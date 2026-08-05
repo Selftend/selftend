@@ -19,6 +19,7 @@
 import { Link, router } from "expo-router";
 import type { ReactNode } from "react";
 import { Image, Platform, Pressable, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { create } from "zustand";
 import { useTranslation } from "react-i18next";
 
@@ -327,6 +328,61 @@ export function Proto658FloatingHamburger() {
     >
       <Icon name="menu" className="size-6 text-foreground" />
     </Pressable>
+  );
+}
+
+/**
+ * Mobile pieces (all variants share one mobile treatment): no header, a
+ * floating hamburger, and the panel showing logo + wordmark only while open.
+ * Wired to AppShell's existing sidebar store via props, not the proto store.
+ */
+export function Proto658MobileHamburger({ onPress }: { onPress: () => void }) {
+  const active = useProto658Active();
+  const { t } = useTranslation("navigation");
+  if (!active) return null;
+  return (
+    <Pressable
+      accessibilityLabel={t("header.openNav")}
+      accessibilityRole="button"
+      role="button"
+      onPress={onPress}
+      className="absolute left-4 top-4 z-30 rounded-full border border-border bg-card p-3 shadow-md web:hover:bg-muted/50"
+    >
+      <Icon name="menu" className="size-6 text-foreground" />
+    </Pressable>
+  );
+}
+
+export function Proto658MobilePanel({ onClose }: { onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation("navigation");
+  return (
+    <View className="absolute inset-0 z-50 flex-row">
+      <View className="border-r border-border bg-card" style={{ paddingTop: insets.top }}>
+        <View className="w-60 flex-row items-center justify-between px-3 pt-3">
+          <LogoHomeLink withWordmark />
+          <Pressable
+            accessibilityLabel={t("header.closeNav")}
+            accessibilityRole="button"
+            role="button"
+            onPress={onClose}
+            className="items-center justify-center rounded-md p-2.5 active:bg-muted/50 web:hover:bg-muted/50"
+          >
+            <Icon name="close" className="size-6 text-muted-foreground" />
+          </Pressable>
+        </View>
+        <View className="-mr-px flex-1">
+          <SidebarNav onSelect={onClose} />
+        </View>
+      </View>
+      <Pressable
+        accessibilityLabel={t("header.closeNav")}
+        accessibilityRole="button"
+        role="button"
+        className="flex-1 bg-black/50"
+        onPress={onClose}
+      />
+    </View>
   );
 }
 

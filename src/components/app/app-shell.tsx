@@ -5,7 +5,11 @@ import { useTranslation } from "react-i18next";
 
 import { AppHeader } from "@/src/components/app/app-header";
 // PROTOTYPE #658 — throwaway wiring, remove with the prototype file.
-import { useProto658Active } from "@/src/components/app/prototype-658-sidebar";
+import {
+  Proto658MobileHamburger,
+  Proto658MobilePanel,
+  useProto658Active,
+} from "@/src/components/app/prototype-658-sidebar";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
@@ -28,10 +32,11 @@ export function AppShell() {
     }
   }, [close, showMobileNav]);
 
-  // PROTOTYPE #658: the headerless shell is a desktop-web question; hide the
-  // top bar there so the variants are judged without the old chrome.
+  // PROTOTYPE #658: hide the top bar on every signed-in width so the
+  // headerless shell is judged without the old chrome. Mobile gets a floating
+  // hamburger; the logo + wordmark appear only inside the opened panel.
   const proto658 = useProto658Active();
-  const hideHeader = proto658 && isDesktop && Boolean(session);
+  const hideHeader = proto658 && Boolean(session);
 
   return (
     <View className="flex-1 bg-background">
@@ -53,18 +58,23 @@ export function AppShell() {
         </Stack>
       </View>
 
+      {showMobileNav && hideHeader && !isOpen ? <Proto658MobileHamburger onPress={toggle} /> : null}
       {showMobileNav && isOpen ? (
-        <View className="absolute inset-0 z-50 flex-row">
-          <SidebarNav includeTopInset onSelect={close} />
-          <Pressable
-            accessibilityLabel={t("header.closeNav")}
-            accessibilityRole="button"
-            className="flex-1 bg-black/50"
-            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-            onPress={close}
-            role="button"
-          />
-        </View>
+        hideHeader ? (
+          <Proto658MobilePanel onClose={close} />
+        ) : (
+          <View className="absolute inset-0 z-50 flex-row">
+            <SidebarNav includeTopInset onSelect={close} />
+            <Pressable
+              accessibilityLabel={t("header.closeNav")}
+              accessibilityRole="button"
+              className="flex-1 bg-black/50"
+              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+              onPress={close}
+              role="button"
+            />
+          </View>
+        )
       ) : null}
     </View>
   );
