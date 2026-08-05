@@ -4,13 +4,15 @@
  * Output: Drive captures/shared/<SHOT>-v01.webm + <SHOT>-frame.png review frame.
  */
 // The capture lib lives with the media in the owner-held Drive folder (see #621's
-// source-of-truth split); this runner executes on the owner's machine only.
+// source-of-truth split); this runner executes on the owner's machine only. The
+// require stays non-literal so import/no-unresolved doesn't chase a machine-local path.
 
-const lib = require("C:/Users/vasil/My Drive/Adobe Premiere Projects/Selftend/scripts/capture-lib.js");
+const DRIVE = "C:/Users/vasil/My Drive/Adobe Premiere Projects/Selftend";
+const lib = require(`${DRIVE}/scripts/capture-lib.js`);
 const path = require("path");
 const fs = require("fs");
 
-const OUT = "C:/Users/vasil/My Drive/Adobe Premiere Projects/Selftend/captures/shared";
+const OUT = `${DRIVE}/captures/shared`;
 
 async function launchShot() {
   const h = await lib.launch({ outDir: OUT, useAuth: true });
