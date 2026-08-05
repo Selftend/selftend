@@ -149,9 +149,12 @@ const ACCOUNT_ITEMS: NavItemDef[] = [
 interface SidebarNavProps {
   includeTopInset?: boolean;
   onSelect?: () => void;
+  // PROTOTYPE #658: lets the prototype wrappers stretch the panel so its
+  // ScrollView keeps a bounded height. Remove with the prototype.
+  className?: string;
 }
 
-export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProps) {
+export function SidebarNav({ includeTopInset = false, onSelect, className }: SidebarNavProps) {
   const { t } = useTranslation("navigation");
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -300,7 +303,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
 
   return (
     <View
-      className="w-60 flex-shrink-0 border-r border-border bg-card"
+      className={cn("w-60 flex-shrink-0 border-r border-border bg-card", className)}
       style={{
         paddingTop: includeTopInset ? insets.top : 0,
         paddingBottom: insets.bottom,

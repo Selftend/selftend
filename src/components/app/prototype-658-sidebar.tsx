@@ -200,15 +200,13 @@ function CollapseToggle({ expanded }: { expanded: boolean }) {
     panel. No logo here any more — it lives in the invisible header. */
 function ExpandedPanel() {
   return (
-    <View className="border-r border-border bg-card">
+    <View className="flex-1 border-r border-border bg-card">
       <View className="w-60 flex-row items-center justify-end px-3 pt-3">
         <CollapseToggle expanded />
       </View>
-      {/* The production panel keeps its own w-60/border; the doubled border is
-          a prototype artifact, ignore it. */}
-      <View className="flex-1 -mr-px">
-        <SidebarNav />
-      </View>
+      {/* flex-1 down the whole chain so the panel's ScrollView keeps a
+          bounded height and can actually scroll. */}
+      <SidebarNav className="-mr-px flex-1" />
     </View>
   );
 }
@@ -283,20 +281,7 @@ function VariantC() {
   return (
     <View className="absolute inset-0 z-40 flex-row">
       <View className="border-r border-border bg-card">
-        <View className="w-60 flex-row items-center justify-end px-3 pt-3">
-          <Pressable
-            accessibilityLabel={t("header.closeNav")}
-            accessibilityRole="button"
-            role="button"
-            onPress={() => setOverlayOpen(false)}
-            className="items-center justify-center rounded-md p-2.5 active:bg-muted/50 web:hover:bg-muted/50"
-          >
-            <Icon name="close" className="size-6 text-muted-foreground" />
-          </Pressable>
-        </View>
-        <View className="flex-1 -mr-px">
-          <SidebarNav onSelect={() => setOverlayOpen(false)} />
-        </View>
+        <SidebarNav className="-mr-px flex-1" onSelect={() => setOverlayOpen(false)} />
       </View>
       <Pressable
         accessibilityLabel={t("header.closeNav")}
@@ -369,20 +354,9 @@ export function Proto658MobilePanel({ onClose }: { onClose: () => void }) {
   return (
     <View className="absolute inset-0 z-50 flex-row">
       <View className="border-r border-border bg-card" style={{ paddingTop: insets.top }}>
-        <View className="w-60 flex-row items-center justify-end px-3 pt-3">
-          <Pressable
-            accessibilityLabel={t("header.closeNav")}
-            accessibilityRole="button"
-            role="button"
-            onPress={onClose}
-            className="items-center justify-center rounded-md p-2.5 active:bg-muted/50 web:hover:bg-muted/50"
-          >
-            <Icon name="close" className="size-6 text-muted-foreground" />
-          </Pressable>
-        </View>
-        <View className="-mr-px flex-1">
-          <SidebarNav onSelect={onClose} />
-        </View>
+        {/* No close button — tap the backdrop to dismiss; the list starts
+            straight at Home. */}
+        <SidebarNav className="-mr-px flex-1" onSelect={onClose} />
       </View>
       <Pressable
         accessibilityLabel={t("header.closeNav")}
