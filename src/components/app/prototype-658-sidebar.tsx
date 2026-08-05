@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
+import { UserMenu } from "@/src/components/app/user-menu";
 
 type Variant = "A" | "B" | "C" | "off";
 
@@ -328,6 +329,21 @@ export function Proto658FloatingHamburger() {
     >
       <Icon name="menu" className="size-6 text-foreground" />
     </Pressable>
+  );
+}
+
+/**
+ * Floating profile button, top-right on every width — the UserMenu freed from
+ * the header. The real cluster membership (Discord/Reddit/YouTube/GitHub) is
+ * ticket #659; the prototype floats just the profile for now.
+ */
+export function Proto658FloatingProfile() {
+  const active = useProto658Active();
+  if (!active) return null;
+  return (
+    <View className="absolute right-4 top-4 z-30 rounded-full border border-border bg-card shadow-md">
+      <UserMenu />
+    </View>
   );
 }
 

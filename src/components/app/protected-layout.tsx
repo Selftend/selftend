@@ -12,6 +12,7 @@ import { SidebarNav } from "@/src/components/app/sidebar-nav";
 // PROTOTYPE #658 — throwaway wiring, remove with the prototype file.
 import {
   Proto658FloatingHamburger,
+  Proto658FloatingProfile,
   Proto658Sidebar,
   Proto658Switcher,
   useProto658Active,
@@ -169,9 +170,15 @@ export default function ProtectedLayout() {
       <View className="flex-1 flex-row bg-background">
         {isDesktop ? proto658 ? <Proto658Sidebar /> : <SidebarNav /> : null}
         <View className="flex-1">
-          <OfflineBanner />
-          <VerifyEmailBanner />
-          <UpdateBanner />
+          {/* PROTOTYPE #658: with no header, top strips collide with the
+              floating buttons — try them at the bottom instead. */}
+          {proto658 ? null : (
+            <>
+              <OfflineBanner />
+              <VerifyEmailBanner />
+              <UpdateBanner />
+            </>
+          )}
           <Stack
             screenOptions={{
               headerShown: false,
@@ -226,9 +233,17 @@ export default function ProtectedLayout() {
           {/* Corner-floating routine-progress handle: authenticated shell only,
               bottom-right so it coexists with the bottom-center reminder prompt
               card by construction. Renders nothing while no routine step is open. */}
+          {proto658 ? (
+            <>
+              <OfflineBanner />
+              <VerifyEmailBanner />
+              <UpdateBanner />
+            </>
+          ) : null}
           <RoutineFab />
         </View>
         {isDesktop ? <Proto658FloatingHamburger /> : null}
+        <Proto658FloatingProfile />
         {isDesktop ? <Proto658Switcher /> : null}
       </View>
     </AppLockGate>
