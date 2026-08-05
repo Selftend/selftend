@@ -9,6 +9,13 @@ import { VerifyEmailBanner } from "@/src/components/app/verify-email-banner";
 import { UpdateBanner } from "@/src/components/app/update-banner";
 import { RoutineFab } from "@/src/components/app/routine-fab";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
+// PROTOTYPE #658 — throwaway wiring, remove with the prototype file.
+import {
+  Proto658FloatingHamburger,
+  Proto658Sidebar,
+  Proto658Switcher,
+  useProto658Active,
+} from "@/src/components/app/prototype-658-sidebar";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
@@ -36,6 +43,8 @@ export default function ProtectedLayout() {
   const { t } = useTranslation("settings");
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
+  // PROTOTYPE #658: swaps the desktop sidebar for the variant under review.
+  const proto658 = useProto658Active();
   const { session, status, user } = useSession();
   const {
     data: preferences,
@@ -158,7 +167,7 @@ export default function ProtectedLayout() {
         />
       ) : null}
       <View className="flex-1 flex-row bg-background">
-        {isDesktop ? <SidebarNav /> : null}
+        {isDesktop ? proto658 ? <Proto658Sidebar /> : <SidebarNav /> : null}
         <View className="flex-1">
           <OfflineBanner />
           <VerifyEmailBanner />
@@ -219,6 +228,8 @@ export default function ProtectedLayout() {
               card by construction. Renders nothing while no routine step is open. */}
           <RoutineFab />
         </View>
+        {isDesktop ? <Proto658FloatingHamburger /> : null}
+        {isDesktop ? <Proto658Switcher /> : null}
       </View>
     </AppLockGate>
   );
