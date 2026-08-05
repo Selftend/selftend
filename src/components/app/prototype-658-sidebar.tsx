@@ -18,8 +18,11 @@
  */
 import { Link, router } from "expo-router";
 import type { ReactNode } from "react";
-import { Image, Platform, Pressable, ScrollView, View } from "react-native";
+import { Image, Platform, Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
+import { useSidebarStore } from "@/src/stores/sidebar-store";
 import { create } from "zustand";
 import { useTranslation } from "react-i18next";
 
@@ -193,12 +196,12 @@ function CollapseToggle({ expanded }: { expanded: boolean }) {
   );
 }
 
-/** Expanded state shared by A and B: logo row + the real production panel. */
+/** Expanded state shared by A and B: collapse toggle + the real production
+    panel. No logo here any more — it lives in the invisible header. */
 function ExpandedPanel() {
   return (
     <View className="border-r border-border bg-card">
-      <View className="w-60 flex-row items-center justify-between px-3 pt-3">
-        <LogoHomeLink withWordmark />
+      <View className="w-60 flex-row items-center justify-end px-3 pt-3">
         <CollapseToggle expanded />
       </View>
       {/* The production panel keeps its own w-60/border; the doubled border is
@@ -213,10 +216,7 @@ function ExpandedPanel() {
 function Rail({ children }: { children: ReactNode }) {
   return (
     <View className="w-14 flex-shrink-0 items-stretch border-r border-border bg-card">
-      <View className="items-center pt-3 pb-1">
-        <LogoHomeLink withWordmark={false} />
-      </View>
-      <ScrollView contentContainerClassName="grow items-stretch px-1.5 pb-2">
+      <ScrollView contentContainerClassName="grow items-stretch px-1.5 pb-2 pt-3">
         <CollapseToggle expanded={false} />
         {children}
       </ScrollView>
@@ -283,8 +283,7 @@ function VariantC() {
   return (
     <View className="absolute inset-0 z-40 flex-row">
       <View className="border-r border-border bg-card">
-        <View className="w-60 flex-row items-center justify-between px-3 pt-3">
-          <LogoHomeLink withWordmark />
+        <View className="w-60 flex-row items-center justify-end px-3 pt-3">
           <Pressable
             accessibilityLabel={t("header.closeNav")}
             accessibilityRole="button"
@@ -310,73 +309,67 @@ function VariantC() {
   );
 }
 
-/** Floating hamburger for variant C (and nothing else). */
-export function Proto658FloatingHamburger() {
+/**
+ * The "invisible header": a transparent bar in normal flow — content is
+ * pushed down instead of floated over. Buttons keep the floating-circle look;
+ * logo + app name sit dead center (and therefore leave the sidebar). Left
+ * slot: hamburger on mobile (drives AppShell's sidebar store) and, on
+ * desktop, only for variant C (opens the overlay). Right slot: UserMenu.
+ */
+export function Proto658InvisibleHeader() {
   const active = useProto658Active();
   const variant = useProto658Store((s) => s.variant);
-  const overlayOpen = useProto658Store((s) => s.overlayOpen);
   const setOverlayOpen = useProto658Store((s) => s.setOverlayOpen);
+  const toggleMobileNav = useSidebarStore((s) => s.toggle);
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation("navigation");
 
-  if (!active || variant !== "C" || overlayOpen) return null;
-  return (
-    <Pressable
-      accessibilityLabel={t("header.openNav")}
-      accessibilityRole="button"
-      role="button"
-      onPress={() => setOverlayOpen(true)}
-      className="absolute left-4 top-4 z-30 rounded-full border border-border bg-card p-3 shadow-md web:hover:bg-muted/50"
-    >
-      <Icon name="menu" className="size-6 text-foreground" />
-    </Pressable>
-  );
-}
-
-/**
- * Floating profile button, top-right on every width — the UserMenu freed from
- * the header. The real cluster membership (Discord/Reddit/YouTube/GitHub) is
- * ticket #659; the prototype floats just the profile for now.
- */
-export function Proto658FloatingProfile() {
-  const active = useProto658Active();
   if (!active) return null;
+  const isDesktop = width >= DESKTOP_BREAKPOINT;
+  const showHamburger = !isDesktop || variant === "C";
+
   return (
-    <View className="absolute right-4 top-4 z-30 rounded-full border border-border bg-card shadow-md">
-      <UserMenu />
+    <View
+      className="flex-row items-center justify-between px-3 py-2"
+      style={{ marginTop: insets.top }}
+    >
+      {/* Centered logo layer under the buttons; box-none so it never eats taps. */}
+      <View pointerEvents="box-none" className="absolute inset-0 items-center justify-center">
+        <LogoHomeLink withWordmark />
+      </View>
+      {showHamburger ? (
+        <Pressable
+          accessibilityLabel={t("header.openNav")}
+          accessibilityRole="button"
+          role="button"
+          onPress={() => (isDesktop ? setOverlayOpen(true) : toggleMobileNav())}
+          className="rounded-full border border-border bg-card p-3 shadow-md web:hover:bg-muted/50"
+        >
+          <Icon name="menu" className="size-6 text-foreground" />
+        </Pressable>
+      ) : (
+        <View className="size-12" />
+      )}
+      <View className="rounded-full border border-border bg-card shadow-md">
+        <UserMenu />
+      </View>
     </View>
   );
 }
 
 /**
- * Mobile pieces (all variants share one mobile treatment): no header, a
- * floating hamburger, and the panel showing logo + wordmark only while open.
- * Wired to AppShell's existing sidebar store via props, not the proto store.
+ * Mobile overlay panel (all variants share one mobile treatment). Opened from
+ * the invisible header's hamburger via AppShell's sidebar store; no logo here
+ * — it lives in the invisible header.
  */
-export function Proto658MobileHamburger({ onPress }: { onPress: () => void }) {
-  const active = useProto658Active();
-  const { t } = useTranslation("navigation");
-  if (!active) return null;
-  return (
-    <Pressable
-      accessibilityLabel={t("header.openNav")}
-      accessibilityRole="button"
-      role="button"
-      onPress={onPress}
-      className="absolute left-4 top-4 z-30 rounded-full border border-border bg-card p-3 shadow-md web:hover:bg-muted/50"
-    >
-      <Icon name="menu" className="size-6 text-foreground" />
-    </Pressable>
-  );
-}
-
 export function Proto658MobilePanel({ onClose }: { onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation("navigation");
   return (
     <View className="absolute inset-0 z-50 flex-row">
       <View className="border-r border-border bg-card" style={{ paddingTop: insets.top }}>
-        <View className="w-60 flex-row items-center justify-between px-3 pt-3">
-          <LogoHomeLink withWordmark />
+        <View className="w-60 flex-row items-center justify-end px-3 pt-3">
           <Pressable
             accessibilityLabel={t("header.closeNav")}
             accessibilityRole="button"

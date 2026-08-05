@@ -5,11 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { AppHeader } from "@/src/components/app/app-header";
 // PROTOTYPE #658 — throwaway wiring, remove with the prototype file.
-import {
-  Proto658MobileHamburger,
-  Proto658MobilePanel,
-  useProto658Active,
-} from "@/src/components/app/prototype-658-sidebar";
+import { Proto658MobilePanel, useProto658Active } from "@/src/components/app/prototype-658-sidebar";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
@@ -58,7 +54,6 @@ export function AppShell() {
         </Stack>
       </View>
 
-      {showMobileNav && hideHeader && !isOpen ? <Proto658MobileHamburger onPress={toggle} /> : null}
       {showMobileNav && isOpen ? (
         hideHeader ? (
           <Proto658MobilePanel onClose={close} />

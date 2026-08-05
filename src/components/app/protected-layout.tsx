@@ -11,8 +11,7 @@ import { RoutineFab } from "@/src/components/app/routine-fab";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 // PROTOTYPE #658 — throwaway wiring, remove with the prototype file.
 import {
-  Proto658FloatingHamburger,
-  Proto658FloatingProfile,
+  Proto658InvisibleHeader,
   Proto658Sidebar,
   Proto658Switcher,
   useProto658Active,
@@ -170,8 +169,9 @@ export default function ProtectedLayout() {
       <View className="flex-1 flex-row bg-background">
         {isDesktop ? proto658 ? <Proto658Sidebar /> : <SidebarNav /> : null}
         <View className="flex-1">
-          {/* PROTOTYPE #658: with no header, top strips collide with the
-              floating buttons — try them at the bottom instead. */}
+          {/* PROTOTYPE #658: transparent header in normal flow pushes content
+              down; the banner strips move to the bottom. */}
+          {proto658 ? <Proto658InvisibleHeader /> : null}
           {proto658 ? null : (
             <>
               <OfflineBanner />
@@ -242,8 +242,6 @@ export default function ProtectedLayout() {
           ) : null}
           <RoutineFab />
         </View>
-        {isDesktop ? <Proto658FloatingHamburger /> : null}
-        <Proto658FloatingProfile />
         {isDesktop ? <Proto658Switcher /> : null}
       </View>
     </AppLockGate>
