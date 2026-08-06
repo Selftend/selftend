@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
@@ -12,6 +12,7 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
+import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 type MockSessionState = {
@@ -348,5 +349,17 @@ describe("ProtectedLayout headerless shell (#667)", () => {
     expect(stackAt).toBeLessThan(output.indexOf("Offline banner"));
     expect(stackAt).toBeLessThan(output.indexOf("Verify-email banner"));
     expect(stackAt).toBeLessThan(output.indexOf("Update banner"));
+  });
+
+  it("publishes the banner strip's measured height for bottom-floating widgets", async () => {
+    renderWithProviders(<ProtectedLayout />);
+
+    const strip = await screen.findByTestId("bottom-banner-strip");
+    fireEvent(strip, "layout", { nativeEvent: { layout: { height: 40 } } });
+    expect(useBannerInsetStore.getState().height).toBe(40);
+
+    // Sign-out unmounts the layout; a stale inset must not survive it.
+    screen.unmount();
+    expect(useBannerInsetStore.getState().height).toBe(0);
   });
 });

@@ -5,6 +5,7 @@ import {
   deleteAllMoodLogsForUser,
   deleteAllRoutinesForUser,
   dismissPostSignInModals,
+  navigateViaPanel,
 } from "./helpers";
 
 // Weekday short names as rendered by form.weekday.* / schedule.weekday.*,
@@ -83,7 +84,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
       timeout: 15_000,
     });
 
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     // --- Create a mood routine scheduled on two non-today days ---
@@ -109,7 +110,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     const routineUrl = page.url();
 
     // --- Routines home: calm schedule label, no unmet count, no FAB ---
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     const card = page.getByRole("button", { name: "Open routine", exact: true });
@@ -143,7 +144,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
 
     // Back on routines home: progress shows despite the off-day - emphasis
     // changed, tracking didn't. The FAB stays quiet (still not scheduled).
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
     await expect(card.getByText("Done for today", { exact: true })).toBeVisible({
       timeout: 15_000,

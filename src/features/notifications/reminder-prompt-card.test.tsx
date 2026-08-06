@@ -4,6 +4,7 @@ import { defaultUserPreferences, type UserPreferences } from "@/src/features/mod
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { scheduleReminder } from "@/src/lib/notifications";
+import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -54,6 +55,7 @@ describe("ReminderPromptCard", () => {
     jest.clearAllMocks();
     act(() => {
       useReminderPromptStore.getState().dismissReminderPrompt();
+      useBannerInsetStore.getState().setHeight(0);
     });
   });
 
@@ -181,5 +183,21 @@ describe("ReminderPromptCard", () => {
     await waitFor(() => {
       expect(screen.queryByText("Set reminder")).toBeNull();
     });
+  });
+
+  it("rides above the bottom banner strip by the published inset (#667)", async () => {
+    setPreferences();
+    setUpdateMutation();
+    act(() => {
+      useBannerInsetStore.getState().setHeight(40);
+    });
+
+    renderWithProviders(<ReminderPromptCard />);
+    requestPrompt("mood");
+
+    await screen.findByText("Set reminder");
+    const host = screen.getByTestId("reminder-prompt-host");
+    // Insets are 0 under the test SafeAreaProvider: base 16 + banner 40.
+    expect(host.props.style).toEqual(expect.objectContaining({ bottom: 56 }));
   });
 });

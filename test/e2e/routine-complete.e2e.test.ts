@@ -4,6 +4,7 @@ import {
   deleteAllMoodLogsForUser,
   deleteAllRoutinesForUser,
   dismissPostSignInModals,
+  navigateViaPanel,
 } from "./helpers";
 
 test.describe("routine completes via tool use", () => {
@@ -32,7 +33,7 @@ test.describe("routine completes via tool use", () => {
     // navigation is immune to the hijack.
     await page.goto("/routines");
     await dismissPostSignInModals(page);
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     // --- Create a routine with a single mood step via the editor UI ---
@@ -58,7 +59,7 @@ test.describe("routine completes via tool use", () => {
     await page.waitForURL(/\/routines\/(?!new)[^/]+$/, { timeout: 15_000 });
 
     // --- Routines home: card is not started, FAB shows 0/1 ---
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     // Scope status assertions to the routine CARD: the page renders tool names
@@ -95,7 +96,7 @@ test.describe("routine completes via tool use", () => {
     await page.waitForURL(/\/tools\/mood-tracker\/(?!new)[^/]+$/, { timeout: 15_000 });
 
     // --- Back on routines home: step derived complete, FAB retired ---
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     await expect(card.getByText("Done for today", { exact: true })).toBeVisible({
