@@ -1,5 +1,5 @@
 import { Stack, usePathname } from "expo-router";
-import { ActivityIndicator, Platform, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,7 +8,6 @@ import { OfflineBanner } from "@/src/components/app/offline-banner";
 import { VerifyEmailBanner } from "@/src/components/app/verify-email-banner";
 import { UpdateBanner } from "@/src/components/app/update-banner";
 import { RoutineFab } from "@/src/components/app/routine-fab";
-import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
@@ -16,7 +15,6 @@ import {
   AppOnboardingWizard,
   type AppOnboardingResult,
 } from "@/src/components/app/app-onboarding-wizard";
-import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import {
   useUpdateOnboardingPreferences,
@@ -34,8 +32,6 @@ import { useAppLockStore } from "@/src/features/security/app-lock-store";
 
 export default function ProtectedLayout() {
   const { t } = useTranslation("settings");
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session, status, user } = useSession();
   const {
     data: preferences,
@@ -158,11 +154,7 @@ export default function ProtectedLayout() {
         />
       ) : null}
       <View className="flex-1 flex-row bg-background">
-        {isDesktop ? <SidebarNav /> : null}
         <View className="flex-1">
-          <OfflineBanner />
-          <VerifyEmailBanner />
-          <UpdateBanner />
           <Stack
             screenOptions={{
               headerShown: false,
@@ -214,6 +206,11 @@ export default function ProtectedLayout() {
             <Stack.Screen name="legal" />
             <Stack.Screen name="progress" />
           </Stack>
+          {/* Banner strips anchor at the bottom of the content column (#660):
+              the top of the screen belongs to the invisible header. */}
+          <OfflineBanner />
+          <VerifyEmailBanner />
+          <UpdateBanner />
           {/* Corner-floating routine-progress handle: authenticated shell only,
               bottom-right so it coexists with the bottom-center reminder prompt
               card by construction. Renders nothing while no routine step is open. */}
