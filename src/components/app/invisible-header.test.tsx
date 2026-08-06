@@ -1,5 +1,5 @@
-import { fireEvent, screen } from "@testing-library/react-native";
-import { Text as mockText } from "react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
+import { StyleSheet, Text as mockText } from "react-native";
 import type { ReactElement } from "react";
 
 import { InvisibleHeader } from "./invisible-header";
@@ -28,6 +28,18 @@ jest.mock("@/src/components/app/user-menu", () => {
   const Text = mockText;
   return {
     UserMenu: () => <Text>User menu</Text>,
+  };
+});
+
+// Notched-device insets so the safe-area test can tell "inset applied" from
+// "no margin". Built on the library's official jest mock (the one
+// test/setup.js installs) — requireActual's SafeAreaProvider renders nothing
+// in jest.
+jest.mock("react-native-safe-area-context", () => {
+  const mock = jest.requireActual("react-native-safe-area-context/jest/mock").default;
+  return {
+    ...mock,
+    useSafeAreaInsets: () => ({ top: 59, right: 0, bottom: 34, left: 0 }),
   };
 });
 
@@ -108,6 +120,43 @@ describe("InvisibleHeader", () => {
       renderWithProviders(<InvisibleHeader homeHref="/" />);
 
       expect(screen.getByText("User menu")).toBeTruthy();
+    });
+  });
+
+  // #673 accessibility verification pass.
+  describe("accessibility", () => {
+    // DOM order IS the web Tab order: the absolute brand layer used to render
+    // first, putting the logo before the hamburger in keyboard traversal
+    // while sitting visually between the buttons.
+    it("orders the chrome hamburger → home link in the DOM", () => {
+      renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
+
+      const labels = within(screen.getByTestId("invisible-header"))
+        .getAllByLabelText(/./)
+        .map((node) => node.props.accessibilityLabel as string);
+
+      expect(labels).toEqual(["Open navigation", "Go to home"]);
+    });
+
+    it("signed out: only the home link is labelled; the spacer is inert", () => {
+      renderWithProviders(<InvisibleHeader homeHref="/" />);
+
+      const labels = within(screen.getByTestId("invisible-header"))
+        .getAllByLabelText(/./)
+        .map((node) => node.props.accessibilityLabel as string);
+      expect(labels).toEqual(["Go to home"]);
+
+      const spacer = screen.getByTestId("invisible-header-nav-spacer");
+      expect(spacer.props.accessibilityLabel).toBeUndefined();
+      expect(spacer.props.focusable).toBeUndefined();
+      expect(spacer.props.onPress).toBeUndefined();
+    });
+
+    it("pushes the bar below the status bar by the top safe-area inset", () => {
+      renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
+
+      const bar = screen.getByTestId("invisible-header");
+      expect((StyleSheet.flatten(bar.props.style) as { marginTop?: number }).marginTop).toBe(59);
     });
   });
 });
