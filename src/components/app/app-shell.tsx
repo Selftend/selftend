@@ -1,11 +1,12 @@
 import { Stack } from "expo-router";
 import { useEffect } from "react";
-import { Pressable, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { InvisibleHeader } from "@/src/components/app/invisible-header";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useModalPanelKeyboard } from "@/src/lib/use-modal-panel-keyboard";
 import { useSession } from "@/src/providers/session-provider";
 import { useSidebarStore } from "@/src/stores/sidebar-store";
 
@@ -26,31 +27,52 @@ export function AppShell() {
     }
   }, [close, signedIn]);
 
+  const overlayOpen = signedIn && isOpen;
+  // Web modal keyboard story (#671): Escape closes, focus is trapped in the
+  // panel, and the opener (hamburger) regains focus on any close path.
+  const { panelRef } = useModalPanelKeyboard({ open: overlayOpen, onClose: close });
+
   return (
     <View className="flex-1 bg-background">
-      <InvisibleHeader
-        homeHref={signedIn ? "/(app)" : "/"}
-        onMenuPress={signedIn ? toggle : undefined}
-      />
-      <View className="flex-1">
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="privacy" />
-          <Stack.Screen name="terms" />
-          <Stack.Screen name="cookies" />
-          <Stack.Screen name="crisis" />
-          <Stack.Screen name="account-deletion" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(app)" />
-        </Stack>
+      {/* While the panel is open the page behind is pointer-blocked by the
+          backdrop; aria-hidden extends that to assistive tech (the keyboard
+          side is the focus trap above). */}
+      <View testID="app-shell-page" className="flex-1" aria-hidden={overlayOpen}>
+        <InvisibleHeader
+          homeHref={signedIn ? "/(app)" : "/"}
+          onMenuPress={signedIn ? toggle : undefined}
+        />
+        <View className="flex-1">
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="privacy" />
+            <Stack.Screen name="terms" />
+            <Stack.Screen name="cookies" />
+            <Stack.Screen name="crisis" />
+            <Stack.Screen name="account-deletion" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(app)" />
+          </Stack>
+        </View>
       </View>
 
-      {signedIn && isOpen ? (
-        <View testID="navigation-overlay" className="absolute inset-0 z-50 flex-row">
+      {overlayOpen ? (
+        // The whole overlay — panel AND backdrop — is the modal dialog: with
+        // aria-modal on the panel alone, the backdrop would be a sibling of
+        // the modal and assistive tech would drop the only close affordance
+        // (a panel with no X). The backdrop still leaves the keyboard Tab
+        // order below; the focus trap skips tabindex="-1" stops.
+        <View
+          testID="navigation-overlay"
+          ref={panelRef}
+          role="dialog"
+          aria-modal
+          className="absolute inset-0 z-50 flex-row"
+        >
           {/* No close button: the panel opens at Home and the backdrop is the
               close affordance for pointer and screen-reader users alike. */}
           <SidebarNav includeTopInset onSelect={close} />
@@ -61,6 +83,10 @@ export function AppShell() {
             hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
             onPress={close}
             role="button"
+            // Invisible to sighted keyboard users, so it leaves the web Tab
+            // order (#671) — but keeps its role + label: touch-exploration
+            // screen readers need a close affordance on a panel with no X.
+            {...(Platform.OS === "web" ? { tabIndex: -1 as const } : {})}
           />
         </View>
       ) : null}
