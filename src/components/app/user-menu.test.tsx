@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
@@ -20,11 +20,13 @@ jest.mock("react-native-screens", () => ({
   FullWindowOverlay: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+const signedInSession = {
+  session: { access_token: "token" },
+  user: { id: "user-1", email: "user@example.com" },
+};
+let mockSession: { session: object | null; user: object | null } = signedInSession;
 jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({
-    session: { access_token: "token" },
-    user: { id: "user-1", email: "user@example.com" },
-  }),
+  useSession: () => mockSession,
 }));
 
 jest.mock("@/src/features/profile/queries", () => ({
@@ -47,11 +49,16 @@ const mockPush = router.push as jest.MockedFunction<typeof router.push>;
 const mockOpen = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 
 const originalDiscordUrl = appEnv.discordUrl;
+const originalRedditUrl = appEnv.redditUrl;
+const originalYoutubeUrl = appEnv.youtubeUrl;
 
 afterEach(() => {
   Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
   appEnv.discordUrl = originalDiscordUrl;
+  appEnv.redditUrl = originalRedditUrl;
+  appEnv.youtubeUrl = originalYoutubeUrl;
   mockPathname = "/";
+  mockSession = signedInSession;
   jest.clearAllMocks();
 });
 
@@ -108,6 +115,79 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByLabelText("Open account menu"));
 
     expect(screen.queryByLabelText("Join our Discord")).toBeNull();
+    expect(screen.getByLabelText("View the source code on GitHub")).toBeTruthy();
+  });
+
+  // #668: Reddit and YouTube join the social row with the same
+  // hide-when-unconfigured contract as Discord; GitHub stays unconditional.
+  it("offers the Reddit link in the dropdown", () => {
+    appEnv.redditUrl = "https://www.reddit.com/r/Selftend/";
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    fireEvent.press(screen.getByLabelText("Open the Selftend subreddit"));
+    expect(mockOpen).toHaveBeenCalledWith("https://www.reddit.com/r/Selftend/");
+  });
+
+  it("offers the YouTube link in the dropdown", () => {
+    appEnv.youtubeUrl = "https://www.youtube.com/@Selftend";
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    fireEvent.press(screen.getByLabelText("Open the Selftend YouTube channel"));
+    expect(mockOpen).toHaveBeenCalledWith("https://www.youtube.com/@Selftend");
+  });
+
+  it("hides the Reddit link when no Reddit URL is configured, keeping GitHub", () => {
+    appEnv.redditUrl = "";
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.queryByLabelText("Open the Selftend subreddit")).toBeNull();
+    expect(screen.getByLabelText("View the source code on GitHub")).toBeTruthy();
+  });
+
+  it("hides the YouTube link when no YouTube URL is configured, keeping GitHub", () => {
+    appEnv.youtubeUrl = "";
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.queryByLabelText("Open the Selftend YouTube channel")).toBeNull();
+    expect(screen.getByLabelText("View the source code on GitHub")).toBeTruthy();
+  });
+
+  // The decided row order (#659): community spaces first in order of
+  // interactivity, GitHub last as the transparency door.
+  it("renders the social row as Discord, Reddit, YouTube, GitHub", () => {
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    const row = screen.getByTestId("social-connections");
+    const labels = within(row)
+      .getAllByLabelText(/./)
+      .map((node) => node.props.accessibilityLabel as string);
+
+    expect(labels).toEqual([
+      "Join our Discord",
+      "Open the Selftend subreddit",
+      "Open the Selftend YouTube channel",
+      "View the source code on GitHub",
+    ]);
+  });
+
+  it("renders the full social row on the signed-out menu too", () => {
+    mockSession = { session: null, user: null };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getByLabelText("Join our Discord")).toBeTruthy();
+    expect(screen.getByLabelText("Open the Selftend subreddit")).toBeTruthy();
+    expect(screen.getByLabelText("Open the Selftend YouTube channel")).toBeTruthy();
     expect(screen.getByLabelText("View the source code on GitHub")).toBeTruthy();
   });
 

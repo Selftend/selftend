@@ -20,7 +20,7 @@ export function SocialConnections({ connections }: SocialConnectionsProps) {
   const isDark = useColorSchemeName() === "dark";
 
   return (
-    <View className="flex-row gap-1">
+    <View className="flex-row gap-1" testID="social-connections">
       {connections.map((item) => (
         <Button
           key={item.id}

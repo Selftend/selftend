@@ -210,17 +210,13 @@ export function UserMenu() {
           <StylePicker />
 
           <GetTheAppSection compact />
-          {/* Community links. On mobile the header shows no Discord/GitHub
-              icons (#92), so this social row is the canonical Discord entry
-              point there; it keeps hiding Discord when no URL is configured. */}
+          {/* Community links (#668): this social row is the app's only
+              community surface. Community spaces first in order of
+              interactivity, GitHub last as the transparency door. Each
+              community link hides when its URL is configured empty; GitHub
+              is unconditional. */}
           <SocialConnections
             connections={[
-              {
-                id: "github",
-                icon: "logo-github",
-                accessibilityLabel: t("header.viewGithub"),
-                onPress: () => openExternal(appEnv.githubRepoUrl),
-              },
               ...(appEnv.discordUrl
                 ? [
                     {
@@ -231,6 +227,32 @@ export function UserMenu() {
                     },
                   ]
                 : []),
+              ...(appEnv.redditUrl
+                ? [
+                    {
+                      id: "reddit",
+                      icon: "logo-reddit" as const,
+                      accessibilityLabel: t("header.openReddit"),
+                      onPress: () => openExternal(appEnv.redditUrl),
+                    },
+                  ]
+                : []),
+              ...(appEnv.youtubeUrl
+                ? [
+                    {
+                      id: "youtube",
+                      icon: "logo-youtube" as const,
+                      accessibilityLabel: t("header.openYoutube"),
+                      onPress: () => openExternal(appEnv.youtubeUrl),
+                    },
+                  ]
+                : []),
+              {
+                id: "github",
+                icon: "logo-github" as const,
+                accessibilityLabel: t("header.viewGithub"),
+                onPress: () => openExternal(appEnv.githubRepoUrl),
+              },
             ]}
           />
 
