@@ -3,7 +3,7 @@ import type { View } from "react-native";
 
 // Module-level registry: components register measurable views under stable keys;
 // tour components look targets up without prop-drilling across layout boundaries
-// (e.g. the hamburger lives in app-header, the check-in widget in today-screen).
+// (e.g. the hamburger lives in invisible-header, the check-in widget in today-screen).
 const targets = new Map<string, View>();
 const listeners = new Set<() => void>();
 

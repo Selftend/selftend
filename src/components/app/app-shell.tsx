@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { AppHeader } from "@/src/components/app/app-header";
 import { InvisibleHeader } from "@/src/components/app/invisible-header";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -16,8 +15,9 @@ export function AppShell() {
   const isOpen = useSidebarStore((s) => s.isOpen);
   const toggle = useSidebarStore((s) => s.toggle);
   const close = useSidebarStore((s) => s.close);
-  // Signed in, the chrome is the invisible header at every width (#667); the
-  // old top bar remains only on signed-out surfaces until #669 retires it.
+  // One chrome everywhere (#667/#669): the invisible header on every surface,
+  // signed in and out. Signed out there is no nav, so the header renders a
+  // same-size spacer in the hamburger slot and the brand links to "/".
   const signedIn = Boolean(session);
 
   useEffect(() => {
@@ -28,7 +28,10 @@ export function AppShell() {
 
   return (
     <View className="flex-1 bg-background">
-      {signedIn ? <InvisibleHeader onMenuPress={toggle} /> : <AppHeader />}
+      <InvisibleHeader
+        homeHref={signedIn ? "/(app)" : "/"}
+        onMenuPress={signedIn ? toggle : undefined}
+      />
       <View className="flex-1">
         <Stack
           screenOptions={{

@@ -10,17 +10,25 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 
 interface InvisibleHeaderProps {
-  onMenuPress: () => void;
+  /**
+   * Opens the navigation panel. Omit when signed out — there is no nav, so
+   * the hamburger slot renders an invisible spacer of the same size, keeping
+   * the row structure (and the UserMenu position) identical everywhere.
+   */
+  onMenuPress?: () => void;
+  /** Where the centered brand links: "/(app)" signed in, "/" signed out. */
+  homeHref: "/" | "/(app)";
 }
 
 /**
- * The signed-in chrome (#658/#667): a transparent bar in normal flow — content
- * is pushed down, never overlapped — with a floating-circle hamburger on the
- * left, the logo + wordmark centered as the home link, and the UserMenu as a
- * floating circle on the right. Identical at every width; the hamburger opens
- * the navigation panel as an overlay.
+ * The app's one chrome (#658/#667/#669): a transparent bar in normal flow —
+ * content is pushed down, never overlapped — with a floating-circle hamburger
+ * on the left (signed in only), the logo + wordmark centered as the home
+ * link, and the UserMenu as a floating circle on the right. Identical at
+ * every width and on every surface; the hamburger opens the navigation panel
+ * as an overlay.
  */
-export function InvisibleHeader({ onMenuPress }: InvisibleHeaderProps) {
+export function InvisibleHeader({ onMenuPress, homeHref }: InvisibleHeaderProps) {
   const { t } = useTranslation("navigation");
   const insets = useSafeAreaInsets();
   const navTargetRef = useTourTargetRef("home-navigation");
@@ -38,7 +46,7 @@ export function InvisibleHeader({ onMenuPress }: InvisibleHeaderProps) {
         pointerEvents="box-none"
         className="absolute inset-0 items-center justify-center"
       >
-        <Link href="/(app)" asChild>
+        <Link href={homeHref} asChild>
           <Pressable
             accessibilityLabel={t("header.goHome")}
             accessibilityRole="link"
@@ -58,17 +66,21 @@ export function InvisibleHeader({ onMenuPress }: InvisibleHeaderProps) {
           </Pressable>
         </Link>
       </View>
-      <View ref={navTargetRef}>
-        <Pressable
-          accessibilityLabel={t("header.openNav")}
-          accessibilityRole="button"
-          role="button"
-          onPress={onMenuPress}
-          className="rounded-full border border-border bg-card p-3 shadow-md active:bg-muted/50 web:hover:bg-muted/50"
-        >
-          <Icon name="menu" className="size-6 text-foreground" />
-        </Pressable>
-      </View>
+      {onMenuPress ? (
+        <View ref={navTargetRef}>
+          <Pressable
+            accessibilityLabel={t("header.openNav")}
+            accessibilityRole="button"
+            role="button"
+            onPress={onMenuPress}
+            className="rounded-full border border-border bg-card p-3 shadow-md active:bg-muted/50 web:hover:bg-muted/50"
+          >
+            <Icon name="menu" className="size-6 text-foreground" />
+          </Pressable>
+        </View>
+      ) : (
+        <View testID="invisible-header-nav-spacer" className="size-12" />
+      )}
       <View className="rounded-full border border-border bg-card shadow-md">
         <UserMenu />
       </View>
