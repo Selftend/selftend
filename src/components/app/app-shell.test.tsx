@@ -117,6 +117,8 @@ describe("AppShell overlay panel", () => {
     expect(screen.queryByText("Navigation panel")).toBeNull();
     fireEvent.press(screen.getByLabelText("Open navigation"));
     expect(screen.getByText("Navigation panel")).toBeTruthy();
+    // e2e scopes panel clicks to this testID (navigateViaPanel) — keep it.
+    expect(screen.getByTestId("navigation-overlay")).toBeTruthy();
 
     // No X: the backdrop is the close affordance, keeping its button role and
     // screen-reader label.

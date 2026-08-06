@@ -47,7 +47,7 @@ export function AppShell() {
       </View>
 
       {signedIn && isOpen ? (
-        <View className="absolute inset-0 z-50 flex-row">
+        <View testID="navigation-overlay" className="absolute inset-0 z-50 flex-row">
           {/* No close button: the panel opens at Home and the backdrop is the
               close affordance for pointer and screen-reader users alike. */}
           <SidebarNav includeTopInset onSelect={close} />
