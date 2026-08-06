@@ -45,15 +45,8 @@ jest.mock("@/src/components/app/user-menu", () => ({
   UserMenu: () => null,
 }));
 
-// The shell is under test, not the header/panel internals — visible stubs let
-// the suite assert which chrome renders without pulling in their deps.
-jest.mock("@/src/components/app/app-header", () => {
-  const Text = mockText;
-  return {
-    AppHeader: () => <Text>Old top bar</Text>,
-  };
-});
-
+// The shell is under test, not the panel internals — a visible stub lets the
+// suite assert the overlay renders without pulling in the panel's deps.
 jest.mock("@/src/components/app/sidebar-nav", () => {
   const Text = mockText;
   return {
@@ -65,7 +58,7 @@ jest.mock("@/src/components/app/sidebar-nav", () => {
 
 const mockUseWindowDimensions = jest.fn();
 
-// Partial mock via Proxy (mirrors app-header.test.tsx): spreading `{...actual}`
+// Partial mock via Proxy: spreading `{...actual}`
 // would eagerly evaluate every lazy getter React Native's module defines, so
 // only intercept the one export this suite needs to control.
 jest.mock("react-native", () => {
@@ -93,20 +86,25 @@ beforeEach(() => {
 });
 
 describe("AppShell chrome per session state", () => {
-  it("signed in: renders the invisible header and never the old top bar", () => {
+  it("signed in: renders the invisible header with the hamburger, home links to the app root", () => {
     renderWithProviders(<AppShell />);
 
+    expect(screen.getByTestId("invisible-header")).toBeTruthy();
     expect(screen.getByLabelText("Open navigation")).toBeTruthy();
-    expect(screen.queryByText("Old top bar")).toBeNull();
+    expect(screen.getByRole("link", { name: "Go to home" }).props.href).toBe("/(app)");
   });
 
-  it("signed out: keeps the old top bar, no hamburger", () => {
+  // #669: one chrome everywhere — signed out gets the same invisible header
+  // with a same-size spacer in the hamburger slot and the brand linking to "/".
+  it("signed out: renders the invisible header with a spacer instead of the hamburger", () => {
     mockSessionState = { session: null };
 
     renderWithProviders(<AppShell />);
 
-    expect(screen.getByText("Old top bar")).toBeTruthy();
+    expect(screen.getByTestId("invisible-header")).toBeTruthy();
     expect(screen.queryByLabelText("Open navigation")).toBeNull();
+    expect(screen.getByTestId("invisible-header-nav-spacer")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Go to home" }).props.href).toBe("/");
   });
 });
 

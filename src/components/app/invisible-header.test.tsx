@@ -37,7 +37,7 @@ afterEach(() => {
 
 describe("InvisibleHeader", () => {
   it("renders a transparent row: no card surface or bottom border on the bar itself", () => {
-    renderWithProviders(<InvisibleHeader onMenuPress={jest.fn()} />);
+    renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
 
     const row = screen.getByTestId("invisible-header");
     expect(row.props.className).not.toContain("bg-");
@@ -46,7 +46,7 @@ describe("InvisibleHeader", () => {
 
   it("opens the navigation from the hamburger", () => {
     const onMenuPress = jest.fn();
-    renderWithProviders(<InvisibleHeader onMenuPress={onMenuPress} />);
+    renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={onMenuPress} />);
 
     const hamburger = screen.getByLabelText("Open navigation");
     expect(hamburger.props.role).toBe("button");
@@ -55,14 +55,14 @@ describe("InvisibleHeader", () => {
   });
 
   it("centers the brand as a home link to the signed-in root", () => {
-    renderWithProviders(<InvisibleHeader onMenuPress={jest.fn()} />);
+    renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
 
     expect(screen.getByRole("link", { name: "Go to home" }).props.href).toBe("/(app)");
     expect(screen.getByText("Selftend")).toBeTruthy();
   });
 
   it("keeps the brand layer tap-transparent via the pointerEvents PROP", () => {
-    renderWithProviders(<InvisibleHeader onMenuPress={jest.fn()} />);
+    renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
 
     // Regression guard: box-none must be the View prop, not a style entry,
     // or the absolutely-positioned brand layer swallows hamburger/menu taps.
@@ -71,16 +71,43 @@ describe("InvisibleHeader", () => {
   });
 
   it("renders the account menu", () => {
-    renderWithProviders(<InvisibleHeader onMenuPress={jest.fn()} />);
+    renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
 
     expect(screen.getByText("User menu")).toBeTruthy();
   });
 
   it("registers the hamburger as the home-navigation tour target", () => {
-    const { unmount } = renderWithProviders(<InvisibleHeader onMenuPress={jest.fn()} />);
+    const { unmount } = renderWithProviders(
+      <InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />,
+    );
 
     expect(getTourTarget("home-navigation")).not.toBeNull();
     unmount();
     expect(getTourTarget("home-navigation")).toBeNull();
+  });
+
+  // #669: signed out there is no nav — the hamburger slot renders an invisible
+  // same-size spacer so the row structure and UserMenu position stay identical.
+  describe("signed out (no onMenuPress)", () => {
+    it("renders a same-size spacer instead of the hamburger", () => {
+      renderWithProviders(<InvisibleHeader homeHref="/" />);
+
+      expect(screen.queryByLabelText("Open navigation")).toBeNull();
+      const spacer = screen.getByTestId("invisible-header-nav-spacer");
+      // size-12 = the hamburger's footprint (p-3 padding around a size-6 icon).
+      expect(spacer.props.className).toContain("size-12");
+    });
+
+    it("links the centered brand to the signed-out root", () => {
+      renderWithProviders(<InvisibleHeader homeHref="/" />);
+
+      expect(screen.getByRole("link", { name: "Go to home" }).props.href).toBe("/");
+    });
+
+    it("keeps the account menu in place", () => {
+      renderWithProviders(<InvisibleHeader homeHref="/" />);
+
+      expect(screen.getByText("User menu")).toBeTruthy();
+    });
   });
 });
