@@ -5,6 +5,8 @@ export const appEnv = {
   playStoreUrl: process.env.EXPO_PUBLIC_PLAY_STORE_URL ?? "",
   appStoreUrl: process.env.EXPO_PUBLIC_APP_STORE_URL ?? "",
   discordUrl: process.env.EXPO_PUBLIC_DISCORD_URL ?? "https://discord.gg/pdaAr9FhcQ",
+  redditUrl: process.env.EXPO_PUBLIC_REDDIT_URL ?? "https://www.reddit.com/r/Selftend/",
+  youtubeUrl: process.env.EXPO_PUBLIC_YOUTUBE_URL ?? "https://www.youtube.com/@Selftend",
   publicAppUrl: process.env.EXPO_PUBLIC_PUBLIC_APP_URL ?? "",
   privacyEmail: process.env.EXPO_PUBLIC_PRIVACY_EMAIL ?? "",
   securityEmail: process.env.EXPO_PUBLIC_SECURITY_EMAIL ?? "",

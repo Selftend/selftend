@@ -30,6 +30,7 @@ import {
   type ReminderTarget,
 } from "@/src/lib/notifications";
 import { useSession } from "@/src/providers/session-provider";
+import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { clampTime, type TimeOfDay } from "@/src/utils/time";
@@ -55,6 +56,7 @@ export function ReminderPromptCard() {
   const showToast = useToastStore((state) => state.showToast);
   const request = useReminderPromptStore((state) => state.request);
   const dismissRequest = useReminderPromptStore((state) => state.dismissReminderPrompt);
+  const bannerInset = useBannerInsetStore((state) => state.height);
 
   const [activeTarget, setActiveTarget] = useState<NotificationTargetKey | null>(null);
   const [time, setTime] = useState<TimeOfDay>({ hour: 19, minute: 0 });
@@ -135,9 +137,12 @@ export function ReminderPromptCard() {
       // this full-width overlay would capture clicks meant for the screen behind it.
       // The prop routes through react-native-web's box-none polyfill (container
       // non-interactive, direct children interactive).
+      testID="reminder-prompt-host"
       pointerEvents="box-none"
       className="absolute inset-x-0 z-[70] items-center px-4"
-      style={{ bottom: insets.bottom + 16 }}
+      // Ride above the bottom-anchored banner strip (#667): a visible banner
+      // would otherwise sit under this card and lose its controls to it.
+      style={{ bottom: insets.bottom + 16 + bannerInset }}
     >
       <Card className="w-full max-w-xl shadow-md dark:shadow-none">
         <CardHeader className="gap-1">

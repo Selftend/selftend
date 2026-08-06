@@ -143,6 +143,28 @@ describe("store and community links", () => {
 
     expect(appEnv.discordUrl).toBe("");
   });
+
+  it("defaults redditUrl and youtubeUrl to the maintainer's community spaces", () => {
+    delete process.env.EXPO_PUBLIC_REDDIT_URL;
+    delete process.env.EXPO_PUBLIC_YOUTUBE_URL;
+
+    jest.resetModules();
+    const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(appEnv.redditUrl).toBe("https://www.reddit.com/r/Selftend/");
+    expect(appEnv.youtubeUrl).toBe("https://www.youtube.com/@Selftend");
+  });
+
+  it("lets EXPO_PUBLIC_REDDIT_URL and EXPO_PUBLIC_YOUTUBE_URL be blanked to hide their links", () => {
+    process.env.EXPO_PUBLIC_REDDIT_URL = "";
+    process.env.EXPO_PUBLIC_YOUTUBE_URL = "";
+
+    jest.resetModules();
+    const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(appEnv.redditUrl).toBe("");
+    expect(appEnv.youtubeUrl).toBe("");
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -5,6 +5,8 @@
     "goHome": "Към начало",
     "appName": "Selftend",
     "joinDiscord": "Присъедини се към нашия Discord",
+    "openReddit": "Отвори субредита на Selftend",
+    "openYoutube": "Отвори YouTube канала на Selftend",
     "viewGithub": "Виж изходния код в GitHub"
   },
   "sidebar": {
@@ -14,16 +16,13 @@
     "notifications": "Известия",
     "settings": "Настройки",
     "support": "Поддръжка",
-    "cbtOverview": "Преглед",
     "cbtHistory": "История",
     "cbtLearn": "Обучение",
     "moodTracker": "Проследяване на настроението",
     "journal": "Дневник",
     "breathing": "Дишане",
     "meditation": "Медитация",
-    "timer": "Таймер",
     "grounding": "Заземяване",
-    "back": "Назад",
     "act": "ACT",
     "dbt": "DBT",
     "cbt": "КПТ",
@@ -37,9 +36,7 @@
     "tools": "Инструменти",
     "badgeLive": "Активно",
     "badgeSoon": "Скоро",
-    "badgeBeta": "Бета",
-    "collapse": "Свий {{label}}",
-    "expand": "Разгъни {{label}}"
+    "badgeBeta": "Бета"
   },
   "userMenu": {
     "account": "Акаунт",
@@ -262,13 +259,11 @@
       },
       "cbtProgramme": {
         "title": "КПТ програма",
-        "metaDesc": "Напредъкът ти по водената програма.",
-        "shortcutCta": "Отвори програмата"
+        "metaDesc": "Напредъкът ти по водената програма."
       },
       "actProgramme": {
         "title": "ACT програма",
-        "metaDesc": "Водената ти ACT програма и текущите цели.",
-        "shortcutCta": "Отвори програмата"
+        "metaDesc": "Водената ти ACT програма и текущите цели."
       },
       "cbtModuleShortcut": {
         "title": "КПТ модул",
@@ -364,13 +359,6 @@
     "moodTrend": "Тенденция на настроението",
     "moodTrendDescription": "Дневно средно за последните 30 дни.",
     "noMoodData": "Запиши настроение, за да започне тенденцията.",
-    "activityTitle": "Последните 30 дни",
-    "activityDescription": "Колко често си се включвал в споделените инструменти.",
-    "moodLogs": "записа на настроение",
-    "journalEntries": "записа в дневника",
-    "gratitudeEntries": "записа за благодарност",
-    "thoughtRecords": "записа на мисли",
-    "actEntries": "ACT записа",
     "reflectionTitle": "Въпрос за рефлексия",
     "reflectionDescription": "Тих въпрос, върху който да поразмишляваш.",
     "prompt1": "Какво се усещаше поносимо този месец, което преди изглеждаше трудно?",
@@ -415,30 +403,8 @@
     "program": "КПТ програма",
     "info": "За този модул"
   },
-  "headerTour": {
-    "skipAll": "Пропусни всички",
-    "tune": {
-      "description": "Натисни тук, за да настроиш модула - разписание и предпочитания.",
-      "dismiss": "Разбрах"
-    },
-    "notifications": {
-      "description": "Натисни тук, за да управляваш напомняния и известия за тази функция.",
-      "dismiss": "Разбрах"
-    },
-    "program": {
-      "description": "Натисни тук, за да покажеш или рестартираш поканата за програмата на този модул.",
-      "dismiss": "Разбрах"
-    },
-    "info": {
-      "description": "Натисни тук по всяко време, за да прочетеш как работи модулът.",
-      "dismiss": "Разбрах"
-    }
-  },
   "homeTour": {
-    "dates": {
-      "description": "Разгледай предишни дни, за да видиш какво си записал.",
-      "dismiss": "Ясно"
-    },
+    "skipAll": "Пропусни всички",
     "edit": {
       "description": "Подреди таблото по свой вкус - добавяй, махай и размествай джаджи.",
       "dismiss": "Ясно"
@@ -497,12 +463,7 @@
     }
   },
   "dateBar": {
-    "today": "Днес",
-    "openCalendar": "Отвори календар",
-    "closeCalendar": "Затвори календара",
     "selectDate": "Избери дата",
-    "scrollOlder": "Покажи по-ранни дни",
-    "scrollNewer": "Покажи по-късни дни",
     "clear": "Изчисти датата"
   },
   "plan": {

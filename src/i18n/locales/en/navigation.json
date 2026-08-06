@@ -5,6 +5,8 @@
     "goHome": "Go to home",
     "appName": "Selftend",
     "joinDiscord": "Join our Discord",
+    "openReddit": "Open the Selftend subreddit",
+    "openYoutube": "Open the Selftend YouTube channel",
     "viewGithub": "View the source code on GitHub"
   },
   "sidebar": {
@@ -14,16 +16,13 @@
     "notifications": "Notifications",
     "settings": "Settings",
     "support": "Support",
-    "cbtOverview": "Overview",
     "cbtHistory": "History",
     "cbtLearn": "Learn",
     "moodTracker": "Check-in",
     "journal": "Journal",
     "breathing": "Breathing",
     "meditation": "Meditation",
-    "timer": "Timer",
     "grounding": "Grounding",
-    "back": "Back",
     "act": "ACT",
     "dbt": "DBT",
     "cbt": "CBT",
@@ -37,9 +36,7 @@
     "tools": "Tools",
     "badgeLive": "Live",
     "badgeSoon": "Soon",
-    "badgeBeta": "Beta",
-    "collapse": "Collapse {{label}}",
-    "expand": "Expand {{label}}"
+    "badgeBeta": "Beta"
   },
   "userMenu": {
     "account": "Account",
@@ -262,13 +259,11 @@
       },
       "cbtProgramme": {
         "title": "CBT programme",
-        "metaDesc": "Your guided programme progress.",
-        "shortcutCta": "Open programme"
+        "metaDesc": "Your guided programme progress."
       },
       "actProgramme": {
         "title": "ACT programme",
-        "metaDesc": "Your guided ACT programme and current goals.",
-        "shortcutCta": "Open programme"
+        "metaDesc": "Your guided ACT programme and current goals."
       },
       "cbtModuleShortcut": {
         "title": "CBT module",
@@ -364,13 +359,6 @@
     "moodTrend": "Mood trend",
     "moodTrendDescription": "Daily average over the last 30 days.",
     "noMoodData": "Log a mood to start your trend.",
-    "activityTitle": "Last 30 days",
-    "activityDescription": "How often you checked in across the shared tools.",
-    "moodLogs": "mood logs",
-    "journalEntries": "journal entries",
-    "gratitudeEntries": "gratitude entries",
-    "thoughtRecords": "thought records",
-    "actEntries": "ACT entries",
     "reflectionTitle": "Reflection prompt",
     "reflectionDescription": "A quiet question to sit with.",
     "prompt1": "What felt manageable this month that felt hard before?",
@@ -415,30 +403,8 @@
     "program": "CBT program",
     "info": "About this module"
   },
-  "headerTour": {
-    "skipAll": "Skip all tips",
-    "tune": {
-      "description": "Tap here to customise this module - adjust your schedule and preferences.",
-      "dismiss": "Got it"
-    },
-    "notifications": {
-      "description": "Tap here to manage reminders and notification settings for this feature.",
-      "dismiss": "Got it"
-    },
-    "program": {
-      "description": "Tap here to show or restart this module's program invitation.",
-      "dismiss": "Got it"
-    },
-    "info": {
-      "description": "Tap here any time to read about how this module works.",
-      "dismiss": "Got it"
-    }
-  },
   "homeTour": {
-    "dates": {
-      "description": "Browse previous days to see what you logged.",
-      "dismiss": "Got it"
-    },
+    "skipAll": "Skip all tips",
     "edit": {
       "description": "Arrange the dashboard your way - add, remove and reorder widgets.",
       "dismiss": "Got it"
@@ -497,12 +463,7 @@
     }
   },
   "dateBar": {
-    "today": "Today",
-    "openCalendar": "Open calendar",
-    "closeCalendar": "Close calendar",
     "selectDate": "Select date",
-    "scrollOlder": "Show earlier days",
-    "scrollNewer": "Show later days",
     "clear": "Clear date"
   },
   "plan": {

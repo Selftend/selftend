@@ -1,6 +1,6 @@
 import { Stack, usePathname } from "expo-router";
-import { ActivityIndicator, Platform, useWindowDimensions, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, Platform, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,7 +8,6 @@ import { OfflineBanner } from "@/src/components/app/offline-banner";
 import { VerifyEmailBanner } from "@/src/components/app/verify-email-banner";
 import { UpdateBanner } from "@/src/components/app/update-banner";
 import { RoutineFab } from "@/src/components/app/routine-fab";
-import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
@@ -16,7 +15,6 @@ import {
   AppOnboardingWizard,
   type AppOnboardingResult,
 } from "@/src/components/app/app-onboarding-wizard";
-import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import {
   useUpdateOnboardingPreferences,
@@ -28,14 +26,13 @@ import { useNotificationSync } from "@/src/features/notifications/use-notificati
 import { useRoutines } from "@/src/features/routines/queries";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
+import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync";
 import { AppLockGate } from "@/src/features/security/app-lock-gate";
 import { useAppLockStore } from "@/src/features/security/app-lock-store";
 
 export default function ProtectedLayout() {
   const { t } = useTranslation("settings");
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session, status, user } = useSession();
   const {
     data: preferences,
@@ -48,6 +45,16 @@ export default function ProtectedLayout() {
   const pathname = usePathname();
 
   const hydrateAppLock = useAppLockStore((s) => s.hydrate);
+  const setBannerInset = useBannerInsetStore((s) => s.setHeight);
+  const insets = useSafeAreaInsets();
+  // Measured height of the banner strip's CONTENT (the strip's safe-area
+  // padding excluded); 0 while no banner renders. Drives both the store and
+  // the conditional padding below.
+  const [bannerContentHeight, setBannerContentHeight] = useState(0);
+
+  // A stale inset must not outlive the strip that measured it (sign-out
+  // unmounts this layout while the store persists).
+  useEffect(() => () => useBannerInsetStore.getState().setHeight(0), []);
 
   useSettingsSync(user?.id ?? null, preferences);
   // Routine reminders live on routines rows (not user_preferences), so fold them into
@@ -158,11 +165,7 @@ export default function ProtectedLayout() {
         />
       ) : null}
       <View className="flex-1 flex-row bg-background">
-        {isDesktop ? <SidebarNav /> : null}
         <View className="flex-1">
-          <OfflineBanner />
-          <VerifyEmailBanner />
-          <UpdateBanner />
           <Stack
             screenOptions={{
               headerShown: false,
@@ -214,6 +217,35 @@ export default function ProtectedLayout() {
             <Stack.Screen name="legal" />
             <Stack.Screen name="progress" />
           </Stack>
+          {/* Banner strips anchor at the bottom of the content column (#660):
+              the top of the screen belongs to the invisible header. Their
+              measured height feeds the banner-inset store so bottom-floating
+              widgets (reminder prompt card; RoutineFab, #670) ride above
+              visible banners instead of covering their controls.
+
+              The home-indicator inset is reserved only while a banner is
+              actually visible (#670): a blanket paddingBottom would hold
+              empty inset-height space under the content column at all times.
+              The store gets the CONTENT height only — the floating widgets'
+              base offset already includes insets.bottom, so adding the
+              padded strip's total would double-count it. */}
+          <View
+            testID="bottom-banner-strip"
+            style={{ paddingBottom: bannerContentHeight > 0 ? insets.bottom : 0 }}
+          >
+            <View
+              testID="bottom-banner-strip-content"
+              onLayout={(event) => {
+                const { height } = event.nativeEvent.layout;
+                setBannerContentHeight(height);
+                setBannerInset(height);
+              }}
+            >
+              <OfflineBanner />
+              <VerifyEmailBanner />
+              <UpdateBanner />
+            </View>
+          </View>
           {/* Corner-floating routine-progress handle: authenticated shell only,
               bottom-right so it coexists with the bottom-center reminder prompt
               card by construction. Renders nothing while no routine step is open. */}

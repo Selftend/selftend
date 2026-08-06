@@ -114,7 +114,8 @@ https://github.com/vasilyoshev/control-tower/blob/main/docs/architecture-rule.md
 
 - Agents may stage, commit, and push on feature branches, and open PRs, without asking - including in autonomous loops (policy changed 2026-07-14).
 - Direct pushes to `main` only when the user explicitly asks for that; otherwise changes reach `main` through PRs and the required `verify` check.
-- Never force-push, never skip hooks (`--no-verify`), never merge PRs autonomously - merging is a human action.
+- Agents may merge PRs without asking once every required check is green (policy changed 2026-08-06; merging was previously human-only).
+- Never force-push, never skip hooks (`--no-verify`), never merge over a failing or pending required check.
 
 ## Product discipline
 

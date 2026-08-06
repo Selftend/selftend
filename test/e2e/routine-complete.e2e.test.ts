@@ -4,6 +4,7 @@ import {
   deleteAllMoodLogsForUser,
   deleteAllRoutinesForUser,
   dismissPostSignInModals,
+  navigateViaPanel,
 } from "./helpers";
 
 test.describe("routine completes via tool use", () => {
@@ -32,7 +33,7 @@ test.describe("routine completes via tool use", () => {
     // navigation is immune to the hijack.
     await page.goto("/routines");
     await dismissPostSignInModals(page);
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     // --- Create a routine with a single mood step via the editor UI ---
@@ -58,7 +59,7 @@ test.describe("routine completes via tool use", () => {
     await page.waitForURL(/\/routines\/(?!new)[^/]+$/, { timeout: 15_000 });
 
     // --- Routines home: card is not started, FAB shows 0/1 ---
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     // Scope status assertions to the routine CARD: the page renders tool names
@@ -75,10 +76,9 @@ test.describe("routine completes via tool use", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // --- Qualifying action: log a mood, all in-app (no hard gotos) ---
-    // Sidebar "Check-in" -> tracker home; tapping a score on the check-in card
+    // Panel "Check-in" -> tracker home; tapping a score on the check-in card
     // pushes to /tools/mood-tracker/new?score=N with the score pre-selected.
-    // (.first() = the sidebar nav link; strict mode needs one.)
-    await page.getByRole("link", { name: "Check-in", exact: true }).first().click();
+    await navigateViaPanel(page, "Check-in");
     await expect(page).toHaveURL(/\/tools\/mood-tracker$/, { timeout: 15_000 });
 
     // Mood logs were cleaned in beforeEach, so the history list is empty and
@@ -95,7 +95,7 @@ test.describe("routine completes via tool use", () => {
     await page.waitForURL(/\/tools\/mood-tracker\/(?!new)[^/]+$/, { timeout: 15_000 });
 
     // --- Back on routines home: step derived complete, FAB retired ---
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     await expect(card.getByText("Done for today", { exact: true })).toBeVisible({

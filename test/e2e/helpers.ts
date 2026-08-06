@@ -64,6 +64,20 @@ export async function signInAsViaUi(page: Page, name: SeedUserName) {
   ).toBeHidden({ timeout: 15_000 });
 }
 
+// The persistent desktop sidebar is gone (#667): navigation links live inside
+// the overlay panel behind the invisible header's hamburger. Opens the panel,
+// clicks the named nav link, and relies on the panel closing itself on select.
+// The click is scoped to the overlay: the panel renders LAST in the DOM, so an
+// unscoped .first() resolves to a same-named link in the page underneath (e.g.
+// a breadcrumb) and the overlay then intercepts the click forever.
+export async function navigateViaPanel(page: Page, linkName: string) {
+  await page.getByRole("button", { name: "Open navigation", exact: true }).click();
+  await page
+    .getByTestId("navigation-overlay")
+    .getByRole("link", { name: linkName, exact: true })
+    .click();
+}
+
 // The cookie consent banner overlays the bottom of the screen on first load.
 // We dismiss it with "Essential only" so no analytics consent is implied.
 // Best-effort: if it isn't there or has already animated out, do nothing.
