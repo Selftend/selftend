@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { UserMenu } from "@/src/components/app/user-menu";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 
 interface InvisibleHeaderProps {
@@ -42,6 +43,7 @@ export function InvisibleHeader({ onMenuPress }: InvisibleHeaderProps) {
             accessibilityLabel={t("header.goHome")}
             accessibilityRole="link"
             role="link"
+            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
             className="flex-row items-center gap-2 rounded-md p-1.5"
           >
             <Image
