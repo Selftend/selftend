@@ -1,5 +1,5 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { Text as mockText, View as mockView } from "react-native";
+import { Platform, Text as mockText, View as mockView } from "react-native";
 import type { ReactElement, ReactNode } from "react";
 
 import { AppShell } from "./app-shell";
@@ -80,6 +80,7 @@ const DESKTOP_DIMENSIONS = { width: 1024, height: 768, scale: 1, fontScale: 1 };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  Object.defineProperty(Platform, "OS", { configurable: true, value: "ios" });
   mockSessionState = { session: { user: { id: "user-1" } } };
   useSidebarStore.setState({ isOpen: false });
   mockUseWindowDimensions.mockReturnValue(DESKTOP_DIMENSIONS);
@@ -141,5 +142,52 @@ describe("AppShell overlay panel", () => {
     fireEvent.press(screen.getByLabelText("Open navigation"));
     fireEvent.press(screen.getByText("Navigation panel"));
     expect(screen.queryByText("Navigation panel")).toBeNull();
+  });
+});
+
+// #671: the declarative half of the web modal keyboard story. The Escape /
+// focus-trap / focus-restore half is the hook's own unit suite
+// (use-modal-panel-keyboard.test.tsx). The dialog is the WHOLE overlay —
+// panel and backdrop — because aria-modal hides the modal's siblings from
+// assistive tech, and the backdrop is the panel's only close affordance.
+describe("AppShell modal panel semantics", () => {
+  it("marks the overlay modal and hides the page behind while open", () => {
+    renderWithProviders(<AppShell />);
+
+    expect(screen.getByTestId("app-shell-page").props["aria-hidden"]).toBe(false);
+    fireEvent.press(screen.getByLabelText("Open navigation"));
+
+    const overlay = screen.getByTestId("navigation-overlay");
+    expect(overlay.props.role).toBe("dialog");
+    expect(overlay.props["aria-modal"]).toBe(true);
+    // The backdrop lives INSIDE the modal, so assistive tech keeps its close
+    // affordance — findable without includeHiddenElements.
+    expect(screen.getByLabelText("Close navigation")).toBeTruthy();
+    // The page is aria-hidden and outside the modal — hidden from default
+    // queries, which is exactly the behavior under assertion.
+    expect(
+      screen.getByTestId("app-shell-page", { includeHiddenElements: true }).props["aria-hidden"],
+    ).toBe(true);
+
+    fireEvent.press(screen.getByLabelText("Close navigation"));
+    expect(screen.getByTestId("app-shell-page").props["aria-hidden"]).toBe(false);
+  });
+
+  it("keeps the backdrop out of the web Tab order without losing its role and label", () => {
+    Object.defineProperty(Platform, "OS", { configurable: true, value: "web" });
+
+    renderWithProviders(<AppShell />);
+    fireEvent.press(screen.getByLabelText("Open navigation"));
+
+    const backdrop = screen.getByLabelText("Close navigation");
+    expect(backdrop.props.tabIndex).toBe(-1);
+    expect(backdrop.props.role).toBe("button");
+  });
+
+  it("does not touch the native backdrop's focusability", () => {
+    renderWithProviders(<AppShell />);
+    fireEvent.press(screen.getByLabelText("Open navigation"));
+
+    expect(screen.getByLabelText("Close navigation").props.tabIndex).toBeUndefined();
   });
 });
