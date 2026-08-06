@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.12.0](https://github.com/Selftend/selftend/compare/v0.11.2...v0.12.0) (2026-08-06)
+
+
+### Features
+
+* **nav:** invisible header + overlay-panel shell for signed-in surfaces ([#675](https://github.com/Selftend/selftend/issues/675)) ([14a1c9d](https://github.com/Selftend/selftend/commit/14a1c9d95a3ff842282fb8339cac3d1de2285c25))
+* **nav:** invisible header on signed-out surfaces, old top bar retired ([#678](https://github.com/Selftend/selftend/issues/678)) ([2e5d1f2](https://github.com/Selftend/selftend/commit/2e5d1f2a02e441b7ffc0ad6b1376b675deea25c2)), closes [#669](https://github.com/Selftend/selftend/issues/669)
+* **nav:** Reddit and YouTube join the UserMenu social row ([#677](https://github.com/Selftend/selftend/issues/677)) ([efd5521](https://github.com/Selftend/selftend/commit/efd5521f8114d63b0c6d7151d98e8a1e9cba854d)), closes [#668](https://github.com/Selftend/selftend/issues/668)
+* **nav:** web modal keyboard story for the navigation panel ([#680](https://github.com/Selftend/selftend/issues/680)) ([a8c874f](https://github.com/Selftend/selftend/commit/a8c874f3d9d8eb339a68e4953badd37b61a8d789)), closes [#671](https://github.com/Selftend/selftend/issues/671)
+* **routines:** RoutineFab rides above bottom-anchored banners ([#679](https://github.com/Selftend/selftend/issues/679)) ([85902ac](https://github.com/Selftend/selftend/commit/85902ac3fc9c2951d646c2953a186e57c4dd0dd1)), closes [#670](https://github.com/Selftend/selftend/issues/670)
+
+
+### Bug Fixes
+
+* **a11y:** put the chrome's web Tab order in visual order ([#682](https://github.com/Selftend/selftend/issues/682)) ([4f648f5](https://github.com/Selftend/selftend/commit/4f648f54643e246d0e2e5d6ea444461fc04e59a5)), closes [#673](https://github.com/Selftend/selftend/issues/673)
+
 ## [0.11.2](https://github.com/Selftend/selftend/compare/v0.11.1...v0.11.2) (2026-08-05)
 
 
