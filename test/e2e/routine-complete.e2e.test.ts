@@ -76,10 +76,9 @@ test.describe("routine completes via tool use", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // --- Qualifying action: log a mood, all in-app (no hard gotos) ---
-    // Sidebar "Check-in" -> tracker home; tapping a score on the check-in card
+    // Panel "Check-in" -> tracker home; tapping a score on the check-in card
     // pushes to /tools/mood-tracker/new?score=N with the score pre-selected.
-    // (.first() = the sidebar nav link; strict mode needs one.)
-    await page.getByRole("link", { name: "Check-in", exact: true }).first().click();
+    await navigateViaPanel(page, "Check-in");
     await expect(page).toHaveURL(/\/tools\/mood-tracker$/, { timeout: 15_000 });
 
     // Mood logs were cleaned in beforeEach, so the history list is empty and
