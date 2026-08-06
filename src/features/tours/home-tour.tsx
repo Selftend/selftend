@@ -114,7 +114,7 @@ export function HomeTour(): React.JSX.Element | null {
       targetRect={targetRect}
       description={t(`homeTour.${current.i18nKey}.description`)}
       dismissLabel={t(`homeTour.${current.i18nKey}.dismiss`)}
-      skipAllLabel={t("headerTour.skipAll")}
+      skipAllLabel={t("homeTour.skipAll")}
       isPending={updateShownButtonTours.isPending}
       onDismiss={() => void dismiss([current.storageKey])}
       onDismissAll={() => void dismiss(ALL_HOME_KEYS)}
