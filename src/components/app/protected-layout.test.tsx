@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Text as mockText, View as mockView } from "react-native";
+import { StyleSheet, Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
 import ProtectedLayout from "./protected-layout";
@@ -76,6 +76,19 @@ jest.mock("@/src/components/app/sidebar-nav", () => {
 
   return {
     SidebarNav: () => <Text>Sidebar column</Text>,
+  };
+});
+
+// A notched-device bottom inset, so the banner strip's conditional safe-area
+// padding (#670) is distinguishable from "no padding" (the default mock
+// reports 0 insets). Built on the library's official jest mock — the one
+// test/setup.js installs globally — NOT requireActual: the real
+// SafeAreaProvider renders nothing in jest without native measurements.
+jest.mock("react-native-safe-area-context", () => {
+  const mock = jest.requireActual("react-native-safe-area-context/jest/mock").default;
+  return {
+    ...mock,
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
   };
 });
 
@@ -351,14 +364,34 @@ describe("ProtectedLayout headerless shell (#667)", () => {
     expect(stackAt).toBeLessThan(output.indexOf("Update banner"));
   });
 
-  it("publishes the banner strip's measured height for bottom-floating widgets", async () => {
+  it("publishes the strip's content height and reserves the safe area only while visible", async () => {
     renderWithProviders(<ProtectedLayout />);
 
-    const strip = await screen.findByTestId("bottom-banner-strip");
-    fireEvent(strip, "layout", { nativeEvent: { layout: { height: 40 } } });
+    const content = await screen.findByTestId("bottom-banner-strip-content");
+
+    // Nothing measured yet: no reserved home-indicator padding (#670 — a
+    // blanket inset would hold empty space when no banner renders).
+    const stripPadding = () =>
+      (
+        StyleSheet.flatten(screen.getByTestId("bottom-banner-strip").props.style) as {
+          paddingBottom?: number;
+        }
+      ).paddingBottom;
+    expect(stripPadding()).toBe(0);
+
+    fireEvent(content, "layout", { nativeEvent: { layout: { height: 40 } } });
+    // The store gets the CONTENT height only — floating widgets add
+    // insets.bottom themselves — while the strip pads the mocked 34px inset.
     expect(useBannerInsetStore.getState().height).toBe(40);
+    expect(stripPadding()).toBe(34);
+
+    // Banner gone: padding released, store cleared.
+    fireEvent(content, "layout", { nativeEvent: { layout: { height: 0 } } });
+    expect(useBannerInsetStore.getState().height).toBe(0);
+    expect(stripPadding()).toBe(0);
 
     // Sign-out unmounts the layout; a stale inset must not survive it.
+    fireEvent(content, "layout", { nativeEvent: { layout: { height: 40 } } });
     screen.unmount();
     expect(useBannerInsetStore.getState().height).toBe(0);
   });

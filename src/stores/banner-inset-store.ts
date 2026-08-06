@@ -6,7 +6,12 @@ import { create } from "zustand";
 // ProtectedLayout publishes the strip's measured height here so those widgets
 // can offset themselves above visible banners instead of covering them.
 interface BannerInsetState {
-  /** Measured height of the bottom banner strip; 0 while no banner is visible. */
+  /**
+   * Measured CONTENT height of the bottom banner strip; 0 while no banner is
+   * visible. Excludes the strip's conditional safe-area padding (#670) — the
+   * floating consumers' base offset already includes insets.bottom, so
+   * base + this height lands them exactly above the padded strip.
+   */
   height: number;
   setHeight: (height: number) => void;
 }

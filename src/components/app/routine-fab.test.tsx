@@ -1,9 +1,11 @@
 import { act, fireEvent, screen } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 
 import { RoutineFab } from "@/src/components/app/routine-fab";
 import { useRoutines } from "@/src/features/routines/queries";
 import type { RoutineWithSteps } from "@/src/features/routines/types";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
+import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { currentDateKey } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -86,6 +88,7 @@ describe("RoutineFab", () => {
     jest.clearAllMocks();
     mockUsePathname.mockReturnValue("/");
     mockUseRoutineToolRecords.mockReturnValue({});
+    useBannerInsetStore.setState({ height: 0 });
   });
 
   it("renders nothing at zero routines", () => {
@@ -445,6 +448,37 @@ describe("RoutineFab", () => {
       expect(screen.getByTestId("routine-fab")).toBeTruthy();
       expect(screen.queryByTestId("routine-fab-complete")).toBeNull();
       expect(screen.getByText("0/1")).toBeTruthy();
+    });
+  });
+
+  // #670: the banner strips anchor at the bottom of the content column, where
+  // the handle floats — it must offset above any visible banner, and settle
+  // back to base when the banner goes away, all without a reload.
+  describe("banner-strip offset", () => {
+    function hostBottom() {
+      const host = screen.getByTestId("routine-fab-host");
+      return (StyleSheet.flatten(host.props.style) as { bottom?: number }).bottom;
+    }
+
+    it("keeps its base position while no banner is visible", () => {
+      setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
+
+      renderWithProviders(<RoutineFab />);
+
+      // Insets are 0 under the test SafeAreaProvider: base offset only.
+      expect(hostBottom()).toBe(16);
+    });
+
+    it("rides above a visible banner and settles back when it disappears", () => {
+      setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
+
+      renderWithProviders(<RoutineFab />);
+
+      act(() => useBannerInsetStore.setState({ height: 40 }));
+      expect(hostBottom()).toBe(56);
+
+      act(() => useBannerInsetStore.setState({ height: 0 }));
+      expect(hostBottom()).toBe(16);
     });
   });
 });
