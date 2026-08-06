@@ -1,6 +1,6 @@
 import { Stack, usePathname } from "expo-router";
 import { ActivityIndicator, Platform, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -46,6 +46,11 @@ export default function ProtectedLayout() {
 
   const hydrateAppLock = useAppLockStore((s) => s.hydrate);
   const setBannerInset = useBannerInsetStore((s) => s.setHeight);
+  const insets = useSafeAreaInsets();
+  // Measured height of the banner strip's CONTENT (the strip's safe-area
+  // padding excluded); 0 while no banner renders. Drives both the store and
+  // the conditional padding below.
+  const [bannerContentHeight, setBannerContentHeight] = useState(0);
 
   // A stale inset must not outlive the strip that measured it (sign-out
   // unmounts this layout while the store persists).
@@ -215,15 +220,31 @@ export default function ProtectedLayout() {
           {/* Banner strips anchor at the bottom of the content column (#660):
               the top of the screen belongs to the invisible header. Their
               measured height feeds the banner-inset store so bottom-floating
-              widgets (reminder prompt card; RoutineFab in #670) ride above
-              visible banners instead of covering their controls. */}
+              widgets (reminder prompt card; RoutineFab, #670) ride above
+              visible banners instead of covering their controls.
+
+              The home-indicator inset is reserved only while a banner is
+              actually visible (#670): a blanket paddingBottom would hold
+              empty inset-height space under the content column at all times.
+              The store gets the CONTENT height only — the floating widgets'
+              base offset already includes insets.bottom, so adding the
+              padded strip's total would double-count it. */}
           <View
             testID="bottom-banner-strip"
-            onLayout={(event) => setBannerInset(event.nativeEvent.layout.height)}
+            style={{ paddingBottom: bannerContentHeight > 0 ? insets.bottom : 0 }}
           >
-            <OfflineBanner />
-            <VerifyEmailBanner />
-            <UpdateBanner />
+            <View
+              testID="bottom-banner-strip-content"
+              onLayout={(event) => {
+                const { height } = event.nativeEvent.layout;
+                setBannerContentHeight(height);
+                setBannerInset(height);
+              }}
+            >
+              <OfflineBanner />
+              <VerifyEmailBanner />
+              <UpdateBanner />
+            </View>
           </View>
           {/* Corner-floating routine-progress handle: authenticated shell only,
               bottom-right so it coexists with the bottom-center reminder prompt

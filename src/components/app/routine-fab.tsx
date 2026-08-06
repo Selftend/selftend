@@ -18,6 +18,7 @@ import {
   useReduceMotionEnabled,
 } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
+import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 
 // Invariant (#90): the FAB never renders over data-entry screens. Its job is
 // nudging from browsing contexts; on form screens it sat on top of
@@ -86,6 +87,10 @@ export function RoutineFab() {
   const today = useRoutinesToday(userId);
   const pathname = usePathname();
   const reduceMotion = useReduceMotionEnabled();
+  // Ride above the bottom-anchored banner strip (#670): a visible banner
+  // would otherwise sit under the handle. 0 while no banner is visible, so
+  // the handle settles back to its base position on its own.
+  const bannerInset = useBannerInsetStore((state) => state.height);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const [showCompleted, setShowCompleted] = useState(false);
@@ -161,9 +166,10 @@ export function RoutineFab() {
     <>
       {showCount && firstOpen ? (
         <View
+          testID="routine-fab-host"
           pointerEvents="box-none"
           className="absolute right-4 z-[60]"
-          style={{ bottom: insets.bottom + 16 }}
+          style={{ bottom: insets.bottom + 16 + bannerInset }}
         >
           <Fab
             icon="repeat"
@@ -185,9 +191,10 @@ export function RoutineFab() {
         </View>
       ) : showCompleted && !isDataEntryPath(pathname) ? (
         <View
+          testID="routine-fab-complete-host"
           pointerEvents="box-none"
           className="absolute right-4 z-[60]"
-          style={{ bottom: insets.bottom + 16 }}
+          style={{ bottom: insets.bottom + 16 + bannerInset }}
         >
           <Animated.View style={{ opacity: completedOpacity }}>
             <Fab
