@@ -119,7 +119,7 @@ export function VerifyEmailBanner() {
     <View
       accessibilityLiveRegion="polite"
       role="status"
-      className="border-b border-border bg-muted px-4 py-2"
+      className="border-t border-border bg-muted px-4 py-2"
     >
       <View className="flex-row flex-wrap items-center justify-center gap-x-2 gap-y-1">
         <Text variant="muted" className="text-sm">

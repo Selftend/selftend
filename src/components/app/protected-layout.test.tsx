@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
@@ -12,6 +12,7 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
+import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 type MockSessionState = {
@@ -46,8 +47,15 @@ jest.mock("expo-router", () => {
   const Text = mockText;
   const View = mockView;
 
+  // The visible marker lets placement tests assert what renders before vs
+  // after the route stack in the content column.
   function Stack({ children }: { children?: ReactNode }) {
-    return <View>{children}</View>;
+    return (
+      <View>
+        <Text>Stack content</Text>
+        {children}
+      </View>
+    );
   }
 
   function StackScreen() {
@@ -63,9 +71,39 @@ jest.mock("expo-router", () => {
   };
 });
 
-jest.mock("@/src/components/app/sidebar-nav", () => ({
-  SidebarNav: () => null,
-}));
+jest.mock("@/src/components/app/sidebar-nav", () => {
+  const Text = mockText;
+
+  return {
+    SidebarNav: () => <Text>Sidebar column</Text>,
+  };
+});
+
+// The banner strips own network/update listeners and have dedicated tests;
+// visible stubs let this suite assert their placement in the shell.
+jest.mock("@/src/components/app/offline-banner", () => {
+  const Text = mockText;
+
+  return {
+    OfflineBanner: () => <Text>Offline banner</Text>,
+  };
+});
+
+jest.mock("@/src/components/app/verify-email-banner", () => {
+  const Text = mockText;
+
+  return {
+    VerifyEmailBanner: () => <Text>Verify-email banner</Text>,
+  };
+});
+
+jest.mock("@/src/components/app/update-banner", () => {
+  const Text = mockText;
+
+  return {
+    UpdateBanner: () => <Text>Update banner</Text>,
+  };
+});
 
 // The date strip and native widget bridge each own timers/listeners and have dedicated
 // tests. This suite only verifies the protected-layout gates, so render inert boundaries.
@@ -135,56 +173,57 @@ const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jes
   typeof useUpdateOnboardingPreferences
 >;
 
-describe("ProtectedLayout app onboarding", () => {
-  const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
+const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    // AppLockGate (native) waits for the app-lock store to hydrate before rendering
-    // protected children. These tests aren't about app-lock, so put the store in its
-    // hydrated, disabled steady state for synchronous assertions on the content.
-    useAppLockStore.setState({ hydrated: true, enabled: false });
-    mockSessionState = {
-      session: {
-        user: {
-          email_confirmed_at: "2026-05-06T10:00:00.000Z",
-          id: "user-1",
-        },
-      },
-      status: "ready",
+// Shared across every describe: a signed-in, hydrated, consent-current state.
+beforeEach(() => {
+  jest.clearAllMocks();
+  // AppLockGate (native) waits for the app-lock store to hydrate before rendering
+  // protected children. These tests aren't about app-lock, so put the store in its
+  // hydrated, disabled steady state for synchronous assertions on the content.
+  useAppLockStore.setState({ hydrated: true, enabled: false });
+  mockSessionState = {
+    session: {
       user: {
         email_confirmed_at: "2026-05-06T10:00:00.000Z",
         id: "user-1",
       },
-    };
-    mutateAsync.mockResolvedValue(undefined);
-    mockUseCompleteAppOnboarding.mockReturnValue({
-      isError: false,
-      isPending: false,
-      mutate: jest.fn(),
-      mutateAsync,
-    } as unknown as ReturnType<typeof useCompleteAppOnboarding>);
-    mockUseUpdateUserPreferences.mockReturnValue({
-      isPending: false,
-      mutate: jest.fn(),
-      mutateAsync: jest.fn(),
-    } as unknown as ReturnType<typeof useUpdateUserPreferences>);
-    mockUseUpdateOnboardingPreferences.mockReturnValue({
-      isError: false,
-      isPending: false,
-      mutate: jest.fn(),
-      mutateAsync: jest.fn().mockResolvedValue(defaultUserPreferences),
-    } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
-    mockUseUserPreferences.mockReturnValue({
-      data: {
-        ...defaultUserPreferences,
-        appOnboardingCompleted: false,
-        policyVersionAccepted: policyVersion,
-      },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useUserPreferences>);
-  });
+    },
+    status: "ready",
+    user: {
+      email_confirmed_at: "2026-05-06T10:00:00.000Z",
+      id: "user-1",
+    },
+  };
+  mutateAsync.mockResolvedValue(undefined);
+  mockUseCompleteAppOnboarding.mockReturnValue({
+    isError: false,
+    isPending: false,
+    mutate: jest.fn(),
+    mutateAsync,
+  } as unknown as ReturnType<typeof useCompleteAppOnboarding>);
+  mockUseUpdateUserPreferences.mockReturnValue({
+    isPending: false,
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+  } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+  mockUseUpdateOnboardingPreferences.mockReturnValue({
+    isError: false,
+    isPending: false,
+    mutate: jest.fn(),
+    mutateAsync: jest.fn().mockResolvedValue(defaultUserPreferences),
+  } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
+  mockUseUserPreferences.mockReturnValue({
+    data: {
+      ...defaultUserPreferences,
+      appOnboardingCompleted: false,
+      policyVersionAccepted: policyVersion,
+    },
+    isLoading: false,
+  } as unknown as ReturnType<typeof useUserPreferences>);
+});
 
+describe("ProtectedLayout app onboarding", () => {
   it("shows the wizard panel-1 title when app onboarding is needed", async () => {
     renderWithProviders(<ProtectedLayout />);
     await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
@@ -287,5 +326,40 @@ describe("ProtectedLayout app onboarding", () => {
 
     renderWithProviders(<ProtectedLayout />);
     expect(screen.getByText("Signed-out landing")).toBeTruthy();
+  });
+});
+
+describe("ProtectedLayout headerless shell (#667)", () => {
+  it("renders no persistent sidebar column at any width", async () => {
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Stack content")).toBeTruthy());
+    expect(screen.queryByText("Sidebar column")).toBeNull();
+  });
+
+  it("renders the banner strips at the bottom of the content column", async () => {
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Offline banner")).toBeTruthy());
+    // Serialized render order stands in for visual order: everything after the
+    // route stack sits at the bottom of the column.
+    const output = JSON.stringify(screen.toJSON());
+    const stackAt = output.indexOf("Stack content");
+    expect(stackAt).toBeGreaterThanOrEqual(0);
+    expect(stackAt).toBeLessThan(output.indexOf("Offline banner"));
+    expect(stackAt).toBeLessThan(output.indexOf("Verify-email banner"));
+    expect(stackAt).toBeLessThan(output.indexOf("Update banner"));
+  });
+
+  it("publishes the banner strip's measured height for bottom-floating widgets", async () => {
+    renderWithProviders(<ProtectedLayout />);
+
+    const strip = await screen.findByTestId("bottom-banner-strip");
+    fireEvent(strip, "layout", { nativeEvent: { layout: { height: 40 } } });
+    expect(useBannerInsetStore.getState().height).toBe(40);
+
+    // Sign-out unmounts the layout; a stale inset must not survive it.
+    screen.unmount();
+    expect(useBannerInsetStore.getState().height).toBe(0);
   });
 });

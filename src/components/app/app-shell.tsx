@@ -1,34 +1,34 @@
 import { Stack } from "expo-router";
 import { useEffect } from "react";
-import { Pressable, useWindowDimensions, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { AppHeader } from "@/src/components/app/app-header";
+import { InvisibleHeader } from "@/src/components/app/invisible-header";
 import { SidebarNav } from "@/src/components/app/sidebar-nav";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { useSession } from "@/src/providers/session-provider";
 import { useSidebarStore } from "@/src/stores/sidebar-store";
 
 export function AppShell() {
   const { t } = useTranslation("navigation");
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= DESKTOP_BREAKPOINT;
   const { session } = useSession();
   const isOpen = useSidebarStore((s) => s.isOpen);
   const toggle = useSidebarStore((s) => s.toggle);
   const close = useSidebarStore((s) => s.close);
-  const showMobileNav = Boolean(session) && !isDesktop;
+  // Signed in, the chrome is the invisible header at every width (#667); the
+  // old top bar remains only on signed-out surfaces until #669 retires it.
+  const signedIn = Boolean(session);
 
   useEffect(() => {
-    if (!showMobileNav) {
+    if (!signedIn) {
       close();
     }
-  }, [close, showMobileNav]);
+  }, [close, signedIn]);
 
   return (
     <View className="flex-1 bg-background">
-      <AppHeader showHamburger={showMobileNav} onMenuPress={toggle} />
+      {signedIn ? <InvisibleHeader onMenuPress={toggle} /> : <AppHeader />}
       <View className="flex-1">
         <Stack
           screenOptions={{
@@ -46,8 +46,10 @@ export function AppShell() {
         </Stack>
       </View>
 
-      {showMobileNav && isOpen ? (
-        <View className="absolute inset-0 z-50 flex-row">
+      {signedIn && isOpen ? (
+        <View testID="navigation-overlay" className="absolute inset-0 z-50 flex-row">
+          {/* No close button: the panel opens at Home and the backdrop is the
+              close affordance for pointer and screen-reader users alike. */}
           <SidebarNav includeTopInset onSelect={close} />
           <Pressable
             accessibilityLabel={t("header.closeNav")}
