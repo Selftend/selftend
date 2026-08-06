@@ -104,6 +104,8 @@ EXPO_PUBLIC_SENTRY_DSN=<your-sentry-dsn>
 EXPO_PUBLIC_PLAY_STORE_URL=<your-play-store-listing-url>
 EXPO_PUBLIC_APP_STORE_URL=<your-app-store-listing-url>
 EXPO_PUBLIC_DISCORD_URL=<your-discord-invite-url>
+EXPO_PUBLIC_REDDIT_URL=<your-subreddit-url>
+EXPO_PUBLIC_YOUTUBE_URL=<your-youtube-channel-url>
 ```
 
 Error monitoring (Sentry): leave `EXPO_PUBLIC_SENTRY_DSN` unset to disable crash reporting entirely, or set it to a DSN from your own Sentry organization or a self-hosted GlitchTip instance (GlitchTip is Sentry-protocol-compatible). The maintainer's hosted build uses Sentry SaaS; self-hosters are not required to use it.
@@ -111,6 +113,8 @@ Error monitoring (Sentry): leave `EXPO_PUBLIC_SENTRY_DSN` unset to disable crash
 Store links: `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` are shown on web surfaces. The Play URL additionally drives the Android mobile-web download bar. **Native update offers are currently disabled** — the in-app update banner is web-only, because `/version.json` records when the _web_ deployed rather than when a store release actually became installable. So neither store URL affects any in-app update prompt today; when native offers return, each platform will use only its own store URL and never fall back to the other. Leave both empty on a self-hosted fork - your build is not on our listings. Empty means the "Coming soon" chip, no download bar, and no native update offer; the web update banner still works because it reads `/version.json` from your own origin (write it in your deploy step, or skip it and the check stays silent).
 
 Discord: `EXPO_PUBLIC_DISCORD_URL` defaults in code to the maintainer's community server. Set it to your own invite URL, or set it to an empty string to hide all Discord UI - this is the documented self-hoster affordance for running without a Discord community.
+
+Reddit and YouTube: `EXPO_PUBLIC_REDDIT_URL` and `EXPO_PUBLIC_YOUTUBE_URL` default in code to the maintainer's subreddit (r/Selftend) and YouTube channel (@Selftend). Set each to your own URL, or to an empty string to hide that link - each community link is independently removable by config. The GitHub source link is always shown.
 
 Never put service-role keys, database passwords, SMTP passwords, OAuth secrets, JWT secrets, private API keys, or backup credentials in Expo public variables. They are bundled into the client app.
 

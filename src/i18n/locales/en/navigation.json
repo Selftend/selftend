@@ -5,6 +5,8 @@
     "goHome": "Go to home",
     "appName": "Selftend",
     "joinDiscord": "Join our Discord",
+    "openReddit": "Open the Selftend subreddit",
+    "openYoutube": "Open the Selftend YouTube channel",
     "viewGithub": "View the source code on GitHub"
   },
   "sidebar": {
