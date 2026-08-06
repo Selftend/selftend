@@ -5,6 +5,7 @@ import {
   deleteAllMoodLogsForUser,
   deleteAllRoutinesForUser,
   dismissPostSignInModals,
+  navigateViaPanel,
 } from "./helpers";
 
 // Weekday short names as rendered by form.weekday.* / schedule.weekday.*,
@@ -83,7 +84,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
       timeout: 15_000,
     });
 
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     // --- Create a mood routine scheduled on two non-today days ---
@@ -109,7 +110,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     const routineUrl = page.url();
 
     // --- Routines home: calm schedule label, no unmet count, no FAB ---
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
 
     const card = page.getByRole("button", { name: "Open routine", exact: true });
@@ -125,7 +126,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
 
     // --- Home: the routines-today widget slot is suppressed entirely ---
     // (routines exist, none scheduled today - the whole slot unmounts, #97)
-    await page.getByRole("link", { name: "Home", exact: true }).first().click();
+    await navigateViaPanel(page, "Home");
     await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
     await expect(page.getByText("Routines today", { exact: true })).toBeHidden({
       timeout: 15_000,
@@ -134,7 +135,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
 
     // --- Manual run: off-schedule still tracks (independent-fact rule) ---
     // Log a mood through the normal check-in flow (the routine's only step).
-    await page.getByRole("link", { name: "Check-in", exact: true }).first().click();
+    await navigateViaPanel(page, "Check-in");
     await expect(page).toHaveURL(/\/tools\/mood-tracker$/, { timeout: 15_000 });
     await page.getByRole("radio", { name: "OK", exact: true }).click();
     await page.waitForURL(/\/tools\/mood-tracker\/new\?/, { timeout: 15_000 });
@@ -143,7 +144,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
 
     // Back on routines home: progress shows despite the off-day - emphasis
     // changed, tracking didn't. The FAB stays quiet (still not scheduled).
-    await page.getByRole("link", { name: "Routines", exact: true }).first().click();
+    await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
     await expect(card.getByText("Done for today", { exact: true })).toBeVisible({
       timeout: 15_000,

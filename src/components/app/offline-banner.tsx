@@ -16,7 +16,7 @@ export function OfflineBanner() {
     <View
       accessibilityLiveRegion="polite"
       role="status"
-      className="border-b border-border bg-muted px-4 py-2"
+      className="border-t border-border bg-muted px-4 py-2"
     >
       <Text variant="muted" className="text-center text-sm">
         {t("offline.banner")}

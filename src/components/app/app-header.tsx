@@ -7,49 +7,31 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { UserMenu } from "@/src/components/app/user-menu";
 import { DESKTOP_BREAKPOINT } from "@/src/constants/layout";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { useSession } from "@/src/providers/session-provider";
-import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
-interface AppHeaderProps {
-  showHamburger?: boolean;
-  onMenuPress?: () => void;
-}
-
-export function AppHeader({ showHamburger, onMenuPress }: AppHeaderProps) {
+// Signed-out surfaces only (#667): the signed-in chrome is the InvisibleHeader,
+// so the hamburger (and the home-navigation tour target with it) lives there.
+// Full retirement of this bar, including signed-out, is #669.
+export function AppHeader() {
   const { t } = useTranslation("navigation");
   const { session } = useSession();
   const { width } = useWindowDimensions();
-  // Same condition as the sidebar-vs-hamburger switch (AppShell/ProtectedLayout):
-  // community links live in the header only where the sidebar does. On mobile
-  // the header is cramped, so the Discord link moves into the account
-  // dropdown's social row instead (#92).
+  // Community links live in the header only on desktop. On mobile the header
+  // is cramped, so the Discord link moves into the account dropdown's social
+  // row instead (#92).
   const isDesktop = width >= DESKTOP_BREAKPOINT;
   const isSignedIn = Boolean(session);
   const iconColor = useColorSchemeName() === "dark" ? "#fafafa" : "#0a0a0a";
-  const navTargetRef = useTourTargetRef("home-navigation");
 
   return (
     <SafeAreaView edges={["top"]} className="bg-card border-b border-border">
       <View className="flex-row items-center gap-2 px-2 h-14">
-        {showHamburger ? (
-          <View ref={navTargetRef}>
-            <Button
-              accessibilityLabel={t("header.openNav")}
-              variant="ghost"
-              size="icon"
-              onPress={onMenuPress}
-            >
-              <Icon name="menu" className="size-6 text-foreground" />
-            </Button>
-          </View>
-        ) : null}
         {/* The flex-1 spacer is a plain View so the pressable hit area stays
             the logo + wordmark, not the whole strip up to the right icons. */}
         <View className="min-w-0 flex-1 flex-row items-center">
