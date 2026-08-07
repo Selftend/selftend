@@ -2,6 +2,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   TextInput,
@@ -84,15 +85,21 @@ function EmotionEditorModal({ state, addPosition, onClose }: EmotionEditorModalP
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
-        <Pressable
-          accessibilityLabel={t("emotions.manage.close")}
-          accessibilityRole="button"
-          className="flex-1 items-center justify-center bg-black/50 p-6"
-          onPress={onClose}
-          role="button"
-        >
-          {/* Inner card - stops tap-through to backdrop */}
-          <Pressable className="w-full max-w-[400px] rounded-2xl bg-card p-4" onPress={() => {}}>
+        <View className="flex-1 items-center justify-center p-6">
+          {/* Dimmed backdrop - tap anywhere outside the card to close. A sibling
+              behind the card rather than a wrapper: a wrapping button would nest
+              the card's buttons inside a <button> on web, which the DOM forbids. */}
+          <Pressable
+            accessibilityLabel={t("emotions.manage.close")}
+            accessibilityRole="button"
+            className="absolute inset-0 bg-black/50"
+            onPress={onClose}
+            role="button"
+            // Out of the web Tab order (invisible to sighted keyboard users, who
+            // have Escape); touch-exploration screen readers keep a labeled close.
+            {...(Platform.OS === "web" ? { tabIndex: -1 as const } : {})}
+          />
+          <View className="w-full max-w-[400px] rounded-2xl bg-card p-4">
             <Text variant="h3" className="mb-4">
               {title}
             </Text>
@@ -134,8 +141,8 @@ function EmotionEditorModal({ state, addPosition, onClose }: EmotionEditorModalP
                 </View>
               </View>
             </ScrollView>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
