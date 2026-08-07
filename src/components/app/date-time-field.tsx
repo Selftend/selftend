@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Modal, Pressable, View } from "react-native";
+import { Modal, Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import DateTimePicker, { useDefaultStyles } from "react-native-ui-datepicker";
 import dayjs from "dayjs";
@@ -96,16 +96,21 @@ export function DateTimeField({
         animationType={reduceMotionEnabled ? "none" : "fade"}
         onRequestClose={() => setOpen(false)}
       >
-        {/* Dimmed backdrop - tap anywhere outside the card to close */}
-        <Pressable
-          accessibilityLabel={t("close")}
-          accessibilityRole="button"
-          className="flex-1 items-center justify-center bg-black/50 p-6"
-          onPress={() => setOpen(false)}
-          role="button"
-        >
-          {/* Card - stop propagation so tapping inside doesn't dismiss */}
-          <Pressable className="w-full max-w-[340px] rounded-2xl bg-card p-3" onPress={() => {}}>
+        <View className="flex-1 items-center justify-center p-6">
+          {/* Dimmed backdrop - tap anywhere outside the card to close. A sibling
+              behind the card rather than a wrapper: a wrapping button would nest
+              the picker's buttons inside a <button> on web, which the DOM forbids. */}
+          <Pressable
+            accessibilityLabel={t("close")}
+            accessibilityRole="button"
+            className="absolute inset-0 bg-black/50"
+            onPress={() => setOpen(false)}
+            role="button"
+            // Out of the web Tab order (invisible to sighted keyboard users, who
+            // have Escape); touch-exploration screen readers keep a labeled close.
+            {...(Platform.OS === "web" ? { tabIndex: -1 as const } : {})}
+          />
+          <View className="w-full max-w-[340px] rounded-2xl bg-card p-3">
             <DateTimePicker
               mode="single"
               date={parsedDate}
@@ -136,8 +141,8 @@ export function DateTimeField({
                 <Text>{t("done")}</Text>
               </Button>
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
     </>
   );
