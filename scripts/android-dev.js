@@ -17,6 +17,7 @@ const {
   hasGuardFlag,
   stripGuardArgs,
 } = require("./lib/prod-env-guard");
+const { ensureLocalDbRunning } = require("./lib/local-db");
 const { getLocalSupabasePort, getMetroPort } = require("./lib/ports");
 
 const controlArgs = new Set(["--list-avds"]);
@@ -333,6 +334,8 @@ async function main() {
     printAvds();
     return;
   }
+
+  await ensureLocalDbRunning();
 
   let activeEmulator = getReadyEmulator();
 
