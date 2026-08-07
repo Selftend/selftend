@@ -33,15 +33,17 @@ cp .env.local.example .env.local
 npx supabase start
 ```
 
+`npx supabase start` is only needed this once, to boot the local stack and print the anon key for `.env.local` (requires Docker). After that, the local-Supabase `start` scripts boot the stack automatically whenever it is down.
+
 In dev mode `.env.local` overrides `.env` (Expo's metro transform merges every `.env*` file over `process.env`). The default `start` scripts load `.env.local`. The `start:prod*` scripts load `.env` and temporarily hide `.env.local` so the dev-client actually hits the hosted Supabase - see [docs/android-development.md](docs/android-development.md) for the gory details.
 
 ## Run
 
 ```bash
 npm run web                    # browser at http://localhost:8081
-npm run start                  # Android device, local Supabase
+npm run start                  # Android device, local Supabase (boots the local stack if down)
 npm run start:prod             # Android device, hosted Supabase (hides .env.local for the run)
-npm run start:emulator         # Android emulator, local Supabase
+npm run start:emulator         # Android emulator, local Supabase (boots the local stack if down)
 npm run start:prod:emulator    # Android emulator, hosted Supabase
 npm run ios                    # iOS simulator
 ```

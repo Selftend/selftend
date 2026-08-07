@@ -2,6 +2,7 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 
 const { applyAdbReverseOnce, startAdbDeviceWatcher } = require("./lib/adb-reverse");
+const { ensureLocalDbRunning } = require("./lib/local-db");
 const { getMetroPort } = require("./lib/ports");
 const {
   applyProdEnvGuard,
@@ -24,23 +25,32 @@ const args = [expoCliPath, "start", "--dev-client", ...expoArgs];
 
 const metroPort = getMetroPort(expoArgs);
 
-applyAdbReverseOnce(metroPort);
-startAdbDeviceWatcher(metroPort);
+async function main() {
+  await ensureLocalDbRunning();
 
-const child = spawn(process.execPath, args, {
-  env: {
-    ...process.env,
-    EXPO_NO_DOTENV: "1",
-    SELFTEND_APP_VARIANT: "development",
-  },
-  stdio: "inherit",
-});
+  applyAdbReverseOnce(metroPort);
+  startAdbDeviceWatcher(metroPort);
 
-child.on("exit", (code, signal) => {
-  if (signal) {
-    process.kill(process.pid, signal);
-    return;
-  }
+  const child = spawn(process.execPath, args, {
+    env: {
+      ...process.env,
+      EXPO_NO_DOTENV: "1",
+      SELFTEND_APP_VARIANT: "development",
+    },
+    stdio: "inherit",
+  });
 
-  process.exit(code ?? 0);
+  child.on("exit", (code, signal) => {
+    if (signal) {
+      process.kill(process.pid, signal);
+      return;
+    }
+
+    process.exit(code ?? 0);
+  });
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
 });
