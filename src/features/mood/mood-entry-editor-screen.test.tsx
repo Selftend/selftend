@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { MoodEntryEditorScreen } from "@/src/features/mood/mood-entry-editor-screen";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
+import { consumeThoughtRecordSeed } from "@/src/stores/thought-record-seed-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-linear-gradient", () => {
@@ -287,26 +288,140 @@ describe("MoodEntryEditorScreen", () => {
     expect(screen.getByLabelText("Notes (optional)").props.value).toBe("draft in progress");
   });
 
-  it("captures the four-box notice when expanded", async () => {
-    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
-    fireEvent.press(screen.getByLabelText("OK"));
-    // Accordion is labelled by t("mood.goDeeperTitle") = "Go deeper"
-    fireEvent.press(screen.getByLabelText("Go deeper"));
-    // Situation textarea still accessible by its label
-    fireEvent.changeText(screen.getByLabelText("Situation / trigger"), "Email from boss");
-    // Body sensations are now chips (accessibilityRole="checkbox"); toggle one
-    fireEvent.press(screen.getByLabelText("Jaw"));
-    fireEvent.press(screen.getByText("Save"));
-    await waitFor(() => {
-      expect(saveMood).toHaveBeenCalledWith(
-        expect.objectContaining({
-          input: expect.objectContaining({
-            moodScore: 3,
-            situation: "Email from boss",
-            bodilySensations: "Jaw",
-          }),
-        }),
+  /**
+   * "Go deeper" stops being four text boxes and becomes the thought-record handoff
+   * (#739, decided on #698). The four CBT fields leave the CREATE form entirely.
+   */
+  describe("go deeper", () => {
+    const makeEntryWith = (overrides: Record<string, unknown>) => ({
+      id: "log-1",
+      userId: "user-1",
+      moodScore: 4,
+      emotions: [],
+      notes: "",
+      linkedStrategy: null,
+      loggedAt: "2026-05-10T08:00:00.000Z",
+      loggedOffsetMinutes: 180,
+      createdAt: "2026-05-10T08:00:00.000Z",
+      situation: "",
+      thoughts: "",
+      behaviours: "",
+      bodilySensations: "",
+      ...overrides,
+    });
+
+    it("offers the thought record, and no CBT fields, on the create form", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      fireEvent.press(screen.getByLabelText("Go deeper"));
+
+      expect(
+        screen.getByText(
+          "If there's a thought underneath this, you can take it into a thought record — no pressure to.",
+        ),
+      ).toBeTruthy();
+      expect(screen.queryByLabelText("Situation / trigger")).toBeNull();
+      expect(screen.queryByLabelText("Thoughts")).toBeNull();
+      expect(screen.queryByLabelText("Response")).toBeNull();
+      expect(screen.queryByLabelText("Jaw")).toBeNull();
+    });
+
+    /**
+     * The seed rides a store, never the URL. A route param would put the user's emotions
+     * in the web address bar, in browser history, and in Sentry's navigation breadcrumbs —
+     * `dropConsoleBreadcrumb` in `sentry.ts` drops *console* breadcrumbs only.
+     */
+    it("hands the picked emotions over out of band, not in the URL", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      fireEvent.press(screen.getByLabelText("OK"));
+      fireEvent.press(screen.getByText("Anxious"));
+      fireEvent.changeText(screen.getByLabelText("Notes (optional)"), "a note, not a situation");
+      fireEvent.press(screen.getByLabelText("Go deeper"));
+      fireEvent.press(screen.getByText("Open a CBT thought record →"));
+
+      expect(mockRouter.push).toHaveBeenCalledWith("/modules/cbt/new");
+      expect(consumeThoughtRecordSeed()).toEqual(["anxious"]);
+    });
+
+    it("pushes rather than replaces, so the half-written check-in survives the detour", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      fireEvent.press(screen.getByLabelText("Go deeper"));
+      fireEvent.press(screen.getByText("Open a CBT thought record →"));
+
+      expect(mockRouter.push).toHaveBeenCalledWith("/modules/cbt/new");
+      expect(mockRouter.replace).not.toHaveBeenCalled();
+    });
+
+    it("keeps editing the fields an entry already holds, and only those", async () => {
+      mockUseMoodLogs.mockReturnValue({
+        data: [makeEntryWith({ situation: "Email from boss", bodilySensations: "Jaw" })],
+      } as unknown as ReturnType<typeof useMoodLogs>);
+
+      renderWithProviders(
+        <MoodEntryEditorScreen fallbackHref="/tools/check-in/log-1" mode="edit" moodId="log-1" />,
       );
+
+      // Auto-expanded: there is inherited reflection to see.
+      expect(screen.getByLabelText("Situation / trigger").props.value).toBe("Email from boss");
+      expect(screen.getByLabelText("Jaw")).toBeTruthy();
+      // The two this entry never held stay gone - the create form no longer offers them.
+      expect(screen.queryByLabelText("Thoughts")).toBeNull();
+      expect(screen.queryByLabelText("Response")).toBeNull();
+
+      fireEvent.changeText(screen.getByLabelText("Situation / trigger"), "Email from my manager");
+      fireEvent.press(screen.getByText("Update"));
+
+      await waitFor(() => {
+        expect(saveMood).toHaveBeenCalledWith(
+          expect.objectContaining({
+            input: expect.objectContaining({
+              situation: "Email from my manager",
+              bodilySensations: "Jaw",
+            }),
+          }),
+        );
+      });
+    });
+
+    it("keeps a cleared field on screen so the cursor is not yanked mid-edit", () => {
+      mockUseMoodLogs.mockReturnValue({
+        data: [makeEntryWith({ situation: "Email from boss" })],
+      } as unknown as ReturnType<typeof useMoodLogs>);
+
+      renderWithProviders(
+        <MoodEntryEditorScreen fallbackHref="/tools/check-in/log-1" mode="edit" moodId="log-1" />,
+      );
+
+      fireEvent.changeText(screen.getByLabelText("Situation / trigger"), "");
+
+      expect(screen.getByLabelText("Situation / trigger")).toBeTruthy();
+    });
+
+    it("gives an entry with no reflection the same collapsed invitation a new check-in gets", () => {
+      mockUseMoodLogs.mockReturnValue({
+        data: [makeEntryWith({})],
+      } as unknown as ReturnType<typeof useMoodLogs>);
+
+      renderWithProviders(
+        <MoodEntryEditorScreen fallbackHref="/tools/check-in/log-1" mode="edit" moodId="log-1" />,
+      );
+
+      expect(screen.queryByLabelText("Situation / trigger")).toBeNull();
+      expect(
+        screen.queryByText(
+          "If there's a thought underneath this, you can take it into a thought record — no pressure to.",
+        ),
+      ).toBeNull();
+
+      fireEvent.press(screen.getByLabelText("Go deeper"));
+
+      expect(
+        screen.getByText(
+          "If there's a thought underneath this, you can take it into a thought record — no pressure to.",
+        ),
+      ).toBeTruthy();
     });
   });
 

@@ -976,7 +976,6 @@
     "saveError": "Unable to save mood.",
     "notFound": "We couldn't find that mood entry.",
     "goDeeperTitle": "Go deeper",
-    "goDeeperIntro": "A light CBT thought-record.",
     "situationHelp": "What happened?",
     "thoughtsHelp": "What went through your mind?",
     "responseLabel": "Response",
@@ -992,7 +991,9 @@
       "heavy": "Heavy",
       "warm": "Warm",
       "tired": "Tired"
-    }
+    },
+    "goDeeperInvite": "If there's a thought underneath this, you can take it into a thought record — no pressure to.",
+    "goDeeperLink": "Open a CBT thought record"
   },
   "record": {
     "newTitle": "New thought record",
