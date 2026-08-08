@@ -39,6 +39,11 @@
   "trend": {
     "emptyRange": "Няма достатъчно записи в този период."
   },
+  "distribution": {
+    "title": "Разпределение",
+    "column_one": "{{level}}: {{count}} запис",
+    "column_other": "{{level}}: {{count}} записа"
+  },
   "recent": {
     "viewEntry": "Виж запис от {{when}}"
   },
@@ -120,6 +125,7 @@
     "range7": "7д",
     "range30": "30д",
     "range90": "90д",
+    "rangeAll": "Всичко",
     "rangeCustom": "По избор"
   },
   "detailWord": {
