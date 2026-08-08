@@ -11,7 +11,6 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { totalSeconds, formatClock } from "@/src/features/breathing/cycle-math";
 import { breathingColorClass } from "@/src/features/breathing/exercise-colors";

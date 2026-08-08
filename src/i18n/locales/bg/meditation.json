@@ -100,7 +100,7 @@
     "median": "Медиана",
     "minutes_one": "{{count}} мин",
     "minutes_other": "{{count}} мин",
-    "last": "Последно · {{when}}",
+    "last": "последна сесия {{when}}",
     "never": "Все още няма сесии"
   },
   "module": {

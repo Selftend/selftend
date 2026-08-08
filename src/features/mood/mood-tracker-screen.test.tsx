@@ -101,7 +101,7 @@ describe("MoodTrackerScreen", () => {
     renderWithProviders(<MoodTrackerScreen />);
 
     expect(screen.queryByText("No check-ins yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
   it("renders the completed Today card with score when a single entry was logged today", () => {

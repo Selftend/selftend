@@ -209,7 +209,7 @@ describe("MeditationHomeScreen", () => {
     renderWithProviders(<MeditationHomeScreen />);
 
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last sat /)).toBeNull();
   });
 
   it("shows the never subline once an empty history has loaded", () => {
@@ -218,7 +218,7 @@ describe("MeditationHomeScreen", () => {
     renderWithProviders(<MeditationHomeScreen />);
 
     expect(screen.getByText("No sessions logged yet")).toBeTruthy();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last sat /)).toBeNull();
   });
 
   it("shows the last-session subline when sessions exist", () => {
@@ -226,7 +226,7 @@ describe("MeditationHomeScreen", () => {
 
     renderWithProviders(<MeditationHomeScreen />);
 
-    expect(screen.getByText(/^Last · /)).toBeTruthy();
+    expect(screen.getByText(/^last sat /)).toBeTruthy();
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
   });
 
@@ -242,6 +242,6 @@ describe("MeditationHomeScreen", () => {
 
     // Matched on composed text: the subline is now a value-less item in the
     // header's inline stat run, so its Text has nested children (#733).
-    expect(screen.getByText(/^Last · .*Jun 1, 2026/)).toBeTruthy();
+    expect(screen.getByText(/^last sat .*Jun 1, 2026/)).toBeTruthy();
   });
 });

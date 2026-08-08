@@ -88,7 +88,7 @@ describe("GratitudeHomeScreen", () => {
 
     renderWithProviders(<GratitudeHomeScreen />);
 
-    expect(screen.getByText(/^Last · /)).toBeTruthy();
+    expect(screen.getByText(/^last logged /)).toBeTruthy();
     expect(screen.queryByText("Nothing logged yet")).toBeNull();
   });
 
@@ -102,7 +102,7 @@ describe("GratitudeHomeScreen", () => {
     renderWithProviders(<GratitudeHomeScreen />);
 
     expect(screen.queryByText("Nothing logged yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
   it("darkens the favorites star to accent ink, which think needs even as an icon", () => {

@@ -82,7 +82,7 @@ describe("JournalListScreen", () => {
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Start writing")).toBeTruthy();
     // A loaded, empty history may claim the never state.
-    expect(screen.getByText("Last · never")).toBeTruthy();
+    expect(screen.getByText("Nothing journaled yet")).toBeTruthy();
   });
 
   it("omits the subline until the entries query has actually loaded", () => {
@@ -94,8 +94,8 @@ describe("JournalListScreen", () => {
 
     renderWithProviders(<JournalListScreen />);
 
-    expect(screen.queryByText("Last · never")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText("Nothing journaled yet")).toBeNull();
+    expect(screen.queryByText(/^last journaled /)).toBeNull();
   });
 
   it("renders entries with title and preview", () => {
@@ -212,8 +212,8 @@ describe("JournalListScreen", () => {
     renderWithProviders(<JournalListScreen />);
 
     // updatedAt max is today (2026-05-28); the index-0 created_at is yesterday.
-    expect(screen.getByText("Last · Today")).toBeTruthy();
-    expect(screen.queryByText("Last · Yesterday")).toBeNull();
+    expect(screen.getByText("last journaled Today")).toBeTruthy();
+    expect(screen.queryByText("last journaled Yesterday")).toBeNull();
   });
 
   it("renders the ink field header with both stats and the subline on the room pour", () => {
@@ -234,11 +234,11 @@ describe("JournalListScreen", () => {
 
     // The root carries the ink room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-    // The existing two stats + "Last ·" subline ride on-field unchanged. Counts
+    // The existing two stats + the subline ride on-field unchanged. Counts
     // also appear in the history divider / entry cards, hence getAllByText.
     expect(screen.getAllByText("1 entry").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("5 words").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("Last · Today")).toBeTruthy();
+    expect(screen.getByText("last journaled Today")).toBeTruthy();
   });
 
   it("shows the exact lifetime word total, not the sum over the capped list", () => {

@@ -97,7 +97,7 @@ describe("GroundingHomeScreen", () => {
     // claiming "no sessions" there would erase a returning user's real history.
     renderWithProviders(<GroundingHomeScreen />);
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
   it("shows the never subline once an empty history has loaded", () => {
@@ -116,7 +116,7 @@ describe("GroundingHomeScreen", () => {
 
     renderWithProviders(<GroundingHomeScreen />);
 
-    expect(screen.getByText(/^Last · /)).toBeTruthy();
+    expect(screen.getByText(/^last logged /)).toBeTruthy();
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
     expect(screen.getByText("Recent sessions")).toBeTruthy();
   });

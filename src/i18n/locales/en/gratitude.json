@@ -20,7 +20,7 @@
     "thisWeek": "This week"
   },
   "stats": {
-    "last": "Last · {{when}}",
+    "last": "last logged {{when}}",
     "never": "Nothing logged yet"
   },
   "insights": {

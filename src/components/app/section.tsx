@@ -11,8 +11,9 @@ interface SectionProps {
   /** Optional trailing control on the label row (a range switch, a "show all" link). */
   action?: ReactNode;
   /**
-   * Drop the top hairline. For the first section under a header, where the rule
-   * would sit directly under the stats row and read as an underline for it.
+   * Draw the top hairline. Defaults to true. Pass `false` for the first section
+   * under a header, where the rule would sit directly beneath the stats row and
+   * read as an underline for it rather than as a divider.
    */
   ruled?: boolean;
   className?: string;

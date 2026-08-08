@@ -88,7 +88,7 @@ describe("SleepTrackerScreen", () => {
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.getByText(/^Last · /)).toBeTruthy();
+    expect(screen.getByText(/^last logged /)).toBeTruthy();
     expect(screen.queryByText("No sleep logged yet")).toBeNull();
   });
 
@@ -102,7 +102,7 @@ describe("SleepTrackerScreen", () => {
     renderWithProviders(<SleepTrackerScreen />);
 
     expect(screen.queryByText("No sleep logged yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
   // -------------------------------------------------------------------------

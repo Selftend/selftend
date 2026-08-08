@@ -32,6 +32,13 @@ interface ScreenTopBarProps {
  * reimplementing them. That keeps the glyph at 16px and the gap at 8px where
  * the design draws 18px/10px: chasing those two would change the breadcrumb
  * everywhere it renders, including in `ScreenHeader`, to buy 2px here.
+ *
+ * Inherited with it: `ScreenBreadcrumb` renders nothing when there is only one
+ * crumb, which would leave this bar 48px tall and empty - no trail and no close
+ * affordance. No call site can reach that today (a form is always at least two
+ * levels deep, and a top-level screen would not use this bar), so it is recorded
+ * rather than guarded; a fallback would be a guess at what the crumb-less case
+ * should say.
  */
 export function ScreenTopBar({ leading = "back", className }: ScreenTopBarProps) {
   return (

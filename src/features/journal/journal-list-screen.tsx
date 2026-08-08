@@ -27,7 +27,6 @@ import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function JournalListScreen() {
   const { t } = useTranslation("journal");
-  const { t: tc } = useTranslation("common");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { selectedDate } = useSelectedDate();
@@ -69,7 +68,14 @@ export default function JournalListScreen() {
   // `entries` is undefined while loading and after a failed fetch with no
   // cache - only an actually-loaded (possibly empty) history may claim
   // "never", or a returning user's history reads as erased.
-  const subline = entries ? `${t("hero.last")} · ${lastWhen ?? tc("never")}` : undefined;
+  // Composed from a key rather than glued together with a "·": the subline is a
+  // value-less item in the header's "·"-separated stat run now, so a separator
+  // inside it would read as a stat boundary (#733).
+  const subline = entries
+    ? lastWhen
+      ? t("hero.last", { when: lastWhen })
+      : t("hero.never")
+    : undefined;
 
   // Stable across renders so memoized JournalCards aren't invalidated by a parent re-render.
   const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);

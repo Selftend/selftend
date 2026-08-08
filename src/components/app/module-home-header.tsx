@@ -160,8 +160,11 @@ function HeaderStats({ stats }: { stats: readonly HeaderStat[] }) {
         // (#690), so a wrapped line can never begin with a stranded "·". The
         // separator carries the 10px on both its sides, which is also why the
         // row itself has no `gap-x`: the last item must not trail one.
-        <View key={i} testID="module-header-stat" className="flex-row items-center">
-          <Text variant="muted" className="text-[13px] tabular-nums">
+        // `shrink`, because React Native defaults flexShrink to 0: without it a
+        // stat wider than the column pushes the row past the screen edge instead
+        // of wrapping inside itself.
+        <View key={i} testID="module-header-stat" className="shrink flex-row items-center">
+          <Text variant="muted" className="shrink text-[13px] tabular-nums">
             {stat.value ? (
               <Text className="text-[13px] font-semibold tabular-nums text-foreground">
                 {stat.value}

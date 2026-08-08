@@ -47,7 +47,7 @@
   "stats": {
     "longest": "Longest",
     "shortest": "Shortest",
-    "last": "Last · {{when}}",
+    "last": "last logged {{when}}",
     "never": "No sleep logged yet"
   },
   "chart": {
