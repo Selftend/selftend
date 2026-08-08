@@ -50,10 +50,23 @@ exactly.
 **Everything beyond a count — sums, averages, medians, buckets, extremes —
 is a SQL function**, shaped like this:
 
-- a **`stable`, `security invoker` SQL function over the decrypting view**,
-  filtered on `auth.uid()` belt-and-braces on top of RLS, with the #322 grant
-  shape (`revoke all … from public; revoke execute … from anon; grant execute
-… to authenticated; notify pgrst, 'reload schema';`);
+- a **`stable`, `security invoker` SQL function**, filtered on `auth.uid()`
+  belt-and-braces on top of RLS, with the #322 grant shape (`revoke all … from
+public; revoke execute … from anon; grant execute … to authenticated; notify
+pgrst, 'reload schema';`);
+- **reading the decrypting view only when it needs the plaintext; otherwise the
+  `*_data` base table.** This is not a preference. `app.decrypt_text` carries no
+  volatility marker, so it is VOLATILE, and the planner will not prune a
+  volatile output expression from a subquery — `is_simple_subquery()` refuses to
+  flatten one and `remove_unused_subquery_outputs()` refuses to drop it ("we
+  daren't remove it"). So selecting one plaintext column from a decrypting view
+  still runs `pgp_sym_decrypt` on **every** encrypted column of **every**
+  matched row. A clean projection buys nothing. `journal_word_total()` needs
+  `body` and is right to read `journal_entries`; `sleep_stats()` reads only
+  plaintext columns and paid a per-row decrypt of `notes` for nothing until
+  `20260808000000` moved it to `sleep_logs_data` (#706). RLS is unaffected
+  either way: the policy lives on the base table, and `security_invoker` is only
+  how a view reaches it;
 - **never a persisted derived column on an encrypted table** — that would
   thread derived data through the encrypted write-path triggers and store it
   beside ciphertext it was derived from;
