@@ -28,7 +28,13 @@ import {
   useMoodScorePoints,
   useMoodWeek,
 } from "@/src/features/mood/queries";
-import { getDayMoodSummary, getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
+import {
+  getDayMoodSummary,
+  getMoodDistribution,
+  getMoodSummary,
+  type MoodSummary,
+} from "@/src/features/mood/summaries";
+import { MoodDistributionChart } from "@/src/features/mood/mood-distribution";
 import {
   buildWeekDays,
   countLogsInCurrentWeek,
@@ -44,13 +50,30 @@ import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mo
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { formatAtOffset, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
+import {
+  addDaysToKey,
+  dayRangeEndKey,
+  formatAtOffset,
+  parseLocalNoon,
+  startOfDayDaysAgo,
+} from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
-type TrendRange = "7d" | "30d" | "90d" | "custom";
+/**
+ * The window the trend and the distribution SHARE (#737, decided on #700).
+ *
+ * Neither three controls nor one: the mood map keeps no control and stays
+ * all-time, because a calendar grid at `7d` is just the week strip and the
+ * heatmap has been unbounded since it was built. Trend and distribution are
+ * adjacent sections answering two halves of one question, so two adjacent
+ * charts silently covering different periods would be worse than the mild loss
+ * of power in sharing. Sharing also means ONE `scorePoints` query feeds both,
+ * and the distribution needs no query of its own.
+ */
+type TrendRange = "7d" | "30d" | "90d" | "all" | "custom";
 
-const PRESET_DAYS: Record<Exclude<TrendRange, "custom">, number> = {
+const PRESET_DAYS: Record<"7d" | "30d" | "90d", number> = {
   "7d": 7,
   "30d": 30,
   "90d": 90,
@@ -150,18 +173,35 @@ export default function MoodTrackerScreen() {
           ...(subline ? [{ value: "", label: subline }] : []),
         ]
       : [];
-  // The trend window rides its own narrow query (timestamp/offset/score only), so
+  const { data: firstLogDayKey } = useFirstMoodDayKey(userId);
+  // The shared window rides its own narrow query (timestamp/offset/score only), so
   // the 200-row history cache never caps the range. Preset windows omit the upper
   // bound — the key stays stable across renders and new logs still land in-window.
+  //
+  // `all` bounds at the first entry rather than the epoch, so the span label
+  // states a real period; #693 already established this query pages to
+  // exhaustion, so All time adds no new query SHAPE, only a wider `fromIso`.
+  // Until that key loads it falls back to the default window rather than
+  // fetching from 1970.
   const isCustom = trendRange === "custom" && customRange !== null;
+  const isAllTime = trendRange === "all" && Boolean(firstLogDayKey);
+  const presetDays = PRESET_DAYS[trendRange === "7d" || trendRange === "90d" ? trendRange : "30d"];
   const windowFromIso = isCustom
     ? new Date(`${customRange.start}T00:00:00`).toISOString()
-    : startOfDayDaysAgo(PRESET_DAYS[trendRange === "custom" ? "30d" : trendRange]).toISOString();
+    : isAllTime
+      ? // UTC midnight, NOT the viewer's local midnight. A day key is a civil day
+        // in the frame it was CAPTURED in, so the earliest instant belonging to it
+        // can sit up to 14h before its UTC midnight - but up to 25h before the
+        // viewer's local midnight, if that entry was logged at +14:00 and is being
+        // read at -11:00. `listMoodScorePoints` pads by only 24h, so the local
+        // reading would leave the user's very first entry outside the `.gte` bound
+        // and All time would silently omit it. Matches `listMoodLogsInDayRange`.
+        `${firstLogDayKey!}T00:00:00.000Z`
+      : startOfDayDaysAgo(presetDays).toISOString();
   const windowToIso = isCustom
     ? new Date(`${customRange.end}T23:59:59.999`).toISOString()
     : undefined;
   const { data: scorePoints } = useMoodScorePoints(userId, windowFromIso, windowToIso);
-  const { data: firstLogDayKey } = useFirstMoodDayKey(userId);
   // Paging stops at the week holding the first entry: weeks before the account
   // existed are empty chrome. Until that query answers, only the current week is
   // reachable - better than offering a back arrow that lands on a blank week.
@@ -170,29 +210,80 @@ export default function MoodTrackerScreen() {
     [firstLogDayKey, anchorWeekStart],
   );
 
+  /**
+   * The ONE civil-day window both charts read.
+   *
+   * It has to be computed once and shared, because `listMoodScorePoints`
+   * deliberately over-fetches: its bounds filter `logged_at`, a UTC instant,
+   * while points are bucketed by the civil day captured with them, so the query
+   * pads a whole day at each end. Every consumer is expected to narrow back by
+   * day key - the trend does it by walking an explicit range. Handing the RAW
+   * response to the distribution counted those padded rows, so a check-in on the
+   * day just outside the range appeared in one chart and not the other, breaking
+   * the single guarantee this ticket exists to make.
+   *
+   * The end is `dayRangeEndKey`, not today: fly east-to-west and you land
+   * holding an entry keyed "tomorrow", and All time that stops at the viewer's
+   * current day would drop it from the trend while still counting it in the
+   * distribution (#250).
+   */
+  const rangeKeys = useMemo(() => {
+    const endKey = dayRangeEndKey((scorePoints ?? []).map((point) => point.dayKey));
+    if (isCustom) return { startKey: customRange.start, endKey: customRange.end };
+    if (isAllTime) return { startKey: firstLogDayKey!, endKey };
+    return { startKey: addDaysToKey(endKey, -(presetDays - 1)), endKey };
+  }, [scorePoints, isCustom, customRange, isAllTime, firstLogDayKey, presetDays]);
+
   // Only the first and last day are labelled — interior labels would collide
   // at the trend windows' densities (matches the previous bespoke chart).
+  //
+  // One builder for every range: `buildMoodChartData(points, days)` is itself
+  // just `buildMoodChartDataForRange` over `dayRangeEndKey`-anchored keys, so
+  // driving it from the shared window changes no preset behaviour and removes
+  // the chance of the two charts computing their bounds differently.
   const chartData = useMemo(() => {
-    const days = isCustom
-      ? buildMoodChartDataForRange(scorePoints, customRange.start, customRange.end, i18n.language)
-      : buildMoodChartData(
-          scorePoints,
-          PRESET_DAYS[trendRange === "custom" ? "30d" : trendRange],
-          i18n.language,
-        );
+    const days = buildMoodChartDataForRange(
+      scorePoints,
+      rangeKeys.startKey,
+      rangeKeys.endKey,
+      i18n.language,
+    );
     return days.map((d, i) => ({
       offset: d.offset,
       value: d.score,
       label: i === 0 || i === days.length - 1 ? d.day : undefined,
     }));
-  }, [scorePoints, isCustom, customRange, trendRange, i18n.language]);
+  }, [scorePoints, rangeKeys, i18n.language]);
 
-  // e.g. "3 Mar – 1 Apr", locale-aware, shown while a custom range is active.
-  const customSpanLabel = useMemo(() => {
-    if (!isCustom) return null;
+  // The distribution reduces over the SAME points the trend plots (#701),
+  // narrowed to the SAME day keys - one range, one query, no second fetch and no
+  // contact with the capped history.
+  const distribution = useMemo(
+    () =>
+      getMoodDistribution(
+        (scorePoints ?? []).filter(
+          (point) => point.dayKey >= rangeKeys.startKey && point.dayKey <= rangeKeys.endKey,
+        ),
+      ),
+    [scorePoints, rangeKeys],
+  );
+
+  /**
+   * The resolved span under the control, e.g. "3 Mar – 1 Apr" (#700).
+   *
+   * Shown for Custom and for All time - the two ranges whose extent a segment
+   * label does not state. `7d`/`30d`/`90d` already say their own span.
+   */
+  const spanLabel = useMemo(() => {
+    const bounds = isCustom
+      ? ([customRange.start, customRange.end] as const)
+      : isAllTime
+        ? ([rangeKeys.startKey, rangeKeys.endKey] as const)
+        : null;
+    if (!bounds) return null;
     const fmt = new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "short" });
-    return `${fmt.format(parseLocalNoon(customRange.start))} – ${fmt.format(parseLocalNoon(customRange.end))}`;
-  }, [isCustom, customRange, i18n.language]);
+    return `${fmt.format(parseLocalNoon(bounds[0]))} – ${fmt.format(parseLocalNoon(bounds[1]))}`;
+  }, [isCustom, customRange, isAllTime, firstLogDayKey, i18n.language]);
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
   };
@@ -322,15 +413,28 @@ export default function MoodTrackerScreen() {
               </Section>
             ) : null}
 
-            {showTrend ? (
-              <Section
-                title={t("trendControls.title")}
-                action={
+            {/*
+              ONE range control, on a row of its own, above the two sections it
+              governs (#737, decided on #700). Not beside a heading: the design
+              puts heading + span + five segments on one line, which measures
+              ~408dp in `en` and ~560dp in `bg` against 328dp usable, and
+              `SegmentedControl` is a no-wrap, no-scroll flex row that would just
+              clip. The map deliberately gets NO control and stays all-time.
+
+              It appears with the first section it governs - the distribution, at
+              one check-in - so it is never a control over nothing.
+            */}
+            {hasAnyCheckIn ? (
+              <Section className="gap-2">
+                {/* The pill sizes to its segments rather than stretching: on its
+                    own row it would otherwise span the full column with the
+                    segments packed left and trailing muted space. */}
+                <View className="flex-row">
                   <SegmentedControl
                     value={trendRange}
                     onChange={(next) => {
-                      // Custom is a two-step choice: the picker applies it. Tapping the
-                      // active Custom segment again reopens the picker for adjustment.
+                      // Custom is a two-step choice: the picker applies it. Tapping
+                      // the active Custom segment again reopens the picker.
                       if (next === "custom") {
                         setRangePickerOpen(true);
                         return;
@@ -341,14 +445,17 @@ export default function MoodTrackerScreen() {
                       { value: "7d", label: t("trendControls.range7") },
                       { value: "30d", label: t("trendControls.range30") },
                       { value: "90d", label: t("trendControls.range90") },
+                      // A short key of its own: `heatmap.title` is the 15-character
+                      // `За цялото време`, right as a section title and unusable as
+                      // a segment.
+                      { value: "all", label: t("trendControls.rangeAll") },
                       { value: "custom", label: t("trendControls.rangeCustom") },
                     ]}
                   />
-                }
-              >
-                {customSpanLabel ? (
+                </View>
+                {spanLabel ? (
                   <Text variant="muted" className="text-[13px]">
-                    {customSpanLabel}
+                    {spanLabel}
                   </Text>
                 ) : null}
                 <DateRangeField
@@ -362,6 +469,11 @@ export default function MoodTrackerScreen() {
                   minDateKey={firstLogDayKey ?? undefined}
                   maxDateKey={currentDateKey()}
                 />
+              </Section>
+            ) : null}
+
+            {showTrend ? (
+              <Section title={t("trendControls.title")}>
                 <View onLayout={handleChartLayout}>
                   {chartData.length >= 2 ? (
                     <LineChart points={chartData} domain={[1, 5]} width={chartContainerWidth} />
@@ -377,12 +489,16 @@ export default function MoodTrackerScreen() {
             ) : null}
 
             {/*
-              The distribution section belongs here, between the trend and the
-              map, sharing the trend's range control (#737). This ticket reserves
-              the slot rather than rendering an empty one - a placeholder panel
-              is exactly the four-empty-panels first run the staging above exists
-              to avoid.
+              Between the trend and the map, on the range they share (#701). At
+              one entry it reads "one check-in, and it was Okay" - four visible
+              zeros are part of the picture, which is exactly the claim the
+              design's stacked pill could not avoid making ("100% Okay").
             */}
+            {hasAnyCheckIn ? (
+              <Section title={t("distribution.title")}>
+                <MoodDistributionChart counts={distribution} />
+              </Section>
+            ) : null}
 
             {hasAnyCheckIn ? (
               <Section title={t("heatmap.title")}>

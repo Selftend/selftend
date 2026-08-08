@@ -500,12 +500,117 @@ describe("MoodTrackerScreen", () => {
     expect(screen.getByText("7d")).toBeTruthy();
     expect(screen.getByText("30d")).toBeTruthy();
     expect(screen.getByText("90d")).toBeTruthy();
+    // Added by #737: the shared control gains All time, on a short key of its
+    // own - `heatmap.title` is the 15-character `За цялото време` in bg, which
+    // is why the segment needs `trendControls.rangeAll` (`Всичко`) instead.
+    // In `en` the two happen to read the same, so there are two matches: the
+    // segment, and the map's section heading below it.
+    expect(screen.getAllByText("All time")).toHaveLength(2);
     expect(screen.getByText("Custom")).toBeTruthy();
     expect(screen.queryByText("14d")).toBeNull();
     // Default window: the narrow score-points query is asked for the 30-day window.
     expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
       "user-1",
       startOfDayDaysAgo(30).toISOString(),
+      undefined,
+    );
+  });
+
+  /**
+   * ONE control drives both charts (#737, decided on #700), and it outlives the
+   * trend: the distribution earns its place at ONE check-in while the trend
+   * needs two, so gating the control on the trend would leave the distribution
+   * with a range nobody could change.
+   */
+  it("shows the shared range control and the distribution at one check-in, before the trend", () => {
+    mockLogged({ points: 1, count: 1 });
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    expect(screen.getByRole("heading", { name: "Distribution" })).toBeTruthy();
+    expect(screen.getByText("30d")).toBeTruthy();
+    // One point is a dot, not a direction.
+    expect(screen.queryByRole("heading", { name: "Mood trend" })).toBeNull();
+  });
+
+  /**
+   * `listMoodScorePoints` pads its instant window by a whole day at each end,
+   * because its bounds filter `logged_at` while points bucket by the civil day
+   * captured with them. Every consumer must narrow back by day key. Handing the
+   * RAW response to the distribution counted those padded rows, so a check-in
+   * on the day just outside the range showed up in one chart and not the other
+   * — breaking the single guarantee this ticket exists to make.
+   */
+  it("counts only the selected range, not the day the query pads either side", () => {
+    mockUseMoodLogCount.mockReturnValue({
+      data: 9,
+    } as unknown as ReturnType<typeof useMoodLogCount>);
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+    // Two in-window days, plus one the pad drags in from just outside 7d.
+    mockUseMoodScorePoints.mockReturnValue({
+      data: [
+        { dayKey: dayKeyDaysAgo(0), moodScore: 5 },
+        { dayKey: dayKeyDaysAgo(6), moodScore: 5 },
+        { dayKey: dayKeyDaysAgo(7), moodScore: 1 },
+      ],
+    } as unknown as ReturnType<typeof useMoodScorePoints>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+    fireEvent.press(screen.getByText("7d"));
+
+    // Two "Great" check-ins in range; the out-of-range "Awful" is not counted.
+    expect(screen.getByLabelText("Great: 2 check-ins")).toBeTruthy();
+    expect(screen.getByLabelText("Awful: 0 check-ins")).toBeTruthy();
+  });
+
+  it("gives the map no range control of its own, leaving it all-time", () => {
+    mockLogged();
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    // A calendar grid at 7d is just the week strip, and the heatmap has been
+    // unbounded since it was built - so exactly one segmented control exists.
+    // "7d" is rendered by a segmented control and nothing else, so one match is
+    // one control on the whole screen.
+    expect(screen.getAllByText("7d")).toHaveLength(1);
+    // The map still names its own span; it just cannot be changed.
+    expect(screen.getByRole("heading", { name: "All time" })).toBeTruthy();
+  });
+
+  it("asks for the whole history when All time is chosen, bounded at the first entry", () => {
+    mockLogged();
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+    mockUseFirstMoodLogDate.mockReturnValue({
+      data: "2026-01-15",
+    } as unknown as ReturnType<typeof useFirstMoodDayKey>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+    // [0] is the segment; [1] is the map's section heading, which in `en` reads
+    // the same and is not pressable.
+    fireEvent.press(screen.getAllByText("All time")[0]);
+
+    // The first entry, not the epoch, so the span states a real period.
+    // `toHaveBeenCalledWith`, not `LastCalledWith`: the mood map consumes the
+    // same hook with its own fixed epoch bound (`ALL_TIME_FROM_ISO`), because it
+    // deliberately has no range control (#700) - so the last call on this mock
+    // is the map's, not the trend's.
+    // UTC midnight, not the viewer's local midnight: a day key is a civil day in
+    // the frame it was CAPTURED in, so an entry logged at +14:00 and read at
+    // -11:00 sits up to 25h before local midnight, past the query's 24h pad -
+    // and All time would silently omit the user's very first entry.
+    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
+      "user-1",
+      "2026-01-15T00:00:00.000Z",
       undefined,
     );
   });
