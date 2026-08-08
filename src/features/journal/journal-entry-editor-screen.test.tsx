@@ -73,7 +73,7 @@ describe("JournalEntryEditorScreen", () => {
     expect(screen.getByText("Save")).toBeTruthy();
   });
 
-  it("renders the ink field header in create mode on the room pour", () => {
+  it("renders the top bar and heading in create mode on the room pour", () => {
     mockUseSaveJournalEntry.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
@@ -81,13 +81,11 @@ describe("JournalEntryEditorScreen", () => {
 
     renderWithProviders(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
 
-    // Create mode gets the full-bleed ink field with the sheet lip.
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The room wrapper carries the ink re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.getByTestId("journal-editor-room"));
   });
 
-  it("keeps the compact header (no field) on the room pour in edit mode", () => {
+  it("renders the top bar and heading on the room pour in edit mode too", () => {
     mockUseSaveJournalEntry.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
@@ -109,7 +107,6 @@ describe("JournalEntryEditorScreen", () => {
       <JournalEntryEditorScreen fallbackHref="/tools/journal" mode="edit" entryId="j-1" />,
     );
 
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(screen.getByText("Edit journal entry")).toBeTruthy();
     expectNeutralRoom(screen.getByTestId("journal-editor-room"));
   });

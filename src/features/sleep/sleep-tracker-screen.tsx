@@ -8,12 +8,12 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardHeader } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { ToolStats } from "@/src/components/app/tool-stats";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import { useSleepLogs, useSleepLogCount, useSleepStats } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
+import { cn } from "@/lib/utils";
+import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatAtOffset } from "@/src/utils/date";
 import { formatDuration, formatHours } from "@/src/features/sleep/format";
@@ -96,104 +96,86 @@ export default function SleepTrackerScreen() {
         style={roomStyle}
       >
         <ScrollView contentContainerClassName="grow p-4">
-          {/* The field + sheet escape the scroll padding so the ink field runs
-              edge to edge; the sheet re-adds the inset for its sections. */}
-          <View className="-mx-4 -mt-4">
+          <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
-              variant="field"
               addWidgetCategory="sleep"
               title={t("title")}
-              hue="ink"
-              icon="bedtime"
-              moduleLabel={null}
               tourScope="sleep"
               description={t("description")}
               actions={[
                 { type: "notifications", targetKey: "sleep" },
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
-              meta={
-                <ToolStats
-                  tone="onField"
-                  accentClassName="text-primary-ink"
-                  items={[
-                    { value: formatHours(sevenDayDuration), label: t("hero.avg") },
-                    {
-                      value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "-",
-                      label: t("hero.quality"),
-                    },
-                    {
-                      value: t("hero.nights", { count: totalNights ?? allLogs.length }),
-                      label: "",
-                    },
-                  ]}
-                  subline={subline}
-                  sublineTone={lastWhen ? "accent" : "muted"}
-                />
-              }
+              stats={[
+                { value: formatHours(sevenDayDuration), label: t("hero.avg") },
+                {
+                  value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "-",
+                  label: t("hero.quality"),
+                },
+                { value: t("hero.nights", { count: totalNights ?? allLogs.length }), label: "" },
+                // The old ToolStats.subline, folded into the row as a value-less
+                // item - which is how the design renders "last logged 4:50 pm".
+                ...(subline ? [{ value: "", label: subline }] : []),
+              ]}
             />
-            <ContentSheet className="px-4">
-              <View className="gap-6">
-                <View className="flex-row gap-3">
-                  <Button onPress={() => router.push("/tools/sleep/new")} className="self-start">
-                    <Icon name="bedtime" className="size-4 text-primary-foreground" />
-                    <Text>{t("cta.log")}</Text>
-                  </Button>
-                </View>
+            <View className="flex-row gap-3">
+              <Button onPress={() => router.push("/tools/sleep/new")} className="self-start">
+                <Icon name="bedtime" className="size-4 text-primary-foreground" />
+                <Text>{t("cta.log")}</Text>
+              </Button>
+            </View>
 
-                <View className="gap-3">
-                  <Text variant="h3">{t("sections.trend")}</Text>
-                  <SleepDurationChart nights={nights14} />
-                </View>
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.trend")}</Text>
+              <SleepDurationChart nights={nights14} />
+            </View>
 
-                <View className="gap-3">
-                  <Text variant="h3">{t("sections.stats")}</Text>
-                  <View className="flex-row flex-wrap gap-3">
-                    <StatTile
-                      label={t("summary.sevenDay")}
-                      value={formatHours(sevenDayDuration)}
-                      sub={
-                        sevenDayQuality !== null
-                          ? t("summary.avgQuality", { quality: sevenDayQuality })
-                          : undefined
-                      }
-                    />
-                    <StatTile
-                      label={t("summary.thirtyDay")}
-                      value={formatHours(thirtyDayDuration)}
-                      sub={
-                        thirtyDayQuality !== null
-                          ? t("summary.avgQuality", { quality: thirtyDayQuality })
-                          : undefined
-                      }
-                    />
-                    <StatTile
-                      label={t("stats.longest")}
-                      value={longest !== null ? formatDuration(longest) : "-"}
-                    />
-                    <StatTile
-                      label={t("stats.shortest")}
-                      value={shortest !== null ? formatDuration(shortest) : "-"}
-                    />
-                  </View>
-                </View>
-
-                <View className="gap-3">
-                  <Text variant="h3">{t("sections.quality")}</Text>
-                  <SleepQualityMix distribution={distribution} />
-                </View>
-
-                <View className="gap-3">
-                  <Text variant="h3">{t("sections.weekday")}</Text>
-                  <SleepWeekdayChart averages={weekly} />
-                </View>
-
-                <View className="gap-3">
-                  <Text variant="h3">{t("sections.recent")}</Text>
-                  <SleepRecentList logs={allLogs} />
-                </View>
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.stats")}</Text>
+              <View className="flex-row flex-wrap gap-3">
+                <StatTile
+                  label={t("summary.sevenDay")}
+                  value={formatHours(sevenDayDuration)}
+                  sub={
+                    sevenDayQuality !== null
+                      ? t("summary.avgQuality", { quality: sevenDayQuality })
+                      : undefined
+                  }
+                />
+                <StatTile
+                  label={t("summary.thirtyDay")}
+                  value={formatHours(thirtyDayDuration)}
+                  sub={
+                    thirtyDayQuality !== null
+                      ? t("summary.avgQuality", { quality: thirtyDayQuality })
+                      : undefined
+                  }
+                />
+                <StatTile
+                  label={t("stats.longest")}
+                  value={longest !== null ? formatDuration(longest) : "-"}
+                />
+                <StatTile
+                  label={t("stats.shortest")}
+                  value={shortest !== null ? formatDuration(shortest) : "-"}
+                />
               </View>
-            </ContentSheet>
+            </View>
+
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.quality")}</Text>
+              <SleepQualityMix distribution={distribution} />
+            </View>
+
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.weekday")}</Text>
+              <SleepWeekdayChart averages={weekly} />
+            </View>
+
+            <View className="gap-3">
+              <Text variant="h3">{t("sections.recent")}</Text>
+              <SleepRecentList logs={allLogs} />
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>

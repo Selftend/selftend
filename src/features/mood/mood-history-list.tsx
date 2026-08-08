@@ -6,6 +6,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { MoodEntryCard } from "@/src/features/mood/mood-entry-card";
 import { groupLogsByDate } from "@/src/features/mood/summaries";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
+import { HOME_COLUMN_WIDTH } from "@/src/lib/layout";
 import type { MoodLog } from "@/src/features/mood/types";
 
 interface MoodHistoryListProps {
@@ -42,7 +43,18 @@ export function MoodHistoryList({ logs, ListHeaderComponent }: MoodHistoryListPr
       // silently dropped and the screen loses its padding. Style the content
       // container directly instead - flexGrow 1 + 16px padding (`p-4`) to match
       // the other tool landings (e.g. journal's `grow gap-6 p-4`).
-      contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+      //
+      // The home column rides here rather than on a wrapper for the same reason
+      // the padding does: the rows are list items, not children of a View this
+      // screen controls, so centring a wrapper would centre only the header and
+      // leave the history sprawling beside it (#733).
+      contentContainerStyle={{
+        flexGrow: 1,
+        padding: 16,
+        width: "100%",
+        maxWidth: HOME_COLUMN_WIDTH,
+        alignSelf: "center",
+      }}
       stickySectionHeadersEnabled={false}
       ItemSeparatorComponent={() => <View className="h-3" />}
       renderSectionHeader={({ section }) => (

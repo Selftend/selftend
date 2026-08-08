@@ -72,8 +72,6 @@ describe("GratitudeEntryEditorScreen", () => {
     );
 
     expect(screen.getByText("New gratitude entry")).toBeTruthy();
-    // Create mode rises out of the full-bleed think field (spec #267 §4).
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     expect(screen.getByLabelText("What made you laugh?")).toBeTruthy();
     expect(screen.getByLabelText("Who was kind to you?")).toBeTruthy();
     expect(screen.getByLabelText("What did your body help you do?")).toBeTruthy();
@@ -243,8 +241,6 @@ describe("GratitudeEntryEditorScreen", () => {
     );
 
     expect(screen.getByText("Edit gratitude entry")).toBeTruthy();
-    // Edit mode keeps the compact header on the room pour - no field.
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(screen.getByDisplayValue("A quiet walk")).toBeTruthy();
     expect(screen.getByDisplayValue("A kind message")).toBeTruthy();
     expect(screen.getByDisplayValue("This helped.")).toBeTruthy();

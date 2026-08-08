@@ -77,7 +77,6 @@ describe("GratitudeHomeScreen", () => {
     renderWithProviders(<GratitudeHomeScreen />);
 
     expect(screen.getByRole("heading", { name: "Gratitude log" })).toBeTruthy();
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // Calm muted subline when nothing is logged - never a shame state.
     expect(screen.getByText("Nothing logged yet")).toBeTruthy();
   });

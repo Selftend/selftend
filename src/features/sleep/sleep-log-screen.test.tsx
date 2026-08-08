@@ -46,15 +46,14 @@ describe("SleepLogScreen", () => {
     } as unknown as ReturnType<typeof useSaveSleepLog>);
   });
 
-  it("renders the ink field header in create mode", () => {
+  it("renders the top bar and heading in create mode", () => {
     renderWithProviders(<SleepLogScreen fallbackHref="/tools/sleep" mode="create" />);
 
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Log sleep" })).toBeTruthy();
     expect(screen.getByLabelText("Add 30 minutes")).toBeTruthy();
   });
 
-  it("keeps the compact header (no field) in edit mode", () => {
+  it("renders the top bar and heading in edit mode too", () => {
     mockUseSleepLogs.mockReturnValue({
       data: [
         {
@@ -72,7 +71,6 @@ describe("SleepLogScreen", () => {
 
     renderWithProviders(<SleepLogScreen fallbackHref="/tools/sleep" mode="edit" logId="s-1" />);
 
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(screen.getByRole("heading", { name: "Edit sleep entry" })).toBeTruthy();
     expect(screen.getByText("Update")).toBeTruthy();
   });

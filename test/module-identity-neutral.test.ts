@@ -87,9 +87,10 @@ const HUE_ARGUMENT = new RegExp(
  * carry.
  */
 const IDENTITY_SURFACES: Record<string, string[]> = {
+  // `tool-hero.tsx` used to sit here too; #733 deleted it, so its neutrality is
+  // asserted by absence in RETIRED rather than by scanning a file that is gone.
   "module and tool badges": [
     "src/components/react-native-reusables/badge.tsx",
-    "src/components/app/tool-hero.tsx",
     "src/components/app/module-home-header.tsx",
   ],
   "sidebar icons": ["src/components/app/sidebar-nav.tsx"],
@@ -147,7 +148,16 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
  * because a neutralised version of it would be a map from eleven tool ids to
  * one constant.
  */
-const RETIRED = ["src/features/home/tool-accent.ts"];
+const RETIRED = [
+  "src/features/home/tool-accent.ts",
+  // #733's deletions, listed here for the same reason: the surest gate on a
+  // hue-bearing surface is that the file no longer exists. `tool-hero.tsx` was
+  // already consumerless; `tool-stats.tsx` took `accentClassName` and
+  // `content-sheet.tsx` existed only to overlap the field.
+  "src/components/app/tool-hero.tsx",
+  "src/components/app/tool-stats.tsx",
+  "src/components/app/content-sheet.tsx",
+];
 
 /**
  * The other half of the gate. Each surface that KEEPS hue, and the literal that

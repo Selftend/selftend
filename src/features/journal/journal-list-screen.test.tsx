@@ -232,8 +232,6 @@ describe("JournalListScreen", () => {
 
     renderWithProviders(<JournalListScreen />);
 
-    // Full-bleed ink field header (Direction B room), not the plain header.
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the ink room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     // The existing two stats + "Last ·" subline ride on-field unchanged. Counts

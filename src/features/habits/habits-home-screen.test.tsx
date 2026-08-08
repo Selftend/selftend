@@ -141,7 +141,6 @@ describe("HabitsHomeScreen act room", () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the act room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     // Both existing stats and the author credit migrate onto the field.

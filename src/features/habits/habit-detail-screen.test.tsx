@@ -118,12 +118,11 @@ describe("HabitDetailScreen act room", () => {
     mockDefaults();
   });
 
-  it("renders the loaded habit inside the act room - no field gradient", () => {
+  it("renders the loaded habit inside the act room", () => {
     const { UNSAFE_getByType } = renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
     expect(screen.getByRole("heading", { name: "Read" })).toBeTruthy();
     expect(screen.getByText("I'm a reader")).toBeTruthy();
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the act room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
@@ -136,7 +135,6 @@ describe("HabitDetailScreen act room", () => {
 
     const { UNSAFE_getByType } = renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
@@ -149,7 +147,6 @@ describe("HabitDetailScreen act room", () => {
     const { UNSAFE_getByType } = renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
     expect(screen.getByText("We couldn't find that habit.")).toBeTruthy();
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 });

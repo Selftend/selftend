@@ -138,8 +138,6 @@ describe("Breathing list polish", () => {
 
     renderWithProviders(<BreathingScreen />);
 
-    // Full-bleed aqua field header (Direction B room), not the plain header.
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the aqua room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     // A loaded, empty history → the subline shows the never state.

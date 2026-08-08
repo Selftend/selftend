@@ -3,7 +3,6 @@ import { THEME_TOKENS } from "@/src/lib/theme/styles";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { useStyleName } from "@/src/lib/style";
 import type { ThemeVarName } from "@/src/lib/theme/contract";
-import { neutralFieldGradient } from "@/src/lib/theme/chrome";
 import type { ThemePalette } from "@/src/lib/theme/projections";
 
 // Imperative theme reads for the handful of call sites a className cannot
@@ -61,16 +60,4 @@ export function useAccentGradient(): [string, string] {
   const accent = useAccentHsl();
   const isDark = useColorSchemeName() === "dark";
   return [accent(isDark ? 0.18 : 0.14), accent(0)];
-}
-
-/**
- * The neutral field gradient for the active (style, scheme) — the full-bleed
- * pour behind a module or tool header.
- *
- * The reason this is a hook and not a constant: the stops are derived from the
- * selected palette's accent, and a module-scope read would freeze them on the
- * default violet for everyone who picked anything else.
- */
-export function useNeutralFieldGradient(): [string, string] {
-  return neutralFieldGradient(useStyleName(), useColorSchemeName() === "dark");
 }

@@ -5,9 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { BarChart } from "@/src/components/charts/bar-chart";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { ToolStats } from "@/src/components/app/tool-stats";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -35,6 +33,7 @@ import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
+import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
@@ -123,155 +122,140 @@ export default function HabitsHomeScreen() {
         style={roomStyle}
       >
         <ScrollView contentContainerClassName="grow p-4">
-          {/* The field + sheet escape the scroll padding so the green field runs
-              edge to edge; the sheet re-adds the inset for its sections. */}
-          <View className="-mx-4 -mt-4">
+          <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
-              variant="field"
               addWidgetCategory="habits"
               title={t("home.title")}
-              hue="act"
-              icon="task-alt"
-              moduleLabel={null}
               tourScope="habits"
               description={t("home.subtitle")}
               actions={[
                 { type: "notifications", targetKey: "habits" },
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
-              meta={
-                <ToolStats
-                  tone="onField"
-                  accentClassName="text-primary-ink"
-                  items={[
-                    { value: `${todayTicked}/${todayHabits.length}`, label: t("hero.today") },
-                    { value: t("hero.habits", { count: allHabits.length }), label: "" },
-                  ]}
-                  subline={subline}
-                  sublineTone={lastWhen ? "accent" : "muted"}
-                />
-              }
+              stats={[
+                { value: `${todayTicked}/${todayHabits.length}`, label: t("hero.today") },
+                { value: t("hero.habits", { count: allHabits.length }), label: "" },
+                // The old ToolStats.subline, folded into the row as a value-less
+                // item - which is how the design renders "last logged 4:50 pm".
+                ...(subline ? [{ value: "", label: subline }] : []),
+              ]}
             />
-            <ContentSheet className="px-4">
-              <View className="gap-6">
-                {identities.length > 0 ? (
-                  <View className="rounded-2xl border border-border bg-muted p-4">
-                    <Text className="text-sm">
-                      {t("home.identityBannerPrefix")}{" "}
-                      <Text className="font-semibold">
-                        {identities[today.getDate() % identities.length]}
-                      </Text>
-                    </Text>
-                  </View>
-                ) : null}
-
-                <View className="flex-row flex-wrap gap-2">
-                  <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
-                    <Icon name="add" className="size-4 text-primary-foreground" />
-                    <Text>{t("cta.newHabit")}</Text>
-                  </Button>
-                  <Button variant="ghost" onPress={() => router.push("/tools/habits/history")}>
-                    <Icon name="history" className="size-4" />
-                    <Text>{t("cta.viewHistory")}</Text>
-                  </Button>
-                </View>
-
-                {missTwiceRiskHabits.length > 0 ? (
-                  <View className="gap-2 rounded-2xl border border-border bg-muted p-4">
-                    <Text className="font-semibold">{t("home.neverMissTwiceTitle")}</Text>
-                    <Text variant="muted">{t("home.neverMissTwiceBody")}</Text>
-                  </View>
-                ) : null}
-
-                <View className="gap-3">
-                  <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t("home.todayHeading")}
+            {identities.length > 0 ? (
+              <View className="rounded-2xl border border-border bg-muted p-4">
+                <Text className="text-sm">
+                  {t("home.identityBannerPrefix")}{" "}
+                  <Text className="font-semibold">
+                    {identities[today.getDate() % identities.length]}
                   </Text>
-
-                  {allHabits.length === 0 ? (
-                    <View className="gap-2 rounded-2xl border border-border bg-card p-5">
-                      <Text className="text-base font-semibold">{t("home.noHabitsTitle")}</Text>
-                      <Text variant="muted">{t("home.noHabitsBody")}</Text>
-                    </View>
-                  ) : todayHabits.length === 0 ? (
-                    <Text variant="muted">{t("home.todayEmpty")}</Text>
-                  ) : (
-                    <View className="gap-3">
-                      {todayHabits.map((habit) => (
-                        <HabitRow
-                          key={habit.id}
-                          habit={habit}
-                          logs={allLogs}
-                          todayStr={todayStr}
-                          onToggle={() => handleToggle(habit.id)}
-                          onOpen={() =>
-                            router.push({
-                              pathname: "/tools/habits/[id]",
-                              params: { id: habit.id },
-                            })
-                          }
-                        />
-                      ))}
-                    </View>
-                  )}
-                </View>
-
-                <LearnCard
-                  learnIndex={learnIndex}
-                  onDismiss={() => setLearnIndex((prev) => prev + 1)}
-                />
-
-                {allHabits.length > 0 ? (
-                  <InsightsSection
-                    rhythm={weeklyRhythm}
-                    identityRoundUp={identityRoundUp}
-                    twoMinuteAdoption={twoMinuteAdoption}
-                  />
-                ) : null}
-
-                <View className="gap-3">
-                  <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t("home.recentActivity")}
-                  </Text>
-                  {recentLogs.length === 0 ? (
-                    <Text variant="muted">{t("home.recentEmpty")}</Text>
-                  ) : (
-                    <View className="gap-2">
-                      {recentLogs.map((log) => {
-                        const habit = allHabits.find((h) => h.id === log.habitId);
-                        if (!habit) return null;
-                        return (
-                          <Pressable
-                            key={log.id}
-                            accessibilityRole="button"
-                            onPress={() =>
-                              router.push({
-                                pathname: "/tools/habits/[id]",
-                                params: { id: habit.id },
-                              })
-                            }
-                            className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
-                            role="button"
-                          >
-                            <View className="flex-1">
-                              <Text className="text-sm font-semibold">{habit.name}</Text>
-                              {habit.identity ? (
-                                <Text variant="muted" className="text-xs">
-                                  {habit.identity}
-                                </Text>
-                              ) : null}
-                            </View>
-                            <Text variant="muted" className="text-xs">
-                              {formatRelativeDayKey(log.loggedOn, t)}
-                            </Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  )}
-                </View>
+                </Text>
               </View>
-            </ContentSheet>
+            ) : null}
+
+            <View className="flex-row flex-wrap gap-2">
+              <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
+                <Icon name="add" className="size-4 text-primary-foreground" />
+                <Text>{t("cta.newHabit")}</Text>
+              </Button>
+              <Button variant="ghost" onPress={() => router.push("/tools/habits/history")}>
+                <Icon name="history" className="size-4" />
+                <Text>{t("cta.viewHistory")}</Text>
+              </Button>
+            </View>
+
+            {missTwiceRiskHabits.length > 0 ? (
+              <View className="gap-2 rounded-2xl border border-border bg-muted p-4">
+                <Text className="font-semibold">{t("home.neverMissTwiceTitle")}</Text>
+                <Text variant="muted">{t("home.neverMissTwiceBody")}</Text>
+              </View>
+            ) : null}
+
+            <View className="gap-3">
+              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                {t("home.todayHeading")}
+              </Text>
+
+              {allHabits.length === 0 ? (
+                <View className="gap-2 rounded-2xl border border-border bg-card p-5">
+                  <Text className="text-base font-semibold">{t("home.noHabitsTitle")}</Text>
+                  <Text variant="muted">{t("home.noHabitsBody")}</Text>
+                </View>
+              ) : todayHabits.length === 0 ? (
+                <Text variant="muted">{t("home.todayEmpty")}</Text>
+              ) : (
+                <View className="gap-3">
+                  {todayHabits.map((habit) => (
+                    <HabitRow
+                      key={habit.id}
+                      habit={habit}
+                      logs={allLogs}
+                      todayStr={todayStr}
+                      onToggle={() => handleToggle(habit.id)}
+                      onOpen={() =>
+                        router.push({
+                          pathname: "/tools/habits/[id]",
+                          params: { id: habit.id },
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <LearnCard
+              learnIndex={learnIndex}
+              onDismiss={() => setLearnIndex((prev) => prev + 1)}
+            />
+
+            {allHabits.length > 0 ? (
+              <InsightsSection
+                rhythm={weeklyRhythm}
+                identityRoundUp={identityRoundUp}
+                twoMinuteAdoption={twoMinuteAdoption}
+              />
+            ) : null}
+
+            <View className="gap-3">
+              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                {t("home.recentActivity")}
+              </Text>
+              {recentLogs.length === 0 ? (
+                <Text variant="muted">{t("home.recentEmpty")}</Text>
+              ) : (
+                <View className="gap-2">
+                  {recentLogs.map((log) => {
+                    const habit = allHabits.find((h) => h.id === log.habitId);
+                    if (!habit) return null;
+                    return (
+                      <Pressable
+                        key={log.id}
+                        accessibilityRole="button"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/tools/habits/[id]",
+                            params: { id: habit.id },
+                          })
+                        }
+                        className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
+                        role="button"
+                      >
+                        <View className="flex-1">
+                          <Text className="text-sm font-semibold">{habit.name}</Text>
+                          {habit.identity ? (
+                            <Text variant="muted" className="text-xs">
+                              {habit.identity}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Text variant="muted" className="text-xs">
+                          {formatRelativeDayKey(log.loggedOn, t)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>

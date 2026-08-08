@@ -125,8 +125,8 @@ describe("MeditationHomeScreen", () => {
     expect(screen.getByText("Stage 3")).toBeTruthy();
     expect(screen.getByText("2 sessions")).toBeTruthy();
     // Median of a 20 and a 10 minute sit.
-    expect(screen.getByText("15 min")).toBeTruthy();
-    expect(screen.getByText("Median")).toBeTruthy();
+    // Value and label compose into one stat now that the run is inline (#733).
+    expect(screen.getByText("15 min Median")).toBeTruthy();
   });
 
   it("shows the lifetime median, not the median of the newest 200 sits", () => {
@@ -166,15 +166,12 @@ describe("MeditationHomeScreen", () => {
 
     renderWithProviders(<MeditationHomeScreen />);
 
-    expect(screen.getByText("-")).toBeTruthy();
-    expect(screen.getByText("Median")).toBeTruthy();
+    expect(screen.getByText("- Median")).toBeTruthy();
   });
 
-  it("renders the iris room: field header and room pour", () => {
+  it("renders the iris room: quiet shell header and room pour", () => {
     renderWithProviders(<MeditationHomeScreen />);
 
-    // Full-bleed iris field header (Direction B room), not the plain header.
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the iris room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
@@ -204,7 +201,6 @@ describe("MeditationHomeScreen", () => {
     // Without this the iris room drops out while preferences resolve and snaps
     // in afterwards - the defect grounding shipped and had to fix.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 
   it("omits the subline until history has actually loaded", () => {
@@ -244,7 +240,8 @@ describe("MeditationHomeScreen", () => {
 
     renderWithProviders(<MeditationHomeScreen />);
 
-    const subline = screen.getByText(/^Last · /).props.children as string;
-    expect(subline).toContain("Jun 1, 2026");
+    // Matched on composed text: the subline is now a value-less item in the
+    // header's inline stat run, so its Text has nested children (#733).
+    expect(screen.getByText(/^Last · .*Jun 1, 2026/)).toBeTruthy();
   });
 });

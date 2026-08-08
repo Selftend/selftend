@@ -85,11 +85,9 @@ describe("GroundingHomeScreen", () => {
     expect(router.push).toHaveBeenCalledWith("/tools/grounding/54321");
   });
 
-  it("renders the clay room: field header and room pour", () => {
+  it("renders the clay room: quiet shell header and room pour", () => {
     renderWithProviders(<GroundingHomeScreen />);
 
-    // Full-bleed clay field header (Direction B room), not the plain header.
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the clay room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });

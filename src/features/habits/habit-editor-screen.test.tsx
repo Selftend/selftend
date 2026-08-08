@@ -79,17 +79,15 @@ describe("HabitEditorScreen", () => {
     saveHabit.mockResolvedValue({ id: "h-1" });
   });
 
-  it("create mode rises out of the act field on the room pour", () => {
+  it("create mode renders the top bar on the room pour", () => {
     renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
 
     expect(screen.getByText("New habit")).toBeTruthy();
-    // Create mode rises out of the full-bleed act field (spec #277).
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The wrapper carries the act room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.getByTestId("habit-editor-room"));
   });
 
-  it("edit mode keeps the compact header on the room pour - no field", () => {
+  it("edit mode renders the top bar on the room pour too", () => {
     mockUseHabits.mockReturnValue({ data: [existingHabit] } as unknown as ReturnType<
       typeof useHabits
     >);
@@ -99,7 +97,6 @@ describe("HabitEditorScreen", () => {
     );
 
     expect(screen.getByText("Edit habit")).toBeTruthy();
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expectNeutralRoom(screen.getByTestId("habit-editor-room"));
     expect(screen.getByDisplayValue("Morning walk")).toBeTruthy();
   });

@@ -20,7 +20,15 @@ describe("MoodHistoryList", () => {
 
     const list = UNSAFE_getByType(SectionList);
 
-    expect(list.props.contentContainerStyle).toEqual({ flexGrow: 1, padding: 16 });
+    // The home column rides here too, not on a wrapper: the history rows are
+    // list items, so a centred wrapper would centre only the header (#733).
+    expect(list.props.contentContainerStyle).toEqual({
+      flexGrow: 1,
+      padding: 16,
+      width: "100%",
+      maxWidth: 720,
+      alignSelf: "center",
+    });
     expect(list.props.contentContainerClassName).toBeUndefined();
   });
 });

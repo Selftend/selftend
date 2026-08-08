@@ -1,19 +1,13 @@
 import { useState } from "react";
-import type { ReactNode } from "react";
-import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-
-import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
-import { useNeutralFieldGradient } from "@/src/lib/theme-palette";
+import { Pressable, View, type ViewStyle } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
-import { Badge } from "@/src/components/react-native-reusables/badge";
-import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { type ToolHue } from "@/src/features/mindfulness/exercise-hue";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
 
 type TuneAction = { type: "tune"; onPress: () => void; accessibilityLabel?: string };
@@ -38,26 +32,24 @@ const buttonStyle: ViewStyle = {
   justifyContent: "center",
 };
 
+/**
+ * One stat in the header's inline run: a value in the foreground ink, then a
+ * muted label. Leave `value` empty for a label-only entry - that is how the
+ * design renders "last logged 4:50 pm", inline with the rest rather than as a
+ * separate subline (which is what the deleted `ToolStats.subline` was).
+ */
+export interface HeaderStat {
+  value: string;
+  label: string;
+}
+
 interface ModuleHomeHeaderProps {
   title: string;
   actions?: readonly HeaderAction[];
-  /** The field/chip hue. `"primary"` pours the field from the app violet (#500). */
-  hue?: ToolHue | "primary";
-  icon?: MaterialIconName;
   description?: string;
-  meta?: ReactNode;
-  /** Short chip label (e.g. "CBT"). Defaults to title. Pass `null` to omit the chip entirely. */
-  moduleLabel?: string | null;
+  stats?: readonly HeaderStat[];
   /** When set, shows an "add to home" button (dropdown of this category's widgets) in the actions row. */
   addWidgetCategory?: string;
-  /**
-   * "hero" (default) is the on-surface header every module renders today.
-   * "field" is the Direction B full-bleed module-hue field: a hue gradient
-   * painted edge to edge behind white ink, meant to sit above a ContentSheet.
-   * Requires `hue`; the screen must let the header span its full width
-   * (escape any horizontal content padding).
-   */
-  variant?: "hero" | "field";
   /**
    * No longer used: per-page button coach marks were removed (only the home dashboard
    * keeps first-run tips now). Kept as an accepted prop so the module screens that
@@ -66,22 +58,33 @@ interface ModuleHomeHeaderProps {
   tourScope?: string;
 }
 
+/**
+ * The module-home shell, shared by all ten homes - the eight tools plus ACT and
+ * CBT (#733, decided on #690).
+ *
+ * One shape, no variant. The full-bleed hue field this replaced had no second
+ * population to serve: all 17 call sites passed `variant="field"` and all eight
+ * `ToolStats` passed `tone="onField"`, so the `"hero"` and `"default"` branches
+ * were dead code carrying a second design language.
+ *
+ * The stats values are `--foreground`, not an accent - read off the design file
+ * rather than assumed. That is what retires `accentClassName`, and with it the
+ * `text-<hue>`-on-background pattern that fails AA on four of the seven hues.
+ *
+ * Deliberately gone with the field: the module chip (the design's header runs
+ * breadcrumb → h1 → tagline → stats, with no chip), and `useNeutralFieldGradient`,
+ * whose only consumer this was. That gradient was the theme selector's biggest
+ * tool-screen expression, and losing it is an accepted trade (#690) - do not
+ * reintroduce a gradient to soften it.
+ */
 export function ModuleHomeHeader({
   title,
   actions = [],
-  hue,
-  icon,
   description,
-  meta,
-  moduleLabel,
+  stats,
   addWidgetCategory,
-  variant = "hero",
 }: ModuleHomeHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
-  // A hook, not a module-scope read: the stops are derived from the SELECTED
-  // palette's accent, and the constant path reads the DEFAULT palette - which
-  // is what left this header violet under all eight styles.
-  const fieldColors = useNeutralFieldGradient();
 
   const notificationsAction = actions.find(
     (a): a is NotificationsAction => a.type === "notifications",
@@ -95,138 +98,83 @@ export function ModuleHomeHeader({
     }
   }
 
-  const fieldMode = variant === "field" && hue != null;
+  return (
+    <View className="gap-2">
+      {notificationsAction ? (
+        <NotificationSettingsModal
+          targetKey={notificationsAction.targetKey}
+          visible={showNotifications}
+          onDismiss={() => setShowNotifications(false)}
+        />
+      ) : null}
 
-  const heroMode = hue != null && icon != null;
-
-  const actionsRow =
-    actions.length > 0 || addWidgetCategory ? (
-      <View className="flex-row items-center gap-3">
-        {actions.map((action) => (
-          <ActionButton
-            key={action.type}
-            action={action}
-            onField={fieldMode}
-            onPress={() => handleActionPress(action)}
-          />
-        ))}
-        {addWidgetCategory ? (
-          <AddToHomeButton
-            category={addWidgetCategory}
-            iconClassName={fieldMode ? "text-white/[0.88]" : "text-muted-foreground"}
-          />
+      {/* Actions ride the breadcrumb row rather than an overflow menu (#692):
+          burying the info action would bury the only path back to the
+          onboarding replay. */}
+      <View className="flex-row items-center gap-2">
+        <View className="flex-1">
+          <ScreenBreadcrumb />
+        </View>
+        {actions.length > 0 || addWidgetCategory ? (
+          <View className="flex-row items-center gap-3">
+            {actions.map((action) => (
+              <ActionButton
+                key={action.type}
+                action={action}
+                onPress={() => handleActionPress(action)}
+              />
+            ))}
+            {addWidgetCategory ? (
+              <AddToHomeButton category={addWidgetCategory} iconClassName="text-muted-foreground" />
+            ) : null}
+          </View>
         ) : null}
       </View>
-    ) : null;
 
-  const notificationsModal = notificationsAction ? (
-    <NotificationSettingsModal
-      targetKey={notificationsAction.targetKey}
-      visible={showNotifications}
-      onDismiss={() => setShowNotifications(false)}
-    />
-  ) : null;
+      <Text variant="h1" className="text-[32px] font-bold leading-[1.15] tracking-tight">
+        {title}
+      </Text>
 
-  if (fieldMode) {
-    return (
-      <View className="relative overflow-hidden px-5 pb-10 pt-4">
-        {notificationsModal}
-        <LinearGradient
-          testID="module-field-gradient"
-          colors={fieldColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0.08, y: 1 }}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-        <View className="flex-row items-center gap-2">
-          <View className="flex-1">
-            <ScreenBreadcrumb tone="onField" />
-          </View>
-          {actionsRow}
-        </View>
-        <View className="mt-3">
-          {moduleLabel !== null ? (
-            <View className="mb-3 flex-row items-center gap-2">
-              <View className="flex-row items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1">
-                {icon ? <Icon name={icon} size={14} className="text-white" /> : null}
-                <Text className="text-xs font-semibold text-white">{moduleLabel ?? title}</Text>
-              </View>
-            </View>
-          ) : null}
-          <Text
-            variant="h1"
-            className="text-[32px] font-extrabold leading-[1.1] tracking-tight text-white"
-          >
-            {title}
-          </Text>
-          {description ? (
-            <Text className="mt-2 max-w-[62ch] text-[15px] leading-[1.55] text-white/[0.88]">
-              {description}
-            </Text>
-          ) : null}
-          {meta ? (
-            typeof meta === "string" ? (
-              <Text className="mt-4 text-xs text-white/[0.88]">{meta}</Text>
-            ) : (
-              <View className="mt-4">{meta}</View>
-            )
-          ) : null}
-        </View>
-      </View>
-    );
-  }
+      {description ? (
+        <Text className="max-w-[62ch] text-[15px] leading-[1.5] text-muted-foreground">
+          {description}
+        </Text>
+      ) : null}
 
+      {stats && stats.length > 0 ? <HeaderStats stats={stats} /> : null}
+    </View>
+  );
+}
+
+/**
+ * The inline stat run: `3 check-ins · 3 this week · 3.0 7-day average`.
+ *
+ * A wrapping row rather than a grid, so a long `bg` label wraps onto a second
+ * line instead of forcing a horizontal scroll at 360dp.
+ */
+function HeaderStats({ stats }: { stats: readonly HeaderStat[] }) {
   return (
-    <View className={heroMode ? "gap-3" : "gap-1"}>
-      {notificationsModal}
-      {heroMode ? (
-        <>
-          <View className="flex-row items-center gap-2">
-            <View className="flex-1">
-              <ScreenBreadcrumb />
-            </View>
-            {actionsRow}
-          </View>
-          <View className="mt-2">
-            {moduleLabel !== null ? (
-              <View className="flex-row items-center gap-2 mb-3">
-                {/* Icon and label, no hue (#587). The chip used to be a tint of
-                    the module's own colour with that hue's ink on top; the glyph
-                    and the words beside it already say which module this is. */}
-                <Badge variant="secondary" icon={icon}>
-                  <Text>{moduleLabel ?? title}</Text>
-                </Badge>
-              </View>
-            ) : null}
-            <Text variant="h1" className="text-[40px] font-extrabold leading-[1.05] tracking-tight">
-              {title}
-            </Text>
-            {description ? (
-              <Text className="mt-2.5 text-[15px] leading-[1.55] text-muted-foreground max-w-[62ch]">
-                {description}
+    <View testID="module-header-stats" className="mt-1 flex-row flex-wrap items-center gap-y-1">
+      {stats.map((stat, i) => (
+        // Each item and the separator that FOLLOWS it are one non-wrapping unit
+        // (#690), so a wrapped line can never begin with a stranded "·". The
+        // separator carries the 10px on both its sides, which is also why the
+        // row itself has no `gap-x`: the last item must not trail one.
+        <View key={i} testID="module-header-stat" className="flex-row items-center">
+          <Text variant="muted" className="text-[13px] tabular-nums">
+            {stat.value ? (
+              <Text className="text-[13px] font-semibold tabular-nums text-foreground">
+                {stat.value}
               </Text>
             ) : null}
-            {meta ? (
-              typeof meta === "string" ? (
-                <Text className="mt-2.5 text-xs text-muted-foreground">{meta}</Text>
-              ) : (
-                <View className="mt-2.5">{meta}</View>
-              )
-            ) : null}
-          </View>
-        </>
-      ) : (
-        <>
-          <ScreenBreadcrumb />
-          <View className="flex-row items-center gap-2">
-            <Text variant="h1" className="flex-1">
-              {title}
-            </Text>
-            {actionsRow}
-          </View>
-        </>
-      )}
+            {stat.value && stat.label ? " " : ""}
+            {stat.label}
+          </Text>
+          {i < stats.length - 1 ? (
+            <Text className="px-2.5 text-[13px] text-muted-foreground/50">·</Text>
+          ) : null}
+        </View>
+      ))}
     </View>
   );
 }
@@ -234,21 +182,15 @@ export function ModuleHomeHeader({
 interface ActionButtonProps {
   action: HeaderAction;
   onPress: () => void;
-  /** White ink for the field header variant. */
-  onField?: boolean;
 }
 
-function ActionButton({ action, onPress, onField }: ActionButtonProps) {
+function ActionButton({ action, onPress }: ActionButtonProps) {
   const { t } = useTranslation("navigation");
   const label = action.accessibilityLabel ?? t(`headerButton.${action.type}`);
   // The programme flag is the one action that wants to be noticed, so it keeps a
   // stronger mark than its neighbours - the app accent now rather than the ACT
   // module's green, which said "ACT" on a button that also appears on CBT (#587).
-  const iconClass = onField
-    ? "text-white/[0.88]"
-    : action.type === "program"
-      ? CHROME_ACCENT_MARK
-      : "text-muted-foreground";
+  const iconClass = action.type === "program" ? CHROME_ACCENT_MARK : "text-muted-foreground";
   return (
     <Pressable
       accessibilityLabel={label}

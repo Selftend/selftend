@@ -9,10 +9,9 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
-import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
@@ -203,25 +202,12 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
     // bg-background surfaces re-resolve to the act pour through it.
     <View testID="habit-editor-room" className="flex-1" style={roomStyle}>
       <MobileFormScreen
-        contentClassName="mx-auto w-full max-w-2xl gap-6"
-        hero={
-          editMode ? undefined : (
-            // Create mode gets the field treatment: the full-bleed green field
-            // with the sheet lip rising over it, outside the max-width column.
-            <View>
-              <ModuleHomeHeader
-                variant="field"
-                hue="act"
-                icon="task-alt"
-                title={t("form.newTitle")}
-                moduleLabel={null}
-              />
-              <ContentSheet />
-            </View>
-          )
-        }
+        contentClassName={cn(FORM_COLUMN, "gap-6")}
+        // Both modes now, where only create mode had chrome: an edit form used to
+        // open with no header at all above its fields (#733).
+        topBar={<ScreenTopBar leading="close" />}
         footer={
-          <View className="mx-auto w-full max-w-2xl flex-row gap-3">
+          <View className={cn(FORM_COLUMN, "flex-row gap-3")}>
             <View className="flex-1">
               <Button onPress={goBack} variant="ghost">
                 <Text>{t("cta.cancel")}</Text>
@@ -236,11 +222,11 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
           </View>
         }
       >
-        {editMode ? (
-          <View className="gap-2">
-            <ScreenHeader title={t("form.editTitle")} />
-          </View>
-        ) : null}
+        {/* No breadcrumb eyebrow above the heading (design `2b`): the bar above
+            carries the trail, so a ScreenHeader here would render it twice. */}
+        <View className="gap-2">
+          <Text variant="h1">{editMode ? t("form.editTitle") : t("form.newTitle")}</Text>
+        </View>
 
         <View className="gap-2">
           <Label>{t("form.identityLabel")}</Label>

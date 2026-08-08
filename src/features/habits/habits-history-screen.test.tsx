@@ -96,7 +96,6 @@ describe("HabitsHistoryScreen", () => {
     expect(screen.getByText("2026-07-19")).toBeTruthy();
     expect(screen.getAllByText("Read")).toHaveLength(2);
     expect(screen.getByText("Ten pages")).toBeTruthy();
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the act room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
@@ -105,7 +104,6 @@ describe("HabitsHistoryScreen", () => {
     const { UNSAFE_getByType } = renderWithProviders(<HabitsHistoryScreen />);
 
     expect(screen.getByText("Once you tick a habit, that day will appear here.")).toBeTruthy();
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 

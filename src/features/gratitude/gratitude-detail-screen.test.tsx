@@ -96,9 +96,8 @@ describe("GratitudeDetailScreen", () => {
     } as unknown as ReturnType<typeof useSetGratitudeEntryStarred>);
   });
 
-  it("keeps the compact header on the think room pour - no field gradient", () => {
+  it("keeps the compact header on the think room pour", () => {
     const { UNSAFE_getByType } = renderWithProviders(<GratitudeDetailScreen />);
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the think room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });

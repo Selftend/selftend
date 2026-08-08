@@ -9,10 +9,11 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
-import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { cn } from "@/lib/utils";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { announceMessage, politeLiveRegionProps } from "@/src/lib/accessibility";
@@ -159,26 +160,12 @@ export function JournalEntryEditorScreen({
     // bg-background surfaces re-resolve to the ink pour through it.
     <View className="flex-1" style={roomStyle} testID="journal-editor-room">
       <MobileFormScreen
-        contentClassName="mx-auto w-full max-w-2xl gap-6"
-        hero={
-          editMode ? undefined : (
-            // Create mode gets the field treatment: the full-bleed ink field
-            // with the sheet lip rising over it, outside the max-width column.
-            <View>
-              <ModuleHomeHeader
-                variant="field"
-                hue="ink"
-                icon="edit-note"
-                title={t("editor.createTitle")}
-                moduleLabel={null}
-                description={t("editor.createDescription")}
-              />
-              <ContentSheet />
-            </View>
-          )
-        }
+        contentClassName={cn(FORM_COLUMN, "gap-6")}
+        // Both modes now, where only create mode had chrome: an edit form used to
+        // open with no header at all above its fields (#733).
+        topBar={<ScreenTopBar leading="close" />}
         footer={
-          <View className="mx-auto w-full max-w-2xl gap-3">
+          <View className={cn(FORM_COLUMN, "gap-3")}>
             {/* The save-failure error lives WITH the pinned Save button: a user
               saving from the footer while scrolled must see it without hunting
               through the content column. */}
@@ -203,12 +190,14 @@ export function JournalEntryEditorScreen({
           </View>
         }
       >
-        {editMode ? (
-          <View className="gap-2">
-            <ScreenHeader title={t("editor.editTitle")} />
-            <Text variant="muted">{t("editor.editDescription")}</Text>
-          </View>
-        ) : null}
+        {/* No breadcrumb eyebrow above the heading (design `2b`): the bar above
+            carries the trail, so a ScreenHeader here would render it twice. */}
+        <View className="gap-2">
+          <Text variant="h1">{editMode ? t("editor.editTitle") : t("editor.createTitle")}</Text>
+          <Text variant="muted">
+            {editMode ? t("editor.editDescription") : t("editor.createDescription")}
+          </Text>
+        </View>
 
         <View className="gap-2">
           <Label>{t("editor.titleLabel")}</Label>
