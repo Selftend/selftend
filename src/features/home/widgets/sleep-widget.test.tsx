@@ -41,7 +41,7 @@ function sleepLog(durationMinutes: number, quality: number, loggedAt: string) {
 describe("SleepWidget", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSelectedDate.mockReturnValue({ selectedDate: currentDateKey(), isToday: true });
+    mockUseSelectedDate.mockReturnValue({ selectedDate: currentDateKey() });
   });
 
   it("renders the Sleep tracker header", () => {
@@ -71,7 +71,7 @@ describe("SleepWidget", () => {
   });
 
   it("hides the badge when today has no entry", () => {
-    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-30", isToday: false });
+    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-30" });
     mockUseSleepLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useSleepLogs>);
     renderWithProviders(<SleepWidget userId="user-1" />);
     expect(screen.queryByText("Logged")).toBeNull();

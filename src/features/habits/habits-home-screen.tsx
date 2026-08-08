@@ -40,7 +40,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function HabitsHomeScreen() {
-  const { t, i18n } = useTranslation("habits");
+  const { t } = useTranslation("habits");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -56,17 +56,12 @@ export default function HabitsHomeScreen() {
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [learnIndex, setLearnIndex] = useState(0);
 
-  const { selectedDate, isToday } = useSelectedDate();
+  const { selectedDate } = useSelectedDate();
 
   const allHabits = habits ?? [];
   const allLogs = logs ?? [];
   const todayStr = selectedDate;
   const today = parseLocalNoon(selectedDate);
-  const dayLabel = new Intl.DateTimeFormat(i18n.language, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }).format(today);
 
   const todayHabits = allHabits.filter((habit) => isScheduledOn(habit, today));
   const todayTicked = todayHabits.filter((habit) => isTickedOn(allLogs, habit.id, todayStr)).length;
@@ -190,7 +185,7 @@ export default function HabitsHomeScreen() {
 
                 <View className="gap-3">
                   <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    {isToday ? t("home.todayHeading") : dayLabel}
+                    {t("home.todayHeading")}
                   </Text>
 
                   {allHabits.length === 0 ? (

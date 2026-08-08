@@ -61,7 +61,7 @@ export default function MoodTrackerScreen() {
   // History feeds the week summaries, day card, and history list; the trend chart
   // rides its own unbounded score-points query further down.
   const { data: moodLogs } = useMoodHistory(userId, 200);
-  const { selectedDate, isToday } = useSelectedDate();
+  const { selectedDate } = useSelectedDate();
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [chartContainerWidth, setChartContainerWidth] = useState(300);
@@ -74,15 +74,6 @@ export default function MoodTrackerScreen() {
   const daySummary = useMemo(
     () => getDayMoodSummary(moodLogs, selectedDate),
     [moodLogs, selectedDate],
-  );
-  const dayLabel = useMemo(
-    () =>
-      new Intl.DateTimeFormat(i18n.language, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      }).format(parseLocalNoon(selectedDate)),
-    [i18n.language, selectedDate],
   );
   const sevenDay = useMemo(() => getMoodSummary(moodLogs, 7), [moodLogs]);
   const weekDelta = useMemo(() => getWeekDelta(moodLogs), [moodLogs]);
@@ -195,7 +186,7 @@ export default function MoodTrackerScreen() {
               />
               <ContentSheet className="px-4">
                 <View className="gap-6">
-                  <TodayCheckInCard summary={daySummary} isToday={isToday} dayLabel={dayLabel} />
+                  <TodayCheckInCard summary={daySummary} />
 
                   <View className="gap-3">
                     <Text variant="h3">{t("week.title")}</Text>
@@ -279,17 +270,16 @@ export default function MoodTrackerScreen() {
 
 interface TodayCheckInCardProps {
   summary: MoodSummary;
-  isToday: boolean;
-  dayLabel: string;
 }
 
-function TodayCheckInCard({ summary, isToday, dayLabel }: TodayCheckInCardProps) {
+// The overview always describes the device's current local day (#250), so this
+// card names today rather than branching on a constant (#720). A card for some
+// other day is the redesign's day panel (#697), not this one wearing a flag.
+function TodayCheckInCard({ summary }: TodayCheckInCardProps) {
   const { t } = useTranslation("mood");
   const logged = summary.count > 0;
   const description = !logged
-    ? isToday
-      ? t("today.howAreYou")
-      : t("today.howWasDay")
+    ? t("today.howAreYou")
     : summary.count === 1
       ? t("today.completeOne", { score: summary.average })
       : t("today.completeMany", { count: summary.count, average: summary.average });
@@ -299,7 +289,7 @@ function TodayCheckInCard({ summary, isToday, dayLabel }: TodayCheckInCardProps)
       <CardHeader>
         <View className="flex-row items-center gap-2">
           {logged ? <Icon name="check-circle" className="size-5 text-primary" /> : null}
-          <CardTitle aria-level={2}>{isToday ? t("today.title") : dayLabel}</CardTitle>
+          <CardTitle aria-level={2}>{t("today.title")}</CardTitle>
         </View>
         <CardDescription>{description}</CardDescription>
       </CardHeader>

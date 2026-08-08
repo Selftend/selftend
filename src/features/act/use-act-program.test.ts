@@ -57,7 +57,7 @@ const actQueryMocks = [
 ] as jest.MockedFunction<typeof useDefusionLogs>[];
 
 function setupBaseMocks(mutateAsync: jest.Mock) {
-  mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-24", isToday: true });
+  mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-24" });
   mockUseUpdateUserPreferences.mockReturnValue({
     mutateAsync,
     isPending: false,

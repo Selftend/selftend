@@ -71,7 +71,6 @@
   },
   "today": {
     "eyebrow": "Днес · {{date}}",
-    "eyebrowPast": "{{date}}",
     "greetingMorning": "Добро утро",
     "greetingAfternoon": "Добър ден",
     "greetingEvening": "Добър вечер",

@@ -17,7 +17,6 @@
   "today": {
     "title": "Днес",
     "howAreYou": "Как се чувстваш в момента?",
-    "howWasDay": "Как се чувстваше този ден?",
     "completeOne": "Записано · {{score}}/5",
     "completeMany": "{{count}} записа · средно {{average}}/5"
   },
