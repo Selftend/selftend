@@ -23,6 +23,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { MoodScale } from "@/src/components/app/mood-scale";
+import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { cn } from "@/lib/utils";
 import { useRoomStyle } from "@/src/lib/use-room-style";
@@ -63,8 +64,22 @@ function paramValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-// Memoized so it re-renders only when the emotion list or the selection changes - not on
-// every keystroke in the notes / four-box text fields, which re-render the parent screen.
+/**
+ * One flat run of chips, in the order the USER set (#738, decided on #699).
+ *
+ * Not two valence groups: `emotion_preferences` carries a `position` column, an
+ * index on it, an `ORDER BY` that reads it, and an entire manage-emotions screen
+ * built to reorder it. Grouping by valence would quietly overrule all of that -
+ * drag order would only sort *within* a group - and custom emotions have no
+ * valence column to group by at all. Between a taxonomy the system imposes and
+ * an order the user set on purpose, the user's order wins.
+ *
+ * `allEmotions` already arrives sorted by `position` with custom rows inline, so
+ * this renders it as-is rather than re-sorting or partitioning.
+ *
+ * Memoized so it re-renders only when the emotion list or the selection changes - not on
+ * every keystroke in the notes / four-box text fields, which re-render the parent screen.
+ */
 const EmotionGrid = memo(function EmotionGrid({
   emotions,
   selectedIds,
@@ -75,36 +90,17 @@ const EmotionGrid = memo(function EmotionGrid({
   onToggle: (id: string) => void;
 }) {
   return (
-    <View className="flex-row flex-wrap gap-2">
-      {emotions.map((emotion) => {
-        const selected = selectedIds.includes(emotion.id);
-        return (
-          <Pressable
-            key={emotion.id}
-            accessibilityLabel={emotion.name}
-            accessibilityRole="checkbox"
-            aria-checked={selected}
-            onPress={() => onToggle(emotion.id)}
-            className={cn(
-              "min-w-[72px] items-center gap-1 rounded-2xl border-2 px-2 py-2",
-              selected ? "border-primary bg-primary/10" : "border-border bg-card",
-            )}
-            {...spaceKeyActivationProps(() => onToggle(emotion.id))}
-          >
-            <Text className="text-2xl">{emotion.emoji}</Text>
-            <Text
-              className={cn(
-                "text-center text-[11px]",
-                selected ? "font-semibold text-primary" : "text-muted-foreground",
-              )}
-              numberOfLines={1}
-            >
-              {emotion.name}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+    <ChipRun>
+      {emotions.map((emotion) => (
+        <SelectableChip
+          key={emotion.id}
+          emoji={emotion.emoji}
+          label={emotion.name}
+          onToggle={() => onToggle(emotion.id)}
+          selected={selectedIds.includes(emotion.id)}
+        />
+      ))}
+    </ChipRun>
   );
 });
 

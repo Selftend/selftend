@@ -315,6 +315,40 @@ describe("MoodEntryEditorScreen", () => {
     expect(await screen.findByLabelText("Great")).toBeTruthy();
   });
 
+  /**
+   * One flat run in the user's own order (#738, decided on #699), not two
+   * valence groups. `emotion_preferences.position` and the whole
+   * manage-emotions screen exist so the USER sets this order; grouping by
+   * valence would overrule it, and custom emotions have no valence column to
+   * group by at all. CBT's grouped picker is a weak precedent - fixed defaults,
+   * no preferences, and *difficult first*, the reverse of the design.
+   */
+  it("renders emotions as one flat run, in position order, with no valence headings", async () => {
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+    // Seeded rows are DEFAULT_EMOTIONS in array order, so the rendered order is
+    // the persisted order rather than a taxonomy.
+    const first = await screen.findByLabelText("Happy");
+    expect(first.props.accessibilityRole).toBe("checkbox");
+    expect(screen.getByLabelText("Excited")).toBeTruthy();
+
+    expect(screen.queryByText("Difficult feelings")).toBeNull();
+    expect(screen.queryByText("Pleasant feelings")).toBeNull();
+  });
+
+  it("selects an emotion with the ink treatment rather than bare primary", async () => {
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+    const chip = await screen.findByLabelText("Happy");
+    fireEvent.press(chip);
+
+    // The live AA failure the rewrite repairs: `text-primary` on `bg-primary/10`
+    // measured 3.81:1 (#368), under AA for this size.
+    const tokens = String(screen.getByText("Happy").props.className).split(/\s+/);
+    expect(tokens).toContain("text-primary-ink");
+    expect(tokens).not.toContain("text-primary");
+  });
+
   it("renders the top bar and heading in create mode", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
   });

@@ -20,7 +20,7 @@ import { LineChart } from "@/src/components/charts/line-chart";
 import { SegmentedControl } from "@/src/components/app/segmented-control";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { DateRangeField, type DateRange } from "@/src/components/app/date-range-field";
-import { buildMoodChartData, buildMoodChartDataForRange } from "@/src/features/mood/chart-data";
+import { buildMoodChartDataForRange } from "@/src/features/mood/chart-data";
 import {
   useFirstMoodDayKey,
   useMoodHistory,
@@ -283,7 +283,10 @@ export default function MoodTrackerScreen() {
     if (!bounds) return null;
     const fmt = new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "short" });
     return `${fmt.format(parseLocalNoon(bounds[0]))} – ${fmt.format(parseLocalNoon(bounds[1]))}`;
-  }, [isCustom, customRange, isAllTime, firstLogDayKey, i18n.language]);
+    // `rangeKeys`, not `firstLogDayKey`: the All-time span ends at
+    // `dayRangeEndKey(points)`, so a newly arrived entry can move the label
+    // without any of the range inputs changing.
+  }, [isCustom, customRange, isAllTime, rangeKeys, i18n.language]);
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
   };
