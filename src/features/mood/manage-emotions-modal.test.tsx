@@ -39,7 +39,7 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
     ],
     isLoading: false,
   }),
-  useEmotionUsageCounts: jest.fn(() => ({ data: { anxious: 3, grateful: 0 } })),
+  useEmotionUsageCounts: jest.fn(() => ({ data: { anxious: 3 } })),
   useUpsertEmotionPreference: () => ({ mutate: mockUpsertEmotion }),
   useReorderEmotions: () => ({ mutate: jest.fn() }),
   useRemoveEmotion: () => ({ mutate: mockRemoveEmotion }),
@@ -91,7 +91,7 @@ describe("ManageEmotionsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseEmotionUsageCounts.mockReturnValue({
-      data: { anxious: 3, grateful: 0 },
+      data: { anxious: 3 },
     } as unknown as ReturnType<typeof useEmotionUsageCounts>);
   });
 
@@ -120,11 +120,26 @@ describe("ManageEmotionsModal", () => {
      * column is a leaderboard of someone's feelings, and "what do I feel most" is already
      * answered - better, and windowed - by the overview's "Felt most often".
      */
+    /**
+     * ⚠️ The RPC returns **no row** for an emotion with no uses, so `grateful` is simply
+     * absent from the response. A mock that returned `{ grateful: 0 }` would be testing a
+     * shape the server can never produce — and did, until Codex caught it.
+     */
     it("marks an unused emotion and shows no number for a used one", () => {
       open();
 
       expect(screen.getByText("unused")).toBeTruthy();
       expect(screen.queryByText("3")).toBeNull();
+    });
+
+    it("labels nothing unused while the count query is still loading", () => {
+      mockUseEmotionUsageCounts.mockReturnValue({ data: undefined } as unknown as ReturnType<
+        typeof useEmotionUsageCounts
+      >);
+      open();
+
+      // Absent-because-unloaded is not the same as absent-because-zero.
+      expect(screen.queryByText("unused")).toBeNull();
     });
   });
 
@@ -163,6 +178,16 @@ describe("ManageEmotionsModal", () => {
       fireEvent.press(screen.getAllByText("Delete")[1]);
 
       expect(mockRemoveEmotion).toHaveBeenCalledWith({ emotionId: "anxious", isCustom: false });
+    });
+
+    it("says nothing is lost for an emotion that has never been used", () => {
+      open();
+
+      fireEvent.press(screen.getByLabelText("Edit Grateful"));
+      fireEvent.press(screen.getByText("Delete"));
+
+      // `grateful` is absent from the response, which means zero - not unknown.
+      expect(screen.getByText("You have never used it. Nothing is lost.")).toBeTruthy();
     });
 
     it("falls back to the plain warning while the count is still loading", () => {

@@ -25,6 +25,10 @@ export const HABIT_COLOR_TINTS: Record<HabitColor, TintToken> = {
   emerald: "mist",
   violet: "iris",
   rose: "clay",
+  // Added by #764. These two are the only habit colours whose stored name and tint
+  // token agree, because they were introduced after the alias layer existed.
+  ink: "ink",
+  aqua: "aqua",
 };
 
 const PALETTE: Record<ColorSchemeName, Record<HabitColor, ChipColors>> = (() => {

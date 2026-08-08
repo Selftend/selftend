@@ -152,6 +152,14 @@ export async function upsertEmotionPreference(
   return mapRow(data as EmotionPreferenceRow);
 }
 
+/**
+ * Hard-delete a preference row.
+ *
+ * ⚠️ No app path calls this any more (#743): removing a custom emotion used to hard-delete
+ * it, which destroyed the name and emoji that old check-ins resolve through, so removal is
+ * now a soft `removed` flag for custom and builtin alike. Kept as a repository primitive
+ * for a future genuine purge, where losing the label IS the point.
+ */
 export async function deleteEmotionPreference(userId: string, emotionId: string): Promise<void> {
   const client = requireSupabase();
   const { error } = await client

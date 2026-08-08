@@ -193,7 +193,10 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   const { user } = useSession();
   const userId = user?.id ?? null;
   const reorderEmotions = useReorderEmotions(userId);
-  const { data: usageCounts } = useEmotionUsageCounts(userId);
+  // Gated on `visible`: the check-in editor mounts this modal unconditionally and merely
+  // hides it, so an ungated query would run the lifetime aggregate on every create and
+  // edit screen for a number only this modal shows.
+  const { data: usageCounts } = useEmotionUsageCounts(userId, visible);
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   const [editorState, setEditorState] = useState<EditorState | null>(null);
@@ -216,7 +219,10 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
    */
   const renderEmotionRow = useCallback(
     ({ item: emotion }: { item: EmotionDisplay }) => {
-      const uses = usageCounts?.[emotion.id];
+      // ⚠️ The RPC returns no row for an emotion with no uses, so a missing key means
+      // zero — but only once the query has loaded. `undefined` before then is "unknown",
+      // and rendering `unused` for it would label every emotion unused on first paint.
+      const uses = usageCounts ? (usageCounts[emotion.id] ?? 0) : null;
       return (
         <Pressable
           accessibilityRole="button"
@@ -242,7 +248,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   );
 
   const editingUses =
-    editorState?.mode === "edit" ? (usageCounts?.[editorState.emotion.id] ?? null) : null;
+    editorState?.mode === "edit" && usageCounts ? (usageCounts[editorState.emotion.id] ?? 0) : null;
 
   return (
     <Modal
