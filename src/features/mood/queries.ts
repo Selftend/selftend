@@ -6,11 +6,13 @@ import {
   getFirstMoodDayKey,
   getMoodLog,
   listMoodLogs,
+  listMoodLogsInDayRange,
   listMoodLogsPage,
   listMoodScorePoints,
   saveMoodLog,
 } from "@/src/features/mood/repository";
 import type { MoodInput } from "@/src/features/mood/types";
+import { addDaysToKey } from "@/src/utils/date";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
@@ -23,6 +25,7 @@ const moodKeys = {
   count: (userId: string) => ["mood", "count", userId] as const,
   scorePoints: (userId: string, fromIso: string, toIso?: string) =>
     ["mood", "scorePoints", userId, fromIso, toIso ?? ""] as const,
+  week: (userId: string, weekStartKey: string) => ["mood", "week", userId, weekStartKey] as const,
   firstLogDate: (userId: string) => ["mood", "firstLogDate", userId] as const,
 };
 
@@ -91,6 +94,30 @@ export function useMoodScorePoints(userId: string | null, fromIso: string, toIso
       ? moodKeys.scorePoints(userId, fromIso, toIso)
       : ["mood", "scorePoints", "anonymous", fromIso, toIso ?? ""],
     queryFn: () => listMoodScorePoints(userId!, fromIso, toIso),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * The displayed week's check-ins, plus the week before it (#736, decided on #697).
+ *
+ * Fourteen days rather than seven, because the week-over-week delta has to be
+ * correct at **every** offset, not only the current week — one fetch feeds the
+ * strip, the average, the delta, "felt most often" and the day panel's rows.
+ * There is deliberately no per-day fetch: the panel is a filter over a week the
+ * screen already holds.
+ *
+ * Keyed per week so paging is cached — walking back and forward re-reads nothing
+ * — and rooted under `mood` like every other key, so a save or delete still
+ * invalidates it with the rest. Cost is 14–40 rows a week, small enough that
+ * #693's decrypt-everything projection cost barely registers.
+ */
+export function useMoodWeek(userId: string | null, weekStartKey: string, previousStartKey: string) {
+  return useQuery({
+    queryKey: userId
+      ? moodKeys.week(userId, weekStartKey)
+      : ["mood", "week", "anonymous", weekStartKey],
+    queryFn: () => listMoodLogsInDayRange(userId!, previousStartKey, addDaysToKey(weekStartKey, 6)),
     enabled: Boolean(userId),
   });
 }

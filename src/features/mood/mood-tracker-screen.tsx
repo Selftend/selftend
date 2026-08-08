@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, View, type LayoutChangeEvent } from "react-native";
+import { ScrollView, View, type LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -20,18 +20,19 @@ import {
   useMoodHistory,
   useMoodLogCount,
   useMoodScorePoints,
+  useMoodWeek,
 } from "@/src/features/mood/queries";
+import { getDayMoodSummary, getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
 import {
-  getDayMoodSummary,
-  getMoodSummary,
-  getDailyAverages,
-  getTopEmotions,
-  getWeekDelta,
-  type MoodSummary,
-} from "@/src/features/mood/summaries";
+  buildWeekDays,
+  countLogsInCurrentWeek,
+  earliestWeekOffset,
+  getTopEmotionsForWindow,
+  getWeekDeltaForWindow,
+  weekWindowForOffset,
+} from "@/src/features/mood/week-window";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
-import { WeekHero } from "@/src/features/mood/mood-week-hero";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatAtOffset, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
@@ -52,8 +53,9 @@ export default function MoodTrackerScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  // History feeds the week summaries, day card, and history list; the trend chart
-  // rides its own unbounded score-points query further down.
+  // History feeds today's card and the "last logged" subline. It is deliberately
+  // NOT the week block's source any more: that block can now page past this
+  // cache's 200-row ceiling, which would render real logged weeks as empty (#697).
   const { data: moodLogs } = useMoodHistory(userId, 200);
   const { selectedDate } = useSelectedDate();
 
@@ -62,6 +64,15 @@ export default function MoodTrackerScreen() {
   const [trendRange, setTrendRange] = useState<TrendRange>("30d");
   const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [rangePickerOpen, setRangePickerOpen] = useState(false);
+  // Purely local, and it does not touch the today picker: "log for today" and
+  // "look at a week" are different questions. There is deliberately no global
+  // selected-date state to collide with (#250).
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const weekWindow = useMemo(() => weekWindowForOffset(weekOffset), [weekOffset]);
+  // One fetch per displayed week, covering it and the week before it, so the
+  // delta is right at every offset rather than only at offset 0.
+  const { data: weekLogs } = useMoodWeek(userId, weekWindow.startKey, weekWindow.previousStartKey);
 
   // Each aggregation iterates up to 200 logs; memoize so unrelated re-renders (chart-width
   // onLayout or onboarding toggle) don't recompute the week/day summaries.
@@ -70,11 +81,20 @@ export default function MoodTrackerScreen() {
     [moodLogs, selectedDate],
   );
   const sevenDay = useMemo(() => getMoodSummary(moodLogs, 7), [moodLogs]);
-  const weekDelta = useMemo(() => getWeekDelta(moodLogs), [moodLogs]);
-  const weekByDay = useMemo(() => getDailyAverages(moodLogs, 7), [moodLogs]);
-  const topEmotions = useMemo(() => getTopEmotions(moodLogs, 3), [moodLogs]);
+  const weekDelta = useMemo(
+    () => getWeekDeltaForWindow(weekLogs, weekWindow),
+    [weekLogs, weekWindow],
+  );
+  const weekByDay = useMemo(() => buildWeekDays(weekLogs, weekWindow), [weekLogs, weekWindow]);
+  const topEmotions = useMemo(
+    () => getTopEmotionsForWindow(weekLogs, weekWindow, 3),
+    [weekLogs, weekWindow],
+  );
   const { data: totalCount } = useMoodLogCount(userId);
-  const thisWeekCount = sevenDay.count;
+  // The calendar week, not a trailing seven days: the block below says "This
+  // week" and means Monday-to-Sunday, and the same two words may not name two
+  // different spans on one screen (#697).
+  const thisWeekCount = useMemo(() => countLogsInCurrentWeek(moodLogs), [moodLogs]);
   const lastLog = (moodLogs ?? [])[0] ?? null; // listMoodLogs returns newest-first
   const lastWhen = lastLog ? formatAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes) : null;
   // `moodLogs` is undefined while loading and after a failed fetch with no
@@ -117,6 +137,13 @@ export default function MoodTrackerScreen() {
     : undefined;
   const { data: scorePoints } = useMoodScorePoints(userId, windowFromIso, windowToIso);
   const { data: firstLogDayKey } = useFirstMoodDayKey(userId);
+  // Paging stops at the week holding the first entry: weeks before the account
+  // existed are empty chrome. Until that query answers, only the current week is
+  // reachable - better than offering a back arrow that lands on a blank week.
+  const earliestOffset = useMemo(
+    () => earliestWeekOffset(firstLogDayKey ?? null),
+    [firstLogDayKey],
+  );
 
   // Only the first and last day are labelled — interior labels would collide
   // at the trend windows' densities (matches the previous bespoke chart).
@@ -221,8 +248,27 @@ export default function MoodTrackerScreen() {
             </Section>
 
             {hasAnyCheckIn ? (
-              <Section title={t("week.title")} action={<ShowAllHistoryLink />}>
-                <WeekHero delta={weekDelta} byDay={weekByDay} topEmotions={topEmotions} />
+              // The section's heading IS the week label, and it moves as you page
+              // (#697). Two labels - a static "This week" eyebrow above a
+              // navigator saying the same thing - is the shape this avoids.
+              <Section
+                title={formatWeekLabel(weekWindow, t, i18n.language)}
+                action={
+                  <WeekNavigator
+                    canGoBack={weekWindow.offset > earliestOffset}
+                    canGoForward={weekWindow.offset < 0}
+                    onPrevious={() => setWeekOffset((o) => o - 1)}
+                    onNext={() => setWeekOffset((o) => Math.min(0, o + 1))}
+                  />
+                }
+              >
+                <WeekHero
+                  window={weekWindow}
+                  days={weekByDay}
+                  delta={weekDelta}
+                  topEmotions={topEmotions}
+                  logs={weekLogs}
+                />
               </Section>
             ) : null}
 
@@ -297,28 +343,6 @@ export default function MoodTrackerScreen() {
         </ScrollView>
       </SafeAreaView>
     </>
-  );
-}
-
-/**
- * The overview's only entrance to the all-history screen, in the week row where
- * the design draws it (#696). The week strip is check-in's recency view, so the
- * link sits beside it rather than under a duplicate list of recent entries.
- */
-function ShowAllHistoryLink() {
-  const { t } = useTranslation("mood");
-
-  return (
-    <Pressable
-      accessibilityRole="link"
-      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push("/tools/check-in/history")}
-      className="flex-row items-center gap-1 active:opacity-70"
-      role="link"
-    >
-      <Text className="text-[13px] font-semibold text-primary-ink">{t("allHistory.link")}</Text>
-      <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />
-    </Pressable>
   );
 }
 
