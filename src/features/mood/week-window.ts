@@ -49,8 +49,8 @@ export interface WeekWindow {
   previousStartKey: string;
   /** Sunday of the week before it. */
   previousEndKey: string;
-  /** Zero for the current week, negative going back. Forward is never allowed. */
-  offset: number;
+  /** Whether this IS the week the viewer is currently living in. */
+  isCurrentWeek: boolean;
 }
 
 export interface WeekDay {
@@ -87,40 +87,50 @@ export function currentWeekStartKey(now: Date = new Date()): string {
   return mondayKeyOf(viewerDayKey(now));
 }
 
+/** The Monday `weeks` weeks from `startKey`. Negative goes back. */
+export function shiftWeek(startKey: string, weeks: number): string {
+  return addDaysToKey(startKey, weeks * 7);
+}
+
 /**
- * The window `offset` weeks back from the current one. `offset` is clamped at 0:
- * there is nothing to see in a week that has not started.
+ * The window for the week starting `startKey`, judged against the week the
+ * viewer is currently in.
+ *
+ * The displayed week is identified by its own **start key**, not by an offset
+ * from now. An offset is only meaningful relative to an anchor that keeps
+ * moving: a screen still mounted when Sunday turns into Monday - a detail
+ * screen pushed over it, a device crossing a timezone - would go on calling the
+ * old week "This week", querying its range, and refusing to page forward,
+ * because nothing about `offset: 0` changed. An absolute key cannot drift: the
+ * week you were looking at stays the week you were looking at, and it correctly
+ * stops being *this* week the moment the anchor moves past it.
+ *
+ * `startKey` is clamped to the anchor, so a stale displayed week can never sit
+ * in the future.
  */
-export function weekWindowForOffset(offset: number, now: Date = new Date()): WeekWindow {
-  const safeOffset = Math.min(0, offset);
-  const startKey = addDaysToKey(currentWeekStartKey(now), safeOffset * 7);
+export function weekWindowFor(startKey: string, anchorWeekStartKey: string): WeekWindow {
+  const start = startKey > anchorWeekStartKey ? anchorWeekStartKey : startKey;
   return {
-    startKey,
-    endKey: addDaysToKey(startKey, 6),
-    previousStartKey: addDaysToKey(startKey, -7),
-    previousEndKey: addDaysToKey(startKey, -1),
-    offset: safeOffset,
+    startKey: start,
+    endKey: addDaysToKey(start, 6),
+    previousStartKey: shiftWeek(start, -1),
+    previousEndKey: addDaysToKey(start, -1),
+    isCurrentWeek: start === anchorWeekStartKey,
   };
 }
 
 /**
- * How many weeks back the user may page: the week holding their first entry.
- * Returns 0 (no paging) when they have none. Never positive.
+ * The earliest week the user may page back to: the one holding their first
+ * entry. With no entries - or a first entry inside the current week - paging
+ * back is not offered at all, since weeks before the account are empty chrome.
  */
-export function earliestWeekOffset(firstLogDayKey: string | null, now: Date = new Date()): number {
-  if (!firstLogDayKey) return 0;
+export function earliestWeekStartKey(
+  firstLogDayKey: string | null,
+  anchorWeekStartKey: string,
+): string {
+  if (!firstLogDayKey) return anchorWeekStartKey;
   const firstWeek = mondayKeyOf(firstLogDayKey);
-  const currentWeek = currentWeekStartKey(now);
-  if (firstWeek >= currentWeek) return 0;
-  // Whole weeks between two Mondays; both are noon-anchored day keys, so plain
-  // day arithmetic cannot be shifted by DST.
-  let offset = 0;
-  let cursor = currentWeek;
-  while (cursor > firstWeek) {
-    cursor = addDaysToKey(cursor, -7);
-    offset -= 1;
-  }
-  return offset;
+  return firstWeek >= anchorWeekStartKey ? anchorWeekStartKey : firstWeek;
 }
 
 function inRange(dayKey: string, startKey: string, endKey: string): boolean {

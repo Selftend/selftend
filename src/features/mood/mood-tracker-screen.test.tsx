@@ -106,6 +106,75 @@ describe("MoodTrackerScreen", () => {
     );
   });
 
+  /**
+   * A week that has not loaded is not an empty week. `weekLogs` is undefined
+   * both while the fetch is in flight and after it fails, and every aggregation
+   * turns undefined into "-", seven blank days and "No emotions tagged yet" -
+   * which would tell a user on a flaky connection that a week they filled is
+   * empty. Same distinction the subline makes for `moodLogs` (#735).
+   */
+  describe("week block load states", () => {
+    it("does not claim an empty week while the week query is still in flight", () => {
+      mockLogged({ points: 1, count: 3 });
+      mockUseMoodLogs.mockReturnValue({
+        data: [],
+      } as unknown as ReturnType<typeof useMoodHistory>);
+      mockUseMoodWeek.mockReturnValue({
+        data: undefined,
+        isError: false,
+        refetch: jest.fn(),
+      } as unknown as ReturnType<typeof useMoodWeek>);
+
+      renderWithProviders(<MoodTrackerScreen />);
+
+      // The section is there (the account has check-ins) but says nothing about
+      // this week yet.
+      expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
+      expect(screen.queryByText("No emotions tagged yet")).toBeNull();
+      expect(screen.queryByText("Mood by day")).toBeNull();
+      expect(screen.queryByText("first week of data")).toBeNull();
+    });
+
+    it("offers a retry instead of an empty week when the week query fails", () => {
+      const refetch = jest.fn();
+      mockLogged({ points: 1, count: 3 });
+      mockUseMoodLogs.mockReturnValue({
+        data: [],
+      } as unknown as ReturnType<typeof useMoodHistory>);
+      mockUseMoodWeek.mockReturnValue({
+        data: undefined,
+        isError: true,
+        refetch,
+      } as unknown as ReturnType<typeof useMoodWeek>);
+
+      renderWithProviders(<MoodTrackerScreen />);
+
+      expect(screen.getByText("This week couldn't be loaded.")).toBeTruthy();
+      expect(screen.queryByText("No emotions tagged yet")).toBeNull();
+      fireEvent.press(screen.getByText("Retry"));
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    // A failed BACKGROUND refetch that still has the week cached must keep
+    // rendering the week rather than replacing it with a retry prompt.
+    it("keeps rendering cached data when a background refetch fails", () => {
+      mockLogged({ points: 1, count: 3 });
+      mockUseMoodLogs.mockReturnValue({
+        data: [],
+      } as unknown as ReturnType<typeof useMoodHistory>);
+      mockUseMoodWeek.mockReturnValue({
+        data: [],
+        isError: true,
+        refetch: jest.fn(),
+      } as unknown as ReturnType<typeof useMoodWeek>);
+
+      renderWithProviders(<MoodTrackerScreen />);
+
+      expect(screen.getByText("Mood by day")).toBeTruthy();
+      expect(screen.queryByText("This week couldn't be loaded.")).toBeNull();
+    });
+  });
+
   describe("section staging", () => {
     // The screen GROWS rather than rearranges: sections append in a fixed order
     // as they earn their place, so nothing already on screen ever moves (#695).

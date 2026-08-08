@@ -2,61 +2,80 @@ import {
   buildWeekDays,
   countLogsInCurrentWeek,
   currentWeekStartKey,
-  earliestWeekOffset,
+  earliestWeekStartKey,
   getTopEmotionsForWindow,
   getWeekDeltaForWindow,
   logsOnDay,
-  weekWindowForOffset,
+  shiftWeek,
+  weekWindowFor,
 } from "@/src/features/mood/week-window";
 
 // A Wednesday, so the current week has both past and future days in it - the
 // case trailing-7 windows never had.
 const WEDNESDAY = new Date(2026, 7, 5, 12, 0, 0, 0); // 2026-08-05
+const ANCHOR = currentWeekStartKey(WEDNESDAY); // 2026-08-03
 
-describe("weekWindowForOffset", () => {
+/** The window `weeks` weeks back from the anchor. */
+function windowAt(weeks: number) {
+  return weekWindowFor(shiftWeek(ANCHOR, weeks), ANCHOR);
+}
+
+describe("weekWindowFor", () => {
   it("starts the week on Monday, matching the mood map's columns", () => {
-    const window = weekWindowForOffset(0, WEDNESDAY);
+    const window = windowAt(0);
     expect(window.startKey).toBe("2026-08-03"); // Monday
     expect(window.endKey).toBe("2026-08-09"); // Sunday
+    expect(window.isCurrentWeek).toBe(true);
   });
 
-  it("spans the previous week too, so the delta is right at every offset", () => {
-    const window = weekWindowForOffset(-3, WEDNESDAY);
+  it("spans the previous week too, so the delta is right on any week", () => {
+    const window = windowAt(-3);
     expect(window.startKey).toBe("2026-07-13");
     expect(window.endKey).toBe("2026-07-19");
     expect(window.previousStartKey).toBe("2026-07-06");
     expect(window.previousEndKey).toBe("2026-07-12");
+    expect(window.isCurrentWeek).toBe(false);
   });
 
   // Forward navigation cannot pass the current week: there is nothing to see in
   // a week that has not started.
-  it("clamps a positive offset to the current week", () => {
-    expect(weekWindowForOffset(3, WEDNESDAY)).toEqual(weekWindowForOffset(0, WEDNESDAY));
-    expect(weekWindowForOffset(3, WEDNESDAY).offset).toBe(0);
+  it("clamps a future week back to the current one", () => {
+    expect(windowAt(3)).toEqual(windowAt(0));
   });
 
-  it("agrees with currentWeekStartKey at offset zero", () => {
-    expect(weekWindowForOffset(0, WEDNESDAY).startKey).toBe(currentWeekStartKey(WEDNESDAY));
+  /**
+   * The displayed week is an absolute key, not an offset from now, so a screen
+   * still mounted when Sunday turns into Monday cannot go on calling the old
+   * week "This week" - the anchor moves and the same key stops being current,
+   * which is what re-enables forward navigation.
+   */
+  it("stops being the current week when the anchor rolls over", () => {
+    const held = weekWindowFor(ANCHOR, ANCHOR);
+    expect(held.isCurrentWeek).toBe(true);
+
+    const nextMonday = shiftWeek(ANCHOR, 1);
+    const afterRollover = weekWindowFor(ANCHOR, nextMonday);
+    expect(afterRollover.startKey).toBe(ANCHOR); // still the week you were reading
+    expect(afterRollover.isCurrentWeek).toBe(false);
   });
 });
 
-describe("earliestWeekOffset", () => {
+describe("earliestWeekStartKey", () => {
   it("stops at the week holding the first entry", () => {
-    // 2026-07-20 is the Monday three weeks before 2026-08-03.
-    expect(earliestWeekOffset("2026-07-22", WEDNESDAY)).toBe(-2);
-    expect(earliestWeekOffset("2026-07-20", WEDNESDAY)).toBe(-2);
+    expect(earliestWeekStartKey("2026-07-22", ANCHOR)).toBe("2026-07-20");
+    expect(earliestWeekStartKey("2026-07-20", ANCHOR)).toBe("2026-07-20");
     // The Sunday before that Monday belongs to the week before it.
-    expect(earliestWeekOffset("2026-07-19", WEDNESDAY)).toBe(-3);
+    expect(earliestWeekStartKey("2026-07-19", ANCHOR)).toBe("2026-07-13");
   });
 
   it("offers no paging at all with no entries, or with only this week's", () => {
-    expect(earliestWeekOffset(null, WEDNESDAY)).toBe(0);
-    expect(earliestWeekOffset("2026-08-04", WEDNESDAY)).toBe(0);
+    expect(earliestWeekStartKey(null, ANCHOR)).toBe(ANCHOR);
+    expect(earliestWeekStartKey("2026-08-04", ANCHOR)).toBe(ANCHOR);
   });
 });
 
 describe("buildWeekDays", () => {
-  const window = weekWindowForOffset(0, WEDNESDAY);
+  const window = windowAt(0);
 
   it("returns seven Monday-first cells, averaging each day's scores", () => {
     const days = buildWeekDays(
@@ -119,7 +138,7 @@ describe("buildWeekDays", () => {
 
 describe("getWeekDeltaForWindow", () => {
   it("compares the displayed calendar week to the one before it", () => {
-    const window = weekWindowForOffset(0, WEDNESDAY);
+    const window = windowAt(0);
     const delta = getWeekDeltaForWindow(
       [
         { dayKey: "2026-08-03", moodScore: 4 },
@@ -133,7 +152,7 @@ describe("getWeekDeltaForWindow", () => {
 
   // The whole reason the query spans fourteen days rather than seven.
   it("is still correct on a navigated week", () => {
-    const window = weekWindowForOffset(-1, WEDNESDAY);
+    const window = windowAt(-1);
     const delta = getWeekDeltaForWindow(
       [
         { dayKey: "2026-07-28", moodScore: 5 }, // displayed week (Jul 27 - Aug 2)
@@ -146,7 +165,7 @@ describe("getWeekDeltaForWindow", () => {
   });
 
   it("reports no comparison when either week is empty", () => {
-    const window = weekWindowForOffset(0, WEDNESDAY);
+    const window = windowAt(0);
     expect(getWeekDeltaForWindow([{ dayKey: "2026-08-03", moodScore: 4 }], window)).toEqual({
       current: 4,
       previous: null,
@@ -162,7 +181,7 @@ describe("getWeekDeltaForWindow", () => {
 
 describe("getTopEmotionsForWindow", () => {
   it("counts only the displayed week, most frequent first", () => {
-    const window = weekWindowForOffset(0, WEDNESDAY);
+    const window = windowAt(0);
     expect(
       getTopEmotionsForWindow(
         [
@@ -182,7 +201,7 @@ describe("getTopEmotionsForWindow", () => {
   // The navigable version of #705: chips under a March heading may not count
   // this week's emotions.
   it("follows the navigated week rather than the newest data", () => {
-    const window = weekWindowForOffset(-1, WEDNESDAY);
+    const window = windowAt(-1);
     expect(
       getTopEmotionsForWindow(
         [
@@ -196,7 +215,7 @@ describe("getTopEmotionsForWindow", () => {
   });
 
   it("honours the limit and breaks ties by id", () => {
-    const window = weekWindowForOffset(0, WEDNESDAY);
+    const window = windowAt(0);
     expect(
       getTopEmotionsForWindow([{ dayKey: "2026-08-03", emotions: ["b", "a", "c"] }], window, 2),
     ).toEqual([

@@ -1,6 +1,12 @@
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
-import { ScrollView, View, type LayoutChangeEvent } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  View,
+  type LayoutChangeEvent,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -26,13 +32,16 @@ import { getDayMoodSummary, getMoodSummary, type MoodSummary } from "@/src/featu
 import {
   buildWeekDays,
   countLogsInCurrentWeek,
-  earliestWeekOffset,
+  currentWeekStartKey,
+  earliestWeekStartKey,
   getTopEmotionsForWindow,
   getWeekDeltaForWindow,
-  weekWindowForOffset,
+  shiftWeek,
+  weekWindowFor,
 } from "@/src/features/mood/week-window";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatAtOffset, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
@@ -67,12 +76,28 @@ export default function MoodTrackerScreen() {
   // Purely local, and it does not touch the today picker: "log for today" and
   // "look at a week" are different questions. There is deliberately no global
   // selected-date state to collide with (#250).
-  const [weekOffset, setWeekOffset] = useState(0);
+  //
+  // The displayed week is stored as its own start key rather than an offset,
+  // and the anchor - which week "now" falls in - is re-read on focus. A screen
+  // left mounted across a Sunday-to-Monday rollover (a detail screen pushed
+  // over it) would otherwise keep calling last week "This week" and refuse to
+  // page forward, because nothing about `offset: 0` changed.
+  const [anchorWeekStart, setAnchorWeekStart] = useState(currentWeekStartKey);
+  const [displayedWeekStart, setDisplayedWeekStart] = useState(currentWeekStartKey);
+  useFocusEffect(
+    useCallback(() => {
+      setAnchorWeekStart(currentWeekStartKey());
+    }, []),
+  );
 
-  const weekWindow = useMemo(() => weekWindowForOffset(weekOffset), [weekOffset]);
+  const weekWindow = useMemo(
+    () => weekWindowFor(displayedWeekStart, anchorWeekStart),
+    [displayedWeekStart, anchorWeekStart],
+  );
   // One fetch per displayed week, covering it and the week before it, so the
-  // delta is right at every offset rather than only at offset 0.
-  const { data: weekLogs } = useMoodWeek(userId, weekWindow.startKey);
+  // delta is right on a navigated week rather than only on the current one.
+  const weekQuery = useMoodWeek(userId, weekWindow.startKey);
+  const weekLogs = weekQuery.data;
 
   // Each aggregation iterates up to 200 logs; memoize so unrelated re-renders (chart-width
   // onLayout or onboarding toggle) don't recompute the week/day summaries.
@@ -140,9 +165,9 @@ export default function MoodTrackerScreen() {
   // Paging stops at the week holding the first entry: weeks before the account
   // existed are empty chrome. Until that query answers, only the current week is
   // reachable - better than offering a back arrow that lands on a blank week.
-  const earliestOffset = useMemo(
-    () => earliestWeekOffset(firstLogDayKey ?? null),
-    [firstLogDayKey],
+  const earliestWeekStart = useMemo(
+    () => earliestWeekStartKey(firstLogDayKey ?? null, anchorWeekStart),
+    [firstLogDayKey, anchorWeekStart],
   );
 
   // Only the first and last day are labelled — interior labels would collide
@@ -255,20 +280,45 @@ export default function MoodTrackerScreen() {
                 title={formatWeekLabel(weekWindow, t, i18n.language)}
                 action={
                   <WeekNavigator
-                    canGoBack={weekWindow.offset > earliestOffset}
-                    canGoForward={weekWindow.offset < 0}
-                    onPrevious={() => setWeekOffset((o) => o - 1)}
-                    onNext={() => setWeekOffset((o) => Math.min(0, o + 1))}
+                    canGoBack={weekWindow.startKey > earliestWeekStart}
+                    canGoForward={!weekWindow.isCurrentWeek}
+                    onPrevious={() => setDisplayedWeekStart((k) => shiftWeek(k, -1))}
+                    onNext={() =>
+                      setDisplayedWeekStart((k) =>
+                        shiftWeek(k, 1) > anchorWeekStart ? anchorWeekStart : shiftWeek(k, 1),
+                      )
+                    }
                   />
                 }
               >
-                <WeekHero
-                  window={weekWindow}
-                  days={weekByDay}
-                  delta={weekDelta}
-                  topEmotions={topEmotions}
-                  logs={weekLogs}
-                />
+                {/*
+                  A week that has not loaded is not an empty week. `weekLogs` is
+                  undefined while the fetch is in flight AND after it fails, and
+                  every aggregation above turns undefined into "-", seven blank
+                  days and "No emotions tagged yet" - telling a user paging
+                  through a flaky connection that a week they filled is empty.
+                  The same distinction the subline makes for `moodLogs` (#735)
+                  and the all-history screen makes for its pages (#734).
+
+                  Data wins over the error arm on purpose: a failed BACKGROUND
+                  refetch that still has this week cached should keep rendering
+                  the week, not replace it with a retry prompt.
+                */}
+                {weekLogs ? (
+                  <WeekHero
+                    window={weekWindow}
+                    days={weekByDay}
+                    delta={weekDelta}
+                    topEmotions={topEmotions}
+                    logs={weekLogs}
+                  />
+                ) : weekQuery.isError ? (
+                  <WeekLoadFailed onRetry={() => void weekQuery.refetch()} />
+                ) : (
+                  <View className="items-center py-8">
+                    <ActivityIndicator />
+                  </View>
+                )}
               </Section>
             ) : null}
 
@@ -343,6 +393,35 @@ export default function MoodTrackerScreen() {
         </ScrollView>
       </SafeAreaView>
     </>
+  );
+}
+
+/**
+ * The week could not be read. Deliberately NOT `ErrorState`: that renders a
+ * `Card`, and #690/#735 took cards off the module homes - a bordered panel
+ * among hairline sections reads as a competing page. Quiet line plus a retry,
+ * at the scale of the section it sits in.
+ */
+function WeekLoadFailed({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation("mood");
+
+  return (
+    <View className="gap-2 py-2">
+      <Text variant="muted" className="text-[13px]">
+        {t("week.loadFailed")}
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        onPress={onRetry}
+        role="button"
+        className="self-start active:opacity-70"
+      >
+        <Text className="text-[13px] font-semibold text-primary-ink">
+          {t("errors:fallback.retry")}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 

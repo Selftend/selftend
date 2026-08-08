@@ -112,7 +112,8 @@
     "dayEntries_one": "{{count}} check-in. Opens the day.",
     "dayEntries_other": "{{count}} check-ins. Opens the day.",
     "feltMost": "Felt most often",
-    "noEmotions": "No emotions tagged yet"
+    "noEmotions": "No emotions tagged yet",
+    "loadFailed": "This week couldn't be loaded."
   },
   "trendControls": {
     "title": "Mood trend",

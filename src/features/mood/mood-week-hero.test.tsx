@@ -2,7 +2,12 @@ import { fireEvent, screen } from "@testing-library/react-native";
 
 import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
 import type { MoodLog } from "@/src/features/mood/types";
-import { buildWeekDays, weekWindowForOffset } from "@/src/features/mood/week-window";
+import {
+  buildWeekDays,
+  currentWeekStartKey,
+  shiftWeek,
+  weekWindowFor,
+} from "@/src/features/mood/week-window";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -22,7 +27,10 @@ jest.mock("expo-router", () => ({
 
 // A Wednesday: the displayed week has past days, today, and days still to come.
 const WEDNESDAY = new Date(2026, 7, 5, 12, 0, 0, 0); // 2026-08-05
-const WINDOW = weekWindowForOffset(0, WEDNESDAY);
+const ANCHOR = currentWeekStartKey(WEDNESDAY); // 2026-08-03
+/** The window `weeks` weeks back from the anchor. */
+const windowAt = (weeks: number) => weekWindowFor(shiftWeek(ANCHOR, weeks), ANCHOR);
+const WINDOW = windowAt(0);
 const NO_DELTA = { current: null, previous: null, delta: null };
 
 function log(partial: Partial<MoodLog> & { dayKey: string; moodScore: number }): MoodLog {
@@ -210,7 +218,7 @@ describe("WeekHero day panel", () => {
     fireEvent.press(screen.getByLabelText(/^Monday: Awful$/));
     expect(screen.getByTestId("week-day-panel")).toBeTruthy();
 
-    const previous = weekWindowForOffset(-1, WEDNESDAY);
+    const previous = windowAt(-1);
     rerender(
       <WeekHero
         window={previous}
@@ -345,6 +353,6 @@ describe("formatWeekLabel", () => {
   // A span, not "2 weeks ago": counting backwards makes the reader do the
   // arithmetic, and the span is what the mood map underneath is labelled with.
   it("dates a past week with its span", () => {
-    expect(formatWeekLabel(weekWindowForOffset(-1, WEDNESDAY), t, "en")).toBe("Jul 27 – Aug 2");
+    expect(formatWeekLabel(windowAt(-1), t, "en")).toBe("Jul 27 – Aug 2");
   });
 });

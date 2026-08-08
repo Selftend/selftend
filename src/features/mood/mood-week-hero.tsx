@@ -56,7 +56,7 @@ function deltaCopy(delta: WeekDelta, t: TFunction) {
  * the arithmetic, and the span is what the mood map underneath is labelled with.
  */
 export function formatWeekLabel(window: WeekWindow, t: TFunction, language: string): string {
-  if (window.offset === 0) return t("week.title");
+  if (window.isCurrentWeek) return t("week.title");
   const fmt = new Intl.DateTimeFormat(language, { day: "numeric", month: "short" });
   return `${fmt.format(parseLocalNoon(window.startKey))} – ${fmt.format(parseLocalNoon(window.endKey))}`;
 }
