@@ -21,7 +21,7 @@ jest.mock("expo-router", () => ({
     replace: jest.fn(),
   },
   useLocalSearchParams: jest.fn(() => ({})),
-  usePathname: () => "/tools/mood-tracker/new",
+  usePathname: () => "/tools/check-in/new",
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -145,7 +145,7 @@ describe("MoodEntryEditorScreen", () => {
   });
 
   it("creates a mood entry and routes to the saved detail page", async () => {
-    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
     fireEvent.press(screen.getByLabelText("OK"));
     fireEvent.press(screen.getByText("Save"));
@@ -167,7 +167,7 @@ describe("MoodEntryEditorScreen", () => {
         moodLogId: undefined,
       });
     });
-    expect(mockRouter.replace).toHaveBeenCalledWith("/tools/mood-tracker/log-1");
+    expect(mockRouter.replace).toHaveBeenCalledWith("/tools/check-in/log-1");
   });
 
   it("updates an existing mood entry", async () => {
@@ -193,7 +193,7 @@ describe("MoodEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useMoodLogs>);
 
     renderWithProviders(
-      <MoodEntryEditorScreen fallbackHref="/tools/mood-tracker/log-1" mode="edit" moodId="log-1" />,
+      <MoodEntryEditorScreen fallbackHref="/tools/check-in/log-1" mode="edit" moodId="log-1" />,
     );
 
     fireEvent.press(screen.getByLabelText("Great"));
@@ -219,7 +219,7 @@ describe("MoodEntryEditorScreen", () => {
   });
 
   it("saves exactly once when Save is pressed twice rapidly", async () => {
-    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
     fireEvent.press(screen.getByLabelText("OK"));
     // isPending has not re-rendered between the two presses, so only the
@@ -232,7 +232,7 @@ describe("MoodEntryEditorScreen", () => {
   });
 
   it("shows an inline error next to the score row and does not save without a score", async () => {
-    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
     // Save stays enabled; pressing it without a score surfaces the inline error.
     fireEvent.press(screen.getByText("Save"));
@@ -268,7 +268,7 @@ describe("MoodEntryEditorScreen", () => {
     } as unknown as ReturnType<typeof useMoodLogs>);
 
     const { rerender } = renderWithProviders(
-      <MoodEntryEditorScreen fallbackHref="/tools/mood-tracker/log-1" mode="edit" moodId="log-1" />,
+      <MoodEntryEditorScreen fallbackHref="/tools/check-in/log-1" mode="edit" moodId="log-1" />,
     );
 
     // The user edits the Notes field.
@@ -281,14 +281,14 @@ describe("MoodEntryEditorScreen", () => {
       data: [makeEntry()],
     } as unknown as ReturnType<typeof useMoodLogs>);
     rerender(
-      <MoodEntryEditorScreen fallbackHref="/tools/mood-tracker/log-1" mode="edit" moodId="log-1" />,
+      <MoodEntryEditorScreen fallbackHref="/tools/check-in/log-1" mode="edit" moodId="log-1" />,
     );
 
     expect(screen.getByLabelText("Notes (optional)").props.value).toBe("draft in progress");
   });
 
   it("captures the four-box notice when expanded", async () => {
-    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
     fireEvent.press(screen.getByLabelText("OK"));
     // Accordion is labelled by t("mood.goDeeperTitle") = "Go deeper"
     fireEvent.press(screen.getByLabelText("Go deeper"));
@@ -311,12 +311,12 @@ describe("MoodEntryEditorScreen", () => {
   });
 
   it("renders the mood scale with a11y labels (no visible word labels)", async () => {
-    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
     expect(await screen.findByLabelText("Great")).toBeTruthy();
   });
 
   it("renders the rose field header in create mode only", async () => {
-    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
     expect(await screen.findByTestId("module-field-gradient")).toBeTruthy();
   });
 
@@ -326,7 +326,7 @@ describe("MoodEntryEditorScreen", () => {
       linkedStrategy: "behavioral-activation",
     });
 
-    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/mood-tracker" mode="create" />);
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
     fireEvent.press(screen.getByLabelText("Good"));
     fireEvent.press(screen.getByText("Save"));

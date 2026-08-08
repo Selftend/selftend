@@ -89,7 +89,7 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
     // no header-tip mechanism at all, so the module screen must render clean regardless.
     await setTourState([]);
 
-    await page.goto("/tools/mood-tracker");
+    await page.goto("/tools/check-in");
 
     // The desktop sidebar also has a "Notifications" nav link (same label), so scope to
     // the module header's own action row via .last() - it renders after the sidebar in
@@ -107,7 +107,7 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
 
   test("notifications action still fires onPress (opens its modal)", async ({ page }) => {
     await setTourState([]);
-    await page.goto("/tools/mood-tracker");
+    await page.goto("/tools/check-in");
 
     // See note above: the sidebar's own "Notifications" nav link shares this label, so
     // the module header's action button is the LAST match, not the first.
@@ -117,7 +117,7 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
 
   test("info action still fires onPress (opens the module's onboarding)", async ({ page }) => {
     await setTourState([]);
-    await page.goto("/tools/mood-tracker");
+    await page.goto("/tools/check-in");
 
     await page.getByLabel("About this module", { exact: true }).click();
     await expect(page.getByText("Know your emotional weather")).toBeVisible();

@@ -78,7 +78,7 @@ const SHOTS = {
   // CHECKIN — pick "Good", short note, save (trailer b3, GS-3, MJ-1)
   async checkin(h) {
     const { page } = h;
-    await page.goto("https://selftend.org/tools/mood-tracker/new", {
+    await page.goto("https://selftend.org/tools/check-in/new", {
       waitUntil: "networkidle",
       timeout: 60000,
     });

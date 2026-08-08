@@ -53,8 +53,8 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/dbt": "sidebar.dbt",
 
   "/tools": "sidebar.tools",
-  "/tools/mood-tracker": "sidebar.moodTracker",
-  "/tools/mood-tracker/new": "breadcrumb.new",
+  "/tools/check-in": "sidebar.moodTracker",
+  "/tools/check-in/new": "breadcrumb.new",
   "/tools/journal": "sidebar.journal",
   "/tools/journal/new": "breadcrumb.new",
   "/tools/breathing": "sidebar.breathing",

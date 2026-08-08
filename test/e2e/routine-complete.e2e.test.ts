@@ -77,7 +77,7 @@ test.describe("routine completes via tool use", () => {
 
     // --- Qualifying action: log a mood, all in-app (no hard gotos) ---
     // Panel "Check-in" -> tracker home; tapping a score on the check-in card
-    // pushes to /tools/mood-tracker/new?score=N with the score pre-selected.
+    // pushes to /tools/check-in/new?score=N with the score pre-selected.
     await navigateViaPanel(page, "Check-in");
     await expect(page).toHaveURL(/\/tools\/mood-tracker$/, { timeout: 15_000 });
 

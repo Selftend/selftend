@@ -54,11 +54,11 @@ New accounts receive the Home recommendation wizard once after consent. Finishin
 
 ### Tools navigation
 
-- sidebar shows Tools with CBT, Mood tracker, Meditation, ACT, and Gratitude log
+- sidebar shows Tools with CBT, Check-in, Meditation, ACT, and Gratitude log
 - Tools can collapse and expand
 - CBT can collapse and expand inside Tools, with History above Learn
 - CBT history is nested under CBT, not shown as a top-level navigation item
-- Mood tracker opens the working mood flow
+- Check-in opens the working mood flow
 - Gratitude log can create, edit, list, open, and delete a private entry
 - Meditation and ACT show under-construction placeholder screens only
 

@@ -250,7 +250,7 @@ export function MoodEntryEditorScreen({
         return;
       }
 
-      router.replace(`/tools/mood-tracker/${saved.id}` as Parameters<typeof router.replace>[0]);
+      router.replace(`/tools/check-in/${saved.id}` as Parameters<typeof router.replace>[0]);
     } catch (e) {
       const message = e instanceof Error ? e.message : t("mood.saveError");
       setError(message);

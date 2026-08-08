@@ -10,14 +10,14 @@ The protected app sidebar groups tools as:
   - Overview
   - History
   - Learn
-- Mood tracker
+- Check-in
 - Journal
 - Mindfulness
 - Meditation
 - ACT
 - Gratitude log
 
-CBT, Mood tracker, Journal, Mindfulness, and Gratitude log are the working modules. The app shell and CBT each have one-page onboarding tracked in `user_preferences`; Settings can reset those flags.
+CBT, Check-in, Journal, Mindfulness, and Gratitude log are the working modules. The app shell and CBT each have one-page onboarding tracked in `user_preferences`; Settings can reset those flags.
 
 Meditation and ACT are placeholders. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each has a reviewed module spec.
 
@@ -45,7 +45,7 @@ Working CBT routes:
 
 Working tool routes:
 
-- `/tools/mood-tracker`, `/tools/mood-tracker/new`, `/tools/mood-tracker/[id]`, `/tools/mood-tracker/[id]/edit`
+- `/tools/check-in`, `/tools/check-in/new`, `/tools/check-in/[id]`, `/tools/check-in/[id]/edit`
 - `/tools/journal`, `/tools/journal/new`, `/tools/journal/[id]`, `/tools/journal/[id]/edit`
 - `/tools/mindfulness`, `/tools/mindfulness/[slug]`
 - `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit` (compat redirects → `/modules/gratitude/*`)
@@ -99,7 +99,7 @@ Every real module must use the shared app foundation:
 Planned boundaries:
 
 - **CBT:** guided self-help strategies under the Gillihan CBT program, private history, recovery planning, pattern insights, and optional quiet reminders
-- **Mood tracker:** check-ins only; do not mix in generic journaling
+- **Check-in:** check-ins only; do not mix in generic journaling
 - **Journaling:** private free-text reflection, separate from CBT and check-ins. Spec: [journaling.md](journaling.md)
 - **ACT:** focused exercises after a spec
 - **Meditation:** the ten-stage Mind Illuminated program with onboarding, stage-aware sits, private session history, and optional quiet reminders. Spec: [meditation-tmi.md](meditation-tmi.md)

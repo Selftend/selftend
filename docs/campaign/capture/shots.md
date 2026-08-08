@@ -20,7 +20,7 @@ in frame before keeping the take (notably the CBT learn-page copy).
 | -------------- | ----------------------------------------- | ------------------------------------------------------- | ------------------------------------ |
 | HOME           | `/`                                       | dashboard hold, gentle scroll                           | trailer b2, GS-1                     |
 | TOOLS          | `/tools`                                  | index scroll, hover pauses                              | GS-2, MJ orientation, BG orientation |
-| CHECKIN        | `/tools/mood-tracker/new`                 | pick mood, short note, save                             | trailer b3, GS-3, MJ-1               |
+| CHECKIN        | `/tools/check-in/new`                     | pick mood, short note, save                             | trailer b3, GS-3, MJ-1               |
 | JOURNAL        | `/tools/journal/new`                      | type a short entry, save                                | trailer b5, MJ-2                     |
 | GRATITUDE      | `/tools/gratitude-log/new`                | three items, save                                       | MJ-3                                 |
 | LOOKBACK       | `/progress` + entry lists                 | scroll history views (seeded weeks)                     | MJ-4                                 |

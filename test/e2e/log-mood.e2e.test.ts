@@ -14,7 +14,7 @@ test.describe("log mood", () => {
   test("alice logs a neutral mood and sees it on the detail screen and in the list", async ({
     page,
   }) => {
-    await page.goto("/tools/mood-tracker/new");
+    await page.goto("/tools/check-in/new");
 
     // Pick score 3 ("OK") on the mood scale - accessible label comes from
     // mood:checkin.scaleLabels.3.

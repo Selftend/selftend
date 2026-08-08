@@ -297,9 +297,7 @@ function TodayCheckInCard({ summary }: TodayCheckInCardProps) {
         <MoodScale
           value={null}
           onChange={(score) =>
-            router.push(
-              `/tools/mood-tracker/new?score=${score}` as Parameters<typeof router.push>[0],
-            )
+            router.push(`/tools/check-in/new?score=${score}` as Parameters<typeof router.push>[0])
           }
           compact
         />

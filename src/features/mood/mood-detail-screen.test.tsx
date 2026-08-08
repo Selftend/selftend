@@ -11,7 +11,7 @@ jest.mock("expo-router", () => ({
     push: jest.fn(),
   },
   useLocalSearchParams: () => ({ id: "log-1" }),
-  usePathname: () => "/tools/mood-tracker/log-1",
+  usePathname: () => "/tools/check-in/log-1",
   useFocusEffect: jest.fn(),
 }));
 
@@ -114,6 +114,6 @@ describe("MoodDetailScreen", () => {
 
     fireEvent.press(screen.getByText("Edit"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/log-1/edit");
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/log-1/edit");
   });
 });

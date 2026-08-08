@@ -44,7 +44,7 @@ interface ToolTile {
 export const TOOLS: ToolTile[] = [
   {
     key: "mood",
-    href: "/tools/mood-tracker",
+    href: "/tools/check-in",
     icon: "mood",
     nameKey: "today.tools.moodTracker",
     subKey: "today.tools.moodTrackerSub",

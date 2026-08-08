@@ -150,6 +150,13 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     minuteField: "mood_reminder_minute",
     timezoneField: "mood_reminder_timezone",
     lastKeyField: "last_mood_reminder_key",
+    // Do NOT flip this to `/tools/check-in` (#732, decided on #704). The route was renamed;
+    // this URL was not. The repo has no OTA channel - no `expo-updates`, no `runtimeVersion` -
+    // so every client change is a store release with an unbounded tail of users who never
+    // update, and this server is shared by all of them. The old path stays permanently
+    // allowlisted in `src/lib/notifications.ts` and permanently served by a `<Redirect>` stub,
+    // so minting it works on every build ever shipped; minting the new one would break the tap
+    // for anyone who has not updated. `test/check-in-route-compat.test.tsx` guards both sides.
     url: "/tools/mood-tracker",
     tag: "selftend-mood-reminder",
     activitySource: { table: "mood_logs", timestampColumn: "logged_at" },

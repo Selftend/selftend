@@ -77,9 +77,9 @@ const MODULE_ITEMS: NavItemDef[] = [
 const TOOL_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.moodTracker",
-    href: "/tools/mood-tracker",
+    href: "/tools/check-in",
     icon: "mood",
-    matchPrefix: "/tools/mood-tracker",
+    matchPrefix: "/tools/check-in",
   },
   {
     labelKey: "sidebar.journal",

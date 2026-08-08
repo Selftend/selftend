@@ -184,7 +184,7 @@ const BE_SHARED_TOOLS: SharedTool[] = [
   },
   {
     key: "moodTracker",
-    route: "/tools/mood-tracker",
+    route: "/tools/check-in",
     icon: "mood",
     labelKey: "navigation:sidebar.moodTracker",
     infoKey: "mood",

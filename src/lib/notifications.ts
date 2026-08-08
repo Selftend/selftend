@@ -90,6 +90,12 @@ function getNativeNotifications() {
  * `routineUrl()` in `supabase/functions/_shared/web-reminders.ts` - the only place these URLs
  * originate. Defense-in-depth: a tapped notification's `data.url` is trusted today, but this
  * allowlist ensures a malformed or off-origin value can never reach `router.navigate()`.
+ *
+ * `/tools/mood-tracker` is deliberately NOT renamed to `/tools/check-in` (#732, decided on
+ * #704). This gate runs BEFORE navigation, so no `<Redirect>` stub can rescue a de-allowlisted
+ * path - dropping it here turns every already-scheduled mood reminder into a dead tap. The edge
+ * function keeps minting the old path forever for the same reason; see the note there.
+ * `test/check-in-route-compat.test.tsx` fails if either side is "tidied".
  */
 const ALLOWED_REMINDER_ROUTES = new Set<string>([
   "/modules/cbt",

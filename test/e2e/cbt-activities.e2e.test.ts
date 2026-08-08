@@ -22,7 +22,7 @@ import { deleteAllActivityLogsForUser, deleteAllMoodLogsForUser } from "./helper
  *   - If not completed: shows "Mark as complete" button (activities.markComplete)
  *     and "Edit activity" button (activities.edit)
  *   - "Mark as complete" navigates to:
- *       /tools/mood-tracker/new?linkedStrategy=behavioral-activation&completeActivityId={id}
+ *       /tools/check-in/new?linkedStrategy=behavioral-activation&completeActivityId={id}
  *     The user rates mood (MoodScale 1-5: Awful/Low/OK/Good/Great) then
  *     clicks "Save" (mood.save). This completes the activity (sets completedAt +
  *     moodAfter) and redirects back to /modules/cbt/activities/{id}.

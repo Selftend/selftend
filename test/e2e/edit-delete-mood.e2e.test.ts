@@ -12,7 +12,7 @@ test.describe("edit and delete a mood log", () => {
 
   test("alice edits then deletes a mood log", async ({ page }) => {
     // Create: score 3 ("OK") → emoji 😐
-    await page.goto("/tools/mood-tracker/new");
+    await page.goto("/tools/check-in/new");
     await page.getByRole("radio", { name: "OK", exact: true }).click();
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("😐")).toBeVisible({ timeout: 15_000 });
@@ -21,7 +21,7 @@ test.describe("edit and delete a mood log", () => {
     await page.getByRole("button", { name: "Edit", exact: true }).click();
     await page.getByRole("radio", { name: "Good", exact: true }).click();
     await page.getByRole("button", { name: "Update", exact: true }).click();
-    // After Update the app navigates back to the detail screen (/tools/mood-tracker/[id]).
+    // After Update the app navigates back to the detail screen (/tools/check-in/[id]).
     // The URL is the most reliable signal; just wait for it.
     await expect(page).toHaveURL(/\/tools\/mood-tracker\/[^/]+$/, { timeout: 15_000 });
     // Assert the edited value (score 4 → 😊) is visible on the detail screen.

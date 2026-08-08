@@ -61,7 +61,7 @@ export default function MoodDetailScreen() {
       await deleteMutation.mutateAsync(entry.id);
       setConfirmOpen(false);
       showToast({ title: t("feedback.deleted"), tone: "success" });
-      router.replace("/tools/mood-tracker" as Parameters<typeof router.replace>[0]);
+      router.replace("/tools/check-in" as Parameters<typeof router.replace>[0]);
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : t("detail.deleteError"));
     }
@@ -128,7 +128,7 @@ export default function MoodDetailScreen() {
                 </View>
                 <View className="gap-2">
                   <Button
-                    onPress={() => router.push(`/tools/mood-tracker/${entry.id}/edit`)}
+                    onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
                     variant="secondary"
                     size="sm"
                   >
