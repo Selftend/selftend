@@ -76,11 +76,11 @@ test.describe("CBT activities: schedule and complete a behavioral-activation act
     ).toBeVisible({ timeout: 10_000 });
 
     // ── Mark as complete ───────────────────────────────────────────────────────
-    // This navigates to the mood-tracker/new route with completeActivityId param.
+    // This navigates to the check-in/new route with completeActivityId param.
     await page.getByRole("button", { name: "Mark as complete", exact: true }).last().click();
 
     // Should be on the mood tracker new entry screen.
-    await expect(page).toHaveURL(/\/tools\/mood-tracker\/new/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/tools\/check-in\/new/, { timeout: 15_000 });
 
     // Select mood score: "Good" (score 4, emoji 😊)
     await page.getByRole("radio", { name: "Good", exact: true }).click();

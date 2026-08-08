@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { render } from "@testing-library/react-native";
 
 import { isAllowedReminderRoute } from "@/src/lib/notifications";
-import { stripComments } from "./source-scan";
+import { sourceFiles, stripComments } from "./source-scan";
 
 // The gate for #732 (decided on #704): the check-in route moved to
 // `/tools/check-in`, and the compatibility layer that keeps the old path
@@ -85,6 +85,53 @@ describe("the reminder edge function never flips to the new path (#732)", () => 
   it("mints a route that a redirect stub still answers", () => {
     expect(existsSync(join(ROOT, `app/(app)${MINTED_MOOD_URL}/index.tsx`))).toBe(true);
   });
+});
+
+// The other half of the gate, and the one that would have caught the miss this
+// suite was first shipped with. The rename swept 94 references across 50 files;
+// five Playwright assertions survived it, because they spell the path as an
+// ESCAPED regex (`/\/tools\/mood-tracker$/`) which a search for the plain string
+// walks straight past. Jest does not run test/e2e, so those five went green here
+// and failed in CI.
+//
+// So the rule is stated positively: the old path may appear in exactly these
+// files, and a new mention anywhere else is a leftover. Comments are stripped -
+// several files legitimately *explain* the old path - and both spellings are
+// matched, which is precisely what the first sweep missed.
+const OLD_PATH = /\/tools\\?\/mood-tracker/;
+
+const MAY_NAME_THE_OLD_PATH = [
+  // The never-flip pair, and their tests.
+  "src/lib/notifications.ts",
+  "src/lib/notifications.test.ts",
+  "supabase/functions/_shared/web-reminders.ts",
+  "supabase/functions/_shared/web-reminders.test.ts",
+  // This gate.
+  "test/check-in-route-compat.test.tsx",
+];
+
+describe("nothing else still points at the old path (#732)", () => {
+  const offenders = sourceFiles(ROOT, {
+    dirs: ["app", "src", "test", "supabase/functions"],
+    excludeTests: false,
+    exclude: MAY_NAME_THE_OLD_PATH,
+  }).filter((file) => OLD_PATH.test(stripComments(readFileSync(join(ROOT, file), "utf8"))));
+
+  it("names it in no source or test file outside the sanctioned set", () => {
+    expect(offenders).toEqual([]);
+  });
+
+  // The two capture surfaces #732 calls out by name: both drive a real browser
+  // at a real URL, and neither is exercised by any test, so riding the redirect
+  // instead of being updated would only surface as a broken screenshot shoot.
+  it.each([".maestro/app-store-screenshots.yaml", "docs/campaign/capture/shoot.js"])(
+    "%s opens the new path directly rather than riding the redirect",
+    (file) => {
+      const source = readFileSync(join(ROOT, file), "utf8");
+      expect(source).toMatch("tools/check-in");
+      expect(source).not.toMatch("tools/mood-tracker");
+    },
+  );
 });
 
 describe("the check-in routes live at the new path (#732)", () => {

@@ -7,7 +7,7 @@ import { policyVersion } from "../../src/features/policies/policy-content";
 // (src/features/tours/home-tour.tsx). The day-strip "dates" tip and every
 // per-page module-header ("button tour") tip were removed - see
 // .superpowers/sdd/task-4-brief.md. This spec now covers:
-//   1. Module screens (e.g. mood-tracker): action buttons render and fire,
+//   1. Module screens (e.g. check-in): action buttons render and fire,
 //      with no coach-mark overlay ever appearing.
 //   2. The home dashboard: exactly the 2 remaining tips still show and can be
 //      dismissed individually or all at once.
