@@ -85,12 +85,21 @@ export function Heatmap({ columns, cellSize = 12, selectedKey, onCellPress }: He
                   return <View key={`pad-${i}`} style={{ width: cellSize, height: cellSize }} />;
                 }
                 const selected = cell.key === selectedKey;
+                // Every in-range cell carries the hairline, filled or not (#717).
+                // It used to mark only the empty ones, which inverted presence:
+                // an unlogged day got an outline while a logged day at the
+                // bottom of the ramp got a ~1.26:1 wash and nothing else, so a
+                // blank day read as more present than the user's worst logged
+                // one. With the hairline uniform it is grid structure, the fill
+                // alone encodes presence, and a logged cell can never render
+                // fainter than an empty one. Null slots (out of range) stay
+                // borderless above, so "no entry" and "not a day" still differ.
                 const style = {
                   width: cellSize,
                   height: cellSize,
                   borderRadius: 3,
                   backgroundColor: cell.color ?? "transparent",
-                  borderWidth: selected ? 1.5 : cell.color === null ? StyleSheet.hairlineWidth : 0,
+                  borderWidth: selected ? 1.5 : StyleSheet.hairlineWidth,
                   borderColor: selected ? selectedBorder : hairline,
                 };
                 if (!onCellPress) {
