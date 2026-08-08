@@ -1,4 +1,4 @@
-import { addDaysToKey, dayRangeEndKey, parseLocalNoon } from "@/src/utils/date";
+import { addDaysToKey, dayRangeEndKey, mondayKeyOf, parseLocalNoon } from "@/src/utils/date";
 
 /** Points arrive pre-bucketed: `dayKey` is the civil day captured at logging time. */
 interface MoodSample {
@@ -17,12 +17,6 @@ export interface HeatmapWeek {
   days: (HeatmapDay | null)[];
   /** Short month name above the column, or null for unlabelled columns. */
   monthLabel: string | null;
-}
-
-/** The day key of the Monday on or before the given day key. */
-function mondayKeyOf(dateKey: string): string {
-  const day = parseLocalNoon(dateKey);
-  return addDaysToKey(dateKey, -((day.getDay() + 6) % 7));
 }
 
 /**

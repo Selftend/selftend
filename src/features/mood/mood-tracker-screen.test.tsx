@@ -210,6 +210,20 @@ describe("MoodTrackerScreen", () => {
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/new?score=3");
   });
 
+  it("links to the all-history screen from the week row", () => {
+    // The week strip is check-in's recency view, so the overview carries no
+    // recent-entries list of its own - this link is the only way to a list of
+    // past check-ins, and the mood map deliberately never navigates (#696).
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+    fireEvent.press(screen.getByText("Show all history"));
+
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/history");
+  });
+
   it("offers 7d/30d/90d/Custom trend ranges, defaulting to a 30-day window (no 14d)", () => {
     mockUseMoodLogs.mockReturnValue({
       data: [],

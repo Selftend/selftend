@@ -3,9 +3,11 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import {
+  MOOD_HISTORY_PAGE_SIZE,
   useDeleteMoodLog,
   useFirstMoodDayKey,
   useMoodHistory,
+  useMoodHistoryPages,
   useMoodLog,
   useMoodLogCount,
   useMoodLogs,
@@ -25,6 +27,7 @@ jest.mock("@/src/features/mood/repository", () => ({
   getFirstMoodDayKey: jest.fn(),
   getMoodLog: jest.fn(),
   listMoodLogs: jest.fn(),
+  listMoodLogsPage: jest.fn(),
   listMoodScorePoints: jest.fn(),
   saveMoodLog: jest.fn(),
 }));
@@ -43,6 +46,7 @@ beforeEach(() => {
   (repo.getMoodLog as jest.Mock).mockResolvedValue(null);
   (repo.getFirstMoodDayKey as jest.Mock).mockResolvedValue(null);
   (repo.listMoodLogs as jest.Mock).mockResolvedValue([]);
+  (repo.listMoodLogsPage as jest.Mock).mockResolvedValue([]);
   (repo.listMoodScorePoints as jest.Mock).mockResolvedValue([]);
   (repo.saveMoodLog as jest.Mock).mockResolvedValue({ id: "m1" });
 });
@@ -289,5 +293,48 @@ describe("useSaveMoodLog reminder prompt wiring", () => {
     await result.current.mutateAsync({ input: { moodScore: 3 } as never, moodLogId: "edit-1" });
 
     expect(useReminderPromptStore.getState().request).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The app's first paged query (#696). Every other history is a single capped
+// fetch with a silent ceiling, so the page-boundary behaviour is the part worth
+// pinning: a full page means "ask again", a short one means "that was the end".
+// ---------------------------------------------------------------------------
+describe("useMoodHistoryPages", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useMoodHistoryPages(null), { wrapper: wrap(client) });
+
+    expect(repo.listMoodLogsPage).not.toHaveBeenCalled();
+  });
+
+  it("asks for the first page at offset 0", async () => {
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useMoodHistoryPages("u1"), { wrapper: wrap(client) });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(repo.listMoodLogsPage).toHaveBeenCalledWith("u1", MOOD_HISTORY_PAGE_SIZE, 0);
+  });
+
+  it("keeps paging while a page comes back full, and stops when one is short", async () => {
+    const fullPage = Array.from({ length: MOOD_HISTORY_PAGE_SIZE }, (_, i) => ({ id: `m${i}` }));
+    (repo.listMoodLogsPage as jest.Mock)
+      .mockResolvedValueOnce(fullPage)
+      .mockResolvedValueOnce([{ id: "tail" }]);
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useMoodHistoryPages("u1"), { wrapper: wrap(client) });
+
+    await waitFor(() => expect(result.current.hasNextPage).toBe(true));
+    await result.current.fetchNextPage();
+    await waitFor(() => expect(result.current.hasNextPage).toBe(false));
+
+    expect(repo.listMoodLogsPage).toHaveBeenLastCalledWith(
+      "u1",
+      MOOD_HISTORY_PAGE_SIZE,
+      MOOD_HISTORY_PAGE_SIZE,
+    );
+    expect(result.current.data?.pages.flat()).toHaveLength(MOOD_HISTORY_PAGE_SIZE + 1);
   });
 });

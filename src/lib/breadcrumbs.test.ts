@@ -14,6 +14,7 @@ const LABELS: Record<string, string> = {
   "breadcrumb.favorites": "Favorites",
   "sidebar.routines": "Routines",
   "breadcrumb.edit": "Edit",
+  "sidebar.moodTracker": "Check-in",
 };
 const t = (key: string) => LABELS[key] ?? key;
 
@@ -44,6 +45,15 @@ describe("computeBreadcrumbs", () => {
   it("labels the gratitude entries list as History, not a generic entry", () => {
     const crumbs = computeBreadcrumbs("/tools/gratitude-log/entries", t);
     expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "History"]);
+    expect(crumbs[2].href).toBeUndefined();
+  });
+
+  // `history` sits beside the `[id]` detail route, so without a static entry it
+  // would fall through to the dynamic branch and read "Tools · Check-in · Entry".
+  it("labels the check-in all-history screen as History, not a generic entry", () => {
+    const crumbs = computeBreadcrumbs("/tools/check-in/history", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Check-in", "History"]);
+    expect(crumbs[1].href).toBe("/tools/check-in");
     expect(crumbs[2].href).toBeUndefined();
   });
 

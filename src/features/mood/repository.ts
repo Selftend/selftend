@@ -53,6 +53,32 @@ export async function listMoodLogs(userId: string, limit = 30) {
   return (data as MoodLogRow[]).map(mapMoodLog);
 }
 
+/**
+ * One page of the full history, newest first — the all-history screen's only read.
+ *
+ * `listMoodLogs` takes a `limit`, which is a ceiling rather than a window: past
+ * it, entries simply stop existing as far as the screen is concerned. This is
+ * the same query with an offset, so a screen can keep asking.
+ *
+ * Ordered by `logged_at` **and then `id`**, because `logged_at` alone is not a
+ * total order: two entries saved in the same second have no defined relative
+ * position, and an undefined order across an offset boundary means a row can be
+ * returned on both pages or on neither.
+ */
+export async function listMoodLogsPage(userId: string, limit: number, offset: number) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("mood_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .order("logged_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw error;
+  return (data as MoodLogRow[]).map(mapMoodLog);
+}
+
 export async function getMoodLog(userId: string, id: string) {
   // A malformed route id would 400 on PostgREST's uuid cast (console error); it's just not-found.
   if (!isValidUuid(id)) return null;

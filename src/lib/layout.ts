@@ -28,3 +28,11 @@ export const FORM_COLUMN = "w-full max-w-[620px] self-center";
  * silently dropped. Kept beside the class so the two can't drift.
  */
 export const HOME_COLUMN_WIDTH = 720;
+
+/**
+ * `FORM_COLUMN` as a number, for the same reason: a virtualized list cannot put
+ * its column on a wrapper without un-virtualizing itself. The all-history screen
+ * (#734) is the first - a long single column of narrow rows, which reads at the
+ * form width rather than the home width.
+ */
+export const FORM_COLUMN_WIDTH = 620;

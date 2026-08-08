@@ -54,6 +54,7 @@ const STATIC_ROUTES: Record<string, string> = {
 
   "/tools": "sidebar.tools",
   "/tools/check-in": "sidebar.moodTracker",
+  "/tools/check-in/history": "breadcrumb.history",
   "/tools/check-in/new": "breadcrumb.new",
   "/tools/journal": "sidebar.journal",
   "/tools/journal/new": "breadcrumb.new",

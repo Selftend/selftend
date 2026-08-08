@@ -3,6 +3,7 @@ import {
   getFirstMoodDayKey,
   getMoodLog,
   listMoodLogs,
+  listMoodLogsPage,
   listMoodScorePoints,
   saveMoodLog,
 } from "@/src/features/mood/repository";
@@ -65,6 +66,26 @@ describe("mood repository", () => {
     expect(eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(order).toHaveBeenCalledWith("logged_at", { ascending: false });
     expect(limit).toHaveBeenCalledWith(15);
+  });
+
+  it("reads a history page at an offset, ordered by a total order", async () => {
+    // `logged_at` alone is not a total order - two entries saved in the same
+    // second have no defined relative position, so a row could be returned on
+    // both sides of an offset boundary or on neither. `id` breaks the tie.
+    const range = jest.fn().mockResolvedValue({ data: [], error: null });
+    const orderId = jest.fn(() => ({ range }));
+    const orderLoggedAt = jest.fn(() => ({ order: orderId }));
+    const eq = jest.fn(() => ({ order: orderLoggedAt }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listMoodLogsPage("user-1", 50, 100)).resolves.toEqual([]);
+    expect(eq).toHaveBeenCalledWith("user_id", "user-1");
+    expect(orderLoggedAt).toHaveBeenCalledWith("logged_at", { ascending: false });
+    expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
+    // Inclusive on both ends, so a 50-row page starting at 100 ends at 149.
+    expect(range).toHaveBeenCalledWith(100, 149);
   });
 
   it("returns null when getMoodLog finds no row", async () => {
