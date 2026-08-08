@@ -82,8 +82,8 @@ test.describe("routine completes via tool use", () => {
     await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
 
     // Mood logs were cleaned in beforeEach, so the history list is empty and
-    // the check-in card's scale renders the only "OK" radio on this screen.
-    await page.getByRole("radio", { name: "OK", exact: true }).click();
+    // the check-in card's scale renders the only "Okay" radio on this screen.
+    await page.getByRole("radio", { name: "Okay", exact: true }).click();
     await page.waitForURL(/\/tools\/check-in\/new\?/, { timeout: 15_000 });
 
     await page.getByRole("button", { name: "Save", exact: true }).click();

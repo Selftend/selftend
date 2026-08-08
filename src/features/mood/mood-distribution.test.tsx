@@ -30,8 +30,8 @@ describe("MoodDistributionChart", () => {
 
     // Level words come from checkin.scaleLabels, left to right 1 -> 5.
     expect(screen.getByText("Awful")).toBeTruthy();
-    expect(screen.getByText("Low")).toBeTruthy();
-    expect(screen.getByText("OK")).toBeTruthy();
+    expect(screen.getByText("Bad")).toBeTruthy();
+    expect(screen.getByText("Okay")).toBeTruthy();
     expect(screen.getByText("Good")).toBeTruthy();
     expect(screen.getByText("Great")).toBeTruthy();
     expect(screen.getAllByTestId("bar-chart-bar")).toHaveLength(5);
@@ -75,7 +75,7 @@ describe("MoodDistributionChart", () => {
     renderWithProviders(<MoodDistributionChart counts={[2, 0, 3, 1, 0]} />);
 
     expect(screen.getByLabelText("Awful: 2 check-ins")).toBeTruthy();
-    expect(screen.getByLabelText("Low: 0 check-ins")).toBeTruthy();
+    expect(screen.getByLabelText("Bad: 0 check-ins")).toBeTruthy();
     expect(screen.getByLabelText("Good: 1 check-in")).toBeTruthy();
   });
 
@@ -88,7 +88,7 @@ describe("MoodDistributionChart", () => {
   it("reads as one check-in rather than 100% at a single entry", () => {
     renderWithProviders(<MoodDistributionChart counts={[0, 0, 1, 0, 0]} />);
 
-    expect(screen.getByLabelText("OK: 1 check-in")).toBeTruthy();
+    expect(screen.getByLabelText("Okay: 1 check-in")).toBeTruthy();
     expect(screen.getAllByText("0")).toHaveLength(4);
     expect(screen.queryByText("100%")).toBeNull();
   });

@@ -137,7 +137,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     // Log a mood through the normal check-in flow (the routine's only step).
     await navigateViaPanel(page, "Check-in");
     await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
-    await page.getByRole("radio", { name: "OK", exact: true }).click();
+    await page.getByRole("radio", { name: "Okay", exact: true }).click();
     await page.waitForURL(/\/tools\/check-in\/new\?/, { timeout: 15_000 });
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await page.waitForURL(/\/tools\/check-in\/(?!new)[^/]+$/, { timeout: 15_000 });
