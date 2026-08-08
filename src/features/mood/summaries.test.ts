@@ -110,20 +110,55 @@ describe("getWeekDelta", () => {
 });
 
 describe("getTopEmotions", () => {
+  const now = new Date(2026, 4, 31, 12, 0, 0, 0); // 2026-05-31
+
   it("counts emotion ids and returns the most frequent first", () => {
     const logs = [
-      { emotions: ["relaxed", "happy"] },
-      { emotions: ["relaxed"] },
-      { emotions: ["anxious"] },
+      { dayKey: "2026-05-31", emotions: ["relaxed", "happy"] },
+      { dayKey: "2026-05-30", emotions: ["relaxed"] },
+      { dayKey: "2026-05-29", emotions: ["anxious"] },
     ];
-    expect(getTopEmotions(logs, 2)).toEqual([
+    expect(getTopEmotions(logs, 2, 7, now)).toEqual([
       { id: "relaxed", count: 2 },
       { id: "anxious", count: 1 },
     ]);
   });
 
   it("returns an empty array when there are no emotions", () => {
-    expect(getTopEmotions([], 3)).toEqual([]);
+    expect(getTopEmotions([], 3, 7, now)).toEqual([]);
+  });
+
+  // #705: this counted every log it was handed while rendering under "This
+  // week", so its real span was the caller's 200-entry cache.
+  it("ignores logs outside the window", () => {
+    const logs = [
+      { dayKey: "2026-05-31", emotions: ["calm"] },
+      { dayKey: "2026-05-25", emotions: ["calm"] }, // day 7 back - the edge, included
+      { dayKey: "2026-05-24", emotions: ["anxious", "anxious"] }, // day 8 - excluded
+      { dayKey: "2026-02-14", emotions: ["anxious"] }, // a hard patch months ago
+    ];
+    expect(getTopEmotions(logs, 3, 7, now)).toEqual([{ id: "calm", count: 2 }]);
+  });
+
+  it("defaults to a seven-day window, matching the section it renders in", () => {
+    const logs = [
+      { dayKey: "2026-05-31", emotions: ["calm"] },
+      { dayKey: "2026-01-01", emotions: ["anxious"] },
+    ];
+    // No explicit `days`, and `now` still inside the window of the newest key.
+    expect(getTopEmotions(logs, 3, undefined, now)).toEqual([{ id: "calm", count: 1 }]);
+  });
+
+  // Anchored on the newest captured day key, not on `now` - a log written east
+  // of the reader must still anchor its own week (#250), exactly as
+  // getDailyAverages and getWeekDelta do.
+  it("anchors the window on the newest day key when it is ahead of now", () => {
+    const logs = [
+      { dayKey: "2026-06-01", emotions: ["hopeful"] }, // ahead of `now`
+      { dayKey: "2026-05-26", emotions: ["hopeful"] }, // still within 7 days of 06-01
+      { dayKey: "2026-05-25", emotions: ["tired"] }, // 8 days back from 06-01
+    ];
+    expect(getTopEmotions(logs, 3, 7, now)).toEqual([{ id: "hopeful", count: 2 }]);
   });
 });
 
