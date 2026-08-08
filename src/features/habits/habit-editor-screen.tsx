@@ -15,12 +15,7 @@ import { FORM_COLUMN } from "@/src/lib/layout";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
-import {
-  HABIT_COLOR_CHOICES,
-  HABIT_NAME_MAX,
-  habitInputSchema,
-  nextHabitColor,
-} from "@/src/features/habits/schemas";
+import { HABIT_COLORS, HABIT_NAME_MAX, habitInputSchema } from "@/src/features/habits/schemas";
 import type {
   Habit,
   HabitCadence,
@@ -60,9 +55,7 @@ const EMPTY_INPUT: HabitInput = {
   rewardNote: "",
   cadence: "daily",
   customDays: [1, 2, 3, 4, 5],
-  // The head of HABIT_COLOR_CHOICES, so a create form never opens on a retired colour
-  // while the habit list is still loading (#764).
-  color: "act",
+  color: "primary",
 };
 
 function habitToInput(habit: Habit): HabitInput {
@@ -90,8 +83,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  // Create mode reads the list too now, to auto-assign a colour nothing else is using.
-  const { data: cachedList } = useHabits(userId);
+  const { data: cachedList } = useHabits(mode === "edit" ? userId : null);
   const fromCache = habitId ? (cachedList?.find((h) => h.id === habitId) ?? null) : null;
   const { data: fetched, isLoading } = useHabit(
     mode === "edit" && !fromCache ? userId : null,
@@ -102,8 +94,6 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   const saveMutation = useSaveHabit(userId);
   const [input, setInput] = useState<HabitInput>(EMPTY_INPUT);
   const [error, setError] = useState("");
-  // null until the user picks one; see activeColor below.
-  const [pickedColor, setPickedColor] = useState<HabitColor | null>(null);
   const nameInputRef = useRef<TextInput>(null);
 
   const editMode = mode === "edit";
@@ -119,33 +109,10 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
     activeIndex: Math.max(0, CADENCE_OPTIONS.indexOf(input.cadence)),
     onActivate: (index) => update("cadence", CADENCE_OPTIONS[index]),
   });
-  /**
-   * The selected colour is **derived**, not stored, until the user picks one (#764).
-   *
-   * A new habit takes the first offered colour nothing else is using — and computing that
-   * at render rather than writing it into state from an effect matters: the habit list is
-   * a query, so it can land *after* the form mounts. An effect would either overwrite a
-   * choice the user had already made, or need a ref to guard against doing so.
-   */
-  const activeColor: HabitColor =
-    pickedColor ??
-    (editMode ? input.color : nextHabitColor((cachedList ?? []).map((h) => h.color)));
-
-  /**
-   * The six offered colours, with the habit's own prepended when it holds a retired one.
-   * A habit created before the palette was cut keeps its identity in the picker rather
-   * than silently resetting the moment its owner opens the form.
-   */
-  const colorChoices: HabitColor[] = (HABIT_COLOR_CHOICES as readonly string[]).includes(
-    activeColor,
-  )
-    ? [...(HABIT_COLOR_CHOICES as readonly HabitColor[])]
-    : [activeColor, ...(HABIT_COLOR_CHOICES as readonly HabitColor[])];
-
   const colorRoving = useRovingFocus({
-    count: colorChoices.length,
-    activeIndex: Math.max(0, colorChoices.indexOf(activeColor)),
-    onActivate: (index) => setPickedColor(colorChoices[index]),
+    count: HABIT_COLORS.length,
+    activeIndex: Math.max(0, HABIT_COLORS.indexOf(input.color)),
+    onActivate: (index) => update("color", HABIT_COLORS[index] as HabitColor),
   });
 
   // Hydrate field state ONCE per habit id; keying on the id (not the object) stops a later
@@ -189,7 +156,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
 
   const handleSave = useSingleFlight(async () => {
     if (!user) return;
-    const trimmed: HabitInput = { ...input, name: input.name.trim(), color: activeColor };
+    const trimmed: HabitInput = { ...input, name: input.name.trim() };
     if (!trimmed.name) {
       showError(t("form.nameRequired"));
       // Focusing also scrolls the field into view on web (shared Input behavior).
@@ -480,14 +447,16 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
             className="flex-row flex-wrap gap-2"
             role="radiogroup"
           >
-            {colorChoices.map((color, index) => (
+            {HABIT_COLORS.map((color, index) => (
               <ColorChip
                 key={color}
-                active={activeColor === color}
+                active={input.color === color}
                 color={color}
                 label={t(`form.colors.${color}` as const)}
-                onPress={() => setPickedColor(color)}
-                rovingProps={colorRoving.getItemProps(index, () => setPickedColor(color))}
+                onPress={() => update("color", color as HabitColor)}
+                rovingProps={colorRoving.getItemProps(index, () =>
+                  update("color", color as HabitColor),
+                )}
               />
             ))}
           </View>

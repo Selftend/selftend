@@ -90,9 +90,7 @@
       "amber": "Amber",
       "emerald": "Teal",
       "violet": "Violet",
-      "rose": "Clay",
-      "ink": "Indigo",
-      "aqua": "Aqua"
+      "rose": "Clay"
     },
     "weekday": {
       "0": "Sun",
