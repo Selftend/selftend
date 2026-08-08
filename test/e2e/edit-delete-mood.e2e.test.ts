@@ -11,9 +11,9 @@ test.describe("edit and delete a mood log", () => {
   });
 
   test("alice edits then deletes a mood log", async ({ page }) => {
-    // Create: score 3 ("OK") → emoji 😐
+    // Create: score 3 ("Okay") → emoji 😐
     await page.goto("/tools/check-in/new");
-    await page.getByRole("radio", { name: "OK", exact: true }).click();
+    await page.getByRole("radio", { name: "Okay", exact: true }).click();
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("😐")).toBeVisible({ timeout: 15_000 });
 

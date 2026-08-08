@@ -6,8 +6,8 @@
     "scoreRequired": "Pick a mood score first.",
     "scaleLabels": {
       "1": "Awful",
-      "2": "Low",
-      "3": "OK",
+      "2": "Bad",
+      "3": "Okay",
       "4": "Good",
       "5": "Great"
     }
@@ -49,11 +49,8 @@
   },
   "detail": {
     "title": "Mood entry",
-    "loggedAt": "Logged at",
     "emotions": "Emotions",
     "notes": "Notes",
-    "noNotes": "No notes for this entry.",
-    "noEmotions": "No emotions tagged.",
     "linkedStrategy": "Linked strategy",
     "edit": "Edit",
     "delete": "Delete",
@@ -64,6 +61,9 @@
       "message": "This permanently removes the mood log. It can't be recovered.",
       "confirm": "Delete",
       "cancel": "Cancel"
+    },
+    "strategies": {
+      "behavioralActivation": "Behavioural activation"
     }
   },
   "onboarding": {
@@ -127,13 +127,6 @@
     "range90": "90d",
     "rangeAll": "All time",
     "rangeCustom": "Custom"
-  },
-  "detailWord": {
-    "1": "Awful",
-    "2": "Low",
-    "3": "OK",
-    "4": "Good",
-    "5": "Great"
   },
   "heatmap": {
     "title": "All time",

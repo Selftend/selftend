@@ -148,7 +148,7 @@ describe("MoodEntryEditorScreen", () => {
   it("creates a mood entry and routes to the saved detail page", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
-    fireEvent.press(screen.getByLabelText("OK"));
+    fireEvent.press(screen.getByLabelText("Okay"));
     fireEvent.press(screen.getByText("Save"));
 
     await waitFor(() => {
@@ -222,7 +222,7 @@ describe("MoodEntryEditorScreen", () => {
   it("saves exactly once when Save is pressed twice rapidly", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
-    fireEvent.press(screen.getByLabelText("OK"));
+    fireEvent.press(screen.getByLabelText("Okay"));
     // isPending has not re-rendered between the two presses, so only the
     // single-flight guard stands between the double-press and two inserts.
     fireEvent.press(screen.getByText("Save"));
@@ -242,7 +242,7 @@ describe("MoodEntryEditorScreen", () => {
     expect(saveMood).not.toHaveBeenCalled();
 
     // Picking a score clears the error and lets the save go through.
-    fireEvent.press(screen.getByLabelText("OK"));
+    fireEvent.press(screen.getByLabelText("Okay"));
     expect(screen.queryByText("Pick a mood score first.")).toBeNull();
     fireEvent.press(screen.getByText("Save"));
     await waitFor(() => expect(saveMood).toHaveBeenCalledTimes(1));
@@ -334,7 +334,7 @@ describe("MoodEntryEditorScreen", () => {
     it("hands the picked emotions over out of band, not in the URL", () => {
       renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
-      fireEvent.press(screen.getByLabelText("OK"));
+      fireEvent.press(screen.getByLabelText("Okay"));
       fireEvent.press(screen.getByText("Anxious"));
       fireEvent.changeText(screen.getByLabelText("Notes (optional)"), "a note, not a situation");
       fireEvent.press(screen.getByLabelText("Go deeper"));
