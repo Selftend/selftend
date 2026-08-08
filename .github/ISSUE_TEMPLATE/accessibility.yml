@@ -3,7 +3,7 @@ description: Report or propose an accessibility improvement.
 title: "[A11y]: "
 labels:
   - accessibility
-  - needs triage
+  - needs-triage
 type: Task
 body:
   - type: markdown
