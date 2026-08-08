@@ -59,6 +59,27 @@ function summarizeScores(scores: number[]): MoodSummary {
   return { average: round1(average), count: scores.length };
 }
 
+/** Counts at each of the five levels, index 0 = score 1 (#737, decided on #701). */
+export type MoodDistribution = [number, number, number, number, number];
+
+/**
+ * How many check-ins landed at each level, over whatever window the caller
+ * already fetched.
+ *
+ * A pure reduction, not a query: the distribution shares the trend's range and
+ * therefore the trend's `scorePoints` array (#700), so it costs one pass over
+ * data already on screen. Scores outside 1-5 are ignored rather than clamped -
+ * a bad row should not inflate a real level's count.
+ */
+export function getMoodDistribution(points: { moodScore: number }[] | undefined): MoodDistribution {
+  const counts: MoodDistribution = [0, 0, 0, 0, 0];
+  for (const point of points ?? []) {
+    const level = point.moodScore;
+    if (Number.isInteger(level) && level >= 1 && level <= 5) counts[level - 1] += 1;
+  }
+  return counts;
+}
+
 // `getDailyAverages`, `getWeekDelta` and `getTopEmotions` lived here until #736.
 // All three measured a TRAILING window anchored on the newest day key, which is
 // what the week strip needed while it could not move. A navigator cannot page

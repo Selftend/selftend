@@ -39,6 +39,11 @@
   "trend": {
     "emptyRange": "Not enough check-ins in this range yet."
   },
+  "distribution": {
+    "title": "Distribution",
+    "column_one": "{{level}}: {{count}} check-in",
+    "column_other": "{{level}}: {{count}} check-ins"
+  },
   "recent": {
     "viewEntry": "View mood entry from {{when}}"
   },
@@ -120,6 +125,7 @@
     "range7": "7d",
     "range30": "30d",
     "range90": "90d",
+    "rangeAll": "All time",
     "rangeCustom": "Custom"
   },
   "detailWord": {
