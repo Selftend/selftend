@@ -138,8 +138,6 @@ describe("Breathing list polish", () => {
 
     renderWithProviders(<BreathingScreen />);
 
-    // Full-bleed aqua field header (Direction B room), not the plain header.
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the aqua room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     // A loaded, empty history → the subline shows the never state.
@@ -151,7 +149,7 @@ describe("Breathing list polish", () => {
     // claiming "no sessions" there would erase a returning user's real history.
     renderWithProviders(<BreathingScreen />);
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
   it("omits the subline while the custom exercises are still loading", () => {
@@ -198,7 +196,7 @@ describe("Breathing list polish", () => {
 
     renderWithProviders(<BreathingScreen />);
 
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
   });
 
@@ -223,7 +221,7 @@ describe("Breathing list polish", () => {
 
     renderWithProviders(<BreathingScreen />);
 
-    expect(screen.getByText(/^Last · /)).toBeTruthy();
+    expect(screen.getByText(/^last logged /)).toBeTruthy();
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
   });
 });

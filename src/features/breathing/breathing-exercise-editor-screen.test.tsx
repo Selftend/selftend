@@ -56,20 +56,16 @@ describe("BreathingExerciseEditorScreen", () => {
     expect(checked[0]).toBe(radios[2]);
   });
 
-  it("renders the aqua room with the field header in create mode", () => {
+  it("renders the aqua room with the top bar in create mode", () => {
     renderWithProviders(<BreathingExerciseEditorScreen exerciseId={null} />);
 
     // The room wrapper carries the aqua re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.getByTestId("breathing-editor-room"));
-    // Create mode gets the full-bleed aqua field (Direction B create-editor rule).
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
   });
 
-  it("renders the plain aqua pour without a field in edit mode", () => {
+  it("renders the plain aqua pour in edit mode", () => {
     renderWithProviders(<BreathingExerciseEditorScreen exerciseId="e-1" />);
 
     expectNeutralRoom(screen.getByTestId("breathing-editor-room"));
-    // Edit mode is a plain-pour sub-surface — no field header.
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 });

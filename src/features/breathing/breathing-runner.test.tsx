@@ -111,8 +111,5 @@ describe("Breathing cycle runner", () => {
 
     // The root carries the aqua room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-    // Wave B direction (#301): session screens take the pour only — the
-    // exercise is the hero, no full-bleed field header.
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 });

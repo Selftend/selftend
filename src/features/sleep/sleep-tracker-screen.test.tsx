@@ -69,13 +69,12 @@ describe("SleepTrackerScreen", () => {
     setServerStats(undefined);
   });
 
-  it("renders the ink field header with title, stats, and empty-state subline", () => {
+  it("renders the quiet shell header with title, stats, and empty-state subline", () => {
     mockUseSleepLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useSleepLogs>);
 
     renderWithProviders(<SleepTrackerScreen />);
 
     expect(screen.getByRole("heading", { name: "Sleep tracker" })).toBeTruthy();
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // Calm muted subline when nothing is logged - never a shame state.
     expect(screen.getByText("No sleep logged yet")).toBeTruthy();
     // Section headings render on the sheet.
@@ -89,7 +88,7 @@ describe("SleepTrackerScreen", () => {
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.getByText(/^Last · /)).toBeTruthy();
+    expect(screen.getByText(/^last logged /)).toBeTruthy();
     expect(screen.queryByText("No sleep logged yet")).toBeNull();
   });
 
@@ -103,7 +102,7 @@ describe("SleepTrackerScreen", () => {
     renderWithProviders(<SleepTrackerScreen />);
 
     expect(screen.queryByText("No sleep logged yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
   // -------------------------------------------------------------------------

@@ -76,7 +76,6 @@ describe("MoodTrackerScreen", () => {
 
     // Field header renders the title as the h1 heading over the hue gradient.
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     expect(screen.getByText("How are you feeling right now?")).toBeTruthy();
     expect(screen.getByLabelText("Awful")).toBeTruthy();
     expect(screen.getByText("Log a mood to start your trend.")).toBeTruthy();
@@ -102,7 +101,7 @@ describe("MoodTrackerScreen", () => {
     renderWithProviders(<MoodTrackerScreen />);
 
     expect(screen.queryByText("No check-ins yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
   it("renders the completed Today card with score when a single entry was logged today", () => {

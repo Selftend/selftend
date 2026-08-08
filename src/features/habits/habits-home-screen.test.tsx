@@ -141,7 +141,6 @@ describe("HabitsHomeScreen act room", () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the act room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     // Both existing stats and the author credit migrate onto the field.
@@ -160,7 +159,7 @@ describe("HabitsHomeScreen act room", () => {
 
     renderWithProviders(<HabitsHomeScreen />);
 
-    expect(await screen.findByText("Last tick · Today")).toBeTruthy();
+    expect(await screen.findByText("last ticked Today")).toBeTruthy();
     expect(screen.queryByText("No ticks yet")).toBeNull();
   });
 
@@ -175,7 +174,7 @@ describe("HabitsHomeScreen act room", () => {
 
     renderWithProviders(<HabitsHomeScreen />);
 
-    expect(await screen.findByText("Last tick · 45 days ago")).toBeTruthy();
+    expect(await screen.findByText("last ticked 45 days ago")).toBeTruthy();
     expect(screen.queryByText("No ticks yet")).toBeNull();
   });
 
@@ -193,7 +192,7 @@ describe("HabitsHomeScreen act room", () => {
 
     expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
     expect(screen.queryByText("No ticks yet")).toBeNull();
-    expect(screen.queryByText(/^Last tick · /)).toBeNull();
+    expect(screen.queryByText(/^last ticked /)).toBeNull();
   });
 });
 

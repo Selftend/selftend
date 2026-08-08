@@ -94,7 +94,7 @@
     "checkinsLabel": "check-ins",
     "thisWeekLabel": "this week",
     "avgLabel": "7-day avg",
-    "last": "Last · {{when}}",
+    "last": "last logged {{when}}",
     "never": "No check-ins yet"
   },
   "week": {

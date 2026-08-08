@@ -7,16 +7,15 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Card } from "@/src/components/react-native-reusables/card";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { HelpSheet } from "@/src/components/app/help-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { ToolStats } from "@/src/components/app/tool-stats";
 import { formatClock } from "@/src/features/breathing/cycle-math";
 import { useBreathingSessions } from "@/src/features/breathing/queries";
 import { breathingPatterns, breathingSlugs } from "@/src/constants/breathing";
 import { breathingColorClass } from "@/src/features/breathing/exercise-colors";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
@@ -79,15 +78,9 @@ export default function BreathingScreen() {
       style={roomStyle}
     >
       <ScrollView contentContainerClassName="grow p-4">
-        {/* The field + sheet escape the scroll padding so the aqua field runs
-            edge to edge; the sheet re-adds the inset for its sections. */}
-        <View className="-mx-4 -mt-4">
+        <View className={cn(HOME_COLUMN, "gap-6")}>
           <ModuleHomeHeader
-            variant="field"
             addWidgetCategory="breathing"
-            hue="aqua"
-            icon="air"
-            moduleLabel={null}
             tourScope="breathing"
             title={t("breathing.title")}
             description={t("breathing.tagline")}
@@ -99,157 +92,145 @@ export default function BreathingScreen() {
                 accessibilityLabel: t("breathing.helpLabel"),
               },
             ]}
-            meta={
-              <ToolStats
-                tone="onField"
-                accentClassName="text-primary-ink"
-                subline={subline}
-                sublineTone={lastWhen ? "accent" : "muted"}
-                items={[
-                  {
-                    value: t("breathing.hero.patterns", { count: breathingPatterns.length }),
-                    label: "",
-                  },
-                  { value: t("breathing.hero.recentSessions", { count: recentCount }), label: "" },
-                ]}
-              />
-            }
+            stats={[
+              {
+                value: t("breathing.hero.patterns", { count: breathingPatterns.length }),
+                label: "",
+              },
+              { value: t("breathing.hero.recentSessions", { count: recentCount }), label: "" },
+              // The old ToolStats.subline, folded into the row as a value-less
+              // item - which is how the design renders "last logged 4:50 pm".
+              ...(subline ? [{ value: "", label: subline }] : []),
+            ]}
           />
 
           <HelpSheet helpKey="breathing" visible={helpOpen} onDismiss={() => setHelpOpen(false)} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("breathing.startSession")}
+            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+            onPress={() => router.push("/tools/breathing/session")}
+          >
+            <Card variant="soft" className="flex-row items-center gap-4 px-5 py-4">
+              <View className="size-12 items-center justify-center rounded-xl bg-muted">
+                <Icon name="air" className="size-6 text-muted-foreground" />
+              </View>
+              <View className="flex-1 min-w-0">
+                <Text className="text-[15px] font-semibold tracking-tight">
+                  {t("breathing.startSession")}
+                </Text>
+                <Text variant="muted" className="mt-1 text-[13px] leading-snug">
+                  {t("breathing.startSessionHint")}
+                </Text>
+              </View>
+              <Icon name="chevron-right" size={20} className="text-muted-foreground" />
+            </Card>
+          </Pressable>
 
-          <ContentSheet className="px-4">
-            <View className="gap-6">
+          <View className="gap-3">
+            <View className="flex-row items-baseline justify-between">
+              <Text variant="h2" className="text-xl font-bold tracking-tight border-0 pb-0">
+                {t("breathing.yourExercisesTitle")}
+              </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t("breathing.startSession")}
+                accessibilityLabel={t("breathing.newExercise")}
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => router.push("/tools/breathing/session")}
+                onPress={() => router.push("/tools/breathing/new")}
               >
-                <Card variant="soft" className="flex-row items-center gap-4 px-5 py-4">
-                  <View className="size-12 items-center justify-center rounded-xl bg-muted">
-                    <Icon name="air" className="size-6 text-muted-foreground" />
-                  </View>
-                  <View className="flex-1 min-w-0">
-                    <Text className="text-[15px] font-semibold tracking-tight">
-                      {t("breathing.startSession")}
-                    </Text>
-                    <Text variant="muted" className="mt-1 text-[13px] leading-snug">
-                      {t("breathing.startSessionHint")}
-                    </Text>
-                  </View>
-                  <Icon name="chevron-right" size={20} className="text-muted-foreground" />
-                </Card>
-              </Pressable>
-
-              <View className="gap-3">
-                <View className="flex-row items-baseline justify-between">
-                  <Text variant="h2" className="text-xl font-bold tracking-tight border-0 pb-0">
-                    {t("breathing.yourExercisesTitle")}
-                  </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t("breathing.newExercise")}
-                    hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => router.push("/tools/breathing/new")}
-                  >
-                    <Text className="text-sm font-semibold text-primary-ink">
-                      {t("breathing.newExercise")}
-                    </Text>
-                  </Pressable>
-                </View>
-
-                {customExercises && customExercises.length > 0 ? (
-                  customExercises.map((exercise) => {
-                    const chip = breathingColorClass(exercise.color);
-                    return (
-                      <View key={exercise.id} className="flex-row items-center gap-2">
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={exercise.name}
-                          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                          onPress={() =>
-                            router.push({
-                              pathname: "/tools/breathing/session",
-                              params: { pattern: exercise.id },
-                            })
-                          }
-                          className={cn(
-                            "flex-1 flex-row items-center gap-3 rounded-xl border p-4 active:opacity-80",
-                            chip.border,
-                            chip.bg,
-                          )}
-                        >
-                          <View
-                            className={cn("size-3 rounded-full border", chip.border, chip.bg)}
-                          />
-                          <Text className="flex-1 text-[15px] font-semibold tracking-tight">
-                            {exercise.name}
-                          </Text>
-                          <Text variant="muted" className="text-xs tabular-nums">
-                            {t("breathing.cycles", { count: exercise.cycles })}
-                          </Text>
-                        </Pressable>
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={t("breathing.editExercise", { name: exercise.name })}
-                          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                          onPress={() =>
-                            router.push({
-                              pathname: "/tools/breathing/new",
-                              params: { id: exercise.id },
-                            })
-                          }
-                          className="p-2"
-                        >
-                          <Icon name="edit" size={18} className="text-muted-foreground" />
-                        </Pressable>
-                      </View>
-                    );
-                  })
-                ) : (
-                  <Text variant="muted" className="text-sm">
-                    {t("breathing.noExercises")}
-                  </Text>
-                )}
-              </View>
-
-              <View className="gap-3">
-                <Text variant="h2" className="text-xl font-bold tracking-tight border-0 pb-0">
-                  {t("breathing.history.title")}
+                <Text className="text-sm font-semibold text-primary-ink">
+                  {t("breathing.newExercise")}
                 </Text>
-
-                {!sessions || sessions.length === 0 ? (
-                  <Text variant="muted" className="text-sm">
-                    {t("breathing.history.empty")}
-                  </Text>
-                ) : (
-                  sessions.map((s) => (
-                    <Card key={s.id} variant="soft" className="px-5 py-4 gap-0">
-                      <View className="flex-row items-center justify-between gap-2">
-                        <Text className="flex-1 text-[15px] font-semibold tracking-tight">
-                          {patternName(s.exerciseName)}
-                        </Text>
-                        <Text className="text-sm font-semibold tabular-nums text-primary-ink">
-                          {s.durationSeconds != null
-                            ? formatClock(s.durationSeconds)
-                            : t("breathing.minutes", { value: s.durationMinutes })}
-                        </Text>
-                      </View>
-                      <View className="mt-1 flex-row items-center justify-between">
-                        <Text variant="muted" className="text-xs tabular-nums">
-                          {s.cycles != null ? t("breathing.cycles", { count: s.cycles }) : ""}
-                        </Text>
-                        <Text variant="muted" className="text-xs">
-                          {formatAtOffset(s.completedAt, s.completedOffsetMinutes)}
-                        </Text>
-                      </View>
-                    </Card>
-                  ))
-                )}
-              </View>
+              </Pressable>
             </View>
-          </ContentSheet>
+
+            {customExercises && customExercises.length > 0 ? (
+              customExercises.map((exercise) => {
+                const chip = breathingColorClass(exercise.color);
+                return (
+                  <View key={exercise.id} className="flex-row items-center gap-2">
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={exercise.name}
+                      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/tools/breathing/session",
+                          params: { pattern: exercise.id },
+                        })
+                      }
+                      className={cn(
+                        "flex-1 flex-row items-center gap-3 rounded-xl border p-4 active:opacity-80",
+                        chip.border,
+                        chip.bg,
+                      )}
+                    >
+                      <View className={cn("size-3 rounded-full border", chip.border, chip.bg)} />
+                      <Text className="flex-1 text-[15px] font-semibold tracking-tight">
+                        {exercise.name}
+                      </Text>
+                      <Text variant="muted" className="text-xs tabular-nums">
+                        {t("breathing.cycles", { count: exercise.cycles })}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t("breathing.editExercise", { name: exercise.name })}
+                      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/tools/breathing/new",
+                          params: { id: exercise.id },
+                        })
+                      }
+                      className="p-2"
+                    >
+                      <Icon name="edit" size={18} className="text-muted-foreground" />
+                    </Pressable>
+                  </View>
+                );
+              })
+            ) : (
+              <Text variant="muted" className="text-sm">
+                {t("breathing.noExercises")}
+              </Text>
+            )}
+          </View>
+
+          <View className="gap-3">
+            <Text variant="h2" className="text-xl font-bold tracking-tight border-0 pb-0">
+              {t("breathing.history.title")}
+            </Text>
+
+            {!sessions || sessions.length === 0 ? (
+              <Text variant="muted" className="text-sm">
+                {t("breathing.history.empty")}
+              </Text>
+            ) : (
+              sessions.map((s) => (
+                <Card key={s.id} variant="soft" className="px-5 py-4 gap-0">
+                  <View className="flex-row items-center justify-between gap-2">
+                    <Text className="flex-1 text-[15px] font-semibold tracking-tight">
+                      {patternName(s.exerciseName)}
+                    </Text>
+                    <Text className="text-sm font-semibold tabular-nums text-primary-ink">
+                      {s.durationSeconds != null
+                        ? formatClock(s.durationSeconds)
+                        : t("breathing.minutes", { value: s.durationMinutes })}
+                    </Text>
+                  </View>
+                  <View className="mt-1 flex-row items-center justify-between">
+                    <Text variant="muted" className="text-xs tabular-nums">
+                      {s.cycles != null ? t("breathing.cycles", { count: s.cycles }) : ""}
+                    </Text>
+                    <Text variant="muted" className="text-xs">
+                      {formatAtOffset(s.completedAt, s.completedOffsetMinutes)}
+                    </Text>
+                  </View>
+                </Card>
+              ))
+            )}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

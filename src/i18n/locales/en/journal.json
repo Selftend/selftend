@@ -12,7 +12,8 @@
     "entries_other": "{{count}} entries",
     "words_one": "{{count}} word",
     "words_other": "{{count}} words",
-    "last": "Last"
+    "last": "last journaled {{when}}",
+    "never": "Nothing journaled yet"
   },
   "list": {
     "empty": {

@@ -126,10 +126,9 @@ describe("ActHomeScreen", () => {
     expect(router.push as jest.Mock).toHaveBeenCalledWith("/modules/act/choice-point");
   });
 
-  it("renders the act field header with no book credit (#493, #494)", () => {
+  it("renders the quiet shell header with no book credit (#493, #494, #733)", () => {
     renderWithProviders(<ActHomeScreen />);
 
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     expect(screen.queryByText(/Inspired by/)).toBeNull();
   });
 

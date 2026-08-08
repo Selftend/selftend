@@ -87,7 +87,6 @@ describe("HabitLogNoteScreen", () => {
 
     expect(screen.getByRole("heading", { name: "Add a note" })).toBeTruthy();
     expect(screen.getByText(`Read · ${currentDateKey()}`)).toBeTruthy();
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The wrapper carries the act room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.getByTestId("habit-log-note-room"));
   });

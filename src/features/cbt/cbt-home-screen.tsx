@@ -5,8 +5,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { cn } from "@/lib/utils";
+import { HOME_COLUMN } from "@/src/lib/layout";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { useGoals } from "@/src/features/goals/queries";
@@ -86,20 +87,15 @@ export default function CbtHomeScreen() {
       />
       <AdvancedToolInfoModals active={activeToolInfo} onClose={() => setActiveToolInfo(null)} />
       {/* No room pour (#500, owner decision): the CBT home wears the app's
-          default violet surfaces - the default theme IS the violet room - and
-          its field matches the sidebar's CBT accent via the primary pour. */}
+          default violet surfaces - the default theme IS the violet room. The
+          primary pour that used to carry its colour identity was the field
+          header, and that is gone with the quiet shell (#733); the consequence
+          for CBT specifically is raised on #691. */}
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
-          {/* The field + sheet escape the scroll padding so the violet field
-              runs edge to edge (Wave C homes-get-fields, #493/#500); the
-              sheet re-adds the inset for its sections. */}
-          <View className="-mx-4 -mt-4">
+          <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
-              variant="field"
               addWidgetCategory="cbt"
-              hue="primary"
-              icon="psychology"
-              moduleLabel={t("common:beta")}
               title={t("fullTitle")}
               tourScope="cbt"
               description={t("home.description")}
@@ -117,46 +113,42 @@ export default function CbtHomeScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
             />
-            <ContentSheet className="px-4">
-              <View className="gap-6">
-                <CbtProgramSection
-                  program={program}
-                  isPending={isProgramUpdating}
-                  showProgramCard={showProgramCard}
-                  graduationDismissedAt={graduationDismissedAt}
-                  onStart={startProgram}
-                  onAdvance={advancePhase}
-                  onRequestAbandon={() => setAbandonConfirmVisible(true)}
-                  onDismissStart={dismissProgramPrompt}
-                  onDismissGraduation={dismissGraduation}
-                  onReplay={replayProgram}
-                />
+            <CbtProgramSection
+              program={program}
+              isPending={isProgramUpdating}
+              showProgramCard={showProgramCard}
+              graduationDismissedAt={graduationDismissedAt}
+              onStart={startProgram}
+              onAdvance={advancePhase}
+              onRequestAbandon={() => setAbandonConfirmVisible(true)}
+              onDismissStart={dismissProgramPrompt}
+              onDismissGraduation={dismissGraduation}
+              onReplay={replayProgram}
+            />
 
-                <PersonalSloganCard slogan={personalSlogan} />
+            <PersonalSloganCard slogan={personalSlogan} />
 
-                <ActiveGoalsSection goals={activeGoals} />
+            <ActiveGoalsSection goals={activeGoals} />
 
-                <CbtInsightsSection cards={insightCards} />
+            <CbtInsightsSection cards={insightCards} />
 
-                <CbtPillarsSection onOpenInfo={setActiveToolInfo} />
+            <CbtPillarsSection onOpenInfo={setActiveToolInfo} />
 
-                <CbtReviewLinks />
+            <CbtReviewLinks />
 
-                <RecentThoughtRecord record={latestRecord} />
+            <RecentThoughtRecord record={latestRecord} />
 
-                <Pressable
-                  accessibilityLabel={t("home.recordHistory")}
-                  accessibilityRole="button"
-                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() => router.push("/modules/cbt/history")}
-                  className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
-                  role="button"
-                >
-                  <Text className="flex-1 text-sm font-medium">{t("home.recordHistory")}</Text>
-                  <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
-                </Pressable>
-              </View>
-            </ContentSheet>
+            <Pressable
+              accessibilityLabel={t("home.recordHistory")}
+              accessibilityRole="button"
+              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+              onPress={() => router.push("/modules/cbt/history")}
+              className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
+              role="button"
+            >
+              <Text className="flex-1 text-sm font-medium">{t("home.recordHistory")}</Text>
+              <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
+            </Pressable>
           </View>
         </ScrollView>
       </SafeAreaView>

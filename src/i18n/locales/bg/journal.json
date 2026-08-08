@@ -12,7 +12,8 @@
     "entries_other": "{{count}} записа",
     "words_one": "{{count}} дума",
     "words_other": "{{count}} думи",
-    "last": "Последно"
+    "last": "последно записано {{when}}",
+    "never": "Все още няма записи"
   },
   "list": {
     "empty": {

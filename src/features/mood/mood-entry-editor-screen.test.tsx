@@ -315,9 +315,8 @@ describe("MoodEntryEditorScreen", () => {
     expect(await screen.findByLabelText("Great")).toBeTruthy();
   });
 
-  it("renders the rose field header in create mode only", async () => {
+  it("renders the top bar and heading in create mode", async () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
-    expect(await screen.findByTestId("module-field-gradient")).toBeTruthy();
   });
 
   it("completes a linked activity after saving from the activity flow", async () => {

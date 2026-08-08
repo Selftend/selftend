@@ -94,7 +94,7 @@
     "checkinsLabel": "записи",
     "thisWeekLabel": "тази седмица",
     "avgLabel": "ср. за 7 дни",
-    "last": "Последно · {{when}}",
+    "last": "последно записано {{when}}",
     "never": "Все още няма записи"
   },
   "week": {

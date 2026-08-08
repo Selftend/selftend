@@ -7,9 +7,9 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
-import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { cn } from "@/lib/utils";
 import { obstacleTagsForStage } from "@/src/features/meditation/obstacles";
 import {
@@ -141,23 +141,10 @@ export default function MeditationSessionLogScreen() {
     // bg-background surfaces re-resolve to the iris pour through it.
     <View className="flex-1" style={roomStyle} testID="meditation-session-log-room">
       <MobileFormScreen
-        hero={
-          // The field rides as the screen's hero with the sheet lip rising over
-          // it - the shipped editor pattern (#307). It carries the title, so the
-          // in-content ScreenHeader is gone rather than doubling it up.
-          <View>
-            <ModuleHomeHeader
-              variant="field"
-              hue="iris"
-              icon="self-improvement"
-              title={t("module.session.title")}
-              moduleLabel={null}
-            />
-            <ContentSheet />
-          </View>
-        }
+        contentClassName={cn(FORM_COLUMN, "gap-6")}
+        topBar={<ScreenTopBar leading="close" />}
         footer={
-          <View className="gap-2">
+          <View className={cn(FORM_COLUMN, "gap-2")}>
             <Button onPress={() => void handleSave(false)} disabled={saveMutation.isPending}>
               <Text>{t("module.session.save")}</Text>
             </Button>
@@ -171,6 +158,11 @@ export default function MeditationSessionLogScreen() {
           </View>
         }
       >
+        {/* No breadcrumb eyebrow above the heading (design `2b`): the bar above
+            carries the trail, so a ScreenHeader here would render it twice. The
+            field header used to be what carried this title. */}
+        <Text variant="h1">{t("module.session.title")}</Text>
+
         <View className="gap-4">
           <Card variant="soft">
             <CardContent className="gap-1 pt-6">

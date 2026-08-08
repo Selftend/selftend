@@ -85,11 +85,9 @@ describe("GroundingHomeScreen", () => {
     expect(router.push).toHaveBeenCalledWith("/tools/grounding/54321");
   });
 
-  it("renders the clay room: field header and room pour", () => {
+  it("renders the clay room: quiet shell header and room pour", () => {
     renderWithProviders(<GroundingHomeScreen />);
 
-    // Full-bleed clay field header (Direction B room), not the plain header.
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
     // The root carries the clay room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
@@ -99,7 +97,7 @@ describe("GroundingHomeScreen", () => {
     // claiming "no sessions" there would erase a returning user's real history.
     renderWithProviders(<GroundingHomeScreen />);
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
   it("shows the never subline once an empty history has loaded", () => {
@@ -118,7 +116,7 @@ describe("GroundingHomeScreen", () => {
 
     renderWithProviders(<GroundingHomeScreen />);
 
-    expect(screen.getByText(/^Last · /)).toBeTruthy();
+    expect(screen.getByText(/^last logged /)).toBeTruthy();
     expect(screen.queryByText("No sessions logged yet")).toBeNull();
     expect(screen.getByText("Recent sessions")).toBeTruthy();
   });

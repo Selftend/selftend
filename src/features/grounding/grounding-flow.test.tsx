@@ -73,14 +73,10 @@ describe("GroundingFlow", () => {
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/tools/grounding"));
   });
 
-  it("pours the clay room over every phase, with no field header", () => {
-    const { getByTestId, getByText, queryByTestId } = renderWithProviders(
-      <GroundingFlow slug="cold-water" />,
-    );
+  it("pours the clay room over every phase", () => {
+    const { getByTestId, getByText } = renderWithProviders(<GroundingFlow slug="cold-water" />);
     // Intro: the room wrapper carries the pour; a wrong or missing room fails here.
     expectNeutralRoom(getByTestId("grounding-flow-room"));
-    // Session screens take the pour only — the exercise is the hero (#301).
-    expect(queryByTestId("module-field-gradient")).toBeNull();
 
     // The pour survives the phase swaps: intro -> session -> done.
     fireEvent.press(getByText("Start"));
@@ -91,7 +87,6 @@ describe("GroundingFlow", () => {
     fireEvent.press(getByText("Next"));
     fireEvent.press(getByText("Finish"));
     expectNeutralRoom(getByTestId("grounding-flow-room"));
-    expect(queryByTestId("module-field-gradient")).toBeNull();
   });
 
   it("pours the clay room on the not-found branch", () => {

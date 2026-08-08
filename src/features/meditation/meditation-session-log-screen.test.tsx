@@ -41,8 +41,6 @@ describe("MeditationSessionLogScreen", () => {
 
     // The room wrapper carries the iris re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.getByTestId("meditation-session-log-room"));
-    // The field rides as the screen's hero header (shipped editor pattern, #307).
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
   });
 
   it("keeps the field as the only title, not a second in-content heading", () => {

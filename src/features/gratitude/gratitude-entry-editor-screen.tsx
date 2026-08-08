@@ -4,9 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
-import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { cn } from "@/lib/utils";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -187,26 +188,12 @@ export function GratitudeEntryEditorScreen({
     // bg-background surfaces re-resolve to the think pour through it.
     <View className="flex-1" style={roomStyle}>
       <MobileFormScreen
-        contentClassName="mx-auto w-full max-w-2xl gap-6"
-        hero={
-          editMode ? undefined : (
-            // Create mode gets the field treatment: the full-bleed gold field
-            // with the sheet lip rising over it, outside the max-width column.
-            <View>
-              <ModuleHomeHeader
-                variant="field"
-                hue="think"
-                icon="favorite"
-                title={t("editor.createTitle")}
-                moduleLabel={null}
-                description={t("editor.createDescription")}
-              />
-              <ContentSheet />
-            </View>
-          )
-        }
+        contentClassName={cn(FORM_COLUMN, "gap-6")}
+        // Both modes now, where only create mode had chrome: an edit form used to
+        // open with no header at all above its fields (#733).
+        topBar={<ScreenTopBar leading="close" />}
         footer={
-          <View className="mx-auto w-full max-w-2xl flex-row gap-3">
+          <View className={cn(FORM_COLUMN, "flex-row gap-3")}>
             <View className="flex-1">
               <Button onPress={goBack} variant="ghost">
                 <Text>{t("editor.cancel")}</Text>
@@ -221,12 +208,14 @@ export function GratitudeEntryEditorScreen({
           </View>
         }
       >
-        {editMode ? (
-          <View className="gap-2">
-            <ScreenHeader title={t("editor.editTitle")} />
-            <Text variant="muted">{t("editor.editDescription")}</Text>
-          </View>
-        ) : null}
+        {/* No breadcrumb eyebrow above the heading (design `2b`): the bar above
+            carries the trail, so a ScreenHeader here would render it twice. */}
+        <View className="gap-2">
+          <Text variant="h1">{editMode ? t("editor.editTitle") : t("editor.createTitle")}</Text>
+          <Text variant="muted">
+            {editMode ? t("editor.editDescription") : t("editor.createDescription")}
+          </Text>
+        </View>
 
         <View className="gap-4">
           <Label>{t("editor.todayItemsLabel")}</Label>

@@ -1216,7 +1216,7 @@
       "techniques_other": "{{count}} техники",
       "takes": "Отнема",
       "takesValue": "2-3 мин",
-      "last": "Последно · {{when}}",
+      "last": "последно записано {{when}}",
       "never": "Все още няма сесии"
     },
     "choose": "Избери техника",
@@ -1310,7 +1310,7 @@
       "patterns_other": "{{count}} модела",
       "recentSessions_one": "{{count}} скорошна сесия",
       "recentSessions_other": "{{count}} скорошни сесии",
-      "last": "Последно · {{when}}",
+      "last": "последно записано {{when}}",
       "never": "Все още няма сесии"
     },
     "choose": "Избери модел",

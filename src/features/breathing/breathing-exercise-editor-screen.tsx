@@ -8,10 +8,9 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
-import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { totalSeconds, formatClock } from "@/src/features/breathing/cycle-math";
 import { breathingColorClass } from "@/src/features/breathing/exercise-colors";
@@ -184,26 +183,12 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
     // bg-background surfaces re-resolve to the aqua pour through it.
     <View className="flex-1" style={roomStyle} testID="breathing-editor-room">
       <MobileFormScreen
-        contentClassName="gap-6"
-        hero={
-          editMode ? undefined : (
-            // Create mode gets the field treatment: the full-bleed aqua field
-            // with the sheet lip rising over it (title only — no description
-            // key exists, matching the habits create editor).
-            <View>
-              <ModuleHomeHeader
-                variant="field"
-                hue="aqua"
-                icon="air"
-                title={t("breathing.builder.newTitle")}
-                moduleLabel={null}
-              />
-              <ContentSheet />
-            </View>
-          )
-        }
+        contentClassName={cn(FORM_COLUMN, "gap-6")}
+        // Both modes now, where only create mode had chrome: an edit form used to
+        // open with no header at all above its fields (#733).
+        topBar={<ScreenTopBar leading="close" />}
         footer={
-          <View className="flex-row gap-3">
+          <View className={cn(FORM_COLUMN, "flex-row gap-3")}>
             <View className="flex-1">
               <Button onPress={goBack} variant="ghost">
                 <Text>{t("breathing.builder.cancel")}</Text>
@@ -218,7 +203,12 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
           </View>
         }
       >
-        {editMode ? <ScreenHeader title={t("breathing.builder.editTitle")} /> : null}
+        {/* No breadcrumb eyebrow above the heading (design `2b`): the bar above
+            carries the trail, so a ScreenHeader here would render it twice.
+            Title only - no description key exists for either mode. */}
+        <Text variant="h1">
+          {editMode ? t("breathing.builder.editTitle") : t("breathing.builder.newTitle")}
+        </Text>
 
         <View className="gap-2">
           <Label>{t("breathing.builder.nameLabel")}</Label>

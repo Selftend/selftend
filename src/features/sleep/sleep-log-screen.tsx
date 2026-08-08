@@ -8,9 +8,10 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
-import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { cn } from "@/lib/utils";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
@@ -146,26 +147,12 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
     // bg-background surfaces re-resolve to the ink pour through it.
     <View className="flex-1" style={roomStyle}>
       <MobileFormScreen
-        contentClassName="mx-auto w-full max-w-2xl gap-6"
-        hero={
-          editMode ? undefined : (
-            // Create mode gets the field treatment: the full-bleed ink field
-            // with the sheet lip rising over it, outside the max-width column.
-            <View>
-              <ModuleHomeHeader
-                variant="field"
-                hue="ink"
-                icon="bedtime"
-                title={t("log.title")}
-                moduleLabel={null}
-                description={t("log.description")}
-              />
-              <ContentSheet />
-            </View>
-          )
-        }
+        contentClassName={cn(FORM_COLUMN, "gap-6")}
+        // Both modes now, where only create mode had chrome: an edit form used to
+        // open with no header at all above its fields (#733).
+        topBar={<ScreenTopBar leading="close" />}
         footer={
-          <View className="mx-auto w-full max-w-2xl flex-row gap-3">
+          <View className={cn(FORM_COLUMN, "flex-row gap-3")}>
             <View className="flex-1">
               <Button onPress={goBack} variant="ghost">
                 <Text>{t("log.cancel")}</Text>
@@ -180,12 +167,12 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
           </View>
         }
       >
-        {editMode ? (
-          <View className="gap-2">
-            <ScreenHeader title={t("log.editTitle")} />
-            <Text variant="muted">{t("log.editDescription")}</Text>
-          </View>
-        ) : null}
+        {/* No breadcrumb eyebrow above the heading (design `2b`): the bar above
+            carries the trail, so a ScreenHeader here would render it twice. */}
+        <View className="gap-2">
+          <Text variant="h1">{editMode ? t("log.editTitle") : t("log.title")}</Text>
+          <Text variant="muted">{editMode ? t("log.editDescription") : t("log.description")}</Text>
+        </View>
 
         <View className="gap-3">
           <Label>{t("log.durationLabel")}</Label>

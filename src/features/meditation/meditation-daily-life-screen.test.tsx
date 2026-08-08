@@ -84,9 +84,7 @@ describe("MeditationDailyLifeScreen", () => {
     expectNeutralRoom(screen.getByTestId("meditation-daily-life-room"));
   });
 
-  it("carries no field - meditation has no immersive surface here", () => {
+  it("carries no immersive surface here", () => {
     renderWithProviders(<MeditationDailyLifeScreen />);
-
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 });

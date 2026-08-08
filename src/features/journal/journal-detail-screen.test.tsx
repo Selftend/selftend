@@ -65,14 +65,12 @@ describe("JournalDetailScreen", () => {
     } as unknown as ReturnType<typeof useDeleteJournalEntry>);
   });
 
-  it("renders the loaded entry inside the ink room - no field gradient", () => {
+  it("renders the loaded entry inside the ink room", () => {
     const { UNSAFE_getByType } = renderWithProviders(<JournalDetailScreen />);
 
     expect(screen.getByText("Quiet morning")).toBeTruthy();
     expect(screen.getByText("Walked outside before work.")).toBeTruthy();
     expect(screen.getByText("When")).toBeTruthy();
-    // Detail is a plain-pour surface: room yes, field no.
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the ink room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
@@ -109,7 +107,6 @@ describe("JournalDetailScreen", () => {
     const { UNSAFE_getByType } = renderWithProviders(<JournalDetailScreen />);
 
     expect(screen.getByText("We couldn't find that journal entry.")).toBeTruthy();
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
@@ -124,7 +121,6 @@ describe("JournalDetailScreen", () => {
 
     const { UNSAFE_getByType } = renderWithProviders(<JournalDetailScreen />);
 
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 });
