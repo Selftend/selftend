@@ -16,9 +16,9 @@ test.describe("log mood", () => {
   }) => {
     await page.goto("/tools/check-in/new");
 
-    // Pick score 3 ("OK") on the mood scale - accessible label comes from
+    // Pick score 3 ("Okay") on the mood scale - accessible label comes from
     // mood:checkin.scaleLabels.3.
-    await page.getByRole("radio", { name: "OK", exact: true }).click();
+    await page.getByRole("radio", { name: "Okay", exact: true }).click();
 
     await page.getByRole("button", { name: "Save", exact: true }).click();
 

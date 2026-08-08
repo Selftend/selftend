@@ -82,6 +82,31 @@ export function SelectableChip({
   );
 }
 
+/**
+ * The same chip, read-only — what a *recorded* selection looks like once it is no
+ * longer editable (#741).
+ *
+ * Deliberately identical to `SelectableChip`'s selected state rather than a `Badge`:
+ * the entry detail screen shows the emotions the user picked on the form directly
+ * above it, and a different shape for the same fact would read as a different fact.
+ *
+ * The design fills these with `hsl(var(--be) / 0.1)` and inks them `hsl(var(--be))`.
+ * That is the pattern #691 named a regression and #368 measured at 3.81:1, so the
+ * ink is `text-primary-ink` here as it is on the form.
+ */
+export function StaticChip({ label, emoji }: { label: string; emoji?: string }) {
+  return (
+    <View className="flex-row items-center gap-1.5 rounded-full border border-primary bg-primary/10 px-3 py-1.5">
+      {emoji ? (
+        <Text aria-hidden className="text-[14px] leading-none">
+          {emoji}
+        </Text>
+      ) : null}
+      <Text className="text-[13px] font-semibold text-primary-ink">{label}</Text>
+    </View>
+  );
+}
+
 interface ChipRunProps {
   children: React.ReactNode;
   className?: string;
