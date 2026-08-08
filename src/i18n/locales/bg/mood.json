@@ -110,17 +110,6 @@
     "feltMost": "Най-често усещано",
     "noEmotions": "Все още няма отбелязани емоции"
   },
-  "history": {
-    "title": "История",
-    "groupAverage": "ср. {{average}}",
-    "groups": {
-      "today": "Днес",
-      "yesterday": "Вчера",
-      "thisWeek": "По-рано тази седмица",
-      "older": "По-рано"
-    },
-    "empty": "Тук ще се появяват записите ти."
-  },
   "trendControls": {
     "title": "Тенденция на настроението",
     "range7": "7д",

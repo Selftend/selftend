@@ -1,25 +1,19 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, View, type LayoutChangeEvent } from "react-native";
+import { Pressable, ScrollView, View, type LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
+import { cn } from "@/lib/utils";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
+import { Section } from "@/src/components/app/section";
 import { LineChart } from "@/src/components/charts/line-chart";
 import { SegmentedControl } from "@/src/components/app/segmented-control";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { DateRangeField, type DateRange } from "@/src/components/app/date-range-field";
-import { MoodHistoryList } from "@/src/features/mood/mood-history-list";
 import { buildMoodChartData, buildMoodChartDataForRange } from "@/src/features/mood/chart-data";
 import {
   useFirstMoodDayKey,
@@ -38,6 +32,7 @@ import {
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { WeekHero } from "@/src/features/mood/mood-week-hero";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatAtOffset, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
@@ -91,17 +86,25 @@ export default function MoodTrackerScreen() {
       ? t("stats.never")
       : undefined;
 
-  const statItems = [
-    { value: String(totalCount ?? moodLogs?.length ?? 0), label: t("stats.checkinsLabel") },
-    { value: String(thisWeekCount), label: t("stats.thisWeekLabel") },
-    {
-      value: sevenDay.average === null ? "-" : sevenDay.average.toFixed(1),
-      label: t("stats.avgLabel"),
-    },
-    // The old ToolStats.subline, folded into the row as a value-less item -
-    // which is exactly how the design's `2a` renders "last logged 4:50 pm".
-    ...(subline ? [{ value: "", label: subline }] : []),
-  ];
+  const checkInCount = totalCount ?? moodLogs?.length ?? 0;
+  // The stats row earns its place the same way the sections below do (#735,
+  // decided on #695): a brand-new user is met by the picker, not by "0 check-ins
+  // · 0 this week · - 7-day avg". `ModuleHomeHeader` renders nothing at all for
+  // an empty array (#690), so there is no empty row left behind.
+  const statItems =
+    checkInCount > 0
+      ? [
+          { value: String(checkInCount), label: t("stats.checkinsLabel") },
+          { value: String(thisWeekCount), label: t("stats.thisWeekLabel") },
+          {
+            value: sevenDay.average === null ? "-" : sevenDay.average.toFixed(1),
+            label: t("stats.avgLabel"),
+          },
+          // The old ToolStats.subline, folded into the row as a value-less item -
+          // which is exactly how the design's `2a` renders "last logged 4:50 pm".
+          ...(subline ? [{ value: "", label: subline }] : []),
+        ]
+      : [];
   // The trend window rides its own narrow query (timestamp/offset/score only), so
   // the 200-row history cache never caps the range. Preset windows omit the upper
   // bound — the key stays stable across renders and new logs still land in-window.
@@ -138,11 +141,31 @@ export default function MoodTrackerScreen() {
     const fmt = new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "short" });
     return `${fmt.format(parseLocalNoon(customRange.start))} – ${fmt.format(parseLocalNoon(customRange.end))}`;
   }, [isCustom, customRange, i18n.language]);
-  const history = moodLogs ?? [];
-
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
   };
+
+  /**
+   * Sections appear as they earn their place (#735, decided on #695).
+   *
+   * They append in a fixed order, so the screen GROWS rather than rearranges -
+   * nothing already on screen ever moves. The alternative was meeting a brand-new
+   * user with four near-identical empty panels, three of which say the same
+   * sentence in different clothes ("Log a mood to start your trend.", "...your
+   * map."). Four consecutive nothing-yet states read as four small failures,
+   * which is the wrong first impression for this product.
+   *
+   * `totalCount` is the lifetime count, so a section that has earned its place
+   * keeps it even when the visible window happens to be empty - a user scrubbing
+   * to a quiet month should not watch the page dismantle itself.
+   *
+   * The trend needs TWO points, not one: a line chart through a single point is
+   * a dot, and "trend" is a claim about direction that one check-in cannot make.
+   * `chartData` already counts days-with-data rather than days-in-window
+   * (`chart-data.ts` skips empty buckets), so its length is the point count.
+   */
+  const hasAnyCheckIn = (totalCount ?? 0) > 0;
+  const showTrend = chartData.length >= 2;
 
   return (
     <>
@@ -156,36 +179,46 @@ export default function MoodTrackerScreen() {
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
-        <MoodHistoryList
-          logs={history}
-          ListHeaderComponent={
-            // The column itself rides the list's contentContainerStyle, so the
-            // header only needs the gap that used to come from the sheet.
-            <View className="gap-6">
-              <ModuleHomeHeader
-                addWidgetCategory="mood"
-                title={t("title")}
-                tourScope="mood"
-                description={t("description")}
-                actions={[
-                  { type: "notifications", targetKey: "mood" },
-                  { type: "info", onPress: () => setForceOnboarding(true) },
-                ]}
-                stats={statItems}
-              />
-              <TodayCheckInCard summary={daySummary} />
+        {/*
+          A plain scroller, not a list (#735, decided on #695). The overview used
+          to BE its history list, with everything above passed as
+          `ListHeaderComponent`; with the history gone there is nothing to
+          virtualize - four sections, fixed count - so the inversion resolves
+          into an ordinary page. The heatmap's own horizontal scroller nests
+          inside this exactly as it already nested inside the list header.
+        */}
+        <ScrollView contentContainerClassName="grow p-4">
+          {/* No gap: `Section` carries its own py-6, and the hairline belongs
+              between two sections' padding rather than across a flex gap. */}
+          <View className={cn(HOME_COLUMN)}>
+            <ModuleHomeHeader
+              addWidgetCategory="mood"
+              title={t("title")}
+              tourScope="mood"
+              description={t("description")}
+              actions={[
+                { type: "notifications", targetKey: "mood" },
+                { type: "info", onPress: () => setForceOnboarding(true) },
+              ]}
+              stats={statItems}
+            />
 
-              <View className="gap-3">
-                <View className="flex-row flex-wrap items-center justify-between gap-2">
-                  <Text variant="h3">{t("week.title")}</Text>
-                  <ShowAllHistoryLink />
-                </View>
+            {/* Always. Tapping a score deep-links into the editor with it
+                preselected, so the first screenful is the whole interaction. */}
+            <Section ruled={false}>
+              <TodayCheckIn summary={daySummary} />
+            </Section>
+
+            {hasAnyCheckIn ? (
+              <Section title={t("week.title")} action={<ShowAllHistoryLink />}>
                 <WeekHero delta={weekDelta} byDay={weekByDay} topEmotions={topEmotions} />
-              </View>
+              </Section>
+            ) : null}
 
-              <View className="gap-3">
-                <View className="flex-row flex-wrap items-center justify-between gap-2">
-                  <Text variant="h3">{t("trendControls.title")}</Text>
+            {showTrend ? (
+              <Section
+                title={t("trendControls.title")}
+                action={
                   <SegmentedControl
                     value={trendRange}
                     onChange={(next) => {
@@ -204,7 +237,8 @@ export default function MoodTrackerScreen() {
                       { value: "custom", label: t("trendControls.rangeCustom") },
                     ]}
                   />
-                </View>
+                }
+              >
                 {customSpanLabel ? (
                   <Text variant="muted" className="text-[13px]">
                     {customSpanLabel}
@@ -221,32 +255,27 @@ export default function MoodTrackerScreen() {
                   minDateKey={firstLogDayKey ?? undefined}
                   maxDateKey={currentDateKey()}
                 />
-                <Card variant="soft">
-                  <CardContent className="pt-4">
-                    <View onLayout={handleChartLayout}>
-                      {chartData.length > 0 ? (
-                        <LineChart points={chartData} domain={[1, 5]} width={chartContainerWidth} />
-                      ) : (
-                        <Text variant="muted">{t("trend.empty")}</Text>
-                      )}
-                    </View>
-                  </CardContent>
-                </Card>
-              </View>
+                <View onLayout={handleChartLayout}>
+                  <LineChart points={chartData} domain={[1, 5]} width={chartContainerWidth} />
+                </View>
+              </Section>
+            ) : null}
 
-              <View className="gap-3">
-                <Text variant="h3">{t("heatmap.title")}</Text>
-                <Card variant="soft">
-                  <CardContent className="pt-4">
-                    <MoodHeatmap userId={userId} />
-                  </CardContent>
-                </Card>
-              </View>
+            {/*
+              The distribution section belongs here, between the trend and the
+              map, sharing the trend's range control (#737). This ticket reserves
+              the slot rather than rendering an empty one - a placeholder panel
+              is exactly the four-empty-panels first run the staging above exists
+              to avoid.
+            */}
 
-              <Text variant="h3">{t("history.title")}</Text>
-            </View>
-          }
-        />
+            {hasAnyCheckIn ? (
+              <Section title={t("heatmap.title")}>
+                <MoodHeatmap userId={userId} />
+              </Section>
+            ) : null}
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </>
   );
@@ -274,14 +303,18 @@ function ShowAllHistoryLink() {
   );
 }
 
-interface TodayCheckInCardProps {
+interface TodayCheckInProps {
   summary: MoodSummary;
 }
 
 // The overview always describes the device's current local day (#250), so this
-// card names today rather than branching on a constant (#720). A card for some
-// other day is the redesign's day panel (#697), not this one wearing a flag.
-function TodayCheckInCard({ summary }: TodayCheckInCardProps) {
+// names today rather than branching on a constant (#720). A panel for some other
+// day is the redesign's day panel (#697), not this one wearing a flag.
+//
+// No longer a card (#735, decided on #690/#695): the surfaces stack down one
+// column, and bordered cards on a background read as competing panels rather
+// than one page. The hairline `Section` around it carries the separation now.
+function TodayCheckIn({ summary }: TodayCheckInProps) {
   const { t } = useTranslation("mood");
   const logged = summary.count > 0;
   const description = !logged
@@ -291,23 +324,25 @@ function TodayCheckInCard({ summary }: TodayCheckInCardProps) {
       : t("today.completeMany", { count: summary.count, average: summary.average });
 
   return (
-    <Card variant="soft">
-      <CardHeader>
+    <>
+      <View className="gap-1.5">
         <View className="flex-row items-center gap-2">
           {logged ? <Icon name="check-circle" className="size-5 text-primary" /> : null}
-          <CardTitle aria-level={2}>{t("today.title")}</CardTitle>
+          {/* Level 2: the module title is the page heading, and this is the
+              first thing under it - the same level the CardTitle carried. */}
+          <Text variant="h3" aria-level={2} className="text-lg">
+            {t("today.title")}
+          </Text>
         </View>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <MoodScale
-          value={null}
-          onChange={(score) =>
-            router.push(`/tools/check-in/new?score=${score}` as Parameters<typeof router.push>[0])
-          }
-          compact
-        />
-      </CardContent>
-    </Card>
+        <Text variant="muted">{description}</Text>
+      </View>
+      <MoodScale
+        value={null}
+        onChange={(score) =>
+          router.push(`/tools/check-in/new?score=${score}` as Parameters<typeof router.push>[0])
+        }
+        compact
+      />
+    </>
   );
 }

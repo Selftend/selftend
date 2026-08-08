@@ -11,9 +11,10 @@ import {
 /**
  * Sectioning for the all-history screen (#696).
  *
- * The overview's `groupLogsByDate` stops at a single `older` bucket, which was
- * fine there because nothing old was shown. Here it would hold every entry from
- * day 8 to forever — and this screen is the ONLY route to an old entry, because
+ * The overview's `groupLogsByDate` stopped at a single `older` bucket, which was
+ * fine there because nothing old was shown — it went with the inline list in
+ * #735. Here that bucket would hold every entry from day 8 to forever, and this
+ * screen is the ONLY route to an old entry, because
  * the mood map deliberately never navigates (`mood-heatmap.tsx:22-25`). So the
  * tail is split into calendar months, which is what gives a long scroll any
  * landmarks at all.

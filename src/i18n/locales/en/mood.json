@@ -110,17 +110,6 @@
     "feltMost": "Felt most often",
     "noEmotions": "No emotions tagged yet"
   },
-  "history": {
-    "title": "History",
-    "groupAverage": "avg {{average}}",
-    "groups": {
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "thisWeek": "Earlier this week",
-      "older": "Earlier"
-    },
-    "empty": "Your check-ins will appear here."
-  },
   "trendControls": {
     "title": "Mood trend",
     "range7": "7d",

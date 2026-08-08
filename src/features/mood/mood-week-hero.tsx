@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
-import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
@@ -42,106 +41,107 @@ export function WeekHero({ delta, byDay, topEmotions }: WeekHeroProps) {
   const todayKey = byDay[byDay.length - 1]?.dateKey;
 
   return (
-    <Card variant="soft">
-      <CardContent className="gap-5 pt-5 pb-5">
-        <View className="flex-row items-end justify-between">
-          <View>
-            <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-              {t("week.average")}
-            </Text>
-            <Text className="font-display text-[40px] font-extrabold leading-[1.1] tracking-tight">
-              {delta.current === null ? "-" : delta.current.toFixed(1)}
-            </Text>
-            <Text className={cn("text-[13px] font-semibold", d.tone)}>{d.text}</Text>
-          </View>
-        </View>
-
-        <View className="gap-2">
+    // No card (#735, decided on #690): the overview stacks hairline sections
+    // down one column, and a bordered panel among them reads as a competing
+    // page rather than part of this one. The block's own interior is #736's.
+    <View className="gap-5">
+      <View className="flex-row items-end justify-between">
+        <View>
           <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            {t("week.byDay")}
+            {t("week.average")}
           </Text>
-          <View className="flex-row gap-1">
-            {byDay.map((day) => {
-              const isToday = day.dateKey === todayKey;
-              const date = parseLocalNoon(day.dateKey);
-              const letter = new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" }).format(
-                date,
-              );
-              const dayName = new Intl.DateTimeFormat(i18n.language, { weekday: "long" }).format(
-                date,
-              );
-              // Day averages are means of 1-5 scores, so Math.round stays in range;
-              // clamp anyway so a bad value can never index off the emoji map.
-              const score =
-                day.average === null ? null : Math.min(5, Math.max(1, Math.round(day.average)));
-              return (
-                <View
-                  key={day.dateKey}
-                  accessible
-                  accessibilityRole="image"
-                  // RNW drops the native-only `accessible` prop, and a generic div
-                  // prohibits an accessible name — the img role carries the label on web.
-                  role="img"
-                  accessibilityLabel={
-                    score === null
-                      ? t("week.dayNoEntry", { day: dayName })
-                      : t("week.dayScore", {
-                          day: dayName,
-                          score: t(`checkin.scaleLabels.${score}`),
-                        })
-                  }
-                  testID={isToday ? "week-strip-today" : undefined}
-                  className={cn(
-                    "flex-1 items-center gap-1.5 rounded-xl py-1.5",
-                    isToday && "bg-muted",
+          <Text className="font-display text-[40px] font-extrabold leading-[1.1] tracking-tight">
+            {delta.current === null ? "-" : delta.current.toFixed(1)}
+          </Text>
+          <Text className={cn("text-[13px] font-semibold", d.tone)}>{d.text}</Text>
+        </View>
+      </View>
+
+      <View className="gap-2">
+        <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          {t("week.byDay")}
+        </Text>
+        <View className="flex-row gap-1">
+          {byDay.map((day) => {
+            const isToday = day.dateKey === todayKey;
+            const date = parseLocalNoon(day.dateKey);
+            const letter = new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" }).format(
+              date,
+            );
+            const dayName = new Intl.DateTimeFormat(i18n.language, { weekday: "long" }).format(
+              date,
+            );
+            // Day averages are means of 1-5 scores, so Math.round stays in range;
+            // clamp anyway so a bad value can never index off the emoji map.
+            const score =
+              day.average === null ? null : Math.min(5, Math.max(1, Math.round(day.average)));
+            return (
+              <View
+                key={day.dateKey}
+                accessible
+                accessibilityRole="image"
+                // RNW drops the native-only `accessible` prop, and a generic div
+                // prohibits an accessible name — the img role carries the label on web.
+                role="img"
+                accessibilityLabel={
+                  score === null
+                    ? t("week.dayNoEntry", { day: dayName })
+                    : t("week.dayScore", {
+                        day: dayName,
+                        score: t(`checkin.scaleLabels.${score}`),
+                      })
+                }
+                testID={isToday ? "week-strip-today" : undefined}
+                className={cn(
+                  "flex-1 items-center gap-1.5 rounded-xl py-1.5",
+                  isToday && "bg-muted",
+                )}
+              >
+                <View className="h-8 items-center justify-center">
+                  {score === null ? (
+                    <View
+                      testID="week-strip-empty-dot"
+                      className="h-2.5 w-2.5 rounded-full border-[1.5px] border-muted-foreground/40"
+                    />
+                  ) : (
+                    <Text className="text-2xl leading-none">{MOOD_EMOJI_BY_SCORE[score]}</Text>
                   )}
+                </View>
+                <Text
+                  variant="muted"
+                  className={cn("text-[11px] font-semibold", isToday && "text-muted-foreground")}
                 >
-                  <View className="h-8 items-center justify-center">
-                    {score === null ? (
-                      <View
-                        testID="week-strip-empty-dot"
-                        className="h-2.5 w-2.5 rounded-full border-[1.5px] border-muted-foreground/40"
-                      />
-                    ) : (
-                      <Text className="text-2xl leading-none">{MOOD_EMOJI_BY_SCORE[score]}</Text>
-                    )}
-                  </View>
-                  <Text
-                    variant="muted"
-                    className={cn("text-[11px] font-semibold", isToday && "text-muted-foreground")}
-                  >
-                    {letter}
+                  {letter}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      <View className="gap-2">
+        <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          {t("week.feltMost")}
+        </Text>
+        {topEmotions.length === 0 ? (
+          <Text variant="muted" className="text-[13px]">
+            {t("week.noEmotions")}
+          </Text>
+        ) : (
+          <View className="flex-row flex-wrap gap-2">
+            {topEmotions.map((e) => {
+              const display = resolveEmotion(e.id);
+              return (
+                <View key={e.id} className="rounded-full bg-muted px-3 py-1.5">
+                  <Text className="text-[13px] text-muted-foreground">
+                    {display.emoji} {display.name} · {e.count}
                   </Text>
                 </View>
               );
             })}
           </View>
-        </View>
-
-        <View className="gap-2">
-          <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            {t("week.feltMost")}
-          </Text>
-          {topEmotions.length === 0 ? (
-            <Text variant="muted" className="text-[13px]">
-              {t("week.noEmotions")}
-            </Text>
-          ) : (
-            <View className="flex-row flex-wrap gap-2">
-              {topEmotions.map((e) => {
-                const display = resolveEmotion(e.id);
-                return (
-                  <View key={e.id} className="rounded-full bg-muted px-3 py-1.5">
-                    <Text className="text-[13px] text-muted-foreground">
-                      {display.emoji} {display.name} · {e.count}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-        </View>
-      </CardContent>
-    </Card>
+        )}
+      </View>
+    </View>
   );
 }
