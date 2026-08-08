@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { router } from "expo-router";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -9,6 +8,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { MoodHistoryRow } from "@/src/features/mood/mood-history-row";
+import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import {
   logsOnDay,
@@ -371,27 +371,5 @@ function DayPanel({ dateKey, entries, language, resolveEmotion }: DayPanelProps)
         </View>
       ))}
     </View>
-  );
-}
-
-/**
- * The overview's only entrance to the all-history screen (#696). The week strip
- * is check-in's recency view, so the link sits with it rather than under a
- * duplicate list of recent entries.
- */
-function ShowAllHistoryLink() {
-  const { t } = useTranslation("mood");
-
-  return (
-    <Pressable
-      accessibilityRole="link"
-      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push("/tools/check-in/history")}
-      className="flex-row items-center gap-1 active:opacity-70"
-      role="link"
-    >
-      <Text className="text-[13px] font-semibold text-primary-ink">{t("allHistory.link")}</Text>
-      <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />
-    </Pressable>
   );
 }

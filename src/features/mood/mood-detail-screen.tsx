@@ -1,34 +1,49 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
-import { Badge } from "@/src/components/react-native-reusables/badge";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { DetailRow } from "@/src/components/app/detail-row";
+import { ChipRun, StaticChip } from "@/src/components/app/selectable-chip";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { useDeleteMoodLog, useMoodLog, useMoodLogs } from "@/src/features/mood/queries";
+import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
 import type { MoodLog } from "@/src/features/mood/types";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { formatAtOffset } from "@/src/utils/date";
-import { cn } from "@/lib/utils";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { scoreToneClass } from "@/src/features/mood/score-tone";
+
+/**
+ * The one linked strategy the app can produce, and where its row leads.
+ *
+ * `linked_strategy` is not a form field and never was: `modules/cbt/activities/[id]`
+ * is the only writer, and it always writes this one slug. Rendering `entry.linkedStrategy`
+ * raw - which is what shipped - put the literal string `behavioral-activation` on screen
+ * in both locales, an untranslated user-visible string.
+ *
+ * An unrecognised slug renders no row at all. That hides nothing the user wrote: this
+ * value is a system marker, not their words, and a row we cannot name is a row that
+ * would have to show the slug again.
+ */
+const LINKED_STRATEGIES: Record<string, { labelKey: string; href: string }> = {
+  "behavioral-activation": {
+    labelKey: "detail.strategies.behavioralActivation",
+    href: "/modules/cbt/activities",
+  },
+};
 
 export default function MoodDetailScreen() {
   const { t } = useTranslation("mood");
@@ -97,131 +112,121 @@ export default function MoodDetailScreen() {
   // Same frame as the card that was tapped: the captured day, not the viewer's.
   const when = formatRelativeDayKey(entry.dayKey, t);
   const trimmedNotes = entry.notes.trim();
+  const linked = entry.linkedStrategy ? LINKED_STRATEGIES[entry.linkedStrategy] : undefined;
+
+  /**
+   * Seven possible rows, every one conditional on having content (#703).
+   *
+   * The design draws two because its sample entry has two - that is a sample, not the
+   * row set. An entry with a score and nothing else shows no rows at all, which is the
+   * point: three big empty cards used to make a one-tap check-in look like an
+   * unfinished form.
+   */
+  const rows = [
+    entry.emotions.length > 0 ? (
+      <DetailRow key="emotions" label={t("detail.emotions")}>
+        <ChipRun>
+          {entry.emotions.map((emotionId) => {
+            const display = resolveEmotion(emotionId);
+            return <StaticChip key={emotionId} emoji={display.emoji} label={display.name} />;
+          })}
+        </ChipRun>
+      </DetailRow>
+    ) : null,
+    trimmedNotes ? (
+      <DetailRow key="notes" label={t("detail.notes")}>
+        <Text className="text-sm leading-relaxed">{trimmedNotes}</Text>
+      </DetailRow>
+    ) : null,
+    ...(
+      [
+        ["situation", tCbt("mood.situationLabel"), entry.situation],
+        ["thoughts", tCbt("mood.thoughtsLabel"), entry.thoughts],
+        ["behaviours", tCbt("mood.behavioursLabel"), entry.behaviours],
+        ["sensations", tCbt("mood.sensationsLabel"), entry.bodilySensations],
+      ] as const
+    ).map(([key, label, raw]) => {
+      const value = raw.trim();
+      return value ? (
+        <DetailRow key={key} label={label}>
+          <Text className="text-sm leading-relaxed">{value}</Text>
+        </DetailRow>
+      ) : null;
+    }),
+    linked ? (
+      <DetailRow key="linkedStrategy" label={t("detail.linkedStrategy")}>
+        <Pressable
+          accessibilityRole="link"
+          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+          onPress={() => router.push(linked.href as Parameters<typeof router.push>[0])}
+          className="flex-row items-center gap-1 self-start active:opacity-70"
+          role="link"
+        >
+          <Text className="text-sm font-semibold text-primary-ink">{t(linked.labelKey)}</Text>
+          <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />
+        </Pressable>
+      </DetailRow>
+    ) : null,
+  ].filter(Boolean);
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <ScreenBreadcrumb />
-            <Card variant="soft">
-              <CardContent className="flex-row items-center gap-4 pt-5 pb-5">
-                <View
-                  className={cn(
-                    "size-16 items-center justify-center rounded-full",
-                    scoreToneClass(entry.moodScore),
-                  )}
+    <View className="flex-1" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+        {/* The trail rides the bar, not the column: chrome for the screen rather than
+            part of the document (#733). */}
+        <ScreenTopBar leading="back" />
+
+        <ScrollView contentContainerClassName="grow px-6 pt-10 pb-14">
+          <View className={`${FORM_COLUMN} gap-8`}>
+            <View className="flex-row items-center gap-4">
+              <Text className="text-[40px] leading-none">
+                {MOOD_EMOJI_BY_SCORE[entry.moodScore] ?? ""}
+              </Text>
+              <View className="flex-1 gap-0.5">
+                <Text className="font-display text-2xl font-bold tracking-tight">
+                  {t(`checkin.scaleLabels.${entry.moodScore}`)} · {entry.moodScore}
+                </Text>
+                {/* The logged-at card folds into this line - a timestamp is not a
+                    section, and it was the emptiest card on the screen. */}
+                <Text variant="muted" className="text-[13px]">
+                  {when} · {formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}
+                </Text>
+              </View>
+              <View className="flex-row items-center gap-1">
+                <Button
+                  onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
+                  variant="outline"
+                  size="sm"
                 >
-                  <Text className="text-4xl">{MOOD_EMOJI_BY_SCORE[entry.moodScore] ?? ""}</Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="font-display text-2xl font-extrabold tracking-tight">
-                    {t(`detailWord.${entry.moodScore}`)} · {entry.moodScore}
-                  </Text>
-                  <Text variant="muted" className="text-sm">
-                    {when}
-                  </Text>
-                </View>
-                <View className="gap-2">
-                  <Button
-                    onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    <Icon name="edit" className="size-4" />
-                    <Text>{t("detail.edit")}</Text>
-                  </Button>
-                  <Button onPress={() => setConfirmOpen(true)} variant="ghost" size="sm">
-                    <Icon name="delete-outline" className="size-4 text-destructive" />
-                    <Text>{t("detail.delete")}</Text>
-                  </Button>
-                </View>
-              </CardContent>
-            </Card>
+                  <Icon name="edit" className="size-4" />
+                  <Text>{t("detail.edit")}</Text>
+                </Button>
+                <Button
+                  onPress={() => setConfirmOpen(true)}
+                  variant="ghost"
+                  size="icon"
+                  accessibilityLabel={t("detail.delete")}
+                >
+                  <Icon name="delete-outline" className="size-[18px] text-muted-foreground" />
+                </Button>
+              </View>
+            </View>
+
+            {rows.length > 0 ? (
+              <View>
+                {rows}
+                {/* Closing hairline: the rows are top-ruled, so the last one needs a
+                    floor or the column stops mid-air. */}
+                <View className="border-t border-border" />
+              </View>
+            ) : null}
+
+            <View className="items-end">
+              <ShowAllHistoryLink />
+            </View>
           </View>
-
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle>{t("detail.loggedAt")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Text>{formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}</Text>
-            </CardContent>
-          </Card>
-
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle>{t("detail.emotions")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {entry.emotions.length > 0 ? (
-                <View className="flex-row flex-wrap gap-1.5">
-                  {entry.emotions.map((emotionId) => {
-                    const display = resolveEmotion(emotionId);
-                    return (
-                      <Badge key={emotionId} variant="secondary">
-                        <Text className="text-xs">
-                          {display.emoji} {display.name}
-                        </Text>
-                      </Badge>
-                    );
-                  })}
-                </View>
-              ) : (
-                <Text variant="muted">{t("detail.noEmotions")}</Text>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle>{t("detail.notes")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {trimmedNotes ? (
-                <Text>{trimmedNotes}</Text>
-              ) : (
-                <Text variant="muted">{t("detail.noNotes")}</Text>
-              )}
-            </CardContent>
-          </Card>
-
-          {[
-            { title: tCbt("mood.situationLabel"), value: entry.situation.trim() },
-            { title: tCbt("mood.thoughtsLabel"), value: entry.thoughts.trim() },
-            { title: tCbt("mood.behavioursLabel"), value: entry.behaviours.trim() },
-            { title: tCbt("mood.sensationsLabel"), value: entry.bodilySensations.trim() },
-          ]
-            .filter((box) => box.value.length > 0)
-            .map((box) => (
-              <Card key={box.title} variant="soft">
-                <CardHeader>
-                  <CardTitle>{box.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Text>{box.value}</Text>
-                </CardContent>
-              </Card>
-            ))}
-
-          {entry.linkedStrategy ? (
-            <Card variant="soft">
-              <CardHeader>
-                <CardTitle>{t("detail.linkedStrategy")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Badge variant="outline">
-                  <Text className="text-xs">{entry.linkedStrategy}</Text>
-                </Badge>
-              </CardContent>
-            </Card>
-          ) : null}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
 
       <ConfirmDialog
         cancelLabel={t("detail.confirmDelete.cancel")}
@@ -237,6 +242,6 @@ export default function MoodDetailScreen() {
         title={t("detail.confirmDelete.title")}
         visible={confirmOpen}
       />
-    </SafeAreaView>
+    </View>
   );
 }

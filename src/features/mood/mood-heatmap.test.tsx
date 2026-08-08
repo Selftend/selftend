@@ -52,8 +52,8 @@ describe("MoodHeatmap", () => {
     renderWithProviders(<MoodHeatmap userId="user-1" />);
 
     expect(screen.getByText("Awful")).toBeTruthy();
-    expect(screen.getByText("Low")).toBeTruthy();
-    expect(screen.getByText("OK")).toBeTruthy();
+    expect(screen.getByText("Bad")).toBeTruthy();
+    expect(screen.getByText("Okay")).toBeTruthy();
     expect(screen.getByText("Good")).toBeTruthy();
     expect(screen.getByText("Great")).toBeTruthy();
   });
