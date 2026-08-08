@@ -132,15 +132,28 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
     (editMode ? input.color : nextHabitColor((cachedList ?? []).map((h) => h.color)));
 
   /**
-   * The six offered colours, with the habit's own prepended when it holds a retired one.
-   * A habit created before the palette was cut keeps its identity in the picker rather
-   * than silently resetting the moment its owner opens the form.
+   * ⚠️ `undefined` means the habits query is still in flight, NOT that the user has no
+   * habits — and the two imply different colours. Saving is gated on this below, so a
+   * cold-opened create form cannot commit `act` while an existing habit already holds it.
    */
-  const colorChoices: HabitColor[] = (HABIT_COLOR_CHOICES as readonly string[]).includes(
-    activeColor,
-  )
-    ? [...(HABIT_COLOR_CHOICES as readonly HabitColor[])]
-    : [activeColor, ...(HABIT_COLOR_CHOICES as readonly HabitColor[])];
+  const awaitingHabitsForColor = !editMode && pickedColor === null && cachedList === undefined;
+
+  /**
+   * The six offered colours, with the edited habit's own prepended when it **stores** a
+   * retired one — so a habit created before the palette was cut keeps its identity.
+   *
+   * ⚠️ Keyed on the *stored* colour, not the selected one. Keying it on the selection made
+   * the retired swatch vanish the moment the user picked anything else, so an accidental
+   * tap could not be undone without leaving the form and losing every other edit.
+   */
+  const grandfathered =
+    existing && !(HABIT_COLOR_CHOICES as readonly string[]).includes(existing.color)
+      ? existing.color
+      : null;
+
+  const colorChoices: HabitColor[] = grandfathered
+    ? [grandfathered, ...(HABIT_COLOR_CHOICES as readonly HabitColor[])]
+    : [...(HABIT_COLOR_CHOICES as readonly HabitColor[])];
 
   const colorRoving = useRovingFocus({
     count: colorChoices.length,
@@ -247,7 +260,10 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
               </Button>
             </View>
             <View className="flex-1">
-              <Button disabled={saving || !user} onPress={() => void handleSave()}>
+              <Button
+                disabled={saving || !user || awaitingHabitsForColor}
+                onPress={() => void handleSave()}
+              >
                 {saving ? <ActivityIndicator color="#ffffff" /> : null}
                 <Text>{saving ? t("cta.saving") : t("cta.save")}</Text>
               </Button>
