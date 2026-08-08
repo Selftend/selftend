@@ -11,7 +11,7 @@ test.describe("log mood", () => {
     await deleteAllMoodLogsForUser(user.id);
   });
 
-  test("alice logs a neutral mood and sees it on the detail screen and in the list", async ({
+  test("alice logs a neutral mood and sees it on the detail screen and in all history", async ({
     page,
   }) => {
     await page.goto("/tools/check-in/new");
@@ -31,20 +31,28 @@ test.describe("log mood", () => {
     // The detail page shows the saved score's emoji.
     await expect(page.getByText("😐")).toBeVisible({ timeout: 15_000 });
 
-    // The entry also appears on the tracker list. Navigate via the sidebar link
-    // (client-side) rather than page.goto(): the save-redirect's history updates
-    // can still be settling, and a hard goto racing a same-document navigation is
-    // resolved by Playwright as same-document — the list never loads.
+    // The overview carries no entry list of its own (#735): the week strip is
+    // check-in's recency view, and past entries live on the all-history screen.
+    // Navigate via the sidebar link (client-side) rather than page.goto(): the
+    // save-redirect's history updates can still be settling, and a hard goto
+    // racing a same-document navigation is resolved by Playwright as
+    // same-document — the page never loads.
     // (.first() = the sidebar nav link; the detail breadcrumb also exposes a
     // "Check-in" link and either would do, but strict mode needs one.)
     await page.getByRole("link", { name: "Check-in" }).first().click();
     await expect(page).toHaveURL(/\/tools\/check-in$/);
 
-    // Scope to the history entry row: the check-in card's mood scale always
-    // renders a 😐 radio on this screen, so a bare getByText("😐") matches 2
-    // elements once the list paints (strict-mode violation).
+    // The overview states the entry once, through the picker — no list echoes it.
+    await expect(page.getByRole("button", { name: /View mood entry from/ })).toHaveCount(0);
+
+    // The one route to the entry: the week row's link to all history.
+    await page.getByRole("link", { name: /Show all history/ }).click();
+    await expect(page).toHaveURL(/\/tools\/check-in\/history$/);
+
+    // Scope to the entry row rather than a bare 😐 — the row names the score
+    // word and the time (mood:allHistory.viewEntry).
     await expect(
-      page.getByRole("button", { name: /View mood entry from/ }).getByText("😐"),
+      page.getByRole("button", { name: /View OK check-in from/ }).getByText("😐"),
     ).toBeVisible({ timeout: 10_000 });
   });
 });
