@@ -141,9 +141,41 @@ describe("MoodTrackerScreen", () => {
       expect(screen.getByRole("heading", { name: "Mood trend" })).toBeTruthy();
     });
 
-    it("keeps a section it has earned even while the count query is reloading", () => {
-      // `totalCount` undefined means loading, not zero - tearing the page down
-      // mid-refetch would be the rearrangement the staging exists to avoid.
+    it("falls back to the loaded logs when the count query has no answer", () => {
+      // A pending or failed count must not retract the week block - and with it
+      // the only link to all history - from a user whose entries are on screen.
+      const loggedAt = new Date(`${currentDateKey()}T12:00:00`).toISOString();
+      mockUseMoodLogCount.mockReturnValue({
+        data: undefined,
+      } as unknown as ReturnType<typeof useMoodLogCount>);
+      mockUseMoodLogs.mockReturnValue({
+        data: [
+          {
+            id: "log-1",
+            userId: "user-1",
+            moodScore: 4,
+            emotions: [],
+            notes: "",
+            linkedStrategy: null,
+            loggedAt,
+            loggedOffsetMinutes: null,
+            dayKey: entryDayKey(loggedAt, null),
+            createdAt: loggedAt,
+          },
+        ],
+      } as unknown as ReturnType<typeof useMoodHistory>);
+
+      renderWithProviders(<MoodTrackerScreen />);
+
+      expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
+      expect(screen.getByText("Show all history")).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "All time" })).toBeTruthy();
+    });
+
+    it("keeps the trend section mounted when a narrower range holds too little", () => {
+      // The range switch lives INSIDE this section. Gating on the selected
+      // range's point count would let a user pick 7d, fall under two points,
+      // and lose the control they need to get back to 30d.
       mockLogged({ points: 2, count: 2 });
       mockUseMoodLogs.mockReturnValue({
         data: [],
@@ -152,8 +184,15 @@ describe("MoodTrackerScreen", () => {
       const { rerender } = renderWithProviders(<MoodTrackerScreen />);
       expect(screen.getByRole("heading", { name: "Mood trend" })).toBeTruthy();
 
+      // The narrowed range comes back with a single day of data.
+      mockLogged({ points: 1, count: 2 });
       rerender(<MoodTrackerScreen />);
+
       expect(screen.getByRole("heading", { name: "Mood trend" })).toBeTruthy();
+      expect(screen.getByText("7d")).toBeTruthy();
+      expect(screen.getByText("30d")).toBeTruthy();
+      // The chart empties, not the page - and it blames the range, not the user.
+      expect(screen.getByText("Not enough check-ins in this range yet.")).toBeTruthy();
     });
   });
 

@@ -37,7 +37,7 @@
     }
   },
   "trend": {
-    "empty": "Log a mood to start your trend."
+    "emptyRange": "Not enough check-ins in this range yet."
   },
   "recent": {
     "viewEntry": "View mood entry from {{when}}"

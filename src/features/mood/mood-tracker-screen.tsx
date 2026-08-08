@@ -155,17 +155,28 @@ export default function MoodTrackerScreen() {
    * map."). Four consecutive nothing-yet states read as four small failures,
    * which is the wrong first impression for this product.
    *
-   * `totalCount` is the lifetime count, so a section that has earned its place
-   * keeps it even when the visible window happens to be empty - a user scrubbing
-   * to a quiet month should not watch the page dismantle itself.
+   * Earning a place is one-way. `checkInCount` falls back to the loaded logs, so
+   * a pending or failed count query cannot retract the week block - and with it
+   * the ONLY link to all history - from a user whose entries are already on
+   * screen.
    *
    * The trend needs TWO points, not one: a line chart through a single point is
    * a dot, and "trend" is a claim about direction that one check-in cannot make.
    * `chartData` already counts days-with-data rather than days-in-window
    * (`chart-data.ts` skips empty buckets), so its length is the point count.
+   *
+   * But that count is the SELECTED range's, and the range switch lives inside
+   * this section: gating on it directly lets a user pick 7d, land under two
+   * points, and watch the control they'd use to get back to 30d unmount with the
+   * chart. So the gate latches - once the trend has been earned it stays for the
+   * life of the screen, and a narrow range empties the chart rather than the
+   * page. This also rides out the blank between a range change and its data.
    */
-  const hasAnyCheckIn = (totalCount ?? 0) > 0;
-  const showTrend = chartData.length >= 2;
+  const hasAnyCheckIn = checkInCount > 0;
+  const trendEarned = chartData.length >= 2;
+  const [trendEverEarned, setTrendEverEarned] = useState(false);
+  if (trendEarned && !trendEverEarned) setTrendEverEarned(true);
+  const showTrend = trendEarned || trendEverEarned;
 
   return (
     <>
@@ -256,7 +267,15 @@ export default function MoodTrackerScreen() {
                   maxDateKey={currentDateKey()}
                 />
                 <View onLayout={handleChartLayout}>
-                  <LineChart points={chartData} domain={[1, 5]} width={chartContainerWidth} />
+                  {chartData.length >= 2 ? (
+                    <LineChart points={chartData} domain={[1, 5]} width={chartContainerWidth} />
+                  ) : (
+                    // The range the user chose, not their history, is what is
+                    // thin here - so this says that rather than "log a mood".
+                    <Text variant="muted" className="text-[13px]">
+                      {t("trend.emptyRange")}
+                    </Text>
+                  )}
                 </View>
               </Section>
             ) : null}
