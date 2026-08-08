@@ -30,15 +30,3 @@ export function seedEmotionsForThoughtRecord(emotionIds: readonly string[]): str
 
   return seeded;
 }
-
-/**
- * Parse the `emotions` route param the check-in handoff writes.
- *
- * Same filtering as the writer, applied again on the read side: the param is a URL the user
- * can edit, and an unknown id would sit checked-but-unrenderable in the wizard.
- */
-export function parseSeededEmotionsParam(value: string | string[] | undefined): string[] {
-  const raw = Array.isArray(value) ? value[0] : value;
-  if (!raw) return [];
-  return seedEmotionsForThoughtRecord(raw.split(","));
-}

@@ -1,7 +1,4 @@
-import {
-  parseSeededEmotionsParam,
-  seedEmotionsForThoughtRecord,
-} from "@/src/features/mood/thought-record-handoff";
+import { seedEmotionsForThoughtRecord } from "@/src/features/mood/thought-record-handoff";
 
 describe("seedEmotionsForThoughtRecord", () => {
   it("keeps builtin ids in the order the user picked them", () => {
@@ -29,24 +26,5 @@ describe("seedEmotionsForThoughtRecord", () => {
 
   it("returns nothing for an empty selection", () => {
     expect(seedEmotionsForThoughtRecord([])).toEqual([]);
-  });
-});
-
-describe("parseSeededEmotionsParam", () => {
-  it("splits the comma-separated param", () => {
-    expect(parseSeededEmotionsParam("anxious,sad")).toEqual(["anxious", "sad"]);
-  });
-
-  it("takes the first value when expo-router hands back an array", () => {
-    expect(parseSeededEmotionsParam(["anxious,sad", "happy"])).toEqual(["anxious", "sad"]);
-  });
-
-  it("filters unknown ids out of a hand-edited URL", () => {
-    expect(parseSeededEmotionsParam("anxious,not-an-emotion")).toEqual(["anxious"]);
-  });
-
-  it("returns nothing when the param is absent or empty", () => {
-    expect(parseSeededEmotionsParam(undefined)).toEqual([]);
-    expect(parseSeededEmotionsParam("")).toEqual([]);
   });
 });

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { MoodEntryEditorScreen } from "@/src/features/mood/mood-entry-editor-screen";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
+import { consumeThoughtRecordSeed } from "@/src/stores/thought-record-seed-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-linear-gradient", () => {
@@ -325,7 +326,12 @@ describe("MoodEntryEditorScreen", () => {
       expect(screen.queryByLabelText("Jaw")).toBeNull();
     });
 
-    it("hands the picked emotions to the thought record, and nothing else", () => {
+    /**
+     * The seed rides a store, never the URL. A route param would put the user's emotions
+     * in the web address bar, in browser history, and in Sentry's navigation breadcrumbs —
+     * `dropConsoleBreadcrumb` in `sentry.ts` drops *console* breadcrumbs only.
+     */
+    it("hands the picked emotions over out of band, not in the URL", () => {
       renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
       fireEvent.press(screen.getByLabelText("OK"));
@@ -334,10 +340,8 @@ describe("MoodEntryEditorScreen", () => {
       fireEvent.press(screen.getByLabelText("Go deeper"));
       fireEvent.press(screen.getByText("Open a CBT thought record →"));
 
-      expect(mockRouter.push).toHaveBeenCalledWith({
-        pathname: "/modules/cbt/new",
-        params: { emotions: "anxious" },
-      });
+      expect(mockRouter.push).toHaveBeenCalledWith("/modules/cbt/new");
+      expect(consumeThoughtRecordSeed()).toEqual(["anxious"]);
     });
 
     it("pushes rather than replaces, so the half-written check-in survives the detour", () => {
@@ -346,7 +350,7 @@ describe("MoodEntryEditorScreen", () => {
       fireEvent.press(screen.getByLabelText("Go deeper"));
       fireEvent.press(screen.getByText("Open a CBT thought record →"));
 
-      expect(mockRouter.push).toHaveBeenCalledWith({ pathname: "/modules/cbt/new" });
+      expect(mockRouter.push).toHaveBeenCalledWith("/modules/cbt/new");
       expect(mockRouter.replace).not.toHaveBeenCalled();
     });
 

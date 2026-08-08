@@ -40,6 +40,7 @@ import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
 import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
 import { seedEmotionsForThoughtRecord } from "@/src/features/mood/thought-record-handoff";
+import { seedThoughtRecord } from "@/src/stores/thought-record-seed-store";
 import { type EmotionDisplay, useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { MoodLog } from "@/src/features/mood/types";
 import { useSession } from "@/src/providers/session-provider";
@@ -297,15 +298,15 @@ export function MoodEntryEditorScreen({
    * detour. The thought record is an invitation, and an invitation you cannot back out of
    * without losing your work is a trap.
    *
-   * Emotions are the only thing seeded - see `thought-record-handoff.ts` for why the note
-   * is not mapped to `situation`.
+   * The seed goes through a store rather than a route param. A param would put the
+   * user's emotions in the web address bar, browser history and Sentry's navigation
+   * breadcrumbs - see `thought-record-seed-store.ts`. Emotions are the only thing
+   * carried; see `thought-record-handoff.ts` for why the note is not mapped to
+   * `situation`.
    */
   const openThoughtRecord = () => {
-    const seeded = seedEmotionsForThoughtRecord(emotions);
-    router.push({
-      pathname: "/modules/cbt/new",
-      ...(seeded.length > 0 ? { params: { emotions: seeded.join(",") } } : {}),
-    });
+    seedThoughtRecord(seedEmotionsForThoughtRecord(emotions));
+    router.push("/modules/cbt/new");
   };
 
   if (editMode && !fromCache && isLoading) {
