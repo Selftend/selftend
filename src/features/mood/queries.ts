@@ -111,13 +111,23 @@ export function useMoodScorePoints(userId: string | null, fromIso: string, toIso
  * — and rooted under `mood` like every other key, so a save or delete still
  * invalidates it with the rest. Cost is 14–40 rows a week, small enough that
  * #693's decrypt-everything projection cost barely registers.
+ *
+ * The span is derived here rather than passed in, so that `weekStartKey` alone
+ * is a complete description of what the query returns. Taking the far bound as
+ * a second argument would let a caller pair one week's key with another week's
+ * range and get a cache hit carrying the wrong fortnight.
  */
-export function useMoodWeek(userId: string | null, weekStartKey: string, previousStartKey: string) {
+export function useMoodWeek(userId: string | null, weekStartKey: string) {
   return useQuery({
     queryKey: userId
       ? moodKeys.week(userId, weekStartKey)
       : ["mood", "week", "anonymous", weekStartKey],
-    queryFn: () => listMoodLogsInDayRange(userId!, previousStartKey, addDaysToKey(weekStartKey, 6)),
+    queryFn: () =>
+      listMoodLogsInDayRange(
+        userId!,
+        addDaysToKey(weekStartKey, -7),
+        addDaysToKey(weekStartKey, 6),
+      ),
     enabled: Boolean(userId),
   });
 }

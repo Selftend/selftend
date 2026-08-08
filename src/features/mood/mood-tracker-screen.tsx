@@ -72,7 +72,7 @@ export default function MoodTrackerScreen() {
   const weekWindow = useMemo(() => weekWindowForOffset(weekOffset), [weekOffset]);
   // One fetch per displayed week, covering it and the week before it, so the
   // delta is right at every offset rather than only at offset 0.
-  const { data: weekLogs } = useMoodWeek(userId, weekWindow.startKey, weekWindow.previousStartKey);
+  const { data: weekLogs } = useMoodWeek(userId, weekWindow.startKey);
 
   // Each aggregation iterates up to 200 logs; memoize so unrelated re-renders (chart-width
   // onLayout or onboarding toggle) don't recompute the week/day summaries.
