@@ -39,6 +39,7 @@ import { parseBodyChips, toggleBodyChip } from "@/src/features/mood/body-sensati
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
 import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
+import { seedEmotionsForThoughtRecord } from "@/src/features/mood/thought-record-handoff";
 import { type EmotionDisplay, useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { MoodLog } from "@/src/features/mood/types";
 import { useSession } from "@/src/providers/session-provider";
@@ -58,6 +59,24 @@ interface MoodEntryEditorScreenProps {
   fallbackHref: Href;
   mode: "create" | "edit";
   moodId?: string | null;
+}
+
+interface InheritedDeeperFields {
+  situation: boolean;
+  thoughts: boolean;
+  behaviours: boolean;
+  bodilySensations: boolean;
+}
+
+const NO_INHERITED: InheritedDeeperFields = {
+  situation: false,
+  thoughts: false,
+  behaviours: false,
+  bodilySensations: false,
+};
+
+function hasInheritedField(fields: InheritedDeeperFields) {
+  return fields.situation || fields.thoughts || fields.behaviours || fields.bodilySensations;
 }
 
 function paramValue(value: string | string[] | undefined) {
@@ -153,6 +172,10 @@ export function MoodEntryEditorScreen({
   const [thoughts, setThoughts] = useState("");
   const [behaviours, setBehaviours] = useState("");
   const [bodilySensations, setBodilySensations] = useState("");
+  // Which of the four CBT fields this entry ALREADY held when it loaded (#739, decided
+  // on #698). Captured once at hydration rather than read from live state, so clearing a
+  // field mid-edit doesn't yank its own input out from under the cursor.
+  const [inheritedFields, setInheritedFields] = useState<InheritedDeeperFields>(NO_INHERITED);
   const [showDeeper, setShowDeeper] = useState(false);
   const [manageEmotionsOpen, setManageEmotionsOpen] = useState(false);
   const editMode = mode === "edit";
@@ -180,14 +203,16 @@ export function MoodEntryEditorScreen({
     setThoughts(existingEntry.thoughts);
     setBehaviours(existingEntry.behaviours);
     setBodilySensations(existingEntry.bodilySensations);
-    setShowDeeper(
-      Boolean(
-        existingEntry.situation ||
-        existingEntry.thoughts ||
-        existingEntry.behaviours ||
-        existingEntry.bodilySensations,
-      ),
-    );
+    const inherited: InheritedDeeperFields = {
+      situation: existingEntry.situation.length > 0,
+      thoughts: existingEntry.thoughts.length > 0,
+      behaviours: existingEntry.behaviours.length > 0,
+      bodilySensations: existingEntry.bodilySensations.length > 0,
+    };
+    setInheritedFields(inherited);
+    // Auto-open only when there is inherited reflection to see. An entry with none gets
+    // the same collapsed invitation a new check-in gets.
+    setShowDeeper(hasInheritedField(inherited));
     setError("");
   }, [existingEntry]);
 
@@ -266,6 +291,22 @@ export function MoodEntryEditorScreen({
 
   // Parse the body-chip CSV once per render instead of inside the chip map (N times).
   const selectedBodyChips = parseBodyChips(bodilySensations);
+
+  /**
+   * `push`, never `replace`: the check-in the user is part-way through must survive the
+   * detour. The thought record is an invitation, and an invitation you cannot back out of
+   * without losing your work is a trap.
+   *
+   * Emotions are the only thing seeded - see `thought-record-handoff.ts` for why the note
+   * is not mapped to `situation`.
+   */
+  const openThoughtRecord = () => {
+    const seeded = seedEmotionsForThoughtRecord(emotions);
+    router.push({
+      pathname: "/modules/cbt/new",
+      ...(seeded.length > 0 ? { params: { emotions: seeded.join(",") } } : {}),
+    });
+  };
 
   if (editMode && !fromCache && isLoading) {
     return (
@@ -449,11 +490,15 @@ export function MoodEntryEditorScreen({
             <Text className="text-sm font-medium">{t("mood.goDeeperTitle")}</Text>
           </Pressable>
           {showDeeper ? (
-            <View className="gap-4 rounded-2xl border border-border bg-muted p-4">
-              <Text variant="muted" className="text-[13px]">
-                {t("mood.goDeeperIntro")}
-              </Text>
-              <View className="gap-4">
+            // No box. The design's disclosure body is plain text on the background - a
+            // bordered panel here would be the one card left on a screen that gave up
+            // its cards (#733).
+            <View className="gap-4">
+              {/* Reflection this entry already holds stays editable, and stays FIRST:
+                  the user opened this to reach their own words, not the invitation. The
+                  create form no longer offers these fields, but taking them away from an
+                  entry that has text would mean deleting the check-in to edit them. */}
+              {inheritedFields.situation ? (
                 <View className="gap-1.5">
                   <Text className="text-[13px] font-bold">{t("mood.situationLabel")}</Text>
                   <Text variant="muted" className="text-[12px]">
@@ -466,6 +511,8 @@ export function MoodEntryEditorScreen({
                     value={situation}
                   />
                 </View>
+              ) : null}
+              {inheritedFields.thoughts ? (
                 <View className="gap-1.5">
                   <Text className="text-[13px] font-bold">{t("mood.thoughtsLabel")}</Text>
                   <Text variant="muted" className="text-[12px]">
@@ -478,6 +525,8 @@ export function MoodEntryEditorScreen({
                     value={thoughts}
                   />
                 </View>
+              ) : null}
+              {inheritedFields.behaviours ? (
                 <View className="gap-1.5">
                   <Text className="text-[13px] font-bold">{t("mood.responseLabel")}</Text>
                   <Text variant="muted" className="text-[12px]">
@@ -490,6 +539,8 @@ export function MoodEntryEditorScreen({
                     value={behaviours}
                   />
                 </View>
+              ) : null}
+              {inheritedFields.bodilySensations ? (
                 <View className="gap-1.5">
                   <Text className="text-[13px] font-bold">{t("mood.bodyLabel")}</Text>
                   <Text variant="muted" className="text-[12px]">
@@ -518,11 +569,9 @@ export function MoodEntryEditorScreen({
                           <Text
                             className={cn(
                               "text-[13px]",
-                              // Accent ink, not `text-be` (#368): the selected chip stacks
-                              // be/10 on the be/[0.06] "go deeper" box on the room
-                              // background, and the published accent reads 3.81:1 through
-                              // that stack - be clears AA on the bare room surfaces, not
-                              // through two tints of itself.
+                              // Accent ink, not `text-be` (#368/#691): hue encodes data,
+                              // not identity, and the published accent measured 3.81:1
+                              // through the tint stack this chip used to sit on.
                               selected ? "text-primary-ink font-medium" : "text-foreground",
                             )}
                           >
@@ -533,6 +582,25 @@ export function MoodEntryEditorScreen({
                     })}
                   </View>
                 </View>
+              ) : null}
+
+              {/* The invitation, verbatim from the design. "no pressure to" is guardrail
+                  copy, not decoration: this is the one place the product suggests more
+                  work, and the sentence is what keeps it an offer. */}
+              <View className="gap-2.5">
+                <Text variant="muted" className="text-[13px]">
+                  {t("mood.goDeeperInvite")}
+                </Text>
+                <Pressable
+                  accessibilityRole="link"
+                  onPress={openThoughtRecord}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  {...spaceKeyActivationProps(openThoughtRecord)}
+                >
+                  <Text className="text-[13px] font-semibold text-primary-ink">
+                    {t("mood.goDeeperLink")} →
+                  </Text>
+                </Pressable>
               </View>
             </View>
           ) : null}
