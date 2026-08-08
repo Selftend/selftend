@@ -154,6 +154,10 @@
     "empty": {
       "title": "Nothing here yet",
       "description": "Your check-ins will collect here as you log them."
+    },
+    "error": {
+      "title": "Couldn't load your history",
+      "description": "Check your connection and try again - nothing has been lost."
     }
   }
 }

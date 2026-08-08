@@ -55,15 +55,18 @@ function log(dayKey: string, overrides: Partial<MoodLog> = {}): MoodLog {
 interface PagesState {
   pages?: MoodLog[][];
   hasNextPage?: boolean;
+  isError?: boolean;
   isFetchingNextPage?: boolean;
   isPending?: boolean;
 }
 
 const fetchNextPage = jest.fn();
+const refetch = jest.fn();
 
 function mockPages({
   pages,
   hasNextPage = false,
+  isError = false,
   isFetchingNextPage = false,
   isPending = false,
 }: PagesState) {
@@ -71,8 +74,10 @@ function mockPages({
     data: pages ? { pages, pageParams: pages.map((_, i) => i * 50) } : undefined,
     fetchNextPage,
     hasNextPage,
+    isError,
     isFetchingNextPage,
     isPending,
+    refetch,
   } as unknown as ReturnType<typeof useMoodHistoryPages>);
 }
 
@@ -200,6 +205,38 @@ describe("MoodHistoryScreen", () => {
     renderWithProviders(<MoodHistoryScreen />);
 
     expect(screen.queryByText("Nothing here yet")).toBeNull();
+  });
+
+  it("says the load failed rather than claiming the history is empty", () => {
+    // A failed first page leaves TanStack with isPending false and no data, so
+    // the empty branch would tell a returning user their check-ins are gone.
+    mockPages({ isError: true });
+
+    renderWithProviders(<MoodHistoryScreen />);
+
+    expect(screen.getByText("Couldn't load your history")).toBeTruthy();
+    expect(screen.queryByText("Nothing here yet")).toBeNull();
+  });
+
+  it("retries the failed first page from the error state", () => {
+    mockPages({ isError: true });
+
+    renderWithProviders(<MoodHistoryScreen />);
+    fireEvent.press(screen.getByText("Retry"));
+
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a loaded history on screen when a background refetch fails", () => {
+    // isError rides alongside cached pages on a background-refetch failure;
+    // replacing a list the user can still read with an error would be a
+    // regression, so the error state is reachable only through the empty slot.
+    mockPages({ pages: [[log(todayKey())]], isError: true });
+
+    renderWithProviders(<MoodHistoryScreen />);
+
+    expect(screen.getByText("Good · 4")).toBeTruthy();
+    expect(screen.queryByText("Couldn't load your history")).toBeNull();
   });
 
   it("keeps the reading column and padding on contentContainerStyle", () => {

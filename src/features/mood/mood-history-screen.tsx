@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { EmptyState } from "@/src/components/app/screen-state";
+import { EmptyState, ErrorState } from "@/src/components/app/screen-state";
 import { Text } from "@/src/components/react-native-reusables/text";
 import {
   formatHistoryMonth,
@@ -36,7 +36,7 @@ export default function MoodHistoryScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } =
+  const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
     useMoodHistoryPages(userId);
   const { resolveEmotion } = useEmotionDisplay();
 
@@ -81,9 +81,20 @@ export default function MoodHistoryScreen() {
           </View>
         }
         ListEmptyComponent={
-          // Only once the first page has actually resolved - an empty list during
-          // the initial fetch would tell a returning user their history is gone.
-          isPending ? null : (
+          // "Nothing here yet" is a claim about the account, so it may only be
+          // made once a page has actually come back empty. While the first page
+          // is in flight, and when it failed outright, the honest answer is a
+          // different one - either would otherwise tell a returning user their
+          // history is gone. A failed background refetch that still has pages
+          // cached never reaches here, because the list is not empty.
+          isPending ? null : isError ? (
+            <ErrorState
+              icon="cloud-off"
+              title={t("allHistory.error.title")}
+              description={t("allHistory.error.description")}
+              action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
+            />
+          ) : (
             <EmptyState
               icon="history"
               title={t("allHistory.empty.title")}
