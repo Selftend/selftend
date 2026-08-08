@@ -18,6 +18,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
   useEmotionPreferences: () => ({ data: [] }),
+  useEmotionUsageCounts: () => ({ data: {} }),
 }));
 
 const mockPush = jest.fn();

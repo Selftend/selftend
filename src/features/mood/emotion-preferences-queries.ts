@@ -5,6 +5,7 @@ import {
   getEmotionsSeeded,
   insertDefaultEmotions,
   listEmotionPreferences,
+  listEmotionUsageCounts,
   markEmotionsSeeded,
   setEmotionOrder,
   upsertEmotionPreference,
@@ -20,6 +21,7 @@ import type {
 
 const emotionPrefKeys = {
   list: (userId: string) => ["emotion-prefs", userId] as const,
+  usage: (userId: string) => ["emotion-usage", userId] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -44,6 +46,19 @@ export function useEmotionPreferences(userId: string | null) {
   return useQuery({
     queryKey: userId ? emotionPrefKeys.list(userId) : emotionPrefKeys.list("anon"),
     queryFn: () => listOrSeedEmotions(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Lifetime uses per emotion (#743). Only the manage-emotions surface asks for it, so it
+ * is a separate query rather than a field on the preference rows - the picker on the
+ * check-in form must not pay for an aggregate it never renders.
+ */
+export function useEmotionUsageCounts(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? emotionPrefKeys.usage(userId) : emotionPrefKeys.usage("anon"),
+    queryFn: listEmotionUsageCounts,
     enabled: Boolean(userId),
   });
 }

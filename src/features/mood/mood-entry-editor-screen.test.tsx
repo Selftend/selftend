@@ -58,6 +58,7 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => {
       })),
       isLoading: false,
     }),
+    useEmotionUsageCounts: () => ({ data: {} }),
     useUpsertEmotionPreference: () => ({ mutate: jest.fn() }),
     useReorderEmotions: () => ({ mutate: jest.fn() }),
     useRemoveEmotion: () => ({ mutate: jest.fn() }),

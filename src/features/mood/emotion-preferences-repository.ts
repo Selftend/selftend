@@ -184,3 +184,29 @@ export async function setEmotionOrder(userId: string, orderedIds: string[]): Pro
   const { error } = await client.from("emotion_preferences").insert(payload);
   if (error) throw error;
 }
+
+/**
+ * Lifetime usage count per emotion id (#743, decided on #702 + #693).
+ *
+ * A server aggregate rather than a reduce over the cached log list, because every other
+ * check-in stat reduces over `useMoodHistory`'s capped 200 rows and is already silently
+ * wrong for a long-tenured user. This one figure cannot be approximate: it is what the
+ * delete confirmation shows someone before they lose data, and "used 3 times" when the
+ * true answer is 60 is worse than no number at all.
+ *
+ * The RPC reads `mood_logs_data`, not the decrypting `mood_logs` view - see the migration
+ * header for why a clean projection is not enough to avoid the decrypt.
+ */
+export async function listEmotionUsageCounts(): Promise<Record<string, number>> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("mood_emotion_counts");
+
+  if (error) throw error;
+
+  const counts: Record<string, number> = {};
+  for (const row of (data ?? []) as { emotion_id: string; uses: number | string }[]) {
+    // PostgREST serialises bigint as a JSON number, but coerce defensively.
+    counts[row.emotion_id] = Number(row.uses);
+  }
+  return counts;
+}
