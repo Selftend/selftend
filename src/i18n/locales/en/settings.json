@@ -206,7 +206,7 @@
     "licenseDescription": "The repository is planned under AGPL-3.0-only. Reference repos and curated resource lists may inform design decisions, but their code, text, and assets are not copied casually into this project."
   },
   "tools": {
-    "moodTracker": "Mood tracker",
+    "moodTracker": "Check-in",
     "gratitudeLog": "Gratitude log"
   },
   "feedback": {

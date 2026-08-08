@@ -55,7 +55,7 @@ app/
     ├── index.tsx          home (Today)
     ├── settings.tsx       settings
     ├── cbt/               index, learn, new, [id], history
-    ├── tools/             mood-tracker, journal, mindfulness, gratitude-log (working); act, meditation (placeholders)
+    ├── tools/             check-in, journal, mindfulness, gratitude-log (working); act, meditation (placeholders)
     ├── legal.tsx
     └── support.tsx
 ```

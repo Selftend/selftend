@@ -1,6 +1,6 @@
 ﻿# Journaling Module
 
-Private free-text reflection. Lightweight by design: write something, save it, come back later. Separate from CBT thought records and from mood-tracker notes. No streaks, no required structure, no reminders.
+Private free-text reflection. Lightweight by design: write something, save it, come back later. Separate from CBT thought records and from check-in notes. No streaks, no required structure, no reminders.
 
 ## User problem
 

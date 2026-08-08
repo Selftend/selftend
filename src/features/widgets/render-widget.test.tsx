@@ -46,9 +46,9 @@ describe("renderWidget v2", () => {
   it("falls back to mood-checkin for unknown cardId and null config", () => {
     const snapshot = buildSnapshot(empty, freshCtx);
     const el = renderWidget({ ...args, snapshot, config: { ...DEFAULT_CONFIG, cardId: "nope" } });
-    expect(clickPaths(widgetTree(el))).toContain("/tools/mood-tracker/new?score=3");
+    expect(clickPaths(widgetTree(el))).toContain("/tools/check-in/new?score=3");
     const el2 = renderWidget({ ...args, snapshot, config: null });
-    expect(clickPaths(widgetTree(el2))).toContain("/tools/mood-tracker/new?score=3");
+    expect(clickPaths(widgetTree(el2))).toContain("/tools/check-in/new?score=3");
   });
 
   it("strips date-scoped data from a stale snapshot", () => {

@@ -168,7 +168,7 @@ env:
 - takeScreenshot: screenshots/02-cbt
 
 - openLink:
-    link: ${APP_LINK}tools/mood-tracker
+    link: ${APP_LINK}tools/check-in
 - runFlow:
     when:
       visible: ".*Open in.*"

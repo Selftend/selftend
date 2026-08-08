@@ -37,7 +37,7 @@ function MoodEntryCardComponent({ entry, resolveEmotion }: MoodEntryCardProps) {
       accessibilityLabel={t("recent.viewEntry", { when })}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(`/tools/mood-tracker/${entry.id}`)}
+      onPress={() => router.push(`/tools/check-in/${entry.id}`)}
       className="gap-2 rounded-3xl bg-card p-4 shadow-lg shadow-black/10 dark:shadow-none active:bg-accent/40"
       role="button"
     >

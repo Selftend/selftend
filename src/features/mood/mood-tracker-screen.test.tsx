@@ -18,7 +18,7 @@ jest.mock("expo-router", () => ({
     canGoBack: jest.fn(() => false),
     push: jest.fn(),
   },
-  usePathname: () => "/tools/mood-tracker",
+  usePathname: () => "/tools/check-in",
   useFocusEffect: jest.fn(),
 }));
 
@@ -208,7 +208,7 @@ describe("MoodTrackerScreen", () => {
 
     fireEvent.press(screen.getByLabelText("OK"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new?score=3");
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/new?score=3");
   });
 
   it("offers 7d/30d/90d/Custom trend ranges, defaulting to a 30-day window (no 14d)", () => {

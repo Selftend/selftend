@@ -96,7 +96,7 @@ const CLARIFY_VALUES: ProgramTaskDef = {
 const DAILY_NOTICING: ProgramTaskDef = {
   key: "dailyNoticing",
   labelKey: "program.tasks.dailyNoticing",
-  route: "/tools/mood-tracker/new",
+  route: "/tools/check-in/new",
   // Mood carries the civil day captured when the log was written (#250), so read
   // it rather than re-bucketing loggedAt through wherever the viewer is standing.
   signal: ({ moodLogs, selectedDate }) => ({

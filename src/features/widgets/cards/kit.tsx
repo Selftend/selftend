@@ -296,7 +296,7 @@ export function MoodFacesRow({
           <FlexWidget
             key={i}
             clickAction={OPEN_PATH}
-            clickActionData={{ path: `/tools/mood-tracker/new?score=${i + 1}` }}
+            clickActionData={{ path: `/tools/check-in/new?score=${i + 1}` }}
             style={{
               flex: 1,
               alignItems: "center",

@@ -14,7 +14,7 @@ test.describe("log mood", () => {
   test("alice logs a neutral mood and sees it on the detail screen and in the list", async ({
     page,
   }) => {
-    await page.goto("/tools/mood-tracker/new");
+    await page.goto("/tools/check-in/new");
 
     // Pick score 3 ("OK") on the mood scale - accessible label comes from
     // mood:checkin.scaleLabels.3.
@@ -26,7 +26,7 @@ test.describe("log mood", () => {
     // The editor form renders its own 😐 radio, so a bare 😐 check can pass while
     // still on /new — and navigating away then races the in-flight router.replace,
     // which can land the browser back on the detail page after the goto.
-    await page.waitForURL(/\/tools\/mood-tracker\/(?!new$)[^/]+$/, { timeout: 15_000 });
+    await page.waitForURL(/\/tools\/check-in\/(?!new$)[^/]+$/, { timeout: 15_000 });
 
     // The detail page shows the saved score's emoji.
     await expect(page.getByText("😐")).toBeVisible({ timeout: 15_000 });
@@ -38,7 +38,7 @@ test.describe("log mood", () => {
     // (.first() = the sidebar nav link; the detail breadcrumb also exposes a
     // "Check-in" link and either would do, but strict mode needs one.)
     await page.getByRole("link", { name: "Check-in" }).first().click();
-    await expect(page).toHaveURL(/\/tools\/mood-tracker$/);
+    await expect(page).toHaveURL(/\/tools\/check-in$/);
 
     // Scope to the history entry row: the check-in card's mood scale always
     // renders a 😐 radio on this screen, so a bare getByText("😐") matches 2

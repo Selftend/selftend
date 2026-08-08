@@ -12,7 +12,7 @@ describe("tool-routes", () => {
   });
 
   it("routes record-writing tools to their /new form and session tools to their picker", () => {
-    expect(routeForTool("mood")).toBe("/tools/mood-tracker/new");
+    expect(routeForTool("mood")).toBe("/tools/check-in/new");
     expect(routeForTool("journal")).toBe("/tools/journal/new");
     expect(routeForTool("gratitude")).toBe("/tools/gratitude-log/new");
     expect(routeForTool("sleep")).toBe("/tools/sleep/new");

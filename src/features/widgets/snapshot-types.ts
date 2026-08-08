@@ -5,7 +5,7 @@ export type AppThemePref = "light" | "dark" | "system";
 
 export interface Clickable {
   label: string;
-  /** Full in-app deep-link path incl. query params, e.g. "/tools/mood-tracker/new?score=3". */
+  /** Full in-app deep-link path incl. query params, e.g. "/tools/check-in/new?score=3". */
   path: string;
 }
 

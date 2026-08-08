@@ -200,7 +200,7 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
           value: String(data.moodLogCount ?? data.moodLogs.length),
         },
       ],
-      openCta: openCta(t, "/tools/mood-tracker"),
+      openCta: openCta(t, "/tools/check-in"),
     };
   },
 

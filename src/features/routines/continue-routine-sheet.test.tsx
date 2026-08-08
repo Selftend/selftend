@@ -122,7 +122,7 @@ describe("ContinueRoutineSheet", () => {
 
     fireEvent.press(screen.getByText("Do next step"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new");
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/new");
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -193,7 +193,7 @@ describe("ContinueRoutineSheet", () => {
     expect(screen.queryByText("Journal")).toBeNull();
 
     fireEvent.press(screen.getByText("Do next step"));
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/new");
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/new");
   });
 
   it("offers the routine's reminder on completion and writes only on accept", async () => {
