@@ -52,7 +52,7 @@ test.describe("log mood", () => {
     // Scope to the entry row rather than a bare 😐 — the row names the score
     // word and the time (mood:allHistory.viewEntry).
     await expect(
-      page.getByRole("button", { name: /View OK check-in from/ }).getByText("😐"),
+      page.getByRole("button", { name: /View Okay check-in from/ }).getByText("😐"),
     ).toBeVisible({ timeout: 10_000 });
   });
 });
