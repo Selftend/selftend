@@ -30,7 +30,7 @@ export default function JournalListScreen() {
   const { t: tc } = useTranslation("common");
   const { user } = useSession();
   const userId = user?.id ?? null;
-  const { selectedDate, isToday } = useSelectedDate();
+  const { selectedDate } = useSelectedDate();
 
   const { data: entries } = useJournalEntries(userId, 50);
   // Exact lifetime totals for the hero - the list is capped at 50, so its length and its
@@ -140,11 +140,7 @@ export default function JournalListScreen() {
                   />
                 ) : (
                   <>
-                    <JournalDayCard
-                      entries={allEntries}
-                      selectedDate={selectedDate}
-                      isToday={isToday}
-                    />
+                    <JournalDayCard entries={allEntries} selectedDate={selectedDate} />
                     <View className="gap-3">
                       <View className="flex-row items-center gap-3">
                         <Text variant="eyebrow">{t("sections.history")}</Text>

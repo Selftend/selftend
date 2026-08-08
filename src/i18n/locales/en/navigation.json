@@ -71,7 +71,6 @@
   },
   "today": {
     "eyebrow": "Today · {{date}}",
-    "eyebrowPast": "{{date}}",
     "greetingMorning": "Good morning",
     "greetingAfternoon": "Good afternoon",
     "greetingEvening": "Good evening",

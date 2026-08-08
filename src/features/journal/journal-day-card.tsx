@@ -10,15 +10,14 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { JournalCard } from "@/src/features/journal/journal-card";
 import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
-import { parseLocalNoon } from "@/src/utils/date";
+import { currentDateKey, parseLocalNoon } from "@/src/utils/date";
 
 interface JournalDayCardProps {
   entries: JournalEntry[];
   selectedDate: string;
-  isToday: boolean;
 }
 
-export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCardProps) {
+export function JournalDayCard({ entries, selectedDate }: JournalDayCardProps) {
   const { t, i18n } = useTranslation("journal");
 
   const dayEntries = useMemo(
@@ -35,6 +34,11 @@ export function JournalDayCard({ entries, selectedDate, isToday }: JournalDayCar
     [i18n.language, selectedDate],
   );
   const words = dayEntries.reduce((sum, e) => sum + countWords(e.body), 0);
+  // Asked of the date this card was handed, not read from a hook that answered
+  // with a literal `true` (#720). Today it is always the current day, because
+  // nothing renders this card for another one yet - but the question is honest,
+  // and the answer starts varying the moment something does.
+  const isToday = selectedDate === currentDateKey();
   const title = isToday ? t("day.today") : dayLabel;
   // Stable callback so memoized JournalCards aren't re-rendered by a parent re-render.
   const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);

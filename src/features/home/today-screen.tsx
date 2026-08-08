@@ -105,7 +105,7 @@ export default function HomeScreen() {
   const [containerWidth, setContainerWidth] = useState(0);
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
-  const { selectedDate, isToday } = useSelectedDate();
+  const { selectedDate } = useSelectedDate();
   const hour = new Date().getHours();
   const dateLabel = new Intl.DateTimeFormat(i18n.language, {
     weekday: "long",
@@ -218,7 +218,9 @@ export default function HomeScreen() {
       {/* Hero - card-style with subtle purple tint */}
       <View className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
         <Text variant="eyebrow">
-          {t(isToday ? "today.eyebrow" : "today.eyebrowPast", { date: dateLabel })}
+          {/* Home always describes the device's current local day (#250), so it
+              names it rather than testing a constant (#720). */}
+          {t("today.eyebrow", { date: dateLabel })}
         </Text>
         <Text
           variant="h1"

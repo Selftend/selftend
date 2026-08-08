@@ -140,7 +140,7 @@ const allCompleteData = {
 };
 
 function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
-  mockUseSelectedDate.mockReturnValue({ selectedDate: TODAY, isToday: true });
+  mockUseSelectedDate.mockReturnValue({ selectedDate: TODAY });
 
   mockUseUpdateUserPreferences.mockReturnValue({
     mutateAsync,

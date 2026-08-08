@@ -81,7 +81,6 @@ function habitLog(overrides: Partial<HabitLog> = {}): HabitLog {
 function mockDefaults() {
   mockUseSelectedDate.mockReturnValue({
     selectedDate: currentDateKey(),
-    isToday: true,
   });
 
   mockUseUserPreferences.mockReturnValue({
@@ -223,7 +222,7 @@ describe("HabitsHomeScreen tap-to-tick", () => {
 
   it("calls toggleHabitLog with a past selectedDate when a non-today date is active", async () => {
     const pastDate = "2026-05-20";
-    mockUseSelectedDate.mockReturnValue({ selectedDate: pastDate, isToday: false });
+    mockUseSelectedDate.mockReturnValue({ selectedDate: pastDate });
 
     renderWithProviders(<HabitsHomeScreen />);
 
