@@ -458,7 +458,7 @@ describe("MoodTrackerScreen", () => {
 
     // Compact MoodScale renders emoji + accessibility label only (no visible text label).
     // Assert on the a11y label via getByLabelText, which works regardless of visible text.
-    expect(await screen.findByLabelText("OK")).toBeTruthy();
+    expect(await screen.findByLabelText("Okay")).toBeTruthy();
     expect(screen.getByLabelText("Awful")).toBeTruthy();
     expect(screen.getByLabelText("Great")).toBeTruthy();
   });
@@ -470,7 +470,7 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    fireEvent.press(screen.getByLabelText("OK"));
+    fireEvent.press(screen.getByLabelText("Okay"));
 
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/new?score=3");
   });

@@ -1,10 +1,12 @@
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, View } from "react-native";
+import { Animated, Easing, Platform, Pressable, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { hueHsl } from "@/src/features/mindfulness/exercise-hue";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
@@ -51,6 +53,71 @@ export const MOOD_EMOJI_BY_SCORE: Record<number, string> = STEPS.reduce(
   {} as Record<number, string>,
 );
 
+/**
+ * The design grows the selected glyph 38px -> 46px on the form and 34px -> 40px on the
+ * overview picker. Expressed as a scale so one transform covers both text sizes.
+ */
+const SELECTED_SCALE = 46 / 38;
+const SELECTED_SCALE_COMPACT = 40 / 34;
+const SCALE_DURATION_MS = 150;
+
+/**
+ * The one animation that survives the redesign (#740, decided on #716).
+ *
+ * The rule it comes from: if a transition's reduce-motion fallback is as good as the
+ * animated version, ship the fallback for everyone. This one is the exception only
+ * because it is purely decorative - `mood-scale.tsx` already confirms selection three
+ * non-moving ways (border weight, border hue, gradient fill) plus `aria-checked`, so
+ * under reduced motion there is nothing for a substitute to replace and the glyph simply
+ * arrives at its size.
+ *
+ * Two constraints, both load-bearing:
+ *
+ * - **The glyph scales, not the `Pressable`.** The steps are `flex-1` siblings, so
+ *   scaling the pressable would reflow the whole row around the one the user just picked.
+ * - **No overshoot.** `Easing.out(Easing.quad)` approaches the target from below and stops;
+ *   a spring would exceed it and the pressable's `overflow-hidden` would clip the peak.
+ */
+function MoodGlyph({
+  emoji,
+  selected,
+  compact,
+}: {
+  emoji: string;
+  selected: boolean;
+  compact: boolean;
+}) {
+  const reduceMotion = useReduceMotionEnabled();
+  const target = selected ? (compact ? SELECTED_SCALE_COMPACT : SELECTED_SCALE) : 1;
+  // Start AT the target rather than animating on mount: an edit form hydrating a saved
+  // score would otherwise play a selection the user did not just make.
+  const [scale] = useState(() => new Animated.Value(target));
+  const settledRef = useRef(false);
+
+  useEffect(() => {
+    if (!settledRef.current) {
+      settledRef.current = true;
+      return;
+    }
+    if (reduceMotion) {
+      scale.setValue(target);
+      return;
+    }
+    Animated.timing(scale, {
+      toValue: target,
+      duration: SCALE_DURATION_MS,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: Platform.OS !== "web",
+    }).start();
+  }, [target, reduceMotion, scale]);
+
+  return (
+    <Animated.View testID="mood-glyph" style={{ transform: [{ scale }] }}>
+      <Text className={cn("leading-none", compact ? "text-xl" : "text-3xl")}>{emoji}</Text>
+    </Animated.View>
+  );
+}
+
 export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) {
   const { t } = useTranslation("mood");
   const isDark = useColorSchemeName() === "dark";
@@ -95,9 +162,7 @@ export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) 
                 style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
               />
             ) : null}
-            <Text className={cn("leading-none", compact ? "text-xl" : "text-3xl")}>
-              {step.emoji}
-            </Text>
+            <MoodGlyph emoji={step.emoji} selected={selected} compact={compact} />
           </Pressable>
         );
       })}
