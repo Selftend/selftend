@@ -188,7 +188,7 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
         // open with no header at all above its fields (#733).
         topBar={<ScreenTopBar leading="close" />}
         footer={
-          <View className="flex-row gap-3">
+          <View className={cn(FORM_COLUMN, "flex-row gap-3")}>
             <View className="flex-1">
               <Button onPress={goBack} variant="ghost">
                 <Text>{t("breathing.builder.cancel")}</Text>
