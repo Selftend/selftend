@@ -3,7 +3,7 @@ description: Request a language, report a translation issue, or flag localizatio
 title: "[i18n]: "
 labels:
   - i18n
-  - needs triage
+  - needs-triage
 type: Task
 body:
   - type: markdown
