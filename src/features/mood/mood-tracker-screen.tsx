@@ -50,7 +50,13 @@ import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mo
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { formatAtOffset, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
+import {
+  addDaysToKey,
+  dayRangeEndKey,
+  formatAtOffset,
+  parseLocalNoon,
+  startOfDayDaysAgo,
+} from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -183,7 +189,14 @@ export default function MoodTrackerScreen() {
   const windowFromIso = isCustom
     ? new Date(`${customRange.start}T00:00:00`).toISOString()
     : isAllTime
-      ? new Date(`${firstLogDayKey!}T00:00:00`).toISOString()
+      ? // UTC midnight, NOT the viewer's local midnight. A day key is a civil day
+        // in the frame it was CAPTURED in, so the earliest instant belonging to it
+        // can sit up to 14h before its UTC midnight - but up to 25h before the
+        // viewer's local midnight, if that entry was logged at +14:00 and is being
+        // read at -11:00. `listMoodScorePoints` pads by only 24h, so the local
+        // reading would leave the user's very first entry outside the `.gte` bound
+        // and All time would silently omit it. Matches `listMoodLogsInDayRange`.
+        `${firstLogDayKey!}T00:00:00.000Z`
       : startOfDayDaysAgo(presetDays).toISOString();
   const windowToIso = isCustom
     ? new Date(`${customRange.end}T23:59:59.999`).toISOString()
@@ -197,24 +210,63 @@ export default function MoodTrackerScreen() {
     [firstLogDayKey, anchorWeekStart],
   );
 
+  /**
+   * The ONE civil-day window both charts read.
+   *
+   * It has to be computed once and shared, because `listMoodScorePoints`
+   * deliberately over-fetches: its bounds filter `logged_at`, a UTC instant,
+   * while points are bucketed by the civil day captured with them, so the query
+   * pads a whole day at each end. Every consumer is expected to narrow back by
+   * day key - the trend does it by walking an explicit range. Handing the RAW
+   * response to the distribution counted those padded rows, so a check-in on the
+   * day just outside the range appeared in one chart and not the other, breaking
+   * the single guarantee this ticket exists to make.
+   *
+   * The end is `dayRangeEndKey`, not today: fly east-to-west and you land
+   * holding an entry keyed "tomorrow", and All time that stops at the viewer's
+   * current day would drop it from the trend while still counting it in the
+   * distribution (#250).
+   */
+  const rangeKeys = useMemo(() => {
+    const endKey = dayRangeEndKey((scorePoints ?? []).map((point) => point.dayKey));
+    if (isCustom) return { startKey: customRange.start, endKey: customRange.end };
+    if (isAllTime) return { startKey: firstLogDayKey!, endKey };
+    return { startKey: addDaysToKey(endKey, -(presetDays - 1)), endKey };
+  }, [scorePoints, isCustom, customRange, isAllTime, firstLogDayKey, presetDays]);
+
   // Only the first and last day are labelled — interior labels would collide
   // at the trend windows' densities (matches the previous bespoke chart).
+  //
+  // One builder for every range: `buildMoodChartData(points, days)` is itself
+  // just `buildMoodChartDataForRange` over `dayRangeEndKey`-anchored keys, so
+  // driving it from the shared window changes no preset behaviour and removes
+  // the chance of the two charts computing their bounds differently.
   const chartData = useMemo(() => {
-    const days = isCustom
-      ? buildMoodChartDataForRange(scorePoints, customRange.start, customRange.end, i18n.language)
-      : isAllTime
-        ? buildMoodChartDataForRange(scorePoints, firstLogDayKey!, currentDateKey(), i18n.language)
-        : buildMoodChartData(scorePoints, presetDays, i18n.language);
+    const days = buildMoodChartDataForRange(
+      scorePoints,
+      rangeKeys.startKey,
+      rangeKeys.endKey,
+      i18n.language,
+    );
     return days.map((d, i) => ({
       offset: d.offset,
       value: d.score,
       label: i === 0 || i === days.length - 1 ? d.day : undefined,
     }));
-  }, [scorePoints, isCustom, customRange, isAllTime, firstLogDayKey, presetDays, i18n.language]);
+  }, [scorePoints, rangeKeys, i18n.language]);
 
-  // The distribution reduces over the SAME points the trend plots (#701) - one
-  // range, one query, no second fetch and no contact with the capped history.
-  const distribution = useMemo(() => getMoodDistribution(scorePoints), [scorePoints]);
+  // The distribution reduces over the SAME points the trend plots (#701),
+  // narrowed to the SAME day keys - one range, one query, no second fetch and no
+  // contact with the capped history.
+  const distribution = useMemo(
+    () =>
+      getMoodDistribution(
+        (scorePoints ?? []).filter(
+          (point) => point.dayKey >= rangeKeys.startKey && point.dayKey <= rangeKeys.endKey,
+        ),
+      ),
+    [scorePoints, rangeKeys],
+  );
 
   /**
    * The resolved span under the control, e.g. "3 Mar – 1 Apr" (#700).
@@ -226,7 +278,7 @@ export default function MoodTrackerScreen() {
     const bounds = isCustom
       ? ([customRange.start, customRange.end] as const)
       : isAllTime
-        ? ([firstLogDayKey!, currentDateKey()] as const)
+        ? ([rangeKeys.startKey, rangeKeys.endKey] as const)
         : null;
     if (!bounds) return null;
     const fmt = new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "short" });

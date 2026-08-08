@@ -536,6 +536,38 @@ describe("MoodTrackerScreen", () => {
     expect(screen.queryByRole("heading", { name: "Mood trend" })).toBeNull();
   });
 
+  /**
+   * `listMoodScorePoints` pads its instant window by a whole day at each end,
+   * because its bounds filter `logged_at` while points bucket by the civil day
+   * captured with them. Every consumer must narrow back by day key. Handing the
+   * RAW response to the distribution counted those padded rows, so a check-in
+   * on the day just outside the range showed up in one chart and not the other
+   * — breaking the single guarantee this ticket exists to make.
+   */
+  it("counts only the selected range, not the day the query pads either side", () => {
+    mockUseMoodLogCount.mockReturnValue({
+      data: 9,
+    } as unknown as ReturnType<typeof useMoodLogCount>);
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+    // Two in-window days, plus one the pad drags in from just outside 7d.
+    mockUseMoodScorePoints.mockReturnValue({
+      data: [
+        { dayKey: dayKeyDaysAgo(0), moodScore: 5 },
+        { dayKey: dayKeyDaysAgo(6), moodScore: 5 },
+        { dayKey: dayKeyDaysAgo(7), moodScore: 1 },
+      ],
+    } as unknown as ReturnType<typeof useMoodScorePoints>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+    fireEvent.press(screen.getByText("7d"));
+
+    // Two "Great" check-ins in range; the out-of-range "Awful" is not counted.
+    expect(screen.getByLabelText("Great: 2 check-ins")).toBeTruthy();
+    expect(screen.getByLabelText("Awful: 0 check-ins")).toBeTruthy();
+  });
+
   it("gives the map no range control of its own, leaving it all-time", () => {
     mockLogged();
     mockUseMoodLogs.mockReturnValue({
@@ -572,9 +604,13 @@ describe("MoodTrackerScreen", () => {
     // same hook with its own fixed epoch bound (`ALL_TIME_FROM_ISO`), because it
     // deliberately has no range control (#700) - so the last call on this mock
     // is the map's, not the trend's.
+    // UTC midnight, not the viewer's local midnight: a day key is a civil day in
+    // the frame it was CAPTURED in, so an entry logged at +14:00 and read at
+    // -11:00 sits up to 25h before local midnight, past the query's 24h pad -
+    // and All time would silently omit the user's very first entry.
     expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
       "user-1",
-      new Date("2026-01-15T00:00:00").toISOString(),
+      "2026-01-15T00:00:00.000Z",
       undefined,
     );
   });
