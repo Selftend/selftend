@@ -1,6 +1,12 @@
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, View, type LayoutChangeEvent } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  View,
+  type LayoutChangeEvent,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -20,17 +26,21 @@ import {
   useMoodHistory,
   useMoodLogCount,
   useMoodScorePoints,
+  useMoodWeek,
 } from "@/src/features/mood/queries";
+import { getDayMoodSummary, getMoodSummary, type MoodSummary } from "@/src/features/mood/summaries";
 import {
-  getDayMoodSummary,
-  getMoodSummary,
-  getDailyAverages,
-  getTopEmotions,
-  getWeekDelta,
-  type MoodSummary,
-} from "@/src/features/mood/summaries";
+  buildWeekDays,
+  countLogsInCurrentWeek,
+  currentWeekStartKey,
+  earliestWeekStartKey,
+  getTopEmotionsForWindow,
+  getWeekDeltaForWindow,
+  shiftWeek,
+  weekWindowFor,
+} from "@/src/features/mood/week-window";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
-import { WeekHero } from "@/src/features/mood/mood-week-hero";
+import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
@@ -52,8 +62,9 @@ export default function MoodTrackerScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  // History feeds the week summaries, day card, and history list; the trend chart
-  // rides its own unbounded score-points query further down.
+  // History feeds today's card and the "last logged" subline. It is deliberately
+  // NOT the week block's source any more: that block can now page past this
+  // cache's 200-row ceiling, which would render real logged weeks as empty (#697).
   const { data: moodLogs } = useMoodHistory(userId, 200);
   const { selectedDate } = useSelectedDate();
 
@@ -62,6 +73,31 @@ export default function MoodTrackerScreen() {
   const [trendRange, setTrendRange] = useState<TrendRange>("30d");
   const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [rangePickerOpen, setRangePickerOpen] = useState(false);
+  // Purely local, and it does not touch the today picker: "log for today" and
+  // "look at a week" are different questions. There is deliberately no global
+  // selected-date state to collide with (#250).
+  //
+  // The displayed week is stored as its own start key rather than an offset,
+  // and the anchor - which week "now" falls in - is re-read on focus. A screen
+  // left mounted across a Sunday-to-Monday rollover (a detail screen pushed
+  // over it) would otherwise keep calling last week "This week" and refuse to
+  // page forward, because nothing about `offset: 0` changed.
+  const [anchorWeekStart, setAnchorWeekStart] = useState(currentWeekStartKey);
+  const [displayedWeekStart, setDisplayedWeekStart] = useState(currentWeekStartKey);
+  useFocusEffect(
+    useCallback(() => {
+      setAnchorWeekStart(currentWeekStartKey());
+    }, []),
+  );
+
+  const weekWindow = useMemo(
+    () => weekWindowFor(displayedWeekStart, anchorWeekStart),
+    [displayedWeekStart, anchorWeekStart],
+  );
+  // One fetch per displayed week, covering it and the week before it, so the
+  // delta is right on a navigated week rather than only on the current one.
+  const weekQuery = useMoodWeek(userId, weekWindow.startKey);
+  const weekLogs = weekQuery.data;
 
   // Each aggregation iterates up to 200 logs; memoize so unrelated re-renders (chart-width
   // onLayout or onboarding toggle) don't recompute the week/day summaries.
@@ -70,11 +106,20 @@ export default function MoodTrackerScreen() {
     [moodLogs, selectedDate],
   );
   const sevenDay = useMemo(() => getMoodSummary(moodLogs, 7), [moodLogs]);
-  const weekDelta = useMemo(() => getWeekDelta(moodLogs), [moodLogs]);
-  const weekByDay = useMemo(() => getDailyAverages(moodLogs, 7), [moodLogs]);
-  const topEmotions = useMemo(() => getTopEmotions(moodLogs, 3), [moodLogs]);
+  const weekDelta = useMemo(
+    () => getWeekDeltaForWindow(weekLogs, weekWindow),
+    [weekLogs, weekWindow],
+  );
+  const weekByDay = useMemo(() => buildWeekDays(weekLogs, weekWindow), [weekLogs, weekWindow]);
+  const topEmotions = useMemo(
+    () => getTopEmotionsForWindow(weekLogs, weekWindow, 3),
+    [weekLogs, weekWindow],
+  );
   const { data: totalCount } = useMoodLogCount(userId);
-  const thisWeekCount = sevenDay.count;
+  // The calendar week, not a trailing seven days: the block below says "This
+  // week" and means Monday-to-Sunday, and the same two words may not name two
+  // different spans on one screen (#697).
+  const thisWeekCount = useMemo(() => countLogsInCurrentWeek(moodLogs), [moodLogs]);
   const lastLog = (moodLogs ?? [])[0] ?? null; // listMoodLogs returns newest-first
   const lastWhen = lastLog ? formatAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes) : null;
   // `moodLogs` is undefined while loading and after a failed fetch with no
@@ -117,6 +162,13 @@ export default function MoodTrackerScreen() {
     : undefined;
   const { data: scorePoints } = useMoodScorePoints(userId, windowFromIso, windowToIso);
   const { data: firstLogDayKey } = useFirstMoodDayKey(userId);
+  // Paging stops at the week holding the first entry: weeks before the account
+  // existed are empty chrome. Until that query answers, only the current week is
+  // reachable - better than offering a back arrow that lands on a blank week.
+  const earliestWeekStart = useMemo(
+    () => earliestWeekStartKey(firstLogDayKey ?? null, anchorWeekStart),
+    [firstLogDayKey, anchorWeekStart],
+  );
 
   // Only the first and last day are labelled — interior labels would collide
   // at the trend windows' densities (matches the previous bespoke chart).
@@ -221,8 +273,52 @@ export default function MoodTrackerScreen() {
             </Section>
 
             {hasAnyCheckIn ? (
-              <Section title={t("week.title")} action={<ShowAllHistoryLink />}>
-                <WeekHero delta={weekDelta} byDay={weekByDay} topEmotions={topEmotions} />
+              // The section's heading IS the week label, and it moves as you page
+              // (#697). Two labels - a static "This week" eyebrow above a
+              // navigator saying the same thing - is the shape this avoids.
+              <Section
+                title={formatWeekLabel(weekWindow, t, i18n.language)}
+                action={
+                  <WeekNavigator
+                    canGoBack={weekWindow.startKey > earliestWeekStart}
+                    canGoForward={!weekWindow.isCurrentWeek}
+                    onPrevious={() => setDisplayedWeekStart((k) => shiftWeek(k, -1))}
+                    onNext={() =>
+                      setDisplayedWeekStart((k) =>
+                        shiftWeek(k, 1) > anchorWeekStart ? anchorWeekStart : shiftWeek(k, 1),
+                      )
+                    }
+                  />
+                }
+              >
+                {/*
+                  A week that has not loaded is not an empty week. `weekLogs` is
+                  undefined while the fetch is in flight AND after it fails, and
+                  every aggregation above turns undefined into "-", seven blank
+                  days and "No emotions tagged yet" - telling a user paging
+                  through a flaky connection that a week they filled is empty.
+                  The same distinction the subline makes for `moodLogs` (#735)
+                  and the all-history screen makes for its pages (#734).
+
+                  Data wins over the error arm on purpose: a failed BACKGROUND
+                  refetch that still has this week cached should keep rendering
+                  the week, not replace it with a retry prompt.
+                */}
+                {weekLogs ? (
+                  <WeekHero
+                    window={weekWindow}
+                    days={weekByDay}
+                    delta={weekDelta}
+                    topEmotions={topEmotions}
+                    logs={weekLogs}
+                  />
+                ) : weekQuery.isError ? (
+                  <WeekLoadFailed onRetry={() => void weekQuery.refetch()} />
+                ) : (
+                  <View className="items-center py-8">
+                    <ActivityIndicator />
+                  </View>
+                )}
               </Section>
             ) : null}
 
@@ -301,24 +397,31 @@ export default function MoodTrackerScreen() {
 }
 
 /**
- * The overview's only entrance to the all-history screen, in the week row where
- * the design draws it (#696). The week strip is check-in's recency view, so the
- * link sits beside it rather than under a duplicate list of recent entries.
+ * The week could not be read. Deliberately NOT `ErrorState`: that renders a
+ * `Card`, and #690/#735 took cards off the module homes - a bordered panel
+ * among hairline sections reads as a competing page. Quiet line plus a retry,
+ * at the scale of the section it sits in.
  */
-function ShowAllHistoryLink() {
+function WeekLoadFailed({ onRetry }: { onRetry: () => void }) {
   const { t } = useTranslation("mood");
 
   return (
-    <Pressable
-      accessibilityRole="link"
-      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push("/tools/check-in/history")}
-      className="flex-row items-center gap-1 active:opacity-70"
-      role="link"
-    >
-      <Text className="text-[13px] font-semibold text-primary-ink">{t("allHistory.link")}</Text>
-      <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />
-    </Pressable>
+    <View className="gap-2 py-2">
+      <Text variant="muted" className="text-[13px]">
+        {t("week.loadFailed")}
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        onPress={onRetry}
+        role="button"
+        className="self-start active:opacity-70"
+      >
+        <Text className="text-[13px] font-semibold text-primary-ink">
+          {t("errors:fallback.retry")}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 

@@ -207,6 +207,56 @@ export async function listMoodScorePoints(
 }
 
 /**
+ * Every check-in whose captured civil day falls in `[startKey, endKey]` — the
+ * navigable week block's only read (#736, decided on #697).
+ *
+ * It cannot come off `useMoodHistory`: that cache is capped at 200 rows, and a
+ * navigator walks straight past the cap. A user with more than 200 check-ins
+ * paging back far enough would be shown *real, logged weeks as empty*, with no
+ * way for the screen to tell "nothing that week" from "outside the window" —
+ * the navigator would manufacture the exact defect #705 describes. The
+ * unbounded score-points query cannot rescue it either: it projects no `id` and
+ * no `emotions`, so it can feed neither the day panel nor "felt most often".
+ *
+ * Bounds are day keys but the filter is on `logged_at`, a UTC instant, so the
+ * range is padded by a whole day at each end (same reason as
+ * `listMoodScorePoints`) and narrowed back to exact day keys here. Paged for the
+ * same reason that query is: PostgREST caps a response at 1,000 rows, and a
+ * silent truncation here would look exactly like the capped cache this function
+ * exists to replace.
+ */
+export async function listMoodLogsInDayRange(
+  userId: string,
+  startKey: string,
+  endKey: string,
+): Promise<MoodLog[]> {
+  const client = requireSupabase();
+  const fromIso = padIso(`${startKey}T00:00:00.000Z`, -1);
+  const toIso = padIso(`${endKey}T23:59:59.999Z`, 1);
+  const logs: MoodLog[] = [];
+  for (let offset = 0; ; offset += SCORE_POINTS_PAGE) {
+    const { data, error } = await client
+      .from("mood_logs")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("logged_at", fromIso)
+      .lte("logged_at", toIso)
+      .order("logged_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + SCORE_POINTS_PAGE - 1);
+
+    if (error) throw error;
+    const rows = data as MoodLogRow[];
+    for (const row of rows) {
+      const log = mapMoodLog(row);
+      // The pad pulls in rows either side of the range; keep only the days asked for.
+      if (log.dayKey >= startKey && log.dayKey <= endKey) logs.push(log);
+    }
+    if (rows.length < SCORE_POINTS_PAGE) return logs;
+  }
+}
+
+/**
  * Civil day of the user's earliest log — the lower clamp for custom trend ranges.
  * Resolved from that row's own captured offset so the picker cannot refuse a day
  * the user actually has an entry on.
