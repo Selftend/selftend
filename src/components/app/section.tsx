@@ -47,7 +47,16 @@ export function Section({ children, title, action, ruled = true, className }: Se
       {title || action ? (
         <View testID="section-label-row" className="flex-row items-center justify-between gap-3">
           {title ? (
-            <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            // A heading, styled quiet - not a quiet piece of text. The eyebrow is
+            // a visual decision; dropping the role would take the sections out of
+            // the heading outline entirely, which is what a screen-reader user
+            // navigates this page by. The callers it replaces were `variant="h3"`,
+            // so level 3 keeps the outline it already had.
+            <Text
+              role="heading"
+              aria-level={3}
+              className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground"
+            >
               {title}
             </Text>
           ) : (

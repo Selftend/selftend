@@ -21,15 +21,6 @@ export const HOME_COLUMN = "w-full max-w-[720px] self-center";
 export const FORM_COLUMN = "w-full max-w-[620px] self-center";
 
 /**
- * `HOME_COLUMN` as a number, for the one home that cannot take a class: the
- * check-in overview is a `SectionList`, whose rows are list items rather than
- * children of a wrapper, so its column has to ride `contentContainerStyle` -
- * and NativeWind does not register `SectionList`, so a className there is
- * silently dropped. Kept beside the class so the two can't drift.
- */
-export const HOME_COLUMN_WIDTH = 720;
-
-/**
  * `FORM_COLUMN` as a number, for the same reason: a virtualized list cannot put
  * its column on a wrapper without un-virtualizing itself. The all-history screen
  * (#734) is the first - a long single column of narrow rows, which reads at the

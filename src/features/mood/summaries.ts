@@ -1,5 +1,4 @@
-import type { MoodLog } from "@/src/features/mood/types";
-import { addDaysToKey, dayKeyDiff, dayRangeEndKey, lastNDayKeysEndingAt } from "@/src/utils/date";
+import { addDaysToKey, dayRangeEndKey, lastNDayKeysEndingAt } from "@/src/utils/date";
 import { roundTo1 as round1 } from "@/src/utils/number";
 
 export interface MoodSummary {
@@ -180,43 +179,8 @@ export function getTopEmotions(
     .slice(0, limit);
 }
 
-type HistoryGroupKey = "today" | "yesterday" | "thisWeek" | "older";
-
-interface HistoryGroup {
-  key: HistoryGroupKey;
-  average: number;
-  entries: MoodLog[];
-}
-
-const GROUP_ORDER: HistoryGroupKey[] = ["today", "yesterday", "thisWeek", "older"];
-
-function groupKeyFor(dayKey: string, todayKey: string): HistoryGroupKey {
-  // A day key ahead of today (logged east, read west) still reads as "today" —
-  // it is the user's most recent entry, not a future one.
-  const dayDiff = dayKeyDiff(dayKey, todayKey);
-  if (dayDiff <= 0) return "today";
-  if (dayDiff === 1) return "yesterday";
-  if (dayDiff <= 6) return "thisWeek";
-  return "older";
-}
-
-/** Groups logs (assumed newest-first) into ordered date buckets with per-group averages. */
-export function groupLogsByDate(
-  logs: MoodLog[] | undefined,
-  now: Date = new Date(),
-): HistoryGroup[] {
-  const todayKey = dayRangeEndKey([], now);
-  const byKey = new Map<HistoryGroupKey, MoodLog[]>();
-  for (const log of logs ?? []) {
-    const key = groupKeyFor(log.dayKey, todayKey);
-    const arr = byKey.get(key);
-    if (arr) arr.push(log);
-    else byKey.set(key, [log]);
-  }
-  return GROUP_ORDER.flatMap((key) => {
-    const entries = byKey.get(key);
-    if (!entries || entries.length === 0) return [];
-    const average = round1(entries.reduce((s, e) => s + e.moodScore, 0) / entries.length);
-    return [{ key, average, entries }];
-  });
-}
+// `groupLogsByDate` lived here until #735. It grouped the overview's inline
+// history into today/yesterday/thisWeek/older buckets with per-group averages;
+// that list is gone, and the all-history screen groups its own rows in
+// `history-groups.ts` - which splits the tail into calendar months rather than
+// one unbounded `older`, and carries no averages (#705).

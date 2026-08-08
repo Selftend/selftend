@@ -37,7 +37,7 @@
     }
   },
   "trend": {
-    "empty": "Log a mood to start your trend."
+    "emptyRange": "Not enough check-ins in this range yet."
   },
   "recent": {
     "viewEntry": "View mood entry from {{when}}"
@@ -109,17 +109,6 @@
     "dayNoEntry": "{{day}}: no entry",
     "feltMost": "Felt most often",
     "noEmotions": "No emotions tagged yet"
-  },
-  "history": {
-    "title": "History",
-    "groupAverage": "avg {{average}}",
-    "groups": {
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "thisWeek": "Earlier this week",
-      "older": "Earlier"
-    },
-    "empty": "Your check-ins will appear here."
   },
   "trendControls": {
     "title": "Mood trend",
