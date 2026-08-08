@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countMoodLogs,
@@ -6,6 +6,7 @@ import {
   getFirstMoodDayKey,
   getMoodLog,
   listMoodLogs,
+  listMoodLogsPage,
   listMoodScorePoints,
   saveMoodLog,
 } from "@/src/features/mood/repository";
@@ -17,6 +18,7 @@ const moodKeys = {
   all: ["mood"] as const,
   list: (userId: string, limit: number) => ["mood", "list", userId, limit] as const,
   history: (userId: string) => ["mood", "history", userId] as const,
+  historyPages: (userId: string) => ["mood", "historyPages", userId] as const,
   detail: (userId: string, id: string) => ["mood", "detail", userId, id] as const,
   count: (userId: string) => ["mood", "count", userId] as const,
   scorePoints: (userId: string, fromIso: string, toIso?: string) =>
@@ -44,6 +46,38 @@ export function useMoodHistory(userId: string | null, take: number = MOOD_HISTOR
     queryKey: userId ? moodKeys.history(userId) : ["mood", "history", "anonymous"],
     queryFn: () => listMoodLogs(userId!, MOOD_HISTORY_WINDOW),
     select: (logs) => (take >= MOOD_HISTORY_WINDOW ? logs : logs.slice(0, take)),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Page size for the all-history screen. Large enough that a first page fills
+ * several screens of ~72px rows, small enough that the first paint doesn't pay
+ * to decrypt a year of entries — every returned row decrypts all five encrypted
+ * columns whatever the projection, because `app.decrypt_text` is VOLATILE (#693).
+ */
+export const MOOD_HISTORY_PAGE_SIZE = 50;
+
+/**
+ * The unbounded history, one page at a time — the app's first paged query (#696).
+ *
+ * Every other history in the product is a single capped fetch with a silent
+ * ceiling (mood 200, habits 365, meditation 100). A screen called *all history*
+ * that stops at 200 is a lie, so this one keeps asking instead.
+ *
+ * The key sits under the `mood` root like every other, so a save or delete still
+ * invalidates it with the rest — TanStack refetches the loaded pages, which is
+ * also what keeps offset paging honest after a row is inserted or removed.
+ */
+export function useMoodHistoryPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: userId ? moodKeys.historyPages(userId) : ["mood", "historyPages", "anonymous"],
+    queryFn: ({ pageParam }) => listMoodLogsPage(userId!, MOOD_HISTORY_PAGE_SIZE, pageParam),
+    initialPageParam: 0,
+    // A short page is the end of the data. A full one may or may not be, so ask
+    // again: one empty round trip at the exact boundary beats stopping early.
+    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+      lastPage.length < MOOD_HISTORY_PAGE_SIZE ? undefined : lastPageParam + MOOD_HISTORY_PAGE_SIZE,
     enabled: Boolean(userId),
   });
 }

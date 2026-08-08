@@ -139,5 +139,25 @@
     "title": "All time",
     "empty": "Log a mood to start your map.",
     "calloutNoEntry": "no entry"
+  },
+  "allHistory": {
+    "link": "Show all history",
+    "title": "All history",
+    "description": "Every check-in you have logged, newest first.",
+    "viewEntry": "View {{score}} check-in from {{when}}",
+    "groups": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "Earlier this week",
+      "lastWeek": "Last week"
+    },
+    "empty": {
+      "title": "Nothing here yet",
+      "description": "Your check-ins will collect here as you log them."
+    },
+    "error": {
+      "title": "Couldn't load your history",
+      "description": "Check your connection and try again - nothing has been lost."
+    }
   }
 }

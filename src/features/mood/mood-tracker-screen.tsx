@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { View, type LayoutChangeEvent } from "react-native";
+import { Pressable, View, type LayoutChangeEvent } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -37,6 +37,7 @@ import {
 } from "@/src/features/mood/summaries";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { WeekHero } from "@/src/features/mood/mood-week-hero";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatAtOffset, parseLocalNoon, startOfDayDaysAgo } from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
@@ -175,7 +176,10 @@ export default function MoodTrackerScreen() {
               <TodayCheckInCard summary={daySummary} />
 
               <View className="gap-3">
-                <Text variant="h3">{t("week.title")}</Text>
+                <View className="flex-row flex-wrap items-center justify-between gap-2">
+                  <Text variant="h3">{t("week.title")}</Text>
+                  <ShowAllHistoryLink />
+                </View>
                 <WeekHero delta={weekDelta} byDay={weekByDay} topEmotions={topEmotions} />
               </View>
 
@@ -245,6 +249,28 @@ export default function MoodTrackerScreen() {
         />
       </SafeAreaView>
     </>
+  );
+}
+
+/**
+ * The overview's only entrance to the all-history screen, in the week row where
+ * the design draws it (#696). The week strip is check-in's recency view, so the
+ * link sits beside it rather than under a duplicate list of recent entries.
+ */
+function ShowAllHistoryLink() {
+  const { t } = useTranslation("mood");
+
+  return (
+    <Pressable
+      accessibilityRole="link"
+      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+      onPress={() => router.push("/tools/check-in/history")}
+      className="flex-row items-center gap-1 active:opacity-70"
+      role="link"
+    >
+      <Text className="text-[13px] font-semibold text-primary-ink">{t("allHistory.link")}</Text>
+      <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />
+    </Pressable>
   );
 }
 

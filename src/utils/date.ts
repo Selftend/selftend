@@ -91,6 +91,18 @@ export function maxDayKey(a: string, b: string): string {
   return a >= b ? a : b;
 }
 
+/**
+ * The day key of the Monday on or before `dateKey`.
+ *
+ * Weeks start Monday everywhere in the app — the mood heatmap's columns and the
+ * history screen's "Earlier this week"/"Last week" groups have to agree, or the
+ * same entry sits in different weeks on two surfaces of the same tool.
+ */
+export function mondayKeyOf(dateKey: string): string {
+  const day = parseLocalNoon(dateKey);
+  return addDaysToKey(dateKey, -((day.getDay() + 6) % 7));
+}
+
 /** Whole days from `fromKey` to `toKey`; negative when `toKey` is earlier. */
 export function dayKeyDiff(fromKey: string, toKey: string): number {
   return calendarDayDiff(parseLocalNoon(fromKey), parseLocalNoon(toKey));
@@ -136,12 +148,34 @@ export function formatAtOffset(
   offsetMinutes: number | null,
   lang: string = i18n.language,
 ): string {
+  return formatInstantAtOffset(
+    value,
+    offsetMinutes,
+    { dateStyle: "medium", timeStyle: "short" },
+    lang,
+  );
+}
+
+/**
+ * `formatAtOffset` with the caller choosing the Intl components.
+ *
+ * The captured-frame shift is the part that must not be re-invented — a surface
+ * that wants only a time, or a weekday and a time, still has to read it in the
+ * frame the entry was logged in. The all-history screen needs three different
+ * shapes (time / weekday + time / date) depending on which group a row is in,
+ * so the options are a parameter rather than three near-identical helpers.
+ */
+export function formatInstantAtOffset(
+  value: string,
+  offsetMinutes: number | null,
+  options: Intl.DateTimeFormatOptions,
+  lang: string = i18n.language,
+): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   const known = offsetMinutes !== null && Number.isFinite(offsetMinutes);
   return new Intl.DateTimeFormat(lang || undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    ...options,
     ...(known ? { timeZone: "UTC" } : {}),
   }).format(known ? new Date(date.getTime() + offsetMinutes! * 60_000) : date);
 }
