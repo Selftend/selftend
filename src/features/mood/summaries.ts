@@ -129,6 +129,7 @@ export function getWeekDelta(logs: MoodSample[] | undefined, now: Date = new Dat
 }
 
 interface EmotionSample {
+  dayKey: string;
   emotions: string[];
 }
 
@@ -137,10 +138,38 @@ export interface EmotionCount {
   count: number;
 }
 
-/** Emotion ids by frequency (desc), ties broken by id (asc). Returns at most `limit`. */
-export function getTopEmotions(logs: EmotionSample[] | undefined, limit = 3): EmotionCount[] {
+/**
+ * Emotion ids by frequency (desc) over the last `days` days, ties broken by id
+ * (asc). Returns at most `limit`.
+ *
+ * The window is not optional and defaults to the same seven days its neighbours
+ * use. This counted every log it was handed (#705), while rendering under the
+ * "This week" heading beside `getDailyAverages(logs, 7)` and `getWeekDelta` -
+ * so its real span was the caller's cache depth (200 check-ins), which is ~4
+ * years for a weekly user and ~6 weeks for a heavy one. Two people reading the
+ * same label saw different periods, and one person's chips changed meaning as
+ * their logging rate drifted.
+ *
+ * Anchored on `dayRangeEndKey` like every other window here, not on `now`: the
+ * end of the range is the newest captured day key, so a log written east of the
+ * reader still anchors the week it belongs to (#250).
+ */
+export function getTopEmotions(
+  logs: EmotionSample[] | undefined,
+  limit = 3,
+  days = 7,
+  now: Date = new Date(),
+): EmotionCount[] {
+  const list = logs ?? [];
+  const endKey = dayRangeEndKey(
+    list.map((log) => log.dayKey),
+    now,
+  );
+  const startKey = addDaysToKey(endKey, -(days - 1));
+
   const counts = new Map<string, number>();
-  for (const log of logs ?? []) {
+  for (const log of list) {
+    if (log.dayKey < startKey || log.dayKey > endKey) continue;
     for (const id of log.emotions ?? []) {
       counts.set(id, (counts.get(id) ?? 0) + 1);
     }
