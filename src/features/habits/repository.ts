@@ -185,7 +185,14 @@ export async function listHabitLogs(
     .from("habit_logs")
     .select("*")
     .eq("user_id", userId)
-    .order("logged_on", { ascending: false });
+    .order("logged_on", { ascending: false })
+    // `logged_on` is a `date` with one row per habit per day, so it is NOT
+    // unique: every habit ticked on the same day ties on it. Postgres gives no
+    // stable order among ties across separate statements, so a paged read
+    // ordered on it alone can hand the same row back twice - or skip it - when
+    // a tied group straddles a page boundary. `id` is arbitrary but total,
+    // which is all a page boundary needs.
+    .order("id", { ascending: false });
 
   if (options.habitId) query = query.eq("habit_id", options.habitId);
   if (options.sinceDate) query = query.gte("logged_on", options.sinceDate);
