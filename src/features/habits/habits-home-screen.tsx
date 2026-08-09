@@ -5,7 +5,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { BarChart } from "@/src/components/charts/bar-chart";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { Section } from "@/src/components/app/section";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -54,16 +56,34 @@ export default function HabitsHomeScreen() {
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [learnIndex, setLearnIndex] = useState(0);
+  // The habit whose tick would delete a note along with it. Null the rest of
+  // the time, which is the overwhelmingly common case (#759).
+  const [untickTarget, setUntickTarget] = useState<Habit | null>(null);
 
   const { selectedDate } = useSelectedDate();
 
   const allHabits = habits ?? [];
   const allLogs = logs ?? [];
+  /**
+   * ⚠️ `undefined` is the window query still in flight, or failed with no
+   * cache - NOT a user with no ticks. The two imply opposite actions.
+   *
+   * `toggleHabitLog` flips whatever the server finds, so a press made against
+   * an unread cache is destructive in a way the screen cannot see: the row
+   * renders unticked, the user presses it meaning "tick", and the server
+   * deletes the tick that was already there - taking the note saved with it,
+   * without the confirmation that exists precisely to prevent that. The habits
+   * query gates the screen, but the logs query resolves separately, so this
+   * window is reachable on any slow or failed load.
+   */
+  const logsLoaded = logs !== undefined;
   const todayStr = selectedDate;
   const today = parseLocalNoon(selectedDate);
 
-  const todayHabits = allHabits.filter((habit) => isScheduledOn(habit, today));
-  const todayTicked = todayHabits.filter((habit) => isTickedOn(allLogs, habit.id, todayStr)).length;
+  // Still scheduling-aware, because "2 of 3 due today" is a statement about
+  // what was due. The LIST below deliberately is not (#759).
+  const dueToday = allHabits.filter((habit) => isScheduledOn(habit, today));
+  const dueTodayTicked = dueToday.filter((habit) => isTickedOn(allLogs, habit.id, todayStr)).length;
 
   const identities = (() => {
     const seen = new Set<string>();
@@ -74,9 +94,9 @@ export default function HabitsHomeScreen() {
     return Array.from(seen);
   })();
 
-  const missTwiceRiskHabits = todayHabits.filter((habit) =>
-    isAtMissTwiceRisk(habit, allLogs, today),
-  );
+  // `isAtMissTwiceRisk` already returns false for a habit that wasn't due, so
+  // this reads the whole list rather than a pre-filtered one.
+  const missTwiceRiskHabits = allHabits.filter((habit) => isAtMissTwiceRisk(habit, allLogs, today));
 
   const recentLogs = allLogs.slice(0, 5);
   const weeklyRhythm = getWeeklyRhythm(allLogs, 4, today);
@@ -95,8 +115,28 @@ export default function HabitsHomeScreen() {
       ? t("stats.never")
       : undefined;
 
-  function handleToggle(habitId: string) {
-    toggleLog.mutate({ habitId, loggedOn: todayStr });
+  /**
+   * Unticking a day that carries a note deletes the note with it, because they
+   * are the same row in both directions - `upsertHabitLogNote` inserts, so
+   * writing a note on an unticked day ticks it. So the destructive case asks
+   * first, and the empty one - which is almost every one - does not.
+   */
+  function handleToggle(habit: Habit) {
+    // Belt as well as braces: the control is disabled below, but a keyboard
+    // activation racing the query landing would otherwise still get through.
+    if (!logsLoaded) return;
+    const existing = allLogs.find((log) => log.habitId === habit.id && log.loggedOn === todayStr);
+    if (existing && existing.note.trim()) {
+      setUntickTarget(habit);
+      return;
+    }
+    toggleLog.mutate({ habitId: habit.id, loggedOn: todayStr });
+  }
+
+  function confirmUntick() {
+    if (!untickTarget) return;
+    toggleLog.mutate({ habitId: untickTarget.id, loggedOn: todayStr });
+    setUntickTarget(null);
   }
 
   const roomStyle = useRoomStyle("act");
@@ -116,13 +156,25 @@ export default function HabitsHomeScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
+      <ConfirmDialog
+        visible={untickTarget !== null}
+        isPending={toggleLog.isPending}
+        title={t("list.untickTitle")}
+        message={t("list.untickBody")}
+        confirmLabel={t("list.untickConfirm")}
+        cancelLabel={t("cta.cancel")}
+        onCancel={() => setUntickTarget(null)}
+        onConfirm={confirmUntick}
+      />
       <SafeAreaView
         className="flex-1 bg-background"
         edges={["bottom", "left", "right"]}
         style={roomStyle}
       >
         <ScrollView contentContainerClassName="grow p-4">
-          <View className={cn(HOME_COLUMN, "gap-6")}>
+          {/* No gap: `Section` carries its own py-6, and the hairline belongs
+              between two sections' padding rather than across a flex gap. */}
+          <View className={cn(HOME_COLUMN)}>
             <ModuleHomeHeader
               addWidgetCategory="habits"
               title={t("home.title")}
@@ -133,63 +185,71 @@ export default function HabitsHomeScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               stats={[
-                { value: `${todayTicked}/${todayHabits.length}`, label: t("hero.today") },
+                { value: `${dueTodayTicked}/${dueToday.length}`, label: t("hero.today") },
                 { value: t("hero.habits", { count: allHabits.length }), label: "" },
                 // The old ToolStats.subline, folded into the row as a value-less
                 // item - which is how the design renders "last logged 4:50 pm".
                 ...(subline ? [{ value: "", label: subline }] : []),
               ]}
             />
-            {identities.length > 0 ? (
-              <View className="rounded-2xl border border-border bg-muted p-4">
+
+            <Section ruled={false} className="gap-3">
+              <View className="flex-row flex-wrap gap-2">
+                <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
+                  <Icon name="add" className="size-4 text-primary-foreground" />
+                  <Text>{t("cta.newHabit")}</Text>
+                </Button>
+                <Button variant="ghost" onPress={() => router.push("/tools/habits/history")}>
+                  <Icon name="history" className="size-4" />
+                  <Text>{t("cta.viewHistory")}</Text>
+                </Button>
+              </View>
+              {identities.length > 0 ? (
                 <Text className="text-sm">
                   {t("home.identityBannerPrefix")}{" "}
                   <Text className="font-semibold">
                     {identities[today.getDate() % identities.length]}
                   </Text>
                 </Text>
-              </View>
-            ) : null}
-
-            <View className="flex-row flex-wrap gap-2">
-              <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
-                <Icon name="add" className="size-4 text-primary-foreground" />
-                <Text>{t("cta.newHabit")}</Text>
-              </Button>
-              <Button variant="ghost" onPress={() => router.push("/tools/habits/history")}>
-                <Icon name="history" className="size-4" />
-                <Text>{t("cta.viewHistory")}</Text>
-              </Button>
-            </View>
+              ) : null}
+            </Section>
 
             {missTwiceRiskHabits.length > 0 ? (
-              <View className="gap-2 rounded-2xl border border-border bg-muted p-4">
+              <Section className="gap-1.5">
                 <Text className="font-semibold">{t("home.neverMissTwiceTitle")}</Text>
                 <Text variant="muted">{t("home.neverMissTwiceBody")}</Text>
-              </View>
+              </Section>
             ) : null}
 
-            <View className="gap-3">
-              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("home.todayHeading")}
-              </Text>
+            {/*
+              Every non-archived habit, every day (#759).
 
+              The list used to filter to `isScheduledOn(habit, today)`, which
+              dodged the not-due/not-done conflation by hiding rows - and cost
+              far more than it saved: a weekdays-only user opening the tool on a
+              Saturday met "No habits scheduled for today" and nothing else, so
+              the whole sense that the tool contained anything vanished on their
+              rest days. The conflation is answered on the cell instead, by a
+              third state, rather than by deleting the row.
+            */}
+            <Section title={t("home.habitsHeading")}>
               {allHabits.length === 0 ? (
-                <View className="gap-2 rounded-2xl border border-border bg-card p-5">
+                <View className="gap-2">
                   <Text className="text-base font-semibold">{t("home.noHabitsTitle")}</Text>
                   <Text variant="muted">{t("home.noHabitsBody")}</Text>
                 </View>
-              ) : todayHabits.length === 0 ? (
-                <Text variant="muted">{t("home.todayEmpty")}</Text>
               ) : (
-                <View className="gap-3">
-                  {todayHabits.map((habit) => (
+                <View>
+                  {allHabits.map((habit, index) => (
                     <HabitRow
                       key={habit.id}
                       habit={habit}
                       logs={allLogs}
                       todayStr={todayStr}
-                      onToggle={() => handleToggle(habit.id)}
+                      today={today}
+                      ruled={index > 0}
+                      canTick={logsLoaded}
+                      onToggle={() => handleToggle(habit)}
                       onOpen={() =>
                         router.push({
                           pathname: "/tools/habits/[id]",
@@ -200,7 +260,7 @@ export default function HabitsHomeScreen() {
                   ))}
                 </View>
               )}
-            </View>
+            </Section>
 
             <LearnCard
               learnIndex={learnIndex}
@@ -215,20 +275,18 @@ export default function HabitsHomeScreen() {
               />
             ) : null}
 
-            <View className="gap-3">
-              <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {t("home.recentActivity")}
-              </Text>
+            <Section title={t("home.recentActivity")}>
               {recentLogs.length === 0 ? (
                 <Text variant="muted">{t("home.recentEmpty")}</Text>
               ) : (
-                <View className="gap-2">
-                  {recentLogs.map((log) => {
+                <View>
+                  {recentLogs.map((log, index) => {
                     const habit = allHabits.find((h) => h.id === log.habitId);
                     if (!habit) return null;
                     return (
                       <Pressable
                         key={log.id}
+                        accessibilityLabel={t("list.openNamedDetail", { habit: habit.name })}
                         accessibilityRole="button"
                         onPress={() =>
                           router.push({
@@ -236,7 +294,10 @@ export default function HabitsHomeScreen() {
                             params: { id: habit.id },
                           })
                         }
-                        className="flex-row items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 active:bg-accent/40"
+                        className={cn(
+                          "flex-row items-center justify-between gap-3 py-3 active:opacity-70",
+                          index > 0 && "border-t border-border",
+                        )}
                         role="button"
                       >
                         <View className="flex-1">
@@ -255,7 +316,7 @@ export default function HabitsHomeScreen() {
                   })}
                 </View>
               )}
-            </View>
+            </Section>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -267,37 +328,59 @@ interface HabitRowProps {
   habit: Habit;
   logs: HabitLog[];
   todayStr: string;
+  today: Date;
+  ruled: boolean;
+  /** False until the logs window has answered - see `logsLoaded` on the screen. */
+  canTick: boolean;
   onToggle: () => void;
   onOpen: () => void;
 }
 
-function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
+function HabitRow({
+  habit,
+  logs,
+  todayStr,
+  today,
+  ruled,
+  canTick,
+  onToggle,
+  onOpen,
+}: HabitRowProps) {
   const { t } = useTranslation("habits");
   const tickedToday = isTickedOn(logs, habit.id, todayStr);
-  const days = lastSevenDays();
+  // Anchored on the day the tick control writes to, so the last cell is always
+  // the one the ring marks and the checkbox acts on.
+  const days = lastSevenDays(today);
   const chip = useHabitChipPalette()[habit.color];
   // Ticked is encoded by color alone on the week strip - no label, no glyph -
   // so the outline has to be the stop certified against the room (WCAG 1.4.11),
   // not the soft resting border. The tick box shares it for one silhouette.
   const tickedStyle = { backgroundColor: chip.fill, borderColor: chip.ink };
+  const tickedDays = days.filter((day) => isTickedOn(logs, habit.id, localDateKey(day))).length;
+
+  // Four habits used to announce identically, because the label named the
+  // action and never the habit (#724). State still rides the checkbox role;
+  // the name is what was missing.
+  const tickLabel = tickedToday
+    ? t("list.tickedToday", { habit: habit.name })
+    : habit.kind === "break"
+      ? t("list.tapToAvoid", { habit: habit.name })
+      : t("list.tapToTick", { habit: habit.name });
 
   return (
-    <View className="gap-3 rounded-2xl border border-border bg-card p-4">
+    <View className={cn("gap-3 py-4", ruled && "border-t border-border")}>
       <View className="flex-row items-center gap-3">
         <Pressable
-          accessibilityLabel={
-            tickedToday
-              ? t("list.tickedToday")
-              : habit.kind === "break"
-                ? t("list.tapToAvoid")
-                : t("list.tapToTick")
-          }
+          accessibilityLabel={tickLabel}
           aria-checked={tickedToday}
+          // Ticking against an unread cache deletes rather than creates.
+          disabled={!canTick}
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
           onPress={onToggle}
           className={cn(
             "size-10 items-center justify-center rounded-xl border",
             !tickedToday && "border-border bg-background",
+            !canTick && "opacity-50",
           )}
           style={tickedToday ? tickedStyle : undefined}
           role="checkbox"
@@ -310,7 +393,7 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
           )}
         </Pressable>
         <Pressable
-          accessibilityLabel={t("list.openDetail")}
+          accessibilityLabel={t("list.openNamedDetail", { habit: habit.name })}
           accessibilityRole="button"
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
           onPress={onOpen}
@@ -331,26 +414,52 @@ function HabitRow({ habit, logs, todayStr, onToggle, onOpen }: HabitRowProps) {
         <Icon name="chevron-right" className="size-5 text-muted-foreground" />
       </View>
 
-      <View className="gap-1.5">
-        <Text variant="muted" className="text-[10px] uppercase tracking-wider">
+      {/*
+        One a11y node for the whole strip (#759). The seven cells are 41.7 ×
+        26dp - under the touch floor on both axes - so they are display-only,
+        and seven unlabelled decorative boxes are worse than useless to a
+        screen reader. The summary below is the text equivalent.
+      */}
+      <View
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={t("list.weekA11y", { count: tickedDays })}
+        className="gap-1.5"
+      >
+        <Text aria-hidden variant="muted" className="text-[10px] uppercase tracking-wider">
           {t("home.weekStripLabel")}
         </Text>
-        <View className="flex-row gap-1.5">
+        <View
+          aria-hidden
+          importantForAccessibility="no-hide-descendants"
+          className="flex-row gap-1.5"
+        >
           {days.map((day) => {
             const dayStr = localDateKey(day);
             const ticked = isTickedOn(logs, habit.id, dayStr);
             const scheduled = isScheduledOn(habit, day);
+            const isToday = dayStr === todayStr;
+            // Today's primary ring outranks the chip ink, so a ticked-today
+            // cell takes only the fill and leaves the border to the class.
             return (
               <View
                 key={dayStr}
+                testID={`week-cell-${habit.id}-${dayStr}`}
                 className={cn(
                   "h-6 flex-1 rounded-md border",
+                  // Dashed vs solid is a non-colour distinction, so "never due"
+                  // and "due and not done" stay apart in greyscale and under
+                  // every CVD - which is what stops a blank cell reading as an
+                  // accusation.
                   !ticked &&
                     (scheduled
                       ? "border-border bg-muted/40"
                       : "border-dashed border-border bg-background"),
+                  isToday && "border-2 border-primary",
                 )}
-                style={ticked ? tickedStyle : undefined}
+                style={
+                  ticked ? (isToday ? { backgroundColor: chip.fill } : tickedStyle) : undefined
+                }
               />
             );
           })}
@@ -374,89 +483,83 @@ function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: Insight
   const adoptionPct = Math.round(twoMinuteAdoption.ratio * 100);
 
   return (
-    <View className="gap-3">
-      <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        {t("insights.title")}
-      </Text>
-
-      <View className="gap-4 rounded-2xl border border-border bg-card p-4">
-        <View className="gap-2">
-          <Text className="text-base font-semibold">{t("insights.rhythmTitle")}</Text>
-          <Text variant="muted" className="text-xs">
-            {t("insights.rhythmSubtitle")}
+    <Section title={t("insights.title")}>
+      <View className="gap-2">
+        <Text className="text-base font-semibold">{t("insights.rhythmTitle")}</Text>
+        <Text variant="muted" className="text-xs">
+          {t("insights.rhythmSubtitle")}
+        </Text>
+        {hasRhythm ? (
+          <BarChart
+            bars={rhythm.map((bucket) => ({
+              key: bucket.weekday,
+              value: bucket.count,
+              label: t(`insights.weekday.${bucket.weekday}` as const),
+            }))}
+            minBarHeight={6}
+            zeroHeight={2}
+            tintClass="bg-muted"
+            barClassName="rounded-t-md"
+            labelClassName="leading-3"
+          />
+        ) : (
+          <Text variant="muted" className="text-sm">
+            {t("insights.rhythmEmpty")}
           </Text>
-          {hasRhythm ? (
-            <BarChart
-              bars={rhythm.map((bucket) => ({
-                key: bucket.weekday,
-                value: bucket.count,
-                label: t(`insights.weekday.${bucket.weekday}` as const),
-              }))}
-              minBarHeight={6}
-              zeroHeight={2}
-              tintClass="bg-muted"
-              barClassName="rounded-t-md"
-              labelClassName="leading-3"
-            />
-          ) : (
-            <Text variant="muted" className="text-sm">
-              {t("insights.rhythmEmpty")}
-            </Text>
-          )}
-        </View>
-
-        <View className="gap-2">
-          <Text className="text-base font-semibold">{t("insights.identityTitle")}</Text>
-          {hasIdentities ? (
-            <View className="gap-1.5">
-              {identityRoundUp.map((row) => (
-                <View key={row.identity} className="flex-row items-center justify-between gap-3">
-                  <Text className="flex-1 text-sm" numberOfLines={1}>
-                    {row.identity}
-                  </Text>
-                  <Text variant="muted" className="text-xs">
-                    {t("insights.identityRow", { count: row.count })}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Text variant="muted" className="text-sm">
-              {t("insights.identityEmpty")}
-            </Text>
-          )}
-        </View>
-
-        <View className="gap-2">
-          <Text className="text-base font-semibold">{t("insights.twoMinuteTitle")}</Text>
-          {hasTwoMinute ? (
-            <View className="gap-1.5">
-              <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                {/* The fill is the accent, not the wash. The sweep sent both the
-                    track and the fill to `bg-muted`, which renders the bar as a
-                    flat blank pill - the one case where a hue was carrying the
-                    only difference between two adjacent surfaces. */}
-                <View
-                  className="h-full rounded-full bg-primary"
-                  style={{ width: `${adoptionPct}%` }}
-                />
-              </View>
-              <Text variant="muted" className="text-xs">
-                {t("insights.twoMinuteSubtitle", {
-                  count: twoMinuteAdoption.total,
-                  filled: twoMinuteAdoption.filled,
-                  total: twoMinuteAdoption.total,
-                })}
-              </Text>
-            </View>
-          ) : (
-            <Text variant="muted" className="text-sm">
-              {t("insights.twoMinuteEmpty")}
-            </Text>
-          )}
-        </View>
+        )}
       </View>
-    </View>
+
+      <View className="gap-2">
+        <Text className="text-base font-semibold">{t("insights.identityTitle")}</Text>
+        {hasIdentities ? (
+          <View className="gap-1.5">
+            {identityRoundUp.map((row) => (
+              <View key={row.identity} className="flex-row items-center justify-between gap-3">
+                <Text className="flex-1 text-sm" numberOfLines={1}>
+                  {row.identity}
+                </Text>
+                <Text variant="muted" className="text-xs">
+                  {t("insights.identityRow", { count: row.count })}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text variant="muted" className="text-sm">
+            {t("insights.identityEmpty")}
+          </Text>
+        )}
+      </View>
+
+      <View className="gap-2">
+        <Text className="text-base font-semibold">{t("insights.twoMinuteTitle")}</Text>
+        {hasTwoMinute ? (
+          <View className="gap-1.5">
+            <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              {/* The fill is the accent, not the wash. The sweep sent both the
+                  track and the fill to `bg-muted`, which renders the bar as a
+                  flat blank pill - the one case where a hue was carrying the
+                  only difference between two adjacent surfaces. */}
+              <View
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${adoptionPct}%` }}
+              />
+            </View>
+            <Text variant="muted" className="text-xs">
+              {t("insights.twoMinuteSubtitle", {
+                count: twoMinuteAdoption.total,
+                filled: twoMinuteAdoption.filled,
+                total: twoMinuteAdoption.total,
+              })}
+            </Text>
+          </View>
+        ) : (
+          <Text variant="muted" className="text-sm">
+            {t("insights.twoMinuteEmpty")}
+          </Text>
+        )}
+      </View>
+    </Section>
   );
 }
 
@@ -474,53 +577,49 @@ function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
   const cardKey = `learn.cards.${card.slug}` as const;
 
   return (
-    <View className="gap-2">
-      <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        {t("learn.sectionLabel")}
-      </Text>
-      <View className="relative">
-        <Pressable
-          accessibilityLabel={t(`${cardKey}.title` as Parameters<typeof t>[0])}
-          accessibilityHint={t("learn.openHint")}
-          accessibilityRole="button"
-          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() =>
-            router.push({
-              pathname: "/tools/habits/learn/[slug]",
-              params: { slug: card.slug },
-            })
-          }
-          className="gap-3 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
-          role="button"
-        >
-          <View className="flex-row items-center justify-between">
-            <View
-              className="size-10 items-center justify-center rounded-xl"
-              style={{ backgroundColor: chip.fill }}
-            >
-              <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
-            </View>
-            <View className="size-5" />
-          </View>
-          <View className="gap-1">
-            <Text className="text-base font-semibold">
-              {t(`${cardKey}.title` as Parameters<typeof t>[0])}
-            </Text>
-            <Text variant="muted" className="text-sm">
-              {t(`${cardKey}.short` as Parameters<typeof t>[0])}
-            </Text>
-          </View>
-        </Pressable>
+    <Section
+      title={t("learn.sectionLabel")}
+      action={
         <Pressable
           accessibilityLabel={t("learn.dismiss")}
           accessibilityRole="button"
-          hitSlop={8}
+          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
           onPress={onDismiss}
-          className="absolute right-4 top-4"
+          role="button"
         >
           <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
         </Pressable>
-      </View>
-    </View>
+      }
+    >
+      <Pressable
+        accessibilityLabel={t(`${cardKey}.title` as Parameters<typeof t>[0])}
+        accessibilityHint={t("learn.openHint")}
+        accessibilityRole="button"
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        onPress={() =>
+          router.push({
+            pathname: "/tools/habits/learn/[slug]",
+            params: { slug: card.slug },
+          })
+        }
+        className="flex-row items-center gap-3 active:opacity-70"
+        role="button"
+      >
+        <View
+          className="size-10 items-center justify-center rounded-xl"
+          style={{ backgroundColor: chip.fill }}
+        >
+          <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
+        </View>
+        <View className="flex-1 gap-1">
+          <Text className="text-base font-semibold">
+            {t(`${cardKey}.title` as Parameters<typeof t>[0])}
+          </Text>
+          <Text variant="muted" className="text-sm">
+            {t(`${cardKey}.short` as Parameters<typeof t>[0])}
+          </Text>
+        </View>
+      </Pressable>
+    </Section>
   );
 }

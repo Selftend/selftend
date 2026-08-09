@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 
 import {
   archiveHabit,
@@ -11,7 +12,13 @@ import {
   toggleHabitLog,
   upsertHabitLogNote,
 } from "@/src/features/habits/repository";
-import type { HabitInput } from "@/src/features/habits/types";
+import {
+  applyOptimisticToggle,
+  habitLogsScope,
+  isTickedInAnyPage,
+  type HabitLogsScope,
+} from "@/src/features/habits/optimistic-logs";
+import type { HabitInput, HabitLog } from "@/src/features/habits/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
@@ -20,7 +27,15 @@ const habitKeys = {
   list: (userId: string, includeArchived: boolean) =>
     ["habits", "list", userId, includeArchived] as const,
   detail: (userId: string, id: string) => ["habits", "detail", userId, id] as const,
-  logs: (userId: string, scope: string) => ["habits", "logs", userId, scope] as const,
+  /** Every logs page for one user - the filter the optimistic tick selects on. */
+  logsRoot: (userId: string) => ["habits", "logs", userId] as const,
+  /**
+   * The scope rides as a structured object rather than a formatted string, so
+   * an optimistic writer can read `sinceDate`/`limit` off the key and decide
+   * whether a newly ticked day belongs in that page (#759). Query keys are
+   * hashed structurally, so a fresh object per render is stable.
+   */
+  logs: (userId: string, scope: HabitLogsScope) => ["habits", "logs", userId, scope] as const,
 };
 
 export function useHabits(userId: string | null, options: { includeArchived?: boolean } = {}) {
@@ -47,9 +62,7 @@ export function useHabitLogs(
   userId: string | null,
   options: { habitId?: string; sinceDate?: string; limit?: number } = {},
 ) {
-  const scope = options.habitId
-    ? `habit:${options.habitId}:${options.sinceDate ?? ""}:${options.limit ?? ""}`
-    : `all:${options.sinceDate ?? ""}:${options.limit ?? ""}`;
+  const scope = habitLogsScope(options);
   return useQuery({
     queryKey: userId ? habitKeys.logs(userId, scope) : ["habits", "logs", "anonymous", scope],
     queryFn: () => listHabitLogs(userId!, options),
@@ -98,18 +111,94 @@ export function useDeleteHabit(userId: string | null) {
   return useDeleteMutation(userId, deleteHabit, habitKeys.all);
 }
 
+/**
+ * Ticking, applied to the cache first (#759).
+ *
+ * The overview's tick is the most-repeated control in the tool, so it may not
+ * wait a round-trip to redraw. Deliberately **without**
+ * `suppressGlobalErrorToast`: an optimistic write that silently rolls back
+ * would leave the user believing a tick landed when it did not, so this is the
+ * one mutation whose failure has to reach the global toast.
+ */
 export function useToggleHabitLog(userId: string | null) {
   const queryClient = useQueryClient();
-  return useMutation({
+  /**
+   * The (habit, day) pairs whose toggle is already in flight.
+   *
+   * `toggleHabitLog` is a read-then-write flip, so two overlapping calls for
+   * one day race: both can read the same row and write in the same direction,
+   * collapsing two intended toggles into one and settling the control opposite
+   * to the user's last press. A ref rather than state, for the reason
+   * `useSingleFlight` documents - `disabled={isPending}` cannot stop a rapid
+   * double-press, because no re-render happens between two synchronous taps.
+   *
+   * Keyed rather than a single boolean, so ticking four habits in a row - the
+   * interaction this tool exists for - stays fully concurrent.
+   */
+  const inFlight = useRef<Set<string>>(new Set());
+  const mutation = useMutation({
     mutationFn: ({ habitId, loggedOn }: { habitId: string; loggedOn: string }) =>
       toggleHabitLog(userId!, habitId, loggedOn),
-    onSuccess: async (data) => {
+    onMutate: async ({ habitId, loggedOn }) => {
+      if (!userId) return undefined;
+      const filters = { queryKey: habitKeys.logsRoot(userId) };
+      // In-flight reads would land after this write and clobber it.
+      await queryClient.cancelQueries(filters);
+
+      const previous = queryClient.getQueriesData<HabitLog[]>(filters);
+      const intent = isTickedInAnyPage(
+        previous.map(([, logs]) => logs),
+        habitId,
+        loggedOn,
+      )
+        ? "untick"
+        : "tick";
+
+      // Iterated rather than `setQueriesData`, because the updater has to see
+      // each page's own scope - which `setQueriesData` does not hand it.
+      for (const query of queryClient.getQueryCache().findAll(filters)) {
+        const scope = (query.queryKey[3] ?? {}) as HabitLogsScope;
+        queryClient.setQueryData<HabitLog[]>(query.queryKey, (logs) =>
+          applyOptimisticToggle(logs, intent, { userId, habitId, loggedOn }, scope),
+        );
+      }
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      for (const [queryKey, logs] of context?.previous ?? []) {
+        queryClient.setQueryData(queryKey, logs);
+      }
+    },
+    onSuccess: (data) => {
       // Only a tick (log created) is a completion; unticking is not.
       if (data.ticked) requestReminderPrompt("habits");
+    },
+    // Both arms: a rollback restores a guess, not the server's answer, and the
+    // insight/list caches never saw the optimistic write at all.
+    onSettled: async (_data, _error, { habitId, loggedOn }) => {
+      inFlight.current.delete(toggleKey(habitId, loggedOn));
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: habitKeys.all });
     },
   });
+
+  /**
+   * The guard lives on the hook, not on a screen, so every caller inherits it:
+   * the overview's row and the detail screen's calendar strip drive the same
+   * row, and either can be double-pressed.
+   */
+  function mutate(variables: { habitId: string; loggedOn: string }) {
+    const key = toggleKey(variables.habitId, variables.loggedOn);
+    if (inFlight.current.has(key)) return;
+    inFlight.current.add(key);
+    mutation.mutate(variables);
+  }
+
+  return { ...mutation, mutate };
+}
+
+function toggleKey(habitId: string, loggedOn: string): string {
+  return `${habitId}:${loggedOn}`;
 }
 
 export function useUpsertHabitLogNote(userId: string | null) {
