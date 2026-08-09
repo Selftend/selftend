@@ -1,33 +1,42 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { formatRelativeDayKey } from "@/src/utils/relative-time";
+import { FORM_COLUMN } from "@/src/lib/layout";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { formatRelativeActivity, formatRelativeDayKey } from "@/src/utils/relative-time";
 import {
   useDeleteJournalEntry,
   useJournalEntries,
   useJournalEntry,
 } from "@/src/features/journal/queries";
+import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatAtOffset } from "@/src/utils/date";
+
+/**
+ * Joins meta segments with the interpunct.
+ *
+ * The separator belongs to the JOIN, never to a segment's own string. #733
+ * shipped the other way round - every `Last · {{when}}` carried its own dot -
+ * and the stats row rendered `12 entries · 3,400 words · Last · 5 Jun`. Empty
+ * segments drop out rather than leaving a dangling dot.
+ */
+export function joinMeta(segments: (string | null | undefined)[]): string {
+  return segments.filter((segment): segment is string => Boolean(segment)).join(" · ");
+}
 
 export default function JournalDetailScreen() {
   const { t, i18n } = useTranslation("journal");
@@ -85,6 +94,32 @@ export default function JournalDetailScreen() {
   // Rendered in the frame it was captured in, so the time matches the civil day
   // the entry is filed under everywhere else (#250).
   const createdAtLabel = formatAtOffset(occurredAt, entry.occurredOffsetMinutes, i18n.language);
+  const words = countWords(entry.body);
+
+  /**
+   * One line, where the old screen had a heading, a muted day and a whole card
+   * whose only content was a timestamp. A timestamp is not a section.
+   *
+   * At 360dp this wraps to two lines in `en` and to three in `bg`, where
+   * "{{count}} думи" and the long month names both run wider - which is why it
+   * is a single wrapping `Text` rather than a no-wrap row.
+   */
+  const metaLine = joinMeta([when, createdAtLabel, t("detail.words", { count: words })]);
+
+  /**
+   * Two frames, deliberately. "Written" is the entry's own captured civil day,
+   * the same `dayKey` every other surface files it under. "edited" is a
+   * server-set instant with no captured offset, so the viewer's frame is the
+   * only frame it has - which is why this file carries the lint exemption.
+   *
+   * `updatedAt` is touched on every write, so it equals `createdAt` for an entry
+   * nobody has come back to; only a real revision earns the second segment.
+   */
+  const editedLabel =
+    entry.updatedAt > entry.createdAt
+      ? t("detail.edited", { when: formatRelativeActivity(entry.updatedAt, t) })
+      : null;
+  const footerLine = joinMeta([t("detail.written", { when }), editedLabel]);
 
   const confirmDelete = async () => {
     setDeleteError("");
@@ -99,45 +134,77 @@ export default function JournalDetailScreen() {
   };
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <ScreenHeader title={heading} />
-            <Text variant="muted">{when}</Text>
-            <View className="flex-row gap-3">
-              <Button
-                onPress={() => router.push(`/tools/journal/${entry.id}/edit`)}
-                variant="secondary"
+    <View testID="journal-detail-room" className="flex-1" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+        {/* The trail rides the bar, not the column: chrome for the screen rather
+            than part of the document (#733). */}
+        <ScreenTopBar leading="back" />
+
+        <ScrollView contentContainerClassName="grow px-6 pt-10 pb-14">
+          <View className={`${FORM_COLUMN} gap-8`}>
+            <View className="gap-4">
+              <View className="flex-row items-start gap-3">
+                <Text
+                  role="heading"
+                  aria-level={1}
+                  className="flex-1 font-display text-[26px] font-bold leading-tight tracking-tight"
+                >
+                  {heading}
+                </Text>
+                <View className="flex-row items-center gap-1">
+                  <Button
+                    onPress={() => router.push(`/tools/journal/${entry.id}/edit`)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Icon name="edit" className="size-4" />
+                    <Text>{t("detail.edit")}</Text>
+                  </Button>
+                  <Button
+                    onPress={() => setConfirmOpen(true)}
+                    variant="ghost"
+                    size="icon"
+                    accessibilityLabel={t("detail.delete")}
+                  >
+                    <Icon name="delete-outline" className="size-[18px] text-muted-foreground" />
+                  </Button>
+                </View>
+              </View>
+              <Text variant="muted" className="text-[13px]">
+                {metaLine}
+              </Text>
+            </View>
+
+            {/*
+              The writing gets the page. Two hairlines and nothing else: a card
+              here would put the entry inside a panel on a page, which is the
+              shape the redesign exists to remove. 16px on the form measure at
+              1.7 is a reading column, not a form field.
+            */}
+            <View className="border-y border-border py-6">
+              <Text className="text-base leading-[1.7]">{entry.body}</Text>
+            </View>
+
+            <View className="flex-row flex-wrap items-center justify-between gap-3">
+              <Text variant="muted" className="text-[13px]">
+                {footerLine}
+              </Text>
+              <Pressable
+                accessibilityRole="link"
+                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                onPress={() => router.push("/tools/journal")}
+                className="flex-row items-center gap-1 active:opacity-70"
+                role="link"
               >
-                <Icon name="edit" className="size-4" />
-                <Text>{t("detail.edit")}</Text>
-              </Button>
-              <Button onPress={() => setConfirmOpen(true)} variant="ghost">
-                <Icon name="delete-outline" className="size-4 text-destructive" />
-                <Text>{t("detail.delete")}</Text>
-              </Button>
+                <Text className="text-[13px] font-semibold text-primary-ink">
+                  {t("detail.showAll")}
+                </Text>
+                <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />
+              </Pressable>
             </View>
           </View>
-
-          <Card variant="soft">
-            <CardContent>
-              <Text className="text-base leading-6">{entry.body}</Text>
-            </CardContent>
-          </Card>
-
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle aria-level={2}>{t("detail.createdAt")}</CardTitle>
-              <CardDescription>{createdAtLabel}</CardDescription>
-            </CardHeader>
-          </Card>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
 
       <ConfirmDialog
         cancelLabel={t("detail.confirmDelete.cancel")}
@@ -153,6 +220,6 @@ export default function JournalDetailScreen() {
         title={t("detail.confirmDelete.title")}
         visible={confirmOpen}
       />
-    </SafeAreaView>
+    </View>
   );
 }
