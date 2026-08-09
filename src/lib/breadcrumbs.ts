@@ -78,7 +78,6 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/habits/new": "breadcrumb.new",
   "/tools/habits/history": "breadcrumb.history",
   "/tools/habits/learn": "breadcrumb.learn",
-  "/tools/habits/onboarding": "breadcrumb.onboarding",
 };
 
 // Path segments that group sub-routes but have no own breadcrumb

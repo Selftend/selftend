@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { BarChart } from "@/src/components/charts/bar-chart";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { Disclosure } from "@/src/components/app/disclosure";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { Section } from "@/src/components/app/section";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -13,14 +14,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HabitsOnboarding } from "@/src/components/app/habits-onboarding-modal";
 import { useHabitChipPalette } from "@/src/features/habits/habit-color";
-import { HABITS_LEARN_CARDS } from "@/src/features/habits/learn";
-import {
-  getIdentityRoundUp,
-  getTwoMinuteAdoption,
-  getWeeklyRhythm,
-  type IdentityRoundUp,
-  type WeekdayRhythm,
-} from "@/src/features/habits/insights";
+import { getWeeklyRhythm, type WeekdayRhythm } from "@/src/features/habits/insights";
 import { useHabits, useHabitLogs, useToggleHabitLog } from "@/src/features/habits/queries";
 import {
   addDays,
@@ -37,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
+import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -63,19 +58,25 @@ export default function HabitsHomeScreen() {
    */
   const { data: recentLogs } = useHabitLogs(userId, { limit: 5 });
   const toggleLog = useToggleHabitLog(userId);
+  const updatePreferences = useUpdateUserPreferences(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [learnIndex, setLearnIndex] = useState(0);
+  const [onboardingError, setOnboardingError] = useState<string | undefined>();
   // The habit whose tick would delete a note along with it. Null the rest of
   // the time, which is the overwhelmingly common case (#759).
   const [untickTarget, setUntickTarget] = useState<Habit | null>(null);
+  const [archivedOpen, setArchivedOpen] = useState(false);
 
   const { selectedDate } = useSelectedDate();
 
-  // Archived habits ride the shared query but never the list: archiving is how
-  // a user puts a habit down, and a put-down habit reappearing every day would
-  // undo the gesture. Their own home on this screen is a later slice (#765).
+  // Archived habits ride the shared query but never the tick list: archiving is
+  // how a user puts a habit down, and a put-down habit reappearing every day
+  // would undo the gesture. They get a collapsed group of their own below
+  // (#765), which is also the only way back to a habit that was archived
+  // before it was ever ticked - history lists *logs*, so no logs meant no row
+  // and no route at all (#723).
   const allHabits = (habits ?? []).filter((habit) => !habit.archivedAt);
+  const archivedHabits = (habits ?? []).filter((habit) => habit.archivedAt);
   const allLogs = logs ?? [];
   /**
    * ⚠️ `undefined` is the window query still in flight, or failed with no
@@ -98,22 +99,11 @@ export default function HabitsHomeScreen() {
   const dueToday = allHabits.filter((habit) => isScheduledOn(habit, today));
   const dueTodayTicked = dueToday.filter((habit) => isTickedOn(allLogs, habit.id, todayStr)).length;
 
-  const identities = (() => {
-    const seen = new Set<string>();
-    for (const habit of allHabits) {
-      const id = habit.identity.trim();
-      if (id) seen.add(id);
-    }
-    return Array.from(seen);
-  })();
-
   // `isAtMissTwiceRisk` already returns false for a habit that wasn't due, so
   // this reads the whole list rather than a pre-filtered one.
   const missTwiceRiskHabits = allHabits.filter((habit) => isAtMissTwiceRisk(habit, allLogs, today));
 
   const weeklyRhythm = getWeeklyRhythm(allLogs, 4, today);
-  const identityRoundUp = getIdentityRoundUp(allHabits, allLogs, today);
-  const twoMinuteAdoption = getTwoMinuteAdoption(allHabits);
   // Newest-first ordering makes row 0 the latest tick.
   const lastTickedOn = recentLogs?.[0]?.loggedOn ?? null;
   // `loggedOn` IS the civil day - label from it directly instead of faking a
@@ -152,6 +142,34 @@ export default function HabitsHomeScreen() {
     setUntickTarget(null);
   }
 
+  /**
+   * The deleted onboarding route held the repository's only write of
+   * `habitsOnboardingCompleted`, so the flag has to move here with it - the
+   * modal is now the sole way through onboarding, and a completion that never
+   * records itself leaves the column false forever, Settings offering to reset
+   * something that never happened, and a data export stating the user never
+   * finished.
+   *
+   * A patch, not the route's `mergeUserPreferences(preferences, ...)`: the
+   * mutation writes only the columns it is given, and a whole-row write
+   * clobbers concurrent writers with values captured at mount (#57).
+   */
+  async function handleOnboardingComplete() {
+    if (!userId) {
+      setForceOnboarding(false);
+      return;
+    }
+    setOnboardingError(undefined);
+    try {
+      await updatePreferences.mutateAsync({ habitsOnboardingCompleted: true });
+      setForceOnboarding(false);
+    } catch (error) {
+      const fallback = t("onboarding.finish.error");
+      const detail = error instanceof Error ? error.message : null;
+      setOnboardingError(detail ? `${fallback} (${detail})` : fallback);
+    }
+  }
+
   const roomStyle = useRoomStyle("act");
 
   if (habitsLoading) {
@@ -166,8 +184,13 @@ export default function HabitsHomeScreen() {
     <>
       <HabitsOnboarding
         visible={forceOnboarding}
-        onComplete={() => setForceOnboarding(false)}
-        onDismiss={() => setForceOnboarding(false)}
+        isPending={updatePreferences.isPending}
+        errorMessage={onboardingError}
+        onComplete={() => void handleOnboardingComplete()}
+        onDismiss={() => {
+          setOnboardingError(undefined);
+          setForceOnboarding(false);
+        }}
       />
       <ConfirmDialog
         visible={untickTarget !== null}
@@ -216,22 +239,14 @@ export default function HabitsHomeScreen() {
                   <Text>{t("cta.newHabit")}</Text>
                 </Button>
               </View>
-              {identities.length > 0 ? (
-                <Text className="text-sm">
-                  {t("home.identityBannerPrefix")}{" "}
-                  <Text className="font-semibold">
-                    {identities[today.getDate() % identities.length]}
-                  </Text>
-                </Text>
-              ) : null}
+              {/*
+                The identity banner is gone (#765). It rotated one of the
+                user's own identity strings into a standing headline by
+                `today.getDate() % identities.length` - so the screen's most
+                prominent sentence changed daily on a rule nobody could see,
+                and named a habit the user might not have touched in weeks.
+              */}
             </Section>
-
-            {missTwiceRiskHabits.length > 0 ? (
-              <Section className="gap-1.5">
-                <Text className="font-semibold">{t("home.neverMissTwiceTitle")}</Text>
-                <Text variant="muted">{t("home.neverMissTwiceBody")}</Text>
-              </Section>
-            ) : null}
 
             {/*
               Every non-archived habit, every day (#759).
@@ -245,6 +260,24 @@ export default function HabitsHomeScreen() {
               third state, rather than by deleting the row.
             */}
             <Section title={t("home.habitsHeading")}>
+              {/*
+                Never Miss Twice survives, as one conditional line rather than
+                the two-line titled block it was (#765). Ambient copy cannot
+                replace it: the line only appears when the condition holds, and
+                that IS its meaning - a standing sentence saying the same thing
+                every day would say nothing.
+
+                It states the record and stops (#711). The old body read "Today
+                is a great day to tick this once - one missed day is data, not
+                failure", which both instructed the user and congratulated the
+                product on not scolding them.
+              */}
+              {missTwiceRiskHabits.length > 0 ? (
+                <Text variant="muted" className="text-[13px]">
+                  {t("home.neverMissTwiceLine", { count: missTwiceRiskHabits.length })}
+                </Text>
+              ) : null}
+
               {allHabits.length === 0 ? (
                 <View className="gap-2">
                   <Text className="text-base font-semibold">{t("home.noHabitsTitle")}</Text>
@@ -272,20 +305,81 @@ export default function HabitsHomeScreen() {
                   ))}
                 </View>
               )}
+
+              {/*
+                Collapsed, and mounted only when open - `Disclosure` unmounts
+                its children rather than hiding them, so a put-down habit stays
+                out of the tab order until it is asked for.
+              */}
+              {archivedHabits.length > 0 ? (
+                <Disclosure
+                  label={t("home.archivedGroup", { count: archivedHabits.length })}
+                  expanded={archivedOpen}
+                  onToggle={() => setArchivedOpen((prev) => !prev)}
+                  testID="habits-archived-group"
+                >
+                  <View>
+                    {archivedHabits.map((habit, index) => (
+                      <Pressable
+                        key={habit.id}
+                        accessibilityLabel={t("list.openNamedDetail", { habit: habit.name })}
+                        accessibilityRole="button"
+                        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/tools/habits/[id]",
+                            params: { id: habit.id },
+                          })
+                        }
+                        className={cn(
+                          "flex-row items-center gap-3 py-3 active:opacity-70",
+                          index > 0 && "border-t border-border",
+                        )}
+                        role="button"
+                      >
+                        {/* No tick control: a habit that has been put down is
+                            reachable, not resumable in place. */}
+                        <Text className="flex-1 text-sm font-semibold">{habit.name}</Text>
+                        <Icon
+                          aria-hidden
+                          name="chevron-right"
+                          className="size-5 text-muted-foreground"
+                        />
+                      </Pressable>
+                    ))}
+                  </View>
+                </Disclosure>
+              ) : null}
             </Section>
 
-            <LearnCard
-              learnIndex={learnIndex}
-              onDismiss={() => setLearnIndex((prev) => prev + 1)}
-            />
+            {/* Learn's first real front door (#765). Both it and the onboarding
+                route were orphaned - only `breadcrumbs.ts` named them, and the
+                bad-slug fallback was the only path that reached the index at
+                all. The rotating `LearnCard` it replaces occupied the overview
+                to advertise a section nothing linked to. */}
+            <Section>
+              <Pressable
+                accessibilityHint={t("learn.openHint")}
+                accessibilityRole="button"
+                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                onPress={() => router.push("/tools/habits/learn")}
+                className="flex-row items-center gap-4 active:opacity-70"
+                role="button"
+                testID="habits-learn-row"
+              >
+                {/* Decorative: the title beside it already names the destination. */}
+                <Icon aria-hidden name="menu-book" className="size-5 text-primary" />
+                <View className="flex-1 gap-0.5">
+                  <Text className="text-[14.5px] font-semibold">{t("learn.sectionLabel")}</Text>
+                  <Text variant="muted" className="text-[13px]">
+                    {t("learn.frontDoorSubtitle")}
+                  </Text>
+                </View>
+                <Icon aria-hidden name="chevron-right" className="size-5 text-muted-foreground" />
+              </Pressable>
+            </Section>
 
-            {allHabits.length > 0 ? (
-              <InsightsSection
-                rhythm={weeklyRhythm}
-                identityRoundUp={identityRoundUp}
-                twoMinuteAdoption={twoMinuteAdoption}
-              />
-            ) : null}
+            {allHabits.length > 0 ? <WeeklyRhythmSection rhythm={weeklyRhythm} /> : null}
 
             {/* Five fixed rows and one link out, matching check-in's overview
                 (#762). The link rides the section label rather than the CTA
@@ -502,157 +596,64 @@ function HabitRow({
   );
 }
 
-interface InsightsSectionProps {
-  rhythm: WeekdayRhythm[];
-  identityRoundUp: IdentityRoundUp[];
-  twoMinuteAdoption: { filled: number; total: number; ratio: number };
-}
+/**
+ * `getWeeklyRhythm` returns [Sun..Sat] because that is what `Date.getDay`
+ * returns. The chart renders Monday-first, matching the habit detail grid
+ * (#713) - a week that starts on Sunday puts the two rest days at opposite
+ * ends of the row, so the shape of a weekday habit reads as two separate dips
+ * rather than one weekend.
+ */
+const MONDAY_FIRST = [1, 2, 3, 4, 5, 6, 0] as const;
 
-function InsightsSection({ rhythm, identityRoundUp, twoMinuteAdoption }: InsightsSectionProps) {
+/**
+ * The one insight habits ships (#712).
+ *
+ * There is no rate and no denominator anywhere in it, deliberately: a
+ * denominator encodes what the user should have done, and this tool has no
+ * standing to say that. Counts sit above their own bars instead.
+ */
+function WeeklyRhythmSection({ rhythm }: { rhythm: WeekdayRhythm[] }) {
   const { t } = useTranslation("habits");
+  const byWeekday = new Map(rhythm.map((bucket) => [bucket.weekday, bucket.count]));
   const hasRhythm = rhythm.some((r) => r.count > 0);
-  const hasIdentities = identityRoundUp.length > 0;
-  const hasTwoMinute = twoMinuteAdoption.total > 0;
-  const adoptionPct = Math.round(twoMinuteAdoption.ratio * 100);
 
   return (
-    <Section title={t("insights.title")}>
-      <View className="gap-2">
-        <Text className="text-base font-semibold">{t("insights.rhythmTitle")}</Text>
-        <Text variant="muted" className="text-xs">
-          {t("insights.rhythmSubtitle")}
+    <Section title={t("insights.rhythmTitle")}>
+      <Text variant="muted" className="text-xs">
+        {t("insights.rhythmSubtitle")}
+      </Text>
+      {hasRhythm ? (
+        <BarChart
+          bars={MONDAY_FIRST.map((weekday) => {
+            const count = byWeekday.get(weekday) ?? 0;
+            const label = t(`insights.weekday.${weekday}` as const);
+            return {
+              key: weekday,
+              value: count,
+              topLabel: String(count),
+              label,
+              // Without this the count above and the weekday below arrive as
+              // two unrelated strings with a decorative box between them, to be
+              // paired by position (#737).
+              accessibilityLabel: t("insights.rhythmBarA11y", { weekday: label, count }),
+            };
+          })}
+          minBarHeight={6}
+          zeroHeight={2}
+          // NOT `bg-muted`, which measures 1.10:1 on card and 1.02:1 on
+          // background - bars that are not low-contrast but invisible (#725).
+          // The accent clears 3:1 in both schemes (WCAG 1.4.11). Single-tone:
+          // the two-tone treatment keyed off an absolute `< 8` threshold, which
+          // means nothing at one habit and nothing at ten.
+          tintClass="bg-primary"
+          barClassName="rounded-t-md"
+          labelClassName="leading-3"
+        />
+      ) : (
+        <Text variant="muted" className="text-sm">
+          {t("insights.rhythmEmpty")}
         </Text>
-        {hasRhythm ? (
-          <BarChart
-            bars={rhythm.map((bucket) => ({
-              key: bucket.weekday,
-              value: bucket.count,
-              label: t(`insights.weekday.${bucket.weekday}` as const),
-            }))}
-            minBarHeight={6}
-            zeroHeight={2}
-            tintClass="bg-muted"
-            barClassName="rounded-t-md"
-            labelClassName="leading-3"
-          />
-        ) : (
-          <Text variant="muted" className="text-sm">
-            {t("insights.rhythmEmpty")}
-          </Text>
-        )}
-      </View>
-
-      <View className="gap-2">
-        <Text className="text-base font-semibold">{t("insights.identityTitle")}</Text>
-        {hasIdentities ? (
-          <View className="gap-1.5">
-            {identityRoundUp.map((row) => (
-              <View key={row.identity} className="flex-row items-center justify-between gap-3">
-                <Text className="flex-1 text-sm" numberOfLines={1}>
-                  {row.identity}
-                </Text>
-                <Text variant="muted" className="text-xs">
-                  {t("insights.identityRow", { count: row.count })}
-                </Text>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <Text variant="muted" className="text-sm">
-            {t("insights.identityEmpty")}
-          </Text>
-        )}
-      </View>
-
-      <View className="gap-2">
-        <Text className="text-base font-semibold">{t("insights.twoMinuteTitle")}</Text>
-        {hasTwoMinute ? (
-          <View className="gap-1.5">
-            <View className="h-2 w-full overflow-hidden rounded-full bg-muted">
-              {/* The fill is the accent, not the wash. The sweep sent both the
-                  track and the fill to `bg-muted`, which renders the bar as a
-                  flat blank pill - the one case where a hue was carrying the
-                  only difference between two adjacent surfaces. */}
-              <View
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${adoptionPct}%` }}
-              />
-            </View>
-            <Text variant="muted" className="text-xs">
-              {t("insights.twoMinuteSubtitle", {
-                count: twoMinuteAdoption.total,
-                filled: twoMinuteAdoption.filled,
-                total: twoMinuteAdoption.total,
-              })}
-            </Text>
-          </View>
-        ) : (
-          <Text variant="muted" className="text-sm">
-            {t("insights.twoMinuteEmpty")}
-          </Text>
-        )}
-      </View>
-    </Section>
-  );
-}
-
-interface LearnCardProps {
-  learnIndex: number;
-  onDismiss: () => void;
-}
-
-function LearnCard({ learnIndex, onDismiss }: LearnCardProps) {
-  const { t } = useTranslation("habits");
-  const palette = useHabitChipPalette();
-  const card = HABITS_LEARN_CARDS[learnIndex % HABITS_LEARN_CARDS.length];
-  if (!card) return null;
-  const chip = palette[card.tone];
-  const cardKey = `learn.cards.${card.slug}` as const;
-
-  return (
-    <Section
-      title={t("learn.sectionLabel")}
-      action={
-        <Pressable
-          accessibilityLabel={t("learn.dismiss")}
-          accessibilityRole="button"
-          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={onDismiss}
-          role="button"
-        >
-          <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
-        </Pressable>
-      }
-    >
-      <Pressable
-        accessibilityLabel={t(`${cardKey}.title` as Parameters<typeof t>[0])}
-        accessibilityHint={t("learn.openHint")}
-        accessibilityRole="button"
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        onPress={() =>
-          router.push({
-            pathname: "/tools/habits/learn/[slug]",
-            params: { slug: card.slug },
-          })
-        }
-        className="flex-row items-center gap-3 active:opacity-70"
-        role="button"
-      >
-        <View
-          className="size-10 items-center justify-center rounded-xl"
-          style={{ backgroundColor: chip.fill }}
-        >
-          <Icon name={card.icon} className="size-5" style={{ color: chip.ink }} />
-        </View>
-        <View className="flex-1 gap-1">
-          <Text className="text-base font-semibold">
-            {t(`${cardKey}.title` as Parameters<typeof t>[0])}
-          </Text>
-          <Text variant="muted" className="text-sm">
-            {t(`${cardKey}.short` as Parameters<typeof t>[0])}
-          </Text>
-        </View>
-      </Pressable>
+      )}
     </Section>
   );
 }

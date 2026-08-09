@@ -119,16 +119,20 @@ This module follows the contract in `tools.md`:
 
 ## 4. Routes
 
-| Route                        | Purpose                                                                                                                         |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `/tools/habits`              | Home - today's habits with tap-to-tick, identity-grouped, recent activity, week strip, _Never Miss Twice_ banner if applicable. |
-| `/tools/habits/onboarding`   | Full-screen fallback / revisit route for the onboarding modal.                                                                  |
-| `/tools/habits/new`          | Create a habit - guided form covering identity, the Four Laws, and the two-minute version.                                      |
-| `/tools/habits/[id]`         | Detail - habit overview, calendar heat-strip, recent notes, edit / archive / delete.                                            |
-| `/tools/habits/[id]/edit`    | Edit a habit.                                                                                                                   |
-| `/tools/habits/[id]/log`     | Quick log a note for today (used when the user taps the tick and chooses _Add note_).                                           |
-| `/tools/habits/history`      | Private history - chronological log of ticks across all habits.                                                                 |
-| `/tools/habits/learn/[slug]` | Single learn card (1% compounding, Four Laws, Two-Minute Rule, Never Miss Twice, Identity-Based Habits).                        |
+| Route                        | Purpose                                                                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `/tools/habits`              | Home - every habit with tap-to-tick, week strip, archived group, weekly rhythm, recent activity, _Never Miss Twice_ line if applicable. |
+| `/tools/habits/new`          | Create a habit - guided form covering identity, the Four Laws, and the two-minute version.                                              |
+| `/tools/habits/[id]`         | Detail - habit overview, calendar heat-strip, recent notes, edit / archive / delete.                                                    |
+| `/tools/habits/[id]/edit`    | Edit a habit.                                                                                                                           |
+| `/tools/habits/[id]/log`     | Quick log a note for today (used when the user taps the tick and chooses _Add note_).                                                   |
+| `/tools/habits/history`      | Private history - chronological log of ticks across all habits.                                                                         |
+| `/tools/habits/learn`        | Learn index - the ten core-idea cards. Linked from the overview's Core ideas row.                                                       |
+| `/tools/habits/learn/[slug]` | Single learn card (1% compounding, Four Laws, Two-Minute Rule, Never Miss Twice, Identity-Based Habits).                                |
+
+Onboarding has no route of its own. `HabitsOnboarding` is a modal, opened from the
+header's `info` action; the standalone `/tools/habits/onboarding` route was removed
+in #765 as an orphan - nothing linked to it.
 
 Existing placeholder `app/(app)/tools/habits/index.tsx` (the `ToolPlaceholderScreen`) is replaced by the real home screen. No compat redirect is needed because the placeholder is unreleased.
 
