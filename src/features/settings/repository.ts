@@ -397,75 +397,53 @@ export async function updateShownButtonTours(userId: string, shownButtonTours: B
   return mapPreferences(data as UserPreferenceRow);
 }
 
-interface OnboardingPreferencesPatch {
-  appOnboardingCompleted?: boolean;
-  appOnboardingCompletedVia?: "finish" | "skip";
-  appOnboardingCompletedAt?: string;
-  cbtOnboardingCompleted?: boolean;
-  gratitudeOnboardingCompleted?: boolean;
-  meditationInfoCompleted?: boolean;
-  habitsOnboardingCompleted?: boolean;
-  moodOnboardingCompleted?: boolean;
-  journalOnboardingCompleted?: boolean;
-  sleepOnboardingCompleted?: boolean;
-  mindfulnessOnboardingCompleted?: boolean;
-  groundingOnboardingCompleted?: boolean;
-  shownButtonTours?: ButtonTourKey[];
-  selectedConcerns?: string[];
-  startHereDismissedAt?: string | null;
-}
+/**
+ * The keys an onboarding write may name.
+ *
+ * Derived from `UserPreferences` via `Pick` rather than redeclared: the previous
+ * hand-written interface carried its own `boolean`/`string` annotations AND a
+ * parallel snake_case list inside the function body, so it could drift from the
+ * schema in two directions at once - and did. `actOnboardingCompleted` and
+ * `meditationOnboardingCompleted` are both written `true` in production code and
+ * neither was nameable here, so Settings' "Reset onboarding" could not clear them
+ * however the reset set was written (#821).
+ */
+type OnboardingPreferencesPatch = Partial<
+  Pick<
+    UserPreferences,
+    | "appOnboardingCompleted"
+    | "appOnboardingCompletedVia"
+    | "appOnboardingCompletedAt"
+    | "cbtOnboardingCompleted"
+    | "actOnboardingCompleted"
+    | "meditationOnboardingCompleted"
+    | "meditationInfoCompleted"
+    | "gratitudeOnboardingCompleted"
+    | "habitsOnboardingCompleted"
+    | "moodOnboardingCompleted"
+    | "journalOnboardingCompleted"
+    | "sleepOnboardingCompleted"
+    | "mindfulnessOnboardingCompleted"
+    | "groundingOnboardingCompleted"
+    | "shownButtonTours"
+    | "selectedConcerns"
+    | "startHereDismissedAt"
+  >
+>;
 
 export async function updateOnboardingPreferences(
   userId: string,
   patch: OnboardingPreferencesPatch,
 ) {
   const client = requireSupabase();
+  // Translate through the SAME `PREFERENCE_COLUMNS` map `updateUserPreferences`
+  // uses. The hand-written if-chain this replaces was a second copy of a subset
+  // of that map, which is how two flags ended up unwritable here while the map
+  // itself had carried their columns all along (#821).
   const payload: Record<string, unknown> = { user_id: userId };
-
-  if (patch.appOnboardingCompleted !== undefined) {
-    payload.app_onboarding_completed = patch.appOnboardingCompleted;
-  }
-  if (patch.appOnboardingCompletedVia !== undefined) {
-    payload.app_onboarding_completed_via = patch.appOnboardingCompletedVia;
-  }
-  if (patch.appOnboardingCompletedAt !== undefined) {
-    payload.app_onboarding_completed_at = patch.appOnboardingCompletedAt;
-  }
-  if (patch.cbtOnboardingCompleted !== undefined) {
-    payload.cbt_onboarding_completed = patch.cbtOnboardingCompleted;
-  }
-  if (patch.gratitudeOnboardingCompleted !== undefined) {
-    payload.gratitude_onboarding_completed = patch.gratitudeOnboardingCompleted;
-  }
-  if (patch.meditationInfoCompleted !== undefined) {
-    payload.meditation_info_completed = patch.meditationInfoCompleted;
-  }
-  if (patch.habitsOnboardingCompleted !== undefined) {
-    payload.habits_onboarding_completed = patch.habitsOnboardingCompleted;
-  }
-  if (patch.moodOnboardingCompleted !== undefined) {
-    payload.mood_onboarding_completed = patch.moodOnboardingCompleted;
-  }
-  if (patch.journalOnboardingCompleted !== undefined) {
-    payload.journal_onboarding_completed = patch.journalOnboardingCompleted;
-  }
-  if (patch.sleepOnboardingCompleted !== undefined) {
-    payload.sleep_onboarding_completed = patch.sleepOnboardingCompleted;
-  }
-  if (patch.mindfulnessOnboardingCompleted !== undefined) {
-    payload.mindfulness_onboarding_completed = patch.mindfulnessOnboardingCompleted;
-  }
-  if (patch.groundingOnboardingCompleted !== undefined) {
-    payload.grounding_onboarding_completed = patch.groundingOnboardingCompleted;
-  }
-  if (patch.shownButtonTours !== undefined) {
-    payload.shown_button_tours = patch.shownButtonTours;
-  }
-  if (patch.selectedConcerns !== undefined) {
-    payload.selected_concerns = patch.selectedConcerns;
-  }
-  if (patch.startHereDismissedAt !== undefined) {
-    payload.start_here_dismissed_at = patch.startHereDismissedAt;
+  for (const key of Object.keys(patch) as (keyof OnboardingPreferencesPatch)[]) {
+    const column = PREFERENCE_COLUMNS[key];
+    if (column !== undefined && patch[key] !== undefined) payload[column] = patch[key];
   }
 
   const { data, error } = await client
