@@ -111,7 +111,11 @@ export function EmojiPicker({ value, onSelect }: EmojiPickerProps) {
             role="radio"
             className={cn(
               "size-11 items-center justify-center rounded-xl border",
-              selected ? "border-border bg-muted" : "border-transparent active:bg-accent/50",
+              // #738's chip treatment, not the design's `be/0.16` wash and `0.4` ring.
+              // That wash is `RAMP_ALPHAS[0]` - it measures ~1.26:1 against the popover
+              // it sits on, which is to say invisible. Border, fill and the ring move
+              // together here so selection is never carried by a tint alone (#691).
+              selected ? "border-primary bg-primary/10" : "border-transparent active:bg-accent/50",
             )}
             {...roving.getItemProps(index, () => onSelect(emoji))}
           >
