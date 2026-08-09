@@ -493,25 +493,18 @@ const ROOMLESS_TAIL_DIRS = [
 // EMPTIED by #588: the module tail's last bare accents - breathing's stepper
 // arrows and sound checks, meditation's chevron, the settings cards' icons,
 // sleep's filled star, the mood week strip's today marker - are all neutral now.
-const ALLOWED_TAIL: AllowedSite[] = [
-  // The single survivor, and it survives because it is not chrome. Sleep quality
-  // is an ordered 1-5 input control - the twin of the mood scale, which #558
-  // keeps by name ("the same 5-step scale on the input control") - and #588
-  // records it as the `sleep-quality-ramp` encoding. The mechanical sweep took
-  // it by accident and left `filled` and `empty` painting the identical class;
-  // this entry is here so the next sweep has to read the argument rather than
-  // rediscover it.
-  {
-    file: "src/features/sleep/star-rating.tsx",
-    snippet: `className={filled ? "text-ink" : "text-muted-foreground"}`,
-    reason: "icon",
-    evidence:
-      "32px star on the sleep log's background: 4.71:1. Filled and empty differ by " +
-      "glyph - star vs star-outline - and each Pressable carries " +
-      "accessibilityRole='radio' with aria-checked, so the fill colour is not the " +
-      "only channel.",
-  },
-];
+// Now fully empty, as of #774. The single survivor was sleep's filled star -
+// `text-ink` on a 32px glyph, kept because an ordered 1-5 input is an encoding
+// and not chrome. #774 replaced that instrument outright: five named options
+// (`quality-scale.tsx`) where the words carry the order, so the control no
+// longer encodes anything in a hue and reaches for the certified chip stops via
+// `chipHsl("ink")` instead of a bare accent class. `quality-tint.ts` still holds
+// the `sleep-quality-ramp` encoding for the display surfaces; it is not swept
+// here because it is a class helper, not a call site.
+//
+// An empty list is the goal state, not a gap: the assertion below still runs, so
+// a new bare `text-<hue>` anywhere in the tail fails until it is justified here.
+const ALLOWED_TAIL: AllowedSite[] = [];
 
 /**
  * Every `accentClassName` literal in the app. `ToolStats` renders it at 13px
