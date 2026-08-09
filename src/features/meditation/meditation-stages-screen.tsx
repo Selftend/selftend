@@ -1,14 +1,22 @@
 import { router } from "expo-router";
+import { useId, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Card, CardContent } from "@/src/components/react-native-reusables/card";
-import { Text } from "@/src/components/react-native-reusables/text";
+import { Button } from "@/src/components/react-native-reusables/button";
+import { DetailRow } from "@/src/components/app/detail-row";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { STAGES } from "@/src/features/meditation/stages";
-import { useMeditationProgramState } from "@/src/features/meditation/queries";
+import {
+  useMeditationProgramState,
+  useUpsertMeditationProgramState,
+} from "@/src/features/meditation/queries";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -29,12 +37,31 @@ const MILESTONE_AFTER: Record<number, string> = {
   10: "module.stages.milestone4Title",
 };
 
+/**
+ * The ten stages as one readable spine (#787).
+ *
+ * Ten cards became ten hairline rows that expand where they sit. The screen this
+ * replaces made reading a stage a round trip: tap a card, land on a detail
+ * screen, come back, tap the next. Comparing two stages - which is most of what
+ * this page is for - meant four navigations.
+ *
+ * **The stage stays user-declared.** `Set as my current stage` is an explicit
+ * button and must not become an inference from sit count or duration. A product
+ * that decides which stage a practice has reached is grading it, which is the
+ * one thing the ten-stage framework is not for.
+ */
 export default function MeditationStagesScreen() {
   const { t } = useTranslation("meditation");
   const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
-  const { data: programState } = useMeditationProgramState(user?.id ?? null);
+  const userId = user?.id ?? null;
+  const { data: programState } = useMeditationProgramState(userId);
+  const upsertProgramState = useUpsertMeditationProgramState(userId);
   const currentStage = programState?.currentStage ?? 1;
+
+  // One open at a time: two expanded stages push the rest of the spine off the
+  // screen, and the point of the spine is that it can be read at a glance.
+  const [openStage, setOpenStage] = useState<number | null>(null);
 
   return (
     <SafeAreaView
@@ -42,91 +69,60 @@ export default function MeditationStagesScreen() {
       edges={["bottom", "left", "right"]}
       style={roomStyle}
     >
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
+      <ScrollView contentContainerClassName="grow p-4">
+        <View className={cn(FORM_COLUMN, "gap-6")}>
           <View className="gap-2">
             <ScreenHeader title={t("module.stages.title")} />
+            {/*
+              The drawn subtitle ends "- you are not behind". That clause is cut:
+              it is the product advertising its own restraint, which #711 forbids,
+              and it is reassurance against a punishment this product does not
+              have - naming it plants the idea it exists. The first two clauses
+              are the record and they stay.
+            */}
             <Text variant="muted">{t("module.stages.subtitle")}</Text>
           </View>
 
-          <View className="gap-3">
-            {STAGES.map((s) => {
-              const phaseHeader = PHASE_HEADERS.find((p) => p.startStage === s.number);
-              const milestoneKey = MILESTONE_AFTER[s.number];
+          <View>
+            {STAGES.map((stage) => {
+              const phaseHeader = PHASE_HEADERS.find((p) => p.startStage === stage.number);
+              const milestoneKey = MILESTONE_AFTER[stage.number];
               return (
-                <View key={s.number} className="gap-3">
+                <View key={stage.number}>
                   {phaseHeader ? (
-                    <Text className="mt-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                      {t(phaseHeader.titleKey)}
+                    <Text
+                      role="heading"
+                      aria-level={2}
+                      className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground"
+                    >
+                      {t(phaseHeader.titleKey as Parameters<typeof t>[0])}
                     </Text>
                   ) : null}
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() =>
-                      router.push({
-                        pathname: "/tools/meditation/stages/[n]",
-                        params: { n: String(s.number) },
-                      })
+
+                  <StageRow
+                    stage={stage}
+                    isCurrent={stage.number === currentStage}
+                    expanded={openStage === stage.number}
+                    isPending={upsertProgramState.isPending}
+                    onToggle={() =>
+                      setOpenStage((open) => (open === stage.number ? null : stage.number))
                     }
-                  >
-                    <Card
-                      className={cn(s.number === currentStage ? "border-primary" : "border-border")}
-                    >
-                      <CardContent className="flex-row items-center gap-4 pt-5">
-                        <View
-                          className={cn(
-                            "size-10 items-center justify-center rounded-full border",
-                            s.number === currentStage
-                              ? "border-primary bg-primary"
-                              : "border-border bg-card",
-                          )}
-                        >
-                          <Text
-                            className={cn(
-                              "text-sm font-bold",
-                              s.number === currentStage
-                                ? "text-primary-foreground"
-                                : "text-foreground",
-                            )}
-                          >
-                            {s.number}
-                          </Text>
-                        </View>
-                        <View className="flex-1 gap-0.5">
-                          <Text className="font-semibold">{t(s.titleKey)}</Text>
-                          <Text variant="muted" className="text-xs">
-                            {t(s.goalKey)}
-                          </Text>
-                        </View>
-                        {s.number === currentStage ? (
-                          // Decorative "you are here" marker, so it takes the
-                          // room hue - the same tinted-chip shape (hue ink on a
-                          // faint hue wash) home's stage badge already wears.
-                          // The filled circle and the row border above stay on
-                          // `primary`: they are the selected-row control state,
-                          // and a solid iris fill has no certified ink pairing
-                          // (white on it is 3.8:1, under AA).
-                          <View className="rounded-full bg-muted px-2 py-0.5">
-                            <Text className="text-[10px] font-semibold uppercase tracking-wider text-primary-ink">
-                              {t("module.stages.currentStageBadge")}
-                            </Text>
-                          </View>
-                        ) : null}
-                      </CardContent>
-                    </Card>
-                  </Pressable>
+                    onSetCurrent={() => upsertProgramState.mutate({ currentStage: stage.number })}
+                  />
+
                   {milestoneKey ? (
-                    <View className="rounded-md border border-dashed border-border bg-muted p-3">
+                    <View className="mt-1.5 flex-row items-center gap-3 rounded-lg bg-muted px-3 py-3">
                       {/*
-                        Hue-keyed ink, not the accent and not `text-primary-ink`
-                        (#412): `be` is a guest hue in the iris room, so the
-                        room's accent ink would repaint this milestone iris.
-                        The published accent reads 4.41:1 as 12px text on
-                        `bg-be/5` over the iris room background - be clears AA
-                        on a plain surface, not through a tint of itself.
+                        Chrome, not the module hue. The design fills this
+                        `iris/0.07` and inks the flag and the text
+                        `hsl(var(--iris))`; the wash is far under 3:1 against the
+                        background and the ink is the shape #368 measured at
+                        3.81:1. A milestone is a fact about the framework, not
+                        the module's identity (#588/#691).
                       */}
-                      <Text className="text-xs font-semibold text-foreground">
-                        {t(milestoneKey)}
+                      <Icon aria-hidden name="flag" className="size-4 text-muted-foreground" />
+                      <Text className="flex-1 text-[12.5px] font-semibold text-foreground">
+                        {t(milestoneKey as Parameters<typeof t>[0])}
                       </Text>
                     </View>
                   ) : null}
@@ -137,5 +133,172 @@ export default function MeditationStagesScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+interface StageRowProps {
+  stage: (typeof STAGES)[number];
+  isCurrent: boolean;
+  expanded: boolean;
+  isPending: boolean;
+  onToggle: () => void;
+  onSetCurrent: () => void;
+}
+
+/**
+ * One stage: a numbered disc, its name, a `Where you are` pill when it is the
+ * declared stage, and a disclosure chevron.
+ *
+ * The chevron is a **glyph swap, not a rotation** (#716). The design animates a
+ * 200ms rotate; the motion decision admits none, and a rotating chevron is the
+ * kind that has to be suppressed again under reduce-motion.
+ *
+ * Expanded content is **unmounted** when collapsed rather than hidden, matching
+ * `Disclosure`: a hidden-but-mounted subtree keeps its button in the tab order,
+ * so ten collapsed stages would leave ten invisible `Set as my current stage`
+ * buttons for a keyboard user to walk through.
+ */
+function StageRow({
+  stage,
+  isCurrent,
+  expanded,
+  isPending,
+  onToggle,
+  onSetCurrent,
+}: StageRowProps) {
+  const { t } = useTranslation("meditation");
+  const contentId = useId();
+
+  return (
+    <View className="border-t border-border">
+      {/*
+        No `spaceKeyActivationProps`: React Native Web already activates
+        `role="button"` on Space, on key UP, so the helper's keyDown handler
+        would toggle twice per press and leave the row exactly as it was.
+      */}
+      <Pressable
+        accessibilityRole="button"
+        aria-expanded={expanded}
+        aria-controls={contentId}
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        onPress={onToggle}
+        className="flex-row items-center gap-4 py-3.5 active:opacity-70"
+        role="button"
+        testID={`stage-row-${stage.number}`}
+      >
+        {/*
+          Filled for the declared stage, outlined for the rest. That is a
+          luminance and shape difference, not a colour one, so it survives
+          greyscale and every CVD - the disc carries real state and may not
+          rest on hue alone.
+        */}
+        <View
+          className={cn(
+            "size-7 shrink-0 items-center justify-center rounded-full border",
+            isCurrent ? "border-primary bg-primary" : "border-border bg-card",
+          )}
+        >
+          <Text
+            className={cn(
+              "text-xs font-bold tabular-nums",
+              isCurrent ? "text-primary-foreground" : "text-muted-foreground",
+            )}
+          >
+            {stage.number}
+          </Text>
+        </View>
+
+        <Text className={cn("flex-1 text-[14.5px]", isCurrent ? "font-semibold" : "font-medium")}>
+          {t(stage.shortTitleKey as Parameters<typeof t>[0])}
+        </Text>
+
+        {isCurrent ? (
+          // Chrome, as the overview's stage badge is (#588): `text-primary-ink`
+          // on the neutral wash, never the drawn `iris` on an `iris/0.1` fill.
+          <View className="shrink-0 rounded-full bg-muted px-2 py-0.5">
+            <Text className="text-[10px] font-semibold uppercase tracking-wider text-primary-ink">
+              {t("module.stages.currentStageBadge")}
+            </Text>
+          </View>
+        ) : null}
+
+        <Icon
+          aria-hidden
+          name={expanded ? "expand-less" : "expand-more"}
+          className="size-5 shrink-0 text-muted-foreground"
+        />
+      </Pressable>
+
+      {expanded ? (
+        <View nativeID={contentId} className="pb-5 pl-11">
+          {/*
+            `DetailRow`, not a local 78px column. The design draws 78px, which is
+            under the same pressure that killed check-in's 110px one: `Obstacles`
+            and `bg`'s `Препятствия` wrap against it at 360dp. The shared row
+            already stacks its label above its content below the breakpoint and
+            only takes a column once there is width for one.
+          */}
+          <DetailRow label={t("module.stages.goalLabel")}>
+            <Text className="text-[14.5px] leading-6">
+              {t(stage.goalKey as Parameters<typeof t>[0])}
+            </Text>
+          </DetailRow>
+          <DetailRow label={t("module.stages.obstaclesLabel")}>
+            <Text variant="muted" className="text-[14.5px] leading-6">
+              {t(stage.obstaclesKey as Parameters<typeof t>[0])}
+            </Text>
+          </DetailRow>
+          <DetailRow label={t("module.stages.masteryLabel")}>
+            <Text variant="muted" className="text-[14.5px] leading-6">
+              {t(stage.masteryKey as Parameters<typeof t>[0])}
+            </Text>
+          </DetailRow>
+
+          <View className="gap-3 pt-4">
+            {isCurrent ? (
+              // Present but inert, so the row that is already your stage says so
+              // rather than offering an action that would do nothing.
+              <Text variant="muted" className="text-[13px] font-semibold">
+                {t("module.stages.alreadyCurrent")}
+              </Text>
+            ) : (
+              <Button
+                variant="outline"
+                size="lg"
+                className="self-start"
+                disabled={isPending}
+                onPress={onSetCurrent}
+              >
+                <Text>{t("module.stages.switchTo")}</Text>
+              </Button>
+            )}
+
+            {/*
+              The stage screen holds two things this expansion does not - the
+              skills and methods, and the reflection prompts - and this list is
+              its only entrance. Expanding in place without this link would not
+              relocate that content, it would strand it.
+            */}
+            <Pressable
+              accessibilityRole="link"
+              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+              onPress={() =>
+                router.push({
+                  pathname: "/tools/meditation/stages/[n]",
+                  params: { n: String(stage.number) },
+                })
+              }
+              className="flex-row items-center gap-1 self-start active:opacity-70"
+              role="link"
+            >
+              <Text className="text-[13px] font-semibold text-primary-ink">
+                {t("module.stages.moreOnStage")}
+              </Text>
+              <Icon aria-hidden name="arrow-forward" className="size-3.5 text-primary-ink" />
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+    </View>
   );
 }
