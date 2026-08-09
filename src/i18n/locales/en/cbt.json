@@ -1374,8 +1374,18 @@
         "amber": "Amber",
         "emerald": "Emerald",
         "violet": "Violet",
-        "rose": "Rose"
-      }
+        "rose": "Rose",
+        "ink": "Ink",
+        "be": "Sage",
+        "act": "Moss"
+      },
+      "timingLabel": "Timing",
+      "perCycle": "{{value}} per cycle",
+      "seconds": "{{value}}s",
+      "startFrom": "Start from",
+      "defaultLengthLabel": "Default length",
+      "lengthChangeable": "You can change the length each time you start a session.",
+      "accentLabel": "Accent"
     },
     "exercises": {
       "box-breathing": {
@@ -1416,6 +1426,39 @@
         "forest": "Forest",
         "night": "Night",
         "brown": "Brown noise"
+      }
+    },
+    "overview": {
+      "patternsTitle": "Patterns",
+      "newPattern": "New pattern →",
+      "recentTitle": "Recent sessions",
+      "showAll": "Show all sessions →",
+      "noPatterns": "No patterns yet.",
+      "startPattern": "Start {{name}}",
+      "minutes_one": "minute",
+      "minutes_other": "minutes",
+      "sessions_one": "session",
+      "sessions_other": "sessions",
+      "lastAt": "last {{when}}",
+      "neverLogged": "no sessions yet"
+    },
+    "setup": {
+      "eachCycle": "Each cycle",
+      "howLong": "How long",
+      "voiceGuidance": "Voice guidance",
+      "ambientSound": "Ambient sound",
+      "none": "None"
+    },
+    "allHistory": {
+      "title": "All sessions",
+      "description": "Every breathing session you've logged.",
+      "empty": {
+        "title": "No sessions yet",
+        "description": "Your breathing sessions will collect here once you've finished one."
+      },
+      "error": {
+        "title": "Couldn't load your sessions",
+        "description": "Check your connection and try again."
       }
     }
   }

@@ -68,6 +68,57 @@ export async function listMindfulnessSessionsByNames(
   return (data as MindfulnessSessionRow[]).map(mapSession);
 }
 
+/**
+ * One page of sessions of the given exercise types, newest first - the all-history
+ * screen's read (#696).
+ *
+ * ⚠️ Offset paging, matching the mood and habits all-history screens rather than
+ * diverging from them. It shares their known flaw (#797): an insert landing between two
+ * page fetches shifts every later boundary, so a row can repeat or be skipped. The tie
+ * break on `id` is what this screen CAN fix locally - without it two pages can disagree
+ * about which row sits on a boundary even with no concurrent write, because
+ * `completed_at` alone is not a total order. Moving the whole pattern to keyset paging is
+ * #797's call, and it should move all three screens together.
+ */
+export async function listMindfulnessSessionsByNamesPage(
+  userId: string,
+  exerciseNames: string[],
+  limit: number,
+  offset: number,
+) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("mindfulness_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .in("exercise_name", exerciseNames)
+    .order("completed_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw error;
+  return (data as MindfulnessSessionRow[]).map(mapSession);
+}
+
+/**
+ * Exact lifetime minutes across every session that is NOT one of the given exercise
+ * types - the breathing overview's "21 minutes" stat. Server-side for the reason
+ * 20260809010000_breathing_total_minutes.sql spells out: the screen's own list is capped,
+ * so summing it would quietly turn a lifetime figure into a "last 50 sessions" one.
+ */
+// No userId parameter: the RPC reads `auth.uid()` itself and RLS confines it, so passing
+// one would be a second, ignorable source of truth about whose minutes these are.
+export async function sumMindfulnessMinutesExcludingNames(
+  excludedNames: string[],
+): Promise<number> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("breathing_total_minutes", {
+    excluded_names: excludedNames,
+  });
+  if (error) throw error;
+  return typeof data === "number" ? data : 0;
+}
+
 // Exact count of sessions of the given exercise types (e.g. grounding) for tile stats -
 // avoids fetching full rows just to display a number.
 export async function countMindfulnessSessionsByNames(
