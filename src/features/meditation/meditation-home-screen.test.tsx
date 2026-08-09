@@ -1,26 +1,37 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationHomeScreen from "@/src/features/meditation/meditation-home-screen";
 import {
   useMeditationMedianMinutes,
+  useMeditationMinutesWindow,
   useMeditationProgramState,
   useMeditationSessionCount,
   useMeditationSessions,
 } from "@/src/features/meditation/queries";
+import {
+  MINUTES_WINDOW_DAYS,
+  minutesWindowFromIso,
+} from "@/src/features/meditation/minutes-window";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { expectNeutralRoom } from "@/test/room-pour";
+import { currentDateKey } from "@/src/utils/date";
 
-jest.mock("expo-router", () => ({
-  router: {
-    push: jest.fn(),
-    canGoBack: jest.fn(() => false),
-  },
-  useLocalSearchParams: () => ({}),
-  usePathname: () => "/tools/meditation",
-  useFocusEffect: jest.fn(),
-}));
+jest.mock("expo-router", () => {
+  const { useEffect } = jest.requireActual<typeof import("react")>("react");
+  return {
+    router: {
+      push: jest.fn(),
+      canGoBack: jest.fn(() => false),
+    },
+    useLocalSearchParams: () => ({}),
+    usePathname: () => "/tools/meditation",
+    // Actually runs its callback, as focus does: the "ends about" read-out reads
+    // the clock there and would never appear under a no-op mock.
+    useFocusEffect: (callback: () => void) => useEffect(callback, [callback]),
+  };
+});
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
@@ -31,6 +42,7 @@ jest.mock("@/src/features/meditation/queries", () => ({
   useMeditationSessions: jest.fn(),
   useMeditationSessionCount: jest.fn(),
   useMeditationMedianMinutes: jest.fn(),
+  useMeditationMinutesWindow: jest.fn(),
   useUpsertMeditationProgramState: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
   useStagePracticeNotes: jest.fn(() => ({ data: undefined })),
   useSaveStagePracticeNote: jest.fn(() => ({ mutateAsync: jest.fn(), isPending: false })),
@@ -44,7 +56,9 @@ jest.mock("@/src/features/settings/queries", () => ({
 
 // The sit itself is not what this suite is about, and the widget reaches for
 // AsyncStorage and native audio on mount.
-jest.mock("@/src/features/timer/timer-widget", () => ({ TimerWidget: () => null }));
+jest.mock("@/src/features/timer/timer-widget", () => ({
+  TimerWidget: () => null,
+}));
 
 jest.mock("@/src/components/app/meditation-info-modal", () => ({ MeditationInfo: () => null }));
 jest.mock("@/src/components/app/meditation-onboarding-modal", () => ({
@@ -69,6 +83,9 @@ const mockUseMeditationProgramState = useMeditationProgramState as jest.MockedFu
 const mockUseMeditationMedianMinutes = useMeditationMedianMinutes as jest.MockedFunction<
   typeof useMeditationMedianMinutes
 >;
+const mockUseMeditationMinutesWindow = useMeditationMinutesWindow as jest.MockedFunction<
+  typeof useMeditationMinutesWindow
+>;
 
 const session = (overrides: Record<string, unknown> = {}) => ({
   id: "s1",
@@ -79,6 +96,8 @@ const session = (overrides: Record<string, unknown> = {}) => ({
   stageAtSession: 2,
   completedAt: "2026-05-28T10:00:00Z",
   completedOffsetMinutes: null,
+  dayKey: "2026-05-28",
+  reflection: "",
   createdAt: "2026-05-28T10:00:00Z",
   ...overrides,
 });
@@ -93,6 +112,11 @@ const setServerMedian = (data: number | null | undefined) =>
     typeof useMeditationMedianMinutes
   >);
 
+const setMinutesWindow = (data: unknown) =>
+  mockUseMeditationMinutesWindow.mockReturnValue({ data } as unknown as ReturnType<
+    typeof useMeditationMinutesWindow
+  >);
+
 describe("MeditationHomeScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -101,16 +125,19 @@ describe("MeditationHomeScreen", () => {
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
     mockUseMeditationProgramState.mockReturnValue({
-      data: { currentStage: 3, preferredDurationMinutes: 15 },
+      // 20 is one of the six drawn lengths, so the default case renders six
+      // buttons; the seventh-button case has a test of its own below.
+      data: { currentStage: 3, preferredDurationMinutes: 20 },
     } as unknown as ReturnType<typeof useMeditationProgramState>);
     mockUseMeditationSessionCount.mockReturnValue({ data: undefined } as unknown as ReturnType<
       typeof useMeditationSessionCount
     >);
     setServerMedian(undefined);
     setSessions(undefined);
+    setMinutesWindow(undefined);
   });
 
-  it("renders the header title, description, and the three stats", () => {
+  it("renders the header title, description, and a split count/noun stat run", () => {
     setSessions([session(), session({ id: "s2", durationMinutes: 10 })]);
     mockUseMeditationSessionCount.mockReturnValue({ data: 2 } as unknown as ReturnType<
       typeof useMeditationSessionCount
@@ -123,19 +150,18 @@ describe("MeditationHomeScreen", () => {
       screen.getByText("Train steady attention and clear awareness, one sit at a time."),
     ).toBeTruthy();
     expect(screen.getByText("Stage 3")).toBeTruthy();
-    expect(screen.getByText("2 sessions")).toBeTruthy();
+    // The count is its own foreground-ink node and the noun is muted beside it,
+    // which is what "24 sits" is in the design - not one baked string (#690).
+    expect(screen.getByText("2 sits")).toBeTruthy();
     // Median of a 20 and a 10 minute sit.
-    // Value and label compose into one stat now that the run is inline (#733).
-    expect(screen.getByText("15 min Median")).toBeTruthy();
+    expect(screen.getByText("15 min typical")).toBeTruthy();
   });
 
   it("shows the lifetime median, not the median of the newest 200 sits", () => {
     // A daily meditator passes the 200-session list cap in under seven months. Here the
     // newest 200 sits alternate 4 and 6 minutes, so a median taken over the capped list
     // is 5; the user's real history is dominated by longer earlier sits, so the lifetime
-    // median is 25. Nothing in the "Median" label says "recent" (#337).
-    // The two durations are chosen so that 5 appears nowhere else on screen - the recent
-    // rows below render their own "{{count}} min" labels.
+    // median is 25. Nothing in the "typical" label says "recent" (#337).
     setSessions(
       Array.from({ length: 200 }, (_, i) =>
         session({ id: `recent-${i}`, durationMinutes: i % 2 === 0 ? 4 : 6 }),
@@ -145,9 +171,11 @@ describe("MeditationHomeScreen", () => {
 
     renderWithProviders(<MeditationHomeScreen />);
 
-    expect(screen.getByText("25 min")).toBeTruthy();
-    // The capped-list median, which is what the screen used to show.
-    expect(screen.queryByText("5 min")).toBeNull();
+    expect(screen.getByText("25 min typical")).toBeTruthy();
+    // The capped-list median, which is what the screen used to show. Asserted on
+    // the composed stat rather than the bare string, because "5 min" is also one
+    // of the length buttons above.
+    expect(screen.queryByText("5 min typical")).toBeNull();
   });
 
   it("falls back to the loaded sits until the server median arrives", () => {
@@ -156,17 +184,20 @@ describe("MeditationHomeScreen", () => {
 
     renderWithProviders(<MeditationHomeScreen />);
 
-    expect(screen.getByText("15 min")).toBeTruthy();
+    expect(screen.getByText("15 min typical")).toBeTruthy();
   });
 
-  it("renders a dash when the server reports no sits to take a median of", () => {
-    // Null is "no sessions at all", which is not a zero-minute median.
+  it("meets a brand-new account with a stage rather than a row of zeros", () => {
+    // `0 sits · - typical` is the row #735 took off the check-in overview. The
+    // stage is different: it exists from the first second of an account.
     setSessions([]);
     setServerMedian(null);
 
     renderWithProviders(<MeditationHomeScreen />);
 
-    expect(screen.getByText("- Median")).toBeTruthy();
+    expect(screen.getByText("Stage 3")).toBeTruthy();
+    expect(screen.queryByText("0 sits")).toBeNull();
+    expect(screen.queryByText(/typical/)).toBeNull();
   });
 
   it("renders the iris room: quiet shell header and room pour", () => {
@@ -176,18 +207,15 @@ describe("MeditationHomeScreen", () => {
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
-  it("wears iris on the stage badge and the history link", () => {
+  it("inks the stage badge and the all-sits link so they clear AA", () => {
     setSessions([session()]);
 
     renderWithProviders(<MeditationHomeScreen />);
 
-    // Room accents follow the module hue; `primary` stays reserved for
-    // interactive control states (buttons, selected chips). The hue reaches
-    // small text as `accent-ink` - the room's own iris darkened until it clears
-    // AA on the surfaces iris pours (#368). Published `text-iris` is 3.33:1
-    // there, so asserting it here would pin an illegible pairing.
+    // The design fills both with `iris/0.1` under `hsl(var(--iris))` text, which
+    // is the pattern #691 named a regression and #368 measured at 3.81:1.
     expect(screen.getByText("Stage 2").props.className).toContain("text-primary-ink");
-    expect(screen.getByText("All sessions").props.className).toContain("text-primary-ink");
+    expect(screen.getByText("Show all sits").props.className).toContain("text-primary-ink");
   });
 
   it("keeps the room poured on the loading return", () => {
@@ -232,10 +260,15 @@ describe("MeditationHomeScreen", () => {
 
   it("derives the subline from the latest session, not the list order", () => {
     setSessions([
-      session({ id: "older", completedAt: "2026-05-20T10:00:00Z" }),
+      session({ id: "older", completedAt: "2026-05-20T10:00:00Z", dayKey: "2026-05-20" }),
       // Captured at UTC-11, where this instant is still June 1 - the subline
       // must date the sit by the captured frame, not the viewer's (#433 §3).
-      session({ id: "newest", completedAt: "2026-06-02T10:00:00Z", completedOffsetMinutes: -660 }),
+      session({
+        id: "newest",
+        completedAt: "2026-06-02T10:00:00Z",
+        completedOffsetMinutes: -660,
+        dayKey: "2026-06-01",
+      }),
     ]);
 
     renderWithProviders(<MeditationHomeScreen />);
@@ -243,5 +276,250 @@ describe("MeditationHomeScreen", () => {
     // Matched on composed text: the subline is now a value-less item in the
     // header's inline stat run, so its Text has nested children (#733).
     expect(screen.getByText(/^last sat .*Jun 1, 2026/)).toBeTruthy();
+  });
+
+  describe("today's sit", () => {
+    // The two rows share labels - `5 min` is both a length and a bell spacing -
+    // so every query here is scoped to the group it belongs to.
+    const lengths = () => within(screen.getByTestId("sit-length-choices"));
+    const bells = () => within(screen.getByTestId("sit-bell-choices"));
+
+    it("offers the six drawn lengths as one-tap choices", () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      for (const label of ["5 min", "10 min", "12 min", "20 min", "30 min", "45 min"]) {
+        expect(lengths().getByText(label)).toBeTruthy();
+      }
+      expect(lengths().getAllByRole("radio")).toHaveLength(6);
+    });
+
+    it("keeps a stored length that is not one of the six reachable", () => {
+      // Onboarding lets someone commit to 15 minutes. Dropping it would quietly
+      // re-decide their length the first time they open the redesigned screen.
+      mockUseMeditationProgramState.mockReturnValue({
+        data: { currentStage: 3, preferredDurationMinutes: 15 },
+      } as unknown as ReturnType<typeof useMeditationProgramState>);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(lengths().getAllByRole("radio")).toHaveLength(7);
+      // And it is the one selected, not merely present.
+      expect(lengths().getByText("15 min").props.className).toContain("text-primary-ink");
+    });
+
+    it("marks exactly one length chosen, by more than colour", () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      // `aria-checked` folds into `accessibilityState` before it reaches the
+      // host node, so the prop by that name is not there to read.
+      const checked = lengths()
+        .getAllByRole("radio")
+        .filter((radio) => radio.props.accessibilityState?.checked === true);
+      expect(checked).toHaveLength(1);
+      // A 10% tint is not a distinction on its own (#691): weight moves too.
+      expect(lengths().getByText("20 min").props.className).toContain("font-semibold");
+      expect(lengths().getByText("5 min").props.className).not.toContain("font-semibold");
+    });
+
+    it("drives the ends-about read-out off the chosen length", () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const before = screen.getByText(/^ends about /).props.children;
+      fireEvent.press(lengths().getByText("45 min"));
+      const after = screen.getByText(/^ends about /).props.children;
+
+      // 20 minutes and 45 minutes cannot land on the same clock minute.
+      expect(after).not.toBe(before);
+      expect(lengths().getByText("45 min").props.className).toContain("font-semibold");
+    });
+
+    it("offers the interval bell with Off selected by default", () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(bells().getAllByRole("radio")).toHaveLength(4);
+      // A bell that rings without being asked for is a notification nobody opted
+      // into; Off is the default and the other three are one tap away.
+      expect(bells().getByText("Off").props.className).toContain("text-primary-ink");
+    });
+
+    it("swaps the choices for the timer once the sit begins", () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      fireEvent.press(screen.getByText("Begin"));
+
+      // Two controls for one value is worse than either, so the length row goes
+      // when the sit starts rather than sitting under a running timer.
+      expect(screen.queryByText("Length")).toBeNull();
+      expect(screen.queryByText(/^ends about /)).toBeNull();
+    });
+  });
+
+  describe("minutes sat", () => {
+    const windowDay = (dayKey: string, durationMinutes: number) => ({ dayKey, durationMinutes });
+
+    it("stays off the screen while the window has not loaded", () => {
+      // Undefined is in flight, or failed with no cache. Thirty stub columns
+      // there would claim a month of not sitting that nobody has established.
+      setSessions([session()]);
+      setMinutesWindow(undefined);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(screen.queryByText("Minutes sat")).toBeNull();
+      expect(screen.queryAllByTestId("bar-chart-bar")).toHaveLength(0);
+    });
+
+    it("stays off the screen when the loaded window holds no sits", () => {
+      setSessions([session()]);
+      setMinutesWindow([]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(screen.queryByText("Minutes sat")).toBeNull();
+    });
+
+    it("draws thirty columns, with a 2px stub for a day nobody sat", () => {
+      setSessions([session()]);
+      setMinutesWindow([windowDay(currentDateKey(), 30)]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const bars = screen.getAllByTestId("bar-chart-bar");
+      expect(bars).toHaveLength(30);
+      // Twenty-nine zero days, each a stub rather than nothing: a gap in a
+      // thirty-column row reads as missing data, not as a rest day.
+      const stubs = bars.filter((bar) => bar.props.style?.height === 2);
+      expect(stubs).toHaveLength(29);
+    });
+
+    it("fills bars with the accent, never the invisible muted wash", () => {
+      setSessions([session()]);
+      setMinutesWindow([windowDay(currentDateKey(), 30)]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const [bar] = screen.getAllByTestId("bar-chart-bar");
+      // `bg-muted` measures 1.10:1 on card and 1.02:1 on background - not low
+      // contrast, invisible (#725). WCAG 1.4.11 wants 3:1 for the bars.
+      expect(bar!.props.className).toContain("bg-primary");
+      expect(bar!.props.className).not.toContain("bg-muted");
+    });
+
+    it("bounds the window from the clock read on focus, so it rolls over at midnight", () => {
+      // Pinned at mount, the bound never advances: a screen left mounted
+      // overnight keeps drawing yesterday's thirty days under today's labels
+      // until something unrelated invalidates the query.
+      jest.useFakeTimers({ now: new Date("2026-08-07T12:00:00+05:30") });
+      try {
+        setSessions([session()]);
+        setMinutesWindow([]);
+
+        renderWithProviders(<MeditationHomeScreen />);
+
+        expect(mockUseMeditationMinutesWindow).toHaveBeenLastCalledWith(
+          "user-1",
+          minutesWindowFromIso(MINUTES_WINDOW_DAYS, new Date("2026-08-07T12:00:00+05:30")),
+        );
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it("asks for nothing until the clock has been read", () => {
+      // The first render happens before the focus effect runs. An empty bound
+      // there must not become a fetch from the epoch.
+      setSessions([session()]);
+      setMinutesWindow([]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(mockUseMeditationMinutesWindow).toHaveBeenCalledWith("user-1", "");
+    });
+
+    it("gives the whole chart one text equivalent rather than thirty silent boxes", () => {
+      setSessions([session()]);
+      setMinutesWindow([windowDay(currentDateKey(), 30)]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(screen.getByLabelText("30 minutes sat over the last 30 days.")).toBeTruthy();
+    });
+  });
+
+  describe("recent sits", () => {
+    it("lists five and links out, with no load-more button", () => {
+      setSessions(
+        Array.from({ length: 8 }, (_, i) =>
+          session({ id: `s${i}`, durationMinutes: 10 + i, reflection: `note ${i}` }),
+        ),
+      );
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      // `Load 5 more` is deleted: growing the list in place is what the
+      // all-sits screen is for (#696).
+      expect(screen.queryByText(/Load \d+ more/)).toBeNull();
+      expect(screen.getByText("Show all sits")).toBeTruthy();
+      expect(screen.getByText("note 0")).toBeTruthy();
+      expect(screen.getByText("note 4")).toBeTruthy();
+      expect(screen.queryByText("note 5")).toBeNull();
+    });
+
+    it("dates a row by the day captured with the sit", () => {
+      // Captured at UTC-11, where this instant is still June 1. The viewer
+      // (Asia/Kolkata) reads June 2 off the raw instant - and would file the row
+      // under a day its own label contradicts (#250).
+      setSessions([
+        session({
+          completedAt: "2026-06-02T10:00:00Z",
+          completedOffsetMinutes: -660,
+          dayKey: "2026-06-01",
+        }),
+      ]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      // By role, because `20 min` is also one of the length buttons above.
+      expect(screen.getByRole("button", { name: "20 min" })).toBeTruthy();
+      expect(screen.getByText("Stage 2")).toBeTruthy();
+    });
+
+    it("says nothing about an empty history until one has loaded", () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(screen.getByText("No sessions yet. Start whenever you're ready.")).toBeTruthy();
+      // No link out of an empty list - it would lead to the same emptiness.
+      expect(screen.queryByText("Show all sits")).toBeNull();
+    });
+
+    it("keeps two same-length sits apart for a screen reader", () => {
+      // An explicit `accessibilityLabel` on the row would override the name
+      // assembled from its children, announcing both of these as "12 min" and
+      // nothing else - two identical rows with no way to choose between them.
+      setSessions([
+        session({ id: "a", durationMinutes: 12, stageAtSession: 2, reflection: "Settled early." }),
+        session({ id: "b", durationMinutes: 12, stageAtSession: 5, reflection: "Restless." }),
+      ]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const rows = screen.getAllByRole("button", { name: /12 min/ });
+      expect(rows).toHaveLength(2);
+      for (const row of rows) {
+        expect(row.props.accessibilityLabel).toBeUndefined();
+      }
+      expect(screen.getByText("Stage 2")).toBeTruthy();
+      expect(screen.getByText("Stage 5")).toBeTruthy();
+    });
+  });
+
+  describe("your practice", () => {
+    it("offers the stage and the framework as hairline rows", () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(screen.getByText("Your practice")).toBeTruthy();
+      expect(screen.getByText("Stage 3 — Overcoming forgetting")).toBeTruthy();
+      expect(screen.getByText("Learn the framework")).toBeTruthy();
+    });
   });
 });

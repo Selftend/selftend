@@ -3,7 +3,7 @@ import { FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationSessionsScreen from "@/src/features/meditation/meditation-sessions-screen";
-import { useMeditationSessions } from "@/src/features/meditation/queries";
+import { useMeditationSessionPages } from "@/src/features/meditation/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { expectNeutralRoom } from "@/test/room-pour";
 import { useThemeStore } from "@/src/stores/theme-store";
@@ -32,11 +32,11 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/meditation/queries", () => ({
-  useMeditationSessions: jest.fn(),
+  useMeditationSessionPages: jest.fn(),
 }));
 
-const mockUseMeditationSessions = useMeditationSessions as jest.MockedFunction<
-  typeof useMeditationSessions
+const mockUseMeditationSessionPages = useMeditationSessionPages as jest.MockedFunction<
+  typeof useMeditationSessionPages
 >;
 
 const session = (overrides: Record<string, unknown> = {}) => ({
@@ -45,15 +45,40 @@ const session = (overrides: Record<string, unknown> = {}) => ({
   durationMinutes: 20,
   stageAtSession: 2,
   completedAt: "2026-05-28T10:00:00Z",
+  completedOffsetMinutes: null,
+  dayKey: "2026-05-28",
   createdAt: "2026-05-28T10:00:00Z",
   reflection: null,
   ...overrides,
 });
 
-const setSessions = (data: unknown) =>
-  mockUseMeditationSessions.mockReturnValue({ data } as unknown as ReturnType<
-    typeof useMeditationSessions
-  >);
+const mockFetchNextPage = jest.fn();
+
+/** The paged query in one of the four states the screen actually distinguishes. */
+const setPages = (
+  overrides: Partial<{
+    pages: unknown[][];
+    isPending: boolean;
+    isError: boolean;
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
+  }> = {},
+) => {
+  const { pages, ...rest } = overrides;
+  mockUseMeditationSessionPages.mockReturnValue({
+    data: pages === undefined ? undefined : { pages, pageParams: [] },
+    fetchNextPage: mockFetchNextPage,
+    refetch: jest.fn(),
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    isPending: false,
+    isError: false,
+    ...rest,
+  } as unknown as ReturnType<typeof useMeditationSessionPages>);
+};
+
+const setSessions = (rows: unknown[] | undefined) =>
+  rows === undefined ? setPages({ isPending: true }) : setPages({ pages: [rows] });
 
 describe("MeditationSessionsScreen", () => {
   beforeEach(() => {
@@ -149,5 +174,68 @@ describe("MeditationSessionsScreen", () => {
     }
     expect(ancestorClasses.some((c) => c.includes("bg-iris/10"))).toBe(false);
     expect(ancestorClasses.some((c) => c.includes("bg-muted"))).toBe(true);
+  });
+
+  describe("reaching the end of the record (#696)", () => {
+    it("says nothing about an empty history while the first page is in flight", () => {
+      // Pending is not empty. The screen this replaces rendered one empty state
+      // for both, so a slow connection told a returning user their record was
+      // gone.
+      setPages({ isPending: true });
+
+      renderWithProviders(<MeditationSessionsScreen />);
+
+      expect(screen.queryByText("No sessions yet.")).toBeNull();
+      expect(screen.queryByText("Couldn't load your sits")).toBeNull();
+    });
+
+    it("distinguishes a failed load from an empty one", () => {
+      setPages({ isError: true });
+
+      renderWithProviders(<MeditationSessionsScreen />);
+
+      expect(screen.getByText("Couldn't load your sits")).toBeTruthy();
+      expect(screen.queryByText("No sessions yet.")).toBeNull();
+    });
+
+    it("claims an empty record only once a page has come back empty", () => {
+      setPages({ pages: [[]] });
+
+      renderWithProviders(<MeditationSessionsScreen />);
+
+      expect(screen.getByText("No sessions yet.")).toBeTruthy();
+      expect(screen.queryByText("Couldn't load your sits")).toBeNull();
+    });
+
+    it("flattens every loaded page into one list", () => {
+      setPages({
+        pages: [
+          [session({ id: "p1", durationMinutes: 20 })],
+          [session({ id: "p2", durationMinutes: 35 })],
+        ],
+      });
+
+      renderWithProviders(<MeditationSessionsScreen />);
+
+      expect(screen.getByText("20 min")).toBeTruthy();
+      expect(screen.getByText("35 min")).toBeTruthy();
+    });
+
+    it("asks for the next page when the list runs out, but only once at a time", () => {
+      setPages({ pages: [[session()]], hasNextPage: true });
+
+      renderWithProviders(<MeditationSessionsScreen />);
+      const list = screen.UNSAFE_getByType(FlatList);
+      list.props.onEndReached();
+      expect(mockFetchNextPage).toHaveBeenCalledTimes(1);
+
+      // onEndReached fires repeatedly while the user keeps dragging; without the
+      // in-flight guard each call queues another page fetch.
+      mockFetchNextPage.mockClear();
+      setPages({ pages: [[session()]], hasNextPage: true, isFetchingNextPage: true });
+      renderWithProviders(<MeditationSessionsScreen />);
+      screen.UNSAFE_getAllByType(FlatList).at(-1)!.props.onEndReached();
+      expect(mockFetchNextPage).not.toHaveBeenCalled();
+    });
   });
 });

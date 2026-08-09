@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countMeditationSessions,
   getMeditationProgramState,
   getMeditationSession,
+  listMeditationMinutesSince,
   listMeditationSessions,
   listStagePracticeNotes,
   medianMeditationMinutes,
@@ -23,6 +24,8 @@ const meditationKeys = {
   detail: (userId: string, sessionId: string) =>
     ["meditation", "detail", userId, sessionId] as const,
   count: (userId: string) => ["meditation", "count", userId] as const,
+  sessionPages: (userId: string) => ["meditation", "sessionPages", userId] as const,
+  minutesWindow: (userId: string) => ["meditation", "minutes-window", userId] as const,
   medianMinutes: (userId: string) => ["meditation", "median-minutes", userId] as const,
   programState: (userId: string) => ["meditation", "programState", userId] as const,
   notes: (userId: string, stage?: number) =>
@@ -38,6 +41,49 @@ export function useMeditationSessions(userId: string | null, limit = 30) {
       : ["meditation", "list", "anonymous"],
     queryFn: () => listMeditationSessions(userId!, limit),
     enabled: Boolean(userId),
+  });
+}
+
+/** One page of the all-sits screen. Twenty rows reaches the fold on a phone with one fetch. */
+export const MEDITATION_HISTORY_PAGE_SIZE = 20;
+
+/**
+ * Every sit, a page at a time (#696).
+ *
+ * The screen this feeds asked for 100 rows once and called that all history.
+ */
+export function useMeditationSessionPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: userId ? meditationKeys.sessionPages(userId) : ["meditation", "sessionPages", "anon"],
+    queryFn: ({ pageParam }) =>
+      listMeditationSessions(userId!, MEDITATION_HISTORY_PAGE_SIZE, pageParam),
+    initialPageParam: 0,
+    // A short page is the end of the data. A full one may or may not be, so ask
+    // again: one empty round trip at the exact boundary beats stopping early.
+    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+      lastPage.length < MEDITATION_HISTORY_PAGE_SIZE
+        ? undefined
+        : lastPageParam + MEDITATION_HISTORY_PAGE_SIZE,
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * The sits inside the overview's thirty-day chart window.
+ *
+ * `fromIso` rides the key so a window that rolls over midnight refetches rather
+ * than redrawing yesterday's thirty days under today's labels. An empty string
+ * is the caller saying it has not read the clock yet - the screen reads it on
+ * focus, never during render - and fetching a window from the epoch in the
+ * meantime would be worse than waiting a frame for it.
+ */
+export function useMeditationMinutesWindow(userId: string | null, fromIso: string) {
+  return useQuery({
+    queryKey: userId
+      ? [...meditationKeys.minutesWindow(userId), fromIso]
+      : ["meditation", "minutes-window", "anonymous"],
+    queryFn: () => listMeditationMinutesSince(userId!, fromIso),
+    enabled: Boolean(userId) && fromIso !== "",
   });
 }
 

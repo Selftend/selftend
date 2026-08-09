@@ -110,17 +110,58 @@ function mapPracticeNote(row: StagePracticeNoteRow): StagePracticeNote {
   };
 }
 
-export async function listMeditationSessions(userId: string, limit = 30) {
+/**
+ * A page of sits, newest first.
+ *
+ * `offset` is what makes the all-sits screen able to reach the end of a history
+ * rather than the first hundred rows of one (#696): `.range` is the same
+ * bounded read `.limit` was, given a start.
+ */
+export async function listMeditationSessions(userId: string, limit = 30, offset = 0) {
   const client = requireSupabase();
   const { data, error } = await client
     .from("meditation_sessions")
     .select("*")
     .eq("user_id", userId)
     .order("completed_at", { ascending: false })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
 
   if (error) throw error;
   return (data as MeditationSessionRow[]).map(mapSession);
+}
+
+/** Just the two columns the minutes chart reduces over, plus what dates them. */
+interface MeditationMinutesRow {
+  duration_minutes: number;
+  completed_at: string;
+  completed_offset_minutes?: number | null;
+}
+
+/**
+ * Minutes sat since an instant, for the overview's thirty-day chart.
+ *
+ * A query of its own rather than a slice of the list, for the reason #337 gave
+ * the median its own RPC: the list is capped, so a chart reduced over it would
+ * quietly stop covering its own window once a user passed the cap - and nothing
+ * on the chart would say so. Bounded by date instead of by row count, it cannot.
+ *
+ * Three columns, not `*`: this reads every sit in a month and needs none of the
+ * reflection text.
+ */
+export async function listMeditationMinutesSince(userId: string, fromIso: string) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("meditation_sessions")
+    .select("duration_minutes, completed_at, completed_offset_minutes")
+    .eq("user_id", userId)
+    .gte("completed_at", fromIso)
+    .order("completed_at", { ascending: false });
+
+  if (error) throw error;
+  return (data as MeditationMinutesRow[]).map((row) => ({
+    dayKey: entryDayKey(row.completed_at, row.completed_offset_minutes ?? null),
+    durationMinutes: row.duration_minutes,
+  }));
 }
 
 // Exact lifetime count for hero stats - independent of the capped list query, which
