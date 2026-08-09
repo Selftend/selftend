@@ -32,6 +32,24 @@ jest.mock("@/src/components/app/notification-settings-modal", () => ({
   NotificationSettingsModal: () => null,
 }));
 
+// Stubbed to its contract - `visible` in, `onComplete` out. The real shell is a
+// four-step wizard with its own tests; driving it here would test the wizard's
+// step order rather than what this screen does when it finishes.
+jest.mock("@/src/components/app/habits-onboarding-modal", () => {
+  const React = jest.requireActual("react");
+  const { Pressable, Text } = jest.requireActual("react-native");
+  return {
+    HabitsOnboarding: ({ visible, onComplete }: { visible: boolean; onComplete: () => void }) =>
+      visible
+        ? React.createElement(
+            Pressable,
+            { testID: "onboarding-complete", onPress: onComplete },
+            React.createElement(Text, null, "complete onboarding"),
+          )
+        : null,
+  };
+});
+
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
@@ -596,6 +614,34 @@ describe("HabitsHomeScreen omissions", () => {
     // It rotated one of the user's own identity strings into the screen's most
     // prominent sentence, on a day-of-month rule nobody could see.
     expect(screen.queryByText(/becoming someone who/i)).toBeNull();
+  });
+});
+
+describe("HabitsHomeScreen onboarding completion", () => {
+  const updateMutateAsync = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+    updateMutateAsync.mockResolvedValue(undefined);
+    mockUseUpdateUserPreferences.mockReturnValue({
+      isPending: false,
+      mutateAsync: updateMutateAsync,
+    } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+  });
+
+  it("records completion, now that the route that used to do it is gone", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    // The `info` action is the only remaining way in, now the route is gone (#765).
+    fireEvent.press(await screen.findByLabelText(/about/i));
+    fireEvent.press(await screen.findByTestId("onboarding-complete"));
+
+    // A patch, not a whole-row merge: the mutation writes only the columns it
+    // is given, and a full write clobbers concurrent writers (#57).
+    await waitFor(() => {
+      expect(updateMutateAsync).toHaveBeenCalledWith({ habitsOnboardingCompleted: true });
+    });
   });
 });
 
