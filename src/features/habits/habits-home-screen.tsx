@@ -64,6 +64,19 @@ export default function HabitsHomeScreen() {
 
   const allHabits = habits ?? [];
   const allLogs = logs ?? [];
+  /**
+   * ⚠️ `undefined` is the window query still in flight, or failed with no
+   * cache - NOT a user with no ticks. The two imply opposite actions.
+   *
+   * `toggleHabitLog` flips whatever the server finds, so a press made against
+   * an unread cache is destructive in a way the screen cannot see: the row
+   * renders unticked, the user presses it meaning "tick", and the server
+   * deletes the tick that was already there - taking the note saved with it,
+   * without the confirmation that exists precisely to prevent that. The habits
+   * query gates the screen, but the logs query resolves separately, so this
+   * window is reachable on any slow or failed load.
+   */
+  const logsLoaded = logs !== undefined;
   const todayStr = selectedDate;
   const today = parseLocalNoon(selectedDate);
 
@@ -109,6 +122,9 @@ export default function HabitsHomeScreen() {
    * first, and the empty one - which is almost every one - does not.
    */
   function handleToggle(habit: Habit) {
+    // Belt as well as braces: the control is disabled below, but a keyboard
+    // activation racing the query landing would otherwise still get through.
+    if (!logsLoaded) return;
     const existing = allLogs.find((log) => log.habitId === habit.id && log.loggedOn === todayStr);
     if (existing && existing.note.trim()) {
       setUntickTarget(habit);
@@ -232,6 +248,7 @@ export default function HabitsHomeScreen() {
                       todayStr={todayStr}
                       today={today}
                       ruled={index > 0}
+                      canTick={logsLoaded}
                       onToggle={() => handleToggle(habit)}
                       onOpen={() =>
                         router.push({
@@ -313,11 +330,22 @@ interface HabitRowProps {
   todayStr: string;
   today: Date;
   ruled: boolean;
+  /** False until the logs window has answered - see `logsLoaded` on the screen. */
+  canTick: boolean;
   onToggle: () => void;
   onOpen: () => void;
 }
 
-function HabitRow({ habit, logs, todayStr, today, ruled, onToggle, onOpen }: HabitRowProps) {
+function HabitRow({
+  habit,
+  logs,
+  todayStr,
+  today,
+  ruled,
+  canTick,
+  onToggle,
+  onOpen,
+}: HabitRowProps) {
   const { t } = useTranslation("habits");
   const tickedToday = isTickedOn(logs, habit.id, todayStr);
   // Anchored on the day the tick control writes to, so the last cell is always
@@ -345,11 +373,14 @@ function HabitRow({ habit, logs, todayStr, today, ruled, onToggle, onOpen }: Hab
         <Pressable
           accessibilityLabel={tickLabel}
           aria-checked={tickedToday}
+          // Ticking against an unread cache deletes rather than creates.
+          disabled={!canTick}
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
           onPress={onToggle}
           className={cn(
             "size-10 items-center justify-center rounded-xl border",
             !tickedToday && "border-border bg-background",
+            !canTick && "opacity-50",
           )}
           style={tickedToday ? tickedStyle : undefined}
           role="checkbox"

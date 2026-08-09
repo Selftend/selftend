@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 
 import {
   archiveHabit,
@@ -121,7 +122,21 @@ export function useDeleteHabit(userId: string | null) {
  */
 export function useToggleHabitLog(userId: string | null) {
   const queryClient = useQueryClient();
-  return useMutation({
+  /**
+   * The (habit, day) pairs whose toggle is already in flight.
+   *
+   * `toggleHabitLog` is a read-then-write flip, so two overlapping calls for
+   * one day race: both can read the same row and write in the same direction,
+   * collapsing two intended toggles into one and settling the control opposite
+   * to the user's last press. A ref rather than state, for the reason
+   * `useSingleFlight` documents - `disabled={isPending}` cannot stop a rapid
+   * double-press, because no re-render happens between two synchronous taps.
+   *
+   * Keyed rather than a single boolean, so ticking four habits in a row - the
+   * interaction this tool exists for - stays fully concurrent.
+   */
+  const inFlight = useRef<Set<string>>(new Set());
+  const mutation = useMutation({
     mutationFn: ({ habitId, loggedOn }: { habitId: string; loggedOn: string }) =>
       toggleHabitLog(userId!, habitId, loggedOn),
     onMutate: async ({ habitId, loggedOn }) => {
@@ -160,11 +175,30 @@ export function useToggleHabitLog(userId: string | null) {
     },
     // Both arms: a rollback restores a guess, not the server's answer, and the
     // insight/list caches never saw the optimistic write at all.
-    onSettled: async () => {
+    onSettled: async (_data, _error, { habitId, loggedOn }) => {
+      inFlight.current.delete(toggleKey(habitId, loggedOn));
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: habitKeys.all });
     },
   });
+
+  /**
+   * The guard lives on the hook, not on a screen, so every caller inherits it:
+   * the overview's row and the detail screen's calendar strip drive the same
+   * row, and either can be double-pressed.
+   */
+  function mutate(variables: { habitId: string; loggedOn: string }) {
+    const key = toggleKey(variables.habitId, variables.loggedOn);
+    if (inFlight.current.has(key)) return;
+    inFlight.current.add(key);
+    mutation.mutate(variables);
+  }
+
+  return { ...mutation, mutate };
+}
+
+function toggleKey(habitId: string, loggedOn: string): string {
+  return `${habitId}:${loggedOn}`;
 }
 
 export function useUpsertHabitLogNote(userId: string | null) {

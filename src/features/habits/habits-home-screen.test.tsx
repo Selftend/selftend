@@ -350,6 +350,40 @@ describe("HabitsHomeScreen lists every habit every day", () => {
   });
 });
 
+describe("HabitsHomeScreen before the logs window answers", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("will not toggle against an unread cache, which deletes rather than creates", async () => {
+    // `undefined` is in-flight or failed-with-no-cache, NOT "no ticks". The
+    // habits query gates the screen but the logs query resolves separately, so
+    // a row can render unticked while a tick - and its note - already exists.
+    mockUseHabitLogs.mockImplementation(
+      (_userId, options) =>
+        ({
+          data: options?.limit === 1 ? [] : undefined,
+        }) as unknown as ReturnType<typeof useHabitLogs>,
+    );
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    const tick = await screen.findByRole("checkbox", { name: /Read: tap to tick today/i });
+    fireEvent.press(tick);
+
+    expect(toggleMutate).not.toHaveBeenCalled();
+  });
+
+  it("allows ticking once the window has answered, even empty", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    fireEvent.press(await screen.findByRole("checkbox", { name: /Read: tap to tick today/i }));
+
+    await waitFor(() => expect(toggleMutate).toHaveBeenCalled());
+  });
+});
+
 describe("HabitsHomeScreen tick labelling", () => {
   beforeEach(() => {
     jest.clearAllMocks();
