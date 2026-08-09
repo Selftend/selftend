@@ -642,3 +642,62 @@ export function classifyPushError(error: unknown): { expired: boolean; statusCod
       : null;
   return { expired: statusCode === 404 || statusCode === 410, statusCode };
 }
+
+// PostgREST caps a single response at ~1000 rows, so an unbounded .select() silently drops
+// everyone past the first page (#25). The cron pages through with .range() until a short
+// page returns.
+export const PAGE_SIZE = 1000;
+
+export interface PagedResult {
+  data: unknown[] | null;
+  error: unknown;
+}
+
+/**
+ * The slice of a PostgREST builder the drain needs. Deliberately structural rather
+ * than supabase-js's own types: the drain is called with four different row shapes
+ * and only ever touches these two methods.
+ */
+export interface PagedQuery {
+  order(column: string, options?: { ascending?: boolean }): PagedQuery;
+  range(from: number, to: number): PromiseLike<PagedResult>;
+}
+
+/**
+ * Drain a PostgREST read one page at a time.
+ *
+ * **`orderBy` is required, and the drain applies it — not the caller.** A paged read
+ * with no `ORDER BY` has no ordering guarantee *across statements*: Postgres may return
+ * a different physical order for each `.range()` call, and it does, because an `UPDATE`
+ * writes a new heap tuple at the end of the table. One two-row update between pages is
+ * enough to push two rows past a page boundary — they are never returned — while two
+ * others are returned twice (#831).
+ *
+ * For this cron a skipped row means that subscriber gets **no reminder for that run**,
+ * silently: nothing is logged and nothing is retried. That is why the ordering is a
+ * parameter of the drain rather than a `.order()` each call site must remember — the
+ * four reads here were written over three separate changes and all four missed it.
+ *
+ * `orderBy` must be a **total** order, so in practice the table's primary key. It is not
+ * always `id`: `user_preferences` is keyed on `user_id` and has no `id` column at all,
+ * so ordering it by `id` would fail the read outright rather than merely mis-order it.
+ *
+ * `buildQuery` is re-invoked per page because a PostgREST builder is single-use; it must
+ * return the query *before* `.order()`/`.range()`, which is what lets the drain own both.
+ */
+export async function fetchAllPaged(
+  orderBy: string,
+  buildQuery: () => PagedQuery,
+): Promise<unknown[]> {
+  const rows: unknown[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await buildQuery()
+      .order(orderBy)
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
