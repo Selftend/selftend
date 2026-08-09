@@ -2,13 +2,22 @@ import { z } from "zod";
 
 import type { HabitColor } from "@/src/features/habits/types";
 
+/**
+ * Every cap is exported, because the form has to enforce all of them (#722).
+ *
+ * Only `name` carried a `maxLength`, so over-cap text in any other field passed
+ * the input, failed `habitInputSchema.safeParse` at save, and surfaced as the
+ * generic "Couldn't save the habit" - with nothing pointing at which field or
+ * why. A cap the user cannot see until it rejects their work is not a cap, it
+ * is a trap.
+ */
 export const HABIT_NAME_MAX = 120;
-const HABIT_IDENTITY_MAX = 200;
+export const HABIT_IDENTITY_MAX = 200;
 export const HABIT_CUE_MAX = 240;
-const HABIT_STACK_MAX = 120;
-const HABIT_PAIRING_MAX = 240;
-const HABIT_TWO_MINUTE_MAX = 200;
-const HABIT_REWARD_MAX = 200;
+export const HABIT_STACK_MAX = 120;
+export const HABIT_PAIRING_MAX = 240;
+export const HABIT_TWO_MINUTE_MAX = 200;
+export const HABIT_REWARD_MAX = 200;
 export const HABIT_NOTE_MAX = 500;
 
 const HABIT_KINDS = ["build", "break"] as const;

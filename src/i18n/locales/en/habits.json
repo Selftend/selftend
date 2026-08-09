@@ -57,6 +57,8 @@
     "kindLabel": "Build or break",
     "kindBuild": "Build",
     "kindBreak": "Break",
+    "moreBuild": "More options for building this",
+    "moreBreak": "More options for breaking this",
     "kindBuildHelp": "A new behavior you want to cast votes for.",
     "kindBreakHelp": "A behavior you want to do less. Inverse the four laws - invisible, unattractive, difficult, unsatisfying.",
     "twoMinuteLabel": "Two-minute version (Make It Easy)",
