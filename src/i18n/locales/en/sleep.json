@@ -11,13 +11,6 @@
     "editDescription": "Update this sleep entry.",
     "durationLabel": "Hours slept",
     "qualityLabel": "How it felt",
-    "qualityOptions": {
-      "veryPoor": "Very poor",
-      "poor": "Poor",
-      "fair": "Fair",
-      "good": "Good",
-      "excellent": "Excellent"
-    },
     "decreaseDuration": "Subtract 30 minutes",
     "increaseDuration": "Add 30 minutes",
     "notesLabel": "Notes (optional)",

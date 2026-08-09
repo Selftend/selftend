@@ -1,5 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 
+import enSleep from "@/src/i18n/locales/en/sleep.json";
 import { QualityScale } from "@/src/features/sleep/quality-scale";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -18,6 +19,27 @@ describe("QualityScale", () => {
       .map((node) => node.props.accessibilityLabel as string);
     expect(rendered).toEqual(WORDS);
     expect(group).toBeTruthy();
+  });
+
+  it("labels the options from the namespace's canonical quality names", () => {
+    // One source of truth per level. `quality.1..5` is what the detail screen,
+    // the recent list and the quality-mix chart already read, so a second
+    // private copy would let a translator retitle one level and leave the
+    // picker and the chart naming the same night differently. Nothing else
+    // catches that: locale-parity checks key *presence across locales*, not
+    // value *agreement across keys*.
+    renderWithProviders(<QualityScale value={null} onChange={() => {}} />);
+
+    const rendered = screen
+      .getAllByRole("radio")
+      .map((node) => node.props.accessibilityLabel as string);
+    expect(rendered).toEqual([
+      enSleep.quality["1"],
+      enSleep.quality["2"],
+      enSleep.quality["3"],
+      enSleep.quality["4"],
+      enSleep.quality["5"],
+    ]);
   });
 
   it("names each option by its word, not by a number", () => {

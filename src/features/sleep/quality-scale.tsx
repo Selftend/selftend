@@ -23,14 +23,15 @@ import { useRovingFocus } from "@/src/lib/roving-focus";
 // under deuteranopia. `quality-tint.ts` keeps the ramp for the *display*
 // surfaces, where a five-word legend would not fit; an input has room to say
 // it in words.
-const QUALITY_LABEL_KEYS = [
-  "log.qualityOptions.veryPoor",
-  "log.qualityOptions.poor",
-  "log.qualityOptions.fair",
-  "log.qualityOptions.good",
-  "log.qualityOptions.excellent",
-] as const;
-
+//
+// The labels come from `quality.1..5`, the namespace's canonical names for the
+// five levels - the same keys the detail screen, the recent list and the
+// quality-mix chart already read. A private `log.qualityOptions.*` copy was
+// written first and is exactly the wrong shape: Weblate presents the two sets
+// as unrelated strings, so a translator retitling one level leaves the picker
+// and the chart naming the same night differently. Not hypothetical - the
+// duplicate had already drifted in `bg`, where `quality.4` reads "Добро" while
+// the copy read "Добре". One source of truth per level.
 export const SLEEP_QUALITY_LEVELS = [1, 2, 3, 4, 5] as const;
 
 export function QualityScale({
@@ -69,7 +70,7 @@ export function QualityScale({
     >
       {SLEEP_QUALITY_LEVELS.map((level, index) => {
         const active = value === level;
-        const label = t(QUALITY_LABEL_KEYS[index]);
+        const label = t(`quality.${level}` as Parameters<typeof t>[0]);
         return (
           <Pressable
             key={level}

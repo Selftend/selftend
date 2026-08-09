@@ -11,13 +11,6 @@
     "editDescription": "Актуализирай този запис за сън.",
     "durationLabel": "Часове сън",
     "qualityLabel": "Как се усещаше",
-    "qualityOptions": {
-      "veryPoor": "Много лошо",
-      "poor": "Лошо",
-      "fair": "Средно",
-      "good": "Добре",
-      "excellent": "Отлично"
-    },
     "decreaseDuration": "Извади 30 минути",
     "increaseDuration": "Добави 30 минути",
     "notesLabel": "Бележки (по избор)",
