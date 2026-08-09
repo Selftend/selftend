@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
+import { RESET_ONBOARDING_PREFERENCES } from "@/src/features/settings/onboarding-reset";
 import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
@@ -158,20 +159,15 @@ describe("SettingsScreen onboarding reset", () => {
     fireEvent.press(screen.getByText("Reset onboarding"));
 
     await waitFor(() => {
+      // Assert against the shared constant rather than a third inline copy of the
+      // same key list. Restating it here is what let the reset drift unnoticed in
+      // the first place (#822): the screen test agreed with the reset test because
+      // both had been edited together, and neither was compared to `UserPreferences`.
+      // `onboarding-reset.test.ts` owns the question of which keys belong; this test
+      // only owns "the button sends the reset patch, plus the funnel marker".
       expect(mutateAsync).toHaveBeenCalledWith({
-        appOnboardingCompleted: false,
+        ...RESET_ONBOARDING_PREFERENCES,
         appOnboardingCompletedVia: "finish",
-        cbtOnboardingCompleted: false,
-        gratitudeOnboardingCompleted: false,
-        meditationInfoCompleted: false,
-        habitsOnboardingCompleted: false,
-        moodOnboardingCompleted: false,
-        journalOnboardingCompleted: false,
-        sleepOnboardingCompleted: false,
-        mindfulnessOnboardingCompleted: false,
-        groundingOnboardingCompleted: false,
-        shownButtonTours: [],
-        startHereDismissedAt: null,
       });
     });
   });

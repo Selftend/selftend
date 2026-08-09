@@ -1,4 +1,5 @@
 import { defaultUserPreferences } from "@/src/features/modules/types";
+import { RESET_ONBOARDING_PREFERENCES } from "@/src/features/settings/onboarding-reset";
 import {
   deleteDevicePushToken,
   deleteUserAccount,
@@ -573,6 +574,41 @@ describe("settings repository", () => {
       }),
       { onConflict: "user_id" },
     );
+  });
+
+  it("carries the whole Settings reset patch through to the columns (#821)", async () => {
+    // The constant containing a key proves nothing: before this fix the patch type
+    // could not name `actOnboardingCompleted` or `meditationOnboardingCompleted`, so
+    // a reset naming them still wrote neither column. Assert at the boundary.
+    const { upsert } = mockPreferenceUpdate({
+      user_id: "user-1",
+      enabled_modules: ["cbt"],
+    });
+
+    await updateOnboardingPreferences("user-1", RESET_ONBOARDING_PREFERENCES);
+
+    const payload = (upsert as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      act_onboarding_completed: false,
+      meditation_onboarding_completed: false,
+      meditation_info_completed: false,
+      app_onboarding_completed: false,
+      cbt_onboarding_completed: false,
+      gratitude_onboarding_completed: false,
+      grounding_onboarding_completed: false,
+      habits_onboarding_completed: false,
+      journal_onboarding_completed: false,
+      mindfulness_onboarding_completed: false,
+      mood_onboarding_completed: false,
+      sleep_onboarding_completed: false,
+      shown_button_tours: [],
+      start_here_dismissed_at: null,
+      user_id: "user-1",
+    });
+    // Every key the reset names must have produced a column - a key the column map
+    // does not know would otherwise be dropped in silence, which is the failure the
+    // old hand-written if-chain made possible.
+    expect(Object.keys(payload)).toHaveLength(Object.keys(RESET_ONBOARDING_PREFERENCES).length + 1);
   });
 
   it("upserts web push subscriptions for the current user", async () => {
