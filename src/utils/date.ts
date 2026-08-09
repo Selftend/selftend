@@ -66,6 +66,25 @@ export function parseLocalNoon(dateKey: string): Date {
   return new Date(`${dateKey}T12:00:00`);
 }
 
+/**
+ * Is this a `YYYY-MM-DD` key naming a real calendar day?
+ *
+ * For day keys that arrive from OUTSIDE the app - a route param, a deep link -
+ * where the rest of the day-key helpers assume a well-formed one. An invalid
+ * `Date` reaching `Intl.DateTimeFormat.format` throws a `RangeError`, which on
+ * a screen means a crash rather than an error state; the same unchecked value
+ * would also ride into a Supabase range filter.
+ *
+ * The round-trip through `localDateKey` is what rejects a well-shaped
+ * impossible day: `new Date("2026-02-31T12:00:00")` rolls forward to 3 March
+ * rather than failing, so the regex alone would pass it through.
+ */
+export function isValidDayKey(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = parseLocalNoon(value);
+  return !Number.isNaN(parsed.getTime()) && localDateKey(parsed) === value;
+}
+
 // ── Day-key arithmetic ─────────────────────────────────────────────────────
 // Day-scoped surfaces bucket entries by the civil day captured at logging time
 // (`entryDayKey`), so their windows have to be walked in day keys too. Doing it

@@ -13,6 +13,7 @@ import type { HabitLog } from "@/src/features/habits/types";
 export interface HabitLogsScope {
   habitId?: string;
   sinceDate?: string;
+  untilDate?: string;
   limit?: number;
 }
 
@@ -34,6 +35,7 @@ export function habitLogsScope(options: HabitLogsScope): HabitLogsScope {
   const scope: HabitLogsScope = {};
   if (options.habitId !== undefined) scope.habitId = options.habitId;
   if (options.sinceDate !== undefined) scope.sinceDate = options.sinceDate;
+  if (options.untilDate !== undefined) scope.untilDate = options.untilDate;
   if (options.limit !== undefined) scope.limit = options.limit;
   return scope;
 }
@@ -90,6 +92,7 @@ export function applyOptimisticToggle(
   // The page does not cover this row, so a tick must not appear inside it.
   if (scope.habitId !== undefined && scope.habitId !== habitId) return logs;
   if (scope.sinceDate !== undefined && loggedOn < scope.sinceDate) return logs;
+  if (scope.untilDate !== undefined && loggedOn > scope.untilDate) return logs;
   if (logs.some((log) => log.habitId === habitId && log.loggedOn === loggedOn)) return logs;
 
   const now = new Date().toISOString();
