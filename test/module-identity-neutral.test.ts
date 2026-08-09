@@ -193,7 +193,12 @@ const KEEPS_HUE: Record<HueEncodingId, { file: string; pattern: RegExp; what: st
   // are admitted by its rule. See the note in src/lib/theme/encoding.ts.
   "breathing-exercise-colour": {
     file: "src/features/breathing/exercise-colors.ts",
-    pattern: /case "aqua":/,
+    // Was `case "aqua":` while this file was a switch returning utility classes.
+    // #780 moved it onto the same alias-map + chipHsl mechanism habits uses, so
+    // the literal that proves the encoding is now the map itself - exactly as
+    // the `habit-colour` entry above pins `HABIT_COLOR_TINTS`. Same strength,
+    // same shape: a sweep that neutralised this file would delete the map.
+    pattern: /BREATHING_COLOR_TINTS/,
     what: "the colour the user picked for their own exercise",
   },
   "sleep-quality-ramp": {
@@ -341,8 +346,6 @@ describe("the lint gate's exemptions and the ruling agree (#589)", () => {
       "src/lib/module-room.ts",
       "src/lib/hue-chip.ts",
       "src/features/mindfulness/exercise-hue.ts",
-      // The sleep quality ramp's input control, the twin of mood-scale.
-      "src/features/sleep/star-rating.tsx",
       // The mood ramp's class helper. The encoding itself is keyed to
       // design-tokens.ts (where HUE_RAMP_CLASSES lives); this is the one-line
       // wrapper the mood surfaces call.

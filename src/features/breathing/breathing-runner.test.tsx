@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import BreathingExerciseScreen from "@/app/(app)/tools/breathing/session";
@@ -69,19 +69,62 @@ beforeEach(() => {
   withTimingSpy.mockClear();
 });
 
-describe("Breathing cycle runner", () => {
+describe("Breathing session setup (4b)", () => {
   it("opens on the default cycle count with calculated total time", () => {
     renderWithProviders(<BreathingExerciseScreen />);
-    // box-breathing default is 8 cycles x 16s = 128s = 2:08
-    expect(screen.getAllByText("8 cycles").length).toBeGreaterThan(0);
+    // box-breathing default is 8 cycles x 16s = 128s = 2:08. The read-out is one
+    // composed node ("8 cycles · 2:08"), so match it by pattern.
+    expect(screen.getByText(/8 cycles/)).toBeTruthy();
     expect(screen.getByText(/2:08/)).toBeTruthy();
   });
 
-  it("recalculates total time when the + stepper is pressed", () => {
+  it("picks a length in minutes and derives the cycle count from the pattern", () => {
     renderWithProviders(<BreathingExerciseScreen />);
-    // default 8 cycles; press + once -> 9 x 16s = 144s = 2:24
-    fireEvent.press(screen.getByLabelText("Increase cycles"));
-    expect(screen.getByText(/2:24/)).toBeTruthy();
+    // Box breathing is 16s per cycle, so a 3-minute target is 180/16 ≈ 11 cycles.
+    fireEvent.press(screen.getByLabelText("3 min"));
+    expect(screen.getByText(/11 cycles/)).toBeTruthy();
+    expect(screen.getByText(/2:56/)).toBeTruthy(); // 11 x 16s
+  });
+
+  it("offers five length buttons and marks the active one", () => {
+    renderWithProviders(<BreathingExerciseScreen />);
+    const buttons = within(screen.getByTestId("breathing-length-buttons")).getAllByRole("radio");
+    expect(buttons).toHaveLength(5);
+
+    fireEvent.press(screen.getByLabelText("1 min"));
+    const checked = within(screen.getByTestId("breathing-length-buttons")).getAllByRole("radio", {
+      checked: true,
+    });
+    expect(checked).toHaveLength(1);
+  });
+
+  it("draws one timing segment per non-zero phase", () => {
+    // Box breathing has four real phases, so four segments and four labels.
+    renderWithProviders(<BreathingExerciseScreen />);
+    const bar = screen.getByTestId("breathing-timing-bar");
+    expect(bar.props.children.filter(Boolean)).toHaveLength(4);
+  });
+
+  it("lists every pattern as a tab, with the requested one selected", () => {
+    renderWithProviders(<BreathingExerciseScreen />);
+    const tabs = within(screen.getByTestId("breathing-pattern-tabs")).getAllByRole("radio");
+    expect(tabs).toHaveLength(3); // three built-ins, no custom patterns in this mock
+
+    const checked = within(screen.getByTestId("breathing-pattern-tabs")).getAllByRole("radio", {
+      checked: true,
+    });
+    expect(checked).toHaveLength(1);
+    expect(checked[0]).toBe(tabs[0]); // ?pattern=box-breathing
+  });
+
+  it("shows the current sound on each row rather than a raw key", () => {
+    renderWithProviders(<BreathingExerciseScreen />);
+    expect(screen.getByText("Voice guidance")).toBeTruthy();
+    expect(screen.getByText("Ambient sound")).toBeTruthy();
+    // Both prefs are "none", whose label lives at `sounds.none` - building the
+    // key from the id would render "breathing.sounds.breath.none" here.
+    expect(screen.getAllByText("None")).toHaveLength(2);
+    expect(screen.queryByText(/^breathing\./)).toBeNull();
   });
 
   it("shows the phase label and cycle progress after starting", () => {

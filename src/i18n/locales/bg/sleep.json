@@ -5,21 +5,18 @@
     "log": "Запиши нощния сън"
   },
   "log": {
-    "title": "Запис на съня",
+    "title": "Как спа?",
     "editTitle": "Редактирай запис на съня",
-    "description": "Как спа?",
+    "description": "Приблизително е достатъчно.",
     "editDescription": "Актуализирай този запис за сън.",
     "durationLabel": "Часове сън",
-    "qualityLabel": "Качество на съня",
-    "qualityHint": "1 = много лошо · 5 = отлично",
+    "qualityLabel": "Как се усещаше",
     "decreaseDuration": "Извади 30 минути",
     "increaseDuration": "Добави 30 минути",
-    "qualityStarLabel": "Оцени {{value}} от {{max}}",
-    "qualityValue": "{{value}}/{{max}}",
     "notesLabel": "Бележки (по избор)",
     "whenLabel": "Кога",
     "notesPlaceholder": "Нещо, което повлия на съня ти?",
-    "save": "Запази",
+    "save": "Запази нощта",
     "update": "Актуализирай",
     "cancel": "Откажи",
     "saveError": "Не можа да се запази записът. Опитай отново.",
@@ -54,7 +51,9 @@
     "duration14": "Часове сън · последните 14 нощи",
     "qualityMix": "Качество · последните 30 дни",
     "weekdayAvg": "Средно по ден от седмицата",
-    "empty": "Запиши няколко нощи, за да видиш това."
+    "empty": "Запиши няколко нощи, за да видиш това.",
+    "qualityColumn_one": "{{level}}: {{count}} нощ",
+    "qualityColumn_other": "{{level}}: {{count}} нощи"
   },
   "quality": {
     "1": "Много лошо",

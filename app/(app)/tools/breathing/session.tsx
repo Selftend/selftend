@@ -11,20 +11,18 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Label } from "@/src/components/react-native-reusables/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { cn } from "@/lib/utils";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { breathingPatterns } from "@/src/constants/breathing";
 import type { BreathingPhase } from "@/src/constants/breathing";
-import { CYCLES_MAX } from "@/src/features/breathing/exercise-schema";
+import { PhaseTimingBar } from "@/src/features/breathing/phase-timing-bar";
+import { SessionLengthButtons } from "@/src/features/breathing/session-length-buttons";
+import { breathingChipColors } from "@/src/features/breathing/exercise-colors";
+import type { BreathingExerciseColor } from "@/src/features/breathing/exercise-types";
 import {
   totalSeconds,
   formatClock,
@@ -37,7 +35,7 @@ import { resolveBuiltin, useResolvedExercise } from "@/src/features/breathing/re
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
 import { SoundsSheet } from "@/src/features/breathing/sounds-sheet";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
-import { breathSoundLookup } from "@/src/constants/breathing-sounds";
+import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { playIntroCue, useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
@@ -357,7 +355,6 @@ export default function BreathingSessionScreen() {
   const description = resolved.i18nSlug
     ? t(`breathing.exercises.${resolved.i18nSlug}.shortDescription`)
     : null;
-  const benefit = resolved.i18nSlug ? t(`breathing.exercises.${resolved.i18nSlug}.benefit`) : null;
 
   const beginActive = () => {
     if (prerollRef.current) {
@@ -391,111 +388,141 @@ export default function BreathingSessionScreen() {
   const timeDisplay = formatClock(secondsLeft);
   const phaseLabelKey = currentPhase ? (`breathing.phases.${currentPhase.label}` as const) : null;
 
+  const secondsPerCycle = cycleSeconds(resolved.phases);
+  const accent = resolved.color;
+
   return (
     <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      {/* Setup gets the 48px trail bar (design `4b`); the pacer keeps the header
+          it has until #779 gives it the session shell decided on #777. */}
+      {screenPhase === "intro" ? <ScreenTopBar leading="back" /> : null}
       <ScrollView contentContainerClassName="grow p-6">
         <View className="grow gap-6">
-          <View className="gap-2">
-            <View className="flex-row items-center justify-between gap-2">
-              <View className="flex-1">
-                <ScreenHeader title={title} />
+          {screenPhase === "intro" ? null : (
+            <View className="gap-2">
+              <View className="flex-row items-center justify-between gap-2">
+                <View className="flex-1">
+                  <ScreenHeader title={title} />
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("breathing.sounds.open")}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => setSoundsOpen(true)}
+                  className="p-2"
+                >
+                  <Icon name="settings" className="size-6 text-muted-foreground" />
+                </Pressable>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("breathing.sounds.open")}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => setSoundsOpen(true)}
-                className="p-2"
-              >
-                <Icon name="settings" className="size-6 text-muted-foreground" />
-              </Pressable>
+              {description ? <Text variant="muted">{description}</Text> : null}
             </View>
-            {description ? <Text variant="muted">{description}</Text> : null}
-          </View>
+          )}
 
           <SoundsSheet visible={soundsOpen} onDismiss={() => setSoundsOpen(false)} />
 
           {screenPhase === "intro" ? (
             <>
-              {/* Pattern + info sit at the top; the spacer below pushes the
-                  cycle picker and Start to the bottom on tall viewports, so the
-                  screen reads composed instead of top-heavy (#612 capture QA). */}
-              <View className="gap-2">
-                <Label>{t("breathing.choosePattern")}</Label>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerClassName="gap-2 pr-4"
-                >
-                  {breathingPatterns.map((p) => (
-                    <Button
-                      key={p.slug}
-                      size="sm"
-                      variant={patternId === p.slug ? "default" : "outline"}
-                      onPress={() => selectPattern(p.slug)}
-                    >
-                      <Text>{t(`breathing.exercises.${p.slug}.title`)}</Text>
-                    </Button>
-                  ))}
-                  {(customExercises ?? []).map((e) => (
-                    <Button
-                      key={e.id}
-                      size="sm"
-                      variant={patternId === e.id ? "default" : "outline"}
-                      onPress={() => selectPattern(e.id)}
-                    >
-                      <Text>{e.name}</Text>
-                    </Button>
-                  ))}
-                </ScrollView>
+              {/* A wrapping run of tabs, not a horizontal scroller: an
+                  off-screen pattern in a scroller is a pattern the user never
+                  learns exists, and the set is small enough to wrap. */}
+              <View
+                accessibilityRole="radiogroup"
+                accessibilityLabel={t("breathing.choosePattern")}
+                className="flex-row flex-wrap gap-2"
+                role="radiogroup"
+                testID="breathing-pattern-tabs"
+              >
+                {breathingPatterns.map((p) => (
+                  <PatternTab
+                    key={p.slug}
+                    label={t(`breathing.exercises.${p.slug}.title`)}
+                    color={p.color}
+                    active={patternId === p.slug}
+                    onPress={() => selectPattern(p.slug)}
+                  />
+                ))}
+                {(customExercises ?? []).map((e) => (
+                  <PatternTab
+                    key={e.id}
+                    label={e.name}
+                    color={e.color}
+                    active={patternId === e.id}
+                    onPress={() => selectPattern(e.id)}
+                  />
+                ))}
               </View>
 
-              <Card>
-                {benefit ? (
-                  <CardHeader>
-                    <CardTitle aria-level={2}>{benefit}</CardTitle>
-                  </CardHeader>
+              <View className="gap-2.5">
+                <Text className="text-[26px] font-bold tracking-tight">{title}</Text>
+                {description ? (
+                  <Text variant="muted" className="text-sm leading-relaxed">
+                    {description}
+                  </Text>
                 ) : null}
-                <CardContent>
-                  <View className="gap-1">
-                    {resolved.phases.map((phase, i) => (
-                      <Text key={i} variant="muted">
-                        {t(`breathing.phases.${phase.label}`)} - {phase.durationSeconds}s
-                      </Text>
-                    ))}
-                  </View>
-                </CardContent>
-              </Card>
+              </View>
 
-              <View className="grow" />
+              <View className="gap-3 border-y border-border py-5">
+                <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  {t("breathing.setup.eachCycle")}
+                </Text>
+                {/* `resolved.phases` already drops zero-length phases for custom
+                    patterns, and the bar drops them again for built-ins - so
+                    coherent breathing draws two segments and two labels, not
+                    four with two invisible ones. */}
+                <PhaseTimingBar phases={resolved.phases} color={accent} showLabels />
+              </View>
 
               <View className="gap-3">
-                <Label>{t("breathing.chooseCycles")}</Label>
-                <View className="flex-row items-center justify-center gap-6">
-                  <Button
-                    variant="outline"
-                    accessibilityLabel={t("breathing.decreaseCycles")}
-                    onPress={() => changeCycles(Math.max(1, selectedCycles - 1))}
-                  >
-                    <Text className="text-lg">−</Text>
-                  </Button>
-                  <View className="items-center">
-                    <Text className="text-3xl font-bold tabular-nums">
-                      {t("breathing.cycles", { count: selectedCycles })}
-                    </Text>
-                    <Text variant="muted" className="text-sm tabular-nums">
-                      {t("breathing.totalTimeLabel")} ·{" "}
-                      {formatClock(totalSeconds(resolved.phases, selectedCycles))}
-                    </Text>
-                  </View>
-                  <Button
-                    variant="outline"
-                    accessibilityLabel={t("breathing.increaseCycles")}
-                    onPress={() => changeCycles(Math.min(CYCLES_MAX, selectedCycles + 1))}
-                  >
-                    <Text className="text-lg">+</Text>
-                  </Button>
+                <View className="flex-row items-baseline justify-between gap-3">
+                  <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                    {t("breathing.setup.howLong")}
+                  </Text>
+                  <Text variant="muted" className="shrink-0 text-[12.5px] tabular-nums">
+                    {t("breathing.cycles", { count: selectedCycles })} ·{" "}
+                    {formatClock(totalSeconds(resolved.phases, selectedCycles))}
+                  </Text>
                 </View>
+                <SessionLengthButtons
+                  secondsPerCycle={secondsPerCycle}
+                  selectedCycles={selectedCycles}
+                  onSelect={changeCycles}
+                  accent={accent}
+                />
+              </View>
+
+              {/* Two rows that OPEN the existing sounds sheet rather than
+                  replacing it. The design's caption says sounds "fold in instead
+                  of a separate sheet", but the sheet also carries the two volume
+                  rails, and the redesign moves those onto the session screen
+                  (`4c`), which is #779's ticket and blocked on #777. Deleting the
+                  sheet now would strand the volume controls between two tickets,
+                  so the rows surface the current values and the sheet stays. */}
+              <View>
+                <SoundRow
+                  icon="record-voice-over"
+                  label={t("breathing.setup.voiceGuidance")}
+                  // The catalog entry owns its label key - `none` lives at
+                  // `sounds.none`, not under `sounds.breath.*`, so building the
+                  // key from the id here would render a raw key string for the
+                  // default selection.
+                  value={
+                    breathSoundLookup[audioPrefs.breathSoundId]
+                      ? t(breathSoundLookup[audioPrefs.breathSoundId].labelKey)
+                      : t("breathing.setup.none")
+                  }
+                  onPress={() => setSoundsOpen(true)}
+                />
+                <SoundRow
+                  icon="graphic-eq"
+                  label={t("breathing.setup.ambientSound")}
+                  value={
+                    ambientSoundLookup[audioPrefs.ambientSoundId]
+                      ? t(ambientSoundLookup[audioPrefs.ambientSoundId].labelKey)
+                      : t("breathing.setup.none")
+                  }
+                  onPress={() => setSoundsOpen(true)}
+                  last
+                />
               </View>
 
               <Button disabled={!selectedCycles} onPress={handleStart}>
@@ -597,5 +624,95 @@ export default function BreathingSessionScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * One pattern tab.
+ *
+ * ⚠️ Selected is `chip.fill` behind `chip.ink`, NOT the design's raw aqua accent
+ * on an `aqua/0.14` fill - that is the shape #691 named a regression and #368
+ * measured at 3.81:1. `chip.ink` is tuned per hue in src/lib/hue-chip.ts
+ * precisely so ink-on-fill clears AA in both schemes.
+ *
+ * The hue is the PATTERN's own colour, so the tab, the timing bar and the
+ * length buttons all agree on what colour "this pattern" is - and the hue
+ * encodes which pattern rather than which tool, which is the distinction #691
+ * draws.
+ */
+function PatternTab({
+  label,
+  color,
+  active,
+  onPress,
+}: {
+  label: string;
+  color: BreathingExerciseColor;
+  active: boolean;
+  onPress: () => void;
+}) {
+  const scheme = useColorSchemeName();
+  const chip = breathingChipColors(color, scheme);
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      aria-checked={active}
+      accessibilityLabel={label}
+      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+      onPress={onPress}
+      // The resting border rides `border-border` as a class rather than a raw
+      // colour literal: test/theme-token-sync.test.ts holds this file to zero
+      // such literals, because the pacer once hardcoded its triple and a palette
+      // retune skipped the screen's central graphic (#310). Only the active
+      // state needs a computed colour, and it comes from the chip recipe.
+      className="rounded-full border border-border px-4 py-2"
+      role="radio"
+      style={active ? { backgroundColor: chip.fill, borderColor: chip.ink } : undefined}
+    >
+      <Text
+        className="text-[13px] font-semibold"
+        numberOfLines={1}
+        style={active ? { color: chip.ink } : undefined}
+        variant={active ? undefined : "muted"}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** A hairline row that shows the current sound and opens the sounds sheet. */
+function SoundRow({
+  icon,
+  label,
+  value,
+  onPress,
+  last = false,
+}: {
+  icon: MaterialIconName;
+  label: string;
+  value: string;
+  onPress: () => void;
+  last?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+      onPress={onPress}
+      className={cn(
+        "flex-row items-center gap-3.5 border-t border-border px-0.5 py-3.5 active:bg-accent/40",
+        last && "border-b",
+      )}
+      role="button"
+    >
+      <Icon name={icon} size={18} className="text-muted-foreground" />
+      <Text className="flex-1 text-sm">{label}</Text>
+      <Text variant="muted" className="shrink-0 text-[13px]">
+        {value}
+      </Text>
+      <Icon name="chevron-right" size={18} className="text-muted-foreground/60" />
+    </Pressable>
   );
 }
