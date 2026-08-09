@@ -46,15 +46,24 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
  *   the four #763 rewrote, on a surface #805 did not cover. Tracked separately.
  *
  * It is the ONLY remaining offender across all twenty namespaces in both locales.
+ *
+ * Each entry names its **namespace** as well as its key. A key-only entry would
+ * exempt the same dotted path in every other namespace too - a namespace blind
+ * spot inside the guard built to remove one.
  */
-const ALLOWED: { locale: Locale; keyPattern: RegExp }[] = [
-  { locale: "en", keyPattern: /^recovery\.maintenanceCommitmentsHint$/ },
-  { locale: "bg", keyPattern: /^recovery\.maintenanceCommitmentsHint$/ },
+const ALLOWED: { locale: Locale; namespace: string; keyPattern: RegExp }[] = [
+  { locale: "en", namespace: "cbt", keyPattern: /^recovery\.maintenanceCommitmentsHint$/ },
+  { locale: "bg", namespace: "cbt", keyPattern: /^recovery\.maintenanceCommitmentsHint$/ },
 ];
 
-type Locale = "en" | "bg";
+function isAllowed(locale: Locale, namespace: string, key: string) {
+  return ALLOWED.some(
+    (allowed) =>
+      allowed.locale === locale && allowed.namespace === namespace && allowed.keyPattern.test(key),
+  );
+}
 
-const LOCALES: Locale[] = ["en", "bg"];
+type Locale = "en" | "bg";
 
 /** Every leaf string in a namespace, keyed by its dotted path. */
 function flatten(value: unknown, prefix = ""): [string, string][] {
@@ -106,21 +115,33 @@ describe("product copy states the record instead of advertising restraint", () =
   it.each(RESTRAINT_CLAIMS)("$locale copy never matches $pattern", ({ locale, pattern }) => {
     const offenders = STRINGS[locale]
       .filter(({ text }) => pattern.test(text))
-      .filter(
-        ({ key }) =>
-          !ALLOWED.some((allowed) => allowed.locale === locale && allowed.keyPattern.test(key)),
-      )
+      .filter(({ namespace, key }) => !isAllowed(locale, namespace, key))
       .map(({ namespace, key, text }) => `${namespace}:${key} - ${text}`);
 
     expect(offenders).toEqual([]);
   });
 
-  it("every allowlisted key still exists, so a stale exemption cannot hide a new offence", () => {
-    // An allowlist that outlives its string silently widens itself: the entry stops
-    // matching anything and nobody notices the rule is now unguarded there.
-    for (const { locale, keyPattern } of ALLOWED) {
-      const matches = STRINGS[locale].filter(({ key }) => keyPattern.test(key));
+  it("every allowlisted entry still breaks a rule, so a stale exemption cannot hide a new offence", () => {
+    // Two ways an exemption goes stale, and both silently unguard that key:
+    //
+    // 1. The key is deleted - the entry stops matching anything.
+    // 2. The COPY is fixed but the key is kept - the entry still matches a real
+    //    string, which now complies, so the exemption sits there ready to cover
+    //    whatever wording lands at that key next.
+    //
+    // Requiring each entry to still match a restraint pattern catches both: fixing
+    // the text forces the exemption to be removed in the same change.
+    for (const { locale, namespace, keyPattern } of ALLOWED) {
+      const matches = STRINGS[locale].filter(
+        (entry) => entry.namespace === namespace && keyPattern.test(entry.key),
+      );
       expect(matches.length).toBeGreaterThan(0);
+
+      const patterns = RESTRAINT_CLAIMS.filter((claim) => claim.locale === locale);
+      const stillOffending = matches.filter(({ text }) =>
+        patterns.some(({ pattern }) => pattern.test(text)),
+      );
+      expect(stillOffending.length).toBeGreaterThan(0);
     }
   });
 
