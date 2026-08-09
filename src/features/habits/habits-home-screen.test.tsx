@@ -485,6 +485,216 @@ describe("HabitsHomeScreen unticking a day that holds a note", () => {
   });
 });
 
+// A Monday inside the four-week rhythm window ending on SATURDAY.
+const MONDAY = "2026-08-03";
+
+describe("HabitsHomeScreen weekly rhythm", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+    mockUseSelectedDate.mockReturnValue({ selectedDate: SATURDAY });
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ loggedOn: MONDAY })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+  });
+
+  it("ships one insight, and neither of the two that measured the user", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    expect(await screen.findByRole("heading", { name: "Weekly rhythm" })).toBeTruthy();
+    // Two-minute adoption was a completeness meter for an optional form field;
+    // the identity round-up ranked the user's own self-descriptions against
+    // each other, and blanked for everyone on the 1st of the month (#712).
+    expect(screen.queryByText("Two-minute floor")).toBeNull();
+    expect(screen.queryByText("Identities this month")).toBeNull();
+    // And the wrapper heading goes with them - one insight does not need a
+    // section called "Insights" containing a heading called "Weekly rhythm".
+    expect(screen.queryByRole("heading", { name: "Insights" })).toBeNull();
+  });
+
+  it("states no rate, because a denominator encodes what the user should have done", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    await screen.findByRole("heading", { name: "Weekly rhythm" });
+    expect(screen.queryByText(/%/)).toBeNull();
+    expect(screen.queryByText(/\d+ of \d+/)).toBeNull();
+  });
+
+  it("orders the week Monday-first, matching the detail grid", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    await screen.findByRole("heading", { name: "Weekly rhythm" });
+    const labels = screen
+      .getAllByText(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/)
+      .map((node) => node.props.children);
+
+    // `getWeeklyRhythm` returns [Sun..Sat] because that is `Date.getDay`; a
+    // Sunday-first row splits the weekend across both ends, so a weekdays habit
+    // reads as two dips rather than one (#713).
+    expect(labels).toEqual(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+  });
+
+  it("puts the count above its own bar", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    await screen.findByRole("heading", { name: "Weekly rhythm" });
+    // One tick, on the Monday - so six columns read zero and one reads one.
+    expect(screen.getAllByText("0")).toHaveLength(6);
+    expect(screen.getByText("1")).toBeTruthy();
+  });
+
+  it("fills bars with an accent rather than the wash that measures 1.10:1", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    await screen.findByRole("heading", { name: "Weekly rhythm" });
+    const bars = screen.getAllByTestId("bar-chart-bar");
+
+    expect(bars).toHaveLength(7);
+    for (const bar of bars) {
+      // `bg-muted` on `bg-card` is not low-contrast, it is invisible (#725).
+      expect(bar.props.className).not.toContain("bg-muted");
+      expect(bar.props.className).toContain("bg-primary");
+    }
+  });
+
+  it("pairs each count with its weekday for a screen reader", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    // Without this the count above and the weekday below arrive as two
+    // unrelated strings to be paired by position (#737).
+    expect(await screen.findByLabelText("Mon: 1 tick")).toBeTruthy();
+    expect(screen.getByLabelText("Tue: 0 ticks")).toBeTruthy();
+  });
+});
+
+describe("HabitsHomeScreen omissions", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("gives Learn one front door instead of rotating a card at the overview", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    fireEvent.press(await screen.findByTestId("habits-learn-row"));
+
+    expect(jest.mocked(router).push).toHaveBeenCalledWith("/tools/habits/learn");
+    // The rotating card advertised a section nothing linked to, and its only
+    // control cycled the advert (#765).
+    expect(screen.queryByLabelText("Next card")).toBeNull();
+  });
+
+  it("retires the identity banner", async () => {
+    mockUseHabits.mockReturnValue({
+      data: [habit({ identity: "I'm a reader" })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabits>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    await screen.findByText("Read");
+    // It rotated one of the user's own identity strings into the screen's most
+    // prominent sentence, on a day-of-month rule nobody could see.
+    expect(screen.queryByText(/becoming someone who/i)).toBeNull();
+  });
+});
+
+describe("HabitsHomeScreen never miss twice", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("renders one line, above the tick list, when the condition holds", async () => {
+    mockUseHabits.mockReturnValue({
+      data: [habit({ name: "Floss" })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabits>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    expect(
+      await screen.findByText("Never miss twice: 1 habit wasn't ticked yesterday."),
+    ).toBeTruthy();
+
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf("Never miss twice")).toBeLessThan(tree.indexOf("Floss"));
+
+    // The old body instructed the user and then congratulated the product:
+    // "Today is a great day to tick this once - one missed day is data, not
+    // failure" (#711).
+    expect(screen.queryByText(/not failure/i)).toBeNull();
+    expect(screen.queryByText(/great day/i)).toBeNull();
+  });
+
+  it("says nothing at all when yesterday was ticked", async () => {
+    const yesterday = localDateKey(addDays(new Date(), -1));
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ loggedOn: yesterday })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    // Not `findByText("Read")` - yesterday's tick also puts the habit in the
+    // recent-activity list, so the name is on the screen twice.
+    await screen.findByRole("checkbox", { name: /Read: tap to tick today/i });
+    // A conditional trigger that fired every day would be ambient copy, which
+    // is exactly what it was kept instead of (#709).
+    expect(screen.queryByText(/Never miss twice/i)).toBeNull();
+  });
+});
+
+describe("HabitsHomeScreen archived habits", () => {
+  const archived = habit({
+    id: "h-archived",
+    name: "Old habit",
+    archivedAt: "2026-06-01T08:00:00.000Z",
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+    mockUseHabits.mockReturnValue({
+      data: [habit({ id: "h-1", name: "Read" }), archived],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabits>);
+  });
+
+  it("keeps them out of the tick list, and out of the tree until asked for", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    expect(await screen.findByText("Read")).toBeTruthy();
+    // Archiving is how a user puts a habit down; a put-down habit reappearing
+    // in tomorrow's list would undo the gesture.
+    expect(screen.queryByText("Old habit")).toBeNull();
+    expect(screen.getByText("Archived (1)")).toBeTruthy();
+  });
+
+  it("reaches a never-ticked archived habit, which nothing else could (#723)", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    // History lists *logs*, so a habit archived before it was ever ticked had
+    // no row anywhere and no route to its own detail screen.
+    fireEvent.press(await screen.findByTestId("habits-archived-group"));
+
+    fireEvent.press(screen.getByLabelText("Old habit: open habit details"));
+
+    expect(jest.mocked(router).push).toHaveBeenCalledWith({
+      pathname: "/tools/habits/[id]",
+      params: { id: "h-archived" },
+    });
+  });
+
+  it("offers no tick control on an archived habit", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    fireEvent.press(await screen.findByTestId("habits-archived-group"));
+
+    // Reachable, not resumable in place.
+    expect(screen.queryByRole("checkbox", { name: /Old habit/i })).toBeNull();
+  });
+});
+
 describe("HabitsHomeScreen ticked-state contrast", () => {
   beforeEach(() => {
     jest.clearAllMocks();

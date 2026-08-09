@@ -23,16 +23,17 @@
   },
   "home": {
     "title": "Habits",
-    "subtitle": "Small habits, repeated. Tap to tick - no shame.",
-    "identityBannerPrefix": "You're becoming someone who",
+    "subtitle": "Small habits, repeated. Tap a habit to tick today.",
     "habitsHeading": "Your habits",
     "noHabitsTitle": "Start with one two-minute habit",
     "noHabitsBody": "Start with a version that takes under two minutes. Pick something small - the goal is to cast a vote for the kind of person you want to become.",
     "recentActivity": "Recent activity",
     "recentEmpty": "Ticks you make will appear here.",
     "weekStripLabel": "Last 7 days",
-    "neverMissTwiceTitle": "Never miss twice",
-    "neverMissTwiceBody": "You skipped yesterday. Today is a great day to tick this once - one missed day is data, not failure."
+    "archivedGroup_one": "Archived ({{count}})",
+    "archivedGroup_other": "Archived ({{count}})",
+    "neverMissTwiceLine_one": "Never miss twice: {{count}} habit wasn't ticked yesterday.",
+    "neverMissTwiceLine_other": "Never miss twice: {{count}} habits weren't ticked yesterday."
   },
   "list": {
     "tickedToday": "{{habit}}: ticked today",
@@ -188,7 +189,7 @@
       "twoMinuteTitle": "The two-minute rule",
       "twoMinuteBody": "Scale every habit down so the starter version takes under two minutes. \"Read one page,\" not \"Read for an hour.\"",
       "neverMissTitle": "Never miss twice",
-      "neverMissBody": "Missing once is data. Missing twice starts a new habit. Selftend will never punish a missed day - we'll just quietly note when you're at risk of missing twice."
+      "neverMissBody": "Missing once is data. Missing twice starts a new habit. When a habit wasn't ticked yesterday, your habit list says so."
     },
     "finish": {
       "start": "Got it",
@@ -199,18 +200,11 @@
     "delete": "Couldn't delete the habit. Try again."
   },
   "insights": {
-    "title": "Insights",
     "rhythmTitle": "Weekly rhythm",
     "rhythmSubtitle": "Ticks per day, last 4 weeks.",
     "rhythmEmpty": "Tick a habit to see your rhythm.",
-    "identityTitle": "Identities this month",
-    "identityEmpty": "Add an identity to a habit to see ticks roll up here.",
-    "identityRow_one": "{{count}} tick",
-    "identityRow_other": "{{count}} ticks",
-    "twoMinuteTitle": "Two-minute floor",
-    "twoMinuteSubtitle_one": "{{filled}} of {{total}} habit has a two-minute starter version.",
-    "twoMinuteSubtitle_other": "{{filled}} of {{total}} habits have a two-minute starter version.",
-    "twoMinuteEmpty": "Add a build habit to see this.",
+    "rhythmBarA11y_one": "{{weekday}}: {{count}} tick",
+    "rhythmBarA11y_other": "{{weekday}}: {{count}} ticks",
     "weekday": {
       "0": "Sun",
       "1": "Mon",
@@ -223,7 +217,7 @@
   },
   "learn": {
     "sectionLabel": "Core ideas",
-    "dismiss": "Next card",
+    "frontDoorSubtitle": "Ten short cards on the habit framework.",
     "openHint": "Read more",
     "indexTitle": "Habit building - core ideas",
     "indexSubtitle": "Ten short cards covering the framework. Read them in any order.",
@@ -272,7 +266,7 @@
       "never-miss-twice": {
         "title": "Never miss twice",
         "short": "Missing once is data. Missing twice is a new habit.",
-        "body": "Perfection is unrealistic; consistency is not. The rule isn't \"never miss\" - it's \"never miss twice.\" When you slip, the priority is to do the habit again the next day, even at the two-minute size. Selftend never punishes a missed day; it just quietly notes when you're at risk of missing twice."
+        "body": "Perfection is unrealistic; consistency is not. The rule isn't \"never miss\" - it's \"never miss twice.\" When you slip, the priority is to do the habit again the next day, even at the two-minute size. When a habit wasn't ticked yesterday, your habit list says so."
       },
       "identity": {
         "title": "Identity-based habits",
