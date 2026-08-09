@@ -1,8 +1,10 @@
 import {
   cycleSeconds,
+  cyclesForMinutes,
   totalSeconds,
   formatClock,
   elapsedMinutes,
+  SESSION_LENGTH_MINUTES,
 } from "@/src/features/breathing/cycle-math";
 
 import { breathingPatterns, breathingLookup } from "@/src/constants/breathing";
@@ -62,5 +64,36 @@ describe("built-in patterns adopt the cycle model", () => {
   it("box-breathing is a 16s, 4-phase cycle", () => {
     expect(cycleSeconds(breathingLookup["box-breathing"].phases)).toBe(16);
     expect(breathingLookup["box-breathing"].phases).toHaveLength(4);
+  });
+});
+
+describe("cyclesForMinutes", () => {
+  it("derives a different cycle count per pattern for the same minute target", () => {
+    // The whole reason the length buttons pick minutes: 2 minutes of box
+    // breathing (16s) is 8 cycles, of 4-7-8 (19s) is 6.
+    expect(cyclesForMinutes(16, 2)).toBe(8);
+    expect(cyclesForMinutes(19, 2)).toBe(6);
+    expect(cyclesForMinutes(11, 2)).toBe(11); // coherent, 5.5 + 5.5
+  });
+
+  it("never returns zero cycles, however long the cycle is", () => {
+    // A 1-minute target against a 76-second cycle would round to 0 and start a
+    // session that ends immediately.
+    expect(cyclesForMinutes(76, 1)).toBe(1);
+    expect(cyclesForMinutes(600, 1)).toBe(1);
+  });
+
+  it("survives a cycle of zero seconds", () => {
+    // Reachable in the editor while every phase is stepped down to zero; the
+    // schema refuses to save it, but the read-out must not divide by zero.
+    expect(cyclesForMinutes(0, 5)).toBe(1);
+    expect(cyclesForMinutes(-1, 5)).toBe(1);
+  });
+
+  it("covers every offered length", () => {
+    for (const minutes of SESSION_LENGTH_MINUTES) {
+      expect(cyclesForMinutes(16, minutes)).toBeGreaterThan(0);
+    }
+    expect(SESSION_LENGTH_MINUTES).toEqual([1, 2, 3, 5, 10]);
   });
 });

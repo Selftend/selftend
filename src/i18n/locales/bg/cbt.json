@@ -1391,8 +1391,18 @@
         "amber": "Кехлибар",
         "emerald": "Изумруд",
         "violet": "Виолет",
-        "rose": "Роза"
-      }
+        "rose": "Роза",
+        "ink": "Мастило",
+        "be": "Салвия",
+        "act": "Мъх"
+      },
+      "timingLabel": "Времена",
+      "perCycle": "{{value}} на цикъл",
+      "seconds": "{{value}} с",
+      "startFrom": "Започни от",
+      "defaultLengthLabel": "Продължителност по подразбиране",
+      "lengthChangeable": "Можеш да промениш продължителността при всяко започване на сесия.",
+      "accentLabel": "Акцент"
     },
     "sounds": {
       "title": "Звуци",
@@ -1416,6 +1426,39 @@
         "forest": "Гора",
         "night": "Нощ",
         "brown": "Кафяв шум"
+      }
+    },
+    "overview": {
+      "patternsTitle": "Модели",
+      "newPattern": "Нов модел →",
+      "recentTitle": "Скорошни сесии",
+      "showAll": "Виж всички сесии →",
+      "noPatterns": "Все още няма модели.",
+      "startPattern": "Започни {{name}}",
+      "minutes_one": "минута",
+      "minutes_other": "минути",
+      "sessions_one": "сесия",
+      "sessions_other": "сесии",
+      "lastAt": "последно {{when}}",
+      "neverLogged": "все още няма сесии"
+    },
+    "setup": {
+      "eachCycle": "Всеки цикъл",
+      "howLong": "Колко дълго",
+      "voiceGuidance": "Гласово напътствие",
+      "ambientSound": "Фонов звук",
+      "none": "Няма"
+    },
+    "allHistory": {
+      "title": "Всички сесии",
+      "description": "Всяка записана дихателна сесия.",
+      "empty": {
+        "title": "Все още няма сесии",
+        "description": "Дихателните ти сесии ще се събират тук, след като завършиш някоя."
+      },
+      "error": {
+        "title": "Сесиите не можаха да се заредят",
+        "description": "Провери връзката си и опитай отново."
       }
     }
   }
