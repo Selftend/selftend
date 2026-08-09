@@ -147,7 +147,10 @@
     "title": "History",
     "subtitle": "Every tick you've made, newest first.",
     "empty": "Once you tick a habit, that day will appear here.",
-    "groupedByDate": "{{date}}"
+    "error": {
+      "title": "Couldn't load your history",
+      "description": "Check your connection and try again. Nothing has been lost."
+    }
   },
   "onboarding": {
     "skip": "Skip",

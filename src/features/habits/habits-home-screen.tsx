@@ -45,13 +45,23 @@ export default function HabitsHomeScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const { data: habits, isLoading: habitsLoading } = useHabits(userId);
+  // `includeArchived: true` so this is the SAME cache entry the history screen
+  // reads (#762) - one fetch of one table, rather than two queries differing by
+  // a flag. The archived habits are filtered out of the list below; they are
+  // here because history needs them to name an old tick.
+  const { data: habits, isLoading: habitsLoading } = useHabits(userId, { includeArchived: true });
   const sinceDate = localDateKey(addDays(new Date(), -30));
   const { data: logs } = useHabitLogs(userId, { sinceDate });
-  // The 30-day window above drives the charts and recent activity; the header
-  // subline needs lifetime history so a tick older than the window doesn't
-  // read as "no ticks yet". Newest-first ordering makes row 0 the latest tick.
-  const { data: latestLogs } = useHabitLogs(userId, { limit: 1 });
+  /**
+   * The recent list and the header subline both read this, and both used to be
+   * wrong in the same direction (#762).
+   *
+   * Recent activity read the 30-day window, so a user returning after a month
+   * saw "Ticks you make will appear here" directly under "last ticked 27 June".
+   * The subline read a separate `limit: 1` query, which is this one truncated -
+   * so the two can no longer disagree, and there is one fewer round trip.
+   */
+  const { data: recentLogs } = useHabitLogs(userId, { limit: 5 });
   const toggleLog = useToggleHabitLog(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
@@ -62,7 +72,10 @@ export default function HabitsHomeScreen() {
 
   const { selectedDate } = useSelectedDate();
 
-  const allHabits = habits ?? [];
+  // Archived habits ride the shared query but never the list: archiving is how
+  // a user puts a habit down, and a put-down habit reappearing every day would
+  // undo the gesture. Their own home on this screen is a later slice (#765).
+  const allHabits = (habits ?? []).filter((habit) => !habit.archivedAt);
   const allLogs = logs ?? [];
   /**
    * ⚠️ `undefined` is the window query still in flight, or failed with no
@@ -98,20 +111,20 @@ export default function HabitsHomeScreen() {
   // this reads the whole list rather than a pre-filtered one.
   const missTwiceRiskHabits = allHabits.filter((habit) => isAtMissTwiceRisk(habit, allLogs, today));
 
-  const recentLogs = allLogs.slice(0, 5);
   const weeklyRhythm = getWeeklyRhythm(allLogs, 4, today);
   const identityRoundUp = getIdentityRoundUp(allHabits, allLogs, today);
   const twoMinuteAdoption = getTwoMinuteAdoption(allHabits);
-  const lastTickedOn = latestLogs?.[0]?.loggedOn ?? null;
+  // Newest-first ordering makes row 0 the latest tick.
+  const lastTickedOn = recentLogs?.[0]?.loggedOn ?? null;
   // `loggedOn` IS the civil day - label from it directly instead of faking a
   // noon instant to reuse the activity formatter.
   const lastWhen = lastTickedOn ? formatRelativeDayKey(lastTickedOn, t) : null;
-  // `latestLogs` is undefined while loading and after a failed fetch with no
+  // `recentLogs` is undefined while loading and after a failed fetch with no
   // cache - only an actually-loaded (possibly empty) history may claim "no
   // ticks yet", or a returning user's history reads as erased.
   const subline = lastWhen
     ? t("stats.last", { when: lastWhen })
-    : latestLogs
+    : recentLogs
       ? t("stats.never")
       : undefined;
 
@@ -194,14 +207,13 @@ export default function HabitsHomeScreen() {
             />
 
             <Section ruled={false} className="gap-3">
+              {/* One CTA. The history button moved down to sit with the list it
+                  opens (#762) - a door beside its own room rather than in the
+                  hallway. */}
               <View className="flex-row flex-wrap gap-2">
                 <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
                   <Icon name="add" className="size-4 text-primary-foreground" />
                   <Text>{t("cta.newHabit")}</Text>
-                </Button>
-                <Button variant="ghost" onPress={() => router.push("/tools/habits/history")}>
-                  <Icon name="history" className="size-4" />
-                  <Text>{t("cta.viewHistory")}</Text>
                 </Button>
               </View>
               {identities.length > 0 ? (
@@ -275,13 +287,34 @@ export default function HabitsHomeScreen() {
               />
             ) : null}
 
-            <Section title={t("home.recentActivity")}>
-              {recentLogs.length === 0 ? (
+            {/* Five fixed rows and one link out, matching check-in's overview
+                (#762). The link rides the section label rather than the CTA
+                row, so it sits with the list it continues. */}
+            <Section
+              title={t("home.recentActivity")}
+              action={
+                <Pressable
+                  accessibilityRole="link"
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => router.push("/tools/habits/history")}
+                  className="flex-row items-center gap-1 active:opacity-70"
+                  role="link"
+                >
+                  <Text className="text-[13px] font-semibold text-primary-ink">
+                    {t("cta.viewHistory")}
+                  </Text>
+                  <Icon name="arrow-forward" className="size-3.5 text-primary-ink" />
+                </Pressable>
+              }
+            >
+              {(recentLogs ?? []).length === 0 ? (
                 <Text variant="muted">{t("home.recentEmpty")}</Text>
               ) : (
                 <View>
-                  {recentLogs.map((log, index) => {
-                    const habit = allHabits.find((h) => h.id === log.habitId);
+                  {(recentLogs ?? []).map((log, index) => {
+                    // Archived habits ride the shared query, so an old tick can
+                    // still name the habit it belongs to.
+                    const habit = (habits ?? []).find((h) => h.id === log.habitId);
                     if (!habit) return null;
                     return (
                       <Pressable

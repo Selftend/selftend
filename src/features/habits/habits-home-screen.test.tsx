@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 
 import HabitsHomeScreen from "./habits-home-screen";
 import { habitChipColors } from "@/src/features/habits/habit-color";
@@ -168,7 +169,7 @@ describe("HabitsHomeScreen act room", () => {
     mockUseHabitLogs.mockImplementation(
       (_userId, options) =>
         ({
-          data: options?.limit === 1 ? [habitLog({ loggedOn: oldDate })] : [],
+          data: options?.limit === 5 ? [habitLog({ loggedOn: oldDate })] : [],
         }) as unknown as ReturnType<typeof useHabitLogs>,
     );
 
@@ -184,7 +185,7 @@ describe("HabitsHomeScreen act room", () => {
     mockUseHabitLogs.mockImplementation(
       (_userId, options) =>
         ({
-          data: options?.limit === 1 ? undefined : [],
+          data: options?.limit === 5 ? undefined : [],
         }) as unknown as ReturnType<typeof useHabitLogs>,
     );
 
@@ -193,6 +194,39 @@ describe("HabitsHomeScreen act room", () => {
     expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
     expect(screen.queryByText("No ticks yet")).toBeNull();
     expect(screen.queryByText(/^last ticked /)).toBeNull();
+  });
+});
+
+describe("HabitsHomeScreen recent activity", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("agrees with the last-tick line instead of the 30-day window", async () => {
+    const oldDate = localDateKey(addDays(new Date(), -45));
+    // The recent list used to read the 30-day window, so a user returning after
+    // a month saw "Ticks you make will appear here" directly under
+    // "last ticked 45 days ago" (#762).
+    mockUseHabitLogs.mockImplementation(
+      (_userId, options) =>
+        ({
+          data: options?.limit === 5 ? [habitLog({ loggedOn: oldDate })] : [],
+        }) as unknown as ReturnType<typeof useHabitLogs>,
+    );
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    expect(await screen.findByText("last ticked 45 days ago")).toBeTruthy();
+    expect(screen.queryByText("Ticks you make will appear here.")).toBeNull();
+  });
+
+  it("puts one link out beside the list rather than in the CTA row", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    fireEvent.press(await screen.findByRole("link", { name: /View history/i }));
+
+    expect(jest.mocked(router).push).toHaveBeenCalledWith("/tools/habits/history");
   });
 });
 
@@ -363,7 +397,7 @@ describe("HabitsHomeScreen before the logs window answers", () => {
     mockUseHabitLogs.mockImplementation(
       (_userId, options) =>
         ({
-          data: options?.limit === 1 ? [] : undefined,
+          data: options?.limit === 5 ? [] : undefined,
         }) as unknown as ReturnType<typeof useHabitLogs>,
     );
 

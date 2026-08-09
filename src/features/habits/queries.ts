@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 
 import {
@@ -36,7 +36,23 @@ const habitKeys = {
    * hashed structurally, so a fresh object per render is stable.
    */
   logs: (userId: string, scope: HabitLogsScope) => ["habits", "logs", userId, scope] as const,
+  /**
+   * Under the `habits` root like every other key, so a tick invalidates the
+   * history pages with the rest. Deliberately NOT under `logs`: the optimistic
+   * tick walks `logsRoot` and writes flat `HabitLog[]` caches, and an infinite
+   * query's cache is `{ pages, pageParams }` - the updater would corrupt it.
+   */
+  logPages: (userId: string) => ["habits", "logPages", userId] as const,
 };
+
+/**
+ * Rows per history page (#762, decided on #696).
+ *
+ * The screen it replaces asked for 365 rows once and called that all history.
+ * For a five-habit user that is ten weeks, silently - the worst cap of the
+ * three screens the shared pattern covers.
+ */
+export const HABITS_HISTORY_PAGE_SIZE = 50;
 
 export function useHabits(userId: string | null, options: { includeArchived?: boolean } = {}) {
   const includeArchived = options.includeArchived ?? false;
@@ -66,6 +82,30 @@ export function useHabitLogs(
   return useQuery({
     queryKey: userId ? habitKeys.logs(userId, scope) : ["habits", "logs", "anonymous", scope],
     queryFn: () => listHabitLogs(userId!, options),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Every tick the user has, paged to exhaustion (#762).
+ *
+ * Offset paging rather than a cursor: `logged_on` is a `date`, so it is not
+ * unique per row - two habits ticked on one day share it - and a
+ * "less than the last row's key" cursor would skip whichever of them the page
+ * boundary fell between.
+ */
+export function useHabitLogPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: userId ? habitKeys.logPages(userId) : ["habits", "logPages", "anonymous"],
+    queryFn: ({ pageParam }) =>
+      listHabitLogs(userId!, { limit: HABITS_HISTORY_PAGE_SIZE, offset: pageParam }),
+    initialPageParam: 0,
+    // A short page is the end of the data. A full one may or may not be, so ask
+    // again: one empty round trip at the exact boundary beats stopping early.
+    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+      lastPage.length < HABITS_HISTORY_PAGE_SIZE
+        ? undefined
+        : lastPageParam + HABITS_HISTORY_PAGE_SIZE,
     enabled: Boolean(userId),
   });
 }
