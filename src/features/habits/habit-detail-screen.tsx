@@ -307,7 +307,11 @@ function StrategiesCard({ habit }: { habit: Habit }) {
       title: isBreak ? t("detail.strategyInvisible") : t("detail.strategyCue"),
       body: habit.cuePlan,
     },
-    isBreak ? null : { icon: "link", title: t("detail.strategyStack"), body: habit.stackAfter },
+    // Conditional on being POPULATED, not on `kind` (#760). `stack_after` no
+    // longer has a field on create, so the row exists to show a value the habit
+    // already carries - and a break habit that somehow holds one was previously
+    // the one case where stored text had nowhere at all to surface.
+    { icon: "link", title: t("detail.strategyStack"), body: habit.stackAfter },
     {
       icon: isBreak ? "block" : "bolt",
       title: isBreak ? t("detail.strategyDifficult") : t("detail.strategyTwoMinute"),
@@ -325,9 +329,9 @@ function StrategiesCard({ habit }: { habit: Habit }) {
     },
   ];
 
-  const populated = rows
-    .filter((row): row is { icon: string; title: string; body: string } => row !== null)
-    .filter((row) => row.body.trim().length > 0);
+  // Every row is now conditional on its own body, so there is no kind-shaped
+  // hole in the array to filter out first.
+  const populated = rows.filter((row) => row.body.trim().length > 0);
   if (populated.length === 0) return null;
 
   return (

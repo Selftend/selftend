@@ -9,6 +9,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { Disclosure } from "@/src/components/app/disclosure";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { FORM_COLUMN } from "@/src/lib/layout";
@@ -17,7 +18,13 @@ import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
 import {
   HABIT_COLOR_CHOICES,
+  HABIT_CUE_MAX,
+  HABIT_IDENTITY_MAX,
   HABIT_NAME_MAX,
+  HABIT_PAIRING_MAX,
+  HABIT_REWARD_MAX,
+  HABIT_STACK_MAX,
+  HABIT_TWO_MINUTE_MAX,
   habitInputSchema,
   nextHabitColor,
 } from "@/src/features/habits/schemas";
@@ -105,6 +112,8 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   // null until the user picks one; see activeColor below.
   const [pickedColor, setPickedColor] = useState<HabitColor | null>(null);
   const nameInputRef = useRef<TextInput>(null);
+  // null until the user opens or folds it; see detailsOpen below.
+  const [detailsToggled, setDetailsToggled] = useState<boolean | null>(null);
 
   const editMode = mode === "edit";
   const saving = saveMutation.isPending;
@@ -150,6 +159,29 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
     existing && !(HABIT_COLOR_CHOICES as readonly string[]).includes(existing.color)
       ? existing.color
       : null;
+
+  /**
+   * The refinements start folded away, and a break habit opens them (#760).
+   *
+   * A create form asks for a name, a two-minute version, a cadence and a
+   * colour; the rest is refinement that a first habit does not need and that a
+   * long form makes feel required. But an EDIT form for a break habit is
+   * relabelled throughout - "Friction" where the user expects "Two-minute
+   * version" - so it opens with the `kind` switch that explains why on screen.
+   *
+   * **Derived**, not written from an effect, for the same reason `activeColor`
+   * is: `existing` arrives from a query, so it can land after the form mounts.
+   * An effect would either clobber a user who had already folded the section
+   * back up, or need a ref to guard against doing so. The user's own toggle is
+   * an override, so it always outranks the default.
+   */
+  const detailsOpen = detailsToggled ?? existing?.kind === "break";
+
+  /**
+   * `stack_after` is offered only where the habit already stores one, so the
+   * stored value - not the live input - decides whether the field exists.
+   */
+  const storedStackAfter = editMode ? (existing?.stackAfter.trim() ?? "") !== "" : false;
 
   const colorChoices: HabitColor[] = grandfathered
     ? [grandfathered, ...(HABIT_COLOR_CHOICES as readonly HabitColor[])]
@@ -278,19 +310,6 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
         </View>
 
         <View className="gap-2">
-          <Label>{t("form.identityLabel")}</Label>
-          <Input
-            accessibilityLabel={t("form.identityLabel")}
-            onChangeText={(v) => update("identity", v)}
-            placeholder={t("form.identityPlaceholder")}
-            value={input.identity}
-          />
-          <Text variant="muted" className="text-xs">
-            {t("form.identityHelp")}
-          </Text>
-        </View>
-
-        <View className="gap-2">
           <Label>{t("form.nameLabel")}</Label>
           <Input
             ref={nameInputRef}
@@ -307,37 +326,12 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
           ) : null}
         </View>
 
-        <View className="gap-2">
-          <Label>{t("form.kindLabel")}</Label>
-          <View
-            accessibilityLabel={t("form.kindLabel")}
-            accessibilityRole="radiogroup"
-            className="flex-row gap-2"
-            role="radiogroup"
-          >
-            <KindChip
-              active={input.kind === "build"}
-              label={t("form.kindBuild")}
-              onPress={() => update("kind", "build" as HabitKind)}
-              rovingProps={kindRoving.getItemProps(0, () => update("kind", "build" as HabitKind))}
-            />
-            <KindChip
-              active={input.kind === "break"}
-              label={t("form.kindBreak")}
-              onPress={() => update("kind", "break" as HabitKind)}
-              rovingProps={kindRoving.getItemProps(1, () => update("kind", "break" as HabitKind))}
-            />
-          </View>
-          <Text variant="muted" className="text-xs">
-            {input.kind === "break" ? t("form.kindBreakHelp") : t("form.kindBuildHelp")}
-          </Text>
-        </View>
-
         {input.kind === "build" ? (
           <View className="gap-2">
             <Label>{t("form.twoMinuteLabel")}</Label>
             <Input
               accessibilityLabel={t("form.twoMinuteLabel")}
+              maxLength={HABIT_TWO_MINUTE_MAX}
               onChangeText={(v) => update("twoMinuteVersion", v)}
               placeholder={t("form.twoMinutePlaceholder")}
               value={input.twoMinuteVersion}
@@ -351,6 +345,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
             <Label>{t("form.difficultLabel")}</Label>
             <Input
               accessibilityLabel={t("form.difficultLabel")}
+              maxLength={HABIT_TWO_MINUTE_MAX}
               onChangeText={(v) => update("twoMinuteVersion", v)}
               placeholder={t("form.difficultPlaceholder")}
               value={input.twoMinuteVersion}
@@ -360,68 +355,6 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
             </Text>
           </View>
         )}
-
-        <View className="gap-2">
-          <Label>{input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")}</Label>
-          <Textarea
-            accessibilityLabel={
-              input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")
-            }
-            onChangeText={(v) => update("cuePlan", v)}
-            placeholder={
-              input.kind === "break" ? t("form.invisiblePlaceholder") : t("form.cuePlaceholder")
-            }
-            value={input.cuePlan}
-          />
-        </View>
-
-        {input.kind === "build" ? (
-          <View className="gap-2">
-            <Label>{t("form.stackLabel")}</Label>
-            <Input
-              accessibilityLabel={t("form.stackLabel")}
-              onChangeText={(v) => update("stackAfter", v)}
-              placeholder={t("form.stackPlaceholder")}
-              value={input.stackAfter}
-            />
-          </View>
-        ) : null}
-
-        <View className="gap-2">
-          <Label>
-            {input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")}
-          </Label>
-          <Textarea
-            accessibilityLabel={
-              input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")
-            }
-            onChangeText={(v) => update("cravingPairing", v)}
-            placeholder={
-              input.kind === "break"
-                ? t("form.unattractivePlaceholder")
-                : t("form.pairingPlaceholder")
-            }
-            value={input.cravingPairing}
-          />
-        </View>
-
-        <View className="gap-2">
-          <Label>
-            {input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")}
-          </Label>
-          <Input
-            accessibilityLabel={
-              input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")
-            }
-            onChangeText={(v) => update("rewardNote", v)}
-            placeholder={
-              input.kind === "break"
-                ? t("form.unsatisfyingPlaceholder")
-                : t("form.rewardPlaceholder")
-            }
-            value={input.rewardNote}
-          />
-        </View>
 
         <View className="gap-2">
           <Label>{t("form.cadenceLabel")}</Label>
@@ -508,6 +441,139 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
             ))}
           </View>
         </View>
+
+        {/*
+          Four prompts become three (#760). The Response prompt is gone: it IS
+          the two-minute version, which sits above the fold, so the form asked
+          the same question twice in two different vocabularies.
+
+          `kind` leads the section because everything under it relabels on
+          `kind` - putting the switch after the fields it renames reads as the
+          form changing its mind.
+        */}
+        <Disclosure
+          testID="habit-details-disclosure"
+          expanded={detailsOpen}
+          onToggle={() => setDetailsToggled(!detailsOpen)}
+          label={input.kind === "break" ? t("form.moreBreak") : t("form.moreBuild")}
+        >
+          <View className="gap-2">
+            <Label>{t("form.kindLabel")}</Label>
+            <View
+              accessibilityLabel={t("form.kindLabel")}
+              accessibilityRole="radiogroup"
+              className="flex-row gap-2"
+              role="radiogroup"
+            >
+              <KindChip
+                active={input.kind === "build"}
+                label={t("form.kindBuild")}
+                onPress={() => update("kind", "build" as HabitKind)}
+                rovingProps={kindRoving.getItemProps(0, () => update("kind", "build" as HabitKind))}
+              />
+              <KindChip
+                active={input.kind === "break"}
+                label={t("form.kindBreak")}
+                onPress={() => update("kind", "break" as HabitKind)}
+                rovingProps={kindRoving.getItemProps(1, () => update("kind", "break" as HabitKind))}
+              />
+            </View>
+            <Text variant="muted" className="text-xs">
+              {input.kind === "break" ? t("form.kindBreakHelp") : t("form.kindBuildHelp")}
+            </Text>
+          </View>
+
+          <View className="gap-2">
+            <Label>{t("form.identityLabel")}</Label>
+            <Input
+              accessibilityLabel={t("form.identityLabel")}
+              maxLength={HABIT_IDENTITY_MAX}
+              onChangeText={(v) => update("identity", v)}
+              placeholder={t("form.identityPlaceholder")}
+              value={input.identity}
+            />
+            <Text variant="muted" className="text-xs">
+              {t("form.identityHelp")}
+            </Text>
+          </View>
+
+          <View className="gap-2">
+            <Label>{input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")}</Label>
+            <Textarea
+              accessibilityLabel={
+                input.kind === "break" ? t("form.invisibleLabel") : t("form.cueLabel")
+              }
+              maxLength={HABIT_CUE_MAX}
+              onChangeText={(v) => update("cuePlan", v)}
+              placeholder={
+                input.kind === "break" ? t("form.invisiblePlaceholder") : t("form.cuePlaceholder")
+              }
+              value={input.cuePlan}
+            />
+          </View>
+
+          <View className="gap-2">
+            <Label>
+              {input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")}
+            </Label>
+            <Textarea
+              accessibilityLabel={
+                input.kind === "break" ? t("form.unattractiveLabel") : t("form.pairingLabel")
+              }
+              maxLength={HABIT_PAIRING_MAX}
+              onChangeText={(v) => update("cravingPairing", v)}
+              placeholder={
+                input.kind === "break"
+                  ? t("form.unattractivePlaceholder")
+                  : t("form.pairingPlaceholder")
+              }
+              value={input.cravingPairing}
+            />
+          </View>
+
+          <View className="gap-2">
+            <Label>
+              {input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")}
+            </Label>
+            <Input
+              accessibilityLabel={
+                input.kind === "break" ? t("form.unsatisfyingLabel") : t("form.rewardLabel")
+              }
+              maxLength={HABIT_REWARD_MAX}
+              onChangeText={(v) => update("rewardNote", v)}
+              placeholder={
+                input.kind === "break"
+                  ? t("form.unsatisfyingPlaceholder")
+                  : t("form.rewardPlaceholder")
+              }
+              value={input.rewardNote}
+            />
+          </View>
+
+          {/*
+            Retired from create, kept in edit wherever a habit already holds one
+            (#760). Habit stacking is a real technique, but it is the one prompt
+            that asks a brand-new user to name a habit they have not entered
+            yet, so it earns nothing on a first habit and costs a field.
+
+            Keyed on the STORED value, not the live input - the same trap the
+            grandfathered colour avoids above. Keying it on `input.stackAfter`
+            would make the field vanish the moment the user cleared it, leaving
+            no way to put the text back without abandoning every other edit.
+          */}
+          {storedStackAfter ? (
+            <View className="gap-2">
+              <Label>{t("form.stackLabel")}</Label>
+              <Input
+                accessibilityLabel={t("form.stackLabel")}
+                maxLength={HABIT_STACK_MAX}
+                onChangeText={(v) => update("stackAfter", v)}
+                placeholder={t("form.stackPlaceholder")}
+                value={input.stackAfter}
+              />
+            </View>
+          ) : null}
+        </Disclosure>
       </MobileFormScreen>
     </View>
   );

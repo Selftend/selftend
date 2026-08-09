@@ -140,6 +140,10 @@ describe("HabitEditorScreen", () => {
   it("exposes the kind chips as radios with a checked state", () => {
     renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
 
+    // `kind` moved to the head of the disclosure (#760), so it is behind the
+    // trigger rather than on the first screenful.
+    fireEvent.press(screen.getByTestId("habit-details-disclosure"));
+
     expect(screen.getByRole("radio", { name: "Build", checked: true })).toBeTruthy();
     expect(screen.getByRole("radio", { name: "Break", checked: false })).toBeTruthy();
 
@@ -147,6 +151,161 @@ describe("HabitEditorScreen", () => {
 
     expect(screen.getByRole("radio", { name: "Break", checked: true })).toBeTruthy();
     expect(screen.getByRole("radio", { name: "Build", checked: false })).toBeTruthy();
+  });
+
+  /**
+   * Four prompts become three, and the refinements fold away (#760).
+   */
+  describe("the details disclosure", () => {
+    it("keeps identity and kind out of the first screenful, and opens them on demand", () => {
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+
+      // Above the fold: name, the two-minute version, cadence, colour.
+      expect(screen.getByLabelText("Habit name")).toBeTruthy();
+      expect(screen.getByLabelText("Two-minute version (Make It Easy)")).toBeTruthy();
+      expect(screen.queryByLabelText("Identity (optional)")).toBeNull();
+      expect(screen.queryByRole("radio", { name: "Build" })).toBeNull();
+
+      fireEvent.press(screen.getByTestId("habit-details-disclosure"));
+
+      expect(screen.getByLabelText("Identity (optional)")).toBeTruthy();
+      expect(screen.getByRole("radio", { name: "Build" })).toBeTruthy();
+    });
+
+    it("asks for the two-minute version once, not once above the fold and again as Response", () => {
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+      fireEvent.press(screen.getByTestId("habit-details-disclosure"));
+
+      // Response IS the two-minute version; the form used to be able to ask for
+      // both. Three prompts remain inside: cue, pairing, reward.
+      expect(screen.getAllByLabelText("Two-minute version (Make It Easy)")).toHaveLength(1);
+      expect(screen.getByLabelText("Cue plan (Make It Obvious)")).toBeTruthy();
+      expect(screen.getByLabelText("Pairing (Make It Attractive)")).toBeTruthy();
+      expect(screen.getByLabelText("Reward (Make It Satisfying)")).toBeTruthy();
+    });
+
+    it("labels itself differently for a build habit and a break habit", () => {
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+
+      expect(screen.getByText("More options for building this")).toBeTruthy();
+
+      fireEvent.press(screen.getByTestId("habit-details-disclosure"));
+      fireEvent.press(screen.getByRole("radio", { name: "Break" }));
+
+      expect(screen.getByText("More options for breaking this")).toBeTruthy();
+      expect(screen.queryByText("More options for building this")).toBeNull();
+    });
+
+    it("auto-expands in edit for a break habit, whose whole form is relabelled", () => {
+      mockUseHabits.mockReturnValue({
+        data: [{ ...existingHabit, kind: "break" }],
+      } as unknown as ReturnType<typeof useHabits>);
+
+      renderWithProviders(
+        <HabitEditorScreen fallbackHref="/tools/habits" mode="edit" habitId="h-9" />,
+      );
+
+      // Opening folded would show "Friction" where the user expects
+      // "Two-minute version", with nothing on screen explaining why.
+      expect(screen.getByRole("radio", { name: "Break", checked: true })).toBeTruthy();
+      expect(screen.getByLabelText("Friction (Make It Difficult)")).toBeTruthy();
+    });
+
+    it("lets the user fold an auto-expanded section back up and keeps it folded", () => {
+      mockUseHabits.mockReturnValue({
+        data: [{ ...existingHabit, kind: "break" }],
+      } as unknown as ReturnType<typeof useHabits>);
+
+      renderWithProviders(
+        <HabitEditorScreen fallbackHref="/tools/habits" mode="edit" habitId="h-9" />,
+      );
+
+      fireEvent.press(screen.getByTestId("habit-details-disclosure"));
+
+      // The auto-expand is a default, not a lock: the user's own toggle
+      // outranks it, and a later refetch may not re-open the section.
+      expect(screen.queryByRole("radio", { name: "Break" })).toBeNull();
+    });
+
+    it("stays folded in edit for a build habit", () => {
+      mockUseHabits.mockReturnValue({ data: [existingHabit] } as unknown as ReturnType<
+        typeof useHabits
+      >);
+
+      renderWithProviders(
+        <HabitEditorScreen fallbackHref="/tools/habits" mode="edit" habitId="h-9" />,
+      );
+
+      expect(screen.queryByRole("radio", { name: "Build" })).toBeNull();
+    });
+  });
+
+  describe("stack_after", () => {
+    it("is absent from the create form entirely", () => {
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+      fireEvent.press(screen.getByTestId("habit-details-disclosure"));
+
+      // It is the one prompt that asks a brand-new user to name a habit they
+      // have not entered yet.
+      expect(screen.queryByLabelText("Stack after (Make It Obvious)")).toBeNull();
+    });
+
+    it("is absent in edit when the habit does not hold one", () => {
+      mockUseHabits.mockReturnValue({ data: [existingHabit] } as unknown as ReturnType<
+        typeof useHabits
+      >);
+
+      renderWithProviders(
+        <HabitEditorScreen fallbackHref="/tools/habits" mode="edit" habitId="h-9" />,
+      );
+      fireEvent.press(screen.getByTestId("habit-details-disclosure"));
+
+      expect(screen.queryByLabelText("Stack after (Make It Obvious)")).toBeNull();
+    });
+
+    it("survives in edit where the habit already holds one, and stays after it is cleared", () => {
+      mockUseHabits.mockReturnValue({
+        data: [{ ...existingHabit, stackAfter: "After coffee" }],
+      } as unknown as ReturnType<typeof useHabits>);
+
+      renderWithProviders(
+        <HabitEditorScreen fallbackHref="/tools/habits" mode="edit" habitId="h-9" />,
+      );
+      fireEvent.press(screen.getByTestId("habit-details-disclosure"));
+
+      const field = screen.getByLabelText("Stack after (Make It Obvious)");
+      expect(field.props.value).toBe("After coffee");
+
+      // Keyed on the stored value, so clearing it cannot make the field vanish
+      // and strand the user with no way to type the text back.
+      fireEvent.changeText(field, "");
+      expect(screen.getByLabelText("Stack after (Make It Obvious)")).toBeTruthy();
+    });
+  });
+
+  describe("field caps", () => {
+    it("enforces every cap in the form rather than failing at save (#722)", () => {
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+      fireEvent.press(screen.getByTestId("habit-details-disclosure"));
+
+      expect(screen.getByLabelText("Habit name").props.maxLength).toBe(120);
+      expect(screen.getByLabelText("Identity (optional)").props.maxLength).toBe(200);
+      expect(screen.getByLabelText("Two-minute version (Make It Easy)").props.maxLength).toBe(200);
+      expect(screen.getByLabelText("Cue plan (Make It Obvious)").props.maxLength).toBe(240);
+      expect(screen.getByLabelText("Pairing (Make It Attractive)").props.maxLength).toBe(240);
+      expect(screen.getByLabelText("Reward (Make It Satisfying)").props.maxLength).toBe(200);
+    });
+  });
+
+  it("keeps three-letter weekday labels, which single letters cannot carry in English", () => {
+    renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+
+    fireEvent.press(screen.getByRole("radio", { name: "Custom" }));
+
+    // Two S and two T: single letters stop being distinguishable.
+    for (const day of ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]) {
+      expect(screen.getByText(day)).toBeTruthy();
+    }
   });
 
   /**

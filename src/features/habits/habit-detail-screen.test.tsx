@@ -112,6 +112,34 @@ function mockDefaults() {
   } as unknown as ReturnType<typeof useDeleteHabit>);
 }
 
+describe("HabitDetailScreen habit-stack row", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("shows the stack row whenever the habit holds one, build or break (#760)", () => {
+    mockUseHabit.mockReturnValue({
+      data: habit({ kind: "break", stackAfter: "After coffee" }),
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabit>);
+
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    // `stack_after` no longer has a field on create, so this row is where a
+    // stored value surfaces - and a break habit holding one used to have
+    // nowhere at all to show it.
+    expect(screen.getByText("Habit stack")).toBeTruthy();
+    expect(screen.getByText("After coffee")).toBeTruthy();
+  });
+
+  it("omits the row when the habit holds no stack", () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    expect(screen.queryByText("Habit stack")).toBeNull();
+  });
+});
+
 describe("HabitDetailScreen act room", () => {
   beforeEach(() => {
     jest.clearAllMocks();
