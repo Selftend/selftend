@@ -79,10 +79,6 @@ export default function MeditationHomeScreen() {
   // is a median of the newest 200 sits, which a daily meditator passes in under seven
   // months - and unlike a rolling window, nothing in the label says so (#337).
   const { data: serverMedianMinutes } = useMeditationMedianMinutes(userId);
-  // The chart's own bounded window, for the third time the same reason: reducing
-  // the capped list would silently stop covering thirty days for a heavy user.
-  const windowFromIso = useMemo(() => minutesWindowFromIso(), []);
-  const { data: windowSessions } = useMeditationMinutesWindow(userId, windowFromIso);
   const sessions = allSessions?.slice(0, RECENT_SITS);
 
   const upsertProgramState = useUpsertMeditationProgramState(userId);
@@ -174,37 +170,59 @@ export default function MeditationHomeScreen() {
   ];
 
   /**
-   * "ends about 6:15 pm" - what the chosen length actually costs, in clock time.
+   * The one reading of the clock this screen makes.
    *
-   * The clock is read on focus and on every length change, never during render:
-   * a render-time `Date.now()` is unstable under the React Compiler, and this
-   * screen re-renders on every query that lands. Those two moments are also the
-   * only ones where the read-out can be seen to change, so nothing ticks.
-   * "About" is doing real work either way - none of this accounts for how long
-   * the user takes to settle.
+   * Never during render: a render-time `Date.now()` is unstable under the React
+   * Compiler, and this screen re-renders on every query that lands. It is taken
+   * on focus and refreshed on every length change - between them, the only two
+   * moments where anything derived from it can be seen to move.
+   *
+   * Re-reading it on FOCUS is what carries the thirty-day window across local
+   * midnight. Pinned at mount, the window's bound never rolls over, so a screen
+   * left mounted overnight would keep drawing yesterday's thirty days under
+   * today's labels until something unrelated invalidated the query.
    */
-  const [startFrom, setStartFrom] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState<number | null>(null);
   useFocusEffect(
     useCallback(() => {
-      setStartFrom(Date.now());
+      setNowMs(Date.now());
     }, []),
   );
 
+  // The chart's own bounded window, for the third time the same reason: reducing
+  // the capped list would silently stop covering thirty days for a heavy user.
+  // The bound is day-truncated, so picking a different length re-reads the clock
+  // without moving the cache key - only a new civil day does that.
+  const windowFromIso = useMemo(
+    () => (nowMs === null ? "" : minutesWindowFromIso(MINUTES_WINDOW_DAYS, new Date(nowMs))),
+    [nowMs],
+  );
+  const { data: windowSessions } = useMeditationMinutesWindow(userId, windowFromIso);
+
+  /** "ends about 6:15 pm" - what the chosen length actually costs, in clock time. */
   const endsAbout = useMemo(() => {
-    if (startFrom === null) return null;
-    const end = new Date(startFrom + durationMinutes * 60_000);
+    if (nowMs === null) return null;
+    const end = new Date(nowMs + durationMinutes * 60_000);
     return new Intl.DateTimeFormat(i18n.language || undefined, {
       hour: "numeric",
       minute: "2-digit",
     }).format(end);
-  }, [startFrom, durationMinutes, i18n.language]);
+  }, [nowMs, durationMinutes, i18n.language]);
 
   function pickDuration(minutes: number) {
     setPickedDuration(minutes);
-    setStartFrom(Date.now());
+    setNowMs(Date.now());
   }
 
-  const minutesWindow = useMemo(() => buildMinutesWindow(windowSessions), [windowSessions]);
+  // The same clock reading, so the last column advances with the query bound
+  // rather than trailing it by a day after a midnight rollover.
+  const minutesWindow = useMemo(
+    () =>
+      nowMs === null
+        ? []
+        : buildMinutesWindow(windowSessions, MINUTES_WINDOW_DAYS, new Date(nowMs)),
+    [windowSessions, nowMs],
+  );
   const minutesTotal = windowTotalMinutes(minutesWindow);
   const minutesRange = useMemo(() => {
     if (minutesWindow.length === 0) return "";
@@ -609,7 +627,11 @@ function SitRow({ session, ruled }: { session: MeditationSession; ruled: boolean
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={t("module.sessions.durationLabel", { count: session.durationMinutes })}
+      // Deliberately NO `accessibilityLabel`. An explicit one overrides the name
+      // assembled from the children, which would announce every row as just its
+      // length - and three twelve-minute sits would be three identical rows with
+      // no way to tell them apart. The children already say length, stage, when
+      // and note, in that order.
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() =>
         router.push({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } })

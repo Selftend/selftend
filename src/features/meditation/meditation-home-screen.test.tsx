@@ -9,6 +9,10 @@ import {
   useMeditationSessionCount,
   useMeditationSessions,
 } from "@/src/features/meditation/queries";
+import {
+  MINUTES_WINDOW_DAYS,
+  minutesWindowFromIso,
+} from "@/src/features/meditation/minutes-window";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { expectNeutralRoom } from "@/test/room-pour";
@@ -401,6 +405,37 @@ describe("MeditationHomeScreen", () => {
       expect(bar!.props.className).not.toContain("bg-muted");
     });
 
+    it("bounds the window from the clock read on focus, so it rolls over at midnight", () => {
+      // Pinned at mount, the bound never advances: a screen left mounted
+      // overnight keeps drawing yesterday's thirty days under today's labels
+      // until something unrelated invalidates the query.
+      jest.useFakeTimers({ now: new Date("2026-08-07T12:00:00+05:30") });
+      try {
+        setSessions([session()]);
+        setMinutesWindow([]);
+
+        renderWithProviders(<MeditationHomeScreen />);
+
+        expect(mockUseMeditationMinutesWindow).toHaveBeenLastCalledWith(
+          "user-1",
+          minutesWindowFromIso(MINUTES_WINDOW_DAYS, new Date("2026-08-07T12:00:00+05:30")),
+        );
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it("asks for nothing until the clock has been read", () => {
+      // The first render happens before the focus effect runs. An empty bound
+      // there must not become a fetch from the epoch.
+      setSessions([session()]);
+      setMinutesWindow([]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(mockUseMeditationMinutesWindow).toHaveBeenCalledWith("user-1", "");
+    });
+
     it("gives the whole chart one text equivalent rather than thirty silent boxes", () => {
       setSessions([session()]);
       setMinutesWindow([windowDay(currentDateKey(), 30)]);
@@ -455,6 +490,26 @@ describe("MeditationHomeScreen", () => {
       expect(screen.getByText("No sessions yet. Start whenever you're ready.")).toBeTruthy();
       // No link out of an empty list - it would lead to the same emptiness.
       expect(screen.queryByText("Show all sits")).toBeNull();
+    });
+
+    it("keeps two same-length sits apart for a screen reader", () => {
+      // An explicit `accessibilityLabel` on the row would override the name
+      // assembled from its children, announcing both of these as "12 min" and
+      // nothing else - two identical rows with no way to choose between them.
+      setSessions([
+        session({ id: "a", durationMinutes: 12, stageAtSession: 2, reflection: "Settled early." }),
+        session({ id: "b", durationMinutes: 12, stageAtSession: 5, reflection: "Restless." }),
+      ]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const rows = screen.getAllByRole("button", { name: /12 min/ });
+      expect(rows).toHaveLength(2);
+      for (const row of rows) {
+        expect(row.props.accessibilityLabel).toBeUndefined();
+      }
+      expect(screen.getByText("Stage 2")).toBeTruthy();
+      expect(screen.getByText("Stage 5")).toBeTruthy();
     });
   });
 

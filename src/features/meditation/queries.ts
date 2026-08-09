@@ -72,7 +72,10 @@ export function useMeditationSessionPages(userId: string | null) {
  * The sits inside the overview's thirty-day chart window.
  *
  * `fromIso` rides the key so a window that rolls over midnight refetches rather
- * than redrawing yesterday's thirty days under today's labels.
+ * than redrawing yesterday's thirty days under today's labels. An empty string
+ * is the caller saying it has not read the clock yet - the screen reads it on
+ * focus, never during render - and fetching a window from the epoch in the
+ * meantime would be worse than waiting a frame for it.
  */
 export function useMeditationMinutesWindow(userId: string | null, fromIso: string) {
   return useQuery({
@@ -80,7 +83,7 @@ export function useMeditationMinutesWindow(userId: string | null, fromIso: strin
       ? [...meditationKeys.minutesWindow(userId), fromIso]
       : ["meditation", "minutes-window", "anonymous"],
     queryFn: () => listMeditationMinutesSince(userId!, fromIso),
-    enabled: Boolean(userId),
+    enabled: Boolean(userId) && fromIso !== "",
   });
 }
 
