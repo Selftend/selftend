@@ -19,11 +19,12 @@ test.describe("log sleep", () => {
 
     // Duration starts at the 7h 30m default; one +30 step makes it 8h (480 min).
     await page.getByRole("button", { name: "Add 30 minutes", exact: true }).click();
-    // Quality is a 5-star control; tap the 4th star.
-    await page.getByRole("radio", { name: "Rate 4 of 5", exact: true }).click();
+    // Quality is five named options (#774); "Good" is the stored 4.
+    await page.getByRole("radio", { name: "Good", exact: true }).click();
     await page.getByPlaceholder("Anything that affected your sleep?").fill(notes);
 
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    // log.save = "Save night"
+    await page.getByRole("button", { name: "Save night", exact: true }).click();
 
     // Wait for the post-save redirect to the detail page (log-mood lesson):
     // the form's own textarea also carries the notes text, so a bare text
