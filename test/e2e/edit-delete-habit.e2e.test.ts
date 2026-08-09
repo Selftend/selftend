@@ -86,9 +86,13 @@ test.describe("edit and delete a habit", () => {
     // offers "Restore" where it offered "Archive", which is the archive having
     // landed on the server rather than only in the header badge.
     await page.getByRole("button", { name: "More actions", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Restore", exact: true })).toBeVisible({
-      timeout: 5_000,
-    });
+    // ⚠️ `filter({ visible: true })` is load-bearing: the archive ConfirmDialog
+    // stays in the DOM once it has been opened, and its confirm button reads
+    // "Restore" too now that the habit is archived. Without the filter this
+    // resolves to two elements and fails on strict mode, not on the app.
+    await expect(
+      page.getByRole("button", { name: "Restore", exact: true }).filter({ visible: true }),
+    ).toBeVisible({ timeout: 5_000 });
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     // The delete dialog's confirm button reads "Delete".
     await page
