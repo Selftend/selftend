@@ -14,9 +14,8 @@
   },
   "hero": {
     "stage": "Stage",
-    "sessions_one": "{{count}} session",
-    "sessions_other": "{{count}} sessions",
-    "median": "Median",
+    "sitsLabel": "sits",
+    "typicalLabel": "typical",
     "minutes_one": "{{count}} min",
     "minutes_other": "{{count}} min",
     "last": "last sat {{when}}",
@@ -28,11 +27,17 @@
       "subtitle": "Train steady attention and clear awareness, one sit at a time.",
       "todayCard": "Today's sit",
       "startSit": "Start a sit",
-      "openStages": "Explore the ten stages",
-      "openLearn": "Learn the framework",
-      "recentTitle": "Recent sessions",
-      "noSessions": "No sessions yet. Start whenever you're ready.",
-      "viewHistory": "All sessions"
+      "endsAbout": "ends about {{time}}",
+      "durationLabel": "Length",
+      "begin": "Begin",
+      "practiceLabel": "Your practice",
+      "stageRow": "Stage {{stage}} — {{name}}",
+      "stageRowSubtitle": "Where you are now · ten stages, four milestones",
+      "minutesSat": "Minutes sat",
+      "minutesA11y": "{{count}} minutes sat over the last {{days}} days.",
+      "recentTitle": "Recent sits",
+      "showAllSits": "Show all sits",
+      "noSessions": "No sessions yet. Start whenever you're ready."
     },
     "learn": {
       "title": "Learn the framework",
@@ -153,7 +158,11 @@
       "subtitle": "Private record of every sit.",
       "empty": "No sessions yet.",
       "stageBadge": "Stage {{stage}}",
-      "durationLabel": "{{count}} min"
+      "durationLabel": "{{count}} min",
+      "error": {
+        "title": "Couldn't load your sits",
+        "description": "Your record is safe - this screen just couldn't reach it. Check your connection and try again."
+      }
     },
     "sessionDetail": {
       "title": "Session detail",

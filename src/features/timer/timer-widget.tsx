@@ -281,21 +281,48 @@ function IntervalPicker({ value, onChange }: { value: number; onChange: (n: numb
 
 interface TimerWidgetProps {
   initialDuration?: number;
+  /** Starting interval-bell spacing in minutes; 0 is off. */
+  initialInterval?: number;
+  /**
+   * Render the widget's own duration and interval pickers. Pass `false` when the
+   * caller already asked for both - the meditation overview does, on the row of
+   * duration and bell buttons the design puts above `Begin` (#785). Two controls
+   * for one value is worse than either.
+   */
+  showSetup?: boolean;
+  /**
+   * Start the sit on mount. Implies the caller's duration and interval are the
+   * chosen ones, so the stored last-used values do not overwrite them.
+   */
+  autoStart?: boolean;
+  /** Fired when the timer returns to idle, so a caller that hid its own setup can bring it back. */
+  onIdle?: () => void;
 }
 
 export function TimerWidget({
   initialDuration = DEFAULT_TIMER_DURATION_MINUTES,
+  initialInterval,
+  showSetup = true,
+  autoStart = false,
+  onIdle,
 }: TimerWidgetProps) {
   const { t } = useTranslation("timer");
   const suggestedDuration = normalizeTimerDuration(initialDuration);
 
   const [durationMinutes, setDurationMinutesState] = useState(suggestedDuration);
-  const [intervalMinutes, setIntervalMinutesState] = useState(DEFAULT_INTERVAL_MINUTES);
+  const [intervalMinutes, setIntervalMinutesState] = useState(
+    initialInterval === undefined
+      ? DEFAULT_INTERVAL_MINUTES
+      : normalizeIntervalMinutes(initialInterval),
+  );
   const [timerState, setTimerState] = useState<TimerState>("idle");
   const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const hasUserSelectedDurationRef = useRef(false);
-  const hasUserSelectedIntervalRef = useRef(false);
+  // An auto-started sit was already configured by its caller, so the stored
+  // last-used values must not land on top of it mid-sit - these read as "the
+  // user has chosen" from the first render rather than after a first tap.
+  const hasUserSelectedDurationRef = useRef(autoStart);
+  const hasUserSelectedIntervalRef = useRef(autoStart || initialInterval !== undefined);
   // Captured at start() so the per-second tick reads stable values.
   const sessionTotalSecondsRef = useRef(0);
   const intervalSecondsRef = useRef(0);
@@ -381,6 +408,16 @@ export function TimerWidget({
     };
   }, [timerState]);
 
+  // Mount-only: `start` reads the duration and interval state seeded above, and
+  // re-running this on any later change would restart a sit already in progress.
+  const hasAutoStartedRef = useRef(false);
+  useEffect(() => {
+    if (!autoStart || hasAutoStartedRef.current) return;
+    hasAutoStartedRef.current = true;
+    start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
+  }, [autoStart]);
+
   const isActive = timerState === "running" || timerState === "paused";
 
   function setDurationMinutes(minutes: number) {
@@ -414,6 +451,7 @@ export function TimerWidget({
   function reset() {
     setTimerState("idle");
     setSecondsLeft(durationMinutes * 60);
+    onIdle?.();
   }
 
   function finishEarly() {
@@ -421,6 +459,7 @@ export function TimerWidget({
     const elapsedMinutes = Math.max(1, Math.round((durationMinutes * 60 - secondsLeft) / 60));
     setTimerState("idle");
     setSecondsLeft(durationMinutes * 60);
+    onIdle?.();
     router.push({
       pathname: "/tools/meditation/session/log",
       params: { duration: String(elapsedMinutes), ...endedNowParams() },
@@ -447,7 +486,7 @@ export function TimerWidget({
 
   return (
     <View className="gap-4">
-      {!isActive && timerState !== "completed" ? (
+      {showSetup && !isActive && timerState !== "completed" ? (
         <View className="gap-4">
           <DurationPicker value={durationMinutes} onChange={setDurationMinutes} />
           <IntervalPicker value={intervalMinutes} onChange={setIntervalMinutes} />

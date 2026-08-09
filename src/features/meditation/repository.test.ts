@@ -2,6 +2,7 @@ import {
   countMeditationSessions,
   getMeditationProgramState,
   getMeditationSession,
+  listMeditationMinutesSince,
   listMeditationSessions,
   listStagePracticeNotes,
   medianMeditationMinutes,
@@ -417,9 +418,9 @@ function sessionRow(overrides: Record<string, unknown> = {}) {
 }
 
 describe("meditation repository - listMeditationSessions", () => {
-  it("maps rows and applies the default limit of 30", async () => {
-    const limit = jest.fn().mockResolvedValue({ data: [sessionRow()], error: null });
-    const order = jest.fn(() => ({ limit }));
+  it("maps rows and reads the first 30 by default", async () => {
+    const range = jest.fn().mockResolvedValue({ data: [sessionRow()], error: null });
+    const order = jest.fn(() => ({ range }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
@@ -428,7 +429,20 @@ describe("meditation repository - listMeditationSessions", () => {
     expect(result[0]).toMatchObject({ id: "s1", stageAtSession: 3, durationMinutes: 15 });
     expect(eq).toHaveBeenCalledWith("user_id", "u1");
     expect(order).toHaveBeenCalledWith("completed_at", { ascending: false });
-    expect(limit).toHaveBeenCalledWith(30);
+    expect(range).toHaveBeenCalledWith(0, 29);
+  });
+
+  it("offsets the window so a later page starts where the previous one stopped", async () => {
+    const range = jest.fn().mockResolvedValue({ data: [], error: null });
+    const order = jest.fn(() => ({ range }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
+
+    await listMeditationSessions("u1", 20, 40);
+    // Inclusive on both ends, so page three of twenty is rows 40-59 - an
+    // off-by-one here silently drops or repeats a sit at every page boundary.
+    expect(range).toHaveBeenCalledWith(40, 59);
   });
 
   it("clamps out-of-range stages and applies nullish fallbacks when mapping", async () => {
@@ -449,13 +463,13 @@ describe("meditation repository - listMeditationSessions", () => {
       ],
       error: null,
     });
-    const order = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ range: limit }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
 
     const [low, high] = await listMeditationSessions("u1", 10);
-    expect(limit).toHaveBeenCalledWith(10);
+    expect(limit).toHaveBeenCalledWith(0, 9);
     expect(low.stageAtSession).toBe(1);
     expect(low.dullnessLevel).toBeNull();
     expect(low.distractionLevel).toBeNull();
@@ -466,13 +480,81 @@ describe("meditation repository - listMeditationSessions", () => {
   });
 
   it("throws when the list query errors", async () => {
-    const limit = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
-    const order = jest.fn(() => ({ limit }));
+    const range = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const order = jest.fn(() => ({ range }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
 
     await expect(listMeditationSessions("u1")).rejects.toMatchObject({ code: "42501" });
+  });
+});
+
+describe("meditation repository - listMeditationMinutesSince", () => {
+  function buildMinutesQuery(result: { data: unknown; error: unknown }) {
+    const order = jest.fn().mockResolvedValue(result);
+    const gte = jest.fn(() => ({ order }));
+    const eq = jest.fn(() => ({ gte }));
+    const select = jest.fn(() => ({ eq }));
+    mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
+    return { select, eq, gte, order };
+  }
+
+  it("reads three columns, bounded by date rather than by row count", async () => {
+    const { select, eq, gte } = buildMinutesQuery({ data: [], error: null });
+
+    await listMeditationMinutesSince("u1", "2026-07-08T00:00:00.000Z");
+
+    // `*` here would pull every reflection in a month for a chart that plots
+    // minutes; the bound is what stops the window truncating for a heavy user.
+    expect(select).toHaveBeenCalledWith("duration_minutes, completed_at, completed_offset_minutes");
+    expect(eq).toHaveBeenCalledWith("user_id", "u1");
+    expect(gte).toHaveBeenCalledWith("completed_at", "2026-07-08T00:00:00.000Z");
+  });
+
+  it("dates each row by the day CAPTURED with it, not the viewer's day", async () => {
+    // 15:30 UTC is 00:30 on the 16th in Tokyo. A viewer in Kolkata (+05:30, the
+    // runner's zone) reads 21:00 on the 15th - the chart column must be the 16th.
+    buildMinutesQuery({
+      data: [
+        {
+          duration_minutes: 12,
+          completed_at: "2026-07-15T15:30:00.000Z",
+          completed_offset_minutes: TOKYO_OFFSET_MINUTES,
+        },
+      ],
+      error: null,
+    });
+
+    await expect(listMeditationMinutesSince("u1", "2026-07-01T00:00:00.000Z")).resolves.toEqual([
+      { dayKey: "2026-07-16", durationMinutes: 12 },
+    ]);
+  });
+
+  it("falls back to the viewer's frame for rows with no captured offset", async () => {
+    buildMinutesQuery({
+      data: [
+        {
+          duration_minutes: 20,
+          completed_at: "2026-07-15T15:30:00.000Z",
+          completed_offset_minutes: null,
+        },
+      ],
+      error: null,
+    });
+
+    const [row] = await listMeditationMinutesSince("u1", "2026-07-01T00:00:00.000Z");
+    expect(row).toEqual({
+      dayKey: entryDayKey("2026-07-15T15:30:00.000Z", null),
+      durationMinutes: 20,
+    });
+  });
+
+  it("throws when the window query errors", async () => {
+    buildMinutesQuery({ data: null, error: { code: "42501" } });
+    await expect(
+      listMeditationMinutesSince("u1", "2026-07-01T00:00:00.000Z"),
+    ).rejects.toMatchObject({ code: "42501" });
   });
 });
 

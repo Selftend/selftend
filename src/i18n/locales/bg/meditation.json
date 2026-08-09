@@ -95,9 +95,8 @@
   },
   "hero": {
     "stage": "Етап",
-    "sessions_one": "{{count}} сесия",
-    "sessions_other": "{{count}} сесии",
-    "median": "Медиана",
+    "sitsLabel": "седения",
+    "typicalLabel": "обичайно",
     "minutes_one": "{{count}} мин",
     "minutes_other": "{{count}} мин",
     "last": "последна сесия {{when}}",
@@ -109,11 +108,17 @@
       "subtitle": "Тренирай устойчиво внимание и ясно осъзнаване, сесия по сесия.",
       "todayCard": "Днешното седене",
       "startSit": "Започни седене",
-      "openStages": "Разгледай десетте етапа",
-      "openLearn": "Научи рамката",
-      "recentTitle": "Последни сесии",
-      "noSessions": "Все още няма сесии. Започни, когато си готов.",
-      "viewHistory": "Всички сесии"
+      "endsAbout": "приключва около {{time}}",
+      "durationLabel": "Дължина",
+      "begin": "Започни",
+      "practiceLabel": "Твоята практика",
+      "stageRow": "Етап {{stage}} — {{name}}",
+      "stageRowSubtitle": "Къде си сега · десет етапа, четири етапни цели",
+      "minutesSat": "Изседени минути",
+      "minutesA11y": "{{count}} минути седене през последните {{days}} дни.",
+      "recentTitle": "Последни седения",
+      "showAllSits": "Виж всички седения",
+      "noSessions": "Все още няма сесии. Започни, когато си готов."
     },
     "learn": {
       "title": "Научи рамката",
@@ -234,7 +239,11 @@
       "subtitle": "Личен запис на всяко седене.",
       "empty": "Все още няма сесии.",
       "stageBadge": "Етап {{stage}}",
-      "durationLabel": "{{count}} мин"
+      "durationLabel": "{{count}} мин",
+      "error": {
+        "title": "Записите не се заредиха",
+        "description": "Записът ти е на сигурно място - този екран просто не успя да го достигне. Провери връзката и опитай отново."
+      }
     },
     "sessionDetail": {
       "title": "Детайли за сесията",
