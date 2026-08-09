@@ -148,4 +148,65 @@ describe("HabitEditorScreen", () => {
     expect(screen.getByRole("radio", { name: "Break", checked: true })).toBeTruthy();
     expect(screen.getByRole("radio", { name: "Build", checked: false })).toBeTruthy();
   });
+
+  /**
+   * The offered palette (#764). Six colours, and the three retired ones stay reachable
+   * for a habit that already stores them.
+   */
+  describe("the colour picker", () => {
+    it("offers six colours, and none of the retired ones, for a new habit", () => {
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+
+      expect(
+        screen.getAllByRole("radio", { name: /Green|Clay|Indigo|Aqua|Pink|Violet/ }),
+      ).toHaveLength(6);
+      expect(screen.queryByRole("radio", { name: "Purple" })).toBeNull();
+      expect(screen.queryByRole("radio", { name: "Amber" })).toBeNull();
+      expect(screen.queryByRole("radio", { name: "Teal" })).toBeNull();
+    });
+
+    it("gives a new habit the first colour nothing else is using", () => {
+      mockUseHabits.mockReturnValue({
+        data: [{ ...existingHabit, color: "act" }],
+      } as unknown as ReturnType<typeof useHabits>);
+
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+
+      // 'act' (Green) is taken, so the next offered colour is 'rose' (Clay).
+      expect(screen.getByRole("radio", { name: "Clay", checked: true })).toBeTruthy();
+    });
+
+    /**
+     * ⚠️ undefined is the query still in flight, not an empty list. Saving while it is
+     * pending would commit the head of the palette even though an existing habit may
+     * already hold it.
+     */
+    it("does not let a cold-opened create form save before the habit list resolves", () => {
+      mockUseHabits.mockReturnValue({ data: undefined } as unknown as ReturnType<typeof useHabits>);
+
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+      fireEvent.changeText(screen.getByLabelText("Habit name"), "Morning walk");
+      fireEvent.press(screen.getByText("Save"));
+
+      expect(saveHabit).not.toHaveBeenCalled();
+    });
+
+    it("keeps a stored retired colour reachable after switching away from it", () => {
+      mockUseHabits.mockReturnValue({ data: [existingHabit] } as unknown as ReturnType<
+        typeof useHabits
+      >);
+
+      renderWithProviders(
+        <HabitEditorScreen fallbackHref="/tools/habits" mode="edit" habitId="h-9" />,
+      );
+
+      // The habit stores 'primary' (Purple), which is retired but still offered to it.
+      expect(screen.getByRole("radio", { name: "Purple", checked: true })).toBeTruthy();
+
+      fireEvent.press(screen.getByRole("radio", { name: "Green" }));
+
+      // An accidental tap must be undoable without leaving the form.
+      expect(screen.getByRole("radio", { name: "Purple", checked: false })).toBeTruthy();
+    });
+  });
 });
