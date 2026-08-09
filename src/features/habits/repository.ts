@@ -175,7 +175,7 @@ export async function deleteHabit(userId: string, id: string): Promise<void> {
 
 export async function listHabitLogs(
   userId: string,
-  options: { habitId?: string; sinceDate?: string; limit?: number } = {},
+  options: { habitId?: string; sinceDate?: string; limit?: number; offset?: number } = {},
 ): Promise<HabitLog[]> {
   // The habit detail/log screens pass the route's habitId here too; a malformed id
   // would 400 on the uuid cast, so short-circuit to the same zero-rows result.
@@ -185,11 +185,25 @@ export async function listHabitLogs(
     .from("habit_logs")
     .select("*")
     .eq("user_id", userId)
-    .order("logged_on", { ascending: false });
+    .order("logged_on", { ascending: false })
+    // `logged_on` is a `date` with one row per habit per day, so it is NOT
+    // unique: every habit ticked on the same day ties on it. Postgres gives no
+    // stable order among ties across separate statements, so a paged read
+    // ordered on it alone can hand the same row back twice - or skip it - when
+    // a tied group straddles a page boundary. `id` is arbitrary but total,
+    // which is all a page boundary needs.
+    .order("id", { ascending: false });
 
   if (options.habitId) query = query.eq("habit_id", options.habitId);
   if (options.sinceDate) query = query.gte("logged_on", options.sinceDate);
-  if (options.limit) query = query.limit(options.limit);
+  // `range` rather than `limit` once an offset is asked for: paging needs a
+  // window, and Supabase's `limit` has no cursor of its own. Both bounds are
+  // inclusive, hence the -1.
+  if (options.offset !== undefined && options.limit) {
+    query = query.range(options.offset, options.offset + options.limit - 1);
+  } else if (options.limit) {
+    query = query.limit(options.limit);
+  }
 
   const { data, error } = await query;
   if (error) throw error;

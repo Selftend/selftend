@@ -409,24 +409,43 @@ describe("habits repository", () => {
   });
 
   it("listHabitLogs lists all logs when no options are passed", async () => {
-    const order = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
-    const eqUser = jest.fn(() => ({ order }));
+    const orderId = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
 
     const result = await listHabitLogs("user-1");
 
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(order).toHaveBeenCalledWith("logged_on", { ascending: false });
+    expect(orderDay).toHaveBeenCalledWith("logged_on", { ascending: false });
     expect(result).toEqual([expect.objectContaining({ id: "log-1", note: "done" })]);
+  });
+
+  it("listHabitLogs breaks ties on id, so a page boundary cannot duplicate or skip a row", async () => {
+    // `logged_on` is a `date` with one row per habit per day, so every habit
+    // ticked on the same day ties on it. Postgres gives no stable order among
+    // ties across separate statements, so a paged read ordered on it alone can
+    // hand the same row back twice - or lose it - when a tied group straddles
+    // a page boundary.
+    const orderId = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    await listHabitLogs("user-1");
+
+    expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
   });
 
   it("listHabitLogs applies habitId, sinceDate and limit filters together", async () => {
     const limit = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
     const gte = jest.fn(() => ({ limit }));
     const eqHabit = jest.fn(() => ({ gte }));
-    const order = jest.fn(() => ({ eq: eqHabit }));
-    const eqUser = jest.fn(() => ({ order }));
+    const orderId = jest.fn(() => ({ eq: eqHabit }));
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
 
@@ -442,9 +461,24 @@ describe("habits repository", () => {
     expect(result).toHaveLength(1);
   });
 
+  it("listHabitLogs pages with an inclusive range when an offset is given", async () => {
+    const range = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const orderId = jest.fn(() => ({ range }));
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    await listHabitLogs("user-1", { limit: 50, offset: 50 });
+
+    // Both bounds inclusive, hence 50..99 rather than 50..100.
+    expect(range).toHaveBeenCalledWith(50, 99);
+  });
+
   it("listHabitLogs throws when the query errors", async () => {
-    const order = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
-    const eqUser = jest.fn(() => ({ order }));
+    const orderId = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
 
