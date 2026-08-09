@@ -13,6 +13,12 @@ import enHabits from "@/src/i18n/locales/en/habits.json";
  *
  * This guards the whole namespace rather than those four keys, because the next
  * copy change will be somewhere else.
+ *
+ * It was - in `policies`, and again in `cbt`, neither of which this file reads
+ * (#805). The app-wide sweep now lives in `test/restraint-copy.test.ts` and covers
+ * every namespace in both locales. What stays here is the habits-specific half:
+ * the positive assertions about what the copy says INSTEAD, which are about this
+ * namespace's own wording and do not generalise.
  */
 const RESTRAINT_CLAIMS: { locale: string; pattern: RegExp }[] = [
   { locale: "en", pattern: /no shame/i },
