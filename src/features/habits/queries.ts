@@ -76,7 +76,7 @@ export function useHabit(userId: string | null, id: string | null) {
 
 export function useHabitLogs(
   userId: string | null,
-  options: { habitId?: string; sinceDate?: string; limit?: number } = {},
+  options: { habitId?: string; sinceDate?: string; untilDate?: string; limit?: number } = {},
 ) {
   const scope = habitLogsScope(options);
   return useQuery({

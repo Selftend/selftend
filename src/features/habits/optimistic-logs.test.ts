@@ -27,6 +27,12 @@ describe("habitLogsScope", () => {
       sinceDate: "2026-08-01",
     });
     expect(habitLogsScope({})).toEqual({});
+    // `untilDate` has to reach the key too, or the note editor's one-day page
+    // would share a cache entry with the detail screen's twelve-week one.
+    expect(habitLogsScope({ sinceDate: "2026-08-09", untilDate: "2026-08-09" })).toEqual({
+      sinceDate: "2026-08-09",
+      untilDate: "2026-08-09",
+    });
   });
 });
 
@@ -73,6 +79,22 @@ describe("applyOptimisticToggle - ticking", () => {
   it("does not add a day that falls before the page's window", () => {
     const logs: HabitLog[] = [];
     expect(applyOptimisticToggle(logs, "tick", params, { sinceDate: "2026-08-20" })).toBe(logs);
+  });
+
+  it("does not add a day that falls after the page's window", () => {
+    // The note editor's page is one closed day. Ticking any other day must not
+    // leak a row into it, or the field would hydrate from a day it never asked
+    // for.
+    const logs: HabitLog[] = [];
+    expect(applyOptimisticToggle(logs, "tick", params, { untilDate: "2026-08-01" })).toBe(logs);
+  });
+
+  it("adds the day the page is closed around", () => {
+    const next = applyOptimisticToggle([], "tick", params, {
+      sinceDate: "2026-08-09",
+      untilDate: "2026-08-09",
+    })!;
+    expect(next.map((l) => l.loggedOn)).toEqual(["2026-08-09"]);
   });
 
   it("truncates a limited page so it keeps holding only its newest rows", () => {

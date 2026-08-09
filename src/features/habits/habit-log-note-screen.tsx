@@ -29,7 +29,24 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
 
   const dateStr = dateOverride ?? currentDateKey();
   const { data: habit } = useHabit(userId, habitId);
-  const { data: logs } = useHabitLogs(userId, { habitId, sinceDate: dateStr, limit: 5 });
+  /**
+   * The one day, both bounds closed.
+   *
+   * ⚠️ It asked for `{ sinceDate: dateStr, limit: 5 }`, and rows come back
+   * newest-first - so for a day with more than five newer ticks the target day
+   * was simply not in the answer. The field then hydrated blank and saving
+   * OVERWROTE the note that was there. Harmless while `dateStr` was always
+   * today (nothing in the UI passed `?date=`), and live the moment habit
+   * detail's notes section started reopening older days.
+   *
+   * No `limit`: `habit_logs` holds at most one row per habit per day, so a
+   * closed one-day range is already bounded at one.
+   */
+  const { data: logs } = useHabitLogs(userId, {
+    habitId,
+    sinceDate: dateStr,
+    untilDate: dateStr,
+  });
   const upsertNote = useUpsertHabitLogNote(userId);
 
   const existing = (logs ?? []).find((log) => log.loggedOn === dateStr);

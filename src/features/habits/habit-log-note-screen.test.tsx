@@ -95,6 +95,19 @@ describe("HabitLogNoteScreen", () => {
     expectNeutralRoom(screen.getByTestId("habit-log-note-room"));
   });
 
+  it("asks for the one day, closed at both ends, so an older note is never missed", () => {
+    renderWithProviders(<HabitLogNoteScreen habitId="h-1" dateOverride="2026-06-14" />);
+
+    // ⚠️ It asked `{ sinceDate, limit: 5 }`, and rows come back newest-first -
+    // so a day with more than five newer ticks was simply absent from the
+    // answer, the field hydrated blank, and saving overwrote the saved note.
+    expect(mockUseHabitLogs).toHaveBeenCalledWith("user-1", {
+      habitId: "h-1",
+      sinceDate: "2026-06-14",
+      untilDate: "2026-06-14",
+    });
+  });
+
   it("hydrates the field from the saved note for the day", () => {
     mockUseHabitLogs.mockReturnValue({
       data: [habitLog({ note: "Ten pages before bed" })],

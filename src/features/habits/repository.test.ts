@@ -461,6 +461,31 @@ describe("habits repository", () => {
     expect(result).toHaveLength(1);
   });
 
+  it("listHabitLogs closes the range on untilDate, so one day can be asked for", async () => {
+    // ⚠️ Rows come back newest-first, so `{ sinceDate: day, limit: n }` returns
+    // the n NEWEST days at or after `day` - which omits `day` itself once it has
+    // n newer ticks. The note editor hydrated from exactly that query, so its
+    // field opened blank and saving overwrote a note that was already there.
+    const lte = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const gte = jest.fn(() => ({ lte }));
+    const eqHabit = jest.fn(() => ({ gte }));
+    const orderId = jest.fn(() => ({ eq: eqHabit }));
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    const result = await listHabitLogs("user-1", {
+      habitId: VALID_ID,
+      sinceDate: "2026-04-01",
+      untilDate: "2026-04-01",
+    });
+
+    expect(gte).toHaveBeenCalledWith("logged_on", "2026-04-01");
+    expect(lte).toHaveBeenCalledWith("logged_on", "2026-04-01");
+    expect(result).toHaveLength(1);
+  });
+
   it("listHabitLogs pages with an inclusive range when an offset is given", async () => {
     const range = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
     const orderId = jest.fn(() => ({ range }));

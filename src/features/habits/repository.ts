@@ -175,7 +175,13 @@ export async function deleteHabit(userId: string, id: string): Promise<void> {
 
 export async function listHabitLogs(
   userId: string,
-  options: { habitId?: string; sinceDate?: string; limit?: number; offset?: number } = {},
+  options: {
+    habitId?: string;
+    sinceDate?: string;
+    untilDate?: string;
+    limit?: number;
+    offset?: number;
+  } = {},
 ): Promise<HabitLog[]> {
   // The habit detail/log screens pass the route's habitId here too; a malformed id
   // would 400 on the uuid cast, so short-circuit to the same zero-rows result.
@@ -196,6 +202,12 @@ export async function listHabitLogs(
 
   if (options.habitId) query = query.eq("habit_id", options.habitId);
   if (options.sinceDate) query = query.gte("logged_on", options.sinceDate);
+  // Inclusive upper bound. The rows come back NEWEST-first, so a `sinceDate`
+  // with a `limit` is a window on the most recent days, not on the oldest -
+  // which means asking for one old day with `{ sinceDate: day, limit: n }`
+  // returns the n newest days at or after it and omits the day itself. Closing
+  // the range is the only way to ask for a specific day.
+  if (options.untilDate) query = query.lte("logged_on", options.untilDate);
   // `range` rather than `limit` once an offset is asked for: paging needs a
   // window, and Supabase's `limit` has no cursor of its own. Both bounds are
   // inclusive, hence the -1.
