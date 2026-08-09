@@ -21,6 +21,28 @@ export function formatClock(seconds: number): string {
 }
 
 /**
+ * The five length buttons on session setup (`4b`) and on the new-pattern
+ * editor's "Default length" row (`4d`). They pick a MINUTE TARGET; the cycle
+ * count is derived from it and the pattern's own cycle length, which is why a
+ * 2-minute box-breathing session is 8 cycles and a 2-minute 4-7-8 session is 6.
+ */
+export const SESSION_LENGTH_MINUTES = [1, 2, 3, 5, 10] as const;
+
+/**
+ * Cycles that come closest to `minutes` for a pattern whose cycle is
+ * `secondsPerCycle` long. Always at least one cycle: a 1-minute target against
+ * a 76-second cycle rounds to 1, not 0.
+ *
+ * `secondsPerCycle` of 0 cannot happen for a saved pattern (the schema refuses
+ * one with neither an inhale nor an exhale) but is guarded anyway, because the
+ * editor calls this on in-progress input that can transiently be all zeros.
+ */
+export function cyclesForMinutes(secondsPerCycle: number, minutes: number): number {
+  if (secondsPerCycle <= 0) return 1;
+  return Math.max(1, Math.round((minutes * 60) / secondsPerCycle));
+}
+
+/**
  * Whole minutes actually breathed, for the session log. Clamps negative
  * remaining to 0 elapsed and floors the result at 1 minute.
  */

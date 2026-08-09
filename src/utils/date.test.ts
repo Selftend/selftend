@@ -5,6 +5,7 @@ import {
   dayRangeEndKey,
   formatAtOffset,
   formatTimestamp,
+  isValidDayKey,
   lastNDayKeys,
   lastNDayKeysEndingAt,
   localDateKey,
@@ -95,6 +96,29 @@ describe("lastNDayKeys", () => {
     const keys = lastNDayKeys(7);
     expect(keys).toHaveLength(7);
     expect(keys[keys.length - 1]).toBe(localDateKey(new Date()));
+  });
+});
+
+describe("isValidDayKey", () => {
+  it("accepts a real day key", () => {
+    expect(isValidDayKey("2026-05-24")).toBe(true);
+    expect(isValidDayKey("2024-02-29")).toBe(true); // a real leap day
+  });
+
+  it("rejects anything that is not the YYYY-MM-DD shape", () => {
+    // These reach `Intl.DateTimeFormat` as an invalid Date otherwise, which
+    // throws a RangeError and takes the route down.
+    for (const value of ["", "bogus", "2026-5-24", "24/05/2026", "2026-05-24T10:00:00Z"]) {
+      expect(isValidDayKey(value)).toBe(false);
+    }
+  });
+
+  it("rejects a well-shaped impossible day", () => {
+    // `new Date("2026-02-31T12:00:00")` rolls forward to 3 March rather than
+    // failing, so the regex alone would wave these through.
+    expect(isValidDayKey("2026-02-31")).toBe(false);
+    expect(isValidDayKey("2026-13-01")).toBe(false);
+    expect(isValidDayKey("2023-02-29")).toBe(false); // 2023 is not a leap year
   });
 });
 

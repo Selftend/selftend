@@ -12,7 +12,8 @@ import {
   useRestoreHabit,
   useToggleHabitLog,
 } from "@/src/features/habits/queries";
-import { currentDateKey } from "@/src/features/habits/scheduling";
+import { currentDateKey, localDateKey } from "@/src/features/habits/scheduling";
+import { tickGridStartKey } from "@/src/features/habits/tick-grid";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { expectNeutralRoom } from "@/test/room-pour";
@@ -86,6 +87,32 @@ function habitLog(overrides: Partial<HabitLog> = {}): HabitLog {
   };
 }
 
+function longDate(dayKey: string): string {
+  return new Intl.DateTimeFormat("en", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(`${dayKey}T12:00:00`));
+}
+
+/** The shape a note row's date column takes once it is older than yesterday. */
+function noteDate(dayKey: string): string {
+  return new Intl.DateTimeFormat("en", {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${dayKey}T12:00:00`));
+}
+
+/** `count` days before today, as a day key. Keeps the fixtures date-agnostic. */
+function daysAgo(count: number): string {
+  const day = new Date(`${currentDateKey()}T12:00:00`);
+  day.setDate(day.getDate() - count);
+  return localDateKey(day);
+}
+
 function mockDefaults() {
   mockUseHabit.mockReturnValue({
     data: habit(),
@@ -112,7 +139,167 @@ function mockDefaults() {
   } as unknown as ReturnType<typeof useDeleteHabit>);
 }
 
-describe("HabitDetailScreen habit-stack row", () => {
+describe("HabitDetailScreen twelve-week grid", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("fetches exactly the window it draws, opening on a Monday", () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    const startKey = tickGridStartKey(currentDateKey());
+    expect(new Date(`${startKey}T12:00:00`).getDay()).toBe(1);
+    expect(mockUseHabitLogs).toHaveBeenCalledWith("user-1", {
+      habitId: "h-1",
+      sinceDate: startKey,
+    });
+  });
+
+  it("draws every past day of the window as a control, and no future day at all", () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    const cells = screen.getAllByRole("checkbox");
+    const today = currentDateKey();
+    const start = new Date(`${tickGridStartKey(today)}T12:00:00`);
+    const elapsed = Math.round(
+      (new Date(`${today}T12:00:00`).getTime() - start.getTime()) / 86_400_000,
+    );
+    // Every day from the window's Monday through today, plus the standalone
+    // "Tick today" button - and nothing for the days still ahead.
+    expect(cells).toHaveLength(elapsed + 1 + 1);
+  });
+
+  it("ticks a past day through its own cell, announced as a human date", () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    const startKey = tickGridStartKey(currentDateKey());
+    // Screen readers should never hear the raw "YYYY-MM-DD" day key.
+    expect(screen.queryByRole("checkbox", { name: startKey })).toBeNull();
+    fireEvent.press(screen.getByRole("checkbox", { name: longDate(startKey) }));
+
+    expect(toggleMutate).toHaveBeenCalledWith({ habitId: "h-1", loggedOn: startKey });
+  });
+
+  it("counts the window's ticks with no denominator anywhere", () => {
+    const startKey = tickGridStartKey(currentDateKey());
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ id: "a" }), habitLog({ id: "b", loggedOn: startKey })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    expect(screen.getByText("2 ticks")).toBeTruthy();
+    // A ratio encodes what the user should have done (#713).
+    expect(screen.queryByText(/of \d+ days/)).toBeNull();
+  });
+
+  it("refuses to tick while the logs query is still unanswered", () => {
+    mockUseHabitLogs.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    // A press against an unread cache would DELETE the server's row, note and
+    // all, past the confirmation that exists to prevent that.
+    fireEvent.press(screen.getByRole("checkbox", { name: longDate(currentDateKey()) }));
+    expect(toggleMutate).not.toHaveBeenCalled();
+  });
+});
+
+describe("HabitDetailScreen tick today", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("offers a full-size control for today and ticks through it", () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    fireEvent.press(screen.getByRole("checkbox", { name: "Tick today" }));
+
+    expect(toggleMutate).toHaveBeenCalledWith({ habitId: "h-1", loggedOn: currentDateKey() });
+  });
+
+  it("reads as done once today is ticked", () => {
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog()],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    expect(screen.getByRole("checkbox", { name: "Ticked today" })).toBeTruthy();
+  });
+
+  it("confirms before an untick that would delete a note, and not otherwise", () => {
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ note: "Two chapters" })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    fireEvent.press(screen.getByRole("checkbox", { name: "Ticked today" }));
+    expect(toggleMutate).not.toHaveBeenCalled();
+    expect(screen.getByText("Remove this tick?")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Remove tick and note"));
+    expect(toggleMutate).toHaveBeenCalledWith({ habitId: "h-1", loggedOn: currentDateKey() });
+  });
+});
+
+describe("HabitDetailScreen notes with ticks", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("renders a translated date, never the raw ISO key (#726)", () => {
+    const day = daysAgo(20);
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ note: "Felt easy today", loggedOn: day })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    expect(screen.getByText("Felt easy today")).toBeTruthy();
+    expect(screen.queryByText(day)).toBeNull();
+    expect(screen.getByText(noteDate(day))).toBeTruthy();
+  });
+
+  it("opens the day's editor from a note row, and today's from the header", () => {
+    const day = daysAgo(20);
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ note: "Felt easy today", loggedOn: day })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    fireEvent.press(screen.getByText("Felt easy today"));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/tools/habits/[id]/log",
+      params: { id: "h-1", date: day },
+    });
+
+    fireEvent.press(screen.getByText("Add note"));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/tools/habits/[id]/log",
+      params: { id: "h-1", date: currentDateKey() },
+    });
+  });
+
+  it("shows the empty state when no tick carries a note", () => {
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog()],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    expect(screen.getByText("Notes you save with a tick will appear here.")).toBeTruthy();
+  });
+});
+
+describe("HabitDetailScreen detail rows", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDefaults();
@@ -126,9 +313,6 @@ describe("HabitDetailScreen habit-stack row", () => {
 
     renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
-    // `stack_after` no longer has a field on create, so this row is where a
-    // stored value surfaces - and a break habit holding one used to have
-    // nowhere at all to show it.
     expect(screen.getByText("Habit stack")).toBeTruthy();
     expect(screen.getByText("After coffee")).toBeTruthy();
   });
@@ -137,6 +321,27 @@ describe("HabitDetailScreen habit-stack row", () => {
     renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
     expect(screen.queryByText("Habit stack")).toBeNull();
+  });
+
+  it("renders populated prompts as labelled rows and hides the empty ones", () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    expect(screen.getByText("Two-minute version")).toBeTruthy();
+    expect(screen.getByText("Read one page")).toBeTruthy();
+    expect(screen.getByText("Identity")).toBeTruthy();
+    expect(screen.getByText("I'm a reader")).toBeTruthy();
+    expect(screen.queryByText("Cue")).toBeNull();
+  });
+
+  it("folds schedule, kind and start date into one subline", () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    const started = new Intl.DateTimeFormat("en", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date("2026-05-01T08:00:00.000Z"));
+    expect(screen.getByText(`Every day · Build · started ${started}`)).toBeTruthy();
   });
 });
 
@@ -147,12 +352,12 @@ describe("HabitDetailScreen act room", () => {
   });
 
   it("renders the loaded habit inside the act room", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
     expect(screen.getByRole("heading", { name: "Read" })).toBeTruthy();
-    expect(screen.getByText("I'm a reader")).toBeTruthy();
-    // The root carries the act room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
+    // The room moved from the SafeAreaView to a wrapper, so the top bar's
+    // `bg-card` re-resolves through it too; a wrong or missing room fails here.
+    expectNeutralRoom(screen.getByTestId("habit-detail-room"));
   });
 
   it("pours the act room on the loading state", () => {
@@ -179,97 +384,29 @@ describe("HabitDetailScreen act room", () => {
   });
 });
 
-describe("HabitDetailScreen content", () => {
+describe("HabitDetailScreen overflow menu", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDefaults();
   });
 
-  it("renders schedule, kind, and populated strategies", () => {
+  it("keeps archive and delete out of the action row", () => {
     renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
-    expect(screen.getByText("Every day")).toBeTruthy();
-    expect(screen.getByText("Build")).toBeTruthy();
-    expect(screen.getByText("Two-minute version")).toBeTruthy();
-    expect(screen.getByText("Read one page")).toBeTruthy();
-    // Empty strategy slots stay hidden.
-    expect(screen.queryByText("Cue")).toBeNull();
-  });
-
-  it("shows the archived badge and restore action for an archived habit", () => {
-    mockUseHabit.mockReturnValue({
-      data: habit({ archivedAt: "2026-06-01T08:00:00.000Z" }),
-      isLoading: false,
-    } as unknown as ReturnType<typeof useHabit>);
-
-    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
-
-    expect(screen.getByText("Archived")).toBeTruthy();
-    expect(screen.getByText("Restore")).toBeTruthy();
+    // Both live behind `more_horiz` now, so a destructive action no longer
+    // carries the same weight as opening the editor (#709).
     expect(screen.queryByText("Archive")).toBeNull();
+    expect(screen.queryByText("Delete")).toBeNull();
+    expect(screen.getByLabelText("More actions")).toBeTruthy();
   });
 
-  it("renders recent notes from logs and the empty state without them", () => {
-    mockUseHabitLogs.mockReturnValue({
-      data: [habitLog({ note: "Felt easy today", loggedOn: "2026-07-20" })],
-    } as unknown as ReturnType<typeof useHabitLogs>);
-
+  it("archives the habit through the menu and its confirm dialog", async () => {
     renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
-    expect(screen.getByText("Felt easy today")).toBeTruthy();
-    expect(screen.getByText("2026-07-20")).toBeTruthy();
-    expect(screen.queryByText("Notes you save with a tick will appear here.")).toBeNull();
-  });
-});
-
-describe("HabitDetailScreen behavior", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockDefaults();
-  });
-
-  it("toggles a calendar day tick for today (announced as a human date, not the raw key)", () => {
-    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
-
-    const today = currentDateKey();
-    // The accessible name is the formatted date - screen readers should never
-    // hear the raw "YYYY-MM-DD" day key.
-    const todayLabel = new Intl.DateTimeFormat("en", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(new Date());
-    expect(screen.queryByRole("checkbox", { name: today })).toBeNull();
-    fireEvent.press(screen.getByRole("checkbox", { name: todayLabel }));
-
-    expect(toggleMutate).toHaveBeenCalledWith({ habitId: "h-1", loggedOn: today });
-  });
-
-  it("navigates to edit and add-note", () => {
-    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
-
-    fireEvent.press(screen.getByText("Edit"));
-    expect(router.push).toHaveBeenCalledWith({
-      pathname: "/tools/habits/[id]/edit",
-      params: { id: "h-1" },
-    });
-
-    fireEvent.press(screen.getByText("Add note"));
-    expect(router.push).toHaveBeenCalledWith({
-      pathname: "/tools/habits/[id]/log",
-      params: { id: "h-1" },
-    });
-  });
-
-  it("archives the habit through the confirm dialog", async () => {
-    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
-
-    expect(screen.queryByText("Archive habit?")).toBeNull();
-    fireEvent.press(screen.getByText("Archive"));
+    fireEvent.press(screen.getByLabelText("More actions"));
+    fireEvent.press(await screen.findByText("Archive"));
     expect(screen.getByText("Archive habit?")).toBeTruthy();
 
-    // Two "Archive" texts now: the action row button and the dialog confirm.
     const confirmButtons = screen.getAllByText("Archive");
     fireEvent.press(confirmButtons[confirmButtons.length - 1]);
 
@@ -278,11 +415,25 @@ describe("HabitDetailScreen behavior", () => {
     });
   });
 
-  it("deletes the habit through the confirm dialog and returns home", async () => {
+  it("offers Restore instead of Archive for an archived habit", async () => {
+    mockUseHabit.mockReturnValue({
+      data: habit({ archivedAt: "2026-06-01T08:00:00.000Z" }),
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabit>);
+
     renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
-    expect(screen.queryByText("Delete habit?")).toBeNull();
-    fireEvent.press(screen.getByText("Delete"));
+    expect(screen.getByText("Archived")).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("More actions"));
+    expect(await screen.findByText("Restore")).toBeTruthy();
+    expect(screen.queryByText("Archive")).toBeNull();
+  });
+
+  it("deletes the habit through the menu and returns home", async () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    fireEvent.press(screen.getByLabelText("More actions"));
+    fireEvent.press(await screen.findByText("Delete"));
     expect(screen.getByText("Delete habit?")).toBeTruthy();
 
     const confirmButtons = screen.getAllByText("Delete");
@@ -292,5 +443,15 @@ describe("HabitDetailScreen behavior", () => {
       expect(deleteMutateAsync).toHaveBeenCalledWith("h-1");
     });
     expect(router.replace).toHaveBeenCalledWith("/tools/habits");
+  });
+
+  it("navigates to edit from the icon button", () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    fireEvent.press(screen.getByLabelText("Edit"));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/tools/habits/[id]/edit",
+      params: { id: "h-1" },
+    });
   });
 });
