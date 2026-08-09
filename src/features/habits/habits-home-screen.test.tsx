@@ -240,6 +240,217 @@ describe("HabitsHomeScreen tap-to-tick", () => {
   });
 });
 
+function habit(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "h-1",
+    userId: "user-1",
+    name: "Read",
+    kind: "build",
+    identity: "",
+    cuePlan: "",
+    stackAfter: "",
+    cravingPairing: "",
+    twoMinuteVersion: "",
+    rewardNote: "",
+    cadence: "daily",
+    customDays: [],
+    color: "primary",
+    archivedAt: null,
+    createdAt: "2026-05-01T08:00:00.000Z",
+    updatedAt: "2026-05-01T08:00:00.000Z",
+    ...overrides,
+  };
+}
+
+// 2026-08-08 is a Saturday and 2026-08-07 the Friday before it, so a
+// weekdays-only habit is off-cadence on the first and due on the second.
+const SATURDAY = "2026-08-08";
+const FRIDAY = "2026-08-07";
+
+describe("HabitsHomeScreen lists every habit every day", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+    mockUseSelectedDate.mockReturnValue({ selectedDate: SATURDAY });
+  });
+
+  it("shows a weekdays-only habit on a Saturday instead of an empty tool", async () => {
+    mockUseHabits.mockReturnValue({
+      data: [habit({ cadence: "weekdays", name: "Read" })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabits>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    // The list used to filter by cadence, so this user's whole tool read as
+    // empty on their rest days.
+    expect(await screen.findByText("Read")).toBeTruthy();
+    expect(screen.queryByText(/No habits scheduled/i)).toBeNull();
+  });
+
+  it("keeps the tick enabled off-cadence, because doing it anyway is a good outcome", async () => {
+    mockUseHabits.mockReturnValue({
+      data: [habit({ cadence: "weekdays" })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabits>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    const tick = await screen.findByRole("checkbox", { name: /Read: tap to tick today/i });
+    fireEvent.press(tick);
+
+    await waitFor(() => {
+      expect(toggleMutate).toHaveBeenCalledWith({ habitId: "h-1", loggedOn: SATURDAY });
+    });
+  });
+
+  it("separates not-due from due-not-done by border style, not by colour alone", async () => {
+    mockUseHabits.mockReturnValue({
+      data: [habit({ cadence: "weekdays" })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabits>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    // `includeHiddenElements` is required precisely because the cells are
+    // hidden from the a11y tree - asserted on its own below.
+    const notDue = await screen.findByTestId(`week-cell-h-1-${SATURDAY}`, {
+      includeHiddenElements: true,
+    });
+    const dueNotDone = screen.getByTestId(`week-cell-h-1-${FRIDAY}`, {
+      includeHiddenElements: true,
+    });
+
+    // Dashed vs solid survives greyscale and every CVD; a colour-only
+    // difference would render "never due" as "due and not done" - the
+    // accusation the guardrails forbid. NativeWind leaves `className` on the
+    // host view under jest rather than resolving it, so the class IS the
+    // observable here.
+    expect(notDue.props.className).toContain("border-dashed");
+    expect(dueNotDone.props.className).not.toContain("border-dashed");
+    expect(dueNotDone.props.className).toContain("bg-muted/40");
+  });
+
+  it("hides the strip's cells behind one text equivalent", async () => {
+    mockUseHabits.mockReturnValue({
+      data: [habit({ cadence: "weekdays" })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabits>);
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ loggedOn: FRIDAY })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    // Seven unlabelled decorative boxes are worse than useless to a screen
+    // reader; the strip announces its record once instead.
+    expect(await screen.findByLabelText("Last 7 days: ticked on 1 day")).toBeTruthy();
+    // And the cells themselves are out of the a11y tree entirely.
+    expect(screen.queryByTestId(`week-cell-h-1-${FRIDAY}`)).toBeNull();
+  });
+});
+
+describe("HabitsHomeScreen before the logs window answers", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("will not toggle against an unread cache, which deletes rather than creates", async () => {
+    // `undefined` is in-flight or failed-with-no-cache, NOT "no ticks". The
+    // habits query gates the screen but the logs query resolves separately, so
+    // a row can render unticked while a tick - and its note - already exists.
+    mockUseHabitLogs.mockImplementation(
+      (_userId, options) =>
+        ({
+          data: options?.limit === 1 ? [] : undefined,
+        }) as unknown as ReturnType<typeof useHabitLogs>,
+    );
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    const tick = await screen.findByRole("checkbox", { name: /Read: tap to tick today/i });
+    fireEvent.press(tick);
+
+    expect(toggleMutate).not.toHaveBeenCalled();
+  });
+
+  it("allows ticking once the window has answered, even empty", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    fireEvent.press(await screen.findByRole("checkbox", { name: /Read: tap to tick today/i }));
+
+    await waitFor(() => expect(toggleMutate).toHaveBeenCalled());
+  });
+});
+
+describe("HabitsHomeScreen tick labelling", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("names the habit in the tick's accessible name, so two habits differ", async () => {
+    mockUseHabits.mockReturnValue({
+      data: [habit({ id: "h-1", name: "Read" }), habit({ id: "h-2", name: "Walk" })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHabits>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    // Every tick used to announce "Tap to tick today" and nothing else (#724).
+    expect(await screen.findByRole("checkbox", { name: "Read: tap to tick today" })).toBeTruthy();
+    expect(screen.getByRole("checkbox", { name: "Walk: tap to tick today" })).toBeTruthy();
+  });
+});
+
+describe("HabitsHomeScreen unticking a day that holds a note", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+  });
+
+  it("confirms first, because the note is the same row as the tick", async () => {
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ note: "Felt good after." })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    fireEvent.press(await screen.findByRole("checkbox", { name: /Read: ticked today/i }));
+
+    expect(toggleMutate).not.toHaveBeenCalled();
+    expect(screen.getByText("Remove tick and note")).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
+
+    await waitFor(() => {
+      expect(toggleMutate).toHaveBeenCalledWith({
+        habitId: "h-1",
+        loggedOn: currentDateKey(),
+      });
+    });
+  });
+
+  it("unticks an empty day immediately - the common case asks nothing", async () => {
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ note: "" })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitsHomeScreen />);
+
+    fireEvent.press(await screen.findByRole("checkbox", { name: /Read: ticked today/i }));
+
+    await waitFor(() => {
+      expect(toggleMutate).toHaveBeenCalledWith({
+        habitId: "h-1",
+        loggedOn: currentDateKey(),
+      });
+    });
+    expect(screen.queryByText("Remove tick and note")).toBeNull();
+  });
+});
+
 describe("HabitsHomeScreen ticked-state contrast", () => {
   beforeEach(() => {
     jest.clearAllMocks();

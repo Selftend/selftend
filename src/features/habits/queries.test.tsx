@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react-native";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import {
@@ -74,8 +74,15 @@ describe("useHabitLogs - queryKey scope derivation", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // Assert the exact computed key exists in the shared client's cache
-    const expectedKey = ["habits", "logs", "u1", "habit:h1:2026-05-01:10"];
+    // Assert the exact computed key exists in the shared client's cache. The
+    // scope is a structured object, not a formatted string, so an optimistic
+    // writer can read the window off the key rather than parse it back (#759).
+    const expectedKey = [
+      "habits",
+      "logs",
+      "u1",
+      { habitId: "h1", sinceDate: "2026-05-01", limit: 10 },
+    ];
     expect(client.getQueryState(expectedKey)).toBeDefined();
   });
 
@@ -89,7 +96,7 @@ describe("useHabitLogs - queryKey scope derivation", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     // Assert the exact computed key exists in the shared client's cache
-    const expectedKey = ["habits", "logs", "u1", "all:2026-05-01:5"];
+    const expectedKey = ["habits", "logs", "u1", { sinceDate: "2026-05-01", limit: 5 }];
     expect(client.getQueryState(expectedKey)).toBeDefined();
   });
 
@@ -108,8 +115,8 @@ describe("useHabitLogs - queryKey scope derivation", () => {
     await waitFor(() => expect(r1.current.isSuccess).toBe(true));
     await waitFor(() => expect(r2.current.isSuccess).toBe(true));
 
-    const habitScopedKey = ["habits", "logs", "u1", "habit:h1:2026-05-01:"];
-    const allScopedKey = ["habits", "logs", "u1", "all:2026-05-01:"];
+    const habitScopedKey = ["habits", "logs", "u1", { habitId: "h1", sinceDate: "2026-05-01" }];
+    const allScopedKey = ["habits", "logs", "u1", { sinceDate: "2026-05-01" }];
 
     // Both keys must exist and be independent entries in the same cache
     expect(client.getQueryState(habitScopedKey)).toBeDefined();
@@ -261,6 +268,88 @@ describe.each(mutationHooks)("%s onSuccess guard", (_name, useHook, repoFn, vari
 
     expect(repoFn).toHaveBeenCalled();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// `toggleHabitLog` is a read-then-write flip, so overlapping calls for one day
+// race - both can read the same row and write in the same direction, which
+// collapses two intended toggles into one.
+// ---------------------------------------------------------------------------
+describe("useToggleHabitLog in-flight guard", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  function deferredToggle() {
+    let settle: () => void = () => {};
+    mockToggleHabitLog.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          settle = () => resolve({ log: null, ticked: true });
+        }),
+    );
+    return () => settle();
+  }
+
+  it("issues one request when the same day is pressed twice before the first settles", async () => {
+    const settle = deferredToggle();
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useToggleHabitLog("u1"), { wrapper: makeWrapper(client) });
+
+    // Both presses read the SAME hook snapshot on purpose: no re-render happens
+    // between two synchronous taps, which is why `isPending` cannot guard this.
+    act(() => {
+      result.current.mutate({ habitId: "h1", loggedOn: "2026-08-09" });
+      result.current.mutate({ habitId: "h1", loggedOn: "2026-08-09" });
+    });
+
+    await waitFor(() => expect(mockToggleHabitLog).toHaveBeenCalled());
+    // An unguarded second call was dispatched in the same tick, so it would
+    // have landed by now too.
+    await act(async () => {});
+    expect(mockToggleHabitLog).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      settle();
+    });
+  });
+
+  it("releases the key once the toggle settles, so the day can be toggled back", async () => {
+    const settle = deferredToggle();
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useToggleHabitLog("u1"), { wrapper: makeWrapper(client) });
+
+    act(() => result.current.mutate({ habitId: "h1", loggedOn: "2026-08-09" }));
+    await waitFor(() => expect(mockToggleHabitLog).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      settle();
+    });
+
+    const settleAgain = deferredToggle();
+    act(() => result.current.mutate({ habitId: "h1", loggedOn: "2026-08-09" }));
+
+    await waitFor(() => expect(mockToggleHabitLog).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      settleAgain();
+    });
+  });
+
+  it("does not block a different habit, so ticking a run of them stays concurrent", async () => {
+    const settle = deferredToggle();
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useToggleHabitLog("u1"), { wrapper: makeWrapper(client) });
+
+    act(() => {
+      result.current.mutate({ habitId: "h1", loggedOn: "2026-08-09" });
+      result.current.mutate({ habitId: "h2", loggedOn: "2026-08-09" });
+    });
+
+    await waitFor(() => expect(mockToggleHabitLog).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      settle();
+    });
   });
 });
 
