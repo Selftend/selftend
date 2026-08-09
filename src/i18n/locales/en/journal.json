@@ -25,10 +25,7 @@
     "untitled": "Untitled"
   },
   "editor": {
-    "createTitle": "New journal entry",
     "editTitle": "Edit journal entry",
-    "createDescription": "Write whatever is useful. Nothing is shared.",
-    "editDescription": "Update what you wrote earlier.",
     "titleLabel": "Title (optional)",
     "titlePlaceholder": "Untitled",
     "bodyLabel": "Body",
@@ -45,7 +42,11 @@
     "title": "Journal entry",
     "edit": "Edit",
     "delete": "Delete",
-    "createdAt": "When",
+    "words_one": "{{count}} word",
+    "words_other": "{{count}} words",
+    "written": "Written {{when}}",
+    "edited": "edited {{when}}",
+    "showAll": "Show all entries",
     "notFound": "We couldn't find that journal entry.",
     "deleteError": "Couldn't delete this entry. Try again.",
     "confirmDelete": {

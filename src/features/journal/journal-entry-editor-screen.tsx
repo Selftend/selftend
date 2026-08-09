@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Input } from "@/src/components/react-native-reusables/input";
-import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { DateTimeField } from "@/src/components/app/date-time-field";
@@ -23,6 +22,7 @@ import {
   useSaveJournalEntry,
 } from "@/src/features/journal/queries";
 import { JOURNAL_BODY_MAX, JOURNAL_TITLE_MAX } from "@/src/features/journal/schemas";
+import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useRoomStyle } from "@/src/lib/use-room-style";
@@ -174,6 +174,46 @@ export function JournalEntryEditorScreen({
                 {error}
               </Text>
             ) : null}
+            {/*
+              The date moves out of the document and into the footer bar (#769):
+              when the entry happened is a property of the record, not a third
+              field in the middle of the writing.
+
+              The design pairs the word count with "saved just now". That is not
+              shipped, and deliberately: there is no autosave here - `handleSave`
+              is explicit and routes to the entry on success - so a permanent
+              "saved just now" would be a claim the screen cannot make.
+            */}
+            {/*
+              Wraps rather than crushes. At 320dp - or at any enlarged text
+              size - the date control's full medium date/time plus its calendar
+              icon and the word count cannot share one line, and neither side
+              truncates: the date would clip or collide with the icon. The
+              min-width forces the count onto its own line first, which is the
+              part that can afford to move.
+            */}
+            <View className="flex-row flex-wrap items-center gap-2">
+              <View className="min-w-[180px] flex-1">
+                <DateTimeField
+                  value={occurredAt}
+                  offsetMinutes={occurredOffsetMinutes}
+                  onChange={(next) => {
+                    setOccurredAt(next);
+                    // A known offset survives a time correction - the user is
+                    // restating when, not where. Only an entry with no captured
+                    // offset picks one up here, from the device now restating it.
+                    setOccurredOffsetMinutes(
+                      occurredOffsetMinutes ??
+                        occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
+                    );
+                  }}
+                  accessibilityLabel={t("editor.dateLabel")}
+                />
+              </View>
+              <Text variant="muted" className="text-[13px]">
+                {t("detail.words", { count: countWords(body) })}
+              </Text>
+            </View>
             <View className="flex-row gap-3">
               <View className="flex-1">
                 <Button onPress={goBack} variant="ghost">
@@ -190,31 +230,27 @@ export function JournalEntryEditorScreen({
           </View>
         }
       >
-        {/* No breadcrumb eyebrow above the heading (design `2b`): the bar above
-            carries the trail, so a ScreenHeader here would render it twice. */}
-        <View className="gap-2">
-          <Text variant="h1">{editMode ? t("editor.editTitle") : t("editor.createTitle")}</Text>
-          <Text variant="muted">
-            {editMode ? t("editor.editDescription") : t("editor.createDescription")}
-          </Text>
-        </View>
+        {/*
+          The page IS the sheet (#769). No h1, no description, no field boxes and
+          no labels above them: the 26px title input is the document's title, and
+          a bordered box around the body would put the writing inside a form on a
+          page. The trail rides the bar above, and each input keeps its
+          accessible name, so nothing is lost to a screen reader.
+        */}
+        <Input
+          accessibilityLabel={t("editor.titleLabel")}
+          className="h-auto border-0 bg-transparent px-0 py-0 text-[26px] font-bold leading-tight shadow-none dark:bg-transparent"
+          maxLength={JOURNAL_TITLE_MAX}
+          onChangeText={setTitle}
+          placeholder={t("editor.titlePlaceholder")}
+          value={title}
+        />
 
         <View className="gap-2">
-          <Label>{t("editor.titleLabel")}</Label>
-          <Input
-            accessibilityLabel={t("editor.titleLabel")}
-            maxLength={JOURNAL_TITLE_MAX}
-            onChangeText={setTitle}
-            placeholder={t("editor.titlePlaceholder")}
-            value={title}
-          />
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("editor.bodyLabel")}</Label>
           <Textarea
             ref={bodyInputRef}
             accessibilityLabel={t("editor.bodyLabel")}
+            className="min-h-[320px] border-0 bg-transparent px-0 py-0 text-base leading-[1.7] shadow-none dark:bg-transparent"
             maxLength={JOURNAL_BODY_MAX}
             onChangeText={(value) => {
               setBody(value);
@@ -229,25 +265,6 @@ export function JournalEntryEditorScreen({
               {bodyError}
             </Text>
           ) : null}
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("editor.dateLabel")}</Label>
-          <DateTimeField
-            value={occurredAt}
-            offsetMinutes={occurredOffsetMinutes}
-            onChange={(next) => {
-              setOccurredAt(next);
-              // A known offset survives a time correction - the user is restating
-              // when, not where. Only an entry with no captured offset picks one
-              // up here, from the device now doing the restating.
-              setOccurredOffsetMinutes(
-                occurredOffsetMinutes ??
-                  occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
-              );
-            }}
-            accessibilityLabel={t("editor.dateLabel")}
-          />
         </View>
       </MobileFormScreen>
     </View>

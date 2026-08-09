@@ -67,10 +67,43 @@ describe("JournalEntryEditorScreen", () => {
 
     renderWithProviders(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
 
-    expect(screen.getByText("New journal entry")).toBeTruthy();
+    // The page IS the sheet (#769): no h1, no description, no field labels -
+    // the 26px title input is the document's title. Each input keeps its
+    // accessible name, so nothing is lost to a screen reader.
+    expect(screen.queryByText("New journal entry")).toBeNull();
     expect(screen.getByLabelText("Title (optional)")).toBeTruthy();
     expect(screen.getByLabelText("Body")).toBeTruthy();
     expect(screen.getByText("Save")).toBeTruthy();
+  });
+
+  it("gives the title and body no boxes of their own", () => {
+    mockUseSaveJournalEntry.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useSaveJournalEntry>);
+
+    renderWithProviders(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
+
+    // A bordered box around the body would put the writing inside a form on a
+    // page, which is the shape this redesign exists to remove.
+    expect(screen.getByLabelText("Title (optional)").props.className).toContain("border-0");
+    expect(screen.getByLabelText("Body").props.className).toContain("border-0");
+  });
+
+  it("carries the date and a live word count in the footer bar", () => {
+    mockUseSaveJournalEntry.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useSaveJournalEntry>);
+
+    renderWithProviders(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
+
+    expect(screen.getByText("0 words")).toBeTruthy();
+    fireEvent.changeText(screen.getByLabelText("Body"), "one two three");
+    expect(screen.getByText("3 words")).toBeTruthy();
+    // When the entry happened is a property of the record, not a third field in
+    // the middle of the writing.
+    expect(screen.getByLabelText("Date")).toBeTruthy();
   });
 
   it("renders the top bar and heading in create mode on the room pour", () => {
@@ -107,7 +140,7 @@ describe("JournalEntryEditorScreen", () => {
       <JournalEntryEditorScreen fallbackHref="/tools/journal" mode="edit" entryId="j-1" />,
     );
 
-    expect(screen.getByText("Edit journal entry")).toBeTruthy();
+    expect(screen.getByDisplayValue("Quiet morning")).toBeTruthy();
     expectNeutralRoom(screen.getByTestId("journal-editor-room"));
   });
 
@@ -165,7 +198,6 @@ describe("JournalEntryEditorScreen", () => {
       <JournalEntryEditorScreen fallbackHref="/tools/journal" mode="edit" entryId="j-9" />,
     );
 
-    expect(screen.getByText("Edit journal entry")).toBeTruthy();
     expect(screen.getByDisplayValue("Yesterday")).toBeTruthy();
     expect(screen.getByDisplayValue("I rested.")).toBeTruthy();
     expect(screen.getByText("Update")).toBeTruthy();

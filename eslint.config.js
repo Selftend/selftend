@@ -304,7 +304,15 @@ module.exports = [
     // chosen over created_at because created_at is user-backdatable - and an
     // update carries no captured offset, so the viewer's frame is the only
     // frame it has. Entries themselves label from dayKey (journal-card).
-    files: ["src/features/journal/journal-list-screen.tsx"],
+    //
+    // The detail screen's footer joins the same two frames on purpose: "Written"
+    // reads the entry's captured dayKey, and only the "edited" segment beside it
+    // uses activity recency, because a revision is a server-set instant with no
+    // frame of its own (#769).
+    files: [
+      "src/features/journal/journal-list-screen.tsx",
+      "src/features/journal/journal-detail-screen.tsx",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
