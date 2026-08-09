@@ -644,8 +644,7 @@ export function classifyPushError(error: unknown): { expired: boolean; statusCod
 }
 
 // PostgREST caps a single response at ~1000 rows, so an unbounded .select() silently drops
-// everyone past the first page (#25). The cron pages through with .range() until a short
-// page returns.
+// everyone past the first page (#25). The cron drains a read a page at a time.
 export const PAGE_SIZE = 1000;
 
 export interface PagedResult {
@@ -656,48 +655,76 @@ export interface PagedResult {
 /**
  * The slice of a PostgREST builder the drain needs. Deliberately structural rather
  * than supabase-js's own types: the drain is called with four different row shapes
- * and only ever touches these two methods.
+ * and only ever touches these three methods.
  */
 export interface PagedQuery {
   order(column: string, options?: { ascending?: boolean }): PagedQuery;
-  range(from: number, to: number): PromiseLike<PagedResult>;
+  gt(column: string, value: unknown): PagedQuery;
+  limit(count: number): PromiseLike<PagedResult>;
 }
 
 /**
- * Drain a PostgREST read one page at a time.
+ * Drain a PostgREST read one page at a time, by **keyset** — never by offset.
  *
- * **`orderBy` is required, and the drain applies it — not the caller.** A paged read
- * with no `ORDER BY` has no ordering guarantee *across statements*: Postgres may return
- * a different physical order for each `.range()` call, and it does, because an `UPDATE`
- * writes a new heap tuple at the end of the table. One two-row update between pages is
- * enough to push two rows past a page boundary — they are never returned — while two
- * others are returned twice (#831).
+ * Offsets are not stable against a table being written to, and this cron reads four
+ * tables that are written to constantly. Three failure modes, all silent:
+ *
+ * - **No `ORDER BY` at all** (what shipped): Postgres may return a different physical
+ *   order per statement, and does, because an `UPDATE` writes a new heap tuple at the
+ *   end of the table. One two-row update between pages pushed two rows past a boundary
+ *   — never returned — while two others came back twice (#831).
+ * - **`ORDER BY` + `OFFSET`**: ordering fixes the heap-movement case but not the rest.
+ *   A row **deleted** before the boundary shifts an unseen row into the previous page's
+ *   span, skipping it; a row **inserted** before the boundary pushes one down, repeating
+ *   it. Randomly-ordered UUID keys mean an insert lands before the cursor about as often
+ *   as after.
+ * - **Keyset** (this): each page asks for the rows *after the last key seen*. Inserts
+ *   and deletes on either side of the cursor cannot shift the window, because there is
+ *   no window — only a position in a total order.
  *
  * For this cron a skipped row means that subscriber gets **no reminder for that run**,
- * silently: nothing is logged and nothing is retried. That is why the ordering is a
- * parameter of the drain rather than a `.order()` each call site must remember — the
- * four reads here were written over three separate changes and all four missed it.
+ * silently: nothing is logged and nothing is retried. A repeated row is worse than a
+ * wasted read — the row object carries its pre-send reminder stamps, so both copies pass
+ * the due check and both send. This is the strategy map #812 settled on (#817).
  *
- * `orderBy` must be a **total** order, so in practice the table's primary key. It is not
- * always `id`: `user_preferences` is keyed on `user_id` and has no `id` column at all,
- * so ordering it by `id` would fail the read outright rather than merely mis-order it.
+ * `orderBy` must be a **total** order, so in practice the table's primary key, and the
+ * query must select it. It is not always `id`: `user_preferences` is keyed on `user_id`
+ * and has no `id` column at all.
  *
  * `buildQuery` is re-invoked per page because a PostgREST builder is single-use; it must
- * return the query *before* `.order()`/`.range()`, which is what lets the drain own both.
+ * return the query *before* `.order()`/`.gt()`/`.limit()`, which is what lets the drain
+ * own the walk.
  */
 export async function fetchAllPaged(
   orderBy: string,
   buildQuery: () => PagedQuery,
 ): Promise<unknown[]> {
   const rows: unknown[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await buildQuery()
-      .order(orderBy)
-      .range(from, from + PAGE_SIZE - 1);
+  let cursor: unknown = undefined;
+
+  for (;;) {
+    let query = buildQuery().order(orderBy);
+    if (cursor !== undefined) query = query.gt(orderBy, cursor);
+
+    const { data, error } = await query.limit(PAGE_SIZE);
     if (error) throw error;
+
     const page = data ?? [];
     rows.push(...page);
     if (page.length < PAGE_SIZE) break;
+
+    const last = page[page.length - 1] as Record<string, unknown>;
+    const next = last?.[orderBy];
+    // A query that does not select its own ordering column would otherwise re-read
+    // page one forever. Fail loudly instead: a cron that never terminates is a worse
+    // outcome than one that errors, and the drain cannot recover on its own.
+    if (next === undefined || next === null) {
+      throw new Error(
+        `fetchAllPaged: ordering column "${orderBy}" is missing from the selected columns, so the keyset cursor cannot advance`,
+      );
+    }
+    cursor = next;
   }
+
   return rows;
 }

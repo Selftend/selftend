@@ -629,14 +629,14 @@ describe("fetchAllPaged", () => {
   }
 
   /**
-   * A table that answers `.range()` out of a mutable *heap order*, and only sorts
-   * when `.order()` was called - which is exactly what Postgres does. `moveIdsToEnd`
-   * simulates an `UPDATE` landing new heap tuples at the end of the table between
-   * two statements of the same drain.
+   * A table that answers reads out of a mutable *heap order*, and only sorts when
+   * `.order()` was called - which is what Postgres does. `mutate` runs after a given
+   * statement, standing in for a concurrent writer: an `UPDATE` (which appends a new
+   * heap tuple at the end), a `DELETE`, or an `INSERT`.
    */
   function makeFakeTable(
     rowCount: number,
-    perturbation?: { afterStatement: number; ids: number[] },
+    mutate?: { afterStatement: number; apply: (heap: HeapRow[]) => HeapRow[] },
   ) {
     let heap: HeapRow[] = Array.from({ length: rowCount }, (_, i) => ({
       id: i + 1,
@@ -646,90 +646,167 @@ describe("fetchAllPaged", () => {
     let builds = 0;
     const orderColumns: string[] = [];
 
-    function read(orderBy: string | null, from: number, to: number) {
+    function sorted(orderBy: string) {
+      return [...heap].sort((a, b) => {
+        const av = a[orderBy as keyof HeapRow];
+        const bv = b[orderBy as keyof HeapRow];
+        return typeof av === "number" && typeof bv === "number"
+          ? av - bv
+          : String(av).localeCompare(String(bv));
+      });
+    }
+
+    function afterRead() {
       statements += 1;
-      const source = orderBy
-        ? [...heap].sort((a, b) => {
-            const av = a[orderBy as keyof HeapRow];
-            const bv = b[orderBy as keyof HeapRow];
-            return typeof av === "number" && typeof bv === "number"
-              ? av - bv
-              : String(av).localeCompare(String(bv));
-          })
-        : heap;
+      if (mutate && mutate.afterStatement === statements) heap = mutate.apply(heap);
+    }
+
+    /** The keyset read the drain performs. */
+    function readKeyset(orderBy: string | null, gtValue: unknown, limit: number) {
+      const source = orderBy ? sorted(orderBy) : heap;
+      const filtered =
+        gtValue === undefined
+          ? source
+          : source.filter((row) => (row[orderBy as keyof HeapRow] as number) > (gtValue as number));
+      const page = filtered.slice(0, limit);
+      afterRead();
+      return page;
+    }
+
+    /** The offset read the drain USED to perform - kept only to pin what it costs. */
+    function readOffset(orderBy: string | null, from: number, to: number) {
+      const source = orderBy ? sorted(orderBy) : heap;
       const page = source.slice(from, to + 1);
-      if (perturbation && perturbation.afterStatement === statements) {
-        const moved = heap.filter((row) => perturbation.ids.includes(row.id));
-        heap = [...heap.filter((row) => !perturbation.ids.includes(row.id)), ...moved];
-      }
+      afterRead();
       return page;
     }
 
     function build(): PagedQuery {
       builds += 1;
       let orderBy: string | null = null;
+      let gtValue: unknown = undefined;
       const query: PagedQuery = {
         order(column: string) {
           orderBy = column;
           orderColumns.push(column);
           return query;
         },
-        range(from: number, to: number) {
-          return Promise.resolve({ data: read(orderBy, from, to), error: null });
+        gt(_column: string, value: unknown) {
+          gtValue = value;
+          return query;
+        },
+        limit(count: number) {
+          return Promise.resolve({ data: readKeyset(orderBy, gtValue, count), error: null });
         },
       };
       return query;
     }
 
+    /** Drain the fake the old way, for the control tests. */
+    function drainByOffset(orderBy: string | null) {
+      const collected: HeapRow[] = [];
+      for (let from = 0; ; from += PAGE_SIZE) {
+        const page = readOffset(orderBy, from, from + PAGE_SIZE - 1);
+        collected.push(...page);
+        if (page.length < PAGE_SIZE) break;
+      }
+      return collected;
+    }
+
     return {
       build,
+      drainByOffset,
       orderColumns,
-      readUnordered: (from: number, to: number) => read(null, from, to),
       get builds() {
         return builds;
       },
     };
   }
 
-  // Three pages, with a two-row UPDATE between the first and the second.
   const ROWS = PAGE_SIZE * 2 + 5;
-  const PERTURBATION = { afterStatement: 1, ids: [500, 501] };
+  // An UPDATE of two rows inside page 1: new heap tuples land at the end.
+  const UPDATE_TWO = {
+    afterStatement: 1,
+    apply: (heap: HeapRow[]) => {
+      const moved = heap.filter((row) => row.id === 500 || row.id === 501);
+      return [...heap.filter((row) => row.id !== 500 && row.id !== 501), ...moved];
+    },
+  };
+  // A DELETE before the page-1 boundary.
+  const DELETE_ONE = {
+    afterStatement: 1,
+    apply: (heap: HeapRow[]) => heap.filter((row) => row.id !== 500),
+  };
+  // An INSERT that sorts before everything already read - a random UUID lands before
+  // the cursor about as often as after.
+  const INSERT_ONE = {
+    afterStatement: 1,
+    apply: (heap: HeapRow[]) => [{ id: 0, user_id: "u0" }, ...heap],
+  };
 
-  it("reproduces #831: draining by offset alone skips rows an update moved past the boundary", async () => {
-    // The control. Without an ORDER BY the drain is not merely mis-ordered - it is
-    // INCOMPLETE, and this is the assertion that fails once the ordering is applied.
-    const table = makeFakeTable(ROWS, PERTURBATION);
-    const collected: HeapRow[] = [];
-    for (let from = 0; ; from += PAGE_SIZE) {
-      const page = table.readUnordered(from, from + PAGE_SIZE - 1);
-      collected.push(...page);
-      if (page.length < PAGE_SIZE) break;
-    }
-
+  it("reproduces #831: an unordered offset drain skips rows an update moved past the boundary", () => {
+    const table = makeFakeTable(ROWS, UPDATE_TWO);
+    const collected = table.drainByOffset(null);
     const seen = new Set(collected.map((row) => row.id));
+
     expect(seen.size).toBeLessThan(ROWS);
-    // The two rows that were pushed past the page-1 boundary are never returned;
-    // for the cron that is a subscriber who gets no reminder for that run.
+    // Never returned: for the cron, a subscriber with no reminder that run.
     expect(seen.has(PAGE_SIZE + 1)).toBe(false);
     expect(seen.has(PAGE_SIZE + 2)).toBe(false);
-    // ...and the two the UPDATE moved are returned twice: a double push.
+    // Returned twice: a double push, since the repeated row object still carries its
+    // pre-send reminder stamps.
     expect(collected.filter((row) => row.id === 500)).toHaveLength(2);
   });
 
-  it("returns every row exactly once despite the same mid-drain update", async () => {
-    const table = makeFakeTable(ROWS, PERTURBATION);
+  it("ordering alone does NOT make an offset drain safe - a delete still skips a row", () => {
+    // Why this landed as keyset rather than just `.order()`. Ordering fixes the
+    // heap-movement case above and nothing else.
+    const table = makeFakeTable(ROWS, DELETE_ONE);
+    const seen = new Set(table.drainByOffset("id").map((row) => row.id));
+
+    expect(seen.has(PAGE_SIZE + 1)).toBe(false);
+  });
+
+  it("ordering alone does NOT make an offset drain safe - an insert repeats a row", () => {
+    const table = makeFakeTable(ROWS, INSERT_ONE);
+    const collected = table.drainByOffset("id");
+
+    expect(collected.filter((row) => row.id === PAGE_SIZE)).toHaveLength(2);
+  });
+
+  it("keyset: returns every row exactly once despite a mid-drain update", async () => {
+    const table = makeFakeTable(ROWS, UPDATE_TWO);
     const rows = (await fetchAllPaged("id", table.build)) as HeapRow[];
 
     expect(rows).toHaveLength(ROWS);
-    expect(new Set(rows.map((row) => row.id)).size).toBe(ROWS);
-    expect(rows.map((row) => row.id)).toEqual(
-      Array.from({ length: ROWS }, (_, index) => index + 1),
-    );
+    expect(rows.map((row) => row.id)).toEqual(Array.from({ length: ROWS }, (_, i) => i + 1));
+  });
+
+  it("keyset: a delete before the cursor cannot skip a later row", async () => {
+    const table = makeFakeTable(ROWS, DELETE_ONE);
+    const rows = (await fetchAllPaged("id", table.build)) as HeapRow[];
+
+    // Row 500 was already read on page 1, before the delete - so it is present, and
+    // that is right. What matters is that removing it did not shift row 1001 out of
+    // the walk: under the offset drain that exact delete skipped it.
+    expect(rows.map((row) => row.id)).toEqual(Array.from({ length: ROWS }, (_, i) => i + 1));
+  });
+
+  it("keyset: an insert before the cursor cannot repeat a row", async () => {
+    const table = makeFakeTable(ROWS, INSERT_ONE);
+    const rows = (await fetchAllPaged("id", table.build)) as HeapRow[];
+
+    const ids = rows.map((row) => row.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    // Row 0 arrived behind the walk and is simply not seen this run - it will be next
+    // tick. Missing a row that did not exist when the walk passed is not the same
+    // failure as dropping one that did.
+    expect(ids).not.toContain(0);
   });
 
   it("orders by the column the caller names, on every page", async () => {
     // `user_preferences` is keyed on `user_id` and has no `id` column at all, so the
-    // ordering column cannot be hardcoded here.
+    // ordering column cannot be hardcoded.
     const table = makeFakeTable(ROWS);
     await fetchAllPaged("user_id", table.build);
 
@@ -751,11 +828,31 @@ describe("fetchAllPaged", () => {
     expect(table.builds).toBe(1);
   });
 
+  it("throws instead of looping forever when the ordering column is not selected", async () => {
+    // A query that does not select its own cursor column would re-read page one
+    // forever. A cron that never terminates is worse than one that errors.
+    const projected = (): PagedQuery => {
+      const query: PagedQuery = {
+        order: () => query,
+        gt: () => query,
+        limit: (count: number) =>
+          Promise.resolve({
+            data: Array.from({ length: count }, () => ({ user_id: "u1" })),
+            error: null,
+          }),
+      };
+      return query;
+    };
+
+    await expect(fetchAllPaged("id", projected)).rejects.toThrow(/ordering column "id" is missing/);
+  });
+
   it("throws the read error instead of returning a truncated drain", async () => {
     const failing = (): PagedQuery => {
       const query: PagedQuery = {
         order: () => query,
-        range: () => Promise.resolve({ data: null, error: new Error("read failed") }),
+        gt: () => query,
+        limit: () => Promise.resolve({ data: null, error: new Error("read failed") }),
       };
       return query;
     };
