@@ -108,6 +108,22 @@ describe("HabitLogNoteScreen", () => {
     });
   });
 
+  it("keeps the editor unusable until the day answers", () => {
+    // ⚠️ `undefined` is the query in flight, not a day with no note. An enabled
+    // field is one hydration is about to overwrite, and an enabled Save upserts
+    // the initial empty string over a note that is already stored - which only
+    // costs something now that a notes row can open a day that HAS one.
+    mockUseHabitLogs.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitLogNoteScreen habitId="h-1" dateOverride="2026-06-14" />);
+
+    expect(screen.getByLabelText("Add a note").props.editable).toBe(false);
+    fireEvent.press(screen.getByText("Save"));
+    expect(upsertMutateAsync).not.toHaveBeenCalled();
+  });
+
   it("hydrates the field from the saved note for the day", () => {
     mockUseHabitLogs.mockReturnValue({
       data: [habitLog({ note: "Ten pages before bed" })],

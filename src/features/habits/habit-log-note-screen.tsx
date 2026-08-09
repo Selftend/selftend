@@ -54,17 +54,28 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | undefined>();
 
-  // Hydrate the field from the saved note exactly once, after the logs query first
-  // settles (render-time adjustment). Re-running on later refetches would overwrite
-  // the user's in-progress text.
+  /**
+   * ⚠️ The editor is not usable until the day has answered.
+   *
+   * Hydration is a render-time adjustment that runs once the query settles, so
+   * an enabled field before that is a field the app is about to overwrite -
+   * and an enabled Save is worse: it upserts the initial empty string over a
+   * note that is already stored. Both were unreachable in practice while the
+   * day was always today, where the editor is a blank field either way; a row
+   * in habit detail's notes section opens a day that HAS a note, which is the
+   * case where losing it costs something.
+   */
+  const hydrating = logs === undefined;
+
+  // Exactly once, so a later refetch cannot overwrite in-progress text.
   const [hydrated, setHydrated] = useState(false);
-  if (!hydrated && logs !== undefined) {
+  if (!hydrated && !hydrating) {
     setHydrated(true);
     if (existing) setNote(existing.note);
   }
 
   async function handleSave() {
-    if (!user) return;
+    if (!user || hydrating) return;
     setError(undefined);
     try {
       await upsertNote.mutateAsync({ habitId, loggedOn: dateStr, note });
@@ -90,7 +101,7 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
               </Button>
             </View>
             <View className="flex-1">
-              <Button disabled={saving || !user} onPress={() => void handleSave()}>
+              <Button disabled={saving || !user || hydrating} onPress={() => void handleSave()}>
                 {saving ? <ActivityIndicator color="#ffffff" /> : null}
                 <Text>{saving ? t("cta.saving") : t("cta.save")}</Text>
               </Button>
@@ -119,6 +130,9 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
           <Label>{t("log.title")}</Label>
           <Textarea
             accessibilityLabel={t("log.title")}
+            // Typing before the day answers would be silently replaced by
+            // hydration; the field dims itself while `editable` is false.
+            editable={!hydrating}
             maxLength={HABIT_NOTE_MAX}
             onChangeText={setNote}
             placeholder={t("log.placeholder")}
