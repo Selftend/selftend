@@ -35,7 +35,8 @@ const RECENT_ROWS = 5;
 
 interface PatternRow {
   key: string;
-  routeParam: string | null;
+  /** The `?pattern=` value: a built-in's slug, or a custom pattern's row id. */
+  routeParam: string;
   name: string;
   description: string | null;
   phases: BreathingPhase[];
@@ -195,7 +196,7 @@ export default function BreathingScreen() {
                   onPress={() =>
                     router.push({
                       pathname: "/tools/breathing/session",
-                      params: { pattern: p.routeParam! },
+                      params: { pattern: p.routeParam },
                     })
                   }
                   className="flex-row items-center gap-4 border-t border-border px-2.5 py-4 active:bg-accent/40"
