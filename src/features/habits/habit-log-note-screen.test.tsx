@@ -86,7 +86,11 @@ describe("HabitLogNoteScreen", () => {
     renderWithProviders(<HabitLogNoteScreen habitId="h-1" />);
 
     expect(screen.getByRole("heading", { name: "Add a note" })).toBeTruthy();
-    expect(screen.getByText(`Read · ${currentDateKey()}`)).toBeTruthy();
+    // A translated day, not the raw `YYYY-MM-DD` key this used to print in both
+    // locales (#726) - now reachable for past days, since habit detail's notes
+    // section is the first thing in the app to pass `?date=`.
+    expect(screen.queryByText(`Read · ${currentDateKey()}`)).toBeNull();
+    expect(screen.getByText("Read · Today")).toBeTruthy();
     // The wrapper carries the act room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.getByTestId("habit-log-note-room"));
   });

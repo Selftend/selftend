@@ -113,16 +113,11 @@
   },
   "detail": {
     "notFound": "Не намерихме този навик.",
-    "calendarTitle": "Скорошни отбелязвания",
     "calendarEmpty": "Няма отбелязвания. Натисни ден, за да отбележиш.",
-    "detailsTitle": "Подробности",
-    "scheduleTitle": "График",
     "scheduleEveryDay": "Всеки ден",
     "scheduleWeekdays": "Делнични дни",
-    "kindTitle": "Тип",
     "kindBuild": "Изграждане",
     "kindBreak": "Премахване",
-    "strategiesTitle": "Стратегии",
     "strategyCue": "Сигнал",
     "strategyStack": "Стек на навика",
     "strategyTwoMinute": "Двуминутна версия",
@@ -132,18 +127,28 @@
     "strategyDifficult": "Триене",
     "strategyUnattractive": "Преосмислено желание",
     "strategyUnsatisfying": "Добавена цена",
-    "notesTitle": "Скорошни бележки",
+    "notesTitle": "Бележки към отбелязвания",
     "notesEmpty": "Бележките, които запазиш с отбелязване, ще се появят тук.",
     "archivedBadge": "Архивиран",
     "archiveConfirmTitle": "Архивирай навика?",
     "archiveConfirmBody": "Архивираните навици напускат списъка за днес, но запазват историята си.",
-    "deleteConfirmTitle": "Изтрий навика?"
+    "deleteConfirmTitle": "Изтрий навика?",
+    "gridTitle": "Последните 12 седмици",
+    "gridCount_one": "{{count}} отбелязване",
+    "gridCount_other": "{{count}} отбелязвания",
+    "started": "започнат на {{date}}",
+    "identityLabel": "Идентичност",
+    "tickToday": "Отбележи днес",
+    "tickedToday": "Отбелязано днес",
+    "moreActions": "Още действия",
+    "editNote": "Редактирай бележката за {{date}}"
   },
   "log": {
     "title": "Добави бележка",
     "subtitle": "Кратко размишление за отбелязването. Лично за акаунта ти - показва се само на теб в приложението.",
     "placeholder": "Как мина днес?",
-    "saveError": "Не успяхме да запазим бележката. Опитай отново."
+    "saveError": "Не успяхме да запазим бележката. Опитай отново.",
+    "forDay": "{{habit}} · {{date}}"
   },
   "history": {
     "title": "История",

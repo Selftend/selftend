@@ -9,6 +9,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { formatHabitHistoryDay } from "@/src/features/habits/history-groups";
 import { useHabit, useHabitLogs, useUpsertHabitLogNote } from "@/src/features/habits/queries";
 import { HABIT_NOTE_MAX } from "@/src/features/habits/schemas";
 import { currentDateKey } from "@/src/features/habits/scheduling";
@@ -21,7 +22,7 @@ interface HabitLogNoteScreenProps {
 }
 
 export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreenProps) {
-  const { t } = useTranslation("habits");
+  const { t, i18n } = useTranslation("habits");
   const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -84,8 +85,15 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
           <ScreenHeader title={t("log.title")} />
           <Text variant="muted">{t("log.subtitle")}</Text>
           {habit ? (
+            // ⚠️ This printed the raw `2026-08-08` key in both locales - the
+            // third site of #726, and the one the redesign makes reachable:
+            // nothing in the UI passed `?date=` before habit detail's notes
+            // section did, so this line always said "today" in ISO.
             <Text variant="muted" className="text-xs">
-              {habit.name} · {dateStr}
+              {t("log.forDay", {
+                habit: habit.name,
+                date: formatHabitHistoryDay(dateStr, t, i18n.language),
+              })}
             </Text>
           ) : null}
         </View>

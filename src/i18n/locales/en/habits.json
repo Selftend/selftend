@@ -113,16 +113,11 @@
   },
   "detail": {
     "notFound": "We couldn't find that habit.",
-    "calendarTitle": "Recent ticks",
     "calendarEmpty": "No ticks recorded yet. Tap any day to tick it.",
-    "detailsTitle": "Details",
-    "scheduleTitle": "Schedule",
     "scheduleEveryDay": "Every day",
     "scheduleWeekdays": "Weekdays",
-    "kindTitle": "Type",
     "kindBuild": "Build",
     "kindBreak": "Break",
-    "strategiesTitle": "Strategies",
     "strategyCue": "Cue",
     "strategyStack": "Habit stack",
     "strategyTwoMinute": "Two-minute version",
@@ -132,18 +127,28 @@
     "strategyDifficult": "Friction",
     "strategyUnattractive": "Reframed craving",
     "strategyUnsatisfying": "Added cost",
-    "notesTitle": "Recent notes",
+    "notesTitle": "Notes with ticks",
     "notesEmpty": "Notes you save with a tick will appear here.",
     "archivedBadge": "Archived",
     "archiveConfirmTitle": "Archive habit?",
     "archiveConfirmBody": "Archived habits leave today's list but keep their ticks for history.",
-    "deleteConfirmTitle": "Delete habit?"
+    "deleteConfirmTitle": "Delete habit?",
+    "gridTitle": "Last 12 weeks",
+    "gridCount_one": "{{count}} tick",
+    "gridCount_other": "{{count}} ticks",
+    "started": "started {{date}}",
+    "identityLabel": "Identity",
+    "tickToday": "Tick today",
+    "tickedToday": "Ticked today",
+    "moreActions": "More actions",
+    "editNote": "Edit the note for {{date}}"
   },
   "log": {
     "title": "Add a note",
     "subtitle": "Optional reflection for the day's tick. Private to your account - shown only to you in the app.",
     "placeholder": "What was this like today?",
-    "saveError": "Couldn't save the note. Try again."
+    "saveError": "Couldn't save the note. Try again.",
+    "forDay": "{{habit}} · {{date}}"
   },
   "history": {
     "title": "History",
