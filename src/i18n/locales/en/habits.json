@@ -25,8 +25,7 @@
     "title": "Habits",
     "subtitle": "Small habits, repeated. Tap to tick - no shame.",
     "identityBannerPrefix": "You're becoming someone who",
-    "todayHeading": "Today",
-    "todayEmpty": "No habits scheduled for today.",
+    "habitsHeading": "Your habits",
     "noHabitsTitle": "Start with one two-minute habit",
     "noHabitsBody": "Start with a version that takes under two minutes. Pick something small - the goal is to cast a vote for the kind of person you want to become.",
     "recentActivity": "Recent activity",
@@ -36,10 +35,15 @@
     "neverMissTwiceBody": "You skipped yesterday. Today is a great day to tick this once - one missed day is data, not failure."
   },
   "list": {
-    "tickedToday": "Ticked today",
-    "tapToTick": "Tap to tick today",
-    "tapToAvoid": "Tap to mark you avoided this today",
-    "openDetail": "Open habit details"
+    "tickedToday": "{{habit}}: ticked today",
+    "tapToTick": "{{habit}}: tap to tick today",
+    "tapToAvoid": "{{habit}}: tap to mark you avoided this today",
+    "openNamedDetail": "{{habit}}: open habit details",
+    "weekA11y_one": "Last 7 days: ticked on {{count}} day",
+    "weekA11y_other": "Last 7 days: ticked on {{count}} days",
+    "untickTitle": "Remove this tick?",
+    "untickBody": "You saved a note with this day. Removing the tick deletes the note too.",
+    "untickConfirm": "Remove tick and note"
   },
   "form": {
     "newTitle": "New habit",

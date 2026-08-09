@@ -74,8 +74,15 @@ describe("useHabitLogs - queryKey scope derivation", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // Assert the exact computed key exists in the shared client's cache
-    const expectedKey = ["habits", "logs", "u1", "habit:h1:2026-05-01:10"];
+    // Assert the exact computed key exists in the shared client's cache. The
+    // scope is a structured object, not a formatted string, so an optimistic
+    // writer can read the window off the key rather than parse it back (#759).
+    const expectedKey = [
+      "habits",
+      "logs",
+      "u1",
+      { habitId: "h1", sinceDate: "2026-05-01", limit: 10 },
+    ];
     expect(client.getQueryState(expectedKey)).toBeDefined();
   });
 
@@ -89,7 +96,7 @@ describe("useHabitLogs - queryKey scope derivation", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     // Assert the exact computed key exists in the shared client's cache
-    const expectedKey = ["habits", "logs", "u1", "all:2026-05-01:5"];
+    const expectedKey = ["habits", "logs", "u1", { sinceDate: "2026-05-01", limit: 5 }];
     expect(client.getQueryState(expectedKey)).toBeDefined();
   });
 
@@ -108,8 +115,8 @@ describe("useHabitLogs - queryKey scope derivation", () => {
     await waitFor(() => expect(r1.current.isSuccess).toBe(true));
     await waitFor(() => expect(r2.current.isSuccess).toBe(true));
 
-    const habitScopedKey = ["habits", "logs", "u1", "habit:h1:2026-05-01:"];
-    const allScopedKey = ["habits", "logs", "u1", "all:2026-05-01:"];
+    const habitScopedKey = ["habits", "logs", "u1", { habitId: "h1", sinceDate: "2026-05-01" }];
+    const allScopedKey = ["habits", "logs", "u1", { sinceDate: "2026-05-01" }];
 
     // Both keys must exist and be independent entries in the same cache
     expect(client.getQueryState(habitScopedKey)).toBeDefined();
