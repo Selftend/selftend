@@ -69,8 +69,17 @@ export async function listMindfulnessSessionsByNames(
 }
 
 /**
- * One page of sessions of the given exercise types, newest first - the all-history
- * screen's read (#696).
+ * One page of every session that is NOT one of the given exercise types, newest first -
+ * the breathing all-history screen's read (#696).
+ *
+ * ⚠️ By EXCLUSION, deliberately, where the recent-window read above works by inclusion.
+ * Breathing is an open set: a custom pattern's sessions carry the pattern's row id as
+ * their name, and **deleting the pattern does not delete its sessions**. An inclusive
+ * filter built from the patterns that still exist therefore drops the history of every
+ * deleted one - silently, from the screen whose entire job is being the complete record,
+ * and while the header's count and minutes (which count by exclusion) still include them.
+ * The two would disagree, and the screen would be the one lying. `breathing.deletedExercise`
+ * already exists to name those rows, which is the tell that they are meant to show.
  *
  * ⚠️ Offset paging, matching the mood and habits all-history screens rather than
  * diverging from them. It shares their known flaw (#797): an insert landing between two
@@ -80,18 +89,19 @@ export async function listMindfulnessSessionsByNames(
  * `completed_at` alone is not a total order. Moving the whole pattern to keyset paging is
  * #797's call, and it should move all three screens together.
  */
-export async function listMindfulnessSessionsByNamesPage(
+export async function listMindfulnessSessionsExcludingNamesPage(
   userId: string,
-  exerciseNames: string[],
+  excludedNames: string[],
   limit: number,
   offset: number,
 ) {
   const client = requireSupabase();
+  const quoted = excludedNames.map((name) => `"${name}"`).join(",");
   const { data, error } = await client
     .from("mindfulness_sessions")
     .select("*")
     .eq("user_id", userId)
-    .in("exercise_name", exerciseNames)
+    .not("exercise_name", "in", `(${quoted})`)
     .order("completed_at", { ascending: false })
     .order("id", { ascending: false })
     .range(offset, offset + limit - 1);

@@ -114,6 +114,24 @@ describe("New breathing pattern (4d)", () => {
       expect(mockSave.mock.calls[0][0].input.color).toBe(BREATHING_EXERCISE_COLOR_CHOICES[2]);
     });
 
+    it("keeps an accent the user picked before the pattern list arrived", async () => {
+      // The form is interactive while the list is in flight. A tap that lands
+      // first must win: auto-assignment is a convenience, not an override.
+      mockList = undefined as unknown as unknown[];
+      const view = renderWithProviders(<BreathingExerciseEditorScreen exerciseId={null} />);
+      fireEvent.press(accentRadios()[4]);
+      const chosen = BREATHING_EXERCISE_COLOR_CHOICES[4];
+
+      // The list resolves afterwards, and would otherwise seed over the choice.
+      mockList = [];
+      view.rerender(<BreathingExerciseEditorScreen exerciseId={null} />);
+
+      fireEvent.changeText(screen.getByLabelText("Name"), "Mine");
+      fireEvent.press(screen.getByText("Save"));
+      await waitFor(() => expect(mockSave).toHaveBeenCalled());
+      expect(mockSave.mock.calls[0][0].input.color).toBe(chosen);
+    });
+
     it("grandfathers a retired colour as a seventh swatch, already selected", async () => {
       // `rose` is a legal stored value the picker no longer offers. Editing must
       // show it rather than silently reassign it on the next save.
@@ -191,6 +209,29 @@ describe("New breathing pattern (4d)", () => {
       // `−` still walks it back down.
       fireEvent.press(screen.getByLabelText("Inhale −"));
       expect(screen.getByText("19.5s")).toBeTruthy();
+    });
+
+    it("keeps each phase's own identity in the preview", () => {
+      // PhaseTimingBar weights a segment by its label - inhale and exhale carry
+      // the pattern's colour, holds are neutral. Collapsing exhale to "hold"
+      // would paint the authoring screen's exhale as a hold.
+      mockList = [
+        exercise({ inhaleSeconds: 4, holdInSeconds: 2, exhaleSeconds: 6, holdOutSeconds: 1 }),
+      ];
+      renderWithProviders(<BreathingExerciseEditorScreen exerciseId="e-1" />);
+
+      const segments = screen
+        .getByTestId("breathing-timing-bar")
+        .props.children.filter(Boolean) as { props: { style: { backgroundColor?: string } } }[];
+      expect(segments).toHaveLength(4);
+
+      const bg = (i: number) => segments[i].props.style.backgroundColor;
+      // inhale and exhale are two DIFFERENT hue stops; both holds are neither.
+      expect(bg(0)).toBeDefined();
+      expect(bg(2)).toBeDefined();
+      expect(bg(0)).not.toBe(bg(2));
+      expect(bg(1)).toBeUndefined();
+      expect(bg(3)).toBeUndefined();
     });
 
     it("populates all four phases from a preset, dropping zeros from its label", () => {

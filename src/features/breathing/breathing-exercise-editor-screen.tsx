@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -10,6 +10,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { LoadingState } from "@/src/components/app/screen-state";
+import type { BreathingPhase, PhaseLabel } from "@/src/constants/breathing";
 import { PhaseTimingBar } from "@/src/features/breathing/phase-timing-bar";
 import { SessionLengthButtons } from "@/src/features/breathing/session-length-buttons";
 import { cycleSeconds, formatClock, totalSeconds } from "@/src/features/breathing/cycle-math";
@@ -48,11 +49,16 @@ import { useSingleFlight } from "@/src/lib/use-single-flight";
 
 type PhaseKey = "inhaleSeconds" | "holdInSeconds" | "exhaleSeconds" | "holdOutSeconds";
 
-const PHASE_FIELDS: { key: PhaseKey; labelKey: string }[] = [
-  { key: "inhaleSeconds", labelKey: "breathing.phases.inhale" },
-  { key: "holdInSeconds", labelKey: "breathing.phases.hold" },
-  { key: "exhaleSeconds", labelKey: "breathing.phases.exhale" },
-  { key: "holdOutSeconds", labelKey: "breathing.phases.holdOut" },
+// `label` is not decoration: PhaseTimingBar reads it to decide a segment's weight -
+// inhale and exhale carry the pattern's colour, the two holds are neutral. Collapsing
+// exhale to "hold" here would paint the preview's exhale as a hold while the saved
+// durations stayed correct, so the one screen for authoring a pattern would be the one
+// screen that draws it wrong.
+const PHASE_FIELDS: { key: PhaseKey; label: PhaseLabel; labelKey: string }[] = [
+  { key: "inhaleSeconds", label: "inhale", labelKey: "breathing.phases.inhale" },
+  { key: "holdInSeconds", label: "hold", labelKey: "breathing.phases.hold" },
+  { key: "exhaleSeconds", label: "exhale", labelKey: "breathing.phases.exhale" },
+  { key: "holdOutSeconds", label: "holdOut", labelKey: "breathing.phases.holdOut" },
 ];
 
 function toInput(e: BreathingExercise): BreathingExerciseInput {
@@ -67,11 +73,8 @@ function toInput(e: BreathingExercise): BreathingExerciseInput {
   };
 }
 
-function phasesOf(input: BreathingExerciseInput) {
-  return PHASE_FIELDS.map((f) => ({
-    label: f.key === "inhaleSeconds" ? ("inhale" as const) : ("hold" as const),
-    durationSeconds: input[f.key],
-  }));
+function phasesOf(input: BreathingExerciseInput): BreathingPhase[] {
+  return PHASE_FIELDS.map((f) => ({ label: f.label, durationSeconds: input[f.key] }));
 }
 
 export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: string | null }) {
@@ -111,12 +114,28 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
   // Seed a new pattern's colour with the first one the user isn't already
   // using, ONCE, when the list arrives - and never in edit mode, and never
   // after the user has touched the picker themselves.
+  //
+  // ⚠️ The form stays interactive while the list is in flight, so "the user got
+  // there first" is a real ordering, not a theoretical one: a cold cache plus a
+  // quick tap on a swatch would otherwise be overwritten by this effect when the
+  // query resolved, and the pattern would save in a colour the user never chose.
+  // `chooseColor` closes that by retiring the seed on first interaction.
   const seededColorRef = useRef(false);
   useEffect(() => {
     if (editMode || seededColorRef.current || !cachedList) return;
     seededColorRef.current = true;
     setInput((prev) => ({ ...prev, color: nextUnusedBreathingColor(cachedList) }));
   }, [cachedList, editMode]);
+
+  // useCallback, not a plain function: the swatch map references this during
+  // render, and react-hooks/refs cannot tell that it only ever runs from an
+  // `onPress`. Declaring it as a hook is what tells the rule the ref access
+  // happens outside render. (A boolean state flag instead trips
+  // react-hooks/set-state-in-effect on the seeding effect above.)
+  const chooseColor = useCallback((color: BreathingExerciseColor) => {
+    seededColorRef.current = true;
+    setInput((prev) => ({ ...prev, color }));
+  }, []);
 
   function update<K extends keyof BreathingExerciseInput>(
     key: K,
@@ -135,14 +154,6 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
       return { ...prev, [key]: next };
     });
   }
-
-  const scheme = useColorSchemeName();
-  const swatches = breathingColorChoicesFor(input.color);
-  const colorRoving = useRovingFocus({
-    count: swatches.length,
-    activeIndex: Math.max(0, swatches.indexOf(input.color)),
-    onActivate: (index) => update("color", swatches[index]),
-  });
 
   const phases = phasesOf(input);
   const secondsPerCycle = cycleSeconds(phases);
@@ -339,47 +350,7 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
           <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
             {t("breathing.builder.accentLabel")}
           </Text>
-          <View
-            accessibilityLabel={t("breathing.builder.accentLabel")}
-            accessibilityRole="radiogroup"
-            className="flex-1 flex-row gap-2"
-            role="radiogroup"
-            testID="breathing-accent-picker"
-          >
-            {swatches.map((color, index) => {
-              const chip = breathingChipColors(color, scheme);
-              const active = input.color === color;
-              const onPress = () => update("color", color as BreathingExerciseColor);
-              return (
-                <Pressable
-                  key={color}
-                  accessibilityRole="radio"
-                  aria-checked={active}
-                  accessibilityLabel={t(`breathing.builder.colors.${color}` as const)}
-                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={onPress}
-                  // flex-1 across the row: six swatches over a 328dp column is
-                  // 48dp each, clear of the 44dp floor without hitSlop; a
-                  // seventh grandfathered one is 40dp, which hitSlop carries.
-                  className="h-11 flex-1 items-center justify-center rounded-full"
-                  role="radio"
-                  {...colorRoving.getItemProps(index, onPress)}
-                >
-                  <View
-                    className="size-6 rounded-full"
-                    style={{
-                      backgroundColor: chip.fill,
-                      borderWidth: 2,
-                      // The selected ring is `ink`, not the raw hue: it has to
-                      // read as a state against the surface, and ink is the one
-                      // stop held to a contrast floor.
-                      borderColor: active ? chip.ink : chip.border,
-                    }}
-                  />
-                </Pressable>
-              );
-            })}
-          </View>
+          <AccentPicker selected={input.color} onSelect={chooseColor} />
         </View>
 
         {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
@@ -390,6 +361,76 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
           </Button>
         ) : null}
       </MobileFormScreen>
+    </View>
+  );
+}
+
+/**
+ * The accent swatch row.
+ *
+ * Its own component so the parent's `chooseColor` - which retires the
+ * auto-assign seed by writing a ref - is never *referenced* inside a render-time
+ * `.map()`. react-hooks/refs cannot tell that such a reference is only ever
+ * invoked from an `onPress`, and flags the whole map; passing the callback
+ * across a component boundary as a prop removes the question.
+ */
+function AccentPicker({
+  selected,
+  onSelect,
+}: {
+  selected: BreathingExerciseColor;
+  onSelect: (color: BreathingExerciseColor) => void;
+}) {
+  const { t } = useTranslation("cbt");
+  const scheme = useColorSchemeName();
+  const swatches = breathingColorChoicesFor(selected);
+  const roving = useRovingFocus({
+    count: swatches.length,
+    activeIndex: Math.max(0, swatches.indexOf(selected)),
+    onActivate: (index) => onSelect(swatches[index]),
+  });
+
+  return (
+    <View
+      accessibilityLabel={t("breathing.builder.accentLabel")}
+      accessibilityRole="radiogroup"
+      className="flex-1 flex-row gap-2"
+      role="radiogroup"
+      testID="breathing-accent-picker"
+    >
+      {swatches.map((color, index) => {
+        const chip = breathingChipColors(color, scheme);
+        const active = selected === color;
+        const onPress = () => onSelect(color);
+        return (
+          <Pressable
+            key={color}
+            accessibilityRole="radio"
+            aria-checked={active}
+            accessibilityLabel={t(`breathing.builder.colors.${color}` as const)}
+            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+            onPress={onPress}
+            // flex-1 across the row: six swatches over a 328dp column is 48dp
+            // each, clear of the 44dp floor without hitSlop; a seventh
+            // grandfathered one is 40dp, which hitSlop carries.
+            className="h-11 flex-1 items-center justify-center rounded-full"
+            role="radio"
+            {...roving.getItemProps(index, onPress)}
+          >
+            <View
+              className="size-6 rounded-full"
+              style={{
+                backgroundColor: chip.fill,
+                borderWidth: 2,
+                // The selected ring is `ink`, not the raw hue: it has to read as
+                // a state against the surface, and ink is the one stop held to a
+                // contrast floor.
+                borderColor: active ? chip.ink : chip.border,
+              }}
+            />
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

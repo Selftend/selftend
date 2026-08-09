@@ -3,7 +3,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   countMindfulnessSessionsExcludingNames,
   listMindfulnessSessionsByNames,
-  listMindfulnessSessionsByNamesPage,
+  listMindfulnessSessionsExcludingNamesPage,
   saveMindfulnessSession,
   sumMindfulnessMinutesExcludingNames,
 } from "@/src/features/mindfulness/repository";
@@ -62,18 +62,25 @@ export function useBreathingTotalMinutes(userId: string | null) {
 /**
  * Every breathing session, paged to the end (#696) - the all-sessions screen's read.
  *
- * `customIds` widens the name filter to the user's own patterns, exactly as
- * `useBreathingSessions` does, and rides the query key so a pattern created mid-session
- * refetches rather than serving a list that silently excludes it.
+ * Counts by EXCLUSION, like `useBreathingSessionCount` and `useBreathingTotalMinutes`, and
+ * unlike the recent-window read above. Breathing is an open set, and a deleted custom
+ * pattern leaves its sessions behind: an inclusive filter over the patterns that still
+ * exist would drop those rows from the one screen that promises the whole record, while
+ * the header totals still counted them. It also means the query needs no `customIds`, so
+ * it can't serve a stale list while that second query is in flight.
  */
-export function useBreathingSessionPages(userId: string | null, customIds: string[] = []) {
-  const names = [...breathingSlugs, ...customIds];
+export function useBreathingSessionPages(userId: string | null) {
   return useInfiniteQuery({
     queryKey: userId
-      ? [...breathingKeys.historyPages(userId), customIds.join(",")]
+      ? breathingKeys.historyPages(userId)
       : ["breathing", "historyPages", "anonymous"],
     queryFn: ({ pageParam }) =>
-      listMindfulnessSessionsByNamesPage(userId!, names, BREATHING_HISTORY_PAGE_SIZE, pageParam),
+      listMindfulnessSessionsExcludingNamesPage(
+        userId!,
+        [...groundingSlugs],
+        BREATHING_HISTORY_PAGE_SIZE,
+        pageParam,
+      ),
     initialPageParam: 0,
     // A short page is the end of the data. A full one may or may not be, so ask again:
     // one empty round trip at the exact boundary beats stopping early and calling a

@@ -85,6 +85,24 @@ describe("Breathing all-sessions screen", () => {
     expect(screen.getAllByText("Box breathing")).toHaveLength(3);
   });
 
+  it("names a session whose custom pattern has since been deleted", () => {
+    // These rows keep the deleted pattern's uuid in `exercise_name`, so the name
+    // lookup misses and must fall back rather than render a raw uuid or blank.
+    // That they REACH the screen at all is the query's job, guarded in
+    // queries.test.tsx ("pages by excluding grounding") - this one only covers
+    // what the row does once it arrives.
+    pages({
+      data: {
+        pages: [[session({ id: "gone", exerciseName: "6f1c1b7e-0000-4000-8000-000000000000" })]],
+        pageParams: [0],
+      },
+    });
+    renderWithProviders(<BreathingHistoryScreen />);
+
+    expect(screen.getByText("Custom exercise")).toBeTruthy();
+    expect(screen.getByText("6 cycles")).toBeTruthy();
+  });
+
   it("says nothing about emptiness while the first page is in flight", () => {
     // "No sessions yet" is a claim about the account. Making it during the first
     // fetch tells a returning user their history is gone.

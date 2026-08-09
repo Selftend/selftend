@@ -34,10 +34,12 @@ export default function BreathingHistoryScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
 
+  // The pattern list is only for naming rows; the page query filters by exclusion, so a
+  // session whose pattern has since been deleted still appears - named by the
+  // `deletedExercise` fallback below rather than vanishing from "all sessions".
   const { data: customExercises } = useBreathingExercises(userId);
-  const customIds = (customExercises ?? []).map((e) => e.id);
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useBreathingSessionPages(userId, customIds);
+    useBreathingSessionPages(userId);
 
   const sessions = data?.pages.flat() ?? [];
 
