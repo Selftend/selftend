@@ -54,7 +54,7 @@ describe("MeditationStageDetailScreen", () => {
     expect(screen.getByRole("heading", { name: "Mastery" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Reflection prompts at this stage" })).toBeTruthy();
     // Not the current stage (1), so the switch control is offered.
-    expect(screen.getByText("Set this as my current stage")).toBeTruthy();
+    expect(screen.getByText("Set as my current stage")).toBeTruthy();
   });
 
   it("renders the iris room pour on its root", () => {

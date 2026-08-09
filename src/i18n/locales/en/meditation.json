@@ -51,9 +51,11 @@
     },
     "stages": {
       "title": "The ten stages",
-      "subtitle": "Ten stages divided by four milestones.",
+      "subtitle": "Four milestones. A single sit can move between stages.",
       "currentStageBadge": "Where you are",
-      "switchTo": "Set this as my current stage",
+      "switchTo": "Set as my current stage",
+      "alreadyCurrent": "This is your current stage.",
+      "moreOnStage": "Skills and reflection prompts",
       "phaseNovice": "Novice - Stages 1 to 3",
       "phaseSkilled": "Skilled - Stages 4 to 6",
       "phaseTransition": "Transition - Stage 7",
