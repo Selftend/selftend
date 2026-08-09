@@ -59,17 +59,27 @@ pgrst, 'reload schema';`);
   items #15/#16 marked them so, and only `app.encrypt_text` is genuinely VOLATILE
   (`pgp_sym_encrypt` salts each call). Because they are stable the planner both
   flattens the view (`is_simple_subquery()`) and prunes unused output expressions
-  (`remove_unused_subquery_outputs()`), so **a narrow projection costs nothing and
-  a `LIMIT` is pushed below the decrypt**. Measured on 1,460 journal entries and
+  (`remove_unused_subquery_outputs()`), so **a projection that names no encrypted
+  column costs nothing, and a `LIMIT` is pushed below the decrypt when the ordering
+  and filtering are themselves plaintext**. Both conditions matter and neither is
+  automatic: a projection that _does_ name an encrypted column still pays one
+  decrypt per returned row per such column, and a query that orders or filters on a
+  decrypted value must decrypt every candidate row before the `LIMIT` can apply — a
+  cap does not save it. Measured on 1,460 journal entries and
   1,460 mood logs (local PG 17.6, decrypt calls counted via
   `pg_stat_user_functions` — a `SECURITY DEFINER` function is never inlined, so
   every call is countable):
 
-  | read                                            | decrypt calls           | time    |
-  | ----------------------------------------------- | ----------------------- | ------- |
-  | `head` count on `journal_entries`               | **0** (Index Only Scan) | 0.60 ms |
-  | 3 plaintext cols from `mood_logs` (5 encrypted) | **0**                   | 1.28 ms |
-  | `select * … limit 50` from `journal_entries`    | 100 = 50 rows × 2 cols  | 33.9 ms |
+  | read                                                                              | decrypt calls           | time    |
+  | --------------------------------------------------------------------------------- | ----------------------- | ------- |
+  | `head` count on `journal_entries`                                                 | **0** (Index Only Scan) | 0.60 ms |
+  | 3 plaintext cols from `mood_logs` (5 encrypted)                                   | **0**                   | 1.28 ms |
+  | `select * … limit 50` from `journal_entries` (ordered on plaintext `occurred_at`) | 100 = 50 rows × 2 cols  | 33.9 ms |
+
+  The third row is the shape to reason from when plaintext _is_ wanted: cost is
+  `rows returned × encrypted columns selected`, not rows matched — but only because
+  `occurred_at` is plaintext. Order that same query by a decrypted column and all
+  1,460 rows decrypt first.
 
   Reverting the marking to VOLATILE locally reproduces the pathology those markers
   exist to prevent — the same three reads cost 2,920 / 7,300 / 2,920 calls and

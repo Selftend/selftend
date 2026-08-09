@@ -58,10 +58,20 @@ Three things this settles:
    with `Heap Fetches: 0` — it never touches the ciphertext at all.
 2. **The view flattens.** The mood query's plan contains no subquery scan; it is a
    bare `Index Scan … on mood_logs_data`. `is_simple_subquery()` pulled it up.
-3. **`LIMIT` is pushed below the decrypt.** 100 calls = 50 rows × 2 columns, not
-   1,460 × 2. List-query decrypt cost scales with the page size, not the user's
-   lifetime history. Under `VOLATILE` the same query pays 2,920 — the whole
-   history — which is the regression `20260666` was written to fix.
+3. **`LIMIT` is pushed below the decrypt — when the ordering is plaintext.** 100
+   calls = 50 rows × 2 columns, not 1,460 × 2. List-query decrypt cost scales with
+   the page size, not the user's lifetime history. Under `VOLATILE` the same query
+   pays 2,920 — the whole history — which is the regression `20260666` was written
+   to fix.
+
+   **Do not generalise this past its conditions.** That query orders by
+   `occurred_at`, a plaintext column, and selects `*` on a view with 2 encrypted
+   columns. Two things break the result: a projection naming an encrypted column
+   still pays one decrypt per returned row per such column (that is what the 100
+   _is_), and a query that orders or filters on a **decrypted** value must decrypt
+   every candidate row before the `LIMIT` can apply — a cap does not save it. The
+   zero-cost rows above are zero because their projections name no encrypted column
+   at all, which is a stronger condition than "narrow".
 
 The `VOLATILE` mood figure is **7,300 decrypt calls**, matching #706's predicted
 figure exactly. Its _mechanism_ is correct in every detail. Only its claim about
@@ -130,11 +140,23 @@ from `pg_class` / `pg_get_viewdef` on the live schema:
 | head counts (`count: "exact", head: true`) | 9     | **0** — fully pruned                  |
 | narrow projections                         | 4     | **0** — fully pruned                  |
 | bounded `select("*")`                      | 58    | scales with the page cap, as intended |
-| **unbounded reads**                        | 16    | scales with the user's whole history  |
+| **uncapped reads**                         | 16    | scales with the user's whole history  |
 
-Of the 16 unbounded, three are `mood_logs` narrow projections
-(`repository.ts:159, :217`) that cost **0** because the projection is pruned. The
-remaining ~14 are unbounded `select("*")`:
+**These four classes overlap, so they sum to 87, not 82.** They are cut along two
+independent axes — _what is projected_ and _whether the row set is capped_ — and two
+pairs intersect:
+
+- **head ∩ `select("*")` = 3.** Three head counts are written
+  `.select("*", { count: "exact", head: true })` (`gratitude:113`, `mood:264`,
+  `sleep:53`) rather than `.select("id", …)`. They are counted in both rows. The
+  projection is irrelevant to a `head` count — all 9 cost zero either way.
+- **narrow ∩ uncapped = 2.** `mood/repository.ts:159` and `:217` are uncapped _and_
+  project only plaintext, so they cost **0** despite being uncapped.
+
+`9 + 4 + 58 + 16 − 3 − 2 = 82` distinct reads. (An earlier draft of this section said
+"three of the 16" for that second intersection; it is two.)
+
+So the genuinely costly set is **14** — the uncapped reads that also `select("*")`:
 
 | enc/row | view                                                                                                                                                             | site                                                 |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
