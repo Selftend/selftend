@@ -346,8 +346,6 @@ describe("the lint gate's exemptions and the ruling agree (#589)", () => {
       "src/lib/module-room.ts",
       "src/lib/hue-chip.ts",
       "src/features/mindfulness/exercise-hue.ts",
-      // The sleep quality ramp's input control, the twin of mood-scale.
-      "src/features/sleep/star-rating.tsx",
       // The mood ramp's class helper. The encoding itself is keyed to
       // design-tokens.ts (where HUE_RAMP_CLASSES lives); this is the one-line
       // wrapper the mood surfaces call.

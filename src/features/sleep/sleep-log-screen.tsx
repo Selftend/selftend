@@ -16,7 +16,7 @@ import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { DurationStepper } from "@/src/features/sleep/duration-stepper";
-import { StarRating } from "@/src/features/sleep/star-rating";
+import { QualityScale } from "@/src/features/sleep/quality-scale";
 import { useSleepLog, useSleepLogs, useSaveSleepLog } from "@/src/features/sleep/queries";
 import type { SleepLog } from "@/src/features/sleep/types";
 import { useRoomStyle } from "@/src/lib/use-room-style";
@@ -182,12 +182,12 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
           />
         </View>
 
+        {/* No "1 = very poor · 5 = excellent" hint any more: the words on the
+            options are the legend, so a second one restates the scale in the
+            numbers the words replaced. */}
         <View className="gap-3">
           <Label>{t("log.qualityLabel")}</Label>
-          <Text variant="muted" className="text-sm">
-            {t("log.qualityHint")}
-          </Text>
-          <StarRating value={quality} onChange={setQuality} />
+          <QualityScale value={quality} onChange={setQuality} />
         </View>
 
         <View className="gap-2">

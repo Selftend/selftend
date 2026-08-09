@@ -155,7 +155,6 @@ const HUE_SANCTIONED_FILES = [
   "src/features/breathing/pacer-colors.ts",
   "src/features/breathing/exercise-colors.ts",
   "src/features/sleep/quality-tint.ts",
-  "src/features/sleep/star-rating.tsx",
   "src/features/mood/score-tone.ts",
   "src/components/app/mood-scale.tsx",
 ];
@@ -414,9 +413,9 @@ module.exports = [
     // accessibilityState guard they would otherwise lose with it.
     files: HUE_SANCTIONED_FILES,
     rules: {
-      // The captured-frame selectors are re-stated because five of these files
-      // are ALSO in CAPTURED_FRAME_FILES - score-tone, star-rating,
-      // quality-tint, pacer-colors, exercise-colors - and last-wins would have
+      // The captured-frame selectors are re-stated because four of these files
+      // are ALSO in CAPTURED_FRAME_FILES - score-tone, quality-tint,
+      // pacer-colors, exercise-colors - and last-wins would have
       // exempted them from the day-key guard as a side effect of exempting them
       // from the hue guard. Exactly the failure the comment on
       // MODULE_ROOM_RESTRICTION warns about, one rule over.
