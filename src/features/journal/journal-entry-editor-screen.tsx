@@ -184,8 +184,16 @@ export function JournalEntryEditorScreen({
               is explicit and routes to the entry on success - so a permanent
               "saved just now" would be a claim the screen cannot make.
             */}
-            <View className="flex-row items-center gap-3">
-              <View className="flex-1">
+            {/*
+              Wraps rather than crushes. At 320dp - or at any enlarged text
+              size - the date control's full medium date/time plus its calendar
+              icon and the word count cannot share one line, and neither side
+              truncates: the date would clip or collide with the icon. The
+              min-width forces the count onto its own line first, which is the
+              part that can afford to move.
+            */}
+            <View className="flex-row flex-wrap items-center gap-2">
+              <View className="min-w-[180px] flex-1">
                 <DateTimeField
                   value={occurredAt}
                   offsetMinutes={occurredOffsetMinutes}
@@ -202,7 +210,7 @@ export function JournalEntryEditorScreen({
                   accessibilityLabel={t("editor.dateLabel")}
                 />
               </View>
-              <Text variant="muted" className="shrink-0 text-[13px]">
+              <Text variant="muted" className="text-[13px]">
                 {t("detail.words", { count: countWords(body) })}
               </Text>
             </View>
