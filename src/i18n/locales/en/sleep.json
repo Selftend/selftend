@@ -58,7 +58,9 @@
     "duration14": "Hours slept · last 14 nights",
     "qualityMix": "Quality mix · last 30 days",
     "weekdayAvg": "Average by weekday",
-    "empty": "Log a few nights to see this."
+    "empty": "Log a few nights to see this.",
+    "qualityColumn_one": "{{level}}: {{count}} night",
+    "qualityColumn_other": "{{level}}: {{count}} nights"
   },
   "quality": {
     "1": "Very poor",
