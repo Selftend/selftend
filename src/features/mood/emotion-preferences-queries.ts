@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  deleteEmotionPreference,
   getEmotionsSeeded,
   insertDefaultEmotions,
   listEmotionPreferences,
+  listEmotionUsageCounts,
   markEmotionsSeeded,
   setEmotionOrder,
   upsertEmotionPreference,
@@ -20,6 +20,16 @@ import type {
 
 const emotionPrefKeys = {
   list: (userId: string) => ["emotion-prefs", userId] as const,
+  /**
+   * Rooted under `["mood", ...]` on purpose, even though it lives in this file.
+   *
+   * The value is derived entirely from `mood_logs`, and every mood mutation already
+   * invalidates `moodKeys.all` (`["mood"]`), which prefix-matches this. Keying it under
+   * `emotion-prefs` instead would leave a lifetime count stale for the whole 60s
+   * `staleTime` after a check-in was created or deleted - and this is the number a delete
+   * confirmation quotes as exact.
+   */
+  usage: (userId: string) => ["mood", "emotionUsage", userId] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -45,6 +55,24 @@ export function useEmotionPreferences(userId: string | null) {
     queryKey: userId ? emotionPrefKeys.list(userId) : emotionPrefKeys.list("anon"),
     queryFn: () => listOrSeedEmotions(userId!),
     enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Lifetime uses per emotion (#743). A separate query rather than a field on the preference
+ * rows, because only the manage-emotions surface asks for it - the picker on the check-in
+ * form must not pay for an aggregate it never renders.
+ *
+ * ⚠️ `enabled` is what makes that true, and it is load-bearing. The check-in editor mounts
+ * `ManageEmotionsModal` unconditionally and merely passes `visible={false}`, so without
+ * this gate the RPC would fire on every create and edit screen - unnesting a long-tenured
+ * user's entire mood history for a number nothing on that screen shows.
+ */
+export function useEmotionUsageCounts(userId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: userId ? emotionPrefKeys.usage(userId) : emotionPrefKeys.usage("anon"),
+    queryFn: listEmotionUsageCounts,
+    enabled: Boolean(userId) && enabled,
   });
 }
 
@@ -177,31 +205,33 @@ export function useRemoveEmotion(userId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ emotionId, isCustom }: { emotionId: string; isCustom: boolean }) => {
-      if (isCustom) {
-        await deleteEmotionPreference(userId!, emotionId);
-      } else {
-        await upsertEmotionPreference(userId!, { emotionId, removed: true });
-      }
+    /**
+     * Soft-remove, for custom emotions as well as builtin ones (#743).
+     *
+     * A custom emotion used to be **hard-deleted**, and that quietly destroyed history:
+     * a check-in stores only the id (`custom_1754…`), and the name and emoji live on the
+     * preference row. Delete the row and `resolveEmotion` falls through to rendering the
+     * raw id with a placeholder glyph — so an entry from six months ago stopped saying
+     * "Wistful 🌧️" and started saying "custom_1754673920117 💭".
+     *
+     * That also made the delete confirmation's promise false. It says the entries that
+     * already name this emotion keep it; for a custom one they kept an unreadable id.
+     * Marking the row `removed` instead takes it out of the picker (`allEmotions` filters
+     * on it) while leaving `resolveEmotion` able to name it forever.
+     */
+    mutationFn: async ({ emotionId }: { emotionId: string; isCustom: boolean }) => {
+      await upsertEmotionPreference(userId!, { emotionId, removed: true });
     },
 
-    onMutate: async ({ emotionId, isCustom }) => {
+    onMutate: async ({ emotionId }) => {
       if (!userId) return;
       const key = emotionPrefKeys.list(userId);
       await queryClient.cancelQueries({ queryKey: key });
       const snapshot = queryClient.getQueryData<EmotionPreference[]>(key);
 
-      if (isCustom) {
-        // Hard-remove the row from the cache immediately.
-        queryClient.setQueryData<EmotionPreference[]>(key, (old = []) =>
-          old.filter((r) => r.emotionId !== emotionId),
-        );
-      } else {
-        // Soft-remove: mark the row as removed (or add a removed placeholder).
-        queryClient.setQueryData<EmotionPreference[]>(key, (old = []) =>
-          mergeRowIntoList(old, { emotionId, removed: true }),
-        );
-      }
+      queryClient.setQueryData<EmotionPreference[]>(key, (old = []) =>
+        mergeRowIntoList(old, { emotionId, removed: true }),
+      );
 
       return { snapshot };
     },

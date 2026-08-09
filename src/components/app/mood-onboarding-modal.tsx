@@ -6,7 +6,6 @@ import {
   OnboardingInfoRow,
   RichOnboardingShell,
 } from "@/src/components/app/rich-onboarding-shell";
-import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 
@@ -45,20 +44,6 @@ export function MoodOnboarding({
         subtitle={t("onboarding.welcome.subtitle")}
       />
 
-      <Card className="border-primary/30 bg-primary/5">
-        <CardContent className="gap-2 pt-6">
-          <Text className="font-semibold">{t("onboarding.affectLabel.title")}</Text>
-          <Text variant="muted">{t("onboarding.affectLabel.body")}</Text>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="gap-2 pt-6">
-          <Text className="font-semibold">{t("onboarding.patterns.title")}</Text>
-          <Text variant="muted">{t("onboarding.patterns.body")}</Text>
-        </CardContent>
-      </Card>
-
       <View className="gap-3">
         <View className="flex-row items-center gap-2">
           <Icon name="tune" className="size-5 text-primary" />
@@ -79,6 +64,37 @@ export function MoodOnboarding({
             icon="notes"
             title={t("onboarding.howToUse.notesLabel")}
             body={t("onboarding.howToUse.notesBody")}
+          />
+        </View>
+      </View>
+
+      {/* The second half of the tour describes the OVERVIEW, which is the part the
+          redesign moved (#744). It replaces two prose cards that described a screen
+          that no longer exists: an inline history list, and a fixed trailing week.
+
+          Each row names a surface and says what it does. None of them reads the record
+          back to the user - "what drains you, what lifts you" was the old copy promising
+          an interpretation the product does not make. */}
+      <View className="gap-3">
+        <View className="flex-row items-center gap-2">
+          <Icon name="insights" className="size-5 text-primary" />
+          <Text className="text-base font-semibold">{t("onboarding.whatYouSee.title")}</Text>
+        </View>
+        <View className="gap-2">
+          <OnboardingInfoRow
+            icon="calendar-today"
+            title={t("onboarding.whatYouSee.weekLabel")}
+            body={t("onboarding.whatYouSee.weekBody")}
+          />
+          <OnboardingInfoRow
+            icon="show-chart"
+            title={t("onboarding.whatYouSee.chartsLabel")}
+            body={t("onboarding.whatYouSee.chartsBody")}
+          />
+          <OnboardingInfoRow
+            icon="history"
+            title={t("onboarding.whatYouSee.historyLabel")}
+            body={t("onboarding.whatYouSee.historyBody")}
           />
         </View>
       </View>

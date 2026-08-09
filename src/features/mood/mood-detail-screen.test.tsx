@@ -30,6 +30,7 @@ jest.mock("@/src/features/mood/queries", () => ({
 
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
   useEmotionPreferences: () => ({ data: [] }),
+  useEmotionUsageCounts: () => ({ data: {} }),
 }));
 
 const mockUseMoodLog = useMoodLog as jest.MockedFunction<typeof useMoodLog>;
