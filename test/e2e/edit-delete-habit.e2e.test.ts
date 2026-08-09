@@ -62,7 +62,10 @@ test.describe("edit and delete a habit", () => {
     await expect(page.getByText(originalName)).toBeHidden({ timeout: 5_000 });
 
     // --- ARCHIVE ---
-    // The detail screen has an "Archive" button that opens a ConfirmDialog.
+    // Archive and Delete moved behind the `more_horiz` overflow menu (#761), so
+    // a destructive action no longer sits in the same row as "Edit". The menu
+    // item opens the same ConfirmDialog the old top-level button did.
+    await page.getByRole("button", { name: "More actions", exact: true }).click();
     await page.getByRole("button", { name: "Archive", exact: true }).click();
     // Both archive and delete ConfirmDialogs are mounted simultaneously. The archive dialog
     // is the first one (its confirm button reads "Archive"); click the visible one.
@@ -79,6 +82,13 @@ test.describe("edit and delete a habit", () => {
     });
 
     // --- DELETE ---
+    // The menu closes when its item fires, so it has to be reopened. It now
+    // offers "Restore" where it offered "Archive", which is the archive having
+    // landed on the server rather than only in the header badge.
+    await page.getByRole("button", { name: "More actions", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Restore", exact: true })).toBeVisible({
+      timeout: 5_000,
+    });
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     // The delete dialog's confirm button reads "Delete".
     await page
