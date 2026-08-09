@@ -4,7 +4,7 @@ import { Pressable, View } from "react-native";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface DisclosureProps {
   /** The trigger's text. Callers may vary it with context - see `#760`'s kind-conditional label. */
@@ -42,6 +42,13 @@ export function Disclosure({
 
   return (
     <View className={cn("gap-4", className)}>
+      {/*
+        No `spaceKeyActivationProps` here, unlike the checkbox and radio
+        Pressables around the app. React Native Web already activates
+        `role="button"` on Space - on keyUP - so adding the helper's keyDown
+        handler toggles twice per press: open on the way down, closed on the way
+        up, leaving the section exactly as it was for a keyboard user.
+      */}
       <Pressable
         accessibilityRole="button"
         aria-expanded={expanded}
@@ -51,7 +58,6 @@ export function Disclosure({
         className="flex-row items-center gap-2 self-start active:opacity-70"
         role="button"
         testID={testID}
-        {...spaceKeyActivationProps(onToggle)}
       >
         <Icon
           name={expanded ? "expand-less" : "expand-more"}

@@ -53,6 +53,15 @@ describe("Disclosure", () => {
     expect(screen.getByTestId("disclosure").props.accessibilityState.expanded).toBe(true);
   });
 
+  it("does not add its own Space handler, which would toggle twice per press", () => {
+    renderWithProviders(<Harness />);
+
+    // React Native Web already activates `role="button"` on Space, on keyUP.
+    // A keyDown handler beside it opens the section on the way down and closes
+    // it on the way up, so a keyboard user sees nothing happen at all.
+    expect(screen.getByTestId("disclosure").props.onKeyDown).toBeUndefined();
+  });
+
   it("renders the label it is given, so callers can vary it with context", () => {
     renderWithProviders(<Harness label="More options for breaking this" />);
 
