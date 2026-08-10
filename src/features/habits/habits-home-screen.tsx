@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { useUpdateUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -58,10 +57,7 @@ export default function HabitsHomeScreen() {
    */
   const { data: recentLogs } = useHabitLogs(userId, { limit: 5 });
   const toggleLog = useToggleHabitLog(userId);
-  const updatePreferences = useUpdateUserPreferences(userId);
-
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [onboardingError, setOnboardingError] = useState<string | undefined>();
   // The habit whose tick would delete a note along with it. Null the rest of
   // the time, which is the overwhelmingly common case (#759).
   const [untickTarget, setUntickTarget] = useState<Habit | null>(null);
@@ -142,34 +138,6 @@ export default function HabitsHomeScreen() {
     setUntickTarget(null);
   }
 
-  /**
-   * The deleted onboarding route held the repository's only write of
-   * `habitsOnboardingCompleted`, so the flag has to move here with it - the
-   * modal is now the sole way through onboarding, and a completion that never
-   * records itself leaves the column false forever, Settings offering to reset
-   * something that never happened, and a data export stating the user never
-   * finished.
-   *
-   * A patch, not the route's `mergeUserPreferences(preferences, ...)`: the
-   * mutation writes only the columns it is given, and a whole-row write
-   * clobbers concurrent writers with values captured at mount (#57).
-   */
-  async function handleOnboardingComplete() {
-    if (!userId) {
-      setForceOnboarding(false);
-      return;
-    }
-    setOnboardingError(undefined);
-    try {
-      await updatePreferences.mutateAsync({ habitsOnboardingCompleted: true });
-      setForceOnboarding(false);
-    } catch (error) {
-      const fallback = t("onboarding.finish.error");
-      const detail = error instanceof Error ? error.message : null;
-      setOnboardingError(detail ? `${fallback} (${detail})` : fallback);
-    }
-  }
-
   const roomStyle = useRoomStyle("act");
 
   if (habitsLoading) {
@@ -184,13 +152,8 @@ export default function HabitsHomeScreen() {
     <>
       <HabitsOnboarding
         visible={forceOnboarding}
-        isPending={updatePreferences.isPending}
-        errorMessage={onboardingError}
-        onComplete={() => void handleOnboardingComplete()}
-        onDismiss={() => {
-          setOnboardingError(undefined);
-          setForceOnboarding(false);
-        }}
+        onComplete={() => setForceOnboarding(false)}
+        onDismiss={() => setForceOnboarding(false)}
       />
       <ConfirmDialog
         visible={untickTarget !== null}

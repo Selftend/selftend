@@ -145,7 +145,7 @@ This module follows the contract in `tools.md`:
 - New `user_preferences` fields:
   - `gratitudeOnboardingCompleted: boolean` (default `false`)
 - No reminder fields - reminders remain out of scope for this module.
-- Settings can reset the onboarding flag (same pattern as CBT and meditation).
+- Settings does not reset a gratitude onboarding flag. The current client opens the introduction explicitly; the legacy column remains temporarily for compatibility with supported mobile builds.
 
 ---
 

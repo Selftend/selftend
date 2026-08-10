@@ -17,32 +17,11 @@ describe("habits schema (integration)", () => {
     // habit_logs FK-cascades from habits, but delete explicitly for clarity
     await admin.from("habit_logs").delete().eq("user_id", SEED_USERS.alice.id);
     await admin.from("habits").delete().eq("user_id", SEED_USERS.alice.id);
-    await admin
-      .from("user_preferences")
-      .update({ habits_onboarding_completed: false })
-      .eq("user_id", SEED_USERS.alice.id);
   });
 
   afterAll(async () => {
     await alice.auth.signOut();
     await bob.auth.signOut();
-  });
-
-  it("stores the habits onboarding preference used by the app", async () => {
-    const upsert = await alice
-      .from("user_preferences")
-      .upsert(
-        {
-          user_id: SEED_USERS.alice.id,
-          habits_onboarding_completed: true,
-        },
-        { onConflict: "user_id" },
-      )
-      .select("habits_onboarding_completed")
-      .single();
-
-    expect(upsert.error).toBeNull();
-    expect(upsert.data?.habits_onboarding_completed).toBe(true);
   });
 
   it("lets a user create a custom-cadence habit and tick it without exposing it to another user", async () => {

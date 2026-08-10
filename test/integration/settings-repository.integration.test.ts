@@ -45,7 +45,6 @@ describe("user_preferences (integration)", () => {
       user_id: SEED_USERS.alice.id,
       enabled_modules: ["cbt"],
       app_onboarding_completed: true,
-      cbt_onboarding_completed: false,
       language: "en",
     });
   });

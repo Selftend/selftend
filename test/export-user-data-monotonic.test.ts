@@ -40,12 +40,12 @@ const DECLARATION = "create or replace function public.export_user_data";
  * an entry stops being necessary - so this list cannot quietly absorb a real
  * regression the way an unexplained one would.
  */
-const INTENTIONALLY_DROPPED: Record<string, string> = {
+const INTENTIONALLY_DROPPED = new Set([
   // `20260715_routines.sql:186` drops the table outright - `plan_items` was the
   // pre-routines "plan" concept, replaced by routines/routine_steps in the same
   // migration. Confirmed absent from information_schema on a migrated database.
-  plan_items: "table dropped by 20260715_routines.sql:186, replaced by routines + routine_steps",
-};
+  "plan_items.*",
+]);
 
 /**
  * Every `select <bare columns> from public.<table>` inside the declaration.
@@ -87,7 +87,8 @@ function readSet(file: string): Set<string> {
   return pairs;
 }
 
-const allowed = (pair: string) => pair.split(".")[0] in INTENTIONALLY_DROPPED;
+const allowed = (pair: string) =>
+  INTENTIONALLY_DROPPED.has(pair) || INTENTIONALLY_DROPPED.has(`${pair.split(".")[0]}.*`);
 
 describe("export_user_data never loses a column it once exported", () => {
   const declarations = declarationsInOrder();
@@ -148,9 +149,15 @@ describe("export_user_data never loses a column it once exported", () => {
     }
     const newest = readSet(declarations[declarations.length - 1]);
 
-    const unnecessary = Object.keys(INTENTIONALLY_DROPPED).filter((table) => {
-      const wasRead = [...everRead].some((pair) => pair.startsWith(`${table}.`));
-      const stillRead = [...newest].some((pair) => pair.startsWith(`${table}.`));
+    const unnecessary = [...INTENTIONALLY_DROPPED].filter((entry) => {
+      const wildcard = entry.endsWith(".*");
+      const prefix = wildcard ? entry.slice(0, -1) : entry;
+      const wasRead = [...everRead].some((pair) =>
+        wildcard ? pair.startsWith(prefix) : pair === entry,
+      );
+      const stillRead = [...newest].some((pair) =>
+        wildcard ? pair.startsWith(prefix) : pair === entry,
+      );
       return !wasRead || stillRead;
     });
 

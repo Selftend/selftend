@@ -30,7 +30,6 @@ export interface UserPreferences {
   meditationReminderHour: number;
   meditationReminderMinute: number;
   meditationReminderTimezone: string | null;
-  actOnboardingCompleted: boolean;
   actRemindersEnabled: boolean;
   actReminderHour: number;
   actReminderMinute: number;
@@ -66,7 +65,6 @@ export interface UserPreferences {
   appOnboardingCompleted: boolean;
   appOnboardingCompletedVia: "finish" | "skip" | null;
   appOnboardingCompletedAt: string | null;
-  cbtOnboardingCompleted: boolean;
   cbtWizardCompleted: boolean;
   cbtProgramStartedAt: string | null;
   cbtProgramCompletedAt: string | null;
@@ -80,15 +78,6 @@ export interface UserPreferences {
   actProgramPhaseIndex: number;
   actProgramPhaseStartedAt: string | null;
   actGraduationDismissedAt: string | null;
-  meditationOnboardingCompleted: boolean;
-  meditationInfoCompleted: boolean;
-  gratitudeOnboardingCompleted: boolean;
-  habitsOnboardingCompleted: boolean;
-  moodOnboardingCompleted: boolean;
-  journalOnboardingCompleted: boolean;
-  sleepOnboardingCompleted: boolean;
-  mindfulnessOnboardingCompleted: boolean;
-  groundingOnboardingCompleted: boolean;
   privacyPolicyAcceptedAt: string | null;
   termsAcceptedAt: string | null;
   policyVersionAccepted: string | null;
@@ -127,7 +116,6 @@ export const defaultUserPreferences: UserPreferences = {
   meditationReminderHour: 7,
   meditationReminderMinute: 0,
   meditationReminderTimezone: null,
-  actOnboardingCompleted: false,
   actRemindersEnabled: false,
   actReminderHour: 19,
   actReminderMinute: 0,
@@ -163,7 +151,6 @@ export const defaultUserPreferences: UserPreferences = {
   appOnboardingCompleted: false,
   appOnboardingCompletedVia: null,
   appOnboardingCompletedAt: null,
-  cbtOnboardingCompleted: false,
   cbtWizardCompleted: false,
   cbtProgramStartedAt: null,
   cbtProgramCompletedAt: null,
@@ -177,15 +164,6 @@ export const defaultUserPreferences: UserPreferences = {
   actProgramPhaseIndex: 0,
   actProgramPhaseStartedAt: null,
   actGraduationDismissedAt: null,
-  meditationOnboardingCompleted: false,
-  meditationInfoCompleted: false,
-  gratitudeOnboardingCompleted: false,
-  habitsOnboardingCompleted: false,
-  moodOnboardingCompleted: false,
-  journalOnboardingCompleted: false,
-  sleepOnboardingCompleted: false,
-  mindfulnessOnboardingCompleted: false,
-  groundingOnboardingCompleted: false,
   privacyPolicyAcceptedAt: null,
   termsAcceptedAt: null,
   policyVersionAccepted: null,

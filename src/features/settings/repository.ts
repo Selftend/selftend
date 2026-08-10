@@ -26,7 +26,6 @@ interface UserPreferenceRow {
   app_onboarding_completed: boolean | null;
   app_onboarding_completed_via: string | null;
   app_onboarding_completed_at: string | null;
-  cbt_onboarding_completed: boolean | null;
   cbt_wizard_completed: boolean | null;
   cbt_program_started_at: string | null;
   cbt_program_completed_at: string | null;
@@ -34,16 +33,6 @@ interface UserPreferenceRow {
   cbt_program_phase_index: number | null;
   cbt_program_phase_started_at: string | null;
   cbt_graduation_dismissed_at: string | null;
-  meditation_onboarding_completed: boolean | null;
-  meditation_info_completed: boolean | null;
-  gratitude_onboarding_completed: boolean | null;
-  habits_onboarding_completed: boolean | null;
-  mood_onboarding_completed: boolean | null;
-  journal_onboarding_completed: boolean | null;
-  sleep_onboarding_completed: boolean | null;
-  mindfulness_onboarding_completed: boolean | null;
-  grounding_onboarding_completed: boolean | null;
-  act_onboarding_completed: boolean | null;
   act_reminders_enabled: boolean | null;
   act_reminder_hour: number | null;
   act_reminder_minute: number | null;
@@ -129,7 +118,6 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
         ? row.app_onboarding_completed_via
         : null,
     appOnboardingCompletedAt: row.app_onboarding_completed_at ?? null,
-    cbtOnboardingCompleted: Boolean(row.cbt_onboarding_completed),
     cbtWizardCompleted: Boolean(row.cbt_wizard_completed),
     cbtProgramStartedAt: row.cbt_program_started_at ?? null,
     cbtProgramCompletedAt: row.cbt_program_completed_at ?? null,
@@ -137,16 +125,6 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     cbtProgramPhaseIndex: row.cbt_program_phase_index ?? 0,
     cbtProgramPhaseStartedAt: row.cbt_program_phase_started_at ?? null,
     cbtGraduationDismissedAt: row.cbt_graduation_dismissed_at ?? null,
-    meditationOnboardingCompleted: Boolean(row.meditation_onboarding_completed),
-    meditationInfoCompleted: Boolean(row.meditation_info_completed),
-    gratitudeOnboardingCompleted: Boolean(row.gratitude_onboarding_completed),
-    habitsOnboardingCompleted: Boolean(row.habits_onboarding_completed),
-    moodOnboardingCompleted: Boolean(row.mood_onboarding_completed),
-    journalOnboardingCompleted: Boolean(row.journal_onboarding_completed),
-    sleepOnboardingCompleted: Boolean(row.sleep_onboarding_completed),
-    mindfulnessOnboardingCompleted: Boolean(row.mindfulness_onboarding_completed),
-    groundingOnboardingCompleted: Boolean(row.grounding_onboarding_completed),
-    actOnboardingCompleted: Boolean(row.act_onboarding_completed),
     actRemindersEnabled: Boolean(row.act_reminders_enabled),
     actReminderHour: row.act_reminder_hour ?? defaultUserPreferences.actReminderHour,
     actReminderMinute: row.act_reminder_minute ?? defaultUserPreferences.actReminderMinute,
@@ -262,7 +240,6 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   appOnboardingCompleted: "app_onboarding_completed",
   appOnboardingCompletedVia: "app_onboarding_completed_via",
   appOnboardingCompletedAt: "app_onboarding_completed_at",
-  cbtOnboardingCompleted: "cbt_onboarding_completed",
   cbtWizardCompleted: "cbt_wizard_completed",
   cbtProgramStartedAt: "cbt_program_started_at",
   cbtProgramCompletedAt: "cbt_program_completed_at",
@@ -270,16 +247,6 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   cbtProgramPhaseIndex: "cbt_program_phase_index",
   cbtProgramPhaseStartedAt: "cbt_program_phase_started_at",
   cbtGraduationDismissedAt: "cbt_graduation_dismissed_at",
-  meditationOnboardingCompleted: "meditation_onboarding_completed",
-  meditationInfoCompleted: "meditation_info_completed",
-  gratitudeOnboardingCompleted: "gratitude_onboarding_completed",
-  habitsOnboardingCompleted: "habits_onboarding_completed",
-  moodOnboardingCompleted: "mood_onboarding_completed",
-  journalOnboardingCompleted: "journal_onboarding_completed",
-  sleepOnboardingCompleted: "sleep_onboarding_completed",
-  mindfulnessOnboardingCompleted: "mindfulness_onboarding_completed",
-  groundingOnboardingCompleted: "grounding_onboarding_completed",
-  actOnboardingCompleted: "act_onboarding_completed",
   actRemindersEnabled: "act_reminders_enabled",
   actReminderHour: "act_reminder_hour",
   actReminderMinute: "act_reminder_minute",
@@ -400,13 +367,8 @@ export async function updateShownButtonTours(userId: string, shownButtonTours: B
 /**
  * The keys an onboarding write may name.
  *
- * Derived from `UserPreferences` via `Pick` rather than redeclared: the previous
- * hand-written interface carried its own `boolean`/`string` annotations AND a
- * parallel snake_case list inside the function body, so it could drift from the
- * schema in two directions at once - and did. `actOnboardingCompleted` and
- * `meditationOnboardingCompleted` are both written `true` in production code and
- * neither was nameable here, so Settings' "Reset onboarding" could not clear them
- * however the reset set was written (#821).
+ * Kept deliberately narrow: module introduction state is not persisted because
+ * those modals are opened explicitly from their module headers (#807).
  */
 type OnboardingPreferencesPatch = Partial<
   Pick<
@@ -414,17 +376,6 @@ type OnboardingPreferencesPatch = Partial<
     | "appOnboardingCompleted"
     | "appOnboardingCompletedVia"
     | "appOnboardingCompletedAt"
-    | "cbtOnboardingCompleted"
-    | "actOnboardingCompleted"
-    | "meditationOnboardingCompleted"
-    | "meditationInfoCompleted"
-    | "gratitudeOnboardingCompleted"
-    | "habitsOnboardingCompleted"
-    | "moodOnboardingCompleted"
-    | "journalOnboardingCompleted"
-    | "sleepOnboardingCompleted"
-    | "mindfulnessOnboardingCompleted"
-    | "groundingOnboardingCompleted"
     | "shownButtonTours"
     | "selectedConcerns"
     | "startHereDismissedAt"

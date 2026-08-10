@@ -137,11 +137,10 @@ describe("CbtHomeScreen onboarding", () => {
     } as unknown as ReturnType<typeof useCbtProgram>);
   });
 
-  it("does not show CBT onboarding after completion", () => {
+  it("does not show CBT onboarding until the info action is pressed", () => {
     mockUseUserPreferences.mockReturnValue({
       data: {
         ...defaultUserPreferences,
-        cbtOnboardingCompleted: true,
       },
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
@@ -153,7 +152,7 @@ describe("CbtHomeScreen onboarding", () => {
 
   it("shows the program start card and no concern guidance", () => {
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
@@ -170,7 +169,7 @@ describe("CbtHomeScreen onboarding", () => {
   it("hides a dismissed start card and restores it from the header program action", () => {
     const showProgramPrompt = jest.fn();
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
     mockUseCbtProgram.mockReturnValue({
@@ -209,7 +208,7 @@ describe("CbtHomeScreen onboarding", () => {
 
   it("renders three PillarCards iterating PILLAR_STRATEGIES", () => {
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
@@ -222,7 +221,7 @@ describe("CbtHomeScreen onboarding", () => {
 
   it("renders full title on the quiet shell with no book credit (#493, #494, #500, #733)", () => {
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
@@ -239,7 +238,7 @@ describe("CbtHomeScreen onboarding", () => {
 
   it("renders shared-tool pills beneath each PillarCard", () => {
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
@@ -258,7 +257,7 @@ describe("CbtHomeScreen onboarding", () => {
   it("confirms before abandoning an in-progress program", () => {
     const abandonProgram = jest.fn();
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
     mockUseCbtProgram.mockReturnValue({
