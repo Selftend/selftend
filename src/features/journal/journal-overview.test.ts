@@ -1,8 +1,11 @@
 import {
   formatJournalMonth,
   formatJournalRecentWhen,
+  formatJournalWritingBucket,
   formatJournalWritingRange,
+  groupJournalHistoryEntries,
   groupRecentJournalEntries,
+  journalWritingBarLabel,
 } from "@/src/features/journal/journal-overview";
 import type { JournalEntry } from "@/src/features/journal/types";
 
@@ -46,6 +49,25 @@ describe("groupRecentJournalEntries", () => {
     ]);
   });
 
+  it("keeps every loaded row on the all-entries screen", () => {
+    const sections = groupJournalHistoryEntries(
+      [
+        entry("2026-05-28"),
+        entry("2026-05-27"),
+        entry("2026-04-30"),
+        entry("2026-03-01", "08:00:00", "fourth"),
+      ],
+      THURSDAY,
+    );
+
+    expect(sections.flatMap((section) => section.data.map((item) => item.id))).toEqual([
+      "2026-05-28",
+      "2026-05-27",
+      "2026-04-30",
+      "fourth",
+    ]);
+  });
+
   it("anchors on a captured future day after travel", () => {
     expect(
       groupRecentJournalEntries([entry("2026-05-29"), entry("2026-05-28")], THURSDAY).map(
@@ -72,11 +94,43 @@ describe("journal overview formatting", () => {
     expect(
       formatJournalWritingRange(
         [
-          { dayKey: "2026-05-15", wordCount: 0 },
-          { dayKey: "2026-05-28", wordCount: 10 },
+          {
+            startDayKey: "2026-05-15",
+            endDayKey: "2026-05-15",
+            wordCount: 0,
+            unit: "day",
+            rangeStartDayKey: "2026-05-15",
+            rangeEndDayKey: "2026-05-28",
+          },
         ],
         "en",
       ),
     ).toBe("May 15 – May 28");
+  });
+
+  it("labels adaptive buckets without crowding every bar", () => {
+    const weekly = {
+      startDayKey: "2026-03-01",
+      endDayKey: "2026-03-07",
+      wordCount: 42,
+      unit: "week" as const,
+      rangeStartDayKey: "2026-03-01",
+      rangeEndDayKey: "2026-05-29",
+    };
+
+    expect(formatJournalWritingBucket(weekly, "en")).toBe("Mar 1 – Mar 7");
+    expect(journalWritingBarLabel(weekly, 0, 13, "en")).toBeUndefined();
+    expect(journalWritingBarLabel(weekly, 1, 13, "en")).toBeUndefined();
+    expect(
+      formatJournalWritingBucket(
+        {
+          ...weekly,
+          startDayKey: "2024-01-01",
+          endDayKey: "2024-12-31",
+          unit: "year",
+        },
+        "en",
+      ),
+    ).toBe("2024");
   });
 });

@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import JournalListScreen from "@/src/features/journal/journal-list-screen";
 import {
   useJournalEntries,
-  useJournalWritingDays,
+  useJournalWritingBuckets,
   useJournalWordTotal,
 } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
@@ -37,7 +37,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 jest.mock("@/src/features/journal/queries", () => ({
   useJournalEntries: jest.fn(),
   useJournalEntryCount: jest.fn(() => ({ data: undefined })),
-  useJournalWritingDays: jest.fn(() => ({ data: [] })),
+  useJournalWritingBuckets: jest.fn(() => ({ data: [] })),
   useJournalWordTotal: jest.fn(() => ({ data: undefined })),
 }));
 
@@ -47,7 +47,7 @@ afterAll(() => jest.useRealTimers());
 
 const mockUseJournalEntries = jest.mocked(useJournalEntries);
 const mockUseJournalWordTotal = jest.mocked(useJournalWordTotal);
-const mockUseJournalWritingDays = jest.mocked(useJournalWritingDays);
+const mockUseJournalWritingBuckets = jest.mocked(useJournalWritingBuckets);
 const mockRouter = jest.mocked(router);
 
 function journalEntry(
@@ -82,8 +82,8 @@ describe("JournalListScreen", () => {
     mockUseJournalWordTotal.mockReturnValue({ data: undefined } as unknown as ReturnType<
       typeof useJournalWordTotal
     >);
-    mockUseJournalWritingDays.mockReturnValue({ data: [] } as unknown as ReturnType<
-      typeof useJournalWritingDays
+    mockUseJournalWritingBuckets.mockReturnValue({ data: [] } as unknown as ReturnType<
+      typeof useJournalWritingBuckets
     >);
   });
 
@@ -162,23 +162,51 @@ describe("JournalListScreen", () => {
     expect(screen.queryByText(/^last written Yesterday, /)).toBeNull();
   });
 
-  it("renders an exact fourteen-day chart with visible zero-day stubs", () => {
+  it("renders an exact thirty-day default chart with visible zero-day stubs", () => {
     mockEntries([journalEntry("today", "2026-05-28")]);
-    const days = lastNDayKeys(14, FIXED_NOW).map((dayKey, index) => ({
-      dayKey,
+    const days = lastNDayKeys(30, FIXED_NOW).map((dayKey, index, all) => ({
+      startDayKey: dayKey,
+      endDayKey: dayKey,
       wordCount: index === 13 ? 120 : 0,
+      unit: "day" as const,
+      rangeStartDayKey: all[0]!,
+      rangeEndDayKey: all[all.length - 1]!,
     }));
-    mockUseJournalWritingDays.mockReturnValue({ data: days } as unknown as ReturnType<
-      typeof useJournalWritingDays
+    mockUseJournalWritingBuckets.mockReturnValue({ data: days } as unknown as ReturnType<
+      typeof useJournalWritingBuckets
     >);
 
     renderWithProviders(<JournalListScreen />);
 
     expect(screen.getByText("Writing")).toBeTruthy();
     expect(screen.getByText("Words written per day.")).toBeTruthy();
-    expect(screen.getAllByTestId("bar-chart-bar")).toHaveLength(14);
+    expect(screen.getAllByTestId("bar-chart-bar")).toHaveLength(30);
     expect(screen.getAllByTestId("bar-chart-bar")[0]).toHaveStyle({ height: 2 });
     expect(screen.getByLabelText(/120 words/)).toBeTruthy();
+  });
+
+  it("offers four phone-safe ranges and leaves Custom out", () => {
+    mockEntries([journalEntry("today", "2026-05-28")]);
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByText("7d")).toBeTruthy();
+    expect(screen.getByText("30d")).toBeTruthy();
+    expect(screen.getByText("90d")).toBeTruthy();
+    expect(screen.getByText("All time")).toBeTruthy();
+    expect(screen.queryByText("Custom")).toBeNull();
+  });
+
+  it("keeps the writing section and its control when the selected range is empty", () => {
+    mockEntries([journalEntry("old", "2025-01-01")]);
+    mockUseJournalWritingBuckets.mockReturnValue({ data: [] } as unknown as ReturnType<
+      typeof useJournalWritingBuckets
+    >);
+
+    renderWithProviders(<JournalListScreen />);
+
+    expect(screen.getByText("Writing")).toBeTruthy();
+    expect(screen.getByText("No writing in this range.")).toBeTruthy();
+    expect(screen.getByText("30d")).toBeTruthy();
   });
 
   it("routes the primary and all-entries actions", () => {

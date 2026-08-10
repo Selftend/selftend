@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countJournalEntries,
@@ -6,11 +6,12 @@ import {
   deleteJournalEntry,
   getJournalEntry,
   listJournalEntries,
-  listJournalWritingDays,
+  listJournalEntriesPage,
+  listJournalWritingBuckets,
   saveJournalEntry,
   sumJournalWords,
 } from "@/src/features/journal/repository";
-import type { JournalInput } from "@/src/features/journal/types";
+import type { JournalInput, JournalWritingRange } from "@/src/features/journal/types";
 import { deviceTimeZone } from "@/src/utils/date";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
@@ -18,11 +19,12 @@ import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 const journalKeys = {
   all: ["journal"] as const,
   list: (userId: string, limit: number) => ["journal", "list", userId, limit] as const,
+  pages: (userId: string) => ["journal", "pages", userId] as const,
   detail: (userId: string, id: string) => ["journal", "detail", userId, id] as const,
   count: (userId: string) => ["journal", "count", userId] as const,
   wordTotal: (userId: string) => ["journal", "word-total", userId] as const,
-  writingDays: (userId: string, timeZone: string, days: number) =>
-    ["journal", "writing-days", userId, timeZone, days] as const,
+  writingBuckets: (userId: string, timeZone: string, range: JournalWritingRange) =>
+    ["journal", "writing-buckets", userId, timeZone, range] as const,
   countSince: (userId: string, sinceIso: string) =>
     ["journal", "count-since", userId, sinceIso] as const,
 };
@@ -31,6 +33,22 @@ export function useJournalEntries(userId: string | null, limit = 50) {
   return useQuery({
     queryKey: userId ? journalKeys.list(userId, limit) : ["journal", "list", "anonymous", limit],
     queryFn: () => listJournalEntries(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+export const JOURNAL_ENTRIES_PAGE_SIZE = 50;
+
+export function useJournalEntryPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: userId ? journalKeys.pages(userId) : ["journal", "pages", "anonymous"],
+    queryFn: ({ pageParam }) =>
+      listJournalEntriesPage(userId!, JOURNAL_ENTRIES_PAGE_SIZE, pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+      lastPage.length < JOURNAL_ENTRIES_PAGE_SIZE
+        ? undefined
+        : lastPageParam + JOURNAL_ENTRIES_PAGE_SIZE,
     enabled: Boolean(userId),
   });
 }
@@ -62,13 +80,13 @@ export function useJournalWordTotal(userId: string | null) {
   });
 }
 
-export function useJournalWritingDays(userId: string | null, days: number) {
+export function useJournalWritingBuckets(userId: string | null, range: JournalWritingRange) {
   const timeZone = deviceTimeZone();
   return useQuery({
     queryKey: userId
-      ? journalKeys.writingDays(userId, timeZone, days)
-      : ["journal", "writing-days", "anonymous", timeZone, days],
-    queryFn: () => listJournalWritingDays(timeZone, days),
+      ? journalKeys.writingBuckets(userId, timeZone, range)
+      : ["journal", "writing-buckets", "anonymous", timeZone, range],
+    queryFn: () => listJournalWritingBuckets(timeZone, range),
     enabled: Boolean(userId),
   });
 }

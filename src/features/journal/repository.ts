@@ -1,4 +1,9 @@
-import type { JournalEntry, JournalInput, JournalWritingDay } from "@/src/features/journal/types";
+import type {
+  JournalEntry,
+  JournalInput,
+  JournalWritingBucket,
+  JournalWritingRange,
+} from "@/src/features/journal/types";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
@@ -15,9 +20,13 @@ interface JournalEntryRow {
   updated_at: string;
 }
 
-interface JournalWritingDayRow {
-  day_key: string;
+interface JournalWritingBucketRow {
+  bucket_start_key: string;
+  bucket_end_key: string;
   word_count: number | string;
+  bucket_unit: JournalWritingBucket["unit"];
+  range_start_key: string;
+  range_end_key: string;
 }
 
 function mapJournalEntry(row: JournalEntryRow): JournalEntry {
@@ -44,6 +53,21 @@ export async function listJournalEntries(userId: string, limit = 50) {
     .eq("user_id", userId)
     .order("occurred_at", { ascending: false })
     .limit(limit);
+
+  if (error) throw error;
+  return (data as JournalEntryRow[]).map(mapJournalEntry);
+}
+
+/** One deterministic offset page for the all-entries screen. */
+export async function listJournalEntriesPage(userId: string, limit: number, offset: number) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("journal_entries")
+    .select("*")
+    .eq("user_id", userId)
+    .order("occurred_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) throw error;
   return (data as JournalEntryRow[]).map(mapJournalEntry);
@@ -88,20 +112,24 @@ export async function sumJournalWords(): Promise<number> {
   return Number(data ?? 0);
 }
 
-export async function listJournalWritingDays(
+export async function listJournalWritingBuckets(
   timeZone: string,
-  days: number,
-): Promise<JournalWritingDay[]> {
+  range: JournalWritingRange,
+): Promise<JournalWritingBucket[]> {
   const client = requireSupabase();
-  const { data, error } = await client.rpc("journal_writing_days", {
+  const { data, error } = await client.rpc("journal_writing_buckets", {
     p_time_zone: timeZone,
-    p_days: days,
+    p_days: range === "all" ? null : range,
   });
 
   if (error) throw error;
-  return ((data ?? []) as JournalWritingDayRow[]).map((row) => ({
-    dayKey: row.day_key,
+  return ((data ?? []) as JournalWritingBucketRow[]).map((row) => ({
+    startDayKey: row.bucket_start_key,
+    endDayKey: row.bucket_end_key,
     wordCount: Number(row.word_count),
+    unit: row.bucket_unit,
+    rangeStartDayKey: row.range_start_key,
+    rangeEndDayKey: row.range_end_key,
   }));
 }
 

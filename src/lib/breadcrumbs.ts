@@ -57,6 +57,7 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/check-in/history": "breadcrumb.history",
   "/tools/check-in/new": "breadcrumb.new",
   "/tools/journal": "sidebar.journal",
+  "/tools/journal/entries": "breadcrumb.entries",
   "/tools/journal/new": "breadcrumb.new",
   "/tools/breathing": "sidebar.breathing",
   "/tools/breathing/session": "breadcrumb.session",

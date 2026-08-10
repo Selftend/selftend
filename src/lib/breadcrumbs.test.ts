@@ -9,6 +9,7 @@ const LABELS: Record<string, string> = {
   "sidebar.cbt": "CBT",
   "breadcrumb.goals": "Goals",
   "breadcrumb.entry": "Entry",
+  "breadcrumb.entries": "Entries",
   "sidebar.gratitudeLog": "Gratitude log",
   "breadcrumb.history": "History",
   "breadcrumb.favorites": "Favorites",
@@ -46,6 +47,12 @@ describe("computeBreadcrumbs", () => {
     const crumbs = computeBreadcrumbs("/tools/gratitude-log/entries", t);
     expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "History"]);
     expect(crumbs[2].href).toBeUndefined();
+  });
+
+  it("labels the journal entries list as Entries, not a singular record", () => {
+    const crumbs = computeBreadcrumbs("/tools/journal/entries", t);
+
+    expect(crumbs.at(-1)).toEqual({ label: "Entries" });
   });
 
   // `history` sits beside the `[id]` detail route, so without a static entry it

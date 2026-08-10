@@ -1,11 +1,12 @@
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { Section } from "@/src/components/app/section";
+import { SegmentedControl } from "@/src/components/app/segmented-control";
 import { JournalOnboarding } from "@/src/components/app/journal-onboarding-modal";
 import { EmptyState } from "@/src/components/app/screen-state";
 import { BarChart } from "@/src/components/charts/bar-chart";
@@ -18,22 +19,25 @@ import { JournalCard } from "@/src/features/journal/journal-card";
 import {
   formatJournalMonth,
   formatJournalRecentWhen,
+  formatJournalWritingBucket,
   formatJournalWritingRange,
   groupRecentJournalEntries,
-  JOURNAL_WRITING_DAYS,
+  journalWritingBarLabel,
+  journalWritingUnit,
   type JournalRecentSection,
 } from "@/src/features/journal/journal-overview";
 import {
   useJournalEntries,
   useJournalEntryCount,
-  useJournalWritingDays,
+  useJournalWritingBuckets,
   useJournalWordTotal,
 } from "@/src/features/journal/queries";
+import type { JournalWritingRange } from "@/src/features/journal/types";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
-import { formatInstantAtOffset, parseLocalNoon } from "@/src/utils/date";
+import { formatInstantAtOffset } from "@/src/utils/date";
 
 export default function JournalListScreen() {
   const { t, i18n } = useTranslation("journal");
@@ -46,7 +50,9 @@ export default function JournalListScreen() {
   // server-side; the loaded entries only stand in until those numbers arrive.
   const { data: totalEntries } = useJournalEntryCount(userId);
   const { data: totalWords } = useJournalWordTotal(userId);
-  const { data: writingDays } = useJournalWritingDays(userId, JOURNAL_WRITING_DAYS);
+  const [writingRange, setWritingRange] = useState<JournalWritingRange>(30);
+  const writingQuery = useJournalWritingBuckets(userId, writingRange);
+  const writingBuckets = writingQuery.data;
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
@@ -96,7 +102,12 @@ export default function JournalListScreen() {
     : undefined;
 
   const recentSections = useMemo(() => groupRecentJournalEntries(entries), [entries]);
-  const hasWritingChart = Boolean(writingDays?.some((day) => day.wordCount > 0));
+  // The section is earned by lifetime history, never by the selected range. A
+  // thin range may empty the chart, but cannot unmount the control needed to
+  // leave that range.
+  const hasAnyEntry = (totalEntries ?? allEntries.length) > 0;
+  const hasWritingInRange = Boolean(writingBuckets?.some((bucket) => bucket.wordCount > 0));
+  const writingUnit = journalWritingUnit(writingBuckets ?? []);
 
   // Stable across renders so memoized JournalCards aren't invalidated by a parent re-render.
   const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
@@ -145,47 +156,76 @@ export default function JournalListScreen() {
               <Text>{t("cta.new")}</Text>
             </Button>
 
-            {hasWritingChart && writingDays ? (
+            {hasAnyEntry ? (
               <Section
                 ruled={false}
                 title={t("sections.writing")}
                 action={
                   <Text variant="muted" className="text-xs tabular-nums">
-                    {formatJournalWritingRange(writingDays, i18n.language)}
+                    {formatJournalWritingRange(writingBuckets ?? [], i18n.language)}
                   </Text>
                 }
               >
-                <BarChart
-                  bars={writingDays.map((day) => ({
-                    key: day.dayKey,
-                    value: day.wordCount,
-                    label: new Intl.DateTimeFormat(i18n.language, { day: "numeric" }).format(
-                      parseLocalNoon(day.dayKey),
-                    ),
-                    accessibilityLabel: t("writing.barLabel", {
-                      date: new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" }).format(
-                        parseLocalNoon(day.dayKey),
-                      ),
-                      count: day.wordCount,
-                    }),
-                  }))}
-                  barAreaHeight={72}
-                  minBarHeight={8}
-                  zeroHeight={2}
-                  tintClass="bg-primary"
-                  barClassName="rounded-sm"
-                  columnClassName="gap-1.5"
-                  labelClassName="tabular-nums"
-                  className="gap-1"
-                />
-                <Text variant="muted" className="text-xs">
-                  {t("writing.caption")}
-                </Text>
+                <View className="flex-row">
+                  <SegmentedControl<JournalWritingRange>
+                    value={writingRange}
+                    onChange={setWritingRange}
+                    options={[
+                      { value: 7, label: t("writing.range7") },
+                      { value: 30, label: t("writing.range30") },
+                      { value: 90, label: t("writing.range90") },
+                      { value: "all", label: t("writing.rangeAll") },
+                    ]}
+                  />
+                </View>
+                {!writingBuckets && !writingQuery.isError ? (
+                  <View className="items-center py-8">
+                    <ActivityIndicator />
+                  </View>
+                ) : writingQuery.isError ? (
+                  <View className="items-start gap-2 py-4">
+                    <Text variant="muted" className="text-[13px]">
+                      {t("writing.error")}
+                    </Text>
+                    <Button variant="outline" size="sm" onPress={() => void writingQuery.refetch()}>
+                      <Text>{t("errors:fallback.retry")}</Text>
+                    </Button>
+                  </View>
+                ) : hasWritingInRange ? (
+                  <>
+                    <BarChart
+                      bars={(writingBuckets ?? []).map((bucket, index, buckets) => ({
+                        key: bucket.startDayKey,
+                        value: bucket.wordCount,
+                        label: journalWritingBarLabel(bucket, index, buckets.length, i18n.language),
+                        accessibilityLabel: t("writing.barLabel", {
+                          period: formatJournalWritingBucket(bucket, i18n.language),
+                          count: bucket.wordCount,
+                        }),
+                      }))}
+                      barAreaHeight={72}
+                      minBarHeight={8}
+                      zeroHeight={2}
+                      tintClass="bg-primary"
+                      barClassName="rounded-sm"
+                      columnClassName="gap-1.5"
+                      labelClassName="tabular-nums"
+                      className={writingBuckets && writingBuckets.length > 14 ? "gap-0.5" : "gap-1"}
+                    />
+                    <Text variant="muted" className="text-xs">
+                      {t(`writing.caption.${writingUnit}`)}
+                    </Text>
+                  </>
+                ) : (
+                  <Text variant="muted" className="py-4 text-[13px]">
+                    {t("writing.emptyRange")}
+                  </Text>
+                )}
               </Section>
             ) : null}
 
             {entries && entries.length === 0 ? (
-              <Section ruled={hasWritingChart}>
+              <Section ruled={hasAnyEntry}>
                 <EmptyState
                   icon="edit-note"
                   title={t("list.empty.title")}
@@ -198,7 +238,7 @@ export default function JournalListScreen() {
               </Section>
             ) : recentSections.length > 0 ? (
               <Section
-                ruled={hasWritingChart}
+                ruled={hasAnyEntry}
                 title={t("sections.entries")}
                 action={
                   <Pressable
