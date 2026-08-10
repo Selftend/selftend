@@ -192,7 +192,7 @@ export default function JournalDetailScreen() {
               <Pressable
                 accessibilityRole="link"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => router.push("/tools/journal")}
+                onPress={() => router.push("/tools/journal/entries")}
                 className="flex-row items-center gap-1 active:opacity-70"
                 role="link"
               >

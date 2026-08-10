@@ -43,7 +43,7 @@ test.describe("journal overview", () => {
     if (preferences.error) throw new Error(preferences.error.message);
   });
 
-  test("fits the fourteen-day chart and recent rows at 360dp in both locales and themes", async ({
+  test("fits the range control, chart, and entry history at 360dp in both locales and themes", async ({
     page,
     user,
   }) => {
@@ -58,11 +58,34 @@ test.describe("journal overview", () => {
 
     await expect(page.getByRole("heading", { name: "Journal", exact: true })).toBeVisible();
     await expect(page.getByText("Words written per day.", { exact: true })).toBeVisible();
-    await expect(page.getByTestId("bar-chart-bar")).toHaveCount(14);
+    await expect(page.getByTestId("bar-chart-bar")).toHaveCount(30);
+    await expect(page.getByRole("tab", { name: "7d" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "30d" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tab", { name: "90d" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "All time" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Custom" })).toHaveCount(0);
+
+    await page.getByRole("tab", { name: "90d" }).click();
+    await expect(page.getByTestId("bar-chart-bar")).toHaveCount(13);
+    await expect(
+      page.getByText("Words written per seven-day period.", { exact: true }),
+    ).toBeVisible();
+    await page.getByRole("tab", { name: "All time" }).click();
+    await expect(page.getByText("Words written per month.", { exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "30d" }).click();
+    await expect(page.getByTestId("bar-chart-bar")).toHaveCount(30);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
     await page.screenshot({ path: "test-results/journal-overview-en-light.png", fullPage: true });
+
+    await page.getByText("Show all entries", { exact: true }).click();
+    await expect(page.getByRole("heading", { name: "All entries", exact: true })).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await page.screenshot({ path: "test-results/journal-entries-en-light.png", fullPage: true });
+    await page.goto("/tools/journal");
 
     const darkPreferences = await admin
       .from("user_preferences")
@@ -76,6 +99,14 @@ test.describe("journal overview", () => {
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
     await page.screenshot({ path: "test-results/journal-overview-en-dark.png", fullPage: true });
+
+    await page.getByText("Show all entries", { exact: true }).click();
+    await expect(page.getByRole("heading", { name: "All entries", exact: true })).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await page.screenshot({ path: "test-results/journal-entries-en-dark.png", fullPage: true });
+    await page.goto("/tools/journal");
 
     const bulgarianPreferences = await admin
       .from("user_preferences")
@@ -91,6 +122,14 @@ test.describe("journal overview", () => {
     ).toBe(true);
     await page.screenshot({ path: "test-results/journal-overview-bg-dark.png", fullPage: true });
 
+    await page.getByText("Виж всички записи", { exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Всички записи", exact: true })).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await page.screenshot({ path: "test-results/journal-entries-bg-dark.png", fullPage: true });
+    await page.goto("/tools/journal");
+
     const lightPreferences = await admin
       .from("user_preferences")
       .update({ theme: "light" })
@@ -103,5 +142,12 @@ test.describe("journal overview", () => {
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
     await page.screenshot({ path: "test-results/journal-overview-bg-light.png", fullPage: true });
+
+    await page.getByText("Виж всички записи", { exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Всички записи", exact: true })).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await page.screenshot({ path: "test-results/journal-entries-bg-light.png", fullPage: true });
   });
 });

@@ -4,7 +4,8 @@ import {
   deleteJournalEntry,
   getJournalEntry,
   listJournalEntries,
-  listJournalWritingDays,
+  listJournalEntriesPage,
+  listJournalWritingBuckets,
   saveJournalEntry,
   sumJournalWords,
 } from "@/src/features/journal/repository";
@@ -58,6 +59,22 @@ describe("journal repository", () => {
     expect(limit).toHaveBeenCalledWith(25);
   });
 
+  it("pages entries with a deterministic occurred-at and id order", async () => {
+    const range = jest.fn().mockResolvedValue({ data: [], error: null });
+    const orderId = jest.fn(() => ({ range }));
+    const orderOccurred = jest.fn(() => ({ order: orderId }));
+    const eq = jest.fn(() => ({ order: orderOccurred }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listJournalEntriesPage("user-1", 50, 100)).resolves.toEqual([]);
+
+    expect(orderOccurred).toHaveBeenCalledWith("occurred_at", { ascending: false });
+    expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
+    expect(range).toHaveBeenCalledWith(100, 149);
+  });
+
   it("sums lifetime words through the RPC rather than the capped list", async () => {
     const rpc = jest.fn().mockResolvedValue({ data: 4210, error: null });
     const from = jest.fn();
@@ -87,11 +104,25 @@ describe("journal repository", () => {
     await expect(sumJournalWords()).rejects.toThrow("rpc failed");
   });
 
-  it("loads exact daily writing totals without reading journal bodies on the client", async () => {
+  it("loads exact adaptive writing buckets without reading journal bodies on the client", async () => {
     const rpc = jest.fn().mockResolvedValue({
       data: [
-        { day_key: "2026-05-27", word_count: 0 },
-        { day_key: "2026-05-28", word_count: "421" },
+        {
+          bucket_start_key: "2026-03-01",
+          bucket_end_key: "2026-03-07",
+          word_count: 0,
+          bucket_unit: "week",
+          range_start_key: "2026-03-01",
+          range_end_key: "2026-05-29",
+        },
+        {
+          bucket_start_key: "2026-03-08",
+          bucket_end_key: "2026-03-14",
+          word_count: "421",
+          bucket_unit: "week",
+          range_start_key: "2026-03-01",
+          range_end_key: "2026-05-29",
+        },
       ],
       error: null,
     });
@@ -100,22 +131,40 @@ describe("journal repository", () => {
       typeof requireSupabase
     >);
 
-    await expect(listJournalWritingDays("Europe/Sofia", 14)).resolves.toEqual([
-      { dayKey: "2026-05-27", wordCount: 0 },
-      { dayKey: "2026-05-28", wordCount: 421 },
+    await expect(listJournalWritingBuckets("Europe/Sofia", 90)).resolves.toEqual([
+      {
+        startDayKey: "2026-03-01",
+        endDayKey: "2026-03-07",
+        wordCount: 0,
+        unit: "week",
+        rangeStartDayKey: "2026-03-01",
+        rangeEndDayKey: "2026-05-29",
+      },
+      {
+        startDayKey: "2026-03-08",
+        endDayKey: "2026-03-14",
+        wordCount: 421,
+        unit: "week",
+        rangeStartDayKey: "2026-03-01",
+        rangeEndDayKey: "2026-05-29",
+      },
     ]);
-    expect(rpc).toHaveBeenCalledWith("journal_writing_days", {
+    expect(rpc).toHaveBeenCalledWith("journal_writing_buckets", {
       p_time_zone: "Europe/Sofia",
-      p_days: 14,
+      p_days: 90,
     });
     expect(from).not.toHaveBeenCalled();
   });
 
-  it("throws when the daily writing totals RPC errors", async () => {
+  it("passes null for all time and throws when the bucket RPC errors", async () => {
     const rpc = jest.fn().mockResolvedValue({ data: null, error: new Error("rpc failed") });
     mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(listJournalWritingDays("Europe/Sofia", 14)).rejects.toThrow("rpc failed");
+    await expect(listJournalWritingBuckets("Europe/Sofia", "all")).rejects.toThrow("rpc failed");
+    expect(rpc).toHaveBeenCalledWith("journal_writing_buckets", {
+      p_time_zone: "Europe/Sofia",
+      p_days: null,
+    });
   });
 
   it("returns null when getJournalEntry finds no row", async () => {

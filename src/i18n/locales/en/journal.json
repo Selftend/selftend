@@ -21,9 +21,20 @@
     "never": "Nothing journaled yet"
   },
   "writing": {
-    "caption": "Words written per day.",
-    "barLabel_one": "{{date}}: {{count}} word",
-    "barLabel_other": "{{date}}: {{count}} words"
+    "caption": {
+      "day": "Words written per day.",
+      "week": "Words written per seven-day period.",
+      "month": "Words written per month.",
+      "year": "Words written per year."
+    },
+    "range7": "7d",
+    "range30": "30d",
+    "range90": "90d",
+    "rangeAll": "All time",
+    "emptyRange": "No writing in this range.",
+    "error": "Couldn't load the writing chart.",
+    "barLabel_one": "{{period}}: {{count}} word",
+    "barLabel_other": "{{period}}: {{count}} words"
   },
   "groups": {
     "today": "Today",
@@ -40,6 +51,15 @@
     "showAll": "Show all entries",
     "viewEntry": "View journal entry from {{when}}",
     "untitled": "Untitled"
+  },
+  "history": {
+    "title": "All entries",
+    "description": "Every journal entry, newest first.",
+    "empty": "Your entries will collect here as you write.",
+    "error": {
+      "title": "Couldn't load your entries",
+      "description": "Check your connection and try again."
+    }
   },
   "editor": {
     "editTitle": "Edit journal entry",

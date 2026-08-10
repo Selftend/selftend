@@ -122,7 +122,7 @@ describe("JournalDetailScreen", () => {
 
     fireEvent.press(screen.getByText("Show all entries"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/journal");
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/journal/entries");
   });
 
   it("routes to the edit screen", () => {
