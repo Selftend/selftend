@@ -17,6 +17,8 @@ interface MindfulnessSessionRow {
   created_at: string;
   cycles: number | null;
   duration_seconds: number | null;
+  steps_completed?: number | null;
+  steps_total?: number | null;
 }
 
 function mapSession(row: MindfulnessSessionRow): MindfulnessSession {
@@ -35,6 +37,8 @@ function mapSession(row: MindfulnessSessionRow): MindfulnessSession {
     createdAt: row.created_at,
     cycles: row.cycles ?? null,
     durationSeconds: row.duration_seconds ?? null,
+    stepsCompleted: row.steps_completed ?? null,
+    stepsTotal: row.steps_total ?? null,
   };
 }
 
@@ -65,6 +69,28 @@ export async function listMindfulnessSessionsByNames(
     .order("completed_at", { ascending: false })
     .limit(limit);
 
+  if (error) throw error;
+  return (data as MindfulnessSessionRow[]).map(mapSession);
+}
+
+/** One stable, newest-first page for a closed set of exercise names. */
+export async function listMindfulnessSessionsByNamesPage(
+  userId: string,
+  exerciseNames: string[],
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  const client = requireSupabase();
+  let query = client
+    .from("mindfulness_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .in("exercise_name", exerciseNames)
+    .order("completed_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("completed_at", cursor));
+
+  const { data, error } = await query.limit(limit);
   if (error) throw error;
   return (data as MindfulnessSessionRow[]).map(mapSession);
 }
@@ -184,6 +210,8 @@ export async function saveMindfulnessSession(userId: string, input: MindfulnessS
       mood_after: null,
       cycles: input.cycles ?? null,
       duration_seconds: input.durationSeconds ?? null,
+      steps_completed: input.stepsCompleted ?? null,
+      steps_total: input.stepsTotal ?? null,
       completed_at: occurrence.occurredAt,
       completed_offset_minutes: occurrence.occurredOffsetMinutes,
     })

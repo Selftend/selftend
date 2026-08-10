@@ -32,16 +32,43 @@ describe("GroundingFlow", () => {
     expect(getByText("Technique not found")).toBeTruthy();
   });
 
-  it("returns to intro when the session is exited", () => {
-    const { getByText, getByLabelText, queryByText } = renderWithProviders(
+  it("saves neutral partial progress when the session is finished early", async () => {
+    const { getByText, getByLabelText, queryByText, getByTestId } = renderWithProviders(
       <GroundingFlow slug="cold-water" />,
     );
     fireEvent.press(getByText("Start"));
     // now in session
     expect(queryByText("Start")).toBeNull();
     fireEvent.press(getByLabelText("Close"));
-    // back on intro
-    expect(getByText("Start")).toBeTruthy();
+    expect(getByText("Finish this session?")).toBeTruthy();
+    expect(queryByText("Start")).toBeNull();
+    fireEvent.press(getByTestId("confirm-dialog-confirm"));
+
+    await waitFor(() =>
+      expect(mockSave).toHaveBeenCalledWith(
+        "user-1",
+        expect.objectContaining({ stepsCompleted: 1, stepsTotal: 4 }),
+      ),
+    );
+    await waitFor(() => expect(getByText("Grounding complete")).toBeTruthy());
+  });
+
+  it("saves the furthest reached step after navigating back", async () => {
+    const { getByText, getByLabelText, getByTestId } = renderWithProviders(
+      <GroundingFlow slug="cold-water" />,
+    );
+    fireEvent.press(getByText("Start"));
+    fireEvent.press(getByLabelText("Go to step 4 of 4"));
+    fireEvent.press(getByText("Back"));
+    fireEvent.press(getByLabelText("Close"));
+    fireEvent.press(getByTestId("confirm-dialog-confirm"));
+
+    await waitFor(() =>
+      expect(mockSave).toHaveBeenCalledWith(
+        "user-1",
+        expect.objectContaining({ stepsCompleted: 4, stepsTotal: 4 }),
+      ),
+    );
   });
 
   it("walks intro -> session -> done -> save", async () => {
@@ -57,23 +84,23 @@ describe("GroundingFlow", () => {
     fireEvent.press(getByText("Next"));
     fireEvent.press(getByText("Finish"));
 
-    // Done
-    expect(getByText("Done")).toBeTruthy();
-    fireEvent.press(getByText("Save session"));
-
     await waitFor(() =>
       expect(mockSave).toHaveBeenCalledWith("user-1", {
         exerciseName: "cold-water",
         durationMinutes: 1,
         reflection: "",
         feelingAfter: null,
+        stepsCompleted: 4,
+        stepsTotal: 4,
       }),
     );
+    await waitFor(() => expect(getByText("Grounding complete")).toBeTruthy());
+    fireEvent.press(getByText("Done"));
 
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/tools/grounding"));
   });
 
-  it("pours the clay room over every phase", () => {
+  it("pours the clay room over every phase", async () => {
     const { getByTestId, getByText } = renderWithProviders(<GroundingFlow slug="cold-water" />);
     // Intro: the room wrapper carries the pour; a wrong or missing room fails here.
     expectNeutralRoom(getByTestId("grounding-flow-room"));
@@ -86,6 +113,7 @@ describe("GroundingFlow", () => {
     fireEvent.press(getByText("Next"));
     fireEvent.press(getByText("Next"));
     fireEvent.press(getByText("Finish"));
+    await waitFor(() => expect(getByText("Grounding complete")).toBeTruthy());
     expectNeutralRoom(getByTestId("grounding-flow-room"));
   });
 

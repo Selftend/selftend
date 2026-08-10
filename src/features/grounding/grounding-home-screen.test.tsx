@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import GroundingHomeScreen from "@/src/features/grounding/grounding-home-screen";
-import { useGroundingSessions } from "@/src/features/grounding/queries";
+import { useGroundingSessionCount, useGroundingSessions } from "@/src/features/grounding/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { expectNeutralRoom } from "@/test/room-pour";
 
@@ -24,6 +24,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 
 jest.mock("@/src/features/grounding/queries", () => ({
   useGroundingSessions: jest.fn(),
+  useGroundingSessionCount: jest.fn(),
 }));
 
 jest.mock("@/src/components/app/grounding-onboarding-modal", () => ({
@@ -43,6 +44,9 @@ jest.mock("@/src/features/settings/queries", () => ({
 const mockUseGroundingSessions = useGroundingSessions as jest.MockedFunction<
   typeof useGroundingSessions
 >;
+const mockUseGroundingSessionCount = useGroundingSessionCount as jest.MockedFunction<
+  typeof useGroundingSessionCount
+>;
 
 const session = (overrides: Record<string, unknown> = {}) => ({
   id: "s1",
@@ -55,7 +59,11 @@ const session = (overrides: Record<string, unknown> = {}) => ({
   moodAfter: null,
   feelingAfter: null,
   completedAt: "2026-05-28T10:00:00Z",
+  completedOffsetMinutes: 0,
+  dayKey: "2026-05-28",
   createdAt: "2026-05-28T10:00:00Z",
+  stepsCompleted: 5,
+  stepsTotal: 5,
   ...overrides,
 });
 
@@ -65,6 +73,9 @@ describe("GroundingHomeScreen", () => {
     mockUseGroundingSessions.mockReturnValue({
       data: undefined,
     } as unknown as ReturnType<typeof useGroundingSessions>);
+    mockUseGroundingSessionCount.mockReturnValue({
+      data: 12,
+    } as unknown as ReturnType<typeof useGroundingSessionCount>);
   });
 
   it("renders the header title, description, and stats", () => {
@@ -76,7 +87,7 @@ describe("GroundingHomeScreen", () => {
       ),
     ).toBeTruthy();
     expect(screen.getByText(/techniques$/)).toBeTruthy();
-    expect(screen.getByText("takes 2-3 min")).toBeTruthy();
+    expect(screen.getByText(/12 sessions/)).toBeTruthy();
   });
 
   it("lists the techniques and navigates on press", () => {
