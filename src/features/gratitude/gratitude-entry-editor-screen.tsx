@@ -1,5 +1,5 @@
 import { router, type Href } from "expo-router";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,9 +13,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Input } from "@/src/components/react-native-reusables/input";
-import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import {
   useGratitudeEntries,
   useGratitudeEntry,
@@ -25,10 +23,8 @@ import {
   GRATITUDE_ITEM_COUNT,
   GRATITUDE_ITEM_MAX,
   GRATITUDE_LIFE_ITEM_COUNT,
-  GRATITUDE_NOTE_MAX,
 } from "@/src/features/gratitude/schemas";
 import {
-  GRATITUDE_LIFE_QUESTIONS_KEY,
   GRATITUDE_TODAY_QUESTIONS_KEY,
   answeredCount,
   asQuestionList,
@@ -39,6 +35,7 @@ import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { formatInstantAtOffset } from "@/src/utils/date";
 
 interface GratitudeEntryEditorScreenProps {
   fallbackHref: Href;
@@ -46,7 +43,7 @@ interface GratitudeEntryEditorScreenProps {
   entryId?: string | null;
 }
 
-const EMPTY_ITEMS = Array.from({ length: GRATITUDE_ITEM_COUNT }, () => "");
+const EMPTY_ITEMS = Array.from({ length: 3 }, () => "");
 const EMPTY_LIFE_ITEMS = Array.from({ length: GRATITUDE_LIFE_ITEM_COUNT }, () => "");
 
 export function GratitudeEntryEditorScreen({
@@ -54,7 +51,7 @@ export function GratitudeEntryEditorScreen({
   mode,
   entryId = null,
 }: GratitudeEntryEditorScreenProps) {
-  const { t } = useTranslation("gratitude");
+  const { t, i18n } = useTranslation("gratitude");
   const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
@@ -73,6 +70,7 @@ export function GratitudeEntryEditorScreen({
   const [items, setItems] = useState<string[]>(EMPTY_ITEMS);
   const [lifeItems, setLifeItems] = useState<string[]>(EMPTY_LIFE_ITEMS);
   const [note, setNote] = useState("");
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [loggedAt, setLoggedAt] = useState(() => new Date().toISOString());
   const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState<CapturedOffsetMinutes>(
     () => occurrenceTimeFromDate().occurredOffsetMinutes,
@@ -88,13 +86,15 @@ export function GratitudeEntryEditorScreen({
     if (!existingEntry) return;
     if (hydratedIdRef.current === existingEntry.id) return;
     hydratedIdRef.current = existingEntry.id;
-    setItems([
+    const hydratedItems = [
       existingEntry.items[0] ?? "",
       existingEntry.items[1] ?? "",
       existingEntry.items[2] ?? "",
       existingEntry.items[3] ?? "",
       existingEntry.items[4] ?? "",
-    ]);
+    ];
+    while (hydratedItems.length > 3 && !hydratedItems.at(-1)?.trim()) hydratedItems.pop();
+    setItems(hydratedItems);
     setNote(existingEntry.note);
     setLoggedAt(existingEntry.loggedAt);
     // Carry a missing offset through as null rather than deriving one from this
@@ -110,8 +110,13 @@ export function GratitudeEntryEditorScreen({
   }, [existingEntry]);
 
   const todayQuestions = asQuestionList(t(GRATITUDE_TODAY_QUESTIONS_KEY, { returnObjects: true }));
-  const lifeQuestions = asQuestionList(t(GRATITUDE_LIFE_QUESTIONS_KEY, { returnObjects: true }));
   const canSave = answeredCount(items) > 0 && !saving && Boolean(user);
+  const dateLabel = formatInstantAtOffset(
+    loggedAt,
+    loggedOffsetMinutes,
+    { weekday: "long", day: "numeric", month: "long" },
+    i18n.language,
+  );
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -123,8 +128,16 @@ export function GratitudeEntryEditorScreen({
 
   const updateItem = (index: number, value: string) =>
     setItems((prev) => prev.map((v, i) => (i === index ? value : v)));
-  const updateLifeItem = (index: number, value: string) =>
-    setLifeItems((prev) => prev.map((v, i) => (i === index ? value : v)));
+  const applyPrompt = (prompt: string) => {
+    setItems((current) => {
+      const focusedIsEmpty = focusedIndex !== null && !(current[focusedIndex] ?? "").trim();
+      const target = focusedIsEmpty ? focusedIndex : current.findIndex((item) => !item.trim());
+      if (target !== null && target >= 0) {
+        return current.map((item, index) => (index === target ? prompt : item));
+      }
+      return current.length < GRATITUDE_ITEM_COUNT ? [...current, prompt] : current;
+    });
+  };
 
   const handleSave = useSingleFlight(async () => {
     if (!user) return;
@@ -138,7 +151,7 @@ export function GratitudeEntryEditorScreen({
         input: {
           level: 3,
           items,
-          note: note.trim().slice(0, GRATITUDE_NOTE_MAX),
+          note,
           loggedAt,
           loggedOffsetMinutes,
           events: [],
@@ -213,48 +226,68 @@ export function GratitudeEntryEditorScreen({
         <View className="gap-2">
           <Text variant="h1">{editMode ? t("editor.editTitle") : t("editor.createTitle")}</Text>
           <Text variant="muted">
-            {editMode ? t("editor.editDescription") : t("editor.createDescription")}
+            {editMode
+              ? t("editor.editDescription")
+              : t("editor.createDescription", { date: dateLabel })}
           </Text>
         </View>
 
-        <View className="gap-4">
-          <Label>{t("editor.todayItemsLabel")}</Label>
+        <View className="border-y border-border">
           {items.map((item, index) => (
-            <View className="gap-2" key={index}>
-              <Label>{todayQuestions[index] ?? ""}</Label>
+            <View
+              className={cn(
+                "flex-row items-center gap-3 py-2",
+                index < items.length - 1 && "border-b border-border",
+              )}
+              key={index}
+            >
+              <Text className="w-6 text-center text-sm font-semibold text-primary-ink">
+                {index + 1}
+              </Text>
               <Input
-                accessibilityLabel={
-                  todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })
-                }
+                accessibilityLabel={t("editor.itemLabel", { number: index + 1 })}
+                className="min-h-12 flex-1 border-0 bg-transparent px-0 shadow-none"
                 maxLength={GRATITUDE_ITEM_MAX}
                 onChangeText={(value) => updateItem(index, value)}
-                placeholder={t("editor.itemPlaceholder")}
+                onFocus={() => setFocusedIndex(index)}
+                placeholder={
+                  index === 0 ? t("editor.itemPlaceholder") : t("editor.continuationPlaceholder")
+                }
                 value={item}
               />
             </View>
           ))}
         </View>
 
-        <View className="gap-4">
-          <Label>{t("editor.lifeItemsLabel")}</Label>
-          {lifeItems.map((item, index) => (
-            <View className="gap-2" key={index}>
-              <Label>{lifeQuestions[index] ?? ""}</Label>
-              <Input
-                accessibilityLabel={
-                  lifeQuestions[index] ?? t("editor.lifeItemLabel", { number: index + 1 })
-                }
-                maxLength={GRATITUDE_ITEM_MAX}
-                onChangeText={(value) => updateLifeItem(index, value)}
-                placeholder={t("editor.lifeItemPlaceholder")}
-                value={item}
-              />
-            </View>
-          ))}
+        {items.length < GRATITUDE_ITEM_COUNT ? (
+          <Button
+            className="self-start"
+            onPress={() => setItems((current) => [...current, ""])}
+            variant="ghost"
+          >
+            <Text>{t("editor.addAnother")}</Text>
+          </Button>
+        ) : null}
+
+        <View className="gap-3">
+          <Text className="text-sm font-semibold">{t("editor.promptHelp")}</Text>
+          <View className="flex-row flex-wrap gap-2">
+            {todayQuestions.map((prompt) => (
+              <Pressable
+                key={prompt}
+                accessibilityRole="button"
+                className="rounded-full border border-primary/30 bg-primary/[0.08] px-3 py-2"
+                onPress={() => applyPrompt(prompt)}
+                role="button"
+              >
+                <Text className="text-xs font-semibold text-primary-ink">{prompt}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         <View className="gap-2">
-          <Label>{t("editor.whenLabel")}</Label>
+          <Text className="text-sm font-medium">{t("editor.whenLabel")}</Text>
           <DateTimeField
             value={loggedAt}
             offsetMinutes={loggedOffsetMinutes}
@@ -268,17 +301,6 @@ export function GratitudeEntryEditorScreen({
               );
             }}
             accessibilityLabel={t("editor.whenLabel")}
-          />
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("editor.noteLabel")}</Label>
-          <Textarea
-            accessibilityLabel={t("editor.noteLabel")}
-            maxLength={GRATITUDE_NOTE_MAX}
-            onChangeText={setNote}
-            placeholder={t("editor.notePlaceholder")}
-            value={note}
           />
         </View>
 

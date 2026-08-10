@@ -10,6 +10,7 @@ import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 
 interface GratitudeEntryRow {
   id: string;
@@ -104,6 +105,25 @@ export async function listGratitudeEntries(userId: string, limit = 50) {
   return (data as GratitudeEntryRow[]).map(mapGratitudeEntry);
 }
 
+export async function listGratitudeEntriesPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  const client = requireSupabase();
+  let query = client
+    .from("gratitude_entries")
+    .select("*")
+    .eq("user_id", userId)
+    .order("logged_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("logged_at", cursor));
+
+  const { data, error } = await query.limit(limit);
+  if (error) throw error;
+  return (data as GratitudeEntryRow[]).map(mapGratitudeEntry);
+}
+
 // Exact lifetime count for hero stats - independent of the capped list query, which
 // would otherwise freeze the displayed total at `limit`.
 export async function countGratitudeEntries(userId: string): Promise<number> {
@@ -117,20 +137,50 @@ export async function countGratitudeEntries(userId: string): Promise<number> {
   return count ?? 0;
 }
 
-// Exact count of entries logged since `sinceIso` - for the Progress 30-day stat.
-export async function countGratitudeEntriesSince(
-  userId: string,
-  sinceIso: string,
-): Promise<number> {
+export async function countFavoriteGratitudeEntries(userId: string): Promise<number> {
   const client = requireSupabase();
   const { count, error } = await client
     .from("gratitude_entries")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .gte("logged_at", sinceIso);
+    .eq("starred", true);
 
   if (error) throw error;
   return count ?? 0;
+}
+
+// Exact count since a civil day, using each entry's captured occurrence offset.
+export async function countGratitudeEntriesSinceDayKey(
+  userId: string,
+  sinceDayKey: string,
+): Promise<number> {
+  const client = requireSupabase();
+  // The earliest UTC instant that can belong to this civil day at a valid
+  // captured offset is 14 hours before UTC midnight. Fetch only that bounded
+  // window, then compare the same captured day keys the UI renders. Page to
+  // keep the count exact even for unusually active accounts.
+  const lowerBound = new Date(`${sinceDayKey}T00:00:00.000Z`);
+  lowerBound.setUTCHours(lowerBound.getUTCHours() - 14);
+  const pageSize = 1000;
+  let start = 0;
+  let count = 0;
+
+  while (true) {
+    const { data, error } = await client
+      .from("gratitude_entries")
+      .select("logged_at,logged_offset_minutes")
+      .eq("user_id", userId)
+      .gte("logged_at", lowerBound.toISOString())
+      .order("logged_at", { ascending: true })
+      .range(start, start + pageSize - 1);
+    if (error) throw error;
+    const rows = (data ?? []) as Pick<GratitudeEntryRow, "logged_at" | "logged_offset_minutes">[];
+    count += rows.filter(
+      (row) => entryDayKey(row.logged_at, row.logged_offset_minutes ?? null) >= sinceDayKey,
+    ).length;
+    if (rows.length < pageSize) return count;
+    start += pageSize;
+  }
 }
 
 export async function listFavoriteGratitudeEntries(userId: string, limit = 100) {

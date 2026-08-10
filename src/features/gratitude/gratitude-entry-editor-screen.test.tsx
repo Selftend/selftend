@@ -61,7 +61,7 @@ describe("GratitudeEntryEditorScreen", () => {
     >);
   });
 
-  it("renders create mode with gratitude item and note fields", () => {
+  it("renders three open lines with only the first full placeholder", () => {
     mockUseSaveGratitudeEntry.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
@@ -71,12 +71,47 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    expect(screen.getByText("New gratitude entry")).toBeTruthy();
-    expect(screen.getByLabelText("What made you laugh?")).toBeTruthy();
-    expect(screen.getByLabelText("Who was kind to you?")).toBeTruthy();
-    expect(screen.getByLabelText("What did your body help you do?")).toBeTruthy();
-    expect(screen.getByLabelText("Note (optional)")).toBeTruthy();
-    expect(screen.getByText("Save")).toBeTruthy();
+    expect(screen.getByText("Three good things")).toBeTruthy();
+    expect(screen.getByLabelText("Gratitude 1")).toBeTruthy();
+    expect(screen.getByLabelText("Gratitude 2")).toBeTruthy();
+    expect(screen.getByLabelText("Gratitude 3")).toBeTruthy();
+    expect(screen.queryByLabelText("Gratitude 4")).toBeNull();
+    expect(screen.getByPlaceholderText("Something small that mattered today")).toBeTruthy();
+    expect(screen.getAllByPlaceholderText("…")).toHaveLength(2);
+    expect(screen.queryByLabelText("Note (optional)")).toBeNull();
+    expect(screen.getByText("Save entry")).toBeTruthy();
+  });
+
+  it("adds open lines up to five", () => {
+    mockUseSaveGratitudeEntry.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as never);
+    renderWithProviders(
+      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
+    );
+
+    fireEvent.press(screen.getByText("Add another"));
+    fireEvent.press(screen.getByText("Add another"));
+
+    expect(screen.getByLabelText("Gratitude 5")).toBeTruthy();
+    expect(screen.queryByText("Add another")).toBeNull();
+  });
+
+  it("fills the focused empty line from a prompt without overwriting text", () => {
+    mockUseSaveGratitudeEntry.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as never);
+    renderWithProviders(
+      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
+    );
+    fireEvent.changeText(screen.getByLabelText("Gratitude 1"), "Already here");
+    fireEvent(screen.getByLabelText("Gratitude 2"), "focus");
+    fireEvent.press(screen.getByText("What made you laugh?"));
+
+    expect(screen.getByDisplayValue("Already here")).toBeTruthy();
+    expect(screen.getByDisplayValue("What made you laugh?")).toBeTruthy();
   });
 
   it("saves a new entry when at least one item is provided", async () => {
@@ -105,14 +140,14 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    fireEvent.changeText(screen.getByLabelText("What made you laugh?"), "Warm coffee");
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.changeText(screen.getByLabelText("Gratitude 1"), "Warm coffee");
+    fireEvent.press(screen.getByText("Save entry"));
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
         input: {
           level: 3,
-          items: ["Warm coffee", "", "", "", ""],
+          items: ["Warm coffee", "", ""],
           note: "",
           loggedAt: expect.any(String),
           loggedOffsetMinutes: expect.any(Number),
@@ -153,9 +188,9 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    fireEvent.changeText(screen.getByLabelText("What made you laugh?"), "Warm coffee");
-    fireEvent.press(screen.getByText("Save"));
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.changeText(screen.getByLabelText("Gratitude 1"), "Warm coffee");
+    fireEvent.press(screen.getByText("Save entry"));
+    fireEvent.press(screen.getByText("Save entry"));
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalled());
     expect(mutateAsync).toHaveBeenCalledTimes(1);
@@ -187,16 +222,15 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    fireEvent.changeText(screen.getByLabelText("Who was kind to you?"), "Sunlight");
-    fireEvent.changeText(screen.getByLabelText("Note (optional)"), "Small thing.");
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.changeText(screen.getByLabelText("Gratitude 2"), "Sunlight");
+    fireEvent.press(screen.getByText("Save entry"));
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
         input: {
           level: 3,
-          items: ["", "Sunlight", "", "", ""],
-          note: "Small thing.",
+          items: ["", "Sunlight", ""],
+          note: "",
           loggedAt: expect.any(String),
           loggedOffsetMinutes: expect.any(Number),
           events: [],
@@ -210,7 +244,7 @@ describe("GratitudeEntryEditorScreen", () => {
     );
   });
 
-  it("prefills fields in edit mode from cache", () => {
+  it("prefills edit lines and preserves hidden legacy content on save", async () => {
     mockUseGratitudeEntries.mockReturnValue({
       data: [
         {
@@ -231,8 +265,9 @@ describe("GratitudeEntryEditorScreen", () => {
         },
       ],
     } as unknown as ReturnType<typeof useGratitudeEntries>);
+    const mutateAsync = jest.fn().mockResolvedValue({ id: "g-9" });
     mockUseSaveGratitudeEntry.mockReturnValue({
-      mutateAsync: jest.fn(),
+      mutateAsync,
       isPending: false,
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
@@ -243,7 +278,17 @@ describe("GratitudeEntryEditorScreen", () => {
     expect(screen.getByText("Edit gratitude entry")).toBeTruthy();
     expect(screen.getByDisplayValue("A quiet walk")).toBeTruthy();
     expect(screen.getByDisplayValue("A kind message")).toBeTruthy();
-    expect(screen.getByDisplayValue("This helped.")).toBeTruthy();
     expect(screen.getByText("Update")).toBeTruthy();
+    expect(screen.queryByDisplayValue("This helped.")).toBeNull();
+
+    fireEvent.press(screen.getByText("Update"));
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entryId: "g-9",
+          input: expect.objectContaining({ note: "This helped." }),
+        }),
+      ),
+    );
   });
 });

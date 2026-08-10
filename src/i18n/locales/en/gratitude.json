@@ -10,14 +10,15 @@
   "home": {
     "title": "Gratitude log",
     "subtitle": "Notice what's good. Write it down. No pressure.",
-    "viewAll": "View all"
+    "viewAll": "Show all entries →"
   },
   "hero": {
     "entries_one": "entry",
     "entries_other": "entries",
     "favorites_one": "favorite",
     "favorites_other": "favorites",
-    "thisWeek": "this week"
+    "thisWeek": "this week",
+    "loadingValue": "—"
   },
   "stats": {
     "last": "last logged {{when}}",
@@ -26,6 +27,8 @@
   "insights": {
     "title": "Insights",
     "frequency": "How often you log",
+    "dayCount_one": "{{date}}: {{count}} entry",
+    "dayCount_other": "{{date}}: {{count}} entries",
     "thisWeek": "This week",
     "themes": "Common themes",
     "favorites": "Favorites",
@@ -77,15 +80,26 @@
     "showMore": "Show more",
     "showLess": "Show less",
     "expandEntry": "Expand gratitude entry from {{when}}",
-    "collapseEntry": "Collapse gratitude entry from {{when}}"
+    "collapseEntry": "Collapse gratitude entry from {{when}}",
+    "filters": {
+      "all": "All",
+      "favorites": "Favorites"
+    },
+    "error": {
+      "title": "Entries could not be loaded",
+      "description": "Check your connection and try again."
+    }
   },
   "editor": {
-    "createTitle": "New gratitude entry",
+    "createTitle": "Three good things",
     "editTitle": "Edit gratitude entry",
-    "createDescription": "Write one to five things you appreciated. Small counts.",
+    "createDescription": "{{date}} · small counts, and one is fine.",
     "editDescription": "Update what you noticed earlier.",
     "itemLabel": "Gratitude {{number}}",
-    "itemPlaceholder": "A small thing that mattered.",
+    "itemPlaceholder": "Something small that mattered today",
+    "continuationPlaceholder": "…",
+    "addAnother": "Add another",
+    "promptHelp": "Stuck? borrow a prompt",
     "todayItemsLabel": "Grateful for today",
     "todayQuestions": [
       "What made you laugh?",
@@ -106,7 +120,7 @@
     "whenLabel": "When",
     "notePlaceholder": "Add a little context if it helps.",
     "cancel": "Cancel",
-    "save": "Save",
+    "save": "Save entry",
     "update": "Update",
     "saveError": "Couldn't save your entry. Try again.",
     "notFound": "We couldn't find that entry."
@@ -123,6 +137,8 @@
     "lifeItemsTitle": "Grateful for (life)",
     "noteTitle": "Note",
     "loggedAt": "Logged",
+    "loggedSummary_one": "Logged {{time}} · {{count}} thing",
+    "loggedSummary_other": "Logged {{time}} · {{count}} things",
     "notFound": "We couldn't find that gratitude entry.",
     "favoriteError": "Couldn't update this favorite. Try again.",
     "deleteError": "Couldn't delete this entry. Try again.",
