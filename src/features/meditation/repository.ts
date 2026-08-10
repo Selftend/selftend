@@ -8,6 +8,7 @@ import type {
   StagePracticeNote,
   TmiTechnique,
 } from "@/src/features/meditation/types";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 import {
   entryDayKey,
   occurrenceTimeFromDate,
@@ -113,19 +114,39 @@ function mapPracticeNote(row: StagePracticeNoteRow): StagePracticeNote {
 /**
  * A page of sits, newest first.
  *
- * `offset` is what makes the all-sits screen able to reach the end of a history
- * rather than the first hundred rows of one (#696): `.range` is the same
- * bounded read `.limit` was, given a start.
+ * The ordinary recent-session read remains deliberately capped. The all-sits
+ * screen uses `listMeditationSessionsPage` below with a stable cursor.
  */
-export async function listMeditationSessions(userId: string, limit = 30, offset = 0) {
+export async function listMeditationSessions(userId: string, limit = 30) {
   const client = requireSupabase();
   const { data, error } = await client
     .from("meditation_sessions")
     .select("*")
     .eq("user_id", userId)
     .order("completed_at", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order("id", { ascending: false })
+    .limit(limit);
 
+  if (error) throw error;
+  return (data as MeditationSessionRow[]).map(mapSession);
+}
+
+/** One stable page for the all-sits screen, with a total descending order. */
+export async function listMeditationSessionsPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  const client = requireSupabase();
+  let query = client
+    .from("meditation_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("completed_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("completed_at", cursor));
+
+  const { data, error } = await query.limit(limit);
   if (error) throw error;
   return (data as MeditationSessionRow[]).map(mapSession);
 }

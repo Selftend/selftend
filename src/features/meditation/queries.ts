@@ -6,6 +6,7 @@ import {
   getMeditationSession,
   listMeditationMinutesSince,
   listMeditationSessions,
+  listMeditationSessionsPage,
   listStagePracticeNotes,
   medianMeditationMinutes,
   saveMeditationSession,
@@ -17,6 +18,7 @@ import type {
   MeditationSessionInput,
 } from "@/src/features/meditation/types";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 const meditationKeys = {
   all: ["meditation"] as const,
@@ -56,14 +58,14 @@ export function useMeditationSessionPages(userId: string | null) {
   return useInfiniteQuery({
     queryKey: userId ? meditationKeys.sessionPages(userId) : ["meditation", "sessionPages", "anon"],
     queryFn: ({ pageParam }) =>
-      listMeditationSessions(userId!, MEDITATION_HISTORY_PAGE_SIZE, pageParam),
-    initialPageParam: 0,
+      listMeditationSessionsPage(userId!, MEDITATION_HISTORY_PAGE_SIZE, pageParam),
+    initialPageParam: null as RecordCursor | null,
     // A short page is the end of the data. A full one may or may not be, so ask
     // again: one empty round trip at the exact boundary beats stopping early.
-    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+    getNextPageParam: (lastPage) =>
       lastPage.length < MEDITATION_HISTORY_PAGE_SIZE
         ? undefined
-        : lastPageParam + MEDITATION_HISTORY_PAGE_SIZE,
+        : nextDescendingCursor(lastPage, (session) => session.completedAt),
     enabled: Boolean(userId),
   });
 }

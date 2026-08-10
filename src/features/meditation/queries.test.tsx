@@ -28,6 +28,7 @@ jest.mock("@/src/features/meditation/repository", () => ({
   getMeditationSession: jest.fn(),
   listMeditationMinutesSince: jest.fn(),
   listMeditationSessions: jest.fn(),
+  listMeditationSessionsPage: jest.fn(),
   listStagePracticeNotes: jest.fn(),
   medianMeditationMinutes: jest.fn(),
   saveMeditationSession: jest.fn(),
@@ -94,17 +95,17 @@ describe("useMeditationSessionPages", () => {
   it("does not fetch when userId is null", () => {
     const client = createTestQueryClient();
     renderHook(() => useMeditationSessionPages(null), { wrapper: wrap(client) });
-    expect(repo.listMeditationSessions).not.toHaveBeenCalled();
+    expect(repo.listMeditationSessionsPage).not.toHaveBeenCalled();
   });
 
-  it("asks for the first page at offset zero", async () => {
+  it("asks for the first page without a cursor", async () => {
     const client = createTestQueryClient();
     renderHook(() => useMeditationSessionPages("u1"), { wrapper: wrap(client) });
     await waitFor(() =>
-      expect(repo.listMeditationSessions).toHaveBeenCalledWith(
+      expect(repo.listMeditationSessionsPage).toHaveBeenCalledWith(
         "u1",
         MEDITATION_HISTORY_PAGE_SIZE,
-        0,
+        null,
       ),
     );
   });
@@ -113,8 +114,11 @@ describe("useMeditationSessionPages", () => {
     // A short page is the end of the data. A full one may or may not be, so it
     // asks again - one empty round trip at the exact boundary beats stopping
     // early and calling a truncated list "all history".
-    const full = Array.from({ length: MEDITATION_HISTORY_PAGE_SIZE }, (_, i) => ({ id: `s${i}` }));
-    (repo.listMeditationSessions as jest.Mock)
+    const full = Array.from({ length: MEDITATION_HISTORY_PAGE_SIZE }, (_, i) => ({
+      id: `s${i}`,
+      completedAt: `2026-08-09T00:${String(i).padStart(2, "0")}:00.000Z`,
+    }));
+    (repo.listMeditationSessionsPage as jest.Mock)
       .mockResolvedValueOnce(full)
       .mockResolvedValueOnce([{ id: "last" }]);
 
@@ -124,10 +128,13 @@ describe("useMeditationSessionPages", () => {
     await waitFor(() => expect(result.current.hasNextPage).toBe(true));
     await result.current.fetchNextPage();
     await waitFor(() =>
-      expect(repo.listMeditationSessions).toHaveBeenLastCalledWith(
+      expect(repo.listMeditationSessionsPage).toHaveBeenLastCalledWith(
         "u1",
         MEDITATION_HISTORY_PAGE_SIZE,
-        MEDITATION_HISTORY_PAGE_SIZE,
+        {
+          id: `s${MEDITATION_HISTORY_PAGE_SIZE - 1}`,
+          timestamp: `2026-08-09T00:${String(MEDITATION_HISTORY_PAGE_SIZE - 1).padStart(2, "0")}:00.000Z`,
+        },
       ),
     );
     await waitFor(() => expect(result.current.hasNextPage).toBe(false));

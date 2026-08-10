@@ -3,10 +3,12 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import {
+  HABITS_HISTORY_PAGE_SIZE,
   useArchiveHabit,
   useDeleteHabit,
   useHabit,
   useHabitLogs,
+  useHabitLogPages,
   useHabits,
   useRestoreHabit,
   useSaveHabit,
@@ -18,6 +20,7 @@ import {
   deleteHabit,
   getHabit,
   listHabitLogs,
+  listHabitLogsPage,
   listHabits,
   restoreHabit,
   saveHabit,
@@ -31,6 +34,7 @@ jest.mock("@/src/features/habits/repository", () => ({
   deleteHabit: jest.fn(),
   getHabit: jest.fn(),
   listHabitLogs: jest.fn(),
+  listHabitLogsPage: jest.fn(),
   listHabits: jest.fn(),
   restoreHabit: jest.fn(),
   saveHabit: jest.fn(),
@@ -39,6 +43,7 @@ jest.mock("@/src/features/habits/repository", () => ({
 }));
 
 const mockListHabitLogs = listHabitLogs as jest.MockedFunction<typeof listHabitLogs>;
+const mockListHabitLogsPage = listHabitLogsPage as jest.MockedFunction<typeof listHabitLogsPage>;
 const mockListHabits = listHabits as jest.MockedFunction<typeof listHabits>;
 const mockGetHabit = getHabit as jest.MockedFunction<typeof getHabit>;
 const mockSaveHabit = saveHabit as jest.MockedFunction<typeof saveHabit>;
@@ -128,6 +133,30 @@ describe("useHabitLogs - queryKey scope derivation", () => {
   it("does not fetch when userId is null", () => {
     renderHook(() => useHabitLogs(null, { habitId: "h1" }), { wrapper: makeWrapper(client) });
     expect(mockListHabitLogs).not.toHaveBeenCalled();
+  });
+});
+
+describe("useHabitLogPages", () => {
+  it("uses the final day and id as the next cursor", async () => {
+    const full = Array.from({ length: HABITS_HISTORY_PAGE_SIZE }, (_, i) => ({
+      id: `log-${i}`,
+      loggedOn: `2026-08-${String(31 - i).padStart(2, "0")}`,
+    }));
+    mockListHabitLogsPage.mockResolvedValueOnce(full as never).mockResolvedValueOnce([]);
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useHabitLogPages("u1"), {
+      wrapper: makeWrapper(client),
+    });
+
+    await waitFor(() => expect(result.current.hasNextPage).toBe(true));
+    expect(mockListHabitLogsPage).toHaveBeenCalledWith("u1", HABITS_HISTORY_PAGE_SIZE, null);
+    await result.current.fetchNextPage();
+    await waitFor(() =>
+      expect(mockListHabitLogsPage).toHaveBeenLastCalledWith("u1", HABITS_HISTORY_PAGE_SIZE, {
+        timestamp: full.at(-1)!.loggedOn,
+        id: full.at(-1)!.id,
+      }),
+    );
   });
 });
 

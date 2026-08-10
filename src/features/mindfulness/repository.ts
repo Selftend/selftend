@@ -1,4 +1,5 @@
 import type { MindfulnessSession, MindfulnessSessionInput } from "@/src/features/mindfulness/types";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 import { entryDayKey, occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
@@ -81,30 +82,28 @@ export async function listMindfulnessSessionsByNames(
  * The two would disagree, and the screen would be the one lying. `breathing.deletedExercise`
  * already exists to name those rows, which is the tell that they are meant to show.
  *
- * ⚠️ Offset paging, matching the mood and habits all-history screens rather than
- * diverging from them. It shares their known flaw (#797): an insert landing between two
- * page fetches shifts every later boundary, so a row can repeat or be skipped. The tie
- * break on `id` is what this screen CAN fix locally - without it two pages can disagree
- * about which row sits on a boundary even with no concurrent write, because
- * `completed_at` alone is not a total order. Moving the whole pattern to keyset paging is
- * #797's call, and it should move all three screens together.
+ * The exclusive `(completed_at, id)` cursor keeps the boundary stable across writes.
+ * `id` is required because two sessions can share a completion timestamp; timestamp
+ * alone would not form a total order.
  */
 export async function listMindfulnessSessionsExcludingNamesPage(
   userId: string,
   excludedNames: string[],
   limit: number,
-  offset: number,
+  cursor: RecordCursor | null,
 ) {
   const client = requireSupabase();
   const quoted = excludedNames.map((name) => `"${name}"`).join(",");
-  const { data, error } = await client
+  let query = client
     .from("mindfulness_sessions")
     .select("*")
     .eq("user_id", userId)
     .not("exercise_name", "in", `(${quoted})`)
     .order("completed_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("completed_at", cursor));
+
+  const { data, error } = await query.limit(limit);
 
   if (error) throw error;
   return (data as MindfulnessSessionRow[]).map(mapSession);
