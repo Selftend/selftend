@@ -1,25 +1,30 @@
+import { useWindowDimensions } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { BarChart } from "@/src/components/charts/bar-chart";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { qualityTint } from "@/src/features/sleep/quality-tint";
+import { formatCompactHours } from "@/src/features/sleep/format";
 import type { SleepLog } from "@/src/features/sleep/types";
 import { parseLocalNoon } from "@/src/utils/date";
 
-const MAX_MINUTES = 10 * 60; // bars cap at 10h
+const MIN_SCALE_MINUTES = 10 * 60;
 const BAR_AREA = 80;
-const MAX_BAR_WIDTH = 44; // keep bars a natural width when only a few nights are logged
+const MAX_BAR_WIDTH = 44;
 
-function compactHours(minutes: number): string {
-  const h = minutes / 60;
-  return `${Number.isInteger(h) ? h : h.toFixed(1)}h`;
+function scaleCeiling(nights: SleepLog[]): number {
+  const longest = Math.max(0, ...nights.map((night) => night.durationMinutes));
+  return Math.max(MIN_SCALE_MINUTES, Math.ceil(longest / 60) * 60);
 }
 
-// One bar per logged night (newest at right), height = hours slept, colour = quality.
+// One bar per sleep entry (newest at right). Height alone encodes duration;
+// colour is deliberately uniform so the chart does not grade an entry (#772).
 export function SleepDurationChart({ nights }: { nights: SleepLog[] }) {
   const { t, i18n } = useTranslation("sleep");
+  const { width } = useWindowDimensions();
   const dateFmt = new Intl.DateTimeFormat(i18n.language, { month: "numeric", day: "numeric" });
+  const maxMinutes = scaleCeiling(nights);
+  const showEveryDate = width > 360;
 
   return (
     <Card variant="soft">
@@ -33,18 +38,30 @@ export function SleepDurationChart({ nights }: { nights: SleepLog[] }) {
           </Text>
         ) : (
           <BarChart
-            bars={nights.map((n) => ({
-              key: n.id,
-              value: n.durationMinutes,
-              topLabel: compactHours(n.durationMinutes),
-              // The bar IS the night's civil day, so its date comes from dayKey -
-              // formatting the instant dates the bar by the viewer's zone (#433 §2).
-              label: dateFmt.format(parseLocalNoon(n.dayKey)),
-              tintClass: qualityTint(n.quality),
-            }))}
-            max={MAX_MINUTES}
+            bars={nights.map((night, index) => {
+              const date = dateFmt.format(parseLocalNoon(night.dayKey));
+              const duration = t("chart.compactHours", {
+                value: formatCompactHours(night.durationMinutes, i18n.language),
+              });
+              return {
+                key: night.id,
+                value: night.durationMinutes,
+                topLabel: duration,
+                // Keep fourteen columns legible at phone width. Every column
+                // retains its date in the accessible name, and wider screens
+                // print every visual date.
+                label: showEveryDate || index % 2 === 0 ? date : undefined,
+                accessibilityLabel: t("chart.durationBarA11y", { date, duration }),
+              };
+            })}
+            max={maxMinutes}
             barAreaHeight={BAR_AREA}
             maxBarWidth={MAX_BAR_WIDTH}
+            tintClass="bg-muted-foreground/80"
+            barClassName="rounded-t-md"
+            className="gap-1"
+            columnClassName="gap-0.5"
+            labelClassName="leading-3"
           />
         )}
       </CardContent>

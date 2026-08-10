@@ -645,10 +645,11 @@ function WeeklyRhythmSection({ rhythm }: { rhythm: WeekdayRhythm[] }) {
           zeroHeight={2}
           // NOT `bg-muted`, which measures 1.10:1 on card and 1.02:1 on
           // background - bars that are not low-contrast but invisible (#725).
-          // The accent clears 3:1 in both schemes (WCAG 1.4.11). Single-tone:
+          // `muted-foreground/80` clears 3:1 in both schemes (WCAG 1.4.11).
+          // Single-tone:
           // the two-tone treatment keyed off an absolute `< 8` threshold, which
           // means nothing at one habit and nothing at ten.
-          tintClass="bg-primary"
+          tintClass="bg-muted-foreground/80"
           barClassName="rounded-t-md"
           labelClassName="leading-3"
         />
