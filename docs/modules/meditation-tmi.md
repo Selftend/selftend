@@ -421,7 +421,6 @@ This module follows the contract documented in `tools.md`:
 - i18n namespace: `meditation:*`.
 - Route group: `/modules/meditation/*` (see §6).
 - New `user_preferences` fields, mirroring the CBT reminder fields:
-  - `meditation_onboarding_completed: boolean`
   - `meditation_reminders_enabled: boolean`
   - `meditation_reminder_hour: integer` (0-23)
   - `meditation_reminder_minute: integer` (0-59)
@@ -450,7 +449,7 @@ This module follows the contract documented in `tools.md`:
 
 ## 6. Onboarding Flow (Modal Wizard)
 
-Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 is mandatory. Completion is tracked via `meditation_onboarding_completed` on `user_preferences`. The full content is also available as a route (`/modules/meditation/onboarding`) so the user can revisit it.
+Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 is mandatory. The introduction is opened explicitly from the module's info action and does not store per-user completion state. The full content is also available as a route (`/modules/meditation/onboarding`) so the user can revisit it.
 
 1. **Welcome** - the "Path to Awakening" infographic + two sentences of framing. Emphasis: ten Stages, non-linear, this is a practice, not a finish line. No claims about Awakening.
 2. **Attention vs. Peripheral Awareness** - paired bullseye/landscape illustration. One short paragraph each. The product's central concept; readers see it once during onboarding and revisit it via the Learn route.

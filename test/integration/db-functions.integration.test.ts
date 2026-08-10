@@ -64,7 +64,6 @@ describe("export_user_data() (integration)", () => {
       preferences: {
         cbt_reminders_enabled: true,
         app_onboarding_completed: true,
-        cbt_onboarding_completed: true,
         language: "en",
         selected_concerns: expect.any(Array),
         active_strategies: expect.any(Array),

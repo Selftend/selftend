@@ -1,5 +1,5 @@
 /**
- * Settings account e2e - display-name, notification toggles, reset onboarding.
+ * Settings account e2e - display-name, notification toggles, onboarding actions.
  *
  * Restore strategy: snapshot the full user_preferences row and profiles row for
  * alice in beforeAll; restore both in afterEach so reruns are deterministic and
@@ -9,7 +9,6 @@
  *   profiles.display_name  = NULL
  *   user_preferences.language = 'en'
  *   user_preferences.app_onboarding_completed = true
- *   user_preferences.cbt_onboarding_completed = false
  *   user_preferences.notifications_enabled_global = true (default)
  *   user_preferences.cbt_reminders_enabled = false
  */
@@ -244,10 +243,10 @@ test.describe("settings - notification toggles", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Reset onboarding test
+// Onboarding actions
 // ---------------------------------------------------------------------------
 
-test.describe("settings - reset onboarding", () => {
+test.describe("settings - onboarding actions", () => {
   test.beforeAll(async ({ user }) => {
     USER_ID = user.id;
     if (!originalPreferences) originalPreferences = await getPreferenceRow();
@@ -261,7 +260,9 @@ test.describe("settings - reset onboarding", () => {
     await restoreWidgets();
   });
 
-  test("reset onboarding replays the introduction and preserves Home widgets", async ({ page }) => {
+  test("replays the introduction, re-arms tips separately, and preserves Home widgets", async ({
+    page,
+  }) => {
     const admin = createServiceClient();
     const { error: deleteError } = await admin
       .from("widget_preferences")
@@ -275,6 +276,12 @@ test.describe("settings - reset onboarding", () => {
     ]);
     if (insertError)
       throw new Error(`Could not prepare widget preferences: ${insertError.message}`);
+    const { error: preferenceError } = await admin
+      .from("user_preferences")
+      .update({ shown_button_tours: ["home:edit"] })
+      .eq("user_id", USER_ID);
+    if (preferenceError)
+      throw new Error(`Could not prepare onboarding preferences: ${preferenceError.message}`);
 
     await page.goto("/(app)/settings");
     await dismissPostSignInModals(page);
@@ -284,24 +291,32 @@ test.describe("settings - reset onboarding", () => {
       timeout: 10_000,
     });
 
-    // Click "Reset onboarding".
-    await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();
+    await page.getByRole("button", { name: "Replay introduction", exact: true }).click();
 
-    await expect(page.getByText(/Tool introductions will be shown again/i).first()).toBeVisible({
+    await expect(page.getByText(/app introduction will be shown again/i).first()).toBeVisible({
       timeout: 8_000,
     });
 
-    // The app introduction and tool introductions reset. Existing widgets are not touched.
-    const { data } = await admin
+    // Replaying the app introduction does not silently alter contextual tips.
+    const { data: replayed } = await admin
       .from("user_preferences")
-      .select(
-        "app_onboarding_completed, cbt_onboarding_completed, shown_button_tours, gratitude_onboarding_completed, mood_onboarding_completed",
-      )
+      .select("app_onboarding_completed, shown_button_tours")
       .eq("user_id", USER_ID)
       .single();
-    expect(data?.app_onboarding_completed).toBe(false);
-    expect(data?.cbt_onboarding_completed).toBe(false);
-    expect(data?.shown_button_tours ?? []).toEqual([]);
+    expect(replayed?.app_onboarding_completed).toBe(false);
+    expect(replayed?.shown_button_tours).toEqual(["home:edit"]);
+
+    await page.getByRole("button", { name: "Show tips again", exact: true }).click();
+    await expect(page.getByText(/button tips.*can appear again/i).first()).toBeVisible({
+      timeout: 8_000,
+    });
+    const { data: tips } = await admin
+      .from("user_preferences")
+      .select("shown_button_tours, start_here_dismissed_at")
+      .eq("user_id", USER_ID)
+      .single();
+    expect(tips?.shown_button_tours ?? []).toEqual([]);
+    expect(tips?.start_here_dismissed_at).toBeNull();
 
     expect(
       (await getWidgetRows()).map(({ widget_id, position }) => ({ widget_id, position })),

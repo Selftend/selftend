@@ -263,7 +263,6 @@ describe("useCbtProgram - advancePhase", () => {
 
     expect(mutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        cbtOnboardingCompleted: true,
         cbtProgramCompletedAt: null,
         cbtProgramPromptDismissedAt: null,
         cbtProgramStartedAt: expect.any(String),

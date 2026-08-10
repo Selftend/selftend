@@ -248,7 +248,6 @@ export default function MeditationHomeScreen() {
         preferredTimeOfDay: result.preferredTimeOfDay,
       });
       await updatePreferences.mutateAsync({
-        meditationOnboardingCompleted: true,
         meditationRemindersEnabled: result.remindersEnabled,
         meditationReminderHour: preferredTime.hour,
         meditationReminderMinute: preferredTime.minute,

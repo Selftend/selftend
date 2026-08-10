@@ -105,7 +105,6 @@ export function useActProgram(userId: string | null): UseActProgramResult {
         actProgramStartedAt: new Date().toISOString(),
         actProgramCompletedAt: null,
         actProgramPromptDismissedAt: null,
-        actOnboardingCompleted: true,
         actProgramPhaseIndex: 0,
         actProgramPhaseStartedAt: new Date().toISOString(),
         actGraduationDismissedAt: null,

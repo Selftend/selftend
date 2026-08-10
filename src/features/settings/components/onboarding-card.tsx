@@ -9,7 +9,8 @@ import { SettingsSectionCard } from "@/src/features/settings/components/settings
 interface OnboardingCardProps {
   disabled: boolean;
   isPending: boolean;
-  onReset: () => void;
+  onReplayIntroduction: () => void;
+  onShowTipsAgain: () => void;
 }
 
 /**
@@ -17,7 +18,12 @@ interface OnboardingCardProps {
  * `useResetOnboarding` at the screen level so its feedback stays the single
  * shared banner (R7).
  */
-export function OnboardingCard({ disabled, isPending, onReset }: OnboardingCardProps) {
+export function OnboardingCard({
+  disabled,
+  isPending,
+  onReplayIntroduction,
+  onShowTipsAgain,
+}: OnboardingCardProps) {
   const { t } = useTranslation("settings");
 
   return (
@@ -28,12 +34,26 @@ export function OnboardingCard({ disabled, isPending, onReset }: OnboardingCardP
       title={t("onboardingSection.title")}
       description={t("onboardingSection.description")}
     >
-      <Button variant="outline" className="justify-start" disabled={disabled} onPress={onReset}>
+      <Button
+        variant="outline"
+        className="justify-start"
+        disabled={disabled}
+        onPress={onReplayIntroduction}
+      >
         {isPending ? <ActivityIndicator /> : null}
         <Icon name="replay" size={18} />
         <Text className="flex-1">
-          {isPending ? t("onboarding.resetting") : t("onboardingSection.reset")}
+          {isPending ? t("onboarding.saving") : t("onboardingSection.replayIntroduction")}
         </Text>
+      </Button>
+      <Button
+        variant="outline"
+        className="justify-start"
+        disabled={disabled}
+        onPress={onShowTipsAgain}
+      >
+        <Icon name="lightbulb" size={18} />
+        <Text className="flex-1">{t("onboardingSection.showTipsAgain")}</Text>
       </Button>
     </SettingsSectionCard>
   );

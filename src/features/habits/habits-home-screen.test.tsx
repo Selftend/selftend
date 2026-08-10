@@ -103,7 +103,7 @@ function mockDefaults() {
   });
 
   mockUseUserPreferences.mockReturnValue({
-    data: { ...defaultUserPreferences, habitsOnboardingCompleted: true },
+    data: defaultUserPreferences,
     isLoading: false,
   } as unknown as ReturnType<typeof useUserPreferences>);
 
@@ -632,18 +632,15 @@ describe("HabitsHomeScreen onboarding completion", () => {
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
   });
 
-  it("records completion, now that the route that used to do it is gone", async () => {
+  it("closes the explicit info modal without storing personal completion state", async () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     // The `info` action is the only remaining way in, now the route is gone (#765).
     fireEvent.press(await screen.findByLabelText(/about/i));
     fireEvent.press(await screen.findByTestId("onboarding-complete"));
 
-    // A patch, not a whole-row merge: the mutation writes only the columns it
-    // is given, and a full write clobbers concurrent writers (#57).
-    await waitFor(() => {
-      expect(updateMutateAsync).toHaveBeenCalledWith({ habitsOnboardingCompleted: true });
-    });
+    await waitFor(() => expect(screen.queryByTestId("onboarding-complete")).toBeNull());
+    expect(updateMutateAsync).not.toHaveBeenCalled();
   });
 });
 

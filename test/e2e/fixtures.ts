@@ -230,7 +230,6 @@ export const test = base.extend<object, WorkerFixtures>({
 // restored row).
 export const NORMALIZED_GATE_PREFS = {
   app_onboarding_completed: true,
-  cbt_onboarding_completed: true,
   policy_version_accepted: policyVersion,
   reminder_consent: false,
   reminder_consent_updated_at: "2026-01-01T00:00:00.000Z",

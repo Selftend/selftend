@@ -4,7 +4,10 @@ import type { ReactNode } from "react";
 
 import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { RESET_ONBOARDING_PREFERENCES } from "@/src/features/settings/onboarding-reset";
+import {
+  REPLAY_INTRODUCTION_PREFERENCES,
+  SHOW_TIPS_AGAIN_PREFERENCES,
+} from "@/src/features/settings/onboarding-reset";
 import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
@@ -126,7 +129,7 @@ describe("SettingsScreen hero and profile badge", () => {
   });
 });
 
-describe("SettingsScreen onboarding reset", () => {
+describe("SettingsScreen onboarding actions", () => {
   const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
 
   beforeEach(() => {
@@ -136,9 +139,7 @@ describe("SettingsScreen onboarding reset", () => {
       data: {
         ...defaultUserPreferences,
         appOnboardingCompleted: true,
-        cbtOnboardingCompleted: true,
         cbtWizardCompleted: true,
-        meditationOnboardingCompleted: true,
         policyVersionAccepted: "2026-05-01",
         shownButtonTours: ["tune", "notifications", "info"],
       },
@@ -150,25 +151,30 @@ describe("SettingsScreen onboarding reset", () => {
     } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
   });
 
-  it("resets all onboarding flags while preserving the rest of preferences", async () => {
+  it("replays the app introduction without resetting contextual tips", async () => {
     renderWithProviders(<SettingsScreen />);
     // Flush SecuritySection's useEffect microtasks (isBiometricAvailable + hydrate)
     // so async setState calls land inside act() before we interact with the screen.
-    await waitFor(() => expect(screen.getByText("Reset onboarding")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Replay introduction")).toBeTruthy());
 
-    fireEvent.press(screen.getByText("Reset onboarding"));
+    fireEvent.press(screen.getByText("Replay introduction"));
 
     await waitFor(() => {
-      // Assert against the shared constant rather than a third inline copy of the
-      // same key list. Restating it here is what let the reset drift unnoticed in
-      // the first place (#822): the screen test agreed with the reset test because
-      // both had been edited together, and neither was compared to `UserPreferences`.
-      // `onboarding-reset.test.ts` owns the question of which keys belong; this test
-      // only owns "the button sends the reset patch, plus the funnel marker".
       expect(mutateAsync).toHaveBeenCalledWith({
-        ...RESET_ONBOARDING_PREFERENCES,
+        ...REPLAY_INTRODUCTION_PREFERENCES,
         appOnboardingCompletedVia: "finish",
       });
+    });
+  });
+
+  it("re-arms contextual tips without replaying the app introduction", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText("Show tips again")).toBeTruthy());
+
+    fireEvent.press(screen.getByText("Show tips again"));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith(SHOW_TIPS_AGAIN_PREFERENCES);
     });
   });
 });

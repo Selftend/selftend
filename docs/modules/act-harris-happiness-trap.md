@@ -663,7 +663,7 @@ Follows the contract in `tools.md`:
 
 ## 8. Onboarding Flow (Modal Wizard)
 
-Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 mandatory. Completion tracked via `act_onboarding_completed`. Full content also at `/modules/act/onboarding`.
+Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 mandatory. The introduction is opened explicitly from the module's info action and does not store per-user completion state. Full content is also at `/modules/act/onboarding`.
 
 > **Implementation status (2026-06): the multi-step wizard below is deferred.** The shipped onboarding is the single-page `ActInfo` info modal (`src/components/app/act-onboarding-modal.tsx`), covering steps 1-2 - the Happiness-Trap myths, the Choice Point, the three pillars (Be Present / Open Up / Do What Matters), and the flexibility formula. The personalization steps - **3 (concern picker)**, **4 (Bull's-Eye snapshot)**, **5 (recommend a principle)** - are not built. Their scaffolding is intentionally retained, not dead rot: `RECOMMENDED_PRINCIPLE` + `ACT_CONCERNS` (`src/features/act/types.ts`), `act_program_state.primaryConcerns` (+ the `primary_concerns` column), and the `onboarding.concerns` / `onboarding.bullsEye` / `onboarding.commit` i18n (en + bg; note `onboarding.commit.saving` is also consumed by the live `ActInfo` CTA, so it is not removable). This matches CBT, whose onboarding is likewise a single info page with the same personalization scaffolding deferred. Building the wizard - for both modules, to keep them symmetric - would be a separate, scheduled project.
 
