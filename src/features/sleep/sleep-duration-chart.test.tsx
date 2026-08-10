@@ -87,8 +87,10 @@ describe("SleepDurationChart", () => {
     const heights = screen.getAllByTestId("bar-chart-bar").map((bar) => bar.props.style.height);
     expect(heights[0]).toBeCloseTo((12 / 14) * 80);
     expect(heights[1]).toBe(80);
-    expect(screen.getByText("7h")).toBeTruthy();
-    expect(screen.getAllByText("14h")).toHaveLength(2);
+    // Exact values sit over their bars; no horizontal row masquerades as a
+    // vertical-axis scale (#842 review).
+    expect(screen.queryByText("7h")).toBeNull();
+    expect(screen.getByText("14h")).toBeTruthy();
   });
 
   it("keeps each date and duration together in one accessible column", () => {

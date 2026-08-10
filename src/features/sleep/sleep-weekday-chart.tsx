@@ -31,7 +31,12 @@ export function SleepWeekdayChart({ averages }: { averages: (number | null)[] })
               weekdayDate.setDate(MONDAY.getDate() + index);
               const label = narrowWeekday.format(weekdayDate);
               const weekday = fullWeekday.format(weekdayDate);
-              const duration = average === null ? null : formatCompactHours(average);
+              const duration =
+                average === null
+                  ? null
+                  : t("chart.compactHours", {
+                      value: formatCompactHours(average, i18n.language),
+                    });
               return {
                 value: average,
                 topLabel: duration ?? "—",

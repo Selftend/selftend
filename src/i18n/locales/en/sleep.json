@@ -52,6 +52,7 @@
     "qualityMix": "Quality mix · last 30 days",
     "weekdayAvg": "Average duration · all sleep entries",
     "empty": "Log a few sleep entries to see this.",
+    "compactHours": "{{value}}h",
     "durationBarA11y": "{{date}}: {{duration}} of sleep",
     "weekdayBarA11y": "{{weekday}}: {{duration}} average sleep duration",
     "weekdayBarEmptyA11y": "{{weekday}}: no sleep entries logged",

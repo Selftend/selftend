@@ -4,10 +4,10 @@ export function formatDuration(minutes: number): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
-/** Compact decimal hours for dense chart labels. */
-export function formatCompactHours(minutes: number): string {
+/** Locale-aware decimal value for dense chart labels; the caller supplies the translated unit. */
+export function formatCompactHours(minutes: number, locale: string): string {
   const hours = minutes / 60;
-  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(hours);
 }
 
 // One-decimal hours for averages, with the shared "-" placeholder for no data.

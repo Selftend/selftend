@@ -52,6 +52,7 @@
     "qualityMix": "Качество · последните 30 дни",
     "weekdayAvg": "Средна продължителност · всички записи за сън",
     "empty": "Добави няколко записа за сън, за да видиш това.",
+    "compactHours": "{{value}} ч",
     "durationBarA11y": "{{date}}: {{duration}} сън",
     "weekdayBarA11y": "{{weekday}}: средна продължителност {{duration}}",
     "weekdayBarEmptyA11y": "{{weekday}}: няма записи за сън",

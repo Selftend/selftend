@@ -1,4 +1,4 @@
-import { useWindowDimensions, View } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { BarChart } from "@/src/components/charts/bar-chart";
@@ -37,39 +37,32 @@ export function SleepDurationChart({ nights }: { nights: SleepLog[] }) {
             {t("chart.empty")}
           </Text>
         ) : (
-          <View className="gap-2">
-            <View className="flex-row justify-between">
-              {[0, maxMinutes / 2, maxMinutes].map((minutes) => (
-                <Text key={minutes} variant="muted" className="text-[10px]">
-                  {formatCompactHours(minutes)}
-                </Text>
-              ))}
-            </View>
-            <BarChart
-              bars={nights.map((night, index) => {
-                const date = dateFmt.format(parseLocalNoon(night.dayKey));
-                const duration = formatCompactHours(night.durationMinutes);
-                return {
-                  key: night.id,
-                  value: night.durationMinutes,
-                  topLabel: duration,
-                  // Keep fourteen columns legible at phone width. Every column
-                  // retains its date in the accessible name, and wider screens
-                  // print every visual date.
-                  label: showEveryDate || index % 2 === 0 ? date : undefined,
-                  accessibilityLabel: t("chart.durationBarA11y", { date, duration }),
-                };
-              })}
-              max={maxMinutes}
-              barAreaHeight={BAR_AREA}
-              maxBarWidth={MAX_BAR_WIDTH}
-              tintClass="bg-muted-foreground/80"
-              barClassName="rounded-t-md"
-              className="gap-1"
-              columnClassName="gap-0.5"
-              labelClassName="leading-3"
-            />
-          </View>
+          <BarChart
+            bars={nights.map((night, index) => {
+              const date = dateFmt.format(parseLocalNoon(night.dayKey));
+              const duration = t("chart.compactHours", {
+                value: formatCompactHours(night.durationMinutes, i18n.language),
+              });
+              return {
+                key: night.id,
+                value: night.durationMinutes,
+                topLabel: duration,
+                // Keep fourteen columns legible at phone width. Every column
+                // retains its date in the accessible name, and wider screens
+                // print every visual date.
+                label: showEveryDate || index % 2 === 0 ? date : undefined,
+                accessibilityLabel: t("chart.durationBarA11y", { date, duration }),
+              };
+            })}
+            max={maxMinutes}
+            barAreaHeight={BAR_AREA}
+            maxBarWidth={MAX_BAR_WIDTH}
+            tintClass="bg-muted-foreground/80"
+            barClassName="rounded-t-md"
+            className="gap-1"
+            columnClassName="gap-0.5"
+            labelClassName="leading-3"
+          />
         )}
       </CardContent>
     </Card>

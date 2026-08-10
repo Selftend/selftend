@@ -1,6 +1,8 @@
 import { screen } from "@testing-library/react-native";
 
+import { formatCompactHours } from "@/src/features/sleep/format";
 import { SleepWeekdayChart } from "@/src/features/sleep/sleep-weekday-chart";
+import bgSleep from "@/src/i18n/locales/bg/sleep.json";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 describe("SleepWeekdayChart", () => {
@@ -33,5 +35,12 @@ describe("SleepWeekdayChart", () => {
 
     expect(screen.getByLabelText("Monday: 6h average sleep duration")).toBeTruthy();
     expect(screen.getByLabelText("Tuesday: no sleep entries logged")).toBeTruthy();
+  });
+
+  it("localizes the decimal and obtains the compact hour unit from translations", () => {
+    const value = formatCompactHours(450, "bg");
+
+    expect(value).toBe("7,5");
+    expect(bgSleep.chart.compactHours.replace("{{value}}", value)).toBe("7,5 ч");
   });
 });
