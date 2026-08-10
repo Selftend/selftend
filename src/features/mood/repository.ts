@@ -73,7 +73,11 @@ export async function listMoodLogsPage(userId: string, limit: number, offset: nu
     .eq("user_id", userId)
     .order("logged_at", { ascending: false })
     .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .range(offset, offset + limit - 1)
+    // PostgREST now retries idempotent reads three times internally. The app's
+    // query client already owns retry policy (one retry), so leaving both on
+    // turns a failed page into 4 x 2 attempts and ~17 seconds of blank UI.
+    .retry(false);
 
   if (error) throw error;
   return (data as MoodLogRow[]).map(mapMoodLog);
