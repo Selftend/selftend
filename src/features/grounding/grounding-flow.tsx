@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,7 @@ import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 
 type Phase = "intro" | "active" | "done";
 
@@ -25,6 +26,8 @@ export function GroundingFlow({ slug }: { slug: string }) {
 
   const [phase, setPhase] = useState<Phase>("intro");
   const [stepIndex, setStepIndex] = useState(0);
+  const [confirmEarlyFinish, setConfirmEarlyFinish] = useState(false);
+  const startedAtRef = useRef(0);
   const saveMutation = useSaveGroundingSession(user?.id ?? null);
   // Grounding is the "clay" room (spec #315). Each phase component owns its
   // own SafeAreaView, so the pour lives on a wrapper here: their
@@ -34,17 +37,19 @@ export function GroundingFlow({ slug }: { slug: string }) {
   const roomStyle = useRoomStyle("clay");
 
   // Declared before the not-found early return below so the hook call is unconditional.
-  const handleSave = useSingleFlight(async () => {
+  const saveAndFinish = useSingleFlight(async (stepsCompleted: number) => {
     if (!technique) return;
     try {
       await saveMutation.mutateAsync({
         exerciseName: technique.slug,
-        durationMinutes: 1,
+        durationMinutes: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 60_000)),
         reflection: "",
         feelingAfter: null,
+        stepsCompleted,
+        stepsTotal: technique.steps.length,
       });
-      showToast({ title: t("common:feedback.saved"), tone: "success" });
-      router.replace("/tools/grounding" as Parameters<typeof router.replace>[0]);
+      setConfirmEarlyFinish(false);
+      setPhase("done");
     } catch {
       showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
@@ -78,14 +83,11 @@ export function GroundingFlow({ slug }: { slug: string }) {
     if (stepIndex < total - 1) {
       setStepIndex(stepIndex + 1);
     } else {
-      setPhase("done");
+      void saveAndFinish(total);
     }
   };
 
-  const handleExit = () => {
-    setStepIndex(0);
-    setPhase("intro");
-  };
+  const handleExit = () => setConfirmEarlyFinish(true);
 
   const phaseContent = () => {
     if (phase === "intro") {
@@ -97,6 +99,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
           steps={stepsText}
           onStart={() => {
             setStepIndex(0);
+            startedAtRef.current = Date.now();
             setPhase("active");
           }}
         />
@@ -114,17 +117,35 @@ export function GroundingFlow({ slug }: { slug: string }) {
           total={total}
           isLast={stepIndex === total - 1}
           onNext={handleNext}
+          onBack={() => setStepIndex((current) => Math.max(0, current - 1))}
+          onStepSelect={setStepIndex}
           onExit={handleExit}
+          saving={saveMutation.isPending}
         />
       );
     }
 
-    return <GroundingDone saving={saveMutation.isPending} onSave={() => void handleSave()} />;
+    return (
+      <GroundingDone
+        onDone={() => router.replace("/tools/grounding" as Parameters<typeof router.replace>[0])}
+      />
+    );
   };
 
   return (
     <View className="flex-1" style={roomStyle} testID="grounding-flow-room">
       {phaseContent()}
+      <ConfirmDialog
+        visible={confirmEarlyFinish}
+        isPending={saveMutation.isPending}
+        title={t("grounding.finishEarly.title")}
+        message={t("grounding.finishEarly.message", { current: stepIndex + 1, total })}
+        confirmLabel={t("grounding.finishEarly.confirm")}
+        cancelLabel={t("grounding.finishEarly.cancel")}
+        destructive={false}
+        onCancel={() => setConfirmEarlyFinish(false)}
+        onConfirm={() => void saveAndFinish(stepIndex + 1)}
+      />
     </View>
   );
 }

@@ -20,6 +20,9 @@ export interface MindfulnessSession {
   // Breathing-only metrics (null for other session types).
   cycles: number | null;
   durationSeconds: number | null;
+  // Grounding-only progress (null for breathing and legacy grounding sessions).
+  stepsCompleted: number | null;
+  stepsTotal: number | null;
 }
 
 export interface MindfulnessSessionInput {
@@ -29,4 +32,6 @@ export interface MindfulnessSessionInput {
   feelingAfter: string | null;
   cycles?: number | null;
   durationSeconds?: number | null;
+  stepsCompleted?: number | null;
+  stepsTotal?: number | null;
 }

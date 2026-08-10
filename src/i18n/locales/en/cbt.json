@@ -1215,6 +1215,8 @@
     "hero": {
       "techniques_one": "technique",
       "techniques_other": "techniques",
+      "sessions_one": "session",
+      "sessions_other": "sessions",
       "takes": "takes",
       "takesValue": "2-3 min",
       "last": "last logged {{when}}",
@@ -1223,6 +1225,9 @@
     "choose": "Choose a technique",
     "howTo": "How to do it",
     "step": "Step {{current}} of {{total}}",
+    "stepShort": "{{current}} / {{total}}",
+    "goToStep": "Go to step {{current}} of {{total}}",
+    "stepsReached": "{{completed}} of {{total}}",
     "stepCounter": "{{label}} · {{current}} of {{total}}",
     "meta": {
       "senses_one": "{{count}} sense",
@@ -1232,14 +1237,44 @@
     },
     "start": "Start",
     "next": "Next",
+    "back": "Back",
     "finish": "Finish",
+    "takeYourTime": "Take as long as you need.",
     "done": "Done",
+    "complete": "Grounding complete",
     "doneMessage": "You got through it. Take a breath.",
     "save": "Save session",
     "notFound": "Technique not found",
     "streakTitle": "Recent sessions",
     "recentCount_one": "{{count}} session logged.",
     "recentCount_other": "{{count}} sessions logged.",
+    "finishEarly": {
+      "title": "Finish this session?",
+      "message": "This will save your progress as {{current}} of {{total}} steps.",
+      "confirm": "Finish session",
+      "cancel": "Keep going"
+    },
+    "recent": {
+      "title": "Recent sessions",
+      "showAll": "Show all sessions",
+      "empty": "No sessions yet.",
+      "error": {
+        "title": "Sessions could not be loaded",
+        "description": "Check your connection and try again."
+      }
+    },
+    "allHistory": {
+      "title": "All grounding sessions",
+      "description": "Every grounding session you have finished, including early finishes.",
+      "empty": {
+        "title": "No sessions yet",
+        "description": "Your grounding sessions will collect here after you finish one."
+      },
+      "error": {
+        "title": "Sessions could not be loaded",
+        "description": "Check your connection and try again."
+      }
+    },
     "techniques": {
       "54321": {
         "title": "5-4-3-2-1",

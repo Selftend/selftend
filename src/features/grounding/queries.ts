@@ -1,17 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countMindfulnessSessionsByNames,
   listMindfulnessSessionsByNames,
+  listMindfulnessSessionsByNamesPage,
   saveMindfulnessSession,
 } from "@/src/features/mindfulness/repository";
 import type { MindfulnessSessionInput } from "@/src/features/mindfulness/types";
 import { groundingSlugs } from "@/src/constants/grounding";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
+
+export const GROUNDING_HISTORY_PAGE_SIZE = 20;
 
 const groundingKeys = {
   list: (userId: string) => ["grounding", "list", userId] as const,
   count: (userId: string) => ["grounding", "count", userId] as const,
+  historyPages: (userId: string) => ["grounding", "historyPages", userId] as const,
 };
 
 export function useGroundingSessions(userId: string | null, limit = 30) {
@@ -20,6 +25,27 @@ export function useGroundingSessions(userId: string | null, limit = 30) {
     // Filter by exercise type at the DB level so `limit` applies AFTER the type filter
     // (see useBreathingSessions) - a pre-filter limit could hide every grounding session.
     queryFn: () => listMindfulnessSessionsByNames(userId!, [...groundingSlugs], limit),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useGroundingSessionPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: userId
+      ? groundingKeys.historyPages(userId)
+      : ["grounding", "historyPages", "anonymous"],
+    queryFn: ({ pageParam }) =>
+      listMindfulnessSessionsByNamesPage(
+        userId!,
+        [...groundingSlugs],
+        GROUNDING_HISTORY_PAGE_SIZE,
+        pageParam,
+      ),
+    initialPageParam: null as RecordCursor | null,
+    getNextPageParam: (lastPage) =>
+      lastPage.length < GROUNDING_HISTORY_PAGE_SIZE
+        ? undefined
+        : nextDescendingCursor(lastPage, (session) => session.completedAt),
     enabled: Boolean(userId),
   });
 }

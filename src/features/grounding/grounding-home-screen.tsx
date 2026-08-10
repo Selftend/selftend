@@ -1,35 +1,32 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
+import { ErrorState } from "@/src/components/app/screen-state";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { TechniqueCard } from "@/src/features/grounding/technique-card";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { GroundingOnboarding } from "@/src/components/app/grounding-onboarding-modal";
 import { groundingTechniques } from "@/src/constants/grounding";
-import { useGroundingSessions } from "@/src/features/grounding/queries";
+import { useGroundingSessionCount, useGroundingSessions } from "@/src/features/grounding/queries";
+import { GroundingSessionRow } from "@/src/features/grounding/grounding-session-row";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 import { formatAtOffset } from "@/src/utils/date";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 
 export default function GroundingHomeScreen() {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
-  const { data: sessions } = useGroundingSessions(userId, 7);
+  const { data: sessions, isError: sessionsFailed, refetch } = useGroundingSessions(userId, 5);
+  const { data: sessionCount } = useGroundingSessionCount(userId);
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
 
@@ -85,36 +82,14 @@ export default function GroundingHomeScreen() {
                   label: t("grounding.hero.techniques", { count: groundingTechniques.length }),
                 },
                 {
-                  value: `${t("grounding.hero.takes")} ${t("grounding.hero.takesValue")}`,
-                  label: "",
+                  value: sessionCount === undefined ? "â€”" : String(sessionCount),
+                  label: t("grounding.hero.sessions", { count: sessionCount ?? 0 }),
                 },
                 // The old ToolStats.subline, folded into the row as a value-less
                 // item - which is how the design renders "last logged 4:50 pm".
                 ...(subline ? [{ value: "", label: subline }] : []),
               ]}
             />
-            {sessions && sessions.length > 0 ? (
-              <Card variant="soft">
-                <CardHeader>
-                  <CardTitle aria-level={2}>{t("grounding.streakTitle")}</CardTitle>
-                  <CardDescription>
-                    {t("grounding.recentCount", { count: sessions.length })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <View className="flex-row flex-wrap gap-2">
-                    {sessions.slice(0, 3).map((s) => (
-                      <View key={s.id} className="rounded-full bg-muted px-3 py-1.5">
-                        <Text variant="muted" className="text-xs">
-                          {t(`grounding.techniques.${s.exerciseName}.title`)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </CardContent>
-              </Card>
-            ) : null}
-
             <View className="gap-3">
               <Text variant="h3">{t("grounding.choose")}</Text>
               {groundingTechniques.map((technique) => (
@@ -131,6 +106,41 @@ export default function GroundingHomeScreen() {
                   onPress={() => router.push(`/tools/grounding/${technique.slug}`)}
                 />
               ))}
+            </View>
+
+            <View className="gap-2">
+              <View className="flex-row items-center justify-between">
+                <Text variant="h3">{t("grounding.recent.title")}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push("/tools/grounding/history")}
+                  role="button"
+                >
+                  <Text className="text-sm font-semibold text-primary-ink">
+                    {t("grounding.recent.showAll")}
+                  </Text>
+                </Pressable>
+              </View>
+              {sessionsFailed && !sessions ? (
+                <ErrorState
+                  icon="cloud-off"
+                  title={t("grounding.recent.error.title")}
+                  description={t("grounding.recent.error.description")}
+                  action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
+                />
+              ) : sessions?.length ? (
+                <View>
+                  {sessions.map((session) => (
+                    <GroundingSessionRow
+                      key={session.id}
+                      session={session}
+                      when={formatRelativeDayKey(session.dayKey, t)}
+                    />
+                  ))}
+                </View>
+              ) : sessions ? (
+                <Text variant="muted">{t("grounding.recent.empty")}</Text>
+              ) : null}
             </View>
           </View>
         </ScrollView>

@@ -1,6 +1,5 @@
 import { Pressable, View } from "react-native";
 
-import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HueIconBadge } from "@/src/features/grounding/hue-icon-badge";
@@ -78,23 +77,21 @@ export function TechniqueCard({
       onPress={onPress}
       role="button"
     >
-      <Card>
-        <CardContent className="flex-row items-center gap-3.5 p-3.5">
-          {technique.kind === "senses" ? (
-            <SenseDots technique={technique} />
-          ) : (
-            <HueIconBadge icon={technique.icon} size={50} iconSize={24} />
-          )}
-          <View className="flex-1">
-            <Text className="text-base font-semibold">{title}</Text>
-            <Text variant="muted" className="mt-0.5">
-              {description}
-            </Text>
-            <Text className="mt-2 text-xs font-semibold">{meta}</Text>
-          </View>
-          <Icon name="chevron-right" size={22} className="text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <View className="flex-row items-center gap-3.5 border-b border-border px-1 py-3.5">
+        {technique.kind === "senses" ? (
+          <SenseDots technique={technique} />
+        ) : (
+          <HueIconBadge icon={technique.icon} size={50} iconSize={24} />
+        )}
+        <View className="flex-1">
+          <Text className="text-base font-semibold">{title}</Text>
+          <Text variant="muted" className="mt-0.5">
+            {description}
+          </Text>
+          <Text className="mt-2 text-xs font-semibold">{meta}</Text>
+        </View>
+        <Icon name="chevron-right" size={22} className="text-muted-foreground" />
+      </View>
     </Pressable>
   );
 }

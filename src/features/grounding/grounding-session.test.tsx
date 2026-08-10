@@ -18,6 +18,8 @@ describe("GroundingSession", () => {
         total={5}
         isLast={false}
         onNext={onNext}
+        onBack={jest.fn()}
+        onStepSelect={jest.fn()}
         onExit={onExit}
       />,
     );
@@ -39,6 +41,8 @@ describe("GroundingSession", () => {
         total={5}
         isLast={false}
         onNext={jest.fn()}
+        onBack={jest.fn()}
+        onStepSelect={jest.fn()}
         onExit={onExit}
       />,
     );
@@ -57,6 +61,8 @@ describe("GroundingSession", () => {
         total={5}
         isLast
         onNext={jest.fn()}
+        onBack={jest.fn()}
+        onStepSelect={jest.fn()}
         onExit={jest.fn()}
       />,
     );

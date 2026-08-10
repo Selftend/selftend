@@ -1,6 +1,7 @@
 import {
   countMindfulnessSessionsByNames,
   listMindfulnessSessions,
+  listMindfulnessSessionsByNamesPage,
   listMindfulnessSessionsExcludingNamesPage,
   saveMindfulnessSession,
 } from "@/src/features/mindfulness/repository";
@@ -125,6 +126,29 @@ describe("mindfulness repository", () => {
     expect(limit).toHaveBeenCalledWith(20);
   });
 
+  it("anchors an included-name page to the encoded completion cursor", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [sampleRow], error: null });
+    const or = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ or, limit }));
+    const orderAt = jest.fn(() => ({ order: orderId }));
+    const inNames = jest.fn(() => ({ order: orderAt }));
+    const eq = jest.fn(() => ({ in: inNames }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await listMindfulnessSessionsByNamesPage("user-1", ["54321"], 20, {
+      timestamp: "2026-08-09T13:57:59.000+00:00",
+      id: "11111111-1111-4111-8111-111111111111",
+    });
+
+    expect(inNames).toHaveBeenCalledWith("exercise_name", ["54321"]);
+    expect(or).toHaveBeenCalledWith(
+      'completed_at.lt."2026-08-09T13:57:59.000+00:00",and(completed_at.eq."2026-08-09T13:57:59.000+00:00",id.lt."11111111-1111-4111-8111-111111111111")',
+    );
+    expect(limit).toHaveBeenCalledWith(20);
+  });
+
   it("trims reflection and inserts a session with feeling", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
     const select = jest.fn(() => ({ single }));
@@ -148,6 +172,8 @@ describe("mindfulness repository", () => {
       mood_after: null,
       cycles: null,
       duration_seconds: null,
+      steps_completed: null,
+      steps_total: null,
       completed_at: expect.any(String),
       completed_offset_minutes: expect.any(Number),
     });
