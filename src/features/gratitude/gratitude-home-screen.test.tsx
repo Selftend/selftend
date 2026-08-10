@@ -5,9 +5,10 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import GratitudeHomeScreen from "@/src/features/gratitude/gratitude-home-screen";
 import {
   useFavoriteGratitudeEntryCount,
+  useFavoriteGratitudeEntries,
   useGratitudeEntries,
   useGratitudeEntryCount,
-  useGratitudeEntryCountSince,
+  useGratitudeEntryCountSinceDayKey,
 } from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -37,7 +38,8 @@ jest.mock("@/src/features/gratitude/queries", () => ({
   useGratitudeEntries: jest.fn(),
   useGratitudeEntryCount: jest.fn(),
   useFavoriteGratitudeEntryCount: jest.fn(),
-  useGratitudeEntryCountSince: jest.fn(),
+  useFavoriteGratitudeEntries: jest.fn(),
+  useGratitudeEntryCountSinceDayKey: jest.fn(),
 }));
 
 const mockUseGratitudeEntries = useGratitudeEntries as jest.MockedFunction<
@@ -49,9 +51,13 @@ const mockUseGratitudeEntryCount = useGratitudeEntryCount as jest.MockedFunction
 const mockUseFavoriteGratitudeEntryCount = useFavoriteGratitudeEntryCount as jest.MockedFunction<
   typeof useFavoriteGratitudeEntryCount
 >;
-const mockUseGratitudeEntryCountSince = useGratitudeEntryCountSince as jest.MockedFunction<
-  typeof useGratitudeEntryCountSince
+const mockUseFavoriteGratitudeEntries = useFavoriteGratitudeEntries as jest.MockedFunction<
+  typeof useFavoriteGratitudeEntries
 >;
+const mockUseGratitudeEntryCountSinceDayKey =
+  useGratitudeEntryCountSinceDayKey as jest.MockedFunction<
+    typeof useGratitudeEntryCountSinceDayKey
+  >;
 const mockRouter = jest.mocked(router);
 
 function gratitudeEntry(overrides: Partial<Record<string, unknown>> = {}) {
@@ -80,7 +86,8 @@ describe("GratitudeHomeScreen", () => {
     mockUseGratitudeEntries.mockReturnValue({ data: [] } as never);
     mockUseGratitudeEntryCount.mockReturnValue({ data: 18 } as never);
     mockUseFavoriteGratitudeEntryCount.mockReturnValue({ data: 3 } as never);
-    mockUseGratitudeEntryCountSince.mockReturnValue({ data: 4 } as never);
+    mockUseFavoriteGratitudeEntries.mockReturnValue({ data: [] } as never);
+    mockUseGratitudeEntryCountSinceDayKey.mockReturnValue({ data: 4 } as never);
   });
 
   it("renders the approved header, exact stats, and non-punitive empty state", () => {
@@ -115,6 +122,19 @@ describe("GratitudeHomeScreen", () => {
     const stars = screen.UNSAFE_getAllByType(Icon).filter((icon) => icon.props.name === "star");
     expect(stars).toHaveLength(1);
     expect(String(stars[0]?.props.className).split(/\s+/)).toContain("text-primary-ink");
+  });
+
+  it("uses the dedicated favorites query instead of the capped recent list", () => {
+    mockUseGratitudeEntries.mockReturnValue({ data: [gratitudeEntry()] } as never);
+    mockUseFavoriteGratitudeEntries.mockReturnValue({
+      data: [gratitudeEntry({ id: "old-favorite", items: ["Older favorite"], starred: true })],
+    } as never);
+    renderWithProviders(<GratitudeHomeScreen />);
+
+    fireEvent.press(screen.getByText("Favorites"));
+
+    expect(screen.getByText("Older favorite")).toBeTruthy();
+    expect(screen.queryByText("Morning walk")).toBeNull();
   });
 
   it("routes to the new entry screen from the CTA", () => {

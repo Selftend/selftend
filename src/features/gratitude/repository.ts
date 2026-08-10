@@ -149,20 +149,38 @@ export async function countFavoriteGratitudeEntries(userId: string): Promise<num
   return count ?? 0;
 }
 
-// Exact count of entries logged since `sinceIso` - for the Progress 30-day stat.
-export async function countGratitudeEntriesSince(
+// Exact count since a civil day, using each entry's captured occurrence offset.
+export async function countGratitudeEntriesSinceDayKey(
   userId: string,
-  sinceIso: string,
+  sinceDayKey: string,
 ): Promise<number> {
   const client = requireSupabase();
-  const { count, error } = await client
-    .from("gratitude_entries")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("logged_at", sinceIso);
+  // The earliest UTC instant that can belong to this civil day at a valid
+  // captured offset is 14 hours before UTC midnight. Fetch only that bounded
+  // window, then compare the same captured day keys the UI renders. Page to
+  // keep the count exact even for unusually active accounts.
+  const lowerBound = new Date(`${sinceDayKey}T00:00:00.000Z`);
+  lowerBound.setUTCHours(lowerBound.getUTCHours() - 14);
+  const pageSize = 1000;
+  let start = 0;
+  let count = 0;
 
-  if (error) throw error;
-  return count ?? 0;
+  while (true) {
+    const { data, error } = await client
+      .from("gratitude_entries")
+      .select("logged_at,logged_offset_minutes")
+      .eq("user_id", userId)
+      .gte("logged_at", lowerBound.toISOString())
+      .order("logged_at", { ascending: true })
+      .range(start, start + pageSize - 1);
+    if (error) throw error;
+    const rows = (data ?? []) as Pick<GratitudeEntryRow, "logged_at" | "logged_offset_minutes">[];
+    count += rows.filter(
+      (row) => entryDayKey(row.logged_at, row.logged_offset_minutes ?? null) >= sinceDayKey,
+    ).length;
+    if (rows.length < pageSize) return count;
+    start += pageSize;
+  }
 }
 
 export async function listFavoriteGratitudeEntries(userId: string, limit = 100) {

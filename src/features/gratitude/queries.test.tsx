@@ -10,7 +10,7 @@ import {
   useGratitudeEntryPages,
   useGratitudeEntry,
   useGratitudeEntryCount,
-  useGratitudeEntryCountSince,
+  useGratitudeEntryCountSinceDayKey,
   useSaveGratitudeEntry,
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
@@ -24,7 +24,7 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 jest.mock("@/src/features/gratitude/repository", () => ({
   countGratitudeEntries: jest.fn(),
   countFavoriteGratitudeEntries: jest.fn(),
-  countGratitudeEntriesSince: jest.fn(),
+  countGratitudeEntriesSinceDayKey: jest.fn(),
   deleteGratitudeEntry: jest.fn(),
   getGratitudeEntry: jest.fn(),
   listFavoriteGratitudeEntries: jest.fn(),
@@ -115,24 +115,24 @@ describe("useGratitudeEntryPages enabled gate", () => {
   });
 });
 
-// useGratitudeEntryCountSince has a second (non-gating) arg threaded into the
+// useGratitudeEntryCountSinceDayKey has a second (non-gating) arg threaded into the
 // query key and the repo call.
-describe("useGratitudeEntryCountSince enabled gate", () => {
+describe("useGratitudeEntryCountSinceDayKey enabled gate", () => {
   it("does not fetch when userId is null", () => {
     const client = createTestQueryClient();
-    renderHook(() => useGratitudeEntryCountSince(null, "2026-01-01T00:00:00.000Z"), {
+    renderHook(() => useGratitudeEntryCountSinceDayKey(null, "2026-01-01"), {
       wrapper: wrap(client),
     });
-    expect(repo.countGratitudeEntriesSince).not.toHaveBeenCalled();
+    expect(repo.countGratitudeEntriesSinceDayKey).not.toHaveBeenCalled();
   });
 
   it("fetches with the userId and sinceIso for a real user", async () => {
     const client = createTestQueryClient();
-    renderHook(() => useGratitudeEntryCountSince("u1", "2026-01-01T00:00:00.000Z"), {
+    renderHook(() => useGratitudeEntryCountSinceDayKey("u1", "2026-01-01"), {
       wrapper: wrap(client),
     });
-    await waitFor(() => expect(repo.countGratitudeEntriesSince).toHaveBeenCalled());
-    expect(repo.countGratitudeEntriesSince).toHaveBeenCalledWith("u1", "2026-01-01T00:00:00.000Z");
+    await waitFor(() => expect(repo.countGratitudeEntriesSinceDayKey).toHaveBeenCalled());
+    expect(repo.countGratitudeEntriesSinceDayKey).toHaveBeenCalledWith("u1", "2026-01-01");
   });
 });
 

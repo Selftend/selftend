@@ -15,9 +15,10 @@ import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-car
 import { getGratitudeFrequencyBuckets } from "@/src/features/gratitude/insights";
 import {
   useFavoriteGratitudeEntryCount,
+  useFavoriteGratitudeEntries,
   useGratitudeEntries,
   useGratitudeEntryCount,
-  useGratitudeEntryCountSince,
+  useGratitudeEntryCountSinceDayKey,
 } from "@/src/features/gratitude/queries";
 import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
@@ -42,11 +43,15 @@ export default function GratitudeHomeScreen() {
   const todayKey = currentDateKey();
 
   const { data: entries, isError, refetch } = useGratitudeEntries(userId, 90);
+  const {
+    data: favoriteEntries,
+    isError: favoritesFailed,
+    refetch: refetchFavorites,
+  } = useFavoriteGratitudeEntries(userId, 5);
   const { data: totalEntries } = useGratitudeEntryCount(userId);
   const { data: favoriteCount } = useFavoriteGratitudeEntryCount(userId);
   const mondayKey = mondayKeyOf(todayKey);
-  const weekStart = new Date(`${mondayKey}T00:00:00`).toISOString();
-  const { data: thisWeekCount } = useGratitudeEntryCountSince(userId, weekStart);
+  const { data: thisWeekCount } = useGratitudeEntryCountSinceDayKey(userId, mondayKey);
 
   const buckets = useMemo(
     () => getGratitudeFrequencyBuckets(entries ?? [], new Date(`${todayKey}T12:00:00`), 30),
@@ -54,9 +59,12 @@ export default function GratitudeHomeScreen() {
     [entries, todayKey],
   );
   const allEntries = entries ?? [];
-  const visibleEntries = allEntries
-    .filter((entry) => filter === "all" || entry.starred)
-    .slice(0, 5);
+  const activeEntries = filter === "favorites" ? favoriteEntries : entries;
+  const activeFailed = filter === "favorites" ? favoritesFailed : isError;
+  const visibleEntries = (filter === "favorites" ? (favoriteEntries ?? []) : allEntries).slice(
+    0,
+    5,
+  );
 
   return (
     <>
@@ -175,14 +183,17 @@ export default function GratitudeHomeScreen() {
                 </View>
               </View>
 
-              {isError && !entries ? (
+              {activeFailed && !activeEntries ? (
                 <ErrorState
                   icon="cloud-off"
                   title={t("list.error.title")}
                   description={t("list.error.description")}
-                  action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
+                  action={{
+                    label: t("errors:fallback.retry"),
+                    onPress: () => void (filter === "favorites" ? refetchFavorites() : refetch()),
+                  }}
                 />
-              ) : entries && visibleEntries.length === 0 ? (
+              ) : activeEntries && visibleEntries.length === 0 ? (
                 <Text variant="muted">
                   {t(
                     filter === "favorites"

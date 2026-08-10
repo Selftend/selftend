@@ -24,9 +24,9 @@ test.describe("create gratitude entry", () => {
     await dismissPostSignInModals(page);
     await page.goto("/tools/gratitude-log/new");
 
-    await page.getByRole("textbox", { name: "What made you laugh?" }).fill(item);
+    await page.getByRole("textbox", { name: "Gratitude 1" }).fill(item);
 
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Save entry", exact: true }).click();
 
     // After save the app redirects to the detail page, which lists the item
     // (the hero is title-less, so the item is body text, not a heading).

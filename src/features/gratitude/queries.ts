@@ -3,7 +3,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   countGratitudeEntries,
   countFavoriteGratitudeEntries,
-  countGratitudeEntriesSince,
+  countGratitudeEntriesSinceDayKey,
   deleteGratitudeEntry,
   getGratitudeEntry,
   listFavoriteGratitudeEntries,
@@ -27,8 +27,8 @@ const gratitudeKeys = {
   count: (userId: string) => ["gratitude", "count", userId] as const,
   favoriteCount: (userId: string) => ["gratitude", "favorite-count", userId] as const,
   historyPages: (userId: string) => ["gratitude", "history-pages", userId] as const,
-  countSince: (userId: string, sinceIso: string) =>
-    ["gratitude", "count-since", userId, sinceIso] as const,
+  countSinceDayKey: (userId: string, sinceDayKey: string) =>
+    ["gratitude", "count-since-day", userId, sinceDayKey] as const,
 };
 
 export function useGratitudeEntries(userId: string | null, limit = 50) {
@@ -86,12 +86,12 @@ export function useFavoriteGratitudeEntryCount(userId: string | null) {
   });
 }
 
-export function useGratitudeEntryCountSince(userId: string | null, sinceIso: string) {
+export function useGratitudeEntryCountSinceDayKey(userId: string | null, sinceDayKey: string) {
   return useQuery({
     queryKey: userId
-      ? gratitudeKeys.countSince(userId, sinceIso)
-      : ["gratitude", "count-since", "anonymous", sinceIso],
-    queryFn: () => countGratitudeEntriesSince(userId!, sinceIso),
+      ? gratitudeKeys.countSinceDayKey(userId, sinceDayKey)
+      : ["gratitude", "count-since-day", "anonymous", sinceDayKey],
+    queryFn: () => countGratitudeEntriesSinceDayKey(userId!, sinceDayKey),
     enabled: Boolean(userId),
   });
 }

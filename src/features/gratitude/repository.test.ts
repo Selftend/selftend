@@ -1,7 +1,7 @@
 import {
   countGratitudeEntries,
   countFavoriteGratitudeEntries,
-  countGratitudeEntriesSince,
+  countGratitudeEntriesSinceDayKey,
   deleteGratitudeEntry,
   getGratitudeEntry,
   listFavoriteGratitudeEntries,
@@ -472,17 +472,33 @@ describe("gratitude repository", () => {
     await expect(countGratitudeEntries("user-1")).resolves.toBe(0);
   });
 
-  it("counts gratitude entries logged since a cutoff (head request + gte filter)", async () => {
-    const gte = jest.fn().mockResolvedValue({ count: 6, error: null });
+  it("counts entries by their captured civil day", async () => {
+    const range = jest.fn().mockResolvedValue({
+      data: [
+        {
+          logged_at: "2026-05-11T11:00:00.000Z",
+          logged_offset_minutes: 14 * 60,
+        },
+        {
+          logged_at: "2026-05-12T01:00:00.000Z",
+          logged_offset_minutes: -2 * 60,
+        },
+      ],
+      error: null,
+    });
+    const order = jest.fn(() => ({ range }));
+    const gte = jest.fn(() => ({ order }));
     const eqUser = jest.fn(() => ({ gte }));
     const select = jest.fn(() => ({ eq: eqUser }));
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(countGratitudeEntriesSince("user-1", "2026-05-13T00:00:00.000Z")).resolves.toBe(6);
-    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    await expect(countGratitudeEntriesSinceDayKey("user-1", "2026-05-12")).resolves.toBe(1);
+    expect(select).toHaveBeenCalledWith("logged_at,logged_offset_minutes");
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(gte).toHaveBeenCalledWith("logged_at", "2026-05-13T00:00:00.000Z");
+    expect(gte).toHaveBeenCalledWith("logged_at", "2026-05-11T10:00:00.000Z");
+    expect(order).toHaveBeenCalledWith("logged_at", { ascending: true });
+    expect(range).toHaveBeenCalledWith(0, 999);
   });
 
   it("sanitizes stored levels 1 and 2 and coerces anything else to 3", async () => {
@@ -614,26 +630,30 @@ describe("gratitude repository", () => {
     await expect(countGratitudeEntries("user-1")).rejects.toMatchObject({ code: "PGRST502" });
   });
 
-  it("propagates the since-count error and treats a null since-count as zero", async () => {
-    const gteErr = jest.fn().mockResolvedValue({ count: null, error: { code: "PGRST503" } });
+  it("propagates the civil-day count error and treats an empty page as zero", async () => {
+    const rangeErr = jest.fn().mockResolvedValue({ data: null, error: { code: "PGRST503" } });
+    const orderErr = jest.fn(() => ({ range: rangeErr }));
+    const gteErr = jest.fn(() => ({ order: orderErr }));
     const eqErr = jest.fn(() => ({ gte: gteErr }));
     const selectErr = jest.fn(() => ({ eq: eqErr }));
     const fromErr = jest.fn(() => ({ select: selectErr }));
     mockRequireSupabase.mockReturnValue({
       from: fromErr,
     } as unknown as ReturnType<typeof requireSupabase>);
-    await expect(
-      countGratitudeEntriesSince("user-1", "2026-05-13T00:00:00.000Z"),
-    ).rejects.toMatchObject({ code: "PGRST503" });
+    await expect(countGratitudeEntriesSinceDayKey("user-1", "2026-05-12")).rejects.toMatchObject({
+      code: "PGRST503",
+    });
 
-    const gteZero = jest.fn().mockResolvedValue({ count: null, error: null });
+    const rangeZero = jest.fn().mockResolvedValue({ data: [], error: null });
+    const orderZero = jest.fn(() => ({ range: rangeZero }));
+    const gteZero = jest.fn(() => ({ order: orderZero }));
     const eqZero = jest.fn(() => ({ gte: gteZero }));
     const selectZero = jest.fn(() => ({ eq: eqZero }));
     const fromZero = jest.fn(() => ({ select: selectZero }));
     mockRequireSupabase.mockReturnValue({
       from: fromZero,
     } as unknown as ReturnType<typeof requireSupabase>);
-    await expect(countGratitudeEntriesSince("user-1", "2026-05-13T00:00:00.000Z")).resolves.toBe(0);
+    await expect(countGratitudeEntriesSinceDayKey("user-1", "2026-05-12")).resolves.toBe(0);
   });
 
   it("maps the found row for getGratitudeEntry and propagates its error", async () => {
