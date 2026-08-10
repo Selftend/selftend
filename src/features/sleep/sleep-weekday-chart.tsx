@@ -3,17 +3,16 @@ import { useTranslation } from "react-i18next";
 import { BarChart } from "@/src/components/charts/bar-chart";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { formatCompactHours } from "@/src/features/sleep/format";
 
 const BAR_AREA = 62;
-const MONDAY = new Date(2024, 0, 1); // Jan 1 2024 is a Monday - used only for weekday letters.
+const MONDAY = new Date(2024, 0, 1);
 
 export function SleepWeekdayChart({ averages }: { averages: (number | null)[] }) {
   const { t, i18n } = useTranslation("sleep");
-  const hasData = averages.some((a) => a !== null);
-  const bestIdx = averages.reduce<number>(
-    (best, a, i) => (a !== null && a > (averages[best] ?? -1) ? i : best),
-    0,
-  );
+  const hasData = averages.some((average) => average !== null);
+  const narrowWeekday = new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" });
+  const fullWeekday = new Intl.DateTimeFormat(i18n.language, { weekday: "long" });
 
   return (
     <Card variant="soft">
@@ -27,21 +26,25 @@ export function SleepWeekdayChart({ averages }: { averages: (number | null)[] })
           </Text>
         ) : (
           <BarChart
-            bars={averages.map((avg, i) => {
-              const letterDate = new Date(MONDAY);
-              letterDate.setDate(MONDAY.getDate() + i);
+            bars={averages.map((average, index) => {
+              const weekdayDate = new Date(MONDAY);
+              weekdayDate.setDate(MONDAY.getDate() + index);
+              const label = narrowWeekday.format(weekdayDate);
+              const weekday = fullWeekday.format(weekdayDate);
+              const duration = average === null ? null : formatCompactHours(average);
               return {
-                value: avg,
-                label: new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" }).format(
-                  letterDate,
-                ),
-                highlighted: avg !== null && i === bestIdx,
+                value: average,
+                topLabel: duration ?? "—",
+                label,
+                accessibilityLabel:
+                  duration === null
+                    ? t("chart.weekdayBarEmptyA11y", { weekday })
+                    : t("chart.weekdayBarA11y", { weekday, duration }),
               };
             })}
             barAreaHeight={BAR_AREA}
             minBarHeight={BAR_AREA * 0.06}
-            tintClass="bg-muted"
-            highlightTintClass="bg-primary"
+            tintClass="bg-muted-foreground/80"
             columnClassName="gap-1.5"
             labelClassName="font-semibold"
           />

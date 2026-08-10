@@ -79,7 +79,7 @@ describe("SleepQualityMix", () => {
   it("says the window is empty rather than drawing five zeros", () => {
     renderWithProviders(<SleepQualityMix distribution={[0, 0, 0, 0, 0]} />);
 
-    expect(screen.getByText("Log a few nights to see this.")).toBeTruthy();
+    expect(screen.getByText("Log a few sleep entries to see this.")).toBeTruthy();
     expect(screen.queryAllByTestId("bar-chart-bar")).toHaveLength(0);
   });
 

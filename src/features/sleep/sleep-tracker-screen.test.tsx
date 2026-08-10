@@ -156,7 +156,7 @@ describe("SleepTrackerScreen", () => {
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.getByText(formatHours(471))).toBeTruthy();
+    expect(screen.getAllByText(formatHours(471)).length).toBeGreaterThan(0);
     // The capped-list average, which is what the screen used to show.
     expect(screen.queryByText(formatHours(420))).toBeNull();
   });
