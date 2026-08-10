@@ -8,11 +8,10 @@ import { HueButton } from "@/src/features/grounding/hue-button";
 import { HueIconBadge } from "@/src/features/grounding/hue-icon-badge";
 
 interface GroundingDoneProps {
-  onSave: () => void;
-  saving: boolean;
+  onDone: () => void;
 }
 
-export function GroundingDone({ onSave, saving }: GroundingDoneProps) {
+export function GroundingDone({ onDone }: GroundingDoneProps) {
   const { t } = useTranslation("cbt");
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -21,14 +20,14 @@ export function GroundingDone({ onSave, saving }: GroundingDoneProps) {
         <View className="flex-1 items-center justify-center gap-4 px-8 py-8">
           <HueIconBadge icon="spa" size={96} iconSize={46} shape="circle" />
           <Text variant="h1" className="text-center">
-            {t("grounding.done")}
+            {t("grounding.complete")}
           </Text>
           <Text variant="muted" className="max-w-[28ch] text-center">
             {t("grounding.doneMessage")}
           </Text>
         </View>
         <View className="px-6 pb-8">
-          <HueButton label={t("grounding.save")} loading={saving} onPress={onSave} />
+          <HueButton label={t("common:done")} onPress={onDone} />
         </View>
       </ScrollView>
     </SafeAreaView>

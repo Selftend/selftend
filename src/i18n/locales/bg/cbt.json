@@ -1215,14 +1215,20 @@
     "hero": {
       "techniques_one": "техника",
       "techniques_other": "техники",
+      "sessions_one": "сесия",
+      "sessions_other": "сесии",
       "takes": "отнема",
       "takesValue": "2-3 мин",
       "last": "последно записано {{when}}",
-      "never": "все още няма сесии"
+      "never": "все още няма сесии",
+      "loading": "Зареждане"
     },
     "choose": "Избери техника",
     "howTo": "Как се прави",
     "step": "Стъпка {{current}} от {{total}}",
+    "stepShort": "{{current}} / {{total}}",
+    "goToStep": "Към стъпка {{current}} от {{total}}",
+    "stepsReached": "{{completed}} от {{total}}",
     "stepCounter": "{{label}} · {{current}} от {{total}}",
     "meta": {
       "senses_one": "{{count}} сетиво",
@@ -1232,14 +1238,44 @@
     },
     "start": "Започни",
     "next": "Напред",
+    "back": "Назад",
     "finish": "Завърши",
+    "takeYourTime": "Отдели толкова време, колкото ти е нужно.",
     "done": "Готово",
+    "complete": "Заземяването е завършено",
     "doneMessage": "Справи се. Поеми дъх.",
     "save": "Запази сесията",
     "notFound": "Техниката не е намерена",
     "streakTitle": "Скорошни сесии",
     "recentCount_one": "{{count}} записана сесия.",
     "recentCount_other": "{{count}} записани сесии.",
+    "finishEarly": {
+      "title": "Да завършиш ли сесията?",
+      "message": "Напредъкът ти ще бъде записан като {{current}} от {{total}} стъпки.",
+      "confirm": "Завърши сесията",
+      "cancel": "Продължи"
+    },
+    "recent": {
+      "title": "Скорошни сесии",
+      "showAll": "Виж всички сесии",
+      "empty": "Все още няма сесии.",
+      "error": {
+        "title": "Сесиите не можаха да се заредят",
+        "description": "Провери връзката си и опитай отново."
+      }
+    },
+    "allHistory": {
+      "title": "Всички сесии за заземяване",
+      "description": "Всяка завършена сесия за заземяване, включително приключените по-рано.",
+      "empty": {
+        "title": "Все още няма сесии",
+        "description": "Сесиите ти за заземяване ще се събират тук, след като завършиш някоя."
+      },
+      "error": {
+        "title": "Сесиите не можаха да се заредят",
+        "description": "Провери връзката си и опитай отново."
+      }
+    },
     "techniques": {
       "54321": {
         "title": "5-4-3-2-1",

@@ -44,6 +44,8 @@ function session(completedOffsetMinutes: number | null): MindfulnessSession {
     createdAt: ACROSS_MIDNIGHT_AT,
     cycles: 4,
     durationSeconds: 240,
+    stepsCompleted: null,
+    stepsTotal: null,
   };
 }
 
