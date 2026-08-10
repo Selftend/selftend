@@ -53,6 +53,24 @@ describe("GroundingFlow", () => {
     await waitFor(() => expect(getByText("Grounding complete")).toBeTruthy());
   });
 
+  it("saves the furthest reached step after navigating back", async () => {
+    const { getByText, getByLabelText, getByTestId } = renderWithProviders(
+      <GroundingFlow slug="cold-water" />,
+    );
+    fireEvent.press(getByText("Start"));
+    fireEvent.press(getByLabelText("Go to step 4 of 4"));
+    fireEvent.press(getByText("Back"));
+    fireEvent.press(getByLabelText("Close"));
+    fireEvent.press(getByTestId("confirm-dialog-confirm"));
+
+    await waitFor(() =>
+      expect(mockSave).toHaveBeenCalledWith(
+        "user-1",
+        expect.objectContaining({ stepsCompleted: 4, stepsTotal: 4 }),
+      ),
+    );
+  });
+
   it("walks intro -> session -> done -> save", async () => {
     const { getByText } = renderWithProviders(<GroundingFlow slug="cold-water" />);
 

@@ -82,7 +82,8 @@ export default function GroundingHomeScreen() {
                   label: t("grounding.hero.techniques", { count: groundingTechniques.length }),
                 },
                 {
-                  value: sessionCount === undefined ? "â€”" : String(sessionCount),
+                  value:
+                    sessionCount === undefined ? t("grounding.hero.loading") : String(sessionCount),
                   label: t("grounding.hero.sessions", { count: sessionCount ?? 0 }),
                 },
                 // The old ToolStats.subline, folded into the row as a value-less

@@ -14,12 +14,7 @@ export function ProgressSegments({ total, current, onSelect }: ProgressSegmentsP
   const accent = useAccentHsl();
   const { t } = useTranslation("cbt");
   return (
-    <View
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel={t("grounding.step", { current: current + 1, total })}
-      style={{ flexDirection: "row", gap: 6 }}
-    >
+    <View style={{ flexDirection: "row", gap: 6 }}>
       {Array.from({ length: total }).map((_, i) => {
         const alpha = i < current ? 1 : i === current ? 0.6 : 0.16;
         return (

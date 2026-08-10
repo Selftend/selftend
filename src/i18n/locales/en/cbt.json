@@ -1220,7 +1220,8 @@
       "takes": "takes",
       "takesValue": "2-3 min",
       "last": "last logged {{when}}",
-      "never": "no sessions logged yet"
+      "never": "no sessions logged yet",
+      "loading": "Loading"
     },
     "choose": "Choose a technique",
     "howTo": "How to do it",

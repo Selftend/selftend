@@ -26,6 +26,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
 
   const [phase, setPhase] = useState<Phase>("intro");
   const [stepIndex, setStepIndex] = useState(0);
+  const [furthestStep, setFurthestStep] = useState(1);
   const [confirmEarlyFinish, setConfirmEarlyFinish] = useState(false);
   const startedAtRef = useRef(0);
   const saveMutation = useSaveGroundingSession(user?.id ?? null);
@@ -81,7 +82,9 @@ export function GroundingFlow({ slug }: { slug: string }) {
 
   const handleNext = () => {
     if (stepIndex < total - 1) {
-      setStepIndex(stepIndex + 1);
+      const nextStep = stepIndex + 1;
+      setFurthestStep((current) => Math.max(current, nextStep + 1));
+      setStepIndex(nextStep);
     } else {
       void saveAndFinish(total);
     }
@@ -99,6 +102,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
           steps={stepsText}
           onStart={() => {
             setStepIndex(0);
+            setFurthestStep(1);
             startedAtRef.current = Date.now();
             setPhase("active");
           }}
@@ -118,7 +122,10 @@ export function GroundingFlow({ slug }: { slug: string }) {
           isLast={stepIndex === total - 1}
           onNext={handleNext}
           onBack={() => setStepIndex((current) => Math.max(0, current - 1))}
-          onStepSelect={setStepIndex}
+          onStepSelect={(index) => {
+            setFurthestStep((current) => Math.max(current, index + 1));
+            setStepIndex(index);
+          }}
           onExit={handleExit}
           saving={saveMutation.isPending}
         />
@@ -139,12 +146,12 @@ export function GroundingFlow({ slug }: { slug: string }) {
         visible={confirmEarlyFinish}
         isPending={saveMutation.isPending}
         title={t("grounding.finishEarly.title")}
-        message={t("grounding.finishEarly.message", { current: stepIndex + 1, total })}
+        message={t("grounding.finishEarly.message", { current: furthestStep, total })}
         confirmLabel={t("grounding.finishEarly.confirm")}
         cancelLabel={t("grounding.finishEarly.cancel")}
         destructive={false}
         onCancel={() => setConfirmEarlyFinish(false)}
-        onConfirm={() => void saveAndFinish(stepIndex + 1)}
+        onConfirm={() => void saveAndFinish(furthestStep)}
       />
     </View>
   );
