@@ -72,7 +72,8 @@ describe("mood repository", () => {
     // `logged_at` alone is not a total order - two entries saved in the same
     // second have no defined relative position, so a row could be returned on
     // both sides of an offset boundary or on neither. `id` breaks the tie.
-    const range = jest.fn().mockResolvedValue({ data: [], error: null });
+    const retry = jest.fn().mockResolvedValue({ data: [], error: null });
+    const range = jest.fn(() => ({ retry }));
     const orderId = jest.fn(() => ({ range }));
     const orderLoggedAt = jest.fn(() => ({ order: orderId }));
     const eq = jest.fn(() => ({ order: orderLoggedAt }));
@@ -86,6 +87,9 @@ describe("mood repository", () => {
     expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
     // Inclusive on both ends, so a 50-row page starting at 100 ends at 149.
     expect(range).toHaveBeenCalledWith(100, 149);
+    // React Query owns the retry budget; do not multiply it by PostgREST's
+    // three inner retries on every failed page read (#748).
+    expect(retry).toHaveBeenCalledWith(false);
   });
 
   it("returns null when getMoodLog finds no row", async () => {
