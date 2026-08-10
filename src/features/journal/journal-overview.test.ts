@@ -121,5 +121,16 @@ describe("journal overview formatting", () => {
     expect(formatJournalWritingBucket(weekly, "en")).toBe("Mar 1 – Mar 7");
     expect(journalWritingBarLabel(weekly, 0, 13, "en")).toBeUndefined();
     expect(journalWritingBarLabel(weekly, 1, 13, "en")).toBeUndefined();
+    expect(
+      formatJournalWritingBucket(
+        {
+          ...weekly,
+          startDayKey: "2024-01-01",
+          endDayKey: "2024-12-31",
+          unit: "year",
+        },
+        "en",
+      ),
+    ).toBe("2024");
   });
 });

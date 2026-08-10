@@ -19,6 +19,7 @@ import { JournalCard } from "@/src/features/journal/journal-card";
 import {
   formatJournalMonth,
   formatJournalRecentWhen,
+  formatJournalWritingBucket,
   formatJournalWritingRange,
   groupRecentJournalEntries,
   journalWritingBarLabel,
@@ -36,7 +37,7 @@ import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
-import { formatInstantAtOffset, parseLocalNoon } from "@/src/utils/date";
+import { formatInstantAtOffset } from "@/src/utils/date";
 
 export default function JournalListScreen() {
   const { t, i18n } = useTranslation("journal");
@@ -198,20 +199,7 @@ export default function JournalListScreen() {
                         value: bucket.wordCount,
                         label: journalWritingBarLabel(bucket, index, buckets.length, i18n.language),
                         accessibilityLabel: t("writing.barLabel", {
-                          period:
-                            bucket.startDayKey === bucket.endDayKey
-                              ? new Intl.DateTimeFormat(i18n.language, {
-                                  dateStyle: "medium",
-                                }).format(parseLocalNoon(bucket.startDayKey))
-                              : `${new Intl.DateTimeFormat(i18n.language, {
-                                  day: "numeric",
-                                  month: "short",
-                                }).format(
-                                  parseLocalNoon(bucket.startDayKey),
-                                )} – ${new Intl.DateTimeFormat(i18n.language, {
-                                  day: "numeric",
-                                  month: "short",
-                                }).format(parseLocalNoon(bucket.endDayKey))}`,
+                          period: formatJournalWritingBucket(bucket, i18n.language),
                           count: bucket.wordCount,
                         }),
                       }))}
