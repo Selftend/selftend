@@ -134,7 +134,7 @@ values
   ('00000000-0000-0000-0000-000000000003', 'demo@test.local',  timezone('utc', now()) - interval '60 days', timezone('utc', now()));
 
 -- public.user_preferences
--- alice: bare post-signup defaults, app onboarding done
+-- alice: bare post-signup defaults, app onboarding done, CBT onboarding NOT done
 insert into public.user_preferences (
   user_id,
   enabled_modules,
@@ -144,6 +144,7 @@ insert into public.user_preferences (
   cbt_reminder_minute,
   language,
   app_onboarding_completed,
+  cbt_onboarding_completed,
   privacy_policy_accepted_at,
   terms_accepted_at,
   policy_version_accepted,
@@ -158,6 +159,7 @@ values (
   19, 0,
   'en',
   true,
+  false,
   timezone('utc', now()),
   timezone('utc', now()),
   '2026-05-20-local-preferences',
@@ -177,6 +179,7 @@ insert into public.user_preferences (
   cbt_reminder_timezone,
   language,
   app_onboarding_completed,
+  cbt_onboarding_completed,
   privacy_policy_accepted_at,
   terms_accepted_at,
   policy_version_accepted,
@@ -192,6 +195,7 @@ values (
   19, 30,
   'Europe/Sofia',
   'en',
+  true,
   true,
   timezone('utc', now()) - interval '30 days',
   timezone('utc', now()) - interval '30 days',
@@ -212,6 +216,7 @@ insert into public.user_preferences (
   cbt_reminder_timezone,
   language,
   app_onboarding_completed,
+  cbt_onboarding_completed,
   privacy_policy_accepted_at,
   terms_accepted_at,
   policy_version_accepted,
@@ -227,6 +232,7 @@ values (
   20, 0,
   'Europe/Sofia',
   'en',
+  true,
   true,
   timezone('utc', now()) - interval '60 days',
   timezone('utc', now()) - interval '60 days',
@@ -309,13 +315,13 @@ from (values
 insert into public.user_preferences (
   user_id, enabled_modules, reminder_consent, cbt_reminders_enabled,
   cbt_reminder_hour, cbt_reminder_minute, language,
-  app_onboarding_completed,
+  app_onboarding_completed, cbt_onboarding_completed,
   privacy_policy_accepted_at, terms_accepted_at, policy_version_accepted,
   created_at, updated_at
 )
 select
   u.id, array['cbt']::text[], false, false, 19, 0, 'en',
-  true,
+  true, true,
   timezone('utc', now()), timezone('utc', now()), '2026-05-20-local-preferences',
   timezone('utc', now()), timezone('utc', now())
 from (values
