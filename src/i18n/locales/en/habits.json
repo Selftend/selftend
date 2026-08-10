@@ -13,13 +13,13 @@
     "deleteConfirm": "Delete this habit and all its ticks? This can't be undone."
   },
   "hero": {
-    "habits_one": "{{count}} active habit",
-    "habits_other": "{{count}} active habits",
-    "today": "Today"
+    "habits_one": "active habit",
+    "habits_other": "active habits",
+    "today": "today"
   },
   "stats": {
     "last": "last ticked {{when}}",
-    "never": "No ticks yet"
+    "never": "no ticks yet"
   },
   "home": {
     "title": "Habits",

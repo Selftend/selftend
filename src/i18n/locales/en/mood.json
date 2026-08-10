@@ -108,11 +108,12 @@
     "deleted": "Mood entry deleted"
   },
   "stats": {
-    "checkinsLabel": "check-ins",
+    "checkins_one": "check-in",
+    "checkins_other": "check-ins",
     "thisWeekLabel": "this week",
     "avgLabel": "7-day avg",
     "last": "last logged {{when}}",
-    "never": "No check-ins yet"
+    "never": "no check-ins yet"
   },
   "week": {
     "title": "This week",

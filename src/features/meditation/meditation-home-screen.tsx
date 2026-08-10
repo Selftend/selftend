@@ -153,12 +153,12 @@ export default function MeditationHomeScreen() {
     { value: `${t("hero.stage")} ${stage.number}`, label: "" },
     ...(sitCount > 0
       ? [
-          { value: String(sitCount), label: t("hero.sitsLabel") },
+          { value: String(sitCount), label: t("hero.sits", { count: sitCount }) },
           ...(medianMinutes !== null
             ? [
                 {
-                  value: t("hero.minutes", { count: medianMinutes }),
-                  label: t("hero.typicalLabel"),
+                  value: String(medianMinutes),
+                  label: t("hero.typicalMinutes"),
                 },
               ]
             : []),

@@ -1213,12 +1213,12 @@
     "title": "Grounding",
     "description": "Quick techniques to anchor yourself in the present moment when anxiety or distress spikes.",
     "hero": {
-      "techniques_one": "{{count}} technique",
-      "techniques_other": "{{count}} techniques",
-      "takes": "Takes",
+      "techniques_one": "technique",
+      "techniques_other": "techniques",
+      "takes": "takes",
       "takesValue": "2-3 min",
       "last": "last logged {{when}}",
-      "never": "No sessions logged yet"
+      "never": "no sessions logged yet"
     },
     "choose": "Choose a technique",
     "howTo": "How to do it",

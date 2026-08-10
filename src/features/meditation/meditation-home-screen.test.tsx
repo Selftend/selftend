@@ -236,7 +236,7 @@ describe("MeditationHomeScreen", () => {
     // claiming "no sessions" there would erase a returning user's real history.
     renderWithProviders(<MeditationHomeScreen />);
 
-    expect(screen.queryByText("No sessions logged yet")).toBeNull();
+    expect(screen.queryByText("no sessions logged yet")).toBeNull();
     expect(screen.queryByText(/^last sat /)).toBeNull();
   });
 
@@ -245,7 +245,7 @@ describe("MeditationHomeScreen", () => {
 
     renderWithProviders(<MeditationHomeScreen />);
 
-    expect(screen.getByText("No sessions logged yet")).toBeTruthy();
+    expect(screen.getByText("no sessions logged yet")).toBeTruthy();
     expect(screen.queryByText(/^last sat /)).toBeNull();
   });
 
@@ -255,7 +255,7 @@ describe("MeditationHomeScreen", () => {
     renderWithProviders(<MeditationHomeScreen />);
 
     expect(screen.getByText(/^last sat /)).toBeTruthy();
-    expect(screen.queryByText("No sessions logged yet")).toBeNull();
+    expect(screen.queryByText("no sessions logged yet")).toBeNull();
   });
 
   it("derives the subline from the latest session, not the list order", () => {

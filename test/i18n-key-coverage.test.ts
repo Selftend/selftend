@@ -147,3 +147,48 @@ test("no stat-run subline string carries its own separator", () => {
 
   expect(offenders).toEqual([]);
 });
+
+// Header stats form one inline, middle-dotted sentence. Labels and empty-state
+// sublines therefore start lowercase even when their locale key is shared with
+// no other surface (#828). `meditation:hero.stage` is the deliberate exception:
+// it leads the row and carries the value in one phrase ("Stage 3").
+test("stat-run labels do not introduce sentence case in the middle of the row", () => {
+  const KEYS: Record<string, string[]> = {
+    cbt: ["grounding.hero.takes", "grounding.hero.never", "breathing.overview.neverLogged"],
+    gratitude: ["hero.thisWeek", "stats.never"],
+    habits: ["hero.today", "stats.never"],
+    journal: ["hero.never"],
+    meditation: ["hero.never"],
+    mood: ["stats.thisWeekLabel", "stats.avgLabel", "stats.never"],
+    sleep: ["hero.avg", "hero.quality", "stats.never"],
+  };
+  const offenders: string[] = [];
+
+  for (const lang of ["en", "bg"]) {
+    for (const [namespace, keys] of Object.entries(KEYS)) {
+      const json = JSON.parse(
+        fs.readFileSync(
+          path.join(ROOT, "src", "i18n", "locales", lang, `${namespace}.json`),
+          "utf8",
+        ),
+      ) as Record<string, unknown>;
+
+      for (const key of keys) {
+        const value = key
+          .split(".")
+          .reduce<unknown>(
+            (current, part) =>
+              current && typeof current === "object"
+                ? (current as Record<string, unknown>)[part]
+                : undefined,
+            json,
+          );
+        if (typeof value !== "string" || /^\p{Lu}/u.test(value)) {
+          offenders.push(`${lang}/${namespace}.json: ${key} = ${JSON.stringify(value)}`);
+        }
+      }
+    }
+  }
+
+  expect(offenders).toEqual([]);
+});

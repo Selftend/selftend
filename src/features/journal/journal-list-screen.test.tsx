@@ -94,7 +94,7 @@ describe("JournalListScreen", () => {
     expect(screen.getByRole("heading", { name: "Journal" })).toBeTruthy();
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Start writing")).toBeTruthy();
-    expect(screen.getByText("Nothing journaled yet")).toBeTruthy();
+    expect(screen.getByText("nothing journaled yet")).toBeTruthy();
 
     mockEntries(undefined);
     renderWithProviders(<JournalListScreen />);

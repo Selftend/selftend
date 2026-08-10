@@ -18,7 +18,7 @@
     "wordLabel_one": "word",
     "wordLabel_other": "words",
     "last": "last written {{when}}, {{time}}",
-    "never": "Nothing journaled yet"
+    "never": "nothing journaled yet"
   },
   "writing": {
     "caption": {

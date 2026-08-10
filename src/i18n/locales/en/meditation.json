@@ -14,12 +14,11 @@
   },
   "hero": {
     "stage": "Stage",
-    "sitsLabel": "sits",
-    "typicalLabel": "typical",
-    "minutes_one": "{{count}} min",
-    "minutes_other": "{{count}} min",
+    "sits_one": "sit",
+    "sits_other": "sits",
+    "typicalMinutes": "min typical",
     "last": "last sat {{when}}",
-    "never": "No sessions logged yet"
+    "never": "no sessions logged yet"
   },
   "module": {
     "home": {

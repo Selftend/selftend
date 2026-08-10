@@ -108,11 +108,12 @@
     "deleted": "Записът на настроението е изтрит"
   },
   "stats": {
-    "checkinsLabel": "записи",
+    "checkins_one": "запис",
+    "checkins_other": "записа",
     "thisWeekLabel": "тази седмица",
     "avgLabel": "ср. за 7 дни",
     "last": "последно записано {{when}}",
-    "never": "Все още няма записи"
+    "never": "все още няма записи"
   },
   "week": {
     "title": "Тази седмица",
