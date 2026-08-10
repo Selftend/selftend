@@ -59,20 +59,29 @@ describe("journal repository", () => {
     expect(limit).toHaveBeenCalledWith(25);
   });
 
-  it("pages entries with a deterministic occurred-at and id order", async () => {
-    const range = jest.fn().mockResolvedValue({ data: [], error: null });
-    const orderId = jest.fn(() => ({ range }));
+  it("pages entries after a deterministic occurred-at and id cursor", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [], error: null });
+    const or = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ or, limit }));
     const orderOccurred = jest.fn(() => ({ order: orderId }));
     const eq = jest.fn(() => ({ order: orderOccurred }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));
     mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
 
-    await expect(listJournalEntriesPage("user-1", 50, 100)).resolves.toEqual([]);
+    await expect(
+      listJournalEntriesPage("user-1", 50, {
+        timestamp: "2026-08-09T13:57:59.000+00:00",
+        id: "11111111-1111-4111-8111-111111111111",
+      }),
+    ).resolves.toEqual([]);
 
     expect(orderOccurred).toHaveBeenCalledWith("occurred_at", { ascending: false });
     expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
-    expect(range).toHaveBeenCalledWith(100, 149);
+    expect(or).toHaveBeenCalledWith(
+      'occurred_at.lt."2026-08-09T13:57:59.000+00:00",and(occurred_at.eq."2026-08-09T13:57:59.000+00:00",id.lt."11111111-1111-4111-8111-111111111111")',
+    );
+    expect(limit).toHaveBeenCalledWith(50);
   });
 
   it("sums lifetime words through the RPC rather than the capped list", async () => {

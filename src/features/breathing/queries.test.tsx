@@ -127,7 +127,7 @@ describe("useBreathingSessionPages", () => {
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockListExcludingPage).toHaveBeenCalledWith("user-1", [...groundingSlugs], 20, 0);
+    expect(mockListExcludingPage).toHaveBeenCalledWith("user-1", [...groundingSlugs], 20, null);
     // Never an inclusion list built from the surviving patterns.
     expect(mockList).not.toHaveBeenCalled();
   });

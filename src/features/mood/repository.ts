@@ -1,4 +1,9 @@
 import type { MoodInput, MoodLog } from "@/src/features/mood/types";
+import {
+  ascendingCursorFilter,
+  descendingCursorFilter,
+  type RecordCursor,
+} from "@/src/lib/descending-cursor";
 import { entryDayKey, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
@@ -57,23 +62,27 @@ export async function listMoodLogs(userId: string, limit = 30) {
  * One page of the full history, newest first — the all-history screen's only read.
  *
  * `listMoodLogs` takes a `limit`, which is a ceiling rather than a window: past
- * it, entries simply stop existing as far as the screen is concerned. This is
- * the same query with an offset, so a screen can keep asking.
+ * it, entries simply stop existing as far as the screen is concerned. This read
+ * accepts an exclusive `(logged_at, id)` cursor so the screen can keep asking
+ * without inserts or deletes shifting later page boundaries.
  *
  * Ordered by `logged_at` **and then `id`**, because `logged_at` alone is not a
  * total order: two entries saved in the same second have no defined relative
  * position, and an undefined order across an offset boundary means a row can be
  * returned on both pages or on neither.
  */
-export async function listMoodLogsPage(userId: string, limit: number, offset: number) {
+export async function listMoodLogsPage(userId: string, limit: number, cursor: RecordCursor | null) {
   const client = requireSupabase();
-  const { data, error } = await client
+  let query = client
     .from("mood_logs")
     .select("*")
     .eq("user_id", userId)
     .order("logged_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + limit - 1)
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("logged_at", cursor));
+
+  const { data, error } = await query
+    .limit(limit)
     // PostgREST now retries idempotent reads three times internally. The app's
     // query client already owns retry policy (one retry), so leaving both on
     // turns a failed page into 4 x 2 attempts and ~17 seconds of blank UI.
@@ -151,6 +160,7 @@ export interface MoodScorePoint {
 }
 
 interface MoodScorePointRow {
+  id: string;
   logged_at: string;
   logged_offset_minutes: number | null;
   mood_score: number;
@@ -184,16 +194,19 @@ export async function listMoodScorePoints(
 ): Promise<MoodScorePoint[]> {
   const client = requireSupabase();
   const points: MoodScorePoint[] = [];
-  for (let offset = 0; ; offset += SCORE_POINTS_PAGE) {
+  let cursor: RecordCursor | null = null;
+  for (;;) {
     let query = client
       .from("mood_logs")
-      .select("logged_at, logged_offset_minutes, mood_score")
+      .select("id, logged_at, logged_offset_minutes, mood_score")
       .eq("user_id", userId)
       .gte("logged_at", padIso(fromIso, -1));
     if (toIso) query = query.lte("logged_at", padIso(toIso, 1));
+    if (cursor) query = query.or(ascendingCursorFilter("logged_at", cursor));
     const { data, error } = await query
       .order("logged_at", { ascending: true })
-      .range(offset, offset + SCORE_POINTS_PAGE - 1);
+      .order("id", { ascending: true })
+      .limit(SCORE_POINTS_PAGE);
 
     if (error) throw error;
     const rows = data as MoodScorePointRow[];
@@ -207,6 +220,8 @@ export async function listMoodScorePoints(
       });
     }
     if (rows.length < SCORE_POINTS_PAGE) return points;
+    const last = rows.at(-1)!;
+    cursor = { timestamp: last.logged_at, id: last.id };
   }
 }
 
@@ -238,16 +253,18 @@ export async function listMoodLogsInDayRange(
   const fromIso = padIso(`${startKey}T00:00:00.000Z`, -1);
   const toIso = padIso(`${endKey}T23:59:59.999Z`, 1);
   const logs: MoodLog[] = [];
-  for (let offset = 0; ; offset += SCORE_POINTS_PAGE) {
-    const { data, error } = await client
+  let cursor: RecordCursor | null = null;
+  for (;;) {
+    let query = client
       .from("mood_logs")
       .select("*")
       .eq("user_id", userId)
       .gte("logged_at", fromIso)
       .lte("logged_at", toIso)
       .order("logged_at", { ascending: false })
-      .order("id", { ascending: false })
-      .range(offset, offset + SCORE_POINTS_PAGE - 1);
+      .order("id", { ascending: false });
+    if (cursor) query = query.or(descendingCursorFilter("logged_at", cursor));
+    const { data, error } = await query.limit(SCORE_POINTS_PAGE);
 
     if (error) throw error;
     const rows = data as MoodLogRow[];
@@ -257,6 +274,8 @@ export async function listMoodLogsInDayRange(
       if (log.dayKey >= startKey && log.dayKey <= endKey) logs.push(log);
     }
     if (rows.length < SCORE_POINTS_PAGE) return logs;
+    const last = rows.at(-1)!;
+    cursor = { timestamp: last.logged_at, id: last.id };
   }
 }
 

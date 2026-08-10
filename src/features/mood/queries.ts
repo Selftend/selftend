@@ -15,6 +15,7 @@ import type { MoodInput } from "@/src/features/mood/types";
 import { addDaysToKey } from "@/src/utils/date";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 const moodKeys = {
   all: ["mood"] as const,
@@ -69,18 +70,20 @@ export const MOOD_HISTORY_PAGE_SIZE = 50;
  * that stops at 200 is a lie, so this one keeps asking instead.
  *
  * The key sits under the `mood` root like every other, so a save or delete still
- * invalidates it with the rest — TanStack refetches the loaded pages, which is
- * also what keeps offset paging honest after a row is inserted or removed.
+ * invalidates it with the rest. Every later page is anchored to the last row of
+ * the prior page, so inserts or deletes above that boundary cannot shift it.
  */
 export function useMoodHistoryPages(userId: string | null) {
   return useInfiniteQuery({
     queryKey: userId ? moodKeys.historyPages(userId) : ["mood", "historyPages", "anonymous"],
     queryFn: ({ pageParam }) => listMoodLogsPage(userId!, MOOD_HISTORY_PAGE_SIZE, pageParam),
-    initialPageParam: 0,
+    initialPageParam: null as RecordCursor | null,
     // A short page is the end of the data. A full one may or may not be, so ask
     // again: one empty round trip at the exact boundary beats stopping early.
-    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
-      lastPage.length < MOOD_HISTORY_PAGE_SIZE ? undefined : lastPageParam + MOOD_HISTORY_PAGE_SIZE,
+    getNextPageParam: (lastPage) =>
+      lastPage.length < MOOD_HISTORY_PAGE_SIZE
+        ? undefined
+        : nextDescendingCursor(lastPage, (log) => log.loggedAt),
     enabled: Boolean(userId),
   });
 }

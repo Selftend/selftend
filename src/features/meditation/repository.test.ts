@@ -4,6 +4,7 @@ import {
   getMeditationSession,
   listMeditationMinutesSince,
   listMeditationSessions,
+  listMeditationSessionsPage,
   listStagePracticeNotes,
   medianMeditationMinutes,
   saveMeditationSession,
@@ -203,7 +204,7 @@ describe("meditation repository - saveMeditationSession", () => {
 
   it("trims reflection text and writes stage-aware fields", async () => {
     const row = {
-      id: "s1",
+      id: "11111111-1111-4111-8111-111111111111",
       user_id: "u1",
       stage_at_session: 3,
       duration_minutes: 15,
@@ -419,8 +420,9 @@ function sessionRow(overrides: Record<string, unknown> = {}) {
 
 describe("meditation repository - listMeditationSessions", () => {
   it("maps rows and reads the first 30 by default", async () => {
-    const range = jest.fn().mockResolvedValue({ data: [sessionRow()], error: null });
-    const order = jest.fn(() => ({ range }));
+    const limit = jest.fn().mockResolvedValue({ data: [sessionRow()], error: null });
+    const orderId = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ order: orderId }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
@@ -429,20 +431,27 @@ describe("meditation repository - listMeditationSessions", () => {
     expect(result[0]).toMatchObject({ id: "s1", stageAtSession: 3, durationMinutes: 15 });
     expect(eq).toHaveBeenCalledWith("user_id", "u1");
     expect(order).toHaveBeenCalledWith("completed_at", { ascending: false });
-    expect(range).toHaveBeenCalledWith(0, 29);
+    expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
+    expect(limit).toHaveBeenCalledWith(30);
   });
 
-  it("offsets the window so a later page starts where the previous one stopped", async () => {
-    const range = jest.fn().mockResolvedValue({ data: [], error: null });
-    const order = jest.fn(() => ({ range }));
+  it("anchors a later page to an encoded timestamp and id cursor", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [], error: null });
+    const or = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ or, limit }));
+    const order = jest.fn(() => ({ order: orderId }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
 
-    await listMeditationSessions("u1", 20, 40);
-    // Inclusive on both ends, so page three of twenty is rows 40-59 - an
-    // off-by-one here silently drops or repeats a sit at every page boundary.
-    expect(range).toHaveBeenCalledWith(40, 59);
+    await listMeditationSessionsPage("u1", 20, {
+      timestamp: "2026-08-09T13:57:59.000+00:00",
+      id: "11111111-1111-4111-8111-111111111111",
+    });
+    expect(or).toHaveBeenCalledWith(
+      'completed_at.lt."2026-08-09T13:57:59.000+00:00",and(completed_at.eq."2026-08-09T13:57:59.000+00:00",id.lt."11111111-1111-4111-8111-111111111111")',
+    );
+    expect(limit).toHaveBeenCalledWith(20);
   });
 
   it("clamps out-of-range stages and applies nullish fallbacks when mapping", async () => {
@@ -463,13 +472,14 @@ describe("meditation repository - listMeditationSessions", () => {
       ],
       error: null,
     });
-    const order = jest.fn(() => ({ range: limit }));
+    const orderId = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ order: orderId }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
 
     const [low, high] = await listMeditationSessions("u1", 10);
-    expect(limit).toHaveBeenCalledWith(0, 9);
+    expect(limit).toHaveBeenCalledWith(10);
     expect(low.stageAtSession).toBe(1);
     expect(low.dullnessLevel).toBeNull();
     expect(low.distractionLevel).toBeNull();
@@ -480,8 +490,9 @@ describe("meditation repository - listMeditationSessions", () => {
   });
 
   it("throws when the list query errors", async () => {
-    const range = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
-    const order = jest.fn(() => ({ range }));
+    const limit = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const orderId = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ order: orderId }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));

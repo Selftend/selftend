@@ -4,6 +4,7 @@ import type {
   JournalWritingBucket,
   JournalWritingRange,
 } from "@/src/features/journal/types";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
@@ -58,16 +59,22 @@ export async function listJournalEntries(userId: string, limit = 50) {
   return (data as JournalEntryRow[]).map(mapJournalEntry);
 }
 
-/** One deterministic offset page for the all-entries screen. */
-export async function listJournalEntriesPage(userId: string, limit: number, offset: number) {
+/** One stable keyset page for the all-entries screen. */
+export async function listJournalEntriesPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
   const client = requireSupabase();
-  const { data, error } = await client
+  let query = client
     .from("journal_entries")
     .select("*")
     .eq("user_id", userId)
     .order("occurred_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("occurred_at", cursor));
+
+  const { data, error } = await query.limit(limit);
 
   if (error) throw error;
   return (data as JournalEntryRow[]).map(mapJournalEntry);

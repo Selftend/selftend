@@ -7,6 +7,7 @@ import type {
   HabitCadence,
 } from "@/src/features/habits/types";
 import { toHabitColor } from "@/src/features/habits/schemas";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
@@ -180,7 +181,6 @@ export async function listHabitLogs(
     sinceDate?: string;
     untilDate?: string;
     limit?: number;
-    offset?: number;
   } = {},
 ): Promise<HabitLog[]> {
   // The habit detail/log screens pass the route's habitId here too; a malformed id
@@ -208,16 +208,29 @@ export async function listHabitLogs(
   // returns the n newest days at or after it and omits the day itself. Closing
   // the range is the only way to ask for a specific day.
   if (options.untilDate) query = query.lte("logged_on", options.untilDate);
-  // `range` rather than `limit` once an offset is asked for: paging needs a
-  // window, and Supabase's `limit` has no cursor of its own. Both bounds are
-  // inclusive, hence the -1.
-  if (options.offset !== undefined && options.limit) {
-    query = query.range(options.offset, options.offset + options.limit - 1);
-  } else if (options.limit) {
-    query = query.limit(options.limit);
-  }
+  if (options.limit) query = query.limit(options.limit);
 
   const { data, error } = await query;
+  if (error) throw error;
+  return (data as HabitLogRow[]).map(mapHabitLog);
+}
+
+/** One stable page for the all-history screen, newest day and id first. */
+export async function listHabitLogsPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+): Promise<HabitLog[]> {
+  const client = requireSupabase();
+  let query = client
+    .from("habit_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .order("logged_on", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("logged_on", cursor));
+
+  const { data, error } = await query.limit(limit);
   if (error) throw error;
   return (data as HabitLogRow[]).map(mapHabitLog);
 }
