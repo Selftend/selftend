@@ -10,6 +10,7 @@ import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 
 interface GratitudeEntryRow {
   id: string;
@@ -104,6 +105,25 @@ export async function listGratitudeEntries(userId: string, limit = 50) {
   return (data as GratitudeEntryRow[]).map(mapGratitudeEntry);
 }
 
+export async function listGratitudeEntriesPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  const client = requireSupabase();
+  let query = client
+    .from("gratitude_entries")
+    .select("*")
+    .eq("user_id", userId)
+    .order("logged_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("logged_at", cursor));
+
+  const { data, error } = await query.limit(limit);
+  if (error) throw error;
+  return (data as GratitudeEntryRow[]).map(mapGratitudeEntry);
+}
+
 // Exact lifetime count for hero stats - independent of the capped list query, which
 // would otherwise freeze the displayed total at `limit`.
 export async function countGratitudeEntries(userId: string): Promise<number> {
@@ -112,6 +132,18 @@ export async function countGratitudeEntries(userId: string): Promise<number> {
     .from("gratitude_entries")
     .select("*", { count: "exact", head: true })
     .eq("user_id", userId);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+export async function countFavoriteGratitudeEntries(userId: string): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("gratitude_entries")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("starred", true);
 
   if (error) throw error;
   return count ?? 0;

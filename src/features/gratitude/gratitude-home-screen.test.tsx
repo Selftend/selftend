@@ -3,7 +3,12 @@ import { router } from "expo-router";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import GratitudeHomeScreen from "@/src/features/gratitude/gratitude-home-screen";
-import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
+import {
+  useFavoriteGratitudeEntryCount,
+  useGratitudeEntries,
+  useGratitudeEntryCount,
+  useGratitudeEntryCountSince,
+} from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -31,6 +36,8 @@ jest.mock("@/src/features/gratitude/queries", () => ({
   ...jest.requireActual("@/src/features/gratitude/queries"),
   useGratitudeEntries: jest.fn(),
   useGratitudeEntryCount: jest.fn(),
+  useFavoriteGratitudeEntryCount: jest.fn(),
+  useGratitudeEntryCountSince: jest.fn(),
 }));
 
 const mockUseGratitudeEntries = useGratitudeEntries as jest.MockedFunction<
@@ -38,6 +45,12 @@ const mockUseGratitudeEntries = useGratitudeEntries as jest.MockedFunction<
 >;
 const mockUseGratitudeEntryCount = useGratitudeEntryCount as jest.MockedFunction<
   typeof useGratitudeEntryCount
+>;
+const mockUseFavoriteGratitudeEntryCount = useFavoriteGratitudeEntryCount as jest.MockedFunction<
+  typeof useFavoriteGratitudeEntryCount
+>;
+const mockUseGratitudeEntryCountSince = useGratitudeEntryCountSince as jest.MockedFunction<
+  typeof useGratitudeEntryCountSince
 >;
 const mockRouter = jest.mocked(router);
 
@@ -64,45 +77,29 @@ function gratitudeEntry(overrides: Partial<Record<string, unknown>> = {}) {
 describe("GratitudeHomeScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseGratitudeEntryCount.mockReturnValue({
-      data: undefined,
-    } as unknown as ReturnType<typeof useGratitudeEntryCount>);
+    mockUseGratitudeEntries.mockReturnValue({ data: [] } as never);
+    mockUseGratitudeEntryCount.mockReturnValue({ data: 18 } as never);
+    mockUseFavoriteGratitudeEntryCount.mockReturnValue({ data: 3 } as never);
+    mockUseGratitudeEntryCountSince.mockReturnValue({ data: 4 } as never);
   });
 
-  it("renders the think field header with title, stats, and empty-state subline", () => {
-    mockUseGratitudeEntries.mockReturnValue({
-      data: [],
-    } as unknown as ReturnType<typeof useGratitudeEntries>);
-
+  it("renders the approved header, exact stats, and non-punitive empty state", () => {
     renderWithProviders(<GratitudeHomeScreen />);
 
     expect(screen.getByRole("heading", { name: "Gratitude log" })).toBeTruthy();
-    // Calm muted subline when nothing is logged - never a shame state.
-    expect(screen.getByText("nothing logged yet")).toBeTruthy();
+    expect(screen.getByText("Three good things from today is enough.")).toBeTruthy();
+    expect(screen.getByText("18 entries")).toBeTruthy();
+    expect(screen.getByText("4 this week")).toBeTruthy();
+    expect(screen.getByText("3 favorites")).toBeTruthy();
+    expect(screen.getByText("Add one small thing you appreciated today.")).toBeTruthy();
   });
 
-  it("shows the last-logged subline when an entry exists", () => {
-    mockUseGratitudeEntries.mockReturnValue({
-      data: [gratitudeEntry()],
-    } as unknown as ReturnType<typeof useGratitudeEntries>);
-
+  it("renders thirty bars and keeps zero days at a two-pixel stub", () => {
     renderWithProviders(<GratitudeHomeScreen />);
 
-    expect(screen.getByText(/^last logged /)).toBeTruthy();
-    expect(screen.queryByText("nothing logged yet")).toBeNull();
-  });
-
-  it("omits the subline until the entries query has actually loaded", () => {
-    // `data === undefined` means still loading, or a failed fetch with no cache -
-    // claiming "nothing logged" there would erase a returning user's real history.
-    mockUseGratitudeEntries.mockReturnValue({
-      data: undefined,
-    } as unknown as ReturnType<typeof useGratitudeEntries>);
-
-    renderWithProviders(<GratitudeHomeScreen />);
-
-    expect(screen.queryByText("nothing logged yet")).toBeNull();
-    expect(screen.queryByText(/^last logged /)).toBeNull();
+    const bars = screen.getAllByTestId("bar-chart-bar");
+    expect(bars).toHaveLength(30);
+    expect(bars[0]).toHaveStyle({ height: 2 });
   });
 
   it("darkens the favorites star to accent ink, which think needs even as an icon", () => {

@@ -3,102 +3,60 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { LinearGradient } from "expo-linear-gradient";
 
-import { BarChart } from "@/src/components/charts/bar-chart";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { Badge } from "@/src/components/react-native-reusables/badge";
+import { ErrorState } from "@/src/components/app/screen-state";
+import { GratitudeOnboarding } from "@/src/components/app/gratitude-onboarding-modal";
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Card } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { GratitudeOnboarding } from "@/src/components/app/gratitude-onboarding-modal";
-import { GRATITUDE_BREAKS } from "@/src/features/gratitude/breaks";
-import {
-  getFavoriteGratitudeEntries,
-  getGratitudeFrequencyBuckets,
-  getGratitudeThemes,
-  type GratitudeTheme,
-} from "@/src/features/gratitude/insights";
+import { BarChart } from "@/src/components/charts/bar-chart";
 import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-card";
-import { useGratitudeEntries, useGratitudeEntryCount } from "@/src/features/gratitude/queries";
+import { getGratitudeFrequencyBuckets } from "@/src/features/gratitude/insights";
+import {
+  useFavoriteGratitudeEntryCount,
+  useGratitudeEntries,
+  useGratitudeEntryCount,
+  useGratitudeEntryCountSince,
+} from "@/src/features/gratitude/queries";
 import { tintStripeColors } from "@/src/features/mindfulness/exercise-hue";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
-import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
-import { formatAtOffset } from "@/src/utils/date";
+import { currentDateKey } from "@/src/stores/selected-date-store";
+import { mondayKeyOf } from "@/src/utils/date";
+
+type EntryFilter = "all" | "favorites";
+const BAR_AREA_HEIGHT = 68;
 
 export default function GratitudeHomeScreen() {
   const { t } = useTranslation("gratitude");
   const roomStyle = useRoomStyle("think");
+  const scheme = useColorSchemeName();
   const { user } = useSession();
   const userId = user?.id ?? null;
-  const { selectedDate } = useSelectedDate();
-
-  const { data: entries } = useGratitudeEntries(userId, 90);
-  // Exact lifetime total for the hero - the list above is capped at 90, so its length
-  // would freeze the displayed "entries" count once a user passes that many.
-  const { data: totalEntries } = useGratitudeEntryCount(userId);
-
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [breakIndex, setBreakIndex] = useState(0);
-
-  const allEntries = entries ?? [];
-  // Memoize the expensive aggregations (regex theme-mining, frequency buckets, favorite
-  // scan) so they don't recompute on every parent render. The bucket
-  // window depends on the current day, so key on todayKey to keep midnight rollover exact.
+  const [filter, setFilter] = useState<EntryFilter>("all");
   const todayKey = currentDateKey();
-  const recentList = useMemo(
-    () => allEntries.filter((entry) => entry.dayKey === selectedDate).slice(0, 7),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries, selectedDate],
-  );
-  const frequencyBuckets = useMemo(
-    () => getGratitudeFrequencyBuckets(allEntries),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  const { data: entries, isError, refetch } = useGratitudeEntries(userId, 90);
+  const { data: totalEntries } = useGratitudeEntryCount(userId);
+  const { data: favoriteCount } = useFavoriteGratitudeEntryCount(userId);
+  const mondayKey = mondayKeyOf(todayKey);
+  const weekStart = new Date(`${mondayKey}T00:00:00`).toISOString();
+  const { data: thisWeekCount } = useGratitudeEntryCountSince(userId, weekStart);
+
+  const buckets = useMemo(
+    () => getGratitudeFrequencyBuckets(entries ?? [], new Date(`${todayKey}T12:00:00`), 30),
+    // Recompute the range if a mounted screen crosses midnight.
     [entries, todayKey],
   );
-  const rawThemes = useMemo(
-    () => getGratitudeThemes(allEntries, 6),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries],
-  );
-  const favoriteCount = useMemo(
-    () => getFavoriteGratitudeEntries(allEntries).length,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [entries],
-  );
-  const thisWeekCount = frequencyBuckets.slice(-7).reduce((sum, bucket) => sum + bucket.count, 0);
-  // ISO timestamps sort lexically, so the max is the latest entry regardless of
-  // the list's own ordering.
-  const lastEntry = allEntries.reduce<(typeof allEntries)[number] | null>(
-    (latest, entry) => (latest === null || entry.loggedAt > latest.loggedAt ? entry : latest),
-    null,
-  );
-  const lastWhen = lastEntry
-    ? formatAtOffset(lastEntry.loggedAt, lastEntry.loggedOffsetMinutes)
-    : null;
-  // `entries` is undefined while loading and after a failed fetch with no
-  // cache - only an actually-loaded (possibly empty) history may claim
-  // "nothing logged yet", or a returning user's history reads as erased.
-  const subline = lastWhen
-    ? t("stats.last", { when: lastWhen })
-    : entries
-      ? t("stats.never")
-      : undefined;
-
-  const hasFrequency = frequencyBuckets.some((b) => b.count > 0);
-  const frequencyData = hasFrequency
-    ? frequencyBuckets.map((b) => ({ label: b.label, count: b.count }))
-    : null;
-
-  const topThemes = rawThemes.length > 0 ? rawThemes : null;
-
-  const hasInsights = hasFrequency || rawThemes.length > 0 || favoriteCount > 0;
+  const allEntries = entries ?? [];
+  const visibleEntries = allEntries
+    .filter((entry) => filter === "all" || entry.starred)
+    .slice(0, 5);
 
   return (
     <>
@@ -125,17 +83,19 @@ export default function GratitudeHomeScreen() {
               ]}
               stats={[
                 {
-                  value: String(totalEntries ?? allEntries.length),
-                  label: t("hero.entries", { count: totalEntries ?? allEntries.length }),
+                  value: totalEntries === undefined ? t("hero.loadingValue") : String(totalEntries),
+                  label: t("hero.entries", { count: totalEntries ?? 0 }),
                 },
                 {
-                  value: String(favoriteCount),
-                  label: t("hero.favorites", { count: favoriteCount }),
+                  value:
+                    thisWeekCount === undefined ? t("hero.loadingValue") : String(thisWeekCount),
+                  label: t("hero.thisWeek"),
                 },
-                { value: String(thisWeekCount), label: t("hero.thisWeek") },
-                // The old ToolStats.subline, folded into the row as a value-less
-                // item - which is how the design renders "last logged 4:50 pm".
-                ...(subline ? [{ value: "", label: subline }] : []),
+                {
+                  value:
+                    favoriteCount === undefined ? t("hero.loadingValue") : String(favoriteCount),
+                  label: t("hero.favorites", { count: favoriteCount ?? 0 }),
+                },
               ]}
             />
             <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
@@ -143,95 +103,96 @@ export default function GratitudeHomeScreen() {
               <Text>{t("newEntry")}</Text>
             </Button>
 
-            {/* Featured break card with gradient stripe */}
-            <BreakCard
-              breakIndex={breakIndex}
-              onDismiss={() => setBreakIndex((prev) => prev + 1)}
-            />
-
-            {/* Insights card */}
-            {hasInsights ? (
-              <View>
-                <Text variant="eyebrow" className="mb-2.5">
-                  {t("insights.title")}
-                </Text>
-                <Card variant="soft" className="gap-5 p-5">
-                  {frequencyData ? (
-                    <FrequencyBars
-                      data={frequencyData}
-                      weekLabel={t("insights.thisWeek")}
-                      title={t("insights.frequency")}
-                    />
-                  ) : null}
-                  {topThemes ? (
-                    <View className={cn(frequencyData ? "border-t border-border pt-4" : "")}>
-                      <Text className="text-sm font-semibold">{t("insights.themes")}</Text>
-                      <ThemeChips themes={topThemes} />
-                    </View>
-                  ) : null}
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t("insights.favorites")}
-                    hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => router.push("/tools/gratitude-log/favorites")}
-                    className={cn(
-                      "flex-row items-center justify-between active:opacity-80",
-                      frequencyData || topThemes ? "border-t border-border pt-4" : "",
-                    )}
-                  >
-                    <View className="flex-row items-center gap-3">
-                      <View
-                        accessibilityElementsHidden
-                        importantForAccessibility="no"
-                        className="h-9 w-9 items-center justify-center rounded-[10px] bg-muted"
-                      >
-                        {/*
-                              A redundant affordance — the row's own title and
-                              the pressable's label both say "Favorites" — so
-                              1.4.11 would exempt it as decoration. It takes
-                              accent ink anyway: at 1.88:1 on this think/0.12
-                              tile the glyph reads as absent rather than
-                              decorative, and its twin in gratitude-entry-card
-                              is already darkened for that reason (#368). think
-                              is the one hue where the non-text exemption cannot
-                              save it. 5.47:1 here, same hue.
-                            */}
-                        <Icon name="star" size={20} className="text-primary-ink" />
-                      </View>
-                      <View>
-                        <Text className="text-sm font-semibold">{t("insights.favorites")}</Text>
-                        <Text variant="muted" className="mt-0.5 text-xs">
-                          {t("insights.savedCount", { count: favoriteCount })}
-                        </Text>
-                      </View>
-                    </View>
-                    <Icon name="chevron-right" size={20} className="text-muted-foreground" />
-                  </Pressable>
-                </Card>
+            {entries ? (
+              <View className="gap-3">
+                <Text variant="h3">{t("insights.frequency")}</Text>
+                <BarChart
+                  bars={buckets.map((bucket) => ({
+                    key: bucket.id,
+                    value: bucket.count,
+                    accessibilityLabel: t("insights.dayCount", {
+                      date: bucket.label,
+                      count: bucket.count,
+                    }),
+                  }))}
+                  barAreaHeight={BAR_AREA_HEIGHT}
+                  minBarHeight={4}
+                  zeroHeight={2}
+                  gradient={tintStripeColors("think", scheme === "dark")}
+                  className="gap-1"
+                />
+                <View className="flex-row justify-between">
+                  <Text variant="muted" className="text-xs">
+                    {buckets[0]?.label}
+                  </Text>
+                  <Text variant="muted" className="text-xs">
+                    {buckets.at(-1)?.label}
+                  </Text>
+                </View>
               </View>
             ) : null}
 
-            {/* Recent entries */}
-            <View className="gap-3">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("list.recent")}
-                </Text>
-                {recentList.length > 0 ? (
+            <View className="gap-2">
+              <View className="flex-row flex-wrap items-center justify-between gap-3">
+                <Text variant="h3">{t("list.recent")}</Text>
+                <View className="flex-row items-center gap-2">
+                  {(["all", "favorites"] as const).map((value) => {
+                    const selected = filter === value;
+                    return (
+                      <Pressable
+                        key={value}
+                        accessibilityRole="button"
+                        aria-pressed={selected}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5",
+                          selected ? "border-primary/30 bg-primary/[0.08]" : "border-transparent",
+                        )}
+                        onPress={() => setFilter(value)}
+                        role="button"
+                      >
+                        <Text
+                          className={cn("text-xs font-semibold", selected && "text-primary-ink")}
+                        >
+                          {t(`list.filters.${value}`)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                   <Pressable
                     accessibilityRole="link"
-                    onPress={() => router.push("/tools/gratitude-log/entries")}
+                    onPress={() =>
+                      router.push(
+                        filter === "favorites"
+                          ? "/tools/gratitude-log/favorites"
+                          : "/tools/gratitude-log/entries",
+                      )
+                    }
                   >
-                    <Text className="text-sm text-primary">{t("home.viewAll")}</Text>
+                    <Text className="text-xs font-semibold text-primary-ink">
+                      {t("home.viewAll")}
+                    </Text>
                   </Pressable>
-                ) : null}
+                </View>
               </View>
 
-              {recentList.length === 0 ? (
-                <Text variant="muted">{t("list.empty.description")}</Text>
+              {isError && !entries ? (
+                <ErrorState
+                  icon="cloud-off"
+                  title={t("list.error.title")}
+                  description={t("list.error.description")}
+                  action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
+                />
+              ) : entries && visibleEntries.length === 0 ? (
+                <Text variant="muted">
+                  {t(
+                    filter === "favorites"
+                      ? "favorites.empty.description"
+                      : "list.empty.description",
+                  )}
+                </Text>
               ) : (
-                <View className="gap-3">
-                  {recentList.map((entry) => (
+                <View>
+                  {visibleEntries.map((entry) => (
                     <GratitudeEntryCard key={entry.id} entry={entry} />
                   ))}
                 </View>
@@ -241,133 +202,5 @@ export default function GratitudeHomeScreen() {
         </ScrollView>
       </SafeAreaView>
     </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// FrequencyBars
-// ---------------------------------------------------------------------------
-
-const FREQUENCY_BAR_AREA = 64;
-
-interface FrequencyBarsProps {
-  data: { label: string; count: number }[];
-  weekLabel: string;
-  title: string;
-}
-
-function FrequencyBars({ data, weekLabel, title }: FrequencyBarsProps) {
-  const scheme = useColorSchemeName();
-  return (
-    <View>
-      <View className="flex-row items-baseline justify-between">
-        <Text className="text-sm font-semibold">{title}</Text>
-        <Text variant="muted" className="text-xs">
-          {weekLabel}
-        </Text>
-      </View>
-      <BarChart
-        bars={data.map((bar) => ({ value: bar.count, label: bar.label }))}
-        barAreaHeight={FREQUENCY_BAR_AREA}
-        minBarHeight={FREQUENCY_BAR_AREA * 0.06}
-        zeroHeight={FREQUENCY_BAR_AREA * 0.02}
-        gradient={tintStripeColors("think", scheme === "dark")}
-        columnClassName="gap-1.5"
-        labelClassName="font-semibold"
-        className="mt-3.5 gap-2.5"
-      />
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// ThemeChips
-//
-// The chips used to rotate through six hues by index (#587). Nothing was read
-// off the colour - the third-most-common word was iris because it was third,
-// not because iris meant anything - which is the "distinguishes items in a set"
-// case the ruling calls insufficient. The word and its count carry it.
-// ---------------------------------------------------------------------------
-
-interface ThemeChipsProps {
-  themes: GratitudeTheme[];
-}
-
-function ThemeChips({ themes }: ThemeChipsProps) {
-  return (
-    <View className="mt-2.5 flex-row flex-wrap gap-2">
-      {themes.map(({ word, count }) => (
-        <Badge key={word} variant="secondary">
-          <Text>
-            {word} <Text className="opacity-60">· {count}</Text>
-          </Text>
-        </Badge>
-      ))}
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// BreakCard - featured prompt card with top-edge gradient stripe
-// ---------------------------------------------------------------------------
-
-const CATEGORY_CLASSES = {
-  "positive-psychology":
-    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
-  stoicism: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  "mental-subtraction": "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
-} as const;
-
-interface BreakCardProps {
-  breakIndex: number;
-  onDismiss: () => void;
-}
-
-function BreakCard({ breakIndex, onDismiss }: BreakCardProps) {
-  const { t } = useTranslation("gratitude");
-  const breakDef = GRATITUDE_BREAKS[breakIndex % GRATITUDE_BREAKS.length];
-  if (!breakDef) return null;
-
-  const cardKey = `breaks.cards.${breakDef.slug}` as Parameters<typeof t>[0];
-  const title = t(`${cardKey}.title` as Parameters<typeof t>[0]);
-  const categoryLabel = t(`breaks.categories.${breakDef.category}` as Parameters<typeof t>[0]);
-
-  return (
-    <View>
-      <Text variant="eyebrow" className="mb-2.5">
-        {t("promptEyebrow")}
-      </Text>
-      <Card variant="soft" className="relative overflow-hidden px-5 py-4">
-        {/* Top-edge think→clay gradient stripe */}
-        <LinearGradient
-          colors={["hsl(43, 74%, 52%)", "hsl(20, 52%, 50%)"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3 }}
-        />
-        <View className="flex-row items-center justify-between">
-          <Text
-            className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-semibold",
-              CATEGORY_CLASSES[breakDef.category],
-            )}
-          >
-            {categoryLabel}
-          </Text>
-          <Pressable
-            accessibilityLabel={t("breaks.dismiss")}
-            accessibilityRole="button"
-            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-            onPress={onDismiss}
-          >
-            <Icon name="arrow-forward" size={18} className="text-muted-foreground" />
-          </Pressable>
-        </View>
-        <Text className="mt-2.5 text-[22px] font-bold tracking-tight">{title}</Text>
-        <Text variant="muted" className="mt-1.5 text-sm leading-relaxed max-w-[62ch]">
-          {t(`${cardKey}.body` as Parameters<typeof t>[0])}
-        </Text>
-      </Card>
-    </View>
   );
 }

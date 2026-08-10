@@ -1,10 +1,12 @@
 import {
   countGratitudeEntries,
+  countFavoriteGratitudeEntries,
   countGratitudeEntriesSince,
   deleteGratitudeEntry,
   getGratitudeEntry,
   listFavoriteGratitudeEntries,
   listGratitudeEntries,
+  listGratitudeEntriesPage,
   saveGratitudeEntry,
   setGratitudeEntryStarred,
 } from "@/src/features/gratitude/repository";
@@ -77,6 +79,52 @@ describe("gratitude repository", () => {
     expect(eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(order).toHaveBeenCalledWith("logged_at", { ascending: false });
     expect(limit).toHaveBeenCalledWith(25);
+  });
+
+  it("pages entries with a stable descending timestamp and id cursor", async () => {
+    const rows = [
+      {
+        id: "g-1",
+        user_id: "user-1",
+        item_1: "Warm coffee",
+        item_2: "",
+        item_3: "",
+        level: 3,
+        note: "",
+        logged_at: "2026-05-15T08:00:00.000Z",
+        created_at: "2026-05-15T08:00:00.000Z",
+        updated_at: "2026-05-15T08:00:00.000Z",
+        events: [],
+        good_moment: "",
+        miss_if_gone: "",
+        hidden_good: "",
+        life_item_1: "",
+        life_item_2: "",
+        life_item_3: "",
+        starred: false,
+      },
+    ];
+    const limit = jest.fn().mockResolvedValue({ data: rows, error: null });
+    const or = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ or, limit }));
+    const orderLogged = jest.fn(() => ({ order: orderId }));
+    const eq = jest.fn(() => ({ order: orderLogged }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      listGratitudeEntriesPage("user-1", 20, {
+        timestamp: "2026-05-15T08:00:00.000Z",
+        id: "22222222-2222-4222-8222-222222222222",
+      }),
+    ).resolves.toMatchObject([{ id: "g-1" }]);
+    expect(orderLogged).toHaveBeenCalledWith("logged_at", { ascending: false });
+    expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
+    expect(or).toHaveBeenCalledWith(
+      'logged_at.lt."2026-05-15T08:00:00.000Z",and(logged_at.eq."2026-05-15T08:00:00.000Z",id.lt."22222222-2222-4222-8222-222222222222")',
+    );
+    expect(limit).toHaveBeenCalledWith(20);
   });
 
   it("returns null when getGratitudeEntry finds no row", async () => {
@@ -401,6 +449,19 @@ describe("gratitude repository", () => {
     expect(from).toHaveBeenCalledWith("gratitude_entries");
     expect(select).toHaveBeenCalledWith("*", { count: "exact", head: true });
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+  });
+
+  it("counts favorites exactly", async () => {
+    const eqStarred = jest.fn().mockResolvedValue({ count: 3, error: null });
+    const eqUser = jest.fn(() => ({ eq: eqStarred }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countFavoriteGratitudeEntries("user-1")).resolves.toBe(3);
+    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqStarred).toHaveBeenCalledWith("starred", true);
   });
 
   it("treats a null gratitude count as zero", async () => {

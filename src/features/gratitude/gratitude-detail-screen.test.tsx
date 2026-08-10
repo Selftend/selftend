@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
@@ -102,23 +102,25 @@ describe("GratitudeDetailScreen", () => {
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
-  it("renders the 1st today question and its answer", () => {
+  it("renders one numbered list without legacy prompt labels", () => {
     renderWithProviders(<GratitudeDetailScreen />);
 
-    expect(screen.getByText("What made you laugh?")).toBeTruthy();
+    expect(screen.getByText(/Logged .* · 2 things/)).toBeTruthy();
+    expect(screen.getByText("1")).toBeTruthy();
     expect(screen.getByText("laughed")).toBeTruthy();
-  });
-
-  it("renders the 3rd today question and its answer", () => {
-    renderWithProviders(<GratitudeDetailScreen />);
-
-    expect(screen.getByText("What simple pleasure did you enjoy?")).toBeTruthy();
+    expect(screen.getByText("2")).toBeTruthy();
     expect(screen.getByText("kind-person")).toBeTruthy();
+    expect(screen.queryByText("What made you laugh?")).toBeNull();
   });
 
-  it("omits the 2nd today question when the slot is empty", () => {
+  it("keeps deletion behind the shared confirmation dialog", async () => {
+    const mutateAsync = jest.fn().mockResolvedValue(undefined);
+    mockUseDeleteGratitudeEntry.mockReturnValue({ mutateAsync, isPending: false } as never);
     renderWithProviders(<GratitudeDetailScreen />);
 
-    expect(screen.queryByText("Who was kind to you?")).toBeNull();
+    fireEvent.press(screen.getByLabelText("Delete"));
+    expect(screen.getByText("Delete this entry?")).toBeTruthy();
+    fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith("g-1"));
   });
 });
