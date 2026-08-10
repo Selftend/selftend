@@ -45,19 +45,6 @@ const INTENTIONALLY_DROPPED = new Set([
   // pre-routines "plan" concept, replaced by routines/routine_steps in the same
   // migration. Confirmed absent from information_schema on a migrated database.
   "plan_items.*",
-  // Module introductions are always available from their info actions; none of
-  // these fields had a read-side consumer (#807/#825).
-  "user_preferences.cbt_onboarding_completed",
-  "user_preferences.act_onboarding_completed",
-  "user_preferences.meditation_onboarding_completed",
-  "user_preferences.meditation_info_completed",
-  "user_preferences.gratitude_onboarding_completed",
-  "user_preferences.habits_onboarding_completed",
-  "user_preferences.mood_onboarding_completed",
-  "user_preferences.journal_onboarding_completed",
-  "user_preferences.sleep_onboarding_completed",
-  "user_preferences.mindfulness_onboarding_completed",
-  "user_preferences.grounding_onboarding_completed",
 ]);
 
 /**

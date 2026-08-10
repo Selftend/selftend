@@ -426,7 +426,7 @@ This module follows the contract documented in `tools.md`:
   - `meditation_reminder_minute: integer` (0-59)
   - `meditation_reminder_timezone: string | null`
 - Reminders default off, single daily reminder at the chosen practice time, non-punitive copy. Same web-push / Expo Notifications path as CBT.
-- Settings can reset the onboarding flag (same pattern as the app and CBT onboarding flags).
+- Settings does not reset a meditation onboarding flag. The current client opens the introduction explicitly; legacy onboarding columns remain temporarily for compatibility with supported mobile builds.
 - The placeholder route at `/tools/meditation` becomes a compatibility redirect to `/modules/meditation`.
 
 ---
@@ -449,7 +449,7 @@ This module follows the contract documented in `tools.md`:
 
 ## 6. Onboarding Flow (Modal Wizard)
 
-Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 is mandatory. The introduction is opened explicitly from the module's info action and does not store per-user completion state. The full content is also available as a route (`/modules/meditation/onboarding`) so the user can revisit it.
+Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 is mandatory. The current client opens the introduction explicitly from the module's info action and does not store per-user completion state. The legacy meditation onboarding columns remain temporarily so supported older builds can continue writing safely. The full content is also available as a route (`/modules/meditation/onboarding`) so the user can revisit it.
 
 1. **Welcome** - the "Path to Awakening" infographic + two sentences of framing. Emphasis: ten Stages, non-linear, this is a practice, not a finish line. No claims about Awakening.
 2. **Attention vs. Peripheral Awareness** - paired bullseye/landscape illustration. One short paragraph each. The product's central concept; readers see it once during onboarding and revisit it via the Learn route.
