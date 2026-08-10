@@ -4,6 +4,7 @@ import {
   getHabit,
   listHabits,
   listHabitLogs,
+  listHabitLogsPage,
   restoreHabit,
   saveHabit,
   toggleHabitLog,
@@ -146,7 +147,7 @@ describe("habits repository", () => {
 
   it("deletes an existing tick when toggling the same date a second time", async () => {
     const existing = {
-      id: "log-1",
+      id: VALID_ID,
       user_id: "user-1",
       habit_id: "h-1",
       logged_on: "2026-05-17",
@@ -173,7 +174,7 @@ describe("habits repository", () => {
       ticked: false,
     });
     expect(eqDeleteUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(eqDeleteId).toHaveBeenCalledWith("id", "log-1");
+    expect(eqDeleteId).toHaveBeenCalledWith("id", VALID_ID);
   });
 
   it("inserts a new tick when toggling a date with no existing log", async () => {
@@ -486,18 +487,24 @@ describe("habits repository", () => {
     expect(result).toHaveLength(1);
   });
 
-  it("listHabitLogs pages with an inclusive range when an offset is given", async () => {
-    const range = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
-    const orderId = jest.fn(() => ({ range }));
+  it("listHabitLogsPage anchors the next page to a day and id", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const or = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ or, limit }));
     const orderDay = jest.fn(() => ({ order: orderId }));
     const eqUser = jest.fn(() => ({ order: orderDay }));
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
 
-    await listHabitLogs("user-1", { limit: 50, offset: 50 });
+    await listHabitLogsPage("user-1", 50, {
+      timestamp: "2026-05-17",
+      id: VALID_ID,
+    });
 
-    // Both bounds inclusive, hence 50..99 rather than 50..100.
-    expect(range).toHaveBeenCalledWith(50, 99);
+    expect(or).toHaveBeenCalledWith(
+      `logged_on.lt."2026-05-17",and(logged_on.eq."2026-05-17",id.lt."${VALID_ID}")`,
+    );
+    expect(limit).toHaveBeenCalledWith(50);
   });
 
   it("listHabitLogs throws when the query errors", async () => {

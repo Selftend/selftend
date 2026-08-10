@@ -6,6 +6,7 @@ import {
   deleteHabit,
   getHabit,
   listHabitLogs,
+  listHabitLogsPage,
   listHabits,
   restoreHabit,
   saveHabit,
@@ -21,6 +22,7 @@ import {
 import type { HabitInput, HabitLog } from "@/src/features/habits/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 const habitKeys = {
   all: ["habits"] as const,
@@ -89,23 +91,20 @@ export function useHabitLogs(
 /**
  * Every tick the user has, paged to exhaustion (#762).
  *
- * Offset paging rather than a cursor: `logged_on` is a `date`, so it is not
- * unique per row - two habits ticked on one day share it - and a
- * "less than the last row's key" cursor would skip whichever of them the page
- * boundary fell between.
+ * The cursor carries both `logged_on` and `id`: the date alone is not unique,
+ * while the pair is a total order even when many habits are ticked on one day.
  */
 export function useHabitLogPages(userId: string | null) {
   return useInfiniteQuery({
     queryKey: userId ? habitKeys.logPages(userId) : ["habits", "logPages", "anonymous"],
-    queryFn: ({ pageParam }) =>
-      listHabitLogs(userId!, { limit: HABITS_HISTORY_PAGE_SIZE, offset: pageParam }),
-    initialPageParam: 0,
+    queryFn: ({ pageParam }) => listHabitLogsPage(userId!, HABITS_HISTORY_PAGE_SIZE, pageParam),
+    initialPageParam: null as RecordCursor | null,
     // A short page is the end of the data. A full one may or may not be, so ask
     // again: one empty round trip at the exact boundary beats stopping early.
-    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+    getNextPageParam: (lastPage) =>
       lastPage.length < HABITS_HISTORY_PAGE_SIZE
         ? undefined
-        : lastPageParam + HABITS_HISTORY_PAGE_SIZE,
+        : nextDescendingCursor(lastPage, (log) => log.loggedOn),
     enabled: Boolean(userId),
   });
 }

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 import { SEED_USERS, deleteAllMoodLogsForUser, signInAs } from "./helpers";
 
 describe("mood mood_logs (integration)", () => {
@@ -72,13 +73,25 @@ describe("mood mood_logs (integration)", () => {
     ]);
   });
 
-  // The all-history screen pages with `.range(offset, offset + limit - 1)` over
-  // `(logged_at desc, id desc)` (#734). Both halves of that are assumptions about
-  // PostgREST and Postgres that a mocked query builder cannot check: that `range`
-  // is inclusive at BOTH ends, and that adding `id` makes the sort total so a row
-  // cannot land on two pages - or on neither - when timestamps tie.
-  it("pages the history without overlapping or dropping a row, even when logged_at ties", async () => {
+  const historyPage = async (limit: number, cursor: RecordCursor | null = null) => {
+    let query = alice
+      .from("mood_logs")
+      .select("id,logged_at")
+      .eq("user_id", SEED_USERS.alice.id)
+      .order("logged_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (cursor) query = query.or(descendingCursorFilter("logged_at", cursor));
+    return query.limit(limit);
+  };
+
+  const cursorAfter = (rows: { id: string; logged_at: string }[]): RecordCursor => {
+    const last = rows.at(-1)!;
+    return { id: last.id, timestamp: last.logged_at };
+  };
+
+  it("keeps the original snapshot complete after an insert and breaks timestamp ties", async () => {
     const tied = "2026-05-20T08:00:00.000Z";
+    const originalIds: string[] = [];
     for (let i = 0; i < 5; i += 1) {
       const r = await alice
         .from("mood_logs")
@@ -92,30 +105,61 @@ describe("mood mood_logs (integration)", () => {
         .select("id")
         .single();
       expect(r.error).toBeNull();
+      originalIds.push(r.data!.id);
     }
 
-    const page = (offset: number, limit: number) =>
-      alice
-        .from("mood_logs")
-        .select("id")
-        .eq("user_id", SEED_USERS.alice.id)
-        .order("logged_at", { ascending: false })
-        .order("id", { ascending: false })
-        .range(offset, offset + limit - 1);
-
-    const first = await page(0, 2);
-    const second = await page(2, 2);
-    const third = await page(4, 2);
+    const first = await historyPage(2);
     expect(first.error).toBeNull();
+    const inserted = await alice.from("mood_logs").insert({
+      user_id: SEED_USERS.alice.id,
+      mood_score: 4,
+      logged_at: "2026-05-21T08:00:00.000Z",
+      ...base,
+    });
+    expect(inserted.error).toBeNull();
 
-    // Inclusive at both ends: a 2-row page is exactly 2 rows.
+    const second = await historyPage(2, cursorAfter(first.data!));
+    expect(second.error).toBeNull();
+    const third = await historyPage(2, cursorAfter(second.data!));
+
     expect(first.data).toHaveLength(2);
     expect(second.data).toHaveLength(2);
-    // A short page is how the query hook learns it has reached the end.
     expect(third.data).toHaveLength(1);
 
     const ids = [...first.data!, ...second.data!, ...third.data!].map((r) => r.id);
-    expect(new Set(ids).size).toBe(5);
+    expect(ids.sort()).toEqual(originalIds.sort());
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("does not skip the next pre-existing row when a loaded row is deleted", async () => {
+    const originalIds: string[] = [];
+    for (let i = 0; i < 5; i += 1) {
+      const created = await alice
+        .from("mood_logs")
+        .insert({
+          user_id: SEED_USERS.alice.id,
+          mood_score: 3,
+          logged_at: `2026-05-${20 - i}T08:00:00.000Z`,
+          ...base,
+        })
+        .select("id")
+        .single();
+      expect(created.error).toBeNull();
+      originalIds.push(created.data!.id);
+    }
+
+    const first = await historyPage(2);
+    const removed = first.data![0].id;
+    expect((await alice.from("mood_logs").delete().eq("id", removed)).error).toBeNull();
+    const second = await historyPage(2, cursorAfter(first.data!));
+    expect(second.error).toBeNull();
+    const third = await historyPage(2, cursorAfter(second.data!));
+    const ids = [...first.data!, ...second.data!, ...third.data!].map((row) => row.id);
+
+    // The already-rendered deleted row remains in the snapshot, and every row
+    // that existed below the cursor still appears exactly once.
+    expect(ids.sort()).toEqual(originalIds.sort());
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("scopes select by RLS so another user cannot read", async () => {

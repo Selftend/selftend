@@ -123,14 +123,24 @@ describe("useJournalEntryPages", () => {
 
   it("pages past a full first page instead of silently capping", async () => {
     (repo.listJournalEntriesPage as jest.Mock)
-      .mockResolvedValueOnce(Array.from({ length: 50 }, (_, id) => ({ id })))
+      .mockResolvedValueOnce(
+        Array.from({ length: 50 }, (_, id) => ({
+          id: `j-${id}`,
+          occurredAt: `2026-08-09T00:${String(id).padStart(2, "0")}:00.000Z`,
+        })),
+      )
       .mockResolvedValueOnce([]);
     const client = createTestQueryClient();
     const { result } = renderHook(() => useJournalEntryPages("u1"), { wrapper: wrap(client) });
 
-    await waitFor(() => expect(repo.listJournalEntriesPage).toHaveBeenCalledWith("u1", 50, 0));
+    await waitFor(() => expect(repo.listJournalEntriesPage).toHaveBeenCalledWith("u1", 50, null));
     await result.current.fetchNextPage();
-    await waitFor(() => expect(repo.listJournalEntriesPage).toHaveBeenCalledWith("u1", 50, 50));
+    await waitFor(() =>
+      expect(repo.listJournalEntriesPage).toHaveBeenCalledWith("u1", 50, {
+        timestamp: "2026-08-09T00:49:00.000Z",
+        id: "j-49",
+      }),
+    );
   });
 });
 

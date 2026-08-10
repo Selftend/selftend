@@ -11,6 +11,7 @@ import type { MindfulnessSessionInput } from "@/src/features/mindfulness/types";
 import { breathingSlugs } from "@/src/constants/breathing";
 import { groundingSlugs } from "@/src/constants/grounding";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 /** Rows per page on the all-sessions screen. */
 export const BREATHING_HISTORY_PAGE_SIZE = 20;
@@ -81,14 +82,14 @@ export function useBreathingSessionPages(userId: string | null) {
         BREATHING_HISTORY_PAGE_SIZE,
         pageParam,
       ),
-    initialPageParam: 0,
+    initialPageParam: null as RecordCursor | null,
     // A short page is the end of the data. A full one may or may not be, so ask again:
     // one empty round trip at the exact boundary beats stopping early and calling a
     // truncated list "all sessions".
-    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+    getNextPageParam: (lastPage) =>
       lastPage.length < BREATHING_HISTORY_PAGE_SIZE
         ? undefined
-        : lastPageParam + BREATHING_HISTORY_PAGE_SIZE,
+        : nextDescendingCursor(lastPage, (session) => session.completedAt),
     enabled: Boolean(userId),
   });
 }

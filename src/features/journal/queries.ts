@@ -15,6 +15,7 @@ import type { JournalInput, JournalWritingRange } from "@/src/features/journal/t
 import { deviceTimeZone } from "@/src/utils/date";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 const journalKeys = {
   all: ["journal"] as const,
@@ -44,11 +45,11 @@ export function useJournalEntryPages(userId: string | null) {
     queryKey: userId ? journalKeys.pages(userId) : ["journal", "pages", "anonymous"],
     queryFn: ({ pageParam }) =>
       listJournalEntriesPage(userId!, JOURNAL_ENTRIES_PAGE_SIZE, pageParam),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+    initialPageParam: null as RecordCursor | null,
+    getNextPageParam: (lastPage) =>
       lastPage.length < JOURNAL_ENTRIES_PAGE_SIZE
         ? undefined
-        : lastPageParam + JOURNAL_ENTRIES_PAGE_SIZE,
+        : nextDescendingCursor(lastPage, (entry) => entry.occurredAt ?? entry.createdAt),
     enabled: Boolean(userId),
   });
 }

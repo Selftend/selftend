@@ -309,17 +309,20 @@ describe("useMoodHistoryPages", () => {
     expect(repo.listMoodLogsPage).not.toHaveBeenCalled();
   });
 
-  it("asks for the first page at offset 0", async () => {
+  it("asks for the first page without a cursor", async () => {
     const client = createTestQueryClient();
     const { result } = renderHook(() => useMoodHistoryPages("u1"), { wrapper: wrap(client) });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(repo.listMoodLogsPage).toHaveBeenCalledWith("u1", MOOD_HISTORY_PAGE_SIZE, 0);
+    expect(repo.listMoodLogsPage).toHaveBeenCalledWith("u1", MOOD_HISTORY_PAGE_SIZE, null);
   });
 
   it("keeps paging while a page comes back full, and stops when one is short", async () => {
-    const fullPage = Array.from({ length: MOOD_HISTORY_PAGE_SIZE }, (_, i) => ({ id: `m${i}` }));
+    const fullPage = Array.from({ length: MOOD_HISTORY_PAGE_SIZE }, (_, i) => ({
+      id: `m${i}`,
+      loggedAt: `2026-08-09T00:${String(i).padStart(2, "0")}:00.000Z`,
+    }));
     (repo.listMoodLogsPage as jest.Mock)
       .mockResolvedValueOnce(fullPage)
       .mockResolvedValueOnce([{ id: "tail" }]);
@@ -330,11 +333,10 @@ describe("useMoodHistoryPages", () => {
     await result.current.fetchNextPage();
     await waitFor(() => expect(result.current.hasNextPage).toBe(false));
 
-    expect(repo.listMoodLogsPage).toHaveBeenLastCalledWith(
-      "u1",
-      MOOD_HISTORY_PAGE_SIZE,
-      MOOD_HISTORY_PAGE_SIZE,
-    );
+    expect(repo.listMoodLogsPage).toHaveBeenLastCalledWith("u1", MOOD_HISTORY_PAGE_SIZE, {
+      id: `m${MOOD_HISTORY_PAGE_SIZE - 1}`,
+      timestamp: `2026-08-09T00:${String(MOOD_HISTORY_PAGE_SIZE - 1).padStart(2, "0")}:00.000Z`,
+    });
     expect(result.current.data?.pages.flat()).toHaveLength(MOOD_HISTORY_PAGE_SIZE + 1);
   });
 });
