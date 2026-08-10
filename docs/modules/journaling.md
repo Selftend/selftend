@@ -18,7 +18,8 @@ In scope:
 
 - create / read / update / delete free-text journal entries
 - optional short title
-- list of recent entries with date, title (or "Untitled"), and a one-line preview
+- overview with an exact 14-day words-per-day chart and five recent entries grouped by civil day
+- recent rows with date, title (or "Untitled"), one-line preview, and word count
 - inclusion in account data export
 - deletion when the account is deleted (cascade)
 
@@ -48,6 +49,8 @@ Indexed by `(user_id, created_at desc)`. Body is checked non-blank at the DB lay
 
 Both home hero stats are counted server-side, because the list query is capped at 50 entries and deriving them on the device would silently turn each into a "recent 50" figure once a user passes the cap. The entry count uses an exact PostgREST `head` count; the word count uses the `journal_word_total()` RPC, which sums word counts over the decrypting view and returns a single number. No word count is stored - it is derived per call - and no entry bodies cross the wire for the stat.
 
+The overview's 14-day chart is also server-derived through `journal_writing_days()`. It returns a dense run of civil-day keys and exact word totals, using each entry's captured occurrence offset (or the viewer's time zone for legacy rows). It decrypts only bodies inside the requested window and never sends those bodies to the client.
+
 ## Privacy and ownership
 
 - Row-level security enabled. Policies allow each authenticated user to `select / insert / update / delete` only rows where `auth.uid() = user_id`. Anon access is denied.
@@ -76,14 +79,17 @@ None. The roadmap explicitly defers any opt-in journaling push reminder. The in-
 ## Tests
 
 - `src/features/journal/schemas.test.ts` - zod validation: empty / whitespace-only body rejected; overlong title / body rejected; valid entry accepted.
-- `src/features/journal/repository.test.ts` - list, get, save (insert + update), delete; trim title/body; word-total RPC call, coercion, and error.
-- `src/features/journal/journal-list-screen.test.tsx` - empty state, populated state with title and preview, "Untitled" fallback, CTA routing, lifetime word total with a loaded-entries fallback.
+- `src/features/journal/repository.test.ts` - list, get, save (insert + update), delete; trim title/body; word-total and writing-days RPC calls, coercion, and errors.
+- `src/features/journal/journal-overview.test.ts` - 14-day chart shaping, civil-day groups, preview extraction, and writing-range labels.
+- `src/features/journal/journal-list-screen.test.tsx` - split stats, exact chart, five grouped recent rows, empty state, fallback titles, and overview routing.
 - `test/integration/journal-word-total.integration.test.ts` - `journal_word_total()` past the 50-entry cap, agreement with `countWords()`, per-user scoping, unauthenticated rejection.
+- `test/integration/journal-writing-days.integration.test.ts` - dense 14-day output, captured civil-day bucketing, per-user scoping, and unauthenticated rejection.
+- `test/e2e/journal-overview.e2e.test.ts` - English and Bulgarian overview at 360dp in light and dark themes, including overflow checks.
 - `src/features/journal/journal-entry-editor-screen.test.tsx` - create-mode render, save flow, edit-mode prefill from cache.
 
 ## Routes
 
-- `/tools/journal` - list of recent entries
+- `/tools/journal` - overview with writing chart and five recent entries
 - `/tools/journal/new` - create a new entry
 - `/tools/journal/[id]` - entry detail (read + delete)
 - `/tools/journal/[id]/edit` - entry edit

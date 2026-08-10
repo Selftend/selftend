@@ -4,6 +4,7 @@ import {
   deleteJournalEntry,
   getJournalEntry,
   listJournalEntries,
+  listJournalWritingDays,
   saveJournalEntry,
   sumJournalWords,
 } from "@/src/features/journal/repository";
@@ -84,6 +85,37 @@ describe("journal repository", () => {
     mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
 
     await expect(sumJournalWords()).rejects.toThrow("rpc failed");
+  });
+
+  it("loads exact daily writing totals without reading journal bodies on the client", async () => {
+    const rpc = jest.fn().mockResolvedValue({
+      data: [
+        { day_key: "2026-05-27", word_count: 0 },
+        { day_key: "2026-05-28", word_count: "421" },
+      ],
+      error: null,
+    });
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ rpc, from } as unknown as ReturnType<
+      typeof requireSupabase
+    >);
+
+    await expect(listJournalWritingDays("Europe/Sofia", 14)).resolves.toEqual([
+      { dayKey: "2026-05-27", wordCount: 0 },
+      { dayKey: "2026-05-28", wordCount: 421 },
+    ]);
+    expect(rpc).toHaveBeenCalledWith("journal_writing_days", {
+      p_time_zone: "Europe/Sofia",
+      p_days: 14,
+    });
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("throws when the daily writing totals RPC errors", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: null, error: new Error("rpc failed") });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listJournalWritingDays("Europe/Sofia", 14)).rejects.toThrow("rpc failed");
   });
 
   it("returns null when getJournalEntry finds no row", async () => {

@@ -1,4 +1,4 @@
-import type { JournalEntry, JournalInput } from "@/src/features/journal/types";
+import type { JournalEntry, JournalInput, JournalWritingDay } from "@/src/features/journal/types";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
@@ -13,6 +13,11 @@ interface JournalEntryRow {
   occurred_offset_minutes?: number | null;
   created_at: string;
   updated_at: string;
+}
+
+interface JournalWritingDayRow {
+  day_key: string;
+  word_count: number | string;
 }
 
 function mapJournalEntry(row: JournalEntryRow): JournalEntry {
@@ -81,6 +86,23 @@ export async function sumJournalWords(): Promise<number> {
   if (error) throw error;
   // PostgREST serialises bigint as a JSON number, but coerce defensively.
   return Number(data ?? 0);
+}
+
+export async function listJournalWritingDays(
+  timeZone: string,
+  days: number,
+): Promise<JournalWritingDay[]> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("journal_writing_days", {
+    p_time_zone: timeZone,
+    p_days: days,
+  });
+
+  if (error) throw error;
+  return ((data ?? []) as JournalWritingDayRow[]).map((row) => ({
+    dayKey: row.day_key,
+    wordCount: Number(row.word_count),
+  }));
 }
 
 export async function getJournalEntry(userId: string, id: string) {
