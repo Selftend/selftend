@@ -81,8 +81,8 @@ export default function GroundingHomeScreen() {
               ]}
               stats={[
                 {
-                  value: t("grounding.hero.techniques", { count: groundingTechniques.length }),
-                  label: "",
+                  value: String(groundingTechniques.length),
+                  label: t("grounding.hero.techniques", { count: groundingTechniques.length }),
                 },
                 {
                   value: `${t("grounding.hero.takes")} ${t("grounding.hero.takesValue")}`,

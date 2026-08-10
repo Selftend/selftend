@@ -76,7 +76,7 @@ describe("GroundingHomeScreen", () => {
       ),
     ).toBeTruthy();
     expect(screen.getByText(/techniques$/)).toBeTruthy();
-    expect(screen.getByText("Takes 2-3 min")).toBeTruthy();
+    expect(screen.getByText("takes 2-3 min")).toBeTruthy();
   });
 
   it("lists the techniques and navigates on press", () => {
@@ -96,7 +96,7 @@ describe("GroundingHomeScreen", () => {
     // `data === undefined` means still loading, or a failed fetch with no cache -
     // claiming "no sessions" there would erase a returning user's real history.
     renderWithProviders(<GroundingHomeScreen />);
-    expect(screen.queryByText("No sessions logged yet")).toBeNull();
+    expect(screen.queryByText("no sessions logged yet")).toBeNull();
     expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
@@ -106,7 +106,7 @@ describe("GroundingHomeScreen", () => {
     } as unknown as ReturnType<typeof useGroundingSessions>);
 
     renderWithProviders(<GroundingHomeScreen />);
-    expect(screen.getByText("No sessions logged yet")).toBeTruthy();
+    expect(screen.getByText("no sessions logged yet")).toBeTruthy();
   });
 
   it("shows the last-done subline and the recent-sessions card when sessions exist", () => {
@@ -117,7 +117,7 @@ describe("GroundingHomeScreen", () => {
     renderWithProviders(<GroundingHomeScreen />);
 
     expect(screen.getByText(/^last logged /)).toBeTruthy();
-    expect(screen.queryByText("No sessions logged yet")).toBeNull();
+    expect(screen.queryByText("no sessions logged yet")).toBeNull();
     expect(screen.getByText("Recent sessions")).toBeTruthy();
   });
 });

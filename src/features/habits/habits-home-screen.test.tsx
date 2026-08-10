@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -168,7 +168,7 @@ describe("HabitsHomeScreen act room", () => {
     // Book credits were scrubbed app-wide (#494).
     expect(screen.queryByText(/Inspired by/)).toBeNull();
     // Calm muted subline when nothing is ticked - never a shame state.
-    expect(screen.getByText("No ticks yet")).toBeTruthy();
+    expect(screen.getByText("no ticks yet")).toBeTruthy();
   });
 
   it("shows the relative last-tick subline when a tick exists", async () => {
@@ -179,7 +179,7 @@ describe("HabitsHomeScreen act room", () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByText("last ticked Today")).toBeTruthy();
-    expect(screen.queryByText("No ticks yet")).toBeNull();
+    expect(screen.queryByText("no ticks yet")).toBeNull();
   });
 
   it("derives the subline from lifetime history when the latest tick is older than the 30-day window", async () => {
@@ -194,7 +194,7 @@ describe("HabitsHomeScreen act room", () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByText("last ticked 45 days ago")).toBeTruthy();
-    expect(screen.queryByText("No ticks yet")).toBeNull();
+    expect(screen.queryByText("no ticks yet")).toBeNull();
   });
 
   it("omits the subline until the lifetime tick query has actually loaded", async () => {
@@ -210,7 +210,7 @@ describe("HabitsHomeScreen act room", () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
-    expect(screen.queryByText("No ticks yet")).toBeNull();
+    expect(screen.queryByText("no ticks yet")).toBeNull();
     expect(screen.queryByText(/^last ticked /)).toBeNull();
   });
 });
@@ -557,8 +557,10 @@ describe("HabitsHomeScreen weekly rhythm", () => {
 
     await screen.findByRole("heading", { name: "Weekly rhythm" });
     // One tick, on the Monday - so six columns read zero and one reads one.
-    expect(screen.getAllByText("0")).toHaveLength(6);
-    expect(screen.getByText("1")).toBeTruthy();
+    expect(within(screen.getByLabelText("Mon: 1 tick")).getByText("1")).toBeTruthy();
+    for (const weekday of ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) {
+      expect(within(screen.getByLabelText(`${weekday}: 0 ticks`)).getByText("0")).toBeTruthy();
+    }
   });
 
   it("fills bars with an accent rather than the wash that measures 1.10:1", async () => {

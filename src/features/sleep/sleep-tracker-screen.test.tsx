@@ -76,7 +76,7 @@ describe("SleepTrackerScreen", () => {
 
     expect(screen.getByRole("heading", { name: "Sleep tracker" })).toBeTruthy();
     // Calm muted subline when nothing is logged - never a shame state.
-    expect(screen.getByText("No sleep logged yet")).toBeTruthy();
+    expect(screen.getByText("no sleep logged yet")).toBeTruthy();
     // Section headings render on the sheet.
     expect(screen.getByRole("heading", { name: "Recent entries" })).toBeTruthy();
   });
@@ -89,7 +89,7 @@ describe("SleepTrackerScreen", () => {
     renderWithProviders(<SleepTrackerScreen />);
 
     expect(screen.getByText(/^last logged /)).toBeTruthy();
-    expect(screen.queryByText("No sleep logged yet")).toBeNull();
+    expect(screen.queryByText("no sleep logged yet")).toBeNull();
   });
 
   it("omits the subline until the logs query has actually loaded", () => {
@@ -101,7 +101,7 @@ describe("SleepTrackerScreen", () => {
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.queryByText("No sleep logged yet")).toBeNull();
+    expect(screen.queryByText("no sleep logged yet")).toBeNull();
     expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 

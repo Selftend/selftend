@@ -162,7 +162,7 @@ export default function MoodTrackerScreen() {
   const statItems =
     checkInCount > 0
       ? [
-          { value: String(checkInCount), label: t("stats.checkinsLabel") },
+          { value: String(checkInCount), label: t("stats.checkins", { count: checkInCount }) },
           { value: String(thisWeekCount), label: t("stats.thisWeekLabel") },
           {
             value: sevenDay.average === null ? "-" : sevenDay.average.toFixed(1),

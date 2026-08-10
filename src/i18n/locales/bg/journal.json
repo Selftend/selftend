@@ -18,7 +18,7 @@
     "wordLabel_one": "дума",
     "wordLabel_other": "думи",
     "last": "последно писано {{when}}, {{time}}",
-    "never": "Все още няма записи"
+    "never": "все още няма записи"
   },
   "writing": {
     "caption": {

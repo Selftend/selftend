@@ -78,7 +78,7 @@ describe("GratitudeHomeScreen", () => {
 
     expect(screen.getByRole("heading", { name: "Gratitude log" })).toBeTruthy();
     // Calm muted subline when nothing is logged - never a shame state.
-    expect(screen.getByText("Nothing logged yet")).toBeTruthy();
+    expect(screen.getByText("nothing logged yet")).toBeTruthy();
   });
 
   it("shows the last-logged subline when an entry exists", () => {
@@ -89,7 +89,7 @@ describe("GratitudeHomeScreen", () => {
     renderWithProviders(<GratitudeHomeScreen />);
 
     expect(screen.getByText(/^last logged /)).toBeTruthy();
-    expect(screen.queryByText("Nothing logged yet")).toBeNull();
+    expect(screen.queryByText("nothing logged yet")).toBeNull();
   });
 
   it("omits the subline until the entries query has actually loaded", () => {
@@ -101,7 +101,7 @@ describe("GratitudeHomeScreen", () => {
 
     renderWithProviders(<GratitudeHomeScreen />);
 
-    expect(screen.queryByText("Nothing logged yet")).toBeNull();
+    expect(screen.queryByText("nothing logged yet")).toBeNull();
     expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 

@@ -222,7 +222,10 @@ export default function HabitsHomeScreen() {
               ]}
               stats={[
                 { value: `${dueTodayTicked}/${dueToday.length}`, label: t("hero.today") },
-                { value: t("hero.habits", { count: allHabits.length }), label: "" },
+                {
+                  value: String(allHabits.length),
+                  label: t("hero.habits", { count: allHabits.length }),
+                },
                 // The old ToolStats.subline, folded into the row as a value-less
                 // item - which is how the design renders "last logged 4:50 pm".
                 ...(subline ? [{ value: "", label: subline }] : []),

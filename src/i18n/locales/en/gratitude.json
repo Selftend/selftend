@@ -13,15 +13,15 @@
     "viewAll": "View all"
   },
   "hero": {
-    "entries_one": "{{count}} entry",
-    "entries_other": "{{count}} entries",
-    "favorites_one": "{{count}} favorite",
-    "favorites_other": "{{count}} favorites",
-    "thisWeek": "This week"
+    "entries_one": "entry",
+    "entries_other": "entries",
+    "favorites_one": "favorite",
+    "favorites_other": "favorites",
+    "thisWeek": "this week"
   },
   "stats": {
     "last": "last logged {{when}}",
-    "never": "Nothing logged yet"
+    "never": "nothing logged yet"
   },
   "insights": {
     "title": "Insights",

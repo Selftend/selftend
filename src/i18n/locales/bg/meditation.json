@@ -95,12 +95,11 @@
   },
   "hero": {
     "stage": "Етап",
-    "sitsLabel": "седения",
-    "typicalLabel": "обичайно",
-    "minutes_one": "{{count}} мин",
-    "minutes_other": "{{count}} мин",
+    "sits_one": "седение",
+    "sits_other": "седения",
+    "typicalMinutes": "мин обичайно",
     "last": "последна сесия {{when}}",
-    "never": "Все още няма сесии"
+    "never": "все още няма сесии"
   },
   "module": {
     "home": {

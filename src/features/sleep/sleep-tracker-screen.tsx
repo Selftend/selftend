@@ -112,7 +112,10 @@ export default function SleepTrackerScreen() {
                   value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "-",
                   label: t("hero.quality"),
                 },
-                { value: t("hero.nights", { count: totalNights ?? allLogs.length }), label: "" },
+                {
+                  value: String(totalNights ?? allLogs.length),
+                  label: t("hero.entries", { count: totalNights ?? allLogs.length }),
+                },
                 // The old ToolStats.subline, folded into the row as a value-less
                 // item - which is how the design renders "last logged 4:50 pm".
                 ...(subline ? [{ value: "", label: subline }] : []),

@@ -25,9 +25,9 @@
   },
   "hero": {
     "avg": "7-day avg",
-    "quality": "Quality",
-    "nights_one": "{{count}} night",
-    "nights_other": "{{count}} nights"
+    "quality": "quality",
+    "entries_one": "sleep entry",
+    "entries_other": "sleep entries"
   },
   "sections": {
     "trend": "Sleep duration",
@@ -45,7 +45,7 @@
     "longest": "Longest",
     "shortest": "Shortest",
     "last": "last logged {{when}}",
-    "never": "No sleep logged yet"
+    "never": "no sleep logged yet"
   },
   "chart": {
     "duration14": "Hours slept · last 14 nights",

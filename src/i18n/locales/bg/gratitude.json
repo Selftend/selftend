@@ -13,15 +13,15 @@
     "viewAll": "Виж всички"
   },
   "hero": {
-    "entries_one": "{{count}} запис",
-    "entries_other": "{{count}} записа",
-    "favorites_one": "{{count}} любим",
-    "favorites_other": "{{count}} любими",
-    "thisWeek": "Тази седмица"
+    "entries_one": "запис",
+    "entries_other": "записа",
+    "favorites_one": "любим",
+    "favorites_other": "любими",
+    "thisWeek": "тази седмица"
   },
   "stats": {
     "last": "последно записано {{when}}",
-    "never": "Все още няма записи"
+    "never": "все още няма записи"
   },
   "insights": {
     "title": "Прозрения",
