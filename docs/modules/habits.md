@@ -112,7 +112,7 @@ This module follows the contract in `tools.md`:
 - No new `ModuleKey` is required; the feature ships under the existing tool route group. (If a future product decision elevates habits to its own enabled-modules toggle, add `"habits"` to `ModuleKey` in `src/features/modules/types.ts` and to `VALID_MODULES`.)
 - i18n namespace: `habits:*` - add `src/i18n/locales/en/habits.json` and `src/i18n/locales/bg/habits.json`. Both languages ship together.
 - New `user_preferences` field: `habitsOnboardingCompleted: boolean` (default `false`). Added to `UserPreferences`, `defaultUserPreferences`, the Supabase column, and the `export_user_data()` projection.
-- Settings can reset the onboarding flag (same pattern as CBT, meditation, gratitude).
+- Settings does not reset a habits onboarding flag. The current client opens the introduction explicitly; the legacy column remains temporarily for compatibility with supported mobile builds.
 - No reminder fields in Phase 1. Reminders are explicitly out of scope until the broader reminder posture is reviewed (AGENTS.md: _"Streaks, quests, reminders, and gamification must always be optional and non-punitive."_). If reminders are added later, they must be off by default and use the existing reminder-consent gate.
 
 ---

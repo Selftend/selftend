@@ -295,9 +295,9 @@ The following invariants should hold on a fully-migrated project:
 - named RLS policies exist for the owner-scoped tables (`profiles`, `user_preferences`, `thought_records`, and the rest), scoped to the `authenticated` role
 - named Storage policies exist for authenticated user-owned objects in `profile-pics`
 - `user_preferences.language` exists with the `user_preferences_language_check` constraint
-- `user_preferences.app_onboarding_completed` and `user_preferences.cbt_onboarding_completed` exist for account-backed onboarding
-- `user_preferences.habits_onboarding_completed`, `habits`, and `habit_logs` exist for account-backed habit onboarding and daily habit ticks
-- `user_preferences.act_onboarding_completed`, `act_program_state`, and the ACT exercise tables exist with owner-scoped RLS policies
+- `user_preferences.app_onboarding_completed` exists for the account-backed app introduction; legacy per-module onboarding columns remain temporarily for compatibility with supported mobile builds, while current clients open module introductions explicitly from their info actions and do not read or write those columns
+- `habits` and `habit_logs` exist for account-backed habit definitions and daily habit ticks
+- `act_program_state` and the ACT exercise tables exist with owner-scoped RLS policies
 - `user_preferences.reminder_consent_updated_at` exists for timestamped reminder opt-in and withdrawal state
 - `user_preferences.cbt_reminder_timezone` and `web_push_subscriptions` exist for opted-in browser reminders
 - `activity_logs`, `mood_logs`, `self_care_logs`, and the rest of the per-module strategy tables exist with owner-scoped RLS policies

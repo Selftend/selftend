@@ -41,7 +41,6 @@ async function setTourState(shownButtonTours: readonly string[]) {
     {
       user_id: USER_ID,
       app_onboarding_completed: true,
-      cbt_onboarding_completed: true,
       policy_version_accepted: policyVersion,
       shown_button_tours: shownButtonTours,
     },
@@ -188,13 +187,13 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
     await expect(page.getByText(/Browse previous days to see what you logged\./i)).toHaveCount(0);
   });
 
-  test("settings reset makes home tips eligible again", async ({ page }) => {
+  test("Show tips again makes home tips eligible again", async ({ page }) => {
     await setTourState([...HOME_TOUR_KEYS]);
 
     await page.goto("/settings");
-    await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();
+    await page.getByRole("button", { name: "Show tips again", exact: true }).click();
 
-    await expect(page.getByText(/Tool introductions will be shown again/i).first()).toBeVisible();
+    await expect(page.getByText(/button tips.*can appear again/i).first()).toBeVisible();
     await expect.poll(getShownButtonTours).toEqual([]);
   });
 });

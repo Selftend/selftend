@@ -92,7 +92,6 @@ export async function dismissCookieBanner(page: Page) {
 //   1. ConsentGate - when seeded policy_version_accepted differs from the
 //      current app policyVersion ("Quick policy check"). Affects all seed users.
 //   2. App-level OnboardingModal - when appOnboardingCompleted is false ("Welcome to Selftend").
-//   3. CBT-screen OnboardingModal - when cbt_onboarding_completed is false ("Using CBT gently").
 // Each is dismissed by clicking its primary button so subsequent UI is interactable.
 export async function dismissPostSignInModals(page: Page) {
   // Cookie banner can re-appear post-navigation; always re-dismiss.

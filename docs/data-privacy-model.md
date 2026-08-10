@@ -44,4 +44,4 @@ The system is **provider-recoverable**: the operator can decrypt, and forgot-pas
 
 ## Backend Status
 
-The active Supabase project includes profile avatar storage, private `profile-pics` policies, `user_preferences.language`, and account-backed onboarding flags.
+The active Supabase project includes profile avatar storage, private `profile-pics` policies, `user_preferences.language`, and the account-backed app-introduction flag. Legacy per-module onboarding columns remain temporarily for compatibility with supported mobile builds; the current client does not read or write them.

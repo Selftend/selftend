@@ -2,18 +2,20 @@ import type { User } from "@supabase/supabase-js";
 import { useTranslation } from "react-i18next";
 
 import { useUpdateOnboardingPreferences } from "@/src/features/settings/queries";
-import { RESET_ONBOARDING_PREFERENCES } from "@/src/features/settings/onboarding-reset";
+import {
+  REPLAY_INTRODUCTION_PREFERENCES,
+  SHOW_TIPS_AGAIN_PREFERENCES,
+} from "@/src/features/settings/onboarding-reset";
 import { useToastStore } from "@/src/stores/toast-store";
 
 /**
- * Onboarding-reset handler, extracted verbatim from the screen. Applies the
- * frozen `RESET_ONBOARDING_PREFERENCES` patch and surfaces feedback.
+ * Settings' two explicit onboarding actions and their shared feedback handling.
  *
  * `setErrorMessage`/`setSuccessMessage` are injected from the screen so the
  * feedback stays the single shared banner pair that `useSignOut` also writes to
  * (R7): the reset clears both banners at the start, then sets exactly one.
  */
-export function useResetOnboarding(
+export function useOnboardingActions(
   user: User | null,
   previousCompletionVia: "finish" | "skip" | null | undefined,
   setErrorMessage: (message: string) => void,
@@ -21,9 +23,13 @@ export function useResetOnboarding(
 ) {
   const { t } = useTranslation("settings");
   const showToast = useToastStore((state) => state.showToast);
-  const resetOnboardingMutation = useUpdateOnboardingPreferences(user?.id ?? null);
+  const updateOnboarding = useUpdateOnboardingPreferences(user?.id ?? null);
 
-  const reset = async () => {
+  const run = async (
+    patch: Parameters<typeof updateOnboarding.mutateAsync>[0],
+    successKey: "onboarding.replaySaved" | "onboarding.tipsSaved",
+    errorKey: "onboarding.replayError" | "onboarding.tipsError",
+  ) => {
     if (!user) {
       return;
     }
@@ -32,22 +38,16 @@ export function useResetOnboarding(
       setErrorMessage("");
       setSuccessMessage("");
 
-      await resetOnboardingMutation.mutateAsync({
-        ...RESET_ONBOARDING_PREFERENCES,
-        // This distinguishes a Settings replay from a genuinely new account. Preserve the
-        // original completion mode when available; legacy rows predate this field, so use
-        // "finish" only as their replay marker.
-        appOnboardingCompletedVia: previousCompletionVia ?? "finish",
-      });
+      await updateOnboarding.mutateAsync(patch);
 
-      setSuccessMessage(t("onboarding.resetSaved"));
+      setSuccessMessage(t(successKey));
       showToast({
         title: t("common:feedback.saved"),
-        description: t("onboarding.resetSaved"),
+        description: t(successKey),
         tone: "success",
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("onboarding.resetError");
+      const message = error instanceof Error ? error.message : t(errorKey);
       setErrorMessage(message);
       showToast({
         title: t("problem"),
@@ -57,5 +57,24 @@ export function useResetOnboarding(
     }
   };
 
-  return { reset, isPending: resetOnboardingMutation.isPending };
+  const replayIntroduction = () =>
+    run(
+      {
+        ...REPLAY_INTRODUCTION_PREFERENCES,
+        // Preserve the original completion path as a replay marker. Legacy rows
+        // predate this field, so "finish" is their neutral fallback.
+        appOnboardingCompletedVia: previousCompletionVia ?? "finish",
+      },
+      "onboarding.replaySaved",
+      "onboarding.replayError",
+    );
+
+  const showTipsAgain = () =>
+    run(SHOW_TIPS_AGAIN_PREFERENCES, "onboarding.tipsSaved", "onboarding.tipsError");
+
+  return {
+    replayIntroduction,
+    showTipsAgain,
+    isPending: updateOnboarding.isPending,
+  };
 }

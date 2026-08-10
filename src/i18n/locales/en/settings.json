@@ -33,9 +33,11 @@
     "openNotifications": "Open notifications"
   },
   "onboarding": {
-    "resetting": "Resetting...",
-    "resetSaved": "The app and tool introductions will be shown again. Your Home widgets stay unchanged.",
-    "resetError": "Unable to reset onboarding.",
+    "saving": "Saving...",
+    "replaySaved": "The app introduction will be shown again. Your Home widgets stay unchanged.",
+    "replayError": "Unable to replay the introduction.",
+    "tipsSaved": "Optional button tips and the Start here suggestion can appear again.",
+    "tipsError": "Unable to show tips again.",
     "appTitle": "Welcome to Selftend",
     "appBody1": "Selftend is a place for guided self-help and private reflection: structured exercises drawn from established approaches, plus everyday wellbeing tools, arranged your way.",
     "appBody2": "It is not a diagnosis tool, therapy replacement, or emergency support. Use local emergency or crisis resources if you need urgent help.",
@@ -88,8 +90,9 @@
   },
   "onboardingSection": {
     "title": "Onboarding",
-    "description": "Show the app and tool introductions again when you want a fresh walkthrough.",
-    "reset": "Reset onboarding"
+    "description": "Replay the app introduction or make optional contextual tips available again.",
+    "replayIntroduction": "Replay introduction",
+    "showTipsAgain": "Show tips again"
   },
   "security": {
     "title": "Security",

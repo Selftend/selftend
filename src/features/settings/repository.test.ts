@@ -1,5 +1,8 @@
 import { defaultUserPreferences } from "@/src/features/modules/types";
-import { RESET_ONBOARDING_PREFERENCES } from "@/src/features/settings/onboarding-reset";
+import {
+  REPLAY_INTRODUCTION_PREFERENCES,
+  SHOW_TIPS_AGAIN_PREFERENCES,
+} from "@/src/features/settings/onboarding-reset";
 import {
   deleteDevicePushToken,
   deleteUserAccount,
@@ -178,10 +181,9 @@ describe("settings repository", () => {
     await expect(getUserPreferences("user-1")).resolves.toEqual(defaultUserPreferences);
   });
 
-  it("maps onboarding flags from the user_preferences row", async () => {
+  it("maps app onboarding state from the user_preferences row", async () => {
     mockPreferenceSelect({
       app_onboarding_completed: true,
-      cbt_onboarding_completed: false,
       cbt_program_completed_at: null,
       cbt_program_phase_index: 2,
       cbt_program_phase_started_at: "2026-05-23T08:00:00.000Z",
@@ -205,7 +207,6 @@ describe("settings repository", () => {
 
     await expect(getUserPreferences("user-1")).resolves.toMatchObject({
       appOnboardingCompleted: true,
-      cbtOnboardingCompleted: false,
       cbtProgramCompletedAt: null,
       cbtProgramPhaseIndex: 2,
       cbtProgramPhaseStartedAt: "2026-05-23T08:00:00.000Z",
@@ -218,10 +219,9 @@ describe("settings repository", () => {
     });
   });
 
-  it("includes onboarding flags when updating preferences", async () => {
+  it("includes app onboarding state when updating preferences", async () => {
     const updatedRow = {
       app_onboarding_completed: true,
-      cbt_onboarding_completed: true,
       cbt_program_completed_at: null,
       cbt_program_phase_index: 0,
       cbt_program_phase_started_at: null,
@@ -246,7 +246,6 @@ describe("settings repository", () => {
     await updateUserPreferences("user-1", {
       ...defaultUserPreferences,
       appOnboardingCompleted: true,
-      cbtOnboardingCompleted: true,
       cbtProgramPromptDismissedAt: "2026-05-22T11:00:00.000Z",
       cbtReminderTimezone: "Europe/Sofia",
       reminderConsent: true,
@@ -257,7 +256,6 @@ describe("settings repository", () => {
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         app_onboarding_completed: true,
-        cbt_onboarding_completed: true,
         cbt_program_phase_index: 0,
         cbt_program_phase_started_at: null,
         cbt_program_prompt_dismissed_at: "2026-05-22T11:00:00.000Z",
@@ -428,10 +426,9 @@ describe("settings repository", () => {
     );
   });
 
-  it("updates onboarding flags without sending unrelated preference columns", async () => {
+  it("updates onboarding state without sending unrelated preference columns", async () => {
     const updatedRow = {
       app_onboarding_completed: false,
-      cbt_onboarding_completed: false,
       enabled_modules: ["cbt"],
       shown_button_tours: [],
       user_id: "user-1",
@@ -441,19 +438,16 @@ describe("settings repository", () => {
     await expect(
       updateOnboardingPreferences("user-1", {
         appOnboardingCompleted: false,
-        cbtOnboardingCompleted: false,
         shownButtonTours: [],
       }),
     ).resolves.toMatchObject({
       appOnboardingCompleted: false,
-      cbtOnboardingCompleted: false,
       shownButtonTours: [],
     });
 
     expect(upsert).toHaveBeenCalledWith(
       {
         app_onboarding_completed: false,
-        cbt_onboarding_completed: false,
         shown_button_tours: [],
         user_id: "user-1",
       },
@@ -576,39 +570,32 @@ describe("settings repository", () => {
     );
   });
 
-  it("carries the whole Settings reset patch through to the columns (#821)", async () => {
-    // The constant containing a key proves nothing: before this fix the patch type
-    // could not name `actOnboardingCompleted` or `meditationOnboardingCompleted`, so
-    // a reset naming them still wrote neither column. Assert at the boundary.
+  it("carries both Settings onboarding actions through to their columns", async () => {
     const { upsert } = mockPreferenceUpdate({
       user_id: "user-1",
       enabled_modules: ["cbt"],
     });
 
-    await updateOnboardingPreferences("user-1", RESET_ONBOARDING_PREFERENCES);
+    await updateOnboardingPreferences("user-1", REPLAY_INTRODUCTION_PREFERENCES);
+    await updateOnboardingPreferences("user-1", SHOW_TIPS_AGAIN_PREFERENCES);
 
-    const payload = (upsert as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
-    expect(payload).toMatchObject({
-      act_onboarding_completed: false,
-      meditation_onboarding_completed: false,
-      meditation_info_completed: false,
-      app_onboarding_completed: false,
-      cbt_onboarding_completed: false,
-      gratitude_onboarding_completed: false,
-      grounding_onboarding_completed: false,
-      habits_onboarding_completed: false,
-      journal_onboarding_completed: false,
-      mindfulness_onboarding_completed: false,
-      mood_onboarding_completed: false,
-      sleep_onboarding_completed: false,
-      shown_button_tours: [],
-      start_here_dismissed_at: null,
-      user_id: "user-1",
-    });
-    // Every key the reset names must have produced a column - a key the column map
-    // does not know would otherwise be dropped in silence, which is the failure the
-    // old hand-written if-chain made possible.
-    expect(Object.keys(payload)).toHaveLength(Object.keys(RESET_ONBOARDING_PREFERENCES).length + 1);
+    expect(upsert).toHaveBeenNthCalledWith(
+      1,
+      {
+        app_onboarding_completed: false,
+        user_id: "user-1",
+      },
+      { onConflict: "user_id" },
+    );
+    expect(upsert).toHaveBeenNthCalledWith(
+      2,
+      {
+        shown_button_tours: [],
+        start_here_dismissed_at: null,
+        user_id: "user-1",
+      },
+      { onConflict: "user_id" },
+    );
   });
 
   it("upserts web push subscriptions for the current user", async () => {

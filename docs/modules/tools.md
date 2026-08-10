@@ -17,7 +17,7 @@ The protected app sidebar groups tools as:
 - ACT
 - Gratitude log
 
-CBT, Check-in, Journal, Mindfulness, and Gratitude log are the working modules. The app shell and CBT each have one-page onboarding tracked in `user_preferences`; Settings can reset those flags.
+CBT, Check-in, Journal, Mindfulness, and Gratitude log are the working modules. The app shell introduction is tracked in `user_preferences`; module introductions are opened explicitly from their info actions and Settings does not reset per-module flags. Legacy module-onboarding columns remain temporarily for compatibility with supported mobile builds.
 
 Meditation and ACT are placeholders. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each has a reviewed module spec.
 
