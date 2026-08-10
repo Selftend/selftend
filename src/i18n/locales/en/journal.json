@@ -5,15 +5,31 @@
     "new": "New entry"
   },
   "sections": {
-    "history": "History"
+    "writing": "Writing",
+    "entries": "Entries"
   },
   "hero": {
     "entries_one": "{{count}} entry",
     "entries_other": "{{count}} entries",
+    "entryLabel_one": "entry",
+    "entryLabel_other": "entries",
     "words_one": "{{count}} word",
     "words_other": "{{count}} words",
-    "last": "last journaled {{when}}",
+    "wordLabel_one": "word",
+    "wordLabel_other": "words",
+    "last": "last written {{when}}, {{time}}",
     "never": "Nothing journaled yet"
+  },
+  "writing": {
+    "caption": "Words written per day.",
+    "barLabel_one": "{{date}}: {{count}} word",
+    "barLabel_other": "{{date}}: {{count}} words"
+  },
+  "groups": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "Earlier this week",
+    "lastWeek": "Last week"
   },
   "list": {
     "empty": {
@@ -21,6 +37,7 @@
       "description": "Write a few words about how today felt.",
       "cta": "Start writing"
     },
+    "showAll": "Show all entries",
     "viewEntry": "View journal entry from {{when}}",
     "untitled": "Untitled"
   },

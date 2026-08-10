@@ -17,6 +17,13 @@ export interface JournalEntry {
   updatedAt: string;
 }
 
+export interface JournalWritingDay {
+  /** Civil day captured with the entries, as `YYYY-MM-DD`. */
+  dayKey: string;
+  /** Exact words across every entry on that day. */
+  wordCount: number;
+}
+
 export interface JournalInput {
   title: string;
   body: string;

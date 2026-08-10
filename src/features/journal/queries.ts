@@ -6,10 +6,12 @@ import {
   deleteJournalEntry,
   getJournalEntry,
   listJournalEntries,
+  listJournalWritingDays,
   saveJournalEntry,
   sumJournalWords,
 } from "@/src/features/journal/repository";
 import type { JournalInput } from "@/src/features/journal/types";
+import { deviceTimeZone } from "@/src/utils/date";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
@@ -19,6 +21,8 @@ const journalKeys = {
   detail: (userId: string, id: string) => ["journal", "detail", userId, id] as const,
   count: (userId: string) => ["journal", "count", userId] as const,
   wordTotal: (userId: string) => ["journal", "word-total", userId] as const,
+  writingDays: (userId: string, timeZone: string, days: number) =>
+    ["journal", "writing-days", userId, timeZone, days] as const,
   countSince: (userId: string, sinceIso: string) =>
     ["journal", "count-since", userId, sinceIso] as const,
 };
@@ -54,6 +58,17 @@ export function useJournalWordTotal(userId: string | null) {
   return useQuery({
     queryKey: userId ? journalKeys.wordTotal(userId) : ["journal", "word-total", "anonymous"],
     queryFn: sumJournalWords,
+    enabled: Boolean(userId),
+  });
+}
+
+export function useJournalWritingDays(userId: string | null, days: number) {
+  const timeZone = deviceTimeZone();
+  return useQuery({
+    queryKey: userId
+      ? journalKeys.writingDays(userId, timeZone, days)
+      : ["journal", "writing-days", "anonymous", timeZone, days],
+    queryFn: () => listJournalWritingDays(timeZone, days),
     enabled: Boolean(userId),
   });
 }

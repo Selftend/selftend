@@ -9,6 +9,7 @@ import {
   useJournalEntry,
   useJournalEntryCount,
   useJournalEntryCountSince,
+  useJournalWritingDays,
   useJournalWordTotal,
   useSaveJournalEntry,
 } from "@/src/features/journal/queries";
@@ -23,6 +24,7 @@ jest.mock("@/src/features/journal/repository", () => ({
   deleteJournalEntry: jest.fn(),
   getJournalEntry: jest.fn(),
   listJournalEntries: jest.fn(),
+  listJournalWritingDays: jest.fn(),
   saveJournalEntry: jest.fn(),
   sumJournalWords: jest.fn(),
 }));
@@ -85,6 +87,27 @@ describe("useJournalEntryCountSince enabled gate", () => {
     });
     await waitFor(() =>
       expect(repo.countJournalEntriesSince).toHaveBeenCalledWith("u1", "2026-01-01T00:00:00.000Z"),
+    );
+  });
+});
+
+describe("useJournalWritingDays", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useJournalWritingDays(null, 14), { wrapper: wrap(client) });
+    expect(repo.listJournalWritingDays).not.toHaveBeenCalled();
+  });
+
+  it("fetches the exact window in the device time zone", async () => {
+    (repo.listJournalWritingDays as jest.Mock).mockResolvedValue([]);
+    const client = createTestQueryClient();
+    renderHook(() => useJournalWritingDays("u1", 14), { wrapper: wrap(client) });
+
+    await waitFor(() =>
+      expect(repo.listJournalWritingDays).toHaveBeenCalledWith(
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        14,
+      ),
     );
   });
 });

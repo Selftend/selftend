@@ -5,15 +5,31 @@
     "new": "Нов запис"
   },
   "sections": {
-    "history": "История"
+    "writing": "Писане",
+    "entries": "Записи"
   },
   "hero": {
     "entries_one": "{{count}} запис",
     "entries_other": "{{count}} записа",
+    "entryLabel_one": "запис",
+    "entryLabel_other": "записа",
     "words_one": "{{count}} дума",
     "words_other": "{{count}} думи",
-    "last": "последно записано {{when}}",
+    "wordLabel_one": "дума",
+    "wordLabel_other": "думи",
+    "last": "последно писано {{when}}, {{time}}",
     "never": "Все още няма записи"
+  },
+  "writing": {
+    "caption": "Думи, написани на ден.",
+    "barLabel_one": "{{date}}: {{count}} дума",
+    "barLabel_other": "{{date}}: {{count}} думи"
+  },
+  "groups": {
+    "today": "Днес",
+    "yesterday": "Вчера",
+    "thisWeek": "По-рано тази седмица",
+    "lastWeek": "Миналата седмица"
   },
   "list": {
     "empty": {
@@ -21,6 +37,7 @@
       "description": "Напиши няколко думи как премина денят.",
       "cta": "Започни да пишеш"
     },
+    "showAll": "Виж всички записи",
     "viewEntry": "Виж запис от {{when}}",
     "untitled": "Без заглавие"
   },
