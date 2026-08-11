@@ -43,7 +43,7 @@ import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { formatAtOffset, parseLocalNoon } from "@/src/utils/date";
+import { formatCompactAtOffset, parseLocalNoon } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 
 /**
@@ -127,7 +127,7 @@ export default function MeditationHomeScreen() {
     null,
   );
   const lastWhen = lastSession
-    ? formatAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
+    ? formatCompactAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
     : null;
   // `allSessions` is undefined while loading and after a failed fetch with no
   // cache - only an actually-loaded (possibly empty) history may claim "no

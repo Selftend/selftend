@@ -66,12 +66,21 @@ export function Heatmap({ columns, cellSize = 12, selectedKey, onCellPress }: He
     >
       <View style={{ gap: CELL_GAP }}>
         <View style={{ flexDirection: "row" }}>
-          {labelSegments.map((segment) => (
+          {labelSegments.map((segment, i) => (
             <Text
               key={segment.key}
               variant="muted"
               numberOfLines={1}
-              style={{ fontSize: 9, lineHeight: 12, width: segment.width }}
+              // The FINAL segment has no successor to stretch toward, so a fixed
+              // width would be the bare column span (15px) and "Aug" would
+              // ellipsize to "A…" (#871). minWidth lets that one label render at
+              // its natural width instead; every other segment keeps the fixed
+              // width so its label cannot push the later ones off their columns.
+              style={
+                i === labelSegments.length - 1
+                  ? { fontSize: 9, lineHeight: 12, minWidth: segment.width }
+                  : { fontSize: 9, lineHeight: 12, width: segment.width }
+              }
             >
               {segment.label ?? ""}
             </Text>

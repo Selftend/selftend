@@ -269,7 +269,11 @@ describe("MeditationHomeScreen", () => {
 
     // Matched on composed text: the subline is now a value-less item in the
     // header's inline stat run, so its Text has nested children (#733).
-    expect(screen.getByText(/^last sat .*Jun 1, 2026/)).toBeTruthy();
+    // Compact date form (#870): an old sit in the current year reads `Jun 1`,
+    // still dated by the captured frame — the -660 offset keeps this instant
+    // on June 1, not the viewer's June 2.
+    expect(screen.getByText(/^last sat .*Jun 1/)).toBeTruthy();
+    expect(screen.queryByText(/May 20/)).toBeNull();
   });
 
   describe("today's sit", () => {
