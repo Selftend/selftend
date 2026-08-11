@@ -98,6 +98,136 @@ describe("sleep sleep_logs (integration)", () => {
     expect(list.data?.map((r) => r.duration_minutes)).toEqual([480, 420, 360]);
   });
 
+  it("stores a sleep window, derives entry_day, and validates the duration against it", async () => {
+    const window = JSON.stringify({
+      startedAt: "2026-05-14T20:30:00.000Z", // 22:30 at +120 — May 14 locally
+      startedOffsetMinutes: 120,
+      endedAt: "2026-05-15T04:00:00.000Z",
+      endedOffsetMinutes: 120,
+    });
+
+    const insert = await alice
+      .from("sleep_logs")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        duration_minutes: 450,
+        quality: 4,
+        notes: "",
+        logged_at: "2026-05-15T04:00:00.000Z",
+        logged_offset_minutes: 120,
+        sleep_window: window,
+      })
+      .select("*")
+      .single();
+
+    expect(insert.error).toBeNull();
+    // The entry belongs to the civil day at sleep start, in its captured frame.
+    expect(insert.data?.entry_day).toBe("2026-05-14");
+    expect(JSON.parse(insert.data!.sleep_window)).toMatchObject({
+      startedAt: expect.stringContaining("2026-05-14T20:30:00"),
+      startedOffsetMinutes: 120,
+      endedOffsetMinutes: 120,
+    });
+
+    // The ciphertext round-trips through the decrypting view.
+    const readBack = await alice
+      .from("sleep_logs")
+      .select("sleep_window, entry_day, duration_minutes")
+      .eq("id", insert.data!.id)
+      .single();
+    expect(readBack.error).toBeNull();
+    expect(JSON.parse(readBack.data!.sleep_window)).toMatchObject({ startedOffsetMinutes: 120 });
+
+    // Clearing the window deletes the ciphertext and re-derives entry_day from
+    // the captured occurrence (04:00Z at +120 is May 15 locally).
+    const cleared = await alice
+      .from("sleep_logs")
+      .update({ sleep_window: null, duration_minutes: 400 })
+      .eq("id", insert.data!.id)
+      .select("sleep_window, entry_day")
+      .single();
+    expect(cleared.error).toBeNull();
+    expect(cleared.data?.sleep_window).toBeNull();
+    expect(cleared.data?.entry_day).toBe("2026-05-15");
+  });
+
+  it("rejects a windowed write whose duration contradicts its own bounds", async () => {
+    const insert = await alice
+      .from("sleep_logs")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        duration_minutes: 480, // bounds say 450
+        quality: 4,
+        notes: "",
+        logged_at: "2026-05-15T04:00:00.000Z",
+        logged_offset_minutes: 120,
+        sleep_window: JSON.stringify({
+          startedAt: "2026-05-14T20:30:00.000Z",
+          startedOffsetMinutes: 120,
+          endedAt: "2026-05-15T04:00:00.000Z",
+          endedOffsetMinutes: 120,
+        }),
+      })
+      .select("id");
+    expect(insert.error).not.toBeNull();
+  });
+
+  it("rejects a one-sided or inverted window", async () => {
+    const base = {
+      user_id: SEED_USERS.alice.id,
+      duration_minutes: 450,
+      quality: 4,
+      notes: "",
+      logged_at: "2026-05-15T04:00:00.000Z",
+      logged_offset_minutes: 120,
+    };
+
+    const oneSided = await alice
+      .from("sleep_logs")
+      .insert({
+        ...base,
+        sleep_window: JSON.stringify({
+          startedAt: "2026-05-14T20:30:00.000Z",
+          startedOffsetMinutes: 120,
+        }),
+      })
+      .select("id");
+    expect(oneSided.error).not.toBeNull();
+
+    const inverted = await alice
+      .from("sleep_logs")
+      .insert({
+        ...base,
+        sleep_window: JSON.stringify({
+          startedAt: "2026-05-15T04:00:00.000Z",
+          startedOffsetMinutes: 120,
+          endedAt: "2026-05-14T20:30:00.000Z",
+          endedOffsetMinutes: 120,
+        }),
+      })
+      .select("id");
+    expect(inverted.error).not.toBeNull();
+  });
+
+  it("backfills entry_day for duration-only rows from the captured occurrence", async () => {
+    const insert = await alice
+      .from("sleep_logs")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        duration_minutes: 480,
+        quality: 4,
+        notes: "",
+        logged_at: "2026-05-15T01:00:00.000Z",
+        logged_offset_minutes: -660, // 14:00 the previous day at -11
+      })
+      .select("entry_day, sleep_window")
+      .single();
+
+    expect(insert.error).toBeNull();
+    expect(insert.data?.entry_day).toBe("2026-05-14");
+    expect(insert.data?.sleep_window).toBeNull();
+  });
+
   it("scopes select by RLS so another user cannot read", async () => {
     const created = await alice
       .from("sleep_logs")

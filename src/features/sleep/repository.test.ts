@@ -86,6 +86,66 @@ describe("sleep repository", () => {
     });
   });
 
+  it("serializes a window for the write path and omits the column when the caller has no opinion", async () => {
+    const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
+    const insert = jest.fn((_payload: Record<string, unknown>) => ({ select }));
+    const from = jest.fn(() => ({ insert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    const window = {
+      startedAt: "2026-07-20T22:30:00.000Z",
+      startedOffsetMinutes: 120,
+      endedAt: "2026-07-21T06:00:00.000Z",
+      endedOffsetMinutes: 120,
+    };
+    await saveSleepLog("user-1", { durationMinutes: 450, quality: 4, notes: "", window });
+    expect(insert.mock.calls[0][0]).toMatchObject({ sleep_window: JSON.stringify(window) });
+
+    // Explicit null deletes the stored window…
+    await saveSleepLog("user-1", { durationMinutes: 450, quality: 4, notes: "", window: null });
+    expect(insert.mock.calls[1][0]).toMatchObject({ sleep_window: null });
+
+    // …while omitting the field leaves whatever is stored untouched.
+    await saveSleepLog("user-1", { durationMinutes: 450, quality: 4, notes: "" });
+    expect(insert.mock.calls[2][0]).not.toHaveProperty("sleep_window");
+  });
+
+  it("parses the decrypted window on read and degrades malformed payloads to null", async () => {
+    const windowed = {
+      ...sampleRow,
+      id: "sl-2",
+      sleep_window: JSON.stringify({
+        startedAt: "2026-05-14T22:30:00.000Z",
+        startedOffsetMinutes: 120,
+        endedAt: "2026-05-15T07:00:00.000Z",
+        endedOffsetMinutes: 120,
+      }),
+    };
+    const malformed = { ...sampleRow, id: "sl-3", sleep_window: "{not json" };
+    const limit = jest
+      .fn()
+      .mockResolvedValue({ data: [windowed, malformed, sampleRow], error: null });
+    const order = jest.fn(() => ({ limit }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    const logs = await listSleepLogs("user-1");
+    expect(logs[0].window).toEqual({
+      startedAt: "2026-05-14T22:30:00.000Z",
+      startedOffsetMinutes: 120,
+      endedAt: "2026-05-15T07:00:00.000Z",
+      endedOffsetMinutes: 120,
+    });
+    // A windowed entry belongs to the civil day at sleep start, in its captured
+    // frame: 22:30Z at +120 is May 15 00:30 local.
+    expect(logs[0].dayKey).toBe("2026-05-15");
+    expect(logs[1].window).toBeNull();
+    expect(logs[2].window).toBeNull();
+  });
+
   it("updates an existing log scoped to user and id", async () => {
     const single = jest.fn().mockResolvedValue({ data: sampleRow, error: null });
     const select = jest.fn(() => ({ single, maybeSingle: single }));

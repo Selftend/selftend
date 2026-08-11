@@ -22,6 +22,7 @@ function sleepLog(i: number) {
     loggedAt,
     loggedOffsetMinutes: null,
     dayKey: entryDayKey(loggedAt, null),
+    window: null,
     createdAt: loggedAt,
   };
 }

@@ -1,4 +1,5 @@
-import type { SleepInput, SleepLog, SleepStats } from "@/src/features/sleep/types";
+import type { SleepInput, SleepLog, SleepStats, SleepWindow } from "@/src/features/sleep/types";
+import { sleepWindowSchema } from "@/src/features/sleep/schemas";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { roundTo1 } from "@/src/utils/number";
@@ -13,11 +14,26 @@ interface SleepLogRow {
   notes: string;
   logged_at: string;
   logged_offset_minutes?: number | null;
+  sleep_window?: string | null;
   created_at: string;
+}
+
+// The view serves the decrypted window as one JSON text column (one decrypt per
+// row, #706). Parse defensively: this runs over whole lists mid-render, so a
+// malformed payload degrades to "no window" rather than blanking a screen.
+function parseSleepWindow(raw: string | null | undefined): SleepWindow | null {
+  if (!raw) return null;
+  try {
+    const parsed = sleepWindowSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
 }
 
 function mapSleepLog(row: SleepLogRow): SleepLog {
   const loggedOffsetMinutes = row.logged_offset_minutes ?? null;
+  const window = parseSleepWindow(row.sleep_window);
   return {
     id: row.id,
     userId: row.user_id,
@@ -26,7 +42,12 @@ function mapSleepLog(row: SleepLogRow): SleepLog {
     notes: row.notes,
     loggedAt: row.logged_at,
     loggedOffsetMinutes,
-    dayKey: entryDayKey(row.logged_at, loggedOffsetMinutes),
+    // A windowed entry belongs to the civil day at sleep start, in the frame
+    // captured at that bound (#800); the rest keep the captured-day calculation.
+    dayKey: window
+      ? entryDayKey(window.startedAt, window.startedOffsetMinutes)
+      : entryDayKey(row.logged_at, loggedOffsetMinutes),
+    window,
     createdAt: row.created_at,
   };
 }
@@ -148,6 +169,12 @@ export async function saveSleepLog(userId: string, input: SleepInput, logId?: st
     duration_minutes: input.durationMinutes,
     quality: input.quality,
     notes: sanitizeUserText(input.notes).trim(),
+    // `undefined` leaves any stored window untouched; `null` explicitly deletes
+    // it (duration-only mode retains no hidden exact times). The database
+    // validates the payload and derives the duration from it (#800).
+    ...(input.window !== undefined
+      ? { sleep_window: input.window ? JSON.stringify(input.window) : null }
+      : {}),
     ...(input.loggedAt
       ? {
           logged_at: input.loggedAt,
