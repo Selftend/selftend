@@ -7,6 +7,12 @@ import { Text } from "@/src/components/react-native-reusables/text";
 
 // Calm, persistent one-line affordance for exercise forms (not the destructive-red
 // full callout used on module home screens and the crisis page - see safety-callout.tsx).
+//
+// A hairline row, not a filled box (#887, decided on #882/#868): the quiet
+// redesign left the filled `bg-muted/40` container the loudest element on
+// screens that gave up their cards, which is what the owner was reacting to —
+// the affordance itself stays, everywhere, and the guardrail (crisis guidance
+// visible, calm, separate from the self-help features) holds.
 export function CrisisSupportBar() {
   const { t } = useTranslation("common");
 
@@ -15,10 +21,10 @@ export function CrisisSupportBar() {
       accessibilityRole="button"
       accessibilityLabel={t("safety.barLabel")}
       onPress={() => router.push("/crisis")}
-      className="flex-row items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 active:bg-muted/60"
+      className="flex-row items-center gap-2.5 border-y border-border py-2.5 active:opacity-70"
     >
       <Icon name="info-outline" className="size-4 text-muted-foreground" />
-      <Text variant="muted" className="flex-1 text-xs">
+      <Text variant="muted" className="flex-1 text-[12.5px]">
         {t("safety.barLabel")}
       </Text>
       <Icon name="chevron-right" className="size-4 text-muted-foreground" />
