@@ -135,46 +135,52 @@ export default function SleepTrackerScreen() {
               longest/shortest fold into the read-out line under the duration
               chart. No 8h-target or hit-rate line: #772 decided against a
               target on principle, and that stands over the drawn annotation.
+
+              The Sections sit in a no-gap group: each carries its own py-6,
+              so the column's gap-6 would compound into an asymmetric 48px
+              band above every divider (same fix as grounding/gratitude).
             */}
-            <Section title={t("chart.duration14")}>
-              <SleepDurationChart nights={nights14} />
-              {longest !== null && shortest !== null ? (
-                <View className="flex-row flex-wrap items-center gap-y-1">
-                  <Text variant="muted" className="text-[13px] tabular-nums">
-                    {t("stats.longest")}{" "}
-                    <Text className="text-[13px] font-semibold tabular-nums text-foreground">
-                      {formatDuration(longest)}
+            <View>
+              <Section title={t("chart.duration14")}>
+                <SleepDurationChart nights={nights14} />
+                {longest !== null && shortest !== null ? (
+                  <View className="flex-row flex-wrap items-center gap-y-1">
+                    <Text variant="muted" className="text-[13px] tabular-nums">
+                      {t("stats.longest")}{" "}
+                      <Text className="text-[13px] font-semibold tabular-nums text-foreground">
+                        {formatDuration(longest)}
+                      </Text>
                     </Text>
-                  </Text>
-                  <Text className="px-2.5 text-[13px] text-muted-foreground/50">·</Text>
-                  <Text variant="muted" className="text-[13px] tabular-nums">
-                    {t("stats.shortest")}{" "}
-                    <Text className="text-[13px] font-semibold tabular-nums text-foreground">
-                      {formatDuration(shortest)}
+                    <Text className="px-2.5 text-[13px] text-muted-foreground/50">·</Text>
+                    <Text variant="muted" className="text-[13px] tabular-nums">
+                      {t("stats.shortest")}{" "}
+                      <Text className="text-[13px] font-semibold tabular-nums text-foreground">
+                        {formatDuration(shortest)}
+                      </Text>
                     </Text>
-                  </Text>
-                </View>
-              ) : null}
-            </Section>
+                  </View>
+                ) : null}
+              </Section>
 
-            <Section title={t("chart.qualityMix")}>
-              <SleepQualityMix distribution={distribution} />
-            </Section>
+              <Section title={t("chart.qualityMix")}>
+                <SleepQualityMix distribution={distribution} />
+              </Section>
 
-            <Section title={t("chart.weekdayAvg")}>
-              <SleepWeekdayChart averages={weekly} />
-            </Section>
+              <Section title={t("chart.weekdayAvg")}>
+                <SleepWeekdayChart averages={weekly} />
+              </Section>
 
-            <Section
-              title={t("sections.recent")}
-              action={
-                /* The door beside its own room: all-history replaces the old
+              <Section
+                title={t("sections.recent")}
+                action={
+                  /* The door beside its own room: all-history replaces the old
                    expand-in-place toggle (#775, pattern from #696). */
-                <ShowAllSleepLink />
-              }
-            >
-              <SleepRecentList logs={allLogs} />
-            </Section>
+                  <ShowAllSleepLink />
+                }
+              >
+                <SleepRecentList logs={allLogs} />
+              </Section>
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>
