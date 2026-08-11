@@ -31,7 +31,7 @@
     "dbtA11y": "DBT module - Dialectical Behavior Therapy (coming soon)",
     "modules": "Modules",
     "gratitudeLog": "Gratitude log",
-    "sleep": "Sleep tracker",
+    "sleep": "Sleep",
     "habits": "Habit tracking",
     "tools": "Tools",
     "badgeLive": "Live",
@@ -110,7 +110,7 @@
       "groundingSub": "Anchor to the present",
       "meditation": "Meditation",
       "meditationSub": "Train steady attention",
-      "sleep": "Sleep tracker",
+      "sleep": "Sleep",
       "sleepSub": "Log and review your sleep",
       "habits": "Habit tracking",
       "habitsSub": "Build consistent daily habits"
@@ -244,7 +244,7 @@
         "cta": "Map it"
       },
       "sleepLatest": {
-        "title": "Sleep tracker",
+        "title": "Sleep",
         "desc": "Your sleep at a glance.",
         "sevenNightAvgLabel": "7-night avg",
         "qualityLabel": "7-night quality",

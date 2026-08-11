@@ -108,7 +108,7 @@
       "description": "Reminders for grounding exercises."
     },
     "sleep": {
-      "label": "Sleep tracker",
+      "label": "Sleep",
       "description": "Reminders to log your sleep."
     },
     "habits": {
