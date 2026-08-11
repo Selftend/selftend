@@ -211,8 +211,18 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   function toggleCustomDay(day: number) {
     setInput((prev) => {
       const next = new Set(prev.customDays);
-      if (next.has(day)) next.delete(day);
-      else next.add(day);
+      if (prev.cadence !== "custom") {
+        // Under another cadence every cell renders unchecked, so the first
+        // press must SELECT the visible day. Toggling the latent set instead
+        // would remove a day it already holds - press Monday from "daily" and
+        // the stored [Mon..Fri] default loses Monday, leaving the pressed
+        // checkbox unchecked and a Tue-Fri schedule active.
+        next.add(day);
+      } else if (next.has(day)) {
+        next.delete(day);
+      } else {
+        next.add(day);
+      }
       // Tapping a day IS choosing the custom cadence (design `9b`): the row is
       // visible under every cadence, dimmed when another one is active, and a
       // tap switches rather than sitting dead under the dim.
