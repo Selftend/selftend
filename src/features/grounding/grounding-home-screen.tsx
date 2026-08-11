@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { ErrorState } from "@/src/components/app/screen-state";
+import { Section } from "@/src/components/app/section";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { TechniqueCard } from "@/src/features/grounding/technique-card";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
@@ -97,37 +98,46 @@ export default function GroundingHomeScreen() {
                 deliberately NOT inside the session flow, which stays
                 chrome-free. */}
             <CrisisSupportBar />
-            <View className="gap-3">
-              <Text variant="h3">{t("grounding.choose")}</Text>
-              {groundingTechniques.map((technique) => (
-                <TechniqueCard
-                  key={technique.slug}
-                  technique={technique}
-                  title={t(`grounding.techniques.${technique.slug}.title`)}
-                  description={t(`grounding.techniques.${technique.slug}.shortDescription`)}
-                  meta={
-                    technique.kind === "senses"
-                      ? t("grounding.meta.senses", { count: technique.steps.length })
-                      : t("grounding.meta.guided", { count: technique.steps.length })
-                  }
-                  onPress={() => router.push(`/tools/grounding/${technique.slug}`)}
-                />
-              ))}
-            </View>
+            {/* The Section eyebrow every conformant overview uses (#875), not
+                an h3 heading. ruled={false}: the crisis row's own bottom
+                hairline already divides here. */}
+            <Section title={t("grounding.choose")} ruled={false} className="gap-1 pt-0">
+              <View>
+                {groundingTechniques.map((technique) => (
+                  <TechniqueCard
+                    key={technique.slug}
+                    technique={technique}
+                    title={t(`grounding.techniques.${technique.slug}.title`)}
+                    description={t(`grounding.techniques.${technique.slug}.shortDescription`)}
+                    meta={
+                      technique.kind === "senses"
+                        ? t("grounding.meta.senses", { count: technique.steps.length })
+                        : t("grounding.meta.guided", { count: technique.steps.length })
+                    }
+                    onPress={() => router.push(`/tools/grounding/${technique.slug}`)}
+                  />
+                ))}
+                {/* Closing hairline: the rows are top-ruled, so the last one
+                    needs a floor. */}
+                <View className="border-t border-border" />
+              </View>
+            </Section>
 
-            <View className="gap-2">
-              <View className="flex-row items-center justify-between">
-                <Text variant="h3">{t("grounding.recent.title")}</Text>
+            <Section
+              title={t("grounding.recent.title")}
+              action={
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => router.push("/tools/grounding/history")}
                   role="button"
+                  className="active:opacity-70"
                 >
-                  <Text className="text-sm font-semibold text-primary-ink">
-                    {t("grounding.recent.showAll")}
+                  <Text className="text-[12.5px] font-semibold text-muted-foreground">
+                    {t("grounding.recent.showAll")} →
                   </Text>
                 </Pressable>
-              </View>
+              }
+            >
               {sessionsFailed && !sessions ? (
                 <ErrorState
                   icon="cloud-off"
@@ -148,7 +158,7 @@ export default function GroundingHomeScreen() {
               ) : sessions ? (
                 <Text variant="muted">{t("grounding.recent.empty")}</Text>
               ) : null}
-            </View>
+            </Section>
           </View>
         </ScrollView>
       </SafeAreaView>
