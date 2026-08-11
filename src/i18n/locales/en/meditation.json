@@ -12,6 +12,30 @@
     "title": "Sit complete",
     "subtitle": "{{count}} min · well done"
   },
+  "sit": {
+    "eyebrow": "Sitting · stage {{stage}}",
+    "progress": "of {{minutes}} min",
+    "progressWithBell": "of {{minutes}} min · bell at {{bell}}",
+    "paused": "Paused",
+    "pause": "Pause",
+    "resume": "Resume",
+    "finishEarly": "Finish early",
+    "exit": {
+      "title": "Finish this sit?",
+      "message": "Your time so far will be saved.",
+      "confirm": "Finish sit",
+      "cancel": "Keep sitting"
+    },
+    "after": {
+      "title_one": "That's {{count}} minute.",
+      "title_other": "That's {{count}} minutes.",
+      "saved": "Saved already — the rest is only if it's useful.",
+      "pulledLabel": "What pulled at you",
+      "notePlaceholder": "Anything worth noting?",
+      "skip": "Skip",
+      "save": "Save reflection"
+    }
+  },
   "hero": {
     "stage": "Stage",
     "sits_one": "sit",

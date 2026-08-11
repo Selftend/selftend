@@ -70,7 +70,7 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/meditation": "sidebar.meditation",
   "/tools/meditation/learn": "breadcrumb.learn",
   "/tools/meditation/daily-life": "breadcrumb.dailyLife",
-  "/tools/meditation/session/log": "breadcrumb.logSession",
+  "/tools/meditation/session": "breadcrumb.session",
   "/tools/meditation/sessions": "breadcrumb.sessions",
   "/tools/meditation/stages": "breadcrumb.stages",
   "/tools/sleep": "sidebar.sleep",
