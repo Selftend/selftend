@@ -96,6 +96,19 @@ describe("GroundingHomeScreen", () => {
     expect(router.push).toHaveBeenCalledWith("/tools/grounding/54321");
   });
 
+  /**
+   * #887 (jointly #882/#868): the acute-distress tool had NO crisis affordance
+   * at all — #782 ordered "preserve the existing" one but none ever existed.
+   * It lives on the home, above the technique list; the session flow stays
+   * chrome-free.
+   */
+  it("carries the crisis-support row on the home, linking to the crisis page", () => {
+    renderWithProviders(<GroundingHomeScreen />);
+
+    fireEvent.press(screen.getByText("Not for emergencies · Crisis resources"));
+    expect(router.push).toHaveBeenCalledWith("/crisis");
+  });
+
   it("renders the clay room: quiet shell header and room pour", () => {
     renderWithProviders(<GroundingHomeScreen />);
 
