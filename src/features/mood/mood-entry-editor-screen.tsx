@@ -5,14 +5,6 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
-import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -35,6 +27,7 @@ import {
 } from "@/src/lib/accessibility";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
+import { formatInstantAtOffset } from "@/src/utils/date";
 import { parseBodyChips, toggleBodyChip } from "@/src/features/mood/body-sensations";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
@@ -123,6 +116,25 @@ const EmotionGrid = memo(function EmotionGrid({
     </ChipRun>
   );
 });
+
+/**
+ * The design language's section eyebrow — 11px, 600, 0.1em-tracked uppercase —
+ * with the quieter "— optional" tail rendered in normal case (design `2b`).
+ * Replaces the sentence-case bold `Label`s the old shell used (#869).
+ */
+function SectionEyebrow({ title, optionalTag }: { title: string; optionalTag?: string }) {
+  return (
+    <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+      {title}
+      {optionalTag ? (
+        <Text className="text-[11px] font-medium normal-case tracking-normal text-muted-foreground/75">
+          {" — "}
+          {optionalTag}
+        </Text>
+      ) : null}
+    </Text>
+  );
+}
 
 export function MoodEntryEditorScreen({
   fallbackHref,
@@ -374,19 +386,31 @@ export function MoodEntryEditorScreen({
         }
       >
         {/* No breadcrumb eyebrow above the heading (design `2b`): the bar above
-            carries the trail, so a ScreenHeader here would render it twice. */}
-        <View className="gap-2">
-          <Text variant="h1">{editMode ? t("mood.editTitle") : tMood("checkin.title")}</Text>
-          <Text variant="muted">
-            {editMode ? t("mood.editDescription") : tMood("checkin.tagline")}
+            carries the trail, so a ScreenHeader here would render it twice.
+            Centred, with the date-and-time line under it — the tagline died
+            with the old shell (#869). The line reads `loggedAt` in its captured
+            frame, so it tracks a schedule change below. */}
+        <View className="items-center gap-1.5">
+          <Text variant="h1" className="text-center">
+            {editMode ? t("mood.editTitle") : tMood("checkin.title")}
+          </Text>
+          <Text variant="muted" className="text-center text-sm">
+            {formatInstantAtOffset(loggedAt, loggedOffsetMinutes, {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              hour: "numeric",
+              minute: "2-digit",
+            })}
           </Text>
         </View>
 
         <CrisisSupportBar />
 
-        <View ref={scoreSectionRef} className="gap-3">
-          <Label>{t("mood.scoreLabel")}</Label>
-          <Text variant="muted">{t("mood.scoreHint")}</Text>
+        {/* The bare centred scale between hairlines (design `2b`): no label
+            block, no helper — the post-selection caption is the selected
+            label's confirmation (`Good · 4 of 5`). */}
+        <View ref={scoreSectionRef} className="gap-4 border-y border-border py-6">
           <MoodScale
             value={moodScore}
             onChange={(score) => {
@@ -394,13 +418,28 @@ export function MoodEntryEditorScreen({
               setScoreError("");
             }}
           />
+          <View className="min-h-[22px] flex-row flex-wrap items-baseline justify-center gap-x-2">
+            {moodScore !== null ? (
+              <>
+                <Text className="text-[15px] font-semibold text-primary-ink">
+                  {tMood(`checkin.scaleLabels.${moodScore}`)}
+                </Text>
+                <Text variant="muted" className="text-[13px] tabular-nums">
+                  {tMood("checkin.scoreOutOf", { score: moodScore })}
+                </Text>
+              </>
+            ) : null}
+          </View>
           {scoreError ? (
-            <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
+            <Text className="text-center text-sm text-destructive" {...politeLiveRegionProps()}>
               {scoreError}
             </Text>
           ) : null}
         </View>
 
+        {/* An accented single-line hairline row, not a card (#869): glyph, one
+            line of copy, the accent-ink link — the old card headline died with
+            the card. */}
         {showBreathingNudge ? (
           <Pressable
             accessibilityRole="button"
@@ -410,30 +449,27 @@ export function MoodEntryEditorScreen({
                 params: { pattern: "box-breathing" },
               })
             }
+            className="flex-row items-center gap-3 border-y border-border py-3.5 active:opacity-70"
           >
-            <Card>
-              <CardHeader>
-                <CardTitle aria-level={2}>{t("breathing.nudgeTitle")}</CardTitle>
-                <CardDescription>{t("breathing.nudgeDescription")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Text className="text-primary text-sm font-medium">
-                  {t("breathing.nudgeButton")} →
-                </Text>
-              </CardContent>
-            </Card>
+            <Icon name="air" className="size-5 text-primary-ink" />
+            <Text className="flex-1 text-[13.5px]">{t("breathing.nudgeDescription")}</Text>
+            <Text className="text-[13px] font-semibold text-primary-ink">
+              {t("breathing.nudgeButton")} →
+            </Text>
           </Pressable>
         ) : null}
 
-        <View className="gap-3">
-          <View className="flex-row items-center justify-between">
-            <Label>{t("mood.emotionsLabel")}</Label>
+        <View className="gap-4">
+          <View className="flex-row items-baseline justify-between">
+            <SectionEyebrow title={t("mood.emotionsTitle")} optionalTag={t("mood.optionalTag")} />
             <Pressable
               onPress={() => setManageEmotionsOpen(true)}
               accessibilityRole="button"
               accessibilityLabel={tMood("emotions.manage.title")}
             >
-              <Text className="text-xs text-primary">{tMood("emotions.manage.title")}</Text>
+              <Text className="text-[12.5px] text-muted-foreground">
+                {tMood("emotions.manage.link")}
+              </Text>
             </Pressable>
           </View>
           {emotionsLoading ? (
@@ -448,33 +484,33 @@ export function MoodEntryEditorScreen({
           onClose={() => setManageEmotionsOpen(false)}
         />
 
-        <View className="gap-2">
-          <Label>{t("mood.loggedAtLabel")}</Label>
-          <DateTimeField
-            value={loggedAt}
-            offsetMinutes={loggedOffsetMinutes}
-            onChange={(next) => {
-              setLoggedAt(next);
-              // A known offset survives a time correction - the user is restating
-              // when, not where. Only an entry with no captured offset picks one
-              // up here, from the device now doing the restating.
-              setLoggedOffsetMinutes(
-                loggedOffsetMinutes ?? occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
-              );
-            }}
-            accessibilityLabel={t("mood.loggedAtLabel")}
-          />
-        </View>
-
-        <View className="gap-2">
-          <Label>{t("mood.notesLabel")}</Label>
+        <View className="gap-2.5">
+          <SectionEyebrow title={t("mood.notesTitle")} optionalTag={t("mood.optionalTag")} />
           <Textarea
-            accessibilityLabel={t("mood.notesLabel")}
+            accessibilityLabel={t("mood.notesTitle")}
             onChangeText={setNotes}
             placeholder={t("mood.notesPlaceholder")}
             value={notes}
           />
         </View>
+
+        {/* The hairline schedule row (design `2b`, matching 6b's identical
+            row) — the boxed input died with the old shell (#869). */}
+        <DateTimeField
+          appearance="row"
+          value={loggedAt}
+          offsetMinutes={loggedOffsetMinutes}
+          onChange={(next) => {
+            setLoggedAt(next);
+            // A known offset survives a time correction - the user is restating
+            // when, not where. Only an entry with no captured offset picks one
+            // up here, from the device now doing the restating.
+            setLoggedOffsetMinutes(
+              loggedOffsetMinutes ?? occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
+            );
+          }}
+          accessibilityLabel={t("mood.loggedAtLabel")}
+        />
 
         <View className="gap-3">
           <Pressable

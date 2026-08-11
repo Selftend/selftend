@@ -21,6 +21,41 @@ describe("Heatmap", () => {
     expect(toJSON()).toBeNull();
   });
 
+  /**
+   * #871: a labelled column with no LATER labelled column keeps the minimum
+   * segment width (one column span), and a fixed `width` at 15px ellipsized
+   * "Aug" into "A…" — hit by any young account, or a month boundary at the
+   * right edge. The final segment takes `minWidth` instead, so its label
+   * renders at natural width; interior segments keep the fixed width so their
+   * labels cannot push later ones off their columns.
+   */
+  it("lets the final month label render at natural width instead of clipping (#871)", () => {
+    // One-column history: the only label IS the final segment.
+    render(<Heatmap columns={[column("w1", [{ key: "d1", color: "#123456" }], "Aug")]} />);
+    const single = StyleSheet.flatten(screen.getByText("Aug").props.style);
+    expect(single.minWidth).toEqual(expect.any(Number));
+    expect(single.width).toBeUndefined();
+  });
+
+  it("keeps interior month labels on fixed widths, only the last on minWidth", () => {
+    render(
+      <Heatmap
+        columns={[
+          column("w1", [{ key: "d1", color: "#123456" }], "Jul"),
+          column("w2", [{ key: "d2", color: "#123456" }], "Aug"),
+        ]}
+      />,
+    );
+    // "Jul" stretches to the next labelled column with a fixed width…
+    expect(StyleSheet.flatten(screen.getByText("Jul").props.style).width).toEqual(
+      expect.any(Number),
+    );
+    // …while "Aug", the newest, is free to overflow its single column span.
+    const last = StyleSheet.flatten(screen.getByText("Aug").props.style);
+    expect(last.minWidth).toEqual(expect.any(Number));
+    expect(last.width).toBeUndefined();
+  });
+
   // #717: the hairline used to mark ONLY empty cells, so an unlogged day was
   // outlined while a logged day at the bottom of the ramp (a ~1.26:1 wash) had
   // no border at all - presence read backwards. The border is grid structure

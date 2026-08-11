@@ -67,7 +67,7 @@ describe("kit", () => {
 
   it("MoodFacesRow renders 5 faces each deep-linking with its score", () => {
     const tree = widgetTree(<MoodFacesRow theme="light" selectedScore={4} />);
-    expect(texts(tree)).toEqual(["😭", "🙁", "😐", "😊", "😁"]);
+    expect(texts(tree)).toEqual(["😞", "😕", "😐", "🙂", "😄"]);
     expect(clickPaths(tree)).toEqual([1, 2, 3, 4, 5].map((s) => `/tools/check-in/new?score=${s}`));
   });
 
