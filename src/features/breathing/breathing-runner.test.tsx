@@ -170,6 +170,22 @@ describe("Breathing session setup (4b)", () => {
     expect(event.preventDefault).not.toHaveBeenCalled();
   });
 
+  /**
+   * #873: the setup content sits on the decided 620px form column (#690 —
+   * widths ride with the shell). Asserted on className tokens, because
+   * NativeWind classes never become styles under jest — a resolved-style
+   * assertion would be vacuously green.
+   */
+  it("keeps the setup content on the 620px form column", () => {
+    renderWithProviders(<BreathingExerciseScreen />);
+    const tokens = String(screen.getByTestId("breathing-setup-column").props.className).split(
+      /\s+/,
+    );
+    expect(tokens).toContain("max-w-[620px]");
+    expect(tokens).toContain("self-center");
+    expect(tokens).toContain("w-full");
+  });
+
   it("renders the aqua room pour with no field header (session = pour only)", () => {
     renderWithProviders(<BreathingExerciseScreen />);
 
