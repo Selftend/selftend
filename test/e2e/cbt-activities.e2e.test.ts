@@ -82,7 +82,7 @@ test.describe("CBT activities: schedule and complete a behavioral-activation act
     // Should be on the mood tracker new entry screen.
     await expect(page).toHaveURL(/\/tools\/check-in\/new/, { timeout: 15_000 });
 
-    // Select mood score: "Good" (score 4, emoji 😊)
+    // Select mood score: "Good" (score 4, emoji 🙂)
     await page.getByRole("radio", { name: "Good", exact: true }).click();
 
     // Save the mood log - this also completes the activity and redirects back.
