@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 
 import { BarChart } from "@/src/components/charts/bar-chart";
-import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { formatCompactHours } from "@/src/features/sleep/format";
 
@@ -14,47 +13,45 @@ export function SleepWeekdayChart({ averages }: { averages: (number | null)[] })
   const narrowWeekday = new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" });
   const fullWeekday = new Intl.DateTimeFormat(i18n.language, { weekday: "long" });
 
+  // No Card and no internal eyebrow (#878): the screen's hairline Section
+  // carries the title.
   return (
-    <Card variant="soft">
-      <CardContent className="gap-3 pt-4 pb-4">
-        <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-          {t("chart.weekdayAvg")}
+    <>
+      {!hasData ? (
+        <Text variant="muted" className="text-sm">
+          {t("chart.empty")}
         </Text>
-        {!hasData ? (
-          <Text variant="muted" className="text-sm">
-            {t("chart.empty")}
-          </Text>
-        ) : (
-          <BarChart
-            bars={averages.map((average, index) => {
-              const weekdayDate = new Date(MONDAY);
-              weekdayDate.setDate(MONDAY.getDate() + index);
-              const label = narrowWeekday.format(weekdayDate);
-              const weekday = fullWeekday.format(weekdayDate);
-              const duration =
-                average === null
-                  ? null
-                  : t("chart.compactHours", {
-                      value: formatCompactHours(average, i18n.language),
-                    });
-              return {
-                value: average,
-                topLabel: duration ?? "—",
-                label,
-                accessibilityLabel:
-                  duration === null
-                    ? t("chart.weekdayBarEmptyA11y", { weekday })
-                    : t("chart.weekdayBarA11y", { weekday, duration }),
-              };
-            })}
-            barAreaHeight={BAR_AREA}
-            minBarHeight={BAR_AREA * 0.06}
-            tintClass="bg-muted-foreground/80"
-            columnClassName="gap-1.5"
-            labelClassName="font-semibold"
-          />
-        )}
-      </CardContent>
-    </Card>
+      ) : (
+        <BarChart
+          bars={averages.map((average, index) => {
+            const weekdayDate = new Date(MONDAY);
+            weekdayDate.setDate(MONDAY.getDate() + index);
+            const label = narrowWeekday.format(weekdayDate);
+            const weekday = fullWeekday.format(weekdayDate);
+            const duration =
+              average === null
+                ? null
+                : t("chart.compactHours", {
+                    value: formatCompactHours(average, i18n.language),
+                  });
+            return {
+              value: average,
+              topLabel: duration ?? "—",
+              label,
+              accessibilityLabel:
+                duration === null
+                  ? t("chart.weekdayBarEmptyA11y", { weekday })
+                  : t("chart.weekdayBarA11y", { weekday, duration }),
+            };
+          })}
+          barAreaHeight={BAR_AREA}
+          minBarHeight={BAR_AREA * 0.06}
+          // bg-primary like every single-series bar chart (#725 family, #878).
+          tintClass="bg-primary"
+          columnClassName="gap-1.5"
+          labelClassName="font-semibold"
+        />
+      )}
+    </>
   );
 }
