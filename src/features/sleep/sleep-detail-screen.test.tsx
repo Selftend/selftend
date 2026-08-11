@@ -126,7 +126,7 @@ describe("SleepDetailScreen", () => {
   it("carries the all-history door at the foot", () => {
     renderWithProviders(<SleepDetailScreen />);
 
-    fireEvent.press(screen.getByText("Show all history"));
+    fireEvent.press(screen.getByText("Show all nights"));
 
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/sleep/history");
   });

@@ -38,16 +38,7 @@
     "entries_other": "sleep entries"
   },
   "sections": {
-    "trend": "Sleep duration",
-    "stats": "Summary",
-    "quality": "Quality breakdown",
-    "weekday": "Sleep by weekday",
     "recent": "Recent entries"
-  },
-  "summary": {
-    "sevenDay": "Last 7 days",
-    "thirtyDay": "Last 30 days",
-    "avgQuality": "{{quality}}/5 quality"
   },
   "stats": {
     "longest": "Longest",
@@ -81,7 +72,7 @@
     "a11y": "{{duration}} of sleep, {{quality}}, {{when}}"
   },
   "allHistory": {
-    "link": "Show all history",
+    "link": "Show all nights",
     "title": "All history",
     "description": "Every sleep entry you have logged, newest first.",
     "groups": {

@@ -21,12 +21,14 @@ describe("SleepWeekdayChart", () => {
     expect(screen.getByText("—")).toBeTruthy();
   });
 
-  it("uses one accessible neutral fill with no best-day highlight", () => {
+  it("uses one uniform bg-primary fill with no best-day highlight", () => {
     renderWithProviders(<SleepWeekdayChart averages={[360, 420, 420, 480, 420, 390, 510]} />);
 
+    // The settled cross-tool rule for single-series bars (#725 family, #878):
+    // bg-primary on every bar, no per-day grading.
     for (const bar of screen.getAllByTestId("bar-chart-bar")) {
-      expect(bar.props.className).toContain("bg-muted-foreground/80");
-      expect(bar.props.className).not.toContain("bg-primary");
+      expect(bar.props.className).toContain("bg-primary");
+      expect(bar.props.className).not.toContain("bg-muted-foreground/80");
     }
   });
 

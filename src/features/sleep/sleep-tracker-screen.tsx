@@ -5,10 +5,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Card, CardContent, CardHeader } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { Section } from "@/src/components/app/section";
 import { SleepOnboarding } from "@/src/components/app/sleep-onboarding-modal";
 import { useSleepLogs, useSleepLogCount, useSleepStats } from "@/src/features/sleep/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -55,11 +55,7 @@ export default function SleepTrackerScreen() {
   const sevenDayDuration = stats
     ? stats.sevenDayDurationMinutes
     : averageDurationMinutes(allLogs, 7);
-  const thirtyDayDuration = stats
-    ? stats.thirtyDayDurationMinutes
-    : averageDurationMinutes(allLogs, 30);
   const sevenDayQuality = stats ? stats.sevenDayQuality : averageQuality(allLogs, 7);
-  const thirtyDayQuality = stats ? stats.thirtyDayQuality : averageQuality(allLogs, 30);
   const { longest, shortest } = stats
     ? { longest: stats.longestMinutes, shortest: stats.shortestMinutes }
     : extremes(allLogs);
@@ -131,93 +127,63 @@ export default function SleepTrackerScreen() {
               </Button>
             </View>
 
-            <View className="gap-3">
-              <Text variant="h3">{t("sections.trend")}</Text>
-              <SleepDurationChart nights={nights14} />
-            </View>
+            {/*
+              Hairline Sections, no cards (#878): the 8a annotation is "Four
+              stat cards and three empty panels become one chart plus a
+              hairline read-out". The four stat tiles are gone — the header
+              stat run already carries typical + quality + nights, and
+              longest/shortest fold into the read-out line under the duration
+              chart. No 8h-target or hit-rate line: #772 decided against a
+              target on principle, and that stands over the drawn annotation.
 
-            <View className="gap-3">
-              <Text variant="h3">{t("sections.stats")}</Text>
-              <View className="flex-row flex-wrap gap-3">
-                <StatTile
-                  label={t("summary.sevenDay")}
-                  value={formatHours(sevenDayDuration)}
-                  sub={
-                    sevenDayQuality !== null
-                      ? t("summary.avgQuality", { quality: sevenDayQuality })
-                      : undefined
-                  }
-                />
-                <StatTile
-                  label={t("summary.thirtyDay")}
-                  value={formatHours(thirtyDayDuration)}
-                  sub={
-                    thirtyDayQuality !== null
-                      ? t("summary.avgQuality", { quality: thirtyDayQuality })
-                      : undefined
-                  }
-                />
-                <StatTile
-                  label={t("stats.longest")}
-                  value={longest !== null ? formatDuration(longest) : "-"}
-                />
-                <StatTile
-                  label={t("stats.shortest")}
-                  value={shortest !== null ? formatDuration(shortest) : "-"}
-                />
-              </View>
-            </View>
+              The Sections sit in a no-gap group: each carries its own py-6,
+              so the column's gap-6 would compound into an asymmetric 48px
+              band above every divider (same fix as grounding/gratitude).
+            */}
+            <View>
+              <Section title={t("chart.duration14")}>
+                <SleepDurationChart nights={nights14} />
+                {longest !== null && shortest !== null ? (
+                  <View className="flex-row flex-wrap items-center gap-y-1">
+                    <Text variant="muted" className="text-[13px] tabular-nums">
+                      {t("stats.longest")}{" "}
+                      <Text className="text-[13px] font-semibold tabular-nums text-foreground">
+                        {formatDuration(longest)}
+                      </Text>
+                    </Text>
+                    <Text className="px-2.5 text-[13px] text-muted-foreground/50">·</Text>
+                    <Text variant="muted" className="text-[13px] tabular-nums">
+                      {t("stats.shortest")}{" "}
+                      <Text className="text-[13px] font-semibold tabular-nums text-foreground">
+                        {formatDuration(shortest)}
+                      </Text>
+                    </Text>
+                  </View>
+                ) : null}
+              </Section>
 
-            <View className="gap-3">
-              <Text variant="h3">{t("sections.quality")}</Text>
-              <SleepQualityMix distribution={distribution} />
-            </View>
+              <Section title={t("chart.qualityMix")}>
+                <SleepQualityMix distribution={distribution} />
+              </Section>
 
-            <View className="gap-3">
-              <Text variant="h3">{t("sections.weekday")}</Text>
-              <SleepWeekdayChart averages={weekly} />
-            </View>
+              <Section title={t("chart.weekdayAvg")}>
+                <SleepWeekdayChart averages={weekly} />
+              </Section>
 
-            <View className="gap-3">
-              <View className="flex-row items-center justify-between gap-3">
-                <Text variant="h3">{t("sections.recent")}</Text>
-                {/* The door beside its own room: all-history replaces the old
-                    expand-in-place toggle (#775, pattern from #696). */}
-                <ShowAllSleepLink />
-              </View>
-              <SleepRecentList logs={allLogs} />
+              <Section
+                title={t("sections.recent")}
+                action={
+                  /* The door beside its own room: all-history replaces the old
+                   expand-in-place toggle (#775, pattern from #696). */
+                  <ShowAllSleepLink />
+                }
+              >
+                <SleepRecentList logs={allLogs} />
+              </Section>
             </View>
           </View>
         </ScrollView>
       </SafeAreaView>
     </>
-  );
-}
-
-interface StatTileProps {
-  label: string;
-  value: string;
-  sub?: string;
-}
-
-function StatTile({ label, value, sub }: StatTileProps) {
-  return (
-    <Card variant="soft" className="min-w-[150px] flex-1 basis-[150px]">
-      <CardHeader>
-        <Text variant="muted" className="text-xs uppercase tracking-wide">
-          {label}
-        </Text>
-      </CardHeader>
-      <CardContent>
-        <View className="gap-1">
-          <Text className="text-2xl font-semibold">{value}</Text>
-          {sub ? (
-            <Text variant="muted" className="text-xs">
-              {sub}
-            </Text>
-          ) : null}
-        </View>
-      </CardContent>
-    </Card>
   );
 }
