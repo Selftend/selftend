@@ -156,7 +156,7 @@ test("stat-run labels do not introduce sentence case in the middle of the row", 
   const KEYS: Record<string, string[]> = {
     cbt: ["grounding.hero.takes", "grounding.hero.never", "breathing.overview.neverLogged"],
     gratitude: ["hero.thisWeek", "stats.never"],
-    habits: ["hero.today", "stats.never"],
+    habits: ["hero.today", "hero.twoWeekTicks_one", "hero.twoWeekTicks_other"],
     journal: ["hero.never"],
     meditation: ["hero.never"],
     mood: ["stats.thisWeekLabel", "stats.avgLabel", "stats.never"],
