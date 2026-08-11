@@ -2,7 +2,7 @@ import {
   formatHistoryMonth,
   formatHistoryWhen,
   groupHistorySections,
-} from "@/src/features/mood/history-groups";
+} from "@/src/lib/history-groups";
 import type { MoodLog } from "@/src/features/mood/types";
 
 // 2026-08-08 is a Saturday, so the Monday-start calendar week runs 08-03..08-09
