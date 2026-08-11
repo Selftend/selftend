@@ -82,7 +82,11 @@ export const HUE_ENCODINGS = [
   {
     id: "breathing-pacer",
     kind: "categorical",
-    reads: "which phase the pacer is in, live — inhale, hold, exhale",
+    // Since #779 the pacer wears the RUNNING PATTERN's colour - the same
+    // categorical datum its overview row, setup tab and timing bar wear - so
+    // the session screen and the screens around it agree on what colour "this
+    // pattern" is. Phase is carried by size, ring position and text, not hue.
+    reads: "which pattern is running — the colour its row, tab and timing bar wear",
   },
   // The two below were NOT in #558's table, and that is worth stating plainly
   // rather than burying: the sweep found them, and the rule admits them.

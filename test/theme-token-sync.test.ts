@@ -532,12 +532,25 @@ describe("chart layer never hardcodes HSL", () => {
   // chart layer above: the screen's colors now come from pacerColors(), and any
   // hsl literal returning to the file is drift by the same definition. A future
   // gradient stop belongs in a helper (fieldGradient/hueHsl), not inline here.
-  it("the breathing session screen contains no hsl literals", () => {
+  //
+  // #779 split the focal element into src/features/breathing/breathing-pacer.tsx
+  // and put the session on the shared focus shell - both render SVG/reanimated
+  // colour props, exactly the surface #310's literal hid in, so both are held
+  // to the same zero.
+  it.each([
+    join("app", "(app)", "tools", "breathing", "session.tsx"),
+    join("src", "features", "breathing", "breathing-pacer.tsx"),
+    join("src", "components", "app", "focus-session-shell.tsx"),
+  ])("%s contains no hsl literals", (file) => {
+    const source = readFileSync(join(ROOT, file), "utf8");
+    expect(source).not.toMatch(/hsla?\(/);
+  });
+
+  it("the breathing session screen still draws through pacerColors()", () => {
     const source = readFileSync(
       join(ROOT, "app", "(app)", "tools", "breathing", "session.tsx"),
       "utf8",
     );
     expect(source).toMatch(/pacerColors/);
-    expect(source).not.toMatch(/hsla?\(/);
   });
 });

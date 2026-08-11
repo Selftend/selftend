@@ -186,8 +186,13 @@ const KEEPS_HUE: Record<HueEncodingId, { file: string; pattern: RegExp; what: st
   },
   "breathing-pacer": {
     file: "src/features/breathing/pacer-colors.ts",
-    pattern: /PACER_HUE[^=]*=\s*"aqua"/,
-    what: "the live inhale/hold/exhale phase",
+    // Was `PACER_HUE = "aqua"` while the pacer was tool-pinned. #779 put the
+    // RUNNING PATTERN's colour on it, resolved through the same alias map as
+    // every other pattern-colour surface - so the literal that proves the
+    // encoding is the map lookup, exactly as `breathing-exercise-colour` pins
+    // the map itself.
+    pattern: /BREATHING_COLOR_TINTS\[color\]/,
+    what: "the running pattern's colour on the live pacer",
   },
   // Added by #588, which found them mid-sweep. Neither is in #558's table; both
   // are admitted by its rule. See the note in src/lib/theme/encoding.ts.

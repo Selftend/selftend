@@ -1371,6 +1371,19 @@
     "start": "Start",
     "getReady": "Get ready...",
     "finishEarly": "Finish early",
+    "session": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "paused": "Paused",
+      "timeLeft": "{{time}} left",
+      "then": "{{seconds}}s · then {{phase}}",
+      "exit": {
+        "title": "Finish this session?",
+        "message": "Your time so far will be saved.",
+        "confirm": "Finish session",
+        "cancel": "Keep going"
+      }
+    },
     "notFound": "Exercise not found",
     "nudgeTitle": "Want to ground yourself?",
     "nudgeDescription": "A short breathing exercise can help settle your nervous system.",
