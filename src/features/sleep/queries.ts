@@ -9,7 +9,8 @@ import {
   saveSleepLog,
   sleepStats,
 } from "@/src/features/sleep/repository";
-import type { SleepInput } from "@/src/features/sleep/types";
+import type { SleepInput, SleepLog } from "@/src/features/sleep/types";
+import type { QueryClient } from "@tanstack/react-query";
 import { nextDescendingDayCursor, type DayRecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
@@ -26,6 +27,19 @@ const sleepKeys = {
   // a stale copy of the same query.
   stats: (userId: string, timeZone: string) => ["sleep", "stats", userId, timeZone] as const,
 };
+
+/**
+ * Seed the detail cache with a row a list already holds, so opening an entry
+ * from the paged all-history screen never depends on a fresh fetch succeeding.
+ * The detail screen's own capped-list lookup only covers the newest 50 rows;
+ * an older entry reached through history would otherwise fire one lone
+ * `getSleepLog` request and, if it failed offline, claim the entry the user
+ * just tapped does not exist. The detail query still refreshes in the
+ * background; this only guarantees it has honest data to show meanwhile.
+ */
+export function seedSleepLogDetail(queryClient: QueryClient, log: SleepLog) {
+  queryClient.setQueryData(sleepKeys.detail(log.userId, log.id), log);
+}
 
 export function useSleepLogs(userId: string | null, limit = 50) {
   return useQuery({

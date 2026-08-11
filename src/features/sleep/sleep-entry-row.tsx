@@ -1,10 +1,12 @@
 import { memo } from "react";
 import { router } from "expo-router";
 import { Pressable, View } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { formatDuration } from "@/src/features/sleep/format";
+import { seedSleepLogDetail } from "@/src/features/sleep/queries";
 import type { SleepLog } from "@/src/features/sleep/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { cn } from "@/lib/utils";
@@ -30,6 +32,7 @@ interface SleepEntryRowProps {
  */
 function SleepEntryRowComponent({ entry, when, className }: SleepEntryRowProps) {
   const { t } = useTranslation("sleep");
+  const queryClient = useQueryClient();
 
   const duration = formatDuration(entry.durationMinutes);
   const qualityWord = t(`quality.${entry.quality}` as Parameters<typeof t>[0]);
@@ -41,7 +44,13 @@ function SleepEntryRowComponent({ entry, when, className }: SleepEntryRowProps) 
       accessibilityLabel={t("entryRow.a11y", { duration, quality: qualityWord, when })}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push({ pathname: "/tools/sleep/[id]", params: { id: entry.id } })}
+      onPress={() => {
+        // This row IS the complete record — hand it to the detail cache so an
+        // entry past the overview's 50-row window opens even if its own fetch
+        // fails (an offline "not found" for an entry the user is looking at).
+        seedSleepLogDetail(queryClient, entry);
+        router.push({ pathname: "/tools/sleep/[id]", params: { id: entry.id } });
+      }}
       className={cn("flex-row items-center gap-3 px-0.5 py-3 active:bg-accent/40", className)}
       role="button"
     >

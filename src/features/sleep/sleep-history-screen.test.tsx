@@ -20,6 +20,9 @@ jest.mock("@/src/providers/session-provider", () => ({
 
 jest.mock("@/src/features/sleep/queries", () => ({
   useSleepHistoryPages: jest.fn(),
+  // The row seeds the detail cache before navigating; the real implementation
+  // is exercised in sleep-recent-list.test.tsx, where queries are unmocked.
+  seedSleepLogDetail: jest.fn(),
 }));
 
 const mockUseSleepHistoryPages = useSleepHistoryPages as jest.MockedFunction<
@@ -113,6 +116,33 @@ describe("SleepHistoryScreen", () => {
       pathname: "/tools/sleep/[id]",
       params: { id: `log-${key}` },
     });
+  });
+
+  it("captions a month row from its grouping day, not the wake bound", () => {
+    // A windowed July 31 → August 1 sleep files under July (dayKey is the civil
+    // day at sleep start); captioning the row from `loggedAt` would print
+    // "Aug 1" under a heading that says July.
+    mockPages({
+      pages: [
+        [
+          log("2026-07-31", {
+            loggedAt: "2026-08-01T05:00:00Z",
+            window: {
+              startedAt: "2026-07-31T21:00:00.000Z",
+              startedOffsetMinutes: 0,
+              endedAt: "2026-08-01T05:00:00.000Z",
+              endedOffsetMinutes: 0,
+            },
+          }),
+        ],
+      ],
+    });
+
+    renderWithProviders(<SleepHistoryScreen />);
+
+    expect(screen.getByText("July 2026")).toBeTruthy();
+    expect(screen.getByText("Jul 31")).toBeTruthy();
+    expect(screen.queryByText("Aug 1")).toBeNull();
   });
 
   it("fetches the next page when the list reaches its end", () => {

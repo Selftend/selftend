@@ -14,10 +14,33 @@ import {
   formatHistoryWhen,
   groupHistorySections,
   type HistorySection,
+  type HistorySectionKind,
 } from "@/src/lib/history-groups";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
+import { parseLocalNoon } from "@/src/utils/date";
+
+/**
+ * The `when` column, sleep-flavoured: any date or weekday it shows must come
+ * from the entry's GROUPING day, not from `loggedAt`. The two differ for a
+ * windowed entry — `dayKey` is the civil day at sleep start, `loggedAt` the
+ * wake bound — so a July 31 → August 1 sleep files under "July 2026" and the
+ * shared `formatHistoryWhen` would caption its row "Aug 1", contradicting the
+ * heading it sits under. Times still read at the captured occurrence offset;
+ * only the calendar part switches frames. Duration-only entries derive `dayKey`
+ * from `loggedAt`, so for them this renders exactly what the shared helper
+ * would.
+ */
+function sleepHistoryWhen(log: SleepLog, kind: HistorySectionKind, lang: string): string {
+  if (kind === "today" || kind === "yesterday") return formatHistoryWhen(log, kind, lang);
+  const day = parseLocalNoon(log.dayKey);
+  if (kind === "month") {
+    return new Intl.DateTimeFormat(lang, { day: "numeric", month: "short" }).format(day);
+  }
+  const weekday = new Intl.DateTimeFormat(lang, { weekday: "short" }).format(day);
+  return `${weekday} ${formatHistoryWhen(log, "today", lang)}`;
+}
 
 /**
  * Every sleep entry the user has, scrollable to the end — check-in's paging
@@ -116,7 +139,7 @@ export default function SleepHistoryScreen() {
           </View>
         )}
         renderItem={({ item, section }) => (
-          <SleepEntryRow entry={item} when={formatHistoryWhen(item, section.kind, i18n.language)} />
+          <SleepEntryRow entry={item} when={sleepHistoryWhen(item, section.kind, i18n.language)} />
         )}
       />
     </SafeAreaView>

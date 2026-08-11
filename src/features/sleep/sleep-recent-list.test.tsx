@@ -3,7 +3,7 @@ import { router } from "expo-router";
 
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
 import { entryDayKey } from "@/src/lib/occurrence-time";
-import { renderWithProviders } from "@/test/render-with-providers";
+import { createTestQueryClient, renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
@@ -63,6 +63,22 @@ describe("SleepRecentList", () => {
     expect(mockRouter.push).toHaveBeenCalledWith({
       pathname: "/tools/sleep/[id]",
       params: { id: "s-0" },
+    });
+  });
+
+  it("seeds the detail cache on press, so the entry opens even if its own fetch fails", () => {
+    // An entry past the overview's 50-row window is only reachable through the
+    // paged history; without the seed, one failed getSleepLog offline shows
+    // "not found" for an entry the user is looking at.
+    const queryClient = createTestQueryClient();
+    const log = sleepLog(0);
+    renderWithProviders(<SleepRecentList logs={[log]} />, { queryClient });
+
+    fireEvent.press(screen.getByText("6h"));
+
+    expect(queryClient.getQueryData(["sleep", "detail", "user-1", "s-0"])).toMatchObject({
+      id: "s-0",
+      durationMinutes: 360,
     });
   });
 
