@@ -54,9 +54,11 @@ jest.mock("@/src/features/breathing/exercises-queries", () => ({
 
 jest.mock("@/src/lib/color-scheme", () => ({ useColorSchemeName: () => "light" }));
 
+// breathSoundId "none" => no spoken intro, so Start goes straight to the active
+// screen. A test that needs the preroll swaps in "guided" (which has an intro).
+const mockPrefs = { breathSoundId: "none", ambientSoundId: "none" };
 jest.mock("@/src/features/settings/queries", () => ({
-  // breathSoundId "none" => no spoken intro, so Start goes straight to the active screen.
-  useUserPreferences: () => ({ data: { breathSoundId: "none", ambientSoundId: "none" } }),
+  useUserPreferences: () => ({ data: mockPrefs }),
   useUpdateUserPreferences: () => ({
     mutateAsync: jest.fn().mockResolvedValue(undefined),
     isPending: false,
@@ -88,6 +90,7 @@ beforeEach(() => {
   withTimingSpy.mockClear();
   mockSaveMutateAsync.mockClear();
   beforeRemoveListeners.length = 0;
+  mockPrefs.breathSoundId = "none";
 });
 
 const startSession = () => {
@@ -264,6 +267,23 @@ describe("Breathing session (4c)", () => {
     expect(screen.queryByText("Finish this session?")).toBeNull();
     expect(screen.queryByText("Paused")).toBeNull();
     expect(mockSaveMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("offers no session controls during the preroll, so nothing false can be saved", () => {
+    // "guided" has a spoken intro: Start enters a ~4s preroll before the clock
+    // exists. A Finish rendered here measured elapsed time from a start that
+    // never happened and recorded the whole session as completed (Codex P1).
+    // Fake timers so the pending preroll timeout doesn't outlive the test.
+    jest.useFakeTimers();
+    try {
+      mockPrefs.breathSoundId = "guided";
+      startSession();
+      expect(screen.getByText("Get ready...")).toBeTruthy();
+      expect(screen.queryByText("Finish early")).toBeNull();
+      expect(screen.queryByText("Pause")).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it("animates the pacer with withTiming when motion is allowed", () => {

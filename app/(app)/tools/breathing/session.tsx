@@ -242,6 +242,9 @@ export default function BreathingSessionScreen() {
     // use-before-declaration), so `resolved` isn't narrowed yet — every caller
     // runs after the not-found guard, making this a type-level guard only.
     if (!resolved || !selectedCycles) return;
+    // The clock is the source of truth for what gets saved; before beginActive()
+    // sets it there is no session to record, only a preroll to abandon.
+    if (!startMsRef.current) return;
     if (finishingRef.current) return;
     finishingRef.current = true;
     if (intervalRef.current) {
@@ -375,6 +378,7 @@ export default function BreathingSessionScreen() {
         finishingRef.current = false;
         phaseIndexRef.current = -1;
         announcedIndexRef.current = -1;
+        startMsRef.current = 0;
         pausedAtMsRef.current = 0;
         cancelAnimation(breath);
         cancelAnimation(cycleProgress);
@@ -529,8 +533,13 @@ export default function BreathingSessionScreen() {
           />
         </View>
 
-        <View className="flex-row items-center justify-center gap-2 pb-1 pt-6">
-          {screenPhase === "active" ? (
+        {/* Controls exist only once the clock does. During the preroll there is
+            nothing to pause and nothing true to save - a Finish here would
+            measure elapsed time from a start that never happened and record a
+            session as fully completed (Codex P1 on #848). The back gesture
+            still exits a preroll freely, and it lasts ~4s. */}
+        {screenPhase === "active" ? (
+          <View className="flex-row items-center justify-center gap-2 pb-1 pt-6">
             <Button onPress={paused ? resumeSession : pauseSession} variant="outline">
               <Icon
                 className="size-[18px] text-foreground"
@@ -538,15 +547,15 @@ export default function BreathingSessionScreen() {
               />
               <Text>{paused ? t("breathing.session.resume") : t("breathing.session.pause")}</Text>
             </Button>
-          ) : null}
-          <Button
-            disabled={saveMutation.isPending}
-            onPress={() => void handleFinish()}
-            variant="ghost"
-          >
-            <Text>{t("breathing.finishEarly")}</Text>
-          </Button>
-        </View>
+            <Button
+              disabled={saveMutation.isPending}
+              onPress={() => void handleFinish()}
+              variant="ghost"
+            >
+              <Text>{t("breathing.finishEarly")}</Text>
+            </Button>
+          </View>
+        ) : null}
 
         <ConfirmDialog
           cancelLabel={t("breathing.session.exit.cancel")}
