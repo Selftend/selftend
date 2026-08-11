@@ -65,6 +65,14 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   // an explicit opt-in, and leaving windowed mode deletes the stored bounds
   // rather than retaining hidden exact times.
   const [sleepWindow, setSleepWindow] = useState<SleepWindow | null>(null);
+  // Whether the window's offsets were captured when the entry was stored (edit)
+  // rather than seeded on this device just now (create). A stored bound edits in
+  // its captured frame and keeps its offset — restating when, not where (#250).
+  // A NEW bound has no captured frame yet: it edits in the device frame and its
+  // offset is recomputed from the picked date, because the device's offset at a
+  // historical date can differ from today's (a DST boundary between then and
+  // now) and freezing today's offset would shift the saved instant by the gap.
+  const [windowIsStored, setWindowIsStored] = useState(false);
   const [error, setError] = useState("");
 
   const editMode = mode === "edit";
@@ -87,6 +95,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
     setLoggedOffsetMinutes(existingLog.loggedOffsetMinutes ?? null);
     // Editing follows the entry's stored mode (#800).
     setSleepWindow(existingLog.window ?? null);
+    setWindowIsStored(Boolean(existingLog.window));
     setError("");
   }, [existingLog]);
 
@@ -104,7 +113,14 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
       endedAt: now.occurredAt,
       endedOffsetMinutes: now.occurredOffsetMinutes,
     });
+    setWindowIsStored(false);
   };
+
+  // A new bound is picked in the device frame, so the honest offset is the
+  // device's offset AT the picked instant, not at the moment the window was
+  // seeded — the two differ across a DST boundary.
+  const deviceOffsetAt = (iso: string) =>
+    occurrenceTimeFromDate(new Date(iso)).occurredOffsetMinutes;
 
   const goBack = () => {
     if (router.canGoBack()) {
@@ -233,11 +249,19 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
               <Label>{t("log.startedLabel")}</Label>
               <DateTimeField
                 value={sleepWindow.startedAt}
-                offsetMinutes={sleepWindow.startedOffsetMinutes}
+                offsetMinutes={windowIsStored ? sleepWindow.startedOffsetMinutes : null}
                 onChange={(next) =>
-                  // The captured frame survives a time correction — the user is
-                  // restating when, not where (#250).
-                  setSleepWindow({ ...sleepWindow, startedAt: next })
+                  setSleepWindow(
+                    windowIsStored
+                      ? // The captured frame survives a time correction — the
+                        // user is restating when, not where (#250).
+                        { ...sleepWindow, startedAt: next }
+                      : {
+                          ...sleepWindow,
+                          startedAt: next,
+                          startedOffsetMinutes: deviceOffsetAt(next),
+                        },
+                  )
                 }
                 accessibilityLabel={t("log.startedLabel")}
               />
@@ -246,8 +270,14 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
               <Label>{t("log.endedLabel")}</Label>
               <DateTimeField
                 value={sleepWindow.endedAt}
-                offsetMinutes={sleepWindow.endedOffsetMinutes}
-                onChange={(next) => setSleepWindow({ ...sleepWindow, endedAt: next })}
+                offsetMinutes={windowIsStored ? sleepWindow.endedOffsetMinutes : null}
+                onChange={(next) =>
+                  setSleepWindow(
+                    windowIsStored
+                      ? { ...sleepWindow, endedAt: next }
+                      : { ...sleepWindow, endedAt: next, endedOffsetMinutes: deviceOffsetAt(next) },
+                  )
+                }
                 accessibilityLabel={t("log.endedLabel")}
               />
             </View>
