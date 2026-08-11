@@ -34,6 +34,8 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
 type SitPhase = "sitting" | "after";
+/** Where a finished sit goes: into the reflection, or straight out. */
+type SitExit = "after" | "leave";
 
 const TICK_MS = 250;
 const DEFAULT_DURATION_MINUTES = 12;
@@ -105,8 +107,14 @@ export function MeditationSitScreen() {
   const bellMinutes = rawBell >= durationMinutes ? 0 : rawBell;
   const totalSeconds = durationMinutes * 60;
 
-  const { data: programState } = useMeditationProgramState(userId);
+  const { data: programState, isFetched, isError } = useMeditationProgramState(userId);
   const currentStage: StageNumber = (programState?.currentStage ?? 1) as StageNumber;
+  // No save may run before this settles: a stage 2-10 user reopening the app
+  // onto a sit that ran out in the background would otherwise race the query
+  // and permanently record `stage_at_session = 1` (Codex P2 on #850). A settled
+  // error still saves - stage 1 is then the best available answer, and holding
+  // a finished sit hostage to a failing query would be worse.
+  const stageSettled = isFetched || isError;
   // The ticking effect subscribes once per phase and calls finishSit through a
   // stale closure; the stage it saves must be the stage at SAVE time, not at
   // subscribe time - program state usually loads a beat after mount.
@@ -119,9 +127,19 @@ export function MeditationSitScreen() {
   const updateMutation = useUpdateMeditationSessionReflection(userId);
 
   const [phase, setPhase] = useState<SitPhase>("sitting");
+  // True exactly while this screen holds navigation focus. The ticking effect
+  // keys on it: a transient blur (a route pushed above a still-mounted screen)
+  // clears the interval via the focus cleanup, and without this flag nothing
+  // would ever resubscribe it - phase and paused are unchanged on refocus, so
+  // the countdown would come back frozen (Codex P2 on #850).
+  const [focused, setFocused] = useState(false);
   const [paused, setPaused] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
   const [exitDialogOpen, setExitDialogOpen] = useState(false);
+  // A finish that has been asked for - by the clock running out, the Finish
+  // early button, or the exit dialog - but may not have run yet: saving waits
+  // for the stage query to settle, and the effect below fires when both hold.
+  const [finishRequested, setFinishRequested] = useState<SitExit | null>(null);
   const [savedSession, setSavedSession] = useState<MeditationSession | null>(null);
   const [pulls, setPulls] = useState<MeditationObstacleTag[]>([]);
   const [note, setNote] = useState("");
@@ -138,6 +156,10 @@ export function MeditationSitScreen() {
   // instead of replayed after a background stretch: three missed bells on
   // foreground would be noise, not timekeeping.
   const bellCountRef = useRef(0);
+  // The end bell and the finish request fire once per sit: a pause/resume while
+  // the finish waits on the stage query resubscribes the tick, and an unguarded
+  // completion branch would ring the end bell again.
+  const completionRef = useRef(false);
 
   const elapsedNow = () => ((pausedAtMsRef.current || Date.now()) - startMsRef.current) / 1000;
 
@@ -147,7 +169,7 @@ export function MeditationSitScreen() {
    * notices runs minutes later - and its occurrence instant is the moment the
    * timer actually reached zero, not the moment the app was reopened.
    */
-  const finishSit = async (exit: "after" | "leave") => {
+  const finishSit = async (exit: SitExit) => {
     if (!startMsRef.current) return;
     if (finishingRef.current) return;
     finishingRef.current = true;
@@ -183,10 +205,23 @@ export function MeditationSitScreen() {
       announceMessage(t("sit.after.title", { count: session.durationMinutes }));
     } catch {
       // The sit is NOT recorded; un-finish so Pause / Finish early can retry.
+      // The request state clears too - a retry must be a fresh transition or
+      // the effect below would never re-fire for it.
       finishingRef.current = false;
+      setFinishRequested(null);
       showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
   };
+
+  // Runs the requested finish once the stage is settled. Reactive rather than
+  // ref-driven on purpose: the query resolving is a render, and a background-
+  // completed sit whose request arrived first must save the moment it lands.
+  useEffect(() => {
+    if (!finishRequested || !stageSettled) return;
+    void finishSit(finishRequested);
+    // finishSit reads its inputs via refs; the request and the gate are the deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finishRequested, stageSettled]);
 
   const pauseSession = useCallback(() => {
     if (pausedAtMsRef.current) return;
@@ -203,7 +238,7 @@ export function MeditationSitScreen() {
   };
 
   useEffect(() => {
-    if (phase !== "sitting" || paused) return;
+    if (phase !== "sitting" || paused || !focused) return;
 
     const tick = () => {
       if (!startMsRef.current || finishingRef.current) return;
@@ -213,8 +248,11 @@ export function MeditationSitScreen() {
       if (elapsed >= totalSeconds) {
         if (intervalRef.current) clearInterval(intervalRef.current);
         intervalRef.current = null;
-        playOneShot(bellSound, 1);
-        void finishSit("after");
+        if (!completionRef.current) {
+          completionRef.current = true;
+          playOneShot(bellSound, 1);
+          setFinishRequested("after");
+        }
         return;
       }
       if (bellMinutes > 0) {
@@ -244,7 +282,7 @@ export function MeditationSitScreen() {
     };
     // The tick reads time via refs; re-subscribing every render would stutter the cadence.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, paused]);
+  }, [phase, paused, focused]);
 
   // Shell B has no chrome, so the OS back gesture and the web back button are
   // the only uninvited exits. Mid-sit they pause the clock and ask (#777) -
@@ -269,8 +307,10 @@ export function MeditationSitScreen() {
       startMsRef.current = Date.now();
       pausedAtMsRef.current = 0;
       bellCountRef.current = 0;
+      completionRef.current = false;
       finishingRef.current = false;
       playOneShot(bellSound, 1);
+      setFocused(true);
       return () => {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
@@ -280,9 +320,11 @@ export function MeditationSitScreen() {
         pausedAtMsRef.current = 0;
         bellCountRef.current = 0;
         finishingRef.current = false;
+        setFocused(false);
         setPhase("sitting");
         setPaused(false);
         setExitDialogOpen(false);
+        setFinishRequested(null);
         setSavedSession(null);
         setPulls([]);
         setNote("");
@@ -348,7 +390,7 @@ export function MeditationSitScreen() {
         </Button>
         <Button
           disabled={saveMutation.isPending}
-          onPress={() => void finishSit("after")}
+          onPress={() => setFinishRequested("after")}
           variant="ghost"
         >
           <Text>{t("sit.finishEarly")}</Text>
@@ -367,7 +409,7 @@ export function MeditationSitScreen() {
         }}
         onConfirm={() => {
           setExitDialogOpen(false);
-          void finishSit("leave");
+          setFinishRequested("leave");
         }}
         title={t("sit.exit.title")}
         visible={exitDialogOpen}

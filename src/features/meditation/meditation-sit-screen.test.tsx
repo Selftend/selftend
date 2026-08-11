@@ -24,6 +24,11 @@ const mockNavigation = {
   dispatch: jest.fn(),
 };
 
+// The focus lifecycle, held where a test can drive it: `focusHandle` lets a
+// test play a TRANSIENT blur - a route pushed above a still-mounted screen -
+// which is not the same event as an unmount.
+const focusHandle: { callback: (() => void | (() => void)) | null; cleanup: (() => void) | null } =
+  { callback: null, cleanup: null };
 jest.mock("expo-router", () => {
   const { useEffect } = jest.requireActual<typeof import("react")>("react");
   return {
@@ -32,7 +37,17 @@ jest.mock("expo-router", () => {
     usePathname: () => "/tools/meditation/session",
     // Actually runs its callback, as focus does: the clock starts there, and
     // under a no-op mock the screen would never begin the sit.
-    useFocusEffect: (callback: () => void) => useEffect(callback, [callback]),
+    useFocusEffect: (callback: () => void | (() => void)) => {
+      useEffect(() => {
+        focusHandle.callback = callback;
+        focusHandle.cleanup = (callback() as (() => void) | undefined) ?? null;
+        return () => {
+          focusHandle.cleanup?.();
+          focusHandle.callback = null;
+          focusHandle.cleanup = null;
+        };
+      }, [callback]);
+    },
     useNavigation: () => mockNavigation,
   };
 });
@@ -45,8 +60,11 @@ jest.mock("@/src/providers/session-provider", () => ({
 // titles itself from the RECORDED minutes, not the requested ones.
 const mockSaveMutateAsync = jest.fn();
 const mockUpdateMutateAsync = jest.fn().mockResolvedValue(undefined);
+// Mutable so a test can hold the stage query unresolved and settle it later.
+const mockProgramState: { data?: { currentStage: number }; isFetched: boolean; isError: boolean } =
+  { data: { currentStage: 3 }, isFetched: true, isError: false };
 jest.mock("@/src/features/meditation/queries", () => ({
-  useMeditationProgramState: () => ({ data: { currentStage: 3 } }),
+  useMeditationProgramState: () => mockProgramState,
   useSaveMeditationSession: () => ({ mutateAsync: mockSaveMutateAsync, isPending: false }),
   useUpdateMeditationSessionReflection: () => ({
     mutateAsync: mockUpdateMutateAsync,
@@ -74,6 +92,9 @@ beforeEach(() => {
   jest.useFakeTimers({ now: START_AT });
   mockParams.duration = "12";
   mockParams.bell = "5";
+  mockProgramState.data = { currentStage: 3 };
+  mockProgramState.isFetched = true;
+  mockProgramState.isError = false;
   beforeRemoveListeners.length = 0;
   router.replace.mockClear();
   mockPlayOneShot.mockClear();
@@ -269,6 +290,50 @@ describe("Meditation sitting (7b)", () => {
     // The user asked to leave: the recorded sit is honoured with an exit, not a
     // detour through the reflection they were leaving.
     expect(router.replace).toHaveBeenCalledWith("/tools/meditation");
+  });
+
+  it("holds a finished sit until the stage query settles, then saves the real stage", async () => {
+    // Reopening the app onto a sit that ran out in the background races the
+    // program-state query: the first tick notices the sit is over before the
+    // stage has loaded, and saving at that instant would permanently record
+    // stage 1 for a stage 2-10 user (Codex P2 on #850).
+    mockProgramState.data = undefined;
+    mockProgramState.isFetched = false;
+    const view = renderWithProviders(<MeditationSitScreen />);
+
+    act(() => {
+      jest.setSystemTime(new Date(START_AT.getTime() + 40 * 60_000));
+    });
+    await advance(250);
+    expect(mockSaveMutateAsync).not.toHaveBeenCalled();
+
+    mockProgramState.data = { currentStage: 7 };
+    mockProgramState.isFetched = true;
+    view.rerender(<MeditationSitScreen />);
+    await act(async () => {});
+
+    expect(mockSaveMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ stageAtSession: 7, durationMinutes: 12 }),
+    );
+  });
+
+  it("keeps counting after a transient blur and refocus", async () => {
+    // A route pushed above this screen blurs it WITHOUT unmounting: the focus
+    // cleanup stops the interval, and refocus must resubscribe it - phase and
+    // paused are unchanged, so nothing else would (Codex P2 on #850). The sit
+    // itself restarts: unsaved time is discarded on blur, as breathing decided.
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(3 * 60_000);
+
+    act(() => {
+      focusHandle.cleanup?.();
+    });
+    act(() => {
+      focusHandle.cleanup = (focusHandle.callback?.() as (() => void) | undefined) ?? null;
+    });
+    await advance(60_000);
+
+    expect(screen.getByText("11:00")).toBeTruthy();
   });
 
   it("keeps sitting when the back-gesture dialog is cancelled", async () => {
