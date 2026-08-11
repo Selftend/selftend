@@ -563,7 +563,7 @@ describe("HabitsHomeScreen weekly rhythm", () => {
     }
   });
 
-  it("fills bars with the accessible neutral rather than the 1.10:1 wash", async () => {
+  it("fills bars with bg-primary rather than the 1.10:1 wash", async () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     await screen.findByRole("heading", { name: "Weekly rhythm" });
@@ -573,7 +573,8 @@ describe("HabitsHomeScreen weekly rhythm", () => {
     for (const bar of bars) {
       // `bg-muted` on `bg-card` is not low-contrast, it is invisible (#725).
       expect(bar.props.className).not.toMatch(/(?:^|\s)bg-muted(?:\s|$)/);
-      expect(bar.props.className).toContain("bg-muted-foreground/80");
+      // Aligned to the settled cross-tool bar fill by #878's sweep.
+      expect(bar.props.className).toContain("bg-primary");
     }
   });
 

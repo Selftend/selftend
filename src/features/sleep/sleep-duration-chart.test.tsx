@@ -71,7 +71,7 @@ describe("SleepDurationChart", () => {
     );
 
     for (const bar of screen.getAllByTestId("bar-chart-bar")) {
-      expect(bar.props.className).toContain("bg-muted-foreground/80");
+      expect(bar.props.className).toContain("bg-primary");
       expect(bar.props.className).not.toContain("bg-ink/");
     }
   });

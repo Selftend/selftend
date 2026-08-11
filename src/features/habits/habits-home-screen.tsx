@@ -628,7 +628,9 @@ function WeeklyRhythmSection({ rhythm }: { rhythm: WeekdayRhythm[] }) {
           // Single-tone:
           // the two-tone treatment keyed off an absolute `< 8` threshold, which
           // means nothing at one habit and nothing at ten.
-          tintClass="bg-muted-foreground/80"
+          // bg-primary like every single-series bar chart (#725 family; folded in
+          // by #878's alignment sweep - this bar shared sleep's neutral tint).
+          tintClass="bg-primary"
           barClassName="rounded-t-md"
           labelClassName="leading-3"
         />
