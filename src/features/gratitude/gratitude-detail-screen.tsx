@@ -117,43 +117,50 @@ export default function GratitudeDetailScreen() {
       <ScreenTopBar leading="back" />
       <ScrollView contentContainerClassName="grow p-6">
         <View className={cn(FORM_COLUMN, "gap-6")}>
-          <View className="gap-2">
-            <Text variant="h1">{dateTitle}</Text>
-            <Text variant="muted">
-              {t("detail.loggedSummary", { time: loggedTime, count: lines.length })}
-            </Text>
-          </View>
-
-          <View className="flex-row flex-wrap gap-2">
-            <Button
-              disabled={starMutation.isPending}
-              onPress={() => void toggleFavorite()}
-              variant={entry.starred ? "tinted" : "outline"}
-            >
-              <Icon name={entry.starred ? "star" : "star-outline"} className="size-4" />
-              <Text>{entry.starred ? t("detail.unfavorite") : t("detail.favorite")}</Text>
-            </Button>
-            <Button
-              accessibilityLabel={t("detail.edit")}
-              onPress={() =>
-                router.push({
-                  pathname: "/tools/gratitude-log/[id]/edit",
-                  params: { id: entry.id },
-                })
-              }
-              size="icon"
-              variant="outline"
-            >
-              <Icon name="edit" className="size-4" />
-            </Button>
-            <Button
-              accessibilityLabel={t("detail.delete")}
-              onPress={() => setConfirmOpen(true)}
-              size="icon"
-              variant="ghost"
-            >
-              <Icon name="delete-outline" className="size-4 text-destructive" />
-            </Button>
+          {/* Actions ride the header row top-right (design 6c, #877), not a
+              row under the subline. The title block shrinks; the actions
+              never do. */}
+          <View className="flex-row items-start justify-between gap-4">
+            <View className="min-w-0 flex-1 gap-2">
+              <Text variant="h1">{dateTitle}</Text>
+              <Text variant="muted">
+                {t("detail.loggedSummary", { time: loggedTime, count: lines.length })}
+              </Text>
+            </View>
+            <View className="shrink-0 flex-row flex-wrap justify-end gap-2">
+              <Button
+                disabled={starMutation.isPending}
+                onPress={() => void toggleFavorite()}
+                variant={entry.starred ? "tinted" : "outline"}
+              >
+                <Icon name={entry.starred ? "star" : "star-outline"} className="size-4" />
+                <Text>{entry.starred ? t("detail.unfavorite") : t("detail.favorite")}</Text>
+              </Button>
+              <Button
+                accessibilityLabel={t("detail.edit")}
+                onPress={() =>
+                  router.push({
+                    pathname: "/tools/gratitude-log/[id]/edit",
+                    params: { id: entry.id },
+                  })
+                }
+                size="icon"
+                variant="outline"
+              >
+                <Icon name="edit" className="size-4" />
+              </Button>
+              <Button
+                accessibilityLabel={t("detail.delete")}
+                onPress={() => setConfirmOpen(true)}
+                size="icon"
+                variant="ghost"
+              >
+                {/* Muted at rest (design 6c): the confirm dialog carries the
+                    destructive weight; a red icon idling on the screen is an
+                    alarm nothing has raised (#877). */}
+                <Icon name="delete-outline" className="size-4 text-muted-foreground" />
+              </Button>
+            </View>
           </View>
           {favoriteError ? <Text className="text-sm text-destructive">{favoriteError}</Text> : null}
 
@@ -174,9 +181,12 @@ export default function GratitudeDetailScreen() {
             ))}
           </View>
 
-          <Button onPress={() => router.push("/tools/gratitude-log/entries")} variant="link">
-            <Text>{t("home.viewAll")}</Text>
-          </Button>
+          {/* Right-aligned quiet link (design 6c), not a centred button. */}
+          <View className="items-end">
+            <Button onPress={() => router.push("/tools/gratitude-log/entries")} variant="link">
+              <Text>{t("home.viewAll")}</Text>
+            </Button>
+          </View>
         </View>
       </ScrollView>
 
