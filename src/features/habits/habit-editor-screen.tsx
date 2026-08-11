@@ -213,7 +213,10 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
       const next = new Set(prev.customDays);
       if (next.has(day)) next.delete(day);
       else next.add(day);
-      return { ...prev, customDays: Array.from(next).sort() };
+      // Tapping a day IS choosing the custom cadence (design `9b`): the row is
+      // visible under every cadence, dimmed when another one is active, and a
+      // tap switches rather than sitting dead under the dim.
+      return { ...prev, cadence: "custom", customDays: Array.from(next).sort() };
     });
   }
 
@@ -391,35 +394,42 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
           </View>
         </View>
 
-        {input.cadence === "custom" ? (
-          <View className="gap-2">
-            <Label>{t("form.customDaysLabel")}</Label>
-            <View className="flex-row gap-1.5">
-              {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+        {/* Always rendered, dimmed when another cadence holds (design `9b`).
+            The checked state follows the CADENCE, not just the stored set -
+            `customDays` persists across cadence switches so an "Every day"
+            habit would otherwise show five phantom selections. */}
+        <View className="gap-2">
+          <Label>{t("form.customDaysLabel")}</Label>
+          <View className="flex-row gap-1.5">
+            {[0, 1, 2, 3, 4, 5, 6].map((day) => {
+              const customActive = input.cadence === "custom";
+              const on = customActive && input.customDays.includes(day);
+              return (
                 <Pressable
                   key={day}
                   accessibilityRole="checkbox"
-                  aria-checked={input.customDays.includes(day)}
+                  aria-checked={on}
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() => toggleCustomDay(day)}
                   className={cn(
                     "h-10 flex-1 items-center justify-center rounded-md border",
-                    input.customDays.includes(day)
-                      ? "border-primary bg-primary/15"
-                      : "border-border bg-background",
+                    on ? "border-primary bg-primary/15" : "border-border bg-background",
+                    !customActive && "opacity-40",
                   )}
                   role="checkbox"
                   {...spaceKeyActivationProps(() => toggleCustomDay(day))}
                 >
                   <Text className="text-xs font-semibold">{t(`form.weekday.${day}` as const)}</Text>
                 </Pressable>
-              ))}
-            </View>
+              );
+            })}
+          </View>
+          {input.cadence === "custom" ? (
             <Text variant="muted" className="text-xs">
               {t("form.customDaysHelp")}
             </Text>
-          </View>
-        ) : null}
+          ) : null}
+        </View>
 
         <View className="gap-2">
           <Label>{t("form.colorLabel")}</Label>

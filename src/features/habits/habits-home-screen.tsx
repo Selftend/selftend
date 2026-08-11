@@ -47,13 +47,8 @@ export default function HabitsHomeScreen() {
   const sinceDate = localDateKey(addDays(new Date(), -30));
   const { data: logs } = useHabitLogs(userId, { sinceDate });
   /**
-   * The recent list and the header subline both read this, and both used to be
-   * wrong in the same direction (#762).
-   *
-   * Recent activity read the 30-day window, so a user returning after a month
-   * saw "Ticks you make will appear here" directly under "last ticked 27 June".
-   * The subline read a separate `limit: 1` query, which is this one truncated -
-   * so the two can no longer disagree, and there is one fewer round trip.
+   * Lifetime, not the 30-day window: a user returning after a month must see
+   * their last ticks here, not "Ticks you make will appear here" (#762).
    */
   const { data: recentLogs } = useHabitLogs(userId, { limit: 5 });
   const toggleLog = useToggleHabitLog(userId);
@@ -100,19 +95,14 @@ export default function HabitsHomeScreen() {
   const missTwiceRiskHabits = allHabits.filter((habit) => isAtMissTwiceRisk(habit, allLogs, today));
 
   const weeklyRhythm = getWeeklyRhythm(allLogs, 4, today);
-  // Newest-first ordering makes row 0 the latest tick.
-  const lastTickedOn = recentLogs?.[0]?.loggedOn ?? null;
-  // `loggedOn` IS the civil day - label from it directly instead of faking a
-  // noon instant to reuse the activity formatter.
-  const lastWhen = lastTickedOn ? formatRelativeDayKey(lastTickedOn, t) : null;
-  // `recentLogs` is undefined while loading and after a failed fetch with no
-  // cache - only an actually-loaded (possibly empty) history may claim "no
-  // ticks yet", or a returning user's history reads as erased.
-  const subline = lastWhen
-    ? t("stats.last", { when: lastWhen })
-    : recentLogs
-      ? t("stats.never")
-      : undefined;
+  /**
+   * The third header stat: ticks in the last two weeks, read straight off the
+   * 30-day window. Gated on the window having actually answered - `undefined`
+   * is a query in flight or failed, and rendering it as "0 ticks" would state
+   * a record the screen has not read. Zero from a loaded window IS the record.
+   */
+  const twoWeeksAgoKey = localDateKey(addDays(today, -13));
+  const twoWeekTicks = allLogs.filter((log) => log.loggedOn >= twoWeeksAgoKey).length;
 
   /**
    * Unticking a day that carries a note deletes the note with it, because they
@@ -139,6 +129,7 @@ export default function HabitsHomeScreen() {
   }
 
   const roomStyle = useRoomStyle("act");
+  const palette = useHabitChipPalette();
 
   if (habitsLoading) {
     return (
@@ -189,9 +180,15 @@ export default function HabitsHomeScreen() {
                   value: String(allHabits.length),
                   label: t("hero.habits", { count: allHabits.length }),
                 },
-                // The old ToolStats.subline, folded into the row as a value-less
-                // item - which is how the design renders "last logged 4:50 pm".
-                ...(subline ? [{ value: "", label: subline }] : []),
+                // Number in `value`, bare noun phrase in `label` (#749).
+                ...(logsLoaded
+                  ? [
+                      {
+                        value: String(twoWeekTicks),
+                        label: t("hero.twoWeekTicks", { count: twoWeekTicks }),
+                      },
+                    ]
+                  : []),
               ]}
             />
 
@@ -376,6 +373,7 @@ export default function HabitsHomeScreen() {
                     // still name the habit it belongs to.
                     const habit = (habits ?? []).find((h) => h.id === log.habitId);
                     if (!habit) return null;
+                    const chip = palette[habit.color];
                     return (
                       <Pressable
                         key={log.id}
@@ -393,6 +391,14 @@ export default function HabitsHomeScreen() {
                         )}
                         role="button"
                       >
+                        {/* The habit's own colour, ringed in its ink so the
+                            light hues stay perceivable against the surface
+                            (WCAG 1.4.11) - the same dot the history rows draw. */}
+                        <View
+                          aria-hidden
+                          className="size-2.5 shrink-0 rounded-full border"
+                          style={{ backgroundColor: chip.accent, borderColor: chip.ink }}
+                        />
                         <View className="flex-1">
                           <Text className="text-sm font-semibold">{habit.name}</Text>
                           {habit.identity ? (
@@ -461,8 +467,16 @@ function HabitRow({
       : t("list.tapToTick", { habit: habit.name });
 
   return (
-    <View className={cn("gap-3 py-4", ruled && "border-t border-border")}>
-      <View className="flex-row items-center gap-3">
+    // Two lines at phone widths, one line from `sm` (#710): the design draws a
+    // single row because it draws a 720px column, and only there is the width
+    // real - at 360dp the strip would leave the name nothing.
+    <View
+      className={cn(
+        "gap-3 py-4 sm:flex-row sm:items-center sm:gap-4",
+        ruled && "border-t border-border",
+      )}
+    >
+      <View className="flex-row items-center gap-3 sm:min-w-0 sm:flex-1">
         <Pressable
           accessibilityLabel={tickLabel}
           aria-checked={tickedToday}
@@ -517,7 +531,9 @@ function HabitRow({
         accessible
         accessibilityRole="image"
         accessibilityLabel={t("list.weekA11y", { count: tickedDays })}
-        className="gap-1.5"
+        // The design's 218px right-hand column: seven cells at ~26dp. Fixed so
+        // the strip reads as a calendar column across rows, not a flex share.
+        className="gap-1.5 sm:w-[218px] sm:shrink-0"
       >
         <Text aria-hidden variant="muted" className="text-[10px] uppercase tracking-wider">
           {t("home.weekStripLabel")}

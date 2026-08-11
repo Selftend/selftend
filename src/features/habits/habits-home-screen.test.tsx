@@ -156,7 +156,7 @@ describe("HabitsHomeScreen act room", () => {
     mockDefaults();
   });
 
-  it("renders the act field header with stats, and empty-state subline on the room pour", async () => {
+  it("renders the act field header with stats, stating a zero fortnight as the record", async () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
@@ -167,51 +167,52 @@ describe("HabitsHomeScreen act room", () => {
     expect(screen.getByText("1 active habit")).toBeTruthy();
     // Book credits were scrubbed app-wide (#494).
     expect(screen.queryByText(/Inspired by/)).toBeNull();
-    // Calm muted subline when nothing is ticked - never a shame state.
-    expect(screen.getByText("no ticks yet")).toBeTruthy();
+    // Zero from a loaded window is the record, stated plainly (design 9a).
+    expect(screen.getByText("0 ticks in the last two weeks")).toBeTruthy();
   });
 
-  it("shows the relative last-tick subline when a tick exists", async () => {
+  it("counts a fresh tick into the fortnight stat", async () => {
     mockUseHabitLogs.mockReturnValue({
       data: [habitLog()],
     } as unknown as ReturnType<typeof useHabitLogs>);
 
     renderWithProviders(<HabitsHomeScreen />);
 
-    expect(await screen.findByText("last ticked Today")).toBeTruthy();
-    expect(screen.queryByText("no ticks yet")).toBeNull();
+    expect(await screen.findByText("1 tick in the last two weeks")).toBeTruthy();
   });
 
-  it("derives the subline from lifetime history when the latest tick is older than the 30-day window", async () => {
-    const oldDate = localDateKey(addDays(new Date(), -45));
+  it("keeps ticks older than two weeks out of the stat while still counting fresh ones", async () => {
+    const inWindow = [-1, -3, -5].map((offset, index) =>
+      habitLog({ id: `log-in-${index}`, loggedOn: localDateKey(addDays(new Date(), offset)) }),
+    );
+    // In the 30-day window the screen fetches, but outside the fortnight.
+    const stale = habitLog({ id: "log-old", loggedOn: localDateKey(addDays(new Date(), -20)) });
     mockUseHabitLogs.mockImplementation(
       (_userId, options) =>
         ({
-          data: options?.limit === 5 ? [habitLog({ loggedOn: oldDate })] : [],
+          data: options?.limit === 5 ? [] : [...inWindow, stale],
         }) as unknown as ReturnType<typeof useHabitLogs>,
     );
 
     renderWithProviders(<HabitsHomeScreen />);
 
-    expect(await screen.findByText("last ticked 45 days ago")).toBeTruthy();
-    expect(screen.queryByText("no ticks yet")).toBeNull();
+    expect(await screen.findByText("3 ticks in the last two weeks")).toBeTruthy();
   });
 
-  it("omits the subline until the lifetime tick query has actually loaded", async () => {
+  it("omits the fortnight stat until the 30-day window has actually loaded", async () => {
     // `data === undefined` means still loading, or a failed fetch with no cache -
-    // claiming "no ticks yet" there would erase a returning user's real history.
+    // rendering "0 ticks" there would state a record the screen has not read.
     mockUseHabitLogs.mockImplementation(
       (_userId, options) =>
         ({
-          data: options?.limit === 5 ? undefined : [],
+          data: options?.limit === 5 ? [] : undefined,
         }) as unknown as ReturnType<typeof useHabitLogs>,
     );
 
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
-    expect(screen.queryByText("no ticks yet")).toBeNull();
-    expect(screen.queryByText(/^last ticked /)).toBeNull();
+    expect(screen.queryByText(/in the last two weeks/)).toBeNull();
   });
 });
 
@@ -221,11 +222,10 @@ describe("HabitsHomeScreen recent activity", () => {
     mockDefaults();
   });
 
-  it("agrees with the last-tick line instead of the 30-day window", async () => {
+  it("lists lifetime ticks even when they are older than the 30-day window", async () => {
     const oldDate = localDateKey(addDays(new Date(), -45));
     // The recent list used to read the 30-day window, so a user returning after
-    // a month saw "Ticks you make will appear here" directly under
-    // "last ticked 45 days ago" (#762).
+    // a month saw "Ticks you make will appear here" over real history (#762).
     mockUseHabitLogs.mockImplementation(
       (_userId, options) =>
         ({
@@ -235,7 +235,7 @@ describe("HabitsHomeScreen recent activity", () => {
 
     renderWithProviders(<HabitsHomeScreen />);
 
-    expect(await screen.findByText("last ticked 45 days ago")).toBeTruthy();
+    expect(await screen.findByText("45 days ago")).toBeTruthy();
     expect(screen.queryByText("Ticks you make will appear here.")).toBeNull();
   });
 
