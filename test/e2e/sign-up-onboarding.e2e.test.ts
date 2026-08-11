@@ -80,7 +80,7 @@ test.describe("sign-up + onboarding + first record", () => {
     await expect(page.getByText("Check-in", { exact: true }).last()).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByText("Sleep tracker", { exact: true }).last()).toBeVisible({
+    await expect(page.getByText("Sleep", { exact: true }).last()).toBeVisible({
       timeout: 10_000,
     });
 

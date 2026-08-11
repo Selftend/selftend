@@ -44,10 +44,10 @@ describe("SleepWidget", () => {
     mockUseSelectedDate.mockReturnValue({ selectedDate: currentDateKey() });
   });
 
-  it("renders the Sleep tracker header", () => {
+  it("renders the Sleep header", () => {
     mockUseSleepLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useSleepLogs>);
     renderWithProviders(<SleepWidget userId="user-1" />);
-    expect(screen.getByText("Sleep tracker")).toBeTruthy();
+    expect(screen.getByText("Sleep")).toBeTruthy();
   });
 
   it("shows the 7-night average duration and quality", () => {
