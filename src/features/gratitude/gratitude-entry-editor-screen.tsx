@@ -270,7 +270,11 @@ export function GratitudeEntryEditorScreen({
         ) : null}
 
         <View className="gap-3">
-          <Text className="text-sm font-semibold">{t("editor.promptHelp")}</Text>
+          {/* The design language's section eyebrow, not a bold sentence-case
+              heading (#877, design 6b). */}
+          <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            {t("editor.promptHelp")}
+          </Text>
           <View className="flex-row flex-wrap gap-2">
             {todayQuestions.map((prompt) => (
               <Pressable
@@ -286,23 +290,25 @@ export function GratitudeEntryEditorScreen({
           </View>
         </View>
 
-        <View className="gap-2">
-          <Text className="text-sm font-medium">{t("editor.whenLabel")}</Text>
-          <DateTimeField
-            value={loggedAt}
-            offsetMinutes={loggedOffsetMinutes}
-            onChange={(next) => {
-              setLoggedAt(next);
-              // A known offset survives a time correction - the user is restating
-              // when, not where. Only an entry with no captured offset picks one
-              // up here, from the device now doing the restating.
-              setLoggedOffsetMinutes(
-                loggedOffsetMinutes ?? occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
-              );
-            }}
-            accessibilityLabel={t("editor.whenLabel")}
-          />
-        </View>
+        {/* The hairline schedule row (design 6b) — the same row check-in's 2b
+            editor restored (#869); the shared appearance covers both. The
+            boxed input and its label are gone; the row is self-describing and
+            keeps the full accessible name. */}
+        <DateTimeField
+          appearance="row"
+          value={loggedAt}
+          offsetMinutes={loggedOffsetMinutes}
+          onChange={(next) => {
+            setLoggedAt(next);
+            // A known offset survives a time correction - the user is restating
+            // when, not where. Only an entry with no captured offset picks one
+            // up here, from the device now doing the restating.
+            setLoggedOffsetMinutes(
+              loggedOffsetMinutes ?? occurrenceTimeFromDate(new Date(next)).occurredOffsetMinutes,
+            );
+          }}
+          accessibilityLabel={t("editor.whenLabel")}
+        />
 
         {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
       </MobileFormScreen>

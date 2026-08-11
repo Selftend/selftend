@@ -14,6 +14,24 @@ import {
 import { renderWithProviders } from "@/test/render-with-providers";
 import { expectNeutralRoom } from "@/test/room-pour";
 
+const mockUseWindowDimensions = jest.fn(() => ({
+  width: 750,
+  height: 1334,
+  scale: 2,
+  fontScale: 1,
+}));
+jest.mock("react-native", () => {
+  const actual = jest.requireActual("react-native");
+  return new Proxy(actual, {
+    get(target, prop, receiver) {
+      if (prop === "useWindowDimensions") {
+        return mockUseWindowDimensions;
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+});
+
 jest.mock("expo-router", () => ({
   router: {
     push: jest.fn(),
@@ -79,6 +97,8 @@ const cachedEntry = {
 describe("GratitudeDetailScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // `mockReturnValue` outlives clearAllMocks — pin the default width back.
+    mockUseWindowDimensions.mockReturnValue({ width: 750, height: 1334, scale: 2, fontScale: 1 });
     mockUseGratitudeEntries.mockReturnValue({
       data: [cachedEntry],
     } as unknown as ReturnType<typeof useGratitudeEntries>);
@@ -94,6 +114,27 @@ describe("GratitudeDetailScreen", () => {
       mutateAsync: jest.fn(),
       isPending: false,
     } as unknown as ReturnType<typeof useSetGratitudeEntryStarred>);
+  });
+
+  /**
+   * The header actions never shrink, so a labelled Favourite button at phone
+   * width crushed the title into a near-character-wide column (#885's failure
+   * class, flagged on this PR's review). Under 640dp the Favourite collapses
+   * to an icon with its accessible name intact.
+   */
+  it("collapses Favourite to an icon button at phone width, keeping its accessible name", () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 320, height: 800, scale: 2, fontScale: 1 });
+    renderWithProviders(<GratitudeDetailScreen />);
+
+    expect(screen.getByLabelText("Favorite")).toBeTruthy();
+    expect(screen.queryByText("Favorite")).toBeNull();
+  });
+
+  it("keeps the labelled Favourite button at desktop width", () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 1280, height: 800, scale: 2, fontScale: 1 });
+    renderWithProviders(<GratitudeDetailScreen />);
+
+    expect(screen.getByText("Favorite")).toBeTruthy();
   });
 
   it("keeps the compact header on the think room pour", () => {
