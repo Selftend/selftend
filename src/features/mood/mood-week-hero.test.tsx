@@ -83,9 +83,9 @@ describe("WeekHero week strip", () => {
     ];
     renderHero(logs);
 
-    expect(screen.getByText("😭")).toBeTruthy();
+    expect(screen.getByText("😞")).toBeTruthy();
     expect(screen.getByText("😐")).toBeTruthy();
-    expect(screen.getByText("😁")).toBeTruthy();
+    expect(screen.getByText("😄")).toBeTruthy();
   });
 
   it("renders a hollow neutral dot for a past day without an entry", () => {
@@ -244,7 +244,10 @@ describe("WeekHero day panel", () => {
 });
 
 describe("WeekHero summary", () => {
-  it("keeps the average, delta, and felt-most sections around the strip", () => {
+  // The design's `2a` gives the week average text weight on the felt-most row,
+  // not a 40px display block, and carries no delta line at all - the trend
+  // chart below is the direction claim.
+  it("states the week average inline on the felt-most row", () => {
     renderWithProviders(
       <WeekHero
         window={WINDOW}
@@ -256,50 +259,27 @@ describe("WeekHero summary", () => {
     );
 
     expect(screen.getByText("3.4")).toBeTruthy();
-    expect(screen.getByText("▲ 0.4 vs last week")).toBeTruthy();
-    expect(screen.getByText("Mood by day")).toBeTruthy();
+    expect(screen.getByText("Felt most often")).toBeTruthy();
     expect(screen.getByText("No emotions tagged yet")).toBeTruthy();
-    // The number is the displayed calendar week's mean now, not a trailing 7 days.
-    expect(screen.getByText("Week average")).toBeTruthy();
+    // The display block and its delta copy are gone.
+    expect(screen.queryByText("Week average")).toBeNull();
+    expect(screen.queryByText("Mood by day")).toBeNull();
+    expect(screen.queryByText(/vs last week/)).toBeNull();
   });
 
-  // INVERTED by #588. The rising delta was `text-act-ink` - ACT's green, on a
-  // mood card, purely so that up and down read differently. The split is what
-  // matters and it survives: falling still takes `destructive`, rising now takes
-  // the neutral foreground.
-  it("paints a rising delta with no module hue, keeping the up/down split", () => {
+  it("renders top emotions as counted chips without the raw hue text (#691)", () => {
     renderWithProviders(
       <WeekHero
         window={WINDOW}
         days={buildWeekDays(WEEK_LOGS, WINDOW, WEDNESDAY)}
-        delta={{ current: 3.4, previous: 3.0, delta: 0.4 }}
-        topEmotions={[]}
+        delta={NO_DELTA}
+        topEmotions={[{ id: "anxious", count: 2 }]}
         logs={WEEK_LOGS}
       />,
     );
 
-    const tokens = String(screen.getByText("▲ 0.4 vs last week").props.className).split(/\s+/);
-    expect(tokens).toContain("text-foreground");
-    // Token-wise, not substring-wise: "text-act-ink" contains "text-act".
-    expect(tokens).not.toContain("text-act-ink");
-    expect(tokens).not.toContain("text-act");
-  });
-
-  it("leaves a falling delta on the destructive token, which already clears AA", () => {
-    renderWithProviders(
-      <WeekHero
-        window={WINDOW}
-        days={buildWeekDays(WEEK_LOGS, WINDOW, WEDNESDAY)}
-        delta={{ current: 3.0, previous: 3.4, delta: -0.4 }}
-        topEmotions={[]}
-        logs={WEEK_LOGS}
-      />,
-    );
-
-    // 5.10:1 on the same surface, so the up arm moving to ink is not a reason to
-    // touch this one - the pair was asymmetric, only the green was below AA.
-    const className = String(screen.getByText("▼ 0.4 vs last week").props.className);
-    expect(className.split(/\s+/)).toContain("text-destructive");
+    const chip = screen.getByText(/Anxious · 2/);
+    expect(String(chip.props.className).split(/\s+/)).toContain("text-primary-ink");
   });
 
   it("keeps the all-history link inside the week block", () => {
@@ -307,6 +287,21 @@ describe("WeekHero summary", () => {
 
     fireEvent.press(screen.getByRole("link"));
     expect(mockPush).toHaveBeenCalledWith("/tools/check-in/history");
+  });
+
+  it("omits its own history link when the section header row carries it", () => {
+    renderWithProviders(
+      <WeekHero
+        window={WINDOW}
+        days={buildWeekDays(WEEK_LOGS, WINDOW, WEDNESDAY)}
+        delta={NO_DELTA}
+        topEmotions={[]}
+        logs={WEEK_LOGS}
+        showHistoryLink={false}
+      />,
+    );
+
+    expect(screen.queryByRole("link")).toBeNull();
   });
 });
 

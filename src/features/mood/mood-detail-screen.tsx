@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,7 +23,7 @@ import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatAtOffset, formatCompactAtOffset } from "@/src/utils/date";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 
 /**
@@ -49,6 +49,13 @@ export default function MoodDetailScreen() {
   const { t } = useTranslation("mood");
   const { t: tCbt } = useTranslation("cbt");
   const roomStyle = useRoomStyle("be");
+  // The header row's flanks (emoji + actions) never shrink, so every pixel of
+  // narrowness comes out of the title block. At phone width the design's 2c
+  // collapses Edit to an icon button and keeps the date on one compact line —
+  // without that, the date wraps into a tall ragged column and the title can
+  // break a character per line (#885).
+  const { width: windowWidth } = useWindowDimensions();
+  const wideHeader = windowWidth >= 640;
   const { user } = useSession();
   const { resolveEmotion } = useEmotionDisplay();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -178,29 +185,51 @@ export default function MoodDetailScreen() {
 
         <ScrollView contentContainerClassName="grow px-6 pt-10 pb-14">
           <View className={`${FORM_COLUMN} gap-8`}>
-            <View className="flex-row items-center gap-4">
+            <View className="flex-row items-center gap-3.5">
               <Text className="text-[40px] leading-none">
                 {MOOD_EMOJI_BY_SCORE[entry.moodScore] ?? ""}
               </Text>
-              <View className="flex-1 gap-0.5">
+              {/* min-w-0: RN-web resolves min-width:auto on a flex child from
+                  its content, so without it the title block refuses to shrink
+                  and pushes the actions off-screen instead (#885). */}
+              <View className="min-w-0 flex-1 gap-0.5">
                 <Text className="font-display text-2xl font-bold tracking-tight">
                   {t(`checkin.scaleLabels.${entry.moodScore}`)} · {entry.moodScore}
                 </Text>
                 {/* The logged-at card folds into this line - a timestamp is not a
-                    section, and it was the emptiest card on the screen. */}
-                <Text variant="muted" className="text-[13px]">
-                  {when} · {formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}
+                    section, and it was the emptiest card on the screen. One line
+                    always (design 2c): at phone width the compact form carries
+                    the date, so nothing is lost to the ellipsis in practice. */}
+                <Text variant="muted" className="text-[13px]" numberOfLines={1}>
+                  {when} ·{" "}
+                  {wideHeader
+                    ? formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)
+                    : formatCompactAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}
                 </Text>
               </View>
-              <View className="flex-row items-center gap-1">
-                <Button
-                  onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
-                  variant="outline"
-                  size="sm"
-                >
-                  <Icon name="edit" className="size-4" />
-                  <Text>{t("detail.edit")}</Text>
-                </Button>
+              <View className="shrink-0 flex-row items-center gap-1">
+                {wideHeader ? (
+                  <Button
+                    onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Icon name="edit" className="size-4" />
+                    <Text>{t("detail.edit")}</Text>
+                  </Button>
+                ) : (
+                  // Icon-only at phone width (design 2c's phone header): the
+                  // labelled button is a third of the row a 360dp screen
+                  // cannot spare.
+                  <Button
+                    onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
+                    variant="outline"
+                    size="icon"
+                    accessibilityLabel={t("detail.edit")}
+                  >
+                    <Icon name="edit" className="size-4" />
+                  </Button>
+                )}
                 <Button
                   onPress={() => setConfirmOpen(true)}
                   variant="ghost"

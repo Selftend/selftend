@@ -150,7 +150,7 @@ describe("MoodEntryEditorScreen", () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
     fireEvent.press(screen.getByLabelText("Okay"));
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save check-in"));
 
     await waitFor(() => {
       expect(saveMood).toHaveBeenCalledWith({
@@ -226,8 +226,8 @@ describe("MoodEntryEditorScreen", () => {
     fireEvent.press(screen.getByLabelText("Okay"));
     // isPending has not re-rendered between the two presses, so only the
     // single-flight guard stands between the double-press and two inserts.
-    fireEvent.press(screen.getByText("Save"));
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save check-in"));
+    fireEvent.press(screen.getByText("Save check-in"));
 
     await waitFor(() => expect(saveMood).toHaveBeenCalled());
     expect(saveMood).toHaveBeenCalledTimes(1);
@@ -237,7 +237,7 @@ describe("MoodEntryEditorScreen", () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
     // Save stays enabled; pressing it without a score surfaces the inline error.
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save check-in"));
 
     expect(await screen.findByText("Pick a mood score first.")).toBeTruthy();
     expect(saveMood).not.toHaveBeenCalled();
@@ -245,7 +245,7 @@ describe("MoodEntryEditorScreen", () => {
     // Picking a score clears the error and lets the save go through.
     fireEvent.press(screen.getByLabelText("Okay"));
     expect(screen.queryByText("Pick a mood score first.")).toBeNull();
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save check-in"));
     await waitFor(() => expect(saveMood).toHaveBeenCalledTimes(1));
   });
 
@@ -274,8 +274,8 @@ describe("MoodEntryEditorScreen", () => {
     );
 
     // The user edits the Notes field.
-    fireEvent.changeText(screen.getByLabelText("Notes (optional)"), "draft in progress");
-    expect(screen.getByLabelText("Notes (optional)").props.value).toBe("draft in progress");
+    fireEvent.changeText(screen.getByLabelText("Note"), "draft in progress");
+    expect(screen.getByLabelText("Note").props.value).toBe("draft in progress");
 
     // A list/detail refetch produces a NEW object identity (same id, same server value).
     // The hydration effect must NOT re-run and clobber the in-progress edit back to "".
@@ -286,7 +286,7 @@ describe("MoodEntryEditorScreen", () => {
       <MoodEntryEditorScreen fallbackHref="/tools/check-in/log-1" mode="edit" moodId="log-1" />,
     );
 
-    expect(screen.getByLabelText("Notes (optional)").props.value).toBe("draft in progress");
+    expect(screen.getByLabelText("Note").props.value).toBe("draft in progress");
   });
 
   /**
@@ -337,7 +337,7 @@ describe("MoodEntryEditorScreen", () => {
 
       fireEvent.press(screen.getByLabelText("Okay"));
       fireEvent.press(screen.getByText("Anxious"));
-      fireEvent.changeText(screen.getByLabelText("Notes (optional)"), "a note, not a situation");
+      fireEvent.changeText(screen.getByLabelText("Note"), "a note, not a situation");
       fireEvent.press(screen.getByLabelText("Go deeper"));
       fireEvent.press(screen.getByText("Open a CBT thought record →"));
 
@@ -469,6 +469,61 @@ describe("MoodEntryEditorScreen", () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
   });
 
+  describe("2b shell (#869)", () => {
+    it("confirms a picked score with the label-and-score caption, no static label block", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      // The old label block and helper are gone…
+      expect(screen.queryByText("Mood score (1-5)")).toBeNull();
+      expect(screen.queryByText("1 is very low, 5 is very good.")).toBeNull();
+      // …and nothing is claimed before a score is picked.
+      expect(screen.queryByText("4 of 5")).toBeNull();
+
+      fireEvent.press(screen.getByLabelText("Good"));
+
+      // The caption is the selected label's only visible confirmation for
+      // sighted users beyond size/filter (design 2b).
+      expect(screen.getByText("Good")).toBeTruthy();
+      expect(screen.getByText("4 of 5")).toBeTruthy();
+    });
+
+    it("renders the schedule row with a Change affordance instead of a boxed field", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      expect(screen.getByText("Change")).toBeTruthy();
+      // The old field label headed the boxed input; the row is self-describing.
+      expect(screen.queryByText("Date & time")).toBeNull();
+      // The row still opens the same picker.
+      expect(screen.queryByText("Done")).toBeNull();
+      fireEvent.press(screen.getByLabelText("Date & time"));
+      expect(screen.getByText("Done")).toBeTruthy();
+    });
+
+    it("renders the low-mood nudge as a single line whose card headline died with the card", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+      expect(screen.queryByText(/breathing exercise can help settle/)).toBeNull();
+
+      fireEvent.press(screen.getByLabelText("Bad"));
+
+      expect(screen.getByText(/breathing exercise can help settle/)).toBeTruthy();
+      expect(screen.getByText(/2 min box breathing/)).toBeTruthy();
+      // The card's headline is gone for good on this screen.
+      expect(screen.queryByText("Want to ground yourself?")).toBeNull();
+    });
+
+    it("labels the sections with eyebrows and shortens the manage link to Manage", () => {
+      renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+
+      expect(screen.getByText(/^Emotions/)).toBeTruthy();
+      expect(screen.getByText(/^Note/)).toBeTruthy();
+      expect(screen.queryByText("Emotions (optional)")).toBeNull();
+      expect(screen.queryByText("Notes (optional)")).toBeNull();
+      // Short visible copy, full accessible name (design 2b).
+      expect(screen.getByText("Manage")).toBeTruthy();
+      expect(screen.getByLabelText("Manage emotions")).toBeTruthy();
+    });
+  });
+
   it("completes a linked activity after saving from the activity flow", async () => {
     mockUseLocalSearchParams.mockReturnValue({
       completeActivityId: "activity-1",
@@ -478,7 +533,7 @@ describe("MoodEntryEditorScreen", () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
 
     fireEvent.press(screen.getByLabelText("Good"));
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save check-in"));
 
     await waitFor(() => {
       expect(completeActivity).toHaveBeenCalledWith({

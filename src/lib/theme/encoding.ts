@@ -69,11 +69,8 @@ export const HUE_ENCODINGS = [
     kind: "relative",
     reads: "a 5-step scale — how the day scored, by depth of colour",
   },
-  {
-    id: "mood-scale",
-    kind: "relative",
-    reads: "the same 5-step scale on the input control",
-  },
+  // "mood-scale" left this list with the 2a redesign: the bare-emoji input
+  // control encodes selection in size and opacity, never in hue.
   {
     id: "habit-colour",
     kind: "categorical",
