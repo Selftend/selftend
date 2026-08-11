@@ -16,7 +16,7 @@ export const MATERIAL_FONT = "MaterialIcons";
 /** In-app MaterialIconName ("show-chart") → MaterialIcons.ttf ligature ("show_chart"). */
 export const glyph = (name: string) => name.replace(/-/g, "_");
 
-const FACES = ["😭", "🙁", "😐", "😊", "😁"]; // score 1..5, mirrors MoodScale
+const FACES = ["😞", "😕", "😐", "🙂", "😄"]; // score 1..5, mirrors MoodScale
 
 export function CardFrame({
   theme,

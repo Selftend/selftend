@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import MoodTrackerScreen from "@/src/features/mood/mood-tracker-screen";
@@ -132,8 +132,7 @@ describe("MoodTrackerScreen", () => {
       // this week yet.
       expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
       expect(screen.queryByText("No emotions tagged yet")).toBeNull();
-      expect(screen.queryByText("Mood by day")).toBeNull();
-      expect(screen.queryByText("first week of data")).toBeNull();
+      expect(screen.queryByText("Felt most often")).toBeNull();
     });
 
     it("offers a retry instead of an empty week when the week query fails", () => {
@@ -171,7 +170,7 @@ describe("MoodTrackerScreen", () => {
 
       renderWithProviders(<MoodTrackerScreen />);
 
-      expect(screen.getByText("Mood by day")).toBeTruthy();
+      expect(screen.getByText("Felt most often")).toBeTruthy();
       expect(screen.queryByText("This week couldn't be loaded.")).toBeNull();
     });
   });
@@ -347,13 +346,16 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    // WeekHero: section heading, null average placeholder (appears in both stats row and hero),
-    // delta copy when there is no prior-week data, sub-section labels, empty emotion state
+    // WeekHero (design 2a): section heading, the strip, and the felt-most row
+    // carrying the inline week average — the 40px display block and its delta
+    // copy are gone.
     expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
-    expect(screen.getAllByText("-")).toHaveLength(2); // stats row 7-day avg + WeekHero big number
-    expect(screen.getByText("first week of data")).toBeTruthy();
-    expect(screen.getByText("Mood by day")).toBeTruthy();
+    expect(screen.getByText("Felt most often")).toBeTruthy();
     expect(screen.getByText("No emotions tagged yet")).toBeTruthy();
+    // No loaded week logs in this fixture, so the inline average is an em dash.
+    expect(screen.getByText("—")).toBeTruthy();
+    expect(screen.queryByText("Week average")).toBeNull();
+    expect(screen.queryByText("first week of data")).toBeNull();
   });
 
   it("omits the subline until the history query has actually loaded", () => {
@@ -369,7 +371,7 @@ describe("MoodTrackerScreen", () => {
     expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
-  it("renders the completed Today card with score when a single entry was logged today", () => {
+  it("shows today's log selected on the picker with the caption naming it", () => {
     mockLogged();
     // Anchor to today's LOCAL date (the app groups entries by local date via
     // toLocalDateKey), so the test is independent of timezone / time of day.
@@ -393,13 +395,16 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("Logged · 4/5")).toBeTruthy();
-    // "Log another" button has been removed; MoodScale emoji row is the only re-log affordance
-    expect(screen.queryByText("Log another")).toBeNull();
-    // WeekHero: the 7-day average appears in both the stats row and the WeekHero big number
-    expect(screen.getAllByText("4.0")).toHaveLength(2); // stats row 7-day avg + WeekHero large number
-    expect(screen.getByText("first week of data")).toBeTruthy();
-    // WeekHero's top-emotion pill is now the ONLY place the emotion appears -
+    // The caption names today's latest log (design 2a): scale word plus the
+    // "tap to add another" invitation. Scoped to the caption row - "Good"
+    // also labels a distribution column and the heatmap callout.
+    const caption = within(screen.getByTestId("today-caption"));
+    expect(caption.getByText("Good")).toBeTruthy();
+    expect(caption.getByText(/tap to add another/)).toBeTruthy();
+    // The 7-day average appears in the stats row AND inline on the felt-most
+    // row - the 40px display block it used to headline is gone.
+    expect(screen.getAllByText("4.0")).toHaveLength(2);
+    // WeekHero's top-emotion chip is the ONLY place the emotion appears -
     // the entry card that used to echo it went with the list (#735).
     expect(screen.getAllByText(/Anxious/)).toHaveLength(1);
   });
@@ -440,12 +445,12 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("2 logs · avg 3/5")).toBeTruthy();
-    // "Log another" button removed; assert it is absent
-    expect(screen.queryByText("Log another")).toBeNull();
-    // The day's average is stated once, by the picker. The list that repeated it
-    // as a group average is gone (#735), and under paging that average was the
-    // defect #705 filed anyway.
+    // The caption follows the LATEST of today's logs (the evening 4), never a
+    // day average - the day's mean lives on the week strip cell instead.
+    const caption = within(screen.getByTestId("today-caption"));
+    expect(caption.getByText("Good")).toBeTruthy();
+    expect(caption.getByText(/tap to add another/)).toBeTruthy();
+    expect(screen.queryByText("2 logs · avg 3/5")).toBeNull();
     expect(screen.queryByText("avg 3.0")).toBeNull();
   });
 

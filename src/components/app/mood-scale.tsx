@@ -1,19 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Animated, Easing, Platform, Pressable, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import { hueHsl } from "@/src/features/mindfulness/exercise-hue";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 interface MoodScaleProps {
   value: number | null;
   onChange: (value: number) => void;
-  /** Compact mode: smaller emoji + padding. Fits tight spaces. */
+  /** Compact mode: the overview picker's 34px glyphs; the form uses 38px. */
   compact?: boolean;
 }
 
@@ -22,14 +19,16 @@ interface ScaleStep {
   emoji: string;
 }
 
+// The design's set (`2a`/`2b`), softer at the floor than the 😭 it replaces: an
+// input scale whose worst option is loudly crying pre-judges the user's day.
 const STEPS: ScaleStep[] = [
   {
     score: 1,
-    emoji: "😭",
+    emoji: "😞",
   },
   {
     score: 2,
-    emoji: "🙁",
+    emoji: "😕",
   },
   {
     score: 3,
@@ -37,11 +36,11 @@ const STEPS: ScaleStep[] = [
   },
   {
     score: 4,
-    emoji: "😊",
+    emoji: "🙂",
   },
   {
     score: 5,
-    emoji: "😁",
+    emoji: "😄",
   },
 ];
 
@@ -66,17 +65,17 @@ const SCALE_DURATION_MS = 150;
  *
  * The rule it comes from: if a transition's reduce-motion fallback is as good as the
  * animated version, ship the fallback for everyone. This one is the exception only
- * because it is purely decorative - `mood-scale.tsx` already confirms selection three
- * non-moving ways (border weight, border hue, gradient fill) plus `aria-checked`, so
- * under reduced motion there is nothing for a substitute to replace and the glyph simply
- * arrives at its size.
+ * because it is purely decorative - selection is already confirmed three non-moving
+ * ways (full opacity against 0.32 siblings, the larger resting size, `aria-checked`),
+ * so under reduced motion there is nothing for a substitute to replace and the glyph
+ * simply arrives at its size.
  *
  * Two constraints, both load-bearing:
  *
- * - **The glyph scales, not the `Pressable`.** The steps are `flex-1` siblings, so
- *   scaling the pressable would reflow the whole row around the one the user just picked.
- * - **No overshoot.** `Easing.out(Easing.quad)` approaches the target from below and stops;
- *   a spring would exceed it and the pressable's `overflow-hidden` would clip the peak.
+ * - **The glyph scales, not the `Pressable`.** Scaling the pressable would reflow
+ *   the whole row around the one the user just picked.
+ * - **No overshoot.** `Easing.out(Easing.quad)` approaches the target from below and
+ *   stops; a spring would exceed it and neighbouring glyphs would jostle at the peak.
  */
 function MoodGlyph({
   emoji,
@@ -113,14 +112,20 @@ function MoodGlyph({
 
   return (
     <Animated.View testID="mood-glyph" style={{ transform: [{ scale }] }}>
-      <Text className={cn("leading-none", compact ? "text-xl" : "text-3xl")}>{emoji}</Text>
+      <Text className={cn("leading-none", compact ? "text-[34px]" : "text-[38px]")}>{emoji}</Text>
     </Animated.View>
   );
 }
 
+/**
+ * The bare emoji scale (design `2a`/`2b`): no boxes, no card fill - the glyphs
+ * ARE the control. State rides opacity: 0.72 resting when nothing is picked,
+ * then 1 for the selection and 0.32 for its siblings, plus the size step above.
+ * The radio semantics and roving focus are unchanged from the boxed version -
+ * each glyph still carries its scale label as an accessible name.
+ */
 export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) {
   const { t } = useTranslation("mood");
-  const isDark = useColorSchemeName() === "dark";
   const selectedIndex = STEPS.findIndex((step) => step.score === value);
   const roving = useRovingFocus({
     count: STEPS.length,
@@ -133,7 +138,7 @@ export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) 
     <View
       accessibilityLabel={t("checkin.title")}
       accessibilityRole="radiogroup"
-      className={cn("flex-row", compact ? "gap-1.5" : "gap-2.5")}
+      className={cn("flex-row items-center justify-center", compact ? "gap-3.5" : "gap-4")}
       role="radiogroup"
     >
       {STEPS.map((step, index) => {
@@ -149,19 +154,10 @@ export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) 
             onPress={() => onChange(step.score)}
             {...roving.getItemProps(index, () => onChange(step.score))}
             className={cn(
-              "flex-1 items-center overflow-hidden rounded-2xl border",
-              compact ? "px-1 py-2" : "px-1.5 py-3.5",
-              selected ? "border-2 border-act" : "border-border bg-card",
+              "items-center justify-center rounded-full p-1.5",
+              value === null ? "opacity-70" : selected ? "opacity-100" : "opacity-30",
             )}
           >
-            {selected ? (
-              <LinearGradient
-                colors={[hueHsl("act", isDark, 0.1), hueHsl("act", isDark, 0.04)]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-              />
-            ) : null}
             <MoodGlyph emoji={step.emoji} selected={selected} compact={compact} />
           </Pressable>
         );

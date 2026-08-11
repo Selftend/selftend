@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  useWindowDimensions,
   View,
   type LayoutChangeEvent,
 } from "react-native";
@@ -11,7 +12,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
-import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
@@ -28,12 +28,8 @@ import {
   useMoodScorePoints,
   useMoodWeek,
 } from "@/src/features/mood/queries";
-import {
-  getDayMoodSummary,
-  getMoodDistribution,
-  getMoodSummary,
-  type MoodSummary,
-} from "@/src/features/mood/summaries";
+import { getMoodDistribution, getMoodSummary } from "@/src/features/mood/summaries";
+import type { MoodLog } from "@/src/features/mood/types";
 import { MoodDistributionChart } from "@/src/features/mood/mood-distribution";
 import {
   buildWeekDays,
@@ -47,6 +43,7 @@ import {
 } from "@/src/features/mood/week-window";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
+import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
@@ -90,6 +87,14 @@ export default function MoodTrackerScreen() {
   // cache's 200-row ceiling, which would render real logged weeks as empty (#697).
   const { data: moodLogs } = useMoodHistory(userId, 200);
   const { selectedDate } = useSelectedDate();
+  /**
+   * One breakpoint for the two rows the design packs tighter than 360dp allows:
+   * the week header (label + chevrons + history link — #697 measured the bg
+   * overflow) and the trend header (heading + five segments — #737's ~560dp).
+   * Wide screens take the design's single rows; narrow keep the decided splits.
+   */
+  const { width: windowWidth } = useWindowDimensions();
+  const wideRows = windowWidth >= 640;
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [chartContainerWidth, setChartContainerWidth] = useState(300);
@@ -122,12 +127,9 @@ export default function MoodTrackerScreen() {
   const weekQuery = useMoodWeek(userId, weekWindow.startKey);
   const weekLogs = weekQuery.data;
 
-  // Each aggregation iterates up to 200 logs; memoize so unrelated re-renders (chart-width
-  // onLayout or onboarding toggle) don't recompute the week/day summaries.
-  const daySummary = useMemo(
-    () => getDayMoodSummary(moodLogs, selectedDate),
-    [moodLogs, selectedDate],
-  );
+  // Newest-first, so `find` is today's latest log — the one the picker shows
+  // selected and the caption names.
+  const latestToday = (moodLogs ?? []).find((log) => log.dayKey === selectedDate) ?? null;
   const sevenDay = useMemo(() => getMoodSummary(moodLogs, 7), [moodLogs]);
   const weekDelta = useMemo(
     () => getWeekDeltaForWindow(weekLogs, weekWindow),
@@ -324,6 +326,39 @@ export default function MoodTrackerScreen() {
   if (trendEarned && !trendEverEarned) setTrendEverEarned(true);
   const showTrend = trendEarned || trendEverEarned;
 
+  /**
+   * Where the shared range control sits (#737, decided on #700 — one control
+   * for trend + distribution, never per-section). The design puts it on the
+   * trend section's heading row; it only rides the heading where the width is
+   * real. A one-check-in user (no trend section yet) keeps the own-row
+   * placement too, so the control still governs the distribution below it.
+   */
+  const trendControlOnHeader = wideRows && showTrend;
+  const rangeControl = (
+    <SegmentedControl
+      value={trendRange}
+      onChange={(next) => {
+        // Custom is a two-step choice: the picker applies it. Tapping the
+        // active Custom segment again reopens the picker.
+        if (next === "custom") {
+          setRangePickerOpen(true);
+          return;
+        }
+        setTrendRange(next);
+      }}
+      options={[
+        { value: "7d", label: t("trendControls.range7") },
+        { value: "30d", label: t("trendControls.range30") },
+        { value: "90d", label: t("trendControls.range90") },
+        // A short key of its own: `heatmap.title` is the 15-character
+        // `За цялото време`, right as a section title and unusable as
+        // a segment.
+        { value: "all", label: t("trendControls.rangeAll") },
+        { value: "custom", label: t("trendControls.rangeCustom") },
+      ]}
+    />
+  );
+
   return (
     <>
       <MoodOnboarding
@@ -362,8 +397,8 @@ export default function MoodTrackerScreen() {
 
             {/* Always. Tapping a score deep-links into the editor with it
                 preselected, so the first screenful is the whole interaction. */}
-            <Section ruled={false}>
-              <TodayCheckIn summary={daySummary} />
+            <Section>
+              <TodayCheckIn latest={latestToday} dateKey={selectedDate} />
             </Section>
 
             {hasAnyCheckIn ? (
@@ -373,16 +408,23 @@ export default function MoodTrackerScreen() {
               <Section
                 title={formatWeekLabel(weekWindow, t, i18n.language)}
                 action={
-                  <WeekNavigator
-                    canGoBack={weekWindow.startKey > earliestWeekStart}
-                    canGoForward={!weekWindow.isCurrentWeek}
-                    onPrevious={() => setDisplayedWeekStart((k) => shiftWeek(k, -1))}
-                    onNext={() =>
-                      setDisplayedWeekStart((k) =>
-                        shiftWeek(k, 1) > anchorWeekStart ? anchorWeekStart : shiftWeek(k, 1),
-                      )
-                    }
-                  />
+                  <View className="flex-row items-center gap-4">
+                    <WeekNavigator
+                      canGoBack={weekWindow.startKey > earliestWeekStart}
+                      canGoForward={!weekWindow.isCurrentWeek}
+                      onPrevious={() => setDisplayedWeekStart((k) => shiftWeek(k, -1))}
+                      onNext={() =>
+                        setDisplayedWeekStart((k) =>
+                          shiftWeek(k, 1) > anchorWeekStart ? anchorWeekStart : shiftWeek(k, 1),
+                        )
+                      }
+                    />
+                    {/* The design's header row carries the history link; on a
+                        narrow screen it drops to its own line inside WeekHero
+                        (#697's 360dp bg measurement). Conditional, not CSS-
+                        hidden, so it never exists twice in the a11y tree. */}
+                    {wideRows ? <ShowAllHistoryLink /> : null}
+                  </View>
                 }
               >
                 {/*
@@ -405,6 +447,7 @@ export default function MoodTrackerScreen() {
                     delta={weekDelta}
                     topEmotions={topEmotions}
                     logs={weekLogs}
+                    showHistoryLink={!wideRows}
                   />
                 ) : weekQuery.isError ? (
                   <WeekLoadFailed onRetry={() => void weekQuery.refetch()} />
@@ -427,56 +470,30 @@ export default function MoodTrackerScreen() {
               It appears with the first section it governs - the distribution, at
               one check-in - so it is never a control over nothing.
             */}
-            {hasAnyCheckIn ? (
+            {hasAnyCheckIn && !trendControlOnHeader ? (
               <Section className="gap-2">
                 {/* The pill sizes to its segments rather than stretching: on its
                     own row it would otherwise span the full column with the
                     segments packed left and trailing muted space. */}
-                <View className="flex-row">
-                  <SegmentedControl
-                    value={trendRange}
-                    onChange={(next) => {
-                      // Custom is a two-step choice: the picker applies it. Tapping
-                      // the active Custom segment again reopens the picker.
-                      if (next === "custom") {
-                        setRangePickerOpen(true);
-                        return;
-                      }
-                      setTrendRange(next);
-                    }}
-                    options={[
-                      { value: "7d", label: t("trendControls.range7") },
-                      { value: "30d", label: t("trendControls.range30") },
-                      { value: "90d", label: t("trendControls.range90") },
-                      // A short key of its own: `heatmap.title` is the 15-character
-                      // `За цялото време`, right as a section title and unusable as
-                      // a segment.
-                      { value: "all", label: t("trendControls.rangeAll") },
-                      { value: "custom", label: t("trendControls.rangeCustom") },
-                    ]}
-                  />
-                </View>
+                <View className="flex-row">{rangeControl}</View>
                 {spanLabel ? (
                   <Text variant="muted" className="text-[13px]">
                     {spanLabel}
                   </Text>
                 ) : null}
-                <DateRangeField
-                  visible={rangePickerOpen}
-                  onClose={() => setRangePickerOpen(false)}
-                  value={customRange}
-                  onChange={(range) => {
-                    setCustomRange(range);
-                    setTrendRange("custom");
-                  }}
-                  minDateKey={firstLogDayKey ?? undefined}
-                  maxDateKey={currentDateKey()}
-                />
               </Section>
             ) : null}
 
             {showTrend ? (
-              <Section title={t("trendControls.title")}>
+              <Section
+                title={t("trendControls.title")}
+                action={trendControlOnHeader ? rangeControl : undefined}
+              >
+                {trendControlOnHeader && spanLabel ? (
+                  <Text variant="muted" className="text-[13px]">
+                    {spanLabel}
+                  </Text>
+                ) : null}
                 <View onLayout={handleChartLayout}>
                   {chartData.length >= 2 ? (
                     <LineChart points={chartData} domain={[1, 5]} width={chartContainerWidth} />
@@ -507,6 +524,22 @@ export default function MoodTrackerScreen() {
               <Section title={t("heatmap.title")}>
                 <MoodHeatmap userId={userId} />
               </Section>
+            ) : null}
+
+            {/* A modal, so it renders once regardless of which row hosts the
+                range control that opens it. */}
+            {hasAnyCheckIn ? (
+              <DateRangeField
+                visible={rangePickerOpen}
+                onClose={() => setRangePickerOpen(false)}
+                value={customRange}
+                onChange={(range) => {
+                  setCustomRange(range);
+                  setTrendRange("custom");
+                }}
+                minDateKey={firstLogDayKey ?? undefined}
+                maxDateKey={currentDateKey()}
+              />
             ) : null}
           </View>
         </ScrollView>
@@ -545,45 +578,68 @@ function WeekLoadFailed({ onRetry }: { onRetry: () => void }) {
 }
 
 interface TodayCheckInProps {
-  summary: MoodSummary;
+  /** The latest of today's logs, newest-first — null when today is unlogged. */
+  latest: MoodLog | null;
+  dateKey: string;
 }
 
 // The overview always describes the device's current local day (#250), so this
 // names today rather than branching on a constant (#720). A panel for some other
 // day is the redesign's day panel (#697), not this one wearing a flag.
 //
-// No longer a card (#735, decided on #690/#695): the surfaces stack down one
-// column, and bordered cards on a background read as competing panels rather
-// than one page. The hairline `Section` around it carries the separation now.
-function TodayCheckIn({ summary }: TodayCheckInProps) {
-  const { t } = useTranslation("mood");
-  const logged = summary.count > 0;
-  const description = !logged
-    ? t("today.howAreYou")
-    : summary.count === 1
-      ? t("today.completeOne", { score: summary.average })
-      : t("today.completeMany", { count: summary.count, average: summary.average });
+// The design's centred block (`2a`): question, the date under it, the bare
+// scale, then a caption line naming today's last log. The scale shows that
+// log's score selected — the picker doubles as today's record — and tapping
+// any glyph still opens the editor with it preselected, which the caption
+// says out loud ("tap to add another").
+function TodayCheckIn({ latest, dateKey }: TodayCheckInProps) {
+  const { t, i18n } = useTranslation("mood");
+  const dateLine = new Intl.DateTimeFormat(i18n.language, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(parseLocalNoon(dateKey));
+  const lastWhen = latest ? formatAtOffset(latest.loggedAt, latest.loggedOffsetMinutes) : null;
 
   return (
-    <>
-      <View className="gap-1.5">
-        <View className="flex-row items-center gap-2">
-          {logged ? <Icon name="check-circle" className="size-5 text-primary" /> : null}
-          {/* Level 2: the module title is the page heading, and this is the
-              first thing under it - the same level the CardTitle carried. */}
-          <Text variant="h3" aria-level={2} className="text-lg">
-            {t("today.title")}
-          </Text>
-        </View>
-        <Text variant="muted">{description}</Text>
+    <View className="items-center gap-5 py-2">
+      <View className="items-center gap-1">
+        {/* Level 2: the module title is the page heading, and this is the
+            first thing under it. */}
+        <Text
+          role="heading"
+          aria-level={2}
+          className="text-center text-lg font-semibold text-foreground"
+        >
+          {t("today.howAreYou")}
+        </Text>
+        <Text variant="muted" className="text-[13px]">
+          {dateLine}
+        </Text>
       </View>
       <MoodScale
-        value={null}
+        value={latest?.moodScore ?? null}
         onChange={(score) =>
           router.push(`/tools/check-in/new?score=${score}` as Parameters<typeof router.push>[0])
         }
         compact
       />
-    </>
+      {/* min-height keeps the block from jumping when the first log lands. */}
+      <View
+        testID="today-caption"
+        className="min-h-[20px] flex-row flex-wrap items-center justify-center gap-x-2"
+      >
+        {latest && lastWhen ? (
+          <>
+            <Text className="text-[13px] font-semibold text-primary-ink">
+              {t(`checkin.scaleLabels.${latest.moodScore}`)}
+            </Text>
+            <Text variant="muted" className="text-[13px]">
+              · {t("today.lastLoggedTap", { when: lastWhen })}
+            </Text>
+          </>
+        ) : null}
+      </View>
+    </View>
   );
 }

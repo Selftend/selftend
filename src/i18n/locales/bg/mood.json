@@ -15,10 +15,8 @@
   "title": "Запис на настроението",
   "description": "Запиши как се чувстваш и проследи промените във времето.",
   "today": {
-    "title": "Днес",
     "howAreYou": "Как се чувстваш в момента?",
-    "completeOne": "Записано · {{score}}/5",
-    "completeMany": "{{count}} записа · средно {{average}}/5"
+    "lastLoggedTap": "последен запис {{when}} — докосни, за да добавиш още един"
   },
   "emotions": {
     "manage": {
@@ -119,17 +117,12 @@
     "title": "Тази седмица",
     "previousWeek": "Предишна седмица",
     "nextWeek": "Следваща седмица",
-    "average": "Средно за седмицата",
-    "deltaUp": "▲ {{delta}} спрямо мин. седмица",
-    "deltaDown": "▼ {{delta}} спрямо мин. седмица",
-    "deltaFlat": "без промяна спрямо мин. седмица",
-    "noComparison": "първа седмица с данни",
-    "byDay": "Настроение по дни",
     "dayScore": "{{day}}: {{score}}",
     "dayNoEntry": "{{day}}: без запис",
     "dayEntries_one": "{{count}} запис. Отваря деня.",
     "dayEntries_other": "{{count}} записа. Отваря деня.",
     "feltMost": "Най-често усещано",
+    "averageWord": "средно",
     "noEmotions": "Все още няма отбелязани емоции",
     "loadFailed": "Тази седмица не се зареди."
   },
