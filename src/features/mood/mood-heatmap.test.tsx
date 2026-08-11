@@ -74,12 +74,12 @@ describe("MoodHeatmap", () => {
     mockPoints([{ loggedAt: isoDaysAgo(0), moodScore: 4 }]);
     renderWithProviders(<MoodHeatmap userId="user-1" />);
 
-    expect(screen.queryByText(/😊 · Good/)).toBeNull();
+    expect(screen.queryByText(/🙂 · Good/)).toBeNull();
     fireEvent.press(screen.getByLabelText(/: Good$/));
-    // Callout: "<date> · 😊 · Good" in one line, read-only.
-    expect(screen.getByText(/· 😊 · Good$/)).toBeTruthy();
+    // Callout: "<date> · 🙂 · Good" in one line, read-only.
+    expect(screen.getByText(/· 🙂 · Good$/)).toBeTruthy();
 
     fireEvent.press(screen.getByLabelText(/: Good$/));
-    expect(screen.queryByText(/😊 · Good/)).toBeNull();
+    expect(screen.queryByText(/🙂 · Good/)).toBeNull();
   });
 });

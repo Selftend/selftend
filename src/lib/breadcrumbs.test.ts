@@ -64,6 +64,32 @@ describe("computeBreadcrumbs", () => {
     expect(crumbs[2].href).toBeUndefined();
   });
 
+  /**
+   * #876: grounding and breathing map dynamic segments through
+   * `…techniques/exercises.<slug>.title`, so an unclaimed `history` segment
+   * rode the template into a key that doesn't exist and the trail rendered
+   * the raw uppercased key — a user-visible untranslated string. The static
+   * entry must win before the slug template.
+   */
+  it("labels the grounding all-history screen as History, never the raw slug-template key", () => {
+    const crumbs = computeBreadcrumbs("/tools/grounding/history", t);
+    expect(crumbs.at(-1)).toEqual({ label: "History" });
+    expect(crumbs.some((c) => c.label.includes("techniques"))).toBe(false);
+  });
+
+  it("labels the breathing all-history screen as History, never the raw slug-template key", () => {
+    const crumbs = computeBreadcrumbs("/tools/breathing/history", t);
+    expect(crumbs.at(-1)).toEqual({ label: "History" });
+    expect(crumbs.some((c) => c.label.includes("exercises"))).toBe(false);
+  });
+
+  // Sleep's history had no slug template to fall into, so it read the merely
+  // wrong "Entry" instead of a raw key — same family, same fix.
+  it("labels the sleep all-history screen as History, not a generic entry", () => {
+    const crumbs = computeBreadcrumbs("/tools/sleep/history", t);
+    expect(crumbs.at(-1)).toEqual({ label: "History" });
+  });
+
   // #468 sweep: the favorites page fell through to the dynamic-segment branch
   // and read "Tools · Gratitude log · Entry".
   it("labels the gratitude favorites page as Favorites, not a generic entry", () => {

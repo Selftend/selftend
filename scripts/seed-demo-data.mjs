@@ -65,7 +65,13 @@ function at(dayIndex, hour, minute = 0) {
   d.setDate(d.getDate() - (DAYS - 1 - dayIndex));
   // The Date is built in this machine's local time; treat it as EEST wall time.
   d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
+  // Run early in the day and today's later entries would land in the future,
+  // tripping the DB's occurrence-time guard ("Occurrence time cannot be in
+  // the future") and failing the whole seed. Clamp to just-passed instead —
+  // today's rows bunch up near "now", which only shows when seeding at odd
+  // hours and only on today's rows.
+  const cap = Date.now() - 120_000;
+  return new Date(Math.min(d.getTime(), cap)).toISOString();
 }
 
 const admin = createClient(LOCAL_SUPABASE_URL, LOCAL_SERVICE_ROLE_KEY, {
@@ -452,12 +458,17 @@ let customExerciseId;
       started.setDate(started.getDate() - (bedHour >= 20 ? 1 : 0));
       started.setHours(bedHour, between(0, 55), 0, 0);
       const ended = new Date(started.getTime() + duration * 60_000);
-      sleepWindow = JSON.stringify({
-        startedAt: started.toISOString(),
-        startedOffsetMinutes: OFFSET_MINUTES,
-        endedAt: ended.toISOString(),
-        endedOffsetMinutes: OFFSET_MINUTES,
-      });
+      // Seeding at an odd hour can push the newest night's wake time past
+      // "now", which the DB rejects ("Sleep end cannot be in the future").
+      // The window is a 50% opt-in anyway — skip it rather than distort it.
+      if (ended.getTime() <= Date.now() - 120_000) {
+        sleepWindow = JSON.stringify({
+          startedAt: started.toISOString(),
+          startedOffsetMinutes: OFFSET_MINUTES,
+          endedAt: ended.toISOString(),
+          endedOffsetMinutes: OFFSET_MINUTES,
+        });
+      }
     }
     rows.push({
       user_id: DEMO_USER_ID,

@@ -28,25 +28,13 @@ interface WeekHeroProps {
   topEmotions: EmotionCount[];
   /** The fetched fourteen-day span; the day panel is a filter over it, not a new fetch. */
   logs: MoodLog[] | undefined;
-}
-
-function deltaCopy(delta: WeekDelta, t: TFunction) {
-  if (delta.delta === null) return { text: t("week.noComparison"), tone: "text-muted-foreground" };
-  // `act-ink`, not `accent-ink` (#403): this block renders inside the mood
-  // module, so the room pours `be` — `accent-ink` would repaint the improvement
-  // pink and collapse it into the "down" case it exists to contrast with. The
-  // hue-explicit token keeps the green and fixes the contrast: published
-  // `text-act` is 3.95:1 on the be room's card, under AA for this 13px line,
-  // while act's own ink clears 6.43:1. The down case was never affected —
-  // `text-destructive` is 5.10:1 on the same surface — so only the up arm moves.
-  if (delta.delta > 0)
-    return { text: t("week.deltaUp", { delta: delta.delta.toFixed(1) }), tone: "text-foreground" };
-  if (delta.delta < 0)
-    return {
-      text: t("week.deltaDown", { delta: Math.abs(delta.delta).toFixed(1) }),
-      tone: "text-destructive",
-    };
-  return { text: t("week.deltaFlat"), tone: "text-muted-foreground" };
+  /**
+   * True when the section header row could not fit the history link (#697's
+   * 360dp bg measurement) and this block must carry it on a line of its own.
+   * A prop rather than a hidden clone, so the link never exists twice in the
+   * accessibility tree.
+   */
+  showHistoryLink?: boolean;
 }
 
 /**
@@ -130,10 +118,16 @@ function NavButton({ disabled, icon, label, onPress, testID }: NavButtonProps) {
   );
 }
 
-export function WeekHero({ window, days, delta, topEmotions, logs }: WeekHeroProps) {
+export function WeekHero({
+  window,
+  days,
+  delta,
+  topEmotions,
+  logs,
+  showHistoryLink = true,
+}: WeekHeroProps) {
   const { t, i18n } = useTranslation("mood");
   const { resolveEmotion } = useEmotionDisplay();
-  const d = deltaCopy(delta, t);
 
   const [openDayKey, setOpenDayKey] = useState<string | null>(null);
   // Paging to another week closes the panel: a day from the week you just left
@@ -148,75 +142,79 @@ export function WeekHero({ window, days, delta, topEmotions, logs }: WeekHeroPro
   const openDayLogs = openDayKey ? logsOnDay(logs, openDayKey) : [];
 
   return (
-    <View className="gap-5">
-      <View>
-        <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-          {t("week.average")}
-        </Text>
-        <Text className="font-display text-[40px] font-extrabold leading-[1.1] tracking-tight">
-          {delta.current === null ? "-" : delta.current.toFixed(1)}
-        </Text>
-        <Text className={cn("text-[13px] font-semibold", d.tone)}>{d.text}</Text>
+    <View className="gap-4">
+      {/*
+        The design's strip (`2a`): seven borderless columns, an emoji or a dash,
+        the weekday letter under each. The big WEEK AVERAGE block it replaces
+        moved inline onto the Felt-most-often row below — one number at text
+        size, which is the weight the design gives it.
+      */}
+      <View className="flex-row gap-1.5">
+        {days.map((day) => (
+          <WeekStripCell
+            key={day.dateKey}
+            day={day}
+            expanded={openDayKey === day.dateKey}
+            language={i18n.language}
+            onPress={() =>
+              setOpenDayKey((current) => (current === day.dateKey ? null : day.dateKey))
+            }
+            t={t}
+          />
+        ))}
       </View>
 
-      <View className="gap-2">
-        <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-          {t("week.byDay")}
-        </Text>
-        <View className="flex-row gap-1">
-          {days.map((day) => (
-            <WeekStripCell
-              key={day.dateKey}
-              day={day}
-              expanded={openDayKey === day.dateKey}
-              language={i18n.language}
-              onPress={() =>
-                setOpenDayKey((current) => (current === day.dateKey ? null : day.dateKey))
-              }
-              t={t}
-            />
-          ))}
-        </View>
+      {openDayKey ? (
+        <DayPanel
+          dateKey={openDayKey}
+          entries={openDayLogs}
+          language={i18n.language}
+          resolveEmotion={resolveEmotion}
+        />
+      ) : null}
 
-        {openDayKey ? (
-          <DayPanel
-            dateKey={openDayKey}
-            entries={openDayLogs}
-            language={i18n.language}
-            resolveEmotion={resolveEmotion}
-          />
-        ) : null}
-
-        {/* Its own right-aligned line rather than the label row (#697): at 360dp
-            in Bulgarian, a week label plus both chevrons plus this link does not
-            fit one row. Same block, own line. */}
+      {showHistoryLink ? (
         <View className="flex-row justify-end">
           <ShowAllHistoryLink />
         </View>
-      </View>
+      ) : null}
 
-      <View className="gap-2">
-        <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+      {/*
+        One inline row (design `2a`): label left, chips and the week average
+        right. The chips drop the design's raw `text-be` for `text-primary-ink`
+        (#691 — the be-on-wash chip measures 3.81 and fails AA; in this room
+        primary IS the be pour, certified).
+      */}
+      <View className="flex-row flex-wrap items-center gap-2">
+        <Text variant="muted" className="text-xs">
           {t("week.feltMost")}
         </Text>
+        <View className="min-w-4 flex-1" />
         {topEmotions.length === 0 ? (
           <Text variant="muted" className="text-[13px]">
             {t("week.noEmotions")}
           </Text>
         ) : (
-          <View className="flex-row flex-wrap gap-2">
-            {topEmotions.map((e) => {
-              const display = resolveEmotion(e.id);
-              return (
-                <View key={e.id} className="rounded-full bg-muted px-3 py-1.5">
-                  <Text className="text-[13px] text-muted-foreground">
-                    {display.emoji} {display.name} · {e.count}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
+          topEmotions.map((e) => {
+            const display = resolveEmotion(e.id);
+            return (
+              <View
+                key={e.id}
+                className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1"
+              >
+                <Text className="text-xs font-semibold text-primary-ink">
+                  {display.name} · {e.count}
+                </Text>
+              </View>
+            );
+          })
         )}
+        <Text variant="muted" className="text-[13px]">
+          {t("week.averageWord")}{" "}
+          <Text className="text-[13px] font-semibold text-foreground">
+            {delta.current === null ? "—" : delta.current.toFixed(1)}
+          </Text>
+        </Text>
       </View>
     </View>
   );
@@ -255,21 +253,20 @@ function WeekStripCell({ day, expanded, language, onPress, t }: WeekStripCellPro
 
   const glyph =
     score === null ? (
+      // The design's mark for an unlogged day: a short dash, not a hollow
+      // circle - a circle reads as a control waiting to be filled, and this
+      // cell is deliberately not one.
       <View
         testID="week-strip-empty-dot"
-        className="h-2.5 w-2.5 rounded-full border-[1.5px] border-muted-foreground/40"
+        className="h-0.5 w-3 rounded-full bg-muted-foreground/35"
       />
     ) : (
-      <Text className="text-2xl leading-none">{MOOD_EMOJI_BY_SCORE[score]}</Text>
+      <Text className="text-xl leading-none">{MOOD_EMOJI_BY_SCORE[score]}</Text>
     );
 
-  // Every cell carries the same transparent border, so opening one cannot shift
-  // the row by a pixel.
-  const shell = cn(
-    "flex-1 items-center gap-1.5 rounded-xl border border-transparent py-1.5",
-    day.isToday && "bg-muted",
-    expanded && "border-primary bg-muted",
-  );
+  // Borderless columns (design `2a`): today and the open day are carried by the
+  // label and a soft wash, never a box outline.
+  const shell = cn("flex-1 items-center gap-2.5 rounded-xl py-2.5", expanded && "bg-muted");
   const label =
     score === null
       ? t("week.dayNoEntry", { day: dayName })
@@ -287,10 +284,10 @@ function WeekStripCell({ day, expanded, language, onPress, t }: WeekStripCellPro
         testID={day.isToday ? "week-strip-today" : undefined}
         className={shell}
       >
-        <View className="h-8 items-center justify-center">{glyph}</View>
+        <View className="h-7 items-center justify-center">{glyph}</View>
         <Text
           variant="muted"
-          className={cn("text-[11px] font-semibold", day.isToday && "text-muted-foreground")}
+          className={cn("text-xs font-semibold", day.isToday && "text-foreground")}
         >
           {letter}
         </Text>
@@ -309,14 +306,10 @@ function WeekStripCell({ day, expanded, language, onPress, t }: WeekStripCellPro
       testID={day.isToday ? "week-strip-today" : undefined}
       className={cn(shell, "active:opacity-70")}
     >
-      <View className="h-8 items-center justify-center">{glyph}</View>
+      <View className="h-7 items-center justify-center">{glyph}</View>
       <Text
         variant="muted"
-        className={cn(
-          "text-[11px] font-semibold",
-          day.isToday && "text-muted-foreground",
-          expanded && "text-foreground",
-        )}
+        className={cn("text-xs font-semibold", (day.isToday || expanded) && "text-foreground")}
       >
         {letter}
       </Text>
@@ -351,7 +344,10 @@ function DayPanel({ dateKey, entries, language, resolveEmotion }: DayPanelProps)
   }).format(parseLocalNoon(dateKey));
 
   return (
-    <View testID="week-day-panel" className="mt-1 gap-0.5 rounded-xl bg-muted/40 px-3 py-2">
+    <View
+      testID="week-day-panel"
+      className="mt-1 gap-0.5 rounded-xl border border-border bg-card px-4 py-3"
+    >
       <Text
         role="heading"
         aria-level={4}

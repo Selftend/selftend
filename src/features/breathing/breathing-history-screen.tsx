@@ -14,7 +14,7 @@ import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatCompactAtOffset } from "@/src/utils/date";
 
 /**
  * Every breathing session the user has, scrollable to the end (#778, taking
@@ -136,7 +136,7 @@ export default function BreathingHistoryScreen() {
                 : t("breathing.minutes", { value: item.durationMinutes })}
             </Text>
             <Text variant="muted" className="shrink-0 text-xs tabular-nums">
-              {formatAtOffset(item.completedAt, item.completedOffsetMinutes)}
+              {formatCompactAtOffset(item.completedAt, item.completedOffsetMinutes)}
             </Text>
           </View>
         )}

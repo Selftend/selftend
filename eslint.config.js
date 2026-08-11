@@ -156,7 +156,6 @@ const HUE_SANCTIONED_FILES = [
   "src/features/breathing/exercise-colors.ts",
   "src/features/sleep/quality-tint.ts",
   "src/features/mood/score-tone.ts",
-  "src/components/app/mood-scale.tsx",
 ];
 
 // Shared by every no-restricted-syntax block: the rule is last-wins per file,

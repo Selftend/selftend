@@ -200,6 +200,47 @@ export function formatInstantAtOffset(
 }
 
 /**
+ * The compact "when" for stats and rows — `last logged 4:50 pm`, not
+ * `last logged Aug 11, 2026, 4:00 PM` (#870). The shape follows how far back
+ * the entry's CAPTURED civil day sits from the viewer's today:
+ *
+ * - today (or later — travel can leave a "tomorrow" entry): the time, `4:50 pm`
+ * - within the last week: `Wed 7:40 pm` — a weekday is unambiguous under 7 days
+ * - older: the date, `Jul 27`, gaining its year only when it isn't this year
+ *
+ * The same three shapes the all-history screens already render per group
+ * (`history-groups.ts`), read in the entry's captured offset like every other
+ * entry timestamp so the label agrees with the day the entry is filed under.
+ */
+export function formatCompactAtOffset(
+  value: string,
+  offsetMinutes: number | null,
+  lang: string = i18n.language,
+  now: Date = new Date(),
+): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const known = offsetMinutes !== null && Number.isFinite(offsetMinutes);
+  // The captured-frame civil day, matching how the entry's dayKey was stamped:
+  // shift by the captured offset and read the UTC calendar fields.
+  const framed = known ? new Date(date.getTime() + offsetMinutes! * 60_000) : date;
+  const dayKey = known
+    ? `${framed.getUTCFullYear()}-${pad(framed.getUTCMonth() + 1)}-${pad(framed.getUTCDate())}`
+    : localDateKey(framed);
+  const todayKey = localDateKey(now);
+  const daysAgo = dayKeyDiff(dayKey, todayKey);
+  const options: Intl.DateTimeFormatOptions =
+    daysAgo <= 0
+      ? { hour: "numeric", minute: "2-digit" }
+      : daysAgo < 7
+        ? { weekday: "short", hour: "numeric", minute: "2-digit" }
+        : dayKey.slice(0, 4) === todayKey.slice(0, 4)
+          ? { day: "numeric", month: "short" }
+          : { day: "numeric", month: "short", year: "numeric" };
+  return formatInstantAtOffset(value, offsetMinutes, options, lang);
+}
+
+/**
  * A Date whose *device-local* wall clock reads as the wall clock at
  * `offsetMinutes` — the trick that lets a device-frame date picker edit in a
  * captured frame. `shiftToOffsetFrame`/`shiftFromOffsetFrame` are inverses.

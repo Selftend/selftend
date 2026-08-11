@@ -17,23 +17,43 @@ const ALL_TIME_FROM_ISO = "1970-01-01T00:00:00.000Z";
 
 interface MoodHeatmapProps {
   userId: string | null;
+  /**
+   * Day-key bounds from the section's own range picker (#880). Omitted/null
+   * bounds leave that side open — the default is still the whole history, the
+   * map just isn't PINNED there any more. A filter over the one all-time
+   * query, never a narrower fetch: the query key stays stable across range
+   * changes, so paging to exhaustion happens once.
+   */
+  startKey?: string | null;
+  endKey?: string | null;
 }
 
 /**
- * All-time mood map: weeks-as-columns cells colored by the day's rounded
+ * The mood map: weeks-as-columns cells colored by the day's rounded
  * average score on the be ramp. A glance view — tapping a cell only reveals a
  * read-only callout (date · face · score word), never navigation.
  */
-export function MoodHeatmap({ userId }: MoodHeatmapProps) {
+export function MoodHeatmap({ userId, startKey = null, endKey = null }: MoodHeatmapProps) {
   const { t, i18n } = useTranslation("mood");
   const scheme = useColorSchemeName();
   const { data: scorePoints } = useMoodScorePoints(userId, ALL_TIME_FROM_ISO);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const ramp = hueRamp("be", scheme === "dark");
+  const inRange = useMemo(
+    () =>
+      startKey === null && endKey === null
+        ? scorePoints
+        : (scorePoints ?? []).filter(
+            (point) =>
+              (startKey === null || point.dayKey >= startKey) &&
+              (endKey === null || point.dayKey <= endKey),
+          ),
+    [scorePoints, startKey, endKey],
+  );
   const weeks = useMemo(
-    () => buildMoodHeatmapWeeks(scorePoints, i18n.language),
-    [scorePoints, i18n.language],
+    () => buildMoodHeatmapWeeks(inRange, i18n.language),
+    [inRange, i18n.language],
   );
 
   const dateFmt = useMemo(
@@ -67,7 +87,10 @@ export function MoodHeatmap({ userId }: MoodHeatmapProps) {
   if (weeks.length === 0) {
     return (
       <Text variant="muted" className="text-[13px]">
-        {t("heatmap.empty")}
+        {/* Two different absences: a narrowed range that caught nothing names
+            the RANGE, not the user's history — "log a mood" at someone with
+            months of check-ins would be wrong (mirrors trend.emptyRange). */}
+        {scorePoints && scorePoints.length > 0 ? t("heatmap.emptyRange") : t("heatmap.empty")}
       </Text>
     );
   }

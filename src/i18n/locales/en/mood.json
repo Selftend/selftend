@@ -2,8 +2,8 @@
   "checkin": {
     "moduleLabel": "Check-in",
     "title": "How are you feeling?",
-    "tagline": "A simple 1-5 picker plus space for a note.",
     "scoreRequired": "Pick a mood score first.",
+    "scoreOutOf": "{{score}} of 5",
     "scaleLabels": {
       "1": "Awful",
       "2": "Bad",
@@ -15,14 +15,13 @@
   "title": "Check-in",
   "description": "Log how you're feeling and see how it shifts over time.",
   "today": {
-    "title": "Today",
     "howAreYou": "How are you feeling right now?",
-    "completeOne": "Logged · {{score}}/5",
-    "completeMany": "{{count}} logs · avg {{average}}/5"
+    "lastLoggedTap": "last logged {{when}} — tap to add another"
   },
   "emotions": {
     "manage": {
       "title": "Manage emotions",
+      "link": "Manage",
       "close": "Close",
       "edit": "Edit emotion",
       "emoji": "Emoji",
@@ -119,17 +118,12 @@
     "title": "This week",
     "previousWeek": "Previous week",
     "nextWeek": "Next week",
-    "average": "Week average",
-    "deltaUp": "▲ {{delta}} vs last week",
-    "deltaDown": "▼ {{delta}} vs last week",
-    "deltaFlat": "steady vs last week",
-    "noComparison": "first week of data",
-    "byDay": "Mood by day",
     "dayScore": "{{day}}: {{score}}",
     "dayNoEntry": "{{day}}: no entry",
     "dayEntries_one": "{{count}} check-in. Opens the day.",
     "dayEntries_other": "{{count}} check-ins. Opens the day.",
     "feltMost": "Felt most often",
+    "averageWord": "average",
     "noEmotions": "No emotions tagged yet",
     "loadFailed": "This week couldn't be loaded."
   },
@@ -142,8 +136,9 @@
     "rangeCustom": "Custom"
   },
   "heatmap": {
-    "title": "All time",
+    "title": "Mood map",
     "empty": "Log a mood to start your map.",
+    "emptyRange": "No check-ins in this range.",
     "calloutNoEntry": "no entry"
   },
   "allHistory": {
