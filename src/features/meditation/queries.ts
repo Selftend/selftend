@@ -11,7 +11,9 @@ import {
   medianMeditationMinutes,
   saveMeditationSession,
   saveStagePracticeNote,
+  updateMeditationSessionReflection,
   upsertMeditationProgramState,
+  type MeditationReflectionPatch,
 } from "@/src/features/meditation/repository";
 import type {
   MeditationProgramStateInput,
@@ -131,6 +133,23 @@ export function useSaveMeditationSession(userId: string | null) {
       // Invalidate the whole meditation prefix rather than the list alone: logging a sit
       // moves the server-derived session count and median too, and invalidating only
       // `list` left both stale until a remount (#337).
+      await queryClient.invalidateQueries({ queryKey: meditationKeys.all });
+    },
+  });
+}
+
+/**
+ * The reflection half of #786: patches the sit the timer already saved.
+ * Invalidates the whole prefix for the same reason the save mutation does -
+ * the reflection text rides the recent-sits rows and the history pages.
+ */
+export function useUpdateMeditationSessionReflection(userId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sessionId, patch }: { sessionId: string; patch: MeditationReflectionPatch }) =>
+      updateMeditationSessionReflection(userId!, sessionId, patch),
+    onSuccess: async () => {
+      if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: meditationKeys.all });
     },
   });

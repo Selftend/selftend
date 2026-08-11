@@ -541,6 +541,9 @@ describe("chart layer never hardcodes HSL", () => {
     join("app", "(app)", "tools", "breathing", "session.tsx"),
     join("src", "features", "breathing", "breathing-pacer.tsx"),
     join("src", "components", "app", "focus-session-shell.tsx"),
+    // #786: the meditation sit ring renders SVG colour props - the same surface
+    // #310's literal hid in - so it draws only through useAccentHsl/useThemeHex.
+    join("src", "features", "meditation", "meditation-sit-screen.tsx"),
   ])("%s contains no hsl literals", (file) => {
     const source = readFileSync(join(ROOT, file), "utf8");
     expect(source).not.toMatch(/hsla?\(/);

@@ -54,12 +54,6 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUpdateShownButtonTours: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 
-// The sit itself is not what this suite is about, and the widget reaches for
-// AsyncStorage and native audio on mount.
-jest.mock("@/src/features/timer/timer-widget", () => ({
-  TimerWidget: () => null,
-}));
-
 jest.mock("@/src/components/app/meditation-info-modal", () => ({ MeditationInfo: () => null }));
 jest.mock("@/src/components/app/meditation-onboarding-modal", () => ({
   MeditationOnboarding: () => null,
@@ -342,15 +336,19 @@ describe("MeditationHomeScreen", () => {
       expect(bells().getByText("Off").props.className).toContain("text-primary-ink");
     });
 
-    it("swaps the choices for the timer once the sit begins", () => {
+    it("hands both choices to the sitting screen when the sit begins", () => {
+      const { router } = jest.requireMock<{ router: { push: jest.Mock } }>("expo-router");
       renderWithProviders(<MeditationHomeScreen />);
 
+      fireEvent.press(bells().getByText("5 min"));
       fireEvent.press(screen.getByText("Begin"));
 
-      // Two controls for one value is worse than either, so the length row goes
-      // when the sit starts rather than sitting under a running timer.
-      expect(screen.queryByText("Length")).toBeNull();
-      expect(screen.queryByText(/^ends about /)).toBeNull();
+      // The rows here ARE the setup: the sitting screen (#786) takes the length
+      // and the bell as params rather than re-asking, and owns the clock.
+      expect(router.push).toHaveBeenCalledWith({
+        pathname: "/tools/meditation/session",
+        params: { duration: "20", bell: "5" },
+      });
     });
   });
 

@@ -273,6 +273,42 @@ export async function saveMeditationSession(userId: string, input: MeditationSes
   return mapSession(data as MeditationSessionRow);
 }
 
+/** What the post-sit reflection may change on an already-recorded sit (#786). */
+export interface MeditationReflectionPatch {
+  obstacleTags: MeditationObstacleTag[];
+  reflection: string;
+}
+
+/**
+ * Attach the optional reflection to a sit that is already saved.
+ *
+ * The sit row is created the moment the timer finishes (#786) - "Saved already"
+ * is the screen's promise, so the reflection can only ever be an UPDATE of that
+ * row, never the write that creates it. Scoped to the owner as well as the id
+ * so a stale or foreign id updates nothing and surfaces as an error rather
+ * than silently writing someone else's row past RLS.
+ */
+export async function updateMeditationSessionReflection(
+  userId: string,
+  sessionId: string,
+  patch: MeditationReflectionPatch,
+) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("meditation_sessions")
+    .update({
+      obstacle_tags: patch.obstacleTags,
+      reflection: sanitizeUserText(patch.reflection).trim(),
+    })
+    .eq("user_id", userId)
+    .eq("id", sessionId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapSession(data as MeditationSessionRow);
+}
+
 export async function getMeditationProgramState(userId: string) {
   const client = requireSupabase();
   const { data, error } = await client

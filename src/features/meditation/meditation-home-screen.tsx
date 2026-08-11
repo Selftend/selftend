@@ -16,7 +16,6 @@ import {
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
 import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/timer/interval";
-import { TimerWidget } from "@/src/features/timer/timer-widget";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
 import { MeditationPracticesSection } from "@/src/features/meditation/meditation-practices-section";
@@ -110,7 +109,6 @@ export default function MeditationHomeScreen() {
   // lands - but a pick made before it arrives is never overwritten.
   const [pickedDuration, setPickedDuration] = useState<number | null>(null);
   const [bellMinutes, setBellMinutes] = useState<number>(0);
-  const [sitting, setSitting] = useState(false);
   const durationMinutes = pickedDuration ?? preferredDuration ?? DEFAULT_DURATION;
 
   // The loaded sessions only stand in until the server median arrives (undefined while
@@ -310,61 +308,57 @@ export default function MeditationHomeScreen() {
                 <Text variant="h3" aria-level={2} className="text-lg">
                   {t("module.home.todayCard")}
                 </Text>
-                {!sitting && endsAbout !== null ? (
+                {endsAbout !== null ? (
                   <Text variant="muted" className="text-[12.5px] tabular-nums">
                     {t("module.home.endsAbout", { time: endsAbout })}
                   </Text>
                 ) : null}
               </View>
 
-              {sitting ? (
-                // The timer owns this block once a sit starts. Its own duration
-                // and interval pickers stay hidden: the row above IS the setup,
-                // and #786 replaces this in-place timer with the sitting screen.
-                <TimerWidget
-                  initialDuration={durationMinutes}
-                  initialInterval={bellMinutes}
-                  showSetup={false}
-                  autoStart
-                  onIdle={() => setSitting(false)}
-                />
-              ) : (
-                <>
-                  <ChoiceRow
-                    testID="sit-length-choices"
-                    label={t("module.home.durationLabel")}
-                    /* 96px floor, so six buttons run across the 720px column and
-                       wrap to three-and-three at 360dp rather than clipping
-                       `45 min` (and `bg`'s longer `Изкл.` neighbours below). */
-                    itemClassName="min-w-[96px]"
-                    options={durationOptions.map((minutes) => ({
-                      value: minutes,
-                      label: t("duration.minutes", { count: minutes }),
-                    }))}
-                    value={durationMinutes}
-                    onChange={pickDuration}
-                  />
-                  <ChoiceRow
-                    testID="sit-bell-choices"
-                    label={t("timer:interval.label")}
-                    itemClassName="min-w-[68px]"
-                    options={INTERVAL_OPTIONS_MINUTES.map((minutes) => ({
-                      value: minutes,
-                      label:
-                        minutes === 0
-                          ? t("timer:interval.off")
-                          : t("duration.minutes", { count: minutes }),
-                    }))}
-                    value={bellMinutes}
-                    onChange={setBellMinutes}
-                  />
-                  {/* `lg`, so the screen's primary action clears the 44dp touch
-                      floor on a phone - the default button is 40dp tall. */}
-                  <Button size="lg" onPress={() => setSitting(true)} className="self-start px-8">
-                    <Text>{t("module.home.begin")}</Text>
-                  </Button>
-                </>
-              )}
+              <ChoiceRow
+                testID="sit-length-choices"
+                label={t("module.home.durationLabel")}
+                /* 96px floor, so six buttons run across the 720px column and
+                   wrap to three-and-three at 360dp rather than clipping
+                   `45 min` (and `bg`'s longer `Изкл.` neighbours below). */
+                itemClassName="min-w-[96px]"
+                options={durationOptions.map((minutes) => ({
+                  value: minutes,
+                  label: t("duration.minutes", { count: minutes }),
+                }))}
+                value={durationMinutes}
+                onChange={pickDuration}
+              />
+              <ChoiceRow
+                testID="sit-bell-choices"
+                label={t("timer:interval.label")}
+                itemClassName="min-w-[68px]"
+                options={INTERVAL_OPTIONS_MINUTES.map((minutes) => ({
+                  value: minutes,
+                  label:
+                    minutes === 0
+                      ? t("timer:interval.off")
+                      : t("duration.minutes", { count: minutes }),
+                }))}
+                value={bellMinutes}
+                onChange={setBellMinutes}
+              />
+              {/* `lg`, so the screen's primary action clears the 44dp touch
+                  floor on a phone - the default button is 40dp tall. The rows
+                  above ARE the setup; Begin hands both choices to the sitting
+                  screen (#786), which owns the clock from there. */}
+              <Button
+                size="lg"
+                onPress={() =>
+                  router.push({
+                    pathname: "/tools/meditation/session",
+                    params: { duration: String(durationMinutes), bell: String(bellMinutes) },
+                  })
+                }
+                className="self-start px-8"
+              >
+                <Text>{t("module.home.begin")}</Text>
+              </Button>
             </Section>
 
             <Section title={t("module.home.practiceLabel")} className="gap-0">
