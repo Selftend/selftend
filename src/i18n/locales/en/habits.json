@@ -15,11 +15,9 @@
   "hero": {
     "habits_one": "active habit",
     "habits_other": "active habits",
-    "today": "today"
-  },
-  "stats": {
-    "last": "last ticked {{when}}",
-    "never": "no ticks yet"
+    "today": "today",
+    "twoWeekTicks_one": "tick in the last two weeks",
+    "twoWeekTicks_other": "ticks in the last two weeks"
   },
   "home": {
     "title": "Habits",

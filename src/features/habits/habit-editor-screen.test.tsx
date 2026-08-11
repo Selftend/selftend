@@ -308,6 +308,40 @@ describe("HabitEditorScreen", () => {
     }
   });
 
+  describe("the day picker", () => {
+    it("stays visible under every cadence, unchecked while another cadence holds", () => {
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+
+      // Cadence is daily; the stored default [Mon..Fri] must not show through
+      // as five phantom selections.
+      expect(screen.getByRole("checkbox", { name: "Mon", checked: false })).toBeTruthy();
+      expect(screen.getByRole("checkbox", { name: "Sat", checked: false })).toBeTruthy();
+    });
+
+    it("switches the cadence to custom when a day is tapped (design 9b)", () => {
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+
+      fireEvent.press(screen.getByRole("checkbox", { name: "Sat" }));
+
+      expect(screen.getByRole("radio", { name: "Custom", checked: true })).toBeTruthy();
+      expect(screen.getByRole("checkbox", { name: "Sat", checked: true })).toBeTruthy();
+      // The default weekday set survives the switch alongside the tapped day.
+      expect(screen.getByRole("checkbox", { name: "Mon", checked: true })).toBeTruthy();
+    });
+
+    it("selects a day the latent set already holds instead of toggling it away", () => {
+      renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
+
+      // Monday is in the stored [Mon..Fri] default while cadence is daily, but
+      // renders unchecked - the first press must check it, not remove it and
+      // activate a Tue-Fri schedule.
+      fireEvent.press(screen.getByRole("checkbox", { name: "Mon" }));
+
+      expect(screen.getByRole("radio", { name: "Custom", checked: true })).toBeTruthy();
+      expect(screen.getByRole("checkbox", { name: "Mon", checked: true })).toBeTruthy();
+    });
+  });
+
   /**
    * The offered palette (#764). Six colours, and the three retired ones stay reachable
    * for a habit that already stores them.
