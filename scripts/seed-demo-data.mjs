@@ -286,6 +286,34 @@ const counts = {};
   counts.journal_entries = await insert("journal_entries", rows);
 }
 
+// ------------------------------------------------- breathing custom exercise
+// Inserted BEFORE the sessions: custom-exercise sessions store the exercise
+// row's generated id in exercise_name (resolve-exercise.ts resolveCustom), not
+// its display name — the overview queries built-in slugs plus current custom
+// ids. Color must be a BreathingExerciseColor STORAGE value; "amber" maps to
+// think's gold tint (exercise-colors.ts), "think" itself is not storable.
+let customExerciseId;
+{
+  await wipe("breathing_exercises");
+  const { data, error } = await admin
+    .from("breathing_exercises")
+    .insert({
+      user_id: DEMO_USER_ID,
+      name: "Evening wind-down",
+      inhale_seconds: 4,
+      hold_in_seconds: 4,
+      exhale_seconds: 6,
+      hold_out_seconds: 2,
+      cycles: 10,
+      color: "amber",
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(`breathing_exercises: ${error.message}`);
+  customExerciseId = data.id;
+  counts.breathing_exercises = 1;
+}
+
 // ------------------------------------------- breathing + grounding (sessions)
 {
   await wipe("mindfulness_sessions");
@@ -295,7 +323,7 @@ const counts = {};
     ["box-breathing", 16, 8],
     ["4-7-8", 19, 6],
     ["coherent-breathing", 11, 12],
-    ["Evening wind-down", 16, 10], // matches the custom exercise below
+    [customExerciseId, 16, 10], // the custom exercise, keyed by its row id
   ];
   for (let d = 1; d < DAYS; d += between(2, 4)) {
     const [name, cycleSeconds, cycles] = pick(patterns);
@@ -343,23 +371,6 @@ const counts = {};
     });
   }
   counts.mindfulness_sessions = await insert("mindfulness_sessions", rows);
-}
-
-// ------------------------------------------------- breathing custom exercise
-{
-  await wipe("breathing_exercises");
-  counts.breathing_exercises = await insert("breathing_exercises", [
-    {
-      user_id: DEMO_USER_ID,
-      name: "Evening wind-down",
-      inhale_seconds: 4,
-      hold_in_seconds: 4,
-      exhale_seconds: 6,
-      hold_out_seconds: 2,
-      cycles: 10,
-      color: "think",
-    },
-  ]);
 }
 
 // ----------------------------------------------------------------- meditation
