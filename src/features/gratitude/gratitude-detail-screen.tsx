@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,6 +29,11 @@ import { cn } from "@/lib/utils";
 export default function GratitudeDetailScreen() {
   const { t, i18n } = useTranslation("gratitude");
   const roomStyle = useRoomStyle("think");
+  // The header actions never shrink, so every pixel of narrowness comes out
+  // of the title block (#885's failure class). At phone width the labelled
+  // Favourite button collapses to an icon, like mood's detail Edit.
+  const { width: windowWidth } = useWindowDimensions();
+  const wideHeader = windowWidth >= 640;
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const entryId = typeof id === "string" ? id : null;
@@ -128,14 +133,28 @@ export default function GratitudeDetailScreen() {
               </Text>
             </View>
             <View className="shrink-0 flex-row flex-wrap justify-end gap-2">
-              <Button
-                disabled={starMutation.isPending}
-                onPress={() => void toggleFavorite()}
-                variant={entry.starred ? "tinted" : "outline"}
-              >
-                <Icon name={entry.starred ? "star" : "star-outline"} className="size-4" />
-                <Text>{entry.starred ? t("detail.unfavorite") : t("detail.favorite")}</Text>
-              </Button>
+              {wideHeader ? (
+                <Button
+                  disabled={starMutation.isPending}
+                  onPress={() => void toggleFavorite()}
+                  variant={entry.starred ? "tinted" : "outline"}
+                >
+                  <Icon name={entry.starred ? "star" : "star-outline"} className="size-4" />
+                  <Text>{entry.starred ? t("detail.unfavorite") : t("detail.favorite")}</Text>
+                </Button>
+              ) : (
+                // Icon-only at phone width: three ~40dp icons leave the title
+                // its column; the accessible name keeps the full verb.
+                <Button
+                  accessibilityLabel={entry.starred ? t("detail.unfavorite") : t("detail.favorite")}
+                  disabled={starMutation.isPending}
+                  onPress={() => void toggleFavorite()}
+                  size="icon"
+                  variant={entry.starred ? "tinted" : "outline"}
+                >
+                  <Icon name={entry.starred ? "star" : "star-outline"} className="size-4" />
+                </Button>
+              )}
               <Button
                 accessibilityLabel={t("detail.edit")}
                 onPress={() =>
