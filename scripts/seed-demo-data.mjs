@@ -113,12 +113,28 @@ const counts = {};
 {
   await wipe("emotion_preferences");
   const defaults = [
-    ["happy", "😊"], ["excited", "🤩"], ["loved", "🥰"], ["inspired", "💡"],
-    ["proud", "💪"], ["playful", "😄"], ["grateful", "🙏"], ["hopeful", "🌟"],
-    ["relaxed", "😌"], ["content", "☺️"], ["anxious", "😰"], ["sad", "😢"],
-    ["angry", "😡"], ["ashamed", "😳"], ["guilty", "😔"], ["overwhelmed", "😵"],
-    ["frustrated", "😤"], ["lonely", "🫂"], ["fearful", "😨"], ["hopeless", "😞"],
-    ["numb", "😶"], ["irritated", "😒"],
+    ["happy", "😊"],
+    ["excited", "🤩"],
+    ["loved", "🥰"],
+    ["inspired", "💡"],
+    ["proud", "💪"],
+    ["playful", "😄"],
+    ["grateful", "🙏"],
+    ["hopeful", "🌟"],
+    ["relaxed", "😌"],
+    ["content", "☺️"],
+    ["anxious", "😰"],
+    ["sad", "😢"],
+    ["angry", "😡"],
+    ["ashamed", "😳"],
+    ["guilty", "😔"],
+    ["overwhelmed", "😵"],
+    ["frustrated", "😤"],
+    ["lonely", "🫂"],
+    ["fearful", "😨"],
+    ["hopeless", "😞"],
+    ["numb", "😶"],
+    ["irritated", "😒"],
   ];
   const rows = defaults.map(([id, emoji], i) => ({
     user_id: DEMO_USER_ID,
@@ -131,12 +147,22 @@ const counts = {};
   }));
   rows.push(
     {
-      user_id: DEMO_USER_ID, emotion_id: "custom-cozy", name: "Cozy", emoji: "🛋️",
-      position: defaults.length, removed: false, is_custom: true,
+      user_id: DEMO_USER_ID,
+      emotion_id: "custom-cozy",
+      name: "Cozy",
+      emoji: "🛋️",
+      position: defaults.length,
+      removed: false,
+      is_custom: true,
     },
     {
-      user_id: DEMO_USER_ID, emotion_id: "custom-curious", name: "Curious", emoji: "🧐",
-      position: defaults.length + 1, removed: false, is_custom: true,
+      user_id: DEMO_USER_ID,
+      emotion_id: "custom-curious",
+      name: "Curious",
+      emoji: "🧐",
+      position: defaults.length + 1,
+      removed: false,
+      is_custom: true,
     },
   );
   counts.emotion_preferences = await insert("emotion_preferences", rows);
@@ -146,7 +172,15 @@ const counts = {};
 {
   await wipe("mood_logs");
   const pleasant = ["happy", "grateful", "relaxed", "content", "hopeful", "playful", "custom-cozy"];
-  const difficult = ["anxious", "sad", "frustrated", "overwhelmed", "irritated", "lonely", "custom-curious"];
+  const difficult = [
+    "anxious",
+    "sad",
+    "frustrated",
+    "overwhelmed",
+    "irritated",
+    "lonely",
+    "custom-curious",
+  ];
   const noteShort = [
     "Slow morning, better afternoon.",
     "Walk after lunch helped.",
@@ -199,13 +233,34 @@ const counts = {};
 {
   await wipe("journal_entries");
   const topics = [
-    ["Weekend reset", "Spent Saturday deep-cleaning the flat and it genuinely changed my mood for the whole weekend. There is something about visible order that quiets the inner noise."],
-    ["Arguing better", "N. and I disagreed about the holiday budget again, but this time I noticed the spiral early and asked for a pause. Twenty minutes later the whole thing took five minutes to settle."],
-    ["Work worries", "The reorg rumours are back. Writing down what I actually know versus what I am inventing: I know my project is funded through Q4. Everything else is speculation."],
-    ["Small wins", "Fixed the bike, called the dentist, cooked instead of ordering. None of it dramatic, all of it the life I keep saying I want."],
-    ["On my father", "His birthday would have been this week. Grief is quieter now — more like weather than a wound. I let myself look through the old photos and it was mostly warm."],
-    ["Can't sleep", "Third night this week staring at the ceiling at 2am. Patterns I notice: late screens, unfinished arguments with people who are not in the room."],
-    ["First swim of the year", "The sea was freezing and perfect. Ten minutes in the water undid about two weeks of hunching over a laptop."],
+    [
+      "Weekend reset",
+      "Spent Saturday deep-cleaning the flat and it genuinely changed my mood for the whole weekend. There is something about visible order that quiets the inner noise.",
+    ],
+    [
+      "Arguing better",
+      "N. and I disagreed about the holiday budget again, but this time I noticed the spiral early and asked for a pause. Twenty minutes later the whole thing took five minutes to settle.",
+    ],
+    [
+      "Work worries",
+      "The reorg rumours are back. Writing down what I actually know versus what I am inventing: I know my project is funded through Q4. Everything else is speculation.",
+    ],
+    [
+      "Small wins",
+      "Fixed the bike, called the dentist, cooked instead of ordering. None of it dramatic, all of it the life I keep saying I want.",
+    ],
+    [
+      "On my father",
+      "His birthday would have been this week. Grief is quieter now — more like weather than a wound. I let myself look through the old photos and it was mostly warm.",
+    ],
+    [
+      "Can't sleep",
+      "Third night this week staring at the ceiling at 2am. Patterns I notice: late screens, unfinished arguments with people who are not in the room.",
+    ],
+    [
+      "First swim of the year",
+      "The sea was freezing and perfect. Ten minutes in the water undid about two weeks of hunching over a laptop.",
+    ],
   ];
   const rows = [];
   let day = 2;
@@ -217,7 +272,10 @@ const counts = {};
       title: rows.length % 5 === 4 ? "" : title, // some untitled entries
       body:
         rows.length === 10
-          ? body + "\n\n" + body + "\n\nAnd a third paragraph to make this one properly long, the kind that tests clamping on the overview and the full read on the detail screen."
+          ? body +
+            "\n\n" +
+            body +
+            "\n\nAnd a third paragraph to make this one properly long, the kind that tests clamping on the overview and the full read on the detail screen."
           : body,
       occurred_at: occurredAt,
       occurred_offset_minutes: OFFSET_MINUTES,
@@ -353,8 +411,16 @@ const counts = {};
   counts.meditation_program_state = 1;
 
   counts.stage_practice_notes = await insert("stage_practice_notes", [
-    { user_id: DEMO_USER_ID, stage: 2, note: "Forgetting still happens fast when tired — shorter sits on bad-sleep days work better." },
-    { user_id: DEMO_USER_ID, stage: 3, note: "Labelling distractions ('planning', 'replaying') helps me let them go." },
+    {
+      user_id: DEMO_USER_ID,
+      stage: 2,
+      note: "Forgetting still happens fast when tired — shorter sits on bad-sleep days work better.",
+    },
+    {
+      user_id: DEMO_USER_ID,
+      stage: 3,
+      note: "Labelling distractions ('planning', 'replaying') helps me let them go.",
+    },
   ]);
 }
 
@@ -469,7 +535,10 @@ const counts = {};
     const logs = [];
     for (let d = Math.max(0, startDay); d < DAYS; d++) {
       const date = new Date(at(d, 12));
-      if (habit.cadence === "custom" && !habit.custom_days.includes((date.getDay() + 6) % 7 + 1)) {
+      if (
+        habit.cadence === "custom" &&
+        !habit.custom_days.includes(((date.getDay() + 6) % 7) + 1)
+      ) {
         continue;
       }
       if (rng() < adherence) {
