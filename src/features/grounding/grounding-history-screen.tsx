@@ -12,7 +12,7 @@ import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatCompactAtOffset } from "@/src/utils/date";
 
 export default function GroundingHistoryScreen() {
   const { t } = useTranslation("cbt");
@@ -77,7 +77,7 @@ export default function GroundingHistoryScreen() {
         renderItem={({ item }) => (
           <GroundingSessionRow
             session={item}
-            when={formatAtOffset(item.completedAt, item.completedOffsetMinutes)}
+            when={formatCompactAtOffset(item.completedAt, item.completedOffsetMinutes)}
           />
         )}
       />

@@ -4,6 +4,7 @@ import {
   dayKeyDiff,
   dayRangeEndKey,
   formatAtOffset,
+  formatCompactAtOffset,
   formatTimestamp,
   isValidDayKey,
   lastNDayKeys,
@@ -207,6 +208,56 @@ describe("formatAtOffset", () => {
 
   it("returns the input unchanged when it is not a date", () => {
     expect(formatAtOffset("nope", 120, "en")).toBe("nope");
+  });
+});
+
+describe("formatCompactAtOffset", () => {
+  // TZ is pinned to Asia/Kolkata (+05:30); "today" for these tests is Monday
+  // 13 July 2026 in that frame.
+  const now = new Date("2026-07-13T12:00:00");
+
+  it("renders a bare time for an entry captured today", () => {
+    // 05:00 UTC at +05:30 is 10:30 on July 13 — today.
+    const formatted = formatCompactAtOffset("2026-07-13T05:00:00.000Z", 330, "en", now);
+    expect(formatted).toBe("10:30 AM");
+  });
+
+  it("decides 'today' in the CAPTURED frame, not the viewer's", () => {
+    // 22:00 UTC on July 13 at +09:00 is already 07:00 on July 14 — a travel
+    // entry keyed "tomorrow" relative to the viewer. Still a bare time (#250).
+    const formatted = formatCompactAtOffset("2026-07-13T22:00:00.000Z", 540, "en", now);
+    expect(formatted).toBe("7:00 AM");
+  });
+
+  it("renders weekday plus time within the last week", () => {
+    // July 10 is three days back — a weekday is unambiguous under 7 days.
+    const formatted = formatCompactAtOffset("2026-07-10T05:00:00.000Z", 330, "en", now);
+    expect(formatted).toContain("Fri");
+    expect(formatted).toContain("10:30 AM");
+  });
+
+  it("renders a short date at exactly seven days back, where the weekday repeats", () => {
+    const formatted = formatCompactAtOffset("2026-07-06T05:00:00.000Z", 330, "en", now);
+    expect(formatted).toContain("Jul 6");
+    expect(formatted).not.toMatch(/AM|PM/);
+    // The current year stays implicit.
+    expect(formatted).not.toContain("2026");
+  });
+
+  it("adds the year only when it is not the viewer's", () => {
+    const formatted = formatCompactAtOffset("2025-11-20T05:00:00.000Z", 330, "en", now);
+    expect(formatted).toContain("Nov 20");
+    expect(formatted).toContain("2025");
+  });
+
+  it("falls back to the viewer's frame when no offset was captured", () => {
+    // 19:00 UTC reads as 00:30 on July 14 in Kolkata — the viewer's tomorrow,
+    // so still a bare time.
+    expect(formatCompactAtOffset("2026-07-13T19:00:00.000Z", null, "en", now)).toBe("12:30 AM");
+  });
+
+  it("returns the input unchanged when it is not a date", () => {
+    expect(formatCompactAtOffset("nope", 120, "en", now)).toBe("nope");
   });
 });
 

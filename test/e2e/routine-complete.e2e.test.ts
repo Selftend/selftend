@@ -86,7 +86,7 @@ test.describe("routine completes via tool use", () => {
     await page.getByRole("radio", { name: "Okay", exact: true }).click();
     await page.waitForURL(/\/tools\/check-in\/new\?/, { timeout: 15_000 });
 
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Save check-in", exact: true }).click();
 
     // Wait for the post-save redirect to the entry detail page before
     // navigating away (log-mood lesson: a goto racing the in-flight

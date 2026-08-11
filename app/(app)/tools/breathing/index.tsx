@@ -28,7 +28,7 @@ import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatCompactAtOffset } from "@/src/utils/date";
 
 /** Rows shown before the section defers to the all-sessions screen. */
 const RECENT_ROWS = 5;
@@ -62,7 +62,7 @@ export default function BreathingScreen() {
     null,
   );
   const lastWhen = lastSession
-    ? formatAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
+    ? formatCompactAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
     : null;
   // `sessions` is undefined while loading and after a failed fetch with no cache.
   // It also resolves early against the built-in patterns alone, because the query
@@ -251,7 +251,7 @@ export default function BreathingScreen() {
                       : t("breathing.minutes", { value: s.durationMinutes })}
                   </Text>
                   <Text variant="muted" className="shrink-0 text-xs tabular-nums">
-                    {formatAtOffset(s.completedAt, s.completedOffsetMinutes)}
+                    {formatCompactAtOffset(s.completedAt, s.completedOffsetMinutes)}
                   </Text>
                 </View>
               ))

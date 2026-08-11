@@ -20,7 +20,7 @@ test.describe("log mood", () => {
     // mood:checkin.scaleLabels.3.
     await page.getByRole("radio", { name: "Okay", exact: true }).click();
 
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Save check-in", exact: true }).click();
 
     // Wait for the post-save redirect to the entry detail page before asserting.
     // The editor form renders its own 😐 radio, so a bare 😐 check can pass while
