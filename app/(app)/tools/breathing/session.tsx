@@ -588,7 +588,7 @@ export default function BreathingSessionScreen() {
         {/* The 620px form column the shell decision assigns to setup/form
             screens (#690) — the setup state just never took it (#873); the 4d
             editor in breathing-exercise-editor-screen.tsx always had it. */}
-        <View className={cn(FORM_COLUMN, "grow gap-6")}>
+        <View className={cn(FORM_COLUMN, "grow gap-6")} testID="breathing-setup-column">
           <SoundsSheet visible={soundsOpen} onDismiss={() => setSoundsOpen(false)} />
 
           {/* A wrapping run of tabs, not a horizontal scroller: an
