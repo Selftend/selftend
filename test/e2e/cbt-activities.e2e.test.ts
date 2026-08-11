@@ -24,7 +24,7 @@ import { deleteAllActivityLogsForUser, deleteAllMoodLogsForUser } from "./helper
  *   - "Mark as complete" navigates to:
  *       /tools/check-in/new?linkedStrategy=behavioral-activation&completeActivityId={id}
  *     The user rates mood (MoodScale 1-5: Awful/Bad/Okay/Good/Great) then
- *     clicks "Save" (mood.save). This completes the activity (sets completedAt +
+ *     clicks "Save check-in" (mood.save). This completes the activity (sets completedAt +
  *     moodAfter) and redirects back to /modules/cbt/activities/{id}.
  *   - After completion: "Completed" badge is visible; "Mark as complete" button is gone.
  *
@@ -86,7 +86,7 @@ test.describe("CBT activities: schedule and complete a behavioral-activation act
     await page.getByRole("radio", { name: "Good", exact: true }).click();
 
     // Save the mood log - this also completes the activity and redirects back.
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Save check-in", exact: true }).click();
 
     // After completion, redirected to /modules/cbt/activities/[id]
     await expect(page).toHaveURL(/\/modules\/cbt\/activities\/[^/]+$/, { timeout: 20_000 });
