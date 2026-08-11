@@ -74,7 +74,7 @@ describe("SleepTrackerScreen", () => {
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.getByRole("heading", { name: "Sleep tracker" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Sleep" })).toBeTruthy();
     // Calm muted subline when nothing is logged - never a shame state.
     expect(screen.getByText("no sleep logged yet")).toBeTruthy();
     // Section headings render on the sheet.
