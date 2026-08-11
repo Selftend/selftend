@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { router, useNavigation } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { groundingLookup } from "@/src/constants/grounding";
 import { GroundingDone } from "@/src/features/grounding/grounding-done";
-import { GroundingIntro } from "@/src/features/grounding/grounding-intro";
 import { GroundingSession } from "@/src/features/grounding/grounding-session";
 import { useSaveGroundingSession } from "@/src/features/grounding/queries";
 import { useRoomStyle } from "@/src/lib/use-room-style";
@@ -16,45 +15,77 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 
-type Phase = "intro" | "active" | "done";
+type Phase = "active" | "done";
 
+/**
+ * No intro phase (#874, decided on #868's consolidation): the session opens
+ * directly on step 1, as the design draws — the overview's technique picker
+ * already carries the context the intro repeated. The active and done phases
+ * render on `FocusSessionShell` (#777: one surface for breathing, grounding
+ * and meditation), which is also why there is no room wrapper around them —
+ * the shell derives its wash from the active style, exactly as the other two
+ * tools' sessions do.
+ */
 export function GroundingFlow({ slug }: { slug: string }) {
   const { t } = useTranslation("cbt");
   const { user } = useSession();
+  const navigation = useNavigation();
   const showToast = useToastStore((state) => state.showToast);
   const technique = slug ? groundingLookup[slug] : undefined;
 
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhase] = useState<Phase>("active");
   const [stepIndex, setStepIndex] = useState(0);
   const [furthestStep, setFurthestStep] = useState(1);
   const [confirmEarlyFinish, setConfirmEarlyFinish] = useState(false);
+  // The saved session's length, for the done screen's meta line.
+  const [savedMinutes, setSavedMinutes] = useState(1);
   const startedAtRef = useRef(0);
+  const finishingRef = useRef(false);
   const saveMutation = useSaveGroundingSession(user?.id ?? null);
-  // Grounding is the "clay" room (spec #315). Each phase component owns its
-  // own SafeAreaView, so the pour lives on a wrapper here: their
-  // bg-background surfaces re-resolve to clay through it. No field header —
-  // a session screen keeps the exercise as the hero (Wave B direction #301),
-  // and the per-technique hue guests (glow, buttons, badges) sit on top.
+  // Grounding is the "clay" room (spec #315) — but only the not-found branch
+  // still needs the pour: the session phases live on the focus surface.
   const roomStyle = useRoomStyle("clay");
+
+  // The clock starts when the flow mounts — there is no Start button any more.
+  useEffect(() => {
+    startedAtRef.current = Date.now();
+  }, []);
 
   // Declared before the not-found early return below so the hook call is unconditional.
   const saveAndFinish = useSingleFlight(async (stepsCompleted: number) => {
     if (!technique) return;
     try {
+      const durationMinutes = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 60_000));
       await saveMutation.mutateAsync({
         exerciseName: technique.slug,
-        durationMinutes: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 60_000)),
+        durationMinutes,
         reflection: "",
         feelingAfter: null,
         stepsCompleted,
         stepsTotal: technique.steps.length,
       });
+      finishingRef.current = true;
+      setSavedMinutes(durationMinutes);
       setConfirmEarlyFinish(false);
       setPhase("done");
     } catch {
       showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
   });
+
+  /**
+   * The shell has no chrome, so the OS back gesture and the web back button
+   * are the only uninvited exits. Mid-session they ask — the same
+   * finish-or-continue the close glyph used to open — never a silent discard.
+   * The done phase and a finished save let the exit through.
+   */
+  useEffect(() => {
+    return navigation.addListener("beforeRemove", (event) => {
+      if (phase !== "active" || finishingRef.current || !technique) return;
+      event.preventDefault();
+      setConfirmEarlyFinish(true);
+    });
+  }, [navigation, phase, technique]);
 
   if (!technique) {
     return (
@@ -76,6 +107,10 @@ export function GroundingFlow({ slug }: { slug: string }) {
     const list = t(`grounding.techniques.${technique.slug}.stepLabels`, { returnObjects: true });
     return Array.isArray(list) ? (list as string[]) : [];
   })();
+  const stepHints = (() => {
+    const list = t(`grounding.techniques.${technique.slug}.stepHints`, { returnObjects: true });
+    return Array.isArray(list) ? (list as string[]) : [];
+  })();
 
   const title = t(`grounding.techniques.${technique.slug}.title`);
   const total = stepsText.length;
@@ -90,33 +125,15 @@ export function GroundingFlow({ slug }: { slug: string }) {
     }
   };
 
-  const handleExit = () => setConfirmEarlyFinish(true);
-
-  const phaseContent = () => {
-    if (phase === "intro") {
-      return (
-        <GroundingIntro
-          technique={technique}
-          title={title}
-          description={t(`grounding.techniques.${technique.slug}.shortDescription`)}
-          steps={stepsText}
-          onStart={() => {
-            setStepIndex(0);
-            setFurthestStep(1);
-            startedAtRef.current = Date.now();
-            setPhase("active");
-          }}
-        />
-      );
-    }
-
-    if (phase === "active") {
-      return (
+  return (
+    <>
+      {phase === "active" ? (
         <GroundingSession
           technique={technique}
           techniqueTitle={title}
           stepText={stepsText[stepIndex]}
           stepLabel={stepLabels[stepIndex] ?? ""}
+          stepHint={stepHints[stepIndex] ?? ""}
           stepIndex={stepIndex}
           total={total}
           isLast={stepIndex === total - 1}
@@ -126,22 +143,18 @@ export function GroundingFlow({ slug }: { slug: string }) {
             setFurthestStep((current) => Math.max(current, index + 1));
             setStepIndex(index);
           }}
-          onExit={handleExit}
           saving={saveMutation.isPending}
         />
-      );
-    }
-
-    return (
-      <GroundingDone
-        onDone={() => router.replace("/tools/grounding" as Parameters<typeof router.replace>[0])}
-      />
-    );
-  };
-
-  return (
-    <View className="flex-1" style={roomStyle} testID="grounding-flow-room">
-      {phaseContent()}
+      ) : (
+        <GroundingDone
+          techniqueTitle={title}
+          durationMinutes={savedMinutes}
+          onDone={() => router.replace("/tools/grounding" as Parameters<typeof router.replace>[0])}
+          onRunAnother={() =>
+            router.replace("/tools/grounding" as Parameters<typeof router.replace>[0])
+          }
+        />
+      )}
       <ConfirmDialog
         visible={confirmEarlyFinish}
         isPending={saveMutation.isPending}
@@ -153,6 +166,6 @@ export function GroundingFlow({ slug }: { slug: string }) {
         onCancel={() => setConfirmEarlyFinish(false)}
         onConfirm={() => void saveAndFinish(furthestStep)}
       />
-    </View>
+    </>
   );
 }

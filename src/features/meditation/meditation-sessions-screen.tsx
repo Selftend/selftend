@@ -12,7 +12,7 @@ import type { MeditationSession } from "@/src/features/meditation/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatCompactAtOffset } from "@/src/utils/date";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 
 // Memoized row so the FlatList only re-renders changed items, and navigation stays
@@ -48,7 +48,7 @@ const SessionRow = memo(function SessionRow({ session }: { session: MeditationSe
       {/* The full instant here, read in the frame it was captured in: this screen
           is the record, so it states when rather than how long ago (#433 §3). */}
       <Text variant="muted" className="text-xs">
-        {formatAtOffset(session.completedAt, session.completedOffsetMinutes)}
+        {formatCompactAtOffset(session.completedAt, session.completedOffsetMinutes)}
       </Text>
       {session.reflection ? (
         <Text variant="muted" className="text-[13px] leading-5" numberOfLines={2}>

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import MoodTrackerScreen from "@/src/features/mood/mood-tracker-screen";
@@ -132,8 +132,7 @@ describe("MoodTrackerScreen", () => {
       // this week yet.
       expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
       expect(screen.queryByText("No emotions tagged yet")).toBeNull();
-      expect(screen.queryByText("Mood by day")).toBeNull();
-      expect(screen.queryByText("first week of data")).toBeNull();
+      expect(screen.queryByText("Felt most often")).toBeNull();
     });
 
     it("offers a retry instead of an empty week when the week query fails", () => {
@@ -171,7 +170,7 @@ describe("MoodTrackerScreen", () => {
 
       renderWithProviders(<MoodTrackerScreen />);
 
-      expect(screen.getByText("Mood by day")).toBeTruthy();
+      expect(screen.getByText("Felt most often")).toBeTruthy();
       expect(screen.queryByText("This week couldn't be loaded.")).toBeNull();
     });
   });
@@ -191,7 +190,7 @@ describe("MoodTrackerScreen", () => {
       // Nothing below the picker has anything to say yet.
       expect(screen.queryByRole("heading", { name: "This week" })).toBeNull();
       expect(screen.queryByRole("heading", { name: "Mood trend" })).toBeNull();
-      expect(screen.queryByRole("heading", { name: "All time" })).toBeNull();
+      expect(screen.queryByRole("heading", { name: "Mood map" })).toBeNull();
       // And none of the old nothing-yet copy is on screen either.
       expect(screen.queryByText("Log a mood to start your trend.")).toBeNull();
       expect(screen.queryByText("Log a mood to start your map.")).toBeNull();
@@ -208,7 +207,7 @@ describe("MoodTrackerScreen", () => {
       renderWithProviders(<MoodTrackerScreen />);
 
       expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
-      expect(screen.getByRole("heading", { name: "All time" })).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Mood map" })).toBeTruthy();
       expect(screen.queryByRole("heading", { name: "Mood trend" })).toBeNull();
     });
 
@@ -251,7 +250,7 @@ describe("MoodTrackerScreen", () => {
 
       expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
       expect(screen.getByText("Show all history")).toBeTruthy();
-      expect(screen.getByRole("heading", { name: "All time" })).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Mood map" })).toBeTruthy();
     });
 
     it("keeps the trend section mounted when a narrower range holds too little", () => {
@@ -271,8 +270,9 @@ describe("MoodTrackerScreen", () => {
       rerender(<MoodTrackerScreen />);
 
       expect(screen.getByRole("heading", { name: "Mood trend" })).toBeTruthy();
-      expect(screen.getByText("7d")).toBeTruthy();
-      expect(screen.getByText("30d")).toBeTruthy();
+      // Its own control is still there to change the range with.
+      expect(screen.getAllByText("7d").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("30d").length).toBeGreaterThan(0);
       // The chart empties, not the page - and it blames the range, not the user.
       expect(screen.getByText("Not enough check-ins in this range yet.")).toBeTruthy();
     });
@@ -347,13 +347,16 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    // WeekHero: section heading, null average placeholder (appears in both stats row and hero),
-    // delta copy when there is no prior-week data, sub-section labels, empty emotion state
+    // WeekHero (design 2a): section heading, the strip, and the felt-most row
+    // carrying the inline week average — the 40px display block and its delta
+    // copy are gone.
     expect(screen.getByRole("heading", { name: "This week" })).toBeTruthy();
-    expect(screen.getAllByText("-")).toHaveLength(2); // stats row 7-day avg + WeekHero big number
-    expect(screen.getByText("first week of data")).toBeTruthy();
-    expect(screen.getByText("Mood by day")).toBeTruthy();
+    expect(screen.getByText("Felt most often")).toBeTruthy();
     expect(screen.getByText("No emotions tagged yet")).toBeTruthy();
+    // No loaded week logs in this fixture, so the inline average is an em dash.
+    expect(screen.getByText("—")).toBeTruthy();
+    expect(screen.queryByText("Week average")).toBeNull();
+    expect(screen.queryByText("first week of data")).toBeNull();
   });
 
   it("omits the subline until the history query has actually loaded", () => {
@@ -369,7 +372,7 @@ describe("MoodTrackerScreen", () => {
     expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
-  it("renders the completed Today card with score when a single entry was logged today", () => {
+  it("shows today's log selected on the picker with the caption naming it", () => {
     mockLogged();
     // Anchor to today's LOCAL date (the app groups entries by local date via
     // toLocalDateKey), so the test is independent of timezone / time of day.
@@ -393,13 +396,16 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("Logged · 4/5")).toBeTruthy();
-    // "Log another" button has been removed; MoodScale emoji row is the only re-log affordance
-    expect(screen.queryByText("Log another")).toBeNull();
-    // WeekHero: the 7-day average appears in both the stats row and the WeekHero big number
-    expect(screen.getAllByText("4.0")).toHaveLength(2); // stats row 7-day avg + WeekHero large number
-    expect(screen.getByText("first week of data")).toBeTruthy();
-    // WeekHero's top-emotion pill is now the ONLY place the emotion appears -
+    // The caption names today's latest log (design 2a): scale word plus the
+    // "tap to add another" invitation. Scoped to the caption row - "Good"
+    // also labels a distribution column and the heatmap callout.
+    const caption = within(screen.getByTestId("today-caption"));
+    expect(caption.getByText("Good")).toBeTruthy();
+    expect(caption.getByText(/tap to add another/)).toBeTruthy();
+    // The 7-day average appears in the stats row AND inline on the felt-most
+    // row - the 40px display block it used to headline is gone.
+    expect(screen.getAllByText("4.0")).toHaveLength(2);
+    // WeekHero's top-emotion chip is the ONLY place the emotion appears -
     // the entry card that used to echo it went with the list (#735).
     expect(screen.getAllByText(/Anxious/)).toHaveLength(1);
   });
@@ -440,12 +446,12 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("2 logs · avg 3/5")).toBeTruthy();
-    // "Log another" button removed; assert it is absent
-    expect(screen.queryByText("Log another")).toBeNull();
-    // The day's average is stated once, by the picker. The list that repeated it
-    // as a group average is gone (#735), and under paging that average was the
-    // defect #705 filed anyway.
+    // The caption follows the LATEST of today's logs (the evening 4), never a
+    // day average - the day's mean lives on the week strip cell instead.
+    const caption = within(screen.getByTestId("today-caption"));
+    expect(caption.getByText("Good")).toBeTruthy();
+    expect(caption.getByText(/tap to add another/)).toBeTruthy();
+    expect(screen.queryByText("2 logs · avg 3/5")).toBeNull();
     expect(screen.queryByText("avg 3.0")).toBeNull();
   });
 
@@ -490,7 +496,7 @@ describe("MoodTrackerScreen", () => {
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/history");
   });
 
-  it("offers 7d/30d/90d/Custom trend ranges, defaulting to a 30-day window (no 14d)", () => {
+  it("gives every stats section its own 7d/30d/90d/All time/Custom control (#880)", () => {
     mockLogged();
     mockUseMoodLogs.mockReturnValue({
       data: [],
@@ -498,18 +504,18 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByText("7d")).toBeTruthy();
-    expect(screen.getByText("30d")).toBeTruthy();
-    expect(screen.getByText("90d")).toBeTruthy();
-    // Added by #737: the shared control gains All time, on a short key of its
-    // own - `heatmap.title` is the 15-character `За цялото време` in bg, which
-    // is why the segment needs `trendControls.rangeAll` (`Всичко`) instead.
-    // In `en` the two happen to read the same, so there are two matches: the
-    // segment, and the map's section heading below it.
-    expect(screen.getAllByText("All time")).toHaveLength(2);
-    expect(screen.getByText("Custom")).toBeTruthy();
+    // Three independent controls — Mood trend, Distribution, Mood map — each
+    // with the full segment set. "All time" appears only as segments now: the
+    // old title/segment naming collision dissolved with the Mood map rename.
+    expect(screen.getAllByText("7d")).toHaveLength(3);
+    expect(screen.getAllByText("30d")).toHaveLength(3);
+    expect(screen.getAllByText("90d")).toHaveLength(3);
+    expect(screen.getAllByText("All time")).toHaveLength(3);
+    expect(screen.getAllByText("Custom")).toHaveLength(3);
     expect(screen.queryByText("14d")).toBeNull();
-    // Default window: the narrow score-points query is asked for the 30-day window.
+    // Defaults: trend 30d, distribution All time, map All time (the design's
+    // drawn states). With no first-entry key loaded yet, All time falls back to
+    // the default preset window, so the union query starts at 30 days.
     expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
       "user-1",
       startOfDayDaysAgo(30).toISOString(),
@@ -518,12 +524,11 @@ describe("MoodTrackerScreen", () => {
   });
 
   /**
-   * ONE control drives both charts (#737, decided on #700), and it outlives the
-   * trend: the distribution earns its place at ONE check-in while the trend
-   * needs two, so gating the control on the trend would leave the distribution
-   * with a range nobody could change.
+   * The distribution's control outlives the trend's staging: the distribution
+   * earns its place at ONE check-in while the trend needs two, so it carries
+   * its own control from the start (#880).
    */
-  it("shows the shared range control and the distribution at one check-in, before the trend", () => {
+  it("shows the distribution with its own range control at one check-in, before the trend", () => {
     mockLogged({ points: 1, count: 1 });
     mockUseMoodLogs.mockReturnValue({
       data: [],
@@ -532,8 +537,9 @@ describe("MoodTrackerScreen", () => {
     renderWithProviders(<MoodTrackerScreen />);
 
     expect(screen.getByRole("heading", { name: "Distribution" })).toBeTruthy();
-    expect(screen.getByText("30d")).toBeTruthy();
-    // One point is a dot, not a direction.
+    // Two controls: the distribution's and the map's. One point is a dot, not
+    // a direction, so the trend section (and its control) is not mounted.
+    expect(screen.getAllByText("30d")).toHaveLength(2);
     expect(screen.queryByRole("heading", { name: "Mood trend" })).toBeNull();
   });
 
@@ -562,28 +568,54 @@ describe("MoodTrackerScreen", () => {
     } as unknown as ReturnType<typeof useMoodScorePoints>);
 
     renderWithProviders(<MoodTrackerScreen />);
-    fireEvent.press(screen.getByText("7d"));
+    // Controls render in section order — trend, distribution, map — so [1] is
+    // the distribution's own 7d segment.
+    fireEvent.press(screen.getAllByText("7d")[1]);
 
-    // Two "Great" check-ins in range; the out-of-range "Awful" is not counted.
+    // Two "Great" check-ins in range; the out-of-range "Awful" is not counted —
+    // it shows only as a zero legend entry, never a bar segment (#881).
     expect(screen.getByLabelText("Great: 2 check-ins")).toBeTruthy();
-    expect(screen.getByLabelText("Awful: 0 check-ins")).toBeTruthy();
+    expect(screen.getByText("Awful · 0")).toBeTruthy();
   });
 
-  it("gives the map no range control of its own, leaving it all-time", () => {
-    mockLogged();
+  /**
+   * The selections are INDEPENDENT (#880): narrowing the distribution must not
+   * narrow the trend. The union query keeps the wider window, and the trend
+   * still plots its own 30 days.
+   */
+  it("keeps the trend window when the distribution is narrowed to 7d", () => {
+    mockUseMoodLogCount.mockReturnValue({
+      data: 9,
+    } as unknown as ReturnType<typeof useMoodLogCount>);
     mockUseMoodLogs.mockReturnValue({
       data: [],
     } as unknown as ReturnType<typeof useMoodHistory>);
+    mockUseMoodScorePoints.mockReturnValue({
+      data: [
+        { dayKey: dayKeyDaysAgo(0), moodScore: 5 },
+        { dayKey: dayKeyDaysAgo(10), moodScore: 1 },
+      ],
+    } as unknown as ReturnType<typeof useMoodScorePoints>);
 
     renderWithProviders(<MoodTrackerScreen />);
+    fireEvent.press(screen.getAllByText("7d")[1]);
 
-    // A calendar grid at 7d is just the week strip, and the heatmap has been
-    // unbounded since it was built - so exactly one segmented control exists.
-    // "7d" is rendered by a segmented control and nothing else, so one match is
-    // one control on the whole screen.
-    expect(screen.getAllByText("7d")).toHaveLength(1);
-    // The map still names its own span; it just cannot be changed.
-    expect(screen.getByRole("heading", { name: "All time" })).toBeTruthy();
+    // The distribution dropped the 10-day-old "Awful"…
+    expect(screen.getByText("Awful · 0")).toBeTruthy();
+    expect(screen.getByLabelText("Great: 1 check-in")).toBeTruthy();
+    // …but the union query still spans the trend's 30 days — the trend's
+    // selection did not move. (`toHaveBeenCalledWith`, not `LastCalledWith`:
+    // the mood map consumes the same hook with its own fixed epoch bound.)
+    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
+      "user-1",
+      startOfDayDaysAgo(30).toISOString(),
+      undefined,
+    );
+    expect(mockUseMoodScorePoints).not.toHaveBeenCalledWith(
+      "user-1",
+      startOfDayDaysAgo(7).toISOString(),
+      undefined,
+    );
   });
 
   it("asks for the whole history when All time is chosen, bounded at the first entry", () => {
@@ -596,8 +628,7 @@ describe("MoodTrackerScreen", () => {
     } as unknown as ReturnType<typeof useFirstMoodDayKey>);
 
     renderWithProviders(<MoodTrackerScreen />);
-    // [0] is the segment; [1] is the map's section heading, which in `en` reads
-    // the same and is not pressable.
+    // [0] is the trend control's segment (controls render in section order).
     fireEvent.press(screen.getAllByText("All time")[0]);
 
     // The first entry, not the epoch, so the span states a real period.
@@ -624,7 +655,7 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    fireEvent.press(screen.getByText("90d"));
+    fireEvent.press(screen.getAllByText("90d")[0]);
 
     // (Not "last called": the all-time heatmap query shares this hook.)
     expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
@@ -634,7 +665,7 @@ describe("MoodTrackerScreen", () => {
     );
   });
 
-  it("renders the all-time heatmap section below the trend", () => {
+  it("renders the Mood map section below the trend", () => {
     mockLogged();
     mockUseMoodLogs.mockReturnValue({
       data: [],
@@ -642,7 +673,10 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    expect(screen.getByRole("heading", { name: "All time" })).toBeTruthy();
+    // Renamed from "All time" (#884): the design's section is MOOD MAP, and
+    // the rename dissolves the title/segment collision the map's own range
+    // control (#880) would otherwise create.
+    expect(screen.getByRole("heading", { name: "Mood map" })).toBeTruthy();
     // The map's own "log a mood to start your map" is no longer the first thing
     // a new user meets: the section only renders once there IS a check-in, so
     // that copy is now reachable only when the map's window is empty while the
@@ -659,7 +693,7 @@ describe("MoodTrackerScreen", () => {
     renderWithProviders(<MoodTrackerScreen />);
 
     expect(screen.queryByText("Done")).toBeNull();
-    fireEvent.press(screen.getByText("Custom"));
+    fireEvent.press(screen.getAllByText("Custom")[0]);
     expect(screen.getByText("Done")).toBeTruthy();
   });
 });

@@ -21,13 +21,14 @@ describe("the surfaces that keep hue", () => {
   // quality ramp. #558 never reviewed either surface; its rule admits both. The
   // list is asserted exactly rather than as a floor, so a seventh cannot arrive
   // without someone answering the question for it.
-  it("are exactly the six the rule admits", () => {
+  // Down from six: "mood-scale" left with the 2a redesign — the bare-emoji
+  // input control encodes selection in size and opacity, not hue.
+  it("are exactly the five the rule admits", () => {
     expect(HUE_ENCODINGS.map((encoding) => encoding.id).sort()).toEqual([
       "breathing-exercise-colour",
       "breathing-pacer",
       "habit-colour",
       "mood-heatmap-ramp",
-      "mood-scale",
       "sleep-quality-ramp",
     ]);
   });
@@ -75,7 +76,7 @@ describe("the surfaces that keep hue", () => {
 describe("relative encodings may re-tint, categorical ones are pinned", () => {
   // A ramp means "worse → better" by depth, and says that just as well in any
   // palette.
-  it.each(["mood-heatmap-ramp", "mood-scale"])("%s is relative", (id) => {
+  it.each(["mood-heatmap-ramp"])("%s is relative", (id) => {
     expect(hueEncoding(id)?.kind).toBe("relative");
     expect(isPinnedEncoding(id)).toBe(false);
   });

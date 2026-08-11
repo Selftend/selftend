@@ -17,6 +17,8 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { cn } from "@/lib/utils";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 import {
@@ -94,68 +96,78 @@ function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorV
 
   return (
     <View className="flex-1 bg-background">
-      <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
-        <Text variant="h3">
-          {state.mode === "add" ? t("emotions.manage.addTitle") : t("emotions.manage.edit")}
-        </Text>
-        <Pressable
-          accessibilityLabel={t("emotions.manage.back")}
-          accessibilityRole="button"
-          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={onClose}
-        >
-          <Icon name="close" className="size-6 text-foreground" />
-        </Pressable>
+      {/* Same form column as the list view (#872): the hairlines span the
+          sheet, the content does not. */}
+      <View className="border-b border-border px-4 py-3">
+        <View className={cn(FORM_COLUMN, "flex-row items-center justify-between")}>
+          <Text variant="h3">
+            {state.mode === "add" ? t("emotions.manage.addTitle") : t("emotions.manage.edit")}
+          </Text>
+          <Pressable
+            accessibilityLabel={t("emotions.manage.back")}
+            accessibilityRole="button"
+            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+            onPress={onClose}
+          >
+            <Icon name="close" className="size-6 text-foreground" />
+          </Pressable>
+        </View>
       </View>
 
       <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
-        <AnimatedScrollView contentContainerClassName="p-4 gap-6 pb-8">
-          {/* Name first, then the emoji picker - the design's order on `2e`. */}
-          <View className="gap-2">
-            <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-              {t("emotions.manage.name")}
-            </Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              className="rounded-lg border border-border bg-card px-3.5 py-2.5 text-foreground"
-              placeholder={t("emotions.manage.namePlaceholder")}
-              accessibilityLabel={t("emotions.manage.name")}
-            />
-          </View>
+        <AnimatedScrollView contentContainerClassName="p-4 pb-8">
+          <View className={cn(FORM_COLUMN, "gap-6")}>
+            {/* Name first, then the emoji picker - the design's order on `2e`. */}
+            <View className="gap-2">
+              <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                {t("emotions.manage.name")}
+              </Text>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                className="rounded-lg border border-border bg-card px-3.5 py-2.5 text-foreground"
+                placeholder={t("emotions.manage.namePlaceholder")}
+                accessibilityLabel={t("emotions.manage.name")}
+              />
+            </View>
 
-          <View className="gap-2.5">
-            <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-              {t("emotions.manage.emoji")}
-            </Text>
-            <EmojiPicker value={emoji} onSelect={setEmoji} />
-          </View>
+            <View className="gap-2.5">
+              <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                {t("emotions.manage.emoji")}
+              </Text>
+              <EmojiPicker value={emoji} onSelect={setEmoji} />
+            </View>
 
-          {/* Delete lives here, not on the row. Moving it inside the editor is what takes
+            {/* Delete lives here, not on the row. Moving it inside the editor is what takes
               a row from six hit targets down to two, and it puts the destructive action
               behind one deliberate step rather than beside a drag handle. */}
-          {state.mode === "edit" ? (
-            <View className="border-t border-border pt-4">
-              <Button
-                variant="ghost"
-                onPress={() => setConfirmDeleteOpen(true)}
-                className="self-start"
-              >
-                <Icon name="delete-outline" className="size-4 text-destructive" />
-                <Text className="text-destructive">{t("emotions.manage.delete")}</Text>
-              </Button>
-            </View>
-          ) : null}
+            {state.mode === "edit" ? (
+              <View className="border-t border-border pt-4">
+                <Button
+                  variant="ghost"
+                  onPress={() => setConfirmDeleteOpen(true)}
+                  className="self-start"
+                >
+                  <Icon name="delete-outline" className="size-4 text-destructive" />
+                  <Text className="text-destructive">{t("emotions.manage.delete")}</Text>
+                </Button>
+              </View>
+            ) : null}
+          </View>
         </AnimatedScrollView>
       </KeyboardAvoidingView>
 
-      <View className="flex-row gap-2 border-t border-border p-4">
-        <Button variant="ghost" onPress={onClose} className="flex-1">
-          <Text>{t("emotions.manage.cancel")}</Text>
-        </Button>
-        <Button onPress={handleSave} disabled={!canSave} className="flex-1">
-          <Text>{state.mode === "add" ? t("emotions.manage.add") : t("emotions.manage.save")}</Text>
-        </Button>
+      <View className="border-t border-border p-4">
+        <View className={cn(FORM_COLUMN, "flex-row gap-2")}>
+          <Button variant="ghost" onPress={onClose} className="flex-1">
+            <Text>{t("emotions.manage.cancel")}</Text>
+          </Button>
+          <Button onPress={handleSave} disabled={!canSave} className="flex-1">
+            <Text>
+              {state.mode === "add" ? t("emotions.manage.add") : t("emotions.manage.save")}
+            </Text>
+          </Button>
+        </View>
       </View>
 
       <ConfirmDialog
@@ -267,57 +279,64 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
           />
         ) : (
           <View className="flex-1 bg-background">
-            <View className="flex-row items-start justify-between gap-6 border-b border-border px-4 py-3">
-              <View className="flex-1 gap-1">
-                <Text variant="h3">{t("emotions.manage.title")}</Text>
-                <Text variant="muted" className="text-[13px]">
-                  {t("emotions.manage.tagline")}
-                </Text>
+            {/* The hairline spans the sheet, but the header content and the
+                rows below sit on the 620px form column (#872, decided on #690:
+                widths ride with the shell — this surface is 2d's form screen). */}
+            <View className="border-b border-border px-4 py-3">
+              <View className={cn(FORM_COLUMN, "flex-row items-start justify-between gap-6")}>
+                <View className="flex-1 gap-1">
+                  <Text variant="h3">{t("emotions.manage.title")}</Text>
+                  <Text variant="muted" className="text-[13px]">
+                    {t("emotions.manage.tagline")}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={onClose}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("emotions.manage.close")}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                >
+                  <Icon name="close" className="size-6 text-foreground" />
+                </Pressable>
               </View>
-              <Pressable
-                onPress={onClose}
-                accessibilityRole="button"
-                accessibilityLabel={t("emotions.manage.close")}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              >
-                <Icon name="close" className="size-6 text-foreground" />
-              </Pressable>
             </View>
 
-            <AnimatedScrollView ref={scrollableRef} contentContainerClassName="p-4 gap-4 pb-8">
-              {isLoading ? (
-                <View className="items-center py-8">
-                  <ActivityIndicator />
-                </View>
-              ) : (
-                <View>
-                  {/* `Sortable.Grid columns={1}`, explicitly, never `Sortable.Flex`:
-                      Flex drops sub-pixel re-measures, so a row can end up one pixel off
-                      and never settle. */}
-                  <Sortable.Grid
-                    columns={1}
-                    data={allEmotions}
-                    keyExtractor={(e) => e.id}
-                    rowGap={0}
-                    scrollableRef={scrollableRef}
-                    customHandle
-                    dragActivationDelay={0}
-                    onDragEnd={({ data }) => reorderEmotions.mutate(data.map((e) => e.id))}
-                    renderItem={renderEmotionRow}
-                  />
-                  {/* Closing hairline: the rows are top-ruled, so the last needs a floor. */}
-                  <View className="border-t border-border" />
-                </View>
-              )}
+            <AnimatedScrollView ref={scrollableRef} contentContainerClassName="p-4 pb-8">
+              <View className={cn(FORM_COLUMN, "gap-4")}>
+                {isLoading ? (
+                  <View className="items-center py-8">
+                    <ActivityIndicator />
+                  </View>
+                ) : (
+                  <View>
+                    {/* `Sortable.Grid columns={1}`, explicitly, never `Sortable.Flex`:
+                        Flex drops sub-pixel re-measures, so a row can end up one pixel off
+                        and never settle. */}
+                    <Sortable.Grid
+                      columns={1}
+                      data={allEmotions}
+                      keyExtractor={(e) => e.id}
+                      rowGap={0}
+                      scrollableRef={scrollableRef}
+                      customHandle
+                      dragActivationDelay={0}
+                      onDragEnd={({ data }) => reorderEmotions.mutate(data.map((e) => e.id))}
+                      renderItem={renderEmotionRow}
+                    />
+                    {/* Closing hairline: the rows are top-ruled, so the last needs a floor. */}
+                    <View className="border-t border-border" />
+                  </View>
+                )}
 
-              <Button
-                variant="outline"
-                onPress={() => setEditorState({ mode: "add" })}
-                className="self-start border-dashed"
-              >
-                <Icon name="add" className="size-4" />
-                <Text>{t("emotions.manage.addButton")}</Text>
-              </Button>
+                <Button
+                  variant="outline"
+                  onPress={() => setEditorState({ mode: "add" })}
+                  className="self-start border-dashed"
+                >
+                  <Icon name="add" className="size-4" />
+                  <Text>{t("emotions.manage.addButton")}</Text>
+                </Button>
+              </View>
             </AnimatedScrollView>
           </View>
         )}

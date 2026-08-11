@@ -174,11 +174,6 @@ const KEEPS_HUE: Record<HueEncodingId, { file: string; pattern: RegExp; what: st
     pattern: /bg-act\/\[0\.16\]/,
     what: "HUE_RAMP_CLASSES, the 5-step score ramp",
   },
-  "mood-scale": {
-    file: "src/components/app/mood-scale.tsx",
-    pattern: /hueHsl\("act"/,
-    what: "the 1-5 input control's hue wash",
-  },
   "habit-colour": {
     file: "src/features/habits/habit-color.ts",
     pattern: /HABIT_COLOR_TINTS/,

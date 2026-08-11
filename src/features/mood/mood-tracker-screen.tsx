@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
+  useWindowDimensions,
   View,
   type LayoutChangeEvent,
 } from "react-native";
@@ -11,7 +12,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
-import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
@@ -28,12 +28,8 @@ import {
   useMoodScorePoints,
   useMoodWeek,
 } from "@/src/features/mood/queries";
-import {
-  getDayMoodSummary,
-  getMoodDistribution,
-  getMoodSummary,
-  type MoodSummary,
-} from "@/src/features/mood/summaries";
+import { getMoodDistribution, getMoodSummary } from "@/src/features/mood/summaries";
+import type { MoodLog } from "@/src/features/mood/types";
 import { MoodDistributionChart } from "@/src/features/mood/mood-distribution";
 import {
   buildWeekDays,
@@ -47,13 +43,14 @@ import {
 } from "@/src/features/mood/week-window";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
+import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import {
   addDaysToKey,
   dayRangeEndKey,
-  formatAtOffset,
+  formatCompactAtOffset,
   parseLocalNoon,
   startOfDayDaysAgo,
 } from "@/src/utils/date";
@@ -61,17 +58,20 @@ import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 /**
- * The window the trend and the distribution SHARE (#737, decided on #700).
+ * Per-section, INDEPENDENT range pickers (#880, amending #700).
  *
- * Neither three controls nor one: the mood map keeps no control and stays
- * all-time, because a calendar grid at `7d` is just the week strip and the
- * heatmap has been unbounded since it was built. Trend and distribution are
- * adjacent sections answering two halves of one question, so two adjacent
- * charts silently covering different periods would be worse than the mild loss
- * of power in sharing. Sharing also means ONE `scorePoints` query feeds both,
- * and the distribution needs no query of its own.
+ * The deciding evidence: the design file itself draws independent selections —
+ * trend at 30d while the distribution shows All time — so "one shared control"
+ * was never what the design specified. Each stats section (Mood trend,
+ * Distribution, Mood map) carries its own control and its own selection state,
+ * defaulting to the design's drawn states: trend 30d, distribution All time,
+ * map All time. The map is no longer *pinned* all-time; it starts there.
+ *
+ * No persistence (upheld from #700), and no new queries: the score-points
+ * fetch is already unbounded (#693) — three filters over one dataset.
  */
-type TrendRange = "7d" | "30d" | "90d" | "all" | "custom";
+type StatsRange = "7d" | "30d" | "90d" | "all" | "custom";
+type StatsSection = "trend" | "distribution" | "map";
 
 const PRESET_DAYS: Record<"7d" | "30d" | "90d", number> = {
   "7d": 7,
@@ -90,12 +90,30 @@ export default function MoodTrackerScreen() {
   // cache's 200-row ceiling, which would render real logged weeks as empty (#697).
   const { data: moodLogs } = useMoodHistory(userId, 200);
   const { selectedDate } = useSelectedDate();
+  /**
+   * One breakpoint for the two rows the design packs tighter than 360dp allows:
+   * the week header (label + chevrons + history link — #697 measured the bg
+   * overflow) and the trend header (heading + five segments — #737's ~560dp).
+   * Wide screens take the design's single rows; narrow keep the decided splits.
+   */
+  const { width: windowWidth } = useWindowDimensions();
+  const wideRows = windowWidth >= 640;
 
   const [forceOnboarding, setForceOnboarding] = useState(false);
   const [chartContainerWidth, setChartContainerWidth] = useState(300);
-  const [trendRange, setTrendRange] = useState<TrendRange>("30d");
-  const [customRange, setCustomRange] = useState<DateRange | null>(null);
-  const [rangePickerOpen, setRangePickerOpen] = useState(false);
+  const [ranges, setRanges] = useState<Record<StatsSection, StatsRange>>({
+    trend: "30d",
+    distribution: "all",
+    map: "all",
+  });
+  const [customRanges, setCustomRanges] = useState<Record<StatsSection, DateRange | null>>({
+    trend: null,
+    distribution: null,
+    map: null,
+  });
+  // Which section's control opened the custom picker — one modal serves all
+  // three controls, writing back to the section that asked.
+  const [rangePickerFor, setRangePickerFor] = useState<StatsSection | null>(null);
   // Purely local, and it does not touch the today picker: "log for today" and
   // "look at a week" are different questions. There is deliberately no global
   // selected-date state to collide with (#250).
@@ -122,12 +140,9 @@ export default function MoodTrackerScreen() {
   const weekQuery = useMoodWeek(userId, weekWindow.startKey);
   const weekLogs = weekQuery.data;
 
-  // Each aggregation iterates up to 200 logs; memoize so unrelated re-renders (chart-width
-  // onLayout or onboarding toggle) don't recompute the week/day summaries.
-  const daySummary = useMemo(
-    () => getDayMoodSummary(moodLogs, selectedDate),
-    [moodLogs, selectedDate],
-  );
+  // Newest-first, so `find` is today's latest log — the one the picker shows
+  // selected and the caption names.
+  const latestToday = (moodLogs ?? []).find((log) => log.dayKey === selectedDate) ?? null;
   const sevenDay = useMemo(() => getMoodSummary(moodLogs, 7), [moodLogs]);
   const weekDelta = useMemo(
     () => getWeekDeltaForWindow(weekLogs, weekWindow),
@@ -144,7 +159,11 @@ export default function MoodTrackerScreen() {
   // different spans on one screen (#697).
   const thisWeekCount = useMemo(() => countLogsInCurrentWeek(moodLogs), [moodLogs]);
   const lastLog = (moodLogs ?? [])[0] ?? null; // listMoodLogs returns newest-first
-  const lastWhen = lastLog ? formatAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes) : null;
+  // Compact, like the design draws it: `last logged 4:50 pm`, not the full
+  // date-and-year the medium/short Intl styles produce (#870).
+  const lastWhen = lastLog
+    ? formatCompactAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes)
+    : null;
   // `moodLogs` is undefined while loading and after a failed fetch with no
   // cache - only an actually-loaded (possibly empty) history may claim "no
   // check-ins", or a returning user's history reads as erased.
@@ -183,24 +202,56 @@ export default function MoodTrackerScreen() {
   // exhaustion, so All time adds no new query SHAPE, only a wider `fromIso`.
   // Until that key loads it falls back to the default window rather than
   // fetching from 1970.
-  const isCustom = trendRange === "custom" && customRange !== null;
-  const isAllTime = trendRange === "all" && Boolean(firstLogDayKey);
-  const presetDays = PRESET_DAYS[trendRange === "7d" || trendRange === "90d" ? trendRange : "30d"];
-  const windowFromIso = isCustom
-    ? new Date(`${customRange.start}T00:00:00`).toISOString()
-    : isAllTime
-      ? // UTC midnight, NOT the viewer's local midnight. A day key is a civil day
-        // in the frame it was CAPTURED in, so the earliest instant belonging to it
-        // can sit up to 14h before its UTC midnight - but up to 25h before the
-        // viewer's local midnight, if that entry was logged at +14:00 and is being
-        // read at -11:00. `listMoodScorePoints` pads by only 24h, so the local
-        // reading would leave the user's very first entry outside the `.gte` bound
-        // and All time would silently omit it. Matches `listMoodLogsInDayRange`.
-        `${firstLogDayKey!}T00:00:00.000Z`
-      : startOfDayDaysAgo(presetDays).toISOString();
-  const windowToIso = isCustom
-    ? new Date(`${customRange.end}T23:59:59.999`).toISOString()
-    : undefined;
+  /**
+   * Each section's chosen range, resolved to the pieces the window math needs.
+   * `isAll` waits for `firstLogDayKey` so All time never fetches from 1970;
+   * until it loads the section falls back to the default preset window.
+   */
+  const resolveRange = (section: StatsSection) => {
+    const range = ranges[section];
+    const custom = customRanges[section];
+    const isCustom = range === "custom" && custom !== null;
+    const isAll = range === "all" && Boolean(firstLogDayKey);
+    const presetDays = PRESET_DAYS[range === "7d" || range === "90d" ? range : "30d"];
+    return { isCustom, isAll, presetDays, custom };
+  };
+  const trendWindow = resolveRange("trend");
+  const distWindow = resolveRange("distribution");
+  const mapWindow = resolveRange("map");
+
+  // One fetch feeds the trend AND the distribution: the query window is the
+  // UNION of their two selections, and each section narrows back to its own
+  // day keys below (#880's "three filters over one dataset" — the map filters
+  // its own all-time query inside MoodHeatmap).
+  const windowStartIso = (w: ReturnType<typeof resolveRange>) =>
+    w.isCustom
+      ? new Date(`${w.custom!.start}T00:00:00`).toISOString()
+      : w.isAll
+        ? // UTC midnight, NOT the viewer's local midnight. A day key is a civil day
+          // in the frame it was CAPTURED in, so the earliest instant belonging to it
+          // can sit up to 14h before its UTC midnight - but up to 25h before the
+          // viewer's local midnight, if that entry was logged at +14:00 and is being
+          // read at -11:00. `listMoodScorePoints` pads by only 24h, so the local
+          // reading would leave the user's very first entry outside the `.gte` bound
+          // and All time would silently omit it. Matches `listMoodLogsInDayRange`.
+          `${firstLogDayKey!}T00:00:00.000Z`
+        : startOfDayDaysAgo(w.presetDays).toISOString();
+  const trendFromIso = windowStartIso(trendWindow);
+  const distFromIso = windowStartIso(distWindow);
+  // ISO-8601 UTC strings sort lexicographically, so the union start is a plain
+  // string min. The upper bound is only closed when BOTH sections are custom —
+  // any open-ended selection has to see entries landing right now.
+  const windowFromIso = trendFromIso <= distFromIso ? trendFromIso : distFromIso;
+  const windowToIso =
+    trendWindow.isCustom && distWindow.isCustom
+      ? new Date(
+          `${
+            trendWindow.custom!.end >= distWindow.custom!.end
+              ? trendWindow.custom!.end
+              : distWindow.custom!.end
+          }T23:59:59.999`,
+        ).toISOString()
+      : undefined;
   const { data: scorePoints } = useMoodScorePoints(userId, windowFromIso, windowToIso);
   // Paging stops at the week holding the first entry: weeks before the account
   // existed are empty chrome. Until that query answers, only the current week is
@@ -211,28 +262,30 @@ export default function MoodTrackerScreen() {
   );
 
   /**
-   * The ONE civil-day window both charts read.
+   * The civil-day window each chart reads, resolved per section (#880).
    *
-   * It has to be computed once and shared, because `listMoodScorePoints`
-   * deliberately over-fetches: its bounds filter `logged_at`, a UTC instant,
+   * Still narrowed by DAY KEY, never by the raw response: `listMoodScorePoints`
+   * deliberately over-fetches — its bounds filter `logged_at`, a UTC instant,
    * while points are bucketed by the civil day captured with them, so the query
-   * pads a whole day at each end. Every consumer is expected to narrow back by
-   * day key - the trend does it by walking an explicit range. Handing the RAW
-   * response to the distribution counted those padded rows, so a check-in on the
-   * day just outside the range appeared in one chart and not the other, breaking
-   * the single guarantee this ticket exists to make.
+   * pads a whole day at each end. Every consumer narrows back to its own keys,
+   * or a check-in on the day just outside a range appears in one chart and not
+   * another.
    *
-   * The end is `dayRangeEndKey`, not today: fly east-to-west and you land
-   * holding an entry keyed "tomorrow", and All time that stops at the viewer's
-   * current day would drop it from the trend while still counting it in the
-   * distribution (#250).
+   * The shared end is `dayRangeEndKey`, not today: fly east-to-west and you
+   * land holding an entry keyed "tomorrow", and a window that stops at the
+   * viewer's current day would silently drop it (#250).
    */
-  const rangeKeys = useMemo(() => {
-    const endKey = dayRangeEndKey((scorePoints ?? []).map((point) => point.dayKey));
-    if (isCustom) return { startKey: customRange.start, endKey: customRange.end };
-    if (isAllTime) return { startKey: firstLogDayKey!, endKey };
-    return { startKey: addDaysToKey(endKey, -(presetDays - 1)), endKey };
-  }, [scorePoints, isCustom, customRange, isAllTime, firstLogDayKey, presetDays]);
+  const sharedEndKey = useMemo(
+    () => dayRangeEndKey((scorePoints ?? []).map((point) => point.dayKey)),
+    [scorePoints],
+  );
+  const sectionKeys = (w: ReturnType<typeof resolveRange>) => {
+    if (w.isCustom) return { startKey: w.custom!.start, endKey: w.custom!.end };
+    if (w.isAll) return { startKey: firstLogDayKey!, endKey: sharedEndKey };
+    return { startKey: addDaysToKey(sharedEndKey, -(w.presetDays - 1)), endKey: sharedEndKey };
+  };
+  const trendKeys = sectionKeys(trendWindow);
+  const distKeys = sectionKeys(distWindow);
 
   // Only the first and last day are labelled — interior labels would collide
   // at the trend windows' densities (matches the previous bespoke chart).
@@ -241,52 +294,69 @@ export default function MoodTrackerScreen() {
   // just `buildMoodChartDataForRange` over `dayRangeEndKey`-anchored keys, so
   // driving it from the shared window changes no preset behaviour and removes
   // the chance of the two charts computing their bounds differently.
-  const chartData = useMemo(() => {
-    const days = buildMoodChartDataForRange(
-      scorePoints,
-      rangeKeys.startKey,
-      rangeKeys.endKey,
-      i18n.language,
-    );
-    return days.map((d, i) => ({
-      offset: d.offset,
-      value: d.score,
-      label: i === 0 || i === days.length - 1 ? d.day : undefined,
-    }));
-  }, [scorePoints, rangeKeys, i18n.language]);
+  //
+  // Plain derivations, no useMemo: the deps would be fields of the per-render
+  // `sectionKeys` objects, which the React Compiler refuses to preserve — it
+  // memoizes these itself once nothing blocks compilation.
+  const chartData = buildMoodChartDataForRange(
+    scorePoints,
+    trendKeys.startKey,
+    trendKeys.endKey,
+    i18n.language,
+  ).map((d, i, days) => ({
+    offset: d.offset,
+    value: d.score,
+    label: i === 0 || i === days.length - 1 ? d.day : undefined,
+  }));
 
-  // The distribution reduces over the SAME points the trend plots (#701),
-  // narrowed to the SAME day keys - one range, one query, no second fetch and no
-  // contact with the capped history.
-  const distribution = useMemo(
-    () =>
-      getMoodDistribution(
-        (scorePoints ?? []).filter(
-          (point) => point.dayKey >= rangeKeys.startKey && point.dayKey <= rangeKeys.endKey,
-        ),
-      ),
-    [scorePoints, rangeKeys],
+  // The distribution reduces over the same fetched points, narrowed to ITS OWN
+  // day keys (#880) - one query, no second fetch and no contact with the capped
+  // history.
+  const distribution = getMoodDistribution(
+    (scorePoints ?? []).filter(
+      (point) => point.dayKey >= distKeys.startKey && point.dayKey <= distKeys.endKey,
+    ),
   );
 
   /**
-   * The resolved span under the control, e.g. "3 Mar – 1 Apr" (#700).
+   * The resolved span beside each section heading, e.g. "3 Mar – 1 Apr" (#700).
    *
    * Shown for Custom and for All time - the two ranges whose extent a segment
-   * label does not state. `7d`/`30d`/`90d` already say their own span.
+   * label does not state. `7d`/`30d`/`90d` already say their own span. The
+   * All-time span ends at `dayRangeEndKey(points)`, so a newly arrived entry
+   * can move the label without any of the range inputs changing.
    */
-  const spanLabel = useMemo(() => {
-    const bounds = isCustom
-      ? ([customRange.start, customRange.end] as const)
-      : isAllTime
-        ? ([rangeKeys.startKey, rangeKeys.endKey] as const)
+  const sectionSpanLabel = (w: ReturnType<typeof resolveRange>) => {
+    const bounds = w.isCustom
+      ? ([w.custom!.start, w.custom!.end] as const)
+      : w.isAll
+        ? ([firstLogDayKey!, sharedEndKey] as const)
         : null;
     if (!bounds) return null;
     const fmt = new Intl.DateTimeFormat(i18n.language, { day: "numeric", month: "short" });
     return `${fmt.format(parseLocalNoon(bounds[0]))} – ${fmt.format(parseLocalNoon(bounds[1]))}`;
-    // `rangeKeys`, not `firstLogDayKey`: the All-time span ends at
-    // `dayRangeEndKey(points)`, so a newly arrived entry can move the label
-    // without any of the range inputs changing.
-  }, [isCustom, customRange, isAllTime, rangeKeys, i18n.language]);
+  };
+  const trendSpan = sectionSpanLabel(trendWindow);
+  const distSpan = sectionSpanLabel(distWindow);
+  const mapSpan = sectionSpanLabel(mapWindow);
+
+  /**
+   * The map narrows ITS OWN all-time query by day key (#880) — never a second
+   * fetch. "All" is unconditionally unfiltered here (unlike the trend's
+   * fallback-to-preset while `firstLogDayKey` loads): the map's query is
+   * already unbounded, so a loading first-key must not flash a 30-day map at
+   * someone who chose — or defaulted to — the whole history.
+   */
+  const mapBounds =
+    ranges.map === "all"
+      ? { startKey: null, endKey: null }
+      : mapWindow.isCustom
+        ? { startKey: mapWindow.custom!.start, endKey: mapWindow.custom!.end }
+        : {
+            startKey: addDaysToKey(currentDateKey(), -(mapWindow.presetDays - 1)),
+            // Open-ended: a travel entry keyed "tomorrow" stays visible (#250).
+            endKey: null,
+          };
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
   };
@@ -323,6 +393,37 @@ export default function MoodTrackerScreen() {
   const [trendEverEarned, setTrendEverEarned] = useState(false);
   if (trendEarned && !trendEverEarned) setTrendEverEarned(true);
   const showTrend = trendEarned || trendEverEarned;
+
+  /**
+   * One control per section (#880). It rides the section's heading row only
+   * where the width is real (#700's measurement stands: heading + five
+   * segments ≈ 560dp in `bg` against 328dp usable, and `SegmentedControl` is a
+   * no-wrap, no-scroll flex row) — below 640dp each control keeps a row of its
+   * own inside its section instead.
+   */
+  const rangeControl = (section: StatsSection) => (
+    <SegmentedControl
+      value={ranges[section]}
+      onChange={(next: StatsRange) => {
+        // Custom is a two-step choice: the picker applies it. Tapping the
+        // active Custom segment again reopens the picker.
+        if (next === "custom") {
+          setRangePickerFor(section);
+          return;
+        }
+        setRanges((prev) => ({ ...prev, [section]: next }));
+      }}
+      options={[
+        { value: "7d", label: t("trendControls.range7") },
+        { value: "30d", label: t("trendControls.range30") },
+        { value: "90d", label: t("trendControls.range90") },
+        // A short key of its own, deliberately separate from the section
+        // titles: "All time" here is a range segment, not a heading.
+        { value: "all", label: t("trendControls.rangeAll") },
+        { value: "custom", label: t("trendControls.rangeCustom") },
+      ]}
+    />
+  );
 
   return (
     <>
@@ -361,9 +462,12 @@ export default function MoodTrackerScreen() {
             />
 
             {/* Always. Tapping a score deep-links into the editor with it
-                preselected, so the first screenful is the whole interaction. */}
-            <Section ruled={false}>
-              <TodayCheckIn summary={daySummary} />
+                preselected, so the first screenful is the whole interaction.
+                mt-6 holds the hairline off the stat run, so the space below the
+                stats reads as the same rhythm as the band inside the section —
+                without it the rule sat directly under the stats (#884). */}
+            <Section className="mt-6">
+              <TodayCheckIn latest={latestToday} dateKey={selectedDate} />
             </Section>
 
             {hasAnyCheckIn ? (
@@ -373,16 +477,23 @@ export default function MoodTrackerScreen() {
               <Section
                 title={formatWeekLabel(weekWindow, t, i18n.language)}
                 action={
-                  <WeekNavigator
-                    canGoBack={weekWindow.startKey > earliestWeekStart}
-                    canGoForward={!weekWindow.isCurrentWeek}
-                    onPrevious={() => setDisplayedWeekStart((k) => shiftWeek(k, -1))}
-                    onNext={() =>
-                      setDisplayedWeekStart((k) =>
-                        shiftWeek(k, 1) > anchorWeekStart ? anchorWeekStart : shiftWeek(k, 1),
-                      )
-                    }
-                  />
+                  <View className="flex-row items-center gap-4">
+                    <WeekNavigator
+                      canGoBack={weekWindow.startKey > earliestWeekStart}
+                      canGoForward={!weekWindow.isCurrentWeek}
+                      onPrevious={() => setDisplayedWeekStart((k) => shiftWeek(k, -1))}
+                      onNext={() =>
+                        setDisplayedWeekStart((k) =>
+                          shiftWeek(k, 1) > anchorWeekStart ? anchorWeekStart : shiftWeek(k, 1),
+                        )
+                      }
+                    />
+                    {/* The design's header row carries the history link; on a
+                        narrow screen it drops to its own line inside WeekHero
+                        (#697's 360dp bg measurement). Conditional, not CSS-
+                        hidden, so it never exists twice in the a11y tree. */}
+                    {wideRows ? <ShowAllHistoryLink /> : null}
+                  </View>
                 }
               >
                 {/*
@@ -405,6 +516,7 @@ export default function MoodTrackerScreen() {
                     delta={weekDelta}
                     topEmotions={topEmotions}
                     logs={weekLogs}
+                    showHistoryLink={!wideRows}
                   />
                 ) : weekQuery.isError ? (
                   <WeekLoadFailed onRetry={() => void weekQuery.refetch()} />
@@ -417,66 +529,24 @@ export default function MoodTrackerScreen() {
             ) : null}
 
             {/*
-              ONE range control, on a row of its own, above the two sections it
-              governs (#737, decided on #700). Not beside a heading: the design
-              puts heading + span + five segments on one line, which measures
-              ~408dp in `en` and ~560dp in `bg` against 328dp usable, and
-              `SegmentedControl` is a no-wrap, no-scroll flex row that would just
-              clip. The map deliberately gets NO control and stays all-time.
-
-              It appears with the first section it governs - the distribution, at
-              one check-in - so it is never a control over nothing.
+              Each stats section carries its OWN range control (#880, amending
+              #700). At ≥640dp the control rides the section's heading row; on a
+              narrow screen it keeps a row of its own inside the section (#700's
+              width measurement stands — heading + five segments ≈ 560dp in `bg`
+              against 328dp usable). The `flex-row` wrapper keeps the pill sized
+              to its segments rather than stretching the full column.
             */}
-            {hasAnyCheckIn ? (
-              <Section className="gap-2">
-                {/* The pill sizes to its segments rather than stretching: on its
-                    own row it would otherwise span the full column with the
-                    segments packed left and trailing muted space. */}
-                <View className="flex-row">
-                  <SegmentedControl
-                    value={trendRange}
-                    onChange={(next) => {
-                      // Custom is a two-step choice: the picker applies it. Tapping
-                      // the active Custom segment again reopens the picker.
-                      if (next === "custom") {
-                        setRangePickerOpen(true);
-                        return;
-                      }
-                      setTrendRange(next);
-                    }}
-                    options={[
-                      { value: "7d", label: t("trendControls.range7") },
-                      { value: "30d", label: t("trendControls.range30") },
-                      { value: "90d", label: t("trendControls.range90") },
-                      // A short key of its own: `heatmap.title` is the 15-character
-                      // `За цялото време`, right as a section title and unusable as
-                      // a segment.
-                      { value: "all", label: t("trendControls.rangeAll") },
-                      { value: "custom", label: t("trendControls.rangeCustom") },
-                    ]}
-                  />
-                </View>
-                {spanLabel ? (
+            {showTrend ? (
+              <Section
+                title={t("trendControls.title")}
+                action={wideRows ? rangeControl("trend") : undefined}
+              >
+                {!wideRows ? <View className="flex-row">{rangeControl("trend")}</View> : null}
+                {trendSpan ? (
                   <Text variant="muted" className="text-[13px]">
-                    {spanLabel}
+                    {trendSpan}
                   </Text>
                 ) : null}
-                <DateRangeField
-                  visible={rangePickerOpen}
-                  onClose={() => setRangePickerOpen(false)}
-                  value={customRange}
-                  onChange={(range) => {
-                    setCustomRange(range);
-                    setTrendRange("custom");
-                  }}
-                  minDateKey={firstLogDayKey ?? undefined}
-                  maxDateKey={currentDateKey()}
-                />
-              </Section>
-            ) : null}
-
-            {showTrend ? (
-              <Section title={t("trendControls.title")}>
                 <View onLayout={handleChartLayout}>
                   {chartData.length >= 2 ? (
                     <LineChart points={chartData} domain={[1, 5]} width={chartContainerWidth} />
@@ -492,21 +562,61 @@ export default function MoodTrackerScreen() {
             ) : null}
 
             {/*
-              Between the trend and the map, on the range they share (#701). At
-              one entry it reads "one check-in, and it was Okay" - four visible
-              zeros are part of the picture, which is exactly the claim the
-              design's stacked pill could not avoid making ("100% Okay").
+              Between the trend and the map, over its own range (#880, default
+              All time). At one entry it reads "one check-in, and it was Okay" -
+              zero counts stay in the legend as part of the picture (#881).
             */}
             {hasAnyCheckIn ? (
-              <Section title={t("distribution.title")}>
+              <Section
+                title={t("distribution.title")}
+                action={wideRows ? rangeControl("distribution") : undefined}
+              >
+                {!wideRows ? (
+                  <View className="flex-row">{rangeControl("distribution")}</View>
+                ) : null}
+                {distSpan ? (
+                  <Text variant="muted" className="text-[13px]">
+                    {distSpan}
+                  </Text>
+                ) : null}
                 <MoodDistributionChart counts={distribution} />
               </Section>
             ) : null}
 
             {hasAnyCheckIn ? (
-              <Section title={t("heatmap.title")}>
-                <MoodHeatmap userId={userId} />
+              <Section
+                title={t("heatmap.title")}
+                action={wideRows ? rangeControl("map") : undefined}
+              >
+                {!wideRows ? <View className="flex-row">{rangeControl("map")}</View> : null}
+                {mapSpan ? (
+                  <Text variant="muted" className="text-[13px]">
+                    {mapSpan}
+                  </Text>
+                ) : null}
+                <MoodHeatmap
+                  userId={userId}
+                  startKey={mapBounds.startKey}
+                  endKey={mapBounds.endKey}
+                />
               </Section>
+            ) : null}
+
+            {/* One modal serving all three controls, writing back to the
+                section whose control opened it. */}
+            {hasAnyCheckIn ? (
+              <DateRangeField
+                visible={rangePickerFor !== null}
+                onClose={() => setRangePickerFor(null)}
+                value={rangePickerFor !== null ? customRanges[rangePickerFor] : null}
+                onChange={(range) => {
+                  if (rangePickerFor === null) return;
+                  setCustomRanges((prev) => ({ ...prev, [rangePickerFor]: range }));
+                  setRanges((prev) => ({ ...prev, [rangePickerFor]: "custom" }));
+                }}
+                minDateKey={firstLogDayKey ?? undefined}
+                maxDateKey={currentDateKey()}
+              />
             ) : null}
           </View>
         </ScrollView>
@@ -545,45 +655,75 @@ function WeekLoadFailed({ onRetry }: { onRetry: () => void }) {
 }
 
 interface TodayCheckInProps {
-  summary: MoodSummary;
+  /** The latest of today's logs, newest-first — null when today is unlogged. */
+  latest: MoodLog | null;
+  dateKey: string;
 }
 
 // The overview always describes the device's current local day (#250), so this
 // names today rather than branching on a constant (#720). A panel for some other
 // day is the redesign's day panel (#697), not this one wearing a flag.
 //
-// No longer a card (#735, decided on #690/#695): the surfaces stack down one
-// column, and bordered cards on a background read as competing panels rather
-// than one page. The hairline `Section` around it carries the separation now.
-function TodayCheckIn({ summary }: TodayCheckInProps) {
-  const { t } = useTranslation("mood");
-  const logged = summary.count > 0;
-  const description = !logged
-    ? t("today.howAreYou")
-    : summary.count === 1
-      ? t("today.completeOne", { score: summary.average })
-      : t("today.completeMany", { count: summary.count, average: summary.average });
+// The design's centred block (`2a`): question, the date under it, the bare
+// scale, then a caption line naming today's last log. The scale shows that
+// log's score selected — the picker doubles as today's record — and tapping
+// any glyph still opens the editor with it preselected, which the caption
+// says out loud ("tap to add another").
+function TodayCheckIn({ latest, dateKey }: TodayCheckInProps) {
+  const { t, i18n } = useTranslation("mood");
+  const dateLine = new Intl.DateTimeFormat(i18n.language, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(parseLocalNoon(dateKey));
+  // Today's log by construction (`latestToday`), so the compact form is always
+  // a bare time — `last logged 4:50 pm`, which is also what stops the caption
+  // wrapping onto two ragged lines at 360dp (#870).
+  const lastWhen = latest
+    ? formatCompactAtOffset(latest.loggedAt, latest.loggedOffsetMinutes)
+    : null;
 
   return (
-    <>
-      <View className="gap-1.5">
-        <View className="flex-row items-center gap-2">
-          {logged ? <Icon name="check-circle" className="size-5 text-primary" /> : null}
-          {/* Level 2: the module title is the page heading, and this is the
-              first thing under it - the same level the CardTitle carried. */}
-          <Text variant="h3" aria-level={2} className="text-lg">
-            {t("today.title")}
-          </Text>
-        </View>
-        <Text variant="muted">{description}</Text>
+    // No extra py: the section's own padding IS the breathing space, and the
+    // even rhythm above/below the block is the point (#884).
+    <View className="items-center gap-5">
+      <View className="items-center gap-1">
+        {/* Level 2: the module title is the page heading, and this is the
+            first thing under it. */}
+        <Text
+          role="heading"
+          aria-level={2}
+          className="text-center text-lg font-semibold text-foreground"
+        >
+          {t("today.howAreYou")}
+        </Text>
+        <Text variant="muted" className="text-[13px]">
+          {dateLine}
+        </Text>
       </View>
       <MoodScale
-        value={null}
+        value={latest?.moodScore ?? null}
         onChange={(score) =>
           router.push(`/tools/check-in/new?score=${score}` as Parameters<typeof router.push>[0])
         }
         compact
       />
-    </>
+      {/* min-height keeps the block from jumping when the first log lands. */}
+      <View
+        testID="today-caption"
+        className="min-h-[20px] flex-row flex-wrap items-center justify-center gap-x-2"
+      >
+        {latest && lastWhen ? (
+          <>
+            <Text className="text-[13px] font-semibold text-primary-ink">
+              {t(`checkin.scaleLabels.${latest.moodScore}`)}
+            </Text>
+            <Text variant="muted" className="text-[13px]">
+              · {t("today.lastLoggedTap", { when: lastWhen })}
+            </Text>
+          </>
+        ) : null}
+      </View>
+    </View>
   );
 }

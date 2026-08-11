@@ -15,7 +15,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatCompactAtOffset } from "@/src/utils/date";
 import { formatDuration, formatHours } from "@/src/features/sleep/format";
 import {
   averageDurationMinutes,
@@ -70,7 +70,9 @@ export default function SleepTrackerScreen() {
     (latest, log) => (latest === null || log.loggedAt > latest.loggedAt ? log : latest),
     null,
   );
-  const lastWhen = lastLog ? formatAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes) : null;
+  const lastWhen = lastLog
+    ? formatCompactAtOffset(lastLog.loggedAt, lastLog.loggedOffsetMinutes)
+    : null;
   // `logs` is undefined while loading and after a failed fetch with no cache -
   // only an actually-loaded (possibly empty) history may claim "no sleep
   // logged", or a returning user's history reads as erased.
