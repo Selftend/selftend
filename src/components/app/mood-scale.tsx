@@ -138,7 +138,13 @@ export function MoodScale({ value, onChange, compact = false }: MoodScaleProps) 
     <View
       accessibilityLabel={t("checkin.title")}
       accessibilityRole="radiogroup"
-      className={cn("flex-row items-center justify-center", compact ? "gap-3.5" : "gap-4")}
+      // The full-size run measures 5×50px glyphs + 4 gaps: at gap-4 that is
+      // 314px against a 312px content column at 360dp, clipping the outer
+      // glyphs — so the gap tightens below `sm` (#869's render pass).
+      className={cn(
+        "flex-row items-center justify-center",
+        compact ? "gap-3.5" : "gap-2.5 sm:gap-4",
+      )}
       role="radiogroup"
     >
       {STEPS.map((step, index) => {

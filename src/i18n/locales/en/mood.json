@@ -2,8 +2,8 @@
   "checkin": {
     "moduleLabel": "Check-in",
     "title": "How are you feeling?",
-    "tagline": "A simple 1-5 picker plus space for a note.",
     "scoreRequired": "Pick a mood score first.",
+    "scoreOutOf": "{{score}} of 5",
     "scaleLabels": {
       "1": "Awful",
       "2": "Bad",
@@ -21,6 +21,7 @@
   "emotions": {
     "manage": {
       "title": "Manage emotions",
+      "link": "Manage",
       "close": "Close",
       "edit": "Edit emotion",
       "emoji": "Emoji",
@@ -135,8 +136,9 @@
     "rangeCustom": "Custom"
   },
   "heatmap": {
-    "title": "All time",
+    "title": "Mood map",
     "empty": "Log a mood to start your map.",
+    "emptyRange": "No check-ins in this range.",
     "calloutNoEntry": "no entry"
   },
   "allHistory": {

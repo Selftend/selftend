@@ -16,6 +16,24 @@ jest.mock("expo-router", () => ({
   useFocusEffect: jest.fn(),
 }));
 
+const mockUseWindowDimensions = jest.fn(() => ({
+  width: 750,
+  height: 1334,
+  scale: 2,
+  fontScale: 1,
+}));
+jest.mock("react-native", () => {
+  const actual = jest.requireActual("react-native");
+  return new Proxy(actual, {
+    get(target, prop, receiver) {
+      if (prop === "useWindowDimensions") {
+        return mockUseWindowDimensions;
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+});
+
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({
     user: { id: "user-1" },
@@ -102,6 +120,9 @@ describe("MoodDetailScreen", () => {
       ],
     });
     jest.clearAllMocks();
+    // `mockReturnValue` outlives clearAllMocks — pin the default width back so
+    // a narrow-width test cannot leak into its neighbours.
+    mockUseWindowDimensions.mockReturnValue({ width: 750, height: 1334, scale: 2, fontScale: 1 });
     mockUseMoodLog.mockReturnValue({
       data: null,
       isLoading: false,
@@ -119,6 +140,35 @@ describe("MoodDetailScreen", () => {
     renderEntry();
 
     expect(screen.getByText("Good · 4")).toBeTruthy();
+  });
+
+  /**
+   * #885: the header row's flanks (emoji + actions) never shrink, so every
+   * pixel of narrowness comes out of the title block — at phone width the
+   * labelled Edit button crushed the title to a character per line. The 2c
+   * phone header collapses Edit to an icon button and keeps the date compact.
+   */
+  it("collapses Edit to an icon button at phone width, keeping its accessible name", () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 360, height: 800, scale: 2, fontScale: 1 });
+    renderEntry();
+
+    // The accessible name survives; the visible label does not.
+    const edit = screen.getByLabelText("Edit");
+    expect(edit).toBeTruthy();
+    expect(screen.queryByText("Edit")).toBeNull();
+    // The date line takes the compact captured-frame form (#870's shapes).
+    expect(screen.getByText(/May 9/)).toBeTruthy();
+
+    fireEvent.press(edit);
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/log-1/edit");
+  });
+
+  it("keeps the labelled Edit button and the full date at desktop width", () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 1280, height: 800, scale: 2, fontScale: 1 });
+    renderEntry();
+
+    expect(screen.getByText("Edit")).toBeTruthy();
+    expect(screen.getByText(/May 9, 2026/)).toBeTruthy();
   });
 
   /**

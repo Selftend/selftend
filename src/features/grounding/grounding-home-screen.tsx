@@ -17,7 +17,7 @@ import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatCompactAtOffset } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 
 export default function GroundingHomeScreen() {
@@ -40,7 +40,7 @@ export default function GroundingHomeScreen() {
     null,
   );
   const lastWhen = lastSession
-    ? formatAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
+    ? formatCompactAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
     : null;
   // `sessions` is undefined while loading and after a failed fetch with no
   // cache - only an actually-loaded (possibly empty) history may claim

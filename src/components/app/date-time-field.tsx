@@ -24,6 +24,12 @@ interface DateTimeFieldProps {
    * omitted (offset never captured) keeps the device's frame.
    */
   offsetMinutes?: number | null;
+  /**
+   * How the closed field draws. `"field"` is the boxed input; `"row"` is the
+   * design's hairline schedule row (`🕓 Aug 7, 2026 · 4:51 pm — Change`, 2b/6b)
+   * — same picker, same frame handling, different chrome (#869).
+   */
+  appearance?: "field" | "row";
 }
 
 export function DateTimeField({
@@ -31,6 +37,7 @@ export function DateTimeField({
   onChange,
   accessibilityLabel,
   offsetMinutes = null,
+  appearance = "field",
 }: DateTimeFieldProps) {
   const { i18n } = useTranslation("navigation");
   const { t } = useTranslation("common");
@@ -80,15 +87,32 @@ export function DateTimeField({
 
   return (
     <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        onPress={() => setOpen(true)}
-        className="h-12 w-full flex-row items-center justify-between rounded-md border border-input bg-background px-3 active:bg-accent/40"
-      >
-        <Text className="text-foreground">{display}</Text>
-        <Icon name="calendar-month" className="size-5 text-muted-foreground" />
-      </Pressable>
+      {appearance === "row" ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          onPress={() => setOpen(true)}
+          className="w-full flex-row items-center justify-between gap-3 border-y border-border py-3.5 active:opacity-70"
+        >
+          <View className="min-w-0 flex-row items-center gap-2.5">
+            <Icon name="schedule" className="size-[18px] text-muted-foreground" />
+            <Text className="text-[13.5px] tabular-nums text-foreground" numberOfLines={1}>
+              {display}
+            </Text>
+          </View>
+          <Text className="text-[12.5px] text-muted-foreground">{t("change")}</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel}
+          onPress={() => setOpen(true)}
+          className="h-12 w-full flex-row items-center justify-between rounded-md border border-input bg-background px-3 active:bg-accent/40"
+        >
+          <Text className="text-foreground">{display}</Text>
+          <Icon name="calendar-month" className="size-5 text-muted-foreground" />
+        </Pressable>
+      )}
 
       <Modal
         visible={open}
