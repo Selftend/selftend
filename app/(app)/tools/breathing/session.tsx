@@ -44,6 +44,7 @@ import {
   useReduceMotionEnabled,
 } from "@/src/lib/accessibility";
 import { useSaveBreathingSession } from "@/src/features/breathing/queries";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -584,7 +585,10 @@ export default function BreathingSessionScreen() {
           the focus shell decided on #777 and built above. */}
       <ScreenTopBar leading="back" />
       <ScrollView contentContainerClassName="grow p-6">
-        <View className="grow gap-6">
+        {/* The 620px form column the shell decision assigns to setup/form
+            screens (#690) — the setup state just never took it (#873); the 4d
+            editor in breathing-exercise-editor-screen.tsx always had it. */}
+        <View className={cn(FORM_COLUMN, "grow gap-6")}>
           <SoundsSheet visible={soundsOpen} onDismiss={() => setSoundsOpen(false)} />
 
           {/* A wrapping run of tabs, not a horizontal scroller: an
