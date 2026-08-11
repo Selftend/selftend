@@ -24,6 +24,14 @@ describe("grounding i18n additions", () => {
         expect(Array.isArray(tech.stepLabels)).toBe(true);
         expect(tech.stepLabels).toHaveLength(tech.steps.length);
       });
+
+      // The hint line under each prompt (design 5b, #874) — index-aligned so a
+      // missing hint can't silently shift the rest.
+      it.each(SLUGS)("has stepHints aligned with steps for %s", (slug) => {
+        const tech = g.techniques[slug];
+        expect(Array.isArray(tech.stepHints)).toBe(true);
+        expect(tech.stepHints).toHaveLength(tech.steps.length);
+      });
     });
   }
 });

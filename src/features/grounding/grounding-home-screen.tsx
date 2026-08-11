@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { ErrorState } from "@/src/components/app/screen-state";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { TechniqueCard } from "@/src/features/grounding/technique-card";
@@ -91,6 +92,11 @@ export default function GroundingHomeScreen() {
                 ...(subline ? [{ value: "", label: subline }] : []),
               ]}
             />
+            {/* The acute-distress tool carries the crisis affordance on its
+                HOME, above the technique list (#887, jointly #882/#868) — and
+                deliberately NOT inside the session flow, which stays
+                chrome-free. */}
+            <CrisisSupportBar />
             <View className="gap-3">
               <Text variant="h3">{t("grounding.choose")}</Text>
               {groundingTechniques.map((technique) => (
