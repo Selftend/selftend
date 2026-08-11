@@ -1,4 +1,3 @@
-import type { MoodLog } from "@/src/features/mood/types";
 import {
   addDaysToKey,
   dayKeyDiff,
@@ -9,13 +8,14 @@ import {
 } from "@/src/utils/date";
 
 /**
- * Sectioning for the all-history screen (#696).
+ * Sectioning for the all-history screens (#696) — check-in's first, and every
+ * later tool that adopts its paging verbatim (sleep, #775). Generic over
+ * anything carrying a `dayKey`, because the grouping is about days, not moods.
  *
  * The overview's `groupLogsByDate` stopped at a single `older` bucket, which was
  * fine there because nothing old was shown — it went with the inline list in
- * #735. Here that bucket would hold every entry from day 8 to forever, and this
- * screen is the ONLY route to an old entry, because
- * the mood map deliberately never navigates (`mood-heatmap.tsx:22-25`). So the
+ * #735. Here that bucket would hold every entry from day 8 to forever, and an
+ * all-history screen is the ONLY route to an old entry. So the
  * tail is split into calendar months, which is what gives a long scroll any
  * landmarks at all.
  *
@@ -25,13 +25,18 @@ import {
  */
 export type HistorySectionKind = "today" | "yesterday" | "thisWeek" | "lastWeek" | "month";
 
-export interface HistorySection {
+/** The one shape the grouping needs; every tool's log type carries it. */
+interface DayKeyed {
+  dayKey: string;
+}
+
+export interface HistorySection<T> {
   /** SectionList key: the kind, or `month:YYYY-MM` — months repeat across years. */
   key: string;
   kind: HistorySectionKind;
   /** `YYYY-MM` on month sections only; the label is formatted by the renderer. */
   monthKey?: string;
-  data: MoodLog[];
+  data: T[];
 }
 
 const FIXED_ORDER: Exclude<HistorySectionKind, "month">[] = [
@@ -41,7 +46,7 @@ const FIXED_ORDER: Exclude<HistorySectionKind, "month">[] = [
   "lastWeek",
 ];
 
-function pushInto<K>(map: Map<K, MoodLog[]>, key: K, log: MoodLog) {
+function pushInto<K, T>(map: Map<K, T[]>, key: K, log: T) {
   const existing = map.get(key);
   if (existing) existing.push(log);
   else map.set(key, [log]);
@@ -57,10 +62,10 @@ function pushInto<K>(map: Map<K, MoodLog[]>, key: K, log: MoodLog) {
  * on a Monday "yesterday" reads as Yesterday rather than being swallowed by Last
  * week, and a month section only ever holds the days the week sections left.
  */
-export function groupHistorySections(
-  logs: MoodLog[] | undefined,
+export function groupHistorySections<T extends DayKeyed>(
+  logs: T[] | undefined,
   now: Date = new Date(),
-): HistorySection[] {
+): HistorySection<T>[] {
   const list = logs ?? [];
   // Today, or a later day the user already holds an entry on: flying east-to-west
   // leaves you holding a "tomorrow" entry, and clamping at today would file it
@@ -72,8 +77,8 @@ export function groupHistorySections(
   const weekStartKey = mondayKeyOf(todayKey);
   const lastWeekStartKey = addDaysToKey(weekStartKey, -7);
 
-  const fixed = new Map<HistorySectionKind, MoodLog[]>();
-  const months = new Map<string, MoodLog[]>();
+  const fixed = new Map<HistorySectionKind, T[]>();
+  const months = new Map<string, T[]>();
 
   for (const log of list) {
     const dayDiff = dayKeyDiff(log.dayKey, todayKey);
@@ -84,7 +89,7 @@ export function groupHistorySections(
     else pushInto(months, log.dayKey.slice(0, 7), log);
   }
 
-  const sections: HistorySection[] = [];
+  const sections: HistorySection<T>[] = [];
   for (const kind of FIXED_ORDER) {
     const data = fixed.get(kind);
     if (data && data.length > 0) sections.push({ key: kind, kind, data });
@@ -125,7 +130,11 @@ const WHEN_OPTIONS: Record<HistorySectionKind, Intl.DateTimeFormatOptions> = {
   month: { day: "numeric", month: "short" },
 };
 
-export function formatHistoryWhen(log: MoodLog, kind: HistorySectionKind, lang?: string): string {
+export function formatHistoryWhen(
+  log: { loggedAt: string; loggedOffsetMinutes: number | null },
+  kind: HistorySectionKind,
+  lang?: string,
+): string {
   return formatInstantAtOffset(log.loggedAt, log.loggedOffsetMinutes, WHEN_OPTIONS[kind], lang);
 }
 

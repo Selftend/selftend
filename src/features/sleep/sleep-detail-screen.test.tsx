@@ -8,6 +8,7 @@ import { renderWithProviders } from "@/test/render-with-providers";
 jest.mock("expo-router", () => ({
   router: {
     canGoBack: jest.fn(() => false),
+    back: jest.fn(),
     push: jest.fn(),
     replace: jest.fn(),
   },
@@ -39,6 +40,10 @@ const entry = {
   quality: 4,
   notes: "Read before bed",
   loggedAt: "2026-07-20T22:30:00.000Z",
+  loggedOffsetMinutes: 0,
+  dayKey: "2026-07-20",
+  entryDay: "2026-07-20",
+  window: null,
   createdAt: "2026-07-20T22:30:00.000Z",
 };
 
@@ -58,15 +63,48 @@ describe("SleepDetailScreen", () => {
     } as unknown as ReturnType<typeof useDeleteSleepLog>);
   });
 
-  it("renders duration, quality word, and notes in the room", () => {
+  it("collapses four cards into one line: duration, quality word, and the note row", () => {
     renderWithProviders(<SleepDetailScreen />);
 
-    expect(screen.getByRole("heading", { name: "Sleep entry" })).toBeTruthy();
-    expect(screen.getByText("7h 30m")).toBeTruthy();
-    // Quality numeral inside the ramp circle plus its word beside it.
-    expect(screen.getByText("4")).toBeTruthy();
-    expect(screen.getByText("Good")).toBeTruthy();
+    // One meta line, joined in code - not a "Duration" card and a "Quality" card.
+    expect(screen.getByText("7h 30m · Good")).toBeTruthy();
+    expect(screen.queryByText("Duration")).toBeNull();
+    expect(screen.queryByText("Quality")).toBeNull();
     expect(screen.getByText("Read before bed")).toBeTruthy();
+  });
+
+  it("shows the window bounds on the subline for a windowed entry", () => {
+    mockUseSleepLogs.mockReturnValue({
+      data: [
+        {
+          ...entry,
+          window: {
+            startedAt: "2026-07-20T20:30:00.000Z",
+            startedOffsetMinutes: 120,
+            endedAt: "2026-07-21T04:00:00.000Z",
+            endedOffsetMinutes: 120,
+          },
+        },
+      ],
+    } as unknown as ReturnType<typeof useSleepLogs>);
+
+    renderWithProviders(<SleepDetailScreen />);
+
+    // Each bound reads in the frame captured at that bound: 20:30Z at +120 is
+    // 22:30 local, 04:00Z at +120 is 06:00 local.
+    expect(screen.getByText(/10:30/)).toBeTruthy();
+    expect(screen.getByText(/6:00/)).toBeTruthy();
+  });
+
+  it("renders no hairline rows for an entry with no note", () => {
+    mockUseSleepLogs.mockReturnValue({
+      data: [{ ...entry, notes: "  " }],
+    } as unknown as ReturnType<typeof useSleepLogs>);
+
+    renderWithProviders(<SleepDetailScreen />);
+
+    expect(screen.queryByTestId("detail-row")).toBeNull();
+    expect(screen.queryByText("Notes")).toBeNull();
   });
 
   it("routes to the edit screen", () => {
@@ -77,12 +115,20 @@ describe("SleepDetailScreen", () => {
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/sleep/s-1/edit");
   });
 
-  it("opens the delete confirmation", () => {
+  it("opens the delete confirmation from the icon button", () => {
     renderWithProviders(<SleepDetailScreen />);
 
-    fireEvent.press(screen.getByText("Delete"));
+    fireEvent.press(screen.getByLabelText("Delete"));
 
     expect(screen.getByTestId("confirm-dialog-confirm")).toBeTruthy();
+  });
+
+  it("carries the all-history door at the foot", () => {
+    renderWithProviders(<SleepDetailScreen />);
+
+    fireEvent.press(screen.getByText("Show all history"));
+
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/sleep/history");
   });
 
   it("shows the not-found state when the entry is missing", () => {

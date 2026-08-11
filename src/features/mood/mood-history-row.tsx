@@ -7,7 +7,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { formatHistoryWhen, type HistorySectionKind } from "@/src/features/mood/history-groups";
+import { formatHistoryWhen, type HistorySectionKind } from "@/src/lib/history-groups";
 import type { EmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import type { MoodLog } from "@/src/features/mood/types";
 

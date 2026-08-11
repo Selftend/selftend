@@ -30,6 +30,14 @@ export interface SleepLog {
    */
   dayKey: string;
   /**
+   * The server-derived calendar key (`entry_day`), verbatim — the all-history
+   * paging cursor speaks this column's own values. Usually equals `dayKey`;
+   * for legacy never-captured-offset rows the server stores a UTC fallback
+   * while `dayKey` stays viewer-local, and the cursor must side with the
+   * server or pages skip and duplicate.
+   */
+  entryDay: string;
+  /**
    * Estimated sleep bounds, or null for a duration-only entry. An entry is in
    * exactly one of the two modes; windowed entries have their duration derived
    * from these bounds by the database write path.

@@ -29,6 +29,7 @@ import { SleepDurationChart } from "@/src/features/sleep/sleep-duration-chart";
 import { SleepQualityMix } from "@/src/features/sleep/sleep-quality-mix";
 import { SleepWeekdayChart } from "@/src/features/sleep/sleep-weekday-chart";
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
+import { ShowAllSleepLink } from "@/src/features/sleep/show-all-sleep-link";
 
 export default function SleepTrackerScreen() {
   const { t } = useTranslation("sleep");
@@ -176,7 +177,12 @@ export default function SleepTrackerScreen() {
             </View>
 
             <View className="gap-3">
-              <Text variant="h3">{t("sections.recent")}</Text>
+              <View className="flex-row items-center justify-between gap-3">
+                <Text variant="h3">{t("sections.recent")}</Text>
+                {/* The door beside its own room: all-history replaces the old
+                    expand-in-place toggle (#775, pattern from #696). */}
+                <ShowAllSleepLink />
+              </View>
               <SleepRecentList logs={allLogs} />
             </View>
           </View>

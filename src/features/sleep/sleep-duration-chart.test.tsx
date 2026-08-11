@@ -28,6 +28,7 @@ function night(overrides: Partial<SleepLog> = {}): SleepLog {
     loggedAt,
     loggedOffsetMinutes: null,
     dayKey: entryDayKey(loggedAt, null),
+    entryDay: entryDayKey(loggedAt, null),
     window: null,
     createdAt: loggedAt,
     ...overrides,

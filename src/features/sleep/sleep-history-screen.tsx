@@ -6,39 +6,35 @@ import { useTranslation } from "react-i18next";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { EmptyState, ErrorState } from "@/src/components/app/screen-state";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { SleepEntryRow } from "@/src/features/sleep/sleep-entry-row";
+import { useSleepHistoryPages } from "@/src/features/sleep/queries";
+import type { SleepLog } from "@/src/features/sleep/types";
 import {
   formatHistoryMonth,
+  formatHistoryWhen,
   groupHistorySections,
   type HistorySection,
 } from "@/src/lib/history-groups";
-import { MoodHistoryRow } from "@/src/features/mood/mood-history-row";
-import { useMoodHistoryPages } from "@/src/features/mood/queries";
-import type { MoodLog } from "@/src/features/mood/types";
-import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 /**
- * Every check-in the user has, scrollable to the end (#734, decided on #696).
+ * Every sleep entry the user has, scrollable to the end — check-in's paging
+ * pattern adopted verbatim (#696, decided for sleep on #775).
  *
- * The only route to an old entry: the overview's week strip is a recency view
- * and the mood map deliberately never navigates. So this screen carries no cap -
- * it pages until the data runs out, rather than stopping at a silent ceiling and
- * calling itself "all history".
- *
- * No stats, no averages, no total count: a `ScreenHeader` sub-screen has nowhere
- * honest to put a number that only covers the pages already loaded (#705).
+ * No stats, no averages, no total count: a `ScreenHeader` sub-screen has
+ * nowhere honest to put a number that only covers the pages already loaded
+ * (#705). Aggregates stay on the overview, where the window is complete.
  */
-export default function MoodHistoryScreen() {
-  const { t, i18n } = useTranslation("mood");
-  const roomStyle = useRoomStyle("be");
+export default function SleepHistoryScreen() {
+  const { t, i18n } = useTranslation("sleep");
+  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
-    useMoodHistoryPages(userId);
-  const { resolveEmotion } = useEmotionDisplay();
+    useSleepHistoryPages(userId);
 
   const sections = useMemo(() => groupHistorySections(data?.pages.flat() ?? []), [data]);
 
@@ -54,7 +50,7 @@ export default function MoodHistoryScreen() {
       edges={["bottom", "left", "right"]}
       style={roomStyle}
     >
-      <SectionList<MoodLog, HistorySection<MoodLog>>
+      <SectionList<SleepLog, HistorySection<SleepLog>>
         sections={sections}
         keyExtractor={(item) => item.id}
         // The SectionList is the scroll root so rows recycle and onEndReached can
@@ -82,11 +78,11 @@ export default function MoodHistoryScreen() {
         }
         ListEmptyComponent={
           // "Nothing here yet" is a claim about the account, so it may only be
-          // made once a page has actually come back empty. While the first page
-          // is in flight, and when it failed outright, the honest answer is a
-          // different one - either would otherwise tell a returning user their
-          // history is gone. A failed background refetch that still has pages
-          // cached never reaches here, because the list is not empty.
+          // made once a page has actually come back empty (#734). While the
+          // first page is in flight, and when it failed outright, the honest
+          // answer is a different one - either would otherwise tell a returning
+          // user their history is gone. A failed background refetch that still
+          // has pages cached never reaches here, because the list is not empty.
           isPending ? null : isError ? (
             <ErrorState
               icon="cloud-off"
@@ -120,12 +116,7 @@ export default function MoodHistoryScreen() {
           </View>
         )}
         renderItem={({ item, section }) => (
-          <MoodHistoryRow
-            entry={item}
-            kind={section.kind}
-            language={i18n.language}
-            resolveEmotion={resolveEmotion}
-          />
+          <SleepEntryRow entry={item} when={formatHistoryWhen(item, section.kind, i18n.language)} />
         )}
       />
     </SafeAreaView>

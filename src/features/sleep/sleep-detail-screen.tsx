@@ -5,28 +5,36 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { DetailRow } from "@/src/components/app/detail-row";
+import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useDeleteSleepLog, useSleepLog, useSleepLogs } from "@/src/features/sleep/queries";
+import { ShowAllSleepLink } from "@/src/features/sleep/show-all-sleep-link";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { cn } from "@/lib/utils";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatAtOffset, formatInstantAtOffset } from "@/src/utils/date";
+import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { formatDuration } from "@/src/features/sleep/format";
-import { qualityTint } from "@/src/features/sleep/quality-tint";
 
+/**
+ * Screen `8c` — one sleep entry (#775).
+ *
+ * Four cards for four facts collapse into one line: the duration and the
+ * quality word are the headline, the day and timing are its subline, and the
+ * note is the one conditional hairline row. The design drew an `Against you`
+ * comparison row and a factors row too; the comparison was removed outright
+ * (#838 — a single entry presents factual details, not a score against a
+ * personal baseline) and structured factors were rejected (#800), so an entry
+ * with no note shows no rows at all.
+ */
 export default function SleepDetailScreen() {
-  const { t } = useTranslation("sleep");
+  const { t, i18n } = useTranslation("sleep");
   const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -87,96 +95,89 @@ export default function SleepDetailScreen() {
   }
 
   const trimmedNotes = entry.notes.trim();
+  const qualityWord = t(`quality.${entry.quality}` as Parameters<typeof t>[0]);
+
+  // The day in the frame the entry was captured in, then the timing. A windowed
+  // entry shows its own bounds, each read at the offset captured at that bound
+  // (#800: a sleep may cross a DST or zone change, so the two frames differ);
+  // a duration-only entry shows the occurrence timestamp it always had. The
+  // separator joins here in code — no translation string carries its own "·".
+  const timeOptions = { hour: "numeric", minute: "2-digit" } as const;
+  const subline = [
+    formatRelativeDayKey(entry.dayKey, t),
+    entry.window
+      ? t("detail.windowTimes", {
+          start: formatInstantAtOffset(
+            entry.window.startedAt,
+            entry.window.startedOffsetMinutes,
+            timeOptions,
+            i18n.language,
+          ),
+          end: formatInstantAtOffset(
+            entry.window.endedAt,
+            entry.window.endedOffsetMinutes,
+            timeOptions,
+            i18n.language,
+          ),
+        })
+      : formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes),
+  ].join(" · ");
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <ScreenHeader title={t("detail.title")} />
-            <View className="flex-row gap-3">
-              <Button
-                onPress={() => router.push(`/tools/sleep/${entry.id}/edit`)}
-                variant="secondary"
-              >
-                <Icon name="edit" className="size-4" />
-                <Text>{t("detail.edit")}</Text>
-              </Button>
-              <Button onPress={() => setConfirmOpen(true)} variant="ghost">
-                <Icon name="delete-outline" className="size-4 text-destructive" />
-                <Text>{t("detail.delete")}</Text>
-              </Button>
-            </View>
-          </View>
+    <View className="flex-1" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+        {/* The trail rides the bar, not the column: chrome for the screen rather
+            than part of the document (#733). */}
+        <ScreenTopBar leading="back" />
 
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle aria-level={2}>{t("detail.duration")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Text className="text-4xl font-bold">{formatDuration(entry.durationMinutes)}</Text>
-            </CardContent>
-          </Card>
-
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle aria-level={2}>{t("detail.quality")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View className="flex-row items-center gap-3">
-                <View
-                  className={cn(
-                    "size-16 items-center justify-center rounded-full",
-                    qualityTint(entry.quality),
-                  )}
-                >
-                  {/* The step-5 fill is the full-strength hue, which brightens in
-                      dark mode — text-primary-foreground carries exactly that
-                      per-scheme ink flip (white on light's deep ink, near-black
-                      on dark's bright ink). Fainter steps keep the default ink. */}
-                  <Text
-                    className={cn(
-                      "text-4xl font-bold",
-                      entry.quality >= 5 && "text-primary-foreground",
-                    )}
-                  >
-                    {entry.quality}
-                  </Text>
-                </View>
-                <Text variant="muted" className="text-base">
-                  {t(`quality.${entry.quality}` as Parameters<typeof t>[0])}
+        <ScrollView contentContainerClassName="grow px-6 pt-10 pb-14">
+          <View className={`${FORM_COLUMN} gap-8`}>
+            <View className="flex-row items-start justify-between gap-4">
+              <View className="flex-1 gap-0.5">
+                <Text className="font-display text-2xl font-bold tracking-tight tabular-nums">
+                  {formatDuration(entry.durationMinutes)} · {qualityWord}
+                </Text>
+                <Text variant="muted" className="text-[13px] tabular-nums">
+                  {subline}
                 </Text>
               </View>
-            </CardContent>
-          </Card>
+              <View className="flex-row items-center gap-1">
+                <Button
+                  onPress={() => router.push(`/tools/sleep/${entry.id}/edit`)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Icon name="edit" className="size-4" />
+                  <Text>{t("detail.edit")}</Text>
+                </Button>
+                <Button
+                  onPress={() => setConfirmOpen(true)}
+                  variant="ghost"
+                  size="icon"
+                  accessibilityLabel={t("detail.delete")}
+                >
+                  <Icon name="delete-outline" className="size-[18px] text-muted-foreground" />
+                </Button>
+              </View>
+            </View>
 
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Text>{formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}</Text>
-            </CardContent>
-          </Card>
+            {trimmedNotes ? (
+              <View>
+                <DetailRow label={t("detail.notes")}>
+                  <Text className="text-sm leading-relaxed">{trimmedNotes}</Text>
+                </DetailRow>
+                {/* Closing hairline: the rows are top-ruled, so the last one
+                    needs a floor or the column stops mid-air. */}
+                <View className="border-t border-border" />
+              </View>
+            ) : null}
 
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle aria-level={2}>{t("detail.notes")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {trimmedNotes ? (
-                <Text>{trimmedNotes}</Text>
-              ) : (
-                <Text variant="muted">{t("detail.noNotes")}</Text>
-              )}
-            </CardContent>
-          </Card>
-        </View>
-      </ScrollView>
+            <View className="items-end">
+              <ShowAllSleepLink />
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
 
       <ConfirmDialog
         cancelLabel={t("detail.confirmDelete.cancel")}
@@ -192,6 +193,6 @@ export default function SleepDetailScreen() {
         title={t("detail.confirmDelete.title")}
         visible={confirmOpen}
       />
-    </SafeAreaView>
+    </View>
   );
 }

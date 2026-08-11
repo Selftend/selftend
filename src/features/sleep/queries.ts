@@ -1,14 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countSleepLogs,
   deleteSleepLog,
   getSleepLog,
   listSleepLogs,
+  listSleepLogsPage,
   saveSleepLog,
   sleepStats,
 } from "@/src/features/sleep/repository";
 import type { SleepInput } from "@/src/features/sleep/types";
+import { nextDescendingDayCursor, type DayRecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { deviceTimeZone } from "@/src/utils/date";
@@ -16,6 +18,7 @@ import { deviceTimeZone } from "@/src/utils/date";
 const sleepKeys = {
   all: ["sleep"] as const,
   list: (userId: string, limit: number) => ["sleep", "list", userId, limit] as const,
+  historyPages: (userId: string) => ["sleep", "historyPages", userId] as const,
   detail: (userId: string, id: string) => ["sleep", "detail", userId, id] as const,
   count: (userId: string) => ["sleep", "count", userId] as const,
   // The time zone is part of the key, not just the argument: it decides which civil day
@@ -28,6 +31,41 @@ export function useSleepLogs(userId: string | null, limit = 50) {
   return useQuery({
     queryKey: userId ? sleepKeys.list(userId, limit) : ["sleep", "list", "anonymous", limit],
     queryFn: () => listSleepLogs(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Page size for the all-history screen. Large enough that a first page fills
+ * several screens of rows, small enough that the first paint doesn't pay to
+ * decrypt a year of notes and windows — every returned row decrypts its
+ * ciphertext whatever the projection, because `app.decrypt_text` is VOLATILE
+ * (#693).
+ */
+export const SLEEP_HISTORY_PAGE_SIZE = 50;
+
+/**
+ * The unbounded history, one page at a time — check-in's paging, adopted
+ * verbatim (#696, #775). The key sits under the `sleep` root, so a save or
+ * delete still invalidates it with the rest; every later page is anchored to
+ * the last row of the prior page, so inserts or deletes above that boundary
+ * cannot shift it.
+ */
+export function useSleepHistoryPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: userId ? sleepKeys.historyPages(userId) : ["sleep", "historyPages", "anonymous"],
+    queryFn: ({ pageParam }) => listSleepLogsPage(userId!, SLEEP_HISTORY_PAGE_SIZE, pageParam),
+    initialPageParam: null as DayRecordCursor | null,
+    // A short page is the end of the data. A full one may or may not be, so ask
+    // again: one empty round trip at the exact boundary beats stopping early.
+    getNextPageParam: (lastPage) =>
+      lastPage.length < SLEEP_HISTORY_PAGE_SIZE
+        ? undefined
+        : nextDescendingDayCursor(
+            lastPage,
+            (log) => log.entryDay,
+            (log) => log.createdAt,
+          ),
     enabled: Boolean(userId),
   });
 }
