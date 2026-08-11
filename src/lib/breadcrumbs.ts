@@ -62,7 +62,14 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/breathing": "sidebar.breathing",
   "/tools/breathing/session": "breadcrumb.session",
   "/tools/breathing/new": "breadcrumb.new",
+  // `history` must be claimed BEFORE the slug template below (#876): the
+  // breathing/grounding dynamic-segment resolvers would otherwise push it
+  // through `…techniques.history.title`, and the trail renders the raw
+  // uppercased key. Sleep's fell back to the generic "Entry" — wrong label,
+  // same family.
+  "/tools/breathing/history": "breadcrumb.history",
   "/tools/grounding": "sidebar.grounding",
+  "/tools/grounding/history": "breadcrumb.history",
   "/tools/gratitude-log": "sidebar.gratitudeLog",
   "/tools/gratitude-log/entries": "breadcrumb.history",
   "/tools/gratitude-log/favorites": "breadcrumb.favorites",
@@ -75,6 +82,7 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/meditation/stages": "breadcrumb.stages",
   "/tools/sleep": "sidebar.sleep",
   "/tools/sleep/new": "breadcrumb.new",
+  "/tools/sleep/history": "breadcrumb.history",
   "/tools/habits": "sidebar.habits",
   "/tools/habits/new": "breadcrumb.new",
   "/tools/habits/history": "breadcrumb.history",
