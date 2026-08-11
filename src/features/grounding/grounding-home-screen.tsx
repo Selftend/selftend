@@ -98,67 +98,76 @@ export default function GroundingHomeScreen() {
                 deliberately NOT inside the session flow, which stays
                 chrome-free. */}
             <CrisisSupportBar />
-            {/* The Section eyebrow every conformant overview uses (#875), not
-                an h3 heading. ruled={false}: the crisis row's own bottom
-                hairline already divides here. */}
-            <Section title={t("grounding.choose")} ruled={false} className="gap-1 pt-0">
-              <View>
-                {groundingTechniques.map((technique) => (
-                  <TechniqueCard
-                    key={technique.slug}
-                    technique={technique}
-                    title={t(`grounding.techniques.${technique.slug}.title`)}
-                    description={t(`grounding.techniques.${technique.slug}.shortDescription`)}
-                    meta={
-                      technique.kind === "senses"
-                        ? t("grounding.meta.senses", { count: technique.steps.length })
-                        : t("grounding.meta.guided", { count: technique.steps.length })
-                    }
-                    onPress={() => router.push(`/tools/grounding/${technique.slug}`)}
-                  />
-                ))}
-                {/* Closing hairline: the rows are top-ruled, so the last one
-                    needs a floor. */}
-                <View className="border-t border-border" />
-              </View>
-            </Section>
-
-            <Section
-              title={t("grounding.recent.title")}
-              action={
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => router.push("/tools/grounding/history")}
-                  role="button"
-                  className="active:opacity-70"
-                >
-                  <Text className="text-[12.5px] font-semibold text-muted-foreground">
-                    {t("grounding.recent.showAll")} →
-                  </Text>
-                </Pressable>
-              }
-            >
-              {sessionsFailed && !sessions ? (
-                <ErrorState
-                  icon="cloud-off"
-                  title={t("grounding.recent.error.title")}
-                  description={t("grounding.recent.error.description")}
-                  action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
-                />
-              ) : sessions?.length ? (
+            {/* The Sections sit in a no-gap group: each carries its own py-6,
+                so the parent's gap-6 would compound into a 72px band between
+                them (design 5a separates sections by the rows' own hairlines,
+                not top rules — hence ruled={false} on both; the crisis row's
+                bottom hairline divides above the first). */}
+            <View>
+              {/* The Section eyebrow every conformant overview uses (#875),
+                  not an h3 heading. */}
+              <Section title={t("grounding.choose")} ruled={false} className="gap-1 pt-0">
                 <View>
-                  {sessions.map((session) => (
-                    <GroundingSessionRow
-                      key={session.id}
-                      session={session}
-                      when={formatRelativeDayKey(session.dayKey, t)}
+                  {groundingTechniques.map((technique) => (
+                    <TechniqueCard
+                      key={technique.slug}
+                      technique={technique}
+                      title={t(`grounding.techniques.${technique.slug}.title`)}
+                      description={t(`grounding.techniques.${technique.slug}.shortDescription`)}
+                      meta={
+                        technique.kind === "senses"
+                          ? t("grounding.meta.senses", { count: technique.steps.length })
+                          : t("grounding.meta.guided", { count: technique.steps.length })
+                      }
+                      onPress={() => router.push(`/tools/grounding/${technique.slug}`)}
                     />
                   ))}
+                  {/* Closing hairline: the rows are top-ruled, so the last one
+                      needs a floor. */}
+                  <View className="border-t border-border" />
                 </View>
-              ) : sessions ? (
-                <Text variant="muted">{t("grounding.recent.empty")}</Text>
-              ) : null}
-            </Section>
+              </Section>
+
+              <Section
+                ruled={false}
+                title={t("grounding.recent.title")}
+                action={
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => router.push("/tools/grounding/history")}
+                    role="button"
+                    className="active:opacity-70"
+                  >
+                    {/* No hardcoded arrow: the label is the translated string
+                        alone, like every sibling show-all link. */}
+                    <Text className="text-[12.5px] font-semibold text-muted-foreground">
+                      {t("grounding.recent.showAll")}
+                    </Text>
+                  </Pressable>
+                }
+              >
+                {sessionsFailed && !sessions ? (
+                  <ErrorState
+                    icon="cloud-off"
+                    title={t("grounding.recent.error.title")}
+                    description={t("grounding.recent.error.description")}
+                    action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
+                  />
+                ) : sessions?.length ? (
+                  <View>
+                    {sessions.map((session) => (
+                      <GroundingSessionRow
+                        key={session.id}
+                        session={session}
+                        when={formatRelativeDayKey(session.dayKey, t)}
+                      />
+                    ))}
+                  </View>
+                ) : sessions ? (
+                  <Text variant="muted">{t("grounding.recent.empty")}</Text>
+                ) : null}
+              </Section>
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>
