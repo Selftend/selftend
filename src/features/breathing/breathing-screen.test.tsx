@@ -104,7 +104,7 @@ describe("Breathing overview (4a)", () => {
 
   it("renders the header title and tagline", () => {
     renderWithProviders(<BreathingScreen />);
-    expect(screen.getByRole("heading", { name: "Breathing exercises" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Breathing" })).toBeTruthy();
     expect(
       screen.getByText("Short guided patterns to calm your nervous system right now."),
     ).toBeTruthy();
