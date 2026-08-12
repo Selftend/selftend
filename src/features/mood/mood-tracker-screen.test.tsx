@@ -36,6 +36,7 @@ jest.mock("@/src/providers/session-provider", () => ({
 }));
 
 jest.mock("@/src/features/mood/queries", () => ({
+  ALL_TIME_FROM_ISO: "1970-01-01T00:00:00.000Z",
   useFirstMoodDayKey: jest.fn(),
   useMoodHistory: jest.fn(),
   useMoodLogCount: jest.fn(),
@@ -514,14 +515,10 @@ describe("MoodTrackerScreen", () => {
     expect(screen.getAllByText("All time")).toHaveLength(2);
     expect(screen.getAllByText("Custom")).toHaveLength(2);
     expect(screen.queryByText("14d")).toBeNull();
-    // Defaults: trend 30d, distribution All time, map All time (the design's
-    // drawn states). With no first-entry key loaded yet, All time falls back to
-    // the default preset window, so the union query starts at 30 days.
-    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
-      "user-1",
-      startOfDayDaysAgo(30).toISOString(),
-      undefined,
-    );
+    // ONE all-time query behind every section (#900): selections are
+    // client-side narrowings, so no selection state appears in the fetch — the
+    // screen and the map share the heatmap's fixed-epoch cache entry.
+    expect(mockUseMoodScorePoints).toHaveBeenCalledWith("user-1", "1970-01-01T00:00:00.000Z");
   });
 
   /**
@@ -582,8 +579,9 @@ describe("MoodTrackerScreen", () => {
 
   /**
    * The selections are INDEPENDENT (#880): narrowing the distribution must not
-   * narrow the trend. The union query keeps the wider window, and the trend
-   * still plots its own 30 days.
+   * narrow the trend. Since #900 both are client-side narrowings of the one
+   * all-time fetch, so the query cannot move either — independence shows in
+   * what each section renders.
    */
   it("keeps the trend window when the distribution is narrowed to 7d", () => {
     mockUseMoodLogCount.mockReturnValue({
@@ -605,14 +603,9 @@ describe("MoodTrackerScreen", () => {
     // The distribution dropped the 10-day-old "Awful"…
     expect(screen.getByText("Awful · 0")).toBeTruthy();
     expect(screen.getByLabelText("Great: 1 check-in")).toBeTruthy();
-    // …but the union query still spans the trend's 30 days — the trend's
-    // selection did not move. (`toHaveBeenCalledWith`, not `LastCalledWith`:
-    // the mood map consumes the same hook with its own fixed epoch bound.)
-    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
-      "user-1",
-      startOfDayDaysAgo(30).toISOString(),
-      undefined,
-    );
+    // …and no selection reaches the fetch: the all-time query is the only
+    // window ever asked for (#900 replaced #880's union-of-selections).
+    expect(mockUseMoodScorePoints).toHaveBeenCalledWith("user-1", "1970-01-01T00:00:00.000Z");
     expect(mockUseMoodScorePoints).not.toHaveBeenCalledWith(
       "user-1",
       startOfDayDaysAgo(7).toISOString(),
@@ -620,7 +613,12 @@ describe("MoodTrackerScreen", () => {
     );
   });
 
-  it("asks for the whole history when All time is chosen, bounded at the first entry", () => {
+  /**
+   * Presets are viewports, not fetch windows (#900): changing one re-frames
+   * the chart over data the screen already holds. A selection that narrowed
+   * the query would refetch on every tap and pan into nothing.
+   */
+  it("never moves the score-points window when a range is chosen", () => {
     mockLogged();
     mockUseMoodLogs.mockReturnValue({
       data: [],
@@ -630,26 +628,62 @@ describe("MoodTrackerScreen", () => {
     } as unknown as ReturnType<typeof useFirstMoodDayKey>);
 
     renderWithProviders(<MoodTrackerScreen />);
-    // [0] is the trend control's segment (controls render in section order).
+    fireEvent.press(screen.getAllByText("90d")[0]);
     fireEvent.press(screen.getAllByText("All time")[0]);
 
-    // The first entry, not the epoch, so the span states a real period.
-    // `toHaveBeenCalledWith`, not `LastCalledWith`: the mood map consumes the
-    // same hook with its own fixed epoch bound (`ALL_TIME_FROM_ISO`), because it
-    // deliberately has no range control (#700, reinstated by #899) - so the
-    // last call on this mock is the map's, not the trend's.
-    // UTC midnight, not the viewer's local midnight: a day key is a civil day in
-    // the frame it was CAPTURED in, so an entry logged at +14:00 and read at
-    // -11:00 sits up to 25h before local midnight, past the query's 24h pad -
-    // and All time would silently omit the user's very first entry.
-    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
+    // Every call — trend, distribution, and the map's own — carries the fixed
+    // epoch; neither the 90d preset nor All time's first-entry key appears.
+    for (const call of mockUseMoodScorePoints.mock.calls) {
+      expect(call[1]).toBe("1970-01-01T00:00:00.000Z");
+    }
+    expect(mockUseMoodScorePoints).not.toHaveBeenCalledWith(
+      "user-1",
+      startOfDayDaysAgo(90).toISOString(),
+      undefined,
+    );
+    expect(mockUseMoodScorePoints).not.toHaveBeenCalledWith(
       "user-1",
       "2026-01-15T00:00:00.000Z",
       undefined,
     );
   });
 
-  it("switches the score-points window when a preset range is tapped", () => {
+  /**
+   * The preset viewport pans (#900): with history older than the 30d default,
+   * the trend renders inside a horizontal scroller anchored at the newest
+   * edge. All time fits the whole span instead — nothing left to pan — so the
+   * scroller goes away. (The mood map's scroller is a plain ScrollView without
+   * this testID, so the query is unambiguous.)
+   */
+  it("pans the trend under a preset when history outgrows it, and fits it under All time", () => {
+    mockUseMoodLogCount.mockReturnValue({
+      data: 9,
+    } as unknown as ReturnType<typeof useMoodLogCount>);
+    mockUseMoodLogs.mockReturnValue({
+      data: [],
+    } as unknown as ReturnType<typeof useMoodHistory>);
+    mockUseMoodScorePoints.mockReturnValue({
+      data: [
+        { dayKey: dayKeyDaysAgo(0), moodScore: 5 },
+        { dayKey: dayKeyDaysAgo(120), moodScore: 1 },
+      ],
+    } as unknown as ReturnType<typeof useMoodScorePoints>);
+    mockUseFirstMoodLogDate.mockReturnValue({
+      data: dayKeyDaysAgo(120),
+    } as unknown as ReturnType<typeof useFirstMoodDayKey>);
+
+    renderWithProviders(<MoodTrackerScreen />);
+
+    // 120 days of history against a 30-day viewport: the chart pans.
+    expect(screen.getByTestId("line-chart-scroller")).toBeTruthy();
+
+    fireEvent.press(screen.getAllByText("All time")[0]);
+    expect(screen.queryByTestId("line-chart-scroller")).toBeNull();
+  });
+
+  it("fits the trend to the viewport while history is shorter than the preset", () => {
+    // Two points inside the default 30 days: the same trailing window as
+    // before #900, nothing to pan.
     mockLogged();
     mockUseMoodLogs.mockReturnValue({
       data: [],
@@ -657,14 +691,8 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    fireEvent.press(screen.getAllByText("90d")[0]);
-
-    // (Not "last called": the all-time heatmap query shares this hook.)
-    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
-      "user-1",
-      startOfDayDaysAgo(90).toISOString(),
-      undefined,
-    );
+    expect(screen.getByRole("heading", { name: "Mood trend" })).toBeTruthy();
+    expect(screen.queryByTestId("line-chart-scroller")).toBeNull();
   });
 
   it("renders the Mood map section below the trend", () => {
