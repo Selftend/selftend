@@ -3,92 +3,66 @@ import { useTranslation } from "react-i18next";
 
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import {
-  computeMeditationInsights,
-  type MeditationInsights,
-} from "@/src/features/meditation/insights";
-import type { MeditationSession } from "@/src/features/meditation/types";
-import { roundTo1 } from "@/src/utils/number";
+import type { MeditationWindowInsights } from "@/src/features/meditation/insights";
 
 interface Props {
-  sessions: MeditationSession[];
+  insights: MeditationWindowInsights;
+  /** How many days the window covers - stated on the card, since nothing else says. */
+  windowDays: number;
 }
 
-const MIN_SESSIONS_TO_SHOW = 5;
-
-export function MeditationInsightsCard({ sessions }: Props) {
+/**
+ * What you've been sitting with, over the recent window (#853).
+ *
+ * Rebuilt on inputs that still accrue: the redesigned reflection (#786) stopped
+ * collecting the stage-conditional TMI probes, so the old card's mood average
+ * and mind-wandering trend were going null for all new activity. What survives
+ * is what the window plainly held - sits, time, and the obstacles tagged.
+ *
+ * Deliberately no window-over-window comparison and no trend arrows: the card
+ * is informational, not evaluative. The lifetime rows the old card carried
+ * (longest sit, stage distribution) are gone with it - the hero already states
+ * the lifetime record, and ten stage rows made the card a table, not a note.
+ */
+export function MeditationInsightsCard({ insights, windowDays }: Props) {
   const { t } = useTranslation("meditation");
-
-  if (sessions.length < MIN_SESSIONS_TO_SHOW) return null;
-
-  const insights = computeMeditationInsights(sessions);
 
   return (
     <Card variant="soft">
       <CardContent className="gap-3 pt-6">
         <CardTitle aria-level={2}>{t("module.insights.title")}</CardTitle>
         <Text variant="muted" className="text-sm">
-          {t("module.insights.subtitle")}
+          {t("module.insights.subtitle", { count: windowDays })}
         </Text>
 
         <View className="gap-2 pt-2">
           <InsightRow
             label={t("module.insights.totalSessions")}
-            value={t("module.insights.sessionCount", { count: insights.totalSessions })}
+            value={t("module.insights.sessionCount", { count: insights.sessionCount })}
           />
           <InsightRow
             label={t("module.insights.totalMinutes")}
             value={t("module.insights.minuteCount", { count: insights.totalMinutes })}
           />
-          <InsightRow
-            label={t("module.insights.longestSit")}
-            value={t("module.insights.minuteCount", { count: insights.longestSitMinutes })}
-          />
-          {insights.averageMoodAfter !== null ? (
-            <InsightRow
-              label={t("module.insights.avgMood")}
-              value={`${insights.averageMoodAfter.toFixed(1)} / 10`}
-            />
-          ) : null}
         </View>
 
-        {insights.stageDistribution.length > 0 ? (
+        {insights.topObstacles.length > 0 ? (
           <View className="gap-2 pt-2">
             <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("module.insights.stageBreakdown")}
+              {t("module.insights.obstaclesLabel")}
             </Text>
-            {insights.stageDistribution.map((entry) => (
+            {insights.topObstacles.map((entry) => (
               <InsightRow
-                key={entry.stage}
-                label={t("module.insights.stageLabel", { stage: entry.stage })}
-                value={t("module.insights.stageValue", {
-                  sessions: entry.sessionCount,
-                  minutes: entry.totalMinutes,
-                })}
+                key={entry.tag}
+                label={t(`module.obstacles.${entry.tag}`)}
+                value={t("module.insights.taggedCount", { count: entry.count })}
               />
             ))}
-          </View>
-        ) : null}
-
-        {insights.mindWanderingTrend !== null ? (
-          <View className="pt-2">
-            <Text variant="muted" className="text-xs">
-              {t(mindWanderingMessageKey(insights), {
-                count: Math.abs(roundTo1(insights.mindWanderingTrend)),
-              })}
-            </Text>
           </View>
         ) : null}
       </CardContent>
     </Card>
   );
-}
-
-function mindWanderingMessageKey(insights: MeditationInsights): string {
-  const trend = insights.mindWanderingTrend ?? 0;
-  if (trend < -0.5) return "module.insights.mindWanderingDown";
-  if (trend > 0.5) return "module.insights.mindWanderingUp";
-  return "module.insights.mindWanderingFlat";
 }
 
 function InsightRow({ label, value }: { label: string; value: string }) {

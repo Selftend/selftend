@@ -1,4 +1,4 @@
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,9 +16,9 @@ import {
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
 import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/timer/interval";
+import { computeWindowInsights } from "@/src/features/meditation/insights";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
-import { MeditationPracticesSection } from "@/src/features/meditation/meditation-practices-section";
 import {
   buildMinutesWindow,
   MINUTES_WINDOW_DAYS,
@@ -222,6 +222,16 @@ export default function MeditationHomeScreen() {
     [windowSessions, nowMs],
   );
   const minutesTotal = windowTotalMinutes(minutesWindow);
+  // The insights card reduces over the same rows and the same drawn day keys as
+  // the chart, so the two surfaces never disagree about what the window held.
+  const windowInsights = useMemo(
+    () =>
+      computeWindowInsights(
+        windowSessions ?? [],
+        minutesWindow.map((day) => day.dayKey),
+      ),
+    [windowSessions, minutesWindow],
+  );
   const minutesRange = useMemo(() => {
     if (minutesWindow.length === 0) return "";
     const fmt = new Intl.DateTimeFormat(i18n.language || undefined, {
@@ -257,6 +267,12 @@ export default function MeditationHomeScreen() {
       const detail = error instanceof Error ? error.message : null;
       setOnboardingError(detail ? `${fallback} (${detail})` : fallback);
     }
+  }
+
+  // The practices reference moved to its own route (#853); a `?practice=` deep
+  // link aimed at the overview follows it there rather than dying quietly.
+  if (practice) {
+    return <Redirect href={{ pathname: "/tools/meditation/practices", params: { practice } }} />;
   }
 
   if (prefsLoading) {
@@ -379,6 +395,13 @@ export default function MeditationHomeScreen() {
                   onPress={() => router.push("/tools/meditation/learn")}
                   ruled
                 />
+                <PracticeRow
+                  icon="self-improvement"
+                  title={t("practices.sectionLabel")}
+                  subtitle={t("module.home.practicesRowSubtitle")}
+                  onPress={() => router.push("/tools/meditation/practices")}
+                  ruled
+                />
               </View>
             </Section>
 
@@ -431,12 +454,8 @@ export default function MeditationHomeScreen() {
               </Section>
             ) : null}
 
-            <Section title={t("practices.sectionLabel")}>
-              <MeditationPracticesSection initialPractice={practice} />
-            </Section>
-
             {currentStage === 10 ? (
-              <Section>
+              <Section title={t("module.dailyLife.title")}>
                 <MeditationDailyLifeCard />
               </Section>
             ) : null}
@@ -473,9 +492,15 @@ export default function MeditationHomeScreen() {
               )}
             </Section>
 
-            {allSessions && allSessions.length > 0 ? (
+            {/* Gated on sits in the window, not on lifetime history: a card
+                about the last thirty days has nothing to say when they were
+                empty, and an empty Section would still draw its hairline. */}
+            {windowSessions && windowInsights.sessionCount > 0 ? (
               <Section>
-                <MeditationInsightsCard sessions={allSessions} />
+                <MeditationInsightsCard
+                  insights={windowInsights}
+                  windowDays={MINUTES_WINDOW_DAYS}
+                />
               </Section>
             ) : null}
           </View>

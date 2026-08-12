@@ -151,11 +151,12 @@ export async function listMeditationSessionsPage(
   return (data as MeditationSessionRow[]).map(mapSession);
 }
 
-/** Just the two columns the minutes chart reduces over, plus what dates them. */
+/** Just the columns the minutes chart and insights card reduce over, plus what dates them. */
 interface MeditationMinutesRow {
   duration_minutes: number;
   completed_at: string;
   completed_offset_minutes?: number | null;
+  obstacle_tags?: MeditationObstacleTag[] | null;
 }
 
 /**
@@ -166,14 +167,15 @@ interface MeditationMinutesRow {
  * quietly stop covering its own window once a user passed the cap - and nothing
  * on the chart would say so. Bounded by date instead of by row count, it cannot.
  *
- * Three columns, not `*`: this reads every sit in a month and needs none of the
- * reflection text.
+ * Four columns, not `*`: this reads every sit in a month and needs none of the
+ * reflection text. `obstacle_tags` rides along for the insights card (#853),
+ * which reduces over the same window the chart draws.
  */
 export async function listMeditationMinutesSince(userId: string, fromIso: string) {
   const client = requireSupabase();
   const { data, error } = await client
     .from("meditation_sessions")
-    .select("duration_minutes, completed_at, completed_offset_minutes")
+    .select("duration_minutes, completed_at, completed_offset_minutes, obstacle_tags")
     .eq("user_id", userId)
     .gte("completed_at", fromIso)
     .order("completed_at", { ascending: false });
@@ -182,6 +184,7 @@ export async function listMeditationMinutesSince(userId: string, fromIso: string
   return (data as MeditationMinutesRow[]).map((row) => ({
     dayKey: entryDayKey(row.completed_at, row.completed_offset_minutes ?? null),
     durationMinutes: row.duration_minutes,
+    obstacleTags: row.obstacle_tags ?? [],
   }));
 }
 

@@ -137,6 +137,7 @@
       "practiceLabel": "Твоята практика",
       "stageRow": "Етап {{stage}} — {{name}}",
       "stageRowSubtitle": "Къде си сега · десет етапа, четири етапни цели",
+      "practicesRowSubtitle": "Стъпка по стъпка за всяка седяща практика",
       "minutesSat": "Изседени минути",
       "minutesA11y": "{{count}} минути седене през последните {{days}} дни.",
       "recentTitle": "Последни седения",
@@ -207,21 +208,14 @@
     },
     "insights": {
       "title": "Размисъл",
-      "subtitle": "Спокойно обобщение на практиката ти - без оценки.",
+      "subtitle": "Последните {{count}} дни практика - без оценки.",
       "totalSessions": "Сесии",
       "totalMinutes": "Общо време",
-      "longestSit": "Най-дълго седене",
-      "avgMood": "Средно настроение след",
       "sessionCount_one": "{{count}} седене",
       "sessionCount_other": "{{count}} седения",
       "minuteCount_one": "{{count}} мин",
       "minuteCount_other": "{{count}} мин",
-      "stageBreakdown": "Време на всеки етап",
-      "stageLabel": "Етап {{stage}}",
-      "stageValue": "{{sessions}} седения · {{minutes}} мин",
-      "mindWanderingDown": "Уловите напоследък са с около {{count}} на седене по-малко, отколкото през предходните две седмици.",
-      "mindWanderingUp": "Уловите напоследък са с около {{count}} на седене повече, отколкото през предходните две седмици.",
-      "mindWanderingFlat": "Уловите остават горе-долу същите през последните четири седмици."
+      "obstaclesLabel": "Какво те дърпаше"
     },
     "dailyLife": {
       "title": "Внимателност в ежедневието",
@@ -286,6 +280,7 @@
   },
   "practices": {
     "sectionLabel": "Практики",
+    "subtitle": "Справочник за седящите практики - самото седене започва от началния екран на модула.",
     "breath-awareness": {
       "title": "Осъзнаване на дъха",
       "shortDescription": "Закотви вниманието си в дъха и нежно го връщай, когато умът се разсее.",

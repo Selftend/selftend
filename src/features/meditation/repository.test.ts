@@ -511,14 +511,17 @@ describe("meditation repository - listMeditationMinutesSince", () => {
     return { select, eq, gte, order };
   }
 
-  it("reads three columns, bounded by date rather than by row count", async () => {
+  it("reads four columns, bounded by date rather than by row count", async () => {
     const { select, eq, gte } = buildMinutesQuery({ data: [], error: null });
 
     await listMeditationMinutesSince("u1", "2026-07-08T00:00:00.000Z");
 
-    // `*` here would pull every reflection in a month for a chart that plots
-    // minutes; the bound is what stops the window truncating for a heavy user.
-    expect(select).toHaveBeenCalledWith("duration_minutes, completed_at, completed_offset_minutes");
+    // `*` here would pull every reflection in a month for surfaces that plot
+    // minutes and count tags; the bound is what stops the window truncating
+    // for a heavy user.
+    expect(select).toHaveBeenCalledWith(
+      "duration_minutes, completed_at, completed_offset_minutes, obstacle_tags",
+    );
     expect(eq).toHaveBeenCalledWith("user_id", "u1");
     expect(gte).toHaveBeenCalledWith("completed_at", "2026-07-08T00:00:00.000Z");
   });
@@ -532,13 +535,14 @@ describe("meditation repository - listMeditationMinutesSince", () => {
           duration_minutes: 12,
           completed_at: "2026-07-15T15:30:00.000Z",
           completed_offset_minutes: TOKYO_OFFSET_MINUTES,
+          obstacle_tags: ["restlessness"],
         },
       ],
       error: null,
     });
 
     await expect(listMeditationMinutesSince("u1", "2026-07-01T00:00:00.000Z")).resolves.toEqual([
-      { dayKey: "2026-07-16", durationMinutes: 12 },
+      { dayKey: "2026-07-16", durationMinutes: 12, obstacleTags: ["restlessness"] },
     ]);
   });
 
@@ -558,6 +562,8 @@ describe("meditation repository - listMeditationMinutesSince", () => {
     expect(row).toEqual({
       dayKey: entryDayKey("2026-07-15T15:30:00.000Z", null),
       durationMinutes: 20,
+      // A row predating tags (or with none) maps to an empty list, not null.
+      obstacleTags: [],
     });
   });
 

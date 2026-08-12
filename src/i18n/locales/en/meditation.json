@@ -56,6 +56,7 @@
       "practiceLabel": "Your practice",
       "stageRow": "Stage {{stage}} — {{name}}",
       "stageRowSubtitle": "Where you are now · ten stages, four milestones",
+      "practicesRowSubtitle": "Step-by-step reference for each seated practice",
       "minutesSat": "Minutes sat",
       "minutesA11y": "{{count}} minutes sat over the last {{days}} days.",
       "recentTitle": "Recent sits",
@@ -126,21 +127,14 @@
     },
     "insights": {
       "title": "Reflect",
-      "subtitle": "A quiet summary of your practice - no scores.",
+      "subtitle": "The last {{count}} days of practice - no scores.",
       "totalSessions": "Sessions",
       "totalMinutes": "Total time",
-      "longestSit": "Longest sit",
-      "avgMood": "Avg mood after",
       "sessionCount_one": "{{count}} sit",
       "sessionCount_other": "{{count}} sits",
       "minuteCount_one": "{{count}} min",
       "minuteCount_other": "{{count}} min",
-      "stageBreakdown": "Time at each stage",
-      "stageLabel": "Stage {{stage}}",
-      "stageValue": "{{sessions}} sits · {{minutes}} min",
-      "mindWanderingDown": "Catches have been about {{count}} per sit lower recently than in the prior two weeks.",
-      "mindWanderingUp": "Catches have been about {{count}} per sit higher recently than in the prior two weeks.",
-      "mindWanderingFlat": "Catches have stayed about the same across the last four weeks."
+      "obstaclesLabel": "What pulled at you"
     },
     "dailyLife": {
       "title": "Daily life mindfulness",
@@ -205,6 +199,7 @@
   },
   "practices": {
     "sectionLabel": "Practices",
+    "subtitle": "A reference for the seated practices - the sit itself starts from the module home.",
     "breath-awareness": {
       "title": "Breath awareness",
       "shortDescription": "Anchor your attention to the breath, returning gently when the mind wanders.",
