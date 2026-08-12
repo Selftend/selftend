@@ -209,10 +209,12 @@ export default function MoodDetailScreen() {
               </View>
               <View className="shrink-0 flex-row items-center gap-1">
                 {wideHeader ? (
+                  // Default size, not "sm": the adjacent trash is size="icon"
+                  // (h-10 sm:h-9), and only the default shares that height —
+                  // an sm pill sits 4px shorter and reads as broken (#901).
                   <Button
                     onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
                     variant="outline"
-                    size="sm"
                   >
                     <Icon name="edit" className="size-4" />
                     <Text>{t("detail.edit")}</Text>

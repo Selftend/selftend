@@ -17,6 +17,17 @@ test.describe("edit and delete a mood log", () => {
     await page.getByRole("button", { name: "Save check-in", exact: true }).click();
     await expect(page.getByText("😐")).toBeVisible({ timeout: 15_000 });
 
+    // #901 regression: at wide widths the header's Edit and Delete must share a
+    // height — a size="sm" Edit next to the size="icon" trash rendered 32px vs
+    // 36px and the owner read the pair as a broken button. Jest cannot see
+    // NativeWind layout, so the rendered-height check lives here.
+    const shell = page.getByTestId("app-shell-page");
+    const editBox = await shell.getByRole("button", { name: "Edit", exact: true }).boundingBox();
+    const deleteBox = await shell
+      .getByRole("button", { name: "Delete", exact: true })
+      .boundingBox();
+    expect(editBox?.height).toBe(deleteBox?.height);
+
     // EDIT: tap Edit, change to score 4 ("Good") → emoji 🙂, then Update.
     await page.getByRole("button", { name: "Edit", exact: true }).click();
     await page.getByRole("radio", { name: "Good", exact: true }).click();
