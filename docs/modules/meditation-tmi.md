@@ -433,17 +433,16 @@ This module follows the contract documented in `tools.md`:
 
 ## 5. Routes
 
-| Route                               | Purpose                                                                                                  |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `/modules/meditation`               | Home: today's practice card (current stage + suggested duration), recent sessions, stage progress strip. |
-| `/modules/meditation/onboarding`    | Full-screen fallback for the onboarding modal (used when the modal is dismissed or revisited).           |
-| `/modules/meditation/learn`         | First-visit primer: Attention vs. Awareness, Gardener's Mindset, non-linearity, safety.                  |
-| `/modules/meditation/session/new`   | Pre-sit primer (Stage-aware) → timer → post-sit reflection. Wraps the existing timer UI.                 |
-| `/modules/meditation/sessions`      | Private session history list.                                                                            |
-| `/modules/meditation/sessions/[id]` | Session detail; edit reflection / archive.                                                               |
-| `/modules/meditation/stages`        | Read-only library of all ten Stages.                                                                     |
-| `/modules/meditation/stages/[n]`    | Single-Stage page: goals, obstacles, skills, prompts, "switch to this Stage" action.                     |
-| `/tools/meditation`                 | Compatibility redirect to `/modules/meditation`.                                                         |
+| Route                               | Purpose                                                                                                                                                                                         |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/modules/meditation`               | Home: today's practice card (current stage + suggested duration), recent sessions, stage progress strip.                                                                                        |
+| `/modules/meditation/onboarding`    | Full-screen fallback for the onboarding modal (used when the modal is dismissed or revisited).                                                                                                  |
+| `/modules/meditation/learn`         | First-visit primer: Attention vs. Awareness, Gardener's Mindset, non-linearity, safety.                                                                                                         |
+| `/modules/meditation/session/new`   | Pre-sit primer (Stage-aware) → timer → post-sit reflection. Wraps the existing timer UI.                                                                                                        |
+| `/modules/meditation/sessions`      | Private session history list.                                                                                                                                                                   |
+| `/modules/meditation/sessions/[id]` | Session detail; edit reflection / archive.                                                                                                                                                      |
+| `/modules/meditation/stages`        | Read-only library of all ten Stages; each row expands in place with goals, obstacles, skills, mastery, prompts, and the "switch to this Stage" action (#851 removed the per-stage detail page). |
+| `/tools/meditation`                 | Compatibility redirect to `/modules/meditation`.                                                                                                                                                |
 
 ---
 

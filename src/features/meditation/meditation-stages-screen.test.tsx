@@ -256,17 +256,18 @@ describe("MeditationStagesScreen", () => {
     });
   });
 
-  it("keeps the stage screen reachable for its skills and prompts", () => {
-    // Those two blocks live only on the detail screen, and this list is its only
-    // entrance - expanding in place without this link would strand them.
+  it("folds skills and reflection prompts into the expansion", () => {
+    // #851 deleted the stage detail screen; the two blocks that lived only
+    // there now render in the expansion, so nothing is stranded and nothing
+    // navigates.
     renderWithProviders(<MeditationStagesScreen />);
 
     fireEvent.press(row(5));
-    fireEvent.press(screen.getByText("Skills and reflection prompts"));
 
-    expect(mockPush).toHaveBeenCalledWith({
-      pathname: "/tools/meditation/stages/[n]",
-      params: { n: "5" },
-    });
+    expect(screen.getByText("Skills and methods")).toBeTruthy();
+    expect(screen.getByText(/Vigilant introspective awareness/)).toBeTruthy();
+    expect(screen.getByText("Reflection prompts at this stage")).toBeTruthy();
+    expect(screen.getByText(/Did you run a body scan today\?/)).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

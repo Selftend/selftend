@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { useId, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -43,7 +42,9 @@ const MILESTONE_AFTER: Record<number, string> = {
  * Ten cards became ten hairline rows that expand where they sit. The screen this
  * replaces made reading a stage a round trip: tap a card, land on a detail
  * screen, come back, tap the next. Comparing two stages - which is most of what
- * this page is for - meant four navigations.
+ * this page is for - meant four navigations. The detail screen is gone (#851):
+ * everything it held - goal, obstacles, skills, mastery, reflection prompts -
+ * renders in the expansion, so the spine is the whole reference.
  *
  * **The stage stays user-declared.** `Set as my current stage` is an explicit
  * button and must not become an inference from sit count or duration. A product
@@ -253,6 +254,20 @@ function StageRow({
               {t(stage.masteryKey as Parameters<typeof t>[0])}
             </Text>
           </DetailRow>
+          <DetailRow label={t("module.stages.skillsLabel")}>
+            <Text variant="muted" className="text-[14.5px] leading-6">
+              {t(stage.skillsKey as Parameters<typeof t>[0])}
+            </Text>
+          </DetailRow>
+          <DetailRow label={t("module.stages.promptsLabel")}>
+            <View className="gap-1">
+              {stage.reflectionPromptKeys.map((key) => (
+                <Text key={key} variant="muted" className="text-[14.5px] leading-6">
+                  • {t(key as Parameters<typeof t>[0])}
+                </Text>
+              ))}
+            </View>
+          </DetailRow>
 
           <View className="gap-3 pt-4">
             {isCurrent ? (
@@ -272,30 +287,6 @@ function StageRow({
                 <Text>{t("module.stages.switchTo")}</Text>
               </Button>
             )}
-
-            {/*
-              The stage screen holds two things this expansion does not - the
-              skills and methods, and the reflection prompts - and this list is
-              its only entrance. Expanding in place without this link would not
-              relocate that content, it would strand it.
-            */}
-            <Pressable
-              accessibilityRole="link"
-              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() =>
-                router.push({
-                  pathname: "/tools/meditation/stages/[n]",
-                  params: { n: String(stage.number) },
-                })
-              }
-              className="flex-row items-center gap-1 self-start active:opacity-70"
-              role="link"
-            >
-              <Text className="text-[13px] font-semibold text-primary-ink">
-                {t("module.stages.moreOnStage")}
-              </Text>
-              <Icon aria-hidden name="arrow-forward" className="size-3.5 text-primary-ink" />
-            </Pressable>
           </View>
         </View>
       ) : null}
