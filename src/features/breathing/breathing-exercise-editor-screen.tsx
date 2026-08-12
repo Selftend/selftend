@@ -259,7 +259,7 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
             </Text>
           </View>
 
-          <PhaseTimingBar phases={phases} color={input.color} />
+          <PhaseTimingBar phases={phases} />
 
           {/* Four columns at 360dp: (328 − 3×10) / 4 = 74dp each. The two 26px
               glyph buttons plus a 34px value read as 86px of content, so they sit

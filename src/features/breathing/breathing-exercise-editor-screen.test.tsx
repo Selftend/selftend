@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react-nativ
 
 import { BreathingExerciseEditorScreen } from "@/src/features/breathing/breathing-exercise-editor-screen";
 import { BREATHING_EXERCISE_COLOR_CHOICES } from "@/src/features/breathing/exercise-types";
+import { TIMING_SEGMENT_CLASSES } from "@/src/features/breathing/phase-timing-bar";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { expectNeutralRoom } from "@/test/room-pour";
 
@@ -213,8 +214,9 @@ describe("New breathing pattern (4d)", () => {
 
     it("keeps each phase's own identity in the preview", () => {
       // PhaseTimingBar weights a segment by its label - inhale and exhale carry
-      // the pattern's colour, holds are neutral. Collapsing exhale to "hold"
-      // would paint the authoring screen's exhale as a hold.
+      // the accent at two strengths, holds are neutral. Collapsing exhale to
+      // "hold" would paint the authoring screen's exhale as a hold. Asserted on
+      // className, because NativeWind classes never become styles under jest.
       mockList = [
         exercise({ inhaleSeconds: 4, holdInSeconds: 2, exhaleSeconds: 6, holdOutSeconds: 1 }),
       ];
@@ -222,16 +224,14 @@ describe("New breathing pattern (4d)", () => {
 
       const segments = screen
         .getByTestId("breathing-timing-bar")
-        .props.children.filter(Boolean) as { props: { style: { backgroundColor?: string } } }[];
+        .props.children.filter(Boolean) as { props: { className?: string } }[];
       expect(segments).toHaveLength(4);
 
-      const bg = (i: number) => segments[i].props.style.backgroundColor;
-      // inhale and exhale are two DIFFERENT hue stops; both holds are neither.
-      expect(bg(0)).toBeDefined();
-      expect(bg(2)).toBeDefined();
-      expect(bg(0)).not.toBe(bg(2));
-      expect(bg(1)).toBeUndefined();
-      expect(bg(3)).toBeUndefined();
+      const cls = (i: number) => segments[i].props.className;
+      expect(cls(0)).toBe(TIMING_SEGMENT_CLASSES.strong);
+      expect(cls(2)).toBe(TIMING_SEGMENT_CLASSES.soft);
+      expect(cls(1)).toBe(TIMING_SEGMENT_CLASSES.neutral);
+      expect(cls(3)).toBe(TIMING_SEGMENT_CLASSES.neutral);
     });
 
     it("populates all four phases from a preset, dropping zeros from its label", () => {
