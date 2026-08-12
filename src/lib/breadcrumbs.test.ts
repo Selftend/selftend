@@ -16,6 +16,7 @@ const LABELS: Record<string, string> = {
   "sidebar.routines": "Routines",
   "breadcrumb.edit": "Edit",
   "sidebar.moodTracker": "Check-in",
+  "breadcrumb.practices": "Practices",
 };
 const t = (key: string) => LABELS[key] ?? key;
 
@@ -25,6 +26,13 @@ describe("computeBreadcrumbs", () => {
     expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Meditation"]);
     expect(crumbs[0].href).toBe("/tools");
     expect(crumbs[1].href).toBeUndefined();
+  });
+
+  it("resolves the meditation practices route to its own label, not the Entry fallback", () => {
+    // An unregistered static route reads as an opaque dynamic segment and
+    // renders the generic "Entry" - which is how #921's review caught this one.
+    const crumbs = computeBreadcrumbs("/tools/meditation/practices", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Meditation", "Practices"]);
   });
 
   it("falls back to a generic label for an opaque-id detail route", () => {

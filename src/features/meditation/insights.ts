@@ -1,102 +1,56 @@
-import type { MeditationSession, StageNumber } from "@/src/features/meditation/types";
+import type { MeditationObstacleTag } from "@/src/features/meditation/types";
 
-interface StageDistributionEntry {
-  stage: StageNumber;
+/** How many obstacle rows the card shows - the most-tagged few, not a league table. */
+const TOP_OBSTACLES = 3;
+
+/** The shape the card reduces over - the minutes-window rows, not full sessions. */
+export interface WindowSit {
+  dayKey: string;
+  durationMinutes: number;
+  obstacleTags: MeditationObstacleTag[];
+}
+
+export interface MeditationWindowInsights {
+  /** Sits whose captured day falls inside the window. */
   sessionCount: number;
   totalMinutes: number;
+  /** Most-tagged obstacles in the window, count descending. At most three. */
+  topObstacles: { tag: MeditationObstacleTag; count: number }[];
 }
 
-export interface MeditationInsights {
-  totalSessions: number;
-  totalMinutes: number;
-  longestSitMinutes: number;
-  averageMoodAfter: number | null;
-  stageDistribution: StageDistributionEntry[];
-  /**
-   * Average mind-wandering count in the last 14 days minus the prior 14 days
-   * (so a negative number means catches are happening less often, which is
-   * the direction practice tends in at Stages 2-3). Null if either window has
-   * fewer than three sits with a logged count.
-   */
-  mindWanderingTrend: number | null;
-}
+/**
+ * What the window held, plainly (#853).
+ *
+ * This replaced `computeMeditationInsights`, whose mood average and
+ * mind-wandering trend read fields the redesigned reflection (#786) no longer
+ * collects - they would have gone null for all new activity. Everything here
+ * reduces over inputs that still accrue, and nothing compares one window to
+ * another: the card is informational, not evaluative.
+ *
+ * Rows are filtered by the same day keys the minutes chart draws, so the two
+ * surfaces never disagree about what "the last thirty days" contains - the
+ * query behind them is padded a day wider than the window on purpose.
+ */
+export function computeWindowInsights(
+  sits: readonly WindowSit[],
+  windowDayKeys: readonly string[],
+): MeditationWindowInsights {
+  const inWindow = new Set(windowDayKeys);
+  const rows = sits.filter((sit) => inWindow.has(sit.dayKey));
 
-const RECENT_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
-const MIN_SAMPLES_FOR_TREND = 3;
+  const totalMinutes = rows.reduce((sum, sit) => sum + sit.durationMinutes, 0);
 
-export function computeMeditationInsights(
-  sessions: MeditationSession[],
-  now: Date = new Date(),
-): MeditationInsights {
-  if (sessions.length === 0) {
-    return {
-      totalSessions: 0,
-      totalMinutes: 0,
-      longestSitMinutes: 0,
-      averageMoodAfter: null,
-      stageDistribution: [],
-      mindWanderingTrend: null,
-    };
-  }
-
-  const totalMinutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
-  const longestSitMinutes = sessions.reduce(
-    (max, s) => (s.durationMinutes > max ? s.durationMinutes : max),
-    0,
-  );
-
-  const moodValues = sessions
-    .map((s) => s.moodAfter)
-    .filter((m): m is number => typeof m === "number");
-  const averageMoodAfter =
-    moodValues.length > 0 ? moodValues.reduce((sum, m) => sum + m, 0) / moodValues.length : null;
-
-  const byStage = new Map<StageNumber, StageDistributionEntry>();
-  for (const session of sessions) {
-    const stage = session.stageAtSession;
-    const existing = byStage.get(stage);
-    if (existing) {
-      existing.sessionCount += 1;
-      existing.totalMinutes += session.durationMinutes;
-    } else {
-      byStage.set(stage, {
-        stage,
-        sessionCount: 1,
-        totalMinutes: session.durationMinutes,
-      });
+  const counts = new Map<MeditationObstacleTag, number>();
+  for (const sit of rows) {
+    for (const tag of sit.obstacleTags) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
     }
   }
-  const stageDistribution = Array.from(byStage.values()).sort((a, b) => a.stage - b.stage);
+  const topObstacles = Array.from(counts, ([tag, count]) => ({ tag, count }))
+    // Count descending; ties break alphabetically so the order is stable
+    // between renders rather than following Map insertion order.
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+    .slice(0, TOP_OBSTACLES);
 
-  const nowMs = now.getTime();
-  const recentSamples: number[] = [];
-  const priorSamples: number[] = [];
-  for (const session of sessions) {
-    if (session.mindWanderingEpisodes === null) continue;
-    const completedAt = new Date(session.completedAt).getTime();
-    const age = nowMs - completedAt;
-    if (age < 0) continue;
-    if (age <= RECENT_WINDOW_MS) {
-      recentSamples.push(session.mindWanderingEpisodes);
-    } else if (age <= RECENT_WINDOW_MS * 2) {
-      priorSamples.push(session.mindWanderingEpisodes);
-    }
-  }
-  const mindWanderingTrend =
-    recentSamples.length >= MIN_SAMPLES_FOR_TREND && priorSamples.length >= MIN_SAMPLES_FOR_TREND
-      ? avg(recentSamples) - avg(priorSamples)
-      : null;
-
-  return {
-    totalSessions: sessions.length,
-    totalMinutes,
-    longestSitMinutes,
-    averageMoodAfter,
-    stageDistribution,
-    mindWanderingTrend,
-  };
-}
-
-function avg(numbers: number[]): number {
-  return numbers.reduce((sum, n) => sum + n, 0) / numbers.length;
+  return { sessionCount: rows.length, totalMinutes, topObstacles };
 }

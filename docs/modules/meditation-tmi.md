@@ -442,6 +442,7 @@ This module follows the contract documented in `tools.md`:
 | `/modules/meditation/sessions`      | Private session history list.                                                                                                                                                                   |
 | `/modules/meditation/sessions/[id]` | Session detail; edit reflection / archive.                                                                                                                                                      |
 | `/modules/meditation/stages`        | Read-only library of all ten Stages; each row expands in place with goals, obstacles, skills, mastery, prompts, and the "switch to this Stage" action (#851 removed the per-stage detail page). |
+| `/tools/meditation/practices`       | Info-only reference for the seated practices; `?practice=` pre-opens one (#853). Implemented under `/tools/`, the app's current meditation prefix.                                              |
 | `/tools/meditation`                 | Compatibility redirect to `/modules/meditation`.                                                                                                                                                |
 
 ---

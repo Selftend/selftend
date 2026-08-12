@@ -357,7 +357,11 @@ describe("MeditationHomeScreen", () => {
   });
 
   describe("minutes sat", () => {
-    const windowDay = (dayKey: string, durationMinutes: number) => ({ dayKey, durationMinutes });
+    const windowDay = (dayKey: string, durationMinutes: number) => ({
+      dayKey,
+      durationMinutes,
+      obstacleTags: [],
+    });
 
     it("stays off the screen while the window has not loaded", () => {
       // Undefined is in flight, or failed with no cache. Thirty stub columns
