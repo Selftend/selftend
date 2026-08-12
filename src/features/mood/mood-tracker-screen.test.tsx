@@ -496,7 +496,7 @@ describe("MoodTrackerScreen", () => {
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/history");
   });
 
-  it("gives every stats section its own 7d/30d/90d/All time/Custom control (#880)", () => {
+  it("gives the trend and the distribution their own range control, and the map none (#899)", () => {
     mockLogged();
     mockUseMoodLogs.mockReturnValue({
       data: [],
@@ -504,14 +504,15 @@ describe("MoodTrackerScreen", () => {
 
     renderWithProviders(<MoodTrackerScreen />);
 
-    // Three independent controls — Mood trend, Distribution, Mood map — each
-    // with the full segment set. "All time" appears only as segments now: the
-    // old title/segment naming collision dissolved with the Mood map rename.
-    expect(screen.getAllByText("7d")).toHaveLength(3);
-    expect(screen.getAllByText("30d")).toHaveLength(3);
-    expect(screen.getAllByText("90d")).toHaveLength(3);
-    expect(screen.getAllByText("All time")).toHaveLength(3);
-    expect(screen.getAllByText("Custom")).toHaveLength(3);
+    // Two independent controls — Mood trend and Distribution — each with the
+    // full segment set. The Mood map has NO control (#899 reverted the one
+    // #880 gave it): it always shows the whole history, reached by its own
+    // horizontal scroller.
+    expect(screen.getAllByText("7d")).toHaveLength(2);
+    expect(screen.getAllByText("30d")).toHaveLength(2);
+    expect(screen.getAllByText("90d")).toHaveLength(2);
+    expect(screen.getAllByText("All time")).toHaveLength(2);
+    expect(screen.getAllByText("Custom")).toHaveLength(2);
     expect(screen.queryByText("14d")).toBeNull();
     // Defaults: trend 30d, distribution All time, map All time (the design's
     // drawn states). With no first-entry key loaded yet, All time falls back to
@@ -537,9 +538,10 @@ describe("MoodTrackerScreen", () => {
     renderWithProviders(<MoodTrackerScreen />);
 
     expect(screen.getByRole("heading", { name: "Distribution" })).toBeTruthy();
-    // Two controls: the distribution's and the map's. One point is a dot, not
-    // a direction, so the trend section (and its control) is not mounted.
-    expect(screen.getAllByText("30d")).toHaveLength(2);
+    // One control: the distribution's. One point is a dot, not a direction,
+    // so the trend section (and its control) is not mounted — and the map
+    // carries no control at all (#899).
+    expect(screen.getAllByText("30d")).toHaveLength(1);
     expect(screen.queryByRole("heading", { name: "Mood trend" })).toBeNull();
   });
 
@@ -568,7 +570,7 @@ describe("MoodTrackerScreen", () => {
     } as unknown as ReturnType<typeof useMoodScorePoints>);
 
     renderWithProviders(<MoodTrackerScreen />);
-    // Controls render in section order — trend, distribution, map — so [1] is
+    // Controls render in section order — trend, then distribution — so [1] is
     // the distribution's own 7d segment.
     fireEvent.press(screen.getAllByText("7d")[1]);
 
@@ -634,8 +636,8 @@ describe("MoodTrackerScreen", () => {
     // The first entry, not the epoch, so the span states a real period.
     // `toHaveBeenCalledWith`, not `LastCalledWith`: the mood map consumes the
     // same hook with its own fixed epoch bound (`ALL_TIME_FROM_ISO`), because it
-    // deliberately has no range control (#700) - so the last call on this mock
-    // is the map's, not the trend's.
+    // deliberately has no range control (#700, reinstated by #899) - so the
+    // last call on this mock is the map's, not the trend's.
     // UTC midnight, not the viewer's local midnight: a day key is a civil day in
     // the frame it was CAPTURED in, so an entry logged at +14:00 and read at
     // -11:00 sits up to 25h before local midnight, past the query's 24h pad -
@@ -674,8 +676,8 @@ describe("MoodTrackerScreen", () => {
     renderWithProviders(<MoodTrackerScreen />);
 
     // Renamed from "All time" (#884): the design's section is MOOD MAP, and
-    // the rename dissolves the title/segment collision the map's own range
-    // control (#880) would otherwise create.
+    // the rename dissolves the title/segment collision the range control the
+    // map briefly carried (#880, reverted by #899) would otherwise create.
     expect(screen.getByRole("heading", { name: "Mood map" })).toBeTruthy();
     // The map's own "log a mood to start your map" is no longer the first thing
     // a new user meets: the section only renders once there IS a check-in, so
