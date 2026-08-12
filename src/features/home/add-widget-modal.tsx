@@ -329,7 +329,7 @@ export function AddWidgetModal({
                 }),
             )}
           >
-            <Icon name="search" className="size-[18px] content-center text-muted-foreground" />
+            <Icon name="search" className="size-[18px] text-muted-foreground" />
             <TextInput
               value={query}
               onChangeText={setQuery}

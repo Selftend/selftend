@@ -55,6 +55,10 @@ const TAILWIND_SIZE_TO_PX: Record<string, number> = {
   "size-10": 40,
 };
 
+// Arbitrary-value sizes (size-[18px]) must resolve too, or the glyph falls
+// back to the default 24px while the CSS box honours the smaller value.
+const ARBITRARY_SIZE_PX = /^size-\[(\d+(?:\.\d+)?)px\]$/;
+
 function iconColorClasses(className: string | undefined) {
   if (!className) {
     return undefined;
@@ -77,7 +81,7 @@ function iconSizeFromClasses(className: string | undefined) {
   const tokens = className.split(/\s+/);
   for (let index = tokens.length - 1; index >= 0; index -= 1) {
     const utility = tokens[index].slice(tokens[index].lastIndexOf(":") + 1);
-    const size = TAILWIND_SIZE_TO_PX[utility];
+    const size = TAILWIND_SIZE_TO_PX[utility] ?? Number(ARBITRARY_SIZE_PX.exec(utility)?.[1]);
     if (size) {
       return size;
     }
