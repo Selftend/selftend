@@ -18,8 +18,6 @@ import type { BreathingPhase } from "@/src/constants/breathing";
 import { BreathingPacer } from "@/src/features/breathing/breathing-pacer";
 import { PhaseTimingBar } from "@/src/features/breathing/phase-timing-bar";
 import { SessionLengthButtons } from "@/src/features/breathing/session-length-buttons";
-import { breathingChipColors } from "@/src/features/breathing/exercise-colors";
-import type { BreathingExerciseColor } from "@/src/features/breathing/exercise-types";
 import {
   totalSeconds,
   formatClock,
@@ -605,7 +603,6 @@ export default function BreathingSessionScreen() {
               <PatternTab
                 key={p.slug}
                 label={t(`breathing.exercises.${p.slug}.title`)}
-                color={p.color}
                 active={patternId === p.slug}
                 onPress={() => selectPattern(p.slug)}
               />
@@ -614,7 +611,6 @@ export default function BreathingSessionScreen() {
               <PatternTab
                 key={e.id}
                 label={e.name}
-                color={e.color}
                 active={patternId === e.id}
                 onPress={() => selectPattern(e.id)}
               />
@@ -638,7 +634,7 @@ export default function BreathingSessionScreen() {
                 patterns, and the bar drops them again for built-ins - so
                 coherent breathing draws two segments and two labels, not
                 four with two invisible ones. */}
-            <PhaseTimingBar phases={resolved.phases} color={resolved.color} showLabels />
+            <PhaseTimingBar phases={resolved.phases} showLabels />
           </View>
 
           <View className="gap-3">
@@ -655,7 +651,6 @@ export default function BreathingSessionScreen() {
               secondsPerCycle={secondsPerCycle}
               selectedCycles={selectedCycles}
               onSelect={changeCycles}
-              accent={resolved.color}
             />
           </View>
 
@@ -747,29 +742,27 @@ function VolumeRail({
 /**
  * One pattern tab.
  *
- * ⚠️ Selected is `chip.fill` behind `chip.ink`, NOT the design's raw aqua accent
- * on an `aqua/0.14` fill - that is the shape #691 named a regression and #368
- * measured at 3.81:1. `chip.ink` is tuned per hue in src/lib/hue-chip.ts
- * precisely so ink-on-fill clears AA in both schemes.
+ * Selected is the shared chip treatment - `border-primary bg-primary/10` behind
+ * `text-primary-ink`, the same shape as selectable-chip.tsx and meditation's
+ * ChoiceRow - not the pattern's own colour: #926 moved the setup controls onto
+ * theme tokens, and the pattern's colour lives in its row's dot and the live
+ * pacer. `text-primary-ink`, never `text-primary`: the latter on `bg-primary/10`
+ * is the shape #691 named a regression and #368 measured at 3.81:1.
  *
- * The hue is the PATTERN's own colour, so the tab, the timing bar and the
- * length buttons all agree on what colour "this pattern" is - and the hue
- * encodes which pattern rather than which tool, which is the distinction #691
- * draws.
+ * Every stop rides a utility class rather than a colour literal:
+ * test/theme-token-sync.test.ts holds this file to zero such literals, because
+ * the pacer once hardcoded its triple and a palette retune skipped the screen's
+ * central graphic (#310).
  */
 function PatternTab({
   label,
-  color,
   active,
   onPress,
 }: {
   label: string;
-  color: BreathingExerciseColor;
   active: boolean;
   onPress: () => void;
 }) {
-  const scheme = useColorSchemeName();
-  const chip = breathingChipColors(color, scheme);
   return (
     <Pressable
       accessibilityRole="radio"
@@ -777,19 +770,17 @@ function PatternTab({
       accessibilityLabel={label}
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onPress}
-      // The resting border rides `border-border` as a class rather than a raw
-      // colour literal: test/theme-token-sync.test.ts holds this file to zero
-      // such literals, because the pacer once hardcoded its triple and a palette
-      // retune skipped the screen's central graphic (#310). Only the active
-      // state needs a computed colour, and it comes from the chip recipe.
-      className="rounded-full border border-border px-4 py-2"
+      // Selection shifts border, fill AND weight together - a 10% tint is not a
+      // distinction on its own (#691), so colour is never the only cue.
+      className={cn(
+        "rounded-full border px-4 py-2",
+        active ? "border-primary bg-primary/10" : "border-border",
+      )}
       role="radio"
-      style={active ? { backgroundColor: chip.fill, borderColor: chip.ink } : undefined}
     >
       <Text
-        className="text-[13px] font-semibold"
+        className={cn("text-[13px]", active && "font-semibold text-primary-ink")}
         numberOfLines={1}
-        style={active ? { color: chip.ink } : undefined}
         variant={active ? undefined : "muted"}
       >
         {label}

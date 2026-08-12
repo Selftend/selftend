@@ -5,7 +5,8 @@
 // the screen used to hardcode the triple, and a lighter one at that).
 //
 // Since #779 the pacer wears the RUNNING PATTERN's colour — the same colour
-// the pattern's overview row, setup tab and timing bar wear — instead of a
+// the pattern's overview-row dot wears (#926 moved the setup tab, timing bar
+// and length buttons onto theme tokens) — instead of a
 // tool-pinned aqua. That is the `breathing-pacer` encoding in
 // src/lib/theme/encoding.ts: categorical, pinned to the encoding palette, and
 // resolved through the same BREATHING_COLOR_TINTS alias map as every other
@@ -36,7 +37,7 @@ export interface PacerColors {
   /**
    * Ink for the timing line under the phase name. The raw hue as TEXT fails AA
    * on several hues (#691 measured 3.81:1) — this is the chip recipe's
-   * AA-tuned ink, the same stop the pattern tabs label themselves with.
+   * AA-tuned ink.
    */
   timingInk: string;
 }

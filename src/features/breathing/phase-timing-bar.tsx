@@ -20,9 +20,9 @@ import { cycleSeconds } from "@/src/features/breathing/cycle-math";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 
 /**
- * A phase's weight in the bar. Inhale and exhale carry the pattern's colour at
- * two strengths; the holds are neutral, because a hold is the absence of
- * movement and colouring it the same hue would say it is a third kind of
+ * A phase's weight in the bar. Inhale and exhale carry the accent at two
+ * strengths; the holds are neutral, because a hold is the absence of
+ * movement and colouring it the same way would say it is a third kind of
  * breath.
  */
 function segmentAlpha(label: BreathingPhase["label"]): "strong" | "soft" | "neutral" {
@@ -31,19 +31,33 @@ function segmentAlpha(label: BreathingPhase["label"]): "strong" | "soft" | "neut
   return "neutral";
 }
 
+/**
+ * The bar's three stops, on theme tokens rather than the pattern's colour:
+ * #926 moved the setup controls onto the active style, and the pattern's
+ * colour lives in its row's dot (below) and the live pacer. `bg-primary/[0.52]`
+ * is `RAMP_ALPHAS[2]`, a class the accent ramp already emits.
+ *
+ * Measured over `--background` across all 8 styles × 2 schemes
+ * (test/breathing-timing-bar-contrast.test.ts): strong-vs-background ≥ 4.08,
+ * strong-vs-soft ≥ 2.10, soft-vs-hold ≥ 1.40 — all clear of the 1.15
+ * distinguishability floor #924 set for the accent ramp, and the strong stop
+ * clears the 3:1 graphical-object floor everywhere.
+ */
+export const TIMING_SEGMENT_CLASSES = {
+  strong: "bg-primary",
+  soft: "bg-primary/[0.52]",
+  neutral: "bg-muted-foreground/25",
+} as const;
+
 export function PhaseTimingBar({
   phases,
-  color,
   showLabels = false,
 }: {
   phases: BreathingPhase[];
-  color: BreathingExerciseColor;
   /** `4b` names each phase under its segment; `4d`'s live preview does not. */
   showLabels?: boolean;
 }) {
   const { t } = useTranslation("cbt");
-  const scheme = useColorSchemeName();
-  const chip = breathingChipColors(color, scheme);
 
   const active = phases.filter((p) => p.durationSeconds > 0);
   const total = cycleSeconds(active);
@@ -58,29 +72,18 @@ export function PhaseTimingBar({
   return (
     <View className="gap-3">
       <View testID="breathing-timing-bar" className="h-2.5 flex-row items-stretch gap-1">
-        {active.map((phase, i) => {
-          const weight = segmentAlpha(phase.label);
-          return (
-            <View
-              key={`${phase.label}-${i}`}
-              // The neutral hold rides a utility class rather than a raw colour
-              // literal, so a palette retune reaches it; only the two hue stops
-              // need a computed value, and those come from the chip recipe.
-              className={weight === "neutral" ? "bg-muted-foreground/25" : undefined}
-              style={{
-                flexGrow: phase.durationSeconds,
-                flexShrink: 1,
-                flexBasis: 0,
-                borderRadius: 999,
-                ...(weight === "strong"
-                  ? { backgroundColor: chip.ink }
-                  : weight === "soft"
-                    ? { backgroundColor: chip.border }
-                    : {}),
-              }}
-            />
-          );
-        })}
+        {active.map((phase, i) => (
+          <View
+            key={`${phase.label}-${i}`}
+            className={TIMING_SEGMENT_CLASSES[segmentAlpha(phase.label)]}
+            style={{
+              flexGrow: phase.durationSeconds,
+              flexShrink: 1,
+              flexBasis: 0,
+              borderRadius: 999,
+            }}
+          />
+        ))}
       </View>
 
       {showLabels ? (
