@@ -96,10 +96,7 @@
     "createDescription": "{{date}} · малките неща се броят, а и едно е достатъчно.",
     "editDescription": "Промени това, което си забелязал по-рано.",
     "itemLabel": "Благодарност {{number}}",
-    "itemPlaceholder": "Нещо малко, което имаше значение днес",
-    "continuationPlaceholder": "…",
     "addAnother": "Добави още",
-    "promptHelp": "Затрудняваш се? вземи подсказка",
     "todayItemsLabel": "Благодарен за днес",
     "todayQuestions": [
       "Какво те разсмя?",

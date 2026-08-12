@@ -61,7 +61,10 @@ describe("GratitudeEntryEditorScreen", () => {
     >);
   });
 
-  it("renders three open lines with only the first full placeholder", () => {
+  // #929 reversed #790's unlabelled-lines decision: each line is labelled with
+  // its question, the questions are the prompt (no placeholders), and the
+  // "borrow a prompt" chips are gone with the redundancy.
+  it("renders three question-labelled lines with no placeholders", () => {
     mockUseSaveGratitudeEntry.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
@@ -72,17 +75,18 @@ describe("GratitudeEntryEditorScreen", () => {
     );
 
     expect(screen.getByText("Three good things")).toBeTruthy();
-    expect(screen.getByLabelText("Gratitude 1")).toBeTruthy();
-    expect(screen.getByLabelText("Gratitude 2")).toBeTruthy();
-    expect(screen.getByLabelText("Gratitude 3")).toBeTruthy();
-    expect(screen.queryByLabelText("Gratitude 4")).toBeNull();
-    expect(screen.getByPlaceholderText("Something small that mattered today")).toBeTruthy();
-    expect(screen.getAllByPlaceholderText("…")).toHaveLength(2);
+    expect(screen.getByLabelText("What made you laugh?")).toBeTruthy();
+    expect(screen.getByLabelText("Who was kind to you?")).toBeTruthy();
+    expect(screen.getByLabelText("What simple pleasure did you enjoy?")).toBeTruthy();
+    expect(screen.queryByLabelText("What went a little better than expected?")).toBeNull();
+    expect(screen.queryByPlaceholderText("Something small that mattered today")).toBeNull();
+    expect(screen.queryByPlaceholderText("…")).toBeNull();
+    expect(screen.queryByText("Stuck? borrow a prompt")).toBeNull();
     expect(screen.queryByLabelText("Note (optional)")).toBeNull();
     expect(screen.getByText("Save entry")).toBeTruthy();
   });
 
-  it("adds open lines up to five", () => {
+  it("adds lines up to five, labelled with the remaining questions", () => {
     mockUseSaveGratitudeEntry.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
@@ -94,24 +98,9 @@ describe("GratitudeEntryEditorScreen", () => {
     fireEvent.press(screen.getByText("Add another"));
     fireEvent.press(screen.getByText("Add another"));
 
-    expect(screen.getByLabelText("Gratitude 5")).toBeTruthy();
+    expect(screen.getByLabelText("What went a little better than expected?")).toBeTruthy();
+    expect(screen.getByLabelText("What did your body help you do?")).toBeTruthy();
     expect(screen.queryByText("Add another")).toBeNull();
-  });
-
-  it("fills the focused empty line from a prompt without overwriting text", () => {
-    mockUseSaveGratitudeEntry.mockReturnValue({
-      mutateAsync: jest.fn(),
-      isPending: false,
-    } as never);
-    renderWithProviders(
-      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
-    );
-    fireEvent.changeText(screen.getByLabelText("Gratitude 1"), "Already here");
-    fireEvent(screen.getByLabelText("Gratitude 2"), "focus");
-    fireEvent.press(screen.getByText("What made you laugh?"));
-
-    expect(screen.getByDisplayValue("Already here")).toBeTruthy();
-    expect(screen.getByDisplayValue("What made you laugh?")).toBeTruthy();
   });
 
   it("saves a new entry when at least one item is provided", async () => {
@@ -140,7 +129,7 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    fireEvent.changeText(screen.getByLabelText("Gratitude 1"), "Warm coffee");
+    fireEvent.changeText(screen.getByLabelText("What made you laugh?"), "Warm coffee");
     fireEvent.press(screen.getByText("Save entry"));
 
     await waitFor(() =>
@@ -188,7 +177,7 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    fireEvent.changeText(screen.getByLabelText("Gratitude 1"), "Warm coffee");
+    fireEvent.changeText(screen.getByLabelText("What made you laugh?"), "Warm coffee");
     fireEvent.press(screen.getByText("Save entry"));
     fireEvent.press(screen.getByText("Save entry"));
 
@@ -222,7 +211,7 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    fireEvent.changeText(screen.getByLabelText("Gratitude 2"), "Sunlight");
+    fireEvent.changeText(screen.getByLabelText("Who was kind to you?"), "Sunlight");
     fireEvent.press(screen.getByText("Save entry"));
 
     await waitFor(() =>
