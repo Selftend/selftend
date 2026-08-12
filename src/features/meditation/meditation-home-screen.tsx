@@ -16,6 +16,7 @@ import {
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
 import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/timer/interval";
+import { DurationSlider } from "@/src/features/meditation/duration-slider";
 import { computeWindowInsights } from "@/src/features/meditation/insights";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
@@ -45,15 +46,6 @@ import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatCompactAtOffset, parseLocalNoon } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
-
-/**
- * The lengths the design offers, in minutes (#785).
- *
- * A row of choices, not a dial. The drag-picker this replaces could express 63
- * minutes and made the user work for 12; six named lengths cover what people
- * actually sit and are one tap each.
- */
-const DURATION_OPTIONS = [5, 10, 12, 20, 30, 45] as const;
 
 /** The pre-selected length when the user has no stored preference. */
 const DEFAULT_DURATION = 12;
@@ -89,21 +81,6 @@ export default function MeditationHomeScreen() {
   const currentStage = (programState?.currentStage ?? 1) as StageNumber;
   const stage = getStage(currentStage);
   const preferredDuration = programState?.preferredDurationMinutes ?? null;
-  /**
-   * The six drawn lengths, plus the user's own if it is not one of them.
-   *
-   * Onboarding lets someone commit to 15 minutes, which the design's row does not
-   * contain. Dropping it would quietly re-decide their length for them the first
-   * time they open the redesigned screen, so it takes a seventh button instead.
-   */
-  const durationOptions = useMemo(() => {
-    const base = [...DURATION_OPTIONS] as number[];
-    if (preferredDuration !== null && !base.includes(preferredDuration)) {
-      base.push(preferredDuration);
-      base.sort((a, b) => a - b);
-    }
-    return base;
-  }, [preferredDuration]);
 
   // Null until the user picks, so a preference arriving after first paint still
   // lands - but a pick made before it arrives is never overwritten.
@@ -331,17 +308,12 @@ export default function MeditationHomeScreen() {
                 ) : null}
               </View>
 
-              <ChoiceRow
-                testID="sit-length-choices"
-                label={t("module.home.durationLabel")}
-                /* 96px floor, so six buttons run across the 720px column and
-                   wrap to three-and-three at 360dp rather than clipping
-                   `45 min` (and `bg`'s longer `Изкл.` neighbours below). */
-                itemClassName="min-w-[96px]"
-                options={durationOptions.map((minutes) => ({
-                  value: minutes,
-                  label: t("duration.minutes", { count: minutes }),
-                }))}
+              {/* Per-minute again (#930, reversing #785's six chips): drag for
+                  distance, the steppers for precision. A stored preference of
+                  any whole minute is directly expressible, so the old
+                  seventh-button append for off-list preferences is gone. */}
+              <DurationSlider
+                testID="sit-length-slider"
                 value={durationMinutes}
                 onChange={pickDuration}
               />
@@ -531,7 +503,8 @@ interface ChoiceRowProps {
 }
 
 /**
- * One pick from a run of named choices - the sit's length, and the interval bell.
+ * One pick from a run of named choices - the interval bell. (The sit's length
+ * used this row too until #930 gave it back its per-minute slider.)
  *
  * The label is the design's 11px eyebrow, but on its own line rather than inline
  * with the buttons. Inline is what the design draws and it is the tightest row on

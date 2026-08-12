@@ -119,8 +119,8 @@ describe("MeditationHomeScreen", () => {
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
     mockUseMeditationProgramState.mockReturnValue({
-      // 20 is one of the six drawn lengths, so the default case renders six
-      // buttons; the seventh-button case has a test of its own below.
+      // The stored preference is where the length slider starts; the
+      // no-chip-ever-drew-it case (15) has a test of its own below.
       data: { currentStage: 3, preferredDurationMinutes: 20 },
     } as unknown as ReturnType<typeof useMeditationProgramState>);
     mockUseMeditationSessionCount.mockReturnValue({ data: undefined } as unknown as ReturnType<
@@ -277,58 +277,49 @@ describe("MeditationHomeScreen", () => {
   });
 
   describe("today's sit", () => {
-    // The two rows share labels - `5 min` is both a length and a bell spacing -
-    // so every query here is scoped to the group it belongs to.
-    const lengths = () => within(screen.getByTestId("sit-length-choices"));
+    // `5 min` can appear as both a length read-out and a bell spacing, so every
+    // query here is scoped to the control it belongs to.
+    const lengths = () => within(screen.getByTestId("sit-length-slider"));
     const bells = () => within(screen.getByTestId("sit-bell-choices"));
 
-    it("offers the six drawn lengths as one-tap choices", () => {
+    it("offers a per-minute length starting at the stored preference", () => {
+      // Six chips until #930 brought the per-minute control back (reversing
+      // #785): one adjustable slider announcing minutes, steppers for precision.
       renderWithProviders(<MeditationHomeScreen />);
 
-      for (const label of ["5 min", "10 min", "12 min", "20 min", "30 min", "45 min"]) {
-        expect(lengths().getByText(label)).toBeTruthy();
-      }
-      expect(lengths().getAllByRole("radio")).toHaveLength(6);
+      expect(lengths().getByText("20 min")).toBeTruthy();
+      expect(lengths().getByLabelText("Length").props.accessibilityValue).toEqual({
+        min: 1,
+        max: 120,
+        now: 20,
+        text: "20 min",
+      });
     });
 
-    it("keeps a stored length that is not one of the six reachable", () => {
-      // Onboarding lets someone commit to 15 minutes. Dropping it would quietly
-      // re-decide their length the first time they open the redesigned screen.
+    it("expresses a stored length no chip ever drew, directly", () => {
+      // Onboarding lets someone commit to 15 minutes. The chip row needed a
+      // seventh button appended for it; the slider simply starts there.
       mockUseMeditationProgramState.mockReturnValue({
         data: { currentStage: 3, preferredDurationMinutes: 15 },
       } as unknown as ReturnType<typeof useMeditationProgramState>);
 
       renderWithProviders(<MeditationHomeScreen />);
 
-      expect(lengths().getAllByRole("radio")).toHaveLength(7);
-      // And it is the one selected, not merely present.
-      expect(lengths().getByText("15 min").props.className).toContain("text-primary-ink");
+      expect(lengths().getByText("15 min")).toBeTruthy();
+      expect(lengths().getByLabelText("Length").props.accessibilityValue.now).toBe(15);
     });
 
-    it("marks exactly one length chosen, by more than colour", () => {
-      renderWithProviders(<MeditationHomeScreen />);
-
-      // `aria-checked` folds into `accessibilityState` before it reaches the
-      // host node, so the prop by that name is not there to read.
-      const checked = lengths()
-        .getAllByRole("radio")
-        .filter((radio) => radio.props.accessibilityState?.checked === true);
-      expect(checked).toHaveLength(1);
-      // A 10% tint is not a distinction on its own (#691): weight moves too.
-      expect(lengths().getByText("20 min").props.className).toContain("font-semibold");
-      expect(lengths().getByText("5 min").props.className).not.toContain("font-semibold");
-    });
-
-    it("drives the ends-about read-out off the chosen length", () => {
+    it("drives the read-out and ends-about off a one-minute step", () => {
       renderWithProviders(<MeditationHomeScreen />);
 
       const before = screen.getByText(/^ends about /).props.children;
-      fireEvent.press(lengths().getByText("45 min"));
+      fireEvent.press(lengths().getByLabelText("One minute more"));
       const after = screen.getByText(/^ends about /).props.children;
 
-      // 20 minutes and 45 minutes cannot land on the same clock minute.
+      // 20 minutes and 21 minutes cannot land on the same clock minute.
       expect(after).not.toBe(before);
-      expect(lengths().getByText("45 min").props.className).toContain("font-semibold");
+      expect(lengths().getByText("21 min")).toBeTruthy();
+      expect(lengths().getByLabelText("Length").props.accessibilityValue.now).toBe(21);
     });
 
     it("offers the interval bell with Off selected by default", () => {
