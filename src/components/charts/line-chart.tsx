@@ -45,6 +45,22 @@ const SCROLL_PLOT_INSET = 8;
 // first/last labelled points — the line and area stay legible at any density.
 const DENSE_POINT_LIMIT = 31;
 
+/**
+ * The `contentWidth` at which `visibleUnits` of a `totalUnits`-unit span fill
+ * the scroll viewport exactly when anchored at the newest edge. Owned by the
+ * chart because only it knows its paddings: the fixed axis column takes
+ * `PADDING.left` out of the scroller's viewport, and the plot keeps its own
+ * insets — sizing from the raw container width would show ~10% fewer units
+ * than the preset promises.
+ */
+export function lineChartContentWidth(width: number, visibleUnits: number, totalUnits: number) {
+  const viewport = width - PADDING.left;
+  // Anchored at the end, the right padding is in view; the left inset is
+  // scrolled away. So `visibleUnits - 1` intervals span viewport minus that pad.
+  const unitSpacing = (viewport - PADDING.right) / (visibleUnits - 1);
+  return Math.round(SCROLL_PLOT_INSET + PADDING.right + unitSpacing * (totalUnits - 1));
+}
+
 export function LineChart({
   points,
   domain,

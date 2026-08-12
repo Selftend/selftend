@@ -16,7 +16,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { MoodOnboarding } from "@/src/components/app/mood-onboarding-modal";
 import { Section } from "@/src/components/app/section";
-import { LineChart } from "@/src/components/charts/line-chart";
+import { LineChart, lineChartContentWidth } from "@/src/components/charts/line-chart";
 import { SegmentedControl } from "@/src/components/app/segmented-control";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { DateRangeField, type DateRange } from "@/src/components/app/date-range-field";
@@ -323,10 +323,11 @@ export default function MoodTrackerScreen() {
         : undefined,
   }));
 
-  // Sized so the viewport shows the preset's day count: day spacing in the
-  // full-span plot equals the spacing a fitted preset window would have.
+  // Sized so the anchored viewport shows exactly the preset's day count — the
+  // chart owns the math because only it knows what its axis and insets take
+  // out of the scroll viewport.
   const trendContentWidth = panning
-    ? Math.round((chartContainerWidth * (trendDayCount - 1)) / (trendWindow.presetDays - 1))
+    ? lineChartContentWidth(chartContainerWidth, trendWindow.presetDays, trendDayCount)
     : undefined;
 
   // The distribution reduces over the same fetched points, narrowed to ITS OWN

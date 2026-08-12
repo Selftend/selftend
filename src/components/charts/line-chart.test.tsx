@@ -1,7 +1,11 @@
 import { render } from "@testing-library/react-native";
 import { Circle, Line, Polygon, Polyline, Text as SvgText } from "react-native-svg";
 
-import { LineChart, type LineChartPoint } from "@/src/components/charts/line-chart";
+import {
+  LineChart,
+  lineChartContentWidth,
+  type LineChartPoint,
+} from "@/src/components/charts/line-chart";
 import { THEME } from "@/lib/theme";
 import { DEFAULT_STYLE } from "@/src/lib/theme/styles";
 import { themeTokens } from "@/src/lib/theme/projections";
@@ -90,6 +94,25 @@ describe("LineChart", () => {
       for (const label of ["d0", "d100", "d250"]) {
         expect(texts).toContain(label);
       }
+    });
+
+    it("sizes content so the anchored viewport shows exactly the promised units", () => {
+      // The scroller's viewport is the container minus the fixed 24px axis
+      // column; anchored at the end the 16px right pad is in view. So the
+      // last (visibleUnits - 1) intervals must span viewport - 16 exactly —
+      // sizing from the raw container would show ~10% fewer units (the P2
+      // caught on #908).
+      const width = 300;
+      const contentWidth = lineChartContentWidth(width, 30, 130);
+      const chartWidth = contentWidth - 8 - 16; // plot inset + right padding
+      const unitSpacing = chartWidth / (130 - 1);
+      expect(unitSpacing * (30 - 1)).toBeCloseTo(width - 24 - 16, 0);
+    });
+
+    it("computes a content width that fits when the span equals the viewport units", () => {
+      // Equal spans must NOT scroll: the returned width lands at or under the
+      // container, so the `contentWidth > width` gate keeps the fitted chart.
+      expect(lineChartContentWidth(300, 30, 30)).toBeLessThanOrEqual(300);
     });
 
     it("stays a plain fitted chart while content fits the viewport", () => {
