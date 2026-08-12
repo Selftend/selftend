@@ -23,6 +23,7 @@ interface GroundingSessionProps {
   onNext: () => void;
   onBack: () => void;
   onStepSelect: (index: number) => void;
+  onFinishEarly: () => void;
   saving?: boolean;
 }
 
@@ -30,9 +31,12 @@ interface GroundingSessionProps {
  * The live step screen, on `FocusSessionShell` like breathing and meditation
  * (#874 — #777 decided one surface for all three session tools; grounding
  * merely shipped two days before the shell existed). The shell brings the
- * measured focus wash and the eyebrow/progress top row; there is no close
- * glyph — the OS/web back action is the uninvited exit, and the flow answers
- * it with the finish-or-continue dialog, exactly as breathing does.
+ * measured focus wash and the eyebrow/progress top row; there is still no
+ * close glyph, but the session is no longer exitless (#928 reversed #874's
+ * stance): the same inline "Finish early" ghost button breathing and
+ * meditation carry is the invited way out, saving and landing on the done
+ * screen. The OS/web back action stays the uninvited exit, answered by the
+ * flow's finish-or-continue dialog.
  */
 export function GroundingSession({
   technique,
@@ -46,6 +50,7 @@ export function GroundingSession({
   onNext,
   onBack,
   onStepSelect,
+  onFinishEarly,
   saving = false,
 }: GroundingSessionProps) {
   const { t } = useTranslation("cbt");
@@ -142,6 +147,14 @@ export function GroundingSession({
           </View>
         </View>
       )}
+
+      {/* The siblings' bottom-centred ghost exit (breathing/meditation carry it
+          next to Pause; grounding has no clock, so it stands alone). */}
+      <View className="flex-row items-center justify-center pb-1 pt-3">
+        <Button disabled={saving} onPress={onFinishEarly} variant="ghost">
+          <Text>{t("grounding.finishEarly.label")}</Text>
+        </Button>
+      </View>
     </FocusSessionShell>
   );
 }
