@@ -55,7 +55,9 @@ export function MeditationInsightsCard({ insights, windowDays }: Props) {
               <InsightRow
                 key={entry.tag}
                 label={t(`module.obstacles.${entry.tag}`)}
-                value={t("module.insights.taggedCount", { count: entry.count })}
+                // The count is "tagged in N sits", so the sit plural is the
+                // right noun - no dedicated key needed.
+                value={t("module.insights.sessionCount", { count: entry.count })}
               />
             ))}
           </View>
