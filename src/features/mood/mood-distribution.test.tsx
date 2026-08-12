@@ -57,19 +57,22 @@ describe("MoodDistributionChart", () => {
   });
 
   /**
-   * The fill is the single-hue `be` ramp at the score→step mapping the heatmap
-   * and `score-tone.ts` use — monotonic, so position + fill agree on the
-   * ordinal. NOT the design's five hues (#881: rejected on measurement — hue
-   * encodes data, not identity, per #691).
+   * The fill is the accent ramp at the score→step mapping the heatmap uses —
+   * monotonic, so position + fill agree on the ordinal. NOT the design's five
+   * hues (#881: rejected on measurement — hue encodes data, not identity, per
+   * #691), and since #924 not the pinned `be` pink either: the encoding is
+   * relative, so the ramp rides the active style's `--primary`.
    */
-  it("fills each segment with its be-ramp step, worst faintest to best fullest", () => {
+  it("fills each segment with its accent-ramp step, worst faintest to best fullest", () => {
     renderWithProviders(<MoodDistributionChart counts={[2, 0, 3, 1, 5]} />);
 
     const classOf = (label: string) => String(screen.getByLabelText(label).props.className);
-    expect(classOf("Awful: 2 check-ins")).toContain("bg-be/[0.16]");
-    expect(classOf("Okay: 3 check-ins")).toContain("bg-be/[0.52]");
-    expect(classOf("Good: 1 check-in")).toContain("bg-be/[0.74]");
-    expect(classOf("Great: 5 check-ins")).toContain("bg-be");
+    expect(classOf("Awful: 2 check-ins")).toContain("bg-primary/[0.16]");
+    expect(classOf("Okay: 3 check-ins")).toContain("bg-primary/[0.52]");
+    expect(classOf("Good: 1 check-in")).toContain("bg-primary/[0.74]");
+    // The full step is the bare token — matched as a whole word, because
+    // every other step CONTAINS "bg-primary" as a prefix.
+    expect(classOf("Great: 5 check-ins")).toMatch(/(?:^| )bg-primary(?: |$)/);
   });
 
   /**

@@ -23,7 +23,10 @@ import type { HueName } from "@/src/lib/design-tokens";
  *
  * - `relative` — the colour's MEANING is its position on a scale; the specific
  *   hue is arbitrary. A mood heatmap says "worse → better" by getting darker,
- *   and it says that just as well in any palette. These may re-tint.
+ *   and it says that just as well in any palette. These may re-tint. (The mood
+ *   ramp did exactly that in #924 — it moved all the way onto the style's own
+ *   accent and LEFT this registry, since it no longer names a hue at all. The
+ *   kind stays for the next relative encoding that still does.)
  *
  * - `categorical` — the colour IS the datum. A habit the user painted green is
  *   green because they chose green; a pacer phase is identified by its colour
@@ -48,11 +51,12 @@ export interface HueEncoding {
 /**
  * The complete list of surfaces that keep hue. Anything not here goes neutral.
  *
- * Four entries. All came through #558's rule: three from its own table, one -
- * the colour a user picks for a custom breathing exercise - found by #588's
- * tree-wide sweep. #558 never reviewed that surface, and its rule admits it.
+ * Three entries, all categorical. All came through #558's rule: two from its
+ * own table, one - the colour a user picks for a custom breathing exercise -
+ * found by #588's tree-wide sweep. #558 never reviewed that surface, and its
+ * rule admits it.
  *
- * The list is still narrow and still exact: a fifth entry needs an answer to
+ * The list is still narrow and still exact: a fourth entry needs an answer to
  * "what does the user read off this colour that they could not read off its icon
  * and label?"
  */
@@ -63,11 +67,14 @@ export interface HueEncoding {
 // silently answer "not a keeps-hue surface". `satisfies` gets the same
 // checking without the widening.
 export const HUE_ENCODINGS = [
-  {
-    id: "mood-heatmap-ramp",
-    kind: "relative",
-    reads: "a 5-step scale — how the day scored, by depth of colour",
-  },
+  // "mood-heatmap-ramp" left this list with #924. It was the one `relative`
+  // entry — a 5-step scale read by depth of colour — and being relative was
+  // its exit: the meaning is the position on the scale, so the ramp re-tinted
+  // onto the active style's accent (ACCENT_RAMP_CLASSES / useAccentRamp) and
+  // now names no hue for this registry to protect. The scale itself is alive
+  // and guarded by test/accent-ramp-classes.test.ts, which measures its steps
+  // across every style.
+  //
   // "mood-scale" left this list with the 2a redesign: the bare-emoji input
   // control encodes selection in size and opacity, never in hue.
   {

@@ -76,7 +76,9 @@ const HUE_IMPORT = /\b(TINT_TEXT|TINT_ACCENT|hueToTint|toolAccent|exerciseHue|hu
  * green. The helper is not itself forbidden; passing it a hue is.
  */
 const HUE_ARGUMENT = new RegExp(
-  String.raw`\b(tintStripeColors|hueHsl|hueRamp|hueGradient|useRoomStyle|hueRampClass)\(\s*"(${HUE_ALTERNATION})"`,
+  // hueRamp/hueRampClass sat in this alternation until #924 retired them (the
+  // mood ramp, their last reader, rides the accent now).
+  String.raw`\b(tintStripeColors|hueHsl|hueGradient|useRoomStyle)\(\s*"(${HUE_ALTERNATION})"`,
   "g",
 );
 
@@ -162,23 +164,29 @@ const RETIRED = [
   // ramp gone, sleep encodes no data in hue at all, so the file has nothing
   // left to answer.
   "src/features/sleep/quality-tint.ts",
+  // #924: the mood ramp moved onto the active style's accent
+  // (accentRampClass), so this wrapper's hueRampClass("be", …) had nothing to
+  // delegate to - and its only callers were tests. Same shape as quality-tint
+  // above: the data outlived the hue, the helper did not.
+  "src/features/mood/score-tone.ts",
 ];
 
 /**
  * The other half of the gate. Each surface that KEEPS hue, and the literal that
- * proves it still does. Four of them - see the notes in
- * src/lib/theme/encoding.ts for the arrivals (#588) and departures (#855).
+ * proves it still does. Three of them - see the notes in
+ * src/lib/theme/encoding.ts for the arrivals (#588) and departures (#855,
+ * #924).
  *
  * The pattern is the encoding itself, not merely "some hue appears here": the
- * failure being guarded against is a later sweep that neutralises the mood
- * ramp because it looks like every other tinted chip in the diff.
+ * failure being guarded against is a later sweep that neutralises an encoding
+ * because it looks like every other tinted chip in the diff.
  */
 const KEEPS_HUE: Record<HueEncodingId, { file: string; pattern: RegExp; what: string }> = {
-  "mood-heatmap-ramp": {
-    file: "src/lib/design-tokens.ts",
-    pattern: /bg-act\/\[0\.16\]/,
-    what: "HUE_RAMP_CLASSES, the 5-step score ramp",
-  },
+  // "mood-heatmap-ramp" left with #924: the ramp re-tinted onto the active
+  // style's accent (ACCENT_RAMP_CLASSES / useAccentRamp), so it names no hue
+  // for this gate to protect. The scale itself - the thing over-sweeping
+  // would have deleted - is guarded by test/accent-ramp-classes.test.ts,
+  // which measures its five steps across every style.
   "habit-colour": {
     file: "src/features/habits/habit-color.ts",
     pattern: /HABIT_COLOR_TINTS/,
@@ -351,10 +359,8 @@ describe("the lint gate's exemptions and the ruling agree (#589)", () => {
       "src/lib/module-room.ts",
       "src/lib/hue-chip.ts",
       "src/features/mindfulness/exercise-hue.ts",
-      // The mood ramp's class helper. The encoding itself is keyed to
-      // design-tokens.ts (where HUE_RAMP_CLASSES lives); this is the one-line
-      // wrapper the mood surfaces call.
-      "src/features/mood/score-tone.ts",
+      // score-tone.ts sat here until #924 retired it with the hue ramp - the
+      // mood surfaces read the accent ramp now, which needs no exemption.
     ];
     const allowed = new Set([...Object.values(KEEPS_HUE).map((e) => e.file), ...palette]);
     const unjustified = sanctioned.filter((file) => !allowed.has(file));

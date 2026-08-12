@@ -1,4 +1,7 @@
+import { useMemo } from "react";
+
 import { THEME_HEXES, THEME_PALETTES } from "@/lib/theme";
+import { RAMP_ALPHAS } from "@/src/lib/design-tokens";
 import { THEME_TOKENS } from "@/src/lib/theme/styles";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { useStyleName } from "@/src/lib/style";
@@ -60,4 +63,27 @@ export function useAccentGradient(): [string, string] {
   const accent = useAccentHsl();
   const isDark = useColorSchemeName() === "dark";
   return [accent(isDark ? 0.18 : 0.14), accent(0)];
+}
+
+/**
+ * The 5-step score ramp on the active accent, faintest → fullest — the hsla
+ * form of ACCENT_RAMP_CLASSES (same RAMP_ALPHAS; test/accent-ramp-classes
+ * holds them in lockstep), for the chart surfaces a className cannot reach
+ * (heatmap cells). The neutral form of the retired `hueRamp`: until #924 the
+ * mood ramp was pinned to the `be` hue, but its encoding is `relative` — the
+ * meaning is the position on the scale — so it re-tints with the style,
+ * exactly as the trend line has since #588.
+ */
+export function useAccentRamp(): [string, string, string, string, string] {
+  const triple = THEME_TOKENS[useStyleName()][useColorSchemeName()]["--primary"];
+  return useMemo(() => {
+    const comma = triple.split(/\s+/).join(", ");
+    return RAMP_ALPHAS.map((alpha) => `hsla(${comma}, ${alpha})`) as [
+      string,
+      string,
+      string,
+      string,
+      string,
+    ];
+  }, [triple]);
 }
