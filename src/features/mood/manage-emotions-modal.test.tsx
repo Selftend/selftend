@@ -116,30 +116,16 @@ describe("ManageEmotionsModal", () => {
     });
 
     /**
-     * The number moves off the row into the delete confirmation. Twenty-two counts down a
-     * column is a leaderboard of someone's feelings, and "what do I feel most" is already
-     * answered - better, and windowed - by the overview's "Felt most often".
+     * No usage signal on the row at all — #903 reversed #702's "unused" tag on the
+     * owner's 2026-08-12 review. The lifetime count surfaces only inside the delete
+     * confirmation. `grateful` is absent from the counts response (the RPC returns no
+     * row for an unused emotion), so this mock covers both the unused and the used case.
      */
-    /**
-     * ⚠️ The RPC returns **no row** for an emotion with no uses, so `grateful` is simply
-     * absent from the response. A mock that returned `{ grateful: 0 }` would be testing a
-     * shape the server can never produce — and did, until Codex caught it.
-     */
-    it("marks an unused emotion and shows no number for a used one", () => {
+    it("shows no usage signal on the row, not even for an unused emotion", () => {
       open();
 
-      expect(screen.getByText("unused")).toBeTruthy();
-      expect(screen.queryByText("3")).toBeNull();
-    });
-
-    it("labels nothing unused while the count query is still loading", () => {
-      mockUseEmotionUsageCounts.mockReturnValue({ data: undefined } as unknown as ReturnType<
-        typeof useEmotionUsageCounts
-      >);
-      open();
-
-      // Absent-because-unloaded is not the same as absent-because-zero.
       expect(screen.queryByText("unused")).toBeNull();
+      expect(screen.queryByText("3")).toBeNull();
     });
   });
 

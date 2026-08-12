@@ -231,10 +231,6 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
    */
   const renderEmotionRow = useCallback(
     ({ item: emotion }: { item: EmotionDisplay }) => {
-      // ⚠️ The RPC returns no row for an emotion with no uses, so a missing key means
-      // zero — but only once the query has loaded. `undefined` before then is "unknown",
-      // and rendering `unused` for it would label every emotion unused on first paint.
-      const uses = usageCounts ? (usageCounts[emotion.id] ?? 0) : null;
       return (
         <Pressable
           accessibilityRole="button"
@@ -247,18 +243,17 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
           </Sortable.Handle>
           <Text className="text-lg leading-none">{emotion.emoji}</Text>
           <Text className="flex-1 text-sm font-medium">{emotion.name}</Text>
-          {/* The one signal that aids curation without inviting comparison. A number on
-              every row would be a leaderboard of someone's feelings; "unused" only ever
-              says "nothing is lost if this goes". */}
-          {uses === 0 ? (
-            <Text className="text-xs text-muted-foreground">{t("emotions.manage.unused")}</Text>
-          ) : null}
+          {/* No usage signal on the row — not even "unused" (#903 reversed #702's tag).
+              The lifetime count surfaces only inside the delete confirmation. */}
         </Pressable>
       );
     },
-    [openEditor, t, usageCounts],
+    [openEditor, t],
   );
 
+  // ⚠️ The RPC returns no row for an emotion with no uses, so a missing key means zero —
+  // but only once the query has loaded. `null` before then is "unknown", and the delete
+  // confirmation falls back to its plain wording rather than claiming a count.
   const editingUses =
     editorState?.mode === "edit" && usageCounts ? (usageCounts[editorState.emotion.id] ?? 0) : null;
 

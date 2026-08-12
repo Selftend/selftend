@@ -63,7 +63,7 @@ describe("mood_emotion_counts (integration)", () => {
 
     const result = await counts(alice);
     expect(result).toEqual({ anxious: 1 });
-    // The client reads a missing key as "unused", so a zero row would be redundant.
+    // The delete confirmation reads a missing key as zero uses, so a zero row would be redundant.
     expect(result.grateful).toBeUndefined();
   });
 
