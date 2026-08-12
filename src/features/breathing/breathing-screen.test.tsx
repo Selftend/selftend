@@ -1,5 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import BreathingScreen from "@/app/(app)/tools/breathing/index";
@@ -177,6 +178,26 @@ describe("Breathing overview (4a)", () => {
     expect(screen.getAllByTestId("breathing-pattern-dot")).toHaveLength(4);
     expect(screen.getByText("Evening wind-down")).toBeTruthy();
     expect(screen.getByText("6 · 8s")).toBeTruthy();
+  });
+
+  it("keeps the play arrow neutral - only the dot carries the pattern colour", () => {
+    renderWithProviders(<BreathingScreen />);
+
+    // The dot proves the probe works: its chip ink is a computed value, so it
+    // survives into the flattened style even in jest (where classNames don't).
+    const dot = screen.getAllByTestId("breathing-pattern-dot")[0];
+    expect(StyleSheet.flatten(dot.props.style)?.backgroundColor).toBeTruthy();
+
+    const glyphs = screen.getAllByTestId("breathing-pattern-play", {
+      includeHiddenElements: true,
+    });
+    expect(glyphs).toHaveLength(3);
+    for (const glyph of glyphs) {
+      // A per-pattern tint would arrive the same way - a computed
+      // `style.color` from the chip recipe. The neutral rides a theme class,
+      // which jest cannot see - the absence of a style colour is the signal.
+      expect(StyleSheet.flatten(glyph.props.style)?.color).toBeUndefined();
+    }
   });
 
   it("starts a pattern in one tap, carrying the pattern id", () => {

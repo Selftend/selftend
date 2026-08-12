@@ -89,7 +89,9 @@ export const HUE_ENCODINGS = [
     // categorical datum its overview row, setup tab and timing bar wear - so
     // the session screen and the screens around it agree on what colour "this
     // pattern" is. Phase is carried by size, ring position and text, not hue.
-    reads: "which pattern is running — the colour its row, tab and timing bar wear",
+    // #925 narrowed what "row" means: the leading dot alone carries the
+    // colour; the trailing play glyph is muted like the caption beside it.
+    reads: "which pattern is running — the colour its row's dot, tab and timing bar wear",
   },
   // The one below was NOT in #558's table, and that is worth stating plainly
   // rather than burying: the sweep found it, and the rule admits it.

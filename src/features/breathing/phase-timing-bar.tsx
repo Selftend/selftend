@@ -129,9 +129,18 @@ export function PatternDot({ color }: { color: BreathingExerciseColor }) {
   );
 }
 
-/** The play glyph that ends a pattern row. Accent ink, never the raw hue. */
-export function PatternPlayGlyph({ color }: { color: BreathingExerciseColor }) {
-  const scheme = useColorSchemeName();
-  const chip = breathingChipColors(color, scheme);
-  return <Icon name="play-arrow" size={20} style={{ color: chip.ink }} />;
+/**
+ * The play glyph that ends a pattern row. Muted, matching the phase-counts
+ * caption beside it - the pattern's colour lives in the leading dot alone, so
+ * the row states its colour once instead of bracketing itself in it (#925).
+ */
+export function PatternPlayGlyph() {
+  return (
+    <Icon
+      testID="breathing-pattern-play"
+      name="play-arrow"
+      size={20}
+      className="text-muted-foreground"
+    />
+  );
 }

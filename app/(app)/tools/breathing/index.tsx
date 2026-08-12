@@ -214,7 +214,7 @@ export default function BreathingScreen() {
                   <Text variant="muted" className="shrink-0 text-[12.5px] tabular-nums">
                     {phaseCountsLabel(p.phases)}
                   </Text>
-                  <PatternPlayGlyph color={p.color} />
+                  <PatternPlayGlyph />
                 </Pressable>
               ))
             )}
