@@ -36,7 +36,6 @@
       "tagline": "Drag to reorder. These are yours — rename or remove any of them.",
       "back": "Back to the list",
       "editEmotion": "Edit {{name}}",
-      "unused": "unused",
       "confirmDelete": {
         "title": "Remove this emotion?",
         "message": "It disappears from the picker. Check-ins that already name it keep it.",
