@@ -1,5 +1,5 @@
 import { router, type Href } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Input } from "@/src/components/react-native-reusables/input";
+import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import {
   useGratitudeEntries,
@@ -70,7 +71,6 @@ export function GratitudeEntryEditorScreen({
   const [items, setItems] = useState<string[]>(EMPTY_ITEMS);
   const [lifeItems, setLifeItems] = useState<string[]>(EMPTY_LIFE_ITEMS);
   const [note, setNote] = useState("");
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [loggedAt, setLoggedAt] = useState(() => new Date().toISOString());
   const [loggedOffsetMinutes, setLoggedOffsetMinutes] = useState<CapturedOffsetMinutes>(
     () => occurrenceTimeFromDate().occurredOffsetMinutes,
@@ -128,16 +128,6 @@ export function GratitudeEntryEditorScreen({
 
   const updateItem = (index: number, value: string) =>
     setItems((prev) => prev.map((v, i) => (i === index ? value : v)));
-  const applyPrompt = (prompt: string) => {
-    setItems((current) => {
-      const focusedIsEmpty = focusedIndex !== null && !(current[focusedIndex] ?? "").trim();
-      const target = focusedIsEmpty ? focusedIndex : current.findIndex((item) => !item.trim());
-      if (target !== null && target >= 0) {
-        return current.map((item, index) => (index === target ? prompt : item));
-      }
-      return current.length < GRATITUDE_ITEM_COUNT ? [...current, prompt] : current;
-    });
-  };
 
   const handleSave = useSingleFlight(async () => {
     if (!user) return;
@@ -232,27 +222,26 @@ export function GratitudeEntryEditorScreen({
           </Text>
         </View>
 
+        {/* Question-labelled lines (#929 reversed #790's unlabelled-numbers
+            decision at the owner's direction): each slot shows its question —
+            the historic item_N ↔ question_N pairing — inside the redesign's
+            hairline list. The question is the prompt, so the inputs carry no
+            placeholder, and the former "borrow a prompt" chips (which pasted
+            question text into answers) are gone with the redundancy. */}
         <View className="border-y border-border">
           {items.map((item, index) => (
             <View
-              className={cn(
-                "flex-row items-center gap-3 py-2",
-                index < items.length - 1 && "border-b border-border",
-              )}
+              className={cn("gap-1 py-3", index < items.length - 1 && "border-b border-border")}
               key={index}
             >
-              <Text className="w-6 text-center text-sm font-semibold text-primary-ink">
-                {index + 1}
-              </Text>
+              <Label>{todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })}</Label>
               <Input
-                accessibilityLabel={t("editor.itemLabel", { number: index + 1 })}
-                className="min-h-12 flex-1 border-0 bg-transparent px-0 shadow-none"
+                accessibilityLabel={
+                  todayQuestions[index] ?? t("editor.itemLabel", { number: index + 1 })
+                }
+                className="min-h-10 border-0 bg-transparent px-0 shadow-none"
                 maxLength={GRATITUDE_ITEM_MAX}
                 onChangeText={(value) => updateItem(index, value)}
-                onFocus={() => setFocusedIndex(index)}
-                placeholder={
-                  index === 0 ? t("editor.itemPlaceholder") : t("editor.continuationPlaceholder")
-                }
                 value={item}
               />
             </View>
@@ -268,27 +257,6 @@ export function GratitudeEntryEditorScreen({
             <Text>{t("editor.addAnother")}</Text>
           </Button>
         ) : null}
-
-        <View className="gap-3">
-          {/* The design language's section eyebrow, not a bold sentence-case
-              heading (#877, design 6b). */}
-          <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            {t("editor.promptHelp")}
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {todayQuestions.map((prompt) => (
-              <Pressable
-                key={prompt}
-                accessibilityRole="button"
-                className="rounded-full border border-primary/30 bg-primary/[0.08] px-3 py-2"
-                onPress={() => applyPrompt(prompt)}
-                role="button"
-              >
-                <Text className="text-xs font-semibold text-primary-ink">{prompt}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
 
         {/* The hairline schedule row (design 6b) — the same row check-in's 2b
             editor restored (#869); the shared appearance covers both. The

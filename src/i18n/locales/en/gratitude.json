@@ -96,10 +96,7 @@
     "createDescription": "{{date}} · small counts, and one is fine.",
     "editDescription": "Update what you noticed earlier.",
     "itemLabel": "Gratitude {{number}}",
-    "itemPlaceholder": "Something small that mattered today",
-    "continuationPlaceholder": "…",
     "addAnother": "Add another",
-    "promptHelp": "Stuck? borrow a prompt",
     "todayItemsLabel": "Grateful for today",
     "todayQuestions": [
       "What made you laugh?",

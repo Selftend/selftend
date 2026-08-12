@@ -99,7 +99,7 @@ The book introduces gratitude as three progressive training levels. The app expl
 | ----------------------------------- | -------------------------------------------------------- |
 | Three good things (expandable to 5) | `items[]` (text[], 1-5 × 240 chars, at least 1 required) |
 
-The editor opens three unlabelled numbered lines and can add two more. Prompt chips fill a focused or empty line and are not stored as attribution. The legacy `life_items[]` and `note` fields remain readable and are preserved by edits, but the current editor does not expose separate controls for them.
+The editor opens three lines, each labelled with its question from `editor.todayQuestions`, and can add two more (labelled with the remaining two questions — five questions ship for the five slots). Slot N pairs with question N; the questions are labels only, not stored with the entry. This reverses the earlier unlabelled-numbered-lines decision (owner review 2026-08-12, #929): the questions are the prompt, so the inputs carry no placeholder and the former "borrow a prompt" chips are gone. The legacy `life_items[]` and `note` fields remain readable and are preserved by edits, but the current editor does not expose separate controls for them.
 
 New entries are saved with `level = 3`. Level 1 and Level 2 columns remain in the table as compatibility fields and are exported if present, but the user-facing editor does not expose separate Level 1/2 modes.
 
