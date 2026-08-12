@@ -88,7 +88,15 @@ export function useMoodHistoryPages(userId: string | null) {
   });
 }
 
-// Trend-window query: only timestamp/offset/score come over the wire and there is
+/**
+ * All time, literally: a fixed epoch keeps the score-points query key stable
+ * while the paged fetch spans the user's whole history. One cache entry feeds
+ * every all-time consumer — the mood map, and since presets became pannable
+ * viewports (#900) the trend and distribution too.
+ */
+export const ALL_TIME_FROM_ISO = "1970-01-01T00:00:00.000Z";
+
+// Score-points query: only timestamp/offset/score come over the wire and there is
 // no row limit, so the 200-row history cache is not the trend's ceiling. Lives
 // under the "mood" root key, so every save invalidates it with the rest.
 export function useMoodScorePoints(userId: string | null, fromIso: string, toIso?: string) {

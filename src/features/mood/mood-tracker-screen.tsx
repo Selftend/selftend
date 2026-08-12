@@ -22,6 +22,7 @@ import { MoodScale } from "@/src/components/app/mood-scale";
 import { DateRangeField, type DateRange } from "@/src/components/app/date-range-field";
 import { buildMoodChartDataForRange } from "@/src/features/mood/chart-data";
 import {
+  ALL_TIME_FROM_ISO,
   useFirstMoodDayKey,
   useMoodHistory,
   useMoodLogCount,
@@ -49,10 +50,10 @@ import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import {
   addDaysToKey,
+  dayKeyDiff,
   dayRangeEndKey,
   formatCompactAtOffset,
   parseLocalNoon,
-  startOfDayDaysAgo,
 } from "@/src/utils/date";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -63,12 +64,21 @@ import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-stor
  * The deciding evidence: the design file itself draws independent selections —
  * trend at 30d while the distribution shows All time — so "one shared control"
  * was never what the design specified. Each stats section (Mood trend,
- * Distribution, Mood map) carries its own control and its own selection state,
- * defaulting to the design's drawn states: trend 30d, distribution All time,
- * map All time. The map is no longer *pinned* all-time; it starts there.
+ * Distribution) carries its own control and its own selection state,
+ * defaulting to the design's drawn states: trend 30d, distribution All time.
+ * The map has no control at all (#899): always the whole history.
  *
- * No persistence (upheld from #700), and no new queries: the score-points
- * fetch is already unbounded (#693) — three filters over one dataset.
+ * The trend's presets are VIEWPORTS, not trailing windows (#900, amending
+ * #880): `30d` sizes what is visible, and the chart pans horizontally back
+ * through the whole history, anchored at the newest edge — the heatmap's
+ * scroller pattern. All time fits the whole span (nothing left to pan);
+ * Custom fits its explicit bounds (nothing outside them belongs on the
+ * chart). The distribution's presets stay trailing windows — a share-of-total
+ * has no axis to pan.
+ *
+ * No persistence (upheld from #700), and no per-selection queries: every
+ * section is a client-side narrowing of ONE all-time score-points fetch — the
+ * same cache entry the map reads, unbounded since #693.
  */
 type StatsRange = "7d" | "30d" | "90d" | "all" | "custom";
 type StatsSection = "trend" | "distribution";
@@ -191,18 +201,9 @@ export default function MoodTrackerScreen() {
         ]
       : [];
   const { data: firstLogDayKey } = useFirstMoodDayKey(userId);
-  // The shared window rides its own narrow query (timestamp/offset/score only), so
-  // the 200-row history cache never caps the range. Preset windows omit the upper
-  // bound — the key stays stable across renders and new logs still land in-window.
-  //
-  // `all` bounds at the first entry rather than the epoch, so the span label
-  // states a real period; #693 already established this query pages to
-  // exhaustion, so All time adds no new query SHAPE, only a wider `fromIso`.
-  // Until that key loads it falls back to the default window rather than
-  // fetching from 1970.
   /**
    * Each section's chosen range, resolved to the pieces the window math needs.
-   * `isAll` waits for `firstLogDayKey` so All time never fetches from 1970;
+   * `isAll` waits for `firstLogDayKey` so All time has a real lower bound;
    * until it loads the section falls back to the default preset window.
    */
   const resolveRange = (section: StatsSection) => {
@@ -216,41 +217,16 @@ export default function MoodTrackerScreen() {
   const trendWindow = resolveRange("trend");
   const distWindow = resolveRange("distribution");
 
-  // One fetch feeds the trend AND the distribution: the query window is the
-  // UNION of their two selections, and each section narrows back to its own
-  // day keys below (#880's filters over one dataset — the map keeps its own
-  // all-time query inside MoodHeatmap, pinned there since #899 dropped its
-  // range control).
-  const windowStartIso = (w: ReturnType<typeof resolveRange>) =>
-    w.isCustom
-      ? new Date(`${w.custom!.start}T00:00:00`).toISOString()
-      : w.isAll
-        ? // UTC midnight, NOT the viewer's local midnight. A day key is a civil day
-          // in the frame it was CAPTURED in, so the earliest instant belonging to it
-          // can sit up to 14h before its UTC midnight - but up to 25h before the
-          // viewer's local midnight, if that entry was logged at +14:00 and is being
-          // read at -11:00. `listMoodScorePoints` pads by only 24h, so the local
-          // reading would leave the user's very first entry outside the `.gte` bound
-          // and All time would silently omit it. Matches `listMoodLogsInDayRange`.
-          `${firstLogDayKey!}T00:00:00.000Z`
-        : startOfDayDaysAgo(w.presetDays).toISOString();
-  const trendFromIso = windowStartIso(trendWindow);
-  const distFromIso = windowStartIso(distWindow);
-  // ISO-8601 UTC strings sort lexicographically, so the union start is a plain
-  // string min. The upper bound is only closed when BOTH sections are custom —
-  // any open-ended selection has to see entries landing right now.
-  const windowFromIso = trendFromIso <= distFromIso ? trendFromIso : distFromIso;
-  const windowToIso =
-    trendWindow.isCustom && distWindow.isCustom
-      ? new Date(
-          `${
-            trendWindow.custom!.end >= distWindow.custom!.end
-              ? trendWindow.custom!.end
-              : distWindow.custom!.end
-          }T23:59:59.999`,
-        ).toISOString()
-      : undefined;
-  const { data: scorePoints } = useMoodScorePoints(userId, windowFromIso, windowToIso);
+  // ONE all-time fetch feeds the trend, the distribution AND the map — the
+  // key matches MoodHeatmap's exactly, so React Query dedupes them into a
+  // single cache entry (#900, replacing #880's union-of-selections window).
+  // The trend's data need stopped being a selection: a preset is a viewport
+  // that pans back to the first entry, so it always wants the whole history,
+  // and the distribution narrows back to its own day keys below. #693
+  // established this query pages to exhaustion; it rides its own narrow
+  // projection (timestamp/offset/score), so the 200-row history cache never
+  // caps it.
+  const { data: scorePoints } = useMoodScorePoints(userId, ALL_TIME_FROM_ISO);
   // Paging stops at the week holding the first entry: weeks before the account
   // existed are empty chrome. Until that query answers, only the current week is
   // reachable - better than offering a back arrow that lands on a blank week.
@@ -282,30 +258,76 @@ export default function MoodTrackerScreen() {
     if (w.isAll) return { startKey: firstLogDayKey!, endKey: sharedEndKey };
     return { startKey: addDaysToKey(sharedEndKey, -(w.presetDays - 1)), endKey: sharedEndKey };
   };
-  const trendKeys = sectionKeys(trendWindow);
   const distKeys = sectionKeys(distWindow);
 
-  // Only the first and last day are labelled — interior labels would collide
-  // at the trend windows' densities (matches the previous bespoke chart).
-  //
-  // One builder for every range: `buildMoodChartData(points, days)` is itself
-  // just `buildMoodChartDataForRange` over `dayRangeEndKey`-anchored keys, so
-  // driving it from the shared window changes no preset behaviour and removes
-  // the chance of the two charts computing their bounds differently.
+  /**
+   * The trend's span under viewport presets (#900): a preset never CROPS the
+   * data — it sizes what is visible. The chart's span runs from the earliest
+   * fetched day (or the preset's trailing start, whichever is older) to the
+   * shared end, and `panning` is true exactly when history outgrows the
+   * viewport — a shorter history renders the same trailing window as before,
+   * with nothing to pan. All time and Custom keep their fitted spans from
+   * `sectionKeys`.
+   */
+  const earliestPointKey = (scorePoints ?? []).reduce<string | null>(
+    (earliest, point) => (earliest === null || point.dayKey < earliest ? point.dayKey : earliest),
+    null,
+  );
+  const trendIsPreset = !trendWindow.isCustom && !trendWindow.isAll;
+  const trailingStartKey = addDaysToKey(sharedEndKey, -(trendWindow.presetDays - 1));
+  const panning = trendIsPreset && earliestPointKey !== null && earliestPointKey < trailingStartKey;
+  const trendKeys = panning
+    ? { startKey: earliestPointKey, endKey: sharedEndKey }
+    : sectionKeys(trendWindow);
+  const trendDayCount = dayKeyDiff(trendKeys.startKey, trendKeys.endKey) + 1;
+
+  // Fitted spans label only the first and last day — interior labels would
+  // collide at the trend windows' densities (matches the previous bespoke
+  // chart). A panning viewport instead needs dates wherever the user has
+  // panned TO, so labels recur about every third of a viewport: walking from
+  // the newest point leftward, a point is labelled once it sits at least
+  // `presetDays / 3` days left of the last labelled one.
   //
   // Plain derivations, no useMemo: the deps would be fields of the per-render
   // `sectionKeys` objects, which the React Compiler refuses to preserve — it
   // memoizes these itself once nothing blocks compilation.
-  const chartData = buildMoodChartDataForRange(
+  const trendDays = buildMoodChartDataForRange(
     scorePoints,
     trendKeys.startKey,
     trendKeys.endKey,
     i18n.language,
-  ).map((d, i, days) => ({
+  );
+  const labelledIndices = new Set<number>();
+  if (panning) {
+    const labelIntervalDays = Math.ceil(trendWindow.presetDays / 3);
+    let nextLabelAtOrBelow = Infinity;
+    for (let i = trendDays.length - 1; i >= 0; i--) {
+      // Recover the point's day index from its offset (offsets spread over
+      // `trendDayCount - 1` intervals, so this inversion is exact).
+      const dayIndex = Math.round(trendDays[i].offset * (trendDayCount - 1));
+      if (i === trendDays.length - 1 || dayIndex <= nextLabelAtOrBelow) {
+        labelledIndices.add(i);
+        nextLabelAtOrBelow = dayIndex - labelIntervalDays;
+      }
+    }
+  }
+  const chartData = trendDays.map((d, i, days) => ({
     offset: d.offset,
     value: d.score,
-    label: i === 0 || i === days.length - 1 ? d.day : undefined,
+    label: panning
+      ? labelledIndices.has(i)
+        ? d.day
+        : undefined
+      : i === 0 || i === days.length - 1
+        ? d.day
+        : undefined,
   }));
+
+  // Sized so the viewport shows the preset's day count: day spacing in the
+  // full-span plot equals the spacing a fitted preset window would have.
+  const trendContentWidth = panning
+    ? Math.round((chartContainerWidth * (trendDayCount - 1)) / (trendWindow.presetDays - 1))
+    : undefined;
 
   // The distribution reduces over the same fetched points, narrowed to ITS OWN
   // day keys (#880) - one query, no second fetch and no contact with the capped
@@ -532,7 +554,12 @@ export default function MoodTrackerScreen() {
                 ) : null}
                 <View onLayout={handleChartLayout}>
                   {chartData.length >= 2 ? (
-                    <LineChart points={chartData} domain={[1, 5]} width={chartContainerWidth} />
+                    <LineChart
+                      points={chartData}
+                      domain={[1, 5]}
+                      width={chartContainerWidth}
+                      contentWidth={trendContentWidth}
+                    />
                   ) : (
                     // The range the user chose, not their history, is what is
                     // thin here - so this says that rather than "log a mood".

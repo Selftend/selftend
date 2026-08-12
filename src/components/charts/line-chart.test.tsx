@@ -52,6 +52,56 @@ describe("LineChart", () => {
     expect(texts).not.toContain("d30");
   });
 
+  /**
+   * Scroll mode (#900): `contentWidth` past the viewport turns the chart into
+   * a fixed y-axis beside a horizontal scroller. Density is judged by what
+   * shares the viewport, not the total count, and the caller's labels are
+   * never collapsed — it already spaced them per viewport.
+   */
+  describe("scroll mode", () => {
+    it("keeps dots and every caller label when only a viewport's worth is visible at once", () => {
+      // 60 points over twice the viewport ≈ 30 visible at once — sparse.
+      const points = evenPoints(60, (i) => (i % 10 === 0 ? `d${i}` : undefined));
+      const { getByTestId, UNSAFE_getAllByType } = render(
+        <LineChart points={points} domain={[1, 5]} width={300} contentWidth={600} />,
+      );
+
+      expect(getByTestId("line-chart-scroller")).toBeTruthy();
+      expect(UNSAFE_getAllByType(Circle)).toHaveLength(60);
+      const texts = UNSAFE_getAllByType(SvgText).map((t) => t.props.children);
+      // Interior labels survive — a first/last collapse would leave the
+      // viewports between them dateless.
+      for (const label of ["d0", "d30", "d50"]) {
+        expect(texts).toContain(label);
+      }
+      // The y axis renders once, in the fixed column.
+      expect(texts.filter((c) => c === 3)).toHaveLength(1);
+    });
+
+    it("thins dots but keeps caller labels when the viewport itself is dense", () => {
+      // 300 points over twice the viewport ≈ 150 visible at once — dense.
+      const points = evenPoints(300, (i) => (i % 50 === 0 ? `d${i}` : undefined));
+      const { UNSAFE_getAllByType, UNSAFE_queryAllByType } = render(
+        <LineChart points={points} domain={[1, 5]} width={300} contentWidth={600} />,
+      );
+
+      expect(UNSAFE_queryAllByType(Circle)).toHaveLength(0);
+      const texts = UNSAFE_getAllByType(SvgText).map((t) => t.props.children);
+      for (const label of ["d0", "d100", "d250"]) {
+        expect(texts).toContain(label);
+      }
+    });
+
+    it("stays a plain fitted chart while content fits the viewport", () => {
+      const points = evenPoints(7, (i) => `d${i}`);
+      const { queryByTestId } = render(
+        <LineChart points={points} domain={[1, 5]} width={300} contentWidth={300} />,
+      );
+
+      expect(queryByTestId("line-chart-scroller")).toBeNull();
+    });
+  });
+
   it("renders only the labels the points carry", () => {
     const points = evenPoints(10, (i) => (i % 2 === 0 ? `d${i}` : undefined));
     const { UNSAFE_getAllByType } = render(<LineChart points={points} domain={[1, 5]} />);
