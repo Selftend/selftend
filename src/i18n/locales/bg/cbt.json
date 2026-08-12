@@ -1245,6 +1245,7 @@
     "recentCount_one": "{{count}} записана сесия.",
     "recentCount_other": "{{count}} записани сесии.",
     "finishEarly": {
+      "label": "Завърши по-рано",
       "title": "Да завършиш ли сесията?",
       "message": "Напредъкът ти ще бъде записан като {{current}} от {{total}} стъпки.",
       "confirm": "Завърши сесията",

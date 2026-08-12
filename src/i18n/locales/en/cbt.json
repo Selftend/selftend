@@ -1245,6 +1245,7 @@
     "recentCount_one": "{{count}} session logged.",
     "recentCount_other": "{{count}} sessions logged.",
     "finishEarly": {
+      "label": "Finish early",
       "title": "Finish this session?",
       "message": "This will save your progress as {{current}} of {{total}} steps.",
       "confirm": "Finish session",

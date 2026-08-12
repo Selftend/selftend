@@ -16,6 +16,7 @@ const baseProps = {
   onNext: jest.fn(),
   onBack: jest.fn(),
   onStepSelect: jest.fn(),
+  onFinishEarly: jest.fn(),
 };
 
 describe("GroundingSession", () => {
@@ -32,17 +33,30 @@ describe("GroundingSession", () => {
   });
 
   /**
-   * #874: on the shell there is no close glyph — the OS/web back action is the
-   * only uninvited exit, answered by the flow's beforeRemove dialog. The top
-   * row reads `1 of 5`, the design's wording, not `1 / 5`.
+   * The shell still has no close glyph, but the session is no longer exitless:
+   * #928 reversed #874's stance and added the siblings' inline "Finish early"
+   * ghost button as the invited way out. The top row reads `1 of 5`, the
+   * design's wording, not `1 / 5`.
    */
-  it("renders the shell top row with the technique eyebrow and '1 of 5', no close glyph", () => {
+  it("renders the shell top row and the inline Finish early exit, no close glyph", () => {
+    const onFinishEarly = jest.fn();
     const { getByText, queryByLabelText } = renderWithProviders(
-      <GroundingSession {...baseProps} />,
+      <GroundingSession {...baseProps} onFinishEarly={onFinishEarly} />,
     );
     expect(getByText("5-4-3-2-1")).toBeTruthy();
     expect(getByText("1 of 5")).toBeTruthy();
     expect(queryByLabelText("Close")).toBeNull();
+    fireEvent.press(getByText("Finish early"));
+    expect(onFinishEarly).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables the Finish early exit while a save is in flight", () => {
+    const onFinishEarly = jest.fn();
+    const { getByText } = renderWithProviders(
+      <GroundingSession {...baseProps} onFinishEarly={onFinishEarly} saving />,
+    );
+    fireEvent.press(getByText("Finish early"));
+    expect(onFinishEarly).not.toHaveBeenCalled();
   });
 
   it("renders the focus wash — the shell surface breathing and meditation share", () => {

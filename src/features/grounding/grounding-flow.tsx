@@ -52,7 +52,10 @@ export function GroundingFlow({ slug }: { slug: string }) {
   }, []);
 
   // Declared before the not-found early return below so the hook call is unconditional.
-  const saveAndFinish = useSingleFlight(async (stepsCompleted: number) => {
+  // `exit` mirrors meditation's SitExit split (#928): "done" (the inline Finish
+  // early button) lands on the done screen; "leave" (the back-gesture confirm)
+  // honours the exit and leaves the route the way the sibling tools do.
+  const saveAndFinish = useSingleFlight(async (stepsCompleted: number, exit: "done" | "leave") => {
     if (!technique) return;
     try {
       const durationMinutes = Math.max(1, Math.round((Date.now() - startedAtRef.current) / 60_000));
@@ -65,6 +68,10 @@ export function GroundingFlow({ slug }: { slug: string }) {
         stepsTotal: technique.steps.length,
       });
       finishingRef.current = true;
+      if (exit === "leave") {
+        router.replace("/tools/grounding" as Parameters<typeof router.replace>[0]);
+        return;
+      }
       setSavedMinutes(durationMinutes);
       setConfirmEarlyFinish(false);
       setPhase("done");
@@ -75,9 +82,11 @@ export function GroundingFlow({ slug }: { slug: string }) {
 
   /**
    * The shell has no chrome, so the OS back gesture and the web back button
-   * are the only uninvited exits. Mid-session they ask — the same
-   * finish-or-continue the close glyph used to open — never a silent discard.
-   * The done phase and a finished save let the exit through.
+   * are the only uninvited exits. Mid-session they ask — never a silent
+   * discard — and confirming saves, then actually leaves (#928; it used to
+   * strand on the done screen, still on the route). The inline Finish early
+   * button is the invited exit. The done phase and a finished save let the
+   * back action through.
    */
   useEffect(() => {
     return navigation.addListener("beforeRemove", (event) => {
@@ -121,7 +130,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
       setFurthestStep((current) => Math.max(current, nextStep + 1));
       setStepIndex(nextStep);
     } else {
-      void saveAndFinish(total);
+      void saveAndFinish(total, "done");
     }
   };
 
@@ -143,6 +152,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
             setFurthestStep((current) => Math.max(current, index + 1));
             setStepIndex(index);
           }}
+          onFinishEarly={() => void saveAndFinish(furthestStep, "done")}
           saving={saveMutation.isPending}
         />
       ) : (
@@ -164,7 +174,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
         cancelLabel={t("grounding.finishEarly.cancel")}
         destructive={false}
         onCancel={() => setConfirmEarlyFinish(false)}
-        onConfirm={() => void saveAndFinish(furthestStep)}
+        onConfirm={() => void saveAndFinish(furthestStep, "leave")}
       />
     </>
   );

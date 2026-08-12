@@ -62,8 +62,12 @@ describe("GroundingFlow", () => {
     expect(getByText("Prepare · 1 of 4")).toBeTruthy();
   });
 
-  it("saves neutral partial progress when a back exit is confirmed", async () => {
-    const { getByText, getByTestId } = renderWithProviders(<GroundingFlow slug="cold-water" />);
+  // Confirming an uninvited exit saves, then actually leaves the route the way
+  // breathing and meditation do (#928 — it used to strand on the done screen).
+  it("saves neutral partial progress and leaves when a back exit is confirmed", async () => {
+    const { getByText, getByTestId, queryByText } = renderWithProviders(
+      <GroundingFlow slug="cold-water" />,
+    );
 
     // Mid-session, an uninvited exit asks rather than discarding.
     const preventDefault = pressBack();
@@ -77,7 +81,27 @@ describe("GroundingFlow", () => {
         expect.objectContaining({ stepsCompleted: 1, stepsTotal: 4 }),
       ),
     );
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/tools/grounding"));
+    expect(queryByText("Grounding complete")).toBeNull();
+  });
+
+  // The invited exit (#928): the inline Finish early button saves the furthest
+  // step and lands on the done screen — no dialog, exactly like the siblings'
+  // explicit finish.
+  it("saves and lands on the done screen when Finish early is pressed", async () => {
+    const { getByText, queryByText } = renderWithProviders(<GroundingFlow slug="cold-water" />);
+    fireEvent.press(getByText("Next"));
+    fireEvent.press(getByText("Finish early"));
+
+    expect(queryByText("Finish this session?")).toBeNull();
+    await waitFor(() =>
+      expect(mockSave).toHaveBeenCalledWith(
+        "user-1",
+        expect.objectContaining({ stepsCompleted: 2, stepsTotal: 4 }),
+      ),
+    );
     await waitFor(() => expect(getByText("Grounding complete")).toBeTruthy());
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
   it("saves the furthest reached step after navigating back within the session", async () => {
