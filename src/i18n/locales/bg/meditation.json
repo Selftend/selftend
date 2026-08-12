@@ -133,6 +133,8 @@
       "startSit": "Започни седене",
       "endsAbout": "приключва около {{time}}",
       "durationLabel": "Дължина",
+      "minuteLess": "Една минута по-малко",
+      "minuteMore": "Една минута повече",
       "begin": "Започни",
       "practiceLabel": "Твоята практика",
       "stageRow": "Етап {{stage}} — {{name}}",

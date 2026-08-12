@@ -52,6 +52,8 @@
       "startSit": "Start a sit",
       "endsAbout": "ends about {{time}}",
       "durationLabel": "Length",
+      "minuteLess": "One minute less",
+      "minuteMore": "One minute more",
       "begin": "Begin",
       "practiceLabel": "Your practice",
       "stageRow": "Stage {{stage}} — {{name}}",
