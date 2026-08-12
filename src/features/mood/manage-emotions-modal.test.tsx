@@ -1,4 +1,5 @@
 import { fireEvent, screen } from "@testing-library/react-native";
+import { Platform } from "react-native";
 
 import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
 import { useEmotionUsageCounts } from "@/src/features/mood/emotion-preferences-queries";
@@ -127,6 +128,50 @@ describe("ManageEmotionsModal", () => {
       expect(screen.queryByText("unused")).toBeNull();
       expect(screen.queryByText("3")).toBeNull();
     });
+  });
+
+  /**
+   * On web the surface is a self-styled panel over a pressable scrim (#905, design 2E);
+   * native keeps the plain sheet, where the scrim would be dead weight behind a
+   * full-size presentation.
+   */
+  describe("the web shell", () => {
+    let platform: ReturnType<typeof jest.replaceProperty>;
+
+    beforeEach(() => {
+      platform = jest.replaceProperty(Platform, "OS", "web");
+    });
+
+    afterEach(() => {
+      platform.restore();
+    });
+
+    it("closes the surface when the backdrop is pressed from the list", () => {
+      const onClose = jest.fn();
+      renderWithProviders(<ManageEmotionsModal visible onClose={onClose} />);
+
+      fireEvent.press(screen.getByTestId("manage-emotions-backdrop"));
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("peels the editor first: a backdrop press returns to the list, not out", () => {
+      const onClose = jest.fn();
+      renderWithProviders(<ManageEmotionsModal visible onClose={onClose} />);
+
+      fireEvent.press(screen.getByLabelText("Edit Anxious"));
+      fireEvent.press(screen.getByTestId("manage-emotions-backdrop"));
+
+      // Same one-dismiss-layer semantics as the back gesture (#743).
+      expect(onClose).not.toHaveBeenCalled();
+      expect(screen.getByText("Manage emotions")).toBeTruthy();
+    });
+  });
+
+  it("renders no scrim on native, where the modal is a real sheet", () => {
+    open();
+
+    expect(screen.queryByTestId("manage-emotions-backdrop")).toBeNull();
   });
 
   describe("the editor", () => {
