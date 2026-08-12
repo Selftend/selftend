@@ -22,15 +22,16 @@ describe("the surfaces that keep hue", () => {
   // list is asserted exactly rather than as a floor, so a new entry cannot
   // arrive without someone answering the question for it.
   // Down from six: "mood-scale" left with the 2a redesign — the bare-emoji
-  // input control encodes selection in size and opacity, not hue — and
+  // input control encodes selection in size and opacity, not hue —
   // "sleep-quality-ramp" left with the sleep redesign (#771/#855), which moved
-  // the level into words and dot count on every surface that had worn the ramp.
-  it("are exactly the four the rule admits", () => {
+  // the level into words and dot count on every surface that had worn the ramp,
+  // and "mood-heatmap-ramp" left with #924, which re-tinted the ramp onto the
+  // active style's accent so it names no hue at all.
+  it("are exactly the three the rule admits", () => {
     expect(HUE_ENCODINGS.map((encoding) => encoding.id).sort()).toEqual([
       "breathing-exercise-colour",
       "breathing-pacer",
       "habit-colour",
-      "mood-heatmap-ramp",
     ]);
   });
 
@@ -42,7 +43,6 @@ describe("the surfaces that keep hue", () => {
   it("classifies the encoding #588 found the way the rule classifies its twin", () => {
     expect(isPinnedEncoding("breathing-exercise-colour")).toBe(true);
     expect(isPinnedEncoding("habit-colour")).toBe(true);
-    expect(isPinnedEncoding("mood-heatmap-ramp")).toBe(false);
   });
 
   it.each(HUE_ENCODINGS)("$id says what the user reads off it", ({ reads, kind }) => {
@@ -74,11 +74,14 @@ describe("the surfaces that keep hue", () => {
 });
 
 describe("relative encodings may re-tint, categorical ones are pinned", () => {
-  // A ramp means "worse → better" by depth, and says that just as well in any
-  // palette.
-  it.each(["mood-heatmap-ramp"])("%s is relative", (id) => {
-    expect(hueEncoding(id)?.kind).toBe("relative");
-    expect(isPinnedEncoding(id)).toBe(false);
+  // The `relative` kind has no members today: its last one, the mood ramp,
+  // re-tinted all the way onto the style accent in #924 and left the registry
+  // (a ramp means "worse → better" by depth, and says that just as well in
+  // any palette — including the accent's own). Departed ids answer "not a
+  // keeps-hue surface", same as any unknown id.
+  it("the mood ramp left the registry when it re-tinted onto the accent (#924)", () => {
+    expect(keepsHue("mood-heatmap-ramp")).toBe(false);
+    expect(isPinnedEncoding("mood-heatmap-ramp")).toBe(false);
   });
 
   // These two are the user's own data wearing a colour. Re-tinting them would

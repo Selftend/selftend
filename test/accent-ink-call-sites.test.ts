@@ -628,8 +628,10 @@ describe("no bare accent survives outside a classified area", () => {
     // #421's hole re-opened one file over. With both maps deleted, the file
     // writes no bare hue text at all, which is the stronger statement.
     //
-    // The encoding palette it still holds is `bg-<hue>/[alpha]` ramp classes,
-    // which BARE_HUE does not match: it looks for hue TEXT.
+    // The encoding palette it still holds is the raw HUE_TRIPLES, which
+    // BARE_HUE does not match: it looks for hue TEXT classes. (The
+    // `bg-<hue>/[alpha]` ramp classes left the file with #924 — the score
+    // ramp rides the accent now.)
     const inTokens = findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] }))
       .filter((finding) => finding.file === TOKENS_FILE)
       .map((finding) => finding.snippet.trim())
@@ -664,12 +666,14 @@ describe("the tint maps are gone", () => {
 
   it("still declares the encoding palette the keeps-hue surfaces read", () => {
     // The other direction, because deleting too much here is the failure that
-    // takes a scale away from a user rather than a decoration.
+    // takes a scale away from a user rather than a decoration. HUE_RAMP_CLASSES
+    // sat here until #924 re-tinted the mood scale onto the accent — the scale
+    // survives as ACCENT_RAMP_CLASSES, so it is pinned the same way.
     const source = stripComments(readFileSync(join(ROOT, TOKENS_FILE), "utf8"));
 
-    expect(source).toMatch(/\bexport const HUE_RAMP_CLASSES\b/);
+    expect(source).toMatch(/\bexport const ACCENT_RAMP_CLASSES\b/);
     expect(source).toMatch(/\bexport const HUE_TRIPLES\b/);
-    expect(source).toMatch(/\bexport function hueRampClass\b/);
+    expect(source).toMatch(/\bexport function accentRampClass\b/);
   });
 });
 

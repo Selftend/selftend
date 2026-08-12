@@ -66,7 +66,7 @@ describe("Heatmap", () => {
       <Heatmap
         columns={[
           column("w1", [
-            { key: "logged", color: "hsla(330, 56%, 47%, 0.16)" },
+            { key: "logged", color: "hsla(262, 62%, 56%, 0.16)" },
             { key: "empty", color: null },
           ]),
         ]}
@@ -79,7 +79,7 @@ describe("Heatmap", () => {
     expect(logged.props.style.borderWidth).toBe(StyleSheet.hairlineWidth);
     expect(empty.props.style.borderWidth).toBe(StyleSheet.hairlineWidth);
     expect(logged.props.style.borderColor).toBe(empty.props.style.borderColor);
-    expect(logged.props.style.backgroundColor).toBe("hsla(330, 56%, 47%, 0.16)");
+    expect(logged.props.style.backgroundColor).toBe("hsla(262, 62%, 56%, 0.16)");
     expect(empty.props.style.backgroundColor).toBe("transparent");
   });
 

@@ -143,9 +143,10 @@ const HUE_CHROME_RESTRICTIONS = [
 ];
 
 // The files allowed to name a hue: the encoding palette's own source, and the
-// five surfaces HUE_ENCODINGS sanctions. Anything added here needs an entry in
+// surfaces HUE_ENCODINGS sanctions. Anything added here needs an entry in
 // HUE_ENCODINGS first - that is the whole point of keeping the two lists the
-// same length.
+// same length. (score-tone.ts left with #924: the mood ramp rides the accent
+// now, and the accent needs no exemption.)
 const HUE_SANCTIONED_FILES = [
   "src/lib/design-tokens.ts",
   "src/lib/module-room.ts",
@@ -154,7 +155,6 @@ const HUE_SANCTIONED_FILES = [
   "src/features/habits/habit-color.ts",
   "src/features/breathing/pacer-colors.ts",
   "src/features/breathing/exercise-colors.ts",
-  "src/features/mood/score-tone.ts",
 ];
 
 // Shared by every no-restricted-syntax block: the rule is last-wins per file,
@@ -411,8 +411,8 @@ module.exports = [
     // accessibilityState guard they would otherwise lose with it.
     files: HUE_SANCTIONED_FILES,
     rules: {
-      // The captured-frame selectors are re-stated because three of these files
-      // are ALSO in CAPTURED_FRAME_FILES - score-tone, pacer-colors,
+      // The captured-frame selectors are re-stated because two of these files
+      // are ALSO in CAPTURED_FRAME_FILES - pacer-colors,
       // exercise-colors - and last-wins would have exempted them from the
       // day-key guard as a side effect of exempting them from the hue guard.
       // Exactly the failure the comment on MODULE_ROOM_RESTRICTION warns

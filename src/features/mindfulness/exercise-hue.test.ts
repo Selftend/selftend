@@ -3,7 +3,6 @@ import {
   exerciseHue,
   hueHsl,
   hueGradient,
-  hueRamp,
 } from "@/src/features/mindfulness/exercise-hue";
 
 describe("exercise-hue", () => {
@@ -53,17 +52,6 @@ describe("exercise-hue", () => {
   it("builds an hsla colour string", () => {
     expect(hueHsl("mist", false, 0.18)).toBe("hsla(178, 40%, 40%, 0.18)");
     expect(hueHsl("mist", true, 0.18)).toBe("hsla(178, 48%, 58%, 0.18)");
-  });
-
-  it("builds a five-step faintest-to-fullest ramp", () => {
-    expect(hueRamp("be", false)).toEqual([
-      "hsla(330, 56%, 47%, 0.16)",
-      "hsla(330, 56%, 47%, 0.32)",
-      "hsla(330, 56%, 47%, 0.52)",
-      "hsla(330, 56%, 47%, 0.74)",
-      "hsla(330, 56%, 47%, 1)",
-    ]);
-    expect(hueRamp("be", true)[4]).toBe("hsla(330, 62%, 72%, 1)");
   });
 
   it("builds a top-fade gradient pair", () => {

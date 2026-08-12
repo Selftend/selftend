@@ -511,7 +511,8 @@ describe("widgets/palette.ts mirrors global.css", () => {
 });
 
 describe("chart layer never hardcodes HSL", () => {
-  // Charts reach hue colors only through hueHsl()/hueRamp()/hueGradient() and
+  // Charts reach hue colors only through hueHsl()/hueGradient(), the accent
+  // through the theme-palette hooks (useAccentHsl/useAccentRamp), and
   // neutrals through THEME — a literal hsl(/hsla( in src/components/charts/
   // is a drift from the token source of truth by definition.
   const chartsDir = join(ROOT, "src", "components", "charts");
