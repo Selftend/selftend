@@ -469,6 +469,41 @@ describe("MoodEntryEditorScreen", () => {
     renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
   });
 
+  it("shows the crisis row on create and not on edit (#906, scoping #882)", () => {
+    // Asserting on the same copy in both modes keeps the absence check honest:
+    // if the label ever changes, the create assertion fails loudly first.
+    const crisisLabel = "Not for emergencies · Crisis resources";
+
+    renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
+    expect(screen.getByLabelText(crisisLabel)).toBeTruthy();
+    screen.unmount();
+
+    const loggedAt = "2026-05-10T08:00:00.000Z";
+    mockUseMoodLogs.mockReturnValue({
+      data: [
+        {
+          id: "log-1",
+          userId: "user-1",
+          moodScore: 4,
+          emotions: [],
+          notes: "",
+          linkedStrategy: null,
+          loggedAt,
+          loggedOffsetMinutes: 180,
+          createdAt: loggedAt,
+          situation: "",
+          thoughts: "",
+          behaviours: "",
+          bodilySensations: "",
+        },
+      ],
+    } as unknown as ReturnType<typeof useMoodLogs>);
+    renderWithProviders(
+      <MoodEntryEditorScreen fallbackHref="/tools/check-in/log-1" mode="edit" moodId="log-1" />,
+    );
+    expect(screen.queryByLabelText(crisisLabel)).toBeNull();
+  });
+
   describe("2b shell (#869)", () => {
     it("confirms a picked score with the label-and-score caption, no static label block", () => {
       renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);

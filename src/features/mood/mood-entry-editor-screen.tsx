@@ -405,7 +405,11 @@ export function MoodEntryEditorScreen({
           </Text>
         </View>
 
-        <CrisisSupportBar />
+        {/* Create only (#906, scoping #882): a fresh check-in is the moment a user
+            may be in distress; editing an old entry is curation. The row stays the
+            first element above the scale on create (#692), and stays on the other
+            nine consumers. */}
+        {!editMode && <CrisisSupportBar />}
 
         {/* The bare centred scale between hairlines (design `2b`): no label
             block, no helper — the post-selection caption is the selected
