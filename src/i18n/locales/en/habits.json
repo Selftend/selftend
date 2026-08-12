@@ -138,7 +138,7 @@
     "started": "started {{date}}",
     "identityLabel": "Identity",
     "tickToday": "Tick today",
-    "tickedToday": "Ticked today",
+    "tickedTodayUndo": "Ticked today · Undo",
     "moreActions": "More actions",
     "editNote": "Edit the note for {{date}}"
   },
