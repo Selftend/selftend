@@ -71,7 +71,7 @@ import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-stor
  * fetch is already unbounded (#693) — three filters over one dataset.
  */
 type StatsRange = "7d" | "30d" | "90d" | "all" | "custom";
-type StatsSection = "trend" | "distribution" | "map";
+type StatsSection = "trend" | "distribution";
 
 const PRESET_DAYS: Record<"7d" | "30d" | "90d", number> = {
   "7d": 7,
@@ -104,15 +104,13 @@ export default function MoodTrackerScreen() {
   const [ranges, setRanges] = useState<Record<StatsSection, StatsRange>>({
     trend: "30d",
     distribution: "all",
-    map: "all",
   });
   const [customRanges, setCustomRanges] = useState<Record<StatsSection, DateRange | null>>({
     trend: null,
     distribution: null,
-    map: null,
   });
-  // Which section's control opened the custom picker — one modal serves all
-  // three controls, writing back to the section that asked.
+  // Which section's control opened the custom picker — one modal serves both
+  // controls, writing back to the section that asked.
   const [rangePickerFor, setRangePickerFor] = useState<StatsSection | null>(null);
   // Purely local, and it does not touch the today picker: "log for today" and
   // "look at a week" are different questions. There is deliberately no global
@@ -217,12 +215,12 @@ export default function MoodTrackerScreen() {
   };
   const trendWindow = resolveRange("trend");
   const distWindow = resolveRange("distribution");
-  const mapWindow = resolveRange("map");
 
   // One fetch feeds the trend AND the distribution: the query window is the
   // UNION of their two selections, and each section narrows back to its own
-  // day keys below (#880's "three filters over one dataset" — the map filters
-  // its own all-time query inside MoodHeatmap).
+  // day keys below (#880's filters over one dataset — the map keeps its own
+  // all-time query inside MoodHeatmap, pinned there since #899 dropped its
+  // range control).
   const windowStartIso = (w: ReturnType<typeof resolveRange>) =>
     w.isCustom
       ? new Date(`${w.custom!.start}T00:00:00`).toISOString()
@@ -338,25 +336,7 @@ export default function MoodTrackerScreen() {
   };
   const trendSpan = sectionSpanLabel(trendWindow);
   const distSpan = sectionSpanLabel(distWindow);
-  const mapSpan = sectionSpanLabel(mapWindow);
 
-  /**
-   * The map narrows ITS OWN all-time query by day key (#880) — never a second
-   * fetch. "All" is unconditionally unfiltered here (unlike the trend's
-   * fallback-to-preset while `firstLogDayKey` loads): the map's query is
-   * already unbounded, so a loading first-key must not flash a 30-day map at
-   * someone who chose — or defaulted to — the whole history.
-   */
-  const mapBounds =
-    ranges.map === "all"
-      ? { startKey: null, endKey: null }
-      : mapWindow.isCustom
-        ? { startKey: mapWindow.custom!.start, endKey: mapWindow.custom!.end }
-        : {
-            startKey: addDaysToKey(currentDateKey(), -(mapWindow.presetDays - 1)),
-            // Open-ended: a travel entry keyed "tomorrow" stays visible (#250).
-            endKey: null,
-          };
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
   };
@@ -395,7 +375,10 @@ export default function MoodTrackerScreen() {
   const showTrend = trendEarned || trendEverEarned;
 
   /**
-   * One control per section (#880). It rides the section's heading row only
+   * One control each for the trend and the distribution (#880) — the map has
+   * none: it always shows the whole history, and its horizontal scroller is
+   * how the past is reached (#899 reverted the control #880 gave it). The
+   * control rides the section's heading row only
    * where the width is real (#700's measurement stands: heading + five
    * segments ≈ 560dp in `bg` against 328dp usable, and `SegmentedControl` is a
    * no-wrap, no-scroll flex row) — below 640dp each control keeps a row of its
@@ -583,26 +566,16 @@ export default function MoodTrackerScreen() {
               </Section>
             ) : null}
 
+            {/* No range control and no span caption (#899): the map is pinned
+                to the whole history, and the scroller's own month labels name
+                the period a caption would restate. */}
             {hasAnyCheckIn ? (
-              <Section
-                title={t("heatmap.title")}
-                action={wideRows ? rangeControl("map") : undefined}
-              >
-                {!wideRows ? <View className="flex-row">{rangeControl("map")}</View> : null}
-                {mapSpan ? (
-                  <Text variant="muted" className="text-[13px]">
-                    {mapSpan}
-                  </Text>
-                ) : null}
-                <MoodHeatmap
-                  userId={userId}
-                  startKey={mapBounds.startKey}
-                  endKey={mapBounds.endKey}
-                />
+              <Section title={t("heatmap.title")}>
+                <MoodHeatmap userId={userId} />
               </Section>
             ) : null}
 
-            {/* One modal serving all three controls, writing back to the
+            {/* One modal serving both controls, writing back to the
                 section whose control opened it. */}
             {hasAnyCheckIn ? (
               <DateRangeField

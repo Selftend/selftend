@@ -138,7 +138,6 @@
   "heatmap": {
     "title": "Mood map",
     "empty": "Log a mood to start your map.",
-    "emptyRange": "No check-ins in this range.",
     "calloutNoEntry": "no entry"
   },
   "allHistory": {
