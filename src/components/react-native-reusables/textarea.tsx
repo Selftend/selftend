@@ -11,9 +11,12 @@ import { Platform, TextInput } from "react-native";
 // shrinks below a JS-set height — CSS is the only web mechanism that shrinks.
 const MIN_HEIGHT = 64;
 const MAX_HEIGHT = 208;
-// py-2 (16px) + 1px border top and bottom: native contentSize reports the text
-// box alone, so the chrome is added back before clamping.
-const VERTICAL_CHROME = 18;
+// What contentSize already includes differs per platform: Android's
+// ReactTextContentSizeWatcher reports compoundPaddingTop + text +
+// compoundPaddingBottom, while iOS's RCTBaseTextInputShadowView measures the
+// text alone. Add back only what the event leaves out — the 1px borders
+// everywhere, plus py-2 (16px) on iOS.
+const VERTICAL_CHROME = Platform.select({ android: 2, default: 18 }) as number;
 
 function Textarea({
   className,

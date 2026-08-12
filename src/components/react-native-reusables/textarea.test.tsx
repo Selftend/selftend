@@ -13,8 +13,10 @@ function heightOf(input: ReactTestInstance) {
 
 // jest-expo runs as iOS, so these exercise the native auto-grow path: height
 // follows onContentSizeChange, clamped to the 64–208px band (min-h-16 to
-// max-h-52). The web path is pure CSS (field-sizing: content) and has no
-// JS behavior to test here.
+// max-h-52). The iOS event carries the text height alone, so +18px of chrome
+// is added back; on Android the event already includes padding and only the
+// borders are added — same clamp, different constant. The web path is pure
+// CSS (field-sizing: content) and has no JS behavior to test here.
 describe("Textarea auto-grow (native)", () => {
   it("sets no explicit height before the first content measurement", () => {
     const { getByTestId } = render(<Textarea testID="notes" />);
