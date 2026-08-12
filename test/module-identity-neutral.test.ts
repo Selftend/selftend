@@ -157,12 +157,17 @@ const RETIRED = [
   "src/components/app/tool-hero.tsx",
   "src/components/app/tool-stats.tsx",
   "src/components/app/content-sheet.tsx",
+  // #855: the sleep redesign's display surfaces stopped reading the quality
+  // ramp (#772/#773/#775), leaving this helper importerless - and with the
+  // ramp gone, sleep encodes no data in hue at all, so the file has nothing
+  // left to answer.
+  "src/features/sleep/quality-tint.ts",
 ];
 
 /**
  * The other half of the gate. Each surface that KEEPS hue, and the literal that
- * proves it still does. Six of them - see the note in src/lib/theme/encoding.ts
- * for the two #588 added to #558's four.
+ * proves it still does. Four of them - see the notes in
+ * src/lib/theme/encoding.ts for the arrivals (#588) and departures (#855).
  *
  * The pattern is the encoding itself, not merely "some hue appears here": the
  * failure being guarded against is a later sweep that neutralises the mood
@@ -201,11 +206,11 @@ const KEEPS_HUE: Record<HueEncodingId, { file: string; pattern: RegExp; what: st
     pattern: /BREATHING_COLOR_TINTS/,
     what: "the colour the user picked for their own exercise",
   },
-  "sleep-quality-ramp": {
-    file: "src/features/sleep/quality-tint.ts",
-    pattern: /hueRampClass\("ink"/,
-    what: "the 5-step night-quality scale",
-  },
+  // "sleep-quality-ramp" left with the sleep redesign (#771, removed by #855):
+  // sleep deliberately encodes nothing in hue anymore - the level's name and
+  // the dot count carry the ordinal on every surface that had worn the ramp
+  // (#772/#773/#775) - so there is no encoding left for an entry to protect,
+  // and `quality-tint.ts` is asserted gone in RETIRED above instead.
 };
 
 const read = (file: string): string => stripComments(readFileSync(join(ROOT, file), "utf8"));

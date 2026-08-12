@@ -48,12 +48,11 @@ export interface HueEncoding {
 /**
  * The complete list of surfaces that keep hue. Anything not here goes neutral.
  *
- * Six entries. Four came from #558's table; #588 swept the whole tree and found
- * two more that answer the same question - a colour the user picked for their own
- * breathing exercise, and the sleep tracker's 5-step quality ramp. #558 never
- * reviewed either surface, and its rule admits both.
+ * Four entries. All came through #558's rule: three from its own table, one -
+ * the colour a user picks for a custom breathing exercise - found by #588's
+ * tree-wide sweep. #558 never reviewed that surface, and its rule admits it.
  *
- * The list is still narrow and still exact: a seventh entry needs an answer to
+ * The list is still narrow and still exact: a fifth entry needs an answer to
  * "what does the user read off this colour that they could not read off its icon
  * and label?"
  */
@@ -85,26 +84,27 @@ export const HUE_ENCODINGS = [
     // pattern" is. Phase is carried by size, ring position and text, not hue.
     reads: "which pattern is running — the colour its row, tab and timing bar wear",
   },
-  // The two below were NOT in #558's table, and that is worth stating plainly
-  // rather than burying: the sweep found them, and the rule admits them.
+  // The one below was NOT in #558's table, and that is worth stating plainly
+  // rather than burying: the sweep found it, and the rule admits it.
   //
   // #558 gave a rule and then applied it to the sites it had reviewed. It never
-  // reviewed the custom-breathing builder or the sleep tracker, so neither
-  // appears in its list of four. Applying the rule as written admits both, and
-  // the alternative in each case is not "simpler chrome" but a deleted feature.
-  // Flagged on the PR for the owner; the conservative move is to keep a colour
-  // the rule protects, not to delete one because a list was written before the
-  // surface was looked at.
+  // reviewed the custom-breathing builder, so it does not appear in the list of
+  // four. Applying the rule as written admits it, and the alternative is not
+  // "simpler chrome" but a deleted feature. Flagged on the PR for the owner;
+  // the conservative move is to keep a colour the rule protects, not to delete
+  // one because a list was written before the surface was looked at.
   {
     id: "breathing-exercise-colour",
     kind: "categorical",
     reads: "the colour the user chose for a custom breathing exercise",
   },
-  {
-    id: "sleep-quality-ramp",
-    kind: "relative",
-    reads: "a 5-step scale — how the night scored, by depth of colour",
-  },
+  // "sleep-quality-ramp" left this list with the sleep redesign (#771, removed
+  // by #855). #588's sweep had admitted it - the 5-step night-quality ramp on
+  // sleep's ink hue - but the redesign deliberately took the data out of hue:
+  // the duration chart went uniform (#772), the quality-mix chart carries the
+  // level in words (#773), and the recent list and detail carry it as dot count
+  // plus the level's name (#775). Sleep now encodes nothing in colour, so there
+  // is no ramp left for this entry to protect.
 ] as const satisfies readonly HueEncoding[];
 
 export type HueEncodingId = (typeof HUE_ENCODINGS)[number]["id"];
