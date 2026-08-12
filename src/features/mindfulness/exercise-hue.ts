@@ -29,8 +29,8 @@ export const EXERCISE_HUES: ExerciseHue[] = [...HUE_NAMES];
 // Its consumers were the grounding icon badge and meditation's practice
 // stripes, both ruled decorative on #558, so both are neutral now and the map
 // has no callers. What survives here is the part that is NOT chrome: `hsl`, and
-// the ramp built on it, which the mood heatmap, the mood scale, the sleep
-// quality ramp and the breathing pacer all read.
+// the ramp built on it, which the mood heatmap, the mood scale and the
+// breathing pacer all read.
 interface HueDef {
   hsl: HslPair;
 }

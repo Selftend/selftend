@@ -498,9 +498,10 @@ const ROOMLESS_TAIL_DIRS = [
 // and not chrome. #774 replaced that instrument outright: five named options
 // (`quality-scale.tsx`) where the words carry the order, so the control no
 // longer encodes anything in a hue and reaches for the certified chip stops via
-// `chipHsl("ink")` instead of a bare accent class. `quality-tint.ts` still holds
-// the `sleep-quality-ramp` encoding for the display surfaces; it is not swept
-// here because it is a class helper, not a call site.
+// `chipHsl("ink")` instead of a bare accent class. `quality-tint.ts` held the
+// `sleep-quality-ramp` encoding for the display surfaces until those dropped
+// the ramp too (#772/#773/#775) and #855 deleted the orphaned helper - sleep
+// now encodes nothing in hue at all.
 //
 // An empty list is the goal state, not a gap: the assertion below still runs, so
 // a new bare `text-<hue>` anywhere in the tail fails until it is justified here.

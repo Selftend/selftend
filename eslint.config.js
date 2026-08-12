@@ -86,8 +86,8 @@ function capturedFrameImportPaths(allow = []) {
 
 // The hue gate (#589). The eight module hues survive ONLY as the pinned encoding
 // palette - the mood heatmap ramp, the mood scale, habit colours, the breathing
-// pacer, the user's custom-exercise colour, the sleep quality ramp. Everywhere
-// else, module identity is icon and label (#558).
+// pacer, the user's custom-exercise colour. Everywhere else, module identity is
+// icon and label (#558).
 //
 // This is a lint rule rather than a test because of what the old gates could not
 // see. Three suites in this workstream were green while `think` shipped at
@@ -143,7 +143,7 @@ const HUE_CHROME_RESTRICTIONS = [
 ];
 
 // The files allowed to name a hue: the encoding palette's own source, and the
-// six surfaces HUE_ENCODINGS sanctions. Anything added here needs an entry in
+// five surfaces HUE_ENCODINGS sanctions. Anything added here needs an entry in
 // HUE_ENCODINGS first - that is the whole point of keeping the two lists the
 // same length.
 const HUE_SANCTIONED_FILES = [
@@ -154,7 +154,6 @@ const HUE_SANCTIONED_FILES = [
   "src/features/habits/habit-color.ts",
   "src/features/breathing/pacer-colors.ts",
   "src/features/breathing/exercise-colors.ts",
-  "src/features/sleep/quality-tint.ts",
   "src/features/mood/score-tone.ts",
 ];
 
@@ -412,12 +411,12 @@ module.exports = [
     // accessibilityState guard they would otherwise lose with it.
     files: HUE_SANCTIONED_FILES,
     rules: {
-      // The captured-frame selectors are re-stated because four of these files
-      // are ALSO in CAPTURED_FRAME_FILES - score-tone, quality-tint,
-      // pacer-colors, exercise-colors - and last-wins would have
-      // exempted them from the day-key guard as a side effect of exempting them
-      // from the hue guard. Exactly the failure the comment on
-      // MODULE_ROOM_RESTRICTION warns about, one rule over.
+      // The captured-frame selectors are re-stated because three of these files
+      // are ALSO in CAPTURED_FRAME_FILES - score-tone, pacer-colors,
+      // exercise-colors - and last-wins would have exempted them from the
+      // day-key guard as a side effect of exempting them from the hue guard.
+      // Exactly the failure the comment on MODULE_ROOM_RESTRICTION warns
+      // about, one rule over.
       "no-restricted-syntax": [
         "error",
         ACCESSIBILITY_STATE_RESTRICTION,

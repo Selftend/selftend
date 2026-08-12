@@ -19,29 +19,29 @@ describe("the surfaces that keep hue", () => {
   // the whole tree and found two more that answer the question - a colour the
   // user picked for their own breathing exercise, and the sleep tracker's 5-step
   // quality ramp. #558 never reviewed either surface; its rule admits both. The
-  // list is asserted exactly rather than as a floor, so a seventh cannot arrive
-  // without someone answering the question for it.
+  // list is asserted exactly rather than as a floor, so a new entry cannot
+  // arrive without someone answering the question for it.
   // Down from six: "mood-scale" left with the 2a redesign — the bare-emoji
-  // input control encodes selection in size and opacity, not hue.
-  it("are exactly the five the rule admits", () => {
+  // input control encodes selection in size and opacity, not hue — and
+  // "sleep-quality-ramp" left with the sleep redesign (#771/#855), which moved
+  // the level into words and dot count on every surface that had worn the ramp.
+  it("are exactly the four the rule admits", () => {
     expect(HUE_ENCODINGS.map((encoding) => encoding.id).sort()).toEqual([
       "breathing-exercise-colour",
       "breathing-pacer",
       "habit-colour",
       "mood-heatmap-ramp",
-      "sleep-quality-ramp",
     ]);
   });
 
-  // The two #588 added are both cases where neutralising would have removed a
-  // feature rather than simplified chrome - the exact words #558 used to keep
-  // habit colours. Pinned by kind as well as by name, because getting the kind
-  // wrong is the quiet failure: a categorical encoding that re-tints repaints
-  // the user's own data.
-  it("classifies the two #588 found the way the rule classifies their twins", () => {
+  // The survivor of #588's two finds is a case where neutralising would have
+  // removed a feature rather than simplified chrome - the exact words #558 used
+  // to keep habit colours. Pinned by kind as well as by name, because getting
+  // the kind wrong is the quiet failure: a categorical encoding that re-tints
+  // repaints the user's own data.
+  it("classifies the encoding #588 found the way the rule classifies its twin", () => {
     expect(isPinnedEncoding("breathing-exercise-colour")).toBe(true);
     expect(isPinnedEncoding("habit-colour")).toBe(true);
-    expect(isPinnedEncoding("sleep-quality-ramp")).toBe(false);
     expect(isPinnedEncoding("mood-heatmap-ramp")).toBe(false);
   });
 

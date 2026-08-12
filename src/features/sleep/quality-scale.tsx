@@ -20,9 +20,9 @@ import { useRovingFocus } from "@/src/lib/roving-focus";
 // selected or not is the only thing colour says here - which is deliberately
 // NOT the five-hue ramp the design drew and check-in rejected on #701: a
 // non-monotonic hue run carries no order for a sighted reader and collapses
-// under deuteranopia. `quality-tint.ts` keeps the ramp for the *display*
-// surfaces, where a five-word legend would not fit; an input has room to say
-// it in words.
+// under deuteranopia. The display surfaces say it without hue too: dot count
+// plus the level's name (#775). The old `quality-tint.ts` ramp lost its last
+// reader with that rebuild and was deleted (#855).
 //
 // The labels come from `quality.1..5`, the namespace's canonical names for the
 // five levels - the same keys the detail screen, the recent list and the

@@ -1,7 +1,6 @@
 import { RAMP_ALPHAS } from "@/src/features/mindfulness/exercise-hue";
 import { HUE_NAMES, HUE_RAMP_CLASSES, hueRampClass } from "@/src/lib/design-tokens";
 import { scoreToneClass } from "@/src/features/mood/score-tone";
-import { qualityTint } from "@/src/features/sleep/quality-tint";
 
 // HUE_RAMP_CLASSES is the class-string form of the same 5-step encoding the
 // heatmap renders via hueRamp() — one ramp app-wide. The class table can't
@@ -33,15 +32,13 @@ describe("HUE_RAMP_CLASSES matches the heatmap ramp", () => {
 });
 
 describe("module tone helpers ride the shared ramp", () => {
+  // sleep's qualityTint sat here too, until #855 deleted it: the sleep
+  // redesign (#771) took the quality level out of hue entirely, so no sleep
+  // helper rides the ramp anymore.
   it("mood scoreToneClass delegates for valid scores and stays neutral otherwise", () => {
     expect(scoreToneClass(1)).toBe(HUE_RAMP_CLASSES.be[0]);
     expect(scoreToneClass(5)).toBe(HUE_RAMP_CLASSES.be[4]);
     expect(scoreToneClass(0)).toBe("bg-muted");
     expect(scoreToneClass(2.5)).toBe("bg-muted");
-  });
-
-  it("sleep qualityTint delegates with end-clamping", () => {
-    expect(qualityTint(2)).toBe(HUE_RAMP_CLASSES.ink[1]);
-    expect(qualityTint(-1)).toBe(HUE_RAMP_CLASSES.ink[0]);
   });
 });
