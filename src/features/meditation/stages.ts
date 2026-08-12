@@ -5,7 +5,6 @@ type StagePhase = "novice" | "skilled" | "transition" | "adept";
 interface StageDefinition {
   number: StageNumber;
   phase: StagePhase;
-  titleKey: string;
   shortTitleKey: string;
   goalKey: string;
   obstaclesKey: string;
@@ -21,7 +20,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 1,
     phase: "novice",
-    titleKey: "stages.s1.title",
     shortTitleKey: "stages.s1.short",
     goalKey: "stages.s1.goal",
     obstaclesKey: "stages.s1.obstacles",
@@ -37,7 +35,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 2,
     phase: "novice",
-    titleKey: "stages.s2.title",
     shortTitleKey: "stages.s2.short",
     goalKey: "stages.s2.goal",
     obstaclesKey: "stages.s2.obstacles",
@@ -53,7 +50,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 3,
     phase: "novice",
-    titleKey: "stages.s3.title",
     shortTitleKey: "stages.s3.short",
     goalKey: "stages.s3.goal",
     obstaclesKey: "stages.s3.obstacles",
@@ -70,7 +66,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 4,
     phase: "skilled",
-    titleKey: "stages.s4.title",
     shortTitleKey: "stages.s4.short",
     goalKey: "stages.s4.goal",
     obstaclesKey: "stages.s4.obstacles",
@@ -86,7 +81,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 5,
     phase: "skilled",
-    titleKey: "stages.s5.title",
     shortTitleKey: "stages.s5.short",
     goalKey: "stages.s5.goal",
     obstaclesKey: "stages.s5.obstacles",
@@ -102,7 +96,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 6,
     phase: "skilled",
-    titleKey: "stages.s6.title",
     shortTitleKey: "stages.s6.short",
     goalKey: "stages.s6.goal",
     obstaclesKey: "stages.s6.obstacles",
@@ -115,7 +108,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 7,
     phase: "transition",
-    titleKey: "stages.s7.title",
     shortTitleKey: "stages.s7.short",
     goalKey: "stages.s7.goal",
     obstaclesKey: "stages.s7.obstacles",
@@ -132,7 +124,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 8,
     phase: "adept",
-    titleKey: "stages.s8.title",
     shortTitleKey: "stages.s8.short",
     goalKey: "stages.s8.goal",
     obstaclesKey: "stages.s8.obstacles",
@@ -144,7 +135,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 9,
     phase: "adept",
-    titleKey: "stages.s9.title",
     shortTitleKey: "stages.s9.short",
     goalKey: "stages.s9.goal",
     obstaclesKey: "stages.s9.obstacles",
@@ -156,7 +146,6 @@ export const STAGES: StageDefinition[] = [
   {
     number: 10,
     phase: "adept",
-    titleKey: "stages.s10.title",
     shortTitleKey: "stages.s10.short",
     goalKey: "stages.s10.goal",
     obstaclesKey: "stages.s10.obstacles",

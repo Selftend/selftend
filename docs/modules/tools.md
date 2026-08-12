@@ -67,7 +67,7 @@ Working meditation routes:
 - `/modules/meditation/learn` - framework primer
 - `/modules/meditation/session/new` - pre-sit primer, timer, post-sit reflection
 - `/modules/meditation/sessions`, `/modules/meditation/sessions/[id]`
-- `/modules/meditation/stages`, `/modules/meditation/stages/[n]`
+- `/modules/meditation/stages`
 
 `/tools/meditation` is kept as a compatibility redirect to `/modules/meditation`.
 

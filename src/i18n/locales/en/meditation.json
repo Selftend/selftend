@@ -78,7 +78,6 @@
       "currentStageBadge": "Where you are",
       "switchTo": "Set as my current stage",
       "alreadyCurrent": "This is your current stage.",
-      "moreOnStage": "Skills and reflection prompts",
       "phaseNovice": "Novice - Stages 1 to 3",
       "phaseSkilled": "Skilled - Stages 4 to 6",
       "phaseTransition": "Transition - Stage 7",
@@ -330,7 +329,6 @@
   },
   "stages": {
     "s1": {
-      "title": "Stage 1 - Establishing a Practice",
       "short": "Establishing a practice",
       "goal": "Develop a regular, consistent meditation practice.",
       "obstacles": "Resistance, procrastination, fatigue, impatience, boredom, lack of motivation.",
@@ -343,7 +341,6 @@
       }
     },
     "s2": {
-      "title": "Stage 2 - Overcoming Mind-Wandering",
       "short": "Overcoming mind-wandering",
       "goal": "Shorten mind-wandering and extend periods of sustained attention to the breath.",
       "obstacles": "Mind-wandering, monkey-mind, impatience.",
@@ -356,7 +353,6 @@
       }
     },
     "s3": {
-      "title": "Stage 3 - Overcoming Forgetting",
       "short": "Overcoming forgetting",
       "goal": "Overcome forgetting the breath and falling asleep.",
       "obstacles": "Distractions, forgetting, mind-wandering, sleepiness.",
@@ -369,7 +365,6 @@
       }
     },
     "s4": {
-      "title": "Stage 4 - Overcoming Gross Distraction and Strong Dullness",
       "short": "Overcoming gross distraction and strong dullness",
       "goal": "Overcome gross distraction and strong dullness.",
       "obstacles": "Distractions, pain and discomfort, intellectual insights, emotionally charged visions and memories.",
@@ -382,7 +377,6 @@
       }
     },
     "s5": {
-      "title": "Stage 5 - Overcoming Subtle Dullness",
       "short": "Overcoming subtle dullness",
       "goal": "Overcome subtle dullness and increase the power of mindfulness.",
       "obstacles": "Subtle dullness is hard to recognize, creates an illusion of stability, and is seductively pleasant.",
@@ -395,7 +389,6 @@
       }
     },
     "s6": {
-      "title": "Stage 6 - Subduing Subtle Distractions",
       "short": "Subduing subtle distractions",
       "goal": "Subdue subtle distractions and develop metacognitive introspective awareness.",
       "obstacles": "Subtle thoughts and mental objects alternate with the breath in peripheral awareness.",
@@ -407,7 +400,6 @@
       }
     },
     "s7": {
-      "title": "Stage 7 - Exclusive Attention and Unifying the Mind",
       "short": "Exclusive attention and unifying the mind",
       "goal": "Reach effortlessly sustained exclusive attention and powerful mindfulness.",
       "obstacles": "Effort is still required; boredom, restlessness, and doubt can arise. Bizarre sensations and involuntary movements may appear. Knowing when to drop effort is its own challenge.",
@@ -420,7 +412,6 @@
       }
     },
     "s8": {
-      "title": "Stage 8 - Mental Pliancy and Pacifying the Senses",
       "short": "Mental pliancy and pacifying the senses",
       "goal": "Complete pacification of the senses and the full arising of meditative joy.",
       "obstacles": "Unusual sensations, energy currents, and intense joy can themselves become distracting.",
@@ -432,7 +423,6 @@
       }
     },
     "s9": {
-      "title": "Stage 9 - Calming the Intensity of Meditative Joy",
       "short": "Calming the intensity of meditative joy",
       "goal": "Mature meditative joy into tranquility and equanimity.",
       "obstacles": "The intensity of joy can perturb the mind and disrupt practice.",
@@ -444,7 +434,6 @@
       }
     },
     "s10": {
-      "title": "Stage 10 - Tranquility and Equanimity",
       "short": "Tranquility and equanimity",
       "goal": "Establish the qualities of śamatha as the normal condition of the mind.",
       "obstacles": "The qualities of śamatha fade after the meditation session ends.",
