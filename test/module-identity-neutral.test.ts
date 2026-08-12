@@ -76,7 +76,9 @@ const HUE_IMPORT = /\b(TINT_TEXT|TINT_ACCENT|hueToTint|toolAccent|exerciseHue|hu
  * green. The helper is not itself forbidden; passing it a hue is.
  */
 const HUE_ARGUMENT = new RegExp(
-  String.raw`\b(tintStripeColors|hueHsl|hueRamp|hueGradient|useRoomStyle|hueRampClass)\(\s*"(${HUE_ALTERNATION})"`,
+  // hueRamp/hueRampClass sat in this alternation until #924 retired them (the
+  // mood ramp, their last reader, rides the accent now).
+  String.raw`\b(tintStripeColors|hueHsl|hueGradient|useRoomStyle)\(\s*"(${HUE_ALTERNATION})"`,
   "g",
 );
 
@@ -87,9 +89,10 @@ const HUE_ARGUMENT = new RegExp(
  * carry.
  */
 const IDENTITY_SURFACES: Record<string, string[]> = {
+  // `tool-hero.tsx` used to sit here too; #733 deleted it, so its neutrality is
+  // asserted by absence in RETIRED rather than by scanning a file that is gone.
   "module and tool badges": [
     "src/components/react-native-reusables/badge.tsx",
-    "src/components/app/tool-hero.tsx",
     "src/components/app/module-home-header.tsx",
   ],
   "sidebar icons": ["src/components/app/sidebar-nav.tsx"],
@@ -147,28 +150,43 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
  * because a neutralised version of it would be a map from eleven tool ids to
  * one constant.
  */
-const RETIRED = ["src/features/home/tool-accent.ts"];
+const RETIRED = [
+  "src/features/home/tool-accent.ts",
+  // #733's deletions, listed here for the same reason: the surest gate on a
+  // hue-bearing surface is that the file no longer exists. `tool-hero.tsx` was
+  // already consumerless; `tool-stats.tsx` took `accentClassName` and
+  // `content-sheet.tsx` existed only to overlap the field.
+  "src/components/app/tool-hero.tsx",
+  "src/components/app/tool-stats.tsx",
+  "src/components/app/content-sheet.tsx",
+  // #855: the sleep redesign's display surfaces stopped reading the quality
+  // ramp (#772/#773/#775), leaving this helper importerless - and with the
+  // ramp gone, sleep encodes no data in hue at all, so the file has nothing
+  // left to answer.
+  "src/features/sleep/quality-tint.ts",
+  // #924: the mood ramp moved onto the active style's accent
+  // (accentRampClass), so this wrapper's hueRampClass("be", …) had nothing to
+  // delegate to - and its only callers were tests. Same shape as quality-tint
+  // above: the data outlived the hue, the helper did not.
+  "src/features/mood/score-tone.ts",
+];
 
 /**
  * The other half of the gate. Each surface that KEEPS hue, and the literal that
- * proves it still does. Six of them - see the note in src/lib/theme/encoding.ts
- * for the two #588 added to #558's four.
+ * proves it still does. Three of them - see the notes in
+ * src/lib/theme/encoding.ts for the arrivals (#588) and departures (#855,
+ * #924).
  *
  * The pattern is the encoding itself, not merely "some hue appears here": the
- * failure being guarded against is a later sweep that neutralises the mood
- * ramp because it looks like every other tinted chip in the diff.
+ * failure being guarded against is a later sweep that neutralises an encoding
+ * because it looks like every other tinted chip in the diff.
  */
 const KEEPS_HUE: Record<HueEncodingId, { file: string; pattern: RegExp; what: string }> = {
-  "mood-heatmap-ramp": {
-    file: "src/lib/design-tokens.ts",
-    pattern: /bg-act\/\[0\.16\]/,
-    what: "HUE_RAMP_CLASSES, the 5-step score ramp",
-  },
-  "mood-scale": {
-    file: "src/components/app/mood-scale.tsx",
-    pattern: /hueHsl\("act"/,
-    what: "the 1-5 input control's hue wash",
-  },
+  // "mood-heatmap-ramp" left with #924: the ramp re-tinted onto the active
+  // style's accent (ACCENT_RAMP_CLASSES / useAccentRamp), so it names no hue
+  // for this gate to protect. The scale itself - the thing over-sweeping
+  // would have deleted - is guarded by test/accent-ramp-classes.test.ts,
+  // which measures its five steps across every style.
   "habit-colour": {
     file: "src/features/habits/habit-color.ts",
     pattern: /HABIT_COLOR_TINTS/,
@@ -176,21 +194,31 @@ const KEEPS_HUE: Record<HueEncodingId, { file: string; pattern: RegExp; what: st
   },
   "breathing-pacer": {
     file: "src/features/breathing/pacer-colors.ts",
-    pattern: /PACER_HUE[^=]*=\s*"aqua"/,
-    what: "the live inhale/hold/exhale phase",
+    // Was `PACER_HUE = "aqua"` while the pacer was tool-pinned. #779 put the
+    // RUNNING PATTERN's colour on it, resolved through the same alias map as
+    // every other pattern-colour surface - so the literal that proves the
+    // encoding is the map lookup, exactly as `breathing-exercise-colour` pins
+    // the map itself.
+    pattern: /BREATHING_COLOR_TINTS\[color\]/,
+    what: "the running pattern's colour on the live pacer",
   },
   // Added by #588, which found them mid-sweep. Neither is in #558's table; both
   // are admitted by its rule. See the note in src/lib/theme/encoding.ts.
   "breathing-exercise-colour": {
     file: "src/features/breathing/exercise-colors.ts",
-    pattern: /case "aqua":/,
+    // Was `case "aqua":` while this file was a switch returning utility classes.
+    // #780 moved it onto the same alias-map + chipHsl mechanism habits uses, so
+    // the literal that proves the encoding is now the map itself - exactly as
+    // the `habit-colour` entry above pins `HABIT_COLOR_TINTS`. Same strength,
+    // same shape: a sweep that neutralised this file would delete the map.
+    pattern: /BREATHING_COLOR_TINTS/,
     what: "the colour the user picked for their own exercise",
   },
-  "sleep-quality-ramp": {
-    file: "src/features/sleep/quality-tint.ts",
-    pattern: /hueRampClass\("ink"/,
-    what: "the 5-step night-quality scale",
-  },
+  // "sleep-quality-ramp" left with the sleep redesign (#771, removed by #855):
+  // sleep deliberately encodes nothing in hue anymore - the level's name and
+  // the dot count carry the ordinal on every surface that had worn the ramp
+  // (#772/#773/#775) - so there is no encoding left for an entry to protect,
+  // and `quality-tint.ts` is asserted gone in RETIRED above instead.
 };
 
 const read = (file: string): string => stripComments(readFileSync(join(ROOT, file), "utf8"));
@@ -331,12 +359,8 @@ describe("the lint gate's exemptions and the ruling agree (#589)", () => {
       "src/lib/module-room.ts",
       "src/lib/hue-chip.ts",
       "src/features/mindfulness/exercise-hue.ts",
-      // The sleep quality ramp's input control, the twin of mood-scale.
-      "src/features/sleep/star-rating.tsx",
-      // The mood ramp's class helper. The encoding itself is keyed to
-      // design-tokens.ts (where HUE_RAMP_CLASSES lives); this is the one-line
-      // wrapper the mood surfaces call.
-      "src/features/mood/score-tone.ts",
+      // score-tone.ts sat here until #924 retired it with the hue ramp - the
+      // mood surfaces read the accent ramp now, which needs no exemption.
     ];
     const allowed = new Set([...Object.values(KEEPS_HUE).map((e) => e.file), ...palette]);
     const unjustified = sanctioned.filter((file) => !allowed.has(file));

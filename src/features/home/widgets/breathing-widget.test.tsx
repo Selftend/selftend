@@ -44,11 +44,13 @@ function session(completedOffsetMinutes: number | null): MindfulnessSession {
     createdAt: ACROSS_MIDNIGHT_AT,
     cycles: 4,
     durationSeconds: 240,
+    stepsCompleted: null,
+    stepsTotal: null,
   };
 }
 
 function renderOn(dayKey: string, sessions: MindfulnessSession[]) {
-  mockUseSelectedDate.mockReturnValue({ selectedDate: dayKey, isToday: true });
+  mockUseSelectedDate.mockReturnValue({ selectedDate: dayKey });
   mockUseBreathingSessions.mockReturnValue({ data: sessions } as unknown as ReturnType<
     typeof useBreathingSessions
   >);

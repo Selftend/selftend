@@ -3,7 +3,7 @@ import { router } from "expo-router";
 
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
 import { entryDayKey } from "@/src/lib/occurrence-time";
-import { renderWithProviders } from "@/test/render-with-providers";
+import { createTestQueryClient, renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
@@ -13,6 +13,7 @@ const mockRouter = jest.mocked(router);
 
 function sleepLog(i: number) {
   const loggedAt = new Date(2026, 4, 30 - i, 12).toISOString();
+  const dayKey = entryDayKey(loggedAt, null);
   return {
     id: `s-${i}`,
     userId: "user-1",
@@ -21,7 +22,9 @@ function sleepLog(i: number) {
     notes: "",
     loggedAt,
     loggedOffsetMinutes: null,
-    dayKey: entryDayKey(loggedAt, null),
+    dayKey,
+    entryDay: dayKey,
+    window: null,
     createdAt: loggedAt,
   };
 }
@@ -34,16 +37,24 @@ describe("SleepRecentList", () => {
     expect(screen.getByText(/No sleep logged yet/)).toBeTruthy();
   });
 
-  it("collapses to 8 rows and expands via Show all", () => {
+  it("shows exactly five rows with no expand-in-place toggle", () => {
     const logs = Array.from({ length: 10 }, (_, i) => sleepLog(i));
     renderWithProviders(<SleepRecentList logs={logs} />);
 
-    // 'Show all (10)' visible while collapsed.
-    const toggle = screen.getByText("Show all (10)");
-    expect(toggle).toBeTruthy();
+    // The five newest by entry day: 360..364 minutes → "6h", "6h 1m"…"6h 4m".
+    expect(screen.getByText("6h")).toBeTruthy();
+    expect(screen.getByText("6h 4m")).toBeTruthy();
+    expect(screen.queryByText("6h 5m")).toBeNull();
+    // Depth moved to the all-history screen; nothing expands in place.
+    expect(screen.queryByText("Show all (10)")).toBeNull();
+    expect(screen.queryByText("Show less")).toBeNull();
+  });
 
-    fireEvent.press(toggle);
-    expect(screen.getByText("Show less")).toBeTruthy();
+  it("gives each row one accessible name carrying duration and quality", () => {
+    // The five-dot read-out is a sighted-only count cue; the label is where a
+    // screen-reader user hears the level (#775).
+    renderWithProviders(<SleepRecentList logs={[sleepLog(0)]} />);
+    expect(screen.getByLabelText(/6h of sleep, Fair/)).toBeTruthy();
   });
 
   it("routes to the detail screen on row press", () => {
@@ -52,6 +63,22 @@ describe("SleepRecentList", () => {
     expect(mockRouter.push).toHaveBeenCalledWith({
       pathname: "/tools/sleep/[id]",
       params: { id: "s-0" },
+    });
+  });
+
+  it("seeds the detail cache on press, so the entry opens even if its own fetch fails", () => {
+    // An entry past the overview's 50-row window is only reachable through the
+    // paged history; without the seed, one failed getSleepLog offline shows
+    // "not found" for an entry the user is looking at.
+    const queryClient = createTestQueryClient();
+    const log = sleepLog(0);
+    renderWithProviders(<SleepRecentList logs={[log]} />, { queryClient });
+
+    fireEvent.press(screen.getByText("6h"));
+
+    expect(queryClient.getQueryData(["sleep", "detail", "user-1", "s-0"])).toMatchObject({
+      id: "s-0",
+      durationMinutes: 360,
     });
   });
 

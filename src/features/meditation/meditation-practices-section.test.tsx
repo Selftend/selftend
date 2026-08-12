@@ -7,35 +7,30 @@ jest.mock("react-i18next", () => ({
 }));
 
 describe("MeditationPracticesSection", () => {
-  it("is collapsed by default - header shown, no practice cards", () => {
+  it("lists every practice with its cards collapsed", () => {
+    // The outer collapsible header is gone (#853): on its own screen the list
+    // is the content, and the screen header names it once.
     render(<MeditationPracticesSection />);
-    expect(screen.getByText("practices.sectionLabel")).toBeTruthy();
-    expect(screen.queryByText("practices.breath-awareness.title")).toBeNull();
-  });
-
-  it("reveals the practice cards when the section header is tapped", () => {
-    render(<MeditationPracticesSection />);
-    fireEvent.press(screen.getByText("practices.sectionLabel"));
     expect(screen.getByText("practices.breath-awareness.title")).toBeTruthy();
+    expect(screen.queryByText("practices.sectionLabel")).toBeNull();
     // cards still collapsed: no instructions yet
     expect(screen.queryByText("practices.breath-awareness.shortDescription")).toBeNull();
   });
 
   it("expands a practice card on tap to show its info", () => {
     render(<MeditationPracticesSection />);
-    fireEvent.press(screen.getByText("practices.sectionLabel"));
     fireEvent.press(screen.getByText("practices.loving-kindness.title"));
     expect(screen.getByText("practices.loving-kindness.shortDescription")).toBeTruthy();
   });
 
-  it("pre-opens the section and card for a valid initialPractice", () => {
+  it("pre-opens the card for a valid initialPractice", () => {
     render(<MeditationPracticesSection initialPractice="body-scan" />);
     expect(screen.getByText("practices.body-scan.shortDescription")).toBeTruthy();
   });
 
-  it("ignores an unknown initialPractice and stays collapsed", () => {
+  it("ignores an unknown initialPractice and opens nothing", () => {
     render(<MeditationPracticesSection initialPractice="mindful-walking" />);
-    expect(screen.queryByText("practices.body-scan.title")).toBeNull();
+    expect(screen.queryByText("practices.body-scan.shortDescription")).toBeNull();
   });
 
   it("keeps its surfaces on theme tokens rather than hardcoding one", () => {

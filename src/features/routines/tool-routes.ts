@@ -16,7 +16,7 @@ import type { SteppableToolId } from "@/src/features/routines/derive";
  * already have - the same list-first shape habits uses.
  */
 export const TOOL_STEP_ROUTES: Record<SteppableToolId, Href> = {
-  mood: "/tools/mood-tracker/new",
+  mood: "/tools/check-in/new",
   journal: "/tools/journal/new",
   gratitude: "/tools/gratitude-log/new",
   sleep: "/tools/sleep/new",

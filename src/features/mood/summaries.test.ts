@@ -1,10 +1,4 @@
-import {
-  getMoodSummary,
-  getDailyAverages,
-  getWeekDelta,
-  getTopEmotions,
-  groupLogsByDate,
-} from "@/src/features/mood/summaries";
+import { getMoodSummary } from "@/src/features/mood/summaries";
 import { addDaysToKey, localDateKey } from "@/src/utils/date";
 
 // Fixed "today" so windows do not drift with the run clock.
@@ -65,96 +59,5 @@ describe("getMoodSummary", () => {
       { dayKey: dayKeyAgo(6), moodScore: 1 }, // one day past the extended window's start
     ];
     expect(getMoodSummary(logs, 7, NOW)).toEqual({ average: 4, count: 2 });
-  });
-});
-
-describe("getDailyAverages", () => {
-  it("returns one bucket per day, oldest→newest, null on empty days", () => {
-    const now = new Date(2026, 4, 31, 12, 0, 0, 0);
-    const logs = [
-      { dayKey: "2026-05-31", moodScore: 4 },
-      { dayKey: "2026-05-31", moodScore: 2 },
-      { dayKey: "2026-05-29", moodScore: 5 },
-    ];
-    const week = getDailyAverages(logs, 7, now);
-    expect(week).toHaveLength(7);
-    expect(week[6]).toEqual({ dateKey: "2026-05-31", average: 3 });
-    expect(week[4]).toEqual({ dateKey: "2026-05-29", average: 5 });
-    expect(week[5]).toEqual({ dateKey: "2026-05-30", average: null });
-  });
-
-  it("ends on a day captured ahead of today rather than dropping it", () => {
-    const now = new Date(2026, 4, 31, 12, 0, 0, 0);
-    const week = getDailyAverages([{ dayKey: "2026-06-01", moodScore: 4 }], 7, now);
-    expect(week).toHaveLength(7);
-    expect(week[6]).toEqual({ dateKey: "2026-06-01", average: 4 });
-  });
-});
-
-describe("getWeekDelta", () => {
-  it("compares the last 7 days to the prior 7 days", () => {
-    const now = new Date(2026, 4, 31, 12, 0, 0, 0);
-    const logs = [
-      { dayKey: "2026-05-30", moodScore: 4 },
-      { dayKey: "2026-05-28", moodScore: 4 },
-      { dayKey: "2026-05-22", moodScore: 2 },
-    ];
-    expect(getWeekDelta(logs, now)).toEqual({ current: 4, previous: 2, delta: 2 });
-  });
-
-  it("returns null delta when either window is empty", () => {
-    const now = new Date(2026, 4, 31, 12, 0, 0, 0);
-    const logs = [{ dayKey: "2026-05-30", moodScore: 4 }];
-    expect(getWeekDelta(logs, now)).toEqual({ current: 4, previous: null, delta: null });
-  });
-});
-
-describe("getTopEmotions", () => {
-  it("counts emotion ids and returns the most frequent first", () => {
-    const logs = [
-      { emotions: ["relaxed", "happy"] },
-      { emotions: ["relaxed"] },
-      { emotions: ["anxious"] },
-    ];
-    expect(getTopEmotions(logs, 2)).toEqual([
-      { id: "relaxed", count: 2 },
-      { id: "anxious", count: 1 },
-    ]);
-  });
-
-  it("returns an empty array when there are no emotions", () => {
-    expect(getTopEmotions([], 3)).toEqual([]);
-  });
-});
-
-describe("groupLogsByDate", () => {
-  it("buckets entries into today/yesterday/thisWeek/older with per-group averages", () => {
-    const now = new Date(2026, 4, 31, 12, 0, 0, 0);
-    const logs = [
-      { id: "a", dayKey: "2026-05-31", moodScore: 4 },
-      { id: "b", dayKey: "2026-05-30", moodScore: 2 },
-      { id: "c", dayKey: "2026-05-28", moodScore: 5 },
-      { id: "d", dayKey: "2026-05-01", moodScore: 3 },
-    ] as Parameters<typeof groupLogsByDate>[0];
-    const groups = groupLogsByDate(logs, now);
-    expect(groups.map((g) => g.key)).toEqual(["today", "yesterday", "thisWeek", "older"]);
-    expect(groups[0]).toMatchObject({ key: "today", average: 4, entries: [logs![0]] });
-    expect(groups[2]).toMatchObject({ key: "thisWeek", average: 5 });
-  });
-
-  it("omits empty groups", () => {
-    const now = new Date(2026, 4, 31, 12, 0, 0, 0);
-    const logs = [{ id: "a", dayKey: "2026-05-31", moodScore: 4 }] as Parameters<
-      typeof groupLogsByDate
-    >[0];
-    expect(groupLogsByDate(logs, now).map((g) => g.key)).toEqual(["today"]);
-  });
-
-  it("reads a day captured ahead of today as today, not as a future entry", () => {
-    const now = new Date(2026, 4, 31, 12, 0, 0, 0);
-    const logs = [{ id: "a", dayKey: "2026-06-01", moodScore: 4 }] as Parameters<
-      typeof groupLogsByDate
-    >[0];
-    expect(groupLogsByDate(logs, now).map((g) => g.key)).toEqual(["today"]);
   });
 });

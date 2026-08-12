@@ -10,22 +10,25 @@
   "home": {
     "title": "Дневник на благодарността",
     "subtitle": "Забелязвай доброто. Запиши го. Без натиск.",
-    "viewAll": "Виж всички"
+    "viewAll": "Виж всички записи →"
   },
   "hero": {
-    "entries_one": "{{count}} запис",
-    "entries_other": "{{count}} записа",
-    "favorites_one": "{{count}} любим",
-    "favorites_other": "{{count}} любими",
-    "thisWeek": "Тази седмица"
+    "entries_one": "запис",
+    "entries_other": "записа",
+    "favorites_one": "любим",
+    "favorites_other": "любими",
+    "thisWeek": "тази седмица",
+    "loadingValue": "—"
   },
   "stats": {
-    "last": "Последно · {{when}}",
-    "never": "Все още няма записи"
+    "last": "последно записано {{when}}",
+    "never": "все още няма записи"
   },
   "insights": {
     "title": "Прозрения",
     "frequency": "Колко често записваш",
+    "dayCount_one": "{{date}}: {{count}} запис",
+    "dayCount_other": "{{date}}: {{count}} записа",
     "thisWeek": "Тази седмица",
     "themes": "Чести теми",
     "favorites": "Любими",
@@ -77,15 +80,23 @@
     "showMore": "Покажи още",
     "showLess": "Покажи по-малко",
     "expandEntry": "Разгъни запис за благодарност от {{when}}",
-    "collapseEntry": "Свий запис за благодарност от {{when}}"
+    "collapseEntry": "Свий запис за благодарност от {{when}}",
+    "filters": {
+      "all": "Всички",
+      "favorites": "Любими"
+    },
+    "error": {
+      "title": "Записите не можаха да се заредят",
+      "description": "Провери връзката си и опитай отново."
+    }
   },
   "editor": {
-    "createTitle": "Нов запис за благодарност",
+    "createTitle": "Три хубави неща",
     "editTitle": "Редактирай запис за благодарност",
-    "createDescription": "Запиши от едно до пет неща, които си оценил. Малките неща се броят.",
+    "createDescription": "{{date}} · малките неща се броят, а и едно е достатъчно.",
     "editDescription": "Промени това, което си забелязал по-рано.",
     "itemLabel": "Благодарност {{number}}",
-    "itemPlaceholder": "Малко нещо, което е имало значение.",
+    "addAnother": "Добави още",
     "todayItemsLabel": "Благодарен за днес",
     "todayQuestions": [
       "Какво те разсмя?",
@@ -106,7 +117,7 @@
     "whenLabel": "Кога",
     "notePlaceholder": "Добави малко контекст, ако помага.",
     "cancel": "Откажи",
-    "save": "Запази",
+    "save": "Запази записа",
     "update": "Обнови",
     "saveError": "Записът не можа да се запази. Опитай отново.",
     "notFound": "Не намерихме този запис."
@@ -123,6 +134,8 @@
     "lifeItemsTitle": "Благодарен за (живота)",
     "noteTitle": "Бележка",
     "loggedAt": "Записан",
+    "loggedSummary_one": "Записано в {{time}} · {{count}} нещо",
+    "loggedSummary_other": "Записано в {{time}} · {{count}} неща",
     "notFound": "Не намерихме този запис за благодарност.",
     "favoriteError": "Любимият момент не можа да се обнови. Опитай отново.",
     "deleteError": "Записът не можа да се изтрие. Опитай отново.",

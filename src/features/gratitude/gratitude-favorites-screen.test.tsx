@@ -71,7 +71,6 @@ describe("GratitudeFavoritesScreen", () => {
     renderWithProviders(<GratitudeFavoritesScreen />);
 
     expect(screen.getByRole("heading", { name: "Favorite moments" })).toBeTruthy();
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the think room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });

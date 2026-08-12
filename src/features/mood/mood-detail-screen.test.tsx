@@ -9,11 +9,30 @@ jest.mock("expo-router", () => ({
   router: {
     canGoBack: jest.fn(() => false),
     push: jest.fn(),
+    replace: jest.fn(),
   },
   useLocalSearchParams: () => ({ id: "log-1" }),
-  usePathname: () => "/tools/mood-tracker/log-1",
+  usePathname: () => "/tools/check-in/log-1",
   useFocusEffect: jest.fn(),
 }));
+
+const mockUseWindowDimensions = jest.fn(() => ({
+  width: 750,
+  height: 1334,
+  scale: 2,
+  fontScale: 1,
+}));
+jest.mock("react-native", () => {
+  const actual = jest.requireActual("react-native");
+  return new Proxy(actual, {
+    get(target, prop, receiver) {
+      if (prop === "useWindowDimensions") {
+        return mockUseWindowDimensions;
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+});
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({
@@ -29,13 +48,29 @@ jest.mock("@/src/features/mood/queries", () => ({
 
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
   useEmotionPreferences: () => ({ data: [] }),
+  useEmotionUsageCounts: () => ({ data: {} }),
 }));
 
 const mockUseMoodLog = useMoodLog as jest.MockedFunction<typeof useMoodLog>;
 const mockUseMoodLogs = useMoodLogs as jest.MockedFunction<typeof useMoodLogs>;
 const mockRouter = jest.mocked(router);
 
-const MOCK_ENTRY = {
+const MOCK_ENTRY: {
+  id: string;
+  userId: string;
+  moodScore: number;
+  emotions: string[];
+  notes: string;
+  linkedStrategy: string | null;
+  loggedAt: string;
+  loggedOffsetMinutes: number;
+  dayKey: string;
+  createdAt: string;
+  situation: string;
+  thoughts: string;
+  behaviours: string;
+  bodilySensations: string;
+} = {
   id: "log-1",
   userId: "user-1",
   moodScore: 4,
@@ -53,6 +88,13 @@ const MOCK_ENTRY = {
   behaviours: "",
   bodilySensations: "",
 };
+
+function renderEntry(overrides: Partial<typeof MOCK_ENTRY> = {}) {
+  mockUseMoodLogs.mockReturnValue({
+    data: [{ ...MOCK_ENTRY, ...overrides }],
+  } as unknown as ReturnType<typeof useMoodLogs>);
+  return renderWithProviders(<MoodDetailScreen />);
+}
 
 describe("MoodDetailScreen", () => {
   beforeEach(() => {
@@ -78,6 +120,9 @@ describe("MoodDetailScreen", () => {
       ],
     });
     jest.clearAllMocks();
+    // `mockReturnValue` outlives clearAllMocks — pin the default width back so
+    // a narrow-width test cannot leak into its neighbours.
+    mockUseWindowDimensions.mockReturnValue({ width: 750, height: 1334, scale: 2, fontScale: 1 });
     mockUseMoodLog.mockReturnValue({
       data: null,
       isLoading: false,
@@ -91,29 +136,151 @@ describe("MoodDetailScreen", () => {
     jest.useRealTimers();
   });
 
-  it("renders the hero strip with score word, score number, and relative time", () => {
-    renderWithProviders(<MoodDetailScreen />);
+  it("renders the hero strip with score word and score number", () => {
+    renderEntry();
 
-    // Hero strip: "Good · 4" (detailWord.4 + moodScore)
     expect(screen.getByText("Good · 4")).toBeTruthy();
-    // Relative time follows the CAPTURED day (2026-05-09, 22 days before the
-    // frozen 2026-05-31), not the instant's viewer-local day (2026-05-10, which
-    // would read "21 days ago").
-    expect(screen.getByText("22 days ago")).toBeTruthy();
   });
 
-  it("renders Edit and Delete buttons in the hero strip", () => {
-    renderWithProviders(<MoodDetailScreen />);
+  /**
+   * #885: the header row's flanks (emoji + actions) never shrink, so every
+   * pixel of narrowness comes out of the title block — at phone width the
+   * labelled Edit button crushed the title to a character per line. The 2c
+   * phone header collapses Edit to an icon button and keeps the date compact.
+   */
+  it("collapses Edit to an icon button at phone width, keeping its accessible name", () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 360, height: 800, scale: 2, fontScale: 1 });
+    renderEntry();
+
+    // The accessible name survives; the visible label does not.
+    const edit = screen.getByLabelText("Edit");
+    expect(edit).toBeTruthy();
+    expect(screen.queryByText("Edit")).toBeNull();
+    // The date line takes the compact captured-frame form (#870's shapes).
+    expect(screen.getByText(/May 9/)).toBeTruthy();
+
+    fireEvent.press(edit);
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/log-1/edit");
+  });
+
+  it("keeps the labelled Edit button and the full date at desktop width", () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 1280, height: 800, scale: 2, fontScale: 1 });
+    renderEntry();
 
     expect(screen.getByText("Edit")).toBeTruthy();
-    expect(screen.getByText("Delete")).toBeTruthy();
+    expect(screen.getByText(/May 9, 2026/)).toBeTruthy();
+  });
+
+  /**
+   * The logged-at card folds into the header line (#703). It was the emptiest card on
+   * the screen: a title and one timestamp.
+   */
+  it("folds the timestamp into the header line, with no logged-at row", () => {
+    renderEntry();
+
+    // Relative time follows the CAPTURED day (2026-05-09, 22 days before the frozen
+    // 2026-05-31), not the instant's viewer-local day (2026-05-10, "21 days ago").
+    expect(screen.getByText(/^22 days ago · /)).toBeTruthy();
+    expect(screen.queryByText("Logged at")).toBeNull();
+  });
+
+  it("renders Edit and Delete in the hero strip", () => {
+    renderEntry();
+
+    expect(screen.getByText("Edit")).toBeTruthy();
+    // Delete is an icon button - its name lives in the a11y tree, not on screen.
+    expect(screen.getByLabelText("Delete")).toBeTruthy();
   });
 
   it("routes to the edit page for the selected mood entry", () => {
-    renderWithProviders(<MoodDetailScreen />);
+    renderEntry();
 
     fireEvent.press(screen.getByText("Edit"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/mood-tracker/log-1/edit");
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/log-1/edit");
+  });
+
+  it("keeps the delete flow behind the confirm dialog", () => {
+    renderEntry();
+
+    fireEvent.press(screen.getByLabelText("Delete"));
+
+    expect(screen.getByText("Delete this entry?")).toBeTruthy();
+  });
+
+  it("links out to all history from the foot of the screen", () => {
+    renderEntry();
+
+    fireEvent.press(screen.getByText("Show all history"));
+
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/history");
+  });
+
+  /**
+   * Seven possible rows, every one conditional (#703). The design draws two because its
+   * sample entry has two; that is a sample, not the row set.
+   */
+  describe("the row set", () => {
+    it("renders a row only for the fields this entry actually holds", () => {
+      renderEntry();
+
+      expect(screen.getAllByTestId("detail-row")).toHaveLength(2);
+      expect(screen.getByText("Emotions")).toBeTruthy();
+      expect(screen.getByText("Notes")).toBeTruthy();
+      expect(screen.getByText("Felt steadier after a walk")).toBeTruthy();
+    });
+
+    it("shows no rows at all for an entry that is only a score", () => {
+      renderEntry({ emotions: [], notes: "", linkedStrategy: null });
+
+      expect(screen.queryAllByTestId("detail-row")).toHaveLength(0);
+      // And no consolation copy either - an empty screen is the honest shape of a
+      // one-tap check-in, not an unfinished form.
+      expect(screen.queryByText("Emotions")).toBeNull();
+      expect(screen.queryByText("Notes")).toBeNull();
+    });
+
+    it("treats whitespace-only reflection as empty", () => {
+      renderEntry({ emotions: [], notes: "   ", situation: "\n " });
+
+      expect(screen.queryAllByTestId("detail-row")).toHaveLength(0);
+    });
+
+    it("renders each of the four go-deeper fields that has text", () => {
+      renderEntry({
+        emotions: [],
+        notes: "",
+        situation: "Email from my manager",
+        thoughts: "I am in trouble",
+        behaviours: "Left it unopened",
+        bodilySensations: "Jaw",
+      });
+
+      expect(screen.getAllByTestId("detail-row")).toHaveLength(4);
+      expect(screen.getByText("Email from my manager")).toBeTruthy();
+      expect(screen.getByText("Jaw")).toBeTruthy();
+    });
+  });
+
+  /**
+   * `linked_strategy` is a system marker with exactly one writer, and the shipped screen
+   * printed its slug verbatim - `behavioral-activation`, untranslated, in both locales.
+   */
+  describe("linked strategy", () => {
+    it("names the strategy instead of printing its slug, and links through", () => {
+      renderEntry({ emotions: [], notes: "", linkedStrategy: "behavioral-activation" });
+
+      expect(screen.queryByText("behavioral-activation")).toBeNull();
+      fireEvent.press(screen.getByText("Behavioural activation"));
+
+      expect(mockRouter.push).toHaveBeenCalledWith("/modules/cbt/activities");
+    });
+
+    it("renders no row for a slug it cannot name", () => {
+      renderEntry({ emotions: [], notes: "", linkedStrategy: "some-future-strategy" });
+
+      expect(screen.queryAllByTestId("detail-row")).toHaveLength(0);
+      expect(screen.queryByText("some-future-strategy")).toBeNull();
+    });
   });
 });

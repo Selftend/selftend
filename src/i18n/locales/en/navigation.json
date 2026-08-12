@@ -31,7 +31,7 @@
     "dbtA11y": "DBT module - Dialectical Behavior Therapy (coming soon)",
     "modules": "Modules",
     "gratitudeLog": "Gratitude log",
-    "sleep": "Sleep tracker",
+    "sleep": "Sleep",
     "habits": "Habit tracking",
     "tools": "Tools",
     "badgeLive": "Live",
@@ -71,7 +71,6 @@
   },
   "today": {
     "eyebrow": "Today · {{date}}",
-    "eyebrowPast": "{{date}}",
     "greetingMorning": "Good morning",
     "greetingAfternoon": "Good afternoon",
     "greetingEvening": "Good evening",
@@ -99,7 +98,7 @@
       "dbtDescription": "Four skill groups - mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness."
     },
     "tools": {
-      "moodTracker": "Mood tracker",
+      "moodTracker": "Check-in",
       "moodTrackerSub": "Patterns over time",
       "gratitudeLog": "Gratitude log",
       "gratitudeLogSub": "Notice the small wins",
@@ -111,7 +110,7 @@
       "groundingSub": "Anchor to the present",
       "meditation": "Meditation",
       "meditationSub": "Train steady attention",
-      "sleep": "Sleep tracker",
+      "sleep": "Sleep",
       "sleepSub": "Log and review your sleep",
       "habits": "Habit tracking",
       "habitsSub": "Build consistent daily habits"
@@ -245,7 +244,7 @@
         "cta": "Map it"
       },
       "sleepLatest": {
-        "title": "Sleep tracker",
+        "title": "Sleep",
         "desc": "Your sleep at a glance.",
         "sevenNightAvgLabel": "7-night avg",
         "qualityLabel": "7-night quality",
@@ -420,11 +419,12 @@
     "progress": "Reflect",
     "legal": "Legal",
     "entry": "Entry",
+    "entries": "Entries",
     "new": "New",
     "newRecord": "New record",
-    "logSession": "Log session",
     "sessions": "Sessions",
     "stages": "Stages",
+    "practices": "Practices",
     "goals": "Goals",
     "activities": "Activities",
     "beliefs": "Core beliefs",
@@ -445,7 +445,6 @@
     "bullsEye": "Values check-in",
     "dailyLife": "Daily life",
     "learn": "Learn",
-    "onboarding": "Onboarding",
     "edit": "Edit",
     "log": "Log",
     "favorites": "Favorites",

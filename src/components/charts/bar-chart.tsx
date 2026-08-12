@@ -16,6 +16,15 @@ export interface BarChartBar {
   tintClass?: string;
   /** Fill with the chart's highlightTintClass instead of tintClass. */
   highlighted?: boolean;
+  /**
+   * Announces this column as a single fact, e.g. "Okay: 3 check-ins" (#737).
+   *
+   * Without it a screen reader meets the top label and the bottom label as two
+   * unrelated strings with a decorative box between them, and has to pair them
+   * by position. Opt-in: charts whose labels already read as a pair leave it
+   * unset and render exactly as before.
+   */
+  accessibilityLabel?: string;
 }
 
 interface BarChartProps {
@@ -85,6 +94,18 @@ export function BarChart({
         return (
           <View
             key={bar.key ?? i}
+            // A labelled column is one fact, so it is announced as one node and
+            // its parts are hidden from the tree. RNW drops the native-only
+            // `accessible` prop, so the img role is what carries the name there
+            // — the same pairing the week strip's cells use.
+            {...(bar.accessibilityLabel !== undefined
+              ? {
+                  accessible: true,
+                  accessibilityRole: "image" as const,
+                  role: "img" as const,
+                  accessibilityLabel: bar.accessibilityLabel,
+                }
+              : null)}
             className={cn("flex-1 items-center gap-1", columnClassName)}
             style={maxBarWidth !== undefined ? { maxWidth: maxBarWidth } : undefined}
           >

@@ -6,6 +6,7 @@ import { entryDayKey } from "@/src/lib/occurrence-time";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/features/mood/queries", () => ({
+  ALL_TIME_FROM_ISO: "1970-01-01T00:00:00.000Z",
   useMoodScorePoints: jest.fn(),
 }));
 
@@ -52,8 +53,8 @@ describe("MoodHeatmap", () => {
     renderWithProviders(<MoodHeatmap userId="user-1" />);
 
     expect(screen.getByText("Awful")).toBeTruthy();
-    expect(screen.getByText("Low")).toBeTruthy();
-    expect(screen.getByText("OK")).toBeTruthy();
+    expect(screen.getByText("Bad")).toBeTruthy();
+    expect(screen.getByText("Okay")).toBeTruthy();
     expect(screen.getByText("Good")).toBeTruthy();
     expect(screen.getByText("Great")).toBeTruthy();
   });
@@ -74,12 +75,12 @@ describe("MoodHeatmap", () => {
     mockPoints([{ loggedAt: isoDaysAgo(0), moodScore: 4 }]);
     renderWithProviders(<MoodHeatmap userId="user-1" />);
 
-    expect(screen.queryByText(/😊 · Good/)).toBeNull();
+    expect(screen.queryByText(/🙂 · Good/)).toBeNull();
     fireEvent.press(screen.getByLabelText(/: Good$/));
-    // Callout: "<date> · 😊 · Good" in one line, read-only.
-    expect(screen.getByText(/· 😊 · Good$/)).toBeTruthy();
+    // Callout: "<date> · 🙂 · Good" in one line, read-only.
+    expect(screen.getByText(/· 🙂 · Good$/)).toBeTruthy();
 
     fireEvent.press(screen.getByLabelText(/: Good$/));
-    expect(screen.queryByText(/😊 · Good/)).toBeNull();
+    expect(screen.queryByText(/🙂 · Good/)).toBeNull();
   });
 });

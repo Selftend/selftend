@@ -1,11 +1,9 @@
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { fireEvent, screen } from "@testing-library/react-native";
+import { router } from "expo-router";
 
 import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-card";
-import {
-  useDeleteGratitudeEntry,
-  useSetGratitudeEntryStarred,
-} from "@/src/features/gratitude/queries";
+import { useSetGratitudeEntryStarred } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -20,13 +18,12 @@ jest.mock("@/src/providers/session-provider", () => ({
 
 jest.mock("@/src/features/gratitude/queries", () => ({
   useSetGratitudeEntryStarred: jest.fn(),
-  useDeleteGratitudeEntry: jest.fn(),
 }));
 
 const mockStar = useSetGratitudeEntryStarred as jest.MockedFunction<
   typeof useSetGratitudeEntryStarred
 >;
-const mockDelete = useDeleteGratitudeEntry as jest.MockedFunction<typeof useDeleteGratitudeEntry>;
+const mockRouter = jest.mocked(router);
 
 function makeEntry(overrides: Partial<GratitudeEntry> = {}): GratitudeEntry {
   return {
@@ -54,54 +51,46 @@ describe("GratitudeEntryCard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockStar.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as never);
-    mockDelete.mockReturnValue({ mutateAsync: jest.fn(), isPending: false } as never);
   });
 
-  it("collapsed shows the first two answers and a Show more affordance, hiding the rest", () => {
+  it("renders a compact hairline row with the first thing emphasized and the rest joined", () => {
     renderWithProviders(<GratitudeEntryCard entry={makeEntry()} />);
 
-    expect(screen.getByText("What made you laugh?")).toBeTruthy();
     expect(screen.getByText("laughed")).toBeTruthy();
-    expect(screen.getByText("Who was kind to you?")).toBeTruthy();
-    expect(screen.getByText("kind-person")).toBeTruthy();
-    expect(screen.getByText("Show more")).toBeTruthy();
-    // 3rd answer hidden while collapsed
-    expect(screen.queryByText("ttt")).toBeNull();
-    expect(screen.queryByText("What simple pleasure did you enjoy?")).toBeNull();
-    // action row hidden while collapsed
-    expect(screen.queryByText("Open")).toBeNull();
-  });
-
-  it("expanding reveals the remaining answers and the action row", () => {
-    renderWithProviders(<GratitudeEntryCard entry={makeEntry()} />);
-
-    fireEvent.press(screen.getByText("Show more"));
-
-    expect(screen.getByText("ttt")).toBeTruthy();
-    expect(screen.getByText("What simple pleasure did you enjoy?")).toBeTruthy();
-    expect(screen.getByText("Show less")).toBeTruthy();
-    expect(screen.getByText("Open")).toBeTruthy();
-    expect(screen.getByText("Edit")).toBeTruthy();
-    expect(screen.getByText("Delete")).toBeTruthy();
-  });
-
-  it("an entry with two or fewer answers shows everything and the action row, with no Show more", () => {
-    renderWithProviders(
-      <GratitudeEntryCard entry={makeEntry({ items: ["only one", "", "", "", ""] })} />,
-    );
-
-    expect(screen.getByText("only one")).toBeTruthy();
-    expect(screen.getByText("Open")).toBeTruthy();
+    expect(screen.getByText("kind-person · ttt")).toBeTruthy();
+    expect(screen.getByText(/days ago/)).toBeTruthy();
     expect(screen.queryByText("Show more")).toBeNull();
   });
 
-  it("a starred entry shows the Favorited action label", () => {
+  it("opens the detail screen when the row is pressed", () => {
+    renderWithProviders(<GratitudeEntryCard entry={makeEntry()} />);
+
+    fireEvent.press(screen.getByLabelText(/View gratitude entry from/));
+
+    expect(mockRouter.push).toHaveBeenCalledWith({
+      pathname: "/tools/gratitude-log/[id]",
+      params: { id: "g-1" },
+    });
+  });
+
+  it("toggles the star without opening the row", () => {
+    const mutateAsync = jest.fn().mockResolvedValue(makeEntry({ starred: true }));
+    mockStar.mockReturnValue({ mutateAsync, isPending: false } as never);
+    renderWithProviders(<GratitudeEntryCard entry={makeEntry()} />);
+
+    fireEvent(screen.getByLabelText("Favorite"), "press", { stopPropagation: jest.fn() });
+
+    expect(mutateAsync).toHaveBeenCalledWith({ id: "g-1", starred: true });
+    expect(mockRouter.push).not.toHaveBeenCalled();
+  });
+
+  it("a starred entry exposes the Favorited action label", () => {
     renderWithProviders(
       <GratitudeEntryCard
         entry={makeEntry({ items: ["only one", "", "", "", ""], starred: true })}
       />,
     );
 
-    expect(screen.getByText("Favorited")).toBeTruthy();
+    expect(screen.getByLabelText("Favorited")).toBeTruthy();
   });
 });

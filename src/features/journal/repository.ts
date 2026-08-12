@@ -1,4 +1,10 @@
-import type { JournalEntry, JournalInput } from "@/src/features/journal/types";
+import type {
+  JournalEntry,
+  JournalInput,
+  JournalWritingBucket,
+  JournalWritingRange,
+} from "@/src/features/journal/types";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
@@ -13,6 +19,15 @@ interface JournalEntryRow {
   occurred_offset_minutes?: number | null;
   created_at: string;
   updated_at: string;
+}
+
+interface JournalWritingBucketRow {
+  bucket_start_key: string;
+  bucket_end_key: string;
+  word_count: number | string;
+  bucket_unit: JournalWritingBucket["unit"];
+  range_start_key: string;
+  range_end_key: string;
 }
 
 function mapJournalEntry(row: JournalEntryRow): JournalEntry {
@@ -39,6 +54,27 @@ export async function listJournalEntries(userId: string, limit = 50) {
     .eq("user_id", userId)
     .order("occurred_at", { ascending: false })
     .limit(limit);
+
+  if (error) throw error;
+  return (data as JournalEntryRow[]).map(mapJournalEntry);
+}
+
+/** One stable keyset page for the all-entries screen. */
+export async function listJournalEntriesPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  const client = requireSupabase();
+  let query = client
+    .from("journal_entries")
+    .select("*")
+    .eq("user_id", userId)
+    .order("occurred_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("occurred_at", cursor));
+
+  const { data, error } = await query.limit(limit);
 
   if (error) throw error;
   return (data as JournalEntryRow[]).map(mapJournalEntry);
@@ -81,6 +117,27 @@ export async function sumJournalWords(): Promise<number> {
   if (error) throw error;
   // PostgREST serialises bigint as a JSON number, but coerce defensively.
   return Number(data ?? 0);
+}
+
+export async function listJournalWritingBuckets(
+  timeZone: string,
+  range: JournalWritingRange,
+): Promise<JournalWritingBucket[]> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("journal_writing_buckets", {
+    p_time_zone: timeZone,
+    p_days: range === "all" ? null : range,
+  });
+
+  if (error) throw error;
+  return ((data ?? []) as JournalWritingBucketRow[]).map((row) => ({
+    startDayKey: row.bucket_start_key,
+    endDayKey: row.bucket_end_key,
+    wordCount: Number(row.word_count),
+    unit: row.bucket_unit,
+    rangeStartDayKey: row.range_start_key,
+    rangeEndDayKey: row.range_end_key,
+  }));
 }
 
 export async function getJournalEntry(userId: string, id: string) {

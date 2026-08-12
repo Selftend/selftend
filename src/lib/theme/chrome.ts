@@ -101,7 +101,14 @@ function solveFieldLightness(h: number, s: number, l: number): number {
  * two would have agreed with itself while the app was visibly wrong. A hue
  * degree cannot be read from a constant here; it has to come from the palette
  * the user actually chose. `useNeutralFieldGradient` in src/lib/theme-palette.ts
- * is the hook that supplies it.
+ * was the hook that supplied it.
+ *
+ * **No app consumer since #733**, which deleted the field header this poured
+ * behind and that hook with it. Kept rather than deleted because #690 scoped
+ * exactly one deletion here, and because this file also holds `RAMP_ALPHAS`,
+ * which the sleep quality tint shares and a paired test pins. Its contrast
+ * floors are still covered by test/neutral-field-contrast.test.ts. Whether it
+ * survives at all is a follow-up decision, not a side effect of a chrome sweep.
  */
 export function neutralFieldGradient(style: StyleName, isDark: boolean): [string, string] {
   // The LIGHT triple's degree in both schemes, matching what `fieldGradient`

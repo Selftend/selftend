@@ -3,7 +3,7 @@ description: Share a manual test pass, device report, or reproducibility result.
 title: "[QA]: "
 labels:
   - qa
-  - needs triage
+  - needs-triage
 type: Task
 body:
   - type: markdown

@@ -83,7 +83,7 @@ jest.mock("@/src/components/app/app-onboarding-wizard", () => {
 });
 
 jest.mock("@/src/stores/selected-date-store", () => ({
-  useSelectedDate: () => ({ selectedDate: "2026-05-28", isToday: true }),
+  useSelectedDate: () => ({ selectedDate: "2026-05-28" }),
 }));
 
 jest.mock("@/src/features/home/queries", () => ({

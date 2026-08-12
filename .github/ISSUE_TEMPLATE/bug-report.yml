@@ -2,7 +2,7 @@ name: Bug report
 description: Report a reproducible defect in the app, docs, or contributor workflow.
 title: "[Bug]: "
 labels:
-  - needs triage
+  - needs-triage
 type: Bug
 body:
   - type: markdown

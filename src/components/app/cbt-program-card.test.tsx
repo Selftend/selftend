@@ -42,7 +42,7 @@ const assessmentPhase: CurrentPhaseView = {
   dailyPractice: {
     key: "dailyNoticing",
     labelKey: "program.tasks.dailyNoticing",
-    route: "/tools/mood-tracker/new",
+    route: "/tools/check-in/new",
     current: 0,
     target: 1,
     done: false,
@@ -194,7 +194,7 @@ describe("CbtProgramCard", () => {
       expect(screen.getByText("Today's practice")).toBeTruthy();
       const practiceRow = screen.getByText("Notice your thoughts, feelings & behaviours today");
       fireEvent.press(practiceRow);
-      expect(router.push).toHaveBeenCalledWith("/tools/mood-tracker/new");
+      expect(router.push).toHaveBeenCalledWith("/tools/check-in/new");
     });
   });
 

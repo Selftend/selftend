@@ -8,6 +8,7 @@ import type {
   StagePracticeNote,
   TmiTechnique,
 } from "@/src/features/meditation/types";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 import {
   entryDayKey,
   occurrenceTimeFromDate,
@@ -110,6 +111,12 @@ function mapPracticeNote(row: StagePracticeNoteRow): StagePracticeNote {
   };
 }
 
+/**
+ * A page of sits, newest first.
+ *
+ * The ordinary recent-session read remains deliberately capped. The all-sits
+ * screen uses `listMeditationSessionsPage` below with a stable cursor.
+ */
 export async function listMeditationSessions(userId: string, limit = 30) {
   const client = requireSupabase();
   const { data, error } = await client
@@ -117,10 +124,68 @@ export async function listMeditationSessions(userId: string, limit = 30) {
     .select("*")
     .eq("user_id", userId)
     .order("completed_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(limit);
 
   if (error) throw error;
   return (data as MeditationSessionRow[]).map(mapSession);
+}
+
+/** One stable page for the all-sits screen, with a total descending order. */
+export async function listMeditationSessionsPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  const client = requireSupabase();
+  let query = client
+    .from("meditation_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("completed_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("completed_at", cursor));
+
+  const { data, error } = await query.limit(limit);
+  if (error) throw error;
+  return (data as MeditationSessionRow[]).map(mapSession);
+}
+
+/** Just the columns the minutes chart and insights card reduce over, plus what dates them. */
+interface MeditationMinutesRow {
+  duration_minutes: number;
+  completed_at: string;
+  completed_offset_minutes?: number | null;
+  obstacle_tags?: MeditationObstacleTag[] | null;
+}
+
+/**
+ * Minutes sat since an instant, for the overview's thirty-day chart.
+ *
+ * A query of its own rather than a slice of the list, for the reason #337 gave
+ * the median its own RPC: the list is capped, so a chart reduced over it would
+ * quietly stop covering its own window once a user passed the cap - and nothing
+ * on the chart would say so. Bounded by date instead of by row count, it cannot.
+ *
+ * Four columns, not `*`: this reads every sit in a month and needs none of the
+ * reflection text. `obstacle_tags` rides along for the insights card (#853),
+ * which reduces over the same window the chart draws.
+ */
+export async function listMeditationMinutesSince(userId: string, fromIso: string) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("meditation_sessions")
+    .select("duration_minutes, completed_at, completed_offset_minutes, obstacle_tags")
+    .eq("user_id", userId)
+    .gte("completed_at", fromIso)
+    .order("completed_at", { ascending: false });
+
+  if (error) throw error;
+  return (data as MeditationMinutesRow[]).map((row) => ({
+    dayKey: entryDayKey(row.completed_at, row.completed_offset_minutes ?? null),
+    durationMinutes: row.duration_minutes,
+    obstacleTags: row.obstacle_tags ?? [],
+  }));
 }
 
 // Exact lifetime count for hero stats - independent of the capped list query, which
@@ -204,6 +269,42 @@ export async function saveMeditationSession(userId: string, input: MeditationSes
       mood_after: input.moodAfter ?? null,
       technique_used: input.techniqueUsed ?? null,
     })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapSession(data as MeditationSessionRow);
+}
+
+/** What the post-sit reflection may change on an already-recorded sit (#786). */
+export interface MeditationReflectionPatch {
+  obstacleTags: MeditationObstacleTag[];
+  reflection: string;
+}
+
+/**
+ * Attach the optional reflection to a sit that is already saved.
+ *
+ * The sit row is created the moment the timer finishes (#786) - "Saved already"
+ * is the screen's promise, so the reflection can only ever be an UPDATE of that
+ * row, never the write that creates it. Scoped to the owner as well as the id
+ * so a stale or foreign id updates nothing and surfaces as an error rather
+ * than silently writing someone else's row past RLS.
+ */
+export async function updateMeditationSessionReflection(
+  userId: string,
+  sessionId: string,
+  patch: MeditationReflectionPatch,
+) {
+  const client = requireSupabase();
+  const { data, error } = await client
+    .from("meditation_sessions")
+    .update({
+      obstacle_tags: patch.obstacleTags,
+      reflection: sanitizeUserText(patch.reflection).trim(),
+    })
+    .eq("user_id", userId)
+    .eq("id", sessionId)
     .select("*")
     .single();
 

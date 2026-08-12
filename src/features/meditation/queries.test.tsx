@@ -3,10 +3,13 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import {
+  MEDITATION_HISTORY_PAGE_SIZE,
   useMeditationMedianMinutes,
+  useMeditationMinutesWindow,
   useMeditationProgramState,
   useMeditationSession,
   useMeditationSessionCount,
+  useMeditationSessionPages,
   useMeditationSessions,
   useSaveMeditationSession,
   useSaveStagePracticeNote,
@@ -23,7 +26,9 @@ jest.mock("@/src/features/meditation/repository", () => ({
   countMeditationSessions: jest.fn(),
   getMeditationProgramState: jest.fn(),
   getMeditationSession: jest.fn(),
+  listMeditationMinutesSince: jest.fn(),
   listMeditationSessions: jest.fn(),
+  listMeditationSessionsPage: jest.fn(),
   listStagePracticeNotes: jest.fn(),
   medianMeditationMinutes: jest.fn(),
   saveMeditationSession: jest.fn(),
@@ -83,6 +88,102 @@ describe("useMeditationSessions limit passthrough", () => {
     const client = createTestQueryClient();
     renderHook(() => useMeditationSessions("u1"), { wrapper: wrap(client) });
     await waitFor(() => expect(repo.listMeditationSessions).toHaveBeenCalledWith("u1", 30));
+  });
+});
+
+describe("useMeditationSessionPages", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useMeditationSessionPages(null), { wrapper: wrap(client) });
+    expect(repo.listMeditationSessionsPage).not.toHaveBeenCalled();
+  });
+
+  it("asks for the first page without a cursor", async () => {
+    const client = createTestQueryClient();
+    renderHook(() => useMeditationSessionPages("u1"), { wrapper: wrap(client) });
+    await waitFor(() =>
+      expect(repo.listMeditationSessionsPage).toHaveBeenCalledWith(
+        "u1",
+        MEDITATION_HISTORY_PAGE_SIZE,
+        null,
+      ),
+    );
+  });
+
+  it("keeps paging after a full page and stops after a short one", async () => {
+    // A short page is the end of the data. A full one may or may not be, so it
+    // asks again - one empty round trip at the exact boundary beats stopping
+    // early and calling a truncated list "all history".
+    const full = Array.from({ length: MEDITATION_HISTORY_PAGE_SIZE }, (_, i) => ({
+      id: `s${i}`,
+      completedAt: `2026-08-09T00:${String(i).padStart(2, "0")}:00.000Z`,
+    }));
+    (repo.listMeditationSessionsPage as jest.Mock)
+      .mockResolvedValueOnce(full)
+      .mockResolvedValueOnce([{ id: "last" }]);
+
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useMeditationSessionPages("u1"), { wrapper: wrap(client) });
+
+    await waitFor(() => expect(result.current.hasNextPage).toBe(true));
+    await result.current.fetchNextPage();
+    await waitFor(() =>
+      expect(repo.listMeditationSessionsPage).toHaveBeenLastCalledWith(
+        "u1",
+        MEDITATION_HISTORY_PAGE_SIZE,
+        {
+          id: `s${MEDITATION_HISTORY_PAGE_SIZE - 1}`,
+          timestamp: `2026-08-09T00:${String(MEDITATION_HISTORY_PAGE_SIZE - 1).padStart(2, "0")}:00.000Z`,
+        },
+      ),
+    );
+    await waitFor(() => expect(result.current.hasNextPage).toBe(false));
+  });
+});
+
+describe("useMeditationMinutesWindow", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useMeditationMinutesWindow(null, "2026-07-08T00:00:00.000Z"), {
+      wrapper: wrap(client),
+    });
+    expect(repo.listMeditationMinutesSince).not.toHaveBeenCalled();
+  });
+
+  it("forwards the window bound to the repository", async () => {
+    const client = createTestQueryClient();
+    renderHook(() => useMeditationMinutesWindow("u1", "2026-07-08T00:00:00.000Z"), {
+      wrapper: wrap(client),
+    });
+    await waitFor(() =>
+      expect(repo.listMeditationMinutesSince).toHaveBeenCalledWith(
+        "u1",
+        "2026-07-08T00:00:00.000Z",
+      ),
+    );
+  });
+
+  it("refetches when the window rolls over rather than redrawing yesterday", async () => {
+    const client = createTestQueryClient();
+    const { rerender } = renderHook(
+      ({ from }: { from: string }) => useMeditationMinutesWindow("u1", from),
+      {
+        wrapper: wrap(client),
+        initialProps: { from: "2026-07-08T00:00:00.000Z" },
+      },
+    );
+    await waitFor(() => expect(repo.listMeditationMinutesSince).toHaveBeenCalledTimes(1));
+
+    rerender({ from: "2026-07-09T00:00:00.000Z" });
+
+    // The bound rides the cache key, so a new day is a new entry - not the old
+    // thirty days redrawn under today's labels.
+    await waitFor(() =>
+      expect(repo.listMeditationMinutesSince).toHaveBeenLastCalledWith(
+        "u1",
+        "2026-07-09T00:00:00.000Z",
+      ),
+    );
   });
 });
 

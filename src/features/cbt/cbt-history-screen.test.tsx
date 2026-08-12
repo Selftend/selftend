@@ -7,7 +7,7 @@ import { localDateKey } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/stores/selected-date-store", () => ({
-  useSelectedDate: jest.fn(() => ({ selectedDate: "2026-05-03", isToday: false })),
+  useSelectedDate: jest.fn(() => ({ selectedDate: "2026-05-03" })),
 }));
 
 jest.mock("expo-router", () => ({

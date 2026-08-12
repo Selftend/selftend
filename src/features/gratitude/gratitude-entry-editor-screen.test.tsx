@@ -61,7 +61,10 @@ describe("GratitudeEntryEditorScreen", () => {
     >);
   });
 
-  it("renders create mode with gratitude item and note fields", () => {
+  // #929 reversed #790's unlabelled-lines decision: each line is labelled with
+  // its question, the questions are the prompt (no placeholders), and the
+  // "borrow a prompt" chips are gone with the redundancy.
+  it("renders three question-labelled lines with no placeholders", () => {
     mockUseSaveGratitudeEntry.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
@@ -71,14 +74,33 @@ describe("GratitudeEntryEditorScreen", () => {
       <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
     );
 
-    expect(screen.getByText("New gratitude entry")).toBeTruthy();
-    // Create mode rises out of the full-bleed think field (spec #267 §4).
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    expect(screen.getByText("Three good things")).toBeTruthy();
     expect(screen.getByLabelText("What made you laugh?")).toBeTruthy();
     expect(screen.getByLabelText("Who was kind to you?")).toBeTruthy();
+    expect(screen.getByLabelText("What simple pleasure did you enjoy?")).toBeTruthy();
+    expect(screen.queryByLabelText("What went a little better than expected?")).toBeNull();
+    expect(screen.queryByPlaceholderText("Something small that mattered today")).toBeNull();
+    expect(screen.queryByPlaceholderText("…")).toBeNull();
+    expect(screen.queryByText("Stuck? borrow a prompt")).toBeNull();
+    expect(screen.queryByLabelText("Note (optional)")).toBeNull();
+    expect(screen.getByText("Save entry")).toBeTruthy();
+  });
+
+  it("adds lines up to five, labelled with the remaining questions", () => {
+    mockUseSaveGratitudeEntry.mockReturnValue({
+      mutateAsync: jest.fn(),
+      isPending: false,
+    } as never);
+    renderWithProviders(
+      <GratitudeEntryEditorScreen fallbackHref="/tools/gratitude-log" mode="create" />,
+    );
+
+    fireEvent.press(screen.getByText("Add another"));
+    fireEvent.press(screen.getByText("Add another"));
+
+    expect(screen.getByLabelText("What went a little better than expected?")).toBeTruthy();
     expect(screen.getByLabelText("What did your body help you do?")).toBeTruthy();
-    expect(screen.getByLabelText("Note (optional)")).toBeTruthy();
-    expect(screen.getByText("Save")).toBeTruthy();
+    expect(screen.queryByText("Add another")).toBeNull();
   });
 
   it("saves a new entry when at least one item is provided", async () => {
@@ -108,13 +130,13 @@ describe("GratitudeEntryEditorScreen", () => {
     );
 
     fireEvent.changeText(screen.getByLabelText("What made you laugh?"), "Warm coffee");
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save entry"));
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
         input: {
           level: 3,
-          items: ["Warm coffee", "", "", "", ""],
+          items: ["Warm coffee", "", ""],
           note: "",
           loggedAt: expect.any(String),
           loggedOffsetMinutes: expect.any(Number),
@@ -156,8 +178,8 @@ describe("GratitudeEntryEditorScreen", () => {
     );
 
     fireEvent.changeText(screen.getByLabelText("What made you laugh?"), "Warm coffee");
-    fireEvent.press(screen.getByText("Save"));
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save entry"));
+    fireEvent.press(screen.getByText("Save entry"));
 
     await waitFor(() => expect(mutateAsync).toHaveBeenCalled());
     expect(mutateAsync).toHaveBeenCalledTimes(1);
@@ -190,15 +212,14 @@ describe("GratitudeEntryEditorScreen", () => {
     );
 
     fireEvent.changeText(screen.getByLabelText("Who was kind to you?"), "Sunlight");
-    fireEvent.changeText(screen.getByLabelText("Note (optional)"), "Small thing.");
-    fireEvent.press(screen.getByText("Save"));
+    fireEvent.press(screen.getByText("Save entry"));
 
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
         input: {
           level: 3,
-          items: ["", "Sunlight", "", "", ""],
-          note: "Small thing.",
+          items: ["", "Sunlight", ""],
+          note: "",
           loggedAt: expect.any(String),
           loggedOffsetMinutes: expect.any(Number),
           events: [],
@@ -212,7 +233,7 @@ describe("GratitudeEntryEditorScreen", () => {
     );
   });
 
-  it("prefills fields in edit mode from cache", () => {
+  it("prefills edit lines and preserves hidden legacy content on save", async () => {
     mockUseGratitudeEntries.mockReturnValue({
       data: [
         {
@@ -233,8 +254,9 @@ describe("GratitudeEntryEditorScreen", () => {
         },
       ],
     } as unknown as ReturnType<typeof useGratitudeEntries>);
+    const mutateAsync = jest.fn().mockResolvedValue({ id: "g-9" });
     mockUseSaveGratitudeEntry.mockReturnValue({
-      mutateAsync: jest.fn(),
+      mutateAsync,
       isPending: false,
     } as unknown as ReturnType<typeof useSaveGratitudeEntry>);
 
@@ -243,11 +265,19 @@ describe("GratitudeEntryEditorScreen", () => {
     );
 
     expect(screen.getByText("Edit gratitude entry")).toBeTruthy();
-    // Edit mode keeps the compact header on the room pour - no field.
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     expect(screen.getByDisplayValue("A quiet walk")).toBeTruthy();
     expect(screen.getByDisplayValue("A kind message")).toBeTruthy();
-    expect(screen.getByDisplayValue("This helped.")).toBeTruthy();
     expect(screen.getByText("Update")).toBeTruthy();
+    expect(screen.queryByDisplayValue("This helped.")).toBeNull();
+
+    fireEvent.press(screen.getByText("Update"));
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entryId: "g-9",
+          input: expect.objectContaining({ note: "This helped." }),
+        }),
+      ),
+    );
   });
 });

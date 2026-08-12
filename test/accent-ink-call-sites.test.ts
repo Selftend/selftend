@@ -493,25 +493,19 @@ const ROOMLESS_TAIL_DIRS = [
 // EMPTIED by #588: the module tail's last bare accents - breathing's stepper
 // arrows and sound checks, meditation's chevron, the settings cards' icons,
 // sleep's filled star, the mood week strip's today marker - are all neutral now.
-const ALLOWED_TAIL: AllowedSite[] = [
-  // The single survivor, and it survives because it is not chrome. Sleep quality
-  // is an ordered 1-5 input control - the twin of the mood scale, which #558
-  // keeps by name ("the same 5-step scale on the input control") - and #588
-  // records it as the `sleep-quality-ramp` encoding. The mechanical sweep took
-  // it by accident and left `filled` and `empty` painting the identical class;
-  // this entry is here so the next sweep has to read the argument rather than
-  // rediscover it.
-  {
-    file: "src/features/sleep/star-rating.tsx",
-    snippet: `className={filled ? "text-ink" : "text-muted-foreground"}`,
-    reason: "icon",
-    evidence:
-      "32px star on the sleep log's background: 4.71:1. Filled and empty differ by " +
-      "glyph - star vs star-outline - and each Pressable carries " +
-      "accessibilityRole='radio' with aria-checked, so the fill colour is not the " +
-      "only channel.",
-  },
-];
+// Now fully empty, as of #774. The single survivor was sleep's filled star -
+// `text-ink` on a 32px glyph, kept because an ordered 1-5 input is an encoding
+// and not chrome. #774 replaced that instrument outright: five named options
+// (`quality-scale.tsx`) where the words carry the order, so the control no
+// longer encodes anything in a hue and reaches for the certified chip stops via
+// `chipHsl("ink")` instead of a bare accent class. `quality-tint.ts` held the
+// `sleep-quality-ramp` encoding for the display surfaces until those dropped
+// the ramp too (#772/#773/#775) and #855 deleted the orphaned helper - sleep
+// now encodes nothing in hue at all.
+//
+// An empty list is the goal state, not a gap: the assertion below still runs, so
+// a new bare `text-<hue>` anywhere in the tail fails until it is justified here.
+const ALLOWED_TAIL: AllowedSite[] = [];
 
 /**
  * Every `accentClassName` literal in the app. `ToolStats` renders it at 13px
@@ -563,7 +557,11 @@ describe("the module tail keeps the raw hue accent only where it is justified (#
     expect(roomed).toEqual([]);
   });
 
-  it("passes only ink tokens to ToolStats' accentClassName, app-wide", () => {
+  it("passes only ink tokens to any surviving accentClassName, app-wide", () => {
+    // Vacuous since #733 deleted the prop's only consumer, and kept anyway: the
+    // rule ("if a component takes a colour class for small text, it takes an ink
+    // token") outlives ToolStats, and the assertion below is what stops this one
+    // passing silently for the wrong reason.
     const wrong = sourceFiles(ROOT, { dirs: ["app", "src"] }).flatMap((file) => {
       const stripped = stripComments(readFileSync(join(ROOT, file), "utf8"));
       return [...stripped.matchAll(ACCENT_PROP)]
@@ -630,8 +628,10 @@ describe("no bare accent survives outside a classified area", () => {
     // #421's hole re-opened one file over. With both maps deleted, the file
     // writes no bare hue text at all, which is the stronger statement.
     //
-    // The encoding palette it still holds is `bg-<hue>/[alpha]` ramp classes,
-    // which BARE_HUE does not match: it looks for hue TEXT.
+    // The encoding palette it still holds is the raw HUE_TRIPLES, which
+    // BARE_HUE does not match: it looks for hue TEXT classes. (The
+    // `bg-<hue>/[alpha]` ramp classes left the file with #924 — the score
+    // ramp rides the accent now.)
     const inTokens = findingsIn(BARE_HUE, sourceFiles(ROOT, { dirs: ["app", "src"] }))
       .filter((finding) => finding.file === TOKENS_FILE)
       .map((finding) => finding.snippet.trim())
@@ -666,12 +666,14 @@ describe("the tint maps are gone", () => {
 
   it("still declares the encoding palette the keeps-hue surfaces read", () => {
     // The other direction, because deleting too much here is the failure that
-    // takes a scale away from a user rather than a decoration.
+    // takes a scale away from a user rather than a decoration. HUE_RAMP_CLASSES
+    // sat here until #924 re-tinted the mood scale onto the accent — the scale
+    // survives as ACCENT_RAMP_CLASSES, so it is pinned the same way.
     const source = stripComments(readFileSync(join(ROOT, TOKENS_FILE), "utf8"));
 
-    expect(source).toMatch(/\bexport const HUE_RAMP_CLASSES\b/);
+    expect(source).toMatch(/\bexport const ACCENT_RAMP_CLASSES\b/);
     expect(source).toMatch(/\bexport const HUE_TRIPLES\b/);
-    expect(source).toMatch(/\bexport function hueRampClass\b/);
+    expect(source).toMatch(/\bexport function accentRampClass\b/);
   });
 });
 
@@ -757,41 +759,46 @@ describe("the onboarding modals mount outside every room", () => {
   });
 });
 
-describe("the ToolStats accent is dead at every call site", () => {
-  // The premise behind the claim, made throughout this file and #412's notes,
-  // that `accentClassName` is dead at every call site: it is dead only because
-  // all eight callers pass `tone="onField"`, the one branch that ignores the
-  // prop. src/components/app/tool-stats.test.tsx proves the branch ignores it;
-  // nothing proved which tone the callers pass.
-  //
-  // The ink-token rule below already makes every value safe if the prop wakes
-  // up, so this is no longer what stops a raw accent going live. It is here to
-  // keep the *stated reason* true: several comments explain a sweep by saying
-  // the prop is never read, and that sentence quietly stops being a fact the
-  // day a screen passes a different tone. Then it should be re-read, which is
-  // what a failure here forces.
-  const callers = sourceFiles(ROOT, { dirs: ["app", "src"] })
-    .map((file) => ({ file, source: stripComments(readFileSync(join(ROOT, file), "utf8")) }))
-    .filter(({ source }) => source.includes("<ToolStats"))
-    .map(({ file, source }) => ({
-      file,
-      rendered: source.split("<ToolStats").length - 1,
-      onField: source.split(`tone="onField"`).length - 1,
-    }));
+// This used to be "the ToolStats accent is dead at every call site": all eight
+// callers passed `tone="onField"`, the one branch that ignored `accentClassName`,
+// and several comments in this file explain a sweep by leaning on that fact.
+//
+// #733 removed the premise rather than the risk. `ToolStats` is deleted; the
+// design colours stat values `--foreground`, so `ModuleHomeHeader` renders them
+// from a token instead of from a caller-supplied class. What replaces the old
+// assertion is stronger than it was: the prop cannot be dead-or-alive at a call
+// site that does not exist, so the gate is now that no call site exists.
+describe("the ToolStats accent is gone rather than merely dead (#733)", () => {
+  const sources = sourceFiles(ROOT, { dirs: ["app", "src"] }).map((file) => ({
+    file,
+    source: stripComments(readFileSync(join(ROOT, file), "utf8")),
+  }));
 
-  it("finds the call sites it is meant to police", () => {
-    // A rename would empty this list and make the assertion below vacuous.
-    const total = callers.reduce((sum, c) => sum + c.rendered, 0);
-    expect(total).toBe(8);
+  it("renders ToolStats nowhere", () => {
+    const callers = sources
+      .filter(({ source }) => source.includes("<ToolStats"))
+      .map((s) => s.file);
+
+    expect(callers).toEqual([]);
   });
 
-  it("passes tone='onField' at every one of them", () => {
-    // Counted per file rather than parsed: a ToolStats that takes any other
-    // tone - or a computed one - leaves the two counts unequal here.
-    const mismatched = callers
-      .filter((c) => c.rendered !== c.onField)
-      .map((c) => `${c.file}: ${c.rendered} rendered, ${c.onField} on the field`);
+  it("names accentClassName nowhere", () => {
+    // The acceptance criterion itself: the prop is gone from the codebase, not
+    // just unread. That is what takes the text-<hue>-on-background pattern -
+    // which fails AA on four of the seven hues bare (#403) - out of the header.
+    const named = sources
+      .filter(({ source }) => source.includes("accentClassName"))
+      .map((s) => s.file);
 
-    expect(mismatched).toEqual([]);
+    expect(named).toEqual([]);
+  });
+
+  it('names tone="onField" nowhere', () => {
+    // The field is gone, so its white-ink tone has nothing left to paint on.
+    const onField = sources
+      .filter(({ source }) => source.includes(`tone="onField"`))
+      .map((s) => s.file);
+
+    expect(onField).toEqual([]);
   });
 });

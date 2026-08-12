@@ -13,33 +13,36 @@
     "deleteConfirm": "Delete this habit and all its ticks? This can't be undone."
   },
   "hero": {
-    "habits_one": "{{count}} active habit",
-    "habits_other": "{{count}} active habits",
-    "today": "Today"
-  },
-  "stats": {
-    "last": "Last tick · {{when}}",
-    "never": "No ticks yet"
+    "habits_one": "active habit",
+    "habits_other": "active habits",
+    "today": "today",
+    "twoWeekTicks_one": "tick in the last two weeks",
+    "twoWeekTicks_other": "ticks in the last two weeks"
   },
   "home": {
     "title": "Habits",
-    "subtitle": "Small habits, repeated. Tap to tick - no shame.",
-    "identityBannerPrefix": "You're becoming someone who",
-    "todayHeading": "Today",
-    "todayEmpty": "No habits scheduled for today.",
+    "subtitle": "Small habits, repeated. Tap a habit to tick today.",
+    "habitsHeading": "Your habits",
     "noHabitsTitle": "Start with one two-minute habit",
     "noHabitsBody": "Start with a version that takes under two minutes. Pick something small - the goal is to cast a vote for the kind of person you want to become.",
     "recentActivity": "Recent activity",
     "recentEmpty": "Ticks you make will appear here.",
     "weekStripLabel": "Last 7 days",
-    "neverMissTwiceTitle": "Never miss twice",
-    "neverMissTwiceBody": "You skipped yesterday. Today is a great day to tick this once - one missed day is data, not failure."
+    "archivedGroup_one": "Archived ({{count}})",
+    "archivedGroup_other": "Archived ({{count}})",
+    "neverMissTwiceLine_one": "Never miss twice: {{count}} habit wasn't ticked yesterday.",
+    "neverMissTwiceLine_other": "Never miss twice: {{count}} habits weren't ticked yesterday."
   },
   "list": {
-    "tickedToday": "Ticked today",
-    "tapToTick": "Tap to tick today",
-    "tapToAvoid": "Tap to mark you avoided this today",
-    "openDetail": "Open habit details"
+    "tickedToday": "{{habit}}: ticked today",
+    "tapToTick": "{{habit}}: tap to tick today",
+    "tapToAvoid": "{{habit}}: tap to mark you avoided this today",
+    "openNamedDetail": "{{habit}}: open habit details",
+    "weekA11y_one": "Last 7 days: ticked on {{count}} day",
+    "weekA11y_other": "Last 7 days: ticked on {{count}} days",
+    "untickTitle": "Remove this tick?",
+    "untickBody": "You saved a note with this day. Removing the tick deletes the note too.",
+    "untickConfirm": "Remove tick and note"
   },
   "form": {
     "newTitle": "New habit",
@@ -53,6 +56,8 @@
     "kindLabel": "Build or break",
     "kindBuild": "Build",
     "kindBreak": "Break",
+    "moreBuild": "More options for building this",
+    "moreBreak": "More options for breaking this",
     "kindBuildHelp": "A new behavior you want to cast votes for.",
     "kindBreakHelp": "A behavior you want to do less. Inverse the four laws - invisible, unattractive, difficult, unsatisfying.",
     "twoMinuteLabel": "Two-minute version (Make It Easy)",
@@ -90,7 +95,9 @@
       "amber": "Amber",
       "emerald": "Teal",
       "violet": "Violet",
-      "rose": "Clay"
+      "rose": "Clay",
+      "ink": "Indigo",
+      "aqua": "Aqua"
     },
     "weekday": {
       "0": "Sun",
@@ -105,16 +112,11 @@
   },
   "detail": {
     "notFound": "We couldn't find that habit.",
-    "calendarTitle": "Recent ticks",
     "calendarEmpty": "No ticks recorded yet. Tap any day to tick it.",
-    "detailsTitle": "Details",
-    "scheduleTitle": "Schedule",
     "scheduleEveryDay": "Every day",
     "scheduleWeekdays": "Weekdays",
-    "kindTitle": "Type",
     "kindBuild": "Build",
     "kindBreak": "Break",
-    "strategiesTitle": "Strategies",
     "strategyCue": "Cue",
     "strategyStack": "Habit stack",
     "strategyTwoMinute": "Two-minute version",
@@ -124,24 +126,37 @@
     "strategyDifficult": "Friction",
     "strategyUnattractive": "Reframed craving",
     "strategyUnsatisfying": "Added cost",
-    "notesTitle": "Recent notes",
+    "notesTitle": "Notes with ticks",
     "notesEmpty": "Notes you save with a tick will appear here.",
     "archivedBadge": "Archived",
     "archiveConfirmTitle": "Archive habit?",
     "archiveConfirmBody": "Archived habits leave today's list but keep their ticks for history.",
-    "deleteConfirmTitle": "Delete habit?"
+    "deleteConfirmTitle": "Delete habit?",
+    "gridTitle": "Last 12 weeks",
+    "gridCount_one": "{{count}} tick",
+    "gridCount_other": "{{count}} ticks",
+    "started": "started {{date}}",
+    "identityLabel": "Identity",
+    "tickToday": "Tick today",
+    "tickedTodayUndo": "Ticked today · Undo",
+    "moreActions": "More actions",
+    "editNote": "Edit the note for {{date}}"
   },
   "log": {
     "title": "Add a note",
     "subtitle": "Optional reflection for the day's tick. Private to your account - shown only to you in the app.",
     "placeholder": "What was this like today?",
-    "saveError": "Couldn't save the note. Try again."
+    "saveError": "Couldn't save the note. Try again.",
+    "forDay": "{{habit}} · {{date}}"
   },
   "history": {
     "title": "History",
     "subtitle": "Every tick you've made, newest first.",
     "empty": "Once you tick a habit, that day will appear here.",
-    "groupedByDate": "{{date}}"
+    "error": {
+      "title": "Couldn't load your history",
+      "description": "Check your connection and try again. Nothing has been lost."
+    }
   },
   "onboarding": {
     "skip": "Skip",
@@ -177,7 +192,7 @@
       "twoMinuteTitle": "The two-minute rule",
       "twoMinuteBody": "Scale every habit down so the starter version takes under two minutes. \"Read one page,\" not \"Read for an hour.\"",
       "neverMissTitle": "Never miss twice",
-      "neverMissBody": "Missing once is data. Missing twice starts a new habit. Selftend will never punish a missed day - we'll just quietly note when you're at risk of missing twice."
+      "neverMissBody": "Missing once is data. Missing twice starts a new habit. When a habit wasn't ticked yesterday, your habit list says so."
     },
     "finish": {
       "start": "Got it",
@@ -188,18 +203,11 @@
     "delete": "Couldn't delete the habit. Try again."
   },
   "insights": {
-    "title": "Insights",
     "rhythmTitle": "Weekly rhythm",
     "rhythmSubtitle": "Ticks per day, last 4 weeks.",
     "rhythmEmpty": "Tick a habit to see your rhythm.",
-    "identityTitle": "Identities this month",
-    "identityEmpty": "Add an identity to a habit to see ticks roll up here.",
-    "identityRow_one": "{{count}} tick",
-    "identityRow_other": "{{count}} ticks",
-    "twoMinuteTitle": "Two-minute floor",
-    "twoMinuteSubtitle_one": "{{filled}} of {{total}} habit has a two-minute starter version.",
-    "twoMinuteSubtitle_other": "{{filled}} of {{total}} habits have a two-minute starter version.",
-    "twoMinuteEmpty": "Add a build habit to see this.",
+    "rhythmBarA11y_one": "{{weekday}}: {{count}} tick",
+    "rhythmBarA11y_other": "{{weekday}}: {{count}} ticks",
     "weekday": {
       "0": "Sun",
       "1": "Mon",
@@ -212,7 +220,7 @@
   },
   "learn": {
     "sectionLabel": "Core ideas",
-    "dismiss": "Next card",
+    "frontDoorSubtitle": "Ten short cards on the habit framework.",
     "openHint": "Read more",
     "indexTitle": "Habit building - core ideas",
     "indexSubtitle": "Ten short cards covering the framework. Read them in any order.",
@@ -261,7 +269,7 @@
       "never-miss-twice": {
         "title": "Never miss twice",
         "short": "Missing once is data. Missing twice is a new habit.",
-        "body": "Perfection is unrealistic; consistency is not. The rule isn't \"never miss\" - it's \"never miss twice.\" When you slip, the priority is to do the habit again the next day, even at the two-minute size. Selftend never punishes a missed day; it just quietly notes when you're at risk of missing twice."
+        "body": "Perfection is unrealistic; consistency is not. The rule isn't \"never miss\" - it's \"never miss twice.\" When you slip, the priority is to do the habit again the next day, even at the two-minute size. When a habit wasn't ticked yesterday, your habit list says so."
       },
       "identity": {
         "title": "Identity-based habits",

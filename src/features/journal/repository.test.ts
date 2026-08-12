@@ -4,6 +4,8 @@ import {
   deleteJournalEntry,
   getJournalEntry,
   listJournalEntries,
+  listJournalEntriesPage,
+  listJournalWritingBuckets,
   saveJournalEntry,
   sumJournalWords,
 } from "@/src/features/journal/repository";
@@ -57,6 +59,31 @@ describe("journal repository", () => {
     expect(limit).toHaveBeenCalledWith(25);
   });
 
+  it("pages entries after a deterministic occurred-at and id cursor", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [], error: null });
+    const or = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ or, limit }));
+    const orderOccurred = jest.fn(() => ({ order: orderId }));
+    const eq = jest.fn(() => ({ order: orderOccurred }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      listJournalEntriesPage("user-1", 50, {
+        timestamp: "2026-08-09T13:57:59.000+00:00",
+        id: "11111111-1111-4111-8111-111111111111",
+      }),
+    ).resolves.toEqual([]);
+
+    expect(orderOccurred).toHaveBeenCalledWith("occurred_at", { ascending: false });
+    expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
+    expect(or).toHaveBeenCalledWith(
+      'occurred_at.lt."2026-08-09T13:57:59.000+00:00",and(occurred_at.eq."2026-08-09T13:57:59.000+00:00",id.lt."11111111-1111-4111-8111-111111111111")',
+    );
+    expect(limit).toHaveBeenCalledWith(50);
+  });
+
   it("sums lifetime words through the RPC rather than the capped list", async () => {
     const rpc = jest.fn().mockResolvedValue({ data: 4210, error: null });
     const from = jest.fn();
@@ -84,6 +111,69 @@ describe("journal repository", () => {
     mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
 
     await expect(sumJournalWords()).rejects.toThrow("rpc failed");
+  });
+
+  it("loads exact adaptive writing buckets without reading journal bodies on the client", async () => {
+    const rpc = jest.fn().mockResolvedValue({
+      data: [
+        {
+          bucket_start_key: "2026-03-01",
+          bucket_end_key: "2026-03-07",
+          word_count: 0,
+          bucket_unit: "week",
+          range_start_key: "2026-03-01",
+          range_end_key: "2026-05-29",
+        },
+        {
+          bucket_start_key: "2026-03-08",
+          bucket_end_key: "2026-03-14",
+          word_count: "421",
+          bucket_unit: "week",
+          range_start_key: "2026-03-01",
+          range_end_key: "2026-05-29",
+        },
+      ],
+      error: null,
+    });
+    const from = jest.fn();
+    mockRequireSupabase.mockReturnValue({ rpc, from } as unknown as ReturnType<
+      typeof requireSupabase
+    >);
+
+    await expect(listJournalWritingBuckets("Europe/Sofia", 90)).resolves.toEqual([
+      {
+        startDayKey: "2026-03-01",
+        endDayKey: "2026-03-07",
+        wordCount: 0,
+        unit: "week",
+        rangeStartDayKey: "2026-03-01",
+        rangeEndDayKey: "2026-05-29",
+      },
+      {
+        startDayKey: "2026-03-08",
+        endDayKey: "2026-03-14",
+        wordCount: 421,
+        unit: "week",
+        rangeStartDayKey: "2026-03-01",
+        rangeEndDayKey: "2026-05-29",
+      },
+    ]);
+    expect(rpc).toHaveBeenCalledWith("journal_writing_buckets", {
+      p_time_zone: "Europe/Sofia",
+      p_days: 90,
+    });
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("passes null for all time and throws when the bucket RPC errors", async () => {
+    const rpc = jest.fn().mockResolvedValue({ data: null, error: new Error("rpc failed") });
+    mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(listJournalWritingBuckets("Europe/Sofia", "all")).rejects.toThrow("rpc failed");
+    expect(rpc).toHaveBeenCalledWith("journal_writing_buckets", {
+      p_time_zone: "Europe/Sofia",
+      p_days: null,
+    });
   });
 
   it("returns null when getJournalEntry finds no row", async () => {

@@ -53,14 +53,23 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/dbt": "sidebar.dbt",
 
   "/tools": "sidebar.tools",
-  "/tools/mood-tracker": "sidebar.moodTracker",
-  "/tools/mood-tracker/new": "breadcrumb.new",
+  "/tools/check-in": "sidebar.moodTracker",
+  "/tools/check-in/history": "breadcrumb.history",
+  "/tools/check-in/new": "breadcrumb.new",
   "/tools/journal": "sidebar.journal",
+  "/tools/journal/entries": "breadcrumb.entries",
   "/tools/journal/new": "breadcrumb.new",
   "/tools/breathing": "sidebar.breathing",
   "/tools/breathing/session": "breadcrumb.session",
   "/tools/breathing/new": "breadcrumb.new",
+  // `history` must be claimed BEFORE the slug template below (#876): the
+  // breathing/grounding dynamic-segment resolvers would otherwise push it
+  // through `…techniques.history.title`, and the trail renders the raw
+  // uppercased key. Sleep's fell back to the generic "Entry" — wrong label,
+  // same family.
+  "/tools/breathing/history": "breadcrumb.history",
   "/tools/grounding": "sidebar.grounding",
+  "/tools/grounding/history": "breadcrumb.history",
   "/tools/gratitude-log": "sidebar.gratitudeLog",
   "/tools/gratitude-log/entries": "breadcrumb.history",
   "/tools/gratitude-log/favorites": "breadcrumb.favorites",
@@ -68,16 +77,17 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/meditation": "sidebar.meditation",
   "/tools/meditation/learn": "breadcrumb.learn",
   "/tools/meditation/daily-life": "breadcrumb.dailyLife",
-  "/tools/meditation/session/log": "breadcrumb.logSession",
+  "/tools/meditation/session": "breadcrumb.session",
   "/tools/meditation/sessions": "breadcrumb.sessions",
   "/tools/meditation/stages": "breadcrumb.stages",
+  "/tools/meditation/practices": "breadcrumb.practices",
   "/tools/sleep": "sidebar.sleep",
   "/tools/sleep/new": "breadcrumb.new",
+  "/tools/sleep/history": "breadcrumb.history",
   "/tools/habits": "sidebar.habits",
   "/tools/habits/new": "breadcrumb.new",
   "/tools/habits/history": "breadcrumb.history",
   "/tools/habits/learn": "breadcrumb.learn",
-  "/tools/habits/onboarding": "breadcrumb.onboarding",
 };
 
 // Path segments that group sub-routes but have no own breadcrumb

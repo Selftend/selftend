@@ -16,7 +16,7 @@ import {
 } from "@/src/features/journal/queries";
 import { countWords } from "@/src/features/journal/word-count";
 import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
-import { useSelectedDate } from "@/src/stores/selected-date-store";
+import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
 
 export function JournalWeekWidget({ userId }: { userId: string }) {
@@ -28,7 +28,10 @@ export function JournalWeekWidget({ userId }: { userId: string }) {
   // entries only stand in until the server-counted numbers arrive.
   const { data: totalEntries } = useJournalEntryCount(userId);
   const { data: totalWords } = useJournalWordTotal(userId);
-  const { selectedDate, isToday } = useSelectedDate();
+  const { selectedDate } = useSelectedDate();
+  // Asked of the date this widget is rendering, not taken from the hook, which
+  // used to answer with a literal `true` (#720).
+  const isToday = selectedDate === currentDateKey();
 
   const all = entries ?? [];
   // Memoize the per-body word count (up to ~50 full journal bodies) so it isn't recomputed

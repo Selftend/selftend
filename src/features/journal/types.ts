@@ -17,6 +17,22 @@ export interface JournalEntry {
   updatedAt: string;
 }
 
+export type JournalWritingRange = 7 | 30 | 90 | "all";
+
+export type JournalWritingBucketUnit = "day" | "week" | "month" | "year";
+
+export interface JournalWritingBucket {
+  /** Inclusive captured-civil-day bounds for this rendered bar. */
+  startDayKey: string;
+  endDayKey: string;
+  /** Exact words across every entry in the bucket. */
+  wordCount: number;
+  unit: JournalWritingBucketUnit;
+  /** Inclusive bounds for the whole selected range, repeated by the RPC. */
+  rangeStartDayKey: string;
+  rangeEndDayKey: string;
+}
+
 export interface JournalInput {
   title: string;
   body: string;

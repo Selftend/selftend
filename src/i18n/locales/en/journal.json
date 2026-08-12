@@ -5,14 +5,42 @@
     "new": "New entry"
   },
   "sections": {
-    "history": "History"
+    "writing": "Writing",
+    "entries": "Entries"
   },
   "hero": {
     "entries_one": "{{count}} entry",
     "entries_other": "{{count}} entries",
+    "entryLabel_one": "entry",
+    "entryLabel_other": "entries",
     "words_one": "{{count}} word",
     "words_other": "{{count}} words",
-    "last": "Last"
+    "wordLabel_one": "word",
+    "wordLabel_other": "words",
+    "last": "last written {{when}}, {{time}}",
+    "never": "nothing journaled yet"
+  },
+  "writing": {
+    "caption": {
+      "day": "Words written per day.",
+      "week": "Words written per seven-day period.",
+      "month": "Words written per month.",
+      "year": "Words written per year."
+    },
+    "range7": "7d",
+    "range30": "30d",
+    "range90": "90d",
+    "rangeAll": "All time",
+    "emptyRange": "No writing in this range.",
+    "error": "Couldn't load the writing chart.",
+    "barLabel_one": "{{period}}: {{count}} word",
+    "barLabel_other": "{{period}}: {{count}} words"
+  },
+  "groups": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "Earlier this week",
+    "lastWeek": "Last week"
   },
   "list": {
     "empty": {
@@ -20,14 +48,21 @@
       "description": "Write a few words about how today felt.",
       "cta": "Start writing"
     },
+    "showAll": "Show all entries",
     "viewEntry": "View journal entry from {{when}}",
     "untitled": "Untitled"
   },
+  "history": {
+    "title": "All entries",
+    "description": "Every journal entry, newest first.",
+    "empty": "Your entries will collect here as you write.",
+    "error": {
+      "title": "Couldn't load your entries",
+      "description": "Check your connection and try again."
+    }
+  },
   "editor": {
-    "createTitle": "New journal entry",
     "editTitle": "Edit journal entry",
-    "createDescription": "Write whatever is useful. Nothing is shared.",
-    "editDescription": "Update what you wrote earlier.",
     "titleLabel": "Title (optional)",
     "titlePlaceholder": "Untitled",
     "bodyLabel": "Body",
@@ -44,7 +79,11 @@
     "title": "Journal entry",
     "edit": "Edit",
     "delete": "Delete",
-    "createdAt": "When",
+    "words_one": "{{count}} word",
+    "words_other": "{{count}} words",
+    "written": "Written {{when}}",
+    "edited": "edited {{when}}",
+    "showAll": "Show all entries",
     "notFound": "We couldn't find that journal entry.",
     "deleteError": "Couldn't delete this entry. Try again.",
     "confirmDelete": {

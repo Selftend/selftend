@@ -20,7 +20,8 @@ interface ResolvedExercise {
   phases: BreathingPhase[];
   defaultCycles: number;
   cycleOptions: number[];
-  color: BreathingExerciseColor | null;
+  /** Never null since #778: built-ins carry a hue too, for the overview's row dots. */
+  color: BreathingExerciseColor;
 }
 
 export function resolveBuiltin(slug: string): ResolvedExercise | null {
@@ -35,7 +36,7 @@ export function resolveBuiltin(slug: string): ResolvedExercise | null {
     phases: pattern.phases,
     defaultCycles: pattern.defaultCycles,
     cycleOptions: pattern.cycleOptions,
-    color: null,
+    color: pattern.color,
   };
 }
 

@@ -61,16 +61,20 @@ The app-wide visual direction (decided on the design redesign map, first shipped
 A module's screen environment: every neutral surface on that screen re-tinted toward the module's hue, switching at navigation boundaries. **Rooms no longer exist** (#586). A module's screens wear the app's own surfaces, and module identity is carried by icon and label rather than by re-tinting the page. The term is kept here only so the phrase is recognisable in older code and docs — do not build new rooms.
 _Avoid_: theme, skin
 
-**Field**:
-The full-bleed pour behind a screen's header, carrying white ink (title, description, stats). It is poured from **the active palette's accent**, not from a module hue (#586) — so a header looks the same in every module and follows the palette the user picked. Its lightness is solved per palette so the white ink clears WCAG AA; see `neutralFieldGradient` in `src/lib/theme/chrome.ts` and `test/neutral-field-contrast.test.ts`.
+**Field** (retired):
+The full-bleed pour behind a screen's header, carrying white ink (title, description, stats), poured from the active palette's accent (#586). **Fields no longer exist** (#733). Every module home now renders the quiet shell instead — breadcrumb, `h1`, tagline, optional inline stats — on the page background, and form and detail screens render `ScreenTopBar`, a 48px `--card` bar with one hairline. The `useNeutralFieldGradient` hook is gone with it. `neutralFieldGradient` in `src/lib/theme/chrome.ts` survives, unused by the app, still covered by `test/neutral-field-contrast.test.ts`. The term is kept here only so the phrase is recognisable in older docs and tickets — do not pour new fields, and do not reintroduce a gradient to soften the loss (an accepted trade, #690).
 _Avoid_: banner, hero image, module hue
 
-**Sheet**:
-The content surface that rises over the field on a large top radius; the screen's cards sit on it.
+**Sheet** (retired):
+The content surface that rose over the field on a large top radius, with the screen's cards on it. **Sheets no longer exist** (#733) — `ContentSheet` went with the field it overlapped, since its only reason to exist was that overlap. Content sits directly on the page background inside the content column.
 _Avoid_: modal, bottom sheet (the interaction pattern is unrelated)
 
+**Content column**:
+The width the shell gives a screen, so no screen picks a number by hand: **720px** for a module home (it rides `ModuleHomeHeader`) and **620px** for a form or detail screen (it rides `ScreenTopBar`). See `src/lib/layout.ts`. Before #733 the app had no content column at all and a tool screen ran edge to edge on desktop.
+_Avoid_: container, wrapper, max-width (the number is never the name)
+
 **Soft card**:
-A borderless card lifted from the sheet by a hue-tinted shadow instead of a border. Opt-in per screen; the bordered card stays the default elsewhere.
+A borderless card lifted from the page by a hue-tinted shadow instead of a border. Opt-in per screen; the bordered card stays the default elsewhere. The redesign replaces these with hairline `Section` rules, but per tool on each tool's own map (#690) — 34 call sites across 18 files, so they were deliberately left out of #733's chrome change.
 
 **Accent ink**:
 A module hue used as _text_ rather than as a surface or a swatch. A hue's published accent (`--think`, `text-think`) is tuned as a _colour_ — it paints fills, borders, chips and gradients — and carries too much luminance for small text in light mode.
@@ -79,7 +83,7 @@ A contrast ratio is only ever true of a **named pair**, so never record that a h
 
 So a hue gets a second, darkened value for text: the same hue and saturation at lightness 28%, certified against the surfaces it lands on. `text-<hue>-ink` carries it; `text-<hue>` stays correct for icons, large numerals and decorative marks, which owe WCAG 1.4.11's 3:1 rather than 1.4.3's 4.5:1.
 
-**Both forms are now the encoding palette only.** #558 ruled that hue survives just where colour carries information the user reads off it — a scale, a live state readout, or a colour they chose — and that "distinguishes items in a set" is explicitly not enough. Module and tool identity is icon and label. Six surfaces keep hue, listed in [`src/lib/theme/encoding.ts`](../src/lib/theme/encoding.ts): the mood heatmap ramp, the mood scale, habit colours, the breathing pacer, the colour a user picks for a custom breathing exercise, and the sleep quality ramp. Everything else takes the neutral roles in [`src/lib/theme/chrome.ts`](../src/lib/theme/chrome.ts) or the app accent.
+**Both forms are now the encoding palette only.** #558 ruled that hue survives just where colour carries information the user reads off it — a scale, a live state readout, or a colour they chose — and that "distinguishes items in a set" is explicitly not enough. Module and tool identity is icon and label. Four surfaces keep hue, listed in [`src/lib/theme/encoding.ts`](../src/lib/theme/encoding.ts): the mood heatmap ramp, habit colours, the breathing pacer, and the colour a user picks for a custom breathing exercise. (The mood scale left the list with the 2a redesign — selection reads in size and opacity — and the sleep quality ramp with the sleep redesign, #771/#855: dot count and the level's name carry it now.) Everything else takes the neutral roles in [`src/lib/theme/chrome.ts`](../src/lib/theme/chrome.ts) or the app accent.
 
 Three things were deleted with the chrome they served (#589), and it is worth knowing they existed because the traps they carried are the reason the gates look the way they do:
 

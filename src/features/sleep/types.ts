@@ -1,5 +1,20 @@
 import type { CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 
+/**
+ * The optional estimated bounds of one sleep period (#800). Both bounds and
+ * both captured offsets travel together — one-sided windows are invalid — and
+ * the whole payload is encrypted at rest as a single ciphertext. The two
+ * offsets are distinct because a sleep may cross a DST transition or, less
+ * commonly, a timezone boundary: elapsed duration comes from the instants,
+ * displayed local times from their respective captured frames.
+ */
+export interface SleepWindow {
+  startedAt: string;
+  startedOffsetMinutes: number;
+  endedAt: string;
+  endedOffsetMinutes: number;
+}
+
 export interface SleepLog {
   id: string;
   userId: string;
@@ -14,6 +29,20 @@ export interface SleepLog {
    * timestamp themselves — see the lint guard in eslint.config.js (#250).
    */
   dayKey: string;
+  /**
+   * The server-derived calendar key (`entry_day`), verbatim — the all-history
+   * paging cursor speaks this column's own values. Usually equals `dayKey`;
+   * for legacy never-captured-offset rows the server stores a UTC fallback
+   * while `dayKey` stays viewer-local, and the cursor must side with the
+   * server or pages skip and duplicate.
+   */
+  entryDay: string;
+  /**
+   * Estimated sleep bounds, or null for a duration-only entry. An entry is in
+   * exactly one of the two modes; windowed entries have their duration derived
+   * from these bounds by the database write path.
+   */
+  window: SleepWindow | null;
   createdAt: string;
 }
 
@@ -46,4 +75,11 @@ export interface SleepInput {
   loggedAt?: string;
   /** Null preserves "not captured" on an edit; see the editor's offset handling. */
   loggedOffsetMinutes?: CapturedOffsetMinutes;
+  /**
+   * The entry's sleep window. `null` explicitly deletes any stored window
+   * (switching to duration-only removes the ciphertext rather than retaining
+   * hidden exact times); `undefined` means the caller has no opinion and leaves
+   * whatever is stored untouched.
+   */
+  window?: SleepWindow | null;
 }

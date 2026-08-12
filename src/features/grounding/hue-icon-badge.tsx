@@ -3,7 +3,6 @@ import { View } from "react-native";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 import { useAccentHsl } from "@/src/lib/theme-palette";
-import { cn } from "@/lib/utils";
 
 interface HueIconBadgeProps {
   icon: MaterialIconName;
@@ -12,24 +11,8 @@ interface HueIconBadgeProps {
   shape?: "square" | "circle";
 }
 
-// Static size classes (written out in full so NativeWind's compiler sees them).
-// The badge MUST set the icon's box size via className: the shared Icon carries a
-// default `size-6` (24px) box, so without an overriding size class a larger glyph
-// (32/46/48px) overflows the 24px box and anchors top-left instead of centering.
-const ICON_SIZE_CLASS: Record<number, string> = {
-  24: "size-6",
-  32: "size-8",
-  46: "size-[46px]",
-  48: "size-12",
-};
-
-export function iconSizeClass(iconSize: number): string {
-  return ICON_SIZE_CLASS[iconSize] ?? "size-6";
-}
-
-// Decorative hue-tinted container holding a single centered icon. Used at four sizes:
-// home card (square 50/24), intro hero (square 64/32), session center (circle 108/48),
-// done (circle 96/46).
+// Decorative hue-tinted container holding a single centered icon. Used by the
+// session step (circle 92/34) and the done screen (circle 84/32).
 export function HueIconBadge({ icon, size, iconSize, shape = "square" }: HueIconBadgeProps) {
   const accent = useAccentHsl();
   return (
@@ -48,7 +31,12 @@ export function HueIconBadge({ icon, size, iconSize, shape = "square" }: HueIcon
       <Icon
         name={icon}
         size={iconSize}
-        className={cn(iconSizeClass(iconSize), CHROME_ACCENT_MARK)}
+        className={CHROME_ACCENT_MARK}
+        // The shared Icon defaults to a `size-6` (24px) box class, and NativeWind
+        // cannot compile a size class from a runtime prop — so the box is sized
+        // inline, where it overrides the class-derived box and matches the glyph
+        // for any iconSize instead of only table-listed values.
+        style={{ width: iconSize, height: iconSize }}
       />
     </View>
   );

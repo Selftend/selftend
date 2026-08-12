@@ -4,21 +4,22 @@ Selftend stores only what is needed for account-based guided self-help across de
 
 ## Data Classes
 
-| Data class              | Storage decision                                      | Privacy rule                                                                                                                      |
-| ----------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Account profile         | Supabase Auth, `profiles.email`, optional avatar data | Keep account metadata separate from self-help content. Avatars stay in private storage.                                           |
-| Preferences             | `user_preferences`                                    | Store quiet defaults, enabled modules, onboarding, consent, language, and notification settings.                                  |
-| Enabled modules         | `user_preferences.enabled_modules`                    | Use explicit user choice. Do not silently enable new modules.                                                                     |
-| CBT guided tool records | `thought_records`, CBT strategy tables                | Private user-owned records protected by RLS. Store only fields needed for the selected exercise or plan.                          |
-| Mood check-ins          | `mood_logs`                                           | Keep separate from journaling. Store mood score, optional emotions, notes, linked strategy, occurrence time, and original offset. |
-| Journal entries         | `journal_entries`                                     | Keep free text separate from structured tool records. Store occurrence time separately from immutable audit timestamps.           |
-| Gratitude entries       | `gratitude_entries`                                   | Keep one-to-three item gratitude logs separate from free-text journaling and CBT self-care records. No social visibility in MVP.  |
-| Future tool records     | Module tables or a reviewed shared table              | Specs must define fields, privacy justification, export, deletion, and RLS before implementation.                                 |
-| Notifications           | Preferences, local schedules, web push subscriptions  | Explicit, quiet by default, easy to disable, and never exposing sensitive content.                                                |
-| Web push subscriptions  | `web_push_subscriptions`                              | Store only endpoint, browser keys, browser metadata, timezone, delivery status, and ownership. Delete on unsubscribe or deletion. |
-| Draft form content      | Local device storage                                  | Preserve supported unfinished wizards for up to 24 hours; clear after confirmed save, explicit discard, expiry, or sign-out.      |
-| Export data             | `export_user_data()`                                  | Include profile metadata, preferences, and persisted private tool records.                                                        |
-| Deletion data           | `delete_user_account()` and cascades                  | New private tables need `user_id` ownership and deletion coverage.                                                                |
+| Data class              | Storage decision                                       | Privacy rule                                                                                                                      |
+| ----------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Account profile         | Supabase Auth, `profiles.email`, optional avatar data  | Keep account metadata separate from self-help content. Avatars stay in private storage.                                           |
+| Preferences             | `user_preferences`                                     | Store quiet defaults, enabled modules, onboarding, consent, language, and notification settings.                                  |
+| Enabled modules         | `user_preferences.enabled_modules`                     | Use explicit user choice. Do not silently enable new modules.                                                                     |
+| CBT guided tool records | `thought_records`, CBT strategy tables                 | Private user-owned records protected by RLS. Store only fields needed for the selected exercise or plan.                          |
+| Mood check-ins          | `mood_logs`                                            | Keep separate from journaling. Store mood score, optional emotions, notes, linked strategy, occurrence time, and original offset. |
+| Journal entries         | `journal_entries`                                      | Keep free text separate from structured tool records. Store occurrence time separately from immutable audit timestamps.           |
+| Gratitude entries       | `gratitude_entries`                                    | Keep one-to-three item gratitude logs separate from free-text journaling and CBT self-care records. No social visibility in MVP.  |
+| Grounding sessions      | `mindfulness_sessions_data` via `mindfulness_sessions` | Store the chosen technique, elapsed minutes, completion time/offset, and optional step progress only. No rating or outcome claim. |
+| Future tool records     | Module tables or a reviewed shared table               | Specs must define fields, privacy justification, export, deletion, and RLS before implementation.                                 |
+| Notifications           | Preferences, local schedules, web push subscriptions   | Explicit, quiet by default, easy to disable, and never exposing sensitive content.                                                |
+| Web push subscriptions  | `web_push_subscriptions`                               | Store only endpoint, browser keys, browser metadata, timezone, delivery status, and ownership. Delete on unsubscribe or deletion. |
+| Draft form content      | Local device storage                                   | Preserve supported unfinished wizards for up to 24 hours; clear after confirmed save, explicit discard, expiry, or sign-out.      |
+| Export data             | `export_user_data()`                                   | Include profile metadata, preferences, and persisted private tool records.                                                        |
+| Deletion data           | `delete_user_account()` and cascades                   | New private tables need `user_id` ownership and deletion coverage.                                                                |
 
 ## Field-Level Encryption
 
@@ -44,4 +45,4 @@ The system is **provider-recoverable**: the operator can decrypt, and forgot-pas
 
 ## Backend Status
 
-The active Supabase project includes profile avatar storage, private `profile-pics` policies, `user_preferences.language`, and account-backed onboarding flags.
+The active Supabase project includes profile avatar storage, private `profile-pics` policies, `user_preferences.language`, and the account-backed app-introduction flag. Legacy per-module onboarding columns remain temporarily for compatibility with supported mobile builds; the current client does not read or write them.

@@ -25,7 +25,19 @@ export function loggedAtForSelectedDate(selectedDate: string): string {
  * state: Home and module dashboards always describe the device's current local
  * day, which is the right frame for "what am I looking at now" even though
  * entries themselves are filed under the civil day they were captured on (#250).
+ *
+ * It used to return `isToday: true` alongside, and 37 files import this hook, so
+ * consumers branched on a literal - every else-arm was unreachable and several
+ * translated strings could never render (#720). Worse, six test files mocked
+ * `isToday: false`, so the suite proved behaviour production could not reach and
+ * the branches read as live.
+ *
+ * The value is not returned any more. A component that is *handed* a date still
+ * asks the honest question - `dayKey === currentDateKey()` - because that is a
+ * fact it can check about its own input, and it starts varying for free if a
+ * screen ever renders a day other than today. A screen that simply *is* today
+ * says so directly instead of testing a constant.
  */
 export function useSelectedDate() {
-  return { selectedDate: currentDateKey(), isToday: true };
+  return { selectedDate: currentDateKey() };
 }

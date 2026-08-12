@@ -56,7 +56,7 @@ function renderWithSessions(sessions: MeditationSession[]) {
 describe("MeditationWidget", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSelectedDate.mockReturnValue({ selectedDate: SELECTED_DAY, isToday: true });
+    mockUseSelectedDate.mockReturnValue({ selectedDate: SELECTED_DAY });
   });
 
   // The runner sits at Asia/Kolkata (+05:30, pinned in jest.config.js), so these

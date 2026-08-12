@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 
 import { ModuleHomeHeader } from "./module-home-header";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -30,6 +30,7 @@ jest.mock("expo-router", () => {
       back: jest.fn(),
       canGoBack: jest.fn(() => false),
       push: jest.fn(),
+      replace: jest.fn(),
     },
     usePathname: () => "/modules/cbt",
     useFocusEffect: (callback: () => void | (() => void)) => {
@@ -41,11 +42,6 @@ jest.mock("expo-router", () => {
 jest.mock("@/src/components/app/notification-settings-modal", () => ({
   NotificationSettingsModal: () => null,
 }));
-
-jest.mock("expo-linear-gradient", () => {
-  const { View } = require("react-native");
-  return { LinearGradient: View };
-});
 
 function renderHeader({ includeProgram = false }: { includeProgram?: boolean } = {}) {
   const onPressTune = jest.fn();
@@ -122,139 +118,121 @@ describe("ModuleHomeHeader action buttons", () => {
   });
 });
 
-describe("ModuleHomeHeader hero mode", () => {
+describe("ModuleHomeHeader shell", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("renders the title and tagline when hue and icon are provided", async () => {
+  it("renders breadcrumb, h1 and tagline", () => {
     renderWithProviders(
-      <ModuleHomeHeader
-        title="Check-in"
-        tourScope="mood"
-        hue="be"
-        icon="mood"
-        description="Log how you're feeling."
-        actions={[{ type: "info", onPress: jest.fn() }]}
-      />,
+      <ModuleHomeHeader title="Check-in" description="Log how you're feeling." tourScope="mood" />,
     );
 
-    // Hero renders title in both the chip label and the h1 heading; use heading role for uniqueness.
-    expect(await screen.findByRole("heading", { name: "Check-in" })).toBeTruthy();
-    expect(await screen.findByText("Log how you're feeling.")).toBeTruthy();
-  });
-
-  it("renders module chip with tint, icon, and module label", () => {
-    renderWithProviders(
-      <ModuleHomeHeader
-        hue="think"
-        icon="psychology"
-        tourScope="cbt"
-        title="Cognitive Behavioral Therapy"
-        moduleLabel="CBT"
-        description="..."
-      />,
-    );
-    expect(screen.getAllByText("CBT").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByRole("heading", { name: "Cognitive Behavioral Therapy" })).toBeTruthy();
-  });
-
-  it("falls back to title for chip label when moduleLabel not provided", () => {
-    renderWithProviders(
-      <ModuleHomeHeader hue="act" icon="explore" tourScope="act" title="ACT" description="..." />,
-    );
-    // chip + heading both contain "ACT"
-    expect(screen.getAllByText("ACT").length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("omits the chip when moduleLabel is explicitly null", () => {
-    renderWithProviders(
-      <ModuleHomeHeader
-        hue="think"
-        icon="psychology"
-        tourScope="cbt"
-        title="Cognitive Behavioral Therapy"
-        moduleLabel={null}
-        description="A focused CBT section..."
-      />,
-    );
-    expect(screen.getByRole("heading", { name: "Cognitive Behavioral Therapy" })).toBeTruthy();
-    // No chip rendered = no second occurrence of the title text
-    expect(screen.getAllByText("Cognitive Behavioral Therapy")).toHaveLength(1);
-  });
-
-  it("renders without a tourScope prop (now unused, kept only for call-site compatibility)", () => {
-    renderWithProviders(
-      <ModuleHomeHeader
-        hue="think"
-        icon="psychology"
-        title="Cognitive Behavioral Therapy"
-        description="..."
-      />,
-    );
-    expect(screen.getByRole("heading", { name: "Cognitive Behavioral Therapy" })).toBeTruthy();
-  });
-});
-
-describe("ModuleHomeHeader field variant", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  function renderFieldHeader({ moduleLabel = null }: { moduleLabel?: string | null } = {}) {
-    const onPressInfo = jest.fn();
-    renderWithProviders(
-      <ModuleHomeHeader
-        variant="field"
-        title="Check-in"
-        hue="be"
-        icon="mood"
-        moduleLabel={moduleLabel}
-        description="Log how you're feeling."
-        actions={[
-          { type: "notifications", targetKey: "mood" },
-          { type: "info", onPress: onPressInfo },
-        ]}
-      />,
-    );
-    return { onPressInfo };
-  }
-
-  it("renders the hue field gradient behind the title, description, and actions", () => {
-    renderFieldHeader();
-
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    // The breadcrumb eyebrow, which the field header used to render in white ink.
+    expect(screen.getByLabelText("Go back")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(screen.getByText("Log how you're feeling.")).toBeTruthy();
-    expect(screen.getByLabelText("Notifications")).toBeTruthy();
-    expect(screen.getByLabelText("About this module")).toBeTruthy();
   });
 
-  it("keeps action buttons working on the field", () => {
-    const { onPressInfo } = renderFieldHeader();
-
-    fireEvent.press(screen.getByLabelText("About this module"));
-
-    expect(onPressInfo).toHaveBeenCalledTimes(1);
-  });
-
-  it("omits the chip when moduleLabel is null (single title occurrence)", () => {
-    renderFieldHeader({ moduleLabel: null });
+  it("renders no module chip - the title occurs exactly once", () => {
+    // The design's header composition is breadcrumb -> h1 -> tagline -> stats,
+    // with no chip. The chip used to repeat the module's name directly above it.
+    renderWithProviders(<ModuleHomeHeader title="Check-in" description="..." />);
 
     expect(screen.getAllByText("Check-in")).toHaveLength(1);
   });
 
-  it("renders an on-field chip when moduleLabel is provided", () => {
-    renderFieldHeader({ moduleLabel: "Mood" });
-
-    expect(screen.getByText("Mood")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
-  });
-
-  it("falls back to hero mode when no hue is provided", () => {
-    renderWithProviders(<ModuleHomeHeader variant="field" title="Check-in" description="..." />);
+  it("renders no hue field gradient", () => {
+    renderWithProviders(<ModuleHomeHeader title="Check-in" description="..." />);
 
     expect(screen.queryByTestId("module-field-gradient")).toBeNull();
+  });
+
+  it("renders without a tourScope prop (now unused, kept only for call-site compatibility)", () => {
+    renderWithProviders(<ModuleHomeHeader title="Check-in" description="..." />);
+
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
+  });
+});
+
+describe("ModuleHomeHeader stats", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  function renderStats(stats: { value: string; label: string }[]) {
+    renderWithProviders(<ModuleHomeHeader title="Check-in" stats={stats} />);
+  }
+
+  it("renders each value with its label", () => {
+    renderStats([
+      { value: "3", label: "check-ins" },
+      { value: "3.0", label: "7-day average" },
+    ]);
+
+    // The value is its own nested Text (it carries the foreground ink), so the
+    // item reads as one composed string with the muted label after it.
+    expect(screen.getByText("3 check-ins")).toBeTruthy();
+    expect(screen.getByText("3.0 7-day average")).toBeTruthy();
+  });
+
+  it("colours the values with the foreground ink, not an accent", () => {
+    // The whole reason accentClassName could be deleted: the design puts stat
+    // values on --foreground, so the text-<hue>-on-background pattern that fails
+    // AA on four of the seven hues (#403) leaves this component entirely.
+    renderStats([{ value: "3", label: "check-ins" }]);
+
+    const value = String(screen.getByText("3").props.className);
+
+    expect(value).toContain("text-foreground");
+    expect(value).not.toContain("-ink");
+  });
+
+  it("renders a label-only entry when value is empty", () => {
+    // This is what the deleted ToolStats.subline becomes: "last logged 4:50 pm"
+    // folds into the stats row as a value-less item rather than a separate line.
+    renderStats([
+      { value: "3", label: "check-ins" },
+      { value: "", label: "last logged 4:50 pm" },
+    ]);
+
+    expect(screen.getByText("last logged 4:50 pm")).toBeTruthy();
+  });
+
+  it("renders one separator fewer than there are stats", () => {
+    renderStats([
+      { value: "1", label: "a" },
+      { value: "2", label: "b" },
+      { value: "3", label: "c" },
+    ]);
+
+    // Scoped to the stats row: the breadcrumb trail above it also uses "·".
+    expect(within(screen.getByTestId("module-header-stats")).getAllByText("·")).toHaveLength(2);
+  });
+
+  it("groups each separator with the stat BEFORE it, so a wrapped line never starts with one", () => {
+    // The wrap unit is (item + trailing separator). Grouping the separator with
+    // the FOLLOWING item instead would strand a "·" at the start of line two.
+    renderStats([
+      { value: "1", label: "a" },
+      { value: "2", label: "b" },
+    ]);
+
+    const [first, last] = within(screen.getByTestId("module-header-stats")).getAllByTestId(
+      "module-header-stat",
+    );
+
+    expect(within(first).getByText("1")).toBeTruthy();
+    expect(within(first).getByText("·")).toBeTruthy();
+    expect(within(last).getByText("2")).toBeTruthy();
+    expect(within(last).queryByText("·")).toBeNull();
+  });
+
+  it("renders nothing for an empty stats array", () => {
+    // ACT and CBT pass no stats at all, and a brand-new user should not be met
+    // with a row of noughts.
+    renderStats([]);
+
+    expect(screen.queryByTestId("module-header-stats")).toBeNull();
   });
 });

@@ -9,6 +9,13 @@ interface VolumeSliderProps {
   onCommit?: (value: number) => void;
   accessibilityLabel: string;
   orientation?: "horizontal" | "vertical";
+  /**
+   * What a screen reader announces as the value. Defaults to the 0-100 percent
+   * reading of `value`; a consumer whose real unit is not a percentage (the sit
+   * length, in minutes) passes its own scale so the announcement matches the
+   * visible read-out.
+   */
+  accessibilityValue?: { min: number; max: number; now: number; text?: string };
 }
 
 const TRACK = 6;
@@ -24,6 +31,7 @@ export function VolumeSlider({
   onCommit,
   accessibilityLabel,
   orientation = "horizontal",
+  accessibilityValue,
 }: VolumeSliderProps) {
   const vertical = orientation === "vertical";
   const [size, setSize] = useState(0);
@@ -74,6 +82,7 @@ export function VolumeSlider({
   );
 
   const pct = clamp01(value);
+  const a11yValue = accessibilityValue ?? { min: 0, max: 100, now: Math.round(pct * 100) };
 
   if (vertical) {
     return (
@@ -83,7 +92,7 @@ export function VolumeSlider({
         collapsable={false}
         accessibilityRole="adjustable"
         accessibilityLabel={accessibilityLabel}
-        accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}
+        accessibilityValue={a11yValue}
         onLayout={(e) => {
           const h = e.nativeEvent.layout.height;
           sizeRef.current = h;
@@ -127,7 +136,7 @@ export function VolumeSlider({
       collapsable={false}
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
-      accessibilityValue={{ min: 0, max: 100, now: Math.round(pct * 100) }}
+      accessibilityValue={a11yValue}
       onLayout={(e) => {
         const w = e.nativeEvent.layout.width;
         sizeRef.current = w;

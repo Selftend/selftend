@@ -421,36 +421,35 @@ This module follows the contract documented in `tools.md`:
 - i18n namespace: `meditation:*`.
 - Route group: `/modules/meditation/*` (see §6).
 - New `user_preferences` fields, mirroring the CBT reminder fields:
-  - `meditation_onboarding_completed: boolean`
   - `meditation_reminders_enabled: boolean`
   - `meditation_reminder_hour: integer` (0-23)
   - `meditation_reminder_minute: integer` (0-59)
   - `meditation_reminder_timezone: string | null`
 - Reminders default off, single daily reminder at the chosen practice time, non-punitive copy. Same web-push / Expo Notifications path as CBT.
-- Settings can reset the onboarding flag (same pattern as the app and CBT onboarding flags).
+- Settings does not reset a meditation onboarding flag. The current client opens the introduction explicitly; legacy onboarding columns remain temporarily for compatibility with supported mobile builds.
 - The placeholder route at `/tools/meditation` becomes a compatibility redirect to `/modules/meditation`.
 
 ---
 
 ## 5. Routes
 
-| Route                               | Purpose                                                                                                  |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `/modules/meditation`               | Home: today's practice card (current stage + suggested duration), recent sessions, stage progress strip. |
-| `/modules/meditation/onboarding`    | Full-screen fallback for the onboarding modal (used when the modal is dismissed or revisited).           |
-| `/modules/meditation/learn`         | First-visit primer: Attention vs. Awareness, Gardener's Mindset, non-linearity, safety.                  |
-| `/modules/meditation/session/new`   | Pre-sit primer (Stage-aware) → timer → post-sit reflection. Wraps the existing timer UI.                 |
-| `/modules/meditation/sessions`      | Private session history list.                                                                            |
-| `/modules/meditation/sessions/[id]` | Session detail; edit reflection / archive.                                                               |
-| `/modules/meditation/stages`        | Read-only library of all ten Stages.                                                                     |
-| `/modules/meditation/stages/[n]`    | Single-Stage page: goals, obstacles, skills, prompts, "switch to this Stage" action.                     |
-| `/tools/meditation`                 | Compatibility redirect to `/modules/meditation`.                                                         |
+| Route                               | Purpose                                                                                                                                                                                         |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/modules/meditation`               | Home: today's practice card (current stage + suggested duration), recent sessions, stage progress strip.                                                                                        |
+| `/modules/meditation/onboarding`    | Full-screen fallback for the onboarding modal (used when the modal is dismissed or revisited).                                                                                                  |
+| `/modules/meditation/learn`         | First-visit primer: Attention vs. Awareness, Gardener's Mindset, non-linearity, safety.                                                                                                         |
+| `/modules/meditation/session/new`   | Pre-sit primer (Stage-aware) → timer → post-sit reflection. Wraps the existing timer UI.                                                                                                        |
+| `/modules/meditation/sessions`      | Private session history list.                                                                                                                                                                   |
+| `/modules/meditation/sessions/[id]` | Session detail; edit reflection / archive.                                                                                                                                                      |
+| `/modules/meditation/stages`        | Read-only library of all ten Stages; each row expands in place with goals, obstacles, skills, mastery, prompts, and the "switch to this Stage" action (#851 removed the per-stage detail page). |
+| `/tools/meditation/practices`       | Info-only reference for the seated practices; `?practice=` pre-opens one (#853). Implemented under `/tools/`, the app's current meditation prefix.                                              |
+| `/tools/meditation`                 | Compatibility redirect to `/modules/meditation`.                                                                                                                                                |
 
 ---
 
 ## 6. Onboarding Flow (Modal Wizard)
 
-Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 is mandatory. Completion is tracked via `meditation_onboarding_completed` on `user_preferences`. The full content is also available as a route (`/modules/meditation/onboarding`) so the user can revisit it.
+Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 is mandatory. The current client opens the introduction explicitly from the module's info action and does not store per-user completion state. The legacy meditation onboarding columns remain temporarily so supported older builds can continue writing safely. The full content is also available as a route (`/modules/meditation/onboarding`) so the user can revisit it.
 
 1. **Welcome** - the "Path to Awakening" infographic + two sentences of framing. Emphasis: ten Stages, non-linear, this is a practice, not a finish line. No claims about Awakening.
 2. **Attention vs. Peripheral Awareness** - paired bullseye/landscape illustration. One short paragraph each. The product's central concept; readers see it once during onboarding and revisit it via the Learn route.

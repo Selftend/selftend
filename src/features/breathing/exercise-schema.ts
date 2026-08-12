@@ -8,6 +8,17 @@ import {
 export const BREATHING_NAME_MAX = 80;
 export const PHASE_SECONDS_MAX = 60;
 export const PHASE_STEP = 0.5;
+/**
+ * The ceiling the `4d` steppers step UP to - lower than what storage accepts.
+ *
+ * The design draws 0-12s, which covers every pattern anyone actually breathes
+ * (the longest built-in phase is 4-7-8's 8s exhale). Storage keeps its 60s
+ * limit: a pattern saved before this screen existed may hold a longer phase,
+ * and clamping the stepper at 12 must not silently rewrite it. `stepPhase`
+ * therefore raises the ceiling to whatever the field already holds, so `+` is
+ * inert on an over-long phase while `−` still walks it back down.
+ */
+export const PHASE_STEPPER_MAX = 12;
 export const CYCLES_MIN = 1;
 export const CYCLES_MAX = 999;
 

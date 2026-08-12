@@ -3,23 +3,15 @@ import type { updateOnboardingPreferences } from "@/src/features/settings/reposi
 type OnboardingPreferencesPatch = Parameters<typeof updateOnboardingPreferences>[1];
 
 /**
- * The exact patch applied when a user resets onboarding from Settings.
- *
- * Named and frozen so a newly-added onboarding flag can't silently drift from
- * the reset set: `onboarding-reset.test.ts` snapshots these keys and fails the
- * day someone introduces a flag without deciding whether the reset clears it.
+ * Settings exposes these as two separate, literal promises: replay the app's
+ * introduction, or re-arm optional contextual tips. Module intro modals remain
+ * available from their own info buttons and carry no persisted completion state.
  */
-export const RESET_ONBOARDING_PREFERENCES = Object.freeze({
+export const REPLAY_INTRODUCTION_PREFERENCES = Object.freeze({
   appOnboardingCompleted: false,
-  cbtOnboardingCompleted: false,
-  gratitudeOnboardingCompleted: false,
-  meditationInfoCompleted: false,
-  habitsOnboardingCompleted: false,
-  moodOnboardingCompleted: false,
-  journalOnboardingCompleted: false,
-  sleepOnboardingCompleted: false,
-  mindfulnessOnboardingCompleted: false,
-  groundingOnboardingCompleted: false,
+}) satisfies OnboardingPreferencesPatch;
+
+export const SHOW_TIPS_AGAIN_PREFERENCES = Object.freeze({
   shownButtonTours: [],
   startHereDismissedAt: null,
 }) satisfies OnboardingPreferencesPatch;

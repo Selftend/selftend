@@ -69,15 +69,14 @@ describe("SleepTrackerScreen", () => {
     setServerStats(undefined);
   });
 
-  it("renders the ink field header with title, stats, and empty-state subline", () => {
+  it("renders the quiet shell header with title, stats, and empty-state subline", () => {
     mockUseSleepLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useSleepLogs>);
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.getByRole("heading", { name: "Sleep tracker" })).toBeTruthy();
-    expect(screen.getByTestId("module-field-gradient")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Sleep" })).toBeTruthy();
     // Calm muted subline when nothing is logged - never a shame state.
-    expect(screen.getByText("No sleep logged yet")).toBeTruthy();
+    expect(screen.getByText("no sleep logged yet")).toBeTruthy();
     // Section headings render on the sheet.
     expect(screen.getByRole("heading", { name: "Recent entries" })).toBeTruthy();
   });
@@ -89,8 +88,8 @@ describe("SleepTrackerScreen", () => {
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.getByText(/^Last · /)).toBeTruthy();
-    expect(screen.queryByText("No sleep logged yet")).toBeNull();
+    expect(screen.getByText(/^last logged /)).toBeTruthy();
+    expect(screen.queryByText("no sleep logged yet")).toBeNull();
   });
 
   it("omits the subline until the logs query has actually loaded", () => {
@@ -102,8 +101,8 @@ describe("SleepTrackerScreen", () => {
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.queryByText("No sleep logged yet")).toBeNull();
-    expect(screen.queryByText(/^Last · /)).toBeNull();
+    expect(screen.queryByText("no sleep logged yet")).toBeNull();
+    expect(screen.queryByText(/^last logged /)).toBeNull();
   });
 
   // -------------------------------------------------------------------------
@@ -131,22 +130,24 @@ describe("SleepTrackerScreen", () => {
     });
   }
 
-  it("shows the 30-day average over every night, not just the newest 50 logged", () => {
+  it("shows the server 7-day average over every night, not the capped list's figure", () => {
+    // The 30-day tile died with the stat cards (#878) — the header's 7-day
+    // stat is the surviving windowed figure, and #256's guarantee still has
+    // to hold for it: the server aggregate wins over the capped list.
     const all = history();
     // What `useSleepLogs(userId, 50)` actually hands the screen.
     const capped = all.slice(0, 50);
 
-    // The premise, asserted rather than assumed: the capped list disagrees with the
-    // full history, and it is the capped figure the screen used to render.
-    expect(averageDurationMinutes(capped, 30)).toBe(420); // 7.0h
-    expect(averageDurationMinutes(all, 30)).toBe(471); // 7.9h
+    // The premise, asserted rather than assumed: the capped list would render
+    // a different figure than the server aggregate this test pins.
+    expect(averageDurationMinutes(capped, 7)).not.toBe(471);
 
     mockUseSleepLogs.mockReturnValue({ data: capped } as unknown as ReturnType<
       typeof useSleepLogs
     >);
     setServerStats({
-      sevenDayDurationMinutes: 300,
-      sevenDayQuality: 2,
+      sevenDayDurationMinutes: 471,
+      sevenDayQuality: 3.7,
       thirtyDayDurationMinutes: 471,
       thirtyDayQuality: 3.7,
       qualityDistribution30: [0, 30, 0, 0, 40],
@@ -157,9 +158,9 @@ describe("SleepTrackerScreen", () => {
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.getByText(formatHours(471))).toBeTruthy();
+    expect(screen.getAllByText(formatHours(471)).length).toBeGreaterThan(0);
     // The capped-list average, which is what the screen used to show.
-    expect(screen.queryByText(formatHours(420))).toBeNull();
+    expect(screen.queryByText(formatHours(averageDurationMinutes(capped, 7)))).toBeNull();
   });
 
   it("shows lifetime longest and shortest, not the extremes of the newest 50", () => {

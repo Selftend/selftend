@@ -1,5 +1,4 @@
-import type { MoodLog } from "@/src/features/mood/types";
-import { addDaysToKey, dayKeyDiff, dayRangeEndKey, lastNDayKeysEndingAt } from "@/src/utils/date";
+import { addDaysToKey, dayRangeEndKey } from "@/src/utils/date";
 import { roundTo1 as round1 } from "@/src/utils/number";
 
 export interface MoodSummary {
@@ -60,134 +59,36 @@ function summarizeScores(scores: number[]): MoodSummary {
   return { average: round1(average), count: scores.length };
 }
 
-export interface DayAverage {
-  dateKey: string;
-  average: number | null;
-}
+/** Counts at each of the five levels, index 0 = score 1 (#737, decided on #701). */
+export type MoodDistribution = [number, number, number, number, number];
 
-/** Per-day averages for the last `days` days (oldest→newest), including days with no logs (`null`). */
-export function getDailyAverages(
-  logs: MoodSample[] | undefined,
-  days = 7,
-  now: Date = new Date(),
-): DayAverage[] {
-  const list = logs ?? [];
-  const endKey = dayRangeEndKey(
-    list.map((log) => log.dayKey),
-    now,
-  );
-
-  const buckets = new Map<string, { sum: number; count: number }>();
-  for (const log of list) {
-    const b = buckets.get(log.dayKey);
-    if (b) {
-      b.sum += log.moodScore;
-      b.count += 1;
-    } else {
-      buckets.set(log.dayKey, { sum: log.moodScore, count: 1 });
-    }
+/**
+ * How many check-ins landed at each level, over whatever window the caller
+ * already fetched.
+ *
+ * A pure reduction, not a query: the distribution shares the trend's range and
+ * therefore the trend's `scorePoints` array (#700), so it costs one pass over
+ * data already on screen. Scores outside 1-5 are ignored rather than clamped -
+ * a bad row should not inflate a real level's count.
+ */
+export function getMoodDistribution(points: { moodScore: number }[] | undefined): MoodDistribution {
+  const counts: MoodDistribution = [0, 0, 0, 0, 0];
+  for (const point of points ?? []) {
+    const level = point.moodScore;
+    if (Number.isInteger(level) && level >= 1 && level <= 5) counts[level - 1] += 1;
   }
-
-  return lastNDayKeysEndingAt(days, endKey).map((dateKey) => {
-    const b = buckets.get(dateKey);
-    return { dateKey, average: b ? round1(b.sum / b.count) : null };
-  });
+  return counts;
 }
 
-function averageInDayWindow(
-  logs: MoodSample[],
-  oldestDaysAgo: number,
-  newestDaysAgo: number,
-  endKey: string,
-): number | null {
-  const scores = scoresInKeyRange(
-    logs,
-    addDaysToKey(endKey, -oldestDaysAgo),
-    addDaysToKey(endKey, -newestDaysAgo),
-  );
-  if (scores.length === 0) return null;
-  return round1(scores.reduce((s, v) => s + v, 0) / scores.length);
-}
-
-export interface WeekDelta {
-  current: number | null;
-  previous: number | null;
-  delta: number | null;
-}
-
-/** This week's average (days 0-6) vs the prior week (days 7-13). */
-export function getWeekDelta(logs: MoodSample[] | undefined, now: Date = new Date()): WeekDelta {
-  const list = logs ?? [];
-  const endKey = dayRangeEndKey(
-    list.map((log) => log.dayKey),
-    now,
-  );
-  const current = averageInDayWindow(list, 6, 0, endKey);
-  const previous = averageInDayWindow(list, 13, 7, endKey);
-  const delta = current !== null && previous !== null ? round1(current - previous) : null;
-  return { current, previous, delta };
-}
-
-interface EmotionSample {
-  emotions: string[];
-}
-
-export interface EmotionCount {
-  id: string;
-  count: number;
-}
-
-/** Emotion ids by frequency (desc), ties broken by id (asc). Returns at most `limit`. */
-export function getTopEmotions(logs: EmotionSample[] | undefined, limit = 3): EmotionCount[] {
-  const counts = new Map<string, number>();
-  for (const log of logs ?? []) {
-    for (const id of log.emotions ?? []) {
-      counts.set(id, (counts.get(id) ?? 0) + 1);
-    }
-  }
-  return [...counts.entries()]
-    .map(([id, count]) => ({ id, count }))
-    .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id))
-    .slice(0, limit);
-}
-
-type HistoryGroupKey = "today" | "yesterday" | "thisWeek" | "older";
-
-interface HistoryGroup {
-  key: HistoryGroupKey;
-  average: number;
-  entries: MoodLog[];
-}
-
-const GROUP_ORDER: HistoryGroupKey[] = ["today", "yesterday", "thisWeek", "older"];
-
-function groupKeyFor(dayKey: string, todayKey: string): HistoryGroupKey {
-  // A day key ahead of today (logged east, read west) still reads as "today" —
-  // it is the user's most recent entry, not a future one.
-  const dayDiff = dayKeyDiff(dayKey, todayKey);
-  if (dayDiff <= 0) return "today";
-  if (dayDiff === 1) return "yesterday";
-  if (dayDiff <= 6) return "thisWeek";
-  return "older";
-}
-
-/** Groups logs (assumed newest-first) into ordered date buckets with per-group averages. */
-export function groupLogsByDate(
-  logs: MoodLog[] | undefined,
-  now: Date = new Date(),
-): HistoryGroup[] {
-  const todayKey = dayRangeEndKey([], now);
-  const byKey = new Map<HistoryGroupKey, MoodLog[]>();
-  for (const log of logs ?? []) {
-    const key = groupKeyFor(log.dayKey, todayKey);
-    const arr = byKey.get(key);
-    if (arr) arr.push(log);
-    else byKey.set(key, [log]);
-  }
-  return GROUP_ORDER.flatMap((key) => {
-    const entries = byKey.get(key);
-    if (!entries || entries.length === 0) return [];
-    const average = round1(entries.reduce((s, e) => s + e.moodScore, 0) / entries.length);
-    return [{ key, average, entries }];
-  });
-}
+// `getDailyAverages`, `getWeekDelta` and `getTopEmotions` lived here until #736.
+// All three measured a TRAILING window anchored on the newest day key, which is
+// what the week strip needed while it could not move. A navigator cannot page
+// trailing windows, so their calendar-week replacements live in `week-window.ts`
+// and read from a per-week query rather than the 200-row history cache. They had
+// no other consumer, so nothing else had to move with them.
+//
+// `groupLogsByDate` lived here until #735. It grouped the overview's inline
+// history into today/yesterday/thisWeek/older buckets with per-group averages;
+// that list is gone, and the all-history screen groups its own rows in
+// `history-groups.ts` - which splits the tail into calendar months rather than
+// one unbounded `older`, and carries no averages (#705).

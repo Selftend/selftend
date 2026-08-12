@@ -67,14 +67,21 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
         animationType={reduceMotionEnabled ? "none" : "fade"}
         onRequestClose={() => setOpen(false)}
       >
-        <Pressable
-          accessibilityLabel={t("close")}
-          accessibilityRole="button"
-          className="flex-1 items-center justify-center bg-black/50 p-6"
-          onPress={() => setOpen(false)}
-          role="button"
-        >
-          <Pressable className="w-full max-w-[340px] rounded-2xl bg-card p-3" onPress={() => {}}>
+        <View className="flex-1 items-center justify-center p-6">
+          {/* Dimmed backdrop - tap anywhere outside the card to close. A sibling
+              behind the card rather than a wrapper: a wrapping button would nest
+              the card's buttons inside a <button> on web, which the DOM forbids. */}
+          <Pressable
+            accessibilityLabel={t("close")}
+            accessibilityRole="button"
+            className="absolute inset-0 bg-black/50"
+            onPress={() => setOpen(false)}
+            role="button"
+            // Out of the web Tab order (invisible to sighted keyboard users, who
+            // have Escape); touch-exploration screen readers keep a labeled close.
+            {...(Platform.OS === "web" ? { tabIndex: -1 as const } : {})}
+          />
+          <View className="w-full max-w-[340px] rounded-2xl bg-card p-3">
             <DateTimePicker
               value={timeToDate(value)}
               mode="time"
@@ -87,8 +94,8 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
                 <Text>{t("done")}</Text>
               </Button>
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
     </>
   );

@@ -1,44 +1,39 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { gratitudeEntryLines } from "@/src/features/gratitude/gratitude-entry-card";
 import {
   useDeleteGratitudeEntry,
   useGratitudeEntries,
   useGratitudeEntry,
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
-import {
-  GRATITUDE_LIFE_QUESTIONS_KEY,
-  GRATITUDE_TODAY_QUESTIONS_KEY,
-  asQuestionList,
-  gratitudeAnswers,
-} from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { formatRelativeDayKey } from "@/src/utils/relative-time";
+import { FORM_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatInstantAtOffset } from "@/src/utils/date";
+import { cn } from "@/lib/utils";
 
 export default function GratitudeDetailScreen() {
-  const { t } = useTranslation("gratitude");
+  const { t, i18n } = useTranslation("gratitude");
   const roomStyle = useRoomStyle("think");
+  // The header actions never shrink, so every pixel of narrowness comes out
+  // of the title block (#885's failure class). At phone width the labelled
+  // Favourite button collapses to an icon, like mood's detail Edit.
+  const { width: windowWidth } = useWindowDimensions();
+  const wideHeader = windowWidth >= 640;
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const entryId = typeof id === "string" ? id : null;
@@ -61,20 +56,14 @@ export default function GratitudeDetailScreen() {
   if (!fromCache && isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.title")} />
-        </View>
+        <LoadingState title={t("detail.title")} />
       </SafeAreaView>
     );
   }
 
   if (!entry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -85,13 +74,19 @@ export default function GratitudeDetailScreen() {
     );
   }
 
-  // Same frame as the card in the list: the captured day, not the viewer's.
-  const when = formatRelativeDayKey(entry.dayKey, t);
-
-  const todayQuestions = asQuestionList(t(GRATITUDE_TODAY_QUESTIONS_KEY, { returnObjects: true }));
-  const lifeQuestions = asQuestionList(t(GRATITUDE_LIFE_QUESTIONS_KEY, { returnObjects: true }));
-  const todayAnswers = gratitudeAnswers(entry.items, todayQuestions);
-  const lifeAnswers = gratitudeAnswers(entry.lifeItems, lifeQuestions);
+  const lines = gratitudeEntryLines(entry);
+  const dateTitle = formatInstantAtOffset(
+    entry.loggedAt,
+    entry.loggedOffsetMinutes,
+    { weekday: "long", day: "numeric", month: "long" },
+    i18n.language,
+  );
+  const loggedTime = formatInstantAtOffset(
+    entry.loggedAt,
+    entry.loggedOffsetMinutes,
+    { hour: "numeric", minute: "2-digit" },
+    i18n.language,
+  );
 
   const confirmDelete = async () => {
     setDeleteError("");
@@ -100,24 +95,21 @@ export default function GratitudeDetailScreen() {
       setConfirmOpen(false);
       showToast({ title: t("feedback.deleted"), tone: "success" });
       router.replace("/tools/gratitude-log" as Parameters<typeof router.replace>[0]);
-    } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : t("detail.deleteError"));
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : t("detail.deleteError"));
     }
   };
 
   const toggleFavorite = async () => {
     setFavoriteError("");
     try {
-      const updated = await starMutation.mutateAsync({
-        id: entry.id,
-        starred: !entry.starred,
-      });
+      const updated = await starMutation.mutateAsync({ id: entry.id, starred: !entry.starred });
       showToast({
         title: updated.starred ? t("feedback.favoriteAdded") : t("feedback.favoriteRemoved"),
         tone: "success",
       });
-    } catch (e) {
-      setFavoriteError(e instanceof Error ? e.message : t("detail.favoriteError"));
+    } catch (error) {
+      setFavoriteError(error instanceof Error ? error.message : t("detail.favoriteError"));
     }
   };
 
@@ -127,101 +119,93 @@ export default function GratitudeDetailScreen() {
       edges={["bottom", "left", "right"]}
       style={roomStyle}
     >
+      <ScreenTopBar leading="back" />
       <ScrollView contentContainerClassName="grow p-6">
-        <View className="gap-6">
-          <View className="gap-2">
-            <ScreenHeader title={t("detail.title")} />
-            <View className="flex-row items-center gap-2">
-              <Text variant="muted">{when}</Text>
+        <View className={cn(FORM_COLUMN, "gap-6")}>
+          {/* Actions ride the header row top-right (design 6c, #877), not a
+              row under the subline. The title block shrinks; the actions
+              never do. */}
+          <View className="flex-row items-start justify-between gap-4">
+            <View className="min-w-0 flex-1 gap-2">
+              <Text variant="h1">{dateTitle}</Text>
+              <Text variant="muted">
+                {t("detail.loggedSummary", { time: loggedTime, count: lines.length })}
+              </Text>
             </View>
-            <View className="flex-row flex-wrap gap-3">
+            <View className="shrink-0 flex-row flex-wrap justify-end gap-2">
+              {wideHeader ? (
+                <Button
+                  disabled={starMutation.isPending}
+                  onPress={() => void toggleFavorite()}
+                  variant={entry.starred ? "tinted" : "outline"}
+                >
+                  <Icon name={entry.starred ? "star" : "star-outline"} className="size-4" />
+                  <Text>{entry.starred ? t("detail.unfavorite") : t("detail.favorite")}</Text>
+                </Button>
+              ) : (
+                // Icon-only at phone width: three ~40dp icons leave the title
+                // its column; the accessible name keeps the full verb.
+                <Button
+                  accessibilityLabel={entry.starred ? t("detail.unfavorite") : t("detail.favorite")}
+                  disabled={starMutation.isPending}
+                  onPress={() => void toggleFavorite()}
+                  size="icon"
+                  variant={entry.starred ? "tinted" : "outline"}
+                >
+                  <Icon name={entry.starred ? "star" : "star-outline"} className="size-4" />
+                </Button>
+              )}
               <Button
-                disabled={starMutation.isPending}
-                onPress={() => void toggleFavorite()}
-                variant={entry.starred ? "secondary" : "ghost"}
-              >
-                <Icon
-                  name={entry.starred ? "star" : "star-outline"}
-                  className="size-4 text-primary"
-                />
-                <Text>{entry.starred ? t("detail.unfavorite") : t("detail.favorite")}</Text>
-              </Button>
-              <Button
+                accessibilityLabel={t("detail.edit")}
                 onPress={() =>
                   router.push({
                     pathname: "/tools/gratitude-log/[id]/edit",
                     params: { id: entry.id },
                   })
                 }
-                variant="secondary"
+                size="icon"
+                variant="outline"
               >
                 <Icon name="edit" className="size-4" />
-                <Text>{t("detail.edit")}</Text>
               </Button>
-              <Button onPress={() => setConfirmOpen(true)} variant="ghost">
-                <Icon name="delete-outline" className="size-4 text-destructive" />
-                <Text>{t("detail.delete")}</Text>
+              <Button
+                accessibilityLabel={t("detail.delete")}
+                onPress={() => setConfirmOpen(true)}
+                size="icon"
+                variant="ghost"
+              >
+                {/* Muted at rest (design 6c): the confirm dialog carries the
+                    destructive weight; a red icon idling on the screen is an
+                    alarm nothing has raised (#877). */}
+                <Icon name="delete-outline" className="size-4 text-muted-foreground" />
               </Button>
             </View>
-            {favoriteError ? (
-              <Text className="text-sm text-destructive">{favoriteError}</Text>
-            ) : null}
+          </View>
+          {favoriteError ? <Text className="text-sm text-destructive">{favoriteError}</Text> : null}
+
+          <View className="border-y border-border">
+            {lines.map((line, index) => (
+              <View
+                key={`${index}-${line}`}
+                className={cn(
+                  "flex-row gap-4 py-4",
+                  index < lines.length - 1 && "border-b border-border",
+                )}
+              >
+                <Text className="w-6 text-center text-sm font-semibold text-primary-ink">
+                  {index + 1}
+                </Text>
+                <Text className="flex-1 text-base leading-6">{line}</Text>
+              </View>
+            ))}
           </View>
 
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle aria-level={2}>{t("detail.itemsTitle")}</CardTitle>
-              <CardDescription>{t("detail.itemsDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-4">
-                {todayAnswers.map((answer, index) => (
-                  <View key={`${index}-${answer.text}`} className="gap-1">
-                    <Text className="text-sm font-semibold text-primary">{answer.question}</Text>
-                    <Text className="text-base leading-6">{answer.text}</Text>
-                  </View>
-                ))}
-              </View>
-            </CardContent>
-          </Card>
-
-          {lifeAnswers.length > 0 ? (
-            <Card variant="soft">
-              <CardHeader>
-                <CardTitle aria-level={2}>{t("detail.lifeItemsTitle")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <View className="gap-4">
-                  {lifeAnswers.map((answer, index) => (
-                    <View key={`${index}-${answer.text}`} className="gap-1">
-                      <Text className="text-sm font-semibold text-primary">{answer.question}</Text>
-                      <Text className="text-base leading-6">{answer.text}</Text>
-                    </View>
-                  ))}
-                </View>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          {entry.note.trim().length > 0 ? (
-            <Card variant="soft">
-              <CardHeader>
-                <CardTitle aria-level={2}>{t("detail.noteTitle")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Text className="text-base leading-6">{entry.note.trim()}</Text>
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Card variant="soft">
-            <CardHeader>
-              <CardTitle aria-level={2}>{t("detail.loggedAt")}</CardTitle>
-              <CardDescription>
-                {formatAtOffset(entry.loggedAt, entry.loggedOffsetMinutes)}
-              </CardDescription>
-            </CardHeader>
-          </Card>
+          {/* Right-aligned quiet link (design 6c), not a centred button. */}
+          <View className="items-end">
+            <Button onPress={() => router.push("/tools/gratitude-log/entries")} variant="link">
+              <Text>{t("home.viewAll")}</Text>
+            </Button>
+          </View>
         </View>
       </ScrollView>
 

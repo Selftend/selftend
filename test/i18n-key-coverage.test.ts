@@ -104,3 +104,91 @@ test("every t() string-literal key resolves in the en locale", () => {
 
   expect(missing).toEqual([]);
 });
+
+// The header's stat run joins its items with "·" (#733), and the "last logged"
+// subline is one of those items. A subline string that carries its own "·" -
+// which every one of them did before #733, as `Last · {{when}}` - renders
+//
+//   12 entries · 3,400 words · Last · 5 Jun
+//
+// where two separators mean two different things and the reader cannot tell
+// which. The strings were rewritten to the inline form #690 named
+// ("last logged 4:50 pm"); this stops them drifting back.
+//
+// Scoped to the subline keys rather than all copy: a "·" is correct in plenty of
+// other strings, and this suite would be noise if it flagged them.
+test("no stat-run subline string carries its own separator", () => {
+  const SUBLINE_KEY = /(^|\.)(stats|hero)\.(last|never)$/;
+  const offenders: string[] = [];
+
+  for (const lang of fs.readdirSync(path.join(ROOT, "src", "i18n", "locales"))) {
+    const dir = path.join(ROOT, "src", "i18n", "locales", lang);
+    if (!fs.statSync(dir).isDirectory()) continue;
+
+    for (const file of fs.readdirSync(dir)) {
+      if (!file.endsWith(".json")) continue;
+      const json = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8")) as Record<
+        string,
+        unknown
+      >;
+      const walk = (obj: Record<string, unknown>, prefix: string) => {
+        for (const [key, value] of Object.entries(obj)) {
+          const full = prefix ? `${prefix}.${key}` : key;
+          if (value && typeof value === "object" && !Array.isArray(value)) {
+            walk(value as Record<string, unknown>, full);
+          } else if (typeof value === "string" && SUBLINE_KEY.test(full) && value.includes("·")) {
+            offenders.push(`${lang}/${file}: ${full} = ${JSON.stringify(value)}`);
+          }
+        }
+      };
+      walk(json, "");
+    }
+  }
+
+  expect(offenders).toEqual([]);
+});
+
+// Header stats form one inline, middle-dotted sentence. Labels and empty-state
+// sublines therefore start lowercase even when their locale key is shared with
+// no other surface (#828). `meditation:hero.stage` is the deliberate exception:
+// it leads the row and carries the value in one phrase ("Stage 3").
+test("stat-run labels do not introduce sentence case in the middle of the row", () => {
+  const KEYS: Record<string, string[]> = {
+    cbt: ["grounding.hero.takes", "grounding.hero.never", "breathing.overview.neverLogged"],
+    gratitude: ["hero.thisWeek", "stats.never"],
+    habits: ["hero.today", "hero.twoWeekTicks_one", "hero.twoWeekTicks_other"],
+    journal: ["hero.never"],
+    meditation: ["hero.never"],
+    mood: ["stats.thisWeekLabel", "stats.avgLabel", "stats.never"],
+    sleep: ["hero.avg", "hero.quality", "stats.never"],
+  };
+  const offenders: string[] = [];
+
+  for (const lang of ["en", "bg"]) {
+    for (const [namespace, keys] of Object.entries(KEYS)) {
+      const json = JSON.parse(
+        fs.readFileSync(
+          path.join(ROOT, "src", "i18n", "locales", lang, `${namespace}.json`),
+          "utf8",
+        ),
+      ) as Record<string, unknown>;
+
+      for (const key of keys) {
+        const value = key
+          .split(".")
+          .reduce<unknown>(
+            (current, part) =>
+              current && typeof current === "object"
+                ? (current as Record<string, unknown>)[part]
+                : undefined,
+            json,
+          );
+        if (typeof value !== "string" || /^\p{Lu}/u.test(value)) {
+          offenders.push(`${lang}/${namespace}.json: ${key} = ${JSON.stringify(value)}`);
+        }
+      }
+    }
+  }
+
+  expect(offenders).toEqual([]);
+});

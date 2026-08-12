@@ -12,15 +12,37 @@
     "title": "Sit complete",
     "subtitle": "{{count}} min · well done"
   },
+  "sit": {
+    "eyebrow": "Sitting · stage {{stage}}",
+    "progress": "of {{minutes}} min",
+    "progressWithBell": "of {{minutes}} min · bell at {{bell}}",
+    "paused": "Paused",
+    "pause": "Pause",
+    "resume": "Resume",
+    "finishEarly": "Finish early",
+    "exit": {
+      "title": "Finish this sit?",
+      "message": "Your time so far will be saved.",
+      "confirm": "Finish sit",
+      "cancel": "Keep sitting"
+    },
+    "after": {
+      "title_one": "That's {{count}} minute.",
+      "title_other": "That's {{count}} minutes.",
+      "saved": "Saved already — the rest is only if it's useful.",
+      "pulledLabel": "What pulled at you",
+      "notePlaceholder": "Anything worth noting?",
+      "skip": "Skip",
+      "save": "Save reflection"
+    }
+  },
   "hero": {
     "stage": "Stage",
-    "sessions_one": "{{count}} session",
-    "sessions_other": "{{count}} sessions",
-    "median": "Median",
-    "minutes_one": "{{count}} min",
-    "minutes_other": "{{count}} min",
-    "last": "Last · {{when}}",
-    "never": "No sessions logged yet"
+    "sits_one": "sit",
+    "sits_other": "sits",
+    "typicalMinutes": "min typical",
+    "last": "last sat {{when}}",
+    "never": "no sessions logged yet"
   },
   "module": {
     "home": {
@@ -28,11 +50,20 @@
       "subtitle": "Train steady attention and clear awareness, one sit at a time.",
       "todayCard": "Today's sit",
       "startSit": "Start a sit",
-      "openStages": "Explore the ten stages",
-      "openLearn": "Learn the framework",
-      "recentTitle": "Recent sessions",
-      "noSessions": "No sessions yet. Start whenever you're ready.",
-      "viewHistory": "All sessions"
+      "endsAbout": "ends about {{time}}",
+      "durationLabel": "Length",
+      "minuteLess": "One minute less",
+      "minuteMore": "One minute more",
+      "begin": "Begin",
+      "practiceLabel": "Your practice",
+      "stageRow": "Stage {{stage}} — {{name}}",
+      "stageRowSubtitle": "Where you are now · ten stages, four milestones",
+      "practicesRowSubtitle": "Step-by-step reference for each seated practice",
+      "minutesSat": "Minutes sat",
+      "minutesA11y": "{{count}} minutes sat over the last {{days}} days.",
+      "recentTitle": "Recent sits",
+      "showAllSits": "Show all sits",
+      "noSessions": "No sessions yet. Start whenever you're ready."
     },
     "learn": {
       "title": "Learn the framework",
@@ -42,13 +73,14 @@
       "gardenerTitle": "The gardener's mindset",
       "gardenerBody": "You can't pull a sapling to make it grow. Progress comes from clear intentions, not from force. Patience over willpower; intention over striving; every sit is the right sit.",
       "nonLinearTitle": "The path is not linear",
-      "nonLinearBody": "A single sit can move between stages. Stress, illness, or a hard day can drop you back. This is normal. You are not behind."
+      "nonLinearBody": "A single sit can move between stages. Stress, illness, or a hard day can drop you back. This is normal."
     },
     "stages": {
       "title": "The ten stages",
-      "subtitle": "Ten stages divided by four milestones.",
+      "subtitle": "Four milestones. A single sit can move between stages.",
       "currentStageBadge": "Where you are",
-      "switchTo": "Set this as my current stage",
+      "switchTo": "Set as my current stage",
+      "alreadyCurrent": "This is your current stage.",
       "phaseNovice": "Novice - Stages 1 to 3",
       "phaseSkilled": "Skilled - Stages 4 to 6",
       "phaseTransition": "Transition - Stage 7",
@@ -97,21 +129,14 @@
     },
     "insights": {
       "title": "Reflect",
-      "subtitle": "A quiet summary of your practice - no scores.",
+      "subtitle": "The last {{count}} days of practice - no scores.",
       "totalSessions": "Sessions",
       "totalMinutes": "Total time",
-      "longestSit": "Longest sit",
-      "avgMood": "Avg mood after",
       "sessionCount_one": "{{count}} sit",
       "sessionCount_other": "{{count}} sits",
       "minuteCount_one": "{{count}} min",
       "minuteCount_other": "{{count}} min",
-      "stageBreakdown": "Time at each stage",
-      "stageLabel": "Stage {{stage}}",
-      "stageValue": "{{sessions}} sits · {{minutes}} min",
-      "mindWanderingDown": "Catches have been about {{count}} per sit lower recently than in the prior two weeks.",
-      "mindWanderingUp": "Catches have been about {{count}} per sit higher recently than in the prior two weeks.",
-      "mindWanderingFlat": "Catches have stayed about the same across the last four weeks."
+      "obstaclesLabel": "What pulled at you"
     },
     "dailyLife": {
       "title": "Daily life mindfulness",
@@ -153,7 +178,11 @@
       "subtitle": "Private record of every sit.",
       "empty": "No sessions yet.",
       "stageBadge": "Stage {{stage}}",
-      "durationLabel": "{{count}} min"
+      "durationLabel": "{{count}} min",
+      "error": {
+        "title": "Couldn't load your sits",
+        "description": "Your record is safe - this screen just couldn't reach it. Check your connection and try again."
+      }
     },
     "sessionDetail": {
       "title": "Session detail",
@@ -172,6 +201,7 @@
   },
   "practices": {
     "sectionLabel": "Practices",
+    "subtitle": "A reference for the seated practices - the sit itself starts from the module home.",
     "breath-awareness": {
       "title": "Breath awareness",
       "shortDescription": "Anchor your attention to the breath, returning gently when the mind wanders.",
@@ -296,7 +326,6 @@
   },
   "stages": {
     "s1": {
-      "title": "Stage 1 - Establishing a Practice",
       "short": "Establishing a practice",
       "goal": "Develop a regular, consistent meditation practice.",
       "obstacles": "Resistance, procrastination, fatigue, impatience, boredom, lack of motivation.",
@@ -309,7 +338,6 @@
       }
     },
     "s2": {
-      "title": "Stage 2 - Overcoming Mind-Wandering",
       "short": "Overcoming mind-wandering",
       "goal": "Shorten mind-wandering and extend periods of sustained attention to the breath.",
       "obstacles": "Mind-wandering, monkey-mind, impatience.",
@@ -322,7 +350,6 @@
       }
     },
     "s3": {
-      "title": "Stage 3 - Overcoming Forgetting",
       "short": "Overcoming forgetting",
       "goal": "Overcome forgetting the breath and falling asleep.",
       "obstacles": "Distractions, forgetting, mind-wandering, sleepiness.",
@@ -335,7 +362,6 @@
       }
     },
     "s4": {
-      "title": "Stage 4 - Overcoming Gross Distraction and Strong Dullness",
       "short": "Overcoming gross distraction and strong dullness",
       "goal": "Overcome gross distraction and strong dullness.",
       "obstacles": "Distractions, pain and discomfort, intellectual insights, emotionally charged visions and memories.",
@@ -348,7 +374,6 @@
       }
     },
     "s5": {
-      "title": "Stage 5 - Overcoming Subtle Dullness",
       "short": "Overcoming subtle dullness",
       "goal": "Overcome subtle dullness and increase the power of mindfulness.",
       "obstacles": "Subtle dullness is hard to recognize, creates an illusion of stability, and is seductively pleasant.",
@@ -361,7 +386,6 @@
       }
     },
     "s6": {
-      "title": "Stage 6 - Subduing Subtle Distractions",
       "short": "Subduing subtle distractions",
       "goal": "Subdue subtle distractions and develop metacognitive introspective awareness.",
       "obstacles": "Subtle thoughts and mental objects alternate with the breath in peripheral awareness.",
@@ -373,7 +397,6 @@
       }
     },
     "s7": {
-      "title": "Stage 7 - Exclusive Attention and Unifying the Mind",
       "short": "Exclusive attention and unifying the mind",
       "goal": "Reach effortlessly sustained exclusive attention and powerful mindfulness.",
       "obstacles": "Effort is still required; boredom, restlessness, and doubt can arise. Bizarre sensations and involuntary movements may appear. Knowing when to drop effort is its own challenge.",
@@ -386,7 +409,6 @@
       }
     },
     "s8": {
-      "title": "Stage 8 - Mental Pliancy and Pacifying the Senses",
       "short": "Mental pliancy and pacifying the senses",
       "goal": "Complete pacification of the senses and the full arising of meditative joy.",
       "obstacles": "Unusual sensations, energy currents, and intense joy can themselves become distracting.",
@@ -398,7 +420,6 @@
       }
     },
     "s9": {
-      "title": "Stage 9 - Calming the Intensity of Meditative Joy",
       "short": "Calming the intensity of meditative joy",
       "goal": "Mature meditative joy into tranquility and equanimity.",
       "obstacles": "The intensity of joy can perturb the mind and disrupt practice.",
@@ -410,7 +431,6 @@
       }
     },
     "s10": {
-      "title": "Stage 10 - Tranquility and Equanimity",
       "short": "Tranquility and equanimity",
       "goal": "Establish the qualities of śamatha as the normal condition of the mind.",
       "obstacles": "The qualities of śamatha fade after the meditation session ends.",

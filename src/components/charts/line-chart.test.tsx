@@ -1,7 +1,11 @@
 import { render } from "@testing-library/react-native";
 import { Circle, Line, Polygon, Polyline, Text as SvgText } from "react-native-svg";
 
-import { LineChart, type LineChartPoint } from "@/src/components/charts/line-chart";
+import {
+  LineChart,
+  lineChartContentWidth,
+  type LineChartPoint,
+} from "@/src/components/charts/line-chart";
 import { THEME } from "@/lib/theme";
 import { DEFAULT_STYLE } from "@/src/lib/theme/styles";
 import { themeTokens } from "@/src/lib/theme/projections";
@@ -50,6 +54,75 @@ describe("LineChart", () => {
     expect(texts).toContain("d0");
     expect(texts).toContain("d59");
     expect(texts).not.toContain("d30");
+  });
+
+  /**
+   * Scroll mode (#900): `contentWidth` past the viewport turns the chart into
+   * a fixed y-axis beside a horizontal scroller. Density is judged by what
+   * shares the viewport, not the total count, and the caller's labels are
+   * never collapsed — it already spaced them per viewport.
+   */
+  describe("scroll mode", () => {
+    it("keeps dots and every caller label when only a viewport's worth is visible at once", () => {
+      // 60 points over twice the viewport ≈ 30 visible at once — sparse.
+      const points = evenPoints(60, (i) => (i % 10 === 0 ? `d${i}` : undefined));
+      const { getByTestId, UNSAFE_getAllByType } = render(
+        <LineChart points={points} domain={[1, 5]} width={300} contentWidth={600} />,
+      );
+
+      expect(getByTestId("line-chart-scroller")).toBeTruthy();
+      expect(UNSAFE_getAllByType(Circle)).toHaveLength(60);
+      const texts = UNSAFE_getAllByType(SvgText).map((t) => t.props.children);
+      // Interior labels survive — a first/last collapse would leave the
+      // viewports between them dateless.
+      for (const label of ["d0", "d30", "d50"]) {
+        expect(texts).toContain(label);
+      }
+      // The y axis renders once, in the fixed column.
+      expect(texts.filter((c) => c === 3)).toHaveLength(1);
+    });
+
+    it("thins dots but keeps caller labels when the viewport itself is dense", () => {
+      // 300 points over twice the viewport ≈ 150 visible at once — dense.
+      const points = evenPoints(300, (i) => (i % 50 === 0 ? `d${i}` : undefined));
+      const { UNSAFE_getAllByType, UNSAFE_queryAllByType } = render(
+        <LineChart points={points} domain={[1, 5]} width={300} contentWidth={600} />,
+      );
+
+      expect(UNSAFE_queryAllByType(Circle)).toHaveLength(0);
+      const texts = UNSAFE_getAllByType(SvgText).map((t) => t.props.children);
+      for (const label of ["d0", "d100", "d250"]) {
+        expect(texts).toContain(label);
+      }
+    });
+
+    it("sizes content so the anchored viewport shows exactly the promised units", () => {
+      // The scroller's viewport is the container minus the fixed 24px axis
+      // column; anchored at the end the 16px right pad is in view. So the
+      // last (visibleUnits - 1) intervals must span viewport - 16 exactly —
+      // sizing from the raw container would show ~10% fewer units (the P2
+      // caught on #908).
+      const width = 300;
+      const contentWidth = lineChartContentWidth(width, 30, 130);
+      const chartWidth = contentWidth - 8 - 16; // plot inset + right padding
+      const unitSpacing = chartWidth / (130 - 1);
+      expect(unitSpacing * (30 - 1)).toBeCloseTo(width - 24 - 16, 0);
+    });
+
+    it("computes a content width that fits when the span equals the viewport units", () => {
+      // Equal spans must NOT scroll: the returned width lands at or under the
+      // container, so the `contentWidth > width` gate keeps the fitted chart.
+      expect(lineChartContentWidth(300, 30, 30)).toBeLessThanOrEqual(300);
+    });
+
+    it("stays a plain fitted chart while content fits the viewport", () => {
+      const points = evenPoints(7, (i) => `d${i}`);
+      const { queryByTestId } = render(
+        <LineChart points={points} domain={[1, 5]} width={300} contentWidth={300} />,
+      );
+
+      expect(queryByTestId("line-chart-scroller")).toBeNull();
+    });
   });
 
   it("renders only the labels the points carry", () => {

@@ -6,31 +6,30 @@ import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { Heatmap, type HeatmapColumn } from "@/src/components/charts/heatmap";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { buildMoodHeatmapWeeks } from "@/src/features/mood/heatmap-data";
-import { useMoodScorePoints } from "@/src/features/mood/queries";
-import { hueRamp } from "@/src/features/mindfulness/exercise-hue";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { ALL_TIME_FROM_ISO, useMoodScorePoints } from "@/src/features/mood/queries";
+import { useAccentRamp } from "@/src/lib/theme-palette";
 import { parseLocalNoon } from "@/src/utils/date";
-
-// All time, literally: a fixed epoch keeps the query key stable while the
-// paged score-points fetch spans the user's whole history.
-const ALL_TIME_FROM_ISO = "1970-01-01T00:00:00.000Z";
 
 interface MoodHeatmapProps {
   userId: string | null;
 }
 
 /**
- * All-time mood map: weeks-as-columns cells colored by the day's rounded
- * average score on the be ramp. A glance view — tapping a cell only reveals a
+ * The mood map: weeks-as-columns cells colored by the day's rounded
+ * average score on the accent ramp (the active style's `--primary`, #924 —
+ * pinned `be` pink before that). A glance view — tapping a cell only reveals a
  * read-only callout (date · face · score word), never navigation.
+ *
+ * Always the whole history (#899 reverted #880's range bounds): the
+ * horizontal scroller, anchored at the newest column, is how the past is
+ * reached.
  */
 export function MoodHeatmap({ userId }: MoodHeatmapProps) {
   const { t, i18n } = useTranslation("mood");
-  const scheme = useColorSchemeName();
   const { data: scorePoints } = useMoodScorePoints(userId, ALL_TIME_FROM_ISO);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
-  const ramp = hueRamp("be", scheme === "dark");
+  const ramp = useAccentRamp();
   const weeks = useMemo(
     () => buildMoodHeatmapWeeks(scorePoints, i18n.language),
     [scorePoints, i18n.language],

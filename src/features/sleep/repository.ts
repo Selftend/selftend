@@ -1,4 +1,6 @@
-import type { SleepInput, SleepLog, SleepStats } from "@/src/features/sleep/types";
+import type { SleepInput, SleepLog, SleepStats, SleepWindow } from "@/src/features/sleep/types";
+import { sleepWindowSchema } from "@/src/features/sleep/schemas";
+import { descendingDayCursorFilter, type DayRecordCursor } from "@/src/lib/descending-cursor";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { roundTo1 } from "@/src/utils/number";
@@ -13,11 +15,27 @@ interface SleepLogRow {
   notes: string;
   logged_at: string;
   logged_offset_minutes?: number | null;
+  sleep_window?: string | null;
+  entry_day?: string | null;
   created_at: string;
+}
+
+// The view serves the decrypted window as one JSON text column (one decrypt per
+// row, #706). Parse defensively: this runs over whole lists mid-render, so a
+// malformed payload degrades to "no window" rather than blanking a screen.
+function parseSleepWindow(raw: string | null | undefined): SleepWindow | null {
+  if (!raw) return null;
+  try {
+    const parsed = sleepWindowSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
 }
 
 function mapSleepLog(row: SleepLogRow): SleepLog {
   const loggedOffsetMinutes = row.logged_offset_minutes ?? null;
+  const window = parseSleepWindow(row.sleep_window);
   return {
     id: row.id,
     userId: row.user_id,
@@ -26,7 +44,16 @@ function mapSleepLog(row: SleepLogRow): SleepLog {
     notes: row.notes,
     loggedAt: row.logged_at,
     loggedOffsetMinutes,
-    dayKey: entryDayKey(row.logged_at, loggedOffsetMinutes),
+    // A windowed entry belongs to the civil day at sleep start, in the frame
+    // captured at that bound (#800); the rest keep the captured-day calculation.
+    dayKey: window
+      ? entryDayKey(window.startedAt, window.startedOffsetMinutes)
+      : entryDayKey(row.logged_at, loggedOffsetMinutes),
+    // The SERVER's derived calendar key, verbatim: paging cursors must speak the
+    // ordering column's own values, not a client recomputation that can disagree
+    // for legacy never-captured-offset rows.
+    entryDay: row.entry_day ?? entryDayKey(row.logged_at, loggedOffsetMinutes),
+    window,
     createdAt: row.created_at,
   };
 }
@@ -39,6 +66,38 @@ export async function listSleepLogs(userId: string, limit = 50) {
     .eq("user_id", userId)
     .order("logged_at", { ascending: false })
     .limit(limit);
+
+  if (error) throw error;
+  return (data as SleepLogRow[]).map(mapSleepLog);
+}
+
+/**
+ * The unbounded history, one page at a time — sleep adopts check-in's paging
+ * (#696, decided for sleep on #775). Ordered by the server-derived entry day,
+ * then creation time, then id (#800; the matching index shipped with
+ * 20260811000000), so a windowed entry files under the day it belongs to and
+ * inserts or deletes above the cursor boundary cannot shift later pages.
+ */
+export async function listSleepLogsPage(
+  userId: string,
+  limit: number,
+  cursor: DayRecordCursor | null,
+) {
+  const client = requireSupabase();
+  let query = client
+    .from("sleep_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .order("entry_day", { ascending: false })
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingDayCursorFilter("entry_day", "created_at", cursor));
+
+  const { data, error } = await query
+    .limit(limit)
+    // PostgREST retries idempotent reads internally; the app's query client
+    // already owns retry policy, and both together mean ~17s of blank UI.
+    .retry(false);
 
   if (error) throw error;
   return (data as SleepLogRow[]).map(mapSleepLog);
@@ -148,6 +207,12 @@ export async function saveSleepLog(userId: string, input: SleepInput, logId?: st
     duration_minutes: input.durationMinutes,
     quality: input.quality,
     notes: sanitizeUserText(input.notes).trim(),
+    // `undefined` leaves any stored window untouched; `null` explicitly deletes
+    // it (duration-only mode retains no hidden exact times). The database
+    // validates the payload and derives the duration from it (#800).
+    ...(input.window !== undefined
+      ? { sleep_window: input.window ? JSON.stringify(input.window) : null }
+      : {}),
     ...(input.loggedAt
       ? {
           logged_at: input.loggedAt,

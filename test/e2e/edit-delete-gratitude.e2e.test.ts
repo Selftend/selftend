@@ -24,7 +24,7 @@ test.describe("edit and delete a gratitude entry", () => {
     await page.goto("/tools/gratitude-log/new");
 
     await page.getByRole("textbox", { name: "What made you laugh?" }).fill(originalItem);
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Save entry", exact: true }).click();
 
     // After save, detail screen shows the original item.
     await expect(page.getByText(originalItem)).toBeVisible({ timeout: 15_000 });

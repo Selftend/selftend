@@ -11,19 +11,20 @@ interface MobileFormScreenProps extends PropsWithChildren {
   contentClassName?: string;
   footer?: ReactNode;
   /**
-   * Full-bleed header rendered inside the scroll view but OUTSIDE the padded
-   * content column, so it can span the whole screen width even when
-   * `contentClassName` caps the form at a max width (e.g. a module-hue field
-   * header). Without it the layout is unchanged.
+   * Full-bleed chrome rendered inside the scroll view but OUTSIDE the padded
+   * content column, so it spans the whole screen width even though
+   * `contentClassName` caps the form at `FORM_COLUMN`. That full bleed is the
+   * point for `ScreenTopBar`: its bottom hairline has to reach both edges.
+   * Without it the layout is unchanged.
    */
-  hero?: ReactNode;
+  topBar?: ReactNode;
 }
 
 export function MobileFormScreen({
   children,
   contentClassName,
   footer,
-  hero,
+  topBar,
 }: MobileFormScreenProps) {
   // KeyboardAvoidingView renders as a plain View on web; the visual-viewport
   // inset pads the footer/content above the on-screen keyboard there.
@@ -37,13 +38,13 @@ export function MobileFormScreen({
         style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
       >
         <KeyboardAwareScrollView
-          contentContainerClassName={hero ? "grow" : cn("grow p-6", contentClassName)}
+          contentContainerClassName={topBar ? "grow" : cn("grow p-6", contentClassName)}
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
-          {hero ? (
+          {topBar ? (
             <>
-              {hero}
+              {topBar}
               <View className={cn("grow p-6", contentClassName)}>{children}</View>
             </>
           ) : (

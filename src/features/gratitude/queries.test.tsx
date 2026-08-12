@@ -4,11 +4,13 @@ import type { PropsWithChildren } from "react";
 
 import {
   useDeleteGratitudeEntry,
+  useFavoriteGratitudeEntryCount,
   useFavoriteGratitudeEntries,
   useGratitudeEntries,
+  useGratitudeEntryPages,
   useGratitudeEntry,
   useGratitudeEntryCount,
-  useGratitudeEntryCountSince,
+  useGratitudeEntryCountSinceDayKey,
   useSaveGratitudeEntry,
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
@@ -21,11 +23,13 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 // established in src/features/act/queries/queries.test.tsx.
 jest.mock("@/src/features/gratitude/repository", () => ({
   countGratitudeEntries: jest.fn(),
-  countGratitudeEntriesSince: jest.fn(),
+  countFavoriteGratitudeEntries: jest.fn(),
+  countGratitudeEntriesSinceDayKey: jest.fn(),
   deleteGratitudeEntry: jest.fn(),
   getGratitudeEntry: jest.fn(),
   listFavoriteGratitudeEntries: jest.fn(),
   listGratitudeEntries: jest.fn(),
+  listGratitudeEntriesPage: jest.fn(),
   saveGratitudeEntry: jest.fn(),
   setGratitudeEntryStarred: jest.fn(),
 }));
@@ -72,6 +76,11 @@ beforeEach(() => {
 const singleArgHooks = [
   ["useGratitudeEntries", useGratitudeEntries, repo.listGratitudeEntries],
   ["useGratitudeEntryCount", useGratitudeEntryCount, repo.countGratitudeEntries],
+  [
+    "useFavoriteGratitudeEntryCount",
+    useFavoriteGratitudeEntryCount,
+    repo.countFavoriteGratitudeEntries,
+  ],
   ["useFavoriteGratitudeEntries", useFavoriteGratitudeEntries, repo.listFavoriteGratitudeEntries],
 ] as const;
 
@@ -90,24 +99,40 @@ describe.each(singleArgHooks)("%s enabled gate", (_name, useHook, repoFn) => {
   });
 });
 
-// useGratitudeEntryCountSince has a second (non-gating) arg threaded into the
-// query key and the repo call.
-describe("useGratitudeEntryCountSince enabled gate", () => {
+describe("useGratitudeEntryPages enabled gate", () => {
   it("does not fetch when userId is null", () => {
     const client = createTestQueryClient();
-    renderHook(() => useGratitudeEntryCountSince(null, "2026-01-01T00:00:00.000Z"), {
+    renderHook(() => useGratitudeEntryPages(null), { wrapper: wrap(client) });
+    expect(repo.listGratitudeEntriesPage).not.toHaveBeenCalled();
+  });
+
+  it("loads the first page for a real user", async () => {
+    (repo.listGratitudeEntriesPage as jest.Mock).mockResolvedValue([]);
+    const client = createTestQueryClient();
+    renderHook(() => useGratitudeEntryPages("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.listGratitudeEntriesPage).toHaveBeenCalled());
+    expect(repo.listGratitudeEntriesPage).toHaveBeenCalledWith("u1", 20, null);
+  });
+});
+
+// useGratitudeEntryCountSinceDayKey has a second (non-gating) arg threaded into the
+// query key and the repo call.
+describe("useGratitudeEntryCountSinceDayKey enabled gate", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useGratitudeEntryCountSinceDayKey(null, "2026-01-01"), {
       wrapper: wrap(client),
     });
-    expect(repo.countGratitudeEntriesSince).not.toHaveBeenCalled();
+    expect(repo.countGratitudeEntriesSinceDayKey).not.toHaveBeenCalled();
   });
 
   it("fetches with the userId and sinceIso for a real user", async () => {
     const client = createTestQueryClient();
-    renderHook(() => useGratitudeEntryCountSince("u1", "2026-01-01T00:00:00.000Z"), {
+    renderHook(() => useGratitudeEntryCountSinceDayKey("u1", "2026-01-01"), {
       wrapper: wrap(client),
     });
-    await waitFor(() => expect(repo.countGratitudeEntriesSince).toHaveBeenCalled());
-    expect(repo.countGratitudeEntriesSince).toHaveBeenCalledWith("u1", "2026-01-01T00:00:00.000Z");
+    await waitFor(() => expect(repo.countGratitudeEntriesSinceDayKey).toHaveBeenCalled());
+    expect(repo.countGratitudeEntriesSinceDayKey).toHaveBeenCalledWith("u1", "2026-01-01");
   });
 });
 
@@ -206,7 +231,7 @@ describe("useDeleteGratitudeEntry", () => {
 //   - only ["gratitude","favorites",userId] is invalidated (NOT ["gratitude"])
 // ---------------------------------------------------------------------------
 describe("useSetGratitudeEntryStarred onSuccess", () => {
-  it("patches cached lists + detail and invalidates favorites only", async () => {
+  it("patches cached lists + detail and invalidates dependent collections", async () => {
     const updated = makeEntry({ id: "g1", starred: true, note: "patched" });
     (repo.setGratitudeEntryStarred as jest.Mock).mockResolvedValue(updated);
 
@@ -239,6 +264,8 @@ describe("useSetGratitudeEntryStarred onSuccess", () => {
     // Only favorites is invalidated - not the whole ["gratitude"] prefix.
     const queryKeys = spy.mock.calls.map((c) => (c[0] as { queryKey?: unknown }).queryKey);
     expect(queryKeys).toContainEqual(["gratitude", "favorites", "u1"]);
+    expect(queryKeys).toContainEqual(["gratitude", "history-pages", "u1"]);
+    expect(queryKeys).toContainEqual(["gratitude", "favorite-count", "u1"]);
     expect(queryKeys).not.toContainEqual(["gratitude"]);
   });
 

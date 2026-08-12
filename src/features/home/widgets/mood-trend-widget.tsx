@@ -59,7 +59,7 @@ export function MoodTrendWidget({ userId }: { userId: string }) {
           size="sm"
           variant="ghost"
           className="self-end"
-          onPress={() => router.push("/tools/mood-tracker")}
+          onPress={() => router.push("/tools/check-in")}
         >
           <Text className="text-muted-foreground">{t("today.dashboard.open")}</Text>
           <Icon name="arrow-forward" className="size-4 text-muted-foreground" />

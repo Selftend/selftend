@@ -37,7 +37,7 @@ export function MoodCheckinWidget({ userId }: { userId: string }) {
         <MoodScale
           compact
           value={moodToday}
-          onChange={(score) => router.push(`/tools/mood-tracker/new?score=${score}`)}
+          onChange={(score) => router.push(`/tools/check-in/new?score=${score}`)}
         />
         <Text variant="muted" className="text-[11px]">
           {todayLogs.length === 0

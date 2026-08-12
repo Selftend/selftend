@@ -140,7 +140,7 @@ const allCompleteData = {
 };
 
 function setupBaseMocks(mutateAsync: jest.Mock, isPending = false) {
-  mockUseSelectedDate.mockReturnValue({ selectedDate: TODAY, isToday: true });
+  mockUseSelectedDate.mockReturnValue({ selectedDate: TODAY });
 
   mockUseUpdateUserPreferences.mockReturnValue({
     mutateAsync,
@@ -263,7 +263,6 @@ describe("useCbtProgram - advancePhase", () => {
 
     expect(mutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        cbtOnboardingCompleted: true,
         cbtProgramCompletedAt: null,
         cbtProgramPromptDismissedAt: null,
         cbtProgramStartedAt: expect.any(String),

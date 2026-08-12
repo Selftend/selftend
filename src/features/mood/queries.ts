@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countMoodLogs,
@@ -6,21 +6,27 @@ import {
   getFirstMoodDayKey,
   getMoodLog,
   listMoodLogs,
+  listMoodLogsInDayRange,
+  listMoodLogsPage,
   listMoodScorePoints,
   saveMoodLog,
 } from "@/src/features/mood/repository";
 import type { MoodInput } from "@/src/features/mood/types";
+import { addDaysToKey } from "@/src/utils/date";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
 const moodKeys = {
   all: ["mood"] as const,
   list: (userId: string, limit: number) => ["mood", "list", userId, limit] as const,
   history: (userId: string) => ["mood", "history", userId] as const,
+  historyPages: (userId: string) => ["mood", "historyPages", userId] as const,
   detail: (userId: string, id: string) => ["mood", "detail", userId, id] as const,
   count: (userId: string) => ["mood", "count", userId] as const,
   scorePoints: (userId: string, fromIso: string, toIso?: string) =>
     ["mood", "scorePoints", userId, fromIso, toIso ?? ""] as const,
+  week: (userId: string, weekStartKey: string) => ["mood", "week", userId, weekStartKey] as const,
   firstLogDate: (userId: string) => ["mood", "firstLogDate", userId] as const,
 };
 
@@ -48,7 +54,49 @@ export function useMoodHistory(userId: string | null, take: number = MOOD_HISTOR
   });
 }
 
-// Trend-window query: only timestamp/offset/score come over the wire and there is
+/**
+ * Page size for the all-history screen. Large enough that a first page fills
+ * several screens of ~72px rows, small enough that the first paint doesn't pay
+ * to decrypt a year of entries — every returned row decrypts all five encrypted
+ * columns whatever the projection, because `app.decrypt_text` is VOLATILE (#693).
+ */
+export const MOOD_HISTORY_PAGE_SIZE = 50;
+
+/**
+ * The unbounded history, one page at a time — the app's first paged query (#696).
+ *
+ * Every other history in the product is a single capped fetch with a silent
+ * ceiling (mood 200, habits 365, meditation 100). A screen called *all history*
+ * that stops at 200 is a lie, so this one keeps asking instead.
+ *
+ * The key sits under the `mood` root like every other, so a save or delete still
+ * invalidates it with the rest. Every later page is anchored to the last row of
+ * the prior page, so inserts or deletes above that boundary cannot shift it.
+ */
+export function useMoodHistoryPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: userId ? moodKeys.historyPages(userId) : ["mood", "historyPages", "anonymous"],
+    queryFn: ({ pageParam }) => listMoodLogsPage(userId!, MOOD_HISTORY_PAGE_SIZE, pageParam),
+    initialPageParam: null as RecordCursor | null,
+    // A short page is the end of the data. A full one may or may not be, so ask
+    // again: one empty round trip at the exact boundary beats stopping early.
+    getNextPageParam: (lastPage) =>
+      lastPage.length < MOOD_HISTORY_PAGE_SIZE
+        ? undefined
+        : nextDescendingCursor(lastPage, (log) => log.loggedAt),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * All time, literally: a fixed epoch keeps the score-points query key stable
+ * while the paged fetch spans the user's whole history. One cache entry feeds
+ * every all-time consumer — the mood map, and since presets became pannable
+ * viewports (#900) the trend and distribution too.
+ */
+export const ALL_TIME_FROM_ISO = "1970-01-01T00:00:00.000Z";
+
+// Score-points query: only timestamp/offset/score come over the wire and there is
 // no row limit, so the 200-row history cache is not the trend's ceiling. Lives
 // under the "mood" root key, so every save invalidates it with the rest.
 export function useMoodScorePoints(userId: string | null, fromIso: string, toIso?: string) {
@@ -57,6 +105,40 @@ export function useMoodScorePoints(userId: string | null, fromIso: string, toIso
       ? moodKeys.scorePoints(userId, fromIso, toIso)
       : ["mood", "scorePoints", "anonymous", fromIso, toIso ?? ""],
     queryFn: () => listMoodScorePoints(userId!, fromIso, toIso),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * The displayed week's check-ins, plus the week before it (#736, decided on #697).
+ *
+ * Fourteen days rather than seven, because the week-over-week delta has to be
+ * correct at **every** offset, not only the current week — one fetch feeds the
+ * strip, the average, the delta, "felt most often" and the day panel's rows.
+ * There is deliberately no per-day fetch: the panel is a filter over a week the
+ * screen already holds.
+ *
+ * Keyed per week so paging is cached — walking back and forward re-reads nothing
+ * — and rooted under `mood` like every other key, so a save or delete still
+ * invalidates it with the rest. Cost is 14–40 rows a week, small enough that
+ * #693's decrypt-everything projection cost barely registers.
+ *
+ * The span is derived here rather than passed in, so that `weekStartKey` alone
+ * is a complete description of what the query returns. Taking the far bound as
+ * a second argument would let a caller pair one week's key with another week's
+ * range and get a cache hit carrying the wrong fortnight.
+ */
+export function useMoodWeek(userId: string | null, weekStartKey: string) {
+  return useQuery({
+    queryKey: userId
+      ? moodKeys.week(userId, weekStartKey)
+      : ["mood", "week", "anonymous", weekStartKey],
+    queryFn: () =>
+      listMoodLogsInDayRange(
+        userId!,
+        addDaysToKey(weekStartKey, -7),
+        addDaysToKey(weekStartKey, 6),
+      ),
     enabled: Boolean(userId),
   });
 }

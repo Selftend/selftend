@@ -136,11 +136,11 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     // --- Manual run: off-schedule still tracks (independent-fact rule) ---
     // Log a mood through the normal check-in flow (the routine's only step).
     await navigateViaPanel(page, "Check-in");
-    await expect(page).toHaveURL(/\/tools\/mood-tracker$/, { timeout: 15_000 });
-    await page.getByRole("radio", { name: "OK", exact: true }).click();
-    await page.waitForURL(/\/tools\/mood-tracker\/new\?/, { timeout: 15_000 });
-    await page.getByRole("button", { name: "Save", exact: true }).click();
-    await page.waitForURL(/\/tools\/mood-tracker\/(?!new)[^/]+$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
+    await page.getByRole("radio", { name: "Okay", exact: true }).click();
+    await page.waitForURL(/\/tools\/check-in\/new\?/, { timeout: 15_000 });
+    await page.getByRole("button", { name: "Save check-in", exact: true }).click();
+    await page.waitForURL(/\/tools\/check-in\/(?!new)[^/]+$/, { timeout: 15_000 });
 
     // Back on routines home: progress shows despite the off-day - emphasis
     // changed, tracking didn't. The FAB stays quiet (still not scheduled).

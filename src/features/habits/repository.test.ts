@@ -4,6 +4,7 @@ import {
   getHabit,
   listHabits,
   listHabitLogs,
+  listHabitLogsPage,
   restoreHabit,
   saveHabit,
   toggleHabitLog,
@@ -146,7 +147,7 @@ describe("habits repository", () => {
 
   it("deletes an existing tick when toggling the same date a second time", async () => {
     const existing = {
-      id: "log-1",
+      id: VALID_ID,
       user_id: "user-1",
       habit_id: "h-1",
       logged_on: "2026-05-17",
@@ -173,7 +174,7 @@ describe("habits repository", () => {
       ticked: false,
     });
     expect(eqDeleteUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(eqDeleteId).toHaveBeenCalledWith("id", "log-1");
+    expect(eqDeleteId).toHaveBeenCalledWith("id", VALID_ID);
   });
 
   it("inserts a new tick when toggling a date with no existing log", async () => {
@@ -409,24 +410,43 @@ describe("habits repository", () => {
   });
 
   it("listHabitLogs lists all logs when no options are passed", async () => {
-    const order = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
-    const eqUser = jest.fn(() => ({ order }));
+    const orderId = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
 
     const result = await listHabitLogs("user-1");
 
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
-    expect(order).toHaveBeenCalledWith("logged_on", { ascending: false });
+    expect(orderDay).toHaveBeenCalledWith("logged_on", { ascending: false });
     expect(result).toEqual([expect.objectContaining({ id: "log-1", note: "done" })]);
+  });
+
+  it("listHabitLogs breaks ties on id, so a page boundary cannot duplicate or skip a row", async () => {
+    // `logged_on` is a `date` with one row per habit per day, so every habit
+    // ticked on the same day ties on it. Postgres gives no stable order among
+    // ties across separate statements, so a paged read ordered on it alone can
+    // hand the same row back twice - or lose it - when a tied group straddles
+    // a page boundary.
+    const orderId = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    await listHabitLogs("user-1");
+
+    expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
   });
 
   it("listHabitLogs applies habitId, sinceDate and limit filters together", async () => {
     const limit = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
     const gte = jest.fn(() => ({ limit }));
     const eqHabit = jest.fn(() => ({ gte }));
-    const order = jest.fn(() => ({ eq: eqHabit }));
-    const eqUser = jest.fn(() => ({ order }));
+    const orderId = jest.fn(() => ({ eq: eqHabit }));
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
 
@@ -442,9 +462,55 @@ describe("habits repository", () => {
     expect(result).toHaveLength(1);
   });
 
+  it("listHabitLogs closes the range on untilDate, so one day can be asked for", async () => {
+    // ⚠️ Rows come back newest-first, so `{ sinceDate: day, limit: n }` returns
+    // the n NEWEST days at or after `day` - which omits `day` itself once it has
+    // n newer ticks. The note editor hydrated from exactly that query, so its
+    // field opened blank and saving overwrote a note that was already there.
+    const lte = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const gte = jest.fn(() => ({ lte }));
+    const eqHabit = jest.fn(() => ({ gte }));
+    const orderId = jest.fn(() => ({ eq: eqHabit }));
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    const result = await listHabitLogs("user-1", {
+      habitId: VALID_ID,
+      sinceDate: "2026-04-01",
+      untilDate: "2026-04-01",
+    });
+
+    expect(gte).toHaveBeenCalledWith("logged_on", "2026-04-01");
+    expect(lte).toHaveBeenCalledWith("logged_on", "2026-04-01");
+    expect(result).toHaveLength(1);
+  });
+
+  it("listHabitLogsPage anchors the next page to a day and id", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [habitLogRow], error: null });
+    const or = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ or, limit }));
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
+
+    await listHabitLogsPage("user-1", 50, {
+      timestamp: "2026-05-17",
+      id: VALID_ID,
+    });
+
+    expect(or).toHaveBeenCalledWith(
+      `logged_on.lt."2026-05-17",and(logged_on.eq."2026-05-17",id.lt."${VALID_ID}")`,
+    );
+    expect(limit).toHaveBeenCalledWith(50);
+  });
+
   it("listHabitLogs throws when the query errors", async () => {
-    const order = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
-    const eqUser = jest.fn(() => ({ order }));
+    const orderId = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
+    const orderDay = jest.fn(() => ({ order: orderId }));
+    const eqUser = jest.fn(() => ({ order: orderDay }));
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ habit_logs: { select } }));
 

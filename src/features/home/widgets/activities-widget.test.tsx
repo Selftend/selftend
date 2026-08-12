@@ -54,7 +54,7 @@ function planned(scheduledOffsetMinutes: number | null): ActivityLog {
 }
 
 function renderOn(dayKey: string, activities: ActivityLog[]) {
-  mockUseSelectedDate.mockReturnValue({ selectedDate: dayKey, isToday: true });
+  mockUseSelectedDate.mockReturnValue({ selectedDate: dayKey });
   mockUseActivities.mockReturnValue({ data: activities } as unknown as ReturnType<
     typeof useActivities
   >);

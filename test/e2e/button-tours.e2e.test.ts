@@ -7,7 +7,7 @@ import { policyVersion } from "../../src/features/policies/policy-content";
 // (src/features/tours/home-tour.tsx). The day-strip "dates" tip and every
 // per-page module-header ("button tour") tip were removed - see
 // .superpowers/sdd/task-4-brief.md. This spec now covers:
-//   1. Module screens (e.g. mood-tracker): action buttons render and fire,
+//   1. Module screens (e.g. check-in): action buttons render and fire,
 //      with no coach-mark overlay ever appearing.
 //   2. The home dashboard: exactly the 2 remaining tips still show and can be
 //      dismissed individually or all at once.
@@ -41,7 +41,6 @@ async function setTourState(shownButtonTours: readonly string[]) {
     {
       user_id: USER_ID,
       app_onboarding_completed: true,
-      cbt_onboarding_completed: true,
       policy_version_accepted: policyVersion,
       shown_button_tours: shownButtonTours,
     },
@@ -89,7 +88,7 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
     // no header-tip mechanism at all, so the module screen must render clean regardless.
     await setTourState([]);
 
-    await page.goto("/tools/mood-tracker");
+    await page.goto("/tools/check-in");
 
     // The desktop sidebar also has a "Notifications" nav link (same label), so scope to
     // the module header's own action row via .last() - it renders after the sidebar in
@@ -107,7 +106,7 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
 
   test("notifications action still fires onPress (opens its modal)", async ({ page }) => {
     await setTourState([]);
-    await page.goto("/tools/mood-tracker");
+    await page.goto("/tools/check-in");
 
     // See note above: the sidebar's own "Notifications" nav link shares this label, so
     // the module header's action button is the LAST match, not the first.
@@ -117,7 +116,7 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
 
   test("info action still fires onPress (opens the module's onboarding)", async ({ page }) => {
     await setTourState([]);
-    await page.goto("/tools/mood-tracker");
+    await page.goto("/tools/check-in");
 
     await page.getByLabel("About this module", { exact: true }).click();
     await expect(page.getByText("Know your emotional weather")).toBeVisible();
@@ -188,13 +187,13 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
     await expect(page.getByText(/Browse previous days to see what you logged\./i)).toHaveCount(0);
   });
 
-  test("settings reset makes home tips eligible again", async ({ page }) => {
+  test("Show tips again makes home tips eligible again", async ({ page }) => {
     await setTourState([...HOME_TOUR_KEYS]);
 
     await page.goto("/settings");
-    await page.getByRole("button", { name: "Reset onboarding", exact: true }).click();
+    await page.getByRole("button", { name: "Show tips again", exact: true }).click();
 
-    await expect(page.getByText(/Tool introductions will be shown again/i).first()).toBeVisible();
+    await expect(page.getByText(/button tips.*can appear again/i).first()).toBeVisible();
     await expect.poll(getShownButtonTours).toEqual([]);
   });
 });

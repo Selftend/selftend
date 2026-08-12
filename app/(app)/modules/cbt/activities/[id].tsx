@@ -133,7 +133,7 @@ export default function ActivityDetailScreen() {
               <Button
                 onPress={() =>
                   router.push(
-                    `/tools/mood-tracker/new?linkedStrategy=behavioral-activation&completeActivityId=${activity.id}` as Parameters<
+                    `/tools/check-in/new?linkedStrategy=behavioral-activation&completeActivityId=${activity.id}` as Parameters<
                       typeof router.push
                     >[0],
                   )

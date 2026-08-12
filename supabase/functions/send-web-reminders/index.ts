@@ -9,7 +9,9 @@ import {
   buildExpoPushMessage,
   buildRoutineExpoPushMessage,
   classifyExpoTicket,
+  fetchAllPaged,
   nextRoutineReminderKeys,
+  PAGE_SIZE,
   reminderKeyIfDue,
   resolveReminderLanguage,
   routineNotificationCopy,
@@ -72,23 +74,6 @@ function getNotificationCopy(language: string | null, target: NotificationCopyKe
 
 type TokenRow = WebPushSubscriptionRow & { expo_push_token: string };
 
-// PostgREST caps a single response at ~1000 rows, so an unbounded .select() silently drops
-// everyone past the first page (#25). Page through with .range() until a short page returns.
-const PAGE_SIZE = 1000;
-async function fetchAllPaged(
-  buildQuery: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>,
-): Promise<unknown[]> {
-  const rows: unknown[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await buildQuery(from, from + PAGE_SIZE - 1);
-    if (error) throw error;
-    const page = data ?? [];
-    rows.push(...page);
-    if (page.length < PAGE_SIZE) break;
-  }
-  return rows;
-}
-
 Deno.serve(async (request) => {
   try {
     const cronSecret = requiredEnv("WEB_PUSH_CRON_SECRET");
@@ -112,27 +97,25 @@ Deno.serve(async (request) => {
     );
     const now = new Date();
 
-    const subscriptions = (await fetchAllPaged((from, to) =>
+    const subscriptions = (await fetchAllPaged("id", () =>
       supabase
         .from("web_push_subscriptions")
         .select(
           "id,user_id,endpoint,p256dh,auth,time_zone,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys,failure_count",
         )
-        .eq("enabled", true)
-        .range(from, to),
+        .eq("enabled", true),
     )) as WebPushSubscriptionRow[];
 
     // Native (Expo) device tokens, fetched HERE - before the user-set is built and unfiltered
     // by user_id - so a native-only user (no web push subscription) still receives reminders
     // (#1). A failed fetch now throws via fetchAllPaged instead of being silently ignored (#19).
-    const tokenRows = (await fetchAllPaged((from, to) =>
+    const tokenRows = (await fetchAllPaged("id", () =>
       supabase
         .from("device_push_tokens")
         .select(
           "id,user_id,expo_push_token,time_zone,failure_count,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys",
         )
-        .eq("enabled", true)
-        .range(from, to),
+        .eq("enabled", true),
     )) as TokenRow[];
 
     const userIds = [
@@ -197,12 +180,10 @@ Deno.serve(async (request) => {
     const preferencesRows: UserPreferenceRow[] = [];
     for (let i = 0; i < userIds.length; i += PAGE_SIZE) {
       const chunk = userIds.slice(i, i + PAGE_SIZE);
-      const chunkRows = (await fetchAllPaged((from, to) =>
-        supabase
-          .from("user_preferences")
-          .select(PREFERENCE_COLUMNS)
-          .in("user_id", chunk)
-          .range(from, to),
+      // Ordered by `user_id`, not `id`: `user_preferences` is keyed on `user_id` and
+      // has no `id` column, so the usual primary key does not exist here.
+      const chunkRows = (await fetchAllPaged("user_id", () =>
+        supabase.from("user_preferences").select(PREFERENCE_COLUMNS).in("user_id", chunk),
       )) as UserPreferenceRow[];
       preferencesRows.push(...chunkRows);
     }
@@ -222,13 +203,12 @@ Deno.serve(async (request) => {
     const routineRows: RoutineReminderRow[] = [];
     for (let i = 0; i < userIds.length; i += PAGE_SIZE) {
       const chunk = userIds.slice(i, i + PAGE_SIZE);
-      const chunkRows = (await fetchAllPaged((from, to) =>
+      const chunkRows = (await fetchAllPaged("id", () =>
         supabase
           .from("routines")
           .select(ROUTINE_COLUMNS)
           .eq("reminder_enabled", true)
-          .in("user_id", chunk)
-          .range(from, to),
+          .in("user_id", chunk),
       )) as RoutineReminderRow[];
       routineRows.push(...chunkRows);
     }

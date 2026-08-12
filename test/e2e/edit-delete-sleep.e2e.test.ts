@@ -18,22 +18,30 @@ test.describe("edit and delete a sleep log", () => {
     await page.goto("/tools/sleep/new");
     // Duration starts at the 7h 30m default; one +30 step makes it 8h.
     await page.getByRole("button", { name: "Add 30 minutes", exact: true }).click();
-    // Quality is a 5-star control; tap the 3rd star.
-    await page.getByRole("radio", { name: "Rate 3 of 5", exact: true }).click();
+    // Quality is five named options (#774); "Fair" is the stored 3.
+    await page.getByRole("radio", { name: "Fair", exact: true }).click();
     // log.notesPlaceholder = "Anything that affected your sleep?"
     await page.getByPlaceholder("Anything that affected your sleep?").fill(originalNotes);
-    // log.save = "Save"
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    // log.save = "Save night"
+    await page.getByRole("button", { name: "Save night", exact: true }).click();
 
     // After save the app redirects to the detail page (/tools/sleep/[id]).
     await expect(page).toHaveURL(/\/tools\/sleep\/[^/]+$/, { timeout: 15_000 });
+
+    // #911 regression: the header's Edit and Delete must share a height — a
+    // size="sm" Edit next to the size="icon" trash rendered 32px vs 36px and
+    // the owner read the pair as a broken button (same mismatch as check-in's
+    // #901). Jest cannot see NativeWind layout, so the check lives here.
+    const editBox = await page.getByRole("button", { name: "Edit", exact: true }).boundingBox();
+    const deleteBox = await page.getByRole("button", { name: "Delete", exact: true }).boundingBox();
+    expect(editBox?.height).toBe(deleteBox?.height);
 
     // EDIT: detail.edit = "Edit"
     await page.getByRole("button", { name: "Edit", exact: true }).click();
     // Change duration from 8h down to 7h (two -30 steps), quality to 4, update notes.
     await page.getByRole("button", { name: "Subtract 30 minutes", exact: true }).click();
     await page.getByRole("button", { name: "Subtract 30 minutes", exact: true }).click();
-    await page.getByRole("radio", { name: "Rate 4 of 5", exact: true }).click();
+    await page.getByRole("radio", { name: "Good", exact: true }).click();
     await page.getByPlaceholder("Anything that affected your sleep?").fill(updatedNotes);
     // log.update = "Update"
     await page.getByRole("button", { name: "Update", exact: true }).click();

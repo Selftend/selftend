@@ -112,23 +112,27 @@ This module follows the contract in `tools.md`:
 - No new `ModuleKey` is required; the feature ships under the existing tool route group. (If a future product decision elevates habits to its own enabled-modules toggle, add `"habits"` to `ModuleKey` in `src/features/modules/types.ts` and to `VALID_MODULES`.)
 - i18n namespace: `habits:*` - add `src/i18n/locales/en/habits.json` and `src/i18n/locales/bg/habits.json`. Both languages ship together.
 - New `user_preferences` field: `habitsOnboardingCompleted: boolean` (default `false`). Added to `UserPreferences`, `defaultUserPreferences`, the Supabase column, and the `export_user_data()` projection.
-- Settings can reset the onboarding flag (same pattern as CBT, meditation, gratitude).
+- Settings does not reset a habits onboarding flag. The current client opens the introduction explicitly; the legacy column remains temporarily for compatibility with supported mobile builds.
 - No reminder fields in Phase 1. Reminders are explicitly out of scope until the broader reminder posture is reviewed (AGENTS.md: _"Streaks, quests, reminders, and gamification must always be optional and non-punitive."_). If reminders are added later, they must be off by default and use the existing reminder-consent gate.
 
 ---
 
 ## 4. Routes
 
-| Route                        | Purpose                                                                                                                         |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `/tools/habits`              | Home - today's habits with tap-to-tick, identity-grouped, recent activity, week strip, _Never Miss Twice_ banner if applicable. |
-| `/tools/habits/onboarding`   | Full-screen fallback / revisit route for the onboarding modal.                                                                  |
-| `/tools/habits/new`          | Create a habit - guided form covering identity, the Four Laws, and the two-minute version.                                      |
-| `/tools/habits/[id]`         | Detail - habit overview, calendar heat-strip, recent notes, edit / archive / delete.                                            |
-| `/tools/habits/[id]/edit`    | Edit a habit.                                                                                                                   |
-| `/tools/habits/[id]/log`     | Quick log a note for today (used when the user taps the tick and chooses _Add note_).                                           |
-| `/tools/habits/history`      | Private history - chronological log of ticks across all habits.                                                                 |
-| `/tools/habits/learn/[slug]` | Single learn card (1% compounding, Four Laws, Two-Minute Rule, Never Miss Twice, Identity-Based Habits).                        |
+| Route                        | Purpose                                                                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `/tools/habits`              | Home - every habit with tap-to-tick, week strip, archived group, weekly rhythm, recent activity, _Never Miss Twice_ line if applicable. |
+| `/tools/habits/new`          | Create a habit - guided form covering identity, the Four Laws, and the two-minute version.                                              |
+| `/tools/habits/[id]`         | Detail - habit overview, calendar heat-strip, recent notes, edit / archive / delete.                                                    |
+| `/tools/habits/[id]/edit`    | Edit a habit.                                                                                                                           |
+| `/tools/habits/[id]/log`     | Quick log a note for today (used when the user taps the tick and chooses _Add note_).                                                   |
+| `/tools/habits/history`      | Private history - chronological log of ticks across all habits.                                                                         |
+| `/tools/habits/learn`        | Learn index - the ten core-idea cards. Linked from the overview's Core ideas row.                                                       |
+| `/tools/habits/learn/[slug]` | Single learn card (1% compounding, Four Laws, Two-Minute Rule, Never Miss Twice, Identity-Based Habits).                                |
+
+Onboarding has no route of its own. `HabitsOnboarding` is a modal, opened from the
+header's `info` action; the standalone `/tools/habits/onboarding` route was removed
+in #765 as an orphan - nothing linked to it.
 
 Existing placeholder `app/(app)/tools/habits/index.tsx` (the `ToolPlaceholderScreen`) is replaced by the real home screen. No compat redirect is needed because the placeholder is unreleased.
 

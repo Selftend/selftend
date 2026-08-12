@@ -105,7 +105,6 @@ export function useCbtProgram(userId: string | null): UseCbtProgramResult {
         cbtProgramCompletedAt: null,
         cbtProgramPromptDismissedAt: null,
         cbtGraduationDismissedAt: null,
-        cbtOnboardingCompleted: true,
         cbtProgramPhaseIndex: 0,
         cbtProgramPhaseStartedAt: new Date().toISOString(),
       })

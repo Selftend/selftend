@@ -1,18 +1,26 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countMindfulnessSessionsExcludingNames,
   listMindfulnessSessionsByNames,
+  listMindfulnessSessionsExcludingNamesPage,
   saveMindfulnessSession,
+  sumMindfulnessMinutesExcludingNames,
 } from "@/src/features/mindfulness/repository";
 import type { MindfulnessSessionInput } from "@/src/features/mindfulness/types";
 import { breathingSlugs } from "@/src/constants/breathing";
 import { groundingSlugs } from "@/src/constants/grounding";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
+
+/** Rows per page on the all-sessions screen. */
+export const BREATHING_HISTORY_PAGE_SIZE = 20;
 
 const breathingKeys = {
   list: (userId: string) => ["breathing", "list", userId] as const,
   count: (userId: string) => ["breathing", "count", userId] as const,
+  minutes: (userId: string) => ["breathing", "minutes", userId] as const,
+  historyPages: (userId: string) => ["breathing", "historyPages", userId] as const,
 };
 
 export function useBreathingSessions(userId: string | null, limit = 30, customIds: string[] = []) {
@@ -34,6 +42,54 @@ export function useBreathingSessionCount(userId: string | null) {
   return useQuery({
     queryKey: userId ? breathingKeys.count(userId) : ["breathing", "count", "anonymous"],
     queryFn: () => countMindfulnessSessionsExcludingNames(userId!, [...groundingSlugs]),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Exact lifetime minutes breathed, for the overview header. Server-side by the same
+ * argument as the count above: the screen's own list is capped, so reducing it would
+ * turn a lifetime figure into a "last 50 sessions" one with nothing in the label to
+ * say so.
+ */
+export function useBreathingTotalMinutes(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? breathingKeys.minutes(userId) : ["breathing", "minutes", "anonymous"],
+    queryFn: () => sumMindfulnessMinutesExcludingNames([...groundingSlugs]),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Every breathing session, paged to the end (#696) - the all-sessions screen's read.
+ *
+ * Counts by EXCLUSION, like `useBreathingSessionCount` and `useBreathingTotalMinutes`, and
+ * unlike the recent-window read above. Breathing is an open set, and a deleted custom
+ * pattern leaves its sessions behind: an inclusive filter over the patterns that still
+ * exist would drop those rows from the one screen that promises the whole record, while
+ * the header totals still counted them. It also means the query needs no `customIds`, so
+ * it can't serve a stale list while that second query is in flight.
+ */
+export function useBreathingSessionPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: userId
+      ? breathingKeys.historyPages(userId)
+      : ["breathing", "historyPages", "anonymous"],
+    queryFn: ({ pageParam }) =>
+      listMindfulnessSessionsExcludingNamesPage(
+        userId!,
+        [...groundingSlugs],
+        BREATHING_HISTORY_PAGE_SIZE,
+        pageParam,
+      ),
+    initialPageParam: null as RecordCursor | null,
+    // A short page is the end of the data. A full one may or may not be, so ask again:
+    // one empty round trip at the exact boundary beats stopping early and calling a
+    // truncated list "all sessions".
+    getNextPageParam: (lastPage) =>
+      lastPage.length < BREATHING_HISTORY_PAGE_SIZE
+        ? undefined
+        : nextDescendingCursor(lastPage, (session) => session.completedAt),
     enabled: Boolean(userId),
   });
 }

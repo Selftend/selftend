@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
@@ -13,6 +13,24 @@ import {
 } from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { expectNeutralRoom } from "@/test/room-pour";
+
+const mockUseWindowDimensions = jest.fn(() => ({
+  width: 750,
+  height: 1334,
+  scale: 2,
+  fontScale: 1,
+}));
+jest.mock("react-native", () => {
+  const actual = jest.requireActual("react-native");
+  return new Proxy(actual, {
+    get(target, prop, receiver) {
+      if (prop === "useWindowDimensions") {
+        return mockUseWindowDimensions;
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+});
 
 jest.mock("expo-router", () => ({
   router: {
@@ -79,6 +97,8 @@ const cachedEntry = {
 describe("GratitudeDetailScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // `mockReturnValue` outlives clearAllMocks — pin the default width back.
+    mockUseWindowDimensions.mockReturnValue({ width: 750, height: 1334, scale: 2, fontScale: 1 });
     mockUseGratitudeEntries.mockReturnValue({
       data: [cachedEntry],
     } as unknown as ReturnType<typeof useGratitudeEntries>);
@@ -96,30 +116,52 @@ describe("GratitudeDetailScreen", () => {
     } as unknown as ReturnType<typeof useSetGratitudeEntryStarred>);
   });
 
-  it("keeps the compact header on the think room pour - no field gradient", () => {
+  /**
+   * The header actions never shrink, so a labelled Favourite button at phone
+   * width crushed the title into a near-character-wide column (#885's failure
+   * class, flagged on this PR's review). Under 640dp the Favourite collapses
+   * to an icon with its accessible name intact.
+   */
+  it("collapses Favourite to an icon button at phone width, keeping its accessible name", () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 320, height: 800, scale: 2, fontScale: 1 });
+    renderWithProviders(<GratitudeDetailScreen />);
+
+    expect(screen.getByLabelText("Favorite")).toBeTruthy();
+    expect(screen.queryByText("Favorite")).toBeNull();
+  });
+
+  it("keeps the labelled Favourite button at desktop width", () => {
+    mockUseWindowDimensions.mockReturnValue({ width: 1280, height: 800, scale: 2, fontScale: 1 });
+    renderWithProviders(<GratitudeDetailScreen />);
+
+    expect(screen.getByText("Favorite")).toBeTruthy();
+  });
+
+  it("keeps the compact header on the think room pour", () => {
     const { UNSAFE_getByType } = renderWithProviders(<GratitudeDetailScreen />);
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
     // The root carries the think room re-pour; a wrong or missing room fails here.
     expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
-  it("renders the 1st today question and its answer", () => {
+  it("renders one numbered list without legacy prompt labels", () => {
     renderWithProviders(<GratitudeDetailScreen />);
 
-    expect(screen.getByText("What made you laugh?")).toBeTruthy();
+    expect(screen.getByText(/Logged .* · 2 things/)).toBeTruthy();
+    expect(screen.getByText("1")).toBeTruthy();
     expect(screen.getByText("laughed")).toBeTruthy();
-  });
-
-  it("renders the 3rd today question and its answer", () => {
-    renderWithProviders(<GratitudeDetailScreen />);
-
-    expect(screen.getByText("What simple pleasure did you enjoy?")).toBeTruthy();
+    expect(screen.getByText("2")).toBeTruthy();
     expect(screen.getByText("kind-person")).toBeTruthy();
+    expect(screen.queryByText("What made you laugh?")).toBeNull();
   });
 
-  it("omits the 2nd today question when the slot is empty", () => {
+  it("keeps deletion behind the shared confirmation dialog", async () => {
+    const mutateAsync = jest.fn().mockResolvedValue(undefined);
+    mockUseDeleteGratitudeEntry.mockReturnValue({ mutateAsync, isPending: false } as never);
     renderWithProviders(<GratitudeDetailScreen />);
 
-    expect(screen.queryByText("Who was kind to you?")).toBeNull();
+    fireEvent.press(screen.getByLabelText("Delete"));
+    expect(screen.getByText("Delete this entry?")).toBeTruthy();
+    fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith("g-1"));
   });
 });

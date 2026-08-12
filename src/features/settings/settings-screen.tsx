@@ -16,7 +16,7 @@ import { SecuritySection } from "@/src/features/settings/components/security-sec
 import { SettingsFeedbackBanner } from "@/src/features/settings/components/settings-feedback-banner";
 import { SettingsHero } from "@/src/features/settings/components/settings-hero";
 import { SupportCard } from "@/src/features/settings/components/support-card";
-import { useResetOnboarding } from "@/src/features/settings/use-reset-onboarding";
+import { useOnboardingActions } from "@/src/features/settings/use-reset-onboarding";
 import { useSignOut } from "@/src/features/settings/use-sign-out";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 
@@ -27,10 +27,14 @@ export default function SettingsScreen() {
   const [successMessage, setSuccessMessage] = useState("");
   const { data, isLoading } = useUserPreferences(user?.id ?? null);
 
-  // useSignOut + useResetOnboarding stay at screen level and share the single
+  // Sign-out and onboarding actions stay at screen level and share the single
   // errorMessage/successMessage banner pair (R7).
   const handleSignOut = useSignOut(user?.id ?? null, setErrorMessage);
-  const { reset, isPending: resetPending } = useResetOnboarding(
+  const {
+    replayIntroduction,
+    showTipsAgain,
+    isPending: onboardingPending,
+  } = useOnboardingActions(
     user,
     data?.appOnboardingCompletedVia,
     setErrorMessage,
@@ -63,9 +67,10 @@ export default function SettingsScreen() {
             <SecuritySection />
 
             <OnboardingCard
-              disabled={!data || resetPending}
-              isPending={resetPending}
-              onReset={() => void reset()}
+              disabled={!data || onboardingPending}
+              isPending={onboardingPending}
+              onReplayIntroduction={() => void replayIntroduction()}
+              onShowTipsAgain={() => void showTipsAgain()}
             />
 
             <SupportCard />

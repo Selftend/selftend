@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { appEnv } from "@/src/lib/env";
-import { AppState, Linking, Platform } from "react-native";
+import { Linking, Platform } from "react-native";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import { useUpdateAvailability } from "@/src/lib/use-update-availability";

@@ -66,6 +66,25 @@ export function parseLocalNoon(dateKey: string): Date {
   return new Date(`${dateKey}T12:00:00`);
 }
 
+/**
+ * Is this a `YYYY-MM-DD` key naming a real calendar day?
+ *
+ * For day keys that arrive from OUTSIDE the app - a route param, a deep link -
+ * where the rest of the day-key helpers assume a well-formed one. An invalid
+ * `Date` reaching `Intl.DateTimeFormat.format` throws a `RangeError`, which on
+ * a screen means a crash rather than an error state; the same unchecked value
+ * would also ride into a Supabase range filter.
+ *
+ * The round-trip through `localDateKey` is what rejects a well-shaped
+ * impossible day: `new Date("2026-02-31T12:00:00")` rolls forward to 3 March
+ * rather than failing, so the regex alone would pass it through.
+ */
+export function isValidDayKey(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = parseLocalNoon(value);
+  return !Number.isNaN(parsed.getTime()) && localDateKey(parsed) === value;
+}
+
 // ── Day-key arithmetic ─────────────────────────────────────────────────────
 // Day-scoped surfaces bucket entries by the civil day captured at logging time
 // (`entryDayKey`), so their windows have to be walked in day keys too. Doing it
@@ -89,6 +108,18 @@ export function lastNDayKeysEndingAt(count: number, endKey: string): string[] {
 /** The later of two day keys. `YYYY-MM-DD` sorts lexicographically, so this is a plain compare. */
 export function maxDayKey(a: string, b: string): string {
   return a >= b ? a : b;
+}
+
+/**
+ * The day key of the Monday on or before `dateKey`.
+ *
+ * Weeks start Monday everywhere in the app — the mood heatmap's columns and the
+ * history screen's "Earlier this week"/"Last week" groups have to agree, or the
+ * same entry sits in different weeks on two surfaces of the same tool.
+ */
+export function mondayKeyOf(dateKey: string): string {
+  const day = parseLocalNoon(dateKey);
+  return addDaysToKey(dateKey, -((day.getDay() + 6) % 7));
 }
 
 /** Whole days from `fromKey` to `toKey`; negative when `toKey` is earlier. */
@@ -136,14 +167,77 @@ export function formatAtOffset(
   offsetMinutes: number | null,
   lang: string = i18n.language,
 ): string {
+  return formatInstantAtOffset(
+    value,
+    offsetMinutes,
+    { dateStyle: "medium", timeStyle: "short" },
+    lang,
+  );
+}
+
+/**
+ * `formatAtOffset` with the caller choosing the Intl components.
+ *
+ * The captured-frame shift is the part that must not be re-invented — a surface
+ * that wants only a time, or a weekday and a time, still has to read it in the
+ * frame the entry was logged in. The all-history screen needs three different
+ * shapes (time / weekday + time / date) depending on which group a row is in,
+ * so the options are a parameter rather than three near-identical helpers.
+ */
+export function formatInstantAtOffset(
+  value: string,
+  offsetMinutes: number | null,
+  options: Intl.DateTimeFormatOptions,
+  lang: string = i18n.language,
+): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   const known = offsetMinutes !== null && Number.isFinite(offsetMinutes);
   return new Intl.DateTimeFormat(lang || undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    ...options,
     ...(known ? { timeZone: "UTC" } : {}),
   }).format(known ? new Date(date.getTime() + offsetMinutes! * 60_000) : date);
+}
+
+/**
+ * The compact "when" for stats and rows — `last logged 4:50 pm`, not
+ * `last logged Aug 11, 2026, 4:00 PM` (#870). The shape follows how far back
+ * the entry's CAPTURED civil day sits from the viewer's today:
+ *
+ * - today (or later — travel can leave a "tomorrow" entry): the time, `4:50 pm`
+ * - within the last week: `Wed 7:40 pm` — a weekday is unambiguous under 7 days
+ * - older: the date, `Jul 27`, gaining its year only when it isn't this year
+ *
+ * The same three shapes the all-history screens already render per group
+ * (`history-groups.ts`), read in the entry's captured offset like every other
+ * entry timestamp so the label agrees with the day the entry is filed under.
+ */
+export function formatCompactAtOffset(
+  value: string,
+  offsetMinutes: number | null,
+  lang: string = i18n.language,
+  now: Date = new Date(),
+): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const known = offsetMinutes !== null && Number.isFinite(offsetMinutes);
+  // The captured-frame civil day, matching how the entry's dayKey was stamped:
+  // shift by the captured offset and read the UTC calendar fields.
+  const framed = known ? new Date(date.getTime() + offsetMinutes! * 60_000) : date;
+  const dayKey = known
+    ? `${framed.getUTCFullYear()}-${pad(framed.getUTCMonth() + 1)}-${pad(framed.getUTCDate())}`
+    : localDateKey(framed);
+  const todayKey = localDateKey(now);
+  const daysAgo = dayKeyDiff(dayKey, todayKey);
+  const options: Intl.DateTimeFormatOptions =
+    daysAgo <= 0
+      ? { hour: "numeric", minute: "2-digit" }
+      : daysAgo < 7
+        ? { weekday: "short", hour: "numeric", minute: "2-digit" }
+        : dayKey.slice(0, 4) === todayKey.slice(0, 4)
+          ? { day: "numeric", month: "short" }
+          : { day: "numeric", month: "short", year: "numeric" };
+  return formatInstantAtOffset(value, offsetMinutes, options, lang);
 }
 
 /**

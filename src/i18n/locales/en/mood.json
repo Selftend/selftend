@@ -2,12 +2,12 @@
   "checkin": {
     "moduleLabel": "Check-in",
     "title": "How are you feeling?",
-    "tagline": "A simple 1-5 picker plus space for a note.",
     "scoreRequired": "Pick a mood score first.",
+    "scoreOutOf": "{{score}} of 5",
     "scaleLabels": {
       "1": "Awful",
-      "2": "Low",
-      "3": "OK",
+      "2": "Bad",
+      "3": "Okay",
       "4": "Good",
       "5": "Great"
     }
@@ -15,15 +15,13 @@
   "title": "Check-in",
   "description": "Log how you're feeling and see how it shifts over time.",
   "today": {
-    "title": "Today",
     "howAreYou": "How are you feeling right now?",
-    "howWasDay": "How were you feeling this day?",
-    "completeOne": "Logged · {{score}}/5",
-    "completeMany": "{{count}} logs · avg {{average}}/5"
+    "lastLoggedTap": "last logged {{when}} — tap to add another"
   },
   "emotions": {
     "manage": {
       "title": "Manage emotions",
+      "link": "Manage",
       "close": "Close",
       "edit": "Edit emotion",
       "emoji": "Emoji",
@@ -34,22 +32,34 @@
       "delete": "Delete",
       "addTitle": "New emotion",
       "addButton": "Add emotion",
-      "add": "Add"
+      "add": "Add",
+      "tagline": "Drag to reorder. These are yours — rename or remove any of them.",
+      "back": "Back to the list",
+      "editEmotion": "Edit {{name}}",
+      "confirmDelete": {
+        "title": "Remove this emotion?",
+        "message": "It disappears from the picker. Check-ins that already name it keep it.",
+        "messageWithUses_one": "You have used it on {{count}} check-in. That entry keeps it — it only disappears from the picker.",
+        "messageWithUses_other": "You have used it on {{count}} check-ins. Those entries keep it — it only disappears from the picker.",
+        "messageWithUses_zero": "You have never used it. Nothing is lost."
+      }
     }
   },
   "trend": {
-    "empty": "Log a mood to start your trend."
+    "emptyRange": "Not enough check-ins in this range yet."
+  },
+  "distribution": {
+    "title": "Distribution",
+    "column_one": "{{level}}: {{count}} check-in",
+    "column_other": "{{level}}: {{count}} check-ins"
   },
   "recent": {
     "viewEntry": "View mood entry from {{when}}"
   },
   "detail": {
     "title": "Mood entry",
-    "loggedAt": "Logged at",
     "emotions": "Emotions",
     "notes": "Notes",
-    "noNotes": "No notes for this entry.",
-    "noEmotions": "No emotions tagged.",
     "linkedStrategy": "Linked strategy",
     "edit": "Edit",
     "delete": "Delete",
@@ -60,20 +70,15 @@
       "message": "This permanently removes the mood log. It can't be recovered.",
       "confirm": "Delete",
       "cancel": "Cancel"
+    },
+    "strategies": {
+      "behavioralActivation": "Behavioural activation"
     }
   },
   "onboarding": {
     "welcome": {
       "title": "Know your emotional weather",
-      "subtitle": "A daily check-in that makes patterns visible over time."
-    },
-    "affectLabel": {
-      "title": "Name it to tame it",
-      "body": "Labelling an emotion - even with one word - reduces the brain's stress response. Logging mood is a small act with a measurable effect."
-    },
-    "patterns": {
-      "title": "Spot what moves the needle",
-      "body": "Daily logs reveal trends across days and weeks: what drains you, what lifts you, and how quickly you recover after hard days."
+      "subtitle": "A quick check-in, and a record you can look back through."
     },
     "howToUse": {
       "title": "How to log",
@@ -86,59 +91,72 @@
     },
     "finish": {
       "start": "Got it"
+    },
+    "whatYouSee": {
+      "title": "What you will see",
+      "weekLabel": "Your week",
+      "weekBody": "The strip shows one week at a time. Move between weeks, and tap a day to read what you logged.",
+      "chartsLabel": "Trend and spread",
+      "chartsBody": "A line for how the score moves, and columns for how often each level came up. Both read the range you pick.",
+      "historyLabel": "All history",
+      "historyBody": "Every check-in you have logged sits on its own screen, newest first."
     }
   },
   "feedback": {
     "deleted": "Mood entry deleted"
   },
   "stats": {
-    "checkinsLabel": "check-ins",
+    "checkins_one": "check-in",
+    "checkins_other": "check-ins",
     "thisWeekLabel": "this week",
     "avgLabel": "7-day avg",
-    "last": "Last · {{when}}",
-    "never": "No check-ins yet"
+    "last": "last logged {{when}}",
+    "never": "no check-ins yet"
   },
   "week": {
     "title": "This week",
-    "average": "7-day average",
-    "deltaUp": "▲ {{delta}} vs last week",
-    "deltaDown": "▼ {{delta}} vs last week",
-    "deltaFlat": "steady vs last week",
-    "noComparison": "first week of data",
-    "byDay": "Mood by day",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
     "dayScore": "{{day}}: {{score}}",
     "dayNoEntry": "{{day}}: no entry",
+    "dayEntries_one": "{{count}} check-in. Opens the day.",
+    "dayEntries_other": "{{count}} check-ins. Opens the day.",
     "feltMost": "Felt most often",
-    "noEmotions": "No emotions tagged yet"
-  },
-  "history": {
-    "title": "History",
-    "groupAverage": "avg {{average}}",
-    "groups": {
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "thisWeek": "Earlier this week",
-      "older": "Earlier"
-    },
-    "empty": "Your check-ins will appear here."
+    "averageWord": "average",
+    "noEmotions": "No emotions tagged yet",
+    "loadFailed": "This week couldn't be loaded."
   },
   "trendControls": {
     "title": "Mood trend",
     "range7": "7d",
     "range30": "30d",
     "range90": "90d",
+    "rangeAll": "All time",
     "rangeCustom": "Custom"
   },
-  "detailWord": {
-    "1": "Awful",
-    "2": "Low",
-    "3": "OK",
-    "4": "Good",
-    "5": "Great"
-  },
   "heatmap": {
-    "title": "All time",
+    "title": "Mood map",
     "empty": "Log a mood to start your map.",
     "calloutNoEntry": "no entry"
+  },
+  "allHistory": {
+    "link": "Show all history",
+    "title": "All history",
+    "description": "Every check-in you have logged, newest first.",
+    "viewEntry": "View {{score}} check-in from {{when}}",
+    "groups": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "Earlier this week",
+      "lastWeek": "Last week"
+    },
+    "empty": {
+      "title": "Nothing here yet",
+      "description": "Your check-ins will collect here as you log them."
+    },
+    "error": {
+      "title": "Couldn't load your history",
+      "description": "Check your connection and try again - nothing has been lost."
+    }
   }
 }

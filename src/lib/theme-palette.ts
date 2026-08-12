@@ -1,9 +1,11 @@
+import { useMemo } from "react";
+
 import { THEME_HEXES, THEME_PALETTES } from "@/lib/theme";
+import { RAMP_ALPHAS } from "@/src/lib/design-tokens";
 import { THEME_TOKENS } from "@/src/lib/theme/styles";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { useStyleName } from "@/src/lib/style";
 import type { ThemeVarName } from "@/src/lib/theme/contract";
-import { neutralFieldGradient } from "@/src/lib/theme/chrome";
 import type { ThemePalette } from "@/src/lib/theme/projections";
 
 // Imperative theme reads for the handful of call sites a className cannot
@@ -64,13 +66,24 @@ export function useAccentGradient(): [string, string] {
 }
 
 /**
- * The neutral field gradient for the active (style, scheme) — the full-bleed
- * pour behind a module or tool header.
- *
- * The reason this is a hook and not a constant: the stops are derived from the
- * selected palette's accent, and a module-scope read would freeze them on the
- * default violet for everyone who picked anything else.
+ * The 5-step score ramp on the active accent, faintest → fullest — the hsla
+ * form of ACCENT_RAMP_CLASSES (same RAMP_ALPHAS; test/accent-ramp-classes
+ * holds them in lockstep), for the chart surfaces a className cannot reach
+ * (heatmap cells). The neutral form of the retired `hueRamp`: until #924 the
+ * mood ramp was pinned to the `be` hue, but its encoding is `relative` — the
+ * meaning is the position on the scale — so it re-tints with the style,
+ * exactly as the trend line has since #588.
  */
-export function useNeutralFieldGradient(): [string, string] {
-  return neutralFieldGradient(useStyleName(), useColorSchemeName() === "dark");
+export function useAccentRamp(): [string, string, string, string, string] {
+  const triple = THEME_TOKENS[useStyleName()][useColorSchemeName()]["--primary"];
+  return useMemo(() => {
+    const comma = triple.split(/\s+/).join(", ");
+    return RAMP_ALPHAS.map((alpha) => `hsla(${comma}, ${alpha})`) as [
+      string,
+      string,
+      string,
+      string,
+      string,
+    ];
+  }, [triple]);
 }

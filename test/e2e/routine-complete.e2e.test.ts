@@ -77,22 +77,22 @@ test.describe("routine completes via tool use", () => {
 
     // --- Qualifying action: log a mood, all in-app (no hard gotos) ---
     // Panel "Check-in" -> tracker home; tapping a score on the check-in card
-    // pushes to /tools/mood-tracker/new?score=N with the score pre-selected.
+    // pushes to /tools/check-in/new?score=N with the score pre-selected.
     await navigateViaPanel(page, "Check-in");
-    await expect(page).toHaveURL(/\/tools\/mood-tracker$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
 
     // Mood logs were cleaned in beforeEach, so the history list is empty and
-    // the check-in card's scale renders the only "OK" radio on this screen.
-    await page.getByRole("radio", { name: "OK", exact: true }).click();
-    await page.waitForURL(/\/tools\/mood-tracker\/new\?/, { timeout: 15_000 });
+    // the check-in card's scale renders the only "Okay" radio on this screen.
+    await page.getByRole("radio", { name: "Okay", exact: true }).click();
+    await page.waitForURL(/\/tools\/check-in\/new\?/, { timeout: 15_000 });
 
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Save check-in", exact: true }).click();
 
     // Wait for the post-save redirect to the entry detail page before
     // navigating away (log-mood lesson: a goto racing the in-flight
     // router.replace silently doesn't navigate). The mood log is created "now"
     // through the UI, so there is no future-timestamp hazard.
-    await page.waitForURL(/\/tools\/mood-tracker\/(?!new)[^/]+$/, { timeout: 15_000 });
+    await page.waitForURL(/\/tools\/check-in\/(?!new)[^/]+$/, { timeout: 15_000 });
 
     // --- Back on routines home: step derived complete, FAB retired ---
     await navigateViaPanel(page, "Routines");

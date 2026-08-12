@@ -4,24 +4,44 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { Card } from "@/src/components/react-native-reusables/card";
-import { ContentSheet } from "@/src/components/app/content-sheet";
 import { HelpSheet } from "@/src/components/app/help-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { ToolStats } from "@/src/components/app/tool-stats";
 import { formatClock } from "@/src/features/breathing/cycle-math";
-import { useBreathingSessions } from "@/src/features/breathing/queries";
+import {
+  useBreathingSessions,
+  useBreathingSessionCount,
+  useBreathingTotalMinutes,
+} from "@/src/features/breathing/queries";
 import { breathingPatterns, breathingSlugs } from "@/src/constants/breathing";
-import { breathingColorClass } from "@/src/features/breathing/exercise-colors";
+import type { BreathingPhase } from "@/src/constants/breathing";
+import {
+  PatternDot,
+  PatternPlayGlyph,
+  phaseCountsLabel,
+} from "@/src/features/breathing/phase-timing-bar";
+import type { BreathingExerciseColor } from "@/src/features/breathing/exercise-types";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
-import { formatAtOffset } from "@/src/utils/date";
+import { formatCompactAtOffset } from "@/src/utils/date";
+
+/** Rows shown before the section defers to the all-sessions screen. */
+const RECENT_ROWS = 5;
+
+interface PatternRow {
+  key: string;
+  /** The `?pattern=` value: a built-in's slug, or a custom pattern's row id. */
+  routeParam: string;
+  name: string;
+  description: string | null;
+  phases: BreathingPhase[];
+  color: BreathingExerciseColor;
+}
 
 export default function BreathingScreen() {
   const { t } = useTranslation("cbt");
@@ -29,9 +49,9 @@ export default function BreathingScreen() {
   const { data: customExercises } = useBreathingExercises(user?.id ?? null);
   const customIds = (customExercises ?? []).map((e) => e.id);
   const { data: sessions } = useBreathingSessions(user?.id ?? null, 50, customIds);
+  const { data: sessionCount } = useBreathingSessionCount(user?.id ?? null);
+  const { data: totalMinutes } = useBreathingTotalMinutes(user?.id ?? null);
   const [helpOpen, setHelpOpen] = useState(false);
-
-  const recentCount = sessions?.length ?? 0;
 
   // Sessions are a recent window; scan for the latest completedAt rather than
   // trusting order, mirroring the sleep tracker's last-logged derivation.
@@ -42,23 +62,21 @@ export default function BreathingScreen() {
     null,
   );
   const lastWhen = lastSession
-    ? formatAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
+    ? formatCompactAtOffset(lastSession.completedAt, lastSession.completedOffsetMinutes)
     : null;
   // `sessions` is undefined while loading and after a failed fetch with no cache.
   // It also resolves early against the built-in patterns alone, because the query
   // is enabled before `customExercises` arrives to widen the name filter - so the
   // early result is not merely incomplete, it is wrong in both directions: a user
-  // whose only history is custom exercises briefly sees an empty list, and a user
-  // whose newest session is a custom exercise briefly sees an older built-in one
-  // billed as their last. So the whole subline waits for the full name set -
-  // unlike the sibling screens, where the guard and `lastWhen` read one query and
-  // a truthy `lastWhen` already implies loaded.
+  // whose only history is custom patterns briefly sees an empty list, and a user
+  // whose newest session is a custom pattern briefly sees an older built-in one
+  // billed as their last. So the whole subline waits for the full name set.
   const historyLoaded = Boolean(sessions && customExercises);
-  const subline = !historyLoaded
-    ? undefined
+  const lastStat = !historyLoaded
+    ? null
     : lastWhen
-      ? t("breathing.hero.last", { when: lastWhen })
-      : t("breathing.hero.never");
+      ? t("breathing.overview.lastAt", { when: lastWhen })
+      : t("breathing.overview.neverLogged");
 
   const patternName = (exerciseName: string) => {
     if (breathingSlugs.includes(exerciseName)) {
@@ -70,6 +88,39 @@ export default function BreathingScreen() {
     );
   };
 
+  // Built-ins and the user's own patterns are ONE list, as the design draws it:
+  // both are things you tap to breathe, and splitting them made the built-ins a
+  // single "Start a session" card that hid which pattern it would open.
+  const patterns: PatternRow[] = [
+    ...breathingPatterns.map((p) => ({
+      key: p.slug,
+      routeParam: p.slug,
+      name: t(`breathing.exercises.${p.slug}.title`),
+      description: t(`breathing.exercises.${p.slug}.shortDescription`),
+      phases: p.phases,
+      color: p.color,
+    })),
+    ...(customExercises ?? []).map((e) => ({
+      key: e.id,
+      routeParam: e.id,
+      name: e.name,
+      // No description line for a user's own pattern. The design fills this with
+      // "Yours · saved Tuesday", but `created_at` carries no UTC offset, so any
+      // date rendered from it would be in the wrong frame for a user who has
+      // travelled - and the phase counts on the right already say what the
+      // pattern is. An empty second line is honest; a wrong date is not.
+      description: null,
+      phases: [
+        { label: "inhale" as const, durationSeconds: e.inhaleSeconds },
+        { label: "hold" as const, durationSeconds: e.holdInSeconds },
+        { label: "exhale" as const, durationSeconds: e.exhaleSeconds },
+        { label: "holdOut" as const, durationSeconds: e.holdOutSeconds },
+      ],
+      color: e.color,
+    })),
+  ];
+
+  const recent = (sessions ?? []).slice(0, RECENT_ROWS);
   const roomStyle = useRoomStyle("aqua");
 
   return (
@@ -79,15 +130,9 @@ export default function BreathingScreen() {
       style={roomStyle}
     >
       <ScrollView contentContainerClassName="grow p-4">
-        {/* The field + sheet escape the scroll padding so the aqua field runs
-            edge to edge; the sheet re-adds the inset for its sections. */}
-        <View className="-mx-4 -mt-4">
+        <View className={cn(HOME_COLUMN, "gap-9")}>
           <ModuleHomeHeader
-            variant="field"
             addWidgetCategory="breathing"
-            hue="aqua"
-            icon="air"
-            moduleLabel={null}
             tourScope="breathing"
             title={t("breathing.title")}
             description={t("breathing.tagline")}
@@ -99,159 +144,156 @@ export default function BreathingScreen() {
                 accessibilityLabel: t("breathing.helpLabel"),
               },
             ]}
-            meta={
-              <ToolStats
-                tone="onField"
-                accentClassName="text-primary-ink"
-                subline={subline}
-                sublineTone={lastWhen ? "accent" : "muted"}
-                items={[
-                  {
-                    value: t("breathing.hero.patterns", { count: breathingPatterns.length }),
-                    label: "",
-                  },
-                  { value: t("breathing.hero.recentSessions", { count: recentCount }), label: "" },
-                ]}
-              />
-            }
+            // Count and noun split, so the number carries the foreground ink and
+            // the unit stays muted. Both figures are exact lifetime totals from
+            // the server; neither is a reduction over the capped list below.
+            // `overview.sessions` / `overview.minutes` resolve to the BARE noun -
+            // the count is passed only to select the plural form, and the number
+            // itself rides `value` so the header can ink it separately. A single
+            // "{{count}} sessions" string could not be split without slicing a
+            // translated string, which breaks in any locale that puts the number
+            // elsewhere.
+            stats={[
+              ...(sessionCount !== undefined
+                ? [
+                    {
+                      value: String(sessionCount),
+                      label: t("breathing.overview.sessions", { count: sessionCount }),
+                    },
+                  ]
+                : []),
+              ...(totalMinutes !== undefined
+                ? [
+                    {
+                      value: String(totalMinutes),
+                      label: t("breathing.overview.minutes", { count: totalMinutes }),
+                    },
+                  ]
+                : []),
+              ...(lastStat ? [{ value: "", label: lastStat }] : []),
+            ]}
           />
 
           <HelpSheet helpKey="breathing" visible={helpOpen} onDismiss={() => setHelpOpen(false)} />
 
-          <ContentSheet className="px-4">
-            <View className="gap-6">
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("breathing.startSession")}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => router.push("/tools/breathing/session")}
-              >
-                <Card variant="soft" className="flex-row items-center gap-4 px-5 py-4">
-                  <View className="size-12 items-center justify-center rounded-xl bg-muted">
-                    <Icon name="air" className="size-6 text-muted-foreground" />
+          <View className="gap-1">
+            <SectionHeader
+              title={t("breathing.overview.patternsTitle")}
+              actionLabel={t("breathing.overview.newPattern")}
+              onAction={() => router.push("/tools/breathing/new")}
+            />
+            {patterns.length === 0 ? (
+              <Text variant="muted" className="border-t border-border py-4 text-sm">
+                {t("breathing.overview.noPatterns")}
+              </Text>
+            ) : (
+              patterns.map((p) => (
+                <Pressable
+                  key={p.key}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("breathing.overview.startPattern", { name: p.name })}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/tools/breathing/session",
+                      params: { pattern: p.routeParam },
+                    })
+                  }
+                  className="flex-row items-center gap-4 border-t border-border px-2.5 py-4 active:bg-accent/40"
+                  role="button"
+                >
+                  <PatternDot color={p.color} />
+                  <View className="min-w-0 flex-1 gap-1">
+                    <Text className="text-[15px] font-semibold tracking-tight">{p.name}</Text>
+                    {p.description ? (
+                      <Text variant="muted" className="text-[13px] leading-snug">
+                        {p.description}
+                      </Text>
+                    ) : null}
                   </View>
-                  <View className="flex-1 min-w-0">
-                    <Text className="text-[15px] font-semibold tracking-tight">
-                      {t("breathing.startSession")}
-                    </Text>
-                    <Text variant="muted" className="mt-1 text-[13px] leading-snug">
-                      {t("breathing.startSessionHint")}
-                    </Text>
-                  </View>
-                  <Icon name="chevron-right" size={20} className="text-muted-foreground" />
-                </Card>
-              </Pressable>
-
-              <View className="gap-3">
-                <View className="flex-row items-baseline justify-between">
-                  <Text variant="h2" className="text-xl font-bold tracking-tight border-0 pb-0">
-                    {t("breathing.yourExercisesTitle")}
+                  <Text variant="muted" className="shrink-0 text-[12.5px] tabular-nums">
+                    {phaseCountsLabel(p.phases)}
                   </Text>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t("breathing.newExercise")}
-                    hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => router.push("/tools/breathing/new")}
-                  >
-                    <Text className="text-sm font-semibold text-primary-ink">
-                      {t("breathing.newExercise")}
+                  <PatternPlayGlyph />
+                </Pressable>
+              ))
+            )}
+            <View className="h-px bg-border" />
+          </View>
+
+          <View className="gap-1">
+            <SectionHeader
+              title={t("breathing.overview.recentTitle")}
+              actionLabel={t("breathing.overview.showAll")}
+              onAction={() => router.push("/tools/breathing/history")}
+            />
+            {recent.length === 0 ? (
+              <Text variant="muted" className="border-t border-border py-4 text-sm">
+                {t("breathing.history.empty")}
+              </Text>
+            ) : (
+              recent.map((s) => (
+                <View
+                  key={s.id}
+                  className="flex-row items-center gap-4 border-t border-border px-2.5 py-3"
+                >
+                  <Text className="flex-1 text-sm" numberOfLines={1}>
+                    {patternName(s.exerciseName)}
+                  </Text>
+                  {s.cycles != null ? (
+                    <Text variant="muted" className="shrink-0 text-[12.5px] tabular-nums">
+                      {t("breathing.cycles", { count: s.cycles })}
                     </Text>
-                  </Pressable>
+                  ) : null}
+                  <Text className="shrink-0 text-[12.5px] tabular-nums">
+                    {s.durationSeconds != null
+                      ? formatClock(s.durationSeconds)
+                      : t("breathing.minutes", { value: s.durationMinutes })}
+                  </Text>
+                  <Text variant="muted" className="shrink-0 text-xs tabular-nums">
+                    {formatCompactAtOffset(s.completedAt, s.completedOffsetMinutes)}
+                  </Text>
                 </View>
-
-                {customExercises && customExercises.length > 0 ? (
-                  customExercises.map((exercise) => {
-                    const chip = breathingColorClass(exercise.color);
-                    return (
-                      <View key={exercise.id} className="flex-row items-center gap-2">
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={exercise.name}
-                          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                          onPress={() =>
-                            router.push({
-                              pathname: "/tools/breathing/session",
-                              params: { pattern: exercise.id },
-                            })
-                          }
-                          className={cn(
-                            "flex-1 flex-row items-center gap-3 rounded-xl border p-4 active:opacity-80",
-                            chip.border,
-                            chip.bg,
-                          )}
-                        >
-                          <View
-                            className={cn("size-3 rounded-full border", chip.border, chip.bg)}
-                          />
-                          <Text className="flex-1 text-[15px] font-semibold tracking-tight">
-                            {exercise.name}
-                          </Text>
-                          <Text variant="muted" className="text-xs tabular-nums">
-                            {t("breathing.cycles", { count: exercise.cycles })}
-                          </Text>
-                        </Pressable>
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={t("breathing.editExercise", { name: exercise.name })}
-                          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                          onPress={() =>
-                            router.push({
-                              pathname: "/tools/breathing/new",
-                              params: { id: exercise.id },
-                            })
-                          }
-                          className="p-2"
-                        >
-                          <Icon name="edit" size={18} className="text-muted-foreground" />
-                        </Pressable>
-                      </View>
-                    );
-                  })
-                ) : (
-                  <Text variant="muted" className="text-sm">
-                    {t("breathing.noExercises")}
-                  </Text>
-                )}
-              </View>
-
-              <View className="gap-3">
-                <Text variant="h2" className="text-xl font-bold tracking-tight border-0 pb-0">
-                  {t("breathing.history.title")}
-                </Text>
-
-                {!sessions || sessions.length === 0 ? (
-                  <Text variant="muted" className="text-sm">
-                    {t("breathing.history.empty")}
-                  </Text>
-                ) : (
-                  sessions.map((s) => (
-                    <Card key={s.id} variant="soft" className="px-5 py-4 gap-0">
-                      <View className="flex-row items-center justify-between gap-2">
-                        <Text className="flex-1 text-[15px] font-semibold tracking-tight">
-                          {patternName(s.exerciseName)}
-                        </Text>
-                        <Text className="text-sm font-semibold tabular-nums text-primary-ink">
-                          {s.durationSeconds != null
-                            ? formatClock(s.durationSeconds)
-                            : t("breathing.minutes", { value: s.durationMinutes })}
-                        </Text>
-                      </View>
-                      <View className="mt-1 flex-row items-center justify-between">
-                        <Text variant="muted" className="text-xs tabular-nums">
-                          {s.cycles != null ? t("breathing.cycles", { count: s.cycles }) : ""}
-                        </Text>
-                        <Text variant="muted" className="text-xs">
-                          {formatAtOffset(s.completedAt, s.completedOffsetMinutes)}
-                        </Text>
-                      </View>
-                    </Card>
-                  ))
-                )}
-              </View>
-            </View>
-          </ContentSheet>
+              ))
+            )}
+            <View className="h-px bg-border" />
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * A section's label and its one link. `Load 5 more` is deliberately absent - a
+ * fixed five rows and a link to the full screen, as the rest of the redesign
+ * landed, rather than a button that grows the page indefinitely.
+ */
+function SectionHeader({
+  title,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <View className="flex-row items-center justify-between gap-3 pb-1.5">
+      <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+        {title}
+      </Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={actionLabel}
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        onPress={onAction}
+        role="button"
+      >
+        <Text variant="muted" className="shrink-0 text-[12.5px] font-semibold">
+          {actionLabel}
+        </Text>
+      </Pressable>
+    </View>
   );
 }

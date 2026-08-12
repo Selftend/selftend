@@ -73,7 +73,7 @@ if (skipBuild) {
 
 // Static file server with SPA fallback. `expo serve` does NOT fall back to
 // index.html for client-side routes (it 404s on deep links like
-// /tools/mood-tracker/new), and the app uses Expo Router's "single" (SPA) web
+// /tools/check-in/new), and the app uses Expo Router's "single" (SPA) web
 // output, so we serve it ourselves: real files are served as-is; an extensionless
 // path that has no file falls back to index.html for the router to handle.
 const ROOT = path.join(process.cwd(), OUTPUT_DIR);

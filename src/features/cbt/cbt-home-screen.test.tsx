@@ -12,9 +12,7 @@ import {
   useUpdateUserPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
-import { processColor } from "react-native";
 
-import { fieldGradient } from "@/src/lib/module-room";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -139,11 +137,10 @@ describe("CbtHomeScreen onboarding", () => {
     } as unknown as ReturnType<typeof useCbtProgram>);
   });
 
-  it("does not show CBT onboarding after completion", () => {
+  it("does not show CBT onboarding until the info action is pressed", () => {
     mockUseUserPreferences.mockReturnValue({
       data: {
         ...defaultUserPreferences,
-        cbtOnboardingCompleted: true,
       },
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
@@ -155,7 +152,7 @@ describe("CbtHomeScreen onboarding", () => {
 
   it("shows the program start card and no concern guidance", () => {
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
@@ -172,7 +169,7 @@ describe("CbtHomeScreen onboarding", () => {
   it("hides a dismissed start card and restores it from the header program action", () => {
     const showProgramPrompt = jest.fn();
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
     mockUseCbtProgram.mockReturnValue({
@@ -211,7 +208,7 @@ describe("CbtHomeScreen onboarding", () => {
 
   it("renders three PillarCards iterating PILLAR_STRATEGIES", () => {
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
@@ -222,29 +219,26 @@ describe("CbtHomeScreen onboarding", () => {
     expect(screen.getByText("Be")).toBeTruthy();
   });
 
-  it("renders full title on the primary-violet field with no book credit (#493, #494, #500)", () => {
+  it("renders full title on the quiet shell with no book credit (#493, #494, #500, #733)", () => {
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
     renderWithProviders(<CbtHomeScreen />);
 
     expect(screen.getByText("Cognitive Behavioral Therapy")).toBeTruthy();
-    // Not just "some gradient": the pour must be the primary violet (#500,
-    // matching the sidebar's CBT accent), so a hue swap back to think fails
-    // here rather than in a review screenshot. Tests render the light scheme;
-    // LinearGradient normalizes its colors through processColor, so the
-    // expectation goes through the same normalization.
-    expect(screen.getByTestId("module-field-gradient").props.colors).toEqual(
-      fieldGradient("primary", false).map((stop) => processColor(stop)),
-    );
+    // This used to pin the pour to the primary violet rather than to "some
+    // gradient", so a hue swap back to think failed here. #733 deleted the field
+    // outright, and CBT's colour identity WAS that pour - the consequence is
+    // raised on #691. What is left to assert is that the shell renders no
+    // gradient at all, which module-home-header.test.tsx owns centrally.
     expect(screen.queryByText(/inspired by/i)).toBeNull();
   });
 
   it("renders shared-tool pills beneath each PillarCard", () => {
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
 
@@ -263,7 +257,7 @@ describe("CbtHomeScreen onboarding", () => {
   it("confirms before abandoning an in-progress program", () => {
     const abandonProgram = jest.fn();
     mockUseUserPreferences.mockReturnValue({
-      data: { ...defaultUserPreferences, cbtOnboardingCompleted: true },
+      data: defaultUserPreferences,
       isLoading: false,
     } as unknown as ReturnType<typeof useUserPreferences>);
     mockUseCbtProgram.mockReturnValue({

@@ -7,6 +7,7 @@ import type {
   HabitCadence,
 } from "@/src/features/habits/types";
 import { toHabitColor } from "@/src/features/habits/schemas";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
@@ -175,7 +176,12 @@ export async function deleteHabit(userId: string, id: string): Promise<void> {
 
 export async function listHabitLogs(
   userId: string,
-  options: { habitId?: string; sinceDate?: string; limit?: number } = {},
+  options: {
+    habitId?: string;
+    sinceDate?: string;
+    untilDate?: string;
+    limit?: number;
+  } = {},
 ): Promise<HabitLog[]> {
   // The habit detail/log screens pass the route's habitId here too; a malformed id
   // would 400 on the uuid cast, so short-circuit to the same zero-rows result.
@@ -185,13 +191,46 @@ export async function listHabitLogs(
     .from("habit_logs")
     .select("*")
     .eq("user_id", userId)
-    .order("logged_on", { ascending: false });
+    .order("logged_on", { ascending: false })
+    // `logged_on` is a `date` with one row per habit per day, so it is NOT
+    // unique: every habit ticked on the same day ties on it. Postgres gives no
+    // stable order among ties across separate statements, so a paged read
+    // ordered on it alone can hand the same row back twice - or skip it - when
+    // a tied group straddles a page boundary. `id` is arbitrary but total,
+    // which is all a page boundary needs.
+    .order("id", { ascending: false });
 
   if (options.habitId) query = query.eq("habit_id", options.habitId);
   if (options.sinceDate) query = query.gte("logged_on", options.sinceDate);
+  // Inclusive upper bound. The rows come back NEWEST-first, so a `sinceDate`
+  // with a `limit` is a window on the most recent days, not on the oldest -
+  // which means asking for one old day with `{ sinceDate: day, limit: n }`
+  // returns the n newest days at or after it and omits the day itself. Closing
+  // the range is the only way to ask for a specific day.
+  if (options.untilDate) query = query.lte("logged_on", options.untilDate);
   if (options.limit) query = query.limit(options.limit);
 
   const { data, error } = await query;
+  if (error) throw error;
+  return (data as HabitLogRow[]).map(mapHabitLog);
+}
+
+/** One stable page for the all-history screen, newest day and id first. */
+export async function listHabitLogsPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+): Promise<HabitLog[]> {
+  const client = requireSupabase();
+  let query = client
+    .from("habit_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .order("logged_on", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("logged_on", cursor));
+
+  const { data, error } = await query.limit(limit);
   if (error) throw error;
   return (data as HabitLogRow[]).map(mapHabitLog);
 }

@@ -95,11 +95,11 @@ The book introduces gratitude as three progressive training levels. The app expl
 
 ### Level 3 - Practicing Gratitude
 
-| Prompt                                    | Field                                                    |
-| ----------------------------------------- | -------------------------------------------------------- |
-| I'm grateful for... (today, up to 5)      | `items[]` (text[], 1-5 × 240 chars, at least 1 required) |
-| I'm grateful for... (in my life, up to 3) | `life_items[]` (text[], 0-3 × 240 chars)                 |
-| Optional note                             | `note` (text, 2000 chars)                                |
+| Prompt                              | Field                                                    |
+| ----------------------------------- | -------------------------------------------------------- |
+| Three good things (expandable to 5) | `items[]` (text[], 1-5 × 240 chars, at least 1 required) |
+
+The editor opens three lines, each labelled with its question from `editor.todayQuestions`, and can add two more (labelled with the remaining two questions — five questions ship for the five slots). Slot N pairs with question N; the questions are labels only, not stored with the entry. This reverses the earlier unlabelled-numbered-lines decision (owner review 2026-08-12, #929): the questions are the prompt, so the inputs carry no placeholder and the former "borrow a prompt" chips are gone. The legacy `life_items[]` and `note` fields remain readable and are preserved by edits, but the current editor does not expose separate controls for them.
 
 New entries are saved with `level = 3`. Level 1 and Level 2 columns remain in the table as compatibility fields and are exported if present, but the user-facing editor does not expose separate Level 1/2 modes.
 
@@ -145,7 +145,7 @@ This module follows the contract in `tools.md`:
 - New `user_preferences` fields:
   - `gratitudeOnboardingCompleted: boolean` (default `false`)
 - No reminder fields - reminders remain out of scope for this module.
-- Settings can reset the onboarding flag (same pattern as CBT and meditation).
+- Settings does not reset a gratitude onboarding flag. The current client opens the introduction explicitly; the legacy column remains temporarily for compatibility with supported mobile builds.
 
 ---
 
@@ -196,9 +196,10 @@ Confirm writes `gratitudeOnboardingCompleted: true` to `user_preferences`. There
 ## 7. Home Screen
 
 - **New Entry button** - always visible, opens the ongoing gratitude journal form.
-- **Recent entries** - last 5-7 entries, each showing date, first item, and item count.
-- **Insights** - quiet local frequency, common themes, and Favorite Moments entry points. No streak language.
-- **Break Card** - one rotating exercise card (from the 9 named exercises above). Tapping opens the full break screen at `/modules/gratitude/breaks/[slug]`. Cards cycle in a fixed order; the user can dismiss the current card to advance.
+- **Recent entries** - last 5 entries as compact hairline rows with first item, remaining-item preview, favorite toggle, and relative date. All/Favorites filters are explicit.
+- **Frequency** - a quiet 30-day bar chart with a 2px zero-day stub and no interpretive caption or streak language.
+- **History** - the all-entries screen uses cursor pagination and distinguishes a failed load from an empty history.
+- **Break cards and extracted themes** are not surfaced on the overview.
 - **`?` icon** in the title row - re-opens the onboarding modal.
 
 ---
@@ -234,8 +235,8 @@ Confirm writes `gratitudeOnboardingCompleted: true` to `user_preferences`. There
 | **1 - Foundation**           | Module contract (`ModuleKey: "gratitude"`, `UserPreferences` fields, i18n namespace). Onboarding modal, `?` re-open icon. Home screen with new-entry CTA and recent entries. Ongoing gratitude entry form. Compat redirects from old `/tools/gratitude-log/*`. | Migrates the existing feature into the module pattern.                                                                     |
 | **2 - Compatibility fields** | DB migration adding `events`, `good_moment`, `miss_if_gone`, `hidden_good`, `level` columns and backfilling existing rows to `level = 3`. These fields remain compatibility/export fields rather than separate product modes.                                  | Reflects the book's progression without making levels a permanent switcher.                                                |
 | **3 - Break Cards**          | Break card carousel on home screen. Individual break screens for all 9 exercises. Card dismissal / rotation state (local, not persisted).                                                                                                                      | Can ship incrementally - start with 3 cards (Gratitude Letter, What if That Didn't Happen?, Instructions for Unhappiness). |
-| **4 - Journal enhancements** | 5-item today list + 3-item "in my life" list. Pre-fill suggestions on some prompts (e.g., rotating variant questions from the book: "What made you laugh?", "Who was kind to you?", "What simple pleasure did you enjoy?").                                    | Enriches the core journaling experience.                                                                                   |
-| **5 - Insights**             | Entry frequency chart (quiet, no streak language). Most-common gratitude themes (word frequency, private, never uploaded). Favorite Moments collection (surfaced from highest-rated or starred entries).                                                       | Deferred - same posture as meditation insights.                                                                            |
+| **4 - Journal enhancements** | Three open item lines, expandable to five, plus non-overwriting prompt chips. Legacy life-item and note fields remain storage-compatible but are not separate controls.                                                                                        | Keeps the primary task small while preserving existing data.                                                               |
+| **5 - Insights**             | 30-day entry-frequency chart (quiet, no streak language), exact overview counts, and the user-controlled Favorites collection. No mined-theme artifact is shown.                                                                                               | Frequency and Favorites are implemented without behavioral scoring.                                                        |
 
 ---
 
@@ -262,6 +263,6 @@ The full module is ready to widen after all five phases pass their own per-phase
 | Question                   | Decision                                                                                                                                                     |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Level picker               | **Removed** - levels are onboarding education only. New entries use the ongoing gratitude journal form and persist `level = 3` internally for compatibility. |
-| Break card cycling         | **Explicit dismiss only** - card stays until the user taps an X or "Next". State stored locally (session). Phase 3 will wire up AsyncStorage persistence.    |
+| Break card cycling         | **Not on the overview** - the current overview keeps attention on logging and private history. Existing break routes remain optional supporting material.    |
 | Favorite Moments (Phase 5) | **Separate collection page** - `/modules/gratitude/favorites` route showing starred entries. Mirrors the book's "Favorite Moments" section.                  |
 | Localization               | **Both languages from the start** - English and Bulgarian translations ship together, matching the existing app coverage.                                    |

@@ -5,14 +5,42 @@
     "new": "Нов запис"
   },
   "sections": {
-    "history": "История"
+    "writing": "Писане",
+    "entries": "Записи"
   },
   "hero": {
     "entries_one": "{{count}} запис",
     "entries_other": "{{count}} записа",
+    "entryLabel_one": "запис",
+    "entryLabel_other": "записа",
     "words_one": "{{count}} дума",
     "words_other": "{{count}} думи",
-    "last": "Последно"
+    "wordLabel_one": "дума",
+    "wordLabel_other": "думи",
+    "last": "последно писано {{when}}, {{time}}",
+    "never": "все още няма записи"
+  },
+  "writing": {
+    "caption": {
+      "day": "Думи, написани на ден.",
+      "week": "Думи, написани за седем дни.",
+      "month": "Думи, написани на месец.",
+      "year": "Думи, написани на година."
+    },
+    "range7": "7д",
+    "range30": "30д",
+    "range90": "90д",
+    "rangeAll": "Всичко",
+    "emptyRange": "Няма писане в този период.",
+    "error": "Графиката за писане не може да се зареди.",
+    "barLabel_one": "{{period}}: {{count}} дума",
+    "barLabel_other": "{{period}}: {{count}} думи"
+  },
+  "groups": {
+    "today": "Днес",
+    "yesterday": "Вчера",
+    "thisWeek": "По-рано тази седмица",
+    "lastWeek": "Миналата седмица"
   },
   "list": {
     "empty": {
@@ -20,14 +48,21 @@
       "description": "Напиши няколко думи как премина денят.",
       "cta": "Започни да пишеш"
     },
+    "showAll": "Виж всички записи",
     "viewEntry": "Виж запис от {{when}}",
     "untitled": "Без заглавие"
   },
+  "history": {
+    "title": "Всички записи",
+    "description": "Всички записи в дневника, първо най-новите.",
+    "empty": "Записите ти ще се събират тук, докато пишеш.",
+    "error": {
+      "title": "Записите не могат да се заредят",
+      "description": "Провери връзката си и опитай отново."
+    }
+  },
   "editor": {
-    "createTitle": "Нов запис в дневника",
     "editTitle": "Редактирай запис",
-    "createDescription": "Пиши каквото ти е полезно. Нищо не се споделя.",
-    "editDescription": "Промени написаното по-рано.",
     "titleLabel": "Заглавие (по избор)",
     "titlePlaceholder": "Без заглавие",
     "bodyLabel": "Текст",
@@ -44,7 +79,11 @@
     "title": "Запис в дневника",
     "edit": "Редактирай",
     "delete": "Изтрий",
-    "createdAt": "Кога",
+    "words_one": "{{count}} дума",
+    "words_other": "{{count}} думи",
+    "written": "Написано {{when}}",
+    "edited": "редактирано {{when}}",
+    "showAll": "Виж всички записи",
     "notFound": "Не намерихме този запис в дневника.",
     "deleteError": "Записът не можа да се изтрие. Опитай отново.",
     "confirmDelete": {

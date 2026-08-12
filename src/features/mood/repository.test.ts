@@ -3,6 +3,7 @@ import {
   getFirstMoodDayKey,
   getMoodLog,
   listMoodLogs,
+  listMoodLogsPage,
   listMoodScorePoints,
   saveMoodLog,
 } from "@/src/features/mood/repository";
@@ -65,6 +66,38 @@ describe("mood repository", () => {
     expect(eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(order).toHaveBeenCalledWith("logged_at", { ascending: false });
     expect(limit).toHaveBeenCalledWith(15);
+  });
+
+  it("reads a history page after an encoded stable cursor", async () => {
+    // `logged_at` alone is not a total order - two entries saved in the same
+    // second have no defined relative position, so a row could be returned on
+    // both sides of an offset boundary or on neither. `id` breaks the tie.
+    const retry = jest.fn().mockResolvedValue({ data: [], error: null });
+    const limit = jest.fn(() => ({ retry }));
+    const or = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ or, limit }));
+    const orderLoggedAt = jest.fn(() => ({ order: orderId }));
+    const eq = jest.fn(() => ({ order: orderLoggedAt }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(
+      listMoodLogsPage("user-1", 50, {
+        timestamp: "2026-08-09T13:57:59.867076+00:00",
+        id: "11111111-1111-4111-8111-111111111111",
+      }),
+    ).resolves.toEqual([]);
+    expect(eq).toHaveBeenCalledWith("user_id", "user-1");
+    expect(orderLoggedAt).toHaveBeenCalledWith("logged_at", { ascending: false });
+    expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
+    expect(or).toHaveBeenCalledWith(
+      'logged_at.lt."2026-08-09T13:57:59.867076+00:00",and(logged_at.eq."2026-08-09T13:57:59.867076+00:00",id.lt."11111111-1111-4111-8111-111111111111")',
+    );
+    expect(limit).toHaveBeenCalledWith(50);
+    // React Query owns the retry budget; do not multiply it by PostgREST's
+    // three inner retries on every failed page read (#748).
+    expect(retry).toHaveBeenCalledWith(false);
   });
 
   it("returns null when getMoodLog finds no row", async () => {
@@ -323,13 +356,24 @@ describe("mood repository", () => {
     await expect(countMoodLogs("user-1")).resolves.toBe(0);
   });
 
-  it("lists score points selecting only timestamp, offset, and score", async () => {
+  it("lists score points selecting only the cursor, offset, and score fields", async () => {
     const rows = [
-      { logged_at: "2026-07-01T08:00:00.000Z", logged_offset_minutes: 180, mood_score: 4 },
-      { logged_at: "2026-07-02T09:00:00.000Z", logged_offset_minutes: null, mood_score: 2 },
+      {
+        id: "m1",
+        logged_at: "2026-07-01T08:00:00.000Z",
+        logged_offset_minutes: 180,
+        mood_score: 4,
+      },
+      {
+        id: "m2",
+        logged_at: "2026-07-02T09:00:00.000Z",
+        logged_offset_minutes: null,
+        mood_score: 2,
+      },
     ];
-    const range = jest.fn().mockResolvedValue({ data: rows, error: null });
-    const order = jest.fn(() => ({ range }));
+    const limit = jest.fn().mockResolvedValue({ data: rows, error: null });
+    const orderId = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ order: orderId }));
     const gte = jest.fn(() => ({ order }));
     const eq = jest.fn(() => ({ gte }));
     const select = jest.fn(() => ({ eq }));
@@ -351,15 +395,16 @@ describe("mood repository", () => {
       },
     ]);
     expect(from).toHaveBeenCalledWith("mood_logs");
-    expect(select).toHaveBeenCalledWith("logged_at, logged_offset_minutes, mood_score");
+    expect(select).toHaveBeenCalledWith("id, logged_at, logged_offset_minutes, mood_score");
     expect(eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(gte).toHaveBeenCalledWith("logged_at", "2026-06-30T00:00:00.000Z");
     expect(order).toHaveBeenCalledWith("logged_at", { ascending: true });
   });
 
   it("bounds score points with lte when an end of window is given", async () => {
-    const range = jest.fn().mockResolvedValue({ data: [], error: null });
-    const order = jest.fn(() => ({ range }));
+    const limit = jest.fn().mockResolvedValue({ data: [], error: null });
+    const orderId = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ order: orderId }));
     const lte = jest.fn(() => ({ order }));
     const gte = jest.fn(() => ({ lte }));
     const eq = jest.fn(() => ({ gte }));
@@ -378,21 +423,25 @@ describe("mood repository", () => {
     // PostgREST caps any single response (1,000 rows by default), so the repository
     // must keep fetching pages until a short page, not trust one unbounded select.
     const fullPage = Array.from({ length: 1000 }, (_, i) => ({
+      id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`,
       logged_at: `2026-01-01T00:00:${String(i % 60).padStart(2, "0")}.000Z`,
       logged_offset_minutes: 0,
       mood_score: 3,
     }));
     const lastRow = {
+      id: "99999999-9999-4999-8999-999999999999",
       logged_at: "2026-07-01T08:00:00.000Z",
       logged_offset_minutes: 0,
       mood_score: 5,
     };
-    const range = jest
+    const limit = jest
       .fn()
       .mockResolvedValueOnce({ data: fullPage, error: null })
       .mockResolvedValueOnce({ data: [lastRow], error: null });
-    const order = jest.fn(() => ({ range }));
-    const gte = jest.fn(() => ({ order }));
+    const orderId = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ order: orderId }));
+    const or = jest.fn(() => ({ order }));
+    const gte = jest.fn(() => ({ order, or }));
     const eq = jest.fn(() => ({ gte }));
     const select = jest.fn(() => ({ eq }));
     const from = jest.fn(() => ({ select }));
@@ -408,8 +457,11 @@ describe("mood repository", () => {
       dayKey: "2026-07-01",
       moodScore: 5,
     });
-    expect(range).toHaveBeenNthCalledWith(1, 0, 999);
-    expect(range).toHaveBeenNthCalledWith(2, 1000, 1999);
+    expect(limit).toHaveBeenNthCalledWith(1, 1000);
+    expect(limit).toHaveBeenNthCalledWith(2, 1000);
+    expect(or).toHaveBeenCalledWith(
+      expect.stringContaining('logged_at.gt."2026-01-01T00:00:39.000Z"'),
+    );
   });
 
   // getFirstMoodDayKey issues TWO queries: the earliest instant, then the window

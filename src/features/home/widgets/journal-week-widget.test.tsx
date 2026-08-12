@@ -53,7 +53,7 @@ function entry(createdAt: string, body: string) {
 describe("JournalWeekWidget", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSelectedDate.mockReturnValue({ selectedDate: currentDateKey(), isToday: true });
+    mockUseSelectedDate.mockReturnValue({ selectedDate: currentDateKey() });
     mockUseJournalEntryCount.mockReturnValue({ data: undefined } as unknown as ReturnType<
       typeof useJournalEntryCount
     >);
@@ -133,7 +133,7 @@ describe("JournalWeekWidget", () => {
   });
 
   it("shows a '{n} on {date}' badge for a past selected day", () => {
-    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-30", isToday: false });
+    mockUseSelectedDate.mockReturnValue({ selectedDate: "2026-05-30" });
     mockUseJournalEntries.mockReturnValue({
       data: [entry("2026-05-30T12:00:00.000Z", "past entry")],
     } as unknown as ReturnType<typeof useJournalEntries>);

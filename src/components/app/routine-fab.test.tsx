@@ -294,7 +294,7 @@ describe("RoutineFab", () => {
     });
 
     it.each([
-      ["/tools/mood-tracker/new", "a creation form"],
+      ["/tools/check-in/new", "a creation form"],
       ["/routines/routine-1/edit", "an edit form"],
       ["/tools/habits/habit-1/log", "a log form"],
       ["/modules/cbt/self-care", "a fixed-path form"],

@@ -2,7 +2,7 @@ name: Content
 description: Improve in-app text, guidance, exercises, or educational material.
 title: "[Content]: "
 labels:
-  - needs triage
+  - needs-triage
 type: Content
 body:
   - type: markdown

@@ -112,6 +112,48 @@ describe("mindfulness mindfulness_sessions (integration)", () => {
     expect(insert.data?.mood_after).toBeNull();
   });
 
+  it("round-trips and exports grounding progress while rejecting incomplete pairs", async () => {
+    const insert = await alice
+      .from("mindfulness_sessions")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        exercise_name: "cold-water",
+        duration_minutes: 1,
+        reflection: "",
+        steps_completed: 2,
+        steps_total: 4,
+      })
+      .select("id, steps_completed, steps_total")
+      .single();
+
+    expect(insert.error).toBeNull();
+    expect(insert.data).toMatchObject({ steps_completed: 2, steps_total: 4 });
+
+    const invalid = await alice
+      .from("mindfulness_sessions")
+      .insert({
+        user_id: SEED_USERS.alice.id,
+        exercise_name: "cold-water",
+        duration_minutes: 1,
+        reflection: "",
+        steps_completed: 2,
+      })
+      .select("id");
+    expect(invalid.error).not.toBeNull();
+
+    const exported = await alice.rpc("export_user_data");
+    expect(exported.error).toBeNull();
+    expect(exported.data.mindfulnessSessions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: insert.data!.id,
+          steps_completed: 2,
+          steps_total: 4,
+        }),
+      ]),
+    );
+  });
+
   it("lists sessions ordered by completed_at desc", async () => {
     const completedAts = [
       "2026-05-10T08:00:00.000Z",

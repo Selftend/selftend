@@ -26,7 +26,6 @@ interface UserPreferenceRow {
   app_onboarding_completed: boolean | null;
   app_onboarding_completed_via: string | null;
   app_onboarding_completed_at: string | null;
-  cbt_onboarding_completed: boolean | null;
   cbt_wizard_completed: boolean | null;
   cbt_program_started_at: string | null;
   cbt_program_completed_at: string | null;
@@ -34,16 +33,6 @@ interface UserPreferenceRow {
   cbt_program_phase_index: number | null;
   cbt_program_phase_started_at: string | null;
   cbt_graduation_dismissed_at: string | null;
-  meditation_onboarding_completed: boolean | null;
-  meditation_info_completed: boolean | null;
-  gratitude_onboarding_completed: boolean | null;
-  habits_onboarding_completed: boolean | null;
-  mood_onboarding_completed: boolean | null;
-  journal_onboarding_completed: boolean | null;
-  sleep_onboarding_completed: boolean | null;
-  mindfulness_onboarding_completed: boolean | null;
-  grounding_onboarding_completed: boolean | null;
-  act_onboarding_completed: boolean | null;
   act_reminders_enabled: boolean | null;
   act_reminder_hour: number | null;
   act_reminder_minute: number | null;
@@ -129,7 +118,6 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
         ? row.app_onboarding_completed_via
         : null,
     appOnboardingCompletedAt: row.app_onboarding_completed_at ?? null,
-    cbtOnboardingCompleted: Boolean(row.cbt_onboarding_completed),
     cbtWizardCompleted: Boolean(row.cbt_wizard_completed),
     cbtProgramStartedAt: row.cbt_program_started_at ?? null,
     cbtProgramCompletedAt: row.cbt_program_completed_at ?? null,
@@ -137,16 +125,6 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     cbtProgramPhaseIndex: row.cbt_program_phase_index ?? 0,
     cbtProgramPhaseStartedAt: row.cbt_program_phase_started_at ?? null,
     cbtGraduationDismissedAt: row.cbt_graduation_dismissed_at ?? null,
-    meditationOnboardingCompleted: Boolean(row.meditation_onboarding_completed),
-    meditationInfoCompleted: Boolean(row.meditation_info_completed),
-    gratitudeOnboardingCompleted: Boolean(row.gratitude_onboarding_completed),
-    habitsOnboardingCompleted: Boolean(row.habits_onboarding_completed),
-    moodOnboardingCompleted: Boolean(row.mood_onboarding_completed),
-    journalOnboardingCompleted: Boolean(row.journal_onboarding_completed),
-    sleepOnboardingCompleted: Boolean(row.sleep_onboarding_completed),
-    mindfulnessOnboardingCompleted: Boolean(row.mindfulness_onboarding_completed),
-    groundingOnboardingCompleted: Boolean(row.grounding_onboarding_completed),
-    actOnboardingCompleted: Boolean(row.act_onboarding_completed),
     actRemindersEnabled: Boolean(row.act_reminders_enabled),
     actReminderHour: row.act_reminder_hour ?? defaultUserPreferences.actReminderHour,
     actReminderMinute: row.act_reminder_minute ?? defaultUserPreferences.actReminderMinute,
@@ -262,7 +240,6 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   appOnboardingCompleted: "app_onboarding_completed",
   appOnboardingCompletedVia: "app_onboarding_completed_via",
   appOnboardingCompletedAt: "app_onboarding_completed_at",
-  cbtOnboardingCompleted: "cbt_onboarding_completed",
   cbtWizardCompleted: "cbt_wizard_completed",
   cbtProgramStartedAt: "cbt_program_started_at",
   cbtProgramCompletedAt: "cbt_program_completed_at",
@@ -270,16 +247,6 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   cbtProgramPhaseIndex: "cbt_program_phase_index",
   cbtProgramPhaseStartedAt: "cbt_program_phase_started_at",
   cbtGraduationDismissedAt: "cbt_graduation_dismissed_at",
-  meditationOnboardingCompleted: "meditation_onboarding_completed",
-  meditationInfoCompleted: "meditation_info_completed",
-  gratitudeOnboardingCompleted: "gratitude_onboarding_completed",
-  habitsOnboardingCompleted: "habits_onboarding_completed",
-  moodOnboardingCompleted: "mood_onboarding_completed",
-  journalOnboardingCompleted: "journal_onboarding_completed",
-  sleepOnboardingCompleted: "sleep_onboarding_completed",
-  mindfulnessOnboardingCompleted: "mindfulness_onboarding_completed",
-  groundingOnboardingCompleted: "grounding_onboarding_completed",
-  actOnboardingCompleted: "act_onboarding_completed",
   actRemindersEnabled: "act_reminders_enabled",
   actReminderHour: "act_reminder_hour",
   actReminderMinute: "act_reminder_minute",
@@ -397,75 +364,37 @@ export async function updateShownButtonTours(userId: string, shownButtonTours: B
   return mapPreferences(data as UserPreferenceRow);
 }
 
-interface OnboardingPreferencesPatch {
-  appOnboardingCompleted?: boolean;
-  appOnboardingCompletedVia?: "finish" | "skip";
-  appOnboardingCompletedAt?: string;
-  cbtOnboardingCompleted?: boolean;
-  gratitudeOnboardingCompleted?: boolean;
-  meditationInfoCompleted?: boolean;
-  habitsOnboardingCompleted?: boolean;
-  moodOnboardingCompleted?: boolean;
-  journalOnboardingCompleted?: boolean;
-  sleepOnboardingCompleted?: boolean;
-  mindfulnessOnboardingCompleted?: boolean;
-  groundingOnboardingCompleted?: boolean;
-  shownButtonTours?: ButtonTourKey[];
-  selectedConcerns?: string[];
-  startHereDismissedAt?: string | null;
-}
+/**
+ * The keys an onboarding write may name.
+ *
+ * Kept deliberately narrow: module introduction state is not persisted because
+ * those modals are opened explicitly from their module headers (#807).
+ */
+type OnboardingPreferencesPatch = Partial<
+  Pick<
+    UserPreferences,
+    | "appOnboardingCompleted"
+    | "appOnboardingCompletedVia"
+    | "appOnboardingCompletedAt"
+    | "shownButtonTours"
+    | "selectedConcerns"
+    | "startHereDismissedAt"
+  >
+>;
 
 export async function updateOnboardingPreferences(
   userId: string,
   patch: OnboardingPreferencesPatch,
 ) {
   const client = requireSupabase();
+  // Translate through the SAME `PREFERENCE_COLUMNS` map `updateUserPreferences`
+  // uses. The hand-written if-chain this replaces was a second copy of a subset
+  // of that map, which is how two flags ended up unwritable here while the map
+  // itself had carried their columns all along (#821).
   const payload: Record<string, unknown> = { user_id: userId };
-
-  if (patch.appOnboardingCompleted !== undefined) {
-    payload.app_onboarding_completed = patch.appOnboardingCompleted;
-  }
-  if (patch.appOnboardingCompletedVia !== undefined) {
-    payload.app_onboarding_completed_via = patch.appOnboardingCompletedVia;
-  }
-  if (patch.appOnboardingCompletedAt !== undefined) {
-    payload.app_onboarding_completed_at = patch.appOnboardingCompletedAt;
-  }
-  if (patch.cbtOnboardingCompleted !== undefined) {
-    payload.cbt_onboarding_completed = patch.cbtOnboardingCompleted;
-  }
-  if (patch.gratitudeOnboardingCompleted !== undefined) {
-    payload.gratitude_onboarding_completed = patch.gratitudeOnboardingCompleted;
-  }
-  if (patch.meditationInfoCompleted !== undefined) {
-    payload.meditation_info_completed = patch.meditationInfoCompleted;
-  }
-  if (patch.habitsOnboardingCompleted !== undefined) {
-    payload.habits_onboarding_completed = patch.habitsOnboardingCompleted;
-  }
-  if (patch.moodOnboardingCompleted !== undefined) {
-    payload.mood_onboarding_completed = patch.moodOnboardingCompleted;
-  }
-  if (patch.journalOnboardingCompleted !== undefined) {
-    payload.journal_onboarding_completed = patch.journalOnboardingCompleted;
-  }
-  if (patch.sleepOnboardingCompleted !== undefined) {
-    payload.sleep_onboarding_completed = patch.sleepOnboardingCompleted;
-  }
-  if (patch.mindfulnessOnboardingCompleted !== undefined) {
-    payload.mindfulness_onboarding_completed = patch.mindfulnessOnboardingCompleted;
-  }
-  if (patch.groundingOnboardingCompleted !== undefined) {
-    payload.grounding_onboarding_completed = patch.groundingOnboardingCompleted;
-  }
-  if (patch.shownButtonTours !== undefined) {
-    payload.shown_button_tours = patch.shownButtonTours;
-  }
-  if (patch.selectedConcerns !== undefined) {
-    payload.selected_concerns = patch.selectedConcerns;
-  }
-  if (patch.startHereDismissedAt !== undefined) {
-    payload.start_here_dismissed_at = patch.startHereDismissedAt;
+  for (const key of Object.keys(patch) as (keyof OnboardingPreferencesPatch)[]) {
+    const column = PREFERENCE_COLUMNS[key];
+    if (column !== undefined && patch[key] !== undefined) payload[column] = patch[key];
   }
 
   const { data, error } = await client

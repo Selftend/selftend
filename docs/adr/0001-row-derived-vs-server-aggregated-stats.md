@@ -50,10 +50,51 @@ exactly.
 **Everything beyond a count — sums, averages, medians, buckets, extremes —
 is a SQL function**, shaped like this:
 
-- a **`stable`, `security invoker` SQL function over the decrypting view**,
-  filtered on `auth.uid()` belt-and-braces on top of RLS, with the #322 grant
-  shape (`revoke all … from public; revoke execute … from anon; grant execute
-… to authenticated; notify pgrst, 'reload schema';`);
+- a **`stable`, `security invoker` SQL function**, filtered on `auth.uid()`
+  belt-and-braces on top of RLS, with the #322 grant shape (`revoke all … from
+public; revoke execute … from anon; grant execute … to authenticated; notify
+pgrst, 'reload schema';`);
+- **reading the decrypting view, with an honest projection.** `app.decrypt_text`
+  and `app.encryption_key()` are **`STABLE`** — `20260666_audit_phase2_fixes.sql`
+  items #15/#16 marked them so, and only `app.encrypt_text` is genuinely VOLATILE
+  (`pgp_sym_encrypt` salts each call). Because they are stable the planner both
+  flattens the view (`is_simple_subquery()`) and prunes unused output expressions
+  (`remove_unused_subquery_outputs()`), so **a projection that names no encrypted
+  column costs nothing, and a `LIMIT` is pushed below the decrypt when the ordering
+  and filtering are themselves plaintext**. Both conditions matter and neither is
+  automatic: a projection that _does_ name an encrypted column still pays one
+  decrypt per returned row per such column, and a query that orders or filters on a
+  decrypted value must decrypt every candidate row before the `LIMIT` can apply — a
+  cap does not save it. Measured on 1,460 journal entries and
+  1,460 mood logs (local PG 17.6, decrypt calls counted via
+  `pg_stat_user_functions` — a `SECURITY DEFINER` function is never inlined, so
+  every call is countable):
+
+  | read                                                                              | decrypt calls           | time    |
+  | --------------------------------------------------------------------------------- | ----------------------- | ------- |
+  | `head` count on `journal_entries`                                                 | **0** (Index Only Scan) | 0.60 ms |
+  | 3 plaintext cols from `mood_logs` (5 encrypted)                                   | **0**                   | 1.28 ms |
+  | `select * … limit 50` from `journal_entries` (ordered on plaintext `occurred_at`) | 100 = 50 rows × 2 cols  | 33.9 ms |
+
+  The third row is the shape to reason from when plaintext _is_ wanted: cost is
+  `rows returned × encrypted columns selected`, not rows matched — but only because
+  `occurred_at` is plaintext. Order that same query by a decrypted column and all
+  1,460 rows decrypt first.
+
+  Reverting the marking to VOLATILE locally reproduces the pathology those markers
+  exist to prevent — the same three reads cost 2,920 / 7,300 / 2,920 calls and
+  980 / 1,761 / 566 ms. **So an exact `head` count on an encrypted table really is
+  cheap, and `journal_word_total()` is right to read `journal_entries` for `body`.**
+  Reading a `*_data` base table instead is a legitimate simplification when no
+  plaintext is wanted at all — it is not a performance requirement, and
+  `sleep_stats()`'s move to `sleep_logs_data` in `20260808000000` should not be
+  cited as though it were one. What _does_ still cost is an **uncapped** read of a
+  decrypting view, whose decrypt count scales with the user's whole history; cap it.
+  RLS is unaffected by any of this: the policy lives on the base table,
+  `security_invoker` is only how a view reaches it, and qual ordering against
+  security quals is governed by `LEAKPROOF`, not by volatility. Detail and method:
+  `docs/research/2026-08-09-crypto-helper-volatility.md` (#706, map #808);
+
 - **never a persisted derived column on an encrypted table** — that would
   thread derived data through the encrypted write-path triggers and store it
   beside ciphertext it was derived from;

@@ -10,14 +10,14 @@ The protected app sidebar groups tools as:
   - Overview
   - History
   - Learn
-- Mood tracker
+- Check-in
 - Journal
 - Mindfulness
 - Meditation
 - ACT
 - Gratitude log
 
-CBT, Mood tracker, Journal, Mindfulness, and Gratitude log are the working modules. The app shell and CBT each have one-page onboarding tracked in `user_preferences`; Settings can reset those flags.
+CBT, Check-in, Journal, Mindfulness, and Gratitude log are the working modules. The app shell introduction is tracked in `user_preferences`; module introductions are opened explicitly from their info actions and Settings does not reset per-module flags. Legacy module-onboarding columns remain temporarily for compatibility with supported mobile builds.
 
 Meditation and ACT are placeholders. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each has a reviewed module spec.
 
@@ -45,11 +45,12 @@ Working CBT routes:
 
 Working tool routes:
 
-- `/tools/mood-tracker`, `/tools/mood-tracker/new`, `/tools/mood-tracker/[id]`, `/tools/mood-tracker/[id]/edit`
+- `/tools/check-in`, `/tools/check-in/new`, `/tools/check-in/[id]`, `/tools/check-in/[id]/edit`
 - `/tools/journal`, `/tools/journal/new`, `/tools/journal/[id]`, `/tools/journal/[id]/edit`
 - `/tools/mindfulness`, `/tools/mindfulness/[slug]`
+- `/tools/grounding`, `/tools/grounding/history`, `/tools/grounding/[slug]`
 - `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit` (compat redirects → `/modules/gratitude/*`)
-- `/tools/habits`, `/tools/habits/new`, `/tools/habits/[id]`, `/tools/habits/[id]/edit`, `/tools/habits/[id]/log`, `/tools/habits/history`, `/tools/habits/onboarding`, `/tools/habits/learn`, `/tools/habits/learn/[slug]`
+- `/tools/habits`, `/tools/habits/new`, `/tools/habits/[id]`, `/tools/habits/[id]/edit`, `/tools/habits/[id]/log`, `/tools/habits/history`, `/tools/habits/learn`, `/tools/habits/learn/[slug]`
 
 Working gratitude routes (planned - Phase 1):
 
@@ -66,7 +67,8 @@ Working meditation routes:
 - `/modules/meditation/learn` - framework primer
 - `/modules/meditation/session/new` - pre-sit primer, timer, post-sit reflection
 - `/modules/meditation/sessions`, `/modules/meditation/sessions/[id]`
-- `/modules/meditation/stages`, `/modules/meditation/stages/[n]`
+- `/modules/meditation/stages`
+- `/tools/meditation/practices` (the app's meditation routes currently live under `/tools/`; the `/modules/` spellings above are the planned canonical paths)
 
 `/tools/meditation` is kept as a compatibility redirect to `/modules/meditation`.
 
@@ -99,7 +101,7 @@ Every real module must use the shared app foundation:
 Planned boundaries:
 
 - **CBT:** guided self-help strategies under the Gillihan CBT program, private history, recovery planning, pattern insights, and optional quiet reminders
-- **Mood tracker:** check-ins only; do not mix in generic journaling
+- **Check-in:** check-ins only; do not mix in generic journaling
 - **Journaling:** private free-text reflection, separate from CBT and check-ins. Spec: [journaling.md](journaling.md)
 - **ACT:** focused exercises after a spec
 - **Meditation:** the ten-stage Mind Illuminated program with onboarding, stage-aware sits, private session history, and optional quiet reminders. Spec: [meditation-tmi.md](meditation-tmi.md)

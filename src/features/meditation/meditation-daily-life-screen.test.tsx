@@ -41,9 +41,9 @@ describe("MeditationDailyLifeScreen", () => {
   it("renders the archive header and the empty state", () => {
     renderWithProviders(<MeditationDailyLifeScreen />);
 
-    // Two headings share the string: the screen title and the embedded capture
-    // card's own title.
-    expect(screen.getAllByRole("heading", { name: "Daily life mindfulness" })).toHaveLength(2);
+    // ONE heading: the embedded composer lost its own title (#853), so the
+    // screen header is the only thing naming the page rather than doubling it.
+    expect(screen.getAllByRole("heading", { name: "Daily life mindfulness" })).toHaveLength(1);
     expect(
       screen.getByText("Private notes about how the practice shows up off the cushion."),
     ).toBeTruthy();
@@ -84,9 +84,7 @@ describe("MeditationDailyLifeScreen", () => {
     expectNeutralRoom(screen.getByTestId("meditation-daily-life-room"));
   });
 
-  it("carries no field - meditation has no immersive surface here", () => {
+  it("carries no immersive surface here", () => {
     renderWithProviders(<MeditationDailyLifeScreen />);
-
-    expect(screen.queryByTestId("module-field-gradient")).toBeNull();
   });
 });

@@ -3,7 +3,7 @@
 // stays (NativeWind needs it at build time); test/theme-token-sync.test.ts
 // asserts CSS ↔ TS parity so drift fails CI. Consumers that cannot read CSS
 // variables (LinearGradient, reanimated, SVG) reach these triples only through
-// hueHsl()/hueRamp() in src/features/mindfulness/exercise-hue.ts.
+// hueHsl() in src/features/mindfulness/exercise-hue.ts.
 
 import { withLightness } from "@/src/lib/theme/color";
 
@@ -155,31 +155,37 @@ export const TINT_TRIPLES: Record<TintToken, SchemeTriples> = {
   ...HUE_TRIPLES,
 };
 
-// The app-wide 5-step score/quality encoding: background classes at the same
-// alphas as RAMP_ALPHAS in src/features/mindfulness/exercise-hue.ts (hueRamp,
-// which feeds the heatmap) — test/hue-ramp-classes.test.ts enforces the match.
-// Class literals are written out in full so NativeWind compiles them.
-export const HUE_RAMP_CLASSES: Record<HueName, readonly [string, string, string, string, string]> =
-  {
-    mist: ["bg-mist/[0.16]", "bg-mist/[0.32]", "bg-mist/[0.52]", "bg-mist/[0.74]", "bg-mist"],
-    iris: ["bg-iris/[0.16]", "bg-iris/[0.32]", "bg-iris/[0.52]", "bg-iris/[0.74]", "bg-iris"],
-    be: ["bg-be/[0.16]", "bg-be/[0.32]", "bg-be/[0.52]", "bg-be/[0.74]", "bg-be"],
-    ink: ["bg-ink/[0.16]", "bg-ink/[0.32]", "bg-ink/[0.52]", "bg-ink/[0.74]", "bg-ink"],
-    act: ["bg-act/[0.16]", "bg-act/[0.32]", "bg-act/[0.52]", "bg-act/[0.74]", "bg-act"],
-    clay: ["bg-clay/[0.16]", "bg-clay/[0.32]", "bg-clay/[0.52]", "bg-clay/[0.74]", "bg-clay"],
-    think: ["bg-think/[0.16]", "bg-think/[0.32]", "bg-think/[0.52]", "bg-think/[0.74]", "bg-think"],
-    aqua: ["bg-aqua/[0.16]", "bg-aqua/[0.32]", "bg-aqua/[0.52]", "bg-aqua/[0.74]", "bg-aqua"],
-  };
+// The 5-step score ramp's alphas, faintest → fullest. Shared by the class form
+// below (the distribution bar) and the hsla form (useAccentRamp in
+// src/lib/theme-palette.ts, which feeds the heatmap) —
+// test/accent-ramp-classes.test.ts enforces the match.
+export const RAMP_ALPHAS = [0.16, 0.32, 0.52, 0.74, 1] as const;
+
+// The app-wide 5-step score encoding, on the ACTIVE STYLE'S ACCENT (#924).
+// Until #924 this was HUE_RAMP_CLASSES, a per-hue table whose only surviving
+// reader was mood on the pinned `be` pink — which clashed with every
+// non-default style. The `mood-heatmap-ramp` encoding was always `relative`
+// (the meaning is the position on the scale, not the hue), so the ramp now
+// rides `--primary` and re-tints with the style, the same move the trend line
+// made in #588. Class literals are written out in full so NativeWind compiles
+// them.
+export const ACCENT_RAMP_CLASSES = [
+  "bg-primary/[0.16]",
+  "bg-primary/[0.32]",
+  "bg-primary/[0.52]",
+  "bg-primary/[0.74]",
+  "bg-primary",
+] as const;
 
 /**
- * Background class for a 1-5 score/quality step on a hue's ramp, faintest →
+ * Background class for a 1-5 score step on the accent ramp, faintest →
  * fullest. Non-integer or out-of-range steps round and clamp into 1..5 —
  * callers that instead want a neutral fallback for invalid input handle that
- * before calling (see mood's scoreToneClass).
+ * before calling.
  */
-export function hueRampClass(hue: HueName, step: number): string {
+export function accentRampClass(step: number): string {
   const clamped = Math.min(5, Math.max(1, Math.round(step)));
-  return HUE_RAMP_CLASSES[hue][clamped - 1];
+  return ACCENT_RAMP_CLASSES[clamped - 1];
 }
 
 // TINT_TEXT and TINT_ACCENT are gone (#589), and so is MARK_WASH_ALPHAS with

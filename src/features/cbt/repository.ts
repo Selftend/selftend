@@ -69,7 +69,7 @@ export async function listThoughtRecords(userId: string) {
 }
 
 // Exact count of non-archived thought records created since `sinceIso` - for the Progress
-// 30-day stat, mirroring countJournalEntriesSince/countGratitudeEntriesSince.
+// 30-day stat, mirroring the journal and gratitude bounded-count queries.
 export async function countThoughtRecordsSince(userId: string, sinceIso: string): Promise<number> {
   const client = requireSupabase();
   const { count, error } = await client

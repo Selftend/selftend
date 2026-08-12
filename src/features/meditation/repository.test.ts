@@ -2,7 +2,9 @@ import {
   countMeditationSessions,
   getMeditationProgramState,
   getMeditationSession,
+  listMeditationMinutesSince,
   listMeditationSessions,
+  listMeditationSessionsPage,
   listStagePracticeNotes,
   medianMeditationMinutes,
   saveMeditationSession,
@@ -202,7 +204,7 @@ describe("meditation repository - saveMeditationSession", () => {
 
   it("trims reflection text and writes stage-aware fields", async () => {
     const row = {
-      id: "s1",
+      id: "11111111-1111-4111-8111-111111111111",
       user_id: "u1",
       stage_at_session: 3,
       duration_minutes: 15,
@@ -417,9 +419,10 @@ function sessionRow(overrides: Record<string, unknown> = {}) {
 }
 
 describe("meditation repository - listMeditationSessions", () => {
-  it("maps rows and applies the default limit of 30", async () => {
+  it("maps rows and reads the first 30 by default", async () => {
     const limit = jest.fn().mockResolvedValue({ data: [sessionRow()], error: null });
-    const order = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ order: orderId }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
@@ -428,7 +431,27 @@ describe("meditation repository - listMeditationSessions", () => {
     expect(result[0]).toMatchObject({ id: "s1", stageAtSession: 3, durationMinutes: 15 });
     expect(eq).toHaveBeenCalledWith("user_id", "u1");
     expect(order).toHaveBeenCalledWith("completed_at", { ascending: false });
+    expect(orderId).toHaveBeenCalledWith("id", { ascending: false });
     expect(limit).toHaveBeenCalledWith(30);
+  });
+
+  it("anchors a later page to an encoded timestamp and id cursor", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [], error: null });
+    const or = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ or, limit }));
+    const order = jest.fn(() => ({ order: orderId }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
+
+    await listMeditationSessionsPage("u1", 20, {
+      timestamp: "2026-08-09T13:57:59.000+00:00",
+      id: "11111111-1111-4111-8111-111111111111",
+    });
+    expect(or).toHaveBeenCalledWith(
+      'completed_at.lt."2026-08-09T13:57:59.000+00:00",and(completed_at.eq."2026-08-09T13:57:59.000+00:00",id.lt."11111111-1111-4111-8111-111111111111")',
+    );
+    expect(limit).toHaveBeenCalledWith(20);
   });
 
   it("clamps out-of-range stages and applies nullish fallbacks when mapping", async () => {
@@ -449,7 +472,8 @@ describe("meditation repository - listMeditationSessions", () => {
       ],
       error: null,
     });
-    const order = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ order: orderId }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
@@ -467,12 +491,87 @@ describe("meditation repository - listMeditationSessions", () => {
 
   it("throws when the list query errors", async () => {
     const limit = jest.fn().mockResolvedValue({ data: null, error: { code: "42501" } });
-    const order = jest.fn(() => ({ limit }));
+    const orderId = jest.fn(() => ({ limit }));
+    const order = jest.fn(() => ({ order: orderId }));
     const eq = jest.fn(() => ({ order }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
 
     await expect(listMeditationSessions("u1")).rejects.toMatchObject({ code: "42501" });
+  });
+});
+
+describe("meditation repository - listMeditationMinutesSince", () => {
+  function buildMinutesQuery(result: { data: unknown; error: unknown }) {
+    const order = jest.fn().mockResolvedValue(result);
+    const gte = jest.fn(() => ({ order }));
+    const eq = jest.fn(() => ({ gte }));
+    const select = jest.fn(() => ({ eq }));
+    mockRequireSupabase.mockReturnValue(buildClient({ meditation_sessions: { select } }));
+    return { select, eq, gte, order };
+  }
+
+  it("reads four columns, bounded by date rather than by row count", async () => {
+    const { select, eq, gte } = buildMinutesQuery({ data: [], error: null });
+
+    await listMeditationMinutesSince("u1", "2026-07-08T00:00:00.000Z");
+
+    // `*` here would pull every reflection in a month for surfaces that plot
+    // minutes and count tags; the bound is what stops the window truncating
+    // for a heavy user.
+    expect(select).toHaveBeenCalledWith(
+      "duration_minutes, completed_at, completed_offset_minutes, obstacle_tags",
+    );
+    expect(eq).toHaveBeenCalledWith("user_id", "u1");
+    expect(gte).toHaveBeenCalledWith("completed_at", "2026-07-08T00:00:00.000Z");
+  });
+
+  it("dates each row by the day CAPTURED with it, not the viewer's day", async () => {
+    // 15:30 UTC is 00:30 on the 16th in Tokyo. A viewer in Kolkata (+05:30, the
+    // runner's zone) reads 21:00 on the 15th - the chart column must be the 16th.
+    buildMinutesQuery({
+      data: [
+        {
+          duration_minutes: 12,
+          completed_at: "2026-07-15T15:30:00.000Z",
+          completed_offset_minutes: TOKYO_OFFSET_MINUTES,
+          obstacle_tags: ["restlessness"],
+        },
+      ],
+      error: null,
+    });
+
+    await expect(listMeditationMinutesSince("u1", "2026-07-01T00:00:00.000Z")).resolves.toEqual([
+      { dayKey: "2026-07-16", durationMinutes: 12, obstacleTags: ["restlessness"] },
+    ]);
+  });
+
+  it("falls back to the viewer's frame for rows with no captured offset", async () => {
+    buildMinutesQuery({
+      data: [
+        {
+          duration_minutes: 20,
+          completed_at: "2026-07-15T15:30:00.000Z",
+          completed_offset_minutes: null,
+        },
+      ],
+      error: null,
+    });
+
+    const [row] = await listMeditationMinutesSince("u1", "2026-07-01T00:00:00.000Z");
+    expect(row).toEqual({
+      dayKey: entryDayKey("2026-07-15T15:30:00.000Z", null),
+      durationMinutes: 20,
+      // A row predating tags (or with none) maps to an empty list, not null.
+      obstacleTags: [],
+    });
+  });
+
+  it("throws when the window query errors", async () => {
+    buildMinutesQuery({ data: null, error: { code: "42501" } });
+    await expect(
+      listMeditationMinutesSince("u1", "2026-07-01T00:00:00.000Z"),
+    ).rejects.toMatchObject({ code: "42501" });
   });
 });
 

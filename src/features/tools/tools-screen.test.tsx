@@ -130,7 +130,9 @@ describe("the tools hub paints no per-tool hue (#587)", () => {
     // Unchanged by the inversion: the hub never hued its tile names, and the
     // reason it must not start is unchanged too - 16px text owes 4.5:1.
     const { getByText } = renderWithProviders(<ToolsScreen />);
-    const name = getByText("Mood tracker");
+    // "Check-in" since #732 - this hub was the last en surface still calling the
+    // tool "Mood tracker" while its own screens said Check-in.
+    const name = getByText("Check-in");
 
     expect(name.props.className as string).not.toContain("text-be");
   });

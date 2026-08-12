@@ -1,4 +1,9 @@
 import type { MoodInput, MoodLog } from "@/src/features/mood/types";
+import {
+  ascendingCursorFilter,
+  descendingCursorFilter,
+  type RecordCursor,
+} from "@/src/lib/descending-cursor";
 import { entryDayKey, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
@@ -48,6 +53,40 @@ export async function listMoodLogs(userId: string, limit = 30) {
     .eq("user_id", userId)
     .order("logged_at", { ascending: false })
     .limit(limit);
+
+  if (error) throw error;
+  return (data as MoodLogRow[]).map(mapMoodLog);
+}
+
+/**
+ * One page of the full history, newest first — the all-history screen's only read.
+ *
+ * `listMoodLogs` takes a `limit`, which is a ceiling rather than a window: past
+ * it, entries simply stop existing as far as the screen is concerned. This read
+ * accepts an exclusive `(logged_at, id)` cursor so the screen can keep asking
+ * without inserts or deletes shifting later page boundaries.
+ *
+ * Ordered by `logged_at` **and then `id`**, because `logged_at` alone is not a
+ * total order: two entries saved in the same second have no defined relative
+ * position, and an undefined order across an offset boundary means a row can be
+ * returned on both pages or on neither.
+ */
+export async function listMoodLogsPage(userId: string, limit: number, cursor: RecordCursor | null) {
+  const client = requireSupabase();
+  let query = client
+    .from("mood_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .order("logged_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (cursor) query = query.or(descendingCursorFilter("logged_at", cursor));
+
+  const { data, error } = await query
+    .limit(limit)
+    // PostgREST now retries idempotent reads three times internally. The app's
+    // query client already owns retry policy (one retry), so leaving both on
+    // turns a failed page into 4 x 2 attempts and ~17 seconds of blank UI.
+    .retry(false);
 
   if (error) throw error;
   return (data as MoodLogRow[]).map(mapMoodLog);
@@ -121,6 +160,7 @@ export interface MoodScorePoint {
 }
 
 interface MoodScorePointRow {
+  id: string;
   logged_at: string;
   logged_offset_minutes: number | null;
   mood_score: number;
@@ -154,16 +194,19 @@ export async function listMoodScorePoints(
 ): Promise<MoodScorePoint[]> {
   const client = requireSupabase();
   const points: MoodScorePoint[] = [];
-  for (let offset = 0; ; offset += SCORE_POINTS_PAGE) {
+  let cursor: RecordCursor | null = null;
+  for (;;) {
     let query = client
       .from("mood_logs")
-      .select("logged_at, logged_offset_minutes, mood_score")
+      .select("id, logged_at, logged_offset_minutes, mood_score")
       .eq("user_id", userId)
       .gte("logged_at", padIso(fromIso, -1));
     if (toIso) query = query.lte("logged_at", padIso(toIso, 1));
+    if (cursor) query = query.or(ascendingCursorFilter("logged_at", cursor));
     const { data, error } = await query
       .order("logged_at", { ascending: true })
-      .range(offset, offset + SCORE_POINTS_PAGE - 1);
+      .order("id", { ascending: true })
+      .limit(SCORE_POINTS_PAGE);
 
     if (error) throw error;
     const rows = data as MoodScorePointRow[];
@@ -177,6 +220,62 @@ export async function listMoodScorePoints(
       });
     }
     if (rows.length < SCORE_POINTS_PAGE) return points;
+    const last = rows.at(-1)!;
+    cursor = { timestamp: last.logged_at, id: last.id };
+  }
+}
+
+/**
+ * Every check-in whose captured civil day falls in `[startKey, endKey]` — the
+ * navigable week block's only read (#736, decided on #697).
+ *
+ * It cannot come off `useMoodHistory`: that cache is capped at 200 rows, and a
+ * navigator walks straight past the cap. A user with more than 200 check-ins
+ * paging back far enough would be shown *real, logged weeks as empty*, with no
+ * way for the screen to tell "nothing that week" from "outside the window" —
+ * the navigator would manufacture the exact defect #705 describes. The
+ * unbounded score-points query cannot rescue it either: it projects no `id` and
+ * no `emotions`, so it can feed neither the day panel nor "felt most often".
+ *
+ * Bounds are day keys but the filter is on `logged_at`, a UTC instant, so the
+ * range is padded by a whole day at each end (same reason as
+ * `listMoodScorePoints`) and narrowed back to exact day keys here. Paged for the
+ * same reason that query is: PostgREST caps a response at 1,000 rows, and a
+ * silent truncation here would look exactly like the capped cache this function
+ * exists to replace.
+ */
+export async function listMoodLogsInDayRange(
+  userId: string,
+  startKey: string,
+  endKey: string,
+): Promise<MoodLog[]> {
+  const client = requireSupabase();
+  const fromIso = padIso(`${startKey}T00:00:00.000Z`, -1);
+  const toIso = padIso(`${endKey}T23:59:59.999Z`, 1);
+  const logs: MoodLog[] = [];
+  let cursor: RecordCursor | null = null;
+  for (;;) {
+    let query = client
+      .from("mood_logs")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("logged_at", fromIso)
+      .lte("logged_at", toIso)
+      .order("logged_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (cursor) query = query.or(descendingCursorFilter("logged_at", cursor));
+    const { data, error } = await query.limit(SCORE_POINTS_PAGE);
+
+    if (error) throw error;
+    const rows = data as MoodLogRow[];
+    for (const row of rows) {
+      const log = mapMoodLog(row);
+      // The pad pulls in rows either side of the range; keep only the days asked for.
+      if (log.dayKey >= startKey && log.dayKey <= endKey) logs.push(log);
+    }
+    if (rows.length < SCORE_POINTS_PAGE) return logs;
+    const last = rows.at(-1)!;
+    cursor = { timestamp: last.logged_at, id: last.id };
   }
 }
 

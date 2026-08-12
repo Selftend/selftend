@@ -2,7 +2,7 @@ name: Feature request
 description: Propose a feature or product change.
 title: "[Feature]: "
 labels:
-  - needs triage
+  - needs-triage
 type: Feature
 body:
   - type: textarea

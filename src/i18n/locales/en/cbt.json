@@ -955,7 +955,6 @@
   "mood": {
     "description": "A quick check on how you are feeling right now.",
     "editTitle": "Edit check-in",
-    "editDescription": "Adjust the score, emotions, date, or notes.",
     "goDeeper": "Go deeper (optional)",
     "situationLabel": "Situation / trigger",
     "situationPlaceholder": "e.g. \"I got an email from my boss.\"",
@@ -964,19 +963,17 @@
     "behavioursLabel": "Behaviours",
     "behavioursPlaceholder": "e.g. \"I avoided opening the email for an hour.\"",
     "sensationsLabel": "Bodily sensations",
-    "scoreLabel": "Mood score (1-5)",
-    "scoreHint": "1 is very low, 5 is very good.",
-    "emotionsLabel": "Emotions (optional)",
+    "emotionsTitle": "Emotions",
+    "notesTitle": "Note",
+    "optionalTag": "optional",
     "loggedAtLabel": "Date & time",
-    "notesLabel": "Notes (optional)",
     "notesPlaceholder": "Anything you want to capture about this moment.",
     "cancel": "Cancel",
-    "save": "Save",
+    "save": "Save check-in",
     "update": "Update",
     "saveError": "Unable to save mood.",
     "notFound": "We couldn't find that mood entry.",
     "goDeeperTitle": "Go deeper",
-    "goDeeperIntro": "A light CBT thought-record.",
     "situationHelp": "What happened?",
     "thoughtsHelp": "What went through your mind?",
     "responseLabel": "Response",
@@ -992,7 +989,9 @@
       "heavy": "Heavy",
       "warm": "Warm",
       "tired": "Tired"
-    }
+    },
+    "goDeeperInvite": "If there's a thought underneath this, you can take it into a thought record — no pressure to.",
+    "goDeeperLink": "Open a CBT thought record"
   },
   "record": {
     "newTitle": "New thought record",
@@ -1212,16 +1211,21 @@
     "title": "Grounding",
     "description": "Quick techniques to anchor yourself in the present moment when anxiety or distress spikes.",
     "hero": {
-      "techniques_one": "{{count}} technique",
-      "techniques_other": "{{count}} techniques",
-      "takes": "Takes",
+      "techniques_one": "technique",
+      "techniques_other": "techniques",
+      "sessions_one": "session",
+      "sessions_other": "sessions",
+      "takes": "takes",
       "takesValue": "2-3 min",
-      "last": "Last · {{when}}",
-      "never": "No sessions logged yet"
+      "last": "last logged {{when}}",
+      "never": "no sessions logged yet",
+      "loading": "Loading"
     },
     "choose": "Choose a technique",
-    "howTo": "How to do it",
     "step": "Step {{current}} of {{total}}",
+    "stepShort": "{{current}} of {{total}}",
+    "goToStep": "Go to step {{current}} of {{total}}",
+    "stepsReached": "{{completed}} of {{total}}",
     "stepCounter": "{{label}} · {{current}} of {{total}}",
     "meta": {
       "senses_one": "{{count}} sense",
@@ -1229,16 +1233,45 @@
       "guided_one": "Guided · {{count}} step",
       "guided_other": "Guided · {{count}} steps"
     },
-    "start": "Start",
     "next": "Next",
+    "back": "Back",
     "finish": "Finish",
+    "takeYourTime": "Take as long as you need.",
     "done": "Done",
-    "doneMessage": "You got through it. Take a breath.",
+    "complete": "Grounding complete",
     "save": "Save session",
     "notFound": "Technique not found",
     "streakTitle": "Recent sessions",
     "recentCount_one": "{{count}} session logged.",
     "recentCount_other": "{{count}} sessions logged.",
+    "finishEarly": {
+      "label": "Finish early",
+      "title": "Finish this session?",
+      "message": "This will save your progress as {{current}} of {{total}} steps.",
+      "confirm": "Finish session",
+      "cancel": "Keep going"
+    },
+    "recent": {
+      "title": "Recent sessions",
+      "showAll": "Show all sessions",
+      "empty": "No sessions yet.",
+      "error": {
+        "title": "Sessions could not be loaded",
+        "description": "Check your connection and try again."
+      }
+    },
+    "allHistory": {
+      "title": "All grounding sessions",
+      "description": "Every grounding session you have finished, including early finishes.",
+      "empty": {
+        "title": "No sessions yet",
+        "description": "Your grounding sessions will collect here after you finish one."
+      },
+      "error": {
+        "title": "Sessions could not be loaded",
+        "description": "Check your connection and try again."
+      }
+    },
     "techniques": {
       "54321": {
         "title": "5-4-3-2-1",
@@ -1250,7 +1283,14 @@
           "Find 2 things you can smell - or recall a familiar scent.",
           "Notice 1 thing you can taste."
         ],
-        "stepLabels": ["Sight", "Touch", "Sound", "Smell", "Taste"]
+        "stepLabels": ["Sight", "Touch", "Sound", "Smell", "Taste"],
+        "stepHints": [
+          "Out loud or in your head — small things count, and repeats are fine.",
+          "Clothes on skin, feet on floor, the temperature of the air.",
+          "Let the far-away ones count too — traffic, a fan, your own breathing.",
+          "If there's nothing, recall a familiar scent instead.",
+          "Coffee, toothpaste, or just the inside of your mouth."
+        ]
       },
       "cold-water": {
         "title": "Cold water",
@@ -1261,7 +1301,13 @@
           "Hold for 30 seconds. Notice the temperature, the sensation, the boundary between cold and skin.",
           "Dry off slowly. Notice how your body feels now."
         ],
-        "stepLabels": ["Prepare", "Contact", "Hold", "Return"]
+        "stepLabels": ["Prepare", "Contact", "Hold", "Return"],
+        "stepHints": [
+          "A sink, a bottle, a bowl — whatever is closest.",
+          "Wrists first, if splashing your face feels like too much.",
+          "Count slowly if it helps — the sharpness fades as you stay with it.",
+          "No rush. Let drying off be part of the exercise."
+        ]
       },
       "feet-floor": {
         "title": "Feet on the floor",
@@ -1272,7 +1318,13 @@
           "Take three slow breaths while keeping your feet grounded.",
           "Stamp your feet three times and notice the vibration."
         ],
-        "stepLabels": ["Plant", "Press", "Breathe", "Stamp"]
+        "stepLabels": ["Plant", "Press", "Breathe", "Stamp"],
+        "stepHints": [
+          "Sitting or standing both work — shoes on or off.",
+          "Feel the floor push back. It holds you without any effort.",
+          "Slow, ordinary breaths — nothing fancy.",
+          "Let the sound and the small vibration bring you back."
+        ]
       }
     },
     "onboarding": {
@@ -1300,10 +1352,12 @@
       "finish": {
         "start": "Got it"
       }
-    }
+    },
+    "doneMeta": "{{title}} · {{minutes}} min · saved to your history",
+    "runAnother": "Run another technique"
   },
   "breathing": {
-    "title": "Breathing exercises",
+    "title": "Breathing",
     "tagline": "Short guided patterns to calm your nervous system right now.",
     "helpLabel": "About breathing",
     "startSession": "Start a session",
@@ -1318,7 +1372,7 @@
       "patterns_other": "{{count}} patterns",
       "recentSessions_one": "{{count}} recent session",
       "recentSessions_other": "{{count}} recent sessions",
-      "last": "Last · {{when}}",
+      "last": "last logged {{when}}",
       "never": "No sessions logged yet"
     },
     "choose": "Choose a pattern",
@@ -1334,6 +1388,19 @@
     "start": "Start",
     "getReady": "Get ready...",
     "finishEarly": "Finish early",
+    "session": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "paused": "Paused",
+      "timeLeft": "{{time}} left",
+      "then": "{{seconds}}s · then {{phase}}",
+      "exit": {
+        "title": "Finish this session?",
+        "message": "Your time so far will be saved.",
+        "confirm": "Finish session",
+        "cancel": "Keep going"
+      }
+    },
     "notFound": "Exercise not found",
     "nudgeTitle": "Want to ground yourself?",
     "nudgeDescription": "A short breathing exercise can help settle your nervous system.",
@@ -1373,8 +1440,18 @@
         "amber": "Amber",
         "emerald": "Emerald",
         "violet": "Violet",
-        "rose": "Rose"
-      }
+        "rose": "Rose",
+        "ink": "Ink",
+        "be": "Sage",
+        "act": "Moss"
+      },
+      "timingLabel": "Timing",
+      "perCycle": "{{value}} per cycle",
+      "seconds": "{{value}}s",
+      "startFrom": "Start from",
+      "defaultLengthLabel": "Default length",
+      "lengthChangeable": "You can change the length each time you start a session.",
+      "accentLabel": "Accent"
     },
     "exercises": {
       "box-breathing": {
@@ -1415,6 +1492,39 @@
         "forest": "Forest",
         "night": "Night",
         "brown": "Brown noise"
+      }
+    },
+    "overview": {
+      "patternsTitle": "Patterns",
+      "newPattern": "New pattern →",
+      "recentTitle": "Recent sessions",
+      "showAll": "Show all sessions →",
+      "noPatterns": "No patterns yet.",
+      "startPattern": "Start {{name}}",
+      "minutes_one": "minute",
+      "minutes_other": "minutes",
+      "sessions_one": "session",
+      "sessions_other": "sessions",
+      "lastAt": "last {{when}}",
+      "neverLogged": "no sessions yet"
+    },
+    "setup": {
+      "eachCycle": "Each cycle",
+      "howLong": "How long",
+      "voiceGuidance": "Voice guidance",
+      "ambientSound": "Ambient sound",
+      "none": "None"
+    },
+    "allHistory": {
+      "title": "All sessions",
+      "description": "Every breathing session you've logged.",
+      "empty": {
+        "title": "No sessions yet",
+        "description": "Your breathing sessions will collect here once you've finished one."
+      },
+      "error": {
+        "title": "Couldn't load your sessions",
+        "description": "Check your connection and try again."
       }
     }
   }

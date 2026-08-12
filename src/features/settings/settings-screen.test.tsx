@@ -5,6 +5,10 @@ import type { ReactNode } from "react";
 import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import {
+  REPLAY_INTRODUCTION_PREFERENCES,
+  SHOW_TIPS_AGAIN_PREFERENCES,
+} from "@/src/features/settings/onboarding-reset";
+import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
@@ -125,7 +129,7 @@ describe("SettingsScreen hero and profile badge", () => {
   });
 });
 
-describe("SettingsScreen onboarding reset", () => {
+describe("SettingsScreen onboarding actions", () => {
   const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
 
   beforeEach(() => {
@@ -135,9 +139,7 @@ describe("SettingsScreen onboarding reset", () => {
       data: {
         ...defaultUserPreferences,
         appOnboardingCompleted: true,
-        cbtOnboardingCompleted: true,
         cbtWizardCompleted: true,
-        meditationOnboardingCompleted: true,
         policyVersionAccepted: "2026-05-01",
         shownButtonTours: ["tune", "notifications", "info"],
       },
@@ -149,30 +151,30 @@ describe("SettingsScreen onboarding reset", () => {
     } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
   });
 
-  it("resets all onboarding flags while preserving the rest of preferences", async () => {
+  it("replays the app introduction without resetting contextual tips", async () => {
     renderWithProviders(<SettingsScreen />);
     // Flush SecuritySection's useEffect microtasks (isBiometricAvailable + hydrate)
     // so async setState calls land inside act() before we interact with the screen.
-    await waitFor(() => expect(screen.getByText("Reset onboarding")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Replay introduction")).toBeTruthy());
 
-    fireEvent.press(screen.getByText("Reset onboarding"));
+    fireEvent.press(screen.getByText("Replay introduction"));
 
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith({
-        appOnboardingCompleted: false,
+        ...REPLAY_INTRODUCTION_PREFERENCES,
         appOnboardingCompletedVia: "finish",
-        cbtOnboardingCompleted: false,
-        gratitudeOnboardingCompleted: false,
-        meditationInfoCompleted: false,
-        habitsOnboardingCompleted: false,
-        moodOnboardingCompleted: false,
-        journalOnboardingCompleted: false,
-        sleepOnboardingCompleted: false,
-        mindfulnessOnboardingCompleted: false,
-        groundingOnboardingCompleted: false,
-        shownButtonTours: [],
-        startHereDismissedAt: null,
       });
+    });
+  });
+
+  it("re-arms contextual tips without replaying the app introduction", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText("Show tips again")).toBeTruthy());
+
+    fireEvent.press(screen.getByText("Show tips again"));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith(SHOW_TIPS_AGAIN_PREFERENCES);
     });
   });
 });

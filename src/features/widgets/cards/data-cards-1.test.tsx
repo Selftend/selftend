@@ -15,9 +15,7 @@ describe("MoodCheckinCard", () => {
   };
   it("renders faces with today's selection and the summary", () => {
     const tree = widgetTree(<MoodCheckinCard payload={payload} icon="mood" tint="be" {...base} />);
-    expect(clickPaths(tree)).toEqual(
-      [1, 2, 3, 4, 5].map((s) => `/tools/mood-tracker/new?score=${s}`),
-    );
+    expect(clickPaths(tree)).toEqual([1, 2, 3, 4, 5].map((s) => `/tools/check-in/new?score=${s}`));
     expect(texts(tree)).toContain("Logged 2 · last at 9:15");
   });
   it("stale (today: null) shows the empty prompt and no selection", () => {
@@ -37,13 +35,13 @@ describe("StatTilesCard", () => {
         { label: "7-day", value: "3.8" },
         { label: "Entries", value: "12" },
       ],
-      openCta: { label: "Open", path: "/tools/mood-tracker" },
+      openCta: { label: "Open", path: "/tools/check-in" },
     };
     const tree = widgetTree(
       <StatTilesCard payload={payload} icon="show-chart" tint="be" {...base} />,
     );
     expect(texts(tree)).toEqual(["Mood trend", "7-DAY", "3.8", "ENTRIES", "12", "Open"]);
-    expect(clickPaths(tree)).toEqual(["/tools/mood-tracker"]);
+    expect(clickPaths(tree)).toEqual(["/tools/check-in"]);
   });
 });
 

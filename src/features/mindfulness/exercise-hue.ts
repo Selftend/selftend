@@ -29,8 +29,8 @@ export const EXERCISE_HUES: ExerciseHue[] = [...HUE_NAMES];
 // Its consumers were the grounding icon badge and meditation's practice
 // stripes, both ruled decorative on #558, so both are neutral now and the map
 // has no callers. What survives here is the part that is NOT chrome: `hsl`, and
-// the ramp built on it, which the mood heatmap, the mood scale, the sleep
-// quality ramp and the breathing pacer all read.
+// the ramp built on it, which the mood heatmap, the mood scale and the
+// breathing pacer all read.
 interface HueDef {
   hsl: HslPair;
 }
@@ -83,7 +83,7 @@ export function exerciseHue(hue: ExerciseHue): HueDef {
 // ---------------------------------------------------------------------------
 // Raw-HSL escape hatch
 // ---------------------------------------------------------------------------
-// hueHsl() and hueRamp() are the only sanctioned paths for raw HSL colour
+// hueHsl() and hueGradient() are the only sanctioned paths for raw HSL colour
 // strings into SVG, LinearGradient, and reanimated props (which cannot read
 // CSS variables). Never hardcode HSL literals in charts or gradients — these
 // helpers read the hue source of truth in src/lib/design-tokens.ts, which
@@ -95,28 +95,11 @@ export function hueHsl(hue: ExerciseHue, isDark: boolean, alpha: number): string
   return `hsla(${triple}, ${alpha})`;
 }
 
-// Exported so test/hue-ramp-classes.test.ts can hold HUE_RAMP_CLASSES in
-// design-tokens.ts to the same steps (the class table can't import from here —
-// this module imports design-tokens).
-export const RAMP_ALPHAS = [0.16, 0.32, 0.52, 0.74, 1] as const;
-
-/**
- * Five-step sequential single-hue ramp, faintest → fullest, for chart
- * intensity encodings (heatmap cells, score tones). Steps are alpha tints of
- * the module hue so they sit correctly on both light and dark surfaces.
- */
-export function hueRamp(
-  hue: ExerciseHue,
-  isDark: boolean,
-): [string, string, string, string, string] {
-  return RAMP_ALPHAS.map((alpha) => hueHsl(hue, isDark, alpha)) as [
-    string,
-    string,
-    string,
-    string,
-    string,
-  ];
-}
+// hueRamp() and RAMP_ALPHAS lived here until #924: the 5-step score ramp's
+// last reader was mood, whose `mood-heatmap-ramp` encoding is `relative` and
+// now rides the active style's accent instead of a pinned hue. RAMP_ALPHAS
+// moved to src/lib/design-tokens.ts beside the accent ramp's class table;
+// the hsla form is useAccentRamp() in src/lib/theme-palette.ts.
 
 export function hueGradient(hue: ExerciseHue, isDark: boolean): [string, string] {
   const triple = isDark ? exerciseHue(hue).hsl.dark : exerciseHue(hue).hsl.light;

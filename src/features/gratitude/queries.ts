@@ -1,18 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countGratitudeEntries,
-  countGratitudeEntriesSince,
+  countFavoriteGratitudeEntries,
+  countGratitudeEntriesSinceDayKey,
   deleteGratitudeEntry,
   getGratitudeEntry,
   listFavoriteGratitudeEntries,
   listGratitudeEntries,
+  listGratitudeEntriesPage,
   saveGratitudeEntry,
   setGratitudeEntryStarred,
 } from "@/src/features/gratitude/repository";
 import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
+
+export const GRATITUDE_HISTORY_PAGE_SIZE = 20;
 
 const gratitudeKeys = {
   all: ["gratitude"] as const,
@@ -20,8 +25,10 @@ const gratitudeKeys = {
   favorites: (userId: string, limit: number) => ["gratitude", "favorites", userId, limit] as const,
   detail: (userId: string, id: string) => ["gratitude", "detail", userId, id] as const,
   count: (userId: string) => ["gratitude", "count", userId] as const,
-  countSince: (userId: string, sinceIso: string) =>
-    ["gratitude", "count-since", userId, sinceIso] as const,
+  favoriteCount: (userId: string) => ["gratitude", "favorite-count", userId] as const,
+  historyPages: (userId: string) => ["gratitude", "history-pages", userId] as const,
+  countSinceDayKey: (userId: string, sinceDayKey: string) =>
+    ["gratitude", "count-since-day", userId, sinceDayKey] as const,
 };
 
 export function useGratitudeEntries(userId: string | null, limit = 50) {
@@ -30,6 +37,22 @@ export function useGratitudeEntries(userId: string | null, limit = 50) {
       ? gratitudeKeys.list(userId, limit)
       : ["gratitude", "list", "anonymous", limit],
     queryFn: () => listGratitudeEntries(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useGratitudeEntryPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: userId
+      ? gratitudeKeys.historyPages(userId)
+      : ["gratitude", "history-pages", "anonymous"],
+    queryFn: ({ pageParam }) =>
+      listGratitudeEntriesPage(userId!, GRATITUDE_HISTORY_PAGE_SIZE, pageParam),
+    initialPageParam: null as RecordCursor | null,
+    getNextPageParam: (lastPage) =>
+      lastPage.length < GRATITUDE_HISTORY_PAGE_SIZE
+        ? undefined
+        : nextDescendingCursor(lastPage, (entry) => entry.loggedAt),
     enabled: Boolean(userId),
   });
 }
@@ -53,12 +76,22 @@ export function useGratitudeEntryCount(userId: string | null) {
   });
 }
 
-export function useGratitudeEntryCountSince(userId: string | null, sinceIso: string) {
+export function useFavoriteGratitudeEntryCount(userId: string | null) {
   return useQuery({
     queryKey: userId
-      ? gratitudeKeys.countSince(userId, sinceIso)
-      : ["gratitude", "count-since", "anonymous", sinceIso],
-    queryFn: () => countGratitudeEntriesSince(userId!, sinceIso),
+      ? gratitudeKeys.favoriteCount(userId)
+      : ["gratitude", "favorite-count", "anonymous"],
+    queryFn: () => countFavoriteGratitudeEntries(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useGratitudeEntryCountSinceDayKey(userId: string | null, sinceDayKey: string) {
+  return useQuery({
+    queryKey: userId
+      ? gratitudeKeys.countSinceDayKey(userId, sinceDayKey)
+      : ["gratitude", "count-since-day", "anonymous", sinceDayKey],
+    queryFn: () => countGratitudeEntriesSinceDayKey(userId!, sinceDayKey),
     enabled: Boolean(userId),
   });
 }
@@ -109,6 +142,8 @@ export function useSetGratitudeEntryStarred(userId: string | null) {
       );
       queryClient.setQueryData(gratitudeKeys.detail(userId, updated.id), updated);
       void queryClient.invalidateQueries({ queryKey: ["gratitude", "favorites", userId] });
+      void queryClient.invalidateQueries({ queryKey: gratitudeKeys.historyPages(userId) });
+      void queryClient.invalidateQueries({ queryKey: gratitudeKeys.favoriteCount(userId) });
     },
   });
 }

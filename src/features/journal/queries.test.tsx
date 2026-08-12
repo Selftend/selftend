@@ -9,6 +9,8 @@ import {
   useJournalEntry,
   useJournalEntryCount,
   useJournalEntryCountSince,
+  useJournalEntryPages,
+  useJournalWritingBuckets,
   useJournalWordTotal,
   useSaveJournalEntry,
 } from "@/src/features/journal/queries";
@@ -23,6 +25,8 @@ jest.mock("@/src/features/journal/repository", () => ({
   deleteJournalEntry: jest.fn(),
   getJournalEntry: jest.fn(),
   listJournalEntries: jest.fn(),
+  listJournalEntriesPage: jest.fn(),
+  listJournalWritingBuckets: jest.fn(),
   saveJournalEntry: jest.fn(),
   sumJournalWords: jest.fn(),
 }));
@@ -85,6 +89,57 @@ describe("useJournalEntryCountSince enabled gate", () => {
     });
     await waitFor(() =>
       expect(repo.countJournalEntriesSince).toHaveBeenCalledWith("u1", "2026-01-01T00:00:00.000Z"),
+    );
+  });
+});
+
+describe("useJournalWritingBuckets", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useJournalWritingBuckets(null, 30), { wrapper: wrap(client) });
+    expect(repo.listJournalWritingBuckets).not.toHaveBeenCalled();
+  });
+
+  it("fetches the selected range in the device time zone", async () => {
+    (repo.listJournalWritingBuckets as jest.Mock).mockResolvedValue([]);
+    const client = createTestQueryClient();
+    renderHook(() => useJournalWritingBuckets("u1", 90), { wrapper: wrap(client) });
+
+    await waitFor(() =>
+      expect(repo.listJournalWritingBuckets).toHaveBeenCalledWith(
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        90,
+      ),
+    );
+  });
+});
+
+describe("useJournalEntryPages", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useJournalEntryPages(null), { wrapper: wrap(client) });
+    expect(repo.listJournalEntriesPage).not.toHaveBeenCalled();
+  });
+
+  it("pages past a full first page instead of silently capping", async () => {
+    (repo.listJournalEntriesPage as jest.Mock)
+      .mockResolvedValueOnce(
+        Array.from({ length: 50 }, (_, id) => ({
+          id: `j-${id}`,
+          occurredAt: `2026-08-09T00:${String(id).padStart(2, "0")}:00.000Z`,
+        })),
+      )
+      .mockResolvedValueOnce([]);
+    const client = createTestQueryClient();
+    const { result } = renderHook(() => useJournalEntryPages("u1"), { wrapper: wrap(client) });
+
+    await waitFor(() => expect(repo.listJournalEntriesPage).toHaveBeenCalledWith("u1", 50, null));
+    await result.current.fetchNextPage();
+    await waitFor(() =>
+      expect(repo.listJournalEntriesPage).toHaveBeenCalledWith("u1", 50, {
+        timestamp: "2026-08-09T00:49:00.000Z",
+        id: "j-49",
+      }),
     );
   });
 });

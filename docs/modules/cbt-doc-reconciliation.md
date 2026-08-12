@@ -76,7 +76,7 @@ equivalent yet — they belong in the spec, not in the as-built doc:
   model instead — a deliberate divergence, see below).
 - `MoodLog { moodScore 1-10, emotions[], linkedStrategy }` — the shipped mood tool uses a
   CBT-column shape (`situation`, `thoughts`, `behaviours`, `bodilySensations`; see
-  `program-definition.ts` `DAILY_NOTICING`), routed at `/tools/mood-tracker`.
+  `program-definition.ts` `DAILY_NOTICING`), routed at `/tools/check-in`.
 - Onboarding assessment / concern→strategy mapping (§10), strategy recommendation,
   distortion pre-selection, auto pattern-detection after 3+ records. `cbt.md` explicitly
   notes the concern/strategy personalization scaffolding is retained but **not surfaced**.
@@ -141,7 +141,7 @@ equivalent yet — they belong in the spec, not in the as-built doc:
      (`evidenceFor[]` / `evidenceAgainst[]`). The spec's Strategy 3 describes a 5-step
      flow with a single `automaticThought` string and string-typed evidence.
    - Mood tool uses a CBT-column shape (situation / thoughts / behaviours / bodily
-     sensations) at `/tools/mood-tracker`, not the spec's `moodScore` 1-10 model.
+     sensations) at `/tools/check-in`, not the spec's `moodScore` 1-10 model.
    - Program scaffold is a 5-phase model (assessment → formulation → thinking →
      behavioural → resilience), not the spec's Week 1 / 2-4 / 4-8 / 8-12 milestones.
    - Onboarding concern→strategy assessment, strategy recommendation, distortion
