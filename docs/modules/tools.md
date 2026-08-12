@@ -68,7 +68,7 @@ Working meditation routes:
 - `/modules/meditation/session/new` - pre-sit primer, timer, post-sit reflection
 - `/modules/meditation/sessions`, `/modules/meditation/sessions/[id]`
 - `/modules/meditation/stages`
-- `/modules/meditation/practices`
+- `/tools/meditation/practices` (the app's meditation routes currently live under `/tools/`; the `/modules/` spellings above are the planned canonical paths)
 
 `/tools/meditation` is kept as a compatibility redirect to `/modules/meditation`.
 

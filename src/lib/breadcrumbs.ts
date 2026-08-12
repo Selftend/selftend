@@ -80,6 +80,7 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/meditation/session": "breadcrumb.session",
   "/tools/meditation/sessions": "breadcrumb.sessions",
   "/tools/meditation/stages": "breadcrumb.stages",
+  "/tools/meditation/practices": "breadcrumb.practices",
   "/tools/sleep": "sidebar.sleep",
   "/tools/sleep/new": "breadcrumb.new",
   "/tools/sleep/history": "breadcrumb.history",
