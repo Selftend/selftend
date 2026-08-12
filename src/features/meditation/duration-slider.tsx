@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
-import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { cn } from "@/lib/utils";
 
 /**
@@ -132,8 +131,10 @@ function StepButton({ icon, label, disabled, onPress }: StepButtonProps) {
         "h-11 w-11 items-center justify-center rounded-full border border-border bg-card",
         disabled ? "opacity-40" : "active:opacity-70",
       )}
+      // No spaceKeyActivationProps: RNW already fires onPress on Space for
+      // role="button", and adding the helper would step twice per press - it
+      // exists for the radio/checkbox roles Space does nothing for natively.
       role="button"
-      {...spaceKeyActivationProps(onPress)}
     >
       <Icon aria-hidden name={icon} className="size-5 text-foreground" />
     </Pressable>
