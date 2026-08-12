@@ -222,14 +222,14 @@ describe("HabitDetailScreen tick today", () => {
     expect(toggleMutate).toHaveBeenCalledWith({ habitId: "h-1", loggedOn: currentDateKey() });
   });
 
-  it("reads as done once today is ticked", () => {
+  it("reads as done once today is ticked, and names the undo action (#932)", () => {
     mockUseHabitLogs.mockReturnValue({
       data: [habitLog()],
     } as unknown as ReturnType<typeof useHabitLogs>);
 
     renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
-    expect(screen.getByRole("checkbox", { name: "Ticked today" })).toBeTruthy();
+    expect(screen.getByRole("checkbox", { name: "Ticked today · Undo" })).toBeTruthy();
   });
 
   it("confirms before an untick that would delete a note, and not otherwise", () => {
@@ -239,7 +239,7 @@ describe("HabitDetailScreen tick today", () => {
 
     renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
-    fireEvent.press(screen.getByRole("checkbox", { name: "Ticked today" }));
+    fireEvent.press(screen.getByRole("checkbox", { name: "Ticked today · Undo" }));
     expect(toggleMutate).not.toHaveBeenCalled();
     expect(screen.getByText("Remove this tick?")).toBeTruthy();
 

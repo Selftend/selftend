@@ -138,7 +138,7 @@
     "started": "започнат на {{date}}",
     "identityLabel": "Идентичност",
     "tickToday": "Отбележи днес",
-    "tickedToday": "Отбелязано днес",
+    "tickedTodayUndo": "Отбелязано днес · Отмени",
     "moreActions": "Още действия",
     "editNote": "Редактирай бележката за {{date}}"
   },

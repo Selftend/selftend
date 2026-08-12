@@ -441,7 +441,10 @@ interface TickTodayButtonProps {
  */
 function TickTodayButton({ chipFill, chipInk, disabled, ticked, onPress }: TickTodayButtonProps) {
   const { t } = useTranslation("habits");
-  const label = ticked ? t("detail.tickedToday") : t("detail.tickToday");
+  // The ticked state names the undo action in its label (#932): un-ticking
+  // existed (this button, today's grid cell, the home-row checkbox) but nothing
+  // visible said so - "Ticked today" read as a status, not a pressable toggle.
+  const label = ticked ? t("detail.tickedTodayUndo") : t("detail.tickToday");
 
   return (
     <Pressable
