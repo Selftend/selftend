@@ -2,11 +2,13 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
@@ -18,6 +20,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { cn } from "@/lib/utils";
+import { NARROW_STEP_INDICATOR_BREAKPOINT } from "@/src/constants/layout";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
@@ -33,6 +36,19 @@ import { EmojiPicker } from "@/src/components/app/emoji-picker";
 import { useSession } from "@/src/providers/session-provider";
 
 type EditorState = { mode: "add" } | { mode: "edit"; emotion: EmotionDisplay };
+
+/**
+ * On web the surface lives in a self-styled panel that hugs its content (#905, design
+ * 2E), so every level between the panel and the scroll view must be allowed to shrink:
+ * `flex-1` has flex-basis 0 and would collapse to nothing inside a content-sized panel,
+ * while the default `shrink-0` would let long content push the footer off screen.
+ * Native keeps `flex-1` — there the modal is a full sheet with a definite height.
+ */
+const VIEW_SIZING = Platform.select({ web: "min-h-0 shrink", default: "flex-1" });
+
+/** The panel paints `popover` (the elevated surface, per 2E); the native sheet stays
+    `background`. */
+const VIEW_SURFACE = Platform.select({ web: "bg-popover", default: "bg-background" });
 
 // ─── Editor view ─────────────────────────────────────────────────────────────
 
@@ -95,7 +111,7 @@ function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorV
   };
 
   return (
-    <View className="flex-1 bg-background">
+    <View className={cn(VIEW_SIZING, VIEW_SURFACE)}>
       {/* Same form column as the list view (#872): the hairlines span the
           sheet, the content does not. */}
       <View className="border-b border-border px-4 py-3">
@@ -114,7 +130,7 @@ function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorV
         </View>
       </View>
 
-      <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
+      <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className={VIEW_SIZING}>
         <AnimatedScrollView contentContainerClassName="p-4 pb-8">
           <View className={cn(FORM_COLUMN, "gap-6")}>
             {/* Name first, then the emoji picker - the design's order on `2e`. */}
@@ -191,6 +207,68 @@ function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorV
   );
 }
 
+// ─── Shell ───────────────────────────────────────────────────────────────────
+
+interface ManageEmotionsShellProps {
+  isDesktopWeb: boolean;
+  isWeb: boolean;
+  /** The editor-aware close the Modal's own `onRequestClose` uses. */
+  onClose: () => void;
+  children: ReactNode;
+}
+
+/**
+ * The presentation fork (#905). Native renders the children straight into the Modal's
+ * sheet. Web wraps them in a self-styled panel over a pressable scrim — a centered card
+ * at desktop widths (design 2E), a bottom drawer with a grab handle below the
+ * breakpoint. `GestureHandlerRootView` sits inside either way: RN `Modal` hosts a
+ * separate native container, so Sortable's gestures need their own root here.
+ */
+function ManageEmotionsShell({ isDesktopWeb, isWeb, onClose, children }: ManageEmotionsShellProps) {
+  const inner = (
+    // The same shrink-not-flex reasoning as VIEW_SIZING; gesture-handler's root takes
+    // a style object, not a className.
+    <GestureHandlerRootView style={isWeb ? { flexShrink: 1, minHeight: 0 } : { flex: 1 }}>
+      {children}
+    </GestureHandlerRootView>
+  );
+
+  if (!isWeb) return inner;
+
+  return (
+    <View
+      className={cn(
+        "flex-1",
+        isDesktopWeb ? "items-center justify-center p-6" : "justify-end pt-12",
+      )}
+    >
+      {/* Kept out of the tab order: keyboard users dismiss with Escape or the panel's
+          own close button; the scrim is a pointer affordance. */}
+      <Pressable
+        className="absolute inset-0 bg-black/50"
+        focusable={false}
+        onPress={onClose}
+        testID="manage-emotions-backdrop"
+      />
+      <View
+        className={cn(
+          "min-h-0 w-full shrink overflow-hidden bg-popover",
+          isDesktopWeb
+            ? "max-w-[460px] rounded-[14px] border border-border shadow-lg"
+            : "rounded-t-[20px] border-t border-border",
+        )}
+      >
+        {isDesktopWeb ? null : (
+          <View className="items-center pt-3">
+            <View className="h-1 w-[38px] rounded-full bg-muted-foreground/35" />
+          </View>
+        )}
+        {inner}
+      </View>
+    </View>
+  );
+}
+
 // ─── List view ───────────────────────────────────────────────────────────────
 
 interface ManageEmotionsModalProps {
@@ -257,14 +335,29 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   const editingUses =
     editorState?.mode === "edit" && usageCounts ? (usageCounts[editorState.emotion.id] ?? 0) : null;
 
+  // Web re-houses the surface per design 2E (#905): react-native-web's Modal never reads
+  // `presentationStyle` and paints full-viewport, so the web shell goes `transparent` and
+  // styles its own panel — a centered card at desktop widths, a bottom drawer below the
+  // breakpoint. Native is untouched: `pageSheet` on iOS is already a real native sheet,
+  // and `transparent` would force it to `overFullScreen` and destroy it (#904) — the two
+  // presentations are mutually exclusive, so this fork must stay per-platform.
+  const isWeb = Platform.OS === "web";
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = isWeb && width >= NARROW_STEP_INDICATOR_BREAKPOINT;
+
+  // The backdrop and the web Escape handler dismiss exactly like the native back
+  // gesture: the editor peels first, the surface itself only closes from the list (#743).
+  const handleRequestClose = editorState ? closeEditor : onClose;
+
   return (
     <Modal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={editorState ? closeEditor : onClose}
-      presentationStyle="pageSheet"
+      animationType={reduceMotionEnabled ? "none" : isDesktopWeb ? "fade" : "slide"}
+      onRequestClose={handleRequestClose}
+      presentationStyle={isWeb ? undefined : "pageSheet"}
+      transparent={isWeb}
       visible={visible}
     >
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <ManageEmotionsShell isDesktopWeb={isDesktopWeb} isWeb={isWeb} onClose={handleRequestClose}>
         {editorState ? (
           <EmotionEditorView
             state={editorState}
@@ -273,7 +366,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
             onClose={closeEditor}
           />
         ) : (
-          <View className="flex-1 bg-background">
+          <View className={cn(VIEW_SIZING, VIEW_SURFACE)}>
             {/* The hairline spans the sheet, but the header content and the
                 rows below sit on the 620px form column (#872, decided on #690:
                 widths ride with the shell — this surface is 2d's form screen). */}
@@ -335,7 +428,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
             </AnimatedScrollView>
           </View>
         )}
-      </GestureHandlerRootView>
+      </ManageEmotionsShell>
     </Modal>
   );
 }
