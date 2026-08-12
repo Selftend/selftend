@@ -28,6 +28,14 @@ test.describe("edit and delete a sleep log", () => {
     // After save the app redirects to the detail page (/tools/sleep/[id]).
     await expect(page).toHaveURL(/\/tools\/sleep\/[^/]+$/, { timeout: 15_000 });
 
+    // #911 regression: the header's Edit and Delete must share a height — a
+    // size="sm" Edit next to the size="icon" trash rendered 32px vs 36px and
+    // the owner read the pair as a broken button (same mismatch as check-in's
+    // #901). Jest cannot see NativeWind layout, so the check lives here.
+    const editBox = await page.getByRole("button", { name: "Edit", exact: true }).boundingBox();
+    const deleteBox = await page.getByRole("button", { name: "Delete", exact: true }).boundingBox();
+    expect(editBox?.height).toBe(deleteBox?.height);
+
     // EDIT: detail.edit = "Edit"
     await page.getByRole("button", { name: "Edit", exact: true }).click();
     // Change duration from 8h down to 7h (two -30 steps), quality to 4, update notes.

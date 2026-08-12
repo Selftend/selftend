@@ -152,10 +152,12 @@ export default function JournalDetailScreen() {
                   {heading}
                 </Text>
                 <View className="flex-row items-center gap-1">
+                  {/* Default size, not "sm": the adjacent trash is size="icon"
+                      (h-10 sm:h-9), and only the default shares that height —
+                      an sm pill sits 4px shorter and reads as broken (#911). */}
                   <Button
                     onPress={() => router.push(`/tools/journal/${entry.id}/edit`)}
                     variant="outline"
-                    size="sm"
                   >
                     <Icon name="edit" className="size-4" />
                     <Text>{t("detail.edit")}</Text>
