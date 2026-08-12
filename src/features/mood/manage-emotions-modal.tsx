@@ -306,24 +306,31 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
    * across a 22-row list did not fit 360dp, and the design's answer - reveal the actions
    * on hover - has no phone equivalent at all. Removing the buttons solves both: the
    * handle stays visible, the row itself opens the editor, and delete moves inside it.
+   *
+   * The handle sits BESIDE the press target, never inside it (#915): on web,
+   * gesture-handler's pan does not cancel an enclosing Pressable the way native gesture
+   * arbitration does, and the dragged row travels with the cursor, so a drag that starts
+   * on a handle inside the Pressable also fires the row press on release.
    */
   const renderEmotionRow = useCallback(
     ({ item: emotion }: { item: EmotionDisplay }) => {
       return (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("emotions.manage.editEmotion", { name: emotion.name })}
-          onPress={() => openEditor(emotion)}
-          className="flex-row items-center gap-3.5 border-t border-border px-1.5 py-2.5 active:bg-accent/30"
-        >
+        <View className="flex-row items-center gap-3.5 border-t border-border px-1.5">
           <Sortable.Handle>
             <Icon name="drag-indicator" className="size-4 text-muted-foreground opacity-50" />
           </Sortable.Handle>
-          <Text className="text-lg leading-none">{emotion.emoji}</Text>
-          <Text className="flex-1 text-sm font-medium">{emotion.name}</Text>
-          {/* No usage signal on the row — not even "unused" (#903 reversed #702's tag).
-              The lifetime count surfaces only inside the delete confirmation. */}
-        </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("emotions.manage.editEmotion", { name: emotion.name })}
+            onPress={() => openEditor(emotion)}
+            className="flex-1 flex-row items-center gap-3.5 py-2.5 active:bg-accent/30"
+          >
+            <Text className="text-lg leading-none">{emotion.emoji}</Text>
+            <Text className="flex-1 text-sm font-medium">{emotion.name}</Text>
+            {/* No usage signal on the row — not even "unused" (#903 reversed #702's tag).
+                The lifetime count surfaces only inside the delete confirmation. */}
+          </Pressable>
+        </View>
       );
     },
     [openEditor, t],

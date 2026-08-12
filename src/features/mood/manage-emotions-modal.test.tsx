@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import { Platform } from "react-native";
 
 import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
@@ -70,7 +70,9 @@ jest.mock("react-native-sortables", () => {
           ))}
         </View>
       ),
-      Handle: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
+      Handle: ({ children }: { children: React.ReactNode }) => (
+        <View testID="sortable-handle">{children}</View>
+      ),
     },
   };
 });
@@ -127,6 +129,25 @@ describe("ManageEmotionsModal", () => {
 
       expect(screen.queryByText("unused")).toBeNull();
       expect(screen.queryByText("3")).toBeNull();
+    });
+
+    /**
+     * The handle must sit beside the press target, never inside it (#915): on web,
+     * gesture-handler's pan does not cancel an enclosing Pressable the way native
+     * gesture arbitration does, and the dragged row travels with the cursor — so a
+     * drag that starts on a handle inside the Pressable also fires the row press on
+     * release, opening the editor after every reorder.
+     */
+    it("keeps the drag handle outside the row press target", () => {
+      open();
+
+      // The handle is rendered… (guards against the sweep-rot where the null
+      // assertion below keeps passing because the handle vanished entirely)
+      expect(screen.getAllByTestId("sortable-handle").length).toBeGreaterThan(0);
+      // …but never inside the pressable that opens the editor.
+      expect(
+        within(screen.getByLabelText("Edit Anxious")).queryByTestId("sortable-handle"),
+      ).toBeNull();
     });
   });
 
