@@ -14,15 +14,22 @@ import { SHARED_TOOL_WIDGET_IDS } from "@/src/features/onboarding/recommendation
 // restated here - a hand-written expectation would drift the moment a route
 // moves. Route groups like `(app)` are invisible in the URL, and `index.tsx`
 // collapses onto its directory.
+//
+// Dynamic segments are deliberately excluded. A dashboard row navigates to a
+// fixed screen, so a route like `/tools/journal/[id]` is always a mistake -
+// leaving `[id]` in the set would let that literal pass as if it resolved.
+const isDynamic = (segment: string) => segment.includes("[");
+
 function collectRoutes(dir: string, prefix: string, out: Set<string>): Set<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const { name } = entry;
     if (entry.isDirectory()) {
+      if (isDynamic(name)) continue;
       const isGroup = name.startsWith("(") && name.endsWith(")");
       collectRoutes(join(dir, name), isGroup ? prefix : `${prefix}/${name}`, out);
       continue;
     }
-    if (!name.endsWith(".tsx") || name.startsWith("_")) continue;
+    if (!name.endsWith(".tsx") || name.startsWith("_") || isDynamic(name)) continue;
     const base = name.slice(0, -".tsx".length);
     out.add(base === "index" ? prefix || "/" : `${prefix}/${base}`);
   }
