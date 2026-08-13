@@ -78,6 +78,12 @@ After running `npm run coverage:ratchet:update`, commit the updated `coverage/ba
 | Privacy data model   | [docs/data-privacy-model.md](docs/data-privacy-model.md)   |
 | Supabase setup       | [supabase/README.md](supabase/README.md)                   |
 
+## Translations
+
+[<img src="https://hosted.weblate.org/widget/selftend/svg-badge.svg" alt="Translation status" />](https://hosted.weblate.org/engage/selftend/)
+
+Selftend is translated on [Hosted Weblate](https://hosted.weblate.org/engage/selftend/). The app currently ships in English and Bulgarian; translation files live in `src/i18n/locales/`. To help translate, pick a language on the Weblate project page - no development setup needed.
+
 ## License
 
 Code is licensed under AGPL-3.0-only. The Selftend name, logo, and branding are not licensed for reuse. See [LICENSE](LICENSE) and [.github/THIRD_PARTY_NOTICES.md](.github/THIRD_PARTY_NOTICES.md).
