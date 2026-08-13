@@ -33,7 +33,7 @@ export function DurationStepper({
       >
         <Icon name="remove" className="size-5" />
       </Button>
-      <Text className="text-2xl font-semibold">{formatDuration(value)}</Text>
+      <Text className="text-2xl font-semibold">{formatDuration(value, t)}</Text>
       <Button
         size="icon"
         variant="outline"

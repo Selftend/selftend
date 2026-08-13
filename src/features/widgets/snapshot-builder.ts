@@ -4,6 +4,7 @@ import {
   loggedOnDate,
 } from "@/src/features/sleep/summaries";
 import { formatHours } from "@/src/features/sleep/format";
+import { formatOneDecimal } from "@/src/lib/locale-format";
 import { countWords } from "@/src/features/journal/word-count";
 import { answeredCount } from "@/src/features/gratitude/questions";
 import { CBT_PROGRAM } from "@/src/features/cbt/program-definition";
@@ -259,7 +260,7 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
     };
   },
 
-  "sleep-latest": (data, { t, dateKey }) => {
+  "sleep-latest": (data, { t, dateKey, locale }) => {
     const avgDuration = averageDurationMinutes(data.sleepLogs, 7);
     const qualityLogs = data.sleepLogs.filter(
       (l): l is (typeof data.sleepLogs)[number] & { quality: number } => l.quality !== null,
@@ -270,11 +271,11 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
       title: t("home.widgets.sleepLatest.title"),
       stats: [
         {
-          value: formatHours(avgDuration),
+          value: formatHours(avgDuration, locale, t),
           label: t("home.widgets.sleepLatest.sevenNightAvgLabel"),
         },
         {
-          value: avgQuality !== null ? avgQuality.toFixed(1) : "-",
+          value: avgQuality !== null ? formatOneDecimal(avgQuality, locale) : "-",
           label: t("home.widgets.sleepLatest.qualityLabel"),
         },
       ],

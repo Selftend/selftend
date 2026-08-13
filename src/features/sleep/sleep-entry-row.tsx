@@ -34,7 +34,7 @@ function SleepEntryRowComponent({ entry, when, className }: SleepEntryRowProps) 
   const { t } = useTranslation("sleep");
   const queryClient = useQueryClient();
 
-  const duration = formatDuration(entry.durationMinutes);
+  const duration = formatDuration(entry.durationMinutes, t);
   const qualityWord = t(`quality.${entry.quality}` as Parameters<typeof t>[0]);
   const note = entry.notes.trim();
 

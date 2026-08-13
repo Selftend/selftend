@@ -12,6 +12,11 @@
   "or": "or",
   "orContinueWithEmail": "or continue with email",
   "never": "never",
+  "units": {
+    "decimalHours": "{{value}}h",
+    "durationH": "{{hours}}h",
+    "durationHm": "{{hours}}h {{minutes}}m"
+  },
   "relativeTime": {
     "today": "Today",
     "yesterday": "Yesterday",

@@ -19,6 +19,7 @@ import {
 } from "@/src/features/mood/week-window";
 import type { MoodLog } from "@/src/features/mood/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { formatOneDecimal } from "@/src/lib/locale-format";
 import { parseLocalNoon } from "@/src/utils/date";
 
 interface WeekHeroProps {
@@ -212,7 +213,7 @@ export function WeekHero({
         <Text variant="muted" className="text-[13px]">
           {t("week.averageWord")}{" "}
           <Text className="text-[13px] font-semibold text-foreground">
-            {delta.current === null ? "—" : delta.current.toFixed(1)}
+            {delta.current === null ? "—" : formatOneDecimal(delta.current, i18n.language)}
           </Text>
         </Text>
       </View>

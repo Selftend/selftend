@@ -1,4 +1,4 @@
-import { makeLocaleFormats } from "@/src/lib/locale-format";
+import { formatOneDecimal, makeLocaleFormats } from "@/src/lib/locale-format";
 
 const SAMPLE = "2026-07-02T14:30:00Z";
 
@@ -20,5 +20,17 @@ describe("makeLocaleFormats", () => {
     const en = makeLocaleFormats("en");
     expect(en.formatDate(new Date(SAMPLE))).toEqual(en.formatDate(SAMPLE));
     expect(en.formatDate(new Date(SAMPLE).getTime())).toEqual(en.formatDate(SAMPLE));
+  });
+});
+
+describe("formatOneDecimal", () => {
+  it("uses the language's decimal separator", () => {
+    expect(formatOneDecimal(7.85, "en")).toBe("7.9");
+    expect(formatOneDecimal(7.85, "bg")).toBe("7,9");
+  });
+
+  it("keeps the trailing zero the old toFixed(1) sites printed", () => {
+    expect(formatOneDecimal(3, "en")).toBe("3.0");
+    expect(formatOneDecimal(3, "bg")).toBe("3,0");
   });
 });

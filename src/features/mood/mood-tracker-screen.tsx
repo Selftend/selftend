@@ -47,6 +47,7 @@ import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mo
 import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
+import { formatOneDecimal } from "@/src/lib/locale-format";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import {
   addDaysToKey,
@@ -192,7 +193,8 @@ export default function MoodTrackerScreen() {
           { value: String(checkInCount), label: t("stats.checkins", { count: checkInCount }) },
           { value: String(thisWeekCount), label: t("stats.thisWeekLabel") },
           {
-            value: sevenDay.average === null ? "-" : sevenDay.average.toFixed(1),
+            value:
+              sevenDay.average === null ? "-" : formatOneDecimal(sevenDay.average, i18n.language),
             label: t("stats.avgLabel"),
           },
           // The old ToolStats.subline, folded into the row as a value-less item -

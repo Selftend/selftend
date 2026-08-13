@@ -10,6 +10,10 @@ import type {
   CommittedActionsCardPayload,
   ProgrammeCardPayload,
 } from "@/src/features/widgets/snapshot-types";
+import bgCommon from "@/src/i18n/locales/bg/common.json";
+import enCommon from "@/src/i18n/locales/en/common.json";
+import { addDaysToKey, currentDateKey } from "@/src/utils/date";
+import { bundleTranslator } from "@/test/bundle-translator";
 
 const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k);
 const ctx = {
@@ -37,6 +41,51 @@ const empty: WidgetData = {
   journalEntryCount: null,
   journalWordTotal: null,
 };
+
+describe("sleep-latest number formatting (#962)", () => {
+  // The Android home-screen widget renders this snapshot verbatim, so a decimal point
+  // baked in here reaches a Bulgarian home screen with nothing left to correct it.
+  const bundles = { en: enCommon, bg: bgCommon };
+
+  // Real `common` templates for the unit keys; the suite's existing stub still answers the
+  // dozens of `navigation` keys the builder asks for alongside them.
+  const localeT = (lang: keyof typeof bundles) => bundleTranslator("common", bundles[lang], t);
+
+  // Inside the rolling 7-day window `averageDurationMinutes` walks, which is anchored on
+  // the real current day rather than on `ctx.dateKey`. Averages: 432 min and quality 3.5.
+  const twoNights: WidgetData = {
+    ...empty,
+    sleepLogs: [
+      {
+        loggedAt: "2026-06-05T22:00:00Z",
+        dayKey: currentDateKey(),
+        durationMinutes: 430,
+        quality: 3,
+      },
+      {
+        loggedAt: "2026-06-04T22:00:00Z",
+        dayKey: addDaysToKey(currentDateKey(), -1),
+        durationMinutes: 434,
+        quality: 4,
+      },
+    ],
+  };
+
+  const stats = (lang: keyof typeof bundles) =>
+    (
+      buildSnapshot(twoNights, { ...ctx, locale: lang, t: localeT(lang) }).widgets[
+        "sleep-latest"
+      ] as StatsCardPayload
+    ).stats;
+
+  it("renders the English average and quality unchanged", () => {
+    expect(stats("en")?.map((s) => s.value)).toEqual(["7.2h", "3.5"]);
+  });
+
+  it("renders a comma separator and the translated hour unit in Bulgarian", () => {
+    expect(stats("bg")?.map((s) => s.value)).toEqual(["7,2 ч", "3,5"]);
+  });
+});
 
 describe("buildSnapshot v2", () => {
   it("stamps schemaVersion 4 and builds every card with its registry kind", () => {
