@@ -1,3 +1,6 @@
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+
 import {
   WIDGET_META,
   WIDGET_REGISTRY,
@@ -6,6 +9,27 @@ import {
 } from "@/src/features/home/widget-registry";
 import { CONCERN_KEYS, resolveConcernWidgetIds } from "@/src/features/onboarding/concerns";
 import { SHARED_TOOL_WIDGET_IDS } from "@/src/features/onboarding/recommendations";
+
+// Every static route Expo Router serves, read off the `app/` tree rather than
+// restated here - a hand-written expectation would drift the moment a route
+// moves. Route groups like `(app)` are invisible in the URL, and `index.tsx`
+// collapses onto its directory.
+function collectRoutes(dir: string, prefix: string, out: Set<string>): Set<string> {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const { name } = entry;
+    if (entry.isDirectory()) {
+      const isGroup = name.startsWith("(") && name.endsWith(")");
+      collectRoutes(join(dir, name), isGroup ? prefix : `${prefix}/${name}`, out);
+      continue;
+    }
+    if (!name.endsWith(".tsx") || name.startsWith("_")) continue;
+    const base = name.slice(0, -".tsx".length);
+    out.add(base === "index" ? prefix || "/" : `${prefix}/${base}`);
+  }
+  return out;
+}
+
+const APP_ROUTES = collectRoutes(join(__dirname, "../../../app"), "", new Set<string>());
 
 describe("widget registry", () => {
   it("exposes the daily check-in (mood-checkin) meta", () => {
@@ -174,5 +198,56 @@ describe("widget registry", () => {
       expect({ id, tint: meta.tint }).toMatchObject({ tint: expect.any(String) });
       expect({ id, toolKey: meta.toolKey }).toMatchObject({ toolKey: expect.any(String) });
     }
+  });
+
+  // The registry is the dashboard catalogue (#972). `route` and `tier` are
+  // required on WidgetMeta so a new id cannot be added without declaring where
+  // its row goes and which tier renders it. Nothing reads them yet - this is
+  // the expand step of an expand-contract.
+  describe("dashboard catalogue", () => {
+    it("every id declares a route and a tier", () => {
+      for (const [id, meta] of Object.entries(WIDGET_META)) {
+        expect({ id, route: meta.route }).toMatchObject({ route: expect.any(String) });
+        expect({ id, tier: meta.tier }).toMatchObject({
+          tier: expect.stringMatching(/^(tool|programme)$/),
+        });
+      }
+    });
+
+    it("every route resolves to a real Expo Router route", () => {
+      // This is the assertion that earns its keep: the decided spec's row table
+      // named `/tools/gratitude` and `/tools/routines`, neither of which the
+      // router serves (`/tools/gratitude-log` and `/routines` do).
+      for (const [id, meta] of Object.entries(WIDGET_META)) {
+        expect({ id, route: meta.route, exists: APP_ROUTES.has(meta.route) }).toMatchObject({
+          exists: true,
+        });
+      }
+    });
+
+    it("exactly two ids are the programme tier - CBT and ACT", () => {
+      const programmeIds = Object.entries(WIDGET_META)
+        .filter(([, meta]) => meta.tier === "programme")
+        .map(([id]) => id)
+        .sort();
+      expect(programmeIds).toEqual(["act-programme", "cbt-programme"]);
+    });
+
+    it("the programme cards press to their module home", () => {
+      expect(WIDGET_META["cbt-programme"].route).toBe("/modules/cbt");
+      expect(WIDGET_META["act-programme"].route).toBe("/modules/act");
+    });
+
+    // S3 collapses these three ids away (mood-trend into mood-checkin, both
+    // -module-shortcut ids into their -programme id). Until it does they are
+    // still in the registry, and each must already point where its survivor
+    // points so the collapse is a delete rather than a re-route.
+    it.each([
+      ["mood-trend", "mood-checkin"],
+      ["cbt-module-shortcut", "cbt-programme"],
+      ["act-module-shortcut", "act-programme"],
+    ])("%s routes where %s routes, ahead of the S3 collapse", (retiring, survivor) => {
+      expect(WIDGET_META[retiring].route).toBe(WIDGET_META[survivor].route);
+    });
   });
 });
