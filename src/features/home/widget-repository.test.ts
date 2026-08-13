@@ -1,11 +1,11 @@
 import {
+  addWidgetPreference,
   deleteWidgetPreference,
   getWidgetsSeeded,
-  insertWidgetPreferences,
   listWidgetPreferences,
   markWidgetsSeeded,
   restoreWidgetPreference,
-  updateWidgetPositions,
+  setWidgetOrder,
 } from "@/src/features/home/widget-repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -17,10 +17,18 @@ jest.mock("@/src/lib/supabase", () => ({
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
 
-function buildClient(builders: Record<string, unknown>) {
-  return { from: jest.fn((t: string) => builders[t]) } as unknown as ReturnType<
-    typeof requireSupabase
-  >;
+function buildClient(builders: Record<string, unknown>, rpc?: jest.Mock) {
+  return {
+    from: jest.fn((t: string) => builders[t]),
+    rpc: rpc ?? jest.fn().mockResolvedValue({ error: null }),
+  } as unknown as ReturnType<typeof requireSupabase>;
+}
+
+// The two write paths are RPCs, so the client surface they need is `rpc`, not `from`.
+function mockRpc(result: { error: unknown } = { error: null }) {
+  const rpc = jest.fn().mockResolvedValue(result);
+  mockRequireSupabase.mockReturnValue({ rpc } as unknown as ReturnType<typeof requireSupabase>);
+  return rpc;
 }
 
 function mockMaybeSingle(result: { data: unknown; error: unknown }) {
@@ -77,9 +85,11 @@ describe("widget-repository getWidgetsSeeded", () => {
 describe("widget-repository listWidgetPreferences", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("maps rows and orders by position then created_at", async () => {
-    const orderCreated = jest.fn().mockResolvedValue({ data: [ROW], error: null });
-    const orderPosition = jest.fn(() => ({ order: orderCreated }));
+  // The `created_at` tiebreak is gone (#974): positions are server-assigned under a
+  // per-user lock and `set_widget_order` only permutes existing positions, so `position`
+  // alone is total. A second `.order` call here would mean the race is back.
+  it("orders by position alone, with no created_at tiebreak", async () => {
+    const orderPosition = jest.fn().mockResolvedValue({ data: [ROW], error: null });
     const eq = jest.fn(() => ({ order: orderPosition }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { select } }));
@@ -95,13 +105,12 @@ describe("widget-repository listWidgetPreferences", () => {
       },
     ]);
     expect(eq).toHaveBeenCalledWith("user_id", "u1");
+    expect(orderPosition).toHaveBeenCalledTimes(1);
     expect(orderPosition).toHaveBeenCalledWith("position", { ascending: true });
-    expect(orderCreated).toHaveBeenCalledWith("created_at", { ascending: true });
   });
 
   it("throws when the query errors", async () => {
-    const orderCreated = jest.fn().mockResolvedValue({ data: null, error: { code: "08006" } });
-    const orderPosition = jest.fn(() => ({ order: orderCreated }));
+    const orderPosition = jest.fn().mockResolvedValue({ data: null, error: { code: "08006" } });
     const eq = jest.fn(() => ({ order: orderPosition }));
     const select = jest.fn(() => ({ eq }));
     mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { select } }));
@@ -125,48 +134,25 @@ describe("widget-repository markWidgetsSeeded", () => {
   });
 });
 
-describe("widget-repository insertWidgetPreferences", () => {
+describe("widget-repository addWidgetPreference", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("returns early without touching the client when widgetIds is empty", async () => {
-    const from = jest.fn();
-    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+  // The whole point of the RPC: the client never names a position, so it cannot compute
+  // a stale one. If a position ever appears in this payload, the race is back (#974).
+  it("names only the widget id - the server owns the position", async () => {
+    const rpc = mockRpc();
 
-    await insertWidgetPreferences("u1", []);
-    expect(from).not.toHaveBeenCalled();
+    await addWidgetPreference("mood-checkin");
+    expect(rpc).toHaveBeenCalledWith("add_widget_preference", { p_widget_id: "mood-checkin" });
+    const payload = (rpc.mock.calls[0] as unknown as [string, Record<string, unknown>])[1];
+    expect(payload).not.toHaveProperty("position");
+    expect(payload).not.toHaveProperty("p_position");
   });
 
-  it("builds positioned payload using the default startPosition (0)", async () => {
-    const upsert = jest.fn().mockResolvedValue({ error: null });
-    mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { upsert } }));
+  it("throws when the RPC errors", async () => {
+    mockRpc({ error: { code: "23505" } });
 
-    await insertWidgetPreferences("u1", ["a", "b"]);
-    const payload = (upsert.mock.calls[0] as unknown as [Record<string, unknown>[]])[0];
-    expect(payload).toEqual([
-      { user_id: "u1", widget_id: "a", position: 0 },
-      { user_id: "u1", widget_id: "b", position: 1 },
-    ]);
-    const options = (upsert.mock.calls[0] as unknown as [unknown, Record<string, unknown>])[1];
-    expect(options).toEqual({ onConflict: "user_id,widget_id", ignoreDuplicates: true });
-  });
-
-  it("offsets positions by an explicit startPosition", async () => {
-    const upsert = jest.fn().mockResolvedValue({ error: null });
-    mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { upsert } }));
-
-    await insertWidgetPreferences("u1", ["a", "b"], 5);
-    const payload = (upsert.mock.calls[0] as unknown as [Record<string, unknown>[]])[0];
-    expect(payload).toEqual([
-      { user_id: "u1", widget_id: "a", position: 5 },
-      { user_id: "u1", widget_id: "b", position: 6 },
-    ]);
-  });
-
-  it("throws when the upsert errors", async () => {
-    const upsert = jest.fn().mockResolvedValue({ error: { code: "23505" } });
-    mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { upsert } }));
-
-    await expect(insertWidgetPreferences("u1", ["a"])).rejects.toMatchObject({ code: "23505" });
+    await expect(addWidgetPreference("mood-checkin")).rejects.toMatchObject({ code: "23505" });
   });
 });
 
@@ -194,63 +180,55 @@ describe("widget-repository deleteWidgetPreference", () => {
   });
 });
 
-describe("widget-repository updateWidgetPositions", () => {
+describe("widget-repository setWidgetOrder", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("upserts each widget at its array index position", async () => {
-    const upsert = jest.fn().mockResolvedValue({ error: null });
-    mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { upsert } }));
+  // Order is expressed as the id sequence alone. No index is sent, because the server
+  // reassigns the positions those ids already hold - which is what leaves rows the
+  // caller did not name untouched (#974).
+  it("sends the id order and no positions at all", async () => {
+    const rpc = mockRpc();
 
-    await updateWidgetPositions("u1", ["c", "a", "b"]);
-    const payload = (upsert.mock.calls[0] as unknown as [Record<string, unknown>[]])[0];
-    expect(payload).toEqual([
-      { user_id: "u1", widget_id: "c", position: 0 },
-      { user_id: "u1", widget_id: "a", position: 1 },
-      { user_id: "u1", widget_id: "b", position: 2 },
-    ]);
-    const options = (upsert.mock.calls[0] as unknown as [unknown, Record<string, unknown>])[1];
-    expect(options).toEqual({ onConflict: "user_id,widget_id" });
+    await setWidgetOrder(["c", "a", "b"]);
+    expect(rpc).toHaveBeenCalledWith("set_widget_order", { p_widget_ids: ["c", "a", "b"] });
   });
 
-  it("throws when the upsert errors", async () => {
-    const upsert = jest.fn().mockResolvedValue({ error: { code: "23505" } });
-    mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { upsert } }));
+  it("forwards a subset unchanged rather than padding it to the full list", async () => {
+    const rpc = mockRpc();
 
-    await expect(updateWidgetPositions("u1", ["a"])).rejects.toMatchObject({ code: "23505" });
+    await setWidgetOrder(["e", "a"]);
+    expect(rpc).toHaveBeenCalledWith("set_widget_order", { p_widget_ids: ["e", "a"] });
+  });
+
+  it("throws when the RPC errors", async () => {
+    mockRpc({ error: { code: "23505" } });
+
+    await expect(setWidgetOrder(["a"])).rejects.toMatchObject({ code: "23505" });
   });
 });
 
 describe("widget-repository restoreWidgetPreference", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("re-inserts a removed widget and restores the requested order", async () => {
-    const orderCreated = jest.fn().mockResolvedValue({
+  it("re-adds the widget then orders the full list around it", async () => {
+    const orderPosition = jest.fn().mockResolvedValue({
       data: [
         { ...ROW, widget_id: "a", position: 0 },
         { ...ROW, id: "22222222-2222-4222-8222-222222222222", widget_id: "c", position: 1 },
       ],
       error: null,
     });
-    const orderPosition = jest.fn(() => ({ order: orderCreated }));
     const eq = jest.fn(() => ({ order: orderPosition }));
     const select = jest.fn(() => ({ eq }));
-    const upsert = jest.fn().mockResolvedValue({ error: null });
-    mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { select, upsert } }));
+    const rpc = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { select } }, rpc));
 
     await restoreWidgetPreference("u1", "b", 1);
 
-    expect(upsert).toHaveBeenNthCalledWith(1, [{ user_id: "u1", widget_id: "b", position: 2 }], {
-      onConflict: "user_id,widget_id",
-      ignoreDuplicates: true,
-    });
-    expect(upsert).toHaveBeenNthCalledWith(
-      2,
-      [
-        { user_id: "u1", widget_id: "a", position: 0 },
-        { user_id: "u1", widget_id: "b", position: 1 },
-        { user_id: "u1", widget_id: "c", position: 2 },
-      ],
-      { onConflict: "user_id,widget_id" },
-    );
+    // Re-add first, so the row exists and holds a position before the order is set.
+    expect(rpc).toHaveBeenNthCalledWith(1, "add_widget_preference", { p_widget_id: "b" });
+    // Every id is named, so `set_widget_order` has every position to redistribute and
+    // the restored row lands at the requested index.
+    expect(rpc).toHaveBeenNthCalledWith(2, "set_widget_order", { p_widget_ids: ["a", "b", "c"] });
   });
 });
