@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Platform, Pressable, View } from "react-native";
+import { Platform, Pressable, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -20,12 +20,14 @@ export interface ToolRowProps {
    * module and shortcut rows whose stats are not built yet.
    */
   stat: string | null;
-  /**
-   * Desktop lays the name in its own column beside the stat; phone stacks the
-   * stat under the name. Measured once by the tier rather than per row.
-   */
-  wide: boolean;
 }
+
+/**
+ * Desktop lays the name in its own column beside the stat; phone stacks the stat under
+ * the name. Same 640 breakpoint and same `useWindowDimensions` source the mood tracker
+ * uses for the two rows the design packs tighter than 360dp allows.
+ */
+const WIDE_ROW_WIDTH = 640;
 
 /**
  * One row of the `Your tools` tier: icon · name · stat · chevron, pressed whole.
@@ -38,8 +40,20 @@ export interface ToolRowProps {
  * but neither drawn frame renders it, so it is an authoring artifact rather than a
  * decision; the chevron is the affordance.
  */
-export function ToolRow({ id, stat, wide }: ToolRowProps) {
+export function ToolRow({ id, stat }: ToolRowProps) {
   const { t } = useTranslation("navigation");
+  /**
+   * Read here rather than passed in from the tier, and that is load-bearing.
+   *
+   * `Sortable.Grid` caches the elements `renderItem` returns in its item store, so a
+   * prop whose value changes AFTER mount leaves the stale copy mounted alongside the
+   * fresh one - two rows, both visible, one narrow and one wide. The old widget cards
+   * never hit this because `WidgetContent` took only `id` and `userId`, both stable
+   * from the first render; a container width measured by `onLayout` is not. Keeping the
+   * breakpoint inside the row means nothing width-dependent crosses that boundary.
+   */
+  const { width } = useWindowDimensions();
+  const wide = width >= WIDE_ROW_WIDTH;
   const meta = metaForWidget(id);
   if (!meta) return null;
 

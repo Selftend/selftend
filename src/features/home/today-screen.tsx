@@ -37,12 +37,6 @@ import { cn } from "@/lib/utils";
 import { useAccentHsl } from "@/src/lib/theme-palette";
 
 const PADDING = 24;
-/**
- * Above this the row lays name and stat on one line, with the name in its own column;
- * below it the stat stacks under the name. Same breakpoint the mood tracker uses for
- * the two rows the design packs tighter than 360dp allows.
- */
-const WIDE_ROW_WIDTH = 640;
 type WidgetEditAction =
   | { type: "add"; widgetId: string }
   | { type: "remove"; widgetId: string; position: number }
@@ -211,7 +205,6 @@ export default function HomeScreen() {
   const [addVisible, setAddVisible] = useState(false);
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
   const [undoStack, setUndoStack] = useState<WidgetEditAction[]>([]);
-  const [containerWidth, setContainerWidth] = useState(0);
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   const { selectedDate } = useSelectedDate();
@@ -336,9 +329,6 @@ export default function HomeScreen() {
     }
   };
 
-  const contentWidth = Math.max(0, containerWidth - PADDING * 2);
-  const wideRows = contentWidth >= WIDE_ROW_WIDTH;
-
   const header = (
     <View className="gap-6 pb-3">
       {/* Hero - card-style with subtle purple tint */}
@@ -416,9 +406,10 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <View
+        // `home-layout` is load-bearing beyond this screen: settings-account.e2e scopes
+        // to it and .maestro/app-store-screenshots.yaml waits on it for 90s.
         testID="home-layout"
         className="flex-1"
-        onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
       >
         <AnimatedScrollView
           ref={scrollableRef}
@@ -472,7 +463,7 @@ export default function HomeScreen() {
                 onDragEnd={(next) => reorderWidgets(toolIds, next)}
                 onMove={(id, offset) => moveWidget(toolIds, id, offset)}
                 onRemove={removeWidget}
-                renderRow={(id) => <ToolTierRow id={id} userId={userId} wide={wideRows} />}
+                renderRow={(id) => <ToolTierRow id={id} userId={userId} />}
               />
 
               {programmeIds.length > 0 ? (

@@ -1,5 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
+import { useWindowDimensions } from "react-native";
 
 import { ToolRow } from "@/src/features/home/tool-row";
 import { WIDGET_META } from "@/src/features/home/widget-registry";
@@ -9,13 +10,25 @@ jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
 }));
 
+jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
+const mockDimensions = useWindowDimensions as unknown as jest.Mock;
+/** The row reads its own breakpoint, so width is set per test rather than passed in. */
+const atWidth = (width: number) => mockDimensions.mockReturnValue({ width, height: 800 });
+
 const mockRouter = jest.mocked(router);
 
 describe("ToolRow", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    atWidth(390);
+  });
 
   it("renders the tool's name and its stat", () => {
-    renderWithProviders(<ToolRow id="sleep-latest" stat="7-day average 7.2h" wide={false} />);
+    renderWithProviders(<ToolRow id="sleep-latest" stat="7-day average 7.2h" />);
 
     expect(screen.getByText("Sleep")).toBeTruthy();
     expect(screen.getByText("7-day average 7.2h")).toBeTruthy();
@@ -23,13 +36,13 @@ describe("ToolRow", () => {
 
   it("names itself to a screen reader as the tool plus its stat", () => {
     // One press acts on the whole row, so the row is one accessible thing.
-    renderWithProviders(<ToolRow id="sleep-latest" stat="7-day average 7.2h" wide={false} />);
+    renderWithProviders(<ToolRow id="sleep-latest" stat="7-day average 7.2h" />);
 
     expect(screen.getByLabelText("Sleep, 7-day average 7.2h")).toBeTruthy();
   });
 
   it("falls back to the bare name when there is no stat", () => {
-    renderWithProviders(<ToolRow id="sleep-latest" stat={null} wide={false} />);
+    renderWithProviders(<ToolRow id="sleep-latest" stat={null} />);
 
     expect(screen.getByLabelText("Sleep")).toBeTruthy();
   });
@@ -37,14 +50,14 @@ describe("ToolRow", () => {
   it("renders no stat node at all when the slot is empty", () => {
     // Never a dash and never a skeleton: a loading surface must not claim emptiness,
     // and this same null covers the deliberate cbt-distortion-guide exception.
-    renderWithProviders(<ToolRow id="sleep-latest" stat={null} wide={false} />);
+    renderWithProviders(<ToolRow id="sleep-latest" stat={null} />);
 
     expect(screen.queryByText("-")).toBeNull();
     expect(screen.queryByText("—")).toBeNull();
   });
 
   it("navigates to the id's registered route when pressed", () => {
-    renderWithProviders(<ToolRow id="sleep-latest" stat="anything" wide={false} />);
+    renderWithProviders(<ToolRow id="sleep-latest" stat="anything" />);
 
     fireEvent.press(screen.getByTestId("tool-row-sleep-latest"));
 
@@ -55,17 +68,17 @@ describe("ToolRow", () => {
     // The decided spec's table says `/tools/gratitude` and `/tools/routines`; neither is
     // served. The row reads the registry rather than restating a route, so it cannot
     // inherit that error - but pin the outcome, because the table is what gets re-read.
-    renderWithProviders(<ToolRow id="gratitude-latest" stat={null} wide={false} />);
+    renderWithProviders(<ToolRow id="gratitude-latest" stat={null} />);
     fireEvent.press(screen.getByTestId("tool-row-gratitude-latest"));
     expect(mockRouter.push).toHaveBeenCalledWith("/tools/gratitude-log");
 
-    renderWithProviders(<ToolRow id="routines-today" stat={null} wide={false} />);
+    renderWithProviders(<ToolRow id="routines-today" stat={null} />);
     fireEvent.press(screen.getByTestId("tool-row-routines-today"));
     expect(mockRouter.push).toHaveBeenCalledWith("/routines");
   });
 
   it("hides the chevron from assistive tech", () => {
-    renderWithProviders(<ToolRow id="sleep-latest" stat="x" wide={false} />);
+    renderWithProviders(<ToolRow id="sleep-latest" stat="x" />);
 
     // The row already announces itself; a second focus stop that says "chevron right"
     // adds a node and no information.
@@ -77,7 +90,8 @@ describe("ToolRow", () => {
 
   it("gives the desktop name column a minimum width, never a fixed one", () => {
     // A fixed 150px column - which is what the design draws - overruns in Bulgarian.
-    renderWithProviders(<ToolRow id="sleep-latest" stat="x" wide />);
+    atWidth(1000);
+    renderWithProviders(<ToolRow id="sleep-latest" stat="x" />);
 
     const name = screen.getByText("Sleep");
     expect(name.props.className).toContain("min-w-[150px]");
@@ -93,7 +107,8 @@ describe("ToolRow", () => {
     // it grows to fit; the stat is `min-w-0 flex-1`, so it is what yields the space.
     // Either half alone is not enough: a shrinkable name truncates, and a stat without
     // `min-w-0` refuses to shrink below its content and pushes the row wide.
-    renderWithProviders(<ToolRow id="gratitude-latest" stat="29 entries · 3 this week" wide />);
+    atWidth(1000);
+    renderWithProviders(<ToolRow id="gratitude-latest" stat="29 entries · 3 this week" />);
 
     const name = screen.getByText("Gratitude log");
     expect(name.props.className).toContain("shrink-0");
@@ -105,7 +120,7 @@ describe("ToolRow", () => {
   });
 
   it("carries the neutral chrome mark, never a per-tool hue", () => {
-    renderWithProviders(<ToolRow id="sleep-latest" stat="x" wide={false} />);
+    renderWithProviders(<ToolRow id="sleep-latest" stat="x" />);
 
     const row = screen.getByTestId("tool-row-sleep-latest");
     const glyph = row.findByProps({ name: WIDGET_META["sleep-latest"].icon });
@@ -113,7 +128,7 @@ describe("ToolRow", () => {
   });
 
   it("renders nothing for an id the catalogue does not know", () => {
-    renderWithProviders(<ToolRow id="not-a-widget" stat="x" wide={false} />);
+    renderWithProviders(<ToolRow id="not-a-widget" stat="x" />);
 
     expect(screen.queryByTestId("tool-row-not-a-widget")).toBeNull();
   });

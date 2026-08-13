@@ -61,7 +61,7 @@ import type { MindfulnessSession } from "@/src/features/mindfulness/types";
  * so its loading signal is the `isLoading` flag it exposes.
  */
 
-type StatRowProps = { userId: string | null; wide: boolean };
+type StatRowProps = { userId: string | null };
 
 /**
  * Joins the row's clauses with the design's separator.
@@ -85,7 +85,7 @@ const emptyStat = (t: TFunction) => t("home.rows.empty");
 // The two clauses use DIFFERENT windows on purpose: `this week` is a calendar Mon-Sun
 // week (#697 decided that deliberately, against a trailing one) and `7-day average` is
 // trailing. Both are labelled, so both are honest; "harmonising" them reverts #697.
-function MoodCheckinRow({ userId, wide }: StatRowProps) {
+function MoodCheckinRow({ userId }: StatRowProps) {
   const { t, i18n } = useTranslation("navigation");
   /**
    * ADR-0001: neither clause may come from a capped list. `useMoodWeek` fetches a DAY
@@ -118,12 +118,12 @@ function MoodCheckinRow({ userId, wide }: StatRowProps) {
                 }),
           );
   }
-  return <ToolRow id="mood-checkin" stat={stat} wide={wide} />;
+  return <ToolRow id="mood-checkin" stat={stat} />;
 }
 
 // --- 2. journal-week -------------------------------------------------------
 // Lifetime figures, matching the journal hero: the id says "week", the tool does not.
-function JournalRow({ userId, wide }: StatRowProps) {
+function JournalRow({ userId }: StatRowProps) {
   const { t } = useTranslation("navigation");
   const { data: entries } = useJournalEntryCount(userId);
   const { data: words } = useJournalWordTotal(userId);
@@ -138,11 +138,11 @@ function JournalRow({ userId, wide }: StatRowProps) {
             t("home.rows.words", { count: words }),
           );
   }
-  return <ToolRow id="journal-week" stat={stat} wide={wide} />;
+  return <ToolRow id="journal-week" stat={stat} />;
 }
 
 // --- 3. gratitude-latest ---------------------------------------------------
-function GratitudeRow({ userId, wide }: StatRowProps) {
+function GratitudeRow({ userId }: StatRowProps) {
   const { t } = useTranslation("navigation");
   const { selectedDate } = useSelectedDate();
   // `mondayKeyOf(todayKey)` is what the gratitude home screen passes, so this shares
@@ -160,11 +160,11 @@ function GratitudeRow({ userId, wide }: StatRowProps) {
             t("home.rows.thisWeek", { value: thisWeek }),
           );
   }
-  return <ToolRow id="gratitude-latest" stat={stat} wide={wide} />;
+  return <ToolRow id="gratitude-latest" stat={stat} />;
 }
 
 // --- 4. breathing-suggested ------------------------------------------------
-function BreathingRow({ userId, wide }: StatRowProps) {
+function BreathingRow({ userId }: StatRowProps) {
   const { t } = useTranslation("navigation");
   const { data: sessions } = useBreathingSessionCount(userId);
   const { data: minutes } = useBreathingTotalMinutes(userId);
@@ -179,7 +179,7 @@ function BreathingRow({ userId, wide }: StatRowProps) {
             t("home.rows.minutes", { count: minutes }),
           );
   }
-  return <ToolRow id="breathing-suggested" stat={stat} wide={wide} />;
+  return <ToolRow id="breathing-suggested" stat={stat} />;
 }
 
 // --- 5. grounding-log ------------------------------------------------------
@@ -187,7 +187,7 @@ function BreathingRow({ userId, wide }: StatRowProps) {
 // `at(0)`, which every cap contains - no new query. `formatCompactAtOffset` never
 // renders "N days ago": a column of `23 days ago · 41 days ago` implies lateness, and
 // home does not tally days since you last opened a tool.
-function GroundingRow({ userId, wide }: StatRowProps) {
+function GroundingRow({ userId }: StatRowProps) {
   const { t, i18n } = useTranslation("navigation");
   const { data: sessions } = useGroundingSessionCount(userId);
   const { data: recent } = useGroundingSessions(userId, 5);
@@ -215,14 +215,14 @@ function GroundingRow({ userId, wide }: StatRowProps) {
               : null,
           );
   }
-  return <ToolRow id="grounding-log" stat={stat} wide={wide} />;
+  return <ToolRow id="grounding-log" stat={stat} />;
 }
 
 // --- 6. meditation-pick ----------------------------------------------------
 // ☠️ The design's drawn "30 sessions · 551 minutes" was the 30-row cache cap times a
 // sum capped the same way. `useMeditationSessionCount` is a real uncapped head count,
 // and the companion figure is the server's median, not a client sum.
-function MeditationRow({ userId, wide }: StatRowProps) {
+function MeditationRow({ userId }: StatRowProps) {
   const { t } = useTranslation("navigation");
   const { data: sits } = useMeditationSessionCount(userId);
   const { data: median } = useMeditationMedianMinutes(userId);
@@ -238,14 +238,14 @@ function MeditationRow({ userId, wide }: StatRowProps) {
             median === null ? null : t("home.rows.typicalMinutes", { value: median }),
           );
   }
-  return <ToolRow id="meditation-pick" stat={stat} wide={wide} />;
+  return <ToolRow id="meditation-pick" stat={stat} />;
 }
 
 // --- 7. sleep-latest -------------------------------------------------------
 // `useSleepStats` passes the viewer timezone itself (`deviceTimeZone()` rides its query
 // key), so the server aggregate is windowed in the viewer's civil days. Duration comes
 // back in MINUTES; `formatHours` does the /60 and the locale-aware decimal (#962).
-function SleepRow({ userId, wide }: StatRowProps) {
+function SleepRow({ userId }: StatRowProps) {
   const { t, i18n } = useTranslation("navigation");
   const { data: stats } = useSleepStats(userId);
 
@@ -267,7 +267,7 @@ function SleepRow({ userId, wide }: StatRowProps) {
               : t("home.rows.quality", { value: formatOneDecimal(quality, i18n.language) }),
           );
   }
-  return <ToolRow id="sleep-latest" stat={stat} wide={wide} />;
+  return <ToolRow id="sleep-latest" stat={stat} />;
 }
 
 // --- 8. habits-today -------------------------------------------------------
@@ -276,7 +276,7 @@ function SleepRow({ userId, wide }: StatRowProps) {
 // always promised. CBT activities keep their own row in S5b, so nothing is lost.
 //
 // Uncapped: the fraction is over every habit due today, not a page of them.
-function HabitsRow({ userId, wide }: StatRowProps) {
+function HabitsRow({ userId }: StatRowProps) {
   const { t } = useTranslation("navigation");
   const { selectedDate } = useSelectedDate();
   /**
@@ -302,13 +302,13 @@ function HabitsRow({ userId, wide }: StatRowProps) {
           ? t("home.rows.nothingScheduled")
           : t("home.rows.doneToday", { done, total: dueToday.length });
   }
-  return <ToolRow id="habits-today" stat={stat} wide={wide} />;
+  return <ToolRow id="habits-today" stat={stat} />;
 }
 
 // --- 9. routines-today -----------------------------------------------------
 // The counts are STEP-level and cover only routines scheduled today, which is why
 // `hasRoutines` is what separates "no routines at all" from "none due".
-function RoutinesRow({ userId, wide }: StatRowProps) {
+function RoutinesRow({ userId }: StatRowProps) {
   const { t } = useTranslation("navigation");
   const { isLoading, hasRoutines, doneSteps, totalSteps } = useRoutinesToday(userId);
 
@@ -320,7 +320,7 @@ function RoutinesRow({ userId, wide }: StatRowProps) {
         ? t("home.rows.nothingScheduled")
         : t("home.rows.doneToday", { done: doneSteps, total: totalSteps });
   }
-  return <ToolRow id="routines-today" stat={stat} wide={wide} />;
+  return <ToolRow id="routines-today" stat={stat} />;
 }
 
 /** The nine ids this slice gives a stat. S5b (#976) adds the remaining fourteen. */
@@ -341,8 +341,8 @@ const STAT_ROWS: Record<string, ComponentType<StatRowProps>> = {
  * row does — deliberately identical, because "we haven't built this" and "we don't know
  * yet" should both decline to make a claim.
  */
-export function ToolTierRow({ id, userId, wide }: { id: string } & StatRowProps) {
+export function ToolTierRow({ id, userId }: { id: string } & StatRowProps) {
   const WithStat = STAT_ROWS[id];
-  if (WithStat) return <WithStat userId={userId} wide={wide} />;
-  return <ToolRow id={id} stat={null} wide={wide} />;
+  if (WithStat) return <WithStat userId={userId} />;
+  return <ToolRow id={id} stat={null} />;
 }

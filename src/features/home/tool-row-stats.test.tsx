@@ -98,8 +98,7 @@ function allLoadedEmpty() {
   });
 }
 
-const renderRow = (id: string) =>
-  renderWithProviders(<ToolTierRow id={id} userId="user-1" wide={false} />);
+const renderRow = (id: string) => renderWithProviders(<ToolTierRow id={id} userId="user-1" />);
 
 /**
  * The row's whole stat, including the ` · ` join. Read off the stat's own node rather
