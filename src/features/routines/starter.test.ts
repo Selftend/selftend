@@ -37,8 +37,10 @@ describe("buildStarterSteps", () => {
   });
 
   it("dedupes widgets that exercise the same tool and ignores unknown widgets", () => {
+    // `mood-trend` used to be the duplicate here; #973 collapsed it into
+    // `mood-checkin`, so a repeat of the same id stands in for the same case.
     expect(
-      buildStarterSteps(["mood-checkin", "mood-trend", "cbt-programme", "breathing-suggested"]),
+      buildStarterSteps(["mood-checkin", "mood-checkin", "cbt-programme", "breathing-suggested"]),
     ).toEqual(["mood", "breathing"]);
   });
 });

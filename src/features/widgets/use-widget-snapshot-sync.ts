@@ -3,7 +3,7 @@ import { AppState, Platform } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { currentDateKey } from "@/src/utils/date";
-import { useMoodLogs, useMoodLogCount } from "@/src/features/mood/queries";
+import { useMoodLogs } from "@/src/features/mood/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { useMeditationSessions } from "@/src/features/meditation/queries";
 import { useActivities } from "@/src/features/activities/queries";
@@ -63,7 +63,6 @@ export function useWidgetSnapshotSync(
   const committedActions = useCommittedActions(widgetUserId, "active").data;
   const actionSteps = useAllActionSteps(widgetUserId).data;
   const defusionLogs = useDefusionLogs(widgetUserId, 30).data;
-  const moodLogCount = useMoodLogCount(widgetUserId).data;
   const gratitudeEntryCount = useGratitudeEntryCount(widgetUserId).data;
   // The journal-week card's two stats are lifetime figures, so they need the same exact
   // server counts the in-app widget and the journal hero use rather than the capped list (#323).
@@ -97,7 +96,6 @@ export function useWidgetSnapshotSync(
       committedActions: committedActions ?? [],
       actionSteps: actionSteps ?? [],
       defusionLogs: defusionLogs ?? [],
-      moodLogCount: moodLogCount ?? null,
       gratitudeEntryCount: gratitudeEntryCount ?? null,
       journalEntryCount: journalEntryCount ?? null,
       journalWordTotal: journalWordTotal ?? null,
@@ -128,7 +126,6 @@ export function useWidgetSnapshotSync(
       committedActions,
       actionSteps,
       defusionLogs,
-      moodLogCount,
       gratitudeEntryCount,
       journalEntryCount,
       journalWordTotal,

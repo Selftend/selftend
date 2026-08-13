@@ -2,7 +2,6 @@ import type { MaterialIconName } from "@/src/components/react-native-reusables/i
 import type { WidgetTint } from "@/src/features/home/widget-tint";
 
 import { MoodCheckinWidget } from "@/src/features/home/widgets/mood-checkin-widget";
-import { MoodTrendWidget } from "@/src/features/home/widgets/mood-trend-widget";
 import { BreathingWidget } from "@/src/features/home/widgets/breathing-widget";
 import { MeditationWidget } from "@/src/features/home/widgets/meditation-widget";
 import { GratitudeWidget } from "@/src/features/home/widgets/gratitude-widget";
@@ -12,7 +11,6 @@ import { SleepWidget } from "@/src/features/home/widgets/sleep-widget";
 import { CbtDistortionGuideWidget } from "@/src/features/home/widgets/cbt-distortion-guide-widget";
 import { CbtProgrammeWidget } from "@/src/features/home/widgets/cbt-programme-widget";
 import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-widget";
-import { ModuleShortcutWidget } from "@/src/features/home/widgets/module-shortcut-widget";
 import { CbtOpenRecordWidget } from "@/src/features/home/widgets/cbt-open-record-widget";
 import { CbtWorryWidget } from "@/src/features/home/widgets/cbt-worry-widget";
 import { CbtBeliefsWidget } from "@/src/features/home/widgets/cbt-beliefs-widget";
@@ -54,7 +52,6 @@ export interface WidgetMeta {
 
 export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "mood-checkin": MoodCheckinWidget,
-  "mood-trend": MoodTrendWidget,
   "breathing-suggested": BreathingWidget,
   "gratitude-latest": GratitudeWidget,
   "meditation-pick": MeditationWidget,
@@ -68,8 +65,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "cbt-distortion-guide": CbtDistortionGuideWidget,
   "cbt-programme": CbtProgrammeWidget,
   "act-programme": ActProgrammeWidget,
-  "cbt-module-shortcut": () => <ModuleShortcutWidget module="cbt" />,
-  "act-module-shortcut": () => <ModuleShortcutWidget module="act" />,
   "cbt-worry": CbtWorryWidget,
   "cbt-beliefs": CbtBeliefsWidget,
   "cbt-activities": CbtActivitiesWidget,
@@ -104,19 +99,10 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     route: "/tools/check-in",
     tier: "tool",
   },
-  // Retires into mood-checkin in S3 - both its numbers live on the check-in
-  // row and it already navigates to the same screen.
-  "mood-trend": {
-    id: "mood-trend",
-    toolKey: "mood",
-    icon: "show-chart",
-    titleKey: "home.widgets.moodTrend.title",
-    descriptionKey: "home.widgets.moodTrend.desc",
-    tint: "be",
-    status: "default",
-    route: "/tools/check-in",
-    tier: "tool",
-  },
+  // `mood-trend` retired into `mood-checkin` here in S3 (#973): both its
+  // numbers live on the check-in row and it already navigated to the same
+  // screen, so it was a second row to the same place. Stored rows were
+  // collapsed by 20260813000000_collapse_legacy_widget_ids.sql.
   "breathing-suggested": {
     id: "breathing-suggested",
     toolKey: "breathing",
@@ -260,32 +246,10 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     route: "/modules/act",
     tier: "programme",
   },
-  // Both shortcuts retire into their `-programme` id in S3. They stay
-  // `tier: "tool"` until then: a shortcut renders as a plain row to the module
-  // home, not as a programme card with a phase badge, so the tool tier is
-  // where they render today and the programme tier keeps exactly two members.
-  "cbt-module-shortcut": {
-    id: "cbt-module-shortcut",
-    toolKey: "cbt",
-    icon: "psychology",
-    titleKey: "home.widgets.cbtModuleShortcut.title",
-    descriptionKey: "home.widgets.cbtModuleShortcut.metaDesc",
-    tint: "primary",
-    status: "available",
-    route: "/modules/cbt",
-    tier: "tool",
-  },
-  "act-module-shortcut": {
-    id: "act-module-shortcut",
-    toolKey: "act",
-    icon: "explore",
-    titleKey: "home.widgets.actModuleShortcut.title",
-    descriptionKey: "home.widgets.actModuleShortcut.metaDesc",
-    tint: "act",
-    status: "available",
-    route: "/modules/act",
-    tier: "tool",
-  },
+  // Both `-module-shortcut` ids retired into their `-programme` id here in S3
+  // (#973). A shortcut was a card carrying the module's name and a button to
+  // its home - which is what the module's own row does - and it pointed at the
+  // route its `-programme` sibling already pointed at.
   "cbt-worry": {
     id: "cbt-worry",
     toolKey: "cbt",

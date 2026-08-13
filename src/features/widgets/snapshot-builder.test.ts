@@ -5,7 +5,6 @@ import type {
   WidgetData,
   BreathingCardPayload,
   MoodCheckinCardPayload,
-  StatTilesCardPayload,
   ActivitiesCardPayload,
   StatsCardPayload,
   CommittedActionsCardPayload,
@@ -34,16 +33,15 @@ const empty: WidgetData = {
   committedActions: [],
   actionSteps: [],
   defusionLogs: [],
-  moodLogCount: null,
   gratitudeEntryCount: null,
   journalEntryCount: null,
   journalWordTotal: null,
 };
 
 describe("buildSnapshot v2", () => {
-  it("stamps schemaVersion 3 and builds every card with its registry kind", () => {
+  it("stamps schemaVersion 4 and builds every card with its registry kind", () => {
     const snap = buildSnapshot(empty, ctx);
-    expect(snap.schemaVersion).toBe(3);
+    expect(snap.schemaVersion).toBe(4);
     for (const id of CARD_IDS) {
       expect(snap.widgets[id]).toBeDefined();
       expect(snap.widgets[id].kind).toBe(CARD_REPLICAS[id].kind);
@@ -66,17 +64,6 @@ describe("buildSnapshot v2", () => {
     const none = buildSnapshot(empty, ctx).widgets["mood-checkin"] as MoodCheckinCardPayload;
     expect(none.today?.score).toBeNull();
     expect(none.today?.summary).toBe("home.widgets.moodCheckin.emptyPrompt");
-  });
-
-  it("mood-trend: 7-day average and lifetime count (falls back to list length)", () => {
-    const data: WidgetData = {
-      ...empty,
-      moodLogs: [{ loggedAt: "2026-06-05T09:00:00", dayKey: "2026-06-05", moodScore: 4 }],
-      moodLogCount: 57,
-    };
-    const p = buildSnapshot(data, ctx).widgets["mood-trend"] as StatTilesCardPayload;
-    expect(p.tiles[0].value).toBe("4.0");
-    expect(p.tiles[1].value).toBe("57");
   });
 
   it("breathing-suggested: the done badge follows the captured day, not the instant", () => {
@@ -294,7 +281,7 @@ describe("buildSignedOutSnapshot v2", () => {
       dateKey: "2026-06-05",
       appThemePref: "system",
     });
-    expect(snap.schemaVersion).toBe(3);
+    expect(snap.schemaVersion).toBe(4);
     expect(snap.auth).toBe("signed-out");
     expect(snap.widgets).toEqual({});
     expect(snap.signedOutCard?.cta).toBe("home.widgets.launcher.signedOutCta");

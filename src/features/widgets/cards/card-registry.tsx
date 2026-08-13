@@ -3,7 +3,6 @@ import type { TintName } from "@/src/features/widgets/palette";
 import { ShortcutCard, type CardViewProps } from "@/src/features/widgets/cards/shortcut-card";
 import { PromptCard } from "@/src/features/widgets/cards/prompt-card";
 import { MoodCheckinCard } from "@/src/features/widgets/cards/mood-checkin-card";
-import { StatTilesCard } from "@/src/features/widgets/cards/stat-tiles-card";
 import { BreathingCard } from "@/src/features/widgets/cards/breathing-card";
 import { StatsCard } from "@/src/features/widgets/cards/stats-card";
 import { ActivitiesCard } from "@/src/features/widgets/cards/activities-card";
@@ -45,12 +44,6 @@ export const CARD_REPLICAS: Record<CardId, CardReplicaEntry> = {
     tint: "be",
     Component: MoodCheckinCard,
   },
-  "mood-trend": {
-    kind: "stat-tiles",
-    icon: "show-chart",
-    tint: "be",
-    Component: StatTilesCard,
-  },
   "breathing-suggested": {
     kind: "breathing",
     icon: "air",
@@ -85,11 +78,6 @@ export const CARD_REPLICAS: Record<CardId, CardReplicaEntry> = {
     icon: "school",
     tint: "act",
     Component: ProgrammeCard,
-  },
-  "cbt-module-shortcut": shortcut("psychology"),
-  "act-module-shortcut": {
-    ...shortcut("explore"),
-    tint: "act",
   },
   "cbt-worry": shortcut("psychology"),
   "cbt-beliefs": shortcut("anchor"),

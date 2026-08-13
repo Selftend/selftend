@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -38,6 +38,31 @@ function collectRoutes(dir: string, prefix: string, out: Set<string>): Set<strin
 
 const APP_ROUTES = collectRoutes(join(__dirname, "../../../app"), "", new Set<string>());
 
+// The (legacy, survivor) pairs the #973 migration rewrote, read off the
+// migration itself so this file and that file cannot disagree. The pattern
+// matches the `values` rows of its collapse loop:
+//
+//   ('cbt-module-shortcut', 'cbt-programme'),
+//
+// A parse that finds nothing would make the assertions below vacuous, so the
+// count is asserted too.
+const COLLAPSE_MIGRATION = join(
+  __dirname,
+  "../../../supabase/migrations/20260813000000_collapse_legacy_widget_ids.sql",
+);
+const COLLAPSED_WIDGET_IDS: [string, string][] = [
+  ...readFileSync(COLLAPSE_MIGRATION, "utf8").matchAll(/\('([\w-]+)',\s*'([\w-]+)'\)/g),
+].map((match) => [match[1], match[2]]);
+
+// Where each survivor must still point. Stated here rather than derived,
+// because this is the assertion: the migration moved rows onto these ids on
+// the strength of them opening the screen the retired id opened.
+const SURVIVOR_ROUTES: Record<string, string> = {
+  "mood-checkin": "/tools/check-in",
+  "cbt-programme": "/modules/cbt",
+  "act-programme": "/modules/act",
+};
+
 describe("widget registry", () => {
   it("exposes the daily check-in (mood-checkin) meta", () => {
     expect(WIDGET_META["mood-checkin"]).toBeDefined();
@@ -51,7 +76,7 @@ describe("widget registry", () => {
   });
 
   it("isImplemented reflects registry membership", () => {
-    expect(isImplemented("mood-trend")).toBe(true);
+    expect(isImplemented("mood-checkin")).toBe(true);
     expect(isImplemented("cbt-open-record")).toBe(true);
     expect(isImplemented("not-a-widget")).toBe(false);
   });
@@ -245,16 +270,28 @@ describe("widget registry", () => {
       expect(WIDGET_META["act-programme"].route).toBe("/modules/act");
     });
 
-    // S3 collapses these three ids away (mood-trend into mood-checkin, both
-    // -module-shortcut ids into their -programme id). Until it does they are
-    // still in the registry, and each must already point where its survivor
-    // points so the collapse is a delete rather than a re-route.
-    it.each([
-      ["mood-trend", "mood-checkin"],
-      ["cbt-module-shortcut", "cbt-programme"],
-      ["act-module-shortcut", "act-programme"],
-    ])("%s routes where %s routes, ahead of the S3 collapse", (retiring, survivor) => {
-      expect(WIDGET_META[retiring].route).toBe(WIDGET_META[survivor].route);
+    // S3 (#973) collapsed three ids away, and the migration that rewrote the
+    // stored rows is the record of which. Reading the pairs off that file
+    // rather than restating them here is the point: a restated list agrees
+    // with the migration only until someone edits one of the two, and the
+    // failure that hides is a registry id whose rows a shipped migration
+    // already deleted from every user's dashboard.
+    //
+    // Each retired id must be GONE (its rows now carry the survivor's id), and
+    // its survivor must still exist - a rename onto an id the registry does not
+    // serve would strand every row the migration moved.
+    it.each(COLLAPSED_WIDGET_IDS)(
+      "%s is retired by the migration; %s survives it",
+      (retired, survivor) => {
+        expect(isImplemented(retired)).toBe(false);
+        expect(WIDGET_META[retired]).toBeUndefined();
+        expect(isImplemented(survivor)).toBe(true);
+        expect(WIDGET_META[survivor].route).toBe(SURVIVOR_ROUTES[survivor]);
+      },
+    );
+
+    it("reads three pairs off the migration, so an empty parse cannot pass", () => {
+      expect(COLLAPSED_WIDGET_IDS).toHaveLength(3);
     });
   });
 });

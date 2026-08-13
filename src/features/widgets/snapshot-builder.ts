@@ -1,5 +1,3 @@
-import { addDaysToKey, maxDayKey } from "@/src/utils/date";
-import { roundTo1 } from "@/src/utils/number";
 import {
   averageDurationMinutes,
   averageQuality,
@@ -91,32 +89,6 @@ const CBT_SHORTCUTS: {
   },
 ];
 
-const MODULE_SHORTCUTS: {
-  id: CardId;
-  module: "cbt" | "act";
-  titleKey: string;
-  descKey: string;
-  ctaKey: string;
-  path: string;
-}[] = [
-  {
-    id: "cbt-module-shortcut",
-    module: "cbt",
-    titleKey: "home.widgets.cbtModuleShortcut.title",
-    descKey: "home.widgets.cbtModuleShortcut.metaDesc",
-    ctaKey: "home.widgets.cbtModuleShortcut.cta",
-    path: "/modules/cbt",
-  },
-  {
-    id: "act-module-shortcut",
-    module: "act",
-    titleKey: "home.widgets.actModuleShortcut.title",
-    descKey: "home.widgets.actModuleShortcut.metaDesc",
-    ctaKey: "home.widgets.actModuleShortcut.cta",
-    path: "/modules/act",
-  },
-];
-
 const ACT_PROMPTS: {
   id: CardId;
   titleKey: string;
@@ -178,29 +150,6 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
       title: t("home.widgets.moodCheckin.title"),
       emptyPrompt,
       today: { score: todayLogs[0]?.moodScore ?? null, summary },
-    };
-  },
-
-  "mood-trend": (data, { t, dateKey }) => {
-    const last7 = sinceDayKeys(data.moodLogs, (m) => m.dayKey, 7, dateKey);
-    const avg = last7.length
-      ? roundTo1(last7.reduce((s, m) => s + m.moodScore, 0) / last7.length)
-      : null;
-    return {
-      kind: "stat-tiles",
-      title: t("home.widgets.moodTrend.title"),
-      tiles: [
-        {
-          label: t("today.moodSnapshot.sevenDay"),
-          value: avg === null ? "-" : avg.toFixed(1),
-          dim: avg === null,
-        },
-        {
-          label: t("today.moodSnapshot.entries"),
-          value: String(data.moodLogCount ?? data.moodLogs.length),
-        },
-      ],
-      openCta: openCta(t, "/tools/check-in"),
     };
   },
 
@@ -520,15 +469,6 @@ for (const s of CBT_SHORTCUTS) {
     cta: { label: t(s.ctaKey), path: s.path },
   });
 }
-for (const s of MODULE_SHORTCUTS) {
-  CARD_BUILDERS[s.id] = (_d, { t, ta, tc }) => ({
-    kind: "shortcut",
-    title: t(s.titleKey),
-    moduleLabel: s.module === "act" ? ta("module.label") : tc("module.label"),
-    description: t(s.descKey),
-    cta: { label: t(s.ctaKey), path: s.path },
-  });
-}
 for (const p of ACT_PROMPTS) {
   CARD_BUILDERS[p.id] = (_d, { t, ta }) => ({
     kind: "prompt",
@@ -560,7 +500,7 @@ export function buildSnapshot(data: WidgetData, ctx: BuildContext): Snapshot {
   // Non-null: CARD_BUILDERS is populated for every CardId by the assignments above.
   for (const id of CARD_IDS) widgets[id] = CARD_BUILDERS[id]!(data, ctx);
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     locale: ctx.locale,
     generatedAt: new Date().toISOString(),
     dateKey: ctx.dateKey,
@@ -578,7 +518,7 @@ export function buildSignedOutSnapshot(ctx: {
   appThemePref: AppThemePref;
 }): Snapshot {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     locale: ctx.locale,
     generatedAt: new Date().toISOString(),
     dateKey: ctx.dateKey,
@@ -590,23 +530,3 @@ export function buildSignedOutSnapshot(ctx: {
 }
 
 // --- helpers ---
-
-/**
- * `sinceDays` for entities that carry a captured civil day: the window is walked
- * in day keys so it lines up with how those entries are bucketed everywhere else
- * (#250). The end extends past `dateKey` if the user holds a later-keyed entry,
- * so travelling west cannot drop today's check-in out of the widget.
- */
-function sinceDayKeys<T>(
-  rows: T[],
-  dayKeyOf: (r: T) => string,
-  days: number,
-  dateKey: string,
-): T[] {
-  const endKey = rows.map(dayKeyOf).reduce(maxDayKey, dateKey);
-  const startKey = addDaysToKey(endKey, -(days - 1));
-  return rows.filter((r) => {
-    const key = dayKeyOf(r);
-    return key >= startKey && key <= endKey;
-  });
-}

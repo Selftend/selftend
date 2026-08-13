@@ -82,10 +82,6 @@
     "emptyDescription": "Build a dashboard yourself, or answer a few questions for tailored suggestions.",
     "addManually": "Add manually",
     "getSuggestions": "Get suggestions",
-    "moodSnapshot": {
-      "sevenDay": "Last 7 days",
-      "entries": "Entries"
-    },
     "plan": {
       "open": "Open"
     },
@@ -192,10 +188,6 @@
         "lastAt": "last {{time}}",
         "emptyPrompt": "How are you feeling?"
       },
-      "moodTrend": {
-        "title": "Mood, last 7 days",
-        "desc": "Your running average and recent entries."
-      },
       "breathingSuggested": {
         "title": "Breathing practice",
         "desc": "Start a breathing exercise and see your latest session."
@@ -263,16 +255,6 @@
       "actProgramme": {
         "title": "ACT programme",
         "metaDesc": "Your guided ACT programme and current goals."
-      },
-      "cbtModuleShortcut": {
-        "title": "CBT module",
-        "metaDesc": "Explore CBT tools and learning at your own pace.",
-        "cta": "Open CBT"
-      },
-      "actModuleShortcut": {
-        "title": "ACT module",
-        "metaDesc": "Explore ACT practices and learning at your own pace.",
-        "cta": "Open ACT"
       },
       "cbtWorry": {
         "title": "Worry journal",

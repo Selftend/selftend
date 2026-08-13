@@ -107,7 +107,12 @@ export function AppOnboardingWizard({
     buildWidgetRecommendations({
       concerns: selected,
       moduleInterests: modules,
-      guidance,
+      // `guidance` is deliberately not passed: #973 retired the two
+      // `-module-shortcut` ids, so a picked module resolves to its programme id
+      // whichever way the guidance panel was answered, and an input the builder
+      // ignores would read as if it still steered something. The panel below
+      // still asks the question and still holds the answer; it just no longer
+      // changes which widgets Home is seeded with (#973).
       selectedToolWidgetIds: Array.from(
         new Set(["mood-checkin" as const, ...suggestSharedToolWidgetIds(selected)]),
       ),

@@ -20,8 +20,9 @@ export const STARTER_STEP_MIN = 2;
 // `habits-today` is intentionally absent: Habits is a valid manual step but is
 // excluded from starter auto-composition (#31 decision, 2026-07-15).
 const WIDGET_STEP_TOOLS: Readonly<Record<string, SteppableToolId>> = {
+  // `mood-trend` mapped here too until #973 collapsed it into `mood-checkin`.
+  // Both pointed at "mood", so the dedupe below already covered the pair.
   "mood-checkin": "mood",
-  "mood-trend": "mood",
   "journal-week": "journal",
   "gratitude-latest": "gratitude",
   "sleep-latest": "sleep",

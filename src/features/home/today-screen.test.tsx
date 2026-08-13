@@ -111,12 +111,15 @@ jest.mock("@/src/features/home/widget-registry", () => {
   const { View } = require("react-native");
   return {
     isImplemented: () => true,
-    metaForWidget: (widgetId: string) => ({
-      titleKey:
-        widgetId === "mood-checkin"
-          ? "home.widgets.moodCheckin.title"
-          : "home.widgets.moodTrend.title",
-    }),
+    // The id IS the title key here, so an edit-mode control is labelled
+    // "Remove mood-checkin" and the assertions below name ids rather than
+    // shipped copy. Two failure modes this avoids: the old form was
+    // `mood-checkin ? moodCheckin.title : moodTrend.title`, which labelled
+    // every other id in the file with `mood-trend`'s copy and kept doing so
+    // after #973 retired that id; and pinning a test to a translated string
+    // makes a copy edit look like a broken screen. Which title a widget
+    // carries is widget-registry.test.tsx's question, not this file's.
+    metaForWidget: (widgetId: string) => ({ titleKey: widgetId }),
     // Marker per widget id so tests can assert which SLOTS the grid renders.
     resolveWidget: (widgetId: string) => <View testID={`widget-${widgetId}`} />,
   };
@@ -141,7 +144,7 @@ beforeEach(() => {
 });
 
 function renderPopulatedHome() {
-  mockWidgetIds = ["mood-checkin", "mood-trend"];
+  mockWidgetIds = ["mood-checkin", "sleep-latest"];
   renderWithProviders(<HomeScreen />);
   fireEvent(screen.getByTestId("home-layout"), "layout", {
     nativeEvent: { layout: { width: 900 } },
@@ -279,14 +282,14 @@ describe("HomeScreen hero", () => {
     renderPopulatedHome();
     fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
 
-    fireEvent.press(screen.getByRole("button", { name: "Remove Check-in" }));
-    fireEvent.press(screen.getByRole("button", { name: "Remove Mood, last 7 days" }));
+    fireEvent.press(screen.getByRole("button", { name: "Remove mood-checkin" }));
+    fireEvent.press(screen.getByRole("button", { name: "Remove sleep-latest" }));
 
     const undo = screen.getByRole("button", { name: "Undo" });
     expect(undo).toBeEnabled();
     fireEvent.press(undo);
     expect(mockRestoreWidget).toHaveBeenLastCalledWith(
-      { widgetId: "mood-trend", position: 1 },
+      { widgetId: "sleep-latest", position: 1 },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
 
