@@ -38,7 +38,7 @@ test.describe("home widget management", () => {
     await dismissPostSignInModals(page);
 
     // Wait for the dashboard and verify the zero-widget recovery choices.
-    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByText("Add tools you want to check in with each day")).toBeVisible();

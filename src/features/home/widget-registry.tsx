@@ -1,13 +1,7 @@
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import type { WidgetTint } from "@/src/features/home/widget-tint";
 
-import { MoodCheckinWidget } from "@/src/features/home/widgets/mood-checkin-widget";
-import { BreathingWidget } from "@/src/features/home/widgets/breathing-widget";
-import { MeditationWidget } from "@/src/features/home/widgets/meditation-widget";
-import { GratitudeWidget } from "@/src/features/home/widgets/gratitude-widget";
-import { ActivitiesWidget } from "@/src/features/home/widgets/activities-widget";
 import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
-import { SleepWidget } from "@/src/features/home/widgets/sleep-widget";
 import { CbtDistortionGuideWidget } from "@/src/features/home/widgets/cbt-distortion-guide-widget";
 import { CbtProgrammeWidget } from "@/src/features/home/widgets/cbt-programme-widget";
 import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-widget";
@@ -23,9 +17,6 @@ import { ActChoicePointWidget } from "@/src/features/home/widgets/act-choice-poi
 import { ActCommittedActionsWidget } from "@/src/features/home/widgets/act-committed-actions-widget";
 import { ActDefusionWidget } from "@/src/features/home/widgets/act-defusion-widget";
 import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-acceptance-prompt-widget";
-import { JournalWeekWidget } from "@/src/features/home/widgets/journal-week-widget";
-import { GroundingLogWidget } from "@/src/features/home/widgets/grounding-log-widget";
-import { RoutinesWidget } from "@/src/features/home/widgets/routines-widget";
 
 type WidgetComponent = React.ComponentType<{ userId: string }>;
 type WidgetStatus = "default" | "available" | "soon";
@@ -50,18 +41,20 @@ export interface WidgetMeta {
   tier: WidgetTier;
 }
 
+/**
+ * Card components for the ids that still render as cards. Shrinking, not growing: #975
+ * moved the nine tool ids to `ToolRow`, and #976 takes the remaining module and shortcut
+ * ids. What survives at the end is the two `programme` ids, whose card #977 reshapes.
+ *
+ * This is NOT the dashboard catalogue - `WIDGET_META` is. Anything asking "does this id
+ * exist" or "where does it go" must read the meta.
+ */
 export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
-  "mood-checkin": MoodCheckinWidget,
-  "breathing-suggested": BreathingWidget,
-  "gratitude-latest": GratitudeWidget,
-  "meditation-pick": MeditationWidget,
-  "habits-today": ActivitiesWidget,
   "self-care": SelfCareWidget,
   "cbt-open-record": CbtOpenRecordWidget,
   "act-drop-anchor": ActDropAnchorWidget,
   "act-observing-self": ActObservingSelfWidget,
   "act-choice-point": ActChoicePointWidget,
-  "sleep-latest": SleepWidget,
   "cbt-distortion-guide": CbtDistortionGuideWidget,
   "cbt-programme": CbtProgrammeWidget,
   "act-programme": ActProgrammeWidget,
@@ -73,9 +66,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "act-committed-actions": ActCommittedActionsWidget,
   "act-defusion": ActDefusionWidget,
   "act-acceptance-prompt": ActAcceptancePromptWidget,
-  "journal-week": JournalWeekWidget,
-  "grounding-log": GroundingLogWidget,
-  "routines-today": RoutinesWidget,
 };
 
 // The dashboard catalogue (#972). Routes come from the decided spec's 24-row
@@ -382,8 +372,20 @@ export function metaForWidget(widgetId: string): WidgetMeta | undefined {
   return WIDGET_META[widgetId];
 }
 
+/**
+ * Whether the dashboard can render this id at all.
+ *
+ * Re-based on `WIDGET_META` by #975: `WIDGET_REGISTRY` used to hold a card component for
+ * every id, so "has a component" and "is in the catalogue" were the same question. The
+ * tool tier renders rows straight from the catalogue and needs no component, so the
+ * registry is now the *programme and not-yet-converted* half only - asking it would
+ * start hiding owned rows the moment a tool widget is deleted.
+ *
+ * Behaviour is unchanged: every catalogued id was already implemented (the `soon` branch
+ * this gates has never rendered, because no meta entry carries that status).
+ */
 export function isImplemented(widgetId: string): boolean {
-  return widgetId in WIDGET_REGISTRY;
+  return widgetId in WIDGET_META;
 }
 
 export function resolveWidget(widgetId: string, userId: string): React.ReactElement | null {

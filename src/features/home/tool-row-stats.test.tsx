@@ -1,0 +1,320 @@
+import { screen } from "@testing-library/react-native";
+
+import { ToolTierRow } from "@/src/features/home/tool-row-stats";
+import { addDaysToKey, currentDateKey } from "@/src/utils/date";
+import { renderWithProviders } from "@/test/render-with-providers";
+
+jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+
+jest.mock("@/src/stores/selected-date-store", () => ({
+  useSelectedDate: () => ({ selectedDate: "2026-05-28" }),
+}));
+
+const q = <T,>(data: T) => ({ data });
+const loading = { data: undefined };
+
+jest.mock("@/src/features/mood/queries", () => ({
+  useMoodWeek: jest.fn(),
+  useMoodLogCount: jest.fn(),
+}));
+jest.mock("@/src/features/journal/queries", () => ({
+  useJournalEntryCount: jest.fn(),
+  useJournalWordTotal: jest.fn(),
+}));
+jest.mock("@/src/features/gratitude/queries", () => ({
+  useGratitudeEntryCount: jest.fn(),
+  useGratitudeEntryCountSinceDayKey: jest.fn(),
+}));
+jest.mock("@/src/features/breathing/queries", () => ({
+  useBreathingSessionCount: jest.fn(),
+  useBreathingTotalMinutes: jest.fn(),
+}));
+jest.mock("@/src/features/grounding/queries", () => ({
+  useGroundingSessionCount: jest.fn(),
+  useGroundingSessions: jest.fn(),
+}));
+jest.mock("@/src/features/meditation/queries", () => ({
+  useMeditationSessionCount: jest.fn(),
+  useMeditationMedianMinutes: jest.fn(),
+}));
+jest.mock("@/src/features/sleep/queries", () => ({ useSleepStats: jest.fn() }));
+jest.mock("@/src/features/habits/queries", () => ({
+  useHabits: jest.fn(),
+  useHabitLogs: jest.fn(),
+}));
+jest.mock("@/src/features/routines/use-routines-today", () => ({ useRoutinesToday: jest.fn() }));
+
+const mocks = {
+  moodLogs: jest.requireMock("@/src/features/mood/queries").useMoodWeek as jest.Mock,
+  moodCount: jest.requireMock("@/src/features/mood/queries").useMoodLogCount as jest.Mock,
+  journalEntries: jest.requireMock("@/src/features/journal/queries")
+    .useJournalEntryCount as jest.Mock,
+  journalWords: jest.requireMock("@/src/features/journal/queries").useJournalWordTotal as jest.Mock,
+  gratitudeTotal: jest.requireMock("@/src/features/gratitude/queries")
+    .useGratitudeEntryCount as jest.Mock,
+  gratitudeWeek: jest.requireMock("@/src/features/gratitude/queries")
+    .useGratitudeEntryCountSinceDayKey as jest.Mock,
+  breathingCount: jest.requireMock("@/src/features/breathing/queries")
+    .useBreathingSessionCount as jest.Mock,
+  breathingMinutes: jest.requireMock("@/src/features/breathing/queries")
+    .useBreathingTotalMinutes as jest.Mock,
+  groundingCount: jest.requireMock("@/src/features/grounding/queries")
+    .useGroundingSessionCount as jest.Mock,
+  groundingList: jest.requireMock("@/src/features/grounding/queries")
+    .useGroundingSessions as jest.Mock,
+  sits: jest.requireMock("@/src/features/meditation/queries")
+    .useMeditationSessionCount as jest.Mock,
+  median: jest.requireMock("@/src/features/meditation/queries")
+    .useMeditationMedianMinutes as jest.Mock,
+  sleepStats: jest.requireMock("@/src/features/sleep/queries").useSleepStats as jest.Mock,
+  habits: jest.requireMock("@/src/features/habits/queries").useHabits as jest.Mock,
+  habitLogs: jest.requireMock("@/src/features/habits/queries").useHabitLogs as jest.Mock,
+  routines: jest.requireMock("@/src/features/routines/use-routines-today")
+    .useRoutinesToday as jest.Mock,
+};
+
+/** Every hook loaded and empty, so each test only sets the ones it is about. */
+function allLoadedEmpty() {
+  mocks.moodLogs.mockReturnValue(q([]));
+  mocks.moodCount.mockReturnValue(q(0));
+  mocks.journalEntries.mockReturnValue(q(0));
+  mocks.journalWords.mockReturnValue(q(0));
+  mocks.gratitudeTotal.mockReturnValue(q(0));
+  mocks.gratitudeWeek.mockReturnValue(q(0));
+  mocks.breathingCount.mockReturnValue(q(0));
+  mocks.breathingMinutes.mockReturnValue(q(0));
+  mocks.groundingCount.mockReturnValue(q(0));
+  mocks.groundingList.mockReturnValue(q([]));
+  mocks.sits.mockReturnValue(q(0));
+  mocks.median.mockReturnValue(q(null));
+  mocks.sleepStats.mockReturnValue(q(null));
+  mocks.habits.mockReturnValue(q([]));
+  mocks.habitLogs.mockReturnValue(q([]));
+  mocks.routines.mockReturnValue({
+    isLoading: false,
+    hasRoutines: false,
+    doneSteps: 0,
+    totalSteps: 0,
+  });
+}
+
+const renderRow = (id: string) => renderWithProviders(<ToolTierRow id={id} userId="user-1" />);
+
+/**
+ * The row's whole stat, including the ` · ` join. Read off the stat's own node rather
+ * than split out of the accessible label: a tool NAME can contain ", " itself, so the
+ * first separator in the label is not reliably the one between name and stat.
+ */
+function statOf(id: string): string | null {
+  const node = screen.queryByTestId(`tool-row-stat-${id}`);
+  return node === null ? null : (node.props.children as string);
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  allLoadedEmpty();
+});
+
+describe("the three states", () => {
+  it("renders no stat at all while the data is still loading", () => {
+    // Not a dash, not a skeleton, not "Nothing yet". `undefined` also covers a failed
+    // fetch with no cache, where claiming emptiness would erase a real history.
+    mocks.journalEntries.mockReturnValue(loading);
+    mocks.journalWords.mockReturnValue(loading);
+
+    renderRow("journal-week");
+
+    expect(statOf("journal-week")).toBeNull();
+  });
+
+  it("waits for every clause before showing any of them", () => {
+    // A row that renders half its stat and then reflows is worse than one that waits.
+    mocks.journalEntries.mockReturnValue(q(24));
+    mocks.journalWords.mockReturnValue(loading);
+
+    renderRow("journal-week");
+
+    expect(statOf("journal-week")).toBeNull();
+  });
+
+  it("renders the one shared empty string when loaded with no record", () => {
+    renderRow("journal-week");
+
+    expect(statOf("journal-week")).toBe("Nothing yet");
+  });
+
+  it("distinguishes an empty day from an empty record", () => {
+    // A user with habits, none due today, has a full record and an empty day.
+    mocks.habits.mockReturnValue(
+      q([{ id: "h1", archivedAt: null, cadence: "custom", customDays: [] }]),
+    );
+
+    renderRow("habits-today");
+
+    expect(statOf("habits-today")).toBe("Nothing scheduled today");
+  });
+});
+
+describe("the stat grammar", () => {
+  it("joins two clauses with the design's separator", () => {
+    mocks.journalEntries.mockReturnValue(q(24));
+    mocks.journalWords.mockReturnValue(q(698));
+
+    renderRow("journal-week");
+
+    expect(statOf("journal-week")).toBe("24 entries · 698 words");
+  });
+
+  it("drops a clause rather than rendering it empty", () => {
+    mocks.sits.mockReturnValue(q(30));
+    mocks.median.mockReturnValue(q(null));
+
+    renderRow("meditation-pick");
+
+    expect(statOf("meditation-pick")).toBe("30 sits");
+  });
+
+  it("names the window on a windowed number and not on a lifetime one", () => {
+    mocks.journalEntries.mockReturnValue(q(24));
+    mocks.journalWords.mockReturnValue(q(698));
+    renderRow("journal-week");
+    expect(statOf("journal-week")).not.toMatch(/week|average/i);
+
+    mocks.sleepStats.mockReturnValue(q({ sevenDayDurationMinutes: 432, sevenDayQuality: 3.2 }));
+    renderRow("sleep-latest");
+    expect(statOf("sleep-latest")).toMatch(/7-day average/);
+  });
+});
+
+describe("per-tool stats", () => {
+  it("check-in quotes a calendar week and a trailing average, both labelled", () => {
+    // The two windows differ ON PURPOSE (#697): `this week` is Mon-Sun, `7-day average`
+    // is trailing. Both are labelled, so both are honest - harmonising them reverts #697.
+    mocks.moodLogs.mockReturnValue(
+      q([
+        { dayKey: currentDateKey(), moodScore: 3 },
+        { dayKey: addDaysToKey(currentDateKey(), -1), moodScore: 3 },
+      ]),
+    );
+    mocks.moodCount.mockReturnValue(q(2));
+
+    renderRow("mood-checkin");
+
+    expect(statOf("mood-checkin")).toMatch(/this week/);
+    expect(statOf("mood-checkin")).toMatch(/7-day average/);
+  });
+
+  it("sleep converts the server's minutes into hours and quotes quality out of five", () => {
+    // `sleep_stats` returns MINUTES; 432 is 7.2h. The decimal is locale-aware via #962.
+    mocks.sleepStats.mockReturnValue(q({ sevenDayDurationMinutes: 432, sevenDayQuality: 3.2 }));
+
+    renderRow("sleep-latest");
+
+    expect(statOf("sleep-latest")).toBe("7-day average 7.2h · quality 3.2/5");
+  });
+
+  it("habits counts habits due today, not CBT activities", () => {
+    // The id maps to ActivitiesWidget today, which reads behavioural-activation data and
+    // no habit data at all. 2026-05-28 is a Thursday (day 4).
+    mocks.habits.mockReturnValue(
+      q([
+        { id: "h1", archivedAt: null, cadence: "daily", customDays: [] },
+        { id: "h2", archivedAt: null, cadence: "daily", customDays: [] },
+        { id: "h3", archivedAt: null, cadence: "custom", customDays: [0] },
+        { id: "h4", archivedAt: "2026-01-01", cadence: "daily", customDays: [] },
+      ]),
+    );
+    mocks.habitLogs.mockReturnValue(q([{ habitId: "h1", loggedOn: "2026-05-28" }]));
+
+    renderRow("habits-today");
+
+    // h1 and h2 are due; h3 is Sundays-only; h4 is archived. One of the two is ticked.
+    expect(statOf("habits-today")).toBe("1 of 2 done today");
+  });
+
+  it("routines separates having no routines from having none due", () => {
+    mocks.routines.mockReturnValue({
+      isLoading: false,
+      hasRoutines: true,
+      doneSteps: 0,
+      totalSteps: 0,
+    });
+    renderRow("routines-today");
+    expect(statOf("routines-today")).toBe("Nothing scheduled today");
+
+    mocks.routines.mockReturnValue({
+      isLoading: false,
+      hasRoutines: true,
+      doneSteps: 2,
+      totalSteps: 5,
+    });
+    renderRow("routines-today");
+    expect(statOf("routines-today")).toBe("2 of 5 done today");
+  });
+
+  it("gratitude counts everything, then this week from the Monday key", () => {
+    // The week clause is a "since Monday" count keyed on `mondayKeyOf(selectedDate)`,
+    // which is the key the gratitude home screen passes - so the row shares its cache
+    // entry rather than opening a second one on a different key.
+    mocks.gratitudeTotal.mockReturnValue(q(29));
+    mocks.gratitudeWeek.mockReturnValue(q(3));
+
+    renderRow("gratitude-latest");
+
+    expect(statOf("gratitude-latest")).toBe("29 entries · 3 this week");
+    // 2026-05-28 is a Thursday; its Monday is the 25th.
+    expect(mocks.gratitudeWeek).toHaveBeenCalledWith("user-1", "2026-05-25");
+  });
+
+  it("breathing quotes lifetime sessions and lifetime minutes, neither windowed", () => {
+    mocks.breathingCount.mockReturnValue(q(14));
+    mocks.breathingMinutes.mockReturnValue(q(82));
+
+    renderRow("breathing-suggested");
+
+    const stat = statOf("breathing-suggested");
+    expect(stat).toBe("14 sessions · 82 minutes");
+    // A lifetime number names no window - that is the other half of the rule that makes
+    // `7-day average` mean something.
+    expect(stat).not.toMatch(/week|average|today/i);
+  });
+
+  it("check-in stays honest for a user whose record is older than the window", () => {
+    // Their last check-in was ten days ago: they have a record, so "Nothing yet" would
+    // be false. `0 this week` is the true clause.
+    mocks.moodLogs.mockReturnValue(q([]));
+    mocks.moodCount.mockReturnValue(q(12));
+
+    renderRow("mood-checkin");
+
+    expect(statOf("mood-checkin")).toBe("0 this week");
+  });
+
+  it("grounding reads recency off the tool's own cached list", () => {
+    mocks.groundingCount.mockReturnValue(q(14));
+    mocks.groundingList.mockReturnValue(
+      q([
+        { completedAt: "2026-05-20T10:00:00.000Z", completedOffsetMinutes: 0 },
+        { completedAt: "2026-05-27T19:40:00.000Z", completedOffsetMinutes: 0 },
+      ]),
+    );
+
+    renderRow("grounding-log");
+
+    const stat = statOf("grounding-log") ?? "";
+    expect(stat).toMatch(/^14 sessions · Last /);
+    // Never "N days ago": a column of those implies lateness, which home does not do.
+    expect(stat).not.toMatch(/days? ago/i);
+  });
+});
+
+describe("rows without a stat yet", () => {
+  it("renders a module row with an empty slot rather than inventing one", () => {
+    // S5b (#976) gives these their stats. Until then they decline to claim anything,
+    // which is the same rendering a loading row uses - deliberately.
+    renderRow("cbt-worry");
+
+    expect(screen.getByTestId("tool-row-cbt-worry")).toBeTruthy();
+    expect(statOf("cbt-worry")).toBeNull();
+  });
+});

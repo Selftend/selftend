@@ -124,11 +124,24 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     // with an open step must not nudge (any label form).
     await expect(page.getByTestId("routine-fab")).toBeHidden();
 
-    // --- Home: the routines-today widget slot is suppressed entirely ---
-    // (routines exist, none scheduled today - the whole slot unmounts, #97)
+    // --- Home: the routines row stays, and states the empty day ---
+    // Inverted by #975, deliberately rather than deleted. Day-level slot suppression
+    // (#97) existed because a 200px empty card was worse than no card; a row costs one
+    // line, so "routines exist, none due today" is now a fact home can state instead of
+    // a slot it has to hide. This assertion is the positive control for that.
     await navigateViaPanel(page, "Home");
     await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
-    await expect(page.getByText("Routines today", { exact: true })).toBeHidden({
+    // `.last()` is load-bearing, and not for the usual reason. Navigating back to Home
+    // through the panel leaves TWO `home-layout` roots mounted (measured: 2 roots, 2
+    // rows); the earlier one is the backgrounded screen and is HIDDEN, so `.first()`
+    // resolves to it and fails. This predates the row rewrite - the assertion replaced
+    // here looked past it only because asserting ABSENCE passes at any mount count, and
+    // `sign-up-onboarding.e2e` already reaches for `.last()` on home strings for the
+    // same reason. Filed separately; scoping keeps this test about routines.
+    await expect(page.getByText("Routines today", { exact: true }).last()).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Nothing scheduled today", { exact: true }).last()).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByTestId("routine-fab")).toBeHidden();

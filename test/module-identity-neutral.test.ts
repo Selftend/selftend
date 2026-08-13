@@ -130,15 +130,10 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
   "the home dashboard's widget identity": [
     "src/features/home/widget-tint.ts",
     "src/features/home/widgets/widget-card-header.tsx",
-    "src/features/home/widgets/activities-widget.tsx",
-    "src/features/home/widgets/breathing-widget.tsx",
-    "src/features/home/widgets/gratitude-widget.tsx",
-    "src/features/home/widgets/grounding-log-widget.tsx",
-    "src/features/home/widgets/journal-week-widget.tsx",
-    "src/features/home/widgets/meditation-widget.tsx",
-    "src/features/home/widgets/mood-checkin-widget.tsx",
-    "src/features/home/widgets/routines-widget.tsx",
-    "src/features/home/widgets/sleep-widget.tsx",
+    // The nine card files this listed are gone (#975); the tool tier's identity now
+    // lives in one row component, whose leading glyph is CHROME_MARK by construction.
+    "src/features/home/tool-row.tsx",
+    "src/features/home/tool-row-stats.tsx",
   ],
 };
 
@@ -151,6 +146,22 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
  */
 const RETIRED = [
   "src/features/home/tool-accent.ts",
+  // #975: the nine tool cards became rows. Listed here rather than merely dropped from
+  // IDENTITY_SURFACES, because "the file is gone" is the strongest gate there is on a
+  // surface that used to carry per-item hue - and a silent removal from the surfaces
+  // list would look identical to someone quietly exempting a file that still exists.
+  "src/features/home/widgets/activities-widget.tsx",
+  "src/features/home/widgets/breathing-widget.tsx",
+  "src/features/home/widgets/gratitude-widget.tsx",
+  "src/features/home/widgets/grounding-log-widget.tsx",
+  "src/features/home/widgets/journal-week-widget.tsx",
+  "src/features/home/widgets/meditation-widget.tsx",
+  "src/features/home/widgets/mood-checkin-widget.tsx",
+  "src/features/home/widgets/routines-widget.tsx",
+  "src/features/home/widgets/sleep-widget.tsx",
+  // Orphaned by the same change: their only importers were the nine above.
+  "src/features/home/widgets/session-log-widget.tsx",
+  "src/features/home/widgets/two-stat-body.tsx",
   // #733's deletions, listed here for the same reason: the surest gate on a
   // hue-bearing surface is that the file no longer exists. `tool-hero.tsx` was
   // already consumerless; `tool-stats.tsx` took `accentClassName` and

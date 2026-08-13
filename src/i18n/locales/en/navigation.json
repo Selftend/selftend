@@ -76,7 +76,6 @@
     "greetingEvening": "Good evening",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "dashboardLabel": "Dashboard",
     "dashboardSub": "Tools you check in with each day",
     "emptyTitle": "Add tools you want to check in with each day",
     "emptyDescription": "Build a dashboard yourself, or answer a few questions for tailored suggestions.",
@@ -178,6 +177,30 @@
       "openProgram": "Open programme",
       "moreGoals_one": "+{{count}} more goal",
       "moreGoals_other": "+{{count}} more goals"
+    },
+    "tiers": {
+      "tools": "Your tools",
+      "programmes": "Guided programmes"
+    },
+    "rows": {
+      "empty": "Nothing yet",
+      "nothingScheduled": "Nothing scheduled today",
+      "thisWeek": "{{value}} this week",
+      "avg7": "7-day average {{value}}",
+      "quality": "quality {{value}}/5",
+      "typicalMinutes": "{{value}} min typical",
+      "last": "Last {{when}}",
+      "doneToday": "{{done}} of {{total}} done today",
+      "entries_one": "{{count}} entry",
+      "entries_other": "{{count}} entries",
+      "words_one": "{{count}} word",
+      "words_other": "{{count}} words",
+      "sessions_one": "{{count}} session",
+      "sessions_other": "{{count}} sessions",
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "sits_one": "{{count}} sit",
+      "sits_other": "{{count}} sits"
     },
     "widgets": {
       "moodCheckin": {

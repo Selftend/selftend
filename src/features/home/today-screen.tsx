@@ -20,8 +20,8 @@ import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
-import { GAP, computeColumns } from "@/src/features/home/grid-layout";
 import { isImplemented, metaForWidget, resolveWidget } from "@/src/features/home/widget-registry";
+import { ToolTierRow } from "@/src/features/home/tool-row-stats";
 import {
   useAddWidget,
   useRemoveWidget,
@@ -29,7 +29,6 @@ import {
   useRestoreWidget,
   useWidgetPreferences,
 } from "@/src/features/home/queries";
-import { useVisibleWidgetIds } from "@/src/features/home/use-visible-widget-ids";
 import { useApplyWidgetSuggestions } from "@/src/features/onboarding/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { HomeTour } from "@/src/features/tours/home-tour";
@@ -38,7 +37,6 @@ import { cn } from "@/lib/utils";
 import { useAccentHsl } from "@/src/lib/theme-palette";
 
 const PADDING = 24;
-const WIDGET_HEIGHT = 200;
 type WidgetEditAction =
   | { type: "add"; widgetId: string }
   | { type: "remove"; widgetId: string; position: number }
@@ -50,6 +48,111 @@ type WidgetEditAction =
 const WidgetContent = memo(function WidgetContent({ id, userId }: { id: string; userId: string }) {
   return resolveWidget(id, userId);
 });
+
+/**
+ * One tier's sortable list. Rows are inert while dragging is available, so the row's own
+ * whole-row press cannot fire from a drag release - the press-through defect #915 fixed
+ * structurally by never nesting a pressable inside a pressable.
+ *
+ * The keyboard path is not optional. Home is the app's only reorderable surface, and
+ * drag-alone fails WCAG 2.2 SC 2.5.7 (Dragging Movements, AA), so the move buttons are
+ * the accessible equivalent rather than a convenience.
+ */
+function TierSection({
+  ids,
+  editMode,
+  mutationPending,
+  scrollableRef,
+  onDragEnd,
+  onMove,
+  onRemove,
+  renderRow,
+}: {
+  ids: string[];
+  editMode: boolean;
+  mutationPending: boolean;
+  scrollableRef: ReturnType<typeof useAnimatedRef<Animated.ScrollView>>;
+  onDragEnd: (next: string[]) => void;
+  onMove: (id: string, offset: -1 | 1) => void;
+  onRemove: (id: string) => void;
+  renderRow: (id: string) => React.ReactNode;
+}) {
+  const { t } = useTranslation("navigation");
+  if (ids.length === 0) return null;
+
+  return (
+    <Sortable.Grid
+      data={ids}
+      columns={1}
+      rowGap={4}
+      scrollableRef={scrollableRef}
+      dragActivationDelay={0}
+      sortEnabled={editMode && !mutationPending}
+      customHandle
+      onDragEnd={({ data }) => onDragEnd(data)}
+      renderItem={({ item: id, index }) => {
+        const meta = metaForWidget(id);
+        const title = meta ? t(meta.titleKey) : id;
+        if (!editMode) return <View>{renderRow(id)}</View>;
+        return (
+          <View className="flex-row items-center gap-1">
+            <Sortable.Handle>
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+                className={cn(
+                  "size-7 items-center justify-center rounded-full border border-primary/35 bg-card active:bg-accent",
+                  Platform.select({ web: "hover:bg-accent" }),
+                )}
+              >
+                <Icon name="drag-indicator" className="size-4 text-primary" />
+              </View>
+            </Sortable.Handle>
+            <View className="min-w-0 flex-1" pointerEvents="none">
+              {renderRow(id)}
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("today.dashboard.moveEarlier", { title })}
+              disabled={index === 0 || mutationPending}
+              onPress={() => onMove(id, -1)}
+              className={cn(
+                "size-7 items-center justify-center rounded-full border border-border bg-card active:bg-accent disabled:opacity-40",
+                Platform.select({ web: "hover:bg-accent" }),
+              )}
+            >
+              <Icon name="keyboard-arrow-up" className="size-4 text-primary" />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("today.dashboard.moveLater", { title })}
+              disabled={index === ids.length - 1 || mutationPending}
+              onPress={() => onMove(id, 1)}
+              className={cn(
+                "size-7 items-center justify-center rounded-full border border-border bg-card active:bg-accent disabled:opacity-40",
+                Platform.select({ web: "hover:bg-accent" }),
+              )}
+            >
+              <Icon name="keyboard-arrow-down" className="size-4 text-primary" />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("today.dashboard.removeWidget", { title })}
+              disabled={mutationPending}
+              onPress={() => onRemove(id)}
+              className={cn(
+                "size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
+                Platform.select({ web: "hover:bg-destructive/10" }),
+              )}
+            >
+              <Icon name="close" className="size-4 text-destructive" />
+            </Pressable>
+          </View>
+        );
+      }}
+    />
+  );
+}
 
 function pickGreetingKey(hour: number) {
   if (hour < 12) return "today.greetingMorning";
@@ -102,7 +205,6 @@ export default function HomeScreen() {
   const [addVisible, setAddVisible] = useState(false);
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
   const [undoStack, setUndoStack] = useState<WidgetEditAction[]>([]);
-  const [containerWidth, setContainerWidth] = useState(0);
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   const { selectedDate } = useSelectedDate();
@@ -135,13 +237,24 @@ export default function HomeScreen() {
     [preferences],
   );
 
-  // Day-level slot suppression (#104): some widgets (routines-today on a day
-  // with nothing scheduled) must not render AT ALL - not even their
-  // fixed-height slot. Edit mode still shows every owned widget so it can be
-  // reordered/removed regardless of today's schedule, and all preference
-  // mutations keep operating on the full owned list.
-  const visibleWidgetIds = useVisibleWidgetIds(userId, widgetIds);
-  const gridWidgetIds = editMode ? widgetIds : visibleWidgetIds;
+  /**
+   * One ordered list, partitioned by tier (#950). `widget_preferences` keeps a single
+   * `position` sequence; which tier an id belongs to is declared by the registry, so the
+   * renderer partitions rather than the table growing a column.
+   *
+   * Day-level slot suppression is GONE with the fixed-height grid: `routines-today` used
+   * to be withheld entirely on a day with nothing scheduled, because a 200px empty card
+   * was worse than no card. A row costs one line and says "Nothing scheduled today",
+   * which is a fact the old grid had no room to state.
+   */
+  const toolIds = useMemo(
+    () => widgetIds.filter((id) => metaForWidget(id)?.tier === "tool"),
+    [widgetIds],
+  );
+  const programmeIds = useMemo(
+    () => widgetIds.filter((id) => metaForWidget(id)?.tier === "programme"),
+    [widgetIds],
+  );
 
   const mutationPending =
     addMutation.isPending ||
@@ -172,22 +285,28 @@ export default function HomeScreen() {
     });
   };
 
-  const reorderWidgets = (next: string[]) => {
-    if (mutationPending || next.every((widgetId, index) => widgetId === widgetIds[index])) return;
-    const previous = [...widgetIds];
+  /**
+   * Reorder within ONE tier. `set_widget_order` reassigns only the positions its named
+   * ids already hold, so passing just this tier's ids leaves every other row where it
+   * is - which is what makes a two-tier screen sortable at all. Passing the flat list
+   * across both tiers would be a lie: the renderer re-partitions and the row snaps back.
+   */
+  const reorderWidgets = (tierIds: string[], next: string[]) => {
+    if (mutationPending || next.every((widgetId, index) => widgetId === tierIds[index])) return;
+    const previous = [...tierIds];
     reorderMutation.mutate(next, {
       onSuccess: () =>
         setUndoStack((current) => [...current, { type: "reorder", widgetIds: previous }]),
     });
   };
 
-  const moveWidget = (widgetId: string, offset: -1 | 1) => {
-    const currentIndex = widgetIds.indexOf(widgetId);
+  const moveWidget = (tierIds: string[], widgetId: string, offset: -1 | 1) => {
+    const currentIndex = tierIds.indexOf(widgetId);
     const nextIndex = currentIndex + offset;
-    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= widgetIds.length) return;
-    const next = [...widgetIds];
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= tierIds.length) return;
+    const next = [...tierIds];
     [next[currentIndex], next[nextIndex]] = [next[nextIndex], next[currentIndex]];
-    reorderWidgets(next);
+    reorderWidgets(tierIds, next);
   };
 
   const undoLastEdit = () => {
@@ -210,9 +329,6 @@ export default function HomeScreen() {
     }
   };
 
-  const gridWidth = Math.max(0, containerWidth - PADDING * 2);
-  const numColumns = computeColumns(gridWidth);
-
   const header = (
     <View className="gap-6 pb-3">
       {/* Hero - card-style with subtle purple tint */}
@@ -234,7 +350,7 @@ export default function HomeScreen() {
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 min-w-0">
           <Text variant="h2" className="text-xl font-bold tracking-tight">
-            {t("today.dashboardLabel")}
+            {t("home.tiers.tools")}
           </Text>
           <Text variant="muted" className="mt-0.5 text-[12.5px]">
             {t("today.dashboardSub")}
@@ -290,9 +406,10 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <View
+        // `home-layout` is load-bearing beyond this screen: settings-account.e2e scopes
+        // to it and .maestro/app-store-screenshots.yaml waits on it for 90s.
         testID="home-layout"
         className="flex-1"
-        onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
       >
         <AnimatedScrollView
           ref={scrollableRef}
@@ -328,92 +445,51 @@ export default function HomeScreen() {
                 </Button>
               </View>
             </View>
-          ) : gridWidth > 0 ? (
-            <Sortable.Grid
-              data={gridWidgetIds}
-              columns={numColumns}
-              rowGap={GAP}
-              columnGap={GAP}
-              scrollableRef={scrollableRef}
-              dragActivationDelay={0}
-              sortEnabled={editMode && !mutationPending}
-              customHandle
-              onDragEnd={({ data }) => reorderWidgets(data)}
-              renderItem={({ item: id, index }) => {
-                const meta = metaForWidget(id);
-                return (
-                  <View style={{ height: WIDGET_HEIGHT, overflow: "hidden" }}>
-                    <View style={{ flex: 1, pointerEvents: editMode ? "none" : "auto" }}>
-                      <WidgetContent id={id} userId={userId ?? ""} />
-                    </View>
-                    {editMode ? (
-                      <>
-                        <Sortable.Handle style={{ position: "absolute", left: 4, top: 4 }}>
-                          <View
-                            accessibilityElementsHidden
-                            importantForAccessibility="no"
-                            className={cn(
-                              "size-7 items-center justify-center rounded-full border border-primary/35 bg-card active:bg-accent",
-                              Platform.select({ web: "hover:bg-accent" }),
-                            )}
-                          >
-                            <Icon name="drag-indicator" className="size-4 text-primary" />
-                          </View>
-                        </Sortable.Handle>
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={t("today.dashboard.removeWidget", {
-                            title: meta ? t(meta.titleKey) : id,
-                          })}
-                          disabled={mutationPending}
-                          onPress={() => removeWidget(id)}
-                          className={cn(
-                            "absolute right-1 top-1 size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
-                            Platform.select({ web: "hover:bg-destructive/10" }),
-                          )}
-                        >
-                          <Icon name="close" className="size-4 text-destructive" />
-                        </Pressable>
-                        <View
-                          pointerEvents="box-none"
-                          className="absolute left-0 right-0 top-1 flex-row justify-center gap-1"
-                        >
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={t("today.dashboard.moveEarlier", {
-                              title: meta ? t(meta.titleKey) : id,
-                            })}
-                            disabled={index === 0 || mutationPending}
-                            onPress={() => moveWidget(id, -1)}
-                            className={cn(
-                              "size-7 items-center justify-center rounded-full border border-border bg-card active:bg-accent disabled:opacity-40",
-                              Platform.select({ web: "hover:bg-accent" }),
-                            )}
-                          >
-                            <Icon name="chevron-left" className="size-4 text-primary" />
-                          </Pressable>
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={t("today.dashboard.moveLater", {
-                              title: meta ? t(meta.titleKey) : id,
-                            })}
-                            disabled={index === widgetIds.length - 1 || mutationPending}
-                            onPress={() => moveWidget(id, 1)}
-                            className={cn(
-                              "size-7 items-center justify-center rounded-full border border-border bg-card active:bg-accent disabled:opacity-40",
-                              Platform.select({ web: "hover:bg-accent" }),
-                            )}
-                          >
-                            <Icon name="chevron-right" className="size-4 text-primary" />
-                          </Pressable>
-                        </View>
-                      </>
-                    ) : null}
-                  </View>
-                );
-              }}
-            />
-          ) : null}
+          ) : (
+            <View className="mt-1 gap-7">
+              {/*
+                Two tiers over ONE ordered list. Each is its own sortable list so a drag
+                can only ever reorder within a tier - see `reorderWidgets`.
+
+                `Sortable.Grid columns={1}`, never `Sortable.Flex`: Flex drops
+                re-measures of 1px or less, which is exactly the delta between two rows
+                of the same height.
+              */}
+              <TierSection
+                ids={toolIds}
+                editMode={editMode}
+                mutationPending={mutationPending}
+                scrollableRef={scrollableRef}
+                onDragEnd={(next) => reorderWidgets(toolIds, next)}
+                onMove={(id, offset) => moveWidget(toolIds, id, offset)}
+                onRemove={removeWidget}
+                renderRow={(id) => <ToolTierRow id={id} userId={userId} />}
+              />
+
+              {programmeIds.length > 0 ? (
+                <View className="gap-2">
+                  <Text variant="h2" className="text-xl font-bold tracking-tight">
+                    {t("home.tiers.programmes")}
+                  </Text>
+                  {/*
+                    The programme tier keeps its existing cards until S6 (#977) reshapes
+                    them. Building the partition here rather than leaving two ids
+                    homeless is the whole reason home stays whole across this slice.
+                  */}
+                  <TierSection
+                    ids={programmeIds}
+                    editMode={editMode}
+                    mutationPending={mutationPending}
+                    scrollableRef={scrollableRef}
+                    onDragEnd={(next) => reorderWidgets(programmeIds, next)}
+                    onMove={(id, offset) => moveWidget(programmeIds, id, offset)}
+                    onRemove={removeWidget}
+                    renderRow={(id) => <WidgetContent id={id} userId={userId ?? ""} />}
+                  />
+                </View>
+              ) : null}
+            </View>
+          )}
         </AnimatedScrollView>
       </View>
 

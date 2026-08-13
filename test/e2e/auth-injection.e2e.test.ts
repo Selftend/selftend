@@ -6,7 +6,7 @@ import { test, expect } from "./fixtures";
 // key drift, expired token, or seed missing).
 test("injected session lands on the authenticated dashboard", async ({ page }) => {
   await page.goto("/(app)");
-  await expect(page.getByRole("heading", { name: "Dashboard", level: 2 })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
     timeout: 15_000,
   });
   await expect(page.getByText("Sign in to your account")).toBeHidden();

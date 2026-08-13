@@ -75,7 +75,7 @@ describe("widget registry", () => {
     }
   });
 
-  it("isImplemented reflects registry membership", () => {
+  it("isImplemented reflects catalogue membership", () => {
     expect(isImplemented("mood-checkin")).toBe(true);
     expect(isImplemented("cbt-open-record")).toBe(true);
     expect(isImplemented("not-a-widget")).toBe(false);
