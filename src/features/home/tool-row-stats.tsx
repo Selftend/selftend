@@ -29,6 +29,19 @@ import { useSleepStats } from "@/src/features/sleep/queries";
 import { useHabits, useHabitLogs } from "@/src/features/habits/queries";
 import { addDays, isScheduledOn, isTickedOn, localDateKey } from "@/src/features/habits/scheduling";
 import { useRoutinesToday } from "@/src/features/routines/use-routines-today";
+import { useThoughtRecordCount, useThoughtRecords } from "@/src/features/cbt/queries";
+import { useSelfCareLogs } from "@/src/features/self-care/queries";
+import { useWorryEntries } from "@/src/features/worry/queries";
+import { useCoreBeliefs } from "@/src/features/beliefs/queries";
+import { useActivities } from "@/src/features/activities/queries";
+import { useRecentExposureSessions } from "@/src/features/exposure/queries";
+import { useGoals } from "@/src/features/goals/queries";
+import { useConnectionLogs } from "@/src/features/act/queries/connection";
+import { useObservingSelfSessions } from "@/src/features/act/queries/observing-self";
+import { useChoicePoints } from "@/src/features/act/queries/choice-points";
+import { useDefusionLogs } from "@/src/features/act/queries/defusion";
+import { useExpansionLogs } from "@/src/features/act/queries/expansion";
+import { useCommittedActions } from "@/src/features/act/queries/committed-action";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 
 /**
@@ -323,7 +336,238 @@ function RoutinesRow({ userId }: StatRowProps) {
   return <ToolRow id="routines-today" stat={stat} />;
 }
 
-/** The nine ids this slice gives a stat. S5b (#976) adds the remaining fourteen. */
+// ===========================================================================
+// S5b (#976): the fourteen module and shortcut rows.
+//
+// Eleven are pure recency, and each reuses the list its own tool already mounts, reading
+// only the newest entry - which every cap contains. Recency renders through
+// `formatCompactAtOffset`, which never says "N days ago".
+//
+// ☠️ NO ACT table carries a captured UTC offset. Checked against every `*_offset_minutes`
+// column in supabase/migrations: only mood, gratitude, sleep, journal, meditation,
+// mindfulness, activity_logs and thought_records have one. So all six ACT rows - and
+// self-care, worry, beliefs and exposure - pass `null` and fall back to the viewer's
+// current zone. A log written in another timezone renders in this one; that is the
+// honest limit of what those tables recorded, not something to paper over.
+// ===========================================================================
+
+/** Newest ISO timestamp in a list, for the lists that are not already recency-ordered. */
+function latestOf<T>(rows: T[] | undefined, at: (row: T) => string | null): string | null {
+  return (rows ?? []).reduce<string | null>((latest, row) => {
+    const value = at(row);
+    if (value === null) return latest;
+    return latest === null || value > latest ? value : latest;
+  }, null);
+}
+
+/** The shared shape of the eleven recency rows. */
+function RecencyRow({
+  id,
+  loaded,
+  at,
+  offsetMinutes = null,
+}: {
+  id: string;
+  loaded: boolean;
+  at: string | null;
+  offsetMinutes?: number | null;
+}) {
+  const { t, i18n } = useTranslation("navigation");
+  let stat: string | null = null;
+  if (loaded) {
+    stat =
+      at === null
+        ? emptyStat(t)
+        : t("home.rows.last", { when: formatCompactAtOffset(at, offsetMinutes, i18n.language) });
+  }
+  return <ToolRow id={id} stat={stat} />;
+}
+
+function SelfCareRow({ userId }: StatRowProps) {
+  const { data: logs } = useSelfCareLogs(userId);
+  // `createdAt`, not the `logDate` day key the list is sorted by: a bare "2026-07-27"
+  // parses as UTC midnight and renders as the previous day for any viewer west of UTC.
+  return (
+    <RecencyRow
+      id="self-care"
+      loaded={isLoaded(logs)}
+      at={latestOf(logs, (log) => log.createdAt)}
+    />
+  );
+}
+
+// The one row of the fourteen with two clauses.
+function CbtOpenRecordRow({ userId }: StatRowProps) {
+  const { t, i18n } = useTranslation("navigation");
+  const { data: records } = useThoughtRecords(userId);
+  /**
+   * An exact head count, not `records.length`. That list is capped at 500 AND ordered by
+   * `updated_at`, so its length is a lifetime figure derived from a capped query -
+   * precisely what ADR-0001 forbids, and it would stay plausible while truncating.
+   *
+   * ⚠️ Unlike the other thirteen rows this does not quote a figure the destination already
+   * renders, because there is none: `/modules/cbt/new` is the record form and the CBT
+   * home shows no record count. Raised on the ticket rather than assumed.
+   */
+  const { data: count } = useThoughtRecordCount(userId);
+
+  let stat: string | null = null;
+  if (isLoaded(records, count)) {
+    // Ordered by `updated_at`, so `.at(0)` is the most recently EDITED record rather than
+    // the most recent one written. Reduce for the real maximum.
+    const last = latestOf(records, (record) => record.createdAt);
+    const lastOffset =
+      records?.find((record) => record.createdAt === last)?.createdOffsetMinutes ?? null;
+    stat =
+      count === 0
+        ? emptyStat(t)
+        : joinClauses(
+            t("home.rows.records", { count }),
+            last === null
+              ? null
+              : t("home.rows.last", {
+                  when: formatCompactAtOffset(last, lastOffset, i18n.language),
+                }),
+          );
+  }
+  return <ToolRow id="cbt-open-record" stat={stat} />;
+}
+
+function CbtWorryRow({ userId }: StatRowProps) {
+  const { data: entries } = useWorryEntries(userId);
+  return (
+    <RecencyRow id="cbt-worry" loaded={isLoaded(entries)} at={entries?.[0]?.createdAt ?? null} />
+  );
+}
+
+function CbtBeliefsRow({ userId }: StatRowProps) {
+  const { data: beliefs } = useCoreBeliefs(userId);
+  return (
+    <RecencyRow id="cbt-beliefs" loaded={isLoaded(beliefs)} at={beliefs?.[0]?.createdAt ?? null} />
+  );
+}
+
+function CbtActivitiesRow({ userId }: StatRowProps) {
+  const { data: activities } = useActivities(userId);
+  // Ordered by `scheduled_at` ascending, so neither end of the list is the newest
+  // completion - and a scheduled activity may never have been completed at all.
+  const last = latestOf(activities, (activity) => activity.completedAt);
+  const offset =
+    activities?.find((activity) => activity.completedAt === last)?.completedOffsetMinutes ?? null;
+  return (
+    <RecencyRow
+      id="cbt-activities"
+      loaded={isLoaded(activities)}
+      at={last}
+      offsetMinutes={offset}
+    />
+  );
+}
+
+function CbtExposureRow({ userId }: StatRowProps) {
+  /**
+   * Sessions, never hierarchies - a hierarchy is a plan, and the row reports what was
+   * done. ⚠️ This is the one row whose tool screen mounts neither list: the exposure index
+   * mounts `useHierarchies`, so there is no session cache entry to share. The limit rides
+   * this hook's query key, so 250 matches `use-routine-tool-records`' constant and shares
+   * with it whenever the user has an exposure routine step.
+   */
+  const { data: sessions } = useRecentExposureSessions(userId, 250);
+  return (
+    <RecencyRow
+      id="cbt-exposure"
+      loaded={isLoaded(sessions)}
+      at={sessions?.[0]?.completedAt ?? null}
+    />
+  );
+}
+
+function CbtGoalsRow({ userId }: StatRowProps) {
+  const { t } = useTranslation("navigation");
+  const { data: goals } = useGoals(userId);
+  // A count, not recency: a goal is a current thing, not an event that happened.
+  let stat: string | null = null;
+  if (isLoaded(goals)) {
+    const active = (goals ?? []).filter((goal) => goal.status === "active").length;
+    stat = active === 0 ? emptyStat(t) : t("home.rows.activeGoals", { count: active });
+  }
+  return <ToolRow id="cbt-goals" stat={stat} />;
+}
+
+function ActDropAnchorRow({ userId }: StatRowProps) {
+  /**
+   * Drop-anchor is a SUBSET of connection, not its own table: filter on `technique`
+   * before taking the newest. ⚠️ The list is capped at 30, so a user with 30 newer
+   * connection logs of other techniques reads as having no drop anchor. Accepted - 30 is
+   * the entry the connection list screen and the ACT programme already mount, and a
+   * second uncapped query for one row's recency is the cost this slice refuses.
+   */
+  const { data: logs } = useConnectionLogs(userId, 30);
+  const dropAnchor = (logs ?? []).filter((log) => log.technique === "dropAnchor");
+  return (
+    <RecencyRow
+      id="act-drop-anchor"
+      loaded={isLoaded(logs)}
+      at={dropAnchor[0]?.createdAt ?? null}
+    />
+  );
+}
+
+function ActObservingSelfRow({ userId }: StatRowProps) {
+  // Limit deliberately omitted: it is NOT part of this hook's query key, so passing a
+  // different one would not open a new entry - it would just race whichever mounts first.
+  const { data: sessions } = useObservingSelfSessions(userId);
+  return (
+    <RecencyRow
+      id="act-observing-self"
+      loaded={isLoaded(sessions)}
+      at={sessions?.[0]?.createdAt ?? null}
+    />
+  );
+}
+
+function ActChoicePointRow({ userId }: StatRowProps) {
+  // Limit omitted for the same reason as observing-self: not in the query key.
+  const { data: points } = useChoicePoints(userId);
+  return (
+    <RecencyRow
+      id="act-choice-point"
+      loaded={isLoaded(points)}
+      at={points?.[0]?.createdAt ?? null}
+    />
+  );
+}
+
+function ActDefusionRow({ userId }: StatRowProps) {
+  const { data: logs } = useDefusionLogs(userId, 30);
+  return <RecencyRow id="act-defusion" loaded={isLoaded(logs)} at={logs?.[0]?.createdAt ?? null} />;
+}
+
+function ActAcceptancePromptRow({ userId }: StatRowProps) {
+  const { data: logs } = useExpansionLogs(userId, 30);
+  return (
+    <RecencyRow
+      id="act-acceptance-prompt"
+      loaded={isLoaded(logs)}
+      at={logs?.[0]?.createdAt ?? null}
+    />
+  );
+}
+
+function ActCommittedActionsRow({ userId }: StatRowProps) {
+  const { t } = useTranslation("navigation");
+  // The status rides the query key, so "active" is its own entry - shared with the
+  // Android snapshot builder rather than with the list screen, which mounts unfiltered.
+  const { data: actions } = useCommittedActions(userId, "active");
+  let stat: string | null = null;
+  if (isLoaded(actions)) {
+    const count = (actions ?? []).length;
+    stat = count === 0 ? emptyStat(t) : t("home.rows.active", { count });
+  }
+  return <ToolRow id="act-committed-actions" stat={stat} />;
+}
+
+/** Every id that renders a stat. */
 const STAT_ROWS: Record<string, ComponentType<StatRowProps>> = {
   "mood-checkin": MoodCheckinRow,
   "journal-week": JournalRow,
@@ -334,6 +578,23 @@ const STAT_ROWS: Record<string, ComponentType<StatRowProps>> = {
   "sleep-latest": SleepRow,
   "habits-today": HabitsRow,
   "routines-today": RoutinesRow,
+  "self-care": SelfCareRow,
+  "cbt-open-record": CbtOpenRecordRow,
+  "cbt-worry": CbtWorryRow,
+  "cbt-beliefs": CbtBeliefsRow,
+  "cbt-activities": CbtActivitiesRow,
+  "cbt-exposure": CbtExposureRow,
+  "cbt-goals": CbtGoalsRow,
+  "act-drop-anchor": ActDropAnchorRow,
+  "act-observing-self": ActObservingSelfRow,
+  "act-choice-point": ActChoicePointRow,
+  "act-defusion": ActDefusionRow,
+  "act-acceptance-prompt": ActAcceptancePromptRow,
+  "act-committed-actions": ActCommittedActionsRow,
+  // `cbt-distortion-guide` is deliberately ABSENT, and it is the one documented exception
+  // to the empty-slot rule. It is reference content: it holds no record of yours, so
+  // "Nothing yet" would be false, and its description is not a stat - a column that
+  // sometimes holds copy teaches the reader it cannot be trusted.
 };
 
 /**

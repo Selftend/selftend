@@ -200,7 +200,13 @@
       "minutes_one": "{{count}} minute",
       "minutes_other": "{{count}} minutes",
       "sits_one": "{{count}} sit",
-      "sits_other": "{{count}} sits"
+      "sits_other": "{{count}} sits",
+      "records_one": "{{count}} record",
+      "records_other": "{{count}} records",
+      "activeGoals_one": "{{count}} active goal",
+      "activeGoals_other": "{{count}} active goals",
+      "active_one": "{{count}} active",
+      "active_other": "{{count}} active"
     },
     "widgets": {
       "moodCheckin": {

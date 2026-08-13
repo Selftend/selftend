@@ -200,7 +200,13 @@
       "minutes_one": "{{count}} минута",
       "minutes_other": "{{count}} минути",
       "sits_one": "{{count}} седение",
-      "sits_other": "{{count}} седения"
+      "sits_other": "{{count}} седения",
+      "records_one": "{{count}} запис",
+      "records_other": "{{count}} записа",
+      "activeGoals_one": "{{count}} активна цел",
+      "activeGoals_other": "{{count}} активни цели",
+      "active_one": "{{count}} активно",
+      "active_other": "{{count}} активни"
     },
     "widgets": {
       "moodCheckin": {
