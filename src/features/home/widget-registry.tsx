@@ -32,6 +32,9 @@ import { RoutinesWidget } from "@/src/features/home/widgets/routines-widget";
 type WidgetComponent = React.ComponentType<{ userId: string }>;
 type WidgetStatus = "default" | "available" | "soon";
 
+/** Which of home's tiers an id renders in. `Right now` is derived, not id-driven. */
+export type WidgetTier = "tool" | "programme";
+
 export interface WidgetMeta {
   id: string;
   toolKey: string;
@@ -40,6 +43,13 @@ export interface WidgetMeta {
   descriptionKey: string;
   tint: WidgetTint;
   status: WidgetStatus;
+  /**
+   * Where the row navigates. Required, so a new id cannot be added without
+   * declaring its destination. Asserted against the real `app/` tree in
+   * widget-registry.test.tsx.
+   */
+  route: string;
+  tier: WidgetTier;
 }
 
 export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
@@ -73,6 +83,15 @@ export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
   "routines-today": RoutinesWidget,
 };
 
+// The dashboard catalogue (#972). Routes come from the decided spec's 24-row
+// table, with two corrections the router forced: the table wrote
+// `/tools/gratitude` and `/tools/routines`, and neither exists - the shipped
+// screens are `/tools/gratitude-log` and `/routines` (top level, not under
+// tools). The test asserts every route against the real `app/` tree.
+//
+// `tint` stays here because the Android snapshot mirrors and asserts it, but
+// this redesign never renders it as colour (rule 1: no colour varies by item
+// on an identity surface).
 export const WIDGET_META: Record<string, WidgetMeta> = {
   "mood-checkin": {
     id: "mood-checkin",
@@ -82,7 +101,11 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.moodCheckin.desc",
     tint: "be",
     status: "default",
+    route: "/tools/check-in",
+    tier: "tool",
   },
+  // Retires into mood-checkin in S3 - both its numbers live on the check-in
+  // row and it already navigates to the same screen.
   "mood-trend": {
     id: "mood-trend",
     toolKey: "mood",
@@ -91,6 +114,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.moodTrend.desc",
     tint: "be",
     status: "default",
+    route: "/tools/check-in",
+    tier: "tool",
   },
   "breathing-suggested": {
     id: "breathing-suggested",
@@ -100,6 +125,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.breathingSuggested.desc",
     tint: "aqua",
     status: "default",
+    route: "/tools/breathing",
+    tier: "tool",
   },
   "gratitude-latest": {
     id: "gratitude-latest",
@@ -109,6 +136,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.gratitudeLatest.desc",
     tint: "think",
     status: "default",
+    route: "/tools/gratitude-log",
+    tier: "tool",
   },
   "meditation-pick": {
     id: "meditation-pick",
@@ -118,6 +147,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.meditationPick.desc",
     tint: "iris",
     status: "default",
+    route: "/tools/meditation",
+    tier: "tool",
   },
   "habits-today": {
     id: "habits-today",
@@ -127,6 +158,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.habitsToday.desc",
     tint: "act",
     status: "default",
+    route: "/tools/habits",
+    tier: "tool",
   },
   "self-care": {
     id: "self-care",
@@ -136,6 +169,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.selfCare.desc",
     tint: "primary",
     status: "available",
+    route: "/modules/cbt/self-care",
+    tier: "tool",
   },
   "cbt-open-record": {
     id: "cbt-open-record",
@@ -145,6 +180,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtOpenRecord.metaDesc",
     tint: "primary",
     status: "default",
+    route: "/modules/cbt/new",
+    tier: "tool",
   },
   "act-drop-anchor": {
     id: "act-drop-anchor",
@@ -154,6 +191,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actDropAnchor.metaDesc",
     tint: "act",
     status: "default",
+    route: "/modules/act/connection/drop-anchor",
+    tier: "tool",
   },
   "act-observing-self": {
     id: "act-observing-self",
@@ -163,6 +202,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actObservingSelf.metaDesc",
     tint: "act",
     status: "available",
+    route: "/modules/act/observing-self",
+    tier: "tool",
   },
   "act-choice-point": {
     id: "act-choice-point",
@@ -172,6 +213,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actChoicePoint.metaDesc",
     tint: "act",
     status: "available",
+    route: "/modules/act/choice-point/new",
+    tier: "tool",
   },
   "sleep-latest": {
     id: "sleep-latest",
@@ -181,6 +224,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.sleepLatest.desc",
     tint: "ink",
     status: "default",
+    route: "/tools/sleep",
+    tier: "tool",
   },
   "cbt-distortion-guide": {
     id: "cbt-distortion-guide",
@@ -190,6 +235,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtDistortionGuide.metaDesc",
     tint: "primary",
     status: "available",
+    route: "/modules/cbt/learn",
+    tier: "tool",
   },
   "cbt-programme": {
     id: "cbt-programme",
@@ -199,6 +246,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtProgramme.metaDesc",
     tint: "primary",
     status: "available",
+    route: "/modules/cbt",
+    tier: "programme",
   },
   "act-programme": {
     id: "act-programme",
@@ -208,7 +257,13 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actProgramme.metaDesc",
     tint: "act",
     status: "available",
+    route: "/modules/act",
+    tier: "programme",
   },
+  // Both shortcuts retire into their `-programme` id in S3. They stay
+  // `tier: "tool"` until then: a shortcut renders as a plain row to the module
+  // home, not as a programme card with a phase badge, so the tool tier is
+  // where they render today and the programme tier keeps exactly two members.
   "cbt-module-shortcut": {
     id: "cbt-module-shortcut",
     toolKey: "cbt",
@@ -217,6 +272,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtModuleShortcut.metaDesc",
     tint: "primary",
     status: "available",
+    route: "/modules/cbt",
+    tier: "tool",
   },
   "act-module-shortcut": {
     id: "act-module-shortcut",
@@ -226,6 +283,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actModuleShortcut.metaDesc",
     tint: "act",
     status: "available",
+    route: "/modules/act",
+    tier: "tool",
   },
   "cbt-worry": {
     id: "cbt-worry",
@@ -235,6 +294,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtWorry.metaDesc",
     tint: "primary",
     status: "available",
+    route: "/modules/cbt/worry/new",
+    tier: "tool",
   },
   "cbt-beliefs": {
     id: "cbt-beliefs",
@@ -244,6 +305,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtBeliefs.metaDesc",
     tint: "primary",
     status: "available",
+    route: "/modules/cbt/beliefs/new",
+    tier: "tool",
   },
   "cbt-activities": {
     id: "cbt-activities",
@@ -253,6 +316,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtActivities.metaDesc",
     tint: "primary",
     status: "available",
+    route: "/modules/cbt/activities/new",
+    tier: "tool",
   },
   "cbt-exposure": {
     id: "cbt-exposure",
@@ -262,6 +327,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtExposure.metaDesc",
     tint: "primary",
     status: "available",
+    route: "/modules/cbt/exposure/new",
+    tier: "tool",
   },
   "cbt-goals": {
     id: "cbt-goals",
@@ -271,6 +338,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.cbtGoals.metaDesc",
     tint: "primary",
     status: "available",
+    route: "/modules/cbt/goals/new",
+    tier: "tool",
   },
   "act-committed-actions": {
     id: "act-committed-actions",
@@ -280,6 +349,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actCommittedActions.metaDesc",
     tint: "act",
     status: "available",
+    route: "/modules/act/committed-action",
+    tier: "tool",
   },
   "act-defusion": {
     id: "act-defusion",
@@ -289,6 +360,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actDefusion.metaDesc",
     tint: "act",
     status: "available",
+    route: "/modules/act/defusion",
+    tier: "tool",
   },
   "act-acceptance-prompt": {
     id: "act-acceptance-prompt",
@@ -298,6 +371,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.actAcceptancePrompt.metaDesc",
     tint: "act",
     status: "available",
+    route: "/modules/act/expansion",
+    tier: "tool",
   },
   "journal-week": {
     id: "journal-week",
@@ -307,6 +382,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.journalWeek.metaDesc",
     tint: "ink",
     status: "available",
+    route: "/tools/journal",
+    tier: "tool",
   },
   "grounding-log": {
     id: "grounding-log",
@@ -316,6 +393,8 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "home.widgets.groundingLog.metaDesc",
     tint: "clay",
     status: "available",
+    route: "/tools/grounding",
+    tier: "tool",
   },
   // Deliberately "available", NOT "default" (spec #37 / #50): routines-today
   // is offered in the Add-Widget modal but never default-seeded - unlike
@@ -329,6 +408,9 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     descriptionKey: "routines:widget.metaDesc",
     tint: "iris",
     status: "available",
+    // Not `/tools/routines` - routines live at the top level of the router.
+    route: "/routines",
+    tier: "tool",
   },
 };
 
