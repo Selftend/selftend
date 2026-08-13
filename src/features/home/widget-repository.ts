@@ -25,12 +25,13 @@ export async function listWidgetPreferences(userId: string): Promise<WidgetPrefe
     .from("widget_preferences")
     .select("*")
     .eq("user_id", userId)
-    .order("position", { ascending: true })
-    // created_at tiebreak so a position collision (two widgets added near-simultaneously,
-    // each reading the same max(position) client-side) still yields a stable, deterministic
-    // order instead of an arbitrary one. (A server-assigned position would prevent the
-    // collision outright - tracked for the DB pass.)
-    .order("created_at", { ascending: true });
+    // No tiebreak: `position` alone is total. Positions are assigned by the server
+    // (`add_widget_preference`) under a per-user lock, and `set_widget_order` only ever
+    // permutes positions that already exist, so two rows cannot share one. The
+    // `created_at` tiebreak that used to sit here covered the old client-side
+    // `max(position) + 1` race, and 20260813010000 renumbered the legacy rows it was
+    // covering - using that very ordering, so no existing dashboard changed order (#974).
+    .order("position", { ascending: true });
   if (error) throw error;
   return (data as WidgetPreferenceRow[]).map(mapWidgetPreference);
 }
@@ -61,34 +62,13 @@ export async function markWidgetsSeeded(userId: string): Promise<void> {
     .upsert({ user_id: userId, widgets_seeded: true }, { onConflict: "user_id" });
 }
 
-export async function insertWidgetPreferences(
-  userId: string,
-  widgetIds: string[],
-  startPosition = 0,
-): Promise<void> {
-  if (widgetIds.length === 0) return;
+// Append one widget to the end of the caller's dashboard. The server computes the
+// position, so no caller can reintroduce the read-then-write race; idempotent, so a
+// double tap is not an error. `user_id` comes from `auth.uid()` inside the function.
+export async function addWidgetPreference(widgetId: string): Promise<void> {
   const client = requireSupabase();
-  const payload = widgetIds.map((widgetId, index) => ({
-    user_id: userId,
-    widget_id: widgetId,
-    position: startPosition + index,
-  }));
-  // Idempotent: ignore duplicates from concurrent seeds.
-  const { error } = await client
-    .from("widget_preferences")
-    .upsert(payload, { onConflict: "user_id,widget_id", ignoreDuplicates: true });
+  const { error } = await client.rpc("add_widget_preference", { p_widget_id: widgetId });
   if (error) throw error;
-}
-
-export async function replaceWidgetPreferences(userId: string, widgetIds: string[]): Promise<void> {
-  const client = requireSupabase();
-  const { error: deleteError } = await client
-    .from("widget_preferences")
-    .delete()
-    .eq("user_id", userId);
-  if (deleteError) throw deleteError;
-
-  await insertWidgetPreferences(userId, widgetIds, 0);
 }
 
 export async function deleteWidgetPreference(userId: string, widgetId: string): Promise<void> {
@@ -113,22 +93,18 @@ export async function restoreWidgetPreference(
   const restoredPosition = Math.max(0, Math.min(position, orderedWidgetIds.length));
   orderedWidgetIds.splice(restoredPosition, 0, widgetId);
 
-  await insertWidgetPreferences(userId, [widgetId], orderedWidgetIds.length - 1);
-  await updateWidgetPositions(userId, orderedWidgetIds);
+  // Re-add at the tail (server-assigned, so it cannot collide with a position already in
+  // use), then order the full list. Because every id is named, `setWidgetOrder` has every
+  // position to hand out and the restored row lands exactly where `position` asked.
+  await addWidgetPreference(widgetId);
+  await setWidgetOrder(orderedWidgetIds);
 }
 
-export async function updateWidgetPositions(
-  userId: string,
-  orderedWidgetIds: string[],
-): Promise<void> {
+// Reorder by handing the named ids the positions they already hold, in this order. Rows
+// not named keep their positions, so a caller holding a filtered view of the list cannot
+// disturb the rows it cannot see.
+export async function setWidgetOrder(orderedWidgetIds: string[]): Promise<void> {
   const client = requireSupabase();
-  const payload = orderedWidgetIds.map((widgetId, index) => ({
-    user_id: userId,
-    widget_id: widgetId,
-    position: index,
-  }));
-  const { error } = await client
-    .from("widget_preferences")
-    .upsert(payload, { onConflict: "user_id,widget_id" });
+  const { error } = await client.rpc("set_widget_order", { p_widget_ids: orderedWidgetIds });
   if (error) throw error;
 }

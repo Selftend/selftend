@@ -10,29 +10,27 @@ import {
   useWidgetPreferences,
 } from "@/src/features/home/queries";
 import {
+  addWidgetPreference,
   deleteWidgetPreference,
-  insertWidgetPreferences,
   listWidgetPreferences,
   restoreWidgetPreference,
-  updateWidgetPositions,
+  setWidgetOrder,
 } from "@/src/features/home/widget-repository";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 jest.mock("@/src/features/home/widget-repository", () => ({
+  addWidgetPreference: jest.fn(),
   deleteWidgetPreference: jest.fn(),
-  insertWidgetPreferences: jest.fn(),
   listWidgetPreferences: jest.fn(),
   restoreWidgetPreference: jest.fn(),
-  updateWidgetPositions: jest.fn(),
+  setWidgetOrder: jest.fn(),
 }));
 
 const mockListWidgets = listWidgetPreferences as jest.MockedFunction<typeof listWidgetPreferences>;
-const mockInsert = insertWidgetPreferences as jest.MockedFunction<typeof insertWidgetPreferences>;
+const mockAdd = addWidgetPreference as jest.MockedFunction<typeof addWidgetPreference>;
 const mockDelete = deleteWidgetPreference as jest.MockedFunction<typeof deleteWidgetPreference>;
 const mockRestore = restoreWidgetPreference as jest.MockedFunction<typeof restoreWidgetPreference>;
-const mockUpdatePositions = updateWidgetPositions as jest.MockedFunction<
-  typeof updateWidgetPositions
->;
+const mockSetOrder = setWidgetOrder as jest.MockedFunction<typeof setWidgetOrder>;
 
 // widgetKeys.list(userId) mirrored from queries.ts for exact-key assertions.
 const listKey = (userId: string) => ["widgets", "list", userId];
@@ -59,7 +57,7 @@ describe("useWidgetPreferences", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(existing);
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockAdd).not.toHaveBeenCalled();
   });
 
   it("keeps an empty Home empty without seeding defaults", async () => {
@@ -72,7 +70,7 @@ describe("useWidgetPreferences", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual([]);
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockAdd).not.toHaveBeenCalled();
   });
 
   it("does not fetch when userId is null (query disabled)", () => {
@@ -82,17 +80,19 @@ describe("useWidgetPreferences", () => {
   });
 });
 
-describe("useAddWidget - nextPosition", () => {
+describe("useAddWidget", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("computes nextPosition as max(position) + 1 when widgets exist", async () => {
+  // The hook used to read the list and post `max(position) + 1`. It must not read at
+  // all now: the position is the server's, computed under a per-user lock (#974).
+  it("adds by id alone, without reading the list to compute a position", async () => {
     const existing = [
       { id: "w1", userId: "u1", widgetId: "mood-checkin", position: 0, createdAt: "2026-01-01" },
       { id: "w2", userId: "u1", widgetId: "sleep-latest", position: 2, createdAt: "2026-01-01" },
       { id: "w3", userId: "u1", widgetId: "cbt-open-record", position: 1, createdAt: "2026-01-01" },
     ];
     mockListWidgets.mockResolvedValue(existing);
-    mockInsert.mockResolvedValue();
+    mockAdd.mockResolvedValue();
 
     const client = createTestQueryClient();
     const spy = jest.spyOn(client, "invalidateQueries");
@@ -102,8 +102,9 @@ describe("useAddWidget - nextPosition", () => {
       await result.current.mutateAsync("habits-today");
     });
 
-    // max position is 2, so nextPosition = 3
-    expect(mockInsert).toHaveBeenCalledWith("u1", ["habits-today"], 3);
+    expect(mockAdd).toHaveBeenCalledWith("habits-today");
+    // The read-then-write is gone: no list read happens on the add path.
+    expect(mockListWidgets).not.toHaveBeenCalled();
     // onSuccess invalidates the user's widget list with the exact key.
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey?: unknown }).queryKey);
     expect(keys).toContainEqual(listKey("u1"));
@@ -111,7 +112,7 @@ describe("useAddWidget - nextPosition", () => {
 
   it("skips invalidation when userId is null (onSuccess guard)", async () => {
     mockListWidgets.mockResolvedValue([]);
-    mockInsert.mockResolvedValue();
+    mockAdd.mockResolvedValue();
 
     const client = createTestQueryClient();
     const spy = jest.spyOn(client, "invalidateQueries");
@@ -124,9 +125,9 @@ describe("useAddWidget - nextPosition", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it("uses position 0 when there are no existing widgets", async () => {
+  it("adds the same way on an empty dashboard - the server still owns position 0", async () => {
     mockListWidgets.mockResolvedValue([]);
-    mockInsert.mockResolvedValue();
+    mockAdd.mockResolvedValue();
 
     const client = createTestQueryClient();
     const { result } = renderHook(() => useAddWidget("u1"), { wrapper: makeWrapper(client) });
@@ -135,7 +136,8 @@ describe("useAddWidget - nextPosition", () => {
       await result.current.mutateAsync("habits-today");
     });
 
-    expect(mockInsert).toHaveBeenCalledWith("u1", ["habits-today"], 0);
+    expect(mockAdd).toHaveBeenCalledWith("habits-today");
+    expect(mockListWidgets).not.toHaveBeenCalled();
   });
 });
 
@@ -177,7 +179,7 @@ describe("useReorderWidgets", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("persists the new order and invalidates the list for a real user", async () => {
-    mockUpdatePositions.mockResolvedValue();
+    mockSetOrder.mockResolvedValue();
     const order = ["sleep-latest", "mood-checkin", "habits-today"];
 
     const client = createTestQueryClient();
@@ -188,13 +190,13 @@ describe("useReorderWidgets", () => {
       await result.current.mutateAsync(order);
     });
 
-    expect(mockUpdatePositions).toHaveBeenCalledWith("u1", order);
+    expect(mockSetOrder).toHaveBeenCalledWith(order);
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey?: unknown }).queryKey);
     expect(keys).toContainEqual(listKey("u1"));
   });
 
   it("skips invalidation when userId is null (onSuccess guard)", async () => {
-    mockUpdatePositions.mockResolvedValue();
+    mockSetOrder.mockResolvedValue();
 
     const client = createTestQueryClient();
     const spy = jest.spyOn(client, "invalidateQueries");
