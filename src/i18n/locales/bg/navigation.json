@@ -148,9 +148,9 @@
       "button": "Добави в начало",
       "title": "Добави в начало"
     },
-    "widgetCount": "{{count}} джаджа",
+    "widgetCount_one": "{{count}} джаджа",
     "widgetCount_other": "{{count}} джаджи",
-    "addedCount": "{{count}} добавено",
+    "addedCount_one": "{{count}} добавено",
     "addedCount_other": "{{count}} добавени",
     "sectionModules": "Модули",
     "sectionTools": "Инструменти",

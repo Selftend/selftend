@@ -148,9 +148,9 @@
       "button": "Add to home",
       "title": "Add to home"
     },
-    "widgetCount": "{{count}} widget",
+    "widgetCount_one": "{{count}} widget",
     "widgetCount_other": "{{count}} widgets",
-    "addedCount": "{{count}} added",
+    "addedCount_one": "{{count}} added",
     "addedCount_other": "{{count}} added",
     "sectionModules": "Modules",
     "sectionTools": "Tools",
