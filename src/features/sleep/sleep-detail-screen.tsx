@@ -135,7 +135,7 @@ export default function SleepDetailScreen() {
             <View className="flex-row items-start justify-between gap-4">
               <View className="flex-1 gap-0.5">
                 <Text className="font-display text-2xl font-bold tracking-tight tabular-nums">
-                  {formatDuration(entry.durationMinutes)} · {qualityWord}
+                  {formatDuration(entry.durationMinutes, t)} · {qualityWord}
                 </Text>
                 <Text variant="muted" className="text-[13px] tabular-nums">
                   {subline}

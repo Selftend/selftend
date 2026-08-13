@@ -7,7 +7,12 @@ import { formatHours } from "@/src/features/sleep/format";
 import { averageDurationMinutes } from "@/src/features/sleep/summaries";
 import type { SleepStats } from "@/src/features/sleep/types";
 import { addDaysToKey, currentDateKey } from "@/src/utils/date";
+import i18n from "@/src/i18n";
 import { renderWithProviders } from "@/test/render-with-providers";
+
+/** The screen renders in en under `renderWithProviders`; format the expectation the same way. */
+const enHours = (minutes: number | null) =>
+  formatHours(minutes, "en", (key, opts) => i18n.t(key, opts) as string);
 
 jest.mock("expo-router", () => ({
   router: {
@@ -158,9 +163,9 @@ describe("SleepTrackerScreen", () => {
 
     renderWithProviders(<SleepTrackerScreen />);
 
-    expect(screen.getAllByText(formatHours(471)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(enHours(471)).length).toBeGreaterThan(0);
     // The capped-list average, which is what the screen used to show.
-    expect(screen.queryByText(formatHours(averageDurationMinutes(capped, 7)))).toBeNull();
+    expect(screen.queryByText(enHours(averageDurationMinutes(capped, 7)))).toBeNull();
   });
 
   it("shows lifetime longest and shortest, not the extremes of the newest 50", () => {

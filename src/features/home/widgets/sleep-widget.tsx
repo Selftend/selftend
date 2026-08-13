@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { TwoStatBody } from "@/src/features/home/widgets/two-stat-body";
 import { formatHours } from "@/src/features/sleep/format";
+import { formatOneDecimal } from "@/src/lib/locale-format";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import {
   averageDurationMinutes,
@@ -19,7 +20,7 @@ import {
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export function SleepWidget({ userId }: { userId: string }) {
-  const { t } = useTranslation("navigation");
+  const { t, i18n } = useTranslation("navigation");
   const { data: logs } = useSleepLogs(userId, 30);
 
   const { selectedDate: todayKey } = useSelectedDate();
@@ -50,11 +51,11 @@ export function SleepWidget({ userId }: { userId: string }) {
         <TwoStatBody
           stats={[
             {
-              value: formatHours(avgDuration),
+              value: formatHours(avgDuration, i18n.language, t),
               label: t("home.widgets.sleepLatest.sevenNightAvgLabel"),
             },
             {
-              value: avgQuality !== null ? avgQuality.toFixed(1) : "-",
+              value: avgQuality !== null ? formatOneDecimal(avgQuality, i18n.language) : "-",
               label: t("home.widgets.sleepLatest.qualityLabel"),
             },
           ]}
