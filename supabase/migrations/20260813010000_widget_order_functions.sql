@@ -140,8 +140,14 @@ begin
     return;
   end if;
 
-  -- Same lock as the add path, so an add cannot land between reading the held
-  -- positions and handing them back out.
+  -- Serializes reorder against reorder. Two concurrent reorders would otherwise each
+  -- plan against their own snapshot of the held positions and the later one would write
+  -- a permutation of a list that no longer exists.
+  --
+  -- It is the same key as the add path, but the two paths do not actually contend:
+  -- reordering is max-preserving (it only redistributes positions that already exist),
+  -- so a concurrent add's `max(position) + 1` is correct either way. Sharing the key
+  -- costs nothing and keeps the ordering of a single user's writes easy to reason about.
   perform pg_advisory_xact_lock(hashtextextended('widget_preferences_order:' || uid::text, 0));
 
   with requested as (

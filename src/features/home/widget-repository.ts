@@ -81,6 +81,13 @@ export async function deleteWidgetPreference(userId: string, widgetId: string): 
   if (error) throw error;
 }
 
+// Undo a removal, putting the widget back at `position` - an index into the ordered id
+// list, not a stored `position` value.
+//
+// This still reads before it writes, and that read is not the race #974 removed: it
+// resolves an *order*, not a position, and the positions themselves stay server-assigned
+// throughout. Restoring by an index captured from a rendered (filtered) array is the
+// separate defect tracked as #964, and it is fixed in a later slice, not here.
 export async function restoreWidgetPreference(
   userId: string,
   widgetId: string,
