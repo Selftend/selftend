@@ -99,6 +99,13 @@ jest.mock("@/src/features/home/queries", () => ({
   useReorderWidgets: () => ({ mutate: mockReorderWidgets, isPending: false }),
 }));
 
+jest.mock("@/src/features/home/tool-row-stats", () => {
+  const { View } = require("react-native");
+  return {
+    ToolTierRow: ({ id }: { id: string }) => <View testID={`tool-row-${id}`} />,
+  };
+});
+
 jest.mock("@/src/features/home/add-widget-modal", () => {
   const { View } = require("react-native");
   return {
@@ -119,8 +126,16 @@ jest.mock("@/src/features/home/widget-registry", () => {
     // after #973 retired that id; and pinning a test to a translated string
     // makes a copy edit look like a broken screen. Which title a widget
     // carries is widget-registry.test.tsx's question, not this file's.
-    metaForWidget: (widgetId: string) => ({ titleKey: widgetId }),
-    // Marker per widget id so tests can assert which SLOTS the grid renders.
+    metaForWidget: (widgetId: string) => ({
+      titleKey: widgetId,
+      icon: "circle",
+      route: `/${widgetId}`,
+      // Derived rather than listed, so adding an id to a test never silently drops it
+      // out of both tiers - which renders as "the screen is empty", not "the id is
+      // untiered", and reads as a broken screen.
+      tier: widgetId.endsWith("-programme") ? "programme" : "tool",
+    }),
+    // Marker per widget id so tests can assert which CARDS the programme tier renders.
     resolveWidget: (widgetId: string) => <View testID={`widget-${widgetId}`} />,
   };
 });
@@ -151,10 +166,17 @@ function renderPopulatedHome() {
   });
 }
 
-// #104: on days where routines exist but none are scheduled, the routines
-// widget must not render AT ALL - the grid wraps every id in a fixed-height
-// slot, so the id has to be dropped at the grid level, not inside the widget.
-describe("HomeScreen routines slot suppression (#104)", () => {
+/**
+ * #104's day-level slot suppression is GONE (#975), and these tests are its inverse
+ * rather than its deletion.
+ *
+ * The suppression existed because the grid wrapped every id in a fixed 200px slot, so a
+ * routines widget with nothing scheduled cost a screenful of empty card - worse than no
+ * card. A row costs one line, so the row stays and states the fact instead. Keeping the
+ * cases and flipping the expectation is what makes that a decision on the record; a
+ * deleted describe block would just look like coverage that evaporated.
+ */
+describe("HomeScreen routines row on a day with nothing scheduled (inverts #104)", () => {
   const { useRoutines } = jest.requireMock("@/src/features/routines/queries") as {
     useRoutines: jest.Mock;
   };
@@ -194,42 +216,39 @@ describe("HomeScreen routines slot suppression (#104)", () => {
     });
   }
 
-  it("drops the routines slot entirely when routines exist but none are scheduled today", () => {
+  it("keeps the row when routines exist but none are scheduled today", () => {
     useRoutines.mockReturnValue({ data: [makeRoutine("on-demand")], isLoading: false });
 
     renderHomeWithRoutinesWidget();
 
-    expect(screen.queryByTestId("widget-routines-today")).toBeNull();
-    // The neighboring slot is untouched - no gap, no shifted grid.
-    expect(screen.getByTestId("widget-mood-checkin")).toBeTruthy();
+    expect(screen.getByTestId("tool-row-routines-today")).toBeTruthy();
+    expect(screen.getByTestId("tool-row-mood-checkin")).toBeTruthy();
   });
 
-  it("renders the slot normally when a routine is scheduled today", () => {
+  it("keeps the row when a routine is scheduled today", () => {
     useRoutines.mockReturnValue({ data: [makeRoutine("daily")], isLoading: false });
 
     renderHomeWithRoutinesWidget();
 
-    expect(screen.getByTestId("widget-routines-today")).toBeTruthy();
-    expect(screen.getByTestId("widget-mood-checkin")).toBeTruthy();
+    expect(screen.getByTestId("tool-row-routines-today")).toBeTruthy();
+    expect(screen.getByTestId("tool-row-mood-checkin")).toBeTruthy();
   });
 
-  it("keeps the slot at zero routines so the onboarding doorway still shows", () => {
+  it("keeps the row at zero routines so the onboarding doorway still shows", () => {
     useRoutines.mockReturnValue({ data: [], isLoading: false });
 
     renderHomeWithRoutinesWidget();
 
-    expect(screen.getByTestId("widget-routines-today")).toBeTruthy();
+    expect(screen.getByTestId("tool-row-routines-today")).toBeTruthy();
   });
 
-  it("still shows the suppressed slot in edit mode so it can be removed or reordered", () => {
+  it("keeps the row in edit mode so it can be removed or reordered", () => {
     useRoutines.mockReturnValue({ data: [makeRoutine("on-demand")], isLoading: false });
 
     renderHomeWithRoutinesWidget();
-    expect(screen.queryByTestId("widget-routines-today")).toBeNull();
-
     fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
 
-    expect(screen.getByTestId("widget-routines-today")).toBeTruthy();
+    expect(screen.getByTestId("tool-row-routines-today")).toBeTruthy();
   });
 });
 
@@ -239,9 +258,9 @@ describe("HomeScreen hero", () => {
     expect(screen.getByText(/good (morning|afternoon|evening)\./i)).toBeTruthy();
   });
 
-  it("renders Dashboard section heading", () => {
+  it("renders the Your tools tier heading", () => {
     renderWithProviders(<HomeScreen />);
-    expect(screen.getByText("Dashboard")).toBeTruthy();
+    expect(screen.getByText("Your tools")).toBeTruthy();
   });
 
   it("renders empty state when no widgets are present", () => {
@@ -299,5 +318,61 @@ describe("HomeScreen hero", () => {
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
     expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
+  });
+});
+
+/**
+ * The tier split (#950's model, built here in #975): `widget_preferences` stays ONE
+ * ordered list and the renderer partitions it by the tier the registry declares. Nothing
+ * about the table changes, which is why there is no migration in this slice.
+ */
+describe("HomeScreen tiers", () => {
+  function renderMixedHome() {
+    mockWidgetIds = ["mood-checkin", "cbt-programme", "sleep-latest"];
+    renderWithProviders(<HomeScreen />);
+    fireEvent(screen.getByTestId("home-layout"), "layout", {
+      nativeEvent: { layout: { width: 900 } },
+    });
+  }
+
+  it("renders tool ids as rows and programme ids as cards", () => {
+    renderMixedHome();
+
+    expect(screen.getByTestId("tool-row-mood-checkin")).toBeTruthy();
+    expect(screen.getByTestId("tool-row-sleep-latest")).toBeTruthy();
+    // The programme tier keeps its card until #977 reshapes it - the point of building
+    // the partition now is that neither programme id is left homeless in between.
+    expect(screen.getByTestId("widget-cbt-programme")).toBeTruthy();
+    expect(screen.queryByTestId("tool-row-cbt-programme")).toBeNull();
+  });
+
+  it("gives each tier its own level-2 heading", () => {
+    renderMixedHome();
+
+    expect(screen.getByText("Your tools")).toBeTruthy();
+    expect(screen.getByText("Guided programmes")).toBeTruthy();
+  });
+
+  it("omits the programmes heading when no programme id is owned", () => {
+    renderPopulatedHome();
+
+    expect(screen.getByText("Your tools")).toBeTruthy();
+    expect(screen.queryByText("Guided programmes")).toBeNull();
+  });
+
+  it("reorders within a tier, naming only that tier's ids", () => {
+    // `set_widget_order` reassigns only the positions its named ids already hold, so a
+    // tool move must not name the programme row. Passing the flat cross-tier list would
+    // renumber 0..n-1 over both tiers - the renderer re-partitions and the row snaps
+    // back, which reads as "drag does nothing" rather than as a wrong write.
+    renderMixedHome();
+    fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
+
+    fireEvent.press(screen.getByRole("button", { name: "Move sleep-latest earlier" }));
+
+    expect(mockReorderWidgets).toHaveBeenCalledWith(
+      ["sleep-latest", "mood-checkin"],
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
   });
 });

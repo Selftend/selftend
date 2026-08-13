@@ -179,6 +179,30 @@
       "moreGoals_one": "+още {{count}} цел",
       "moreGoals_other": "+още {{count}} цели"
     },
+    "tiers": {
+      "tools": "Твоите инструменти",
+      "programmes": "Насочени програми"
+    },
+    "rows": {
+      "empty": "Още нищо",
+      "nothingScheduled": "Нищо насрочено за днес",
+      "thisWeek": "{{value}} тази седмица",
+      "avg7": "ср. за 7 дни {{value}}",
+      "quality": "качество {{value}}/5",
+      "typicalMinutes": "{{value}} мин обичайно",
+      "last": "Последно {{when}}",
+      "doneToday": "{{done}} от {{total}} готови днес",
+      "entries_one": "{{count}} запис",
+      "entries_other": "{{count}} записа",
+      "words_one": "{{count}} дума",
+      "words_other": "{{count}} думи",
+      "sessions_one": "{{count}} сесия",
+      "sessions_other": "{{count}} сесии",
+      "minutes_one": "{{count}} минута",
+      "minutes_other": "{{count}} минути",
+      "sits_one": "{{count}} седение",
+      "sits_other": "{{count}} седения"
+    },
     "widgets": {
       "moodCheckin": {
         "title": "Запис на настроението",
