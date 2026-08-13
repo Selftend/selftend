@@ -51,7 +51,7 @@ describe("widget registry", () => {
   });
 
   it("isImplemented reflects registry membership", () => {
-    expect(isImplemented("mood-trend")).toBe(true);
+    expect(isImplemented("mood-checkin")).toBe(true);
     expect(isImplemented("cbt-open-record")).toBe(true);
     expect(isImplemented("not-a-widget")).toBe(false);
   });
@@ -245,16 +245,18 @@ describe("widget registry", () => {
       expect(WIDGET_META["act-programme"].route).toBe("/modules/act");
     });
 
-    // S3 collapses these three ids away (mood-trend into mood-checkin, both
-    // -module-shortcut ids into their -programme id). Until it does they are
-    // still in the registry, and each must already point where its survivor
-    // points so the collapse is a delete rather than a re-route.
+    // S3 (#973) collapsed these three ids away. The route each one pointed at
+    // is the route its survivor still points at, which is what made the
+    // collapse a delete rather than a re-route - so the stored rows the
+    // migration renamed land on the same screen they already opened.
     it.each([
-      ["mood-trend", "mood-checkin"],
-      ["cbt-module-shortcut", "cbt-programme"],
-      ["act-module-shortcut", "act-programme"],
-    ])("%s routes where %s routes, ahead of the S3 collapse", (retiring, survivor) => {
-      expect(WIDGET_META[retiring].route).toBe(WIDGET_META[survivor].route);
+      ["mood-trend", "mood-checkin", "/tools/check-in"],
+      ["cbt-module-shortcut", "cbt-programme", "/modules/cbt"],
+      ["act-module-shortcut", "act-programme", "/modules/act"],
+    ])("%s is gone; %s survives it and still routes to %s", (retired, survivor, route) => {
+      expect(isImplemented(retired)).toBe(false);
+      expect(WIDGET_META[retired]).toBeUndefined();
+      expect(WIDGET_META[survivor].route).toBe(route);
     });
   });
 });

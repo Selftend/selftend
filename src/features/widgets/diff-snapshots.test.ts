@@ -9,7 +9,7 @@ const prompt = (v: string): PromptCardPayload => ({
   cta: { label: "o", path: "/p" },
 });
 const snap = (widgets: Snapshot["widgets"]): Snapshot => ({
-  schemaVersion: 3,
+  schemaVersion: 4,
   locale: "en",
   generatedAt: "x",
   dateKey: "2026-06-05",

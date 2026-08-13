@@ -132,7 +132,6 @@ export type CardPayload =
 /** Launcher-configurable cards; must mirror the in-app WIDGET_REGISTRY ids. */
 export const CARD_IDS = [
   "mood-checkin",
-  "mood-trend",
   "breathing-suggested",
   "gratitude-latest",
   "meditation-pick",
@@ -146,8 +145,6 @@ export const CARD_IDS = [
   "cbt-distortion-guide",
   "cbt-programme",
   "act-programme",
-  "cbt-module-shortcut",
-  "act-module-shortcut",
   "cbt-worry",
   "cbt-beliefs",
   "cbt-activities",
@@ -170,7 +167,13 @@ export type CardId = (typeof CARD_IDS)[number];
 export type WidgetPayload = CardPayload;
 
 export interface Snapshot {
-  schemaVersion: 3;
+  /**
+   * 4 since #973 dropped `mood-trend` and the two `-module-shortcut` cards from
+   * {@link CARD_IDS}. The launcher reads a stored snapshot only when this
+   * matches (`snapshot-store.ts`), so the bump is what stops an Android widget
+   * that was configured against a retired card id from rendering it forever.
+   */
+  schemaVersion: 4;
   locale: string;
   generatedAt: string;
   dateKey: string;

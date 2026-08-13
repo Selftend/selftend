@@ -137,7 +137,6 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
     "src/features/home/widgets/journal-week-widget.tsx",
     "src/features/home/widgets/meditation-widget.tsx",
     "src/features/home/widgets/mood-checkin-widget.tsx",
-    "src/features/home/widgets/mood-trend-widget.tsx",
     "src/features/home/widgets/routines-widget.tsx",
     "src/features/home/widgets/sleep-widget.tsx",
   ],
@@ -169,6 +168,17 @@ const RETIRED = [
   // delegate to - and its only callers were tests. Same shape as quality-tint
   // above: the data outlived the hue, the helper did not.
   "src/features/mood/score-tone.ts",
+  // #973 collapsed `mood-trend` into `mood-checkin` and both `-module-shortcut`
+  // ids into their `-programme` id, which left these two components with no
+  // registry entry to render them. They move here from IDENTITY_SURFACES for
+  // the same reason `tool-hero.tsx` did: absence is a stronger assertion of
+  // neutrality than scanning the file was, and a file that is gone cannot
+  // regain a hue. `module-shortcut-widget.tsx` never sat in IDENTITY_SURFACES -
+  // it reached its hue by passing `tint="act"` as a bare string, which none of
+  // the four patterns above can see - so its deletion is recorded here rather
+  // than being one more scan it would have passed while still painting.
+  "src/features/home/widgets/mood-trend-widget.tsx",
+  "src/features/home/widgets/module-shortcut-widget.tsx",
 ];
 
 /**

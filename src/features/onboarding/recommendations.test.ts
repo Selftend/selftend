@@ -1,4 +1,8 @@
-import { buildWidgetRecommendations } from "@/src/features/onboarding/recommendations";
+import { CONCERN_KEYS } from "@/src/features/onboarding/concerns";
+import {
+  SHARED_TOOL_WIDGET_IDS,
+  buildWidgetRecommendations,
+} from "@/src/features/onboarding/recommendations";
 
 describe("buildWidgetRecommendations", () => {
   it("returns nothing when the user chooses nothing", () => {
@@ -6,7 +10,6 @@ describe("buildWidgetRecommendations", () => {
       buildWidgetRecommendations({
         concerns: [],
         moduleInterests: [],
-        guidance: "self-directed",
         selectedToolWidgetIds: [],
       }),
     ).toEqual([]);
@@ -16,7 +19,6 @@ describe("buildWidgetRecommendations", () => {
     const result = buildWidgetRecommendations({
       concerns: ["anxious-thoughts"],
       moduleInterests: [],
-      guidance: "guided",
       selectedToolWidgetIds: ["mood-checkin", "breathing-suggested", "journal-week"],
     });
 
@@ -30,39 +32,28 @@ describe("buildWidgetRecommendations", () => {
     );
   });
 
-  it("uses program widgets for guided module choices", () => {
+  // There used to be a second case here: the same call with `guidance:
+  // "self-directed"`, expecting the two `-module-shortcut` ids. #973 retired
+  // those ids, so the onboarding guidance answer has nothing left to select and
+  // a picked module resolves to its programme id either way. The input no
+  // longer carries `guidance` at all, which is what makes the pair of cases one.
+  it("uses the programme widget for a picked module, in the order picked", () => {
     const result = buildWidgetRecommendations({
       concerns: [],
       moduleInterests: ["act", "cbt"],
-      guidance: "guided",
       selectedToolWidgetIds: [],
     });
 
     expect(result.map((item) => item.widgetId)).toEqual(["act-programme", "cbt-programme"]);
-  });
-
-  it("uses static module shortcuts for self-directed choices", () => {
-    const result = buildWidgetRecommendations({
-      concerns: [],
-      moduleInterests: ["cbt", "act"],
-      guidance: "self-directed",
-      selectedToolWidgetIds: [],
-    });
-
-    expect(result.map((item) => item.widgetId)).toEqual([
-      "cbt-module-shortcut",
-      "act-module-shortcut",
-    ]);
+    expect(result.map((item) => item.reason)).toEqual(["module", "module"]);
   });
 
   it("does not cap selected tools and removes duplicates without changing order", () => {
     const result = buildWidgetRecommendations({
       concerns: ["reflection", "sleep"],
       moduleInterests: [],
-      guidance: "self-directed",
       selectedToolWidgetIds: [
         "mood-checkin",
-        "mood-trend",
         "breathing-suggested",
         "journal-week",
         "grounding-log",
@@ -73,10 +64,9 @@ describe("buildWidgetRecommendations", () => {
       ],
     });
 
-    expect(result).toHaveLength(9);
+    expect(result).toHaveLength(8);
     expect(result.map((item) => item.widgetId)).toEqual([
       "mood-checkin",
-      "mood-trend",
       "breathing-suggested",
       "journal-week",
       "grounding-log",
@@ -85,5 +75,18 @@ describe("buildWidgetRecommendations", () => {
       "sleep-latest",
       "habits-today",
     ]);
+  });
+
+  it("no longer offers the three collapsed ids (#973)", () => {
+    const result = buildWidgetRecommendations({
+      concerns: [...CONCERN_KEYS],
+      moduleInterests: ["cbt", "act"],
+      selectedToolWidgetIds: [...SHARED_TOOL_WIDGET_IDS],
+    });
+
+    const offered = result.map((item) => item.widgetId);
+    for (const retired of ["mood-trend", "cbt-module-shortcut", "act-module-shortcut"]) {
+      expect(offered).not.toContain(retired);
+    }
   });
 });

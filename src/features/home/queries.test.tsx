@@ -88,7 +88,7 @@ describe("useAddWidget - nextPosition", () => {
   it("computes nextPosition as max(position) + 1 when widgets exist", async () => {
     const existing = [
       { id: "w1", userId: "u1", widgetId: "mood-checkin", position: 0, createdAt: "2026-01-01" },
-      { id: "w2", userId: "u1", widgetId: "mood-trend", position: 2, createdAt: "2026-01-01" },
+      { id: "w2", userId: "u1", widgetId: "sleep-latest", position: 2, createdAt: "2026-01-01" },
       { id: "w3", userId: "u1", widgetId: "cbt-open-record", position: 1, createdAt: "2026-01-01" },
     ];
     mockListWidgets.mockResolvedValue(existing);
@@ -178,7 +178,7 @@ describe("useReorderWidgets", () => {
 
   it("persists the new order and invalidates the list for a real user", async () => {
     mockUpdatePositions.mockResolvedValue();
-    const order = ["mood-trend", "mood-checkin", "habits-today"];
+    const order = ["sleep-latest", "mood-checkin", "habits-today"];
 
     const client = createTestQueryClient();
     const spy = jest.spyOn(client, "invalidateQueries");
@@ -201,7 +201,7 @@ describe("useReorderWidgets", () => {
     const { result } = renderHook(() => useReorderWidgets(null), { wrapper: makeWrapper(client) });
 
     await act(async () => {
-      await result.current.mutateAsync(["mood-trend"]);
+      await result.current.mutateAsync(["sleep-latest"]);
     });
 
     expect(spy).not.toHaveBeenCalled();

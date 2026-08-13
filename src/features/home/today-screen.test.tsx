@@ -111,11 +111,14 @@ jest.mock("@/src/features/home/widget-registry", () => {
   const { View } = require("react-native");
   return {
     isImplemented: () => true,
+    // Derived from the id, not a lookup table. This used to be
+    // `mood-checkin ? moodCheckin.title : moodTrend.title`, which meant every
+    // id in every test here except one was labelled "Mood, last 7 days" - so
+    // when #973 retired `mood-trend`, the mock kept rendering its copy for
+    // whatever id replaced it and the failure read as a bug in the screen.
+    // The real registry keys titles as `home.widgets.<camelCaseId>.title`.
     metaForWidget: (widgetId: string) => ({
-      titleKey:
-        widgetId === "mood-checkin"
-          ? "home.widgets.moodCheckin.title"
-          : "home.widgets.moodTrend.title",
+      titleKey: `home.widgets.${widgetId.replace(/-(.)/g, (_m: string, c: string) => c.toUpperCase())}.title`,
     }),
     // Marker per widget id so tests can assert which SLOTS the grid renders.
     resolveWidget: (widgetId: string) => <View testID={`widget-${widgetId}`} />,
@@ -141,7 +144,7 @@ beforeEach(() => {
 });
 
 function renderPopulatedHome() {
-  mockWidgetIds = ["mood-checkin", "mood-trend"];
+  mockWidgetIds = ["mood-checkin", "sleep-latest"];
   renderWithProviders(<HomeScreen />);
   fireEvent(screen.getByTestId("home-layout"), "layout", {
     nativeEvent: { layout: { width: 900 } },
@@ -280,13 +283,13 @@ describe("HomeScreen hero", () => {
     fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
 
     fireEvent.press(screen.getByRole("button", { name: "Remove Check-in" }));
-    fireEvent.press(screen.getByRole("button", { name: "Remove Mood, last 7 days" }));
+    fireEvent.press(screen.getByRole("button", { name: "Remove Sleep" }));
 
     const undo = screen.getByRole("button", { name: "Undo" });
     expect(undo).toBeEnabled();
     fireEvent.press(undo);
     expect(mockRestoreWidget).toHaveBeenLastCalledWith(
-      { widgetId: "mood-trend", position: 1 },
+      { widgetId: "sleep-latest", position: 1 },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
 
