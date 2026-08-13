@@ -76,7 +76,6 @@
     "greetingEvening": "Добър вечер",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "dashboardLabel": "Табло",
     "dashboardSub": "Инструменти, с които се проверяваш всеки ден",
     "emptyTitle": "Добави инструменти, с които искаш да се проверяваш всеки ден",
     "emptyDescription": "Подреди таблото самостоятелно или отговори на няколко въпроса за подходящи предложения.",

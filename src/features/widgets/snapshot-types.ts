@@ -129,7 +129,13 @@ export type CardPayload =
   | PromptCardPayload
   | ProgrammeCardPayload;
 
-/** Launcher-configurable cards; must mirror the in-app WIDGET_REGISTRY ids. */
+/**
+ * Launcher-configurable cards; must mirror the dashboard catalogue (`WIDGET_META`).
+ *
+ * Not `WIDGET_REGISTRY` (#975): that map is now the in-app CARD components only, and it
+ * shrinks as tool ids become rows. The launcher renders every catalogued id regardless
+ * of how the app draws it.
+ */
 export const CARD_IDS = [
   "mood-checkin",
   "breathing-suggested",

@@ -76,7 +76,6 @@
     "greetingEvening": "Good evening",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "dashboardLabel": "Dashboard",
     "dashboardSub": "Tools you check in with each day",
     "emptyTitle": "Add tools you want to check in with each day",
     "emptyDescription": "Build a dashboard yourself, or answer a few questions for tailored suggestions.",

@@ -184,12 +184,18 @@ The system is **provider-recoverable** (not zero-knowledge): the operator can de
 ## Android launcher widgets
 
 Android exposes one reconfigurable `SelftendCard` provider. Each placed instance selects one
-of the 27 Home card IDs and stores its own card, theme, and opacity configuration. The app
-builds a pre-localized snapshot from the same React Query data used by Home, then the native
-widget layer renders the selected card with `react-native-android-widget` primitives.
+of the dashboard catalogue's card IDs (`WIDGET_META`) and stores its own card, theme, and
+opacity configuration. The app builds a pre-localized snapshot from the same React Query data
+Home reads, then the native widget layer renders the selected card with
+`react-native-android-widget` primitives.
 
-The CBT and ACT programme replicas preserve the Home cards' three states: review before
-enrollment, current programme goals with deep links while enrolled, and completion guidance.
+The launcher's card set tracks the **catalogue**, not how Home happens to draw an entry. Home's
+tool entries render as rows rather than cards, so the launcher replica is the only card form
+some IDs still have; `card-registry.test.tsx` pins the two sets equal so neither can drift.
+
+The CBT and ACT programme replicas preserve the three states their Home cards have: review
+before enrollment, current programme goals with deep links while enrolled, and completion
+guidance.
 Programme enrollment is never triggered from the launcher widget. Adding or changing a
 provider still requires a native Android rebuild; card payload and replica changes do not.
 

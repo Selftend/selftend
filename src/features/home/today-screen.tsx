@@ -2,7 +2,6 @@ import { ActivityIndicator, Platform, Pressable, RefreshControl, View } from "re
 import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import Sortable from "react-native-sortables";
@@ -74,7 +73,6 @@ function TierSection({
   onMove,
   onRemove,
   renderRow,
-  t,
 }: {
   ids: string[];
   editMode: boolean;
@@ -84,8 +82,8 @@ function TierSection({
   onMove: (id: string, offset: -1 | 1) => void;
   onRemove: (id: string) => void;
   renderRow: (id: string) => React.ReactNode;
-  t: TFunction;
 }) {
+  const { t } = useTranslation("navigation");
   if (ids.length === 0) return null;
 
   return (
@@ -475,7 +473,6 @@ export default function HomeScreen() {
                 onMove={(id, offset) => moveWidget(toolIds, id, offset)}
                 onRemove={removeWidget}
                 renderRow={(id) => <ToolTierRow id={id} userId={userId} wide={wideRows} />}
-                t={t}
               />
 
               {programmeIds.length > 0 ? (
@@ -497,7 +494,6 @@ export default function HomeScreen() {
                     onMove={(id, offset) => moveWidget(programmeIds, id, offset)}
                     onRemove={removeWidget}
                     renderRow={(id) => <WidgetContent id={id} userId={userId ?? ""} />}
-                    t={t}
                   />
                 </View>
               ) : null}

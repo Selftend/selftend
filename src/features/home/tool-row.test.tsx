@@ -86,6 +86,24 @@ describe("ToolRow", () => {
     expect(name.props.className).not.toMatch(/(^|\s)w-\[150px\]/);
   });
 
+  it("lets the name grow past its minimum and the stat give way", () => {
+    // This is the mechanism that keeps a long Bulgarian name from overrunning, so it is
+    // what gets asserted - rather than a measured width, which would be a claim about a
+    // render this test never performs. The name is `shrink-0` over a MINIMUM width, so
+    // it grows to fit; the stat is `min-w-0 flex-1`, so it is what yields the space.
+    // Either half alone is not enough: a shrinkable name truncates, and a stat without
+    // `min-w-0` refuses to shrink below its content and pushes the row wide.
+    renderWithProviders(<ToolRow id="gratitude-latest" stat="29 entries · 3 this week" wide />);
+
+    const name = screen.getByText("Gratitude log");
+    expect(name.props.className).toContain("shrink-0");
+    expect(name.props.className).toContain("min-w-[150px]");
+
+    const stat = screen.getByTestId("tool-row-stat-gratitude-latest");
+    expect(stat.props.className).toContain("min-w-0");
+    expect(stat.props.className).toContain("flex-1");
+  });
+
   it("carries the neutral chrome mark, never a per-tool hue", () => {
     renderWithProviders(<ToolRow id="sleep-latest" stat="x" wide={false} />);
 

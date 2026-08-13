@@ -8,8 +8,8 @@ import { formatHours } from "@/src/features/sleep/format";
 import { formatCompactAtOffset, mondayKeyOf, parseLocalNoon } from "@/src/utils/date";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
-import { useMoodLogs } from "@/src/features/mood/queries";
-import { countLogsInCurrentWeek } from "@/src/features/mood/week-window";
+import { useMoodLogCount, useMoodWeek } from "@/src/features/mood/queries";
+import { countLogsInCurrentWeek, currentWeekStartKey } from "@/src/features/mood/week-window";
 import { getMoodSummary } from "@/src/features/mood/summaries";
 import { useJournalEntryCount, useJournalWordTotal } from "@/src/features/journal/queries";
 import {
@@ -27,7 +27,7 @@ import {
 } from "@/src/features/meditation/queries";
 import { useSleepStats } from "@/src/features/sleep/queries";
 import { useHabits, useHabitLogs } from "@/src/features/habits/queries";
-import { isScheduledOn, isTickedOn } from "@/src/features/habits/scheduling";
+import { addDays, isScheduledOn, isTickedOn, localDateKey } from "@/src/features/habits/scheduling";
 import { useRoutinesToday } from "@/src/features/routines/use-routines-today";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 
@@ -55,14 +55,25 @@ import type { MindfulnessSession } from "@/src/features/mindfulness/types";
  *   own name already supplies the noun.
  * - **nothing scheduled today** → its own string. A user with seven habits and none due
  *   has a full record and an empty day; those are different facts.
+ *
+ * `RoutinesRow` is the one row that cannot use the `isLoaded` idiom: `useRoutinesToday`
+ * aggregates several queries and returns a fully-formed object rather than `undefined`,
+ * so its loading signal is the `isLoading` flag it exposes.
  */
 
 type StatRowProps = { userId: string | null; wide: boolean };
 
-/** Joins clauses with the design's separator, enforcing the two-clause cap. */
-function joinClauses(...clauses: (string | null)[]): string | null {
-  const kept = clauses.filter((clause): clause is string => clause !== null);
-  return kept.length > 0 ? kept.slice(0, 2).join(" · ") : null;
+/**
+ * Joins the row's clauses with the design's separator.
+ *
+ * Exactly two parameters, so the "two clauses is a cap, not a target" rule is enforced
+ * by the type checker rather than by a runtime `slice` no test could ever reach. A third
+ * clause overruns the 390dp frame's line in Bulgarian; adding one has to be a deliberate
+ * edit here, not an extra argument that silently vanishes.
+ */
+function joinClauses(first: string | null, second: string | null): string | null {
+  const kept = [first, second].filter((clause): clause is string => clause !== null);
+  return kept.length > 0 ? kept.join(" · ") : null;
 }
 
 /** `undefined` from a query hook means not loaded — never "zero". */
@@ -76,18 +87,30 @@ const emptyStat = (t: TFunction) => t("home.rows.empty");
 // trailing. Both are labelled, so both are honest; "harmonising" them reverts #697.
 function MoodCheckinRow({ userId, wide }: StatRowProps) {
   const { t, i18n } = useTranslation("navigation");
-  // The same cache entry the check-in tool and the old widget already mount.
-  const { data: logs } = useMoodLogs(userId, 30);
+  /**
+   * ADR-0001: neither clause may come from a capped list. `useMoodWeek` fetches a DAY
+   * RANGE - [previous Monday, this Sunday] - and `listMoodLogsInDayRange` pages it with
+   * a keyset cursor, so it is uncapped by row count. That 14-day span always contains
+   * both windows this row quotes, which means there is no assumed logging-rate bound to
+   * state and nothing to truncate. (The 30-row list this first used would have silently
+   * undercounted a user checking in twice a day - well inside real behaviour, since the
+   * tool itself invites more than one check-in a day.)
+   *
+   * Emptiness is the exact lifetime count, not "nothing in the window": a user whose
+   * last check-in was ten days ago has a record, and `0 this week` is the honest clause
+   * for them. An exact `head` count needs no function under ADR-0001.
+   */
+  const { data: logs } = useMoodWeek(userId, currentWeekStartKey());
+  const { data: lifetimeCount } = useMoodLogCount(userId);
 
   let stat: string | null = null;
-  if (isLoaded(logs)) {
+  if (isLoaded(logs, lifetimeCount)) {
     const summary = getMoodSummary(logs, 7);
-    const thisWeek = countLogsInCurrentWeek(logs);
     stat =
-      summary.count === 0 && thisWeek === 0
+      lifetimeCount === 0
         ? emptyStat(t)
         : joinClauses(
-            t("home.rows.thisWeek", { value: thisWeek }),
+            t("home.rows.thisWeek", { value: countLogsInCurrentWeek(logs) }),
             summary.average === null
               ? null
               : t("home.rows.avg7", {
@@ -256,10 +279,16 @@ function SleepRow({ userId, wide }: StatRowProps) {
 function HabitsRow({ userId, wide }: StatRowProps) {
   const { t } = useTranslation("navigation");
   const { selectedDate } = useSelectedDate();
-  // The habits screen's own cache entries - matching its options object exactly, since
-  // the scope is structural in the query key.
+  /**
+   * The habits screen's own cache entries. `useHabitLogs`' scope is structural in the
+   * query key, so the options object has to MATCH the screen's to share it - a narrower
+   * `sinceDate` of just today would be a second query for a subset of rows this one
+   * already holds, which is what rule 1 above exists to prevent.
+   */
   const { data: habits } = useHabits(userId, { includeArchived: true });
-  const { data: logs } = useHabitLogs(userId, { sinceDate: selectedDate });
+  const { data: logs } = useHabitLogs(userId, {
+    sinceDate: localDateKey(addDays(new Date(), -30)),
+  });
 
   let stat: string | null = null;
   if (isLoaded(habits, logs)) {
@@ -317,5 +346,3 @@ export function ToolTierRow({ id, userId, wide }: { id: string } & StatRowProps)
   if (WithStat) return <WithStat userId={userId} wide={wide} />;
   return <ToolRow id={id} stat={null} wide={wide} />;
 }
-
-export const STAT_ROW_IDS = Object.keys(STAT_ROWS);

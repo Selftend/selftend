@@ -13,7 +13,10 @@ jest.mock("@/src/stores/selected-date-store", () => ({
 const q = <T,>(data: T) => ({ data });
 const loading = { data: undefined };
 
-jest.mock("@/src/features/mood/queries", () => ({ useMoodLogs: jest.fn() }));
+jest.mock("@/src/features/mood/queries", () => ({
+  useMoodWeek: jest.fn(),
+  useMoodLogCount: jest.fn(),
+}));
 jest.mock("@/src/features/journal/queries", () => ({
   useJournalEntryCount: jest.fn(),
   useJournalWordTotal: jest.fn(),
@@ -42,7 +45,8 @@ jest.mock("@/src/features/habits/queries", () => ({
 jest.mock("@/src/features/routines/use-routines-today", () => ({ useRoutinesToday: jest.fn() }));
 
 const mocks = {
-  moodLogs: jest.requireMock("@/src/features/mood/queries").useMoodLogs as jest.Mock,
+  moodLogs: jest.requireMock("@/src/features/mood/queries").useMoodWeek as jest.Mock,
+  moodCount: jest.requireMock("@/src/features/mood/queries").useMoodLogCount as jest.Mock,
   journalEntries: jest.requireMock("@/src/features/journal/queries")
     .useJournalEntryCount as jest.Mock,
   journalWords: jest.requireMock("@/src/features/journal/queries").useJournalWordTotal as jest.Mock,
@@ -72,6 +76,7 @@ const mocks = {
 /** Every hook loaded and empty, so each test only sets the ones it is about. */
 function allLoadedEmpty() {
   mocks.moodLogs.mockReturnValue(q([]));
+  mocks.moodCount.mockReturnValue(q(0));
   mocks.journalEntries.mockReturnValue(q(0));
   mocks.journalWords.mockReturnValue(q(0));
   mocks.gratitudeTotal.mockReturnValue(q(0));
@@ -192,6 +197,7 @@ describe("per-tool stats", () => {
         { dayKey: addDaysToKey(currentDateKey(), -1), moodScore: 3 },
       ]),
     );
+    mocks.moodCount.mockReturnValue(q(2));
 
     renderRow("mood-checkin");
 
@@ -245,6 +251,44 @@ describe("per-tool stats", () => {
     });
     renderRow("routines-today");
     expect(statOf("routines-today")).toBe("2 of 5 done today");
+  });
+
+  it("gratitude counts everything, then this week from the Monday key", () => {
+    // The week clause is a "since Monday" count keyed on `mondayKeyOf(selectedDate)`,
+    // which is the key the gratitude home screen passes - so the row shares its cache
+    // entry rather than opening a second one on a different key.
+    mocks.gratitudeTotal.mockReturnValue(q(29));
+    mocks.gratitudeWeek.mockReturnValue(q(3));
+
+    renderRow("gratitude-latest");
+
+    expect(statOf("gratitude-latest")).toBe("29 entries · 3 this week");
+    // 2026-05-28 is a Thursday; its Monday is the 25th.
+    expect(mocks.gratitudeWeek).toHaveBeenCalledWith("user-1", "2026-05-25");
+  });
+
+  it("breathing quotes lifetime sessions and lifetime minutes, neither windowed", () => {
+    mocks.breathingCount.mockReturnValue(q(14));
+    mocks.breathingMinutes.mockReturnValue(q(82));
+
+    renderRow("breathing-suggested");
+
+    const stat = statOf("breathing-suggested");
+    expect(stat).toBe("14 sessions · 82 minutes");
+    // A lifetime number names no window - that is the other half of the rule that makes
+    // `7-day average` mean something.
+    expect(stat).not.toMatch(/week|average|today/i);
+  });
+
+  it("check-in stays honest for a user whose record is older than the window", () => {
+    // Their last check-in was ten days ago: they have a record, so "Nothing yet" would
+    // be false. `0 this week` is the true clause.
+    mocks.moodLogs.mockReturnValue(q([]));
+    mocks.moodCount.mockReturnValue(q(12));
+
+    renderRow("mood-checkin");
+
+    expect(statOf("mood-checkin")).toBe("0 this week");
   });
 
   it("grounding reads recency off the tool's own cached list", () => {
