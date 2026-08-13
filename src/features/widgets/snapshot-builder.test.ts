@@ -33,7 +33,6 @@ const empty: WidgetData = {
   committedActions: [],
   actionSteps: [],
   defusionLogs: [],
-  moodLogCount: null,
   gratitudeEntryCount: null,
   journalEntryCount: null,
   journalWordTotal: null,

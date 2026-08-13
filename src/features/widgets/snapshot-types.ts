@@ -210,7 +210,6 @@ export interface WidgetData {
   committedActions: { id: string; title: string; updatedAt: string }[];
   actionSteps: { actionId: string; isCompleted: boolean }[];
   defusionLogs: { createdAt: string; techniqueUsed: string }[];
-  moodLogCount: number | null;
   gratitudeEntryCount: number | null;
   /** Exact lifetime journal totals, both null until the server counts arrive (#323);
    *  the journal-week card falls back to its loaded entries while they are. */
