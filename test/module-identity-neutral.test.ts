@@ -162,6 +162,26 @@ const RETIRED = [
   // Orphaned by the same change: their only importers were the nine above.
   "src/features/home/widgets/session-log-widget.tsx",
   "src/features/home/widgets/two-stat-body.tsx",
+  // #976: the remaining fourteen module and shortcut cards became rows, which empties
+  // the `tool` tier of card components entirely. `widget-card-header.tsx` survives -
+  // `program-widget.tsx` still renders it for the two programme ids.
+  "src/features/home/widgets/self-care-widget.tsx",
+  "src/features/home/widgets/cbt-open-record-widget.tsx",
+  "src/features/home/widgets/cbt-worry-widget.tsx",
+  "src/features/home/widgets/cbt-beliefs-widget.tsx",
+  "src/features/home/widgets/cbt-activities-widget.tsx",
+  "src/features/home/widgets/cbt-exposure-widget.tsx",
+  "src/features/home/widgets/cbt-goals-widget.tsx",
+  "src/features/home/widgets/cbt-distortion-guide-widget.tsx",
+  // The shared base the eight CBT shortcut cards above were built on; every importer
+  // is in that set, so it goes with them.
+  "src/features/home/widgets/cbt-shortcut-widget.tsx",
+  "src/features/home/widgets/act-drop-anchor-widget.tsx",
+  "src/features/home/widgets/act-observing-self-widget.tsx",
+  "src/features/home/widgets/act-choice-point-widget.tsx",
+  "src/features/home/widgets/act-defusion-widget.tsx",
+  "src/features/home/widgets/act-acceptance-prompt-widget.tsx",
+  "src/features/home/widgets/act-committed-actions-widget.tsx",
   // #733's deletions, listed here for the same reason: the surest gate on a
   // hue-bearing surface is that the file no longer exists. `tool-hero.tsx` was
   // already consumerless; `tool-stats.tsx` took `accentClassName` and

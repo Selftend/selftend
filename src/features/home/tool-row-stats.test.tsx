@@ -44,6 +44,27 @@ jest.mock("@/src/features/habits/queries", () => ({
 }));
 jest.mock("@/src/features/routines/use-routines-today", () => ({ useRoutinesToday: jest.fn() }));
 
+jest.mock("@/src/features/cbt/queries", () => ({
+  useThoughtRecords: jest.fn(),
+  useThoughtRecordCount: jest.fn(),
+}));
+jest.mock("@/src/features/self-care/queries", () => ({ useSelfCareLogs: jest.fn() }));
+jest.mock("@/src/features/worry/queries", () => ({ useWorryEntries: jest.fn() }));
+jest.mock("@/src/features/beliefs/queries", () => ({ useCoreBeliefs: jest.fn() }));
+jest.mock("@/src/features/activities/queries", () => ({ useActivities: jest.fn() }));
+jest.mock("@/src/features/exposure/queries", () => ({ useRecentExposureSessions: jest.fn() }));
+jest.mock("@/src/features/goals/queries", () => ({ useGoals: jest.fn() }));
+jest.mock("@/src/features/act/queries/connection", () => ({ useConnectionLogs: jest.fn() }));
+jest.mock("@/src/features/act/queries/observing-self", () => ({
+  useObservingSelfSessions: jest.fn(),
+}));
+jest.mock("@/src/features/act/queries/choice-points", () => ({ useChoicePoints: jest.fn() }));
+jest.mock("@/src/features/act/queries/defusion", () => ({ useDefusionLogs: jest.fn() }));
+jest.mock("@/src/features/act/queries/expansion", () => ({ useExpansionLogs: jest.fn() }));
+jest.mock("@/src/features/act/queries/committed-action", () => ({
+  useCommittedActions: jest.fn(),
+}));
+
 const mocks = {
   moodLogs: jest.requireMock("@/src/features/mood/queries").useMoodWeek as jest.Mock,
   moodCount: jest.requireMock("@/src/features/mood/queries").useMoodLogCount as jest.Mock,
@@ -71,6 +92,25 @@ const mocks = {
   habitLogs: jest.requireMock("@/src/features/habits/queries").useHabitLogs as jest.Mock,
   routines: jest.requireMock("@/src/features/routines/use-routines-today")
     .useRoutinesToday as jest.Mock,
+  records: jest.requireMock("@/src/features/cbt/queries").useThoughtRecords as jest.Mock,
+  recordCount: jest.requireMock("@/src/features/cbt/queries").useThoughtRecordCount as jest.Mock,
+  selfCare: jest.requireMock("@/src/features/self-care/queries").useSelfCareLogs as jest.Mock,
+  worry: jest.requireMock("@/src/features/worry/queries").useWorryEntries as jest.Mock,
+  beliefs: jest.requireMock("@/src/features/beliefs/queries").useCoreBeliefs as jest.Mock,
+  activities: jest.requireMock("@/src/features/activities/queries").useActivities as jest.Mock,
+  exposure: jest.requireMock("@/src/features/exposure/queries")
+    .useRecentExposureSessions as jest.Mock,
+  goals: jest.requireMock("@/src/features/goals/queries").useGoals as jest.Mock,
+  connection: jest.requireMock("@/src/features/act/queries/connection")
+    .useConnectionLogs as jest.Mock,
+  observing: jest.requireMock("@/src/features/act/queries/observing-self")
+    .useObservingSelfSessions as jest.Mock,
+  choicePoints: jest.requireMock("@/src/features/act/queries/choice-points")
+    .useChoicePoints as jest.Mock,
+  defusion: jest.requireMock("@/src/features/act/queries/defusion").useDefusionLogs as jest.Mock,
+  expansion: jest.requireMock("@/src/features/act/queries/expansion").useExpansionLogs as jest.Mock,
+  committed: jest.requireMock("@/src/features/act/queries/committed-action")
+    .useCommittedActions as jest.Mock,
 };
 
 /** Every hook loaded and empty, so each test only sets the ones it is about. */
@@ -96,6 +136,20 @@ function allLoadedEmpty() {
     doneSteps: 0,
     totalSteps: 0,
   });
+  mocks.records.mockReturnValue(q([]));
+  mocks.recordCount.mockReturnValue(q(0));
+  mocks.selfCare.mockReturnValue(q([]));
+  mocks.worry.mockReturnValue(q([]));
+  mocks.beliefs.mockReturnValue(q([]));
+  mocks.activities.mockReturnValue(q([]));
+  mocks.exposure.mockReturnValue(q([]));
+  mocks.goals.mockReturnValue(q([]));
+  mocks.connection.mockReturnValue(q([]));
+  mocks.observing.mockReturnValue(q([]));
+  mocks.choicePoints.mockReturnValue(q([]));
+  mocks.defusion.mockReturnValue(q([]));
+  mocks.expansion.mockReturnValue(q([]));
+  mocks.committed.mockReturnValue(q([]));
 }
 
 const renderRow = (id: string) => renderWithProviders(<ToolTierRow id={id} userId="user-1" />);
@@ -308,13 +362,189 @@ describe("per-tool stats", () => {
   });
 });
 
-describe("rows without a stat yet", () => {
-  it("renders a module row with an empty slot rather than inventing one", () => {
-    // S5b (#976) gives these their stats. Until then they decline to claim anything,
-    // which is the same rendering a loading row uses - deliberately.
+describe("the module and shortcut rows (#976)", () => {
+  it("renders recency through the compact formatter, never as days ago", () => {
+    mocks.worry.mockReturnValue(q([{ createdAt: "2026-07-27T19:40:00.000Z" }]));
+
     renderRow("cbt-worry");
 
-    expect(screen.getByTestId("tool-row-cbt-worry")).toBeTruthy();
-    expect(statOf("cbt-worry")).toBeNull();
+    const stat = statOf("cbt-worry") ?? "";
+    expect(stat).toMatch(/^Last /);
+    // A column of "23 days ago / 41 days ago" implies lateness. Home does not tally
+    // days since you last opened a tool.
+    expect(stat).not.toMatch(/days? ago/i);
+  });
+
+  it("says Nothing yet when a tool has no record at all", () => {
+    renderRow("act-defusion");
+
+    expect(statOf("act-defusion")).toBe("Nothing yet");
+  });
+
+  it("renders no stat while a recency list is still loading", () => {
+    mocks.beliefs.mockReturnValue(loading);
+
+    renderRow("cbt-beliefs");
+
+    expect(statOf("cbt-beliefs")).toBeNull();
+  });
+
+  it("cbt-distortion-guide renders no stat in ANY state", () => {
+    // The one documented exception. It is reference content and holds no record of
+    // yours, so "Nothing yet" would be false - and its description is not a stat.
+    renderRow("cbt-distortion-guide");
+
+    expect(screen.getByTestId("tool-row-cbt-distortion-guide")).toBeTruthy();
+    expect(statOf("cbt-distortion-guide")).toBeNull();
+  });
+
+  it("counts thought records exactly rather than measuring the capped list", () => {
+    // The list is capped at 500 and ordered by `updated_at`; ADR-0001 forbids taking a
+    // lifetime figure off it. The count comes from a head count instead, so a
+    // short/stale list cannot shrink it.
+    mocks.recordCount.mockReturnValue(q(24));
+    mocks.records.mockReturnValue(
+      q([{ createdAt: "2026-07-27T10:00:00.000Z", createdOffsetMinutes: null }]),
+    );
+
+    renderRow("cbt-open-record");
+
+    expect(statOf("cbt-open-record")).toMatch(/^24 records · Last /);
+  });
+
+  it("takes the newest thought record by creation, not by last edit", () => {
+    // `listThoughtRecords` orders by `updated_at`, so the first element is the most
+    // recently EDITED record. Editing an old record must not make it "last written".
+    mocks.recordCount.mockReturnValue(q(2));
+    mocks.records.mockReturnValue(
+      q([
+        { createdAt: "2026-01-02T10:00:00.000Z", createdOffsetMinutes: null },
+        { createdAt: "2026-07-27T10:00:00.000Z", createdOffsetMinutes: null },
+      ]),
+    );
+
+    renderRow("cbt-open-record");
+
+    const stat = statOf("cbt-open-record") ?? "";
+    expect(stat).toContain("Jul");
+    expect(stat).not.toContain("Jan");
+  });
+
+  it("takes the newest activity completion from a schedule-ordered list", () => {
+    // `useActivities` orders by `scheduled_at` ASC, so neither end of the list is the
+    // newest completion - and a scheduled activity may never have been completed.
+    mocks.activities.mockReturnValue(
+      q([
+        { completedAt: "2026-07-27T10:00:00.000Z", completedOffsetMinutes: null },
+        { completedAt: null, completedOffsetMinutes: null },
+        { completedAt: "2026-01-02T10:00:00.000Z", completedOffsetMinutes: null },
+      ]),
+    );
+
+    renderRow("cbt-activities");
+
+    const stat = statOf("cbt-activities") ?? "";
+    expect(stat).toContain("Jul");
+    expect(stat).not.toContain("Jan");
+  });
+
+  it("treats a never-completed activity list as no record", () => {
+    mocks.activities.mockReturnValue(q([{ completedAt: null, completedOffsetMinutes: null }]));
+
+    renderRow("cbt-activities");
+
+    expect(statOf("cbt-activities")).toBe("Nothing yet");
+  });
+
+  it("filters drop-anchor out of the shared connection log", () => {
+    // Drop anchor is a SUBSET of connection, not its own table. A newer log of another
+    // technique must not be reported as the last drop anchor.
+    mocks.connection.mockReturnValue(
+      q([
+        { technique: "bodyScan", createdAt: "2026-07-27T10:00:00.000Z" },
+        { technique: "dropAnchor", createdAt: "2026-01-02T10:00:00.000Z" },
+      ]),
+    );
+
+    renderRow("act-drop-anchor");
+
+    const stat = statOf("act-drop-anchor") ?? "";
+    expect(stat).toContain("Jan");
+    expect(stat).not.toContain("Jul");
+  });
+
+  it("says Nothing yet when connection logs exist but none are drop anchor", () => {
+    mocks.connection.mockReturnValue(
+      q([{ technique: "bodyScan", createdAt: "2026-07-27T10:00:00.000Z" }]),
+    );
+
+    renderRow("act-drop-anchor");
+
+    expect(statOf("act-drop-anchor")).toBe("Nothing yet");
+  });
+
+  it("shares the connection cache entry the list screen mounts", () => {
+    // The limit rides this hook's query key, so 30 is what shares with the ACT
+    // connection list screen and the programme rather than opening a second fetch.
+    renderRow("act-drop-anchor");
+
+    expect(mocks.connection).toHaveBeenCalledWith("user-1", 30);
+  });
+
+  it("omits the limit where it is NOT part of the query key", () => {
+    // `useObservingSelfSessions` and `useChoicePoints` key on the user alone, so passing
+    // a limit cannot open a separate entry - it would only race whichever mounts first.
+    renderRow("act-observing-self");
+    expect(mocks.observing).toHaveBeenCalledWith("user-1");
+
+    renderRow("act-choice-point");
+    expect(mocks.choicePoints).toHaveBeenCalledWith("user-1");
+  });
+
+  it("counts only active goals, and calls them goals", () => {
+    mocks.goals.mockReturnValue(
+      q([
+        { status: "active" },
+        { status: "completed" },
+        { status: "active" },
+        { status: "paused" },
+      ]),
+    );
+
+    renderRow("cbt-goals");
+
+    expect(statOf("cbt-goals")).toBe("2 active goals");
+  });
+
+  it("counts committed actions from the status-filtered entry", () => {
+    mocks.committed.mockReturnValue(q([{ status: "active" }, { status: "active" }]));
+
+    renderRow("act-committed-actions");
+
+    expect(statOf("act-committed-actions")).toBe("2 active");
+    // The status is part of the query key, so asking for "active" is what makes the
+    // count mean what the row says it means.
+    expect(mocks.committed).toHaveBeenCalledWith("user-1", "active");
+  });
+
+  it("reads exposure SESSIONS, never hierarchies", () => {
+    mocks.exposure.mockReturnValue(q([{ completedAt: "2026-07-27T10:00:00.000Z" }]));
+
+    renderRow("cbt-exposure");
+
+    expect(statOf("cbt-exposure")).toMatch(/^Last /);
+    expect(mocks.exposure).toHaveBeenCalledWith("user-1", 250);
+  });
+
+  it("dates self-care from the instant, not from its day key", () => {
+    // The list is sorted by `log_date`, a bare "YYYY-MM-DD". Parsed as an instant that
+    // is UTC midnight, which renders as the previous day for any viewer west of UTC.
+    mocks.selfCare.mockReturnValue(
+      q([{ logDate: "2026-07-27", createdAt: "2026-07-27T15:00:00.000Z" }]),
+    );
+
+    renderRow("self-care");
+
+    expect(statOf("self-care")).toMatch(/^Last /);
   });
 });

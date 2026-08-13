@@ -1,22 +1,8 @@
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import type { WidgetTint } from "@/src/features/home/widget-tint";
 
-import { SelfCareWidget } from "@/src/features/home/widgets/self-care-widget";
-import { CbtDistortionGuideWidget } from "@/src/features/home/widgets/cbt-distortion-guide-widget";
 import { CbtProgrammeWidget } from "@/src/features/home/widgets/cbt-programme-widget";
 import { ActProgrammeWidget } from "@/src/features/home/widgets/act-programme-widget";
-import { CbtOpenRecordWidget } from "@/src/features/home/widgets/cbt-open-record-widget";
-import { CbtWorryWidget } from "@/src/features/home/widgets/cbt-worry-widget";
-import { CbtBeliefsWidget } from "@/src/features/home/widgets/cbt-beliefs-widget";
-import { CbtActivitiesWidget } from "@/src/features/home/widgets/cbt-activities-widget";
-import { CbtExposureWidget } from "@/src/features/home/widgets/cbt-exposure-widget";
-import { CbtGoalsWidget } from "@/src/features/home/widgets/cbt-goals-widget";
-import { ActDropAnchorWidget } from "@/src/features/home/widgets/act-drop-anchor-widget";
-import { ActObservingSelfWidget } from "@/src/features/home/widgets/act-observing-self-widget";
-import { ActChoicePointWidget } from "@/src/features/home/widgets/act-choice-point-widget";
-import { ActCommittedActionsWidget } from "@/src/features/home/widgets/act-committed-actions-widget";
-import { ActDefusionWidget } from "@/src/features/home/widgets/act-defusion-widget";
-import { ActAcceptancePromptWidget } from "@/src/features/home/widgets/act-acceptance-prompt-widget";
 
 type WidgetComponent = React.ComponentType<{ userId: string }>;
 type WidgetStatus = "default" | "available" | "soon";
@@ -42,30 +28,18 @@ export interface WidgetMeta {
 }
 
 /**
- * Card components for the ids that still render as cards. Shrinking, not growing: #975
- * moved the nine tool ids to `ToolRow`, and #976 takes the remaining module and shortcut
- * ids. What survives at the end is the two `programme` ids, whose card #977 reshapes.
+ * Card components for the ids that still render as cards - now exactly the two
+ * `programme` ids, whose card #977 reshapes. #975 moved the nine tool ids to `ToolRow`
+ * and #976 took the remaining fourteen, so the whole `tool` tier is rows.
  *
- * This is NOT the dashboard catalogue - `WIDGET_META` is. Anything asking "does this id
- * exist" or "where does it go" must read the meta.
+ * This is NOT the dashboard catalogue - `WIDGET_META` is, and it still holds all 25 ids.
+ * Anything asking "does this id exist" or "where does it go" reads the meta; the Android
+ * launcher's `CARD_REPLICAS` mirrors the meta too, which is why it is unaffected by every
+ * deletion above.
  */
 export const WIDGET_REGISTRY: Record<string, WidgetComponent> = {
-  "self-care": SelfCareWidget,
-  "cbt-open-record": CbtOpenRecordWidget,
-  "act-drop-anchor": ActDropAnchorWidget,
-  "act-observing-self": ActObservingSelfWidget,
-  "act-choice-point": ActChoicePointWidget,
-  "cbt-distortion-guide": CbtDistortionGuideWidget,
   "cbt-programme": CbtProgrammeWidget,
   "act-programme": ActProgrammeWidget,
-  "cbt-worry": CbtWorryWidget,
-  "cbt-beliefs": CbtBeliefsWidget,
-  "cbt-activities": CbtActivitiesWidget,
-  "cbt-exposure": CbtExposureWidget,
-  "cbt-goals": CbtGoalsWidget,
-  "act-committed-actions": ActCommittedActionsWidget,
-  "act-defusion": ActDefusionWidget,
-  "act-acceptance-prompt": ActAcceptancePromptWidget,
 };
 
 // The dashboard catalogue (#972). Routes come from the decided spec's 24-row

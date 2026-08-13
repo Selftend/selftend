@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   archiveThoughtRecord,
+  countThoughtRecords,
   countThoughtRecordsSince,
   getThoughtRecord,
   listThoughtRecords,
@@ -16,6 +17,7 @@ const cbtKeys = {
   records: (userId: string) => ["cbt", "records", userId] as const,
   countSince: (userId: string, sinceIso: string) =>
     ["cbt", "count-since", userId, sinceIso] as const,
+  count: (userId: string) => ["cbt", "count", userId] as const,
 };
 
 export function useThoughtRecords(userId: string | null) {
@@ -32,6 +34,14 @@ export function useThoughtRecord(userId: string | null, recordId: string | null)
       userId && recordId ? cbtKeys.record(userId, recordId) : ["cbt", "record", "anonymous"],
     queryFn: () => getThoughtRecord(userId!, recordId!),
     enabled: Boolean(userId && recordId),
+  });
+}
+
+export function useThoughtRecordCount(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? cbtKeys.count(userId) : ["cbt", "count", "anonymous"],
+    queryFn: () => countThoughtRecords(userId!),
+    enabled: Boolean(userId),
   });
 }
 
