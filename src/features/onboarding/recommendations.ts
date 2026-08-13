@@ -37,21 +37,6 @@ export function suggestSharedToolWidgetIds(concerns: readonly ConcernKey[]): Sha
   );
 }
 
-/**
- * A picked module resolves to its programme id, and to nothing else.
- *
- * This used to branch on the onboarding `guidance` answer, handing a
- * self-directed user `${module}-module-shortcut` instead. #973 retired both
- * shortcut ids - a shortcut was a card that carried a module's name and a
- * button to its home, which is what the module's own row does now - so the
- * branch had one arm left and the answer had nothing to select. The wizard
- * still asks the question and still holds the answer; it no longer decides
- * which widget you get.
- */
-function moduleWidgetId(module: ModuleInterest): string {
-  return `${module}-programme`;
-}
-
 export function buildWidgetRecommendations(
   input: WidgetRecommendationInput,
 ): WidgetRecommendation[] {
@@ -63,8 +48,14 @@ export function buildWidgetRecommendations(
     recommendations.push({ widgetId, reason });
   };
 
+  // A picked module resolves to its programme id, and to nothing else. This
+  // used to go through a helper that branched on the onboarding `guidance`
+  // answer, handing a self-directed user `${module}-module-shortcut` instead.
+  // #973 retired both shortcut ids - a shortcut was a card carrying a module's
+  // name and a button to its home, which is what the module's own row does -
+  // so the branch had one arm left and the answer had nothing to select.
   for (const module of input.moduleInterests) {
-    add(moduleWidgetId(module), "module");
+    add(`${module}-programme`, "module");
   }
 
   const concernSuggestions = new Set(suggestSharedToolWidgetIds(input.concerns));

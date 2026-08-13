@@ -111,15 +111,15 @@ jest.mock("@/src/features/home/widget-registry", () => {
   const { View } = require("react-native");
   return {
     isImplemented: () => true,
-    // Derived from the id, not a lookup table. This used to be
-    // `mood-checkin ? moodCheckin.title : moodTrend.title`, which meant every
-    // id in every test here except one was labelled "Mood, last 7 days" - so
-    // when #973 retired `mood-trend`, the mock kept rendering its copy for
-    // whatever id replaced it and the failure read as a bug in the screen.
-    // The real registry keys titles as `home.widgets.<camelCaseId>.title`.
-    metaForWidget: (widgetId: string) => ({
-      titleKey: `home.widgets.${widgetId.replace(/-(.)/g, (_m: string, c: string) => c.toUpperCase())}.title`,
-    }),
+    // The id IS the title key here, so an edit-mode control is labelled
+    // "Remove mood-checkin" and the assertions below name ids rather than
+    // shipped copy. Two failure modes this avoids: the old form was
+    // `mood-checkin ? moodCheckin.title : moodTrend.title`, which labelled
+    // every other id in the file with `mood-trend`'s copy and kept doing so
+    // after #973 retired that id; and pinning a test to a translated string
+    // makes a copy edit look like a broken screen. Which title a widget
+    // carries is widget-registry.test.tsx's question, not this file's.
+    metaForWidget: (widgetId: string) => ({ titleKey: widgetId }),
     // Marker per widget id so tests can assert which SLOTS the grid renders.
     resolveWidget: (widgetId: string) => <View testID={`widget-${widgetId}`} />,
   };
@@ -282,8 +282,8 @@ describe("HomeScreen hero", () => {
     renderPopulatedHome();
     fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
 
-    fireEvent.press(screen.getByRole("button", { name: "Remove Check-in" }));
-    fireEvent.press(screen.getByRole("button", { name: "Remove Sleep" }));
+    fireEvent.press(screen.getByRole("button", { name: "Remove mood-checkin" }));
+    fireEvent.press(screen.getByRole("button", { name: "Remove sleep-latest" }));
 
     const undo = screen.getByRole("button", { name: "Undo" });
     expect(undo).toBeEnabled();
