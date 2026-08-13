@@ -4,8 +4,6 @@ import { useTranslation } from "react-i18next";
 export interface LocaleFormats {
   formatDate: (value: string | number | Date) => string;
   formatDateTime: (value: string | number | Date) => string;
-  /** One-decimal number, e.g. `3.0` in en and `3,0` in bg. */
-  formatOneDecimal: (value: number) => string;
 }
 
 // One-decimal formatters are the same per-language cache problem as the date ones.
@@ -43,7 +41,6 @@ export function makeLocaleFormats(lang: string): LocaleFormats {
   const formats: LocaleFormats = {
     formatDate: (value) => date.format(new Date(value)),
     formatDateTime: (value) => dateTime.format(new Date(value)),
-    formatOneDecimal: (value) => formatOneDecimal(value, lang),
   };
   cache.set(lang, formats);
   return formats;

@@ -13,6 +13,7 @@ import type {
 import bgCommon from "@/src/i18n/locales/bg/common.json";
 import enCommon from "@/src/i18n/locales/en/common.json";
 import { addDaysToKey, currentDateKey } from "@/src/utils/date";
+import { bundleTranslator } from "@/test/bundle-translator";
 
 const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k);
 const ctx = {
@@ -44,18 +45,11 @@ const empty: WidgetData = {
 describe("sleep-latest number formatting (#962)", () => {
   // The Android home-screen widget renders this snapshot verbatim, so a decimal point
   // baked in here reaches a Bulgarian home screen with nothing left to correct it.
-  const units = { en: enCommon, bg: bgCommon };
+  const bundles = { en: enCommon, bg: bgCommon };
 
-  /** Resolves `common:units.*` against the real bundles; echoes every other key. */
-  const localeT =
-    (lang: keyof typeof units) =>
-    (key: string, opts?: Record<string, unknown>): string => {
-      if (!key.startsWith("common:units.")) return key;
-      const name = key.slice("common:units.".length) as keyof (typeof units)["en"]["units"];
-      return units[lang].units[name].replace(/{{(\w+)}}/g, (_, n: string) =>
-        String(opts?.[n] ?? ""),
-      );
-    };
+  // Real `common` templates for the unit keys; the suite's existing stub still answers the
+  // dozens of `navigation` keys the builder asks for alongside them.
+  const localeT = (lang: keyof typeof bundles) => bundleTranslator("common", bundles[lang], t);
 
   // Inside the rolling 7-day window `averageDurationMinutes` walks, which is anchored on
   // the real current day rather than on `ctx.dateKey`. Averages: 432 min and quality 3.5.
@@ -77,7 +71,7 @@ describe("sleep-latest number formatting (#962)", () => {
     ],
   };
 
-  const stats = (lang: keyof typeof units) =>
+  const stats = (lang: keyof typeof bundles) =>
     (
       buildSnapshot(twoNights, { ...ctx, locale: lang, t: localeT(lang) }).widgets[
         "sleep-latest"

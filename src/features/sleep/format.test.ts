@@ -1,26 +1,12 @@
 import { formatCompactHours, formatDuration, formatHours } from "@/src/features/sleep/format";
 import bgCommon from "@/src/i18n/locales/bg/common.json";
 import enCommon from "@/src/i18n/locales/en/common.json";
+import { bundleTranslator } from "@/test/bundle-translator";
 
-/**
- * A miniature i18next: resolves a `common:`-prefixed key against the real shipped JSON and
- * interpolates. Resolving against the bundles rather than a stub is the point — it fails
- * loudly when a unit template is added to en and forgotten in bg.
- */
-function translatorFor(bundle: object) {
-  return (key: string, opts?: Record<string, unknown>): string => {
-    const path = key.replace(/^common:/, "").split(".");
-    let node: unknown = bundle;
-    for (const segment of path) {
-      node = (node as Record<string, unknown> | undefined)?.[segment];
-    }
-    if (typeof node !== "string") throw new Error(`missing translation key: ${key}`);
-    return node.replace(/{{(\w+)}}/g, (_, name: string) => String(opts?.[name] ?? ""));
-  };
-}
-
-const en = translatorFor(enCommon);
-const bg = translatorFor(bgCommon);
+// Resolved against the shipped bundles, so a template added to en and forgotten in bg
+// fails here rather than shipping.
+const en = bundleTranslator("common", enCommon);
+const bg = bundleTranslator("common", bgCommon);
 
 describe("formatDuration", () => {
   it("keeps the shipped English compact form", () => {

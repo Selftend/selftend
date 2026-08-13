@@ -21,11 +21,6 @@ describe("makeLocaleFormats", () => {
     expect(en.formatDate(new Date(SAMPLE))).toEqual(en.formatDate(SAMPLE));
     expect(en.formatDate(new Date(SAMPLE).getTime())).toEqual(en.formatDate(SAMPLE));
   });
-
-  it("exposes the one-decimal formatter bound to the language", () => {
-    expect(makeLocaleFormats("en").formatOneDecimal(3)).toBe("3.0");
-    expect(makeLocaleFormats("bg").formatOneDecimal(3)).toBe("3,0");
-  });
 });
 
 describe("formatOneDecimal", () => {
