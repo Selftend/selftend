@@ -77,14 +77,16 @@ test.describe("routine completes via tool use", () => {
 
     // --- Qualifying action: log a mood, all in-app (no hard gotos) ---
     // Panel "Check-in" -> tracker home; tapping a score on the check-in card
-    // pushes to /tools/check-in/new?score=N with the score pre-selected.
+    // seeds the score in memory and pushes the bare /tools/check-in/new (#961).
     await navigateViaPanel(page, "Check-in");
     await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
 
     // Mood logs were cleaned in beforeEach, so the history list is empty and
     // the check-in card's scale renders the only "Okay" radio on this screen.
     await page.getByRole("radio", { name: "Okay", exact: true }).click();
-    await page.waitForURL(/\/tools\/check-in\/new\?/, { timeout: 15_000 });
+    // No query string any more (#961): the score is seeded in memory, so the URL is
+    // bare. `\?` here required the query and is exactly the pin this change breaks.
+    await page.waitForURL(/\/tools\/check-in\/new$/, { timeout: 15_000 });
 
     await page.getByRole("button", { name: "Save check-in", exact: true }).click();
 

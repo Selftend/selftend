@@ -56,6 +56,7 @@ import {
   formatCompactAtOffset,
   parseLocalNoon,
 } from "@/src/utils/date";
+import { seedMoodScore } from "@/src/stores/mood-seed-store";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -706,9 +707,16 @@ function TodayCheckIn({ latest, dateKey }: TodayCheckInProps) {
       </View>
       <MoodScale
         value={latest?.moodScore ?? null}
-        onChange={(score) =>
-          router.push(`/tools/check-in/new?score=${score}` as Parameters<typeof router.push>[0])
-        }
+        onChange={(score) => {
+          // Seeded in memory, never in the URL (#961). Expo Router serializes params
+          // into the address bar on web, so `?score=N` puts a mood score in browser
+          // history and in Sentry's navigation breadcrumbs - `dropConsoleBreadcrumb`
+          // drops *console* breadcrumbs only, and navigation breadcrumbs carry the path.
+          // #739 rejected this exact shape for the emotions beside it and built the
+          // seed-store pattern; this is the score's half.
+          seedMoodScore(score);
+          router.push("/tools/check-in/new");
+        }}
         compact
       />
       {/* min-height keeps the block from jumping when the first log lands. */}
