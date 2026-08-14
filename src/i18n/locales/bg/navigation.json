@@ -110,8 +110,6 @@
       "habitsSub": "Изгради постоянни ежедневни навици"
     },
     "dashboard": {
-      "addWidgetTitle": "Добави към таблото",
-      "addToolButton": "Добави",
       "removeWidget": "Премахни {{title}}",
       "undo": "Отмени",
       "moveEarlier": "Премести {{title}} по-напред",
@@ -137,23 +135,17 @@
     "doneLabel": "Готово",
     "arrangeLabel": "Подреди",
     "addToolLabel": "Добави инструмент",
-    "editingHint": "Плъзни за пренареждане",
-    "added": "Добавено",
+    "arrange": {
+      "hint": "Плъзни, за да пренаредиш, или премахни това, с което не се проверяваш.",
+      "handle": "Пренареждане на {{title}}",
+      "handleHint": "Използвай стрелките нагоре и надолу, за да преместиш този инструмент.",
+      "addHeading": "Добави инструмент",
+      "addChip": "Добави {{title}}",
+      "allAdded": "Всички инструменти вече са на началния екран."
+    },
     "addToHome": {
       "button": "Добави в начало",
       "title": "Добави в начало"
-    },
-    "widgetCount_one": "{{count}} джаджа",
-    "widgetCount_other": "{{count}} джаджи",
-    "addedCount_one": "{{count}} добавено",
-    "addedCount_other": "{{count}} добавени",
-    "sectionModules": "Модули",
-    "sectionTools": "Инструменти",
-    "addPanel": {
-      "subtitle": "Избери инструмент - джаджите му ще се появят на началния екран.",
-      "searchPlaceholder": "Търси джаджи...",
-      "allCategories": "Всички категории",
-      "noResults": "Няма джаджи, отговарящи на търсенето."
     },
     "categories": {
       "mood": "Запис на настроението",
@@ -428,7 +420,7 @@
   "homeTour": {
     "skipAll": "Пропусни всички",
     "edit": {
-      "description": "Подреди таблото по свой вкус - добавяй, махай и размествай джаджи.",
+      "description": "Подреди началния екран - добавяй, махай и размествай инструментите си.",
       "dismiss": "Ясно"
     },
     "navigation": {

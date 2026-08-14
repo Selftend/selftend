@@ -174,6 +174,7 @@ export default function ProtectedLayout() {
             }}
           >
             <Stack.Screen name="index" />
+            <Stack.Screen name="arrange" />
             <Stack.Screen name="settings" />
             <Stack.Screen name="modules/index" />
             <Stack.Screen name="modules/cbt/index" />

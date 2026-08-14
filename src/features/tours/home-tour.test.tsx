@@ -83,7 +83,7 @@ describe("HomeTour", () => {
     renderWithProviders(<HomeTour />);
 
     expect(
-      screen.queryByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+      screen.queryByText("Arrange your home screen - add, remove and reorder your tools."),
     ).toBeNull();
   });
 
@@ -95,7 +95,7 @@ describe("HomeTour", () => {
     renderWithProviders(<HomeTour />);
 
     expect(
-      await screen.findByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+      await screen.findByText("Arrange your home screen - add, remove and reorder your tools."),
     ).toBeTruthy();
   });
 
@@ -108,7 +108,7 @@ describe("HomeTour", () => {
     renderWithProviders(<HomeTour />);
 
     expect(
-      screen.queryByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+      screen.queryByText("Arrange your home screen - add, remove and reorder your tools."),
     ).toBeNull();
   });
 
@@ -129,7 +129,7 @@ describe("HomeTour", () => {
 
     expect(await screen.findByText("Find all Modules and Tools here.")).toBeTruthy();
     expect(
-      screen.queryByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+      screen.queryByText("Arrange your home screen - add, remove and reorder your tools."),
     ).toBeNull();
 
     fireEvent.press(screen.getByText("Got it"));

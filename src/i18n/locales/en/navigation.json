@@ -110,8 +110,6 @@
       "habitsSub": "Build consistent daily habits"
     },
     "dashboard": {
-      "addWidgetTitle": "Add to your dashboard",
-      "addToolButton": "Add",
       "removeWidget": "Remove {{title}}",
       "undo": "Undo",
       "moveEarlier": "Move {{title}} earlier",
@@ -137,23 +135,17 @@
     "doneLabel": "Done",
     "arrangeLabel": "Arrange",
     "addToolLabel": "Add tool",
-    "editingHint": "Drag to rearrange",
-    "added": "Added",
+    "arrange": {
+      "hint": "Drag to reorder, or remove what you don't check in with.",
+      "handle": "Reorder {{title}}",
+      "handleHint": "Use the up and down arrow keys to move this tool.",
+      "addHeading": "Add a tool",
+      "addChip": "Add {{title}}",
+      "allAdded": "Every tool is already on your home screen."
+    },
     "addToHome": {
       "button": "Add to home",
       "title": "Add to home"
-    },
-    "widgetCount_one": "{{count}} widget",
-    "widgetCount_other": "{{count}} widgets",
-    "addedCount_one": "{{count}} added",
-    "addedCount_other": "{{count}} added",
-    "sectionModules": "Modules",
-    "sectionTools": "Tools",
-    "addPanel": {
-      "subtitle": "Pick a tool - its widgets will appear in the home screen.",
-      "searchPlaceholder": "Search widgets...",
-      "allCategories": "All categories",
-      "noResults": "No widgets match your search."
     },
     "categories": {
       "mood": "Check-in",
@@ -428,7 +420,7 @@
   "homeTour": {
     "skipAll": "Skip all tips",
     "edit": {
-      "description": "Arrange the dashboard your way - add, remove and reorder widgets.",
+      "description": "Arrange your home screen - add, remove and reorder your tools.",
       "dismiss": "Got it"
     },
     "navigation": {

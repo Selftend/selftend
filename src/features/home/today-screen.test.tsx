@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import type { ReactNode } from "react";
 import { ActivityIndicator, useWindowDimensions } from "react-native";
+import { router } from "expo-router";
 
 import HomeScreen from "./today-screen";
 import { getTourTarget } from "@/src/features/tours/tour-targets";
@@ -17,10 +17,6 @@ let mockUnimplementedIds: string[] = [];
 let mockIsLoading = false;
 /** The query settled with no data: disabled, or errored. `isLoading` is false in both. */
 let mockPreferencesUndefined = false;
-const mockAddWidget = jest.fn();
-const mockRemoveWidget = jest.fn();
-const mockRestoreWidget = jest.fn();
-const mockReorderWidgets = jest.fn();
 
 jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
   __esModule: true,
@@ -35,28 +31,18 @@ const mockDimensions = useWindowDimensions as unknown as jest.Mock;
  */
 const atWidth = (width: number) => mockDimensions.mockReturnValue({ width, height: 900 });
 
-jest.mock("react-native-sortables", () => {
-  const { Fragment } = require("react");
-  return {
-    __esModule: true,
-    default: {
-      Grid: ({
-        data,
-        renderItem,
-      }: {
-        data: string[];
-        renderItem: (info: { item: string; index: number }) => ReactNode;
-      }) => (
-        <>
-          {data.map((item, index) => (
-            <Fragment key={item}>{renderItem({ item, index })}</Fragment>
-          ))}
-        </>
-      ),
-      Handle: ({ children }: { children?: ReactNode }) => <>{children}</>,
-    },
-  };
-});
+/**
+ * Home has no sortable any more (#980) - the drag left with the mode, so the tool tier is
+ * a plain mapped list. What used to need a `react-native-sortables` mock here now needs an
+ * `expo-router` one: every add/arrange door on this screen is a push to `/arrange`.
+ */
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn() },
+  // `HomeTour` reads it, and only gates its queue on being at "/".
+  usePathname: () => "/",
+}));
+
+const mockPush = router.push as jest.Mock;
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
@@ -102,6 +88,9 @@ jest.mock("@/src/stores/selected-date-store", () => ({
   useSelectedDate: () => ({ selectedDate: "2026-05-28" }),
 }));
 
+// Read-only: home no longer mutates `widget_preferences` at all (#980), so this is the
+// whole of its data surface. The mutation hooks moved to arrange-screen.test.tsx with the
+// controls that call them.
 jest.mock("@/src/features/home/queries", () => ({
   useWidgetPreferences: () => ({
     data: mockPreferencesUndefined
@@ -111,10 +100,6 @@ jest.mock("@/src/features/home/queries", () => ({
     refetch: jest.fn(),
     isRefetching: false,
   }),
-  useAddWidget: () => ({ mutate: mockAddWidget, isPending: false }),
-  useRemoveWidget: () => ({ mutate: mockRemoveWidget, isPending: false }),
-  useRestoreWidget: () => ({ mutate: mockRestoreWidget, isPending: false }),
-  useReorderWidgets: () => ({ mutate: mockReorderWidgets, isPending: false }),
 }));
 
 jest.mock("@/src/features/home/right-now-tier", () => {
@@ -131,21 +116,12 @@ jest.mock("@/src/features/home/tool-row-stats", () => {
   };
 });
 
-jest.mock("@/src/features/home/add-widget-modal", () => {
-  const { View } = require("react-native");
-  return {
-    AddWidgetModal: ({ visible }: { visible: boolean }) =>
-      visible ? <View testID="add-widget-modal-visible" /> : null,
-  };
-});
-
 jest.mock("@/src/features/home/widget-registry", () => {
   const { View } = require("react-native");
   return {
     isImplemented: (widgetId: string) => !mockUnimplementedIds.includes(widgetId),
-    // The id IS the title key here, so an edit-mode control is labelled
-    // "Remove mood-checkin" and the assertions below name ids rather than
-    // shipped copy. Two failure modes this avoids: the old form was
+    // The id IS the title key here, so the assertions below name ids rather
+    // than shipped copy. Two failure modes this avoids: the old form was
     // `mood-checkin ? moodCheckin.title : moodTrend.title`, which labelled
     // every other id in the file with `mood-trend`'s copy and kept doing so
     // after #973 retired that id; and pinning a test to a translated string
@@ -182,9 +158,6 @@ beforeEach(() => {
   mockPreferencesUndefined = false;
   jest.clearAllMocks();
   atWidth(900);
-  for (const mutation of [mockAddWidget, mockRemoveWidget, mockRestoreWidget, mockReorderWidgets]) {
-    mutation.mockImplementation((_value, options) => options?.onSuccess?.());
-  }
 });
 
 function renderPopulatedHome() {
@@ -270,15 +243,6 @@ describe("HomeScreen routines row on a day with nothing scheduled (inverts #104)
 
     expect(screen.getByTestId("tool-row-routines-today")).toBeTruthy();
   });
-
-  it("keeps the row in edit mode so it can be removed or reordered", () => {
-    useRoutines.mockReturnValue({ data: [makeRoutine("on-demand")], isLoading: false });
-
-    renderHomeWithRoutinesWidget();
-    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
-
-    expect(screen.getByTestId("tool-row-routines-today")).toBeTruthy();
-  });
 });
 
 describe("HomeScreen greeting", () => {
@@ -315,10 +279,10 @@ describe("HomeScreen greeting", () => {
     expect(screen.getByText(/add tools you want to check in/i)).toBeTruthy();
   });
 
-  it("opens the add-widget modal from the manual action", () => {
+  it("opens the arrange route from the empty state's manual action", () => {
     renderWithProviders(<HomeScreen />);
     fireEvent.press(screen.getByRole("button", { name: /add manually/i }));
-    expect(screen.getByTestId("add-widget-modal-visible")).toBeTruthy();
+    expect(mockPush).toHaveBeenCalledWith("/arrange");
   });
 
   it("opens the suggestion wizard only from an empty Home", () => {
@@ -328,38 +292,18 @@ describe("HomeScreen greeting", () => {
     expect(screen.getByLabelText("without welcome")).toBeTruthy();
   });
 
-  it("shows undo only in edit mode and disables it before the first edit", () => {
+  /**
+   * Arrange is a ROUTE now, not a mode, so home carries none of its controls (#980). This
+   * is stated as "no editing control renders at all" rather than as a testID that no
+   * longer exists: a `queryByTestId(...).toBeNull()` for a deleted node passes forever.
+   */
+  it("renders no arrange-mode controls - no Done, no Undo, no per-row remove", () => {
     renderPopulatedHome();
 
+    expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
-    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
-
-    expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
-    fireEvent.press(screen.getAllByRole("button", { name: "Done" })[0]);
-    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
-  });
-
-  it("undoes multiple removals in reverse order", () => {
-    renderPopulatedHome();
-    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
-
-    fireEvent.press(screen.getByRole("button", { name: "Remove mood-checkin" }));
-    fireEvent.press(screen.getByRole("button", { name: "Remove sleep-latest" }));
-
-    const undo = screen.getByRole("button", { name: "Undo" });
-    expect(undo).toBeEnabled();
-    fireEvent.press(undo);
-    expect(mockRestoreWidget).toHaveBeenLastCalledWith(
-      { widgetId: "sleep-latest", position: 1 },
-      expect.objectContaining({ onSuccess: expect.any(Function) }),
-    );
-
-    fireEvent.press(screen.getByRole("button", { name: "Undo" }));
-    expect(mockRestoreWidget).toHaveBeenLastCalledWith(
-      { widgetId: "mood-checkin", position: 0 },
-      expect.objectContaining({ onSuccess: expect.any(Function) }),
-    );
-    expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Remove mood-checkin" })).toBeNull();
+    expect(screen.queryByText("Drag to rearrange")).toBeNull();
   });
 });
 
@@ -395,11 +339,21 @@ describe("HomeScreen header actions (#979)", () => {
     expect(screen.queryByRole("button", { name: "Add tool" })).toBeNull();
   });
 
-  it("opens the add-widget modal from the header action", () => {
+  /**
+   * Both actions lead to `/arrange`, and neither is a toggle. `Arrange` used to flip a
+   * mode and relabel itself `Done`; `Add tool` used to open `AddWidgetModal`. Adding lives
+   * on the arrange screen as the chip run, so this is one destination reached by the two
+   * verbs people arrive with.
+   */
+  it("opens the arrange route from both header actions", () => {
     renderPopulatedHome();
-    fireEvent.press(screen.getByRole("button", { name: "Add tool" }));
 
-    expect(screen.getByTestId("add-widget-modal-visible")).toBeTruthy();
+    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
+    expect(mockPush).toHaveBeenLastCalledWith("/arrange");
+
+    fireEvent.press(screen.getByRole("button", { name: "Add tool" }));
+    expect(mockPush).toHaveBeenLastCalledWith("/arrange");
+    expect(mockPush).toHaveBeenCalledTimes(2);
   });
 
   /**
@@ -440,22 +394,6 @@ describe("HomeScreen header actions (#979)", () => {
 
     renderPopulatedHome();
     expect(getTourTarget("home-edit")).not.toBeNull();
-  });
-
-  /**
-   * Removing the last tool row while arranging must not strand the mode on with no
-   * control left to turn it off - the next added row would arrive wearing drag handles.
-   */
-  it("drops out of arrange mode when the last tool row is removed", () => {
-    renderPopulatedHome();
-    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
-    expect(screen.getByText("Drag to rearrange")).toBeTruthy();
-
-    mockWidgetIds = [];
-    fireEvent.press(screen.getByRole("button", { name: "Remove mood-checkin" }));
-
-    expect(screen.queryByText("Drag to rearrange")).toBeNull();
-    expect(screen.getByTestId("home-empty-state")).toBeTruthy();
   });
 });
 
@@ -658,19 +596,14 @@ describe("HomeScreen tiers", () => {
     expect(screen.getByText("Guided programmes")).toBeTruthy();
   });
 
-  it("reorders within a tier, naming only that tier's ids", () => {
-    // `set_widget_order` reassigns only the positions its named ids already hold, so a
-    // tool move must not name the programme row. Passing the flat cross-tier list would
-    // renumber 0..n-1 over both tiers - the renderer re-partitions and the row snaps
-    // back, which reads as "drag does nothing" rather than as a wrong write.
+  it("renders the tool tier in preference order", () => {
+    // Home is a read-only view of `widget_preferences` in `position` order; reordering
+    // is arrange-screen.test.tsx's question now. Order is still asserted HERE, because
+    // "arrange writes the order" and "home renders that order" are two different claims
+    // and only the second one is this screen's.
     renderMixedHome();
-    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
 
-    fireEvent.press(screen.getByRole("button", { name: "Move sleep-latest earlier" }));
-
-    expect(mockReorderWidgets).toHaveBeenCalledWith(
-      ["sleep-latest", "mood-checkin"],
-      expect.objectContaining({ onSuccess: expect.any(Function) }),
-    );
+    const rendered = screen.getAllByTestId(/^tool-row-/).map((node) => node.props.testID as string);
+    expect(rendered).toEqual(["tool-row-mood-checkin", "tool-row-sleep-latest"]);
   });
 });
