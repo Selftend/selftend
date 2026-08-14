@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.14.0](https://github.com/Selftend/selftend/compare/v0.13.0...v0.14.0) (2026-08-14)
+
+
+### Features
+
+* **cbt:** the condition table says what it is ([#1011](https://github.com/Selftend/selftend/issues/1011)) ([#1022](https://github.com/Selftend/selftend/issues/1022)) ([aa50ae7](https://github.com/Selftend/selftend/commit/aa50ae7ba63fe09b261ea4c3a2038af986a6faea))
+* **home:** arrange becomes a route, and AddWidgetModal dies ([#980](https://github.com/Selftend/selftend/issues/980)) ([#1018](https://github.com/Selftend/selftend/issues/1018)) ([706b99b](https://github.com/Selftend/selftend/commit/706b99bbeb1fd3d16794787566e3a6ccd22867d4))
+* **home:** collapse the three legacy widget ids and bump snapshot schemaVersion to 4 ([#984](https://github.com/Selftend/selftend/issues/984)) ([381ad0e](https://github.com/Selftend/selftend/commit/381ad0e6f0e4437ac1ad7e8b342e20ca9213516e))
+* **home:** server-owned widget positions via add_widget_preference and set_widget_order ([#985](https://github.com/Selftend/selftend/issues/985)) ([0ddbf9f](https://github.com/Selftend/selftend/commit/0ddbf9fa6c96cdfc3cbe48c7b25be222190d1dbc)), closes [#974](https://github.com/Selftend/selftend/issues/974)
+* **home:** the fourteen module and shortcut rows ([#992](https://github.com/Selftend/selftend/issues/992)) ([c1a8a0c](https://github.com/Selftend/selftend/commit/c1a8a0cb84918b16bc8a2f7e103203c880234c59))
+* **home:** the greeting, two header actions, and the empty state ([#979](https://github.com/Selftend/selftend/issues/979)) ([#997](https://github.com/Selftend/selftend/issues/997)) ([636580e](https://github.com/Selftend/selftend/commit/636580e60e80403fc44ce49abf17dd68a4917b74))
+* **home:** the Guided programmes tier - honest ordinal badge, no bar ([#993](https://github.com/Selftend/selftend/issues/993)) ([4474916](https://github.com/Selftend/selftend/commit/447491673e0b170239bc37e6b70b26e0407084bd))
+* **home:** the Right now tier - mood card and two derived nudges ([#994](https://github.com/Selftend/selftend/issues/994)) ([12ae145](https://github.com/Selftend/selftend/commit/12ae1458518d7f5129493e1a9d89d123cdca4550))
+* **home:** the Your tools tier becomes rows, with nine tool stats ([#988](https://github.com/Selftend/selftend/issues/988)) ([e1a620f](https://github.com/Selftend/selftend/commit/e1a620f468a1a7bdefd18062b782eef0935aca9e))
+* **home:** WidgetMeta gains route and tier, making the registry the dashboard catalogue ([#983](https://github.com/Selftend/selftend/issues/983)) ([759e6be](https://github.com/Selftend/selftend/commit/759e6bede57480f04b772c0796ca8b2913c59395))
+* **reminders:** one control, two paths ([#981](https://github.com/Selftend/selftend/issues/981)) ([#1012](https://github.com/Selftend/selftend/issues/1012)) ([b8910db](https://github.com/Selftend/selftend/commit/b8910dbbeb94efdb8560556fab998af7a8f978b1))
+* **settings:** seven cards flatten into four labelled runs ([#982](https://github.com/Selftend/selftend/issues/982)) ([#1015](https://github.com/Selftend/selftend/issues/1015)) ([01620a6](https://github.com/Selftend/selftend/commit/01620a6c6b9088fcb18e33c9d3759b3139fa5efa))
+* **store:** commit the Apple age-rating declaration and guard it ([#1021](https://github.com/Selftend/selftend/issues/1021)) ([#1025](https://github.com/Selftend/selftend/issues/1025)) ([a06ed05](https://github.com/Selftend/selftend/commit/a06ed05ea41f4bf51daa0fb9714998cd0578e968))
+
+
+### Bug Fixes
+
+* canonical _one plural suffix ends Weblate's duplicated-identifier alert ([#946](https://github.com/Selftend/selftend/issues/946)) ([506df5b](https://github.com/Selftend/selftend/commit/506df5bac336ed0b470e9e193f0cad1d2285e618))
+* **copy:** &quot;no pressure&quot; stops advertising the product's restraint ([#963](https://github.com/Selftend/selftend/issues/963)) ([#1030](https://github.com/Selftend/selftend/issues/1030)) ([726eb92](https://github.com/Selftend/selftend/commit/726eb920b382a38c71cb138dca1bcd3d53123a09))
+* **home:** an unrenderable dashboard says so instead of &quot;nothing added yet&quot; ([#964](https://github.com/Selftend/selftend/issues/964)) ([#1033](https://github.com/Selftend/selftend/issues/1033)) ([ead8c22](https://github.com/Selftend/selftend/commit/ead8c22f53ce1a8fb6c0bb59788fefcfa06e3e97))
+* **i18n:** locale-aware one-decimal numbers and translated hour units ([#987](https://github.com/Selftend/selftend/issues/987)) ([2a770d3](https://github.com/Selftend/selftend/commit/2a770d31481a6563c1ce169c1489d91f70dfba62))
+* **modules:** DBT stops advertising a module that does not exist ([#1020](https://github.com/Selftend/selftend/issues/1020)) ([#1024](https://github.com/Selftend/selftend/issues/1024)) ([0ccfcd6](https://github.com/Selftend/selftend/commit/0ccfcd692503ff83b111f44ccb4446817b4fc555))
+* **nav:** lateral navigation reuses a screen instead of stacking a copy ([#1027](https://github.com/Selftend/selftend/issues/1027)) ([#1028](https://github.com/Selftend/selftend/issues/1028)) ([d44daff](https://github.com/Selftend/selftend/commit/d44dafffaf60a3e50c0f43eea6f0d950c3ad6c36))
+* **nav:** the panel returns to a screen instead of stacking a second one ([#989](https://github.com/Selftend/selftend/issues/989)) ([#1026](https://github.com/Selftend/selftend/issues/1026)) ([f245997](https://github.com/Selftend/selftend/commit/f24599751e07efe3cb926ce74b5b5f691a6253b3))
+* **privacy:** cookie consent can be withdrawn again ([#969](https://github.com/Selftend/selftend/issues/969)) ([#1031](https://github.com/Selftend/selftend/issues/1031)) ([01a571c](https://github.com/Selftend/selftend/commit/01a571c9f42a445af7d92d4b4b49301e6887eeda))
+* **privacy:** the mood score no longer rides a Sentry navigation breadcrumb ([#996](https://github.com/Selftend/selftend/issues/996)) ([#1029](https://github.com/Selftend/selftend/issues/1029)) ([3afcf87](https://github.com/Selftend/selftend/commit/3afcf8737618d15e9994b90c6da8f8a208459dbe))
+* **privacy:** the mood score no longer rides an in-app URL ([#995](https://github.com/Selftend/selftend/issues/995)) ([061d677](https://github.com/Selftend/selftend/commit/061d677f05590e5c5909ea021d84705cdc9fc76e))
+* **profile:** the header and settings agree on one avatar expression ([#970](https://github.com/Selftend/selftend/issues/970)) ([#1032](https://github.com/Selftend/selftend/issues/1032)) ([0bfaba8](https://github.com/Selftend/selftend/commit/0bfaba8f5a76ac77c94332dedea17fb19d003392))
+
+
+### Performance Improvements
+
+* **home:** fourteen list fetches become fourteen one-row reads ([#990](https://github.com/Selftend/selftend/issues/990)) ([#1023](https://github.com/Selftend/selftend/issues/1023)) ([d91a669](https://github.com/Selftend/selftend/commit/d91a669b9fa3f45bf06a582ef0414a5ef148666d))
+
 ## [0.13.0](https://github.com/Selftend/selftend/compare/v0.12.0...v0.13.0) (2026-08-12)
 
 
