@@ -1,4 +1,11 @@
-import { ActivityIndicator, Platform, Pressable, RefreshControl, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  RefreshControl,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,7 +13,6 @@ import type { TFunction } from "i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import Sortable from "react-native-sortables";
-import { Circle, Svg } from "react-native-svg";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -36,11 +42,16 @@ import { useUserPreferences } from "@/src/features/settings/queries";
 import { HomeTour } from "@/src/features/tours/home-tour";
 import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 import { cn } from "@/lib/utils";
-import { useAccentHsl } from "@/src/lib/theme-palette";
 
 const PADDING = 24;
 /** The `Guided programmes` tier's fixed order. */
 const PROGRAMME_ORDER = ["cbt-programme", "act-programme"];
+/**
+ * Phone below, desktop at or above - the same 640 breakpoint and the same
+ * `useWindowDimensions` source `ToolRow` uses, so the header actions and the rows they
+ * sit above never disagree about which face the screen is wearing.
+ */
+const WIDE_HEADER_WIDTH = 640;
 type WidgetEditAction =
   | { type: "add"; widgetId: string }
   | { type: "remove"; widgetId: string; position: number }
@@ -189,33 +200,29 @@ function firstWord(value: string) {
 }
 
 /**
- * Exported for its own test. The colours are SVG props rather than classes, so
- * the only way to assert they follow the selected palette is to render this and
- * read them back - and a static scan cannot do it, because the regression this
- * guards against is a VALUE (a default-palette constant like PRIMARY_TRIPLES),
- * not a literal.
+ * The empty box's mark: one drawn ring, 44px desktop / 42px phone.
+ *
+ * This replaced `BreathingDotEmpty`, three concentric SVG circles whose colours were
+ * `stroke`/`fill` PROPS. An SVG prop cannot read a CSS variable, so those rings were
+ * hand-copied `hsla(262, 62%, 56%, …)` literals - the DEFAULT palette's accent - and they
+ * stayed violet on every other palette while the `+` in the middle followed the style.
+ * `useAccentHsl` fixed the value but not the mechanism, and the mechanism was the problem:
+ * a prop is invisible to the token gates, so only a bespoke 8-palette render test could
+ * see it. Plain classes are what the gates already read, which is why deleting that test
+ * with the component is safe rather than a loss of coverage.
  */
-export function BreathingDotEmpty() {
-  // The three rings are the app accent at three strengths. They were written as
-  // `hsla(262, 62%, 56%, …)` literals - the DEFAULT palette's accent, copied by
-  // hand - so they stayed violet on every other palette while the `+` glyph in
-  // the middle (`text-primary`) followed the style. An SVG prop cannot read a
-  // CSS variable, which is exactly what `useAccentHsl` is for.
-  const accent = useAccentHsl();
+function EmptyStateMark({ wide }: { wide: boolean }) {
   return (
     <View
       accessibilityElementsHidden
       importantForAccessibility="no"
-      className="h-[72px] w-[72px] items-center justify-center"
+      testID="home-empty-mark"
+      className={cn(
+        "items-center justify-center rounded-full border border-primary/30 bg-primary/10",
+        wide ? "size-11" : "size-[42px]",
+      )}
     >
-      <Svg width="72" height="72" viewBox="0 0 72 72">
-        <Circle cx="36" cy="36" r="35" stroke={accent(0.2)} strokeWidth="1" fill="none" />
-        <Circle cx="36" cy="36" r="25" stroke={accent(0.3)} strokeWidth="1" fill="none" />
-        <Circle cx="36" cy="36" r="20" fill={accent(0.1)} />
-      </Svg>
-      <View className="absolute items-center justify-center">
-        <Icon name="add" size={22} className="text-primary" />
-      </View>
+      <Icon name="add" size={22} className="text-primary" />
     </View>
   );
 }
@@ -225,13 +232,15 @@ export default function HomeScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: profile } = useUserProfile(user);
-  const [editMode, setEditMode] = useState(false);
+  const [editRequested, setEditRequested] = useState(false);
   const [addVisible, setAddVisible] = useState(false);
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
   const [undoStack, setUndoStack] = useState<WidgetEditAction[]>([]);
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   const { selectedDate } = useSelectedDate();
+  const { width } = useWindowDimensions();
+  const wide = width >= WIDE_HEADER_WIDTH;
   const hour = new Date().getHours();
   const dateLabel = new Intl.DateTimeFormat(i18n.language, {
     weekday: "long",
@@ -293,6 +302,25 @@ export default function HomeScreen() {
       ),
     [widgetIds],
   );
+
+  /**
+   * Derived, not stored: arranging is only reachable from the header cluster, and the
+   * cluster unmounts the moment the tool tier empties. Removing the last tool while in
+   * edit mode would otherwise strand the flag `true` with no control left to turn it off,
+   * so the next added row would arrive wearing drag handles nobody asked for. (S9/#980
+   * deletes the mode outright when arrange becomes a route.)
+   */
+  const editMode = editRequested && toolIds.length > 0;
+
+  /**
+   * `Get suggestions` runs `apply_widget_recommendations`, which opens with
+   * `delete from public.widget_preferences where user_id = uid` - a whole-dashboard
+   * rewrite. That is correct on first run and destructive anywhere else, so the offer is
+   * gated on the UNFILTERED row count, not on `widgetIds`. A row for an id this build
+   * does not implement is invisible to the screen but very much present in the table, and
+   * it would be deleted just the same. (One face of #964; the general defect stays open.)
+   */
+  const dashboardIsEmpty = (preferences ?? []).length === 0;
 
   const mutationPending =
     addMutation.isPending ||
@@ -367,24 +395,33 @@ export default function HomeScreen() {
     }
   };
 
-  const hero = (
-    <View className="pb-3">
-      {/* Hero - card-style with subtle purple tint */}
-      <View className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
-        <Text variant="eyebrow">
-          {/* Home always describes the device's current local day (#250), so it
-              names it rather than testing a constant (#720). */}
-          {t("today.eyebrow", { date: dateLabel })}
-        </Text>
-        <Text
-          variant="h1"
-          className="mt-2.5 text-[32px] font-extrabold leading-[1.1] tracking-tight"
-        >
-          {greetingLine}
-        </Text>
-      </View>
+  /**
+   * Eyebrow and `h1`, and it stops there (#960).
+   *
+   * Home carries no derived prose: live state is shown by `Right now` existing, recorded
+   * state by the row that owns it, and the absence of both by absence. The tinted hero box
+   * went with the third line - a box exists to separate its contents from the page, and
+   * two lines of chrome at the top of a scroll have nothing to be separated from.
+   *
+   * Exactly two children is the assertion (`home-greeting`), not the absence of a testID:
+   * a `queryByTestId(...).toBeNull()` for copy that no longer exists passes forever and
+   * rots silently.
+   */
+  const greetingBlock = (
+    <View testID="home-greeting" className="pb-5">
+      <Text variant="eyebrow">
+        {/* Home always describes the device's current local day (#250), so it
+            names it rather than testing a constant (#720). */}
+        {t("today.eyebrow", { date: dateLabel })}
+      </Text>
+      <Text variant="h1" className="mt-2.5 text-[32px] font-extrabold leading-[1.1] tracking-tight">
+        {greetingLine}
+      </Text>
     </View>
   );
+
+  const arrangeLabel = editMode ? t("home.doneLabel") : t("home.arrangeLabel");
+  const addToolLabel = t("home.addToolLabel");
 
   /**
    * The `Your tools` heading and its actions, rendered with the rows they name rather
@@ -394,50 +431,63 @@ export default function HomeScreen() {
    */
   const toolsHeader = (
     <View className="gap-6">
-      {/* Section heading row */}
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1 min-w-0">
-          <Text variant="h2" className="text-xl font-bold tracking-tight">
-            {t("home.tiers.tools")}
-          </Text>
-          <Text variant="muted" className="mt-0.5 text-[12.5px]">
-            {t("today.dashboardSub")}
-          </Text>
-        </View>
-        <View className="flex-row gap-1" ref={editButtonsRef}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={() => setEditMode((v) => !v)}
-            accessibilityLabel={editMode ? t("home.doneLabel") : t("home.editLabel")}
-          >
-            <Icon name={editMode ? "check" : "edit"} className="size-5 text-primary" />
-          </Button>
-          {editMode ? (
+      {/* Section heading row. The heading is bare - one tier, one name, in both states. */}
+      <View className="flex-row items-center justify-between gap-3">
+        <Text variant="h2" className="min-w-0 flex-1 text-xl font-bold tracking-tight">
+          {t("home.tiers.tools")}
+        </Text>
+        {/*
+          Two actions, and they render iff the tool tier is non-empty: both of them act on
+          rows, and there are no rows to act on. The empty box below carries its own
+          `Add manually`, so nothing becomes unreachable.
+
+          The tour target rides this cluster, and that is deliberate rather than tolerated:
+          `HomeTour` builds its queue from targets that are already REGISTERED, so an
+          unmounted cluster makes the `home:edit` stop skip - silently, and without marking
+          it shown, which is what leaves it to fire the first time the user owns a tool.
+        */}
+        {toolIds.length > 0 ? (
+          <View className="flex-row items-center gap-1.5" ref={editButtonsRef}>
             <Button
               variant="ghost"
-              size="sm"
-              disabled={undoStack.length === 0}
-              onPress={undoLastEdit}
-              accessibilityLabel={t("today.dashboard.undo")}
+              size={wide ? "sm" : "icon"}
+              className={cn(!wide && "h-9 w-9")}
+              // S9/#980 swaps this handler for `router.push` to the arrange route; the
+              // label is already the route's name rather than the mode's.
+              onPress={() => setEditRequested((v) => !v)}
+              accessibilityLabel={arrangeLabel}
             >
-              <Icon
-                name="undo"
-                className={
-                  undoStack.length === 0 ? "size-5 text-primary/40" : "size-5 text-primary"
-                }
-              />
+              <Icon name={editMode ? "check" : "tune"} className="size-5 text-primary" />
+              {wide ? <Text className="text-primary">{arrangeLabel}</Text> : null}
             </Button>
-          ) : null}
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={() => setAddVisible(true)}
-            accessibilityLabel={t("today.dashboard.addWidgetTitle")}
-          >
-            <Icon name="add" className="size-5 text-primary" />
-          </Button>
-        </View>
+            {editMode ? (
+              <Button
+                variant="ghost"
+                size={wide ? "sm" : "icon"}
+                className={cn(!wide && "h-9 w-9")}
+                disabled={undoStack.length === 0}
+                onPress={undoLastEdit}
+                accessibilityLabel={t("today.dashboard.undo")}
+              >
+                <Icon
+                  name="undo"
+                  className={
+                    undoStack.length === 0 ? "size-5 text-primary/40" : "size-5 text-primary"
+                  }
+                />
+              </Button>
+            ) : null}
+            <Button
+              size={wide ? "sm" : "icon"}
+              className={cn(!wide && "h-9 w-9")}
+              onPress={() => setAddVisible(true)}
+              accessibilityLabel={addToolLabel}
+            >
+              <Icon name="add" className="size-5 text-primary-foreground" />
+              {wide ? <Text>{addToolLabel}</Text> : null}
+            </Button>
+          </View>
+        ) : null}
       </View>
 
       {editMode ? (
@@ -464,7 +514,7 @@ export default function HomeScreen() {
           contentContainerStyle={{ padding: PADDING }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         >
-          {hero}
+          {greetingBlock}
 
           {/*
             `Right now` is home's FIRST tier and is NOT id-driven: zero rows in
@@ -483,57 +533,96 @@ export default function HomeScreen() {
           */}
           {toolsHeader}
 
+          {/*
+            A loading surface never claims emptiness. The spinner is the first branch and
+            the dashed box is unreachable until the query settles, so `Add tools you want
+            to check in with each day` is never shown to someone who has some.
+          */}
           {isLoading ? (
             <View className="items-center py-8">
               <ActivityIndicator />
             </View>
-          ) : widgetIds.length === 0 ? (
-            <View className="mt-2 items-center gap-3.5 rounded-2xl border border-dashed border-border px-6 py-10">
-              <BreathingDotEmpty />
-              <View className="items-center gap-1.5 px-6">
-                <Text className="text-center text-[15px] font-semibold">
-                  {t("today.emptyTitle")}
-                </Text>
-                <Text
-                  variant="muted"
-                  className="text-center text-[13px] leading-relaxed max-w-[34ch]"
-                >
-                  {t("today.emptyDescription")}
-                </Text>
-              </View>
-              <View className="mt-2 w-full max-w-sm gap-2 sm:flex-row">
-                <Button variant="outline" className="flex-1" onPress={() => setAddVisible(true)}>
-                  <Text>{t("today.addManually")}</Text>
-                </Button>
-                <Button className="flex-1" onPress={() => setSuggestionsVisible(true)}>
-                  <Text>{t("today.getSuggestions")}</Text>
-                </Button>
-              </View>
-            </View>
           ) : (
             <View className="mt-1 gap-7">
               {/*
-                Two tiers over ONE ordered list. A drag can only ever reorder within a
-                tier, because the sortable is given that tier's ids alone - see
-                `reorderWidgets`.
+                The dashed box is the TOOL TIER's empty state, not the page's - it renders
+                beside a programme card rather than instead of it. The design never drew
+                that state; the split falls out of `apply_widget_recommendations` being a
+                whole-dashboard rewrite, so only the offer inside the box is gated on the
+                page being empty.
 
-                `Sortable.Grid columns={1}`, never `Sortable.Flex`: Flex drops
-                re-measures of 1px or less, which is exactly the delta between two rows
-                of the same height.
-
-                Only the TOOL tier is sortable. The programme tier below renders in a
-                fixed order (#977), so it is a plain list - see `programmeIds`.
+                No starter cards. A starter tap has exactly two possible meanings and both
+                break: `open the tool` leaves home permanently empty so the screen never
+                resolves itself, and `add and open` silently writes a persisted row from a
+                card that reads as a suggestion - with undo living in an arrange bar an
+                empty dashboard cannot reach.
               */}
-              <TierSection
-                ids={toolIds}
-                editMode={editMode}
-                mutationPending={mutationPending}
-                scrollableRef={scrollableRef}
-                onDragEnd={(next) => reorderWidgets(toolIds, next)}
-                onMove={(id, offset) => moveWidget(toolIds, id, offset)}
-                onRemove={removeWidget}
-                renderRow={(id) => <ToolTierRow id={id} userId={userId} />}
-              />
+              {toolIds.length === 0 ? (
+                <View
+                  testID="home-empty-state"
+                  className="items-center gap-3.5 rounded-2xl border border-dashed border-border px-6 py-10"
+                >
+                  <EmptyStateMark wide={wide} />
+                  <View className="items-center gap-1.5 px-6">
+                    <Text className="text-center text-[15px] font-semibold">
+                      {t("today.emptyTitle")}
+                    </Text>
+                    <Text
+                      variant="muted"
+                      className="text-center text-[13px] leading-relaxed max-w-[34ch]"
+                    >
+                      {t("today.emptyDescription")}
+                    </Text>
+                  </View>
+                  {/*
+                    Neither button is primary, and `Add manually` is first. Three different
+                    arrangements existed across the two frames and the shipped code, so
+                    there was no intent to preserve - and the two choices are peers: one
+                    builds the dashboard by hand, the other by questionnaire.
+                  */}
+                  <View className="mt-2 w-full max-w-sm gap-2 sm:flex-row">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onPress={() => setAddVisible(true)}
+                    >
+                      <Text>{t("today.addManually")}</Text>
+                    </Button>
+                    {dashboardIsEmpty ? (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onPress={() => setSuggestionsVisible(true)}
+                      >
+                        <Text>{t("today.getSuggestions")}</Text>
+                      </Button>
+                    ) : null}
+                  </View>
+                </View>
+              ) : (
+                /*
+                  Two tiers over ONE ordered list. A drag can only ever reorder within a
+                  tier, because the sortable is given that tier's ids alone - see
+                  `reorderWidgets`.
+
+                  `Sortable.Grid columns={1}`, never `Sortable.Flex`: Flex drops
+                  re-measures of 1px or less, which is exactly the delta between two rows
+                  of the same height.
+
+                  Only the TOOL tier is sortable. The programme tier below renders in a
+                  fixed order (#977), so it is a plain list - see `programmeIds`.
+                */
+                <TierSection
+                  ids={toolIds}
+                  editMode={editMode}
+                  mutationPending={mutationPending}
+                  scrollableRef={scrollableRef}
+                  onDragEnd={(next) => reorderWidgets(toolIds, next)}
+                  onMove={(id, offset) => moveWidget(toolIds, id, offset)}
+                  onRemove={removeWidget}
+                  renderRow={(id) => <ToolTierRow id={id} userId={userId} />}
+                />
+              )}
 
               {programmeIds.length > 0 ? (
                 <View className="gap-2">
@@ -571,7 +660,7 @@ export default function HomeScreen() {
         onAdd={addWidget}
         onRemove={removeWidget}
       />
-      {suggestionsVisible && widgetIds.length === 0 ? (
+      {suggestionsVisible && dashboardIsEmpty ? (
         <AppOnboardingWizard
           visible
           includeWelcome={false}

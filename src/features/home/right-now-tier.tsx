@@ -139,7 +139,12 @@ export function RightNowTier({
   if (!showMood && !showSleep && !showHabits) return null;
 
   return (
-    <View className="gap-2" testID="right-now-tier">
+    // `pb-7` matches the gap between the two tiers below, and it belongs to this root
+    // rather than to `Your tools` because the tier returns null above when it has nothing
+    // to say - so the separator exists exactly when there is something to separate. It
+    // only became visible once #979 took the tinted hero box out and left home as a run of
+    // flush blocks.
+    <View className="gap-2 pb-7" testID="right-now-tier">
       <Text variant="h2" className="text-xl font-bold tracking-tight">
         {t("home.rightNow.heading")}
       </Text>

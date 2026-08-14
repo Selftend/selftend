@@ -21,6 +21,24 @@ const HOME_TOUR_STOPS = [
 
 const ALL_HOME_KEYS = HOME_TOUR_STOPS.map((s) => s.storageKey);
 
+/**
+ * The stops whose target is currently registered.
+ *
+ * `version` is a real argument rather than decoration. `getTourTarget` reads a module-level
+ * store the React Compiler cannot see into, so a filter written inline in the component
+ * gets memoized on the reactive values it happens to mention - `preferences` and
+ * `pathname` - and then never re-runs when a target registers LATE. That was harmless
+ * while every home target mounted on the first render; #979 made home's edit cluster mount
+ * only after the widget query settles, and the tip froze on the next stop in the queue.
+ *
+ * Naming the version here puts it in the memo key, which is the whole point. The bug is
+ * invisible to jest, where the compiler never runs - the e2e is what caught it.
+ */
+function registeredStops(version: number) {
+  void version;
+  return HOME_TOUR_STOPS.filter((stop) => getTourTarget(stop.targetKey) !== null);
+}
+
 export function HomeTour(): React.JSX.Element | null {
   const { t } = useTranslation("navigation");
   const { user } = useSession();
@@ -40,9 +58,7 @@ export function HomeTour(): React.JSX.Element | null {
   const shown = preferences?.shownButtonTours ?? [];
   const queue =
     preferences?.appOnboardingCompleted && pathname === "/"
-      ? HOME_TOUR_STOPS.filter(
-          (stop) => !shown.includes(stop.storageKey) && getTourTarget(stop.targetKey) !== null,
-        )
+      ? registeredStops(registryVersion).filter((stop) => !shown.includes(stop.storageKey))
       : [];
   const current = queue[0] ?? null;
 
