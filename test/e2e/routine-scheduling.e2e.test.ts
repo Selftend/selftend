@@ -131,17 +131,14 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     // a slot it has to hide. This assertion is the positive control for that.
     await navigateViaPanel(page, "Home");
     await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
-    // `.last()` is load-bearing, and not for the usual reason. Navigating back to Home
-    // through the panel leaves TWO `home-layout` roots mounted (measured: 2 roots, 2
-    // rows); the earlier one is the backgrounded screen and is HIDDEN, so `.first()`
-    // resolves to it and fails. This predates the row rewrite - the assertion replaced
-    // here looked past it only because asserting ABSENCE passes at any mount count, and
-    // `sign-up-onboarding.e2e` already reaches for `.last()` on home strings for the
-    // same reason. Filed separately; scoping keeps this test about routines.
-    await expect(page.getByText("Routines today", { exact: true }).last()).toBeVisible({
+    // Plain locators, no `.last()`: panel navigation used to leave TWO mounted `home-layout`
+    // roots, so `.first()` resolved to the hidden backgrounded copy and every home locator
+    // here had to reach past it. #989 fixed the cause, and a strict-mode violation on
+    // either of these is the duplicate coming back.
+    await expect(page.getByText("Routines today", { exact: true })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText("Nothing scheduled today", { exact: true }).last()).toBeVisible({
+    await expect(page.getByText("Nothing scheduled today", { exact: true })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByTestId("routine-fab")).toBeHidden();

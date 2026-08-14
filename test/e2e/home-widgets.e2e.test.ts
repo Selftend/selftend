@@ -15,9 +15,13 @@
  * the render - a row that moves on screen and snaps back on reload is exactly the failure
  * #975 removed from the tool tier.
  *
- * ⚠️ Home locators are `.last()`. After panel navigation home has TWO mounted roots and
- * `.first()` resolves to the hidden one (#989). The arrange route has one root, so its
- * locators are bare.
+ * ⚠️ Home locators were `.last()` because panel navigation left TWO mounted home roots
+ * and `.first()` resolved to the hidden one. #989 fixed that, so they are plain again -
+ * a strict-mode violation here now means the duplicate is back, which is worth more than
+ * the workaround was. One genuine ambiguity is unrelated and remains: `Sleep` names both
+ * the Right now nudge and the tool row on a SINGLE home, so that one assertion goes by
+ * testID. `Check-in` does not - the Right now mood card reads "How are you?" - so it
+ * stays a text locator and keeps the duplicate-detector.
  */
 
 import type { Page } from "@playwright/test";
@@ -31,7 +35,6 @@ import {
 } from "./helpers";
 
 const CHECK_IN = "Check-in";
-const SLEEP = "Sleep";
 const SELF_CARE = "Self-care log";
 const CBT_PROGRAMME = "CBT programme";
 
@@ -94,12 +97,12 @@ test.describe("home arrange screen", () => {
 
     await page.goto("/(app)");
     await dismissPostSignInModals(page);
-    await expect(page.getByRole("heading", { name: "Your tools", exact: true }).last()).toBeVisible(
-      { timeout: 15_000 },
-    );
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
 
     // --- Arrange is a ROUTE, reached from home's tune action -----------------
-    await page.getByRole("button", { name: "Arrange", exact: true }).last().click();
+    await page.getByRole("button", { name: "Arrange", exact: true }).click();
     await expect(page).toHaveURL(/\/arrange$/);
 
     // The banner is the one sentence. The design's second - "Nothing is deleted -
@@ -192,13 +195,15 @@ test.describe("home arrange screen", () => {
 
     // --- Done is router.back() ------------------------------------------------
     await page.getByRole("button", { name: "Done", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Your tools", exact: true }).last()).toBeVisible(
-      { timeout: 15_000 },
-    );
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
 
-    // Home renders the order arrange wrote, and the removal stuck.
-    await expect(page.getByText(SLEEP, { exact: true }).last()).toBeVisible();
-    await expect(page.getByText(CHECK_IN, { exact: true }).last()).toBeVisible();
+    // Home renders the order arrange wrote, and the removal stuck. Sleep by testID, because
+    // `Sleep` also names the Right now nudge and matches twice on one home; `Check-in` has
+    // no such twin, so it stays a text locator that a duplicate home would break.
+    await expect(page.getByTestId("tool-row-sleep-latest")).toBeVisible();
+    await expect(page.getByText(CHECK_IN, { exact: true })).toBeVisible();
     await expect(page.getByText(SELF_CARE, { exact: true })).toHaveCount(0);
     // `mood-checkin` last, because two keyboard moves took it there and both stuck. The
     // programme row is still at the position it was seeded into, untouched by either.
@@ -213,9 +218,9 @@ test.describe("home arrange screen", () => {
 
     await page.goto("/(app)");
     await dismissPostSignInModals(page);
-    await expect(page.getByRole("heading", { name: "Your tools", exact: true }).last()).toBeVisible(
-      { timeout: 15_000 },
-    );
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
 
     // Home has no editing affordance left: no per-row remove, no move chevrons, no
     // `Drag to rearrange` hint. Both header actions are doors to the route.
@@ -225,15 +230,15 @@ test.describe("home arrange screen", () => {
 
     // `Add tool` leads to the same screen as `Arrange`: adding lives there as the chip
     // run now that the modal is gone.
-    await page.getByRole("button", { name: "Add tool", exact: true }).last().click();
+    await page.getByRole("button", { name: "Add tool", exact: true }).click();
     await expect(page).toHaveURL(/\/arrange$/);
     await expect(page.getByTestId("arrange-chip-self-care")).toBeVisible({ timeout: 10_000 });
 
     // Browser back is Done by construction, because Done IS back.
     await page.goBack();
-    await expect(page.getByRole("heading", { name: "Your tools", exact: true }).last()).toBeVisible(
-      { timeout: 15_000 },
-    );
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(
       page.getByText("Drag to reorder, or remove what you don't check in with."),
     ).toHaveCount(0);

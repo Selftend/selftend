@@ -8,15 +8,21 @@ jest.mock("expo-router", () => {
   const React = require("react");
 
   return {
+    // `dangerouslySingular` rides through with `href` because it is half of what a
+    // panel link IS (#989) - a link that pushes a duplicate of a screen already in the
+    // stack is a different thing from one that returns to it.
     Link: ({
       href,
       asChild: _asChild,
       children,
+      dangerouslySingular,
     }: {
       href: string;
       asChild?: boolean;
       children: ReactElement;
-    }) => React.cloneElement(React.Children.only(children), { href }),
+      // expo-router's real SingularOptions; the panel only ever passes `true`.
+      dangerouslySingular?: boolean | ((name: string, params: object) => string | undefined);
+    }) => React.cloneElement(React.Children.only(children), { href, dangerouslySingular }),
     usePathname: () => "/",
   };
 });
@@ -69,5 +75,40 @@ describe("SidebarNav module rows", () => {
     for (const label of ["CBT", "ACT", "DBT"]) {
       expect(screen.getByText(label)).toBeTruthy();
     }
+  });
+});
+
+/**
+ * The panel is LATERAL navigation between peer destinations, and expo-router's default
+ * NAVIGATE only reuses the route it is already on: a target sitting deeper in the stack
+ * gets pushed again. Routines -> Home therefore mounted a SECOND Home and every query on
+ * it ran twice (#989). `dangerouslySingular` moves the existing screen to the top instead.
+ *
+ * Asserted over every row rather than a sampled one: the defect is per-link, so one
+ * un-marked row is the whole bug back for that destination.
+ */
+describe("SidebarNav link identity", () => {
+  it("marks every destination singular so a revisit cannot stack a second copy", () => {
+    renderWithProviders(<SidebarNav />);
+
+    // Report the hrefs that are NOT singular rather than asserting row by row: the
+    // failure then names the destination that regressed instead of just "false !== true".
+    const notSingular = screen
+      .getAllByRole("link")
+      .filter((link) => link.props.dangerouslySingular !== true)
+      .map((link) => String(link.props.href));
+
+    expect(notSingular).toEqual([]);
+  });
+
+  // Guards the assertion above against passing vacuously: an empty-array expectation is
+  // satisfied forever by a render that produces no links at all. Named destinations
+  // rather than a count, so adding a nav item doesn't fail a test about something else.
+  it("actually renders the destinations that assertion is about", () => {
+    renderWithProviders(<SidebarNav />);
+
+    const hrefs = screen.getAllByRole("link").map((link) => String(link.props.href));
+
+    expect(hrefs).toEqual(expect.arrayContaining(["/(app)", "/(app)/routines", "/(app)/settings"]));
   });
 });
