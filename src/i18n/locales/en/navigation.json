@@ -168,6 +168,14 @@
       "habits": "Habits",
       "routines": "Routines"
     },
+    "tiers": {
+      "tools": "Your tools",
+      "programmes": "Guided programmes"
+    },
+    "programme": {
+      "phase": "Phase {{current}} of {{total}}",
+      "complete": "Complete"
+    },
     "programWidget": {
       "notEnrolled": "A guided path through this module. Open it to review the full programme before choosing whether to begin.",
       "viewProgram": "View programme",
@@ -177,10 +185,6 @@
       "openProgram": "Open programme",
       "moreGoals_one": "+{{count}} more goal",
       "moreGoals_other": "+{{count}} more goals"
-    },
-    "tiers": {
-      "tools": "Your tools",
-      "programmes": "Guided programmes"
     },
     "rows": {
       "empty": "Nothing yet",
@@ -279,11 +283,11 @@
       },
       "cbtProgramme": {
         "title": "CBT programme",
-        "metaDesc": "Your guided programme progress."
+        "metaDesc": "A guided path through the CBT module, one phase at a time."
       },
       "actProgramme": {
         "title": "ACT programme",
-        "metaDesc": "Your guided ACT programme and current goals."
+        "metaDesc": "A guided path through the ACT module, one phase at a time."
       },
       "cbtWorry": {
         "title": "Worry journal",

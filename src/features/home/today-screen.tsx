@@ -37,6 +37,8 @@ import { cn } from "@/lib/utils";
 import { useAccentHsl } from "@/src/lib/theme-palette";
 
 const PADDING = 24;
+/** The `Guided programmes` tier's fixed order. */
+const PROGRAMME_ORDER = ["cbt-programme", "act-programme"];
 type WidgetEditAction =
   | { type: "add"; widgetId: string }
   | { type: "remove"; widgetId: string; position: number }
@@ -251,8 +253,22 @@ export default function HomeScreen() {
     () => widgetIds.filter((id) => metaForWidget(id)?.tier === "tool"),
     [widgetIds],
   );
+  /**
+   * Fixed order, CBT then ACT (#977) - deliberately NOT `position` order like the tool
+   * tier. Onboarding writes these ids in the order the user tapped the module chips, so
+   * `position` would seat ACT first for anyone who picked it first, and the tier is two
+   * cards with no reason to vary.
+   *
+   * ⚠️ It follows that the programme tier is not user-orderable, so it is rendered as a
+   * plain list rather than a sortable one - a drag that writes a position the renderer
+   * then ignores is the row-snaps-back lie #975 removed from the tool tier. #980's
+   * arrange screen has to reckon with that; raised on the ticket.
+   */
   const programmeIds = useMemo(
-    () => widgetIds.filter((id) => metaForWidget(id)?.tier === "programme"),
+    () =>
+      PROGRAMME_ORDER.filter(
+        (id) => widgetIds.includes(id) && metaForWidget(id)?.tier === "programme",
+      ),
     [widgetIds],
   );
 
@@ -471,21 +487,31 @@ export default function HomeScreen() {
                   <Text variant="h2" className="text-xl font-bold tracking-tight">
                     {t("home.tiers.programmes")}
                   </Text>
-                  {/*
-                    The programme tier keeps its existing cards until S6 (#977) reshapes
-                    them. Building the partition here rather than leaving two ids
-                    homeless is the whole reason home stays whole across this slice.
-                  */}
-                  <TierSection
-                    ids={programmeIds}
-                    editMode={editMode}
-                    mutationPending={mutationPending}
-                    scrollableRef={scrollableRef}
-                    onDragEnd={(next) => reorderWidgets(programmeIds, next)}
-                    onMove={(id, offset) => moveWidget(programmeIds, id, offset)}
-                    onRemove={removeWidget}
-                    renderRow={(id) => <WidgetContent id={id} userId={userId ?? ""} />}
-                  />
+                  {programmeIds.map((id) => (
+                    <View key={id} className="flex-row items-center gap-1">
+                      <View className="min-w-0 flex-1" pointerEvents={editMode ? "none" : "auto"}>
+                        <WidgetContent id={id} userId={userId ?? ""} />
+                      </View>
+                      {/* Remove only: there is no drag handle and no move buttons,
+                          because the order is not the user's to set. */}
+                      {editMode ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={t("today.dashboard.removeWidget", {
+                            title: t(metaForWidget(id)?.titleKey ?? id),
+                          })}
+                          disabled={mutationPending}
+                          onPress={() => removeWidget(id)}
+                          className={cn(
+                            "size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
+                            Platform.select({ web: "hover:bg-destructive/10" }),
+                          )}
+                        >
+                          <Icon name="close" className="size-4 text-destructive" />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  ))}
                 </View>
               ) : null}
             </View>

@@ -134,6 +134,10 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
     // lives in one row component, whose leading glyph is CHROME_MARK by construction.
     "src/features/home/tool-row.tsx",
     "src/features/home/tool-row-stats.tsx",
+    // #977: the programme card is the tier's other identity surface. Its glyph is
+    // CHROME_MARK and its wash is `primary`, which is the app accent rather than a
+    // per-module hue - #587 already collapsed the identical act/primary twins here.
+    "src/features/home/widgets/program-widget.tsx",
   ],
 };
 
