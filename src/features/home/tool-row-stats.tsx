@@ -5,7 +5,7 @@ import type { TFunction } from "i18next";
 import { ToolRow } from "@/src/features/home/tool-row";
 import { formatOneDecimal } from "@/src/lib/locale-format";
 import { formatHours } from "@/src/features/sleep/format";
-import { formatCompactAtOffset, mondayKeyOf, parseLocalNoon } from "@/src/utils/date";
+import { addDaysToKey, formatCompactAtOffset, mondayKeyOf, parseLocalNoon } from "@/src/utils/date";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 import { useMoodLogCount, useMoodWeek } from "@/src/features/mood/queries";
@@ -27,7 +27,7 @@ import {
 } from "@/src/features/meditation/queries";
 import { useSleepStats } from "@/src/features/sleep/queries";
 import { useHabits, useHabitLogs } from "@/src/features/habits/queries";
-import { addDays, isScheduledOn, isTickedOn, localDateKey } from "@/src/features/habits/scheduling";
+import { isScheduledOn, isTickedOn } from "@/src/features/habits/scheduling";
 import { useRoutinesToday } from "@/src/features/routines/use-routines-today";
 import { useThoughtRecordCount, useThoughtRecords } from "@/src/features/cbt/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
@@ -299,8 +299,12 @@ function HabitsRow({ userId }: StatRowProps) {
    * already holds, which is what rule 1 above exists to prevent.
    */
   const { data: habits } = useHabits(userId, { includeArchived: true });
+  // The 30-day window is derived from `selectedDate` rather than a fresh `new Date()`:
+  // both resolve to the same civil-day string (so the habits screen's cache entry is
+  // still shared), but a clock read during render is impure and the React Compiler
+  // rejects it outright inside a `useMemo`.
   const { data: logs } = useHabitLogs(userId, {
-    sinceDate: localDateKey(addDays(new Date(), -30)),
+    sinceDate: addDaysToKey(selectedDate, -30),
   });
 
   let stat: string | null = null;

@@ -23,6 +23,7 @@ import { parseLocalNoon } from "@/src/utils/date";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import { isImplemented, metaForWidget, resolveWidget } from "@/src/features/home/widget-registry";
 import { ToolTierRow } from "@/src/features/home/tool-row-stats";
+import { RightNowTier } from "@/src/features/home/right-now-tier";
 import {
   useAddWidget,
   useRemoveWidget,
@@ -484,6 +485,14 @@ export default function HomeScreen() {
             </View>
           ) : (
             <View className="mt-1 gap-7">
+              {/*
+                `Right now` is first and is NOT id-driven: zero rows in
+                `widget_preferences`, derived entirely from live state, and absent from
+                arrange mode without a special case. It collapses to nothing - heading
+                included - once the day is satisfied.
+              */}
+              <RightNowTier userId={userId} widgetIds={widgetIds} />
+
               {/*
                 Two tiers over ONE ordered list. A drag can only ever reorder within a
                 tier, because the sortable is given that tier's ids alone - see

@@ -186,6 +186,14 @@
       "phase": "Phase {{current}} of {{total}}",
       "complete": "Complete"
     },
+    "rightNow": {
+      "heading": "Right now",
+      "moodTitle": "How are you?",
+      "sleepTitle": "Sleep",
+      "sleepNothing": "Nothing captured since yesterday",
+      "sleepAverage": "{{value}} average this week",
+      "habitsTitle": "Today's habits"
+    },
     "rows": {
       "empty": "Nothing yet",
       "nothingScheduled": "Nothing scheduled today",
