@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { SettingsRow } from "@/src/features/settings/components/settings-row";
@@ -13,16 +12,17 @@ import { useAppLock } from "@/src/features/settings/use-app-lock";
  * Settings → Privacy → the document, and the card was covering a device lock and
  * a policy page in one box.
  *
- * Native only. On web the app relies on the browser session plus sign-out, and
- * there is no biometric prompt to gate anything with.
+ * Native only, and the gate lives at the MOUNT POINT rather than here. A
+ * self-hiding row is invisible to `SettingsRun`: `Children.toArray` drops a
+ * `null` child, but not a child element that returns `null` once rendered - so a
+ * row hiding itself would leave its hairline behind as a stray rule on web.
+ *
+ * Gating at the mount point also means `useAppLock` never runs on web, where its
+ * biometric probe has nothing to ask.
  */
 export function AppLockRow() {
   const { t } = useTranslation("settings");
   const { enabled, available, canToggle, toggle } = useAppLock();
-
-  if (Platform.OS === "web") {
-    return null;
-  }
 
   return (
     <SettingsRow

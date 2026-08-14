@@ -10,6 +10,7 @@ import { useUserProfile } from "@/src/features/profile/queries";
 import { AvatarControls } from "@/src/features/settings/components/avatar-controls";
 import { DisplayNameField } from "@/src/features/settings/components/display-name-field";
 import { ProfileIdentityRow } from "@/src/features/settings/components/profile-identity-row";
+import { SettingsRun } from "@/src/features/settings/components/settings-run";
 import { useDisplayName } from "@/src/features/settings/use-display-name";
 import { useProfileAvatar } from "@/src/features/settings/use-profile-avatar";
 import { getErrorMessage } from "@/src/utils/error-message";
@@ -66,7 +67,12 @@ export function SettingsProfileBlock({ user }: { user: User | null }) {
           </Text>
         ) : null}
 
-        <View className="rounded-xl border border-border bg-card px-4">
+        {/*
+          The same `SettingsRun` the four labelled runs use, without a label:
+          restating its card chrome and hairline rule here is how the profile
+          panel and the runs drift into looking like different kinds of thing.
+        */}
+        <SettingsRun testID="settings-profile-panel">
           <View className="py-3.5">
             <Disclosure
               label={t("profile.editName")}
@@ -85,7 +91,7 @@ export function SettingsProfileBlock({ user }: { user: User | null }) {
             </Disclosure>
           </View>
 
-          <View className="border-t border-border py-3.5">
+          <View className="py-3.5">
             <Disclosure
               label={t("profile.change")}
               expanded={open === "photo"}
@@ -124,7 +130,7 @@ export function SettingsProfileBlock({ user }: { user: User | null }) {
               </View>
             </Disclosure>
           </View>
-        </View>
+        </SettingsRun>
       </View>
 
       {Platform.OS === "web" && avatar.cropUri ? (

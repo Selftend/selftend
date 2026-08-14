@@ -79,6 +79,14 @@ export function SettingsRow({
   testID,
 }: SettingsRowProps) {
   const ink = destructive ? "text-destructive" : undefined;
+  /**
+   * The one question the kind decides beyond which mark to draw, asked once: a
+   * switch row is NOT pressable as a whole. Wrapping it would give the row two
+   * targets for one setting, and a stray tap on the label would silently flip a
+   * device lock.
+   */
+  const pressableWhole = trailing.kind !== "switch";
+  const inert = disabled || pending;
 
   const body = (
     <>
@@ -119,10 +127,7 @@ export function SettingsRow({
     </>
   );
 
-  // A switch row is NOT pressable as a whole. Wrapping it would give the row two
-  // targets for one setting, and a stray tap on the label would silently flip a
-  // device lock.
-  if (trailing.kind === "switch") {
+  if (!pressableWhole) {
     return (
       <View testID={testID} className="flex-row items-center gap-[14px] py-3.5">
         {body}
@@ -144,15 +149,15 @@ export function SettingsRow({
       accessibilityHint={description}
       // `aria-disabled`, not `accessibilityState`: react-native-web drops the
       // latter, so a row that refuses presses would still announce as available.
-      aria-disabled={disabled || pending}
-      disabled={disabled || pending}
+      aria-disabled={inert}
+      disabled={inert}
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onPress}
       testID={testID}
       className={cn(
         "flex-row items-center gap-[14px] rounded-xl py-3.5 active:bg-accent/60",
         Platform.select({ web: "hover:bg-accent/40" }),
-        (disabled || pending) && "opacity-60",
+        inert && "opacity-60",
       )}
     >
       {body}

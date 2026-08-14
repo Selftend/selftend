@@ -96,7 +96,10 @@ export default function SettingsScreen() {
                 onPress={() => router.push("/notifications")}
                 testID="settings-row-reminders"
               />
-              <AppLockRow />
+              {/* Native only, gated here rather than inside the row: a row that
+                  returns `null` is still a child element, so `SettingsRun` would
+                  keep its hairline and draw a stray rule on web. */}
+              {Platform.OS === "web" ? null : <AppLockRow />}
               <SettingsRow
                 icon="replay"
                 label={t("onboardingSection.replayIntroduction")}

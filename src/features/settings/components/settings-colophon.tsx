@@ -1,10 +1,10 @@
-import * as Linking from "expo-linking";
 import { Platform, Pressable, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { appEnv } from "@/src/lib/env";
+import { openExternalUrl } from "@/src/lib/linking";
 import { getRunningVersion } from "@/src/lib/update-availability";
 import { cn } from "@/lib/utils";
 
@@ -63,9 +63,16 @@ export function SettingsColophon() {
       <Pressable
         accessibilityRole="link"
         role="link"
-        accessibilityLabel={t("openSource")}
+        // The visible text is two words of colophon; a link's accessible NAME has
+        // to say where it goes, and "open source" names a licence, not a
+        // destination.
+        accessibilityLabel={t("openSourceA11y")}
         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        onPress={() => void Linking.openURL(appEnv.githubRepoUrl)}
+        // `openExternalUrl`, not a bare `Linking.openURL`: on web the helper opens
+        // a new tab with `noopener,noreferrer`, where `Linking.openURL` navigates
+        // the app's own tab away - and it logs the native rejection that a `void`
+        // would swallow. Every other outbound link in the app already uses it.
+        onPress={() => openExternalUrl(appEnv.githubRepoUrl)}
         testID="settings-open-source"
         className={cn("active:opacity-70", Platform.select({ web: "hover:opacity-80" }))}
       >

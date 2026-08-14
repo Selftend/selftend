@@ -1,6 +1,7 @@
 {
   "title": "Settings",
   "openSource": "open source",
+  "openSourceA11y": "Open the Selftend source code on GitHub",
   "runs": {
     "app": "App",
     "data": "Your data",

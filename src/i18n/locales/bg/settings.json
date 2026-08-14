@@ -1,6 +1,7 @@
 {
   "title": "Настройки",
   "openSource": "отворен код",
+  "openSourceA11y": "Отвори изходния код на Selftend в GitHub",
   "runs": {
     "app": "Приложение",
     "data": "Твоите данни",

@@ -7,7 +7,7 @@ import { getErrorMessage } from "@/src/utils/error-message";
 
 /**
  * Display-name field state + save handler, extracted verbatim from
- * `ProfilePictureCard`. The input stays seeded from the loaded profile via a
+ * `SettingsProfileBlock`. The input stays seeded from the loaded profile via a
  * render-time adjustment; `save` writes through the mutation and surfaces a
  * localized message or error.
  */
