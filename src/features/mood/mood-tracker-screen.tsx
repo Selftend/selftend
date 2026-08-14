@@ -710,8 +710,8 @@ function TodayCheckIn({ latest, dateKey }: TodayCheckInProps) {
         onChange={(score) => {
           // Seeded in memory, never in the URL (#961). Expo Router serializes params
           // into the address bar on web, so `?score=N` puts a mood score in browser
-          // history and in Sentry's navigation breadcrumbs - `dropConsoleBreadcrumb`
-          // drops *console* breadcrumbs only, and navigation breadcrumbs carry the path.
+          // history. Sentry no longer sees it - `scrubBreadcrumb` strips query strings off
+          // navigation breadcrumbs (#996) - but the address bar and history still would.
           // #739 rejected this exact shape for the emotions beside it and built the
           // seed-store pattern; this is the score's half.
           seedMoodScore(score);

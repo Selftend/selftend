@@ -33,10 +33,49 @@ export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
   return event;
 }
 
-// Console logs can carry server error payloads; navigation/http breadcrumbs
-// carry only routes and status codes, which is all we need.
-export function dropConsoleBreadcrumb<T extends { category?: string }>(breadcrumb: T): T | null {
-  return breadcrumb.category === "console" ? null : breadcrumb;
+/** A route with its query string removed. Non-strings pass through untouched. */
+function routeWithoutQuery(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const queryStart = value.indexOf("?");
+  return queryStart === -1 ? value : value.slice(0, queryStart);
+}
+
+/**
+ * Console breadcrumbs are dropped whole - they can carry server error payloads.
+ *
+ * ☠️ Navigation breadcrumbs used to be waved through on the belief that they "carry only
+ * routes", which was never true: the Android launcher's mood faces deep-link
+ * `/tools/check-in/new?score=N` (#996), putting a health value in the breadcrumb trail.
+ * #961 fixed the two in-app callers with an in-memory seed store, but a launcher tap is a
+ * COLD-START deep link - there is no running JS to seed - and this repo has no OTA
+ * channel, so already-installed builds keep minting that path forever. Scrubbing here is
+ * the only fix that reaches them.
+ *
+ * The whole query string goes rather than a `score` key: a denylist of known-sensitive
+ * params is satisfied forever by whatever was known when it was written, and the next
+ * param carrying a value would leak in silence. The route still names the screen, which
+ * is what the breadcrumb is for.
+ *
+ * http breadcrumbs keep theirs - a PostgREST query string is the filter, which is the
+ * useful part, and none of them carries a health value today.
+ */
+export function scrubBreadcrumb<
+  T extends { category?: string; message?: string; data?: Record<string, unknown> },
+>(breadcrumb: T): T | null {
+  if (breadcrumb.category === "console") return null;
+
+  if (breadcrumb.category === "navigation") {
+    if (typeof breadcrumb.message === "string") {
+      breadcrumb.message = routeWithoutQuery(breadcrumb.message) as string;
+    }
+    for (const key of ["from", "to"]) {
+      if (breadcrumb.data && key in breadcrumb.data) {
+        breadcrumb.data[key] = routeWithoutQuery(breadcrumb.data[key]);
+      }
+    }
+  }
+
+  return breadcrumb;
 }
 
 export function initSentry(): void {
@@ -49,7 +88,8 @@ export function initSentry(): void {
     environment: sentryEnvironment,
     sendDefaultPii: false,
     beforeSend: (event) => scrubEvent(event as ScrubbableEvent) as typeof event,
-    beforeBreadcrumb: (breadcrumb) => dropConsoleBreadcrumb(breadcrumb as { category?: string }),
+    beforeBreadcrumb: (breadcrumb) =>
+      scrubBreadcrumb(breadcrumb as { category?: string; message?: string }),
   });
 }
 
