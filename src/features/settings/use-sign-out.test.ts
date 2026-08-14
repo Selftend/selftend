@@ -28,8 +28,7 @@ describe("useSignOut", () => {
   });
 
   it("cancels this device's reminders BEFORE signing out (RLS context still valid)", async () => {
-    const setError = jest.fn();
-    const { result } = renderHook(() => useSignOut("user-1", setError));
+    const { result } = renderHook(() => useSignOut("user-1"));
 
     await act(async () => {
       await result.current();
@@ -41,20 +40,22 @@ describe("useSignOut", () => {
     expect(mockCancel.mock.invocationCallOrder[0]).toBeLessThan(
       mockSignOut.mock.invocationCallOrder[0],
     );
-    expect(setError).not.toHaveBeenCalled();
     expect(showToast).not.toHaveBeenCalled();
   });
 
-  it("surfaces the shared error banner + an error toast when sign-out fails", async () => {
+  // The `setErrorMessage` this used to take is gone with the R7 banner pair (#982):
+  // the toast was already firing beside the banner, so the failure is reported once
+  // rather than twice on a page the user is trying to leave.
+  it("reports a failed sign-out through the toast, and only the toast", async () => {
     mockSignOut.mockRejectedValue(new Error("boom"));
-    const setError = jest.fn();
-    const { result } = renderHook(() => useSignOut("user-1", setError));
+    const { result } = renderHook(() => useSignOut("user-1"));
 
     await act(async () => {
       await result.current();
     });
 
-    expect(setError).toHaveBeenCalledWith("boom");
-    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ tone: "error" }));
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ description: "boom", tone: "error" }),
+    );
   });
 });

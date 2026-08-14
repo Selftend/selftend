@@ -1,45 +1,59 @@
-import { KeyboardAvoidingView, View } from "react-native";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { StylePicker } from "@/src/components/app/style-picker";
+import { Text } from "@/src/components/react-native-reusables/text";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { AccountCard } from "@/src/features/settings/components/account-card";
-import { OnboardingCard } from "@/src/features/settings/components/onboarding-card";
-import { ProfilePictureCard } from "@/src/features/settings/components/profile-picture-card";
-import { AppearanceCard } from "@/src/features/settings/components/appearance-card";
-import { RemindersCard } from "@/src/features/settings/components/reminders-card";
-import { SecuritySection } from "@/src/features/settings/components/security-section";
-import { SettingsFeedbackBanner } from "@/src/features/settings/components/settings-feedback-banner";
+import { AppLockRow } from "@/src/features/settings/components/app-lock-row";
+import { DeleteAccountRow } from "@/src/features/settings/components/delete-account-row";
+import { ExportDataRow } from "@/src/features/settings/components/export-data-row";
+import { SettingsColophon } from "@/src/features/settings/components/settings-colophon";
 import { SettingsHero } from "@/src/features/settings/components/settings-hero";
-import { SupportCard } from "@/src/features/settings/components/support-card";
+import { SettingsProfileBlock } from "@/src/features/settings/components/settings-profile-block";
+import { SettingsRow } from "@/src/features/settings/components/settings-row";
+import { SettingsRun } from "@/src/features/settings/components/settings-run";
 import { useOnboardingActions } from "@/src/features/settings/use-reset-onboarding";
 import { useSignOut } from "@/src/features/settings/use-sign-out";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 
+/**
+ * Settings: identity header → palette → four labelled runs → colophon.
+ *
+ * Eleven rows and one grammar, in place of seven `SettingsSectionCard`s. Two of
+ * the old cards each held two unrelated things and had to split - `Onboarding`
+ * into `Replay introduction` + `Show tips again`, and `Privacy and cookies` into
+ * two rows going to two routes - because one row cannot hold two buttons or
+ * navigate to two places, and there is no hub here worth inventing.
+ *
+ * **No page-level `LoadingState`.** The eleven rows are known before any query
+ * resolves, so a spinner over the whole page would hide a list nothing is waiting
+ * for. `useUserPreferences` survives for exactly one reason -
+ * `appOnboardingCompletedVia`, which the replay action has to preserve - so the
+ * two onboarding rows are the only ones that wait.
+ *
+ * **No feedback banners.** The R7 pair died at zero cost: both of its writers
+ * already called `showToast` beside it, and export has joined them. Transient
+ * outcomes toast; a state that persists is shown where it lives, which is why
+ * `appLockUnavailable` is a row description and the profile disclosures keep
+ * their inline messages.
+ */
 export default function SettingsScreen() {
   const { t } = useTranslation("settings");
   const { user } = useSession();
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const { data, isLoading } = useUserPreferences(user?.id ?? null);
+  const { data } = useUserPreferences(user?.id ?? null);
 
-  // Sign-out and onboarding actions stay at screen level and share the single
-  // errorMessage/successMessage banner pair (R7).
-  const handleSignOut = useSignOut(user?.id ?? null, setErrorMessage);
+  const handleSignOut = useSignOut(user?.id ?? null);
   const {
     replayIntroduction,
     showTipsAgain,
     isPending: onboardingPending,
-  } = useOnboardingActions(
-    user,
-    data?.appOnboardingCompletedVia,
-    setErrorMessage,
-    setSuccessMessage,
-  );
+  } = useOnboardingActions(user, data?.appOnboardingCompletedVia);
+
+  const onboardingDisabled = !data || onboardingPending;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
@@ -47,35 +61,129 @@ export default function SettingsScreen() {
           gets no window resize, so the screen must pad itself). */}
       <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
         <KeyboardAwareScrollView contentContainerClassName="grow p-4">
-          <View className="mx-auto w-full max-w-2xl gap-6">
+          <View testID="settings-layout" className="mx-auto w-full max-w-2xl gap-6">
             <SettingsHero />
 
-            {isLoading ? <LoadingState title={t("loading")} /> : null}
-            {errorMessage ? (
-              <SettingsFeedbackBanner title={t("problem")} message={errorMessage} />
-            ) : null}
-            {successMessage ? (
-              <SettingsFeedbackBanner title={t("saved")} message={successMessage} />
-            ) : null}
+            <SettingsProfileBlock user={user} />
 
-            <ProfilePictureCard user={user} />
+            {/*
+              The palette, above the runs and outside them: it is the one control
+              on this page that shows its own state at a glance, and a row saying
+              `Appearance ›` would hide a grid that fits.
 
-            <AppearanceCard />
+              The eight per-item swatches are not a rule-1 violation. They are
+              `hue encodes data, not identity` in its plainest form - each chip is
+              read off the RESOLVED tokens of the palette it advertises, so what
+              the user reads off the colour is the colour they would get. See the
+              asked-and-refused note in `src/lib/theme/encoding.ts`.
+            */}
+            <View className="gap-2">
+              <Text variant="muted" className="px-1 text-[13px]">
+                {t("appearance.description")}
+              </Text>
+              <StylePicker itemClassName="w-1/2 md:w-1/4 p-1" heading={false} />
+            </View>
 
-            <RemindersCard />
+            <SettingsRun label={t("runs.app")} testID="settings-run-app">
+              <SettingsRow
+                icon="notifications-active"
+                label={t("reminders.title")}
+                // The drawn `3 on` is dropped rather than fixed: it is the
+                // undercounting master count again, and the row already says the
+                // one thing that stays true - reminders are off by default.
+                description={t("reminders.description")}
+                trailing={{ kind: "chevron" }}
+                onPress={() => router.push("/notifications")}
+                testID="settings-row-reminders"
+              />
+              {/* Native only, gated here rather than inside the row: a row that
+                  returns `null` is still a child element, so `SettingsRun` would
+                  keep its hairline and draw a stray rule on web. */}
+              {Platform.OS === "web" ? null : <AppLockRow />}
+              <SettingsRow
+                icon="replay"
+                label={t("onboardingSection.replayIntroduction")}
+                trailing={{ kind: "act" }}
+                disabled={onboardingDisabled}
+                pending={onboardingPending}
+                pendingLabel={t("onboarding.saving")}
+                onPress={() => void replayIntroduction()}
+                testID="settings-row-replay-introduction"
+              />
+              <SettingsRow
+                icon="lightbulb"
+                label={t("onboardingSection.showTipsAgain")}
+                trailing={{ kind: "act" }}
+                disabled={onboardingDisabled}
+                pending={onboardingPending}
+                pendingLabel={t("onboarding.saving")}
+                onPress={() => void showTipsAgain()}
+                testID="settings-row-show-tips-again"
+              />
+            </SettingsRun>
 
-            <SecuritySection />
+            <SettingsRun label={t("runs.data")} testID="settings-run-data">
+              <ExportDataRow />
+              <SettingsRow
+                icon="shield"
+                label={t("privacy.title")}
+                // Not the drawn "…what never leaves your device": an
+                // account-required product stores what you save on a server, and
+                // the privacy page it opens says so.
+                description={t("privacy.description")}
+                trailing={{ kind: "chevron" }}
+                onPress={() => router.push("/privacy")}
+                testID="settings-row-privacy"
+              />
+              {/* Web only: browser storage is the only thing a cookie preference
+                  can be about. */}
+              {Platform.OS === "web" ? (
+                <SettingsRow
+                  icon="cookie"
+                  label={t("support.cookies")}
+                  trailing={{ kind: "chevron" }}
+                  onPress={() => router.push("/cookies")}
+                  testID="settings-row-cookies"
+                />
+              ) : null}
+            </SettingsRun>
 
-            <OnboardingCard
-              disabled={!data || onboardingPending}
-              isPending={onboardingPending}
-              onReplayIntroduction={() => void replayIntroduction()}
-              onShowTipsAgain={() => void showTipsAgain()}
-            />
+            <SettingsRun label={t("runs.help")} testID="settings-run-help">
+              <SettingsRow
+                icon="support-agent"
+                label={t("support.support")}
+                trailing={{ kind: "chevron" }}
+                onPress={() => router.push("/support")}
+                testID="settings-row-support"
+              />
+              <SettingsRow
+                icon="gavel"
+                label={t("support.legal")}
+                trailing={{ kind: "chevron" }}
+                onPress={() => router.push("/legal")}
+                testID="settings-row-legal"
+              />
+            </SettingsRun>
 
-            <SupportCard />
+            <SettingsRun label={t("runs.account")} testID="settings-run-account">
+              {/*
+                No description. The drawn "You'll stay signed in on other devices."
+                is exactly backwards - `signOut()` takes supabase-js's
+                `scope: 'global'` default at all three call sites (#968) - and it is
+                DELETED rather than rewritten, because writing the true sentence
+                here would pre-commit the scope question that ticket has to answer.
+              */}
+              <SettingsRow
+                icon="logout"
+                label={t("account.signOut")}
+                trailing={{ kind: "act" }}
+                onPress={() => void handleSignOut()}
+                testID="settings-row-sign-out"
+              />
+              <DeleteAccountRow />
+            </SettingsRun>
 
-            <AccountCard user={user} onSignOut={() => void handleSignOut()} />
+            <SettingsColophon />
           </View>
         </KeyboardAwareScrollView>
       </KeyboardAvoidingView>

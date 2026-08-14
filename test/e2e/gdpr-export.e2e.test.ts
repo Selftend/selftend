@@ -29,8 +29,14 @@ test.describe("GDPR data export", () => {
     const downloadPromise = page.waitForEvent("download", { timeout: 10_000 }).catch(() => null);
     await exportButton.click();
 
-    // Assert the success copy "Data exported successfully." appears (account.exported).
-    await expect(page.getByText("Data exported successfully.")).toBeVisible({ timeout: 15_000 });
+    // The success copy is TOAST content now (#982) - the permanent `Text` node that
+    // used to sit under the button went with the R7 banner pair. Scoped to the toast
+    // for two reasons: an unscoped match would pass just as happily against a stale
+    // permanent node, and the toast auto-dismisses at 4500ms, so what is asserted has
+    // to be the thing that is actually transient.
+    await expect(
+      page.getByTestId("app-toast").getByText("Data exported successfully."),
+    ).toBeVisible({ timeout: 15_000 });
 
     // Optionally confirm the download was triggered.
     const download = await downloadPromise;

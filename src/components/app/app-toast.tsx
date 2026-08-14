@@ -56,6 +56,12 @@ export function AppToast() {
         className="w-full max-w-xl"
         onPress={dismissToast}
         role="button"
+        // Scoping handle for the specs that assert on toast CONTENT rather than on
+        // the toast existing - `gdpr-export.e2e` moved onto it when the export's
+        // permanent success line became a toast (#982). Without it a spec has to
+        // match the copy anywhere on the page, which passes just as happily
+        // against a stale permanent node.
+        testID="app-toast"
       >
         <Card className={cn("gap-0 py-4 shadow-md dark:shadow-none", toneClasses[toast.tone])}>
           <CardHeader className="gap-1 px-4">

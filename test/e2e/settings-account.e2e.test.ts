@@ -113,7 +113,14 @@ test.describe("settings - profile display name", () => {
   test("saves display name and shows confirmation; persists across reload", async ({ page }) => {
     await page.goto("/(app)/settings");
 
-    // Wait for the profile card to load (the display-name label is the stable marker).
+    // The display-name field is behind an in-place disclosure now (#982): the field,
+    // its placeholder, `Save name` and `Display name saved.` all survive, one click
+    // deeper. Collapsed content is UNMOUNTED, so this is a real gate rather than a
+    // visibility one.
+    const editName = page.getByRole("button", { name: "Edit name", exact: true });
+    await expect(editName).toBeVisible({ timeout: 10_000 });
+    await editName.click();
+
     await expect(page.getByText("Display name", { exact: true }).first()).toBeVisible({
       timeout: 10_000,
     });
@@ -138,10 +145,13 @@ test.describe("settings - profile display name", () => {
       timeout: 8_000,
     });
 
-    // Persist check: reload and verify the input shows the saved name.
+    // Persist check: reload and verify the input shows the saved name. A reload
+    // collapses the disclosure, so it has to be opened again - which is also the
+    // proof that the field is genuinely unmounted rather than merely hidden.
     await page.reload();
     await page.goto("/(app)/settings");
 
+    await page.getByRole("button", { name: "Edit name", exact: true }).click();
     await expect(page.getByPlaceholder("Your name (optional)", { exact: true })).toHaveValue(
       "E2E Test Name",
       { timeout: 8_000 },
@@ -170,12 +180,15 @@ test.describe("settings - notification toggles", () => {
     page,
   }) => {
     await page.goto("/(app)/settings");
-    await expect(page.getByText("Reminders & notifications", { exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
+    // The card and its "Open notifications" button are gone (#982): the settings
+    // ROW is the door now, and its label is `Reminders`. Scoped to the page body,
+    // because the desktop sidebar's own nav link carries the same word since #981.
+    const settings = page.getByTestId("settings-layout");
+    const remindersRow = settings.getByRole("button", { name: "Reminders", exact: true });
+    await expect(remindersRow).toBeVisible({ timeout: 10_000 });
 
-    // Navigate to /notifications via the "Open notifications" button.
-    await page.getByRole("button", { name: "Open notifications", exact: true }).click();
+    // Navigate to /notifications by pressing the row itself.
+    await remindersRow.click();
     // The screen's h1 is "Reminders" (#981). Asserted as the HEADING, not as text: the
     // sidebar's nav link carries the same word now, so a text match would pass on the door
     // instead of the room.
@@ -291,16 +304,20 @@ test.describe("settings - onboarding actions", () => {
     await page.goto("/(app)/settings");
     await dismissPostSignInModals(page);
 
-    // Wait for the onboarding section.
-    await expect(page.getByText("Onboarding", { exact: true }).first()).toBeVisible({
-      timeout: 10_000,
-    });
+    // The `Onboarding` card heading is gone (#982) - both rows now sit in the `App`
+    // run - so the wait is on the button this test actually presses. Its name
+    // survives verbatim.
+    const replay = page.getByRole("button", { name: "Replay introduction", exact: true });
+    await expect(replay).toBeVisible({ timeout: 10_000 });
 
-    await page.getByRole("button", { name: "Replay introduction", exact: true }).click();
+    await replay.click();
 
-    await expect(page.getByText(/app introduction will be shown again/i).first()).toBeVisible({
-      timeout: 8_000,
-    });
+    // Toast-only feedback (#982): the shared banner pair is gone, and `.first()`
+    // existed to disambiguate the banner from the toast that already fired beside
+    // it. Scoped to the toast so this cannot pass against a stale permanent node.
+    await expect(
+      page.getByTestId("app-toast").getByText(/app introduction will be shown again/i),
+    ).toBeVisible({ timeout: 8_000 });
 
     // Replaying the app introduction does not silently alter contextual tips.
     const { data: replayed } = await admin
@@ -312,9 +329,9 @@ test.describe("settings - onboarding actions", () => {
     expect(replayed?.shown_button_tours).toEqual(["home:edit"]);
 
     await page.getByRole("button", { name: "Show tips again", exact: true }).click();
-    await expect(page.getByText(/button tips.*can appear again/i).first()).toBeVisible({
-      timeout: 8_000,
-    });
+    await expect(
+      page.getByTestId("app-toast").getByText(/button tips.*can appear again/i),
+    ).toBeVisible({ timeout: 8_000 });
     const { data: tips } = await admin
       .from("user_preferences")
       .select("shown_button_tours, start_here_dismissed_at")

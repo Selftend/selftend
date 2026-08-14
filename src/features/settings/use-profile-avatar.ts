@@ -22,7 +22,7 @@ import { getErrorMessage } from "@/src/utils/error-message";
 
 /**
  * All avatar mutation orchestration + the image pipeline, extracted verbatim
- * from `ProfilePictureCard`. The pure crop/resize derivation lives in
+ * from `SettingsProfileBlock`. The pure crop/resize derivation lives in
  * `buildAvatarManipulation`; size validation in `validatePickedAsset`. Web goes
  * through the in-app crop modal (`cropUri`), native uses the OS editor.
  */

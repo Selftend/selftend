@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
+import { router } from "expo-router";
 
 import SettingsScreen from "./settings-screen";
 import { defaultUserPreferences } from "@/src/features/modules/types";
@@ -69,9 +70,9 @@ jest.mock("@/src/features/auth/api", () => ({
   signOut: jest.fn(),
 }));
 
-// SecuritySection calls isBiometricAvailable() inside a useEffect .then() which
-// fires setAvailable() outside act() unless we resolve it synchronously. Mocking
-// it as a resolved Promise prevents the async state update from leaking out.
+// `AppLockRow` calls isBiometricAvailable() inside a useEffect .then() which fires
+// setAvailable() outside act() unless we resolve it synchronously. Mocking it as a
+// resolved Promise prevents the async state update from leaking out.
 jest.mock("@/src/features/security/biometric", () => ({
   authenticate: jest.fn().mockResolvedValue(false),
   isBiometricAvailable: jest.fn().mockResolvedValue(false),
@@ -101,31 +102,134 @@ const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jes
   typeof useUpdateOnboardingPreferences
 >;
 
-describe("SettingsScreen hero and profile badge", () => {
+const loadedPreferences = {
+  ...defaultUserPreferences,
+  appOnboardingCompleted: true,
+  cbtWizardCompleted: true,
+  policyVersionAccepted: "2026-05-01",
+  shownButtonTours: ["tune", "notifications", "info"],
+};
+
+function mockPreferences(data: unknown, isLoading = false) {
+  mockUseUserPreferences.mockReturnValue({ data, isLoading } as unknown as ReturnType<
+    typeof useUserPreferences
+  >);
+}
+
+describe("SettingsScreen structure", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseUserPreferences.mockReturnValue({
-      data: null,
-      isLoading: false,
-    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockPreferences(loadedPreferences);
     mockUseUpdateOnboardingPreferences.mockReturnValue({
       isPending: false,
       mutateAsync: jest.fn(),
     } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
   });
 
-  it("renders hero with eyebrow + title", async () => {
+  it("renders hero, four labelled runs and the colophon", async () => {
     renderWithProviders(<SettingsScreen />);
-    // waitFor flushes the SecuritySection useEffect microtasks (isBiometricAvailable
-    // and hydrate) so their async setState calls land inside act() boundaries.
+    // waitFor flushes the app-lock useEffect microtasks (isBiometricAvailable and
+    // hydrate) so their async setState calls land inside act() boundaries.
     await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
-    // "Account" appears as eyebrow and as the account section card title
-    expect(screen.getAllByText("Account").length).toBeGreaterThanOrEqual(1);
+
+    expect(screen.getByTestId("settings-run-app")).toBeTruthy();
+    expect(screen.getByTestId("settings-run-data")).toBeTruthy();
+    expect(screen.getByTestId("settings-run-help")).toBeTruthy();
+    expect(screen.getByTestId("settings-run-account")).toBeTruthy();
+    expect(screen.getByTestId("settings-colophon")).toBeTruthy();
   });
 
-  it("labels the display name input for assistive tech", async () => {
+  /**
+   * The eleven rows are known before any query resolves, so a page-level
+   * `LoadingState` would hide a list nothing is waiting for. This is the
+   * assertion that the eleventh-hour reflex to add one back stays out.
+   */
+  it("renders every row while preferences are still loading", async () => {
+    mockPreferences(undefined, true);
     renderWithProviders(<SettingsScreen />);
-    await waitFor(() => expect(screen.getByLabelText("Display name")).toBeTruthy());
+
+    await waitFor(() => expect(screen.getByLabelText("Sign out")).toBeTruthy());
+    expect(screen.getByLabelText("Reminders")).toBeTruthy();
+    expect(screen.getByLabelText("Export my data")).toBeTruthy();
+    expect(screen.getByLabelText("Delete my account")).toBeTruthy();
+    // The deleted `loading` key had one consumer: a page-level LoadingState.
+    expect(screen.queryByText(/loading/i)).toBeNull();
+  });
+
+  it("waits only the two onboarding rows on the preferences query", async () => {
+    mockPreferences(undefined, true);
+    renderWithProviders(<SettingsScreen />);
+
+    await waitFor(() => expect(screen.getByLabelText("Replay introduction")).toBeTruthy());
+    // `appOnboardingCompletedVia` is the single reason the query survives, and
+    // replaying without it would rewrite the user's original completion path.
+    expect(screen.getByLabelText("Replay introduction").props.accessibilityState.disabled).toBe(
+      true,
+    );
+    expect(screen.getByLabelText("Show tips again").props.accessibilityState.disabled).toBe(true);
+    // Nothing else waits.
+    expect(screen.getByLabelText("Export my data").props.accessibilityState.disabled).toBe(false);
+  });
+
+  it("navigates rather than acting in place on the chevron rows", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByLabelText("Reminders")).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText("Reminders"));
+    expect(router.push).toHaveBeenCalledWith("/notifications");
+
+    fireEvent.press(screen.getByLabelText("Privacy"));
+    expect(router.push).toHaveBeenCalledWith("/privacy");
+
+    fireEvent.press(screen.getByLabelText("Legal and boundaries"));
+    expect(router.push).toHaveBeenCalledWith("/legal");
+  });
+});
+
+describe("SettingsScreen profile disclosures", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPreferences(loadedPreferences);
+    mockUseUpdateOnboardingPreferences.mockReturnValue({
+      isPending: false,
+      mutateAsync: jest.fn(),
+    } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
+  });
+
+  it("hides the display-name field until Edit name is pressed", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByTestId("settings-edit-name")).toBeTruthy());
+
+    // Collapsed content is UNMOUNTED, not merely hidden - a hidden-but-mounted
+    // input stays in the tab order and in the accessibility tree.
+    expect(screen.queryByLabelText("Display name")).toBeNull();
+
+    fireEvent.press(screen.getByTestId("settings-edit-name"));
+
+    expect(screen.getByLabelText("Display name")).toBeTruthy();
+    // React Native folds `aria-expanded` into `accessibilityState`.
+    expect(screen.getByTestId("settings-edit-name").props.accessibilityState.expanded).toBe(true);
+  });
+
+  it("keeps one disclosure open at a time", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByTestId("settings-edit-name")).toBeTruthy());
+
+    fireEvent.press(screen.getByTestId("settings-edit-name"));
+    expect(screen.getByLabelText("Display name")).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId("settings-change-photo"));
+
+    expect(screen.queryByLabelText("Display name")).toBeNull();
+    // All three photo controls, and they are three: `Use Google photo` and
+    // `Remove photo` behave differently on the next screen (#970), so a design
+    // pass cannot merge them.
+    expect(screen.getByText("Choose a photo")).toBeTruthy();
+    expect(screen.getByText("Remove photo")).toBeTruthy();
+    expect(screen.getByTestId("settings-change-photo").props.accessibilityState.expanded).toBe(
+      true,
+    );
+    expect(screen.getByTestId("settings-edit-name").props.accessibilityState.expanded).toBe(false);
   });
 });
 
@@ -135,16 +239,7 @@ describe("SettingsScreen onboarding actions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mutateAsync.mockResolvedValue(defaultUserPreferences);
-    mockUseUserPreferences.mockReturnValue({
-      data: {
-        ...defaultUserPreferences,
-        appOnboardingCompleted: true,
-        cbtWizardCompleted: true,
-        policyVersionAccepted: "2026-05-01",
-        shownButtonTours: ["tune", "notifications", "info"],
-      },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useUserPreferences>);
+    mockPreferences(loadedPreferences);
     mockUseUpdateOnboardingPreferences.mockReturnValue({
       isPending: false,
       mutateAsync,
@@ -153,8 +248,6 @@ describe("SettingsScreen onboarding actions", () => {
 
   it("replays the app introduction without resetting contextual tips", async () => {
     renderWithProviders(<SettingsScreen />);
-    // Flush SecuritySection's useEffect microtasks (isBiometricAvailable + hydrate)
-    // so async setState calls land inside act() before we interact with the screen.
     await waitFor(() => expect(screen.getByText("Replay introduction")).toBeTruthy());
 
     fireEvent.press(screen.getByText("Replay introduction"));

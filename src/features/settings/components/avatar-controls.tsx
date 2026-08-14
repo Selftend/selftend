@@ -19,8 +19,17 @@ interface AvatarControlsProps {
 }
 
 /**
- * Change / use-Google / remove photo controls. Extracted verbatim from
- * `ProfilePictureCard`; handlers + pending flags come from `useProfileAvatar`.
+ * The three photo controls, revealed by the `Change photo` disclosure.
+ *
+ * The picker's own label is `Choose a photo`, not `Change photo`: the disclosure
+ * that reveals this group already carries that name, and two buttons with one
+ * name - the trigger and the control inside it - is a target a screen reader and
+ * an e2e locator both have to guess at.
+ *
+ * All three stay. `Use Google photo` and `Remove photo` look interchangeable here
+ * and are not: `ProfileIdentityRow` falls back to `googleAvatarUrl` while
+ * `ProfileAvatar` has no OAuth fallback (#970), so merging them would decide that
+ * bug by accident.
  */
 export function AvatarControls({
   isPending,
@@ -39,7 +48,7 @@ export function AvatarControls({
     <View className="flex-row flex-wrap gap-2">
       <Button variant="outline" size="sm" disabled={isPending} onPress={onPick}>
         {uploadPending ? <ActivityIndicator /> : <Icon name="photo-camera" size={16} />}
-        <Text>{uploadPending ? t("profile.uploading") : t("profile.change")}</Text>
+        <Text>{uploadPending ? t("profile.uploading") : t("profile.pickPhoto")}</Text>
       </Button>
       {hasGoogleAvatar ? (
         <Button variant="outline" size="sm" disabled={isPending} onPress={onRestoreGoogle}>

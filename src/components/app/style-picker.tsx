@@ -34,7 +34,29 @@ function swatchHexes(style: (typeof STYLE_NAMES)[number], scheme: "light" | "dar
   return [hexes["--background"], hexes["--foreground"], hexes["--primary"]];
 }
 
-export function StylePicker() {
+interface StylePickerProps {
+  /**
+   * The per-card wrapper's classes. Two-up in the user menu's 344px popover;
+   * settings passes `"w-1/2 md:w-1/4 p-1"` for a 4-up desktop grid.
+   *
+   * The 4-up grid is measured safe: 136px per label on the settings frame against
+   * the shipped popover's 108px, with the widest label - `Plum Manuscript` - at
+   * 95.8px. Palette names are untranslated proper nouns, which makes this the one
+   * grid on the settings page immune to Bulgarian.
+   */
+  itemClassName?: string;
+  /**
+   * The group's own `Switch style` caption. Settings passes `false`: the caption
+   * sits directly under the page's palette line, and two labels for one grid is
+   * one more than the grid needs.
+   */
+  heading?: boolean;
+}
+
+export function StylePicker({
+  itemClassName = "w-1/2 p-1",
+  heading = true,
+}: StylePickerProps = {}) {
   const { t } = useTranslation("navigation");
   const scheme = useColorSchemeName();
   const active = useStyleName();
@@ -59,14 +81,20 @@ export function StylePicker() {
       role="radiogroup"
       accessibilityLabel={t("styleToggle.toggle")}
     >
-      <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
-        {t("styleToggle.toggle")}
-      </Text>
+      {/* The group keeps its `accessibilityLabel` either way, so hiding the
+          caption never leaves the radiogroup unnamed. */}
+      {heading ? (
+        <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
+          {t("styleToggle.toggle")}
+        </Text>
+      ) : null}
       <View className="flex-row flex-wrap">
         {STYLE_NAMES.map((style, index) => {
           const selected = style === active;
           return (
-            <View className="w-1/2 p-1" key={style}>
+            // The wrapper carries the grid class, so it carries the testID that
+            // proves which grid this mount point asked for.
+            <View className={itemClassName} key={style} testID={`style-item-${style}`}>
               <Pressable
                 // The palette name is a proper noun and is NOT translated; the
                 // "Default" tag around it is.
