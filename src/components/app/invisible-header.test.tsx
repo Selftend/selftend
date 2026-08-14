@@ -20,7 +20,8 @@ jest.mock("expo-router", () => {
       href: string;
       asChild?: boolean;
       children: ReactElement;
-      dangerouslySingular?: boolean;
+      // expo-router's real SingularOptions; the panel only ever passes `true`.
+      dangerouslySingular?: boolean | ((name: string, params: object) => string | undefined);
     }) => React.cloneElement(React.Children.only(children), { href, dangerouslySingular }),
   };
 });
@@ -73,6 +74,17 @@ describe("InvisibleHeader", () => {
 
     expect(screen.getByRole("link", { name: "Go to home" }).props.href).toBe("/(app)");
     expect(screen.getByText("Selftend")).toBeTruthy();
+  });
+
+  /**
+   * The wordmark is a "go to the top" affordance, not a drill-down. Without `singular`,
+   * expo-router pushes a second Home whenever one is already deeper in the stack, so
+   * every query on Home runs twice (#989) - the same defect as the nav panel's rows.
+   */
+  it("returns to the Home already in the stack instead of pushing a second one", () => {
+    renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
+
+    expect(screen.getByRole("link", { name: "Go to home" }).props.dangerouslySingular).toBe(true);
   });
 
   it("keeps the brand layer tap-transparent via the pointerEvents PROP", () => {
@@ -161,15 +173,4 @@ describe("InvisibleHeader", () => {
       expect((StyleSheet.flatten(bar.props.style) as { marginTop?: number }).marginTop).toBe(59);
     });
   });
-});
-
-/**
- * The wordmark is a "go to the top" affordance, not a drill-down. Without `singular`,
- * expo-router pushes a second Home whenever one is already deeper in the stack, so
- * every query on Home runs twice (#989) - the same defect as the nav panel's rows.
- */
-it("returns to the Home already in the stack instead of pushing a second one", () => {
-  renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
-
-  expect(screen.getByRole("link", { name: "Go to home" }).props.dangerouslySingular).toBe(true);
 });

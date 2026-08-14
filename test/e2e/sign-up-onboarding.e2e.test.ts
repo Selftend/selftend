@@ -76,12 +76,14 @@ test.describe("sign-up + onboarding + first record", () => {
       timeout: 15_000,
     });
 
-    // Personalization payoff: the selected shared widgets are now on Home. By testID
-    // rather than by text: `Sleep` also names the Right now nudge, so the bare string
-    // matches twice on a single home. (`.last()` here was long read as a workaround for
-    // the duplicate-home mount of #989 - it never was; #989's fix left this ambiguity
-    // untouched, because the two matches are two different elements of ONE home.)
-    await expect(page.getByTestId("tool-row-mood-checkin")).toBeVisible({ timeout: 10_000 });
+    // Personalization payoff: the selected shared widgets are now on Home.
+    //
+    // The two `.last()` here were read as one workaround and were really two different
+    // things. `Check-in` was the #989 duplicate-home mount, now fixed, so it goes back to
+    // a plain text locator that a returning duplicate would break. `Sleep` never was:
+    // it names the Right now nudge AND the tool row on a SINGLE home (the mood card reads
+    // "How are you?", which is why only Sleep has this twin), so it goes by testID.
+    await expect(page.getByText("Check-in", { exact: true })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("tool-row-sleep-latest")).toBeVisible({ timeout: 10_000 });
 
     // The optional Home tour may be ineligible after the personalized setup. If

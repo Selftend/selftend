@@ -15,11 +15,13 @@
  * the render - a row that moves on screen and snaps back on reload is exactly the failure
  * #975 removed from the tool tier.
  *
- * ⚠️ Home locators were `` because panel navigation left TWO mounted home roots and
- * `.first()` resolved to the hidden one. #989 fixed that, so they are plain again — a
- * strict-mode violation here means the duplicate is back. The one genuine ambiguity that
- * remains is unrelated: `Sleep` names both the Right now nudge and the tool row on a
- * single home, so that assertion goes by testID rather than by text.
+ * ⚠️ Home locators were `.last()` because panel navigation left TWO mounted home roots
+ * and `.first()` resolved to the hidden one. #989 fixed that, so they are plain again -
+ * a strict-mode violation here now means the duplicate is back, which is worth more than
+ * the workaround was. One genuine ambiguity is unrelated and remains: `Sleep` names both
+ * the Right now nudge and the tool row on a SINGLE home, so that one assertion goes by
+ * testID. `Check-in` does not - the Right now mood card reads "How are you?" - so it
+ * stays a text locator and keeps the duplicate-detector.
  */
 
 import type { Page } from "@playwright/test";
@@ -197,10 +199,11 @@ test.describe("home arrange screen", () => {
       timeout: 15_000,
     });
 
-    // Home renders the order arrange wrote, and the removal stuck. By testID, not by text:
-    // `Sleep` also names the Right now nudge, so the bare string matches twice on one home.
+    // Home renders the order arrange wrote, and the removal stuck. Sleep by testID, because
+    // `Sleep` also names the Right now nudge and matches twice on one home; `Check-in` has
+    // no such twin, so it stays a text locator that a duplicate home would break.
     await expect(page.getByTestId("tool-row-sleep-latest")).toBeVisible();
-    await expect(page.getByTestId("tool-row-mood-checkin")).toBeVisible();
+    await expect(page.getByText(CHECK_IN, { exact: true })).toBeVisible();
     await expect(page.getByText(SELF_CARE, { exact: true })).toHaveCount(0);
     // `mood-checkin` last, because two keyboard moves took it there and both stuck. The
     // programme row is still at the position it was seeded into, untouched by either.
