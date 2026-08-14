@@ -191,8 +191,8 @@
       "moodTitle": "How are you?",
       "sleepTitle": "Sleep",
       "sleepNothing": "Nothing captured since yesterday",
-      "sleepAverage": "{{value}} average this week",
-      "habitsTitle": "Today's habits"
+      "habitsTitle": "Today's habits",
+      "sleepNothingWithAverage": "Nothing captured since yesterday — {{value}} average this week"
     },
     "rows": {
       "empty": "Nothing yet",

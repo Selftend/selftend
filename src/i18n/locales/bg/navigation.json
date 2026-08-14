@@ -191,8 +191,8 @@
       "moodTitle": "Как си?",
       "sleepTitle": "Сън",
       "sleepNothing": "Няма записано от вчера",
-      "sleepAverage": "средно {{value}} тази седмица",
-      "habitsTitle": "Навиците за днес"
+      "habitsTitle": "Навиците за днес",
+      "sleepNothingWithAverage": "Няма записано от вчера — средно {{value}} тази седмица"
     },
     "rows": {
       "empty": "Още нищо",

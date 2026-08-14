@@ -168,12 +168,15 @@ export function RightNowTier({
           testID="right-now-sleep"
           icon="bedtime"
           title={t("home.rightNow.sleepTitle")}
+          // One key for the whole sentence, not two joined in code: the separator and
+          // the clause order are the translator's to choose, and an em-dash hardcoded
+          // here is a punctuation decision made in English on every locale's behalf.
           subtitle={
             sevenDayMinutes === null
               ? t("home.rightNow.sleepNothing")
-              : `${t("home.rightNow.sleepNothing")} — ${t("home.rightNow.sleepAverage", {
+              : t("home.rightNow.sleepNothingWithAverage", {
                   value: formatHours(sevenDayMinutes, i18n.language, t),
-                })}`
+                })
           }
           route={metaForWidget("sleep-latest")?.route ?? "/tools/sleep"}
         />

@@ -67,6 +67,13 @@ describe("the copy bar (#952)", () => {
       .map((node) => node.props.children as string)
       .join(" | ");
 
+    // Canaries FIRST. Without them this whole assertion is vacuous: if a refactor wraps
+    // a Text child, `findAll` returns fewer nodes and every `not.toMatch` below passes
+    // against a string that no longer holds the copy it is meant to be policing.
+    expect(text).toContain("Right now");
+    expect(text).toContain("Today's habits");
+    expect(text).toContain("Nothing captured since yesterday");
+
     expect(text).not.toMatch(/\bdue\b/i);
     expect(text).not.toMatch(/\bowed?\b/i);
     expect(text).not.toMatch(/\bmissed?\b/i);
@@ -211,14 +218,19 @@ describe("the mood tap", () => {
     expect(router.push).not.toHaveBeenCalledWith(expect.stringContaining("score="));
   });
 
-  it("never writes the check-in inline", () => {
-    // An accidental brush on a scrollable home would otherwise record health data.
-    render();
+  it("cannot write a check-in at all, inline or otherwise", () => {
+    // An accidental brush on a scrollable home must not record health data. The
+    // enforcement is structural rather than behavioural: this file mocks the mood queries
+    // module down to the single READ hook, so a tier that imported a save would fail at
+    // module load rather than at assertion time. Asserting the mock's surface is the real
+    // check - a `router.push` call count proves nothing about writes.
+    expect(Object.keys(jest.requireMock("@/src/features/mood/queries"))).toEqual(["useMoodLogs"]);
 
+    render();
     fireEvent.press(screen.getByLabelText("Awful"));
 
-    // The only mood hook mounted here is the read; nothing in this tier can save.
-    expect(m.mood).toHaveBeenCalled();
+    // And the tap's only effect is a seed plus a navigation.
+    expect(useMoodSeedStore.getState().score).toBe(1);
     expect(router.push).toHaveBeenCalledTimes(1);
   });
 });
