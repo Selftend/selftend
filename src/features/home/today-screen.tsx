@@ -23,6 +23,7 @@ import { parseLocalNoon } from "@/src/utils/date";
 import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
 import { isImplemented, metaForWidget, resolveWidget } from "@/src/features/home/widget-registry";
 import { ToolTierRow } from "@/src/features/home/tool-row-stats";
+import { RightNowTier } from "@/src/features/home/right-now-tier";
 import {
   useAddWidget,
   useRemoveWidget,
@@ -366,8 +367,8 @@ export default function HomeScreen() {
     }
   };
 
-  const header = (
-    <View className="gap-6 pb-3">
+  const hero = (
+    <View className="pb-3">
       {/* Hero - card-style with subtle purple tint */}
       <View className="rounded-2xl border border-primary/30 bg-primary/5 p-6">
         <Text variant="eyebrow">
@@ -382,7 +383,17 @@ export default function HomeScreen() {
           {greetingLine}
         </Text>
       </View>
+    </View>
+  );
 
+  /**
+   * The `Your tools` heading and its actions, rendered with the rows they name rather
+   * than in the page header. They used to sit in `header`, which put this heading
+   * ABOVE the `Right now` tier - so the tier was not first, and the heading was
+   * separated from its own list by everything in between.
+   */
+  const toolsHeader = (
+    <View className="gap-6">
       {/* Section heading row */}
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 min-w-0">
@@ -453,7 +464,24 @@ export default function HomeScreen() {
           contentContainerStyle={{ padding: PADDING }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         >
-          {header}
+          {hero}
+
+          {/*
+            `Right now` is home's FIRST tier and is NOT id-driven: zero rows in
+            `widget_preferences`, derived entirely from live state, absent from arrange
+            mode without a special case, and collapsing to nothing - heading included -
+            once the day is satisfied. On a loading or empty dashboard it renders
+            nothing, because no owned id means no eligible nudge.
+          */}
+          <RightNowTier userId={userId} widgetIds={widgetIds} />
+
+          {/*
+            Above the branch, not inside it: this block holds the `home-edit` tour
+            target, and `HomeTour` builds its queue from targets that are already
+            registered. Mounted only after the widget query settles, the dashboard tip
+            loses that race and is silently dropped.
+          */}
+          {toolsHeader}
 
           {isLoading ? (
             <View className="items-center py-8">

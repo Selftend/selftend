@@ -31,6 +31,7 @@ import { formatInstantAtOffset } from "@/src/utils/date";
 import { parseBodyChips, toggleBodyChip } from "@/src/features/mood/body-sensations";
 import { useCompleteActivity } from "@/src/features/activities/queries";
 import { useMoodLog, useMoodLogs, useSaveMoodLog } from "@/src/features/mood/queries";
+import { consumeMoodSeed } from "@/src/stores/mood-seed-store";
 import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
 import { seedEmotionsForThoughtRecord } from "@/src/features/mood/thought-record-handoff";
 import { seedThoughtRecord } from "@/src/stores/thought-record-seed-store";
@@ -152,14 +153,25 @@ export function MoodEntryEditorScreen({
   }>();
   const linkedStrategy = paramValue(params.linkedStrategy) ?? null;
   const completeActivityId = paramValue(params.completeActivityId) ?? null;
+  /**
+   * Home's tap arrives in memory, never in the URL (#952). Consumed once on mount, the
+   * same shape `use-thought-record-editor.ts:32` uses for the emotions seed - reading it
+   * during render would clear it before the form could apply it.
+   */
+  const [seededScore] = useState(consumeMoodSeed);
   const rawScore = paramValue(params.score);
   const parsedScore = rawScore != null ? Number(rawScore) : null;
   // The only valid scores are the integers 1-5 (MoodScale steps; DB CHECK 1..5). Reject
   // non-numeric, non-integer, and out-of-range `score` route params, not just NaN.
-  const initialScore =
+  //
+  // The route param survives for the mood tracker, which still pushes one
+  // (`mood-tracker-screen.tsx`); #961 owns retiring that half. The seed wins when both
+  // are present, because only a stale link can produce a param the user did not just tap.
+  const paramScore =
     parsedScore != null && Number.isInteger(parsedScore) && parsedScore >= 1 && parsedScore <= 5
       ? parsedScore
       : null;
+  const initialScore = seededScore ?? paramScore;
 
   const { data: cachedList } = useMoodLogs(mode === "edit" ? (user?.id ?? null) : null, 30);
   const fromCache = moodId ? (cachedList?.find((log) => log.id === moodId) ?? null) : null;

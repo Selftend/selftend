@@ -186,6 +186,14 @@
       "phase": "Фаза {{current}} от {{total}}",
       "complete": "Завършена"
     },
+    "rightNow": {
+      "heading": "Точно сега",
+      "moodTitle": "Как си?",
+      "sleepTitle": "Сън",
+      "sleepNothing": "Няма записано от вчера",
+      "habitsTitle": "Навиците за днес",
+      "sleepNothingWithAverage": "Няма записано от вчера — средно {{value}} тази седмица"
+    },
     "rows": {
       "empty": "Още нищо",
       "nothingScheduled": "Нищо насрочено за днес",

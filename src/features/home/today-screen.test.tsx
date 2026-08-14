@@ -99,6 +99,13 @@ jest.mock("@/src/features/home/queries", () => ({
   useReorderWidgets: () => ({ mutate: mockReorderWidgets, isPending: false }),
 }));
 
+jest.mock("@/src/features/home/right-now-tier", () => {
+  const { View } = require("react-native");
+  return {
+    RightNowTier: () => <View testID="right-now-tier" />,
+  };
+});
+
 jest.mock("@/src/features/home/tool-row-stats", () => {
   const { View } = require("react-native");
   return {
@@ -344,6 +351,22 @@ describe("HomeScreen tiers", () => {
     // itself, but the partition is what decides which of the two an id gets.
     expect(screen.getByTestId("widget-cbt-programme")).toBeTruthy();
     expect(screen.queryByTestId("tool-row-cbt-programme")).toBeNull();
+  });
+
+  it("renders Right now above the Your tools heading, not below it", () => {
+    // The heading used to live in the page header, which put it ABOVE the `Right now`
+    // tier - so the tier was not first, and `Your tools` was separated from the rows it
+    // names by everything in between.
+    renderMixedHome();
+
+    const order = screen.UNSAFE_root.findAll(
+      (node) =>
+        node.props?.testID === "right-now-tier" ||
+        (typeof node.props?.children === "string" && node.props.children === "Your tools"),
+    ).map((node) => (node.props.testID === "right-now-tier" ? "right-now" : "your-tools"));
+
+    expect(order[0]).toBe("right-now");
+    expect(order).toContain("your-tools");
   });
 
   it("gives each tier its own level-2 heading", () => {
