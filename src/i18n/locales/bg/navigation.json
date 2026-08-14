@@ -168,14 +168,6 @@
       "habits": "Навици",
       "routines": "Рутини"
     },
-    "tiers": {
-      "tools": "Твоите инструменти",
-      "programmes": "Насочени програми"
-    },
-    "programme": {
-      "phase": "Фаза {{current}} от {{total}}",
-      "complete": "Завършена"
-    },
     "programWidget": {
       "notEnrolled": "Воден път през този модул. Отвори го, за да прегледаш цялата програма, преди да решиш дали да започнеш.",
       "viewProgram": "Виж програмата",
@@ -185,6 +177,14 @@
       "openProgram": "Отвори програмата",
       "moreGoals_one": "+още {{count}} цел",
       "moreGoals_other": "+още {{count}} цели"
+    },
+    "tiers": {
+      "tools": "Твоите инструменти",
+      "programmes": "Насочени програми"
+    },
+    "programme": {
+      "phase": "Фаза {{current}} от {{total}}",
+      "complete": "Завършена"
     },
     "rows": {
       "empty": "Още нищо",

@@ -168,14 +168,6 @@
       "habits": "Habits",
       "routines": "Routines"
     },
-    "tiers": {
-      "tools": "Your tools",
-      "programmes": "Guided programmes"
-    },
-    "programme": {
-      "phase": "Phase {{current}} of {{total}}",
-      "complete": "Complete"
-    },
     "programWidget": {
       "notEnrolled": "A guided path through this module. Open it to review the full programme before choosing whether to begin.",
       "viewProgram": "View programme",
@@ -185,6 +177,14 @@
       "openProgram": "Open programme",
       "moreGoals_one": "+{{count}} more goal",
       "moreGoals_other": "+{{count}} more goals"
+    },
+    "tiers": {
+      "tools": "Your tools",
+      "programmes": "Guided programmes"
+    },
+    "programme": {
+      "phase": "Phase {{current}} of {{total}}",
+      "complete": "Complete"
     },
     "rows": {
       "empty": "Nothing yet",

@@ -2,6 +2,7 @@ import { ActivityIndicator, Platform, Pressable, RefreshControl, View } from "re
 import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import Sortable from "react-native-sortables";
@@ -50,6 +51,37 @@ type WidgetEditAction =
 const WidgetContent = memo(function WidgetContent({ id, userId }: { id: string; userId: string }) {
   return resolveWidget(id, userId);
 });
+
+/** The edit-mode remove control, shared by both tiers. */
+function RemoveWidgetButton({
+  id,
+  disabled,
+  onRemove,
+  t,
+}: {
+  id: string;
+  disabled: boolean;
+  onRemove: (id: string) => void;
+  t: TFunction;
+}) {
+  const meta = metaForWidget(id);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t("today.dashboard.removeWidget", {
+        title: meta ? t(meta.titleKey) : id,
+      })}
+      disabled={disabled}
+      onPress={() => onRemove(id)}
+      className={cn(
+        "size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
+        Platform.select({ web: "hover:bg-destructive/10" }),
+      )}
+    >
+      <Icon name="close" className="size-4 text-destructive" />
+    </Pressable>
+  );
+}
 
 /**
  * One tier's sortable list. Rows are inert while dragging is available, so the row's own
@@ -137,18 +169,7 @@ function TierSection({
             >
               <Icon name="keyboard-arrow-down" className="size-4 text-primary" />
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("today.dashboard.removeWidget", { title })}
-              disabled={mutationPending}
-              onPress={() => onRemove(id)}
-              className={cn(
-                "size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
-                Platform.select({ web: "hover:bg-destructive/10" }),
-              )}
-            >
-              <Icon name="close" className="size-4 text-destructive" />
-            </Pressable>
+            <RemoveWidgetButton id={id} disabled={mutationPending} onRemove={onRemove} t={t} />
           </View>
         );
       }}
@@ -464,12 +485,16 @@ export default function HomeScreen() {
           ) : (
             <View className="mt-1 gap-7">
               {/*
-                Two tiers over ONE ordered list. Each is its own sortable list so a drag
-                can only ever reorder within a tier - see `reorderWidgets`.
+                Two tiers over ONE ordered list. A drag can only ever reorder within a
+                tier, because the sortable is given that tier's ids alone - see
+                `reorderWidgets`.
 
                 `Sortable.Grid columns={1}`, never `Sortable.Flex`: Flex drops
                 re-measures of 1px or less, which is exactly the delta between two rows
                 of the same height.
+
+                Only the TOOL tier is sortable. The programme tier below renders in a
+                fixed order (#977), so it is a plain list - see `programmeIds`.
               */}
               <TierSection
                 ids={toolIds}
@@ -495,20 +520,12 @@ export default function HomeScreen() {
                       {/* Remove only: there is no drag handle and no move buttons,
                           because the order is not the user's to set. */}
                       {editMode ? (
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={t("today.dashboard.removeWidget", {
-                            title: t(metaForWidget(id)?.titleKey ?? id),
-                          })}
+                        <RemoveWidgetButton
+                          id={id}
                           disabled={mutationPending}
-                          onPress={() => removeWidget(id)}
-                          className={cn(
-                            "size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
-                            Platform.select({ web: "hover:bg-destructive/10" }),
-                          )}
-                        >
-                          <Icon name="close" className="size-4 text-destructive" />
-                        </Pressable>
+                          onRemove={removeWidget}
+                          t={t}
+                        />
                       ) : null}
                     </View>
                   ))}

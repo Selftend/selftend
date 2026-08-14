@@ -340,8 +340,8 @@ describe("HomeScreen tiers", () => {
 
     expect(screen.getByTestId("tool-row-mood-checkin")).toBeTruthy();
     expect(screen.getByTestId("tool-row-sleep-latest")).toBeTruthy();
-    // The programme tier keeps its card until #977 reshapes it - the point of building
-    // the partition now is that neither programme id is left homeless in between.
+    // Programme ids render as cards; tool ids render as rows. #977 reshaped the card
+    // itself, but the partition is what decides which of the two an id gets.
     expect(screen.getByTestId("widget-cbt-programme")).toBeTruthy();
     expect(screen.queryByTestId("tool-row-cbt-programme")).toBeNull();
   });
@@ -358,6 +358,31 @@ describe("HomeScreen tiers", () => {
 
     expect(screen.getByText("Your tools")).toBeTruthy();
     expect(screen.queryByText("Guided programmes")).toBeNull();
+  });
+
+  it("seats CBT before ACT whatever order the preferences hold", () => {
+    // The slice's one novel ordering rule (#977). Onboarding writes these ids in the
+    // order the user tapped the module chips, so `position` order would seat ACT first
+    // for anyone who picked ACT first - which is why the programme tier does not use it.
+    mockWidgetIds = ["act-programme", "cbt-programme"];
+    renderWithProviders(<HomeScreen />);
+    fireEvent(screen.getByTestId("home-layout"), "layout", {
+      nativeEvent: { layout: { width: 900 } },
+    });
+
+    const rendered = screen
+      .getAllByTestId(/^widget-(cbt|act)-programme$/)
+      .map((node) => node.props.testID);
+    expect(rendered).toEqual(["widget-cbt-programme", "widget-act-programme"]);
+  });
+
+  it("renders one card for a user with a single module interest", () => {
+    mockWidgetIds = ["act-programme"];
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.getByTestId("widget-act-programme")).toBeTruthy();
+    expect(screen.queryByTestId("widget-cbt-programme")).toBeNull();
+    expect(screen.getByText("Guided programmes")).toBeTruthy();
   });
 
   it("reorders within a tier, naming only that tier's ids", () => {

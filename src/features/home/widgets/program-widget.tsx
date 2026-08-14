@@ -1,4 +1,4 @@
-import { router, type Href } from "expo-router";
+import { router } from "expo-router";
 import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -7,6 +7,7 @@ import { CBT_PROGRAM } from "@/src/features/cbt/program-definition";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
+import { metaForWidget } from "@/src/features/home/widget-registry";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +38,9 @@ export function ProgramWidget({ module, userId }: { module: "cbt" | "act"; userI
   const { data: preferences } = useUserPreferences(userId);
 
   const isCbt = module === "cbt";
-  const route: Href = isCbt ? "/modules/cbt" : "/modules/act";
+  // From the catalogue, not restated here: `WIDGET_META` gained `route` in #972 precisely
+  // so a destination lives in one place, and its filesystem test proves the path is served.
+  const route = metaForWidget(`${module}-programme`)?.route ?? `/modules/${module}`;
   const startedAt = isCbt ? preferences?.cbtProgramStartedAt : preferences?.actProgramStartedAt;
   const completedAt = isCbt
     ? preferences?.cbtProgramCompletedAt
@@ -74,7 +77,7 @@ export function ProgramWidget({ module, userId }: { module: "cbt" | "act"; userI
       accessibilityRole="button"
       accessibilityLabel={badge ? `${title}, ${badge}, ${secondLine}` : `${title}, ${secondLine}`}
       testID={`programme-card-${module}`}
-      onPress={() => router.push(route)}
+      onPress={() => router.push(route as Parameters<typeof router.push>[0])}
       className={cn(
         "gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3.5 active:bg-primary/10",
         Platform.select({ web: "hover:bg-primary/[0.08]" }),

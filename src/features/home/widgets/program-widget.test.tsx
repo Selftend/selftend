@@ -6,6 +6,7 @@ import { useUserPreferences } from "@/src/features/settings/queries";
 import { useProgramWidgetTaskStatus } from "@/src/features/home/program-widget-status";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { CBT_PROGRAM } from "@/src/features/cbt/program-definition";
+import { WIDGET_META } from "@/src/features/home/widget-registry";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 /**
@@ -118,6 +119,15 @@ describe("ProgramWidget second line", () => {
 });
 
 describe("ProgramWidget shape", () => {
+  it("takes its destination from the catalogue rather than restating it", () => {
+    prefs();
+
+    renderWithProviders(<ProgramWidget module="act" userId="user-1" />);
+    fireEvent.press(screen.getByTestId("programme-card-act"));
+
+    expect(mockRouter.push).toHaveBeenCalledWith(WIDGET_META["act-programme"].route);
+  });
+
   it("presses whole to the module, with one accessible name", () => {
     prefs({ cbtProgramStartedAt: "2026-07-01T00:00:00.000Z", cbtProgramPhaseIndex: 1 });
 
@@ -142,9 +152,10 @@ describe("ProgramWidget shape", () => {
       },
     ]) {
       prefs(state);
-      renderWithProviders(<ProgramWidget module="cbt" userId="user-1" />);
+      const { unmount } = renderWithProviders(<ProgramWidget module="cbt" userId="user-1" />);
       // The card itself is the only button.
       expect(screen.getAllByRole("button")).toHaveLength(1);
+      unmount();
     }
   });
 
@@ -168,7 +179,15 @@ describe("ProgramWidget shape", () => {
       for (const node of fractions) {
         expect(node.props.children).toMatch(/^Phase /);
       }
-      expect(screen.queryByTestId("progress-bar")).toBeNull();
+      // Not `queryByTestId("progress-bar")` - `ProgressBar` sets no testID, so that
+      // assertion was null before this change and after it, and could never fail. The
+      // track is what a bar would put on this card, and `bg-muted` on a `primary/5`
+      // wash is the 1.052:1 pairing the ticket measured and rejected.
+      for (const node of screen.UNSAFE_root.findAll(
+        (element) => typeof element.props?.className === "string",
+      )) {
+        expect(node.props.className).not.toContain("bg-muted");
+      }
       unmount();
     }
   });
