@@ -1,6 +1,6 @@
 {
   "title": "Gratitude",
-  "description": "Notice small things you appreciated. Save only when it feels useful - no pressure.",
+  "description": "Notice small things you appreciated. Save only when it feels useful.",
   "tagline": "Three good things from today is enough.",
   "newEntry": "New entry",
   "promptEyebrow": "A prompt for today",
@@ -9,7 +9,7 @@
   },
   "home": {
     "title": "Gratitude log",
-    "subtitle": "Notice what's good. Write it down. No pressure.",
+    "subtitle": "Notice what's good. Write it down.",
     "viewAll": "Show all entries →"
   },
   "hero": {

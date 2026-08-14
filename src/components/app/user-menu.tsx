@@ -17,6 +17,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { signOut } from "@/src/features/auth/api";
 import { cancelAllReminders } from "@/src/lib/notifications";
+import { resolveAvatarUrl } from "@/src/features/profile/avatar-url";
 import { resolveDisplayName } from "@/src/features/profile/display-name";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { supportedLanguages } from "@/src/i18n";
@@ -68,7 +69,9 @@ export function UserMenu() {
   const setPreference = useThemeStore((s) => s.setPreference);
 
   const email = user?.email;
-  const avatarUrl = profile?.avatarUrl ?? null;
+  // One expression, shared with settings (#970) - the header used to omit the OAuth
+  // fallback, so the same `Remove photo` tap changed this and not that.
+  const avatarUrl = resolveAvatarUrl(profile, user);
   const displayName = resolveDisplayName(profile, user);
 
   const languageIndex = supportedLanguages.indexOf(language);

@@ -1,3 +1,4 @@
+import { resolveAvatarUrl } from "@/src/features/profile/avatar-url";
 import type { User } from "@supabase/supabase-js";
 import { Platform, View } from "react-native";
 import { useState } from "react";
@@ -45,6 +46,9 @@ export function SettingsProfileBlock({ user }: { user: User | null }) {
 
   const displayName = profile?.displayName ?? user?.email ?? "";
   const displayInitial = displayName.charAt(0).toUpperCase();
+  // Shared with the header (#970); the inline fallback this replaces is what let the two
+  // surfaces answer the same `Remove photo` tap differently.
+  const avatarUrl = resolveAvatarUrl(profile, user);
 
   const toggle = (panel: Exclude<OpenPanel, null>) =>
     setOpen((current) => (current === panel ? null : panel));
@@ -53,8 +57,8 @@ export function SettingsProfileBlock({ user }: { user: User | null }) {
     <>
       <View className="gap-3">
         <ProfileIdentityRow
-          avatarUri={profile?.avatarUrl ?? avatar.googleAvatarUrl ?? undefined}
-          hasAvatar={Boolean(profile?.avatarUrl || avatar.googleAvatarUrl)}
+          avatarUri={avatarUrl ?? undefined}
+          hasAvatar={Boolean(avatarUrl)}
           name={profile?.displayName ?? user?.email ?? ""}
           showEmail={Boolean(profile?.displayName)}
           email={user?.email ?? ""}
@@ -99,11 +103,12 @@ export function SettingsProfileBlock({ user }: { user: User | null }) {
               testID="settings-change-photo"
             >
               {/*
-                All three controls stay. `Use Google photo` and `Remove photo`
-                look like one control here and behave as two on the next screen -
-                `ProfileIdentityRow` falls back to `googleAvatarUrl` while
-                `ProfileAvatar` has no OAuth fallback (#970) - so a design pass
-                cannot merge them without deciding that bug first.
+                All three controls stay. #970 made the header and this row agree on
+                ONE avatar expression, so they no longer answer the same tap
+                differently - but for a Google user who never uploaded, `Use Google
+                photo` and `Remove photo` now land on the same picture in both places.
+                That redundancy is a copy and product question about the buttons, and
+                a design pass merging them still has to answer it first.
 
                 The messages stay inline rather than becoming toasts: they are
                 what the disclosure has to say for itself, and a toast that has
