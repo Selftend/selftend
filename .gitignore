@@ -63,3 +63,9 @@ expo-env.d.ts
 docs/superpowers/
 
 .env.local
+
+# EAS Metadata pulls the FULL App Store listing into this file. It is never
+# committed: a partial store.config.json is something `eas metadata:push` could
+# send at an app under review. The committed, reviewed subset of the age-rating
+# declaration lives at store/apple-advisory.json - see store/README.md.
+store.config.json

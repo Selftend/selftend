@@ -184,6 +184,18 @@ Two speeds: mitigate first, then make the fix permanent. The database is
 
 For a production emergency where `dev` carries unrelated unreleased work, use the [hotfix path](#hotfixes) instead of a revert-through-promotion.
 
+## Store metadata drift
+
+Selftend's Apple **age-rating declaration** is mirrored in the repository at [`store/apple-advisory.json`](../store/apple-advisory.json), and `store-metadata-drift.yml` pulls the live values from App Store Connect every Monday and fails if they no longer match.
+
+It exists because the declaration used to live only in a web form: two manual overrides sat on top of a `FREQUENT_OR_INTENSE` medical answer and rated the app **18+ in 173 countries** for an unknown length of time, with no diff to review and nothing in the repository to grep. Corrected 2026-08-14 — the rating is now 13+.
+
+The job needs **no new credentials**: the App Store Connect API key already lives on EAS, so `EXPO_TOKEN` plus the `ASC_APP_ID` / `APPLE_TEAM_ID` variables from step 5 above are all it uses. It is gated on `IOS_RELEASE_ENABLED` exactly as the iOS release is, and **skips with a notice** rather than failing while the Apple setup is incomplete.
+
+It is deliberately **not a required check** — it reads a system a human can legitimately change, so a red run is a question rather than a verdict. [`store/README.md`](../store/README.md) explains how to decide which side is wrong; the rules that _are_ a merge gate (no manual override, medical never `FREQUENT_OR_INTENSE`) run in `verify` via `test/store-advisory-invariants.test.ts`.
+
+⚠️ **Never run `eas metadata:push` from this repository.** `store.config.json` is gitignored precisely so a partial metadata file cannot be pushed at an app under review.
+
 ## Invariants
 
 1. Never squash the `dev→main` promotion PR or a `hotfix/*` PR — merge commits only.
