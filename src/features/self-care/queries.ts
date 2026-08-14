@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  getLatestSelfCareLogAt,
   getSelfCareLog,
   listSelfCareLogs,
   upsertSelfCareLog,
@@ -11,6 +12,8 @@ import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 const selfCareKeys = {
   all: ["self-care"] as const,
   list: (userId: string) => ["self-care", "list", userId] as const,
+  // Nested under the list prefix so the upsert invalidation below reaches it too.
+  latest: (userId: string) => ["self-care", "list", userId, "latest"] as const,
   detail: (userId: string, logDate: string) => ["self-care", "detail", userId, logDate] as const,
 };
 
@@ -22,6 +25,15 @@ export function useSelfCareLog(userId: string | null, logDate: string | null) {
         : ["self-care", "detail", "anonymous"],
     queryFn: () => getSelfCareLog(userId!, logDate!),
     enabled: Boolean(userId && logDate),
+  });
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 14-row list (#990). */
+export function useLatestSelfCareLogAt(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? selfCareKeys.latest(userId) : ["self-care", "list", "anonymous", "latest"],
+    queryFn: () => getLatestSelfCareLogAt(userId!),
+    enabled: Boolean(userId),
   });
 }
 

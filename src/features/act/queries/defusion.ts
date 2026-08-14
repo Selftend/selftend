@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteDefusionLog,
   getDefusionLog,
+  getLatestDefusionLogAt,
   listDefusionLogs,
   saveDefusionLog,
 } from "@/src/features/act/repository";
@@ -17,6 +18,15 @@ export function useDefusionLogs(userId: string | null, limit = 30) {
     // prefix in actKeys.defusionList still matches every variant on invalidation.
     queryKey: [...actKeys.defusionList(userId), limit],
     queryFn: () => listDefusionLogs(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 30-row list (#990). */
+export function useLatestDefusionLogAt(userId: string | null) {
+  return useQuery({
+    queryKey: actKeys.defusionLatest(userId),
+    queryFn: () => getLatestDefusionLogAt(userId!),
     enabled: Boolean(userId),
   });
 }

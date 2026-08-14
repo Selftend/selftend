@@ -1,9 +1,10 @@
 import {
+  degradeMissingSchema,
   isMissingACTSchemaError,
+  mutateVoid,
   selectList,
   selectMaybe,
   writeSingle,
-  mutateVoid,
 } from "@/src/features/act/repository/helpers";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -106,5 +107,22 @@ describe("mutateVoid", () => {
   it("throws on error", async () => {
     const run = jest.fn().mockResolvedValue({ error: realError });
     await expect(mutateVoid(run)).rejects.toBe(realError);
+  });
+});
+
+describe("degradeMissingSchema", () => {
+  it("returns the value when the read succeeds", async () => {
+    await expect(degradeMissingSchema(async () => "ok", "fallback")).resolves.toBe("ok");
+  });
+
+  it("falls back when ACT is not migrated yet", async () => {
+    await expect(
+      degradeMissingSchema(() => Promise.reject(schemaCacheError), null),
+    ).resolves.toBeNull();
+  });
+
+  it("rethrows anything else", async () => {
+    const real = { code: "23505", message: "duplicate key" };
+    await expect(degradeMissingSchema(() => Promise.reject(real), null)).rejects.toEqual(real);
   });
 });

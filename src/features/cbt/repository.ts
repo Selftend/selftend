@@ -5,6 +5,7 @@ import type {
 } from "@/src/features/cbt/types";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { trimAndFilterEmpty } from "@/src/lib/strings";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 
@@ -90,6 +91,23 @@ export async function countThoughtRecords(userId: string): Promise<number> {
 
   if (error) throw error;
   return count ?? 0;
+}
+
+/**
+ * When the user last wrote a thought record, for Home's one-line row (#990).
+ *
+ * `created_at`, not the `updated_at` the list is ordered by: the row reports the most
+ * recently WRITTEN record, not the most recently edited one. Archived records are
+ * excluded, matching the count beside it and the list the row opens.
+ */
+export function getLatestThoughtRecordAt(userId: string) {
+  return fetchLatestActivity({
+    table: "thought_records",
+    userId,
+    column: "created_at",
+    offsetColumn: "created_offset_minutes",
+    isNull: "archived_at",
+  });
 }
 
 export async function countThoughtRecordsSince(userId: string, sinceIso: string): Promise<number> {

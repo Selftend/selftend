@@ -1,15 +1,21 @@
 import {
   deleteCoreBelief,
   getCoreBelief,
+  getLatestCoreBeliefAt,
   listCoreBeliefs,
   saveCoreBelief,
   updateBeliefStrength,
 } from "@/src/features/beliefs/repository";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: jest.fn(),
 }));
+
+jest.mock("@/src/lib/latest-activity", () => ({ fetchLatestActivity: jest.fn() }));
+
+const mockFetchLatestActivity = jest.mocked(fetchLatestActivity);
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
 
@@ -164,5 +170,18 @@ describe("beliefs repository", () => {
     });
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "b-1");
+  });
+});
+
+describe("getLatestCoreBeliefAt", () => {
+  it("reads one row's created_at instead of the 500-row list (#990)", async () => {
+    mockFetchLatestActivity.mockResolvedValue(null);
+
+    await expect(getLatestCoreBeliefAt("user-1")).resolves.toBeNull();
+    expect(mockFetchLatestActivity).toHaveBeenCalledWith({
+      table: "core_beliefs",
+      userId: "user-1",
+      column: "created_at",
+    });
   });
 });

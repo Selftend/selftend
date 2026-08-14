@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   deleteWorryEntry,
+  getLatestWorryEntryAt,
   getWorryEntry,
   listWorryEntries,
   saveWorryEntry,
@@ -13,6 +14,9 @@ import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 const worryKeys = {
   all: ["worry"] as const,
   list: (userId: string) => ["worry", "list", userId] as const,
+  // Nested under the list prefix so every save/delete/toggle invalidation below reaches
+  // it too, per ADR-0001's cache-shape rule. A sibling root would go stale silently.
+  latest: (userId: string) => ["worry", "list", userId, "latest"] as const,
   detail: (userId: string, entryId: string) => ["worry", "detail", userId, entryId] as const,
 };
 
@@ -20,6 +24,15 @@ export function useWorryEntries(userId: string | null) {
   return useQuery({
     queryKey: userId ? worryKeys.list(userId) : ["worry", "list", "anonymous"],
     queryFn: () => listWorryEntries(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 500-row list (#990). */
+export function useLatestWorryEntryAt(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? worryKeys.latest(userId) : ["worry", "list", "anonymous", "latest"],
+    queryFn: () => getLatestWorryEntryAt(userId!),
     enabled: Boolean(userId),
   });
 }

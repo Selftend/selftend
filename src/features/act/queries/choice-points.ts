@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteChoicePoint,
   getChoicePoint,
+  getLatestChoicePointAt,
   listChoicePoints,
   saveChoicePoint,
 } from "@/src/features/act/repository";
@@ -15,6 +16,15 @@ export function useChoicePoints(userId: string | null, limit = 30) {
   return useQuery({
     queryKey: actKeys.choicePointList(userId),
     queryFn: () => listChoicePoints(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 30-row list (#990). */
+export function useLatestChoicePointAt(userId: string | null) {
+  return useQuery({
+    queryKey: actKeys.choicePointLatest(userId),
+    queryFn: () => getLatestChoicePointAt(userId!),
     enabled: Boolean(userId),
   });
 }

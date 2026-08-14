@@ -1,16 +1,22 @@
 import {
   archiveThoughtRecord,
   countThoughtRecordsSince,
+  getLatestThoughtRecordAt,
   getThoughtRecord,
   listThoughtRecords,
   saveThoughtRecord,
 } from "@/src/features/cbt/repository";
 import type { ThoughtRecordInput } from "@/src/features/cbt/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: jest.fn(),
 }));
+
+jest.mock("@/src/lib/latest-activity", () => ({ fetchLatestActivity: jest.fn() }));
+
+const mockFetchLatestActivity = jest.mocked(fetchLatestActivity);
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
 
@@ -434,5 +440,23 @@ describe("cbt repository - archiveThoughtRecord", () => {
     mockRequireSupabase.mockReturnValue(buildClient({ thought_records: { update } }));
 
     await expect(archiveThoughtRecord("u1", FULL_ROW.id)).rejects.toThrow("archive boom");
+  });
+});
+
+describe("getLatestThoughtRecordAt", () => {
+  // `created_at`, not the `updated_at` the list is ordered by: the row reports the last
+  // record WRITTEN. Archived records are excluded, matching the count beside it.
+  it("reads the newest non-archived record by creation (#990)", async () => {
+    mockFetchLatestActivity.mockResolvedValue(null);
+
+    await getLatestThoughtRecordAt("user-1");
+
+    expect(mockFetchLatestActivity).toHaveBeenCalledWith({
+      table: "thought_records",
+      userId: "user-1",
+      column: "created_at",
+      offsetColumn: "created_offset_minutes",
+      isNull: "archived_at",
+    });
   });
 });

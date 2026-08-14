@@ -1,12 +1,17 @@
 import {
-  listExpansionLogs,
-  getExpansionLog,
-  saveExpansionLog,
   deleteExpansionLog,
+  getExpansionLog,
+  getLatestExpansionLogAt,
+  listExpansionLogs,
+  saveExpansionLog,
 } from "@/src/features/act/repository";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({ requireSupabase: jest.fn() }));
+jest.mock("@/src/lib/latest-activity", () => ({ fetchLatestActivity: jest.fn() }));
+
+const mockFetchLatestActivity = jest.mocked(fetchLatestActivity);
 const mockRequireSupabase = jest.mocked(requireSupabase);
 
 function buildClient(builders: Record<string, unknown>) {
@@ -123,5 +128,19 @@ describe("expansion repository", () => {
     await deleteExpansionLog("u1", ROW.id);
     expect(eqUser).toHaveBeenCalledWith("user_id", "u1");
     expect(eqId).toHaveBeenCalledWith("id", ROW.id);
+  });
+});
+
+describe("getLatestExpansionLogAt", () => {
+  it("reads one row instead of the 30-row list (#990)", async () => {
+    mockFetchLatestActivity.mockResolvedValue(null);
+
+    await getLatestExpansionLogAt("u1");
+
+    expect(mockFetchLatestActivity).toHaveBeenCalledWith({
+      table: "act_expansion_logs",
+      userId: "u1",
+      column: "created_at",
+    });
   });
 });

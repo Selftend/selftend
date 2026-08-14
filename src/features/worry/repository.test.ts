@@ -1,15 +1,21 @@
 import {
   deleteWorryEntry,
+  getLatestWorryEntryAt,
   getWorryEntry,
   listWorryEntries,
   saveWorryEntry,
   toggleWorryResolved,
 } from "@/src/features/worry/repository";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: jest.fn(),
 }));
+
+jest.mock("@/src/lib/latest-activity", () => ({ fetchLatestActivity: jest.fn() }));
+
+const mockFetchLatestActivity = jest.mocked(fetchLatestActivity);
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
 
@@ -190,5 +196,24 @@ describe("worry repository", () => {
     expect(update).toHaveBeenCalledWith({ resolved: true });
     expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
     expect(eqId).toHaveBeenCalledWith("id", "w-1");
+  });
+});
+
+describe("getLatestWorryEntryAt", () => {
+  it("reads one row's created_at instead of the 500-row list (#990)", async () => {
+    mockFetchLatestActivity.mockResolvedValue({
+      at: "2026-07-27T08:00:00.000Z",
+      offsetMinutes: null,
+    });
+
+    await expect(getLatestWorryEntryAt("user-1")).resolves.toEqual({
+      at: "2026-07-27T08:00:00.000Z",
+      offsetMinutes: null,
+    });
+    expect(mockFetchLatestActivity).toHaveBeenCalledWith({
+      table: "worry_entries",
+      userId: "user-1",
+      column: "created_at",
+    });
   });
 });

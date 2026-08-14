@@ -1,4 +1,5 @@
 import type { WorryEntry, WorryEntryInput } from "@/src/features/worry/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 
@@ -45,6 +46,14 @@ export async function listWorryEntries(userId: string) {
 
   if (error) throw error;
   return (data as WorryEntryRow[]).map(mapWorryEntry);
+}
+
+/**
+ * When the user last wrote a worry, for Home's one-line row (#990). One row, no
+ * decryption - the 500-row list above was fetched whole to read this single field.
+ */
+export function getLatestWorryEntryAt(userId: string) {
+  return fetchLatestActivity({ table: "worry_entries", userId, column: "created_at" });
 }
 
 export async function getWorryEntry(userId: string, entryId: string) {

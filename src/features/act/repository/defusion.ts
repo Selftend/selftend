@@ -4,9 +4,10 @@ import type {
   DefusionTechnique,
   ThoughtCategory,
 } from "@/src/features/act/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
-import { selectList, selectMaybe, writeSingle, mutateVoid } from "./helpers";
+import { degradeMissingSchema, mutateVoid, selectList, selectMaybe, writeSingle } from "./helpers";
 
 interface DefusionLogRow {
   id: string;
@@ -36,6 +37,14 @@ function mapDefusionLog(row: DefusionLogRow): DefusionLog {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 30-row list (#990). */
+export function getLatestDefusionLogAt(userId: string) {
+  return degradeMissingSchema(
+    () => fetchLatestActivity({ table: "act_defusion_logs", userId, column: "created_at" }),
+    null,
+  );
 }
 
 export async function listDefusionLogs(userId: string, limit = 30) {

@@ -40,6 +40,20 @@ export async function selectMaybe<Row, T>(
   return map(data);
 }
 
+/**
+ * Same degradation for a read that builds its own query rather than taking a `run`
+ * callback — the narrow recency reads behind Home's ACT rows (#990) go through
+ * `fetchLatestActivity`, which knows nothing about ACT's un-migrated case.
+ */
+export async function degradeMissingSchema<T>(run: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (isMissingACTSchemaError(error)) return fallback;
+    throw error;
+  }
+}
+
 // Writes never degrade — a failed write must surface.
 export async function writeSingle<Row, T>(
   run: (client: Client) => PromiseLike<{ data: Row | null; error: unknown }>,

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteExpansionLog,
   getExpansionLog,
+  getLatestExpansionLogAt,
   listExpansionLogs,
   saveExpansionLog,
 } from "@/src/features/act/repository";
@@ -15,6 +16,15 @@ export function useExpansionLogs(userId: string | null, limit = 30) {
   return useQuery({
     queryKey: [...actKeys.expansionList(userId), limit],
     queryFn: () => listExpansionLogs(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 30-row list (#990). */
+export function useLatestExpansionLogAt(userId: string | null) {
+  return useQuery({
+    queryKey: actKeys.expansionLatest(userId),
+    queryFn: () => getLatestExpansionLogAt(userId!),
     enabled: Boolean(userId),
   });
 }

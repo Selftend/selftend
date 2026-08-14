@@ -3,10 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteConnectionLog,
   getConnectionLog,
+  getLatestConnectionLogAt,
   listConnectionLogs,
   saveConnectionLog,
 } from "@/src/features/act/repository";
-import type { ConnectionLogInput } from "@/src/features/act/types";
+import type { ConnectionLogInput, ConnectionTechnique } from "@/src/features/act/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { actKeys } from "./keys";
@@ -18,6 +19,18 @@ export function useConnectionLogs(userId: string | null, limit = 30) {
     // actKeys.connectionList still matches every variant on invalidation.
     queryKey: [...actKeys.connectionList(userId), limit],
     queryFn: () => listConnectionLogs(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Home's drop-anchor row - one row, filtered in SQL, instead of the 30-row list (#990).
+ * The technique rides the query key so each filter gets its own entry.
+ */
+export function useLatestConnectionLogAt(userId: string | null, technique: ConnectionTechnique) {
+  return useQuery({
+    queryKey: actKeys.connectionLatest(userId, technique),
+    queryFn: () => getLatestConnectionLogAt(userId!, technique),
     enabled: Boolean(userId),
   });
 }

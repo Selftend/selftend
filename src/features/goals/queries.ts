@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   completeMilestone,
+  countActiveGoals,
   deleteMilestonesForGoal,
   getGoal,
   listGoals,
@@ -16,6 +17,9 @@ import type { GoalInput, GoalStatus, MilestoneInput } from "@/src/features/goals
 const goalKeys = {
   all: ["goals"] as const,
   list: (userId: string) => ["goals", "list", userId] as const,
+  // Nested under the list prefix so the save invalidation reaches it; the status update
+  // invalidates `goalKeys.all`, which covers it either way.
+  activeCount: (userId: string) => ["goals", "list", userId, "active-count"] as const,
   detail: (userId: string, goalId: string) => ["goals", "detail", userId, goalId] as const,
   milestones: (userId: string, goalId: string) => ["goals", "milestones", userId, goalId] as const,
 };
@@ -24,6 +28,17 @@ export function useGoals(userId: string | null) {
   return useQuery({
     queryKey: userId ? goalKeys.list(userId) : ["goals", "list", "anonymous"],
     queryFn: () => listGoals(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Home's `N active goals` row - an exact count instead of the 500-row list (#990). */
+export function useActiveGoalCount(userId: string | null) {
+  return useQuery({
+    queryKey: userId
+      ? goalKeys.activeCount(userId)
+      : ["goals", "list", "anonymous", "active-count"],
+    queryFn: () => countActiveGoals(userId!),
     enabled: Boolean(userId),
   });
 }

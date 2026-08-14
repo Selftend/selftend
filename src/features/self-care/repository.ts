@@ -1,4 +1,5 @@
 import type { SelfCareLog, SelfCareLogInput } from "@/src/features/self-care/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
 
@@ -34,6 +35,18 @@ function mapSelfCareLog(row: SelfCareLogRow): SelfCareLog {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * When the user last filled in a self-care log, for Home's one-line row (#990).
+ *
+ * `created_at`, not the `log_date` day key the list is sorted by: a bare "2026-07-27"
+ * parses as UTC midnight and renders as the previous day for any viewer west of UTC.
+ * Ordering by it also fixes a truncation the list read could not avoid - a back-dated
+ * log written today sorts outside the 14-row `log_date` window.
+ */
+export function getLatestSelfCareLogAt(userId: string) {
+  return fetchLatestActivity({ table: "self_care_logs", userId, column: "created_at" });
 }
 
 export async function getSelfCareLog(userId: string, logDate: string) {
