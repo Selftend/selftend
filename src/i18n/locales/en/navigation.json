@@ -75,6 +75,8 @@
     "greetingPlain": "{{greeting}}.",
     "emptyTitle": "Add tools you want to check in with each day",
     "emptyDescription": "Build a dashboard yourself, or answer a few questions for tailored suggestions.",
+    "unsupportedTitle": "Some of your dashboard needs a newer version",
+    "unsupportedDescription": "You added things this version of the app can't show yet. Update when you can, or add something else in the meantime.",
     "addManually": "Add manually",
     "getSuggestions": "Get suggestions",
     "plan": {
