@@ -236,3 +236,28 @@ describe("UserMenu", () => {
     expect(screen.getByText("Settings")).toBeTruthy();
   });
 });
+
+/**
+ * The header used to read `profile?.avatarUrl ?? null` while settings fell back to the
+ * OAuth photo, so a Google user with no upload saw a photo on one surface and an initial
+ * on the other — and `Remove photo` changed the header while appearing to do nothing in
+ * settings (#970). Both now go through `resolveAvatarUrl`.
+ */
+describe("UserMenu avatar (#970)", () => {
+  it("shows the OAuth photo when the profile stores none", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: {
+        id: "user-1",
+        email: "user@example.com",
+        user_metadata: { avatar_url: "https://lh3.googleusercontent.com/photo" },
+      },
+    };
+
+    renderWithProviders(<UserMenu />);
+
+    // The avatar is an <Image source={{ uri }}> inside the trigger; assert the URI reached
+    // the tree rather than reaching for the element, which is nested in menu chrome.
+    expect(JSON.stringify(screen.toJSON())).toContain("https://lh3.googleusercontent.com/photo");
+  });
+});
