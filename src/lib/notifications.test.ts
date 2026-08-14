@@ -165,6 +165,28 @@ describe("Reminder notifications", () => {
     });
   });
 
+  it("keeps missing-user distinct on native instead of collapsing it to unsupported", async () => {
+    setPlatformOS("ios");
+    mockEnsureDevicePushToken.mockResolvedValue({ enabled: false, reason: "missing-user" });
+
+    // "You need to be signed in" and "This device can't deliver reminders" send the reader to
+    // different places; collapsing them made the first string unreachable on native.
+    await expect(ensureReminderChannel(null)).resolves.toEqual({
+      enabled: false,
+      reason: "missing-user",
+    });
+  });
+
+  it("collapses the remaining native failures onto unsupported", async () => {
+    setPlatformOS("android");
+    mockEnsureDevicePushToken.mockResolvedValue({ enabled: false, reason: "missing-project-id" });
+
+    await expect(ensureReminderChannel("user-1")).resolves.toEqual({
+      enabled: false,
+      reason: "unsupported",
+    });
+  });
+
   it("disables the device token when cancelAllReminders runs on native", async () => {
     setPlatformOS("android");
 

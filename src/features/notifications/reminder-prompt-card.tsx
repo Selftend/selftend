@@ -25,8 +25,8 @@ import {
 } from "@/src/features/notifications/registry";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { reminderChannelErrorKey } from "@/src/features/notifications/channel-errors";
+import { enableTargetPatch } from "@/src/features/notifications/enable-patch";
 import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
-import { getReminderTimeZone } from "@/src/lib/notifications";
 import { useSession } from "@/src/providers/session-provider";
 import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
@@ -110,15 +110,8 @@ export function ReminderPromptCard() {
         return;
       }
       const patch: Partial<UserPreferences> = {
-        reminderConsent: true,
-        reminderConsentUpdatedAt: preferences.reminderConsent
-          ? preferences.reminderConsentUpdatedAt
-          : new Date().toISOString(),
+        ...enableTargetPatch(preferences, target, { hour, minute }),
         reminderPromptedTools: promptedToolsIncluding(preferences, activeTarget),
-        [target.enabledField]: true,
-        [target.hourField]: hour,
-        [target.minuteField]: minute,
-        [target.timezoneField]: getReminderTimeZone(),
       };
       await persistPreferences(patch);
       showToast({

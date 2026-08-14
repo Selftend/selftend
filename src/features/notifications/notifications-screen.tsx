@@ -7,8 +7,15 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { NOTIFICATION_TARGETS, readEnabled } from "@/src/features/notifications/registry";
-import { NotificationTargetRow } from "@/src/features/notifications/notification-target-row";
+import {
+  NOTIFICATION_TARGETS,
+  readEnabled,
+  type NotificationTargetKey,
+} from "@/src/features/notifications/registry";
+import {
+  NotificationRowSkeleton,
+  NotificationTargetRow,
+} from "@/src/features/notifications/notification-target-row";
 import { reminderChannelErrorKey } from "@/src/features/notifications/channel-errors";
 import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { cancelAllReminders } from "@/src/lib/notifications";
@@ -16,8 +23,8 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
-/** One skeleton row at the real row height: 14px padding, a 20px name line, a 36px time field. */
-const ROW_HEIGHT = "h-[88px]";
+/** Which control owns the open permission prompt, if any. */
+type PendingControl = "master" | NotificationTargetKey | null;
 
 export default function NotificationsScreen() {
   const { t } = useTranslation("notifications");
@@ -34,7 +41,7 @@ export default function NotificationsScreen() {
    * the prompt is channel-scoped, so a second request while one is open would queue behind a
    * dialog the user is already looking at.
    */
-  const [pendingControl, setPendingControl] = useState<string | null>(null);
+  const [pendingControl, setPendingControl] = useState<PendingControl>(null);
 
   const globalEnabled = preferences?.notificationsEnabledGlobal ?? true;
   const masterPending = pendingControl === "master";
@@ -133,50 +140,31 @@ export default function NotificationsScreen() {
             </Text>
           </View>
 
-          <View className="rounded-xl border border-border bg-card px-4">
-            {preferences && !isLoading
-              ? NOTIFICATION_TARGETS.map((target, index) => (
-                  <View key={target.key} className={cn(index > 0 && "border-t border-border")}>
-                    <NotificationTargetRow
-                      target={target}
-                      preferences={preferences}
-                      userId={userId}
-                      masterEnabled={globalEnabled}
-                      channel={channel}
-                      locked={Boolean(pendingControl)}
-                      onRequestChange={(pending) => setPendingControl(pending ? target.key : null)}
-                    />
-                  </View>
-                ))
-              : /**
-                 * Ten skeleton rows at final height. The registry is static, so the shape of
-                 * this screen is known before any query resolves - and a loading surface
-                 * never claims emptiness.
-                 */
-                NOTIFICATION_TARGETS.map((target, index) => (
-                  <View
-                    key={target.key}
-                    testID={`notification-row-skeleton-${target.key}`}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                    className={cn(
-                      "flex-row items-center gap-[14px]",
-                      ROW_HEIGHT,
-                      index > 0 && "border-t border-border",
-                    )}
-                  >
-                    {/* `bg-muted` measures 1.10:1 on a card and is therefore invisible (#725);
-                        `muted-foreground/25` is 1.41 light / 1.68 dark - faint on purpose,
-                        but actually there. */}
-                    <View className="size-5 rounded bg-muted-foreground/25" />
-                    <View className="min-w-0 flex-1 gap-2">
-                      <View className="h-4 w-1/3 rounded bg-muted-foreground/25" />
-                      <View className="h-9 w-16 rounded-md bg-muted-foreground/25" />
+          {isLoading || preferences ? (
+            <View className="rounded-xl border border-border bg-card px-4">
+              {preferences
+                ? NOTIFICATION_TARGETS.map((target, index) => (
+                    <View key={target.key} className={cn(index > 0 && "border-t border-border")}>
+                      <NotificationTargetRow
+                        target={target}
+                        preferences={preferences}
+                        userId={userId}
+                        masterEnabled={globalEnabled}
+                        channel={channel}
+                        locked={Boolean(pendingControl)}
+                        onRequestChange={(pending) =>
+                          setPendingControl(pending ? target.key : null)
+                        }
+                      />
                     </View>
-                    <View className="h-[1.15rem] w-8 rounded-full bg-muted-foreground/25" />
-                  </View>
-                ))}
-          </View>
+                  ))
+                : NOTIFICATION_TARGETS.map((target, index) => (
+                    <View key={target.key} className={cn(index > 0 && "border-t border-border")}>
+                      <NotificationRowSkeleton targetKey={target.key} />
+                    </View>
+                  ))}
+            </View>
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>

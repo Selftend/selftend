@@ -1,4 +1,5 @@
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { Dimensions } from "react-native";
 
 import { defaultUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import NotificationsScreen from "@/src/features/notifications/notifications-screen";
@@ -91,22 +92,48 @@ describe("NotificationsScreen", () => {
     }
   });
 
-  it("renders ten skeleton rows at final height while preferences load", () => {
-    setPreferences(null);
+  it.each([
+    [390, "h-[88px]"],
+    [1280, "h-16"],
+  ])("renders ten skeleton rows at the real %ipx row height while loading", (width, height) => {
+    const spy = jest
+      .spyOn(Dimensions, "get")
+      .mockReturnValue({ width, height: 844, scale: 3, fontScale: 1 });
+    try {
+      setPreferences(null);
+      renderWithProviders(<NotificationsScreen />);
+
+      for (const target of NOTIFICATION_TARGETS) {
+        // `includeHiddenElements` because the skeletons are deliberately hidden from
+        // assistive tech - ten empty rows are worth nothing to announce.
+        const skeleton = screen.getByTestId(`notification-row-skeleton-${target.key}`, {
+          includeHiddenElements: true,
+        });
+        // The REAL height for this width, so nothing jumps when the data lands: the desktop
+        // row is one line at 64px against the phone's stacked 88px.
+        expect(skeleton.props.className).toContain(height);
+      }
+      // A loading surface claims nothing: no control is offered yet.
+      expect(screen.queryByLabelText("Sleep")).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("shows no rows and no skeletons when the query settles with no preferences", () => {
+    // Signed out, or a failed read. Skeletons here would claim "still loading" forever.
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
     renderWithProviders(<NotificationsScreen />);
 
-    for (const target of NOTIFICATION_TARGETS) {
-      // `includeHiddenElements` because the skeletons are deliberately hidden from
-      // assistive tech - ten empty rows are worth nothing to announce.
-      const skeleton = screen.getByTestId(`notification-row-skeleton-${target.key}`, {
-        includeHiddenElements: true,
-      });
-      // Final height, so the ten rows do not jump when the data lands. The registry is
-      // static, so the shape is known before any query.
-      expect(skeleton.props.className).toContain("h-[88px]");
-    }
-    // A loading surface claims nothing: no control is offered yet.
+    expect(
+      screen.queryByTestId("notification-row-skeleton-sleep", { includeHiddenElements: true }),
+    ).toBeNull();
     expect(screen.queryByLabelText("Sleep")).toBeNull();
+    // The screen itself still renders - the master and the notice are not preference-shaped.
+    expect(screen.getByText("Reminders")).toBeTruthy();
   });
 
   it("shows a page-level notice when the channel is blocked, and leaves rows interactive", () => {
@@ -184,6 +211,32 @@ describe("NotificationsScreen", () => {
 
     expect(mockEnsure).not.toHaveBeenCalled();
     expect(mockMutateAsync).toHaveBeenCalledWith({ notificationsEnabledGlobal: true });
+  });
+
+  it("locks the master and every other row while one row's request is open", async () => {
+    setChannel("prompt-needed");
+    let resolveEnsure: (result: ReminderScheduleResult) => void = () => {};
+    mockEnsure.mockReturnValue(
+      new Promise((resolve) => {
+        resolveEnsure = resolve;
+      }),
+    );
+    renderWithProviders(<NotificationsScreen />);
+
+    fireEvent(screen.getByLabelText("Sleep"), "checkedChange", true);
+    await waitFor(() => expect(screen.getByTestId("notification-row-pending-sleep")).toBeTruthy());
+
+    // One permission dialog is open; a second request would queue behind something the user
+    // is already looking at.
+    expect(screen.getByLabelText("Notifications enabled").props.accessibilityState.disabled).toBe(
+      true,
+    );
+    expect(screen.getByLabelText("Journal").props.accessibilityState.disabled).toBe(true);
+
+    await act(async () => {
+      resolveEnsure({ enabled: true });
+    });
+    expect(screen.getByLabelText("Journal").props.accessibilityState.disabled).toBe(false);
   });
 
   it("dims and disables every row while the master is off, without lying about their state", () => {

@@ -13,9 +13,6 @@
     "requesting": "Изчаква разрешение",
     "blockedTitle": "Известията са изключени"
   },
-  "actions": {
-    "openShort": "Напомняния"
-  },
   "feedback": {
     "problem": "Възникна проблем"
   },

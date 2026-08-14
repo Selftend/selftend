@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import type { ChangeEvent, FocusEvent } from "react";
+import { useState, type ChangeEvent, type FocusEvent } from "react";
 
 import { useThemePalette } from "@/src/lib/theme-palette";
 import { formatHHmm, parseHHmm, type TimeOfDay } from "@/src/utils/time";
@@ -18,11 +18,11 @@ export interface TimeFieldProps {
   /** Row-sized trigger (36px, hugging its content) instead of the full-width form field. */
   compact?: boolean;
   /**
-   * Whether a disabled field also dims itself. Off when the CONTAINER is already dimmed -
-   * two opacities multiply, and 0.4 x 0.55 erases the very value the reminders row is meant
-   * to keep showing while the master is off.
+   * True when this field sits inside an ALREADY-DIMMED container, so a disabled field must
+   * not dim again: 0.4 over the reminders row's 0.55 lands the time at 0.22, which erases
+   * the very value that row exists to keep showing while the master is off.
    */
-  dimWhenDisabled?: boolean;
+  inDimmedContainer?: boolean;
 }
 
 export function TimeField({
@@ -32,17 +32,29 @@ export function TimeField({
   accessibilityLabel,
   disabled,
   compact,
-  dimWhenDisabled = true,
+  inDimmedContainer = false,
 }: TimeFieldProps) {
   const theme = useThemePalette();
+  /**
+   * The raw text while the field is being edited, `null` once it is settled.
+   *
+   * `<input type="time">` legitimately holds unparseable intermediate values ("07:" between
+   * two keystrokes). Without holding them here, the input's own DOM value drifts away from
+   * the React `value` prop and an abandoned edit leaves a half-typed time on screen that no
+   * longer matches what is stored. Clearing it on blur is what makes the field VISIBLY revert
+   * rather than silently disagree.
+   */
+  const [draftText, setDraftText] = useState<string | null>(null);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setDraftText(event.target.value);
     const next = parseHHmm(event.target.value);
     if (next) onChange(next);
   };
 
   const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
     const next = parseHHmm(event.target.value);
+    setDraftText(null);
     if (next) onCommit?.(next);
   };
 
@@ -62,14 +74,14 @@ export function TimeField({
         backgroundColor: theme.background,
         paddingLeft: compact ? 10 : 12,
         paddingRight: compact ? 10 : 12,
-        opacity: disabled && dimWhenDisabled ? 0.4 : 1,
+        opacity: disabled && !inDimmedContainer ? 0.4 : 1,
       }}
     >
       <input
         type="time"
         aria-label={accessibilityLabel}
         disabled={disabled}
-        value={formatHHmm(value)}
+        value={draftText ?? formatHHmm(value)}
         onChange={handleChange}
         onBlur={handleBlur}
         style={{

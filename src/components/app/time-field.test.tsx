@@ -116,4 +116,27 @@ describe("TimeField commit boundary", () => {
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit).toHaveBeenCalledWith({ hour: 7, minute: 5 });
   });
+
+  it("web: an abandoned half-typed edit visibly reverts instead of silently sticking", () => {
+    const onCommit = jest.fn();
+    renderWithProviders(
+      <WebTimeField
+        value={{ hour: 19, minute: 0 }}
+        onChange={jest.fn()}
+        onCommit={onCommit}
+        accessibilityLabel="Sleep reminder time"
+      />,
+    );
+
+    const input = screen.getByLabelText("Sleep reminder time");
+    fireEvent(input, "change", { target: { value: "07:" } });
+    // The intermediate text is held, so the field shows what the user typed...
+    expect(screen.getByLabelText("Sleep reminder time").props.value).toBe("07:");
+
+    fireEvent(input, "blur", { target: { value: "07:" } });
+    // ...and leaving with nothing valid reverts to the stored time rather than committing
+    // or stranding a half-typed one.
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Sleep reminder time").props.value).toBe("19:00");
+  });
 });

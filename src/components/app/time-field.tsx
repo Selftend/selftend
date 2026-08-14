@@ -27,11 +27,11 @@ interface TimeFieldProps {
   /** Row-sized trigger (36px, hugging its content) instead of the full-width form field. */
   compact?: boolean;
   /**
-   * Whether a disabled field also dims itself. Off when the CONTAINER is already dimmed -
-   * two 0.4/0.55 opacities multiply to 0.22, which erases the very value the reminders row
-   * is meant to keep showing while the master is off.
+   * True when this field sits inside an ALREADY-DIMMED container, so a disabled field must
+   * not dim again: 0.4 over the reminders row's 0.55 lands the time at 0.22, which erases
+   * the very value that row exists to keep showing while the master is off.
    */
-  dimWhenDisabled?: boolean;
+  inDimmedContainer?: boolean;
 }
 
 export function TimeField({
@@ -41,7 +41,7 @@ export function TimeField({
   accessibilityLabel,
   disabled,
   compact,
-  dimWhenDisabled = true,
+  inDimmedContainer = false,
 }: TimeFieldProps) {
   const { t } = useTranslation("common");
   const reduceMotionEnabled = useReduceMotionEnabled();
@@ -98,7 +98,7 @@ export function TimeField({
         className={cn(
           "h-12 w-full flex-row items-center rounded-md border border-input bg-background px-3",
           compact && "h-9 w-auto self-start px-2.5",
-          disabled && dimWhenDisabled && "opacity-40",
+          disabled && !inDimmedContainer && "opacity-40",
         )}
       >
         <Text className={cn("text-foreground", compact && "text-sm")}>{formatHHmm(value)}</Text>

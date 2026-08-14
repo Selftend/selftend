@@ -13,9 +13,6 @@
     "requesting": "Waiting for permission",
     "blockedTitle": "Notifications are turned off"
   },
-  "actions": {
-    "openShort": "Reminders"
-  },
   "feedback": {
     "problem": "Something went wrong"
   },

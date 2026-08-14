@@ -44,6 +44,7 @@ import {
   politeLiveRegionProps,
   spaceKeyActivationProps,
 } from "@/src/lib/accessibility";
+import { reminderConsentPatch } from "@/src/features/notifications/enable-patch";
 import { ensureReminderChannel, getReminderTimeZone } from "@/src/lib/notifications";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
@@ -365,10 +366,8 @@ export function RoutineEditorScreen({
         const result = await ensureReminderChannel(user.id);
         if (result.enabled) {
           if (preferences && !preferences.reminderConsent) {
-            await updatePreferences.mutateAsync({
-              reminderConsent: true,
-              reminderConsentUpdatedAt: new Date().toISOString(),
-            });
+            // Same hard delivery gate every other reminder surface writes (#981).
+            await updatePreferences.mutateAsync(reminderConsentPatch(preferences));
           }
         } else {
           channelFailed = true;

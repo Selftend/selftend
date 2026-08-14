@@ -94,7 +94,7 @@ EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 
 ### Web Push Reminders
 
-Web push reminders use the browser Push API, `public/selftend-push-worker.js`, the `web_push_subscriptions` table, and the `send-web-reminders` Supabase Edge Function. Native Android and iOS builds keep using local Expo Notifications.
+Web push reminders use the browser Push API, `public/selftend-push-worker.js`, the `web_push_subscriptions` table, and the `send-web-reminders` Supabase Edge Function. Native Android and iOS builds go through the same Edge Function, delivering to an Expo push token in `device_push_tokens` - nothing is scheduled locally on any platform.
 
 Because the app uses `web.output = "single"`, PWA head tags are added through `public/index.html`. Keep the manifest and push worker in `public/` so `npm run export:web` copies them to `dist`.
 

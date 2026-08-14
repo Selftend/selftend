@@ -62,14 +62,15 @@ type TimezoneField =
  * One reminder target: a tool or module the server can nudge about, and the four
  * `user_preferences` columns the edge function reads at send time.
  *
- * There is no `status` field and no `descriptionKey` any more (#981). `status: "placeholder"`
+ * There is no `status` field, no `descriptionKey` and no `kind` any more (#981). `kind` split
+ * the list into "Modules" and "Tools" sections; the screen renders one run in catalogue order
+ * now, so nothing read it. `status: "placeholder"`
  * appeared zero times in the array, so its whole branch - the "Coming soon" badge, the hidden
  * time field, the optional field types - was dead code guarding a state that never existed.
  * Every target is live, so every field is required.
  */
 export interface NotificationTarget {
   key: NotificationTargetKey;
-  kind: "module" | "tool";
   /** i18n key inside the `notifications` namespace, e.g. `targets.cbt.label`. */
   labelKey: string;
   icon: MaterialIconName;
@@ -81,13 +82,12 @@ export interface NotificationTarget {
 
 /**
  * Ordered by the dashboard catalogue, so a user meets the same tools in the same sequence on
- * home and here (#981). `notification-registry-order.test.ts` derives the expected order from
- * `WIDGET_META` rather than restating it, so the two screens cannot drift apart silently.
+ * home and here (#981). `registry.test.ts` derives the expected order from `WIDGET_META`
+ * rather than restating it, so the two screens cannot drift apart silently.
  */
 export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   {
     key: "mood",
-    kind: "tool",
     labelKey: "targets.mood.label",
     icon: "mood",
     enabledField: "moodRemindersEnabled",
@@ -97,7 +97,6 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   },
   {
     key: "breathing",
-    kind: "tool",
     labelKey: "targets.breathing.label",
     icon: "air",
     enabledField: "breathingRemindersEnabled",
@@ -107,7 +106,6 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   },
   {
     key: "gratitude",
-    kind: "tool",
     labelKey: "targets.gratitude.label",
     icon: "favorite",
     enabledField: "gratitudeRemindersEnabled",
@@ -117,7 +115,6 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   },
   {
     key: "meditation",
-    kind: "tool",
     labelKey: "targets.meditation.label",
     icon: "self-improvement",
     enabledField: "meditationRemindersEnabled",
@@ -127,7 +124,6 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   },
   {
     key: "habits",
-    kind: "tool",
     labelKey: "targets.habits.label",
     icon: "task-alt",
     enabledField: "habitsRemindersEnabled",
@@ -137,7 +133,6 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   },
   {
     key: "cbt",
-    kind: "module",
     labelKey: "targets.cbt.label",
     icon: "psychology",
     enabledField: "cbtRemindersEnabled",
@@ -147,7 +142,6 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   },
   {
     key: "act",
-    kind: "module",
     labelKey: "targets.act.label",
     icon: "explore",
     enabledField: "actRemindersEnabled",
@@ -157,7 +151,6 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   },
   {
     key: "sleep",
-    kind: "tool",
     labelKey: "targets.sleep.label",
     icon: "bedtime",
     enabledField: "sleepRemindersEnabled",
@@ -167,7 +160,6 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   },
   {
     key: "journal",
-    kind: "tool",
     labelKey: "targets.journal.label",
     icon: "edit-note",
     enabledField: "journalRemindersEnabled",
@@ -177,7 +169,6 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   },
   {
     key: "grounding",
-    kind: "tool",
     labelKey: "targets.grounding.label",
     icon: "anchor",
     enabledField: "groundingRemindersEnabled",

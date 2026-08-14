@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { Dimensions } from "react-native";
 
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { NotificationTargetRow } from "@/src/features/notifications/notification-target-row";
@@ -254,6 +255,32 @@ describe("NotificationTargetRow - state it renders", () => {
     // The old shared names are gone.
     expect(screen.queryByLabelText("Enable reminders")).toBeNull();
     expect(screen.queryByLabelText("Reminder time")).toBeNull();
+  });
+
+  /**
+   * jest reports a 750px window and the e2e viewport is Desktop Chrome, so without mocking
+   * the dimensions the phone branch ships with zero coverage in both layers - the blind spot
+   * #990/#991 were filed for. `Dimensions.get` is read by `useWindowDimensions` at mount, so
+   * each width needs its own render.
+   */
+  it.each([
+    [390, "items-start gap-1", "flex-row items-center gap-3"],
+    [1280, "flex-row items-center gap-3", "items-start gap-1"],
+  ])("at %ipx the row body lays out as %s", (width, expected, notExpected) => {
+    const spy = jest
+      .spyOn(Dimensions, "get")
+      .mockReturnValue({ width, height: 844, scale: 3, fontScale: 1 });
+    try {
+      renderRow();
+      const body = screen.getByTestId("notification-row-body-sleep");
+      expect(body.props.className).toContain(expected);
+      expect(body.props.className).not.toContain(notExpected);
+      // Both layouts carry the same two controls; only the axis changes.
+      expect(screen.getByLabelText("Sleep")).toBeTruthy();
+      expect(screen.getByLabelText("Sleep reminder time")).toBeTruthy();
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("has no Save button and no 'Coming soon' badge left to render", () => {

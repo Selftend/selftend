@@ -395,10 +395,13 @@ export async function ensureReminderChannel(
 
   const result = await ensureDevicePushToken(userId ?? null);
   if (result.enabled) return { enabled: true };
-  return {
-    enabled: false,
-    reason: result.reason === "permission-denied" ? "permission-denied" : "unsupported",
-  };
+  // `missing-user` and `permission-denied` carry through, because each has its own wording
+  // and its own remedy; the remaining native reasons (no project id, registration failure)
+  // have no user-actionable difference, so they collapse onto `unsupported`.
+  if (result.reason === "permission-denied" || result.reason === "missing-user") {
+    return { enabled: false, reason: result.reason };
+  }
+  return { enabled: false, reason: "unsupported" };
 }
 
 /**

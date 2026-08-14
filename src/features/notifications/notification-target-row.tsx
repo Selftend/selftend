@@ -15,6 +15,7 @@ import {
   readMinute,
 } from "@/src/features/notifications/registry";
 import { reminderChannelErrorKey } from "@/src/features/notifications/channel-errors";
+import { enableTargetPatch } from "@/src/features/notifications/enable-patch";
 import type { ReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { getReminderTimeZone } from "@/src/lib/notifications";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
@@ -109,22 +110,6 @@ export function NotificationTargetRow({
     }
   }
 
-  /**
-   * `reminder_consent` is a hard delivery gate, not an audit field - the edge function
-   * `continue`s past a user whose consent is falsy, and it defaults false. So enabling a
-   * target has to carry it, including on Path A where no channel call happens.
-   */
-  function enablePatch(): Partial<UserPreferences> {
-    return {
-      [target.enabledField]: true,
-      [target.timezoneField]: getReminderTimeZone(),
-      reminderConsent: true,
-      reminderConsentUpdatedAt: preferences.reminderConsent
-        ? preferences.reminderConsentUpdatedAt
-        : new Date().toISOString(),
-    };
-  }
-
   async function handleToggle(next: boolean) {
     if (!userId || requestPending || locked) return;
 
@@ -134,7 +119,7 @@ export function NotificationTargetRow({
     }
 
     if (channel.status !== "prompt-needed") {
-      await writePatch(enablePatch());
+      await writePatch(enableTargetPatch(preferences, target));
       return;
     }
 
@@ -148,7 +133,7 @@ export function NotificationTargetRow({
         reportFailure(t(reminderChannelErrorKey(result.reason)));
         return;
       }
-      await writePatch(enablePatch());
+      await writePatch(enableTargetPatch(preferences, target));
     } catch {
       reportFailure(t("feedback.problem"));
     } finally {
@@ -185,6 +170,7 @@ export function NotificationTargetRow({
       <View className="flex-row items-center gap-[14px]">
         <Icon name={target.icon} className={cn("size-5 shrink-0", CHROME_MARK)} />
         <View
+          testID={`notification-row-body-${target.key}`}
           className={cn(
             "min-w-0 flex-1",
             wide ? "flex-row items-center gap-3" : "items-start gap-1",
@@ -209,7 +195,7 @@ export function NotificationTargetRow({
             disabled={disabled}
             // The row already carries the master-off dim; a second 0.4 on top of it lands the
             // time at 0.22, which is the "shows Off" failure by another route.
-            dimWhenDisabled={masterEnabled}
+            inDimmedContainer={!masterEnabled}
             accessibilityLabel={t("time.labelFor", { label })}
           />
         </View>
@@ -239,6 +225,37 @@ export function NotificationTargetRow({
           {errorMessage}
         </Text>
       ) : null}
+    </View>
+  );
+}
+
+/**
+ * One row's silhouette at its REAL height, for the moment before preferences land.
+ *
+ * It lives beside the row and shares its breakpoint deliberately: a skeleton that is the
+ * wrong height is a layout jump dressed up as a loading state, and the desktop row is 64px
+ * against the phone's 88px. The registry is static, so ten of these are known before any
+ * query resolves - and a loading surface never claims emptiness.
+ */
+export function NotificationRowSkeleton({ targetKey }: { targetKey: string }) {
+  const { width } = useWindowDimensions();
+  const wide = width >= WIDE_ROW_WIDTH;
+
+  return (
+    <View
+      testID={`notification-row-skeleton-${targetKey}`}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      className={cn("flex-row items-center gap-[14px]", wide ? "h-16" : "h-[88px]")}
+    >
+      {/* `bg-muted` measures 1.10:1 on a card and is therefore invisible (#725);
+          `muted-foreground/25` is 1.41 light / 1.68 dark - faint on purpose, but there. */}
+      <View className="size-5 rounded bg-muted-foreground/25" />
+      <View className={cn("min-w-0 flex-1", wide ? "flex-row items-center gap-3" : "gap-2")}>
+        <View className={cn("h-4 rounded bg-muted-foreground/25", wide ? "w-[150px]" : "w-1/3")} />
+        <View className="h-9 w-16 rounded-md bg-muted-foreground/25" />
+      </View>
+      <View className="h-[1.15rem] w-8 rounded-full bg-muted-foreground/25" />
     </View>
   );
 }
