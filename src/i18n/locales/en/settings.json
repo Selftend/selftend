@@ -34,7 +34,7 @@
   },
   "reminders": {
     "title": "Reminders",
-    "description": "Reminders stay explicit and off by default. They should support use, not create pressure."
+    "description": "Reminders stay explicit and off by default. You choose which ones to turn on."
   },
   "onboarding": {
     "saving": "Saving...",

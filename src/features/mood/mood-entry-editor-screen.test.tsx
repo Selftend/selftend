@@ -318,7 +318,7 @@ describe("MoodEntryEditorScreen", () => {
 
       expect(
         screen.getByText(
-          "If there's a thought underneath this, you can take it into a thought record — no pressure to.",
+          "If there's a thought underneath this, you can take it into a thought record.",
         ),
       ).toBeTruthy();
       expect(screen.queryByLabelText("Situation / trigger")).toBeNull();
@@ -413,7 +413,7 @@ describe("MoodEntryEditorScreen", () => {
       expect(screen.queryByLabelText("Situation / trigger")).toBeNull();
       expect(
         screen.queryByText(
-          "If there's a thought underneath this, you can take it into a thought record — no pressure to.",
+          "If there's a thought underneath this, you can take it into a thought record.",
         ),
       ).toBeNull();
 
@@ -421,7 +421,7 @@ describe("MoodEntryEditorScreen", () => {
 
       expect(
         screen.getByText(
-          "If there's a thought underneath this, you can take it into a thought record — no pressure to.",
+          "If there's a thought underneath this, you can take it into a thought record.",
         ),
       ).toBeTruthy();
     });
