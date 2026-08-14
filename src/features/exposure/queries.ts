@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteHierarchy,
   getHierarchy,
+  getLatestExposureSessionAt,
   listAllItems,
   listHierarchies,
   listItems,
@@ -30,6 +31,8 @@ const exposureKeys = {
   sessions: (userId: string, itemId: string) => ["exposure", "sessions", userId, itemId] as const,
   recentSessions: (userId: string, limit: number) =>
     ["exposure", "sessions", "recent", userId, limit] as const,
+  // Every exposure mutation invalidates `exposureKeys.all`, which covers this too.
+  latestSession: (userId: string) => ["exposure", "sessions", "latest", userId] as const,
 };
 
 export function useHierarchies(userId: string | null) {
@@ -92,6 +95,21 @@ export function useRecentExposureSessions(userId: string | null, limit = 250) {
       ? exposureKeys.recentSessions(userId, limit)
       : ["exposure", "sessions", "recent", "anonymous"],
     queryFn: () => listRecentSessions(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Home's `Last {{when}}` row - one row instead of the 250-row session strip (#990).
+ * This is the one row whose tool screen mounts neither list: the exposure index mounts
+ * `useHierarchies`, so there was never a session cache entry to share.
+ */
+export function useLatestExposureSessionAt(userId: string | null) {
+  return useQuery({
+    queryKey: userId
+      ? exposureKeys.latestSession(userId)
+      : ["exposure", "sessions", "latest", "anonymous"],
+    queryFn: () => getLatestExposureSessionAt(userId!),
     enabled: Boolean(userId),
   });
 }

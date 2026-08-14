@@ -1,9 +1,10 @@
 import {
-  listCommittedActions,
+  countCommittedActions,
+  deleteCommittedAction,
   getCommittedAction,
+  listCommittedActions,
   saveCommittedAction,
   updateCommittedAction,
-  deleteCommittedAction,
 } from "@/src/features/act/repository";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -190,5 +191,48 @@ describe("committed-action repository", () => {
     await deleteCommittedAction("u1", ROW.id);
     expect(eqUser).toHaveBeenCalledWith("user_id", "u1");
     expect(eqId).toHaveBeenCalledWith("id", ROW.id);
+  });
+});
+
+describe("countCommittedActions", () => {
+  // The list read has no LIMIT at all, so counting it client-side was the one row whose
+  // cost grew without bound with the user's history (#990).
+  it("counts with an exact head request and the status filter", async () => {
+    const eqStatus = jest.fn().mockResolvedValue({ count: 2, error: null });
+    const eqUser = jest.fn(() => ({ eq: eqStatus }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
+
+    await expect(countCommittedActions("u1", "active")).resolves.toBe(2);
+
+    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "u1");
+    expect(eqStatus).toHaveBeenCalledWith("status", "active");
+  });
+
+  it("counts every status when none is given", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: 7, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
+
+    await expect(countCommittedActions("u1")).resolves.toBe(7);
+  });
+
+  it("reads as nothing recorded when ACT is not migrated yet", async () => {
+    const eqUser = jest
+      .fn()
+      .mockResolvedValue({ count: null, error: { code: "PGRST205", message: "schema cache" } });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
+
+    await expect(countCommittedActions("u1")).resolves.toBe(0);
+  });
+
+  it("throws a real error rather than reporting zero", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: null, error: { code: "23505" } });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
+
+    await expect(countCommittedActions("u1")).rejects.toEqual({ code: "23505" });
   });
 });

@@ -10,6 +10,7 @@ import {
   useChoicePoint,
   useChoicePoints,
   useCommittedAction,
+  useCommittedActionCount,
   useCommittedActions,
   useConnectionLog,
   useConnectionLogs,
@@ -24,6 +25,11 @@ import {
   useDeleteObservingSelfSession,
   useExpansionLog,
   useExpansionLogs,
+  useLatestChoicePointAt,
+  useLatestConnectionLogAt,
+  useLatestDefusionLogAt,
+  useLatestExpansionLogAt,
+  useLatestObservingSelfSessionAt,
   useObservingSelfSession,
   useObservingSelfSessions,
   useSaveActionStep,
@@ -48,6 +54,7 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 // mock fns for every named export, so use the explicit-factory pattern already
 // established in src/features/act/queries.test.tsx.
 jest.mock("@/src/features/act/repository", () => ({
+  countCommittedActions: jest.fn(),
   deleteActionStep: jest.fn(),
   deleteChoicePoint: jest.fn(),
   deleteCommittedAction: jest.fn(),
@@ -61,6 +68,11 @@ jest.mock("@/src/features/act/repository", () => ({
   getConnectionLog: jest.fn(),
   getDefusionLog: jest.fn(),
   getExpansionLog: jest.fn(),
+  getLatestChoicePointAt: jest.fn(),
+  getLatestConnectionLogAt: jest.fn(),
+  getLatestDefusionLogAt: jest.fn(),
+  getLatestExpansionLogAt: jest.fn(),
+  getLatestObservingSelfSessionAt: jest.fn(),
   getObservingSelfSession: jest.fn(),
   getValueEntryByDomain: jest.fn(),
   listActionSteps: jest.fn(),
@@ -438,5 +450,125 @@ describe("useDeleteActionStep onSuccess guard", () => {
     await result.current.mutateAsync({ stepId: "s1", actionId: "a1" } as never);
 
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Home's one-row recency and count reads (#990). Each hangs off its tool's list
+// key, so the invalidations the ACT mutations already fire reach it - ADR-0001's
+// cache-shape rule. A sibling root would go stale silently.
+// ---------------------------------------------------------------------------
+
+describe("useLatestConnectionLogAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestConnectionLogAt(null, "dropAnchor"), { wrapper: wrap(client) });
+    expect(repo.getLatestConnectionLogAt).not.toHaveBeenCalled();
+  });
+
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestConnectionLogAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestConnectionLogAt("u1", "dropAnchor"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestConnectionLogAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["act", "connection", "list", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestConnectionLogAt).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("useLatestObservingSelfSessionAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestObservingSelfSessionAt(null), { wrapper: wrap(client) });
+    expect(repo.getLatestObservingSelfSessionAt).not.toHaveBeenCalled();
+  });
+
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestObservingSelfSessionAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestObservingSelfSessionAt("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestObservingSelfSessionAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["act", "observing", "list", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestObservingSelfSessionAt).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("useLatestChoicePointAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestChoicePointAt(null), { wrapper: wrap(client) });
+    expect(repo.getLatestChoicePointAt).not.toHaveBeenCalled();
+  });
+
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestChoicePointAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestChoicePointAt("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestChoicePointAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["act", "choicePoint", "list", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestChoicePointAt).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("useLatestDefusionLogAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestDefusionLogAt(null), { wrapper: wrap(client) });
+    expect(repo.getLatestDefusionLogAt).not.toHaveBeenCalled();
+  });
+
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestDefusionLogAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestDefusionLogAt("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestDefusionLogAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["act", "defusion", "list", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestDefusionLogAt).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("useLatestExpansionLogAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestExpansionLogAt(null), { wrapper: wrap(client) });
+    expect(repo.getLatestExpansionLogAt).not.toHaveBeenCalled();
+  });
+
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestExpansionLogAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestExpansionLogAt("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestExpansionLogAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["act", "expansion", "list", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestExpansionLogAt).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("useCommittedActionCount", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useCommittedActionCount(null, "active"), { wrapper: wrap(client) });
+    expect(repo.countCommittedActions).not.toHaveBeenCalled();
+  });
+
+  it("passes the status through and refetches on the list invalidation", async () => {
+    const client = createTestQueryClient();
+    (repo.countCommittedActions as jest.Mock).mockResolvedValue(0);
+    renderHook(() => useCommittedActionCount("u1", "active"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.countCommittedActions).toHaveBeenCalledWith("u1", "active"));
+
+    await client.invalidateQueries({ queryKey: ["act", "committedAction", "list", "u1"] });
+
+    await waitFor(() => expect(repo.countCommittedActions).toHaveBeenCalledTimes(2));
   });
 });

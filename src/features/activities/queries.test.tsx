@@ -6,6 +6,7 @@ import {
   useActivities,
   useActivity,
   useCompleteActivity,
+  useLatestCompletedActivityAt,
   useRecentCompletedActivities,
   useSaveActivity,
 } from "@/src/features/activities/queries";
@@ -17,6 +18,7 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 jest.mock("@/src/features/activities/repository", () => ({
   completeActivity: jest.fn(),
   getActivity: jest.fn(),
+  getLatestCompletedActivityAt: jest.fn(),
   listActivities: jest.fn(),
   listRecentCompletedActivities: jest.fn(),
   saveActivity: jest.fn(),
@@ -170,5 +172,26 @@ describe("useCompleteActivity onSuccess guard", () => {
 
     expect(repo.completeActivity).toHaveBeenCalled();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useLatestCompletedActivityAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestCompletedActivityAt(null), { wrapper: wrap(client) });
+    expect(repo.getLatestCompletedActivityAt).not.toHaveBeenCalled();
+  });
+
+  // ADR-0001's cache-shape rule: the read hangs off the list key, so the invalidations
+  // the tool's own mutations already fire reach it without a new invalidate call (#990).
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestCompletedActivityAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestCompletedActivityAt("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestCompletedActivityAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["activities", "list", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestCompletedActivityAt).toHaveBeenCalledTimes(2));
   });
 });

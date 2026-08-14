@@ -6,6 +6,7 @@ import type {
   ExposureSession,
   ExposureSessionInput,
 } from "@/src/features/exposure/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 
@@ -197,6 +198,14 @@ export async function listSessions(userId: string, itemId: string) {
  * Newest sessions across every item - the routines derive engine needs "any
  * session completed on day X" without knowing item ids (mirrors listAllItems).
  */
+/**
+ * When the user last ran an exposure, for Home's one-line row (#990). Sessions, never
+ * hierarchies - a hierarchy is a plan, and the row reports what was done.
+ */
+export function getLatestExposureSessionAt(userId: string) {
+  return fetchLatestActivity({ table: "exposure_sessions", userId, column: "completed_at" });
+}
+
 export async function listRecentSessions(userId: string, limit = 250) {
   const client = requireSupabase();
   const { data, error } = await client

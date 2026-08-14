@@ -5,6 +5,7 @@ import type { PropsWithChildren } from "react";
 import * as repo from "@/src/features/worry/repository";
 import {
   useDeleteWorryEntry,
+  useLatestWorryEntryAt,
   useSaveWorryEntry,
   useToggleWorryResolved,
   useWorryEntries,
@@ -17,6 +18,7 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 // established in src/features/act/queries/queries.test.tsx.
 jest.mock("@/src/features/worry/repository", () => ({
   deleteWorryEntry: jest.fn(),
+  getLatestWorryEntryAt: jest.fn(),
   getWorryEntry: jest.fn(),
   listWorryEntries: jest.fn(),
   saveWorryEntry: jest.fn(),
@@ -171,5 +173,26 @@ describe("useToggleWorryResolved onSuccess guard", () => {
 
     expect(repo.toggleWorryResolved).toHaveBeenCalled();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useLatestWorryEntryAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestWorryEntryAt(null), { wrapper: wrap(client) });
+    expect(repo.getLatestWorryEntryAt).not.toHaveBeenCalled();
+  });
+
+  // ADR-0001's cache-shape rule: the read hangs off the list key, so the invalidations
+  // the tool's own mutations already fire reach it without a new invalidate call (#990).
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestWorryEntryAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestWorryEntryAt("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestWorryEntryAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["worry", "list", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestWorryEntryAt).toHaveBeenCalledTimes(2));
   });
 });

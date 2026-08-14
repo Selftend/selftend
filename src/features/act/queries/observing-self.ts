@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   deleteObservingSelfSession,
+  getLatestObservingSelfSessionAt,
   getObservingSelfSession,
   listObservingSelfSessions,
   saveObservingSelfSession,
@@ -15,6 +16,15 @@ export function useObservingSelfSessions(userId: string | null, limit = 30) {
   return useQuery({
     queryKey: actKeys.observingList(userId),
     queryFn: () => listObservingSelfSessions(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 30-row list (#990). */
+export function useLatestObservingSelfSessionAt(userId: string | null) {
+  return useQuery({
+    queryKey: actKeys.observingLatest(userId),
+    queryFn: () => getLatestObservingSelfSessionAt(userId!),
     enabled: Boolean(userId),
   });
 }

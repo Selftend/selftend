@@ -1,5 +1,6 @@
 import {
   completeMilestone,
+  countActiveGoals,
   deleteMilestonesForGoal,
   getGoal,
   listGoals,
@@ -425,5 +426,44 @@ describe("goals repository - error and guard paths", () => {
     } as unknown as ReturnType<typeof requireSupabase>);
 
     await expect(uncompleteMilestone("user-1", "m-1")).rejects.toMatchObject({ code: "42501" });
+  });
+});
+
+describe("countActiveGoals", () => {
+  // A head count, not `listGoals().filter(...)`: ADR-0001 forbids deriving a lifetime
+  // figure from a capped list, and the count decrypts nothing (#990).
+  it("counts active goals with an exact head request", async () => {
+    const eqStatus = jest.fn().mockResolvedValue({ count: 3, error: null });
+    const eqUser = jest.fn(() => ({ eq: eqStatus }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countActiveGoals("user-1")).resolves.toBe(3);
+
+    expect(from).toHaveBeenCalledWith("goals");
+    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "user-1");
+    expect(eqStatus).toHaveBeenCalledWith("status", "active");
+  });
+
+  it("treats a null count as zero", async () => {
+    const eqStatus = jest.fn().mockResolvedValue({ count: null, error: null });
+    const eqUser = jest.fn(() => ({ eq: eqStatus }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countActiveGoals("user-1")).resolves.toBe(0);
+  });
+
+  it("throws rather than reporting zero when the read fails", async () => {
+    const eqStatus = jest.fn().mockResolvedValue({ count: null, error: { message: "boom" } });
+    const eqUser = jest.fn(() => ({ eq: eqStatus }));
+    const select = jest.fn(() => ({ eq: eqUser }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await expect(countActiveGoals("user-1")).rejects.toEqual({ message: "boom" });
   });
 });

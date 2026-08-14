@@ -3,9 +3,10 @@ import type {
   ConnectionLogInput,
   ConnectionTechnique,
 } from "@/src/features/act/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
-import { selectList, selectMaybe, writeSingle, mutateVoid } from "./helpers";
+import { degradeMissingSchema, mutateVoid, selectList, selectMaybe, writeSingle } from "./helpers";
 
 interface ConnectionLogRow {
   id: string;
@@ -33,6 +34,27 @@ function mapConnectionLog(row: ConnectionLogRow): ConnectionLog {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * When the user last used a connection technique, for Home's `Last {{when}}` row (#990).
+ *
+ * `technique` is a plaintext pass-through column on the base table, so filtering on it
+ * keeps the LIMIT below the decrypt (ADR-0001). Filtering in SQL also fixes the cap the
+ * row's client-side filter documented and accepted: a user with 30 newer connection logs
+ * of other techniques read as having never dropped anchor.
+ */
+export function getLatestConnectionLogAt(userId: string, technique?: ConnectionTechnique) {
+  return degradeMissingSchema(
+    () =>
+      fetchLatestActivity({
+        table: "act_connection_logs",
+        userId,
+        column: "created_at",
+        match: technique ? { technique } : {},
+      }),
+    null,
+  );
 }
 
 export async function listConnectionLogs(userId: string, limit = 30) {

@@ -3,9 +3,10 @@ import type {
   ObservingSelfSessionInput,
   ObservingTechnique,
 } from "@/src/features/act/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
-import { selectList, selectMaybe, writeSingle, mutateVoid } from "./helpers";
+import { degradeMissingSchema, mutateVoid, selectList, selectMaybe, writeSingle } from "./helpers";
 
 interface ObservingSelfSessionRow {
   id: string;
@@ -31,6 +32,19 @@ function mapObservingSelfSession(row: ObservingSelfSessionRow): ObservingSelfSes
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 30-row list (#990). */
+export function getLatestObservingSelfSessionAt(userId: string) {
+  return degradeMissingSchema(
+    () =>
+      fetchLatestActivity({
+        table: "act_observing_self_sessions",
+        userId,
+        column: "created_at",
+      }),
+    null,
+  );
 }
 
 export async function listObservingSelfSessions(userId: string, limit = 30) {

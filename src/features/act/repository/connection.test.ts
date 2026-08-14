@@ -1,12 +1,17 @@
 import {
-  listConnectionLogs,
-  getConnectionLog,
-  saveConnectionLog,
   deleteConnectionLog,
+  getConnectionLog,
+  getLatestConnectionLogAt,
+  listConnectionLogs,
+  saveConnectionLog,
 } from "@/src/features/act/repository";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({ requireSupabase: jest.fn() }));
+jest.mock("@/src/lib/latest-activity", () => ({ fetchLatestActivity: jest.fn() }));
+
+const mockFetchLatestActivity = jest.mocked(fetchLatestActivity);
 const mockRequireSupabase = jest.mocked(requireSupabase);
 
 function buildClient(builders: Record<string, unknown>) {
@@ -122,5 +127,51 @@ describe("connection repository", () => {
     await deleteConnectionLog("u1", ROW.id);
     expect(eqUser).toHaveBeenCalledWith("user_id", "u1");
     expect(eqId).toHaveBeenCalledWith("id", ROW.id);
+  });
+});
+
+describe("getLatestConnectionLogAt", () => {
+  // Filtering in the read, not over a fetched page: 30 newer logs of other techniques
+  // used to hide the last drop anchor entirely (#990). `technique` is plaintext on the
+  // base table, so the filter keeps the LIMIT below the decrypt.
+  it("filters by technique in the query", async () => {
+    mockFetchLatestActivity.mockResolvedValue({
+      at: "2026-07-27T08:00:00.000Z",
+      offsetMinutes: null,
+    });
+
+    await expect(getLatestConnectionLogAt("u1", "dropAnchor")).resolves.toEqual({
+      at: "2026-07-27T08:00:00.000Z",
+      offsetMinutes: null,
+    });
+    expect(mockFetchLatestActivity).toHaveBeenCalledWith({
+      table: "act_connection_logs",
+      userId: "u1",
+      column: "created_at",
+      match: { technique: "dropAnchor" },
+    });
+  });
+
+  it("reads every technique when none is given", async () => {
+    mockFetchLatestActivity.mockResolvedValue(null);
+
+    await getLatestConnectionLogAt("u1");
+
+    expect(mockFetchLatestActivity).toHaveBeenCalledWith(expect.objectContaining({ match: {} }));
+  });
+
+  it("degrades to no record when ACT is not migrated yet", async () => {
+    mockFetchLatestActivity.mockRejectedValue({ code: "PGRST205", message: "schema cache" });
+
+    await expect(getLatestConnectionLogAt("u1", "dropAnchor")).resolves.toBeNull();
+  });
+
+  it("rethrows a real error rather than reporting no record", async () => {
+    mockFetchLatestActivity.mockRejectedValue({ code: "23505", message: "duplicate" });
+
+    await expect(getLatestConnectionLogAt("u1")).rejects.toEqual({
+      code: "23505",
+      message: "duplicate",
+    });
   });
 });

@@ -1,13 +1,19 @@
 import {
+  getLatestSelfCareLogAt,
   getSelfCareLog,
   listSelfCareLogs,
   upsertSelfCareLog,
 } from "@/src/features/self-care/repository";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: jest.fn(),
 }));
+
+jest.mock("@/src/lib/latest-activity", () => ({ fetchLatestActivity: jest.fn() }));
+
+const mockFetchLatestActivity = jest.mocked(fetchLatestActivity);
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
 
@@ -87,5 +93,21 @@ describe("self-care repository", () => {
         meaningful_activity: "read",
       }),
     );
+  });
+});
+
+describe("getLatestSelfCareLogAt", () => {
+  // `created_at`, not `log_date`: a bare "YYYY-MM-DD" parses as UTC midnight and renders
+  // as the previous day west of UTC, and a back-dated log sorts outside the day window.
+  it("dates the newest log by its instant, not by its day key (#990)", async () => {
+    mockFetchLatestActivity.mockResolvedValue(null);
+
+    await getLatestSelfCareLogAt("user-1");
+
+    expect(mockFetchLatestActivity).toHaveBeenCalledWith({
+      table: "self_care_logs",
+      userId: "user-1",
+      column: "created_at",
+    });
   });
 });

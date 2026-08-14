@@ -2,6 +2,7 @@ import {
   deleteHierarchy,
   getHierarchy,
   getItem,
+  getLatestExposureSessionAt,
   listAllItems,
   listHierarchies,
   listItems,
@@ -11,11 +12,16 @@ import {
   saveItems,
   saveSession,
 } from "@/src/features/exposure/repository";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: jest.fn(),
 }));
+
+jest.mock("@/src/lib/latest-activity", () => ({ fetchLatestActivity: jest.fn() }));
+
+const mockFetchLatestActivity = jest.mocked(fetchLatestActivity);
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
 
@@ -538,5 +544,19 @@ describe("exposure repository - sessions", () => {
 
     const result = await listSessions("user-1", "i-1");
     expect(result[0]).toMatchObject({ id: "s-1", exposureItemId: "i-1", preSuds: 60 });
+  });
+});
+
+describe("getLatestExposureSessionAt", () => {
+  it("reads sessions, never hierarchies, and only the newest one (#990)", async () => {
+    mockFetchLatestActivity.mockResolvedValue(null);
+
+    await getLatestExposureSessionAt("user-1");
+
+    expect(mockFetchLatestActivity).toHaveBeenCalledWith({
+      table: "exposure_sessions",
+      userId: "user-1",
+      column: "completed_at",
+    });
   });
 });

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   completeActivity,
   getActivity,
+  getLatestCompletedActivityAt,
   listActivities,
   listRecentCompletedActivities,
   saveActivity,
@@ -17,6 +18,7 @@ const activityKeys = {
   // never collide on one cache entry.
   recentCompleted: (userId: string, limit: number) =>
     ["activities", "list", userId, "recent-completed", limit] as const,
+  latestCompleted: (userId: string) => ["activities", "list", userId, "latest-completed"] as const,
   detail: (userId: string, activityId: string) =>
     ["activities", "detail", userId, activityId] as const,
 };
@@ -40,6 +42,17 @@ export function useRecentCompletedActivities(userId: string | null, limit = 250)
       ? activityKeys.recentCompleted(userId, limit)
       : ["activities", "list", "anonymous", "recent-completed"],
     queryFn: () => listRecentCompletedActivities(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 500-row list (#990). */
+export function useLatestCompletedActivityAt(userId: string | null) {
+  return useQuery({
+    queryKey: userId
+      ? activityKeys.latestCompleted(userId)
+      : ["activities", "list", "anonymous", "latest-completed"],
+    queryFn: () => getLatestCompletedActivityAt(userId!),
     enabled: Boolean(userId),
   });
 }
