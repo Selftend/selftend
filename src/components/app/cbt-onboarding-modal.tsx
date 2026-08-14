@@ -176,34 +176,48 @@ export function CbtOnboarding({
         </Card>
       </View>
 
-      <View className="overflow-hidden rounded-lg border border-border">
-        <View className="flex-row border-b border-border">
-          <View className="w-1/4 border-r border-border p-2">
-            <Text className="text-xs font-semibold">{t("onboarding.intro.tableCondition")}</Text>
+      {/*
+       * The table names three clinical diagnoses beside the techniques used for them,
+       * which is the strongest thing in the app that reads as treatment information
+       * (#1002). It is educational and never assesses anyone - this line makes that
+       * true on the screen's face rather than only in argument (#1011).
+       */}
+      <View className="gap-2">
+        <Text variant="muted" className="text-sm">
+          {t("onboarding.intro.tableIntro")}
+        </Text>
+
+        <View className="overflow-hidden rounded-lg border border-border">
+          <View className="flex-row border-b border-border">
+            <View className="w-1/4 border-r border-border p-2">
+              <Text className="text-xs font-semibold">{t("onboarding.intro.tableCondition")}</Text>
+            </View>
+            <View className="w-1/4 border-r border-border p-2">
+              <Text className="text-xs font-semibold">
+                {t("onboarding.intro.tableCoreFeature")}
+              </Text>
+            </View>
+            <View className="flex-1 p-2">
+              <Text className="text-xs font-semibold">{t("onboarding.intro.tableCbtFocus")}</Text>
+            </View>
           </View>
-          <View className="w-1/4 border-r border-border p-2">
-            <Text className="text-xs font-semibold">{t("onboarding.intro.tableCoreFeature")}</Text>
-          </View>
-          <View className="flex-1 p-2">
-            <Text className="text-xs font-semibold">{t("onboarding.intro.tableCbtFocus")}</Text>
-          </View>
+          <TableRow
+            condition={t("onboarding.intro.tableRow1Condition")}
+            feature={t("onboarding.intro.tableRow1Feature")}
+            focus={t("onboarding.intro.tableRow1Focus")}
+          />
+          <TableRow
+            condition={t("onboarding.intro.tableRow2Condition")}
+            feature={t("onboarding.intro.tableRow2Feature")}
+            focus={t("onboarding.intro.tableRow2Focus")}
+          />
+          <TableRow
+            condition={t("onboarding.intro.tableRow3Condition")}
+            feature={t("onboarding.intro.tableRow3Feature")}
+            focus={t("onboarding.intro.tableRow3Focus")}
+            isLast
+          />
         </View>
-        <TableRow
-          condition={t("onboarding.intro.tableRow1Condition")}
-          feature={t("onboarding.intro.tableRow1Feature")}
-          focus={t("onboarding.intro.tableRow1Focus")}
-        />
-        <TableRow
-          condition={t("onboarding.intro.tableRow2Condition")}
-          feature={t("onboarding.intro.tableRow2Feature")}
-          focus={t("onboarding.intro.tableRow2Focus")}
-        />
-        <TableRow
-          condition={t("onboarding.intro.tableRow3Condition")}
-          feature={t("onboarding.intro.tableRow3Feature")}
-          focus={t("onboarding.intro.tableRow3Focus")}
-          isLast
-        />
       </View>
 
       <HelpSections helpKey="program" />
