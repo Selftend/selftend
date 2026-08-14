@@ -176,7 +176,7 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
     // The navigation stop takes its place; the edit copy never appears.
     await expect(page.getByText(/Find all Modules and Tools here\./i)).toBeVisible();
     await expect(
-      page.getByText(/Arrange the dashboard your way - add, remove and reorder widgets\./i),
+      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
     ).toHaveCount(0);
 
     await page.getByRole("button", { name: "Got it", exact: true }).click();
@@ -190,7 +190,7 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
 
     await page.goto("/");
     await expect(
-      page.getByText(/Arrange the dashboard your way - add, remove and reorder widgets\./i),
+      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Got it", exact: true }).click();
@@ -206,7 +206,7 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
 
     await page.goto("/");
     await expect(
-      page.getByText(/Arrange the dashboard your way - add, remove and reorder widgets\./i),
+      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Skip all tips", exact: true }).click();

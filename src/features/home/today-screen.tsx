@@ -1,18 +1,9 @@
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  RefreshControl,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { ActivityIndicator, RefreshControl, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { memo, useMemo, useState } from "react";
+import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
-import Animated, { useAnimatedRef } from "react-native-reanimated";
+import { router } from "expo-router";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
-import Sortable from "react-native-sortables";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -26,17 +17,11 @@ import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
-import { AddWidgetModal } from "@/src/features/home/add-widget-modal";
-import { isImplemented, metaForWidget, resolveWidget } from "@/src/features/home/widget-registry";
+import { resolveWidget } from "@/src/features/home/widget-registry";
+import { useWidgetTiers } from "@/src/features/home/widget-tiers";
 import { ToolTierRow } from "@/src/features/home/tool-row-stats";
 import { RightNowTier } from "@/src/features/home/right-now-tier";
-import {
-  useAddWidget,
-  useRemoveWidget,
-  useReorderWidgets,
-  useRestoreWidget,
-  useWidgetPreferences,
-} from "@/src/features/home/queries";
+import { useWidgetPreferences } from "@/src/features/home/queries";
 import { useApplyWidgetSuggestions } from "@/src/features/onboarding/queries";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { HomeTour } from "@/src/features/tours/home-tour";
@@ -44,150 +29,19 @@ import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 import { cn } from "@/lib/utils";
 
 const PADDING = 24;
-/** The `Guided programmes` tier's fixed order. */
-const PROGRAMME_ORDER = ["cbt-programme", "act-programme"];
 /**
  * Phone below, desktop at or above - the same 640 breakpoint and the same
  * `useWindowDimensions` source `ToolRow` uses, so the header actions and the rows they
  * sit above never disagree about which face the screen is wearing.
  */
 const WIDE_HEADER_WIDTH = 640;
-type WidgetEditAction =
-  | { type: "add"; widgetId: string }
-  | { type: "remove"; widgetId: string; position: number }
-  | { type: "reorder"; widgetIds: string[] };
 
 // Memoized widget body. id and userId are stable, so the (data-fetching, computation-heavy)
-// widget subtree is not re-run on the frequent grid re-renders (edit-mode toggle, add-modal
-// open, container-width onLayout). Each widget's own query hooks still drive its data updates.
+// widget subtree is not re-run on home's re-renders. Each widget's own query hooks still
+// drive its data updates.
 const WidgetContent = memo(function WidgetContent({ id, userId }: { id: string; userId: string }) {
   return resolveWidget(id, userId);
 });
-
-/** The edit-mode remove control, shared by both tiers. */
-function RemoveWidgetButton({
-  id,
-  disabled,
-  onRemove,
-  t,
-}: {
-  id: string;
-  disabled: boolean;
-  onRemove: (id: string) => void;
-  t: TFunction;
-}) {
-  const meta = metaForWidget(id);
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={t("today.dashboard.removeWidget", {
-        title: meta ? t(meta.titleKey) : id,
-      })}
-      disabled={disabled}
-      onPress={() => onRemove(id)}
-      className={cn(
-        "size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
-        Platform.select({ web: "hover:bg-destructive/10" }),
-      )}
-    >
-      <Icon name="close" className="size-4 text-destructive" />
-    </Pressable>
-  );
-}
-
-/**
- * One tier's sortable list. Rows are inert while dragging is available, so the row's own
- * whole-row press cannot fire from a drag release - the press-through defect #915 fixed
- * structurally by never nesting a pressable inside a pressable.
- *
- * The keyboard path is not optional. Home is the app's only reorderable surface, and
- * drag-alone fails WCAG 2.2 SC 2.5.7 (Dragging Movements, AA), so the move buttons are
- * the accessible equivalent rather than a convenience.
- */
-function TierSection({
-  ids,
-  editMode,
-  mutationPending,
-  scrollableRef,
-  onDragEnd,
-  onMove,
-  onRemove,
-  renderRow,
-}: {
-  ids: string[];
-  editMode: boolean;
-  mutationPending: boolean;
-  scrollableRef: ReturnType<typeof useAnimatedRef<Animated.ScrollView>>;
-  onDragEnd: (next: string[]) => void;
-  onMove: (id: string, offset: -1 | 1) => void;
-  onRemove: (id: string) => void;
-  renderRow: (id: string) => React.ReactNode;
-}) {
-  const { t } = useTranslation("navigation");
-  if (ids.length === 0) return null;
-
-  return (
-    <Sortable.Grid
-      data={ids}
-      columns={1}
-      rowGap={4}
-      scrollableRef={scrollableRef}
-      dragActivationDelay={0}
-      sortEnabled={editMode && !mutationPending}
-      customHandle
-      onDragEnd={({ data }) => onDragEnd(data)}
-      renderItem={({ item: id, index }) => {
-        const meta = metaForWidget(id);
-        const title = meta ? t(meta.titleKey) : id;
-        if (!editMode) return <View>{renderRow(id)}</View>;
-        return (
-          <View className="flex-row items-center gap-1">
-            <Sortable.Handle>
-              <View
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-                className={cn(
-                  "size-7 items-center justify-center rounded-full border border-primary/35 bg-card active:bg-accent",
-                  Platform.select({ web: "hover:bg-accent" }),
-                )}
-              >
-                <Icon name="drag-indicator" className="size-4 text-primary" />
-              </View>
-            </Sortable.Handle>
-            <View className="min-w-0 flex-1" pointerEvents="none">
-              {renderRow(id)}
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("today.dashboard.moveEarlier", { title })}
-              disabled={index === 0 || mutationPending}
-              onPress={() => onMove(id, -1)}
-              className={cn(
-                "size-7 items-center justify-center rounded-full border border-border bg-card active:bg-accent disabled:opacity-40",
-                Platform.select({ web: "hover:bg-accent" }),
-              )}
-            >
-              <Icon name="keyboard-arrow-up" className="size-4 text-primary" />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("today.dashboard.moveLater", { title })}
-              disabled={index === ids.length - 1 || mutationPending}
-              onPress={() => onMove(id, 1)}
-              className={cn(
-                "size-7 items-center justify-center rounded-full border border-border bg-card active:bg-accent disabled:opacity-40",
-                Platform.select({ web: "hover:bg-accent" }),
-              )}
-            >
-              <Icon name="keyboard-arrow-down" className="size-4 text-primary" />
-            </Pressable>
-            <RemoveWidgetButton id={id} disabled={mutationPending} onRemove={onRemove} t={t} />
-          </View>
-        );
-      }}
-    />
-  );
-}
 
 function pickGreetingKey(hour: number) {
   if (hour < 12) return "today.greetingMorning";
@@ -276,11 +130,7 @@ export default function HomeScreen() {
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: profile } = useUserProfile(user);
-  const [editRequested, setEditRequested] = useState(false);
-  const [addVisible, setAddVisible] = useState(false);
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
-  const [undoStack, setUndoStack] = useState<WidgetEditAction[]>([]);
-  const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   const { selectedDate } = useSelectedDate();
   const { width } = useWindowDimensions();
@@ -301,60 +151,20 @@ export default function HomeScreen() {
 
   const { data: preferences, isLoading, refetch, isRefetching } = useWidgetPreferences(userId);
   const { data: userPreferences } = useUserPreferences(userId);
-  const addMutation = useAddWidget(userId);
-  const removeMutation = useRemoveWidget(userId);
-  const restoreMutation = useRestoreWidget(userId);
-  const reorderMutation = useReorderWidgets(userId);
   const applySuggestions = useApplyWidgetSuggestions(userId);
 
   const editButtonsRef = useTourTargetRef("home-edit");
 
-  const widgetIds = useMemo(
-    () => (preferences ?? []).map((p) => p.widgetId).filter(isImplemented),
-    [preferences],
-  );
-
   /**
-   * One ordered list, partitioned by tier (#950). `widget_preferences` keeps a single
-   * `position` sequence; which tier an id belongs to is declared by the registry, so the
-   * renderer partitions rather than the table growing a column.
+   * The tier partition, shared with `/arrange` rather than restated here (see
+   * `widget-tiers.ts`). Both screens must agree on it or they lie to each other.
    *
    * Day-level slot suppression is GONE with the fixed-height grid: `routines-today` used
    * to be withheld entirely on a day with nothing scheduled, because a 200px empty card
    * was worse than no card. A row costs one line and says "Nothing scheduled today",
    * which is a fact the old grid had no room to state.
    */
-  const toolIds = useMemo(
-    () => widgetIds.filter((id) => metaForWidget(id)?.tier === "tool"),
-    [widgetIds],
-  );
-  /**
-   * Fixed order, CBT then ACT (#977) - deliberately NOT `position` order like the tool
-   * tier. Onboarding writes these ids in the order the user tapped the module chips, so
-   * `position` would seat ACT first for anyone who picked it first, and the tier is two
-   * cards with no reason to vary.
-   *
-   * ⚠️ It follows that the programme tier is not user-orderable, so it is rendered as a
-   * plain list rather than a sortable one - a drag that writes a position the renderer
-   * then ignores is the row-snaps-back lie #975 removed from the tool tier. #980's
-   * arrange screen has to reckon with that; raised on the ticket.
-   */
-  const programmeIds = useMemo(
-    () =>
-      PROGRAMME_ORDER.filter(
-        (id) => widgetIds.includes(id) && metaForWidget(id)?.tier === "programme",
-      ),
-    [widgetIds],
-  );
-
-  /**
-   * Derived, not stored: arranging is only reachable from the header cluster, and the
-   * cluster unmounts the moment the tool tier empties. Removing the last tool while in
-   * edit mode would otherwise strand the flag `true` with no control left to turn it off,
-   * so the next added row would arrive wearing drag handles nobody asked for. (S9/#980
-   * deletes the mode outright when arrange becomes a route.)
-   */
-  const editMode = editRequested && toolIds.length > 0;
+  const { widgetIds, toolIds, programmeIds } = useWidgetTiers(preferences);
 
   /**
    * `Get suggestions` runs `apply_widget_recommendations`, which opens with
@@ -376,78 +186,13 @@ export default function HomeScreen() {
    */
   const dashboardIsEmpty = preferences !== undefined && preferences.length === 0;
 
-  const mutationPending =
-    addMutation.isPending ||
-    removeMutation.isPending ||
-    restoreMutation.isPending ||
-    reorderMutation.isPending;
-
-  const addWidget = (widgetId: string) => {
-    if (mutationPending) return;
-    addMutation.mutate(widgetId, {
-      onSuccess: () => setUndoStack((current) => [...current, { type: "add", widgetId }]),
-    });
-  };
-
-  const removeWidget = (widgetId: string) => {
-    if (mutationPending) return;
-    const position = widgetIds.indexOf(widgetId);
-    removeMutation.mutate(widgetId, {
-      onSuccess: () =>
-        setUndoStack((current) => [
-          ...current,
-          {
-            type: "remove",
-            widgetId,
-            position: Math.max(position, 0),
-          },
-        ]),
-    });
-  };
-
   /**
-   * Reorder within ONE tier. `set_widget_order` reassigns only the positions its named
-   * ids already hold, so passing just this tier's ids leaves every other row where it
-   * is - which is what makes a two-tier screen sortable at all. Passing the flat list
-   * across both tiers would be a lie: the renderer re-partitions and the row snaps back.
+   * Home no longer writes to `widget_preferences` at all - it reads them and renders
+   * them. Add, remove, reorder and undo moved to `/arrange` with the mode that used to
+   * host them (#980), so there is no mutation on this screen to guard, no undo stack to
+   * keep, and no state that can be left stranded by a row leaving.
    */
-  const reorderWidgets = (tierIds: string[], next: string[]) => {
-    if (mutationPending || next.every((widgetId, index) => widgetId === tierIds[index])) return;
-    const previous = [...tierIds];
-    reorderMutation.mutate(next, {
-      onSuccess: () =>
-        setUndoStack((current) => [...current, { type: "reorder", widgetIds: previous }]),
-    });
-  };
-
-  const moveWidget = (tierIds: string[], widgetId: string, offset: -1 | 1) => {
-    const currentIndex = tierIds.indexOf(widgetId);
-    const nextIndex = currentIndex + offset;
-    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= tierIds.length) return;
-    const next = [...tierIds];
-    [next[currentIndex], next[nextIndex]] = [next[nextIndex], next[currentIndex]];
-    reorderWidgets(tierIds, next);
-  };
-
-  const undoLastEdit = () => {
-    const action = undoStack[undoStack.length - 1];
-    if (!action || mutationPending) return;
-    const onSuccess = () =>
-      setUndoStack((current) =>
-        current[current.length - 1] === action ? current.slice(0, -1) : current,
-      );
-
-    if (action.type === "add") {
-      removeMutation.mutate(action.widgetId, { onSuccess });
-    } else if (action.type === "remove") {
-      restoreMutation.mutate(
-        { widgetId: action.widgetId, position: action.position },
-        { onSuccess },
-      );
-    } else {
-      reorderMutation.mutate(action.widgetIds, { onSuccess });
-    }
-  };
+  const openArrange = () => router.push("/arrange");
 
   /**
    * Eyebrow and `h1`, and it stops there (#960).
@@ -474,9 +219,6 @@ export default function HomeScreen() {
     </View>
   );
 
-  const arrangeLabel = editMode ? t("home.doneLabel") : t("home.arrangeLabel");
-  const addToolLabel = t("home.addToolLabel");
-
   /**
    * The `Your tools` heading and its actions, rendered with the rows they name rather
    * than in the page header. They used to sit in `header`, which put this heading
@@ -484,69 +226,46 @@ export default function HomeScreen() {
    * separated from its own list by everything in between.
    */
   const toolsHeader = (
-    <View className="gap-6">
-      {/* Section heading row. The heading is bare - one tier, one name, in both states. */}
-      <View className="flex-row items-center justify-between gap-3">
-        <Text variant="h2" className="min-w-0 flex-1 text-xl font-bold tracking-tight">
-          {t("home.tiers.tools")}
-        </Text>
-        {/*
-          Two actions, and they render iff the tool tier is non-empty: both of them act on
-          rows, and there are no rows to act on. The empty box below carries its own
-          `Add manually`, so nothing becomes unreachable.
+    <View className="flex-row items-center justify-between gap-3">
+      {/* Section heading row. The heading is bare - one tier, one name. */}
+      <Text variant="h2" className="min-w-0 flex-1 text-xl font-bold tracking-tight">
+        {t("home.tiers.tools")}
+      </Text>
+      {/*
+        Two actions, and they render iff the tool tier is non-empty: both of them act on
+        rows, and there are no rows to act on. The empty box below carries its own
+        `Add manually`, so nothing becomes unreachable.
 
-          The tour target rides this cluster, and that is deliberate rather than tolerated:
-          `HomeTour` builds its queue from targets that are already REGISTERED, so an
-          unmounted cluster makes the `home:edit` stop skip - silently, and without marking
-          it shown, which is what leaves it to fire the first time the user owns a tool.
-        */}
-        {toolIds.length > 0 ? (
-          <View className="flex-row items-center gap-1.5" ref={editButtonsRef}>
-            {/*
-              At rest this cluster is exactly the two specified actions. Arrange mode adds
-              `Undo` and turns the first into `Done` - which is the MODE's label, not the
-              route's, and stays that way only until S9/#980 replaces the toggle with
-              `router.push` to `app/(app)/arrange.tsx`. Undo is not dropped early: it is
-              the mode's only safety net, and the mode outlives this slice.
-            */}
-            <HeaderAction
-              icon={editMode ? "check" : "tune"}
-              label={arrangeLabel}
-              wide={wide}
-              variant="ghost"
-              iconClassName="size-5 text-primary"
-              onPress={() => setEditRequested((v) => !v)}
-            />
-            {editMode ? (
-              <HeaderAction
-                icon="undo"
-                label={t("today.dashboard.undo")}
-                wide={wide}
-                variant="ghost"
-                iconClassName={
-                  undoStack.length === 0 ? "size-5 text-primary/40" : "size-5 text-primary"
-                }
-                disabled={undoStack.length === 0}
-                onPress={undoLastEdit}
-              />
-            ) : null}
-            <HeaderAction
-              icon="add"
-              label={addToolLabel}
-              wide={wide}
-              iconClassName="size-5 text-primary-foreground"
-              onPress={() => setAddVisible(true)}
-            />
-          </View>
-        ) : null}
-      </View>
-
-      {editMode ? (
-        <View className="flex-row items-center rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-2">
-          <View className="flex-row items-center gap-2">
-            <Icon name="drag-indicator" className="size-4 text-primary" />
-            <Text className="text-xs font-semibold text-primary">{t("home.editingHint")}</Text>
-          </View>
+        The tour target rides this cluster, and that is deliberate rather than tolerated:
+        `HomeTour` builds its queue from targets that are already REGISTERED, so an
+        unmounted cluster makes the `home:edit` stop skip - silently, and without marking
+        it shown, which is what leaves it to fire the first time the user owns a tool.
+      */}
+      {toolIds.length > 0 ? (
+        <View className="flex-row items-center gap-1.5" ref={editButtonsRef}>
+          {/*
+            Both actions open `/arrange`, and neither is a toggle any more (#980). The
+            first once flipped a mode and relabelled itself `Done`; `Done` is now the
+            route's own control, which is what makes hardware and browser back mean the
+            same thing. The second opened `AddWidgetModal`, and adding lives on that same
+            screen as a chip run - so this is one destination reached by the two verbs
+            people arrive with.
+          */}
+          <HeaderAction
+            icon="tune"
+            label={t("home.arrangeLabel")}
+            wide={wide}
+            variant="ghost"
+            iconClassName="size-5 text-primary"
+            onPress={openArrange}
+          />
+          <HeaderAction
+            icon="add"
+            label={t("home.addToolLabel")}
+            wide={wide}
+            iconClassName="size-5 text-primary-foreground"
+            onPress={openArrange}
+          />
         </View>
       ) : null}
     </View>
@@ -561,7 +280,6 @@ export default function HomeScreen() {
         className="flex-1"
       >
         <AnimatedScrollView
-          ref={scrollableRef}
           contentContainerStyle={{ padding: PADDING }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         >
@@ -605,8 +323,8 @@ export default function HomeScreen() {
                 No starter cards. A starter tap has exactly two possible meanings and both
                 break: `open the tool` leaves home permanently empty so the screen never
                 resolves itself, and `add and open` silently writes a persisted row from a
-                card that reads as a suggestion - with undo living in an arrange bar an
-                empty dashboard cannot reach.
+                card that reads as a suggestion - with undo living on a screen an empty
+                dashboard has no reason to be on.
               */}
               {toolIds.length === 0 ? (
                 <View
@@ -632,11 +350,7 @@ export default function HomeScreen() {
                     builds the dashboard by hand, the other by questionnaire.
                   */}
                   <View className="mt-2 w-full max-w-sm gap-2 sm:flex-row">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onPress={() => setAddVisible(true)}
-                    >
+                    <Button variant="outline" className="flex-1" onPress={openArrange}>
                       <Text>{t("today.addManually")}</Text>
                     </Button>
                     {dashboardIsEmpty ? (
@@ -652,27 +366,19 @@ export default function HomeScreen() {
                 </View>
               ) : (
                 /*
-                  Two tiers over ONE ordered list. A drag can only ever reorder within a
-                  tier, because the sortable is given that tier's ids alone - see
-                  `reorderWidgets`.
+                  Two tiers over ONE ordered list, and home renders both as plain lists.
 
-                  `Sortable.Grid columns={1}`, never `Sortable.Flex`: Flex drops
-                  re-measures of 1px or less, which is exactly the delta between two rows
-                  of the same height.
-
-                  Only the TOOL tier is sortable. The programme tier below renders in a
-                  fixed order (#977), so it is a plain list - see `programmeIds`.
+                  The sortable left with the mode (#980). Home is now a read-only view of
+                  `widget_preferences` in `position` order - which also retires the whole
+                  `Sortable.Grid` cache-a-stale-prop family of defects from this screen,
+                  since `renderItem` no longer exists here to hand a row a prop that
+                  changes after mount.
                 */
-                <TierSection
-                  ids={toolIds}
-                  editMode={editMode}
-                  mutationPending={mutationPending}
-                  scrollableRef={scrollableRef}
-                  onDragEnd={(next) => reorderWidgets(toolIds, next)}
-                  onMove={(id, offset) => moveWidget(toolIds, id, offset)}
-                  onRemove={removeWidget}
-                  renderRow={(id) => <ToolTierRow id={id} userId={userId} />}
-                />
+                <View className="gap-1">
+                  {toolIds.map((id) => (
+                    <ToolTierRow key={id} id={id} userId={userId} />
+                  ))}
+                </View>
               )}
 
               {programmeIds.length > 0 ? (
@@ -681,21 +387,7 @@ export default function HomeScreen() {
                     {t("home.tiers.programmes")}
                   </Text>
                   {programmeIds.map((id) => (
-                    <View key={id} className="flex-row items-center gap-1">
-                      <View className="min-w-0 flex-1" pointerEvents={editMode ? "none" : "auto"}>
-                        <WidgetContent id={id} userId={userId ?? ""} />
-                      </View>
-                      {/* Remove only: there is no drag handle and no move buttons,
-                          because the order is not the user's to set. */}
-                      {editMode ? (
-                        <RemoveWidgetButton
-                          id={id}
-                          disabled={mutationPending}
-                          onRemove={removeWidget}
-                          t={t}
-                        />
-                      ) : null}
-                    </View>
+                    <WidgetContent key={id} id={id} userId={userId ?? ""} />
                   ))}
                 </View>
               ) : null}
@@ -704,13 +396,6 @@ export default function HomeScreen() {
         </AnimatedScrollView>
       </View>
 
-      <AddWidgetModal
-        visible={addVisible}
-        onClose={() => setAddVisible(false)}
-        existingWidgetIds={widgetIds}
-        onAdd={addWidget}
-        onRemove={removeWidget}
-      />
       {suggestionsVisible && dashboardIsEmpty ? (
         <AppOnboardingWizard
           visible

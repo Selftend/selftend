@@ -1,126 +1,241 @@
 /**
- * Home widget management e2e test.
+ * Arrange-screen e2e (#980).
  *
- * Signs in as alice and starts with an intentionally empty dashboard. Tests:
- *   1. Verify the empty-state recovery choices and open the manual widget picker.
- *   2. Assert the widget renders and persists across reload.
- *   3. Remove it and verify Home returns to the empty state.
+ * A rewrite, not a patch. The previous suite drove the add modal's search placeholder,
+ * its `Add` pill, its own `Done`, the `Edit widgets` toggle and the `Drag to rearrange`
+ * hint - every one of which left with `AddWidgetModal` and the edit mode. Its closing
+ * block also ADMITTED that reorder was never asserted, blaming a `Sortable.Flex` the
+ * screen had already stopped using.
  *
- * Widget chosen: "self-care" (id: "self-care", title: "Self-care log", category: CBT).
+ * So reorder had no coverage at all, and this suite carries its first real assertion.
+ * It is driven through the drag handle's KEYBOARD path rather than a synthetic drag: the
+ * keyboard path is a shipped accessibility requirement (drag alone only partially answers
+ * WCAG 2.2 SC 2.5.7), so this tests something users have rather than simulating a gesture
+ * Playwright cannot faithfully produce. The move is asserted against the STORE as well as
+ * the render - a row that moves on screen and snaps back on reload is exactly the failure
+ * #975 removed from the tool tier.
+ *
+ * ⚠️ Home locators are `.last()`. After panel navigation home has TWO mounted roots and
+ * `.first()` resolves to the hidden one (#989). The arrange route has one root, so its
+ * locators are bare.
  */
+
+import type { Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures";
 
-import { dismissPostSignInModals, resetWidgetPreferencesForUser } from "./helpers";
+import {
+  createServiceClient,
+  dismissPostSignInModals,
+  resetWidgetPreferencesForUser,
+} from "./helpers";
 
-// Widget to add: "self-care" (Self-care log) under CBT category.
-const ADD_WIDGET_TITLE = "Self-care log";
-// We remove the same widget we added - ensures it's definitely visible on screen.
-const REMOVE_WIDGET_ARIA = `Remove ${ADD_WIDGET_TITLE}`;
+const CHECK_IN = "Check-in";
+const SLEEP = "Sleep";
+const SELF_CARE = "Self-care log";
+const CBT_PROGRAMME = "CBT programme";
 
-test.describe("home widget management", () => {
+// Seeded in a known order, so "the order changed" is a statement about the write rather
+// than about whatever the seed happened to contain.
+async function seedWidgets(userId: string, widgetIds: string[]) {
+  const admin = createServiceClient();
+  const { error } = await admin
+    .from("widget_preferences")
+    .insert(widgetIds.map((widget_id, position) => ({ user_id: userId, widget_id, position })));
+  if (error) throw new Error(error.message);
+}
+
+/** The stored order, which is the fact `set_widget_order` is judged on. */
+async function storedOrder(userId: string): Promise<string[]> {
+  const admin = createServiceClient();
+  const { data, error } = await admin
+    .from("widget_preferences")
+    .select("widget_id")
+    .eq("user_id", userId)
+    .order("position", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => row.widget_id as string);
+}
+
+/**
+ * The tool tier as arrange DRAWS it, ordered by where each handle actually sits.
+ *
+ * Not by DOM order: `Sortable.Grid` positions its items with transforms, so the document
+ * order is an implementation detail and reading it would assert the wrong thing. Callers
+ * wrap this in `expect.poll` - a react-native-web slide reports a stale box for ~250ms
+ * after it starts, so the first reading can legitimately be the old layout.
+ */
+async function renderedToolOrder(page: Page): Promise<string[]> {
+  const handles = await page.locator('[data-testid^="arrange-handle-"]').all();
+  const placed = await Promise.all(
+    handles.map(async (handle) => ({
+      id: ((await handle.getAttribute("data-testid")) ?? "").replace("arrange-handle-", ""),
+      y: (await handle.boundingBox())?.y ?? 0,
+    })),
+  );
+  return placed.sort((a, b) => a.y - b.y).map((entry) => entry.id);
+}
+
+test.describe("home arrange screen", () => {
   test.beforeEach(async ({ user }) => {
-    // Empty is now a deliberate, stable state; defaults are never auto-seeded.
+    // Empty is a deliberate, stable state; defaults are never auto-seeded.
     await resetWidgetPreferencesForUser(user.id);
   });
 
   test.afterEach(async ({ user }) => {
-    // Clean up regardless of test outcome.
     await resetWidgetPreferencesForUser(user.id);
   });
 
-  test("add a non-default widget, assert it renders, persists on reload, and can be removed in edit mode", async ({
+  test("adds from the chip run, reorders by keyboard, removes and undoes, then Done returns home", async ({
     page,
+    user,
   }) => {
-    // Navigate to the home/today tab.
+    await seedWidgets(user.id, ["mood-checkin", "sleep-latest", "cbt-programme"]);
+
     await page.goto("/(app)");
-    // Dismiss home tour (seeded users have empty shown_button_tours, so it fires on first visit).
     await dismissPostSignInModals(page);
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true }).last()).toBeVisible(
+      { timeout: 15_000 },
+    );
 
-    // Wait for the dashboard and verify the zero-widget recovery choices.
-    await expect(page.getByRole("heading", { name: "Your tools", exact: true })).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByText("Add tools you want to check in with each day")).toBeVisible();
+    // --- Arrange is a ROUTE, reached from home's tune action -----------------
+    await page.getByRole("button", { name: "Arrange", exact: true }).last().click();
+    await expect(page).toHaveURL(/\/arrange$/);
 
-    // --- Add a widget from the empty-state manual action ---
-    const addButton = page.getByRole("button", { name: "Add manually", exact: true });
-    await expect(addButton).toBeVisible({ timeout: 10_000 });
-    await addButton.click();
+    // The banner is the one sentence. The design's second - "Nothing is deleted -
+    // it stays in Tools" - was false for most removable ids and is not shipped.
+    await expect(
+      page.getByText("Drag to reorder, or remove what you don't check in with."),
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/stays in Tools/i)).toHaveCount(0);
 
-    // AddWidgetModal appears. Wait for the modal panel (has heading "Add to your dashboard").
-    // The modal panel has a TextInput for search (placeholder "Search widgets...").
-    await expect(page.getByPlaceholder("Search widgets...")).toBeVisible({ timeout: 10_000 });
+    // Both tiers, named with home's own tier names. The programme section is the one
+    // the drawn screen could not reach at all.
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Guided programmes", exact: true }),
+    ).toBeVisible();
 
-    // Use search to find the widget by name - avoids clicking on category rows
-    // that may be blocked by the backdrop element.
-    await page.getByPlaceholder("Search widgets...").fill("Self-care");
+    // --- Add from the chip run ----------------------------------------------
+    // No search field: the run is complete and registry-ordered, so there is nothing
+    // to search for that is not already in view.
+    await expect(page.getByPlaceholder("Search widgets...")).toHaveCount(0);
+    await page.getByTestId("arrange-chip-self-care").click();
+    // Added ids leave the run - it is add-only.
+    await expect(page.getByTestId("arrange-chip-self-care")).toBeHidden({ timeout: 10_000 });
+    await expect(page.getByTestId("arrange-handle-self-care")).toBeVisible();
+    expect(await storedOrder(user.id)).toEqual([
+      "mood-checkin",
+      "sleep-latest",
+      "cbt-programme",
+      "self-care",
+    ]);
 
-    // The OptionRow for "Self-care log" should appear in the search results.
-    await expect(page.getByText(ADD_WIDGET_TITLE)).toBeVisible({ timeout: 10_000 });
+    // --- Reorder through the handle's keyboard path --------------------------
+    // The suite's FIRST reorder assertion. `role="button"` makes the handle a tab stop
+    // on web (react-native-web gives a button-role View tabIndex 0), so it focuses and
+    // takes the arrow keys.
+    const firstHandle = page.getByTestId("arrange-handle-mood-checkin");
+    await firstHandle.focus();
+    await expect(firstHandle).toBeFocused();
+    await page.keyboard.press("ArrowDown");
 
-    // Click the "Add" button next to the Self-care log row.
-    // The Pressable in OptionRow has role="button" and text "Add".
-    const addWidgetButton = page.getByRole("button", { name: "Add", exact: true }).first();
-    await expect(addWidgetButton).toBeVisible({ timeout: 5_000 });
-    await addWidgetButton.click();
+    // The store moved...
+    await expect
+      .poll(() => storedOrder(user.id), { timeout: 10_000 })
+      .toEqual(["sleep-latest", "mood-checkin", "cbt-programme", "self-care"]);
+    // ...and so did the render. Both, because either one alone is the snap-back lie.
+    await expect
+      .poll(() => renderedToolOrder(page), { timeout: 10_000 })
+      .toEqual(["sleep-latest", "mood-checkin", "self-care"]);
 
-    // Close the modal via the close (Done) button in the modal header.
-    await page.getByRole("button", { name: "Done", exact: true }).first().click();
+    // ☠️ And AGAIN, without re-focusing. Reordering by keyboard has to work more than
+    // once per row: `focusable` is `tabIndex` under react-native-web, so if the handle
+    // stopped being focusable while the write settled, this second press would land on
+    // the document and the row would stop moving after one step.
+    await expect(firstHandle).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect
+      .poll(() => storedOrder(user.id), { timeout: 10_000 })
+      .toEqual(["sleep-latest", "self-care", "cbt-programme", "mood-checkin"]);
+    await expect
+      .poll(() => renderedToolOrder(page), { timeout: 10_000 })
+      .toEqual(["sleep-latest", "self-care", "mood-checkin"]);
 
-    // --- Assert the added widget renders on home ---
-    // The widget renders with its title key. "Self-care log" appears in the grid.
-    await expect(page.getByText(ADD_WIDGET_TITLE)).toBeVisible({ timeout: 15_000 });
+    // The programme row never entered either write: `set_widget_order` reassigns only the
+    // positions its named ids already hold, and only the tool tier is named - so
+    // `cbt-programme` sat at position 2 throughout. It has no handle at all; its order is
+    // not the user's to set (#977).
+    await expect(page.getByTestId("arrange-handle-cbt-programme")).toHaveCount(0);
 
-    // --- Assert persistence across reload ---
-    await page.reload();
-    await page.waitForTimeout(2_000);
-    await expect(page.getByText(ADD_WIDGET_TITLE)).toBeVisible({ timeout: 15_000 });
+    // --- Remove a programme card, and get it back from the chip that returns ---
+    await page.getByRole("button", { name: `Remove ${CBT_PROGRAMME}`, exact: true }).click();
+    await expect(page.getByTestId("arrange-chip-cbt-programme")).toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.getByRole("heading", { name: "Guided programmes", exact: true }),
+    ).toBeHidden();
 
-    // --- Enter edit mode and remove the widget we just added ---
-    // The header cluster is `tune` + `Add tool`, and it mounts only now that the tool
-    // tier is non-empty (#979): on the empty screen this test started from, neither
-    // action existed. The tune action carries t("home.arrangeLabel") = "Arrange".
-    const editButton = page.getByRole("button", { name: "Arrange", exact: true });
-    await expect(editButton).toBeVisible({ timeout: 10_000 });
-    await editButton.click();
+    // Undo restores it to the index it held in the FULL preference order - position 2,
+    // between the tool rows it sat among, not appended at the tail (#964).
+    await page.getByRole("button", { name: "Undo", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Guided programmes", exact: true })).toBeVisible(
+      { timeout: 10_000 },
+    );
+    await expect
+      .poll(() => storedOrder(user.id), { timeout: 10_000 })
+      .toEqual(["sleep-latest", "self-care", "cbt-programme", "mood-checkin"]);
 
-    // The editing hint "Drag to rearrange" should appear.
-    await expect(page.getByText("Drag to rearrange")).toBeVisible({ timeout: 5_000 });
+    // --- Remove a tool row, and leave it removed -----------------------------
+    await page.getByRole("button", { name: `Remove ${SELF_CARE}`, exact: true }).click();
+    await expect(page.getByTestId("arrange-chip-self-care")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("arrange-handle-self-care")).toHaveCount(0);
 
-    // Click the remove (x) button for the Self-care log widget (the one we added).
-    // accessibilityLabel = t("today.dashboard.removeWidget", { title: "Self-care log" })
-    // = "Remove Self-care log"
-    const removeButton = page.getByRole("button", { name: REMOVE_WIDGET_ARIA, exact: true });
-    await expect(removeButton).toBeVisible({ timeout: 10_000 });
-    await removeButton.click();
+    // --- Done is router.back() ------------------------------------------------
+    await page.getByRole("button", { name: "Done", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true }).last()).toBeVisible(
+      { timeout: 15_000 },
+    );
 
-    // Assert the removed widget's remove button is gone (widget is removed from grid).
-    await expect(page.getByRole("button", { name: REMOVE_WIDGET_ARIA })).toBeHidden({
-      timeout: 10_000,
-    });
+    // Home renders the order arrange wrote, and the removal stuck.
+    await expect(page.getByText(SLEEP, { exact: true }).last()).toBeVisible();
+    await expect(page.getByText(CHECK_IN, { exact: true }).last()).toBeVisible();
+    await expect(page.getByText(SELF_CARE, { exact: true })).toHaveCount(0);
+    // `mood-checkin` last, because two keyboard moves took it there and both stuck. The
+    // programme row is still at the position it was seeded into, untouched by either.
+    expect(await storedOrder(user.id)).toEqual(["sleep-latest", "cbt-programme", "mood-checkin"]);
+  });
 
-    // Also assert the widget title text is gone from the grid.
-    await expect(page.getByText(ADD_WIDGET_TITLE, { exact: true })).toBeHidden({
-      timeout: 10_000,
-    });
-    await expect(page.getByText("Add tools you want to check in with each day")).toBeVisible();
+  test("browser back is Done, and home carries no arrange controls of its own", async ({
+    page,
+    user,
+  }) => {
+    await seedWidgets(user.id, ["mood-checkin", "sleep-latest"]);
 
-    // --- The header cluster leaves with the last tool row (#979) ---
-    // There is no "exit edit mode" step any more, and that is the point: both header
-    // actions act on rows, so removing the last one unmounts the cluster and drops the
-    // screen back out of arrange mode by itself. Asserting the hint is gone proves the
-    // mode did not survive its own controls.
-    await expect(page.getByRole("button", { name: "Arrange", exact: true })).toBeHidden({
-      timeout: 10_000,
-    });
-    await expect(page.getByRole("button", { name: "Add tool", exact: true })).toBeHidden();
-    await expect(page.getByText("Drag to rearrange")).toBeHidden();
+    await page.goto("/(app)");
+    await dismissPostSignInModals(page);
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true }).last()).toBeVisible(
+      { timeout: 15_000 },
+    );
 
-    // --- Widget reorder (DONE_WITH_CONCERNS) ---
-    // Sortable.Flex drag-handles are notoriously fiddly via Playwright synthetic events.
-    // We attempt a drag but don't fail the test if it doesn't produce a visible order change.
-    // (Assertion: test is marked as passing regardless of reorder outcome.)
-    // Note: reorder is skipped as a hard assertion - only add/remove/persistence are asserted.
+    // Home has no editing affordance left: no per-row remove, no move chevrons, no
+    // `Drag to rearrange` hint. Both header actions are doors to the route.
+    await expect(page.getByRole("button", { name: `Remove ${CHECK_IN}` })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: `Move ${CHECK_IN} earlier` })).toHaveCount(0);
+    await expect(page.getByText("Drag to rearrange")).toHaveCount(0);
+
+    // `Add tool` leads to the same screen as `Arrange`: adding lives there as the chip
+    // run now that the modal is gone.
+    await page.getByRole("button", { name: "Add tool", exact: true }).last().click();
+    await expect(page).toHaveURL(/\/arrange$/);
+    await expect(page.getByTestId("arrange-chip-self-care")).toBeVisible({ timeout: 10_000 });
+
+    // Browser back is Done by construction, because Done IS back.
+    await page.goBack();
+    await expect(page.getByRole("heading", { name: "Your tools", exact: true }).last()).toBeVisible(
+      { timeout: 15_000 },
+    );
+    await expect(
+      page.getByText("Drag to reorder, or remove what you don't check in with."),
+    ).toHaveCount(0);
   });
 });
