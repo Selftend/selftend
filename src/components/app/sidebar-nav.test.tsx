@@ -8,15 +8,20 @@ jest.mock("expo-router", () => {
   const React = require("react");
 
   return {
+    // `dangerouslySingular` rides through with `href` because it is half of what a
+    // panel link IS (#989) - a link that pushes a duplicate of a screen already in the
+    // stack is a different thing from one that returns to it.
     Link: ({
       href,
       asChild: _asChild,
       children,
+      dangerouslySingular,
     }: {
       href: string;
       asChild?: boolean;
       children: ReactElement;
-    }) => React.cloneElement(React.Children.only(children), { href }),
+      dangerouslySingular?: boolean;
+    }) => React.cloneElement(React.Children.only(children), { href, dangerouslySingular }),
     usePathname: () => "/",
   };
 });
@@ -68,6 +73,27 @@ describe("SidebarNav module rows", () => {
 
     for (const label of ["CBT", "ACT", "DBT"]) {
       expect(screen.getByText(label)).toBeTruthy();
+    }
+  });
+});
+
+/**
+ * The panel is LATERAL navigation between peer destinations, and expo-router's default
+ * NAVIGATE only reuses the route it is already on: a target sitting deeper in the stack
+ * gets pushed again. Routines -> Home therefore mounted a SECOND Home and every query on
+ * it ran twice (#989). `dangerouslySingular` moves the existing screen to the top instead.
+ *
+ * Asserted over every row rather than a sampled one: the defect is per-link, so one
+ * un-marked row is the whole bug back for that destination.
+ */
+describe("SidebarNav link identity", () => {
+  it("marks every destination singular so a revisit cannot stack a second copy", () => {
+    renderWithProviders(<SidebarNav />);
+
+    const links = screen.getAllByRole("link");
+    expect(links.length).toBeGreaterThan(10);
+    for (const link of links) {
+      expect([link.props.href, link.props.dangerouslySingular]).toEqual([link.props.href, true]);
     }
   });
 });

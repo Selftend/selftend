@@ -176,7 +176,15 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     const accessibilityLabel = item.a11yKey ? t(item.a11yKey) : label;
 
     return (
-      <Link href={item.href} key={item.labelKey} asChild>
+      // `dangerouslySingular` (#989): the panel is LATERAL navigation between peer
+      // destinations, and expo-router's default NAVIGATE only reuses the route it is
+      // already on - a target sitting deeper in the stack is pushed again. Going
+      // Routines -> Home therefore left TWO mounted Home screens, so every query on it
+      // ran twice. Singular moves the existing screen to the top instead, which also
+      // keeps Back meaning "the screen I came from". The id substitutes dynamic segments
+      // with their params, so it can never collapse two different `[id]` screens - and
+      // no panel destination is dynamic anyway.
+      <Link href={item.href} key={item.labelKey} dangerouslySingular asChild>
         <Pressable
           accessibilityLabel={accessibilityLabel}
           accessibilityRole="link"
@@ -252,7 +260,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     }
 
     return (
-      <Link href={href} key={`group-${label}`} asChild>
+      <Link href={href} key={`group-${label}`} dangerouslySingular asChild>
         <Pressable
           accessibilityLabel={label}
           accessibilityRole="link"

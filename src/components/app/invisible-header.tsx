@@ -65,7 +65,10 @@ export function InvisibleHeader({ onMenuPress, homeHref }: InvisibleHeaderProps)
         pointerEvents="box-none"
         className="absolute inset-0 items-center justify-center"
       >
-        <Link href={homeHref} asChild>
+        {/* Singular for the same reason as the nav panel (#989): the wordmark is a
+            "go to the top" affordance, not a drill-down, so it must reuse the Home
+            already in the stack rather than push a second one. */}
+        <Link href={homeHref} dangerouslySingular asChild>
           <Pressable
             accessibilityLabel={t("header.goHome")}
             accessibilityRole="link"
