@@ -181,10 +181,24 @@ export default function ProtectedLayout() {
                 ANCESTOR, which is in the stack by definition, so every crumb tap used to
                 duplicate the screen it returned to.
 
-                The `[id]` screens are deliberately left plain. Singular's id substitutes
-                each dynamic segment with its value, so marking them would still keep
-                `/goals/1` and `/goals/2` apart and would be safe - but this change only
-                claims what it measured, and stacking two records is a real flow.
+                TWO kinds of screen are deliberately left plain, and `nav-singular.test.ts`
+                derives both rather than trusting this list:
+
+                - `[id]` screens. Singular's id substitutes each dynamic segment with its
+                  value, so marking them would keep `/goals/1` and `/goals/2` apart and
+                  would be safe - but this change only claims what it measured, and
+                  stacking two records is a real flow.
+                - ☠️ CREATION screens (a `new` route) and anything keyed by a QUERY param.
+                  Singular reuses the existing route rather than remounting it, so state
+                  initialised at mount survives - an unsaved draft would reappear on a
+                  later "new". `getSingularId` also reads path segments ONLY, so
+                  `/modules/cbt/new?recordId=A` and `?recordId=B` share an id and would
+                  collapse. `/modules/cbt/new` shows how quiet that is: its check-in
+                  handoff is `useState(consumeThoughtRecordSeed)`, read once per MOUNT, so
+                  a reused instance drops the seeded emotions with nothing failing.
+
+                So the rule is: LIST and OVERVIEW screens are single-instance; screens that
+                hold per-visit state - creation, editing, dynamic records - are not.
 
                 ⚠️ Screen-level does NOT cover navigation that crosses a group boundary:
                 #989 measured that the panel's `/(app)` links still duplicated Home with
@@ -197,29 +211,29 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/cbt/learn" dangerouslySingular />
             <Stack.Screen name="modules/cbt/history/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/history/[id]" />
-            <Stack.Screen name="modules/cbt/new" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/new" />
             <Stack.Screen name="modules/cbt/[id]" />
             <Stack.Screen name="modules/cbt/goals/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/goals/new" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/goals/new" />
             <Stack.Screen name="modules/cbt/goals/[id]" />
             <Stack.Screen name="modules/cbt/activities/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/activities/new" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/activities/new" />
             <Stack.Screen name="modules/cbt/activities/[id]" />
             <Stack.Screen name="modules/cbt/values" dangerouslySingular />
             <Stack.Screen name="modules/cbt/weekly-review" dangerouslySingular />
             <Stack.Screen name="modules/cbt/beliefs/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/beliefs/new" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/beliefs/new" />
             <Stack.Screen name="modules/cbt/beliefs/[id]" />
             <Stack.Screen name="modules/cbt/exposure/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/exposure/new" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/exposure/new" />
             <Stack.Screen name="modules/cbt/exposure/[id]" />
             <Stack.Screen name="modules/cbt/worry/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/worry/new" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/worry/new" />
             <Stack.Screen name="modules/cbt/tasks/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/tasks/new" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/tasks/new" />
             <Stack.Screen name="modules/cbt/tasks/[id]" />
             <Stack.Screen name="modules/cbt/anger/index" dangerouslySingular />
-            <Stack.Screen name="modules/cbt/anger/new" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/anger/new" />
             <Stack.Screen name="modules/cbt/anger/[id]" />
             <Stack.Screen name="modules/cbt/self-care" dangerouslySingular />
             <Stack.Screen name="modules/cbt/recovery" dangerouslySingular />
@@ -227,7 +241,7 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/dbt" dangerouslySingular />
             <Stack.Screen name="tools/index" dangerouslySingular />
             <Stack.Screen name="tools/check-in/index" dangerouslySingular />
-            <Stack.Screen name="tools/meditation/index" dangerouslySingular />
+            <Stack.Screen name="tools/meditation/index" />
             <Stack.Screen name="tools/act" dangerouslySingular />
             <Stack.Screen name="tools/gratitude-log/index" dangerouslySingular />
             <Stack.Screen name="support" dangerouslySingular />

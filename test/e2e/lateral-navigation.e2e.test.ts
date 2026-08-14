@@ -10,9 +10,18 @@
  * ancestor, which is in the stack by definition, and the policy pages push each other.
  */
 
+import type { Page } from "@playwright/test";
+
 import { test, expect } from "./fixtures";
 
 import { dismissPostSignInModals } from "./helpers";
+
+/** One per mounted `/modules` screen. */
+const modulesRoots = (page: Page) => page.locator('h1:text-is("Modules")').count();
+
+/** One per mounted `/privacy` screen — the BUTTON, since security's <h1> shares its words. */
+const privacyRoots = (page: Page) =>
+  page.locator('[role="button"]:has-text("How we protect your data")').count();
 
 /**
  * ☠️ The counts below are CSS/text locators, never `getByRole`. A backgrounded screen is
@@ -32,7 +41,7 @@ test("a breadcrumb returns to its ancestor instead of stacking a second copy", a
     timeout: 15_000,
   });
   await dismissPostSignInModals(page);
-  expect(await page.locator('h1:text-is("Modules")').count()).toBe(1);
+  expect(await modulesRoots(page)).toBe(1);
 
   // Down one level, so `/modules` is now an ancestor sitting in the stack.
   await page.getByRole("button", { name: "Cognitive behavioral therapy", exact: true }).click();
@@ -49,7 +58,18 @@ test("a breadcrumb returns to its ancestor instead of stacking a second copy", a
     page.getByText("Structured therapeutic programs", { exact: false }).last(),
   ).toBeVisible({ timeout: 15_000 });
 
-  expect(await page.locator('h1:text-is("Modules")').count()).toBe(1);
+  expect(await modulesRoots(page)).toBe(1);
+
+  // Back, measured on this surface rather than assumed from the policy one: the ticket's
+  // own point is that "a breadcrumb's Back expectation is not a settings menu's". Singular
+  // replaces the history entry rather than adding one, so Back holds here instead of
+  // returning to the child - the same trade #989 accepted, and the duplicate must not
+  // come back with it.
+  await page.goBack();
+  await expect(
+    page.getByText("Structured therapeutic programs", { exact: false }).last(),
+  ).toBeVisible({ timeout: 15_000 });
+  expect(await modulesRoots(page)).toBe(1);
 });
 
 test("policy pages that cross-link do not stack copies of each other", async ({ page }) => {
@@ -57,9 +77,7 @@ test("policy pages that cross-link do not stack copies of each other", async ({ 
   await page.goto("/privacy");
   const toSecurity = page.getByRole("button", { name: "How we protect your data" });
   await expect(toSecurity).toBeVisible({ timeout: 15_000 });
-  expect(await page.locator('[role="button"]:has-text("How we protect your data")').count()).toBe(
-    1,
-  );
+  expect(await privacyRoots(page)).toBe(1);
 
   await toSecurity.click();
   await expect(page).toHaveURL(/\/security/, { timeout: 15_000 });
@@ -72,9 +90,7 @@ test("policy pages that cross-link do not stack copies of each other", async ({ 
   });
 
   // One privacy screen, not two.
-  expect(await page.locator('[role="button"]:has-text("How we protect your data")').count()).toBe(
-    1,
-  );
+  expect(await privacyRoots(page)).toBe(1);
 
   // The same trade #989 measured and accepted, pinned here for the imperative sites too:
   // singular MOVES the screen to the top, which on web replaces the history entry rather
@@ -85,7 +101,5 @@ test("policy pages that cross-link do not stack copies of each other", async ({ 
   await expect(page.getByRole("button", { name: "How we protect your data" })).toBeVisible({
     timeout: 15_000,
   });
-  expect(await page.locator('[role="button"]:has-text("How we protect your data")').count()).toBe(
-    1,
-  );
+  expect(await privacyRoots(page)).toBe(1);
 });
