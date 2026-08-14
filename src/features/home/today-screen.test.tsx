@@ -1,6 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import type { ReactNode } from "react";
-import { ActivityIndicator } from "react-native";
+import { ActivityIndicator, useWindowDimensions } from "react-native";
 
 import HomeScreen from "./today-screen";
 import { getTourTarget } from "@/src/features/tours/tour-targets";
@@ -15,10 +15,25 @@ let mockWidgetIds: string[] = [];
  */
 let mockUnimplementedIds: string[] = [];
 let mockIsLoading = false;
+/** The query settled with no data: disabled, or errored. `isLoading` is false in both. */
+let mockPreferencesUndefined = false;
 const mockAddWidget = jest.fn();
 const mockRemoveWidget = jest.fn();
 const mockRestoreWidget = jest.fn();
 const mockReorderWidgets = jest.fn();
+
+jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
+const mockDimensions = useWindowDimensions as unknown as jest.Mock;
+/**
+ * The screen reads its own breakpoint, and jest's default width (750) sits on the DESKTOP
+ * side of it - so without setting this every test would exercise the wide face and the
+ * phone face would ship uncovered.
+ */
+const atWidth = (width: number) => mockDimensions.mockReturnValue({ width, height: 900 });
 
 jest.mock("react-native-sortables", () => {
   const { Fragment } = require("react");
@@ -89,7 +104,9 @@ jest.mock("@/src/stores/selected-date-store", () => ({
 
 jest.mock("@/src/features/home/queries", () => ({
   useWidgetPreferences: () => ({
-    data: mockWidgetIds.map((widgetId, position) => ({ widgetId, position })),
+    data: mockPreferencesUndefined
+      ? undefined
+      : mockWidgetIds.map((widgetId, position) => ({ widgetId, position })),
     isLoading: mockIsLoading,
     refetch: jest.fn(),
     isRefetching: false,
@@ -162,7 +179,9 @@ beforeEach(() => {
   mockWidgetIds = [];
   mockUnimplementedIds = [];
   mockIsLoading = false;
+  mockPreferencesUndefined = false;
   jest.clearAllMocks();
+  atWidth(900);
   for (const mutation of [mockAddWidget, mockRemoveWidget, mockRestoreWidget, mockReorderWidgets]) {
     mutation.mockImplementation((_value, options) => options?.onSuccess?.());
   }
@@ -384,6 +403,31 @@ describe("HomeScreen header actions (#979)", () => {
   });
 
   /**
+   * The two faces. Phone is 36px icon-only; desktop puts the label beside the glyph. Both
+   * carry the same `accessibilityLabel`, so the icon-only face is never an unnamed glyph -
+   * which is what makes shrinking it to a square safe at all.
+   */
+  it("draws 36px icon-only actions on phone, with the label still announced", () => {
+    atWidth(390);
+    renderPopulatedHome();
+
+    for (const name of ["Arrange", "Add tool"]) {
+      const button = screen.getByRole("button", { name });
+      expect(button.props.className as string).toContain("h-9 w-9");
+    }
+    // The label is announced, not drawn: no visible text node carries it on phone.
+    expect(screen.queryByText("Add tool")).toBeNull();
+  });
+
+  it("labels the actions in text on desktop", () => {
+    atWidth(900);
+    renderPopulatedHome();
+
+    expect(screen.getByText("Arrange")).toBeTruthy();
+    expect(screen.getByText("Add tool")).toBeTruthy();
+  });
+
+  /**
    * The tour half of the same fact. `HomeTour` builds its queue from targets that are
    * already REGISTERED (`getTourTarget(...) !== null`), so an unmounted cluster makes the
    * `home:edit` stop skip itself - and skipping is not dismissing, so the stop is never
@@ -494,6 +538,43 @@ describe("HomeScreen empty state (#979)", () => {
     expect(screen.queryByTestId("home-empty-state")).toBeNull();
     expect(screen.queryByText(/add tools you want to check in/i)).toBeNull();
     expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+  });
+
+  /**
+   * `undefined` is not zero, and this is the case `isLoading` does NOT cover: the query is
+   * disabled (no user id yet on web hydration) or it errored, so `isLoading` is false and
+   * `data` never arrived. The box may render - an unknown dashboard and an empty one look
+   * the same - but the offer to REWRITE the table must not, because
+   * `apply_widget_recommendations` would delete rows nobody has seen.
+   */
+  it("withholds Get suggestions when the preference rows never arrived", () => {
+    mockPreferencesUndefined = true;
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.getByTestId("home-empty-state")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /add manually/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /get suggestions/i })).toBeNull();
+  });
+
+  /**
+   * The ring is 44px on desktop and 42px on phone, and both are plain classes rather than
+   * SVG props - which is the whole reason `BreathingDotEmpty` and its 8-palette render
+   * test could go. `includeHiddenElements` is required: the mark is decoration, so it is
+   * `accessibilityElementsHidden`, and RNTL hides such subtrees from queries by default.
+   */
+  it("draws the mark at 44px on desktop and 42px on phone", () => {
+    const markClass = () =>
+      screen.getByTestId("home-empty-mark", { includeHiddenElements: true }).props
+        .className as string;
+
+    atWidth(900);
+    renderWithProviders(<HomeScreen />);
+    expect(markClass()).toContain("size-11");
+
+    screen.unmount();
+    atWidth(390);
+    renderWithProviders(<HomeScreen />);
+    expect(markClass()).toContain("size-[42px]");
   });
 });
 

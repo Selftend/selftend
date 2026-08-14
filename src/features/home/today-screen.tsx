@@ -200,6 +200,50 @@ function firstWord(value: string) {
 }
 
 /**
+ * One header action. Phone gets a 36px icon-only square, desktop the same glyph with its
+ * label beside it - and the `accessibilityLabel` is set in BOTH, so the two faces are named
+ * identically and the icon-only one is never a mystery glyph to a screen reader.
+ *
+ * 36px is under the 44px pointer target, which is why `Button` carries
+ * `DEFAULT_INTERACTIVE_HIT_SLOP`: the drawn square is 36px, the touchable is not.
+ */
+function HeaderAction({
+  icon,
+  label,
+  wide,
+  variant,
+  iconClassName,
+  disabled,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Icon>["name"];
+  label: string;
+  wide: boolean;
+  variant?: "ghost";
+  iconClassName: string;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Button
+      variant={variant}
+      size={wide ? "sm" : "icon"}
+      // `size="icon"` is 40px on phone by design-system default; this cluster is specified
+      // at 36px, and tailwind-merge drops the `h-10 w-10` in favour of the later class.
+      className={cn(!wide && "h-9 w-9")}
+      disabled={disabled}
+      onPress={onPress}
+      accessibilityLabel={label}
+    >
+      <Icon name={icon} className={iconClassName} />
+      {wide ? (
+        <Text className={variant === "ghost" ? "text-primary" : undefined}>{label}</Text>
+      ) : null}
+    </Button>
+  );
+}
+
+/**
  * The empty box's mark: one drawn ring, 44px desktop / 42px phone.
  *
  * This replaced `BreathingDotEmpty`, three concentric SVG circles whose colours were
@@ -316,11 +360,21 @@ export default function HomeScreen() {
    * `Get suggestions` runs `apply_widget_recommendations`, which opens with
    * `delete from public.widget_preferences where user_id = uid` - a whole-dashboard
    * rewrite. That is correct on first run and destructive anywhere else, so the offer is
-   * gated on the UNFILTERED row count, not on `widgetIds`. A row for an id this build
-   * does not implement is invisible to the screen but very much present in the table, and
-   * it would be deleted just the same. (One face of #964; the general defect stays open.)
+   * gated twice over.
+   *
+   * On the UNFILTERED row count, not on `widgetIds`: a row for an id this build does not
+   * implement is invisible to the screen but very much present in the table, and it would
+   * be deleted just the same. (One face of #964; the general defect stays open.)
+   *
+   * And on the rows having actually ARRIVED. `undefined` is not zero - it is what the
+   * query holds while disabled (`enabled: Boolean(userId)`, briefly false on web
+   * hydration) and after an error, and in neither state is `isLoading` true to catch it.
+   * `(preferences ?? []).length === 0` would read both as "the table is empty" and offer
+   * to rewrite a dashboard nobody has seen. The box still renders in those states,
+   * because an unknown dashboard and an empty one look the same; what must not happen is
+   * the destructive offer appearing beside it.
    */
-  const dashboardIsEmpty = (preferences ?? []).length === 0;
+  const dashboardIsEmpty = preferences !== undefined && preferences.length === 0;
 
   const mutationPending =
     addMutation.isPending ||
@@ -448,44 +502,41 @@ export default function HomeScreen() {
         */}
         {toolIds.length > 0 ? (
           <View className="flex-row items-center gap-1.5" ref={editButtonsRef}>
-            <Button
+            {/*
+              At rest this cluster is exactly the two specified actions. Arrange mode adds
+              `Undo` and turns the first into `Done` - which is the MODE's label, not the
+              route's, and stays that way only until S9/#980 replaces the toggle with
+              `router.push` to `app/(app)/arrange.tsx`. Undo is not dropped early: it is
+              the mode's only safety net, and the mode outlives this slice.
+            */}
+            <HeaderAction
+              icon={editMode ? "check" : "tune"}
+              label={arrangeLabel}
+              wide={wide}
               variant="ghost"
-              size={wide ? "sm" : "icon"}
-              className={cn(!wide && "h-9 w-9")}
-              // S9/#980 swaps this handler for `router.push` to the arrange route; the
-              // label is already the route's name rather than the mode's.
+              iconClassName="size-5 text-primary"
               onPress={() => setEditRequested((v) => !v)}
-              accessibilityLabel={arrangeLabel}
-            >
-              <Icon name={editMode ? "check" : "tune"} className="size-5 text-primary" />
-              {wide ? <Text className="text-primary">{arrangeLabel}</Text> : null}
-            </Button>
+            />
             {editMode ? (
-              <Button
+              <HeaderAction
+                icon="undo"
+                label={t("today.dashboard.undo")}
+                wide={wide}
                 variant="ghost"
-                size={wide ? "sm" : "icon"}
-                className={cn(!wide && "h-9 w-9")}
+                iconClassName={
+                  undoStack.length === 0 ? "size-5 text-primary/40" : "size-5 text-primary"
+                }
                 disabled={undoStack.length === 0}
                 onPress={undoLastEdit}
-                accessibilityLabel={t("today.dashboard.undo")}
-              >
-                <Icon
-                  name="undo"
-                  className={
-                    undoStack.length === 0 ? "size-5 text-primary/40" : "size-5 text-primary"
-                  }
-                />
-              </Button>
+              />
             ) : null}
-            <Button
-              size={wide ? "sm" : "icon"}
-              className={cn(!wide && "h-9 w-9")}
+            <HeaderAction
+              icon="add"
+              label={addToolLabel}
+              wide={wide}
+              iconClassName="size-5 text-primary-foreground"
               onPress={() => setAddVisible(true)}
-              accessibilityLabel={addToolLabel}
-            >
-              <Icon name="add" className="size-5 text-primary-foreground" />
-              {wide ? <Text>{addToolLabel}</Text> : null}
-            </Button>
+            />
           </View>
         ) : null}
       </View>
