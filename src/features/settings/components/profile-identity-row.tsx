@@ -21,8 +21,8 @@ interface ProfileIdentityRowProps {
 }
 
 /**
- * Identity row: gradient avatar + name/email. Extracted verbatim from
- * `ProfilePictureCard`. Pure props — all derivations happen in the card so the
+ * Identity row: gradient avatar + name/email — the settings page's identity
+ * header. Pure props: every derivation happens in `SettingsProfileBlock`, so the
  * `||` vs `??` semantics of the original are preserved exactly.
  */
 export function ProfileIdentityRow({

@@ -284,7 +284,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
             <View className="flex-row items-center justify-between gap-3">
               <Text variant="muted" className="text-sm">
                 {derivedMinutes !== null
-                  ? t("log.derived", { duration: formatDuration(derivedMinutes) })
+                  ? t("log.derived", { duration: formatDuration(derivedMinutes, t) })
                   : t("log.derivedPending")}
               </Text>
               <Button variant="ghost" size="sm" onPress={() => setSleepWindow(null)}>

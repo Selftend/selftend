@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
-import { Switch } from "@/src/components/react-native-reusables/switch";
 import { TimeField } from "@/src/components/app/time-field";
 import { formatHHmm, parseHHmm } from "@/src/utils/time";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -29,7 +28,6 @@ export interface MeditationOnboardingResult {
   assessedStage: StageNumber;
   preferredDurationMinutes: number;
   preferredTimeOfDay: string;
-  remindersEnabled: boolean;
 }
 
 interface Props {
@@ -70,7 +68,6 @@ export function MeditationOnboarding({
   const [answers, setAnswers] = useState<AssessmentAnswers>(EMPTY_ANSWERS);
   const [timeOfDay, setTimeOfDay] = useState("07:00");
   const [duration, setDuration] = useState<number>(15);
-  const [remindersEnabled, setRemindersEnabled] = useState(false);
   // A manual stage pick is only valid for the assessment it was made under -
   // changing an answer re-derives the suggestion and drops the stale pick.
   const [stagePick, setStagePick] = useState<{
@@ -116,7 +113,6 @@ export function MeditationOnboarding({
       assessedStage: selectedStage,
       preferredDurationMinutes: duration,
       preferredTimeOfDay: timeOfDay,
-      remindersEnabled,
     });
   }
 
@@ -397,22 +393,12 @@ export function MeditationOnboarding({
                     </View>
                   </View>
 
-                  <View className="flex-row items-center justify-between gap-3">
-                    <View className="flex-1 gap-1">
-                      <Text className="text-sm font-semibold">
-                        {t("onboarding.commit.reminderLabel")}
-                      </Text>
-                      <Text variant="muted" className="text-xs">
-                        {t("onboarding.commit.reminderHint")}
-                      </Text>
-                    </View>
-                    <Switch
-                      checked={remindersEnabled}
-                      onCheckedChange={setRemindersEnabled}
-                      accessibilityLabel={t("onboarding.commit.reminderLabel")}
-                    />
-                  </View>
-
+                  {/* The reminder switch is deliberately absent (#981). It was a fourth writer
+                      of `meditationRemindersEnabled` that wrote no consent and armed no
+                      channel, so it produced a reminder that could never be delivered - and
+                      routing it through the permission prompt was rejected too: a permission
+                      modal mid-wizard is the worst available place to ask. The contextual
+                      prompt after the first session asks instead. */}
                   <Text variant="muted" className="text-center">
                     {t("onboarding.commit.startingAt", { stage: selectedStage })}
                   </Text>

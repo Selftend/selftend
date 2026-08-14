@@ -6,7 +6,6 @@ import {
 
 export const SHARED_TOOL_WIDGET_IDS = [
   "mood-checkin",
-  "mood-trend",
   "breathing-suggested",
   "journal-week",
   "grounding-log",
@@ -23,14 +22,12 @@ export type GuidancePreference = "guided" | "self-directed";
 export interface WidgetRecommendationInput {
   concerns: readonly ConcernKey[];
   moduleInterests: readonly ModuleInterest[];
-  guidance: GuidancePreference;
   selectedToolWidgetIds: readonly SharedToolWidgetId[];
 }
 
 export interface WidgetRecommendation {
   widgetId: string;
-  reason:
-    "selected-tool" | "matched-concern" | "optional-tool" | "guided-module" | "module-shortcut";
+  reason: "selected-tool" | "matched-concern" | "optional-tool" | "module";
 }
 
 export function suggestSharedToolWidgetIds(concerns: readonly ConcernKey[]): SharedToolWidgetId[] {
@@ -38,11 +35,6 @@ export function suggestSharedToolWidgetIds(concerns: readonly ConcernKey[]): Sha
     (widgetId): widgetId is SharedToolWidgetId =>
       (SHARED_TOOL_WIDGET_IDS as readonly string[]).includes(widgetId),
   );
-}
-
-function moduleWidgetId(module: ModuleInterest, guidance: GuidancePreference): string {
-  if (guidance === "guided") return `${module}-programme`;
-  return `${module}-module-shortcut`;
 }
 
 export function buildWidgetRecommendations(
@@ -56,11 +48,14 @@ export function buildWidgetRecommendations(
     recommendations.push({ widgetId, reason });
   };
 
+  // A picked module resolves to its programme id, and to nothing else. This
+  // used to go through a helper that branched on the onboarding `guidance`
+  // answer, handing a self-directed user `${module}-module-shortcut` instead.
+  // #973 retired both shortcut ids - a shortcut was a card carrying a module's
+  // name and a button to its home, which is what the module's own row does -
+  // so the branch had one arm left and the answer had nothing to select.
   for (const module of input.moduleInterests) {
-    add(
-      moduleWidgetId(module, input.guidance),
-      input.guidance === "guided" ? "guided-module" : "module-shortcut",
-    );
+    add(`${module}-programme`, "module");
   }
 
   const concernSuggestions = new Set(suggestSharedToolWidgetIds(input.concerns));

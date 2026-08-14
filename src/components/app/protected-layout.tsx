@@ -173,49 +173,80 @@ export default function ProtectedLayout() {
               animationDuration: 220,
             }}
           >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="settings" />
-            <Stack.Screen name="modules/index" />
-            <Stack.Screen name="modules/cbt/index" />
-            <Stack.Screen name="modules/cbt/learn" />
-            <Stack.Screen name="modules/cbt/history/index" />
+            {/* `dangerouslySingular` on every non-dynamic screen (#1027).
+
+                A screen pushed while it already sits deeper in the stack is mounted
+                TWICE - both copies run every hook, the older one is hidden. The
+                breadcrumb is the case a user hits without trying: its crumbs target an
+                ANCESTOR, which is in the stack by definition, so every crumb tap used to
+                duplicate the screen it returned to.
+
+                TWO kinds of screen are deliberately left plain, and `nav-singular.test.ts`
+                derives both rather than trusting this list:
+
+                - `[id]` screens. Singular's id substitutes each dynamic segment with its
+                  value, so marking them would keep `/goals/1` and `/goals/2` apart and
+                  would be safe - but this change only claims what it measured, and
+                  stacking two records is a real flow.
+                - ☠️ CREATION screens (a `new` route) and anything keyed by a QUERY param.
+                  Singular reuses the existing route rather than remounting it, so state
+                  initialised at mount survives - an unsaved draft would reappear on a
+                  later "new". `getSingularId` also reads path segments ONLY, so
+                  `/modules/cbt/new?recordId=A` and `?recordId=B` share an id and would
+                  collapse. `/modules/cbt/new` shows how quiet that is: its check-in
+                  handoff is `useState(consumeThoughtRecordSeed)`, read once per MOUNT, so
+                  a reused instance drops the seeded emotions with nothing failing.
+
+                So the rule is: LIST and OVERVIEW screens are single-instance; screens that
+                hold per-visit state - creation, editing, dynamic records - are not.
+
+                ⚠️ Screen-level does NOT cover navigation that crosses a group boundary:
+                #989 measured that the panel's `/(app)` links still duplicated Home with
+                this prop set here, which is why those carry it on the `Link` instead. */}
+            <Stack.Screen name="index" dangerouslySingular />
+            <Stack.Screen name="arrange" dangerouslySingular />
+            <Stack.Screen name="settings" dangerouslySingular />
+            <Stack.Screen name="modules/index" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/index" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/learn" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/history/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/history/[id]" />
             <Stack.Screen name="modules/cbt/new" />
             <Stack.Screen name="modules/cbt/[id]" />
-            <Stack.Screen name="modules/cbt/goals/index" />
+            <Stack.Screen name="modules/cbt/goals/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/goals/new" />
             <Stack.Screen name="modules/cbt/goals/[id]" />
-            <Stack.Screen name="modules/cbt/activities/index" />
+            <Stack.Screen name="modules/cbt/activities/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/activities/new" />
             <Stack.Screen name="modules/cbt/activities/[id]" />
-            <Stack.Screen name="modules/cbt/values" />
-            <Stack.Screen name="modules/cbt/weekly-review" />
-            <Stack.Screen name="modules/cbt/beliefs/index" />
+            <Stack.Screen name="modules/cbt/values" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/weekly-review" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/beliefs/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/beliefs/new" />
             <Stack.Screen name="modules/cbt/beliefs/[id]" />
-            <Stack.Screen name="modules/cbt/exposure/index" />
+            <Stack.Screen name="modules/cbt/exposure/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/exposure/new" />
             <Stack.Screen name="modules/cbt/exposure/[id]" />
-            <Stack.Screen name="modules/cbt/worry/index" />
+            <Stack.Screen name="modules/cbt/worry/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/worry/new" />
-            <Stack.Screen name="modules/cbt/tasks/index" />
+            <Stack.Screen name="modules/cbt/tasks/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/tasks/new" />
             <Stack.Screen name="modules/cbt/tasks/[id]" />
-            <Stack.Screen name="modules/cbt/anger/index" />
+            <Stack.Screen name="modules/cbt/anger/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/anger/new" />
             <Stack.Screen name="modules/cbt/anger/[id]" />
-            <Stack.Screen name="modules/cbt/self-care" />
-            <Stack.Screen name="modules/cbt/recovery" />
-            <Stack.Screen name="modules/act/index" />
-            <Stack.Screen name="modules/dbt" />
-            <Stack.Screen name="tools/index" />
-            <Stack.Screen name="tools/check-in/index" />
+            <Stack.Screen name="modules/cbt/self-care" dangerouslySingular />
+            <Stack.Screen name="modules/cbt/recovery" dangerouslySingular />
+            <Stack.Screen name="modules/act/index" dangerouslySingular />
+            <Stack.Screen name="modules/dbt" dangerouslySingular />
+            <Stack.Screen name="tools/index" dangerouslySingular />
+            <Stack.Screen name="tools/check-in/index" dangerouslySingular />
             <Stack.Screen name="tools/meditation/index" />
-            <Stack.Screen name="tools/act" />
-            <Stack.Screen name="tools/gratitude-log/index" />
-            <Stack.Screen name="support" />
-            <Stack.Screen name="legal" />
-            <Stack.Screen name="progress" />
+            <Stack.Screen name="tools/act" dangerouslySingular />
+            <Stack.Screen name="tools/gratitude-log/index" dangerouslySingular />
+            <Stack.Screen name="support" dangerouslySingular />
+            <Stack.Screen name="legal" dangerouslySingular />
+            <Stack.Screen name="progress" dangerouslySingular />
           </Stack>
           {/* Banner strips anchor at the bottom of the content column (#660):
               the top of the screen belongs to the invisible header. Their

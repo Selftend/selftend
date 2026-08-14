@@ -8,6 +8,19 @@ const targets = new Map<string, View>();
 const listeners = new Set<() => void>();
 
 let _version = 0;
+/**
+ * The registered keys as a value, recomputed on write and never on read.
+ *
+ * `useSyncExternalStore` requires `getSnapshot` to return the SAME reference until the
+ * store actually changes - building this array inside the getter would hand React a fresh
+ * array every render and spin it forever. Keeping it here is what lets a consumer read the
+ * registry as reactive DATA rather than reading a version counter and then calling
+ * `getTourTarget` imperatively during render, which is invisible to the React Compiler.
+ */
+let _registeredKeys: readonly string[] = [];
+
+/** Stable empty snapshot for the server/initial render. */
+const NO_KEYS: readonly string[] = [];
 
 function notify() {
   for (const listener of listeners) listener();
@@ -17,6 +30,7 @@ export function setTourTarget(key: string, ref: View | null): void {
   if (ref) targets.set(key, ref);
   else targets.delete(key);
   _version += 1;
+  _registeredKeys = [...targets.keys()];
   notify();
 }
 
@@ -32,6 +46,16 @@ export function subscribeTourTargets(listener: () => void): () => void {
 /** Returns a monotonically increasing counter, incremented on every setTourTarget call. */
 export function getTourTargetVersion(): number {
   return _version;
+}
+
+/** The keys with a registered target right now, as a `useSyncExternalStore` snapshot. */
+export function getRegisteredTourTargetKeys(): readonly string[] {
+  return _registeredKeys;
+}
+
+/** The server/initial snapshot: nothing has registered yet. */
+export function getNoTourTargetKeys(): readonly string[] {
+  return NO_KEYS;
 }
 
 /** Ref callback that registers this view as a tour target; unregisters on unmount. */

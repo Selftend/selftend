@@ -47,6 +47,7 @@ import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mo
 import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
+import { formatOneDecimal } from "@/src/lib/locale-format";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import {
   addDaysToKey,
@@ -55,6 +56,7 @@ import {
   formatCompactAtOffset,
   parseLocalNoon,
 } from "@/src/utils/date";
+import { seedMoodScore } from "@/src/stores/mood-seed-store";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -192,7 +194,8 @@ export default function MoodTrackerScreen() {
           { value: String(checkInCount), label: t("stats.checkins", { count: checkInCount }) },
           { value: String(thisWeekCount), label: t("stats.thisWeekLabel") },
           {
-            value: sevenDay.average === null ? "-" : sevenDay.average.toFixed(1),
+            value:
+              sevenDay.average === null ? "-" : formatOneDecimal(sevenDay.average, i18n.language),
             label: t("stats.avgLabel"),
           },
           // The old ToolStats.subline, folded into the row as a value-less item -
@@ -704,9 +707,16 @@ function TodayCheckIn({ latest, dateKey }: TodayCheckInProps) {
       </View>
       <MoodScale
         value={latest?.moodScore ?? null}
-        onChange={(score) =>
-          router.push(`/tools/check-in/new?score=${score}` as Parameters<typeof router.push>[0])
-        }
+        onChange={(score) => {
+          // Seeded in memory, never in the URL (#961). Expo Router serializes params
+          // into the address bar on web, so `?score=N` puts a mood score in browser
+          // history. Sentry no longer sees it - `scrubBreadcrumb` strips query strings off
+          // navigation breadcrumbs (#996) - but the address bar and history still would.
+          // #739 rejected this exact shape for the emotions beside it and built the
+          // seed-store pattern; this is the score's half.
+          seedMoodScore(score);
+          router.push("/tools/check-in/new");
+        }}
         compact
       />
       {/* min-height keeps the block from jumping when the first log lands. */}

@@ -95,7 +95,8 @@
       "distortionSummaryItem": "{{name}} ({{count}}×)",
       "exerciseMood": "Average mood on exercise days: {{withExercise}} vs {{withoutExercise}} without.",
       "exerciseMoodDetail": "This compares mood logs on days with and without exercise.",
-      "reviewBelief": "{{count}} belief(s) due for review.",
+      "reviewBelief_one": "{{count}} belief due for review.",
+      "reviewBelief_other": "{{count}} beliefs due for review.",
       "reviewBeliefDetail": "Review dates and low alternative-belief strength can be useful checkpoints.",
       "activityMoodLift": "Activity mood lift by category",
       "activityMoodLiftDetail": "{{summary}} with before/after mood.",
@@ -626,6 +627,7 @@
       "exposureBody": "Systematically face fears to teach the brain that the perceived danger is exaggerated and manageable.",
       "sleepTitle": "The 7-9 Hour Sleep Target",
       "sleepBody": "Prioritise restorative sleep to regulate the limbic system and improve daytime emotional resilience.",
+      "tableIntro": "The table below describes what CBT is clinically used for. It is background reading, not a diagnosis, an assessment, or a treatment plan.",
       "tableCondition": "Condition",
       "tableCoreFeature": "Core Feature",
       "tableCbtFocus": "CBT Focus",
@@ -990,7 +992,7 @@
       "warm": "Warm",
       "tired": "Tired"
     },
-    "goDeeperInvite": "If there's a thought underneath this, you can take it into a thought record — no pressure to.",
+    "goDeeperInvite": "If there's a thought underneath this, you can take it into a thought record.",
     "goDeeperLink": "Open a CBT thought record"
   },
   "record": {

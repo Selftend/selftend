@@ -16,8 +16,8 @@ interface DisplayNameFieldProps {
 }
 
 /**
- * Display-name input + save button + messages. Extracted verbatim from
- * `ProfilePictureCard`; state wiring comes from `useDisplayName`.
+ * Display-name input + save button + messages. Revealed by the `Edit name`
+ * disclosure in `SettingsProfileBlock`; state wiring comes from `useDisplayName`.
  */
 export function DisplayNameField({
   value,

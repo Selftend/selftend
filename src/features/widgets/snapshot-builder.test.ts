@@ -5,12 +5,15 @@ import type {
   WidgetData,
   BreathingCardPayload,
   MoodCheckinCardPayload,
-  StatTilesCardPayload,
   ActivitiesCardPayload,
   StatsCardPayload,
   CommittedActionsCardPayload,
   ProgrammeCardPayload,
 } from "@/src/features/widgets/snapshot-types";
+import bgCommon from "@/src/i18n/locales/bg/common.json";
+import enCommon from "@/src/i18n/locales/en/common.json";
+import { addDaysToKey, currentDateKey } from "@/src/utils/date";
+import { bundleTranslator } from "@/test/bundle-translator";
 
 const t = (k: string, o?: Record<string, unknown>) => (o ? `${k}:${JSON.stringify(o)}` : k);
 const ctx = {
@@ -34,16 +37,60 @@ const empty: WidgetData = {
   committedActions: [],
   actionSteps: [],
   defusionLogs: [],
-  moodLogCount: null,
   gratitudeEntryCount: null,
   journalEntryCount: null,
   journalWordTotal: null,
 };
 
+describe("sleep-latest number formatting (#962)", () => {
+  // The Android home-screen widget renders this snapshot verbatim, so a decimal point
+  // baked in here reaches a Bulgarian home screen with nothing left to correct it.
+  const bundles = { en: enCommon, bg: bgCommon };
+
+  // Real `common` templates for the unit keys; the suite's existing stub still answers the
+  // dozens of `navigation` keys the builder asks for alongside them.
+  const localeT = (lang: keyof typeof bundles) => bundleTranslator("common", bundles[lang], t);
+
+  // Inside the rolling 7-day window `averageDurationMinutes` walks, which is anchored on
+  // the real current day rather than on `ctx.dateKey`. Averages: 432 min and quality 3.5.
+  const twoNights: WidgetData = {
+    ...empty,
+    sleepLogs: [
+      {
+        loggedAt: "2026-06-05T22:00:00Z",
+        dayKey: currentDateKey(),
+        durationMinutes: 430,
+        quality: 3,
+      },
+      {
+        loggedAt: "2026-06-04T22:00:00Z",
+        dayKey: addDaysToKey(currentDateKey(), -1),
+        durationMinutes: 434,
+        quality: 4,
+      },
+    ],
+  };
+
+  const stats = (lang: keyof typeof bundles) =>
+    (
+      buildSnapshot(twoNights, { ...ctx, locale: lang, t: localeT(lang) }).widgets[
+        "sleep-latest"
+      ] as StatsCardPayload
+    ).stats;
+
+  it("renders the English average and quality unchanged", () => {
+    expect(stats("en")?.map((s) => s.value)).toEqual(["7.2h", "3.5"]);
+  });
+
+  it("renders a comma separator and the translated hour unit in Bulgarian", () => {
+    expect(stats("bg")?.map((s) => s.value)).toEqual(["7,2 ч", "3,5"]);
+  });
+});
+
 describe("buildSnapshot v2", () => {
-  it("stamps schemaVersion 3 and builds every card with its registry kind", () => {
+  it("stamps schemaVersion 4 and builds every card with its registry kind", () => {
     const snap = buildSnapshot(empty, ctx);
-    expect(snap.schemaVersion).toBe(3);
+    expect(snap.schemaVersion).toBe(4);
     for (const id of CARD_IDS) {
       expect(snap.widgets[id]).toBeDefined();
       expect(snap.widgets[id].kind).toBe(CARD_REPLICAS[id].kind);
@@ -66,17 +113,6 @@ describe("buildSnapshot v2", () => {
     const none = buildSnapshot(empty, ctx).widgets["mood-checkin"] as MoodCheckinCardPayload;
     expect(none.today?.score).toBeNull();
     expect(none.today?.summary).toBe("home.widgets.moodCheckin.emptyPrompt");
-  });
-
-  it("mood-trend: 7-day average and lifetime count (falls back to list length)", () => {
-    const data: WidgetData = {
-      ...empty,
-      moodLogs: [{ loggedAt: "2026-06-05T09:00:00", dayKey: "2026-06-05", moodScore: 4 }],
-      moodLogCount: 57,
-    };
-    const p = buildSnapshot(data, ctx).widgets["mood-trend"] as StatTilesCardPayload;
-    expect(p.tiles[0].value).toBe("4.0");
-    expect(p.tiles[1].value).toBe("57");
   });
 
   it("breathing-suggested: the done badge follows the captured day, not the instant", () => {
@@ -294,7 +330,7 @@ describe("buildSignedOutSnapshot v2", () => {
       dateKey: "2026-06-05",
       appThemePref: "system",
     });
-    expect(snap.schemaVersion).toBe(3);
+    expect(snap.schemaVersion).toBe(4);
     expect(snap.auth).toBe("signed-out");
     expect(snap.widgets).toEqual({});
     expect(snap.signedOutCard?.cta).toBe("home.widgets.launcher.signedOutCta");

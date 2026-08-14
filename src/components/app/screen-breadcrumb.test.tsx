@@ -39,7 +39,10 @@ describe("ScreenBreadcrumb", () => {
     // The current (last) crumb is not a link.
     expect(queryByRole("link", { name: "Mindfulness" })).toBeNull();
     fireEvent.press(getByRole("link", { name: "Tools" }));
-    expect(router.push).toHaveBeenCalledWith("/tools");
+    // `dangerouslySingular` is part of what a crumb press IS (#1027): a crumb targets an
+    // ancestor, so without it the press mounts a SECOND copy of a screen already in the
+    // stack. Asserted with the option, not just the href.
+    expect(router.push).toHaveBeenCalledWith("/tools", { dangerouslySingular: true });
   });
 
   // #495, revised on owner decision (2026-07-29): the back affordance is

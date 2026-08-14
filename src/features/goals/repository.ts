@@ -60,6 +60,26 @@ function mapMilestone(row: MilestoneRow): Milestone {
   };
 }
 
+/**
+ * How many goals are currently active, for Home's one-line row (#990). A count, not
+ * recency: a goal is a current thing, not an event that happened.
+ *
+ * An exact `head` count needs no function under ADR-0001 - PostgREST answers it under
+ * RLS, and it decrypts nothing. `listGoals` was fetched whole, all 500 rows and every
+ * encrypted column, to filter the same predicate in JavaScript.
+ */
+export async function countActiveGoals(userId: string): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("goals")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("status", "active");
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function listGoals(userId: string) {
   const client = requireSupabase();
   const { data, error } = await client

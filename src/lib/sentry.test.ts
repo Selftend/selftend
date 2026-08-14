@@ -1,5 +1,5 @@
 import {
-  dropConsoleBreadcrumb,
+  scrubBreadcrumb,
   isReportableError,
   scrubEvent,
   shouldEnableSentry,
@@ -54,15 +54,55 @@ describe("scrubEvent", () => {
   });
 });
 
-describe("dropConsoleBreadcrumb", () => {
+describe("scrubBreadcrumb", () => {
   it("drops console breadcrumbs (they can carry logged payloads)", () => {
-    expect(dropConsoleBreadcrumb({ category: "console", message: "oops" })).toBeNull();
+    expect(scrubBreadcrumb({ category: "console", message: "oops" })).toBeNull();
   });
 
   it("keeps navigation breadcrumbs", () => {
-    expect(dropConsoleBreadcrumb({ category: "navigation" })).toEqual({
+    expect(scrubBreadcrumb({ category: "navigation" })).toEqual({
       category: "navigation",
     });
+  });
+
+  /**
+   * The Android launcher's mood faces deep-link `?score=N` (#996), and already-shipped
+   * builds keep minting that path forever - this repo has no OTA channel, so no app
+   * change can reach them. Stripping it here is the only fix that covers them.
+   *
+   * The WHOLE query string goes, not the `score` key: a denylist of known-sensitive
+   * params is satisfied forever by whatever was known when it was written, and the next
+   * param carrying a health value would leak in silence. The route still identifies the
+   * screen, which is what a breadcrumb is for.
+   */
+  it("strips the query string from a navigated route, whatever it carries", () => {
+    expect(
+      scrubBreadcrumb({
+        category: "navigation",
+        data: { from: "/", to: "/tools/check-in/new?score=3" },
+      }),
+    ).toEqual({ category: "navigation", data: { from: "/", to: "/tools/check-in/new" } });
+  });
+
+  it("strips it from the message too, which is where some navigations put the route", () => {
+    expect(
+      scrubBreadcrumb({ category: "navigation", message: "/tools/check-in/new?score=5" }),
+    ).toEqual({ category: "navigation", message: "/tools/check-in/new" });
+  });
+
+  it("leaves a route without a query string untouched", () => {
+    expect(scrubBreadcrumb({ category: "navigation", data: { to: "/tools/sleep" } })).toEqual({
+      category: "navigation",
+      data: { to: "/tools/sleep" },
+    });
+  });
+
+  it("leaves non-navigation breadcrumbs alone", () => {
+    // An http breadcrumb's query string is its filter, which is what makes it useful;
+    // it carries no health value today. Narrowed deliberately rather than by oversight.
+    expect(
+      scrubBreadcrumb({ category: "http", data: { url: "https://x/rest/v1/mood_logs?select=id" } }),
+    ).toEqual({ category: "http", data: { url: "https://x/rest/v1/mood_logs?select=id" } });
   });
 });
 

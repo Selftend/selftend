@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteCoreBelief,
   getCoreBelief,
+  getLatestCoreBeliefAt,
   listCoreBeliefs,
   saveCoreBelief,
   updateBeliefStrength,
@@ -12,6 +13,8 @@ import type { CoreBeliefInput } from "@/src/features/beliefs/types";
 const beliefKeys = {
   all: ["beliefs"] as const,
   list: (userId: string) => ["beliefs", "list", userId] as const,
+  // Nested under the list prefix so the save invalidation below reaches it too.
+  latest: (userId: string) => ["beliefs", "list", userId, "latest"] as const,
   detail: (userId: string, beliefId: string) => ["beliefs", "detail", userId, beliefId] as const,
 };
 
@@ -19,6 +22,15 @@ export function useCoreBeliefs(userId: string | null) {
   return useQuery({
     queryKey: userId ? beliefKeys.list(userId) : ["beliefs", "list", "anonymous"],
     queryFn: () => listCoreBeliefs(userId!),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 500-row list (#990). */
+export function useLatestCoreBeliefAt(userId: string | null) {
+  return useQuery({
+    queryKey: userId ? beliefKeys.latest(userId) : ["beliefs", "list", "anonymous", "latest"],
+    queryFn: () => getLatestCoreBeliefAt(userId!),
     enabled: Boolean(userId),
   });
 }

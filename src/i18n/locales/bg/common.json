@@ -12,6 +12,11 @@
   "or": "или",
   "orContinueWithEmail": "или продължи с имейл",
   "never": "никога",
+  "units": {
+    "decimalHours": "{{value}} ч",
+    "durationH": "{{hours}} ч",
+    "durationHm": "{{hours}} ч {{minutes}} мин"
+  },
   "relativeTime": {
     "today": "Днес",
     "yesterday": "Вчера",

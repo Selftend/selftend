@@ -130,16 +130,35 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
   "the home dashboard's widget identity": [
     "src/features/home/widget-tint.ts",
     "src/features/home/widgets/widget-card-header.tsx",
-    "src/features/home/widgets/activities-widget.tsx",
-    "src/features/home/widgets/breathing-widget.tsx",
-    "src/features/home/widgets/gratitude-widget.tsx",
-    "src/features/home/widgets/grounding-log-widget.tsx",
-    "src/features/home/widgets/journal-week-widget.tsx",
-    "src/features/home/widgets/meditation-widget.tsx",
-    "src/features/home/widgets/mood-checkin-widget.tsx",
-    "src/features/home/widgets/mood-trend-widget.tsx",
-    "src/features/home/widgets/routines-widget.tsx",
-    "src/features/home/widgets/sleep-widget.tsx",
+    // The nine card files this listed are gone (#975); the tool tier's identity now
+    // lives in one row component, whose leading glyph is CHROME_MARK by construction.
+    "src/features/home/tool-row.tsx",
+    "src/features/home/tool-row-stats.tsx",
+    // #977: the programme card is the tier's other identity surface. Its glyph is
+    // CHROME_MARK and its wash is `primary`, which is the app accent rather than a
+    // per-module hue - #587 already collapsed the identical act/primary twins here.
+    "src/features/home/widgets/program-widget.tsx",
+  ],
+  // #981: the reminders screen lists the same ten tools and modules as home, one row each,
+  // so it is the same identity surface wearing a different control. Its leading glyph is
+  // CHROME_MARK for the same reason home's is.
+  "the reminder rows": [
+    "src/features/notifications/notifications-screen.tsx",
+    "src/features/notifications/notification-target-row.tsx",
+    "src/features/notifications/registry.ts",
+  ],
+  // #982: eleven settings rows, four labelled runs. It joins the reminders screen
+  // for the same reason - one row grammar, one neutral leading glyph - and it is
+  // the surface where the question was actually contested: the style picker's
+  // eight cards show three swatches each. Those are not hues from this palette
+  // (they are eight OTHER palettes' resolved tokens, read through THEME_HEXES),
+  // so the picker is not exempted here; the settings screen and its row are, and
+  // the reasoning is recorded in src/lib/theme/encoding.ts under "asked and
+  // refused".
+  "the settings rows": [
+    "src/features/settings/settings-screen.tsx",
+    "src/features/settings/components/settings-row.tsx",
+    "src/features/settings/components/settings-run.tsx",
   ],
 };
 
@@ -152,6 +171,42 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
  */
 const RETIRED = [
   "src/features/home/tool-accent.ts",
+  // #975: the nine tool cards became rows. Listed here rather than merely dropped from
+  // IDENTITY_SURFACES, because "the file is gone" is the strongest gate there is on a
+  // surface that used to carry per-item hue - and a silent removal from the surfaces
+  // list would look identical to someone quietly exempting a file that still exists.
+  "src/features/home/widgets/activities-widget.tsx",
+  "src/features/home/widgets/breathing-widget.tsx",
+  "src/features/home/widgets/gratitude-widget.tsx",
+  "src/features/home/widgets/grounding-log-widget.tsx",
+  "src/features/home/widgets/journal-week-widget.tsx",
+  "src/features/home/widgets/meditation-widget.tsx",
+  "src/features/home/widgets/mood-checkin-widget.tsx",
+  "src/features/home/widgets/routines-widget.tsx",
+  "src/features/home/widgets/sleep-widget.tsx",
+  // Orphaned by the same change: their only importers were the nine above.
+  "src/features/home/widgets/session-log-widget.tsx",
+  "src/features/home/widgets/two-stat-body.tsx",
+  // #976: the remaining fourteen module and shortcut cards became rows, which empties
+  // the `tool` tier of card components entirely. `widget-card-header.tsx` survives -
+  // `program-widget.tsx` still renders it for the two programme ids.
+  "src/features/home/widgets/self-care-widget.tsx",
+  "src/features/home/widgets/cbt-open-record-widget.tsx",
+  "src/features/home/widgets/cbt-worry-widget.tsx",
+  "src/features/home/widgets/cbt-beliefs-widget.tsx",
+  "src/features/home/widgets/cbt-activities-widget.tsx",
+  "src/features/home/widgets/cbt-exposure-widget.tsx",
+  "src/features/home/widgets/cbt-goals-widget.tsx",
+  "src/features/home/widgets/cbt-distortion-guide-widget.tsx",
+  // The shared base the eight CBT shortcut cards above were built on; every importer
+  // is in that set, so it goes with them.
+  "src/features/home/widgets/cbt-shortcut-widget.tsx",
+  "src/features/home/widgets/act-drop-anchor-widget.tsx",
+  "src/features/home/widgets/act-observing-self-widget.tsx",
+  "src/features/home/widgets/act-choice-point-widget.tsx",
+  "src/features/home/widgets/act-defusion-widget.tsx",
+  "src/features/home/widgets/act-acceptance-prompt-widget.tsx",
+  "src/features/home/widgets/act-committed-actions-widget.tsx",
   // #733's deletions, listed here for the same reason: the surest gate on a
   // hue-bearing surface is that the file no longer exists. `tool-hero.tsx` was
   // already consumerless; `tool-stats.tsx` took `accentClassName` and
@@ -169,6 +224,17 @@ const RETIRED = [
   // delegate to - and its only callers were tests. Same shape as quality-tint
   // above: the data outlived the hue, the helper did not.
   "src/features/mood/score-tone.ts",
+  // #973 collapsed `mood-trend` into `mood-checkin` and both `-module-shortcut`
+  // ids into their `-programme` id, which left these two components with no
+  // registry entry to render them. They move here from IDENTITY_SURFACES for
+  // the same reason `tool-hero.tsx` did: absence is a stronger assertion of
+  // neutrality than scanning the file was, and a file that is gone cannot
+  // regain a hue. `module-shortcut-widget.tsx` never sat in IDENTITY_SURFACES -
+  // it reached its hue by passing `tint="act"` as a bare string, which none of
+  // the four patterns above can see - so its deletion is recorded here rather
+  // than being one more scan it would have passed while still painting.
+  "src/features/home/widgets/mood-trend-widget.tsx",
+  "src/features/home/widgets/module-shortcut-widget.tsx",
 ];
 
 /**

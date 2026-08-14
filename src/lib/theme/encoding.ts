@@ -110,6 +110,27 @@ export const HUE_ENCODINGS = [
     kind: "categorical",
     reads: "the colour the user chose for a custom breathing exercise",
   },
+  // ASKED AND REFUSED (#982, the settings redesign). The style picker's eight
+  // cards each show three swatches of the palette they advertise, and the
+  // question was put plainly: is that a fourth encoding?
+  //
+  // No, and for a reason worth writing down rather than re-deriving. An entry
+  // here exists to say a surface may hold a hue from THIS fixed palette, and to
+  // decide whether that hue re-tints with the active style. The swatches are
+  // neither: they are not hues from this palette at all, they are the resolved
+  // `--background` / `--foreground` / `--primary` tokens of eight other
+  // palettes, read back through `THEME_HEXES` precisely so a card cannot
+  // advertise a colour the app would not paint. `keepsHue("style-swatch")`
+  // answering "no" is therefore correct - there is no hue for this registry to
+  // protect or to pin.
+  //
+  // They also cannot violate #951's "no colour varies by item on an identity
+  // surface", because the colour IS the item. A style card with a neutral swatch
+  // row would be a palette picker that declines to show you the palettes.
+  //
+  // Recorded beside the granted (#588) and withdrawn (#855, #924) entries so the
+  // next sweep finds an answer instead of a gap.
+  //
   // "sleep-quality-ramp" left this list with the sleep redesign (#771, removed
   // by #855). #588's sweep had admitted it - the 5-step night-quality ramp on
   // sleep's ink hue - but the redesign deliberately took the data out of hue:

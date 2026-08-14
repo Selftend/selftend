@@ -12,6 +12,7 @@ import {
 import { currentDateKey } from "@/src/stores/selected-date-store";
 import { startOfDayDaysAgo } from "@/src/utils/date";
 import { entryDayKey } from "@/src/lib/occurrence-time";
+import { useMoodSeedStore } from "@/src/stores/mood-seed-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -479,7 +480,12 @@ describe("MoodTrackerScreen", () => {
 
     fireEvent.press(screen.getByLabelText("Okay"));
 
-    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/new?score=3");
+    // Asserts the SEED, not a new URL shape. Re-pointing this at a different path would
+    // be the tests-weakened-to-fit failure AGENTS.md asks reviewers to flag: the whole
+    // point of #961 is that the score must not be in the URL at all.
+    expect(useMoodSeedStore.getState().score).toBe(3);
+    expect(mockRouter.push).toHaveBeenCalledWith("/tools/check-in/new");
+    expect(mockRouter.push).not.toHaveBeenCalledWith(expect.stringContaining("score="));
   });
 
   it("links to the all-history screen from the week row", () => {

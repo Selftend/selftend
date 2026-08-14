@@ -1,6 +1,6 @@
 import { expect, NORMALIZED_GATE_PREFS, test } from "./fixtures";
 
-import { createServiceClient } from "./helpers";
+import { createServiceClient, resetWidgetPreferencesForUser } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
 
 // Home dashboard's two surviving first-run tips, in HOME_TOUR_STOPS order
@@ -90,10 +90,11 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
 
     await page.goto("/tools/check-in");
 
-    // The desktop sidebar also has a "Notifications" nav link (same label), so scope to
-    // the module header's own action row via .last() - it renders after the sidebar in
-    // the DOM (see src/components/app/protected-layout.tsx).
-    await expect(page.getByLabel("Notifications", { exact: true }).last()).toBeVisible();
+    // The desktop sidebar also has a "Reminders" nav link (same label - both were renamed
+    // from "Notifications" with the screen, #981), so scope to the module header's own
+    // action row via .last() - it renders after the sidebar in the DOM (see
+    // src/components/app/protected-layout.tsx).
+    await expect(page.getByLabel("Reminders", { exact: true }).last()).toBeVisible();
     await expect(page.getByLabel("About this module", { exact: true })).toBeVisible();
 
     // None of the removed coach-mark copy/controls should ever appear.
@@ -108,10 +109,10 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
     await setTourState([]);
     await page.goto("/tools/check-in");
 
-    // See note above: the sidebar's own "Notifications" nav link shares this label, so
+    // See note above: the sidebar's own "Reminders" nav link shares this label, so
     // the module header's action button is the LAST match, not the first.
-    await page.getByLabel("Notifications", { exact: true }).last().click();
-    await expect(page.getByRole("heading", { name: "Notifications", exact: true })).toBeVisible();
+    await page.getByLabel("Reminders", { exact: true }).last().click();
+    await expect(page.getByRole("heading", { name: "Reminders", exact: true })).toBeVisible();
   });
 
   test("info action still fires onPress (opens the module's onboarding)", async ({ page }) => {
@@ -142,16 +143,54 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
     originalPreferences = await getPreferenceRow();
   });
 
+  /**
+   * The `home:edit` stop points at home's header cluster, and since #979 that cluster
+   * mounts only when the TOOL tier is non-empty. Pool users start with no widget
+   * preferences and other specs clear them, so a tip test that does not own a tool row is
+   * asserting against a target that was never registered. Seeding one makes these tests
+   * say what they mean instead of depending on what ran before them.
+   */
+  async function ownOneToolRow() {
+    const admin = createServiceClient();
+    await resetWidgetPreferencesForUser(USER_ID);
+    const { error } = await admin
+      .from("widget_preferences")
+      .insert([{ user_id: USER_ID, widget_id: "mood-checkin", position: 0 }]);
+    if (error) throw new Error(`Could not seed a widget preference: ${error.message}`);
+  }
+
   test.afterEach(async () => {
     await restoreOriginalPreferences();
+    await resetWidgetPreferencesForUser(USER_ID);
+  });
+
+  test("skips the edit tip on an empty dashboard without marking it shown", async ({ page }) => {
+    // Skipping is not dismissing. With no tool row the cluster is unmounted, so the stop
+    // must fall out of the queue and stay unwritten - otherwise the tip burns itself on
+    // the one screen where it has nothing to point at.
+    await resetWidgetPreferencesForUser(USER_ID);
+    await setTourState([]);
+
+    await page.goto("/");
+
+    // The navigation stop takes its place; the edit copy never appears.
+    await expect(page.getByText(/Find all Modules and Tools here\./i)).toBeVisible();
+    await expect(
+      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
+    ).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Got it", exact: true }).click();
+
+    await expect.poll(getShownButtonTours).toEqual(["home:navigation"]);
   });
 
   test("shows the edit (dashboard) tip and Got it dismisses only that stop", async ({ page }) => {
+    await ownOneToolRow();
     await setTourState([]);
 
     await page.goto("/");
     await expect(
-      page.getByText(/Arrange the dashboard your way - add, remove and reorder widgets\./i),
+      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Got it", exact: true }).click();
@@ -162,11 +201,12 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
   test("Skip all tips dismisses both remaining home stops (no check-in or day-strip tip)", async ({
     page,
   }) => {
+    await ownOneToolRow();
     await setTourState([]);
 
     await page.goto("/");
     await expect(
-      page.getByText(/Arrange the dashboard your way - add, remove and reorder widgets\./i),
+      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Skip all tips", exact: true }).click();
@@ -191,9 +231,14 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
     await setTourState([...HOME_TOUR_KEYS]);
 
     await page.goto("/settings");
+    // `Show tips again` survives #982 verbatim as a button name; only the `Onboarding`
+    // card heading around it disappeared, and this spec never asserted that heading.
     await page.getByRole("button", { name: "Show tips again", exact: true }).click();
 
-    await expect(page.getByText(/button tips.*can appear again/i).first()).toBeVisible();
+    // Toast-only now that the shared feedback banner is gone.
+    await expect(
+      page.getByTestId("app-toast").getByText(/button tips.*can appear again/i),
+    ).toBeVisible();
     await expect.poll(getShownButtonTours).toEqual([]);
   });
 });

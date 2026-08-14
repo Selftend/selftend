@@ -26,6 +26,24 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
   { locale: "en", pattern: /punishment/i },
   { locale: "en", pattern: /no penalty/i },
   { locale: "en", pattern: /not (a )?failure/i },
+  /**
+   * The third form of the #711 violation, after *shame* (#763) and *punishment* (#805).
+   * #952 claimed this guard already forbade it — it did not (#963).
+   *
+   * ☠️ The pattern is the NEGATION, never the noun. *Pressure* is also a physical
+   * sensation and the grounding content uses it correctly ("Notice the pressure and
+   * texture", "(temperature, texture, pressure)"), as does the breathing help text in bg
+   * ("освобождава напрежение" — releases tension). A `/pressure/i` guard would forbid
+   * teaching a grounding technique.
+   *
+   * ⚠️ bg needs the SYNONYM too. `routines:home.subtitle` read "без напрежение", which
+   * the obvious `натиск`-only pattern walks straight past — the same string in en said
+   * "no pressure", so a locale-blind reading would have called bg clean.
+   */
+  { locale: "en", pattern: /no pressure/i },
+  { locale: "en", pattern: /create pressure/i },
+  { locale: "bg", pattern: /без\s+(?:\S+\s+)?(натиск|напрежени)/i },
+  { locale: "bg", pattern: /създава\w*\s+натиск/i },
   { locale: "bg", pattern: /без срам/i },
   { locale: "bg", pattern: /не наказва/i },
   { locale: "bg", pattern: /наказва(ме|ш|т)?\b/i },

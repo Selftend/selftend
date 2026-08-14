@@ -4,6 +4,7 @@ import type { PropsWithChildren } from "react";
 
 import {
   useArchiveThoughtRecord,
+  useLatestThoughtRecordAt,
   useSaveThoughtRecord,
   useThoughtRecord,
   useThoughtRecordCountSince,
@@ -17,7 +18,9 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 // established in src/features/act/queries/queries.test.tsx.
 jest.mock("@/src/features/cbt/repository", () => ({
   archiveThoughtRecord: jest.fn(),
+  countThoughtRecords: jest.fn(),
   countThoughtRecordsSince: jest.fn(),
+  getLatestThoughtRecordAt: jest.fn(),
   getThoughtRecord: jest.fn(),
   listThoughtRecords: jest.fn(),
   saveThoughtRecord: jest.fn(),
@@ -175,5 +178,26 @@ describe("useArchiveThoughtRecord onSuccess guard", () => {
 
     expect(repo.archiveThoughtRecord).toHaveBeenCalled();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useLatestThoughtRecordAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestThoughtRecordAt(null), { wrapper: wrap(client) });
+    expect(repo.getLatestThoughtRecordAt).not.toHaveBeenCalled();
+  });
+
+  // ADR-0001's cache-shape rule: the read hangs off the list key, so the invalidations
+  // the tool's own mutations already fire reach it without a new invalidate call (#990).
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestThoughtRecordAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestThoughtRecordAt("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestThoughtRecordAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["cbt", "records", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestThoughtRecordAt).toHaveBeenCalledTimes(2));
   });
 });

@@ -7,6 +7,7 @@ import {
   useCoreBelief,
   useCoreBeliefs,
   useDeleteCoreBelief,
+  useLatestCoreBeliefAt,
   useSaveCoreBelief,
   useUpdateBeliefStrength,
 } from "@/src/features/beliefs/queries";
@@ -18,6 +19,7 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 jest.mock("@/src/features/beliefs/repository", () => ({
   deleteCoreBelief: jest.fn(),
   getCoreBelief: jest.fn(),
+  getLatestCoreBeliefAt: jest.fn(),
   listCoreBeliefs: jest.fn(),
   saveCoreBelief: jest.fn(),
   updateBeliefStrength: jest.fn(),
@@ -196,5 +198,26 @@ describe("useUpdateBeliefStrength onSuccess guard", () => {
 
     expect(repo.updateBeliefStrength).toHaveBeenCalled();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useLatestCoreBeliefAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestCoreBeliefAt(null), { wrapper: wrap(client) });
+    expect(repo.getLatestCoreBeliefAt).not.toHaveBeenCalled();
+  });
+
+  // ADR-0001's cache-shape rule: the read hangs off the list key, so the invalidations
+  // the tool's own mutations already fire reach it without a new invalidate call (#990).
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestCoreBeliefAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestCoreBeliefAt("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestCoreBeliefAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["beliefs", "list", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestCoreBeliefAt).toHaveBeenCalledTimes(2));
   });
 });

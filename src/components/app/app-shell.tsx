@@ -48,12 +48,27 @@ export function AppShell() {
               headerShown: false,
             }}
           >
+            {/* `dangerouslySingular` on every screen but `index` (#1027).
+
+                expo-router's NAVIGATE reuses only the route it is ALREADY on, so pushing
+                a screen that already sits deeper in the stack mounts a SECOND copy of it.
+                Both run every hook; the older one is hidden, which is why nothing looks
+                wrong. These policy pages cross-link to each other - privacy pushes
+                security, security pushes privacy, legal and support push all of them - so
+                the duplicates were unbounded.
+
+                Declared per screen rather than per call site: there are ~30 lateral
+                `router.push` calls across the app and this covers every one of them,
+                including calls written later. `index` stays plain - it is the landing
+                route and redirects when signed in, so it is never a push target. */}
             <Stack.Screen name="index" />
-            <Stack.Screen name="privacy" />
-            <Stack.Screen name="terms" />
-            <Stack.Screen name="cookies" />
-            <Stack.Screen name="crisis" />
-            <Stack.Screen name="account-deletion" />
+            <Stack.Screen name="privacy" dangerouslySingular />
+            <Stack.Screen name="terms" dangerouslySingular />
+            <Stack.Screen name="cookies" dangerouslySingular />
+            <Stack.Screen name="crisis" dangerouslySingular />
+            <Stack.Screen name="account-deletion" dangerouslySingular />
+            <Stack.Screen name="security" dangerouslySingular />
+            <Stack.Screen name="faq" dangerouslySingular />
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(app)" />
           </Stack>

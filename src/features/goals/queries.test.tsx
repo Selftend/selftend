@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import {
+  useActiveGoalCount,
   useGoal,
   useGoals,
   useMilestones,
@@ -12,6 +13,7 @@ import {
 } from "@/src/features/goals/queries";
 import {
   completeMilestone,
+  countActiveGoals,
   deleteMilestonesForGoal,
   getGoal,
   listGoals,
@@ -25,6 +27,7 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 
 jest.mock("@/src/features/goals/repository", () => ({
   completeMilestone: jest.fn(),
+  countActiveGoals: jest.fn(),
   deleteMilestonesForGoal: jest.fn(),
   getGoal: jest.fn(),
   listGoals: jest.fn(),
@@ -396,5 +399,26 @@ describe("useSaveGoal onSuccess guard", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useActiveGoalCount", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useActiveGoalCount(null), { wrapper: makeWrapper(client) });
+    expect(countActiveGoals).not.toHaveBeenCalled();
+  });
+
+  // ADR-0001's cache-shape rule: the count hangs off the list key, so the invalidations
+  // the goals mutations already fire reach it without a new invalidate call (#990).
+  it("refetches when the goal list is invalidated", async () => {
+    const client = createTestQueryClient();
+    (countActiveGoals as jest.Mock).mockResolvedValue(0);
+    renderHook(() => useActiveGoalCount("u1"), { wrapper: makeWrapper(client) });
+    await waitFor(() => expect(countActiveGoals).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["goals", "list", "u1"] });
+
+    await waitFor(() => expect(countActiveGoals).toHaveBeenCalledTimes(2));
   });
 });

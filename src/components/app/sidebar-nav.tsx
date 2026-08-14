@@ -7,19 +7,24 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { currentStateProps, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import {
-  CHROME_ACCENT_MARK,
-  CHROME_BADGE_SURFACE,
-  CHROME_BADGE_TEXT,
-} from "@/src/lib/theme/chrome";
+import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 
+// No nav row carries a status chip (#1020). The field was a three-value union -
+// LIVE, SOON, BETA - and all three came off at once, which left the rendering
+// branch with nothing to render, so it went too rather than sitting here as a
+// corpse waiting for a fourth value.
+//
+// SOON was the load-bearing one. It sat on DBT, over a screen headed "On the
+// roadmap", inside a binary Apple had cited under Guideline 2.1 *App
+// Completeness* - a nav entry advertising a module the app does not have. BETA
+// went with it: CBT and ACT are both fully usable, so the word understated them
+// and handed the same reviewer a second thing to doubt.
 interface NavItemDef {
   labelKey: string;
   href: Href;
   icon: MaterialIconName;
   matchPrefix: string | null;
   activeWhen?: (pathname: string) => boolean;
-  badgeKey?: "badgeLive" | "badgeSoon" | "badgeBeta";
   a11yKey?: string;
 }
 
@@ -53,7 +58,6 @@ const MODULE_ITEMS: NavItemDef[] = [
     icon: "psychology",
     matchPrefix: "/modules/cbt",
     activeWhen: (pathname) => pathname === "/modules/cbt" || pathname.startsWith("/modules/cbt/"),
-    badgeKey: "badgeBeta",
     a11yKey: "sidebar.cbtA11y",
   },
   {
@@ -61,7 +65,6 @@ const MODULE_ITEMS: NavItemDef[] = [
     href: "/modules/act",
     icon: "explore",
     matchPrefix: "/modules/act",
-    badgeKey: "badgeBeta",
     a11yKey: "sidebar.actA11y",
   },
   {
@@ -69,7 +72,6 @@ const MODULE_ITEMS: NavItemDef[] = [
     href: "/modules/dbt",
     icon: "anchor",
     matchPrefix: "/modules/dbt",
-    badgeKey: "badgeSoon",
     a11yKey: "sidebar.dbtA11y",
   },
 ];
@@ -172,12 +174,17 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     const active = isActive(item);
     const label = t(item.labelKey);
     const accessibilityLabel = item.a11yKey ? t(item.a11yKey) : label;
-    const badgeLabel = item.badgeKey ? t(`sidebar.${item.badgeKey}`) : null;
-    const isLive = item.badgeKey === "badgeLive";
-    const isBeta = item.badgeKey === "badgeBeta";
 
     return (
-      <Link href={item.href} key={item.labelKey} asChild>
+      // `dangerouslySingular` (#989): the panel is LATERAL navigation between peer
+      // destinations, and expo-router's default NAVIGATE only reuses the route it is
+      // already on - a target sitting deeper in the stack is pushed again. Going
+      // Routines -> Home therefore left TWO mounted Home screens, so every query on it
+      // ran twice. Singular moves the existing screen to the top instead, which also
+      // keeps Back meaning "the screen I came from". The id substitutes dynamic segments
+      // with their params, so it can never collapse two different `[id]` screens - and
+      // no panel destination is dynamic anyway.
+      <Link href={item.href} key={item.labelKey} dangerouslySingular asChild>
         <Pressable
           accessibilityLabel={accessibilityLabel}
           accessibilityRole="link"
@@ -225,41 +232,13 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
             {label}
           </Text>
           {/*
-            LIVE was `bg-act/15` + `text-act-ink` — the ACT module's green on a
-            chip that says nothing about ACT. It is a status marker, and the
-            status is spelled out in the word inside it, so it takes the neutral
-            chip (#587). BETA keeps the accent: it is the one that asks the
-            reader to notice, and `primary` is the app's colour rather than a
-            module's.
+            The status chip stood here (#587 gave LIVE the neutral pill, #421 §3
+            gave BETA `primary`'s ink on `bg-primary/15`). #1020 took the last
+            value off the last row, so the branch is gone with it. The contrast
+            work it prompted is not wasted and is not orphaned - `--primary-ink`
+            is still certified by test/theme-token-sync.ts, and `bg-primary/15`
+            is still painted by the habit editor and four routines surfaces.
           */}
-          {badgeLabel ? (
-            <View
-              className={cn(
-                "rounded-full px-2 py-0.5",
-                isBeta ? "bg-primary/15" : isLive ? CHROME_BADGE_SURFACE : "bg-muted",
-              )}
-            >
-              {/*
-                The chip #421 §3 was filed about, and the widest-reach text site
-                in the app: the sidebar renders on all 20 captured screens. 10px
-                uppercase on `bg-primary/15` over the sidebar's card, where the
-                raw accent reads 4.41:1 light and 4.22:1 dark, so it takes
-                `primary`'s ink.
-              */}
-              <Text
-                className={cn(
-                  "text-[10px] font-semibold uppercase tracking-wider",
-                  isBeta
-                    ? "text-primary-ink"
-                    : isLive
-                      ? CHROME_BADGE_TEXT
-                      : "text-muted-foreground",
-                )}
-              >
-                {badgeLabel}
-              </Text>
-            </View>
-          ) : null}
         </Pressable>
       </Link>
     );
@@ -281,7 +260,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     }
 
     return (
-      <Link href={href} key={`group-${label}`} asChild>
+      <Link href={href} key={`group-${label}`} dangerouslySingular asChild>
         <Pressable
           accessibilityLabel={label}
           accessibilityRole="link"

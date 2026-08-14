@@ -1,15 +1,21 @@
 import {
   completeActivity,
   getActivity,
+  getLatestCompletedActivityAt,
   listActivities,
   listRecentCompletedActivities,
   saveActivity,
 } from "@/src/features/activities/repository";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: jest.fn(),
 }));
+
+jest.mock("@/src/lib/latest-activity", () => ({ fetchLatestActivity: jest.fn() }));
+
+const mockFetchLatestActivity = jest.mocked(fetchLatestActivity);
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
 
@@ -334,5 +340,27 @@ describe("activities repository", () => {
     const sent = new Date(payload.completed_at as string);
     expect(Number.isNaN(sent.getTime())).toBe(false);
     expect(payload.completed_offset_minutes).toBe(-sent.getTimezoneOffset());
+  });
+});
+
+describe("getLatestCompletedActivityAt", () => {
+  // `completed_at`, never `scheduled_at`: the row reports what was done, and the
+  // schedule-ordered 500-row list could push a recent completion off its own page.
+  it("reads the newest completion with its captured offset (#990)", async () => {
+    mockFetchLatestActivity.mockResolvedValue({
+      at: "2026-07-27T08:00:00.000Z",
+      offsetMinutes: -420,
+    });
+
+    await expect(getLatestCompletedActivityAt("user-1")).resolves.toEqual({
+      at: "2026-07-27T08:00:00.000Z",
+      offsetMinutes: -420,
+    });
+    expect(mockFetchLatestActivity).toHaveBeenCalledWith({
+      table: "activity_logs",
+      userId: "user-1",
+      column: "completed_at",
+      offsetColumn: "completed_offset_minutes",
+    });
   });
 });

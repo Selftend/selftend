@@ -14,9 +14,10 @@ interface ThoughtRecordSeedState {
  * The obvious implementation is a route param - `/modules/cbt/new?emotions=anxious` -
  * and it is the wrong one. Expo Router serializes params into the address bar on web,
  * so the user's selected emotions would land in browser history, in any URL the
- * platform logs, and in Sentry's navigation breadcrumbs: `dropConsoleBreadcrumb` in
- * `src/lib/sentry.ts` drops *console* breadcrumbs only, and navigation breadcrumbs
- * carry the path. That is health data leaving the form data path for nothing.
+ * platform logs. Sentry itself is covered since #996 - `scrubBreadcrumb` in
+ * `src/lib/sentry.ts` strips the query string off navigation breadcrumbs - but that
+ * backstop exists for the launcher paths shipped builds keep minting, and the address
+ * bar is not covered by it. Health data on a route still leaves the form data path.
  *
  * Deliberately NOT persisted. This is a handoff that lives for one navigation; a
  * survivor of an app restart would prefill a thought record from a check-in the user

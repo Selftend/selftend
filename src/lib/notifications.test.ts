@@ -3,11 +3,14 @@ import { Platform } from "react-native";
 
 import {
   cancelAllReminders,
-  cancelReminder,
   clearLegacyLocalReminders,
+  ensureReminderChannel,
+  getReminderChannelStatus,
   isAllowedReminderRoute,
+  peekReminderChannelStatus,
+  reconcileWebReminderChannel,
   registerWebPushServiceWorker,
-  scheduleReminder,
+  resetWebReminderReconciliation,
 } from "@/src/lib/notifications";
 import {
   deleteWebPushSubscription,
@@ -130,6 +133,7 @@ function createWebPushMocks() {
 describe("Reminder notifications", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    resetWebReminderReconciliation();
     setPlatformOS("ios");
     mockDeleteWebPushSubscription.mockResolvedValue(undefined);
     mockUpsertWebPushSubscription.mockResolvedValue(undefined);
@@ -143,10 +147,10 @@ describe("Reminder notifications", () => {
 
   // ---- Native: server-driven push (token registration only) ----
 
-  it("registers a device push token on native scheduleReminder", async () => {
+  it("registers a device push token on native", async () => {
     setPlatformOS("android");
 
-    await expect(scheduleReminder("mood", 12, 0, "user-1")).resolves.toEqual({ enabled: true });
+    await expect(ensureReminderChannel("user-1")).resolves.toEqual({ enabled: true });
 
     expect(mockEnsureDevicePushToken).toHaveBeenCalledWith("user-1");
   });
@@ -155,9 +159,31 @@ describe("Reminder notifications", () => {
     setPlatformOS("android");
     mockEnsureDevicePushToken.mockResolvedValue({ enabled: false, reason: "permission-denied" });
 
-    await expect(scheduleReminder("mood", 12, 0, "user-1")).resolves.toEqual({
+    await expect(ensureReminderChannel("user-1")).resolves.toEqual({
       enabled: false,
       reason: "permission-denied",
+    });
+  });
+
+  it("keeps missing-user distinct on native instead of collapsing it to unsupported", async () => {
+    setPlatformOS("ios");
+    mockEnsureDevicePushToken.mockResolvedValue({ enabled: false, reason: "missing-user" });
+
+    // "You need to be signed in" and "This device can't deliver reminders" send the reader to
+    // different places; collapsing them made the first string unreachable on native.
+    await expect(ensureReminderChannel(null)).resolves.toEqual({
+      enabled: false,
+      reason: "missing-user",
+    });
+  });
+
+  it("collapses the remaining native failures onto unsupported", async () => {
+    setPlatformOS("android");
+    mockEnsureDevicePushToken.mockResolvedValue({ enabled: false, reason: "missing-project-id" });
+
+    await expect(ensureReminderChannel("user-1")).resolves.toEqual({
+      enabled: false,
+      reason: "unsupported",
     });
   });
 
@@ -167,15 +193,6 @@ describe("Reminder notifications", () => {
     await cancelAllReminders("user-1");
 
     expect(mockDisableDevicePushToken).toHaveBeenCalledWith("user-1");
-  });
-
-  it("cancelReminder is a no-op (per-target enablement lives in preferences)", async () => {
-    setPlatformOS("android");
-
-    await cancelReminder("cbt", "user-1");
-
-    expect(mockCancelAllScheduled).not.toHaveBeenCalled();
-    expect(mockDisableDevicePushToken).not.toHaveBeenCalled();
   });
 
   it("clearLegacyLocalReminders cancels every previously-scheduled local notification", async () => {
@@ -192,7 +209,7 @@ describe("Reminder notifications", () => {
     setPlatformOS("web");
     setWindowProperty("Notification", undefined);
 
-    await expect(scheduleReminder("cbt", 19, 0, "user-1")).resolves.toEqual({
+    await expect(ensureReminderChannel("user-1")).resolves.toEqual({
       enabled: false,
       reason: "unsupported",
     });
@@ -211,7 +228,7 @@ describe("Reminder notifications", () => {
     setPlatformOS("web");
     const { pushManager } = createWebPushMocks();
 
-    await expect(scheduleReminder("cbt", 19, 0, "user-1")).resolves.toEqual({ enabled: true });
+    await expect(ensureReminderChannel("user-1")).resolves.toEqual({ enabled: true });
 
     expect(pushManager.subscribe).toHaveBeenCalledWith({
       applicationServerKey: expect.any(Uint8Array),
@@ -234,8 +251,8 @@ describe("Reminder notifications", () => {
       return subscription;
     });
 
-    await expect(scheduleReminder("cbt", 19, 0, "user-1")).resolves.toEqual({ enabled: true });
-    await expect(scheduleReminder("meditation", 7, 0, "user-1")).resolves.toEqual({
+    await expect(ensureReminderChannel("user-1")).resolves.toEqual({ enabled: true });
+    await expect(ensureReminderChannel("user-1")).resolves.toEqual({
       enabled: true,
     });
 
@@ -251,7 +268,7 @@ describe("Reminder notifications", () => {
       // A blocked/unreachable push service: subscribe hangs forever (#473).
       pushManager.subscribe.mockReturnValue(new Promise(() => {}));
 
-      const resultPromise = scheduleReminder("cbt", 19, 0, "user-1");
+      const resultPromise = ensureReminderChannel("user-1");
       await jest.advanceTimersByTimeAsync(20_000);
 
       await expect(resultPromise).resolves.toEqual({ enabled: false, reason: "timeout" });
@@ -267,7 +284,7 @@ describe("Reminder notifications", () => {
       setPlatformOS("web");
       createWebPushMocks();
 
-      const resultPromise = scheduleReminder("cbt", 19, 0, "user-1");
+      const resultPromise = ensureReminderChannel("user-1");
       await jest.advanceTimersByTimeAsync(0);
 
       await expect(resultPromise).resolves.toEqual({ enabled: true });
@@ -281,22 +298,99 @@ describe("Reminder notifications", () => {
     const { notification } = createWebPushMocks();
     notification.requestPermission.mockResolvedValue("denied");
 
-    await expect(scheduleReminder("cbt", 19, 0, "user-1")).resolves.toEqual({
+    await expect(ensureReminderChannel("user-1")).resolves.toEqual({
       enabled: false,
       reason: "permission-denied",
     });
     expect(mockUpsertWebPushSubscription).not.toHaveBeenCalled();
   });
 
-  it("does not unsubscribe a single web target on cancel (subscription is shared)", async () => {
+  // ---- Channel status: read without prompting (#981) ----
+
+  it("reads the web channel status from the browser permission, without asking", async () => {
     setPlatformOS("web");
-    const { pushManager, subscription } = createWebPushMocks();
-    pushManager.getSubscription.mockResolvedValue(subscription);
+    const { notification } = createWebPushMocks();
 
-    await cancelReminder("cbt", "user-1");
+    notification.permission = "default";
+    expect(peekReminderChannelStatus()).toBe("prompt-needed");
+    await expect(getReminderChannelStatus()).resolves.toBe("prompt-needed");
 
-    expect(subscription.unsubscribe).not.toHaveBeenCalled();
-    expect(mockDeleteWebPushSubscription).not.toHaveBeenCalled();
+    notification.permission = "granted";
+    expect(peekReminderChannelStatus()).toBe("granted");
+    await expect(getReminderChannelStatus()).resolves.toBe("granted");
+
+    notification.permission = "denied";
+    expect(peekReminderChannelStatus()).toBe("blocked");
+    await expect(getReminderChannelStatus()).resolves.toBe("blocked");
+
+    // Nothing above may prompt: that is the whole point of a status a control can read
+    // before it is tapped.
+    expect(notification.requestPermission).not.toHaveBeenCalled();
+  });
+
+  it("reports unsupported when the browser has no push APIs", async () => {
+    setPlatformOS("web");
+    createWebPushMocks();
+    setWindowProperty("Notification", undefined);
+
+    await expect(getReminderChannelStatus()).resolves.toBe("unsupported");
+  });
+
+  // ---- Web reconciliation: repair, never ask ----
+
+  it("re-arms the web subscription when permission is already granted", async () => {
+    setPlatformOS("web");
+    const { notification, pushManager } = createWebPushMocks();
+    notification.permission = "granted";
+
+    await reconcileWebReminderChannel("user-1");
+
+    expect(pushManager.subscribe).toHaveBeenCalledTimes(1);
+    expect(mockUpsertWebPushSubscription).toHaveBeenCalledWith("user-1", {
+      auth: "auth-secret",
+      endpoint: "https://push.example/subscription",
+      p256dh: "p256dh-key",
+      timeZone: expect.any(String),
+      userAgent: "jest-browser",
+    });
+    expect(notification.requestPermission).not.toHaveBeenCalled();
+  });
+
+  it("never prompts: no permission yet means no reconciliation at all", async () => {
+    setPlatformOS("web");
+    const { notification, pushManager } = createWebPushMocks();
+    notification.permission = "default";
+
+    await reconcileWebReminderChannel("user-1");
+
+    expect(notification.requestPermission).not.toHaveBeenCalled();
+    expect(pushManager.subscribe).not.toHaveBeenCalled();
+    expect(mockUpsertWebPushSubscription).not.toHaveBeenCalled();
+  });
+
+  it("re-upserts nothing on a second focus with the same subscription and zone", async () => {
+    setPlatformOS("web");
+    const { notification, pushManager, subscription } = createWebPushMocks();
+    notification.permission = "granted";
+    pushManager.subscribe.mockImplementation(async () => {
+      pushManager.getSubscription.mockResolvedValue(subscription);
+      return subscription;
+    });
+
+    await reconcileWebReminderChannel("user-1");
+    await reconcileWebReminderChannel("user-1");
+
+    expect(mockUpsertWebPushSubscription).toHaveBeenCalledTimes(1);
+  });
+
+  it("is a no-op on native and without a user", async () => {
+    setPlatformOS("android");
+    await reconcileWebReminderChannel("user-1");
+    setPlatformOS("web");
+    createWebPushMocks();
+    await reconcileWebReminderChannel(null);
+
+    expect(mockUpsertWebPushSubscription).not.toHaveBeenCalled();
   });
 
   it("unsubscribes the browser subscription when cancelAllReminders is called", async () => {

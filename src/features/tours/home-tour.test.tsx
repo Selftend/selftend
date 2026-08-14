@@ -83,7 +83,7 @@ describe("HomeTour", () => {
     renderWithProviders(<HomeTour />);
 
     expect(
-      screen.queryByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+      screen.queryByText("Arrange your home screen - add, remove and reorder your tools."),
     ).toBeNull();
   });
 
@@ -95,7 +95,7 @@ describe("HomeTour", () => {
     renderWithProviders(<HomeTour />);
 
     expect(
-      await screen.findByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+      await screen.findByText("Arrange your home screen - add, remove and reorder your tools."),
     ).toBeTruthy();
   });
 
@@ -108,8 +108,35 @@ describe("HomeTour", () => {
     renderWithProviders(<HomeTour />);
 
     expect(
-      screen.queryByText("Arrange the dashboard your way - add, remove and reorder widgets."),
+      screen.queryByText("Arrange your home screen - add, remove and reorder your tools."),
     ).toBeNull();
+  });
+
+  /**
+   * Home's edit cluster is mounted only when the tool tier is non-empty (#979), so an
+   * empty dashboard leaves `home-edit` unregistered. Skipping is not dismissing: the stop
+   * must fall out of the queue WITHOUT being written to `shown_button_tours`, or the tip
+   * burns itself on the one screen where it has nothing to point at and never fires on
+   * the screen where it would.
+   */
+  it("skips an unregistered home-edit without marking it shown", async () => {
+    const mutateAsync = setupMutationMock();
+    setupPreferencesMock(true, []);
+    // Only the hamburger is registered - an empty dashboard's home.
+    setTourTarget("home-navigation", fakeView as never);
+
+    renderWithProviders(<HomeTour />);
+
+    expect(await screen.findByText("Find all Modules and Tools here.")).toBeTruthy();
+    expect(
+      screen.queryByText("Arrange your home screen - add, remove and reorder your tools."),
+    ).toBeNull();
+
+    fireEvent.press(screen.getByText("Got it"));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith(["home:navigation"]);
+    });
   });
 
   it("skips stops with no registered target (desktop: no hamburger)", () => {

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countCommittedActions,
   deleteCommittedAction,
   getCommittedAction,
   listCommittedActions,
@@ -19,6 +20,19 @@ export function useCommittedActions(userId: string | null, status?: ActionStatus
   return useQuery({
     queryKey: actKeys.committedActionList(userId, status),
     queryFn: () => listCommittedActions(userId!, status),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Home's `N active` row - an exact count instead of an uncapped list read (#990).
+ * The status rides the key, so each filter is its own entry under the list prefix
+ * every committed-action mutation already invalidates.
+ */
+export function useCommittedActionCount(userId: string | null, status: ActionStatus) {
+  return useQuery({
+    queryKey: actKeys.committedActionCount(userId, status),
+    queryFn: () => countCommittedActions(userId!, status),
     enabled: Boolean(userId),
   });
 }

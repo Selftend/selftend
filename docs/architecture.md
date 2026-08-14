@@ -184,31 +184,55 @@ The system is **provider-recoverable** (not zero-knowledge): the operator can de
 ## Android launcher widgets
 
 Android exposes one reconfigurable `SelftendCard` provider. Each placed instance selects one
-of the 27 Home card IDs and stores its own card, theme, and opacity configuration. The app
-builds a pre-localized snapshot from the same React Query data used by Home, then the native
-widget layer renders the selected card with `react-native-android-widget` primitives.
+of the dashboard catalogue's card IDs (`WIDGET_META`) and stores its own card, theme, and
+opacity configuration. The app builds a pre-localized snapshot from the same React Query data
+Home reads, then the native widget layer renders the selected card with
+`react-native-android-widget` primitives.
 
-The CBT and ACT programme replicas preserve the Home cards' three states: review before
-enrollment, current programme goals with deep links while enrolled, and completion guidance.
+The launcher's card set tracks the **catalogue**, not how Home happens to draw an entry. Home's
+tool entries render as rows rather than cards, so the launcher replica is the only card form
+some IDs still have; `card-registry.test.tsx` pins the two sets equal so neither can drift.
+
+The CBT and ACT programme replicas preserve the three states their Home cards have: review
+before enrollment, current programme goals with deep links while enrolled, and completion
+guidance.
 Programme enrollment is never triggered from the launcher widget. Adding or changing a
 provider still requires a native Android rebuild; card payload and replica changes do not.
 
-## Reminders: native vs. web
+## Reminders: one channel, server-driven delivery
 
-Native (Android, iOS):
+Delivery is **server-driven on every platform**. What, when and whether to send is read out of
+`user_preferences` (and, for routines, the reminder fields on the `routines` rows) by the
+`send-web-reminders` Edge Function at send time. Nothing is scheduled per reminder on the
+client - the app's only job is to keep a **channel** registered for the device.
 
-- Schedules **locally on device**. The OS triggers them; no server roundtrip.
-- The scheduled notification ID is stored in SecureStore (key `selftend:cbt-reminder-id`) so it can be canceled when the user disables reminders.
-- See [src/lib/notifications.ts](../src/lib/notifications.ts).
+The channel, in [src/lib/notifications.ts](../src/lib/notifications.ts):
 
-Web:
+- **Web** - a browser Push API subscription against a service worker registered at
+  `/selftend-push-worker.js`. Endpoint and keys live in `web_push_subscriptions` (per browser,
+  not per user). iOS Safari requires the site to be added to the Home Screen first; this is
+  said at the consent surface.
+- **Native** - an Expo push token in `device_push_tokens`.
+- `ensureReminderChannel(userId)` registers it, prompting for permission if needed;
+  `getReminderChannelStatus()` reports `granted` / `prompt-needed` / `blocked` / `unsupported`
+  **without prompting**, which is what lets a control know whether a tap can fail before it is
+  tapped; `cancelAllReminders(userId)` tears the channel down when the global master goes off.
 
-- Uses the browser **Push API** plus a service worker registered at `/selftend-push-worker.js`.
-- The browser subscription endpoint and keys are stored in the `web_push_subscriptions` table (per browser, not per user).
-- A scheduled **Supabase Edge Function** (`send-web-reminders`) runs on a Vault-stored cron secret and sends pushes to subscribed endpoints whose local-time matches.
-- iOS Safari requires the user to add the site to the Home Screen before web push works - this is documented at the consent surface.
+Two consequences worth knowing before changing a reminder surface:
 
-Controls are shared; delivery differs. Reminder copy/consent usually changes one surface. Reminder scheduling changes both.
+- **A time or on/off change is a plain column write.** It cannot fail for a permission reason,
+  and it needs no channel call at all once permission exists.
+- **The channel can outlive its registration.** Master-off and sign-out both delete the web
+  subscription while browser permission stays granted, so
+  `useNotificationSync` runs a non-prompting repair on the web focus event, and native
+  re-registers its token on every foreground.
+
+`user_preferences.reminder_consent` is a **hard delivery gate**, not an audit field: the Edge
+Function skips any user whose consent is falsy, and it defaults false. Every surface that
+enables a reminder has to write it.
+
+Controls are shared; delivery differs only in the channel. Reminder copy/consent usually
+changes one surface; the channel changes both.
 
 ## i18n
 

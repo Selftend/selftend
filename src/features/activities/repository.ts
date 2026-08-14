@@ -1,5 +1,6 @@
 import type { ActivityInput, ActivityLog } from "@/src/features/activities/types";
 import { entryDayKey, occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 
@@ -51,6 +52,24 @@ function mapActivity(row: ActivityLogRow): ActivityLog {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * When the user last completed a behavioural-activation activity, for Home's one-line
+ * row (#990). `completed_at`, not `scheduled_at`: the row reports what was done, and a
+ * scheduled activity may never have been completed at all.
+ *
+ * This also un-truncates the figure. `listActivities` orders by `scheduled_at` ascending
+ * and caps at 500, so a heavy scheduler's recent completion could sit outside the page
+ * the row derived its answer from.
+ */
+export function getLatestCompletedActivityAt(userId: string) {
+  return fetchLatestActivity({
+    table: "activity_logs",
+    userId,
+    column: "completed_at",
+    offsetColumn: "completed_offset_minutes",
+  });
 }
 
 export async function listActivities(userId: string) {

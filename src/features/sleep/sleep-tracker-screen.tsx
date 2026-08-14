@@ -32,7 +32,7 @@ import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
 import { ShowAllSleepLink } from "@/src/features/sleep/show-all-sleep-link";
 
 export default function SleepTrackerScreen() {
-  const { t } = useTranslation("sleep");
+  const { t, i18n } = useTranslation("sleep");
   const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -106,7 +106,7 @@ export default function SleepTrackerScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
               stats={[
-                { value: formatHours(sevenDayDuration), label: t("hero.avg") },
+                { value: formatHours(sevenDayDuration, i18n.language, t), label: t("hero.avg") },
                 {
                   value: sevenDayQuality !== null ? `${sevenDayQuality}/5` : "-",
                   label: t("hero.quality"),
@@ -148,14 +148,14 @@ export default function SleepTrackerScreen() {
                     <Text variant="muted" className="text-[13px] tabular-nums">
                       {t("stats.longest")}{" "}
                       <Text className="text-[13px] font-semibold tabular-nums text-foreground">
-                        {formatDuration(longest)}
+                        {formatDuration(longest, t)}
                       </Text>
                     </Text>
                     <Text className="px-2.5 text-[13px] text-muted-foreground/50">·</Text>
                     <Text variant="muted" className="text-[13px] tabular-nums">
                       {t("stats.shortest")}{" "}
                       <Text className="text-[13px] font-semibold tabular-nums text-foreground">
-                        {formatDuration(shortest)}
+                        {formatDuration(shortest, t)}
                       </Text>
                     </Text>
                   </View>

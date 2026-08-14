@@ -17,7 +17,16 @@ export const SNAPSHOT_KEY = "selftend.widgets.snapshot.v1";
 // "activities" (#330). A stale v2 snapshot would still parse but no card would match
 // its kind, so the widget would render blank until the next sync - bumping discards it
 // outright instead, which is what this version exists for.
-const SCHEMA_VERSION = 3;
+// v4: `mood-trend` and the two `-module-shortcut` cards left CARD_IDS (#973), so a
+// stale v3 snapshot still holds payloads for ids the launcher can no longer configure.
+//
+// Typed rather than inferred, because this constant is the gate and the builder
+// is what passes through it: written as a bare `= 3` it drifted independently
+// of `Snapshot["schemaVersion"]`, and a store that rejects the version the
+// builder stamps discards every snapshot the app writes - the widget renders
+// nothing, forever, with nothing failing anywhere. Now a bump to the interface
+// fails to compile here until this follows.
+const SCHEMA_VERSION: Snapshot["schemaVersion"] = 4;
 
 export async function writeSnapshot(snapshot: Snapshot): Promise<void> {
   await AsyncStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));

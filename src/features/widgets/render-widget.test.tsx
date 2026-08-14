@@ -25,7 +25,6 @@ const empty = {
   committedActions: [],
   actionSteps: [],
   defusionLogs: [],
-  moodLogCount: null,
   gratitudeEntryCount: null,
   journalEntryCount: null,
   journalWordTotal: null,

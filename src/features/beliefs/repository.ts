@@ -1,4 +1,5 @@
 import type { CoreBelief, CoreBeliefInput } from "@/src/features/beliefs/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 
@@ -47,6 +48,14 @@ export async function listCoreBeliefs(userId: string) {
 
   if (error) throw error;
   return (data as CoreBeliefRow[]).map(mapCoreBelief);
+}
+
+/**
+ * When the user last recorded a core belief, for Home's one-line row (#990). One row,
+ * no decryption - the 500-row list above was fetched whole to read this single field.
+ */
+export function getLatestCoreBeliefAt(userId: string) {
+  return fetchLatestActivity({ table: "core_beliefs", userId, column: "created_at" });
 }
 
 export async function getCoreBelief(userId: string, beliefId: string) {

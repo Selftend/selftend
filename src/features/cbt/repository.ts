@@ -5,6 +5,7 @@ import type {
 } from "@/src/features/cbt/types";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 import { trimAndFilterEmpty } from "@/src/lib/strings";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 
@@ -70,6 +71,45 @@ export async function listThoughtRecords(userId: string) {
 
 // Exact count of non-archived thought records created since `sinceIso` - for the Progress
 // 30-day stat, mirroring the journal and gratitude bounded-count queries.
+/**
+ * Exact lifetime count of the records a user still holds, matching what `listThoughtRecords`
+ * shows them: archived records are excluded, because the number stands beside a row that
+ * opens the record list.
+ *
+ * A `head` count rather than `records.length` off the 500-row list, per ADR-0001 - a
+ * lifetime figure derived from a capped list truncates silently, and the count stays
+ * plausible while it does. This needs no function or migration; PostgREST answers it
+ * exactly under RLS, which is the `countJournalEntries` precedent.
+ */
+export async function countThoughtRecords(userId: string): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("thought_records")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("archived_at", null);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * When the user last wrote a thought record, for Home's one-line row (#990).
+ *
+ * `created_at`, not the `updated_at` the list is ordered by: the row reports the most
+ * recently WRITTEN record, not the most recently edited one. Archived records are
+ * excluded, matching the count beside it and the list the row opens.
+ */
+export function getLatestThoughtRecordAt(userId: string) {
+  return fetchLatestActivity({
+    table: "thought_records",
+    userId,
+    column: "created_at",
+    offsetColumn: "created_offset_minutes",
+    isNull: "archived_at",
+  });
+}
+
 export async function countThoughtRecordsSince(userId: string, sinceIso: string): Promise<number> {
   const client = requireSupabase();
   const { count, error } = await client

@@ -1,3 +1,6 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+
 import {
   WIDGET_META,
   WIDGET_REGISTRY,
@@ -6,6 +9,59 @@ import {
 } from "@/src/features/home/widget-registry";
 import { CONCERN_KEYS, resolveConcernWidgetIds } from "@/src/features/onboarding/concerns";
 import { SHARED_TOOL_WIDGET_IDS } from "@/src/features/onboarding/recommendations";
+
+// Every static route Expo Router serves, read off the `app/` tree rather than
+// restated here - a hand-written expectation would drift the moment a route
+// moves. Route groups like `(app)` are invisible in the URL, and `index.tsx`
+// collapses onto its directory.
+//
+// Dynamic segments are deliberately excluded. A dashboard row navigates to a
+// fixed screen, so a route like `/tools/journal/[id]` is always a mistake -
+// leaving `[id]` in the set would let that literal pass as if it resolved.
+const isDynamic = (segment: string) => segment.includes("[");
+
+function collectRoutes(dir: string, prefix: string, out: Set<string>): Set<string> {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const { name } = entry;
+    if (entry.isDirectory()) {
+      if (isDynamic(name)) continue;
+      const isGroup = name.startsWith("(") && name.endsWith(")");
+      collectRoutes(join(dir, name), isGroup ? prefix : `${prefix}/${name}`, out);
+      continue;
+    }
+    if (!name.endsWith(".tsx") || name.startsWith("_") || isDynamic(name)) continue;
+    const base = name.slice(0, -".tsx".length);
+    out.add(base === "index" ? prefix || "/" : `${prefix}/${base}`);
+  }
+  return out;
+}
+
+const APP_ROUTES = collectRoutes(join(__dirname, "../../../app"), "", new Set<string>());
+
+// The (legacy, survivor) pairs the #973 migration rewrote, read off the
+// migration itself so this file and that file cannot disagree. The pattern
+// matches the `values` rows of its collapse loop:
+//
+//   ('cbt-module-shortcut', 'cbt-programme'),
+//
+// A parse that finds nothing would make the assertions below vacuous, so the
+// count is asserted too.
+const COLLAPSE_MIGRATION = join(
+  __dirname,
+  "../../../supabase/migrations/20260813000000_collapse_legacy_widget_ids.sql",
+);
+const COLLAPSED_WIDGET_IDS: [string, string][] = [
+  ...readFileSync(COLLAPSE_MIGRATION, "utf8").matchAll(/\('([\w-]+)',\s*'([\w-]+)'\)/g),
+].map((match) => [match[1], match[2]]);
+
+// Where each survivor must still point. Stated here rather than derived,
+// because this is the assertion: the migration moved rows onto these ids on
+// the strength of them opening the screen the retired id opened.
+const SURVIVOR_ROUTES: Record<string, string> = {
+  "mood-checkin": "/tools/check-in",
+  "cbt-programme": "/modules/cbt",
+  "act-programme": "/modules/act",
+};
 
 describe("widget registry", () => {
   it("exposes the daily check-in (mood-checkin) meta", () => {
@@ -19,8 +75,8 @@ describe("widget registry", () => {
     }
   });
 
-  it("isImplemented reflects registry membership", () => {
-    expect(isImplemented("mood-trend")).toBe(true);
+  it("isImplemented reflects catalogue membership", () => {
+    expect(isImplemented("mood-checkin")).toBe(true);
     expect(isImplemented("cbt-open-record")).toBe(true);
     expect(isImplemented("not-a-widget")).toBe(false);
   });
@@ -174,5 +230,68 @@ describe("widget registry", () => {
       expect({ id, tint: meta.tint }).toMatchObject({ tint: expect.any(String) });
       expect({ id, toolKey: meta.toolKey }).toMatchObject({ toolKey: expect.any(String) });
     }
+  });
+
+  // The registry is the dashboard catalogue (#972). `route` and `tier` are
+  // required on WidgetMeta so a new id cannot be added without declaring where
+  // its row goes and which tier renders it. Nothing reads them yet - this is
+  // the expand step of an expand-contract.
+  describe("dashboard catalogue", () => {
+    it("every id declares a route and a tier", () => {
+      for (const [id, meta] of Object.entries(WIDGET_META)) {
+        expect({ id, route: meta.route }).toMatchObject({ route: expect.any(String) });
+        expect({ id, tier: meta.tier }).toMatchObject({
+          tier: expect.stringMatching(/^(tool|programme)$/),
+        });
+      }
+    });
+
+    it("every route resolves to a real Expo Router route", () => {
+      // This is the assertion that earns its keep: the decided spec's row table
+      // named `/tools/gratitude` and `/tools/routines`, neither of which the
+      // router serves (`/tools/gratitude-log` and `/routines` do).
+      for (const [id, meta] of Object.entries(WIDGET_META)) {
+        expect({ id, route: meta.route, exists: APP_ROUTES.has(meta.route) }).toMatchObject({
+          exists: true,
+        });
+      }
+    });
+
+    it("exactly two ids are the programme tier - CBT and ACT", () => {
+      const programmeIds = Object.entries(WIDGET_META)
+        .filter(([, meta]) => meta.tier === "programme")
+        .map(([id]) => id)
+        .sort();
+      expect(programmeIds).toEqual(["act-programme", "cbt-programme"]);
+    });
+
+    it("the programme cards press to their module home", () => {
+      expect(WIDGET_META["cbt-programme"].route).toBe("/modules/cbt");
+      expect(WIDGET_META["act-programme"].route).toBe("/modules/act");
+    });
+
+    // S3 (#973) collapsed three ids away, and the migration that rewrote the
+    // stored rows is the record of which. Reading the pairs off that file
+    // rather than restating them here is the point: a restated list agrees
+    // with the migration only until someone edits one of the two, and the
+    // failure that hides is a registry id whose rows a shipped migration
+    // already deleted from every user's dashboard.
+    //
+    // Each retired id must be GONE (its rows now carry the survivor's id), and
+    // its survivor must still exist - a rename onto an id the registry does not
+    // serve would strand every row the migration moved.
+    it.each(COLLAPSED_WIDGET_IDS)(
+      "%s is retired by the migration; %s survives it",
+      (retired, survivor) => {
+        expect(isImplemented(retired)).toBe(false);
+        expect(WIDGET_META[retired]).toBeUndefined();
+        expect(isImplemented(survivor)).toBe(true);
+        expect(WIDGET_META[survivor].route).toBe(SURVIVOR_ROUTES[survivor]);
+      },
+    );
+
+    it("reads three pairs off the migration, so an empty parse cannot pass", () => {
+      expect(COLLAPSED_WIDGET_IDS).toHaveLength(3);
+    });
   });
 });

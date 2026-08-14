@@ -9,6 +9,7 @@ import {
   useExposureSessions,
   useHierarchies,
   useHierarchy,
+  useLatestExposureSessionAt,
   useRecentExposureSessions,
   useSaveExposureSession,
   useSaveHierarchy,
@@ -21,6 +22,7 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 jest.mock("@/src/features/exposure/repository", () => ({
   deleteHierarchy: jest.fn(),
   getHierarchy: jest.fn(),
+  getLatestExposureSessionAt: jest.fn(),
   listAllItems: jest.fn(),
   listHierarchies: jest.fn(),
   listItems: jest.fn(),
@@ -340,5 +342,26 @@ describe("useDeleteHierarchy", () => {
 
     expect(mockDeleteHierarchy).toHaveBeenCalled();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useLatestExposureSessionAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestExposureSessionAt(null), { wrapper: makeWrapper(client) });
+    expect(repo.getLatestExposureSessionAt).not.toHaveBeenCalled();
+  });
+
+  // ADR-0001's cache-shape rule: the read hangs off the list key, so the invalidations
+  // the tool's own mutations already fire reach it without a new invalidate call (#990).
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestExposureSessionAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestExposureSessionAt("u1"), { wrapper: makeWrapper(client) });
+    await waitFor(() => expect(repo.getLatestExposureSessionAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["exposure"] });
+
+    await waitFor(() => expect(repo.getLatestExposureSessionAt).toHaveBeenCalledTimes(2));
   });
 });

@@ -4,9 +4,10 @@ import type {
   ExpansionTechnique,
   DiscomfortType,
 } from "@/src/features/act/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
-import { selectList, selectMaybe, writeSingle, mutateVoid } from "./helpers";
+import { degradeMissingSchema, mutateVoid, selectList, selectMaybe, writeSingle } from "./helpers";
 
 interface ExpansionLogRow {
   id: string;
@@ -38,6 +39,14 @@ function mapExpansionLog(row: ExpansionLogRow): ExpansionLog {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/** Home's `Last {{when}}` row - one row instead of the 30-row list (#990). */
+export function getLatestExpansionLogAt(userId: string) {
+  return degradeMissingSchema(
+    () => fetchLatestActivity({ table: "act_expansion_logs", userId, column: "created_at" }),
+    null,
+  );
 }
 
 export async function listExpansionLogs(userId: string, limit = 30) {

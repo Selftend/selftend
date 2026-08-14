@@ -124,11 +124,21 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     // with an open step must not nudge (any label form).
     await expect(page.getByTestId("routine-fab")).toBeHidden();
 
-    // --- Home: the routines-today widget slot is suppressed entirely ---
-    // (routines exist, none scheduled today - the whole slot unmounts, #97)
+    // --- Home: the routines row stays, and states the empty day ---
+    // Inverted by #975, deliberately rather than deleted. Day-level slot suppression
+    // (#97) existed because a 200px empty card was worse than no card; a row costs one
+    // line, so "routines exist, none due today" is now a fact home can state instead of
+    // a slot it has to hide. This assertion is the positive control for that.
     await navigateViaPanel(page, "Home");
     await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
-    await expect(page.getByText("Routines today", { exact: true })).toBeHidden({
+    // Plain locators, no `.last()`: panel navigation used to leave TWO mounted `home-layout`
+    // roots, so `.first()` resolved to the hidden backgrounded copy and every home locator
+    // here had to reach past it. #989 fixed the cause, and a strict-mode violation on
+    // either of these is the duplicate coming back.
+    await expect(page.getByText("Routines today", { exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Nothing scheduled today", { exact: true })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByTestId("routine-fab")).toBeHidden();
@@ -138,7 +148,9 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     await navigateViaPanel(page, "Check-in");
     await expect(page).toHaveURL(/\/tools\/check-in$/, { timeout: 15_000 });
     await page.getByRole("radio", { name: "Okay", exact: true }).click();
-    await page.waitForURL(/\/tools\/check-in\/new\?/, { timeout: 15_000 });
+    // No query string any more (#961): the score is seeded in memory, so the URL is
+    // bare. `\?` here required the query and is exactly the pin this change breaks.
+    await page.waitForURL(/\/tools\/check-in\/new$/, { timeout: 15_000 });
     await page.getByRole("button", { name: "Save check-in", exact: true }).click();
     await page.waitForURL(/\/tools\/check-in\/(?!new)[^/]+$/, { timeout: 15_000 });
 

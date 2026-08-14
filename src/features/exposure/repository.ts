@@ -6,6 +6,7 @@ import type {
   ExposureSession,
   ExposureSessionInput,
 } from "@/src/features/exposure/types";
+import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { requireSupabase } from "@/src/lib/supabase";
 import { isValidUuid } from "@/src/utils/uuid";
 
@@ -208,6 +209,14 @@ export async function listRecentSessions(userId: string, limit = 250) {
 
   if (error) throw error;
   return (data as SessionRow[]).map(mapSession);
+}
+
+/**
+ * When the user last ran an exposure, for Home's one-line row (#990). Sessions, never
+ * hierarchies - a hierarchy is a plan, and the row reports what was done.
+ */
+export function getLatestExposureSessionAt(userId: string) {
+  return fetchLatestActivity({ table: "exposure_sessions", userId, column: "completed_at" });
 }
 
 export async function deleteHierarchy(userId: string, hierarchyId: string) {

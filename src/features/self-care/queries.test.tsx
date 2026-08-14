@@ -3,6 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
 import {
+  useLatestSelfCareLogAt,
   useSelfCareLog,
   useSelfCareLogs,
   useUpsertSelfCareLog,
@@ -14,6 +15,7 @@ import { createTestQueryClient } from "@/test/render-with-providers";
 // mock fns for every named export, so use the explicit-factory pattern
 // established in src/features/act/queries/queries.test.tsx.
 jest.mock("@/src/features/self-care/repository", () => ({
+  getLatestSelfCareLogAt: jest.fn(),
   getSelfCareLog: jest.fn(),
   listSelfCareLogs: jest.fn(),
   upsertSelfCareLog: jest.fn(),
@@ -128,5 +130,26 @@ describe("useUpsertSelfCareLog onSuccess guard", () => {
 
     expect(repo.upsertSelfCareLog).toHaveBeenCalled();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useLatestSelfCareLogAt", () => {
+  it("does not fetch when userId is null", () => {
+    const client = createTestQueryClient();
+    renderHook(() => useLatestSelfCareLogAt(null), { wrapper: wrap(client) });
+    expect(repo.getLatestSelfCareLogAt).not.toHaveBeenCalled();
+  });
+
+  // ADR-0001's cache-shape rule: the read hangs off the list key, so the invalidations
+  // the tool's own mutations already fire reach it without a new invalidate call (#990).
+  it("refetches when the list it summarises is invalidated", async () => {
+    const client = createTestQueryClient();
+    (repo.getLatestSelfCareLogAt as jest.Mock).mockResolvedValue(null);
+    renderHook(() => useLatestSelfCareLogAt("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(repo.getLatestSelfCareLogAt).toHaveBeenCalledTimes(1));
+
+    await client.invalidateQueries({ queryKey: ["self-care", "list", "u1"] });
+
+    await waitFor(() => expect(repo.getLatestSelfCareLogAt).toHaveBeenCalledTimes(2));
   });
 });

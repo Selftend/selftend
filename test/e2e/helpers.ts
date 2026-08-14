@@ -126,7 +126,18 @@ export async function dismissPostSignInModals(page: Page) {
     await expect(wizardTitle).toBeHidden({ timeout: 10_000 });
   }
 
-  // Home tour spotlight: one "Skip all tips" dismisses all four home stops.
+  await dismissHomeTour(page);
+}
+
+/**
+ * Home tour spotlight: one "Skip all tips" dismisses all four home stops.
+ *
+ * Waits rather than sampling `isVisible()` once - the tour arms a beat after the screen
+ * settles, so a single sample sees nothing and the tour then appears mid-test. Its scrim
+ * sits ABOVE an open nav panel, so an undismissed tour blocks the panel's links, not just
+ * the header it points at.
+ */
+export async function dismissHomeTour(page: Page) {
   const skipAllTips = page.getByRole("button", { name: "Skip all tips", exact: true });
   const tourVisible = await skipAllTips
     .waitFor({ state: "visible", timeout: 3_000 })
