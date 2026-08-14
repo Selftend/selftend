@@ -279,6 +279,12 @@ describe("hue ink meets WCAG AA on the neutral app surface", () => {
 // This suite is `--primary-ink`'s floor, and it is deliberately the *same* set
 // of surfaces the hue block above checks, so the new token is certified by the
 // rule the eight were certified by rather than by one written to fit it.
+//
+// ⚠️ The Beta chip named throughout this block is GONE (#1020 took the status
+// chips off the sidebar). It is kept here as the worked example because it is
+// what #421 actually measured, and the floor it established still binds: the
+// habit editor and four routines surfaces paint `bg-primary/15` today. Read
+// every "Beta chip" below as history, not as a site to go and look at.
 describe("primary ink meets WCAG AA on the neutral app surface", () => {
   it("--primary-ink mirrors PRIMARY_INK_TRIPLES in both schemes", () => {
     expect({ light: css.light["--primary-ink"], dark: css.dark["--primary-ink"] }).toEqual(

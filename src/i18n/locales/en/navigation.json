@@ -28,15 +28,12 @@
     "cbt": "CBT",
     "cbtA11y": "CBT module - Cognitive Behavioral Therapy",
     "actA11y": "ACT module - Acceptance and Commitment Therapy",
-    "dbtA11y": "DBT module - Dialectical Behavior Therapy (coming soon)",
+    "dbtA11y": "DBT overview - Dialectical Behavior Therapy",
     "modules": "Modules",
     "gratitudeLog": "Gratitude log",
     "sleep": "Sleep",
     "habits": "Habit tracking",
-    "tools": "Tools",
-    "badgeLive": "Live",
-    "badgeSoon": "Soon",
-    "badgeBeta": "Beta"
+    "tools": "Tools"
   },
   "userMenu": {
     "account": "Account",
@@ -89,7 +86,7 @@
       "actName": "Acceptance & commitment",
       "actDescription": "Skills for handling difficult feelings and acting on what matters to you (Acceptance and Commitment Therapy).",
       "dbtName": "Dialectical behavior therapy",
-      "dbtDescription": "Four skill groups - mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness."
+      "dbtDescription": "Four skill groups - mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness. An overview of the approach."
     },
     "tools": {
       "moodTracker": "Check-in",
@@ -470,10 +467,7 @@
     "description": "Structured therapeutic programs you can work through over time. Each draws on the shared tools.",
     "whereToStart": "Not sure where to start? The everyday tools help with general wellbeing. Try CBT if difficult thoughts are your main concern. Mixing is fine.",
     "stats": {
-      "live": "Live",
-      "soon": "Soon",
-      "inDesign": "In design",
-      "onRoadmap": "On the roadmap"
+      "overview": "Overview"
     }
   },
   "dateBar": {
