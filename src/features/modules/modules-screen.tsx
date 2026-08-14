@@ -8,24 +8,25 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import {
-  CHROME_BADGE_SURFACE,
-  CHROME_BADGE_TEXT,
-  CHROME_RULE,
-  CHROME_TEXT,
-  CHROME_WASH,
-} from "@/src/lib/theme/chrome";
+import { CHROME_RULE, CHROME_TEXT, CHROME_WASH } from "@/src/lib/theme/chrome";
 
 type ModuleKey = "cbt" | "act" | "dbt";
 
+// The tile no longer has a `badgeKey` (#1020). It held one value, `"soon"`, on
+// one tile, DBT - and the pill it rendered was the second of two places the app
+// advertised a module it does not have, the sidebar row being the first.
+//
+// `footerKey` survives the same sweep with different wording rather than being
+// deleted, because the DBT tile still needs to say what it is. "On the roadmap"
+// promised a module; "Overview" describes the screen you actually land on. Its
+// sibling value `"inDesign"` came off here too - no tile ever carried it.
 interface ModuleTile {
   key: ModuleKey;
   href: Href;
   abbreviation: string;
   nameKey: string;
   descriptionKey: string;
-  badgeKey: "soon" | null;
-  footerKey: "inDesign" | "onRoadmap" | null;
+  footerKey: "overview" | null;
 }
 
 const MODULES: ModuleTile[] = [
@@ -35,7 +36,6 @@ const MODULES: ModuleTile[] = [
     abbreviation: "CBT",
     nameKey: "today.modules.cbtName",
     descriptionKey: "today.modules.cbtDescription",
-    badgeKey: null,
     footerKey: null,
   },
   {
@@ -44,7 +44,6 @@ const MODULES: ModuleTile[] = [
     abbreviation: "ACT",
     nameKey: "today.modules.actName",
     descriptionKey: "today.modules.actDescription",
-    badgeKey: null,
     footerKey: null,
   },
   {
@@ -53,8 +52,7 @@ const MODULES: ModuleTile[] = [
     abbreviation: "DBT",
     nameKey: "today.modules.dbtName",
     descriptionKey: "today.modules.dbtDescription",
-    badgeKey: "soon",
-    footerKey: "onRoadmap",
+    footerKey: "overview",
   },
 ];
 
@@ -103,7 +101,6 @@ export default function ModulesScreen() {
 
 function ModuleCard({ module }: { module: ModuleTile }) {
   const { t } = useTranslation("navigation");
-  const isLocked = module.badgeKey === "soon";
 
   return (
     <Pressable
@@ -124,22 +121,6 @@ function ModuleCard({ module }: { module: ModuleTile }) {
         <View className="flex-1">
           <Text className="text-base font-semibold">{t(module.nameKey)}</Text>
         </View>
-        {/* The badge pairing, not the muted one. `text-muted-foreground` on
-            `bg-muted` reads 4.27:1 on sage-garden light — under AA for 10px
-            text — while `--secondary-foreground` on `--secondary` never drops
-            below 9.65 in any of the eight palettes. */}
-        {module.badgeKey ? (
-          <View className={cn("rounded-full px-2 py-0.5", CHROME_BADGE_SURFACE)}>
-            <Text
-              className={cn(
-                "text-[10px] font-semibold uppercase tracking-wider",
-                CHROME_BADGE_TEXT,
-              )}
-            >
-              {t(`modulesPage.stats.${module.badgeKey}`)}
-            </Text>
-          </View>
-        ) : null}
       </View>
       <Text variant="muted" className="text-sm leading-5">
         {t(module.descriptionKey)}
@@ -148,10 +129,10 @@ function ModuleCard({ module }: { module: ModuleTile }) {
         <Text variant="muted" className="text-xs">
           {module.footerKey ? t(`modulesPage.stats.${module.footerKey}`) : ""}
         </Text>
-        <Icon
-          name={isLocked ? "schedule" : "arrow-forward"}
-          className="size-4 text-muted-foreground"
-        />
+        {/* Always the forward arrow. DBT used to draw `schedule` - a clock face,
+            the wordless form of "not yet" - and every tile here leads somewhere
+            that exists, so every tile points forward. */}
+        <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
       </View>
     </Pressable>
   );
