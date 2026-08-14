@@ -1,31 +1,22 @@
 {
-  "title": "Notifications",
-  "description": "Manage reminders for every tool and module.",
+  "title": "Reminders",
+  "description": "Every reminder here is off until you turn it on. Pick the ones you want and the time they arrive.",
   "globalMaster": {
     "label": "Notifications enabled",
-    "hint": "Turns off every reminder. Your schedules are saved and resume when you switch this back on."
-  },
-  "perTargetMaster": {
-    "label": "Enable reminders",
-    "hint": "Turns all reminders here on or off."
-  },
-  "subToggles": {
-    "dailyReminder": "Daily reminder"
+    "hint": "One switch for every reminder, routines included. Your times are kept while it is off."
   },
   "time": {
-    "label": "Reminder time"
+    "label": "Reminder time",
+    "labelFor": "{{label}} reminder time"
   },
-  "comingSoon": {
-    "badge": "Coming soon",
-    "hint": "Reminders for this tool aren't available yet."
+  "channel": {
+    "requesting": "Waiting for permission",
+    "blockedTitle": "Notifications are turned off"
   },
   "actions": {
-    "save": "Save",
-    "saving": "Saving...",
-    "openShort": "Notifications"
+    "openShort": "Reminders"
   },
   "feedback": {
-    "saved": "Saved",
     "problem": "Something went wrong"
   },
   "copy": {
@@ -76,49 +67,35 @@
   },
   "targets": {
     "cbt": {
-      "label": "CBT",
-      "description": "Daily thought record reminders."
+      "label": "CBT"
     },
     "act": {
-      "label": "ACT",
-      "description": "Reminders for defusion, values, and committed action."
+      "label": "ACT"
     },
     "meditation": {
-      "label": "Meditation",
-      "description": "Daily meditation reminders."
+      "label": "Meditation"
     },
     "gratitude": {
-      "label": "Gratitude log",
-      "description": "Reminders to capture a moment of gratitude."
+      "label": "Gratitude log"
     },
     "mood": {
-      "label": "Check-in",
-      "description": "Reminders to log your mood."
+      "label": "Check-in"
     },
     "journal": {
-      "label": "Journal",
-      "description": "Reminders to write a journal entry."
+      "label": "Journal"
     },
     "breathing": {
-      "label": "Breathing",
-      "description": "Reminders for a breathing break."
+      "label": "Breathing"
     },
     "grounding": {
-      "label": "Grounding",
-      "description": "Reminders for grounding exercises."
+      "label": "Grounding"
     },
     "sleep": {
-      "label": "Sleep",
-      "description": "Reminders to log your sleep."
+      "label": "Sleep"
     },
     "habits": {
-      "label": "Habits",
-      "description": "Reminders for your habit check-ins."
+      "label": "Habits"
     }
-  },
-  "sections": {
-    "modules": "Modules",
-    "tools": "Tools"
   },
   "reminderPrompt": {
     "title": "Nice work. Want a daily reminder?",
@@ -129,10 +106,16 @@
   "saveErrors": {
     "missing-user": "You need to be signed in to set up reminders.",
     "missing-vapid-key": "Reminders aren't configured for this app build.",
-    "permission-denied": "Notifications are blocked for this site in your browser settings.",
+    "permission-denied": {
+      "web": "Notifications are blocked for this site in your browser settings.",
+      "native": "Notifications are turned off for Selftend in your device settings."
+    },
     "service-worker-unavailable": "Couldn't set up reminders on this browser.",
     "subscription-failed": "Couldn't set up reminders on this browser.",
     "timeout": "Couldn't reach this browser's notification service. Reminders may not work here.",
-    "unsupported": "This browser doesn't support reminders."
+    "unsupported": {
+      "web": "This browser doesn't support reminders.",
+      "native": "This device can't deliver reminders."
+    }
   }
 }

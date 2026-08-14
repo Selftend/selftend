@@ -44,7 +44,7 @@ import {
   politeLiveRegionProps,
   spaceKeyActivationProps,
 } from "@/src/lib/accessibility";
-import { cancelReminder, getReminderTimeZone, scheduleReminder } from "@/src/lib/notifications";
+import { ensureReminderChannel, getReminderTimeZone } from "@/src/lib/notifications";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
@@ -362,8 +362,7 @@ export function RoutineEditorScreen({
       let channelFailed = false;
       let effectiveReminderEnabled = cadence !== "on-demand" && reminderEnabled;
       if (effectiveReminderEnabled && globalEnabled) {
-        const { hour, minute } = clampTime(reminderTime);
-        const result = await scheduleReminder("routine", hour, minute, user.id);
+        const result = await ensureReminderChannel(user.id);
         if (result.enabled) {
           if (preferences && !preferences.reminderConsent) {
             await updatePreferences.mutateAsync({
@@ -427,13 +426,13 @@ export function RoutineEditorScreen({
         })
       : [];
 
-  // Mirrors the notification-target-card disable path: cancelReminder (a no-op by
-  // design - delivery is server-driven) plus a preferences patch flipping ONLY this
-  // target's enabled flag. Runs exclusively on the user's tap.
+  // Mirrors the reminder row's disable path: a preferences patch flipping ONLY this
+  // target's enabled flag. Nothing to cancel on the channel - delivery is server-driven,
+  // which is why the old `cancelReminder` call here was a documented no-op (#981). Runs
+  // exclusively on the user's tap.
   async function turnOffToolReminder(target: NotificationTarget, toolLabel: string) {
-    if (!userId || !target.enabledField) return;
+    if (!userId) return;
     try {
-      await cancelReminder(target.key, userId);
       await updatePreferences.mutateAsync({ [target.enabledField]: false });
       announceMessage(t("overlap.turnedOff", { tool: toolLabel }));
       showToast({ title: t("overlap.turnedOff", { tool: toolLabel }), tone: "success" });

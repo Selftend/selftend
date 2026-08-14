@@ -3,7 +3,7 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { defaultUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { scheduleReminder } from "@/src/lib/notifications";
+import { ensureReminderChannel } from "@/src/lib/notifications";
 import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -19,13 +19,15 @@ jest.mock("@/src/features/settings/queries", () => ({
 }));
 
 jest.mock("@/src/lib/notifications", () => ({
-  scheduleReminder: jest.fn(),
+  ensureReminderChannel: jest.fn(),
+  getReminderChannelStatus: jest.fn().mockResolvedValue("prompt-needed"),
+  peekReminderChannelStatus: jest.fn().mockReturnValue("prompt-needed"),
   getReminderTimeZone: () => "Europe/Sofia",
 }));
 
 const mockUseUserPreferences = jest.mocked(useUserPreferences);
 const mockUseUpdateUserPreferences = jest.mocked(useUpdateUserPreferences);
-const mockScheduleReminder = jest.mocked(scheduleReminder);
+const mockEnsureChannel = jest.mocked(ensureReminderChannel);
 
 function setPreferences(overrides: Partial<UserPreferences> = {}) {
   const preferences = { ...defaultUserPreferences, ...overrides };
@@ -84,23 +86,28 @@ describe("ReminderPromptCard", () => {
     expect(preferences.reminderPromptedTools).toEqual([]);
   });
 
-  it("renders nothing when the tool was already prompted", () => {
+  it("renders nothing when the tool was already prompted", async () => {
     setPreferences({ reminderPromptedTools: ["mood"] });
     const mutateAsync = setUpdateMutation();
 
     renderWithProviders(<ReminderPromptCard />);
     requestPrompt("mood");
 
+    // Flush the channel-status read the card's `useReminderChannel` kicks off on mount.
+    await act(async () => {});
+
     expect(screen.queryByText("Set reminder")).toBeNull();
     expect(mutateAsync).not.toHaveBeenCalled();
   });
 
-  it("renders nothing when a reminder is already enabled for the tool", () => {
+  it("renders nothing when a reminder is already enabled for the tool", async () => {
     setPreferences({ moodRemindersEnabled: true });
     setUpdateMutation();
 
     renderWithProviders(<ReminderPromptCard />);
     requestPrompt("mood");
+
+    await act(async () => {});
 
     expect(screen.queryByText("Set reminder")).toBeNull();
   });
@@ -117,14 +124,14 @@ describe("ReminderPromptCard", () => {
     await waitFor(() => {
       expect(screen.queryByText("Set reminder")).toBeNull();
     });
-    expect(mockScheduleReminder).not.toHaveBeenCalled();
+    expect(mockEnsureChannel).not.toHaveBeenCalled();
   });
 
   it("shows translated copy, not the raw reason slug, when scheduling fails", async () => {
     setPreferences();
     const mutateAsync = setUpdateMutation();
-    mockScheduleReminder.mockResolvedValue({ enabled: false, reason: "timeout" } as Awaited<
-      ReturnType<typeof scheduleReminder>
+    mockEnsureChannel.mockResolvedValue({ enabled: false, reason: "timeout" } as Awaited<
+      ReturnType<typeof ensureReminderChannel>
     >);
     const showToastSpy = jest.spyOn(useToastStore.getState(), "showToast");
 
@@ -152,11 +159,11 @@ describe("ReminderPromptCard", () => {
     }
   });
 
-  it("schedules the reminder and stores consent on accept", async () => {
+  it("arms the channel and stores consent on accept", async () => {
     setPreferences();
     const mutateAsync = setUpdateMutation();
-    mockScheduleReminder.mockResolvedValue({ enabled: true } as Awaited<
-      ReturnType<typeof scheduleReminder>
+    mockEnsureChannel.mockResolvedValue({ enabled: true } as Awaited<
+      ReturnType<typeof ensureReminderChannel>
     >);
 
     renderWithProviders(<ReminderPromptCard />);
@@ -165,12 +172,7 @@ describe("ReminderPromptCard", () => {
     fireEvent.press(await screen.findByText("Set reminder"));
 
     await waitFor(() => {
-      expect(mockScheduleReminder).toHaveBeenCalledWith(
-        "mood",
-        expect.any(Number),
-        expect.any(Number),
-        "user-1",
-      );
+      expect(mockEnsureChannel).toHaveBeenCalledWith("user-1");
     });
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledWith(

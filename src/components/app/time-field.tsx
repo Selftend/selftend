@@ -15,19 +15,61 @@ import { dateToTime, formatHHmm, timeToDate, type TimeOfDay } from "@/src/utils/
 interface TimeFieldProps {
   value: TimeOfDay;
   onChange: (next: TimeOfDay) => void;
+  /**
+   * Fired once when the picker CLOSES, with the value the user settled on - the commit
+   * boundary for anything that persists (#981). `onChange` is the draft: the iOS spinner
+   * fires it continuously while scrolling and the web input fires it per keystroke, so a
+   * caller that writes on every `onChange` writes a row of half-typed times.
+   */
+  onCommit?: (next: TimeOfDay) => void;
   accessibilityLabel?: string;
   disabled?: boolean;
+  /** Row-sized trigger (36px, hugging its content) instead of the full-width form field. */
+  compact?: boolean;
+  /**
+   * Whether a disabled field also dims itself. Off when the CONTAINER is already dimmed -
+   * two 0.4/0.55 opacities multiply to 0.22, which erases the very value the reminders row
+   * is meant to keep showing while the master is off.
+   */
+  dimWhenDisabled?: boolean;
 }
 
-export function TimeField({ value, onChange, accessibilityLabel, disabled }: TimeFieldProps) {
+export function TimeField({
+  value,
+  onChange,
+  onCommit,
+  accessibilityLabel,
+  disabled,
+  compact,
+  dimWhenDisabled = true,
+}: TimeFieldProps) {
   const { t } = useTranslation("common");
   const reduceMotionEnabled = useReduceMotionEnabled();
   const [open, setOpen] = useState(false);
+  // The iOS spinner's live value. The modal's Done button is the commit, so the last
+  // scrolled-to value has to survive from the spinner's last onChange to that press.
+  const [draft, setDraft] = useState<TimeOfDay | null>(null);
 
-  // Android fires `dismissed` on cancel; ignore it and any missing date.
-  const commit = (event: DateTimePickerEvent, date?: Date) => {
+  // Android fires `dismissed` on cancel; ignore it and any missing date. Android has no
+  // separate close event - the OS dialog's OK IS the close - so `set` commits directly.
+  const commitAndroid = (event: DateTimePickerEvent, date?: Date) => {
     if (event.type === "dismissed" || !date) return;
-    onChange(dateToTime(date));
+    const next = dateToTime(date);
+    onChange(next);
+    onCommit?.(next);
+  };
+
+  const changeIos = (_event: DateTimePickerEvent, date?: Date) => {
+    if (!date) return;
+    const next = dateToTime(date);
+    setDraft(next);
+    onChange(next);
+  };
+
+  const closeIos = () => {
+    setOpen(false);
+    onCommit?.(draft ?? value);
+    setDraft(null);
   };
 
   const openPicker = () => {
@@ -37,10 +79,11 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
         value: timeToDate(value),
         mode: "time",
         is24Hour: true,
-        onChange: commit,
+        onChange: commitAndroid,
       });
       return;
     }
+    setDraft(null);
     setOpen(true);
   };
 
@@ -54,10 +97,11 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
         onPress={openPicker}
         className={cn(
           "h-12 w-full flex-row items-center rounded-md border border-input bg-background px-3",
-          disabled && "opacity-40",
+          compact && "h-9 w-auto self-start px-2.5",
+          disabled && dimWhenDisabled && "opacity-40",
         )}
       >
-        <Text className="text-foreground">{formatHHmm(value)}</Text>
+        <Text className={cn("text-foreground", compact && "text-sm")}>{formatHHmm(value)}</Text>
       </Pressable>
 
       {/* iOS only: Android uses the OS dialog opened above. */}
@@ -65,7 +109,7 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
         visible={open}
         transparent
         animationType={reduceMotionEnabled ? "none" : "fade"}
-        onRequestClose={() => setOpen(false)}
+        onRequestClose={closeIos}
       >
         <View className="flex-1 items-center justify-center p-6">
           {/* Dimmed backdrop - tap anywhere outside the card to close. A sibling
@@ -75,7 +119,7 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
             accessibilityLabel={t("close")}
             accessibilityRole="button"
             className="absolute inset-0 bg-black/50"
-            onPress={() => setOpen(false)}
+            onPress={closeIos}
             role="button"
             // Out of the web Tab order (invisible to sighted keyboard users, who
             // have Escape); touch-exploration screen readers keep a labeled close.
@@ -83,14 +127,15 @@ export function TimeField({ value, onChange, accessibilityLabel, disabled }: Tim
           />
           <View className="w-full max-w-[340px] rounded-2xl bg-card p-3">
             <DateTimePicker
-              value={timeToDate(value)}
+              testID="time-picker-spinner"
+              value={timeToDate(draft ?? value)}
               mode="time"
               display="spinner"
               is24Hour
-              onChange={commit}
+              onChange={changeIos}
             />
             <View className="mt-3">
-              <Button onPress={() => setOpen(false)}>
+              <Button onPress={closeIos}>
                 <Text>{t("done")}</Text>
               </Button>
             </View>

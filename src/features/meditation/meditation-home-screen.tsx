@@ -232,8 +232,11 @@ export default function MeditationHomeScreen() {
         preferredDurationMinutes: result.preferredDurationMinutes,
         preferredTimeOfDay: result.preferredTimeOfDay,
       });
+      // The wizard's preferred time seeds the reminder columns but never ENABLES the
+      // reminder (#981): enabling it here wrote no `reminder_consent` and armed no push
+      // channel, so the reminder it promised could not be delivered on any platform. The
+      // contextual prompt after the first session is what asks.
       await updatePreferences.mutateAsync({
-        meditationRemindersEnabled: result.remindersEnabled,
         meditationReminderHour: preferredTime.hour,
         meditationReminderMinute: preferredTime.minute,
         enabledModules: addModule(preferences.enabledModules, "meditation"),

@@ -6,14 +6,14 @@ import { NOTIFICATION_TARGETS, readEnabled } from "@/src/features/notifications/
 import {
   cancelAllReminders,
   clearLegacyLocalReminders,
-  scheduleReminder,
+  ensureReminderChannel,
+  reconcileWebReminderChannel,
 } from "@/src/lib/notifications";
+import { onWindowFocus } from "@/src/lib/window-focus";
 
 function anyReminderEnabled(prefs: UserPreferences): boolean {
   if (!prefs.notificationsEnabledGlobal) return false;
-  return NOTIFICATION_TARGETS.some(
-    (target) => target.status === "live" && target.schedulesOs && readEnabled(prefs, target),
-  );
+  return NOTIFICATION_TARGETS.some((target) => readEnabled(prefs, target));
 }
 
 /**
@@ -51,8 +51,7 @@ export function useNotificationSync(
         const routineReminderOn = prefs.notificationsEnabledGlobal && anyRoutineReminderEnabled;
         if (anyReminderEnabled(prefs) || routineReminderOn) {
           // Native is server-driven: this just ensures the device push token is registered.
-          // The target/hour/minute args are ignored on native.
-          await scheduleReminder("cbt", 0, 0, uid);
+          await ensureReminderChannel(uid);
         } else if (!prefs.notificationsEnabledGlobal) {
           await cancelAllReminders(uid);
         }
@@ -69,4 +68,30 @@ export function useNotificationSync(
 
     return () => subscription.remove();
   }, [preferences, userId, anyRoutineReminderEnabled]);
+
+  /**
+   * The web half, and it is a repair rather than a sync (#981). Native re-registers its token
+   * on every foreground above; web had nothing equivalent, so a deleted
+   * `web_push_subscriptions` row - which is what master-off *and every ordinary sign-out*
+   * leaves behind - meant every reminder stayed silently dead with browser permission still
+   * granted.
+   *
+   * Gated on the master rather than on any single target, deliberately: routine reminders are
+   * governed by the same master and their opt-ins are not loaded on web (no extra query for a
+   * screen that does not need them), so the master is the one condition that covers both.
+   * `reconcileWebReminderChannel` self-gates on `permission === "granted"`, so this never
+   * prompts and costs nothing for a user who has not enabled reminders.
+   *
+   * On the focus EVENT, never on a state value: a blur does not change
+   * `notificationsEnabledGlobal`, so an effect keyed on preferences alone would run once and
+   * never again.
+   */
+  useEffect(() => {
+    if (Platform.OS !== "web" || !userId || !preferences?.notificationsEnabledGlobal) return;
+    const uid = userId;
+
+    const reconcile = () => void reconcileWebReminderChannel(uid);
+    reconcile();
+    return onWindowFocus(reconcile);
+  }, [userId, preferences?.notificationsEnabledGlobal]);
 }

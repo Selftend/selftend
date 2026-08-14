@@ -139,6 +139,14 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
     // per-module hue - #587 already collapsed the identical act/primary twins here.
     "src/features/home/widgets/program-widget.tsx",
   ],
+  // #981: the reminders screen lists the same ten tools and modules as home, one row each,
+  // so it is the same identity surface wearing a different control. Its leading glyph is
+  // CHROME_MARK for the same reason home's is.
+  "the reminder rows": [
+    "src/features/notifications/notifications-screen.tsx",
+    "src/features/notifications/notification-target-row.tsx",
+    "src/features/notifications/registry.ts",
+  ],
 };
 
 /**

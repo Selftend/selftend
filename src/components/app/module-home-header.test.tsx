@@ -73,7 +73,7 @@ describe("ModuleHomeHeader action buttons", () => {
     renderHeader({ includeProgram: true });
 
     expect(screen.getByLabelText("Customise")).toBeTruthy();
-    expect(screen.getByLabelText("Notifications")).toBeTruthy();
+    expect(screen.getByLabelText("Reminders")).toBeTruthy();
     expect(screen.getByLabelText("CBT program")).toBeTruthy();
     expect(screen.getByLabelText("About this module")).toBeTruthy();
   });

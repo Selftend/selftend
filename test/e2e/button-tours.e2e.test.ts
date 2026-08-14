@@ -90,10 +90,11 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
 
     await page.goto("/tools/check-in");
 
-    // The desktop sidebar also has a "Notifications" nav link (same label), so scope to
-    // the module header's own action row via .last() - it renders after the sidebar in
-    // the DOM (see src/components/app/protected-layout.tsx).
-    await expect(page.getByLabel("Notifications", { exact: true }).last()).toBeVisible();
+    // The desktop sidebar also has a "Reminders" nav link (same label - both were renamed
+    // from "Notifications" with the screen, #981), so scope to the module header's own
+    // action row via .last() - it renders after the sidebar in the DOM (see
+    // src/components/app/protected-layout.tsx).
+    await expect(page.getByLabel("Reminders", { exact: true }).last()).toBeVisible();
     await expect(page.getByLabel("About this module", { exact: true })).toBeVisible();
 
     // None of the removed coach-mark copy/controls should ever appear.
@@ -108,10 +109,10 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
     await setTourState([]);
     await page.goto("/tools/check-in");
 
-    // See note above: the sidebar's own "Notifications" nav link shares this label, so
+    // See note above: the sidebar's own "Reminders" nav link shares this label, so
     // the module header's action button is the LAST match, not the first.
-    await page.getByLabel("Notifications", { exact: true }).last().click();
-    await expect(page.getByRole("heading", { name: "Notifications", exact: true })).toBeVisible();
+    await page.getByLabel("Reminders", { exact: true }).last().click();
+    await expect(page.getByRole("heading", { name: "Reminders", exact: true })).toBeVisible();
   });
 
   test("info action still fires onPress (opens the module's onboarding)", async ({ page }) => {

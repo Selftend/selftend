@@ -66,7 +66,7 @@ Progress comes from clear intentions, not from force. The practitioner is a gard
 - Stage 1 home card: today's sit slot, current streak shown _only as continuity-of-practice context_ (no fire emojis, no warnings), one-tap start.
 - Six-Point Preparation as an opt-in pre-sit checklist; collapses to a single tap once the user marks it familiar.
 - Four-Step Transition as an opt-in 30-60 s guided opener at the start of the timer.
-- Routine builder: preferred time of day, preferred duration, optional quiet reminder.
+- Routine builder: preferred time of day and preferred duration. The reminder itself is offered after the first sit, on the reminders screen or the contextual prompt - not inside the builder.
 
 **Key prompts (post-sit):**
 
@@ -460,7 +460,7 @@ Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 i
    - "Can you notice you've been distracted before you've fully forgotten the breath?" → no = Stage 2; yes = Stage 3+
    - "Have you ever experienced extended periods (minutes) of breath sensation with no thoughts at all?" → yes = Stage 4+ candidate
 4. **The Gardener's Mindset** - compass + sitting-on-the-path illustrations. Three short bullets: _patience over force_, _intention over willpower_, _every sit is the right sit_. Anchors the tone of the rest of the product.
-5. **Commit to a slot** - pick a daily time and duration (10 / 15 / 20 / 30 / custom). Optional reminder toggle (default off). Writes to `user_preferences` and creates the initial `meditation_program_state` row.
+5. **Commit to a slot** - pick a daily time and duration (10 / 15 / 20 / 30 / custom). Writes to `user_preferences` and creates the initial `meditation_program_state` row. The chosen time seeds the meditation reminder columns but never enables the reminder: the wizard is the wrong place to ask for notification permission, so the contextual prompt after the first sit asks instead.
 
 Onboarding can be skipped after Step 1; doing so lands the user on Stage 1 by default.
 

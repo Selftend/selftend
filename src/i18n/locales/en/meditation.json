@@ -315,8 +315,6 @@
       "stageHint": "Based on your answers, Stage {{stage}} is suggested - you can override it.",
       "stageOption": "Stage {{stage}}",
       "startingAt": "We'll start you at Stage {{stage}}.",
-      "reminderLabel": "Quiet daily reminder",
-      "reminderHint": "Off by default. You can always change this in settings.",
       "finish": "Got it",
       "saving": "Saving...",
       "error": "Could not save. Please try again."
