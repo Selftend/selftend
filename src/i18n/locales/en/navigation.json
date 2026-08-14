@@ -76,7 +76,6 @@
     "greetingEvening": "Good evening",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "dashboardSub": "Tools you check in with each day",
     "emptyTitle": "Add tools you want to check in with each day",
     "emptyDescription": "Build a dashboard yourself, or answer a few questions for tailored suggestions.",
     "addManually": "Add manually",
@@ -135,8 +134,9 @@
     }
   },
   "home": {
-    "editLabel": "Edit widgets",
     "doneLabel": "Done",
+    "arrangeLabel": "Arrange",
+    "addToolLabel": "Add tool",
     "editingHint": "Drag to rearrange",
     "added": "Added",
     "addToHome": {

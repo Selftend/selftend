@@ -4,6 +4,8 @@ import { usePathname } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 import {
+  getNoTourTargetKeys,
+  getRegisteredTourTargetKeys,
   getTourTarget,
   getTourTargetVersion,
   subscribeTourTargets,
@@ -36,12 +38,30 @@ export function HomeTour(): React.JSX.Element | null {
     () => getTourTargetVersion(),
     () => 0,
   );
+  /**
+   * The same store read as DATA rather than as a version counter, and the queue below
+   * filters on this value rather than calling `getTourTarget` inline.
+   *
+   * That distinction is the whole fix. `getTourTarget` is an imperative read of a module
+   * store, so a queue expression built from it gets memoized by the React Compiler on the
+   * reactive values it happens to mention - `preferences` and `pathname` - and never
+   * re-runs when a target registers LATE. Harmless while every home target mounted on the
+   * first render; #979 made home's edit cluster mount only after the widget query settles,
+   * and the tip froze on whichever stop was showing. Reading through
+   * `useSyncExternalStore` puts the registry in the dependency graph where the compiler
+   * can see it. Invisible to jest, where the compiler never runs - the e2e caught it.
+   */
+  const registeredKeys = useSyncExternalStore(
+    subscribeTourTargets,
+    getRegisteredTourTargetKeys,
+    getNoTourTargetKeys,
+  );
 
   const shown = preferences?.shownButtonTours ?? [];
   const queue =
     preferences?.appOnboardingCompleted && pathname === "/"
       ? HOME_TOUR_STOPS.filter(
-          (stop) => !shown.includes(stop.storageKey) && getTourTarget(stop.targetKey) !== null,
+          (stop) => !shown.includes(stop.storageKey) && registeredKeys.includes(stop.targetKey),
         )
       : [];
   const current = queue[0] ?? null;

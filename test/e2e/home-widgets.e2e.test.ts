@@ -78,8 +78,10 @@ test.describe("home widget management", () => {
     await expect(page.getByText(ADD_WIDGET_TITLE)).toBeVisible({ timeout: 15_000 });
 
     // --- Enter edit mode and remove the widget we just added ---
-    // The edit button has accessibilityLabel t("home.editLabel") = "Edit widgets"
-    const editButton = page.getByRole("button", { name: "Edit widgets", exact: true });
+    // The header cluster is `tune` + `Add tool`, and it mounts only now that the tool
+    // tier is non-empty (#979): on the empty screen this test started from, neither
+    // action existed. The tune action carries t("home.arrangeLabel") = "Arrange".
+    const editButton = page.getByRole("button", { name: "Arrange", exact: true });
     await expect(editButton).toBeVisible({ timeout: 10_000 });
     await editButton.click();
 
@@ -104,9 +106,16 @@ test.describe("home widget management", () => {
     });
     await expect(page.getByText("Add tools you want to check in with each day")).toBeVisible();
 
-    // Exit edit mode.
-    const doneButton = page.getByRole("button", { name: "Done", exact: true }).first();
-    await doneButton.click();
+    // --- The header cluster leaves with the last tool row (#979) ---
+    // There is no "exit edit mode" step any more, and that is the point: both header
+    // actions act on rows, so removing the last one unmounts the cluster and drops the
+    // screen back out of arrange mode by itself. Asserting the hint is gone proves the
+    // mode did not survive its own controls.
+    await expect(page.getByRole("button", { name: "Arrange", exact: true })).toBeHidden({
+      timeout: 10_000,
+    });
+    await expect(page.getByRole("button", { name: "Add tool", exact: true })).toBeHidden();
+    await expect(page.getByText("Drag to rearrange")).toBeHidden();
 
     // --- Widget reorder (DONE_WITH_CONCERNS) ---
     // Sortable.Flex drag-handles are notoriously fiddly via Playwright synthetic events.

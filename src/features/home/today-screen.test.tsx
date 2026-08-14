@@ -1,23 +1,39 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import type { ReactNode } from "react";
-import { View as mockView } from "react-native";
+import { ActivityIndicator, useWindowDimensions } from "react-native";
 
 import HomeScreen from "./today-screen";
+import { getTourTarget } from "@/src/features/tours/tour-targets";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockWidgetIds: string[] = [];
+/**
+ * Rows that exist in `widget_preferences` but that this build does not render. They are
+ * the difference between the filtered read and the unfiltered table - the distinction the
+ * `Get suggestions` gate turns on, and one this screen can only be tested against if the
+ * mock can express it.
+ */
+let mockUnimplementedIds: string[] = [];
+let mockIsLoading = false;
+/** The query settled with no data: disabled, or errored. `isLoading` is false in both. */
+let mockPreferencesUndefined = false;
 const mockAddWidget = jest.fn();
 const mockRemoveWidget = jest.fn();
 const mockRestoreWidget = jest.fn();
 const mockReorderWidgets = jest.fn();
 
-jest.mock("react-native-svg", () => {
-  const View = mockView;
-  return {
-    Svg: ({ children }: { children?: ReactNode }) => <View>{children}</View>,
-    Circle: () => null,
-  };
-});
+jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
+const mockDimensions = useWindowDimensions as unknown as jest.Mock;
+/**
+ * The screen reads its own breakpoint, and jest's default width (750) sits on the DESKTOP
+ * side of it - so without setting this every test would exercise the wide face and the
+ * phone face would ship uncovered.
+ */
+const atWidth = (width: number) => mockDimensions.mockReturnValue({ width, height: 900 });
 
 jest.mock("react-native-sortables", () => {
   const { Fragment } = require("react");
@@ -88,8 +104,10 @@ jest.mock("@/src/stores/selected-date-store", () => ({
 
 jest.mock("@/src/features/home/queries", () => ({
   useWidgetPreferences: () => ({
-    data: mockWidgetIds.map((widgetId, position) => ({ widgetId, position })),
-    isLoading: false,
+    data: mockPreferencesUndefined
+      ? undefined
+      : mockWidgetIds.map((widgetId, position) => ({ widgetId, position })),
+    isLoading: mockIsLoading,
     refetch: jest.fn(),
     isRefetching: false,
   }),
@@ -124,7 +142,7 @@ jest.mock("@/src/features/home/add-widget-modal", () => {
 jest.mock("@/src/features/home/widget-registry", () => {
   const { View } = require("react-native");
   return {
-    isImplemented: () => true,
+    isImplemented: (widgetId: string) => !mockUnimplementedIds.includes(widgetId),
     // The id IS the title key here, so an edit-mode control is labelled
     // "Remove mood-checkin" and the assertions below name ids rather than
     // shipped copy. Two failure modes this avoids: the old form was
@@ -159,7 +177,11 @@ jest.mock("@/src/features/routines/use-routine-tool-records", () => ({
 
 beforeEach(() => {
   mockWidgetIds = [];
+  mockUnimplementedIds = [];
+  mockIsLoading = false;
+  mockPreferencesUndefined = false;
   jest.clearAllMocks();
+  atWidth(900);
   for (const mutation of [mockAddWidget, mockRemoveWidget, mockRestoreWidget, mockReorderWidgets]) {
     mutation.mockImplementation((_value, options) => options?.onSuccess?.());
   }
@@ -253,16 +275,34 @@ describe("HomeScreen routines row on a day with nothing scheduled (inverts #104)
     useRoutines.mockReturnValue({ data: [makeRoutine("on-demand")], isLoading: false });
 
     renderHomeWithRoutinesWidget();
-    fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
+    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
 
     expect(screen.getByTestId("tool-row-routines-today")).toBeTruthy();
   });
 });
 
-describe("HomeScreen hero", () => {
-  it("renders the greeting hero with date eyebrow", () => {
+describe("HomeScreen greeting", () => {
+  it("renders the greeting with the date eyebrow", () => {
     renderWithProviders(<HomeScreen />);
     expect(screen.getByText(/good (morning|afternoon|evening)\./i)).toBeTruthy();
+  });
+
+  /**
+   * The whole of #960 in one assertion, and it is stated as a COUNT on purpose.
+   *
+   * The obvious form - `queryByTestId("dashboard-sub")).toBeNull()` - passes forever the
+   * moment the node it names stops existing, so it stops testing anything the day it
+   * starts being true. Counting the greeting block's children instead fails the moment
+   * anyone adds a third line, whatever they call it.
+   */
+  it("renders exactly two elements - eyebrow and h1 - and no third line", () => {
+    renderWithProviders(<HomeScreen />);
+    expect(screen.getByTestId("home-greeting").children).toHaveLength(2);
+  });
+
+  it("keeps the greeting at two elements on a populated dashboard too", () => {
+    renderPopulatedHome();
+    expect(screen.getByTestId("home-greeting").children).toHaveLength(2);
   });
 
   it("renders the Your tools tier heading", () => {
@@ -273,11 +313,6 @@ describe("HomeScreen hero", () => {
   it("renders empty state when no widgets are present", () => {
     renderWithProviders(<HomeScreen />);
     expect(screen.getByText(/add tools you want to check in/i)).toBeTruthy();
-  });
-
-  it("renders Add tool button", () => {
-    renderWithProviders(<HomeScreen />);
-    expect(screen.getByRole("button", { name: /add to your dashboard/i })).toBeTruthy();
   });
 
   it("opens the add-widget modal from the manual action", () => {
@@ -297,7 +332,7 @@ describe("HomeScreen hero", () => {
     renderPopulatedHome();
 
     expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
-    fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
+    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
 
     expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
     fireEvent.press(screen.getAllByRole("button", { name: "Done" })[0]);
@@ -306,7 +341,7 @@ describe("HomeScreen hero", () => {
 
   it("undoes multiple removals in reverse order", () => {
     renderPopulatedHome();
-    fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
+    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
 
     fireEvent.press(screen.getByRole("button", { name: "Remove mood-checkin" }));
     fireEvent.press(screen.getByRole("button", { name: "Remove sleep-latest" }));
@@ -325,6 +360,221 @@ describe("HomeScreen hero", () => {
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
     expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
+  });
+});
+
+/**
+ * The header cluster is `tune` + `Add tool`, and it renders iff the TOOL tier is
+ * non-empty. Both actions act on rows; with no rows there is nothing to arrange and
+ * nothing to add beside, and the dashed box carries its own `Add manually` so no door
+ * closes.
+ */
+describe("HomeScreen header actions (#979)", () => {
+  it("renders neither action while the tool tier is empty", () => {
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.queryByRole("button", { name: "Arrange" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add tool" })).toBeNull();
+  });
+
+  it("renders exactly the two actions once a tool row is owned", () => {
+    renderPopulatedHome();
+
+    expect(screen.getByRole("button", { name: "Arrange" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Add tool" })).toBeTruthy();
+  });
+
+  it("still withholds them when the only rows are programme cards", () => {
+    // The tier that owns the actions is `Your tools`, so a programme card does not
+    // conjure them - the same split the dashed box is on.
+    mockWidgetIds = ["cbt-programme"];
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.getByTestId("widget-cbt-programme")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Arrange" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add tool" })).toBeNull();
+  });
+
+  it("opens the add-widget modal from the header action", () => {
+    renderPopulatedHome();
+    fireEvent.press(screen.getByRole("button", { name: "Add tool" }));
+
+    expect(screen.getByTestId("add-widget-modal-visible")).toBeTruthy();
+  });
+
+  /**
+   * The two faces. Phone is 36px icon-only; desktop puts the label beside the glyph. Both
+   * carry the same `accessibilityLabel`, so the icon-only face is never an unnamed glyph -
+   * which is what makes shrinking it to a square safe at all.
+   */
+  it("draws 36px icon-only actions on phone, with the label still announced", () => {
+    atWidth(390);
+    renderPopulatedHome();
+
+    for (const name of ["Arrange", "Add tool"]) {
+      const button = screen.getByRole("button", { name });
+      expect(button.props.className as string).toContain("h-9 w-9");
+    }
+    // The label is announced, not drawn: no visible text node carries it on phone.
+    expect(screen.queryByText("Add tool")).toBeNull();
+  });
+
+  it("labels the actions in text on desktop", () => {
+    atWidth(900);
+    renderPopulatedHome();
+
+    expect(screen.getByText("Arrange")).toBeTruthy();
+    expect(screen.getByText("Add tool")).toBeTruthy();
+  });
+
+  /**
+   * The tour half of the same fact. `HomeTour` builds its queue from targets that are
+   * already REGISTERED (`getTourTarget(...) !== null`), so an unmounted cluster makes the
+   * `home:edit` stop skip itself - and skipping is not dismissing, so the stop is never
+   * written to `shown_button_tours` and still fires the first time the user owns a tool.
+   */
+  it("leaves home-edit unregistered while the cluster is unmounted, and registers it after", () => {
+    const { unmount } = renderWithProviders(<HomeScreen />);
+    expect(getTourTarget("home-edit")).toBeNull();
+    unmount();
+
+    renderPopulatedHome();
+    expect(getTourTarget("home-edit")).not.toBeNull();
+  });
+
+  /**
+   * Removing the last tool row while arranging must not strand the mode on with no
+   * control left to turn it off - the next added row would arrive wearing drag handles.
+   */
+  it("drops out of arrange mode when the last tool row is removed", () => {
+    renderPopulatedHome();
+    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
+    expect(screen.getByText("Drag to rearrange")).toBeTruthy();
+
+    mockWidgetIds = [];
+    fireEvent.press(screen.getByRole("button", { name: "Remove mood-checkin" }));
+
+    expect(screen.queryByText("Drag to rearrange")).toBeNull();
+    expect(screen.getByTestId("home-empty-state")).toBeTruthy();
+  });
+});
+
+/**
+ * The dashed box is the TOOL TIER's empty state, and the offer inside it is gated one
+ * level wider than the box itself. Both halves are consequences of
+ * `apply_widget_recommendations` opening with a whole-table delete.
+ */
+describe("HomeScreen empty state (#979)", () => {
+  it("renders the box beside a programme card, not instead of it", () => {
+    mockWidgetIds = ["cbt-programme"];
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.getByTestId("home-empty-state")).toBeTruthy();
+    expect(screen.getByTestId("widget-cbt-programme")).toBeTruthy();
+  });
+
+  it("offers Add manually alone once any row exists, whatever tier it is in", () => {
+    mockWidgetIds = ["cbt-programme"];
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.getByRole("button", { name: /add manually/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /get suggestions/i })).toBeNull();
+  });
+
+  /**
+   * The gate is the UNFILTERED row count. A preference row this build cannot render is
+   * invisible on screen but present in the table, and `apply_widget_recommendations`
+   * would delete it just the same - so the offer has to stay hidden even though the
+   * screen looks completely empty.
+   */
+  it("withholds Get suggestions when the only row is one this build cannot render", () => {
+    mockWidgetIds = ["some-future-widget"];
+    mockUnimplementedIds = ["some-future-widget"];
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.getByTestId("home-empty-state")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /add manually/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /get suggestions/i })).toBeNull();
+  });
+
+  it("offers both choices, Add manually first, on a wholly empty dashboard", () => {
+    renderWithProviders(<HomeScreen />);
+
+    // Order is the assertion, not just presence: `Add manually` leads.
+    const order = screen.UNSAFE_root.findAll(
+      (node) =>
+        node.props?.children === "Add manually" || node.props?.children === "Get suggestions",
+    )
+      .map((node) => node.props.children as string)
+      // One label is carried by a stack of Text wrappers, so keep first sightings only.
+      .filter((label, index, all) => all.indexOf(label) === index);
+    expect(order).toEqual(["Add manually", "Get suggestions"]);
+  });
+
+  /**
+   * Neither is primary. Three different arrangements existed across the two drawn frames
+   * and the shipped code, so there was nothing to preserve - and the two are peers, one
+   * building the dashboard by hand and the other by questionnaire.
+   *
+   * Asserted on the class string rather than a computed style: NativeWind never resolves
+   * `className` into `style` under jest, so a style assertion here would read `undefined`
+   * and pass for the wrong reason.
+   */
+  it("gives both choices the outline variant, neither the primary fill", () => {
+    renderWithProviders(<HomeScreen />);
+
+    for (const name of [/add manually/i, /get suggestions/i]) {
+      const className = screen.getByRole("button", { name }).props.className as string;
+      expect(className).toContain("border-border");
+      expect(className).not.toContain("bg-primary");
+    }
+  });
+
+  /** A loading surface never claims emptiness. */
+  it("renders the spinner while loading and never falls through to the box", () => {
+    mockIsLoading = true;
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.queryByTestId("home-empty-state")).toBeNull();
+    expect(screen.queryByText(/add tools you want to check in/i)).toBeNull();
+    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+  });
+
+  /**
+   * `undefined` is not zero, and this is the case `isLoading` does NOT cover: the query is
+   * disabled (no user id yet on web hydration) or it errored, so `isLoading` is false and
+   * `data` never arrived. The box may render - an unknown dashboard and an empty one look
+   * the same - but the offer to REWRITE the table must not, because
+   * `apply_widget_recommendations` would delete rows nobody has seen.
+   */
+  it("withholds Get suggestions when the preference rows never arrived", () => {
+    mockPreferencesUndefined = true;
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.getByTestId("home-empty-state")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /add manually/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /get suggestions/i })).toBeNull();
+  });
+
+  /**
+   * The ring is 44px on desktop and 42px on phone, and both are plain classes rather than
+   * SVG props - which is the whole reason `BreathingDotEmpty` and its 8-palette render
+   * test could go. `includeHiddenElements` is required: the mark is decoration, so it is
+   * `accessibilityElementsHidden`, and RNTL hides such subtrees from queries by default.
+   */
+  it("draws the mark at 44px on desktop and 42px on phone", () => {
+    const markClass = () =>
+      screen.getByTestId("home-empty-mark", { includeHiddenElements: true }).props
+        .className as string;
+
+    atWidth(900);
+    renderWithProviders(<HomeScreen />);
+    expect(markClass()).toContain("size-11");
+
+    screen.unmount();
+    atWidth(390);
+    renderWithProviders(<HomeScreen />);
+    expect(markClass()).toContain("size-[42px]");
   });
 });
 
@@ -414,7 +664,7 @@ describe("HomeScreen tiers", () => {
     // renumber 0..n-1 over both tiers - the renderer re-partitions and the row snaps
     // back, which reads as "drag does nothing" rather than as a wrong write.
     renderMixedHome();
-    fireEvent.press(screen.getByRole("button", { name: "Edit widgets" }));
+    fireEvent.press(screen.getByRole("button", { name: "Arrange" }));
 
     fireEvent.press(screen.getByRole("button", { name: "Move sleep-latest earlier" }));
 

@@ -76,7 +76,6 @@
     "greetingEvening": "Добър вечер",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "dashboardSub": "Инструменти, с които се проверяваш всеки ден",
     "emptyTitle": "Добави инструменти, с които искаш да се проверяваш всеки ден",
     "emptyDescription": "Подреди таблото самостоятелно или отговори на няколко въпроса за подходящи предложения.",
     "addManually": "Добави ръчно",
@@ -135,8 +134,9 @@
     }
   },
   "home": {
-    "editLabel": "Редактирай джаджите",
     "doneLabel": "Готово",
+    "arrangeLabel": "Подреди",
+    "addToolLabel": "Добави инструмент",
     "editingHint": "Плъзни за пренареждане",
     "added": "Добавено",
     "addToHome": {

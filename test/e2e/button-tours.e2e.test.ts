@@ -1,6 +1,6 @@
 import { expect, NORMALIZED_GATE_PREFS, test } from "./fixtures";
 
-import { createServiceClient } from "./helpers";
+import { createServiceClient, resetWidgetPreferencesForUser } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
 
 // Home dashboard's two surviving first-run tips, in HOME_TOUR_STOPS order
@@ -142,11 +142,49 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
     originalPreferences = await getPreferenceRow();
   });
 
+  /**
+   * The `home:edit` stop points at home's header cluster, and since #979 that cluster
+   * mounts only when the TOOL tier is non-empty. Pool users start with no widget
+   * preferences and other specs clear them, so a tip test that does not own a tool row is
+   * asserting against a target that was never registered. Seeding one makes these tests
+   * say what they mean instead of depending on what ran before them.
+   */
+  async function ownOneToolRow() {
+    const admin = createServiceClient();
+    await resetWidgetPreferencesForUser(USER_ID);
+    const { error } = await admin
+      .from("widget_preferences")
+      .insert([{ user_id: USER_ID, widget_id: "mood-checkin", position: 0 }]);
+    if (error) throw new Error(`Could not seed a widget preference: ${error.message}`);
+  }
+
   test.afterEach(async () => {
     await restoreOriginalPreferences();
+    await resetWidgetPreferencesForUser(USER_ID);
+  });
+
+  test("skips the edit tip on an empty dashboard without marking it shown", async ({ page }) => {
+    // Skipping is not dismissing. With no tool row the cluster is unmounted, so the stop
+    // must fall out of the queue and stay unwritten - otherwise the tip burns itself on
+    // the one screen where it has nothing to point at.
+    await resetWidgetPreferencesForUser(USER_ID);
+    await setTourState([]);
+
+    await page.goto("/");
+
+    // The navigation stop takes its place; the edit copy never appears.
+    await expect(page.getByText(/Find all Modules and Tools here\./i)).toBeVisible();
+    await expect(
+      page.getByText(/Arrange the dashboard your way - add, remove and reorder widgets\./i),
+    ).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Got it", exact: true }).click();
+
+    await expect.poll(getShownButtonTours).toEqual(["home:navigation"]);
   });
 
   test("shows the edit (dashboard) tip and Got it dismisses only that stop", async ({ page }) => {
+    await ownOneToolRow();
     await setTourState([]);
 
     await page.goto("/");
@@ -162,6 +200,7 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
   test("Skip all tips dismisses both remaining home stops (no check-in or day-strip tip)", async ({
     page,
   }) => {
+    await ownOneToolRow();
     await setTourState([]);
 
     await page.goto("/");
