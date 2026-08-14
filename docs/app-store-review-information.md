@@ -54,7 +54,9 @@ Selftend is a free, non-profit, open-source **wellness and guided self-help** ap
 
 The **DBT** module is a nav entry badged **"Soon"** leading to a screen headed _"On the roadmap"_. Under a citation that is specifically about app completeness, that is the most plausible thing a reviewer would point at, and it is the only "coming soon" surface in build 6 — the widget picker's `Soon` chip exists in code but has nothing to render, because all 28 catalogued widgets are implemented.
 
-A copy change cannot reach build 6, so the only lever is the reply, which therefore names DBT as an educational overview of a planned module rather than leaving the reviewer to discover it. Whether the placeholder should survive into the next build is a separate question, tracked on the map.
+A copy change cannot reach build 6, so the only lever is the reply, which therefore names DBT as an educational overview of a planned module rather than leaving the reviewer to discover it.
+
+⚠️ **Everything above this line describes build 6 and must stay that way until the next release ships.** Whether the placeholder should survive was settled on [#1020](https://github.com/Selftend/selftend/issues/1020): it does not. On `dev`, the "Soon" badge, the "On the roadmap" screen and the **"Beta"** badges on CBT and ACT are all gone — DBT is now framed as an overview of the approach, which is what the screen always was. None of that reaches build 6, so **this document must not be updated to match `dev` until the release that carries it is the build under review** — the reply quoted below is sized and worded against build 6, and item 3 is measured with only 73 characters to spare.
 
 ## Item 4 — Setting up and accessing the main features
 

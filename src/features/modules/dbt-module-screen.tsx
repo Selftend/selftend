@@ -20,6 +20,18 @@ const SKILL_KEYS = [
   "interpersonal",
 ] as const;
 
+// This screen is an OVERVIEW, and #1020 made it say so rather than leaving it to
+// be inferred. Its content never changed: four skill groups, explained, with the
+// crisis callout under them - a complete piece of background reading, and the
+// only thing missing was any exercise to do, which nothing here now offers.
+//
+// What came off was the framing. It used to open with an eyebrow reading
+// "Module · DBT", a description ending "On the roadmap." and a card headed "On
+// the roadmap" - three promises of a module that does not exist, inside a binary
+// Apple had cited under Guideline 2.1 *App Completeness*. `statusTitle` /
+// `statusBody` were renamed to `aboutTitle` / `aboutBody` in the same pass: with
+// no status left to report, the old names described a machine that isn't here.
+
 export default function DbtModuleScreen() {
   const { t } = useTranslation("modules");
 
@@ -43,9 +55,9 @@ export default function DbtModuleScreen() {
                 <Icon name="anchor" className="size-7 text-muted-foreground" />
               </View>
               <View className="flex-1 gap-1">
-                <Text className="text-base font-semibold">{t("dbt.statusTitle")}</Text>
+                <Text className="text-base font-semibold">{t("dbt.aboutTitle")}</Text>
                 <Text variant="muted" className="text-sm leading-5">
-                  {t("dbt.statusBody")}
+                  {t("dbt.aboutBody")}
                 </Text>
               </View>
             </CardHeader>
