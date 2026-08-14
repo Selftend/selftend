@@ -435,6 +435,40 @@ describe("HomeScreen empty state (#979)", () => {
     expect(screen.queryByRole("button", { name: /get suggestions/i })).toBeNull();
   });
 
+  /**
+   * The other half of #964. Withholding the destructive offer stopped the wipe; it did
+   * not stop the box telling a user with a full table that they have added nothing. No
+   * OTA channel means an old build can outlive the ids a newer one wrote, so this is
+   * permanent by construction rather than a migration window.
+   */
+  it("says the rows need a newer build, not that nothing was added", () => {
+    mockWidgetIds = ["some-future-widget"];
+    mockUnimplementedIds = ["some-future-widget"];
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.getByText(/needs a newer version/i)).toBeTruthy();
+    expect(screen.queryByText(/Add tools you want to check in with each day/i)).toBeNull();
+    // The recovery affordance stays: this user can still build a dashboard by hand.
+    expect(screen.getByRole("button", { name: /add manually/i })).toBeTruthy();
+  });
+
+  it("still says nothing-added-yet when the table really is empty", () => {
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.getByText(/Add tools you want to check in with each day/i)).toBeTruthy();
+    expect(screen.queryByText(/needs a newer version/i)).toBeNull();
+  });
+
+  // One renderable row is enough to make the tier real, so the unsupported line must not
+  // appear beside rows the user can actually see.
+  it("does not claim an unsupported dashboard when something does render", () => {
+    mockWidgetIds = ["cbt-programme", "some-future-widget"];
+    mockUnimplementedIds = ["some-future-widget"];
+    renderWithProviders(<HomeScreen />);
+
+    expect(screen.queryByText(/needs a newer version/i)).toBeNull();
+  });
+
   it("offers both choices, Add manually first, on a wholly empty dashboard", () => {
     renderWithProviders(<HomeScreen />);
 

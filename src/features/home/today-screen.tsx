@@ -187,6 +187,22 @@ export default function HomeScreen() {
   const dashboardIsEmpty = preferences !== undefined && preferences.length === 0;
 
   /**
+   * Rows exist, and NONE of them is something this build can render (#964).
+   *
+   * `isImplemented` filters ids the running build does not know, and the repo has no OTA
+   * channel - old native builds persist indefinitely - so a user who rebuilt their
+   * dashboard on web out of newer ids opens their phone to a screen with nothing on it.
+   *
+   * The destructive half of this is already handled: `Get suggestions` is gated on the
+   * UNFILTERED count, so it cannot offer to rewrite a table it cannot see. What was left
+   * is that the box then said "Add tools you want to check in with each day" to someone
+   * who has added plenty - home stating something false about the user's record, which is
+   * the one thing an empty state must never do.
+   */
+  const dashboardIsUnsupported =
+    preferences !== undefined && preferences.length > 0 && widgetIds.length === 0;
+
+  /**
    * Home no longer writes to `widget_preferences` at all - it reads them and renders
    * them. Add, remove, reorder and undo moved to `/arrange` with the mode that used to
    * host them (#980), so there is no mutation on this screen to guard, no undo stack to
@@ -334,13 +350,17 @@ export default function HomeScreen() {
                   <EmptyStateMark wide={wide} />
                   <View className="items-center gap-1.5 px-6">
                     <Text className="text-center text-[15px] font-semibold">
-                      {t("today.emptyTitle")}
+                      {t(dashboardIsUnsupported ? "today.unsupportedTitle" : "today.emptyTitle")}
                     </Text>
                     <Text
                       variant="muted"
                       className="text-center text-[13px] leading-relaxed max-w-[34ch]"
                     >
-                      {t("today.emptyDescription")}
+                      {t(
+                        dashboardIsUnsupported
+                          ? "today.unsupportedDescription"
+                          : "today.emptyDescription",
+                      )}
                     </Text>
                   </View>
                   {/*
