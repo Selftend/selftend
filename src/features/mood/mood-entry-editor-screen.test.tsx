@@ -329,8 +329,9 @@ describe("MoodEntryEditorScreen", () => {
 
     /**
      * The seed rides a store, never the URL. A route param would put the user's emotions
-     * in the web address bar, in browser history, and in Sentry's navigation breadcrumbs —
-     * `dropConsoleBreadcrumb` in `sentry.ts` drops *console* breadcrumbs only.
+     * in the web address bar and in browser history. (`scrubBreadcrumb` in `sentry.ts`
+     * now strips query strings off navigation breadcrumbs too, per #996 - but that is a
+     * backstop for paths already-shipped builds mint, not a licence to send data there.)
      */
     it("hands the picked emotions over out of band, not in the URL", () => {
       renderWithProviders(<MoodEntryEditorScreen fallbackHref="/tools/check-in" mode="create" />);
