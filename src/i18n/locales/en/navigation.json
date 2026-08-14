@@ -139,9 +139,9 @@
       "hint": "Drag to reorder, or remove what you don't check in with.",
       "handle": "Reorder {{title}}",
       "handleHint": "Use the up and down arrow keys to move this tool.",
-      "addHeading": "Add a tool",
+      "addHeading": "Add to your home screen",
       "addChip": "Add {{title}}",
-      "allAdded": "Every tool is already on your home screen."
+      "allAdded": "Everything is already on your home screen."
     },
     "addToHome": {
       "button": "Add to home",

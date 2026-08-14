@@ -1,6 +1,6 @@
 import { ActivityIndicator, RefreshControl, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { memo, useMemo, useState } from "react";
+import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
@@ -17,7 +17,8 @@ import { useUserProfile } from "@/src/features/profile/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
-import { isImplemented, metaForWidget, resolveWidget } from "@/src/features/home/widget-registry";
+import { resolveWidget } from "@/src/features/home/widget-registry";
+import { useWidgetTiers } from "@/src/features/home/widget-tiers";
 import { ToolTierRow } from "@/src/features/home/tool-row-stats";
 import { RightNowTier } from "@/src/features/home/right-now-tier";
 import { useWidgetPreferences } from "@/src/features/home/queries";
@@ -28,8 +29,6 @@ import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 import { cn } from "@/lib/utils";
 
 const PADDING = 24;
-/** The `Guided programmes` tier's fixed order. */
-const PROGRAMME_ORDER = ["cbt-programme", "act-programme"];
 /**
  * Phone below, desktop at or above - the same 640 breakpoint and the same
  * `useWindowDimensions` source `ToolRow` uses, so the header actions and the rows they
@@ -156,43 +155,16 @@ export default function HomeScreen() {
 
   const editButtonsRef = useTourTargetRef("home-edit");
 
-  const widgetIds = useMemo(
-    () => (preferences ?? []).map((p) => p.widgetId).filter(isImplemented),
-    [preferences],
-  );
-
   /**
-   * One ordered list, partitioned by tier (#950). `widget_preferences` keeps a single
-   * `position` sequence; which tier an id belongs to is declared by the registry, so the
-   * renderer partitions rather than the table growing a column.
+   * The tier partition, shared with `/arrange` rather than restated here (see
+   * `widget-tiers.ts`). Both screens must agree on it or they lie to each other.
    *
    * Day-level slot suppression is GONE with the fixed-height grid: `routines-today` used
    * to be withheld entirely on a day with nothing scheduled, because a 200px empty card
    * was worse than no card. A row costs one line and says "Nothing scheduled today",
    * which is a fact the old grid had no room to state.
    */
-  const toolIds = useMemo(
-    () => widgetIds.filter((id) => metaForWidget(id)?.tier === "tool"),
-    [widgetIds],
-  );
-  /**
-   * Fixed order, CBT then ACT (#977) - deliberately NOT `position` order like the tool
-   * tier. Onboarding writes these ids in the order the user tapped the module chips, so
-   * `position` would seat ACT first for anyone who picked it first, and the tier is two
-   * cards with no reason to vary.
-   *
-   * ⚠️ It follows that the programme tier is not user-orderable. #980's arrange screen
-   * honours that (owner decision, 2026-08-14): programme rows there get remove and
-   * re-add, and no drag handle - a drag that writes a position this renderer then ignores
-   * is the row-snaps-back lie #975 removed from the tool tier.
-   */
-  const programmeIds = useMemo(
-    () =>
-      PROGRAMME_ORDER.filter(
-        (id) => widgetIds.includes(id) && metaForWidget(id)?.tier === "programme",
-      ),
-    [widgetIds],
-  );
+  const { widgetIds, toolIds, programmeIds } = useWidgetTiers(preferences);
 
   /**
    * `Get suggestions` runs `apply_widget_recommendations`, which opens with

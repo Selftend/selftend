@@ -149,9 +149,23 @@ test.describe("home arrange screen", () => {
       .poll(() => renderedToolOrder(page), { timeout: 10_000 })
       .toEqual(["sleep-latest", "mood-checkin", "self-care"]);
 
-    // The programme row never entered the write: `set_widget_order` reassigns only the
-    // positions its named ids already hold, and only the tool tier is named. It has no
-    // handle at all - its order is not the user's to set (#977).
+    // ☠️ And AGAIN, without re-focusing. Reordering by keyboard has to work more than
+    // once per row: `focusable` is `tabIndex` under react-native-web, so if the handle
+    // stopped being focusable while the write settled, this second press would land on
+    // the document and the row would stop moving after one step.
+    await expect(firstHandle).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect
+      .poll(() => storedOrder(user.id), { timeout: 10_000 })
+      .toEqual(["sleep-latest", "self-care", "cbt-programme", "mood-checkin"]);
+    await expect
+      .poll(() => renderedToolOrder(page), { timeout: 10_000 })
+      .toEqual(["sleep-latest", "self-care", "mood-checkin"]);
+
+    // The programme row never entered either write: `set_widget_order` reassigns only the
+    // positions its named ids already hold, and only the tool tier is named - so
+    // `cbt-programme` sat at position 2 throughout. It has no handle at all; its order is
+    // not the user's to set (#977).
     await expect(page.getByTestId("arrange-handle-cbt-programme")).toHaveCount(0);
 
     // --- Remove a programme card, and get it back from the chip that returns ---
@@ -162,14 +176,14 @@ test.describe("home arrange screen", () => {
     ).toBeHidden();
 
     // Undo restores it to the index it held in the FULL preference order - position 2,
-    // between the two tool rows it was seeded among, not appended at the tail (#964).
+    // between the tool rows it sat among, not appended at the tail (#964).
     await page.getByRole("button", { name: "Undo", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Guided programmes", exact: true })).toBeVisible(
       { timeout: 10_000 },
     );
     await expect
       .poll(() => storedOrder(user.id), { timeout: 10_000 })
-      .toEqual(["sleep-latest", "mood-checkin", "cbt-programme", "self-care"]);
+      .toEqual(["sleep-latest", "self-care", "cbt-programme", "mood-checkin"]);
 
     // --- Remove a tool row, and leave it removed -----------------------------
     await page.getByRole("button", { name: `Remove ${SELF_CARE}`, exact: true }).click();
@@ -186,7 +200,9 @@ test.describe("home arrange screen", () => {
     await expect(page.getByText(SLEEP, { exact: true }).last()).toBeVisible();
     await expect(page.getByText(CHECK_IN, { exact: true }).last()).toBeVisible();
     await expect(page.getByText(SELF_CARE, { exact: true })).toHaveCount(0);
-    expect(await storedOrder(user.id)).toEqual(["sleep-latest", "mood-checkin", "cbt-programme"]);
+    // `mood-checkin` last, because two keyboard moves took it there and both stuck. The
+    // programme row is still at the position it was seeded into, untouched by either.
+    expect(await storedOrder(user.id)).toEqual(["sleep-latest", "cbt-programme", "mood-checkin"]);
   });
 
   test("browser back is Done, and home carries no arrange controls of its own", async ({

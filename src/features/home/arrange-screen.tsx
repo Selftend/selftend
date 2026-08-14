@@ -1,9 +1,8 @@
-import { Platform, Pressable, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { router } from "expo-router";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
 
@@ -11,9 +10,11 @@ import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
 import { useSession } from "@/src/providers/session-provider";
-import { WIDGET_META, isImplemented, metaForWidget } from "@/src/features/home/widget-registry";
+import { WIDGET_META, metaForWidget } from "@/src/features/home/widget-registry";
+import { useWidgetTiers } from "@/src/features/home/widget-tiers";
 import {
   useAddWidget,
   useRemoveWidget,
@@ -24,20 +25,6 @@ import {
 import { cn } from "@/lib/utils";
 
 const PADDING = 24;
-
-/**
- * The `Guided programmes` tier's fixed order, mirroring `today-screen.tsx`.
- *
- * ⚠️ This tier is deliberately NOT sortable here, and that is the one place this screen
- * departs from #980 as written. #977 shipped the tier in a fixed CBT-then-ACT order
- * because `position` order does not give it: onboarding writes these ids in the order the
- * user tapped the module chips, so anyone who picked ACT first would get ACT first. A
- * drag that writes a `position` the home renderer then ignores is exactly the snap-back
- * lie #975 removed from the tool tier - the row returns to where it was and reads as
- * "drag is broken" rather than as a wrong write. Owner decision, 2026-08-14: keep the
- * fixed order; programme rows get remove and re-add, not reorder.
- */
-const PROGRAMME_ORDER = ["cbt-programme", "act-programme"];
 
 /**
  * An arrange edit, for the visit-scoped undo stack.
@@ -114,24 +101,32 @@ function ArrangeRow({ id, t }: { id: string; t: TFunction }) {
  * whose press does nothing would be a lie, and pressing a drag handle does nothing - the
  * gesture is the pointer path. `accessible` is safe on a leaf like this; it is only on a
  * group wrapper that it would collapse children into one node.
+ *
+ * ☠️ `canMove` is STRUCTURAL and must not fold in "a write is in flight". Both would
+ * suppress the same two moves, but only one may touch `focusable`: react-native-web reads
+ * it as `tabIndex`, so flipping it while a reorder settles takes the focused handle out of
+ * the tab order mid-move and drops focus. The keyboard user's second Arrow press then goes
+ * to the document, and reordering by keyboard works exactly once per row. The in-flight
+ * guard lives in `reorderWidgets` instead, where a rejected move is a no-op rather than a
+ * lost focus ring.
  */
 function DragHandle({
   id,
   title,
-  disabled,
+  canMove,
   onMove,
   t,
 }: {
   id: string;
   title: string;
-  disabled: boolean;
+  canMove: boolean;
   onMove: (offset: -1 | 1) => void;
   t: TFunction;
 }) {
   return (
     <View
       accessible
-      focusable={!disabled}
+      focusable={canMove}
       accessibilityRole="button"
       accessibilityLabel={t("home.arrange.handle", { title })}
       accessibilityHint={t("home.arrange.handleHint")}
@@ -140,15 +135,15 @@ function DragHandle({
         { name: "moveLater", label: t("today.dashboard.moveLater", { title }) },
       ]}
       onAccessibilityAction={(event) => {
-        if (disabled) return;
+        if (!canMove) return;
         if (event.nativeEvent.actionName === "moveEarlier") onMove(-1);
         if (event.nativeEvent.actionName === "moveLater") onMove(1);
       }}
-      {...(disabled ? {} : arrowKeyMoveProps(onMove))}
+      {...(canMove ? arrowKeyMoveProps(onMove) : {})}
       testID={`arrange-handle-${id}`}
       className={cn(
         "size-9 items-center justify-center rounded-full border border-primary/35 bg-card",
-        disabled && "opacity-40",
+        !canMove && "opacity-40",
         Platform.select({ web: "hover:bg-accent" }),
       )}
     >
@@ -208,29 +203,28 @@ export default function ArrangeScreen() {
    */
   const [undoStack, setUndoStack] = useState<WidgetEditAction[]>([]);
 
-  const { data: preferences } = useWidgetPreferences(userId);
+  const { data: preferences, isLoading } = useWidgetPreferences(userId);
   const addMutation = useAddWidget(userId);
   const removeMutation = useRemoveWidget(userId);
   const restoreMutation = useRestoreWidget(userId);
   const reorderMutation = useReorderWidgets(userId);
 
-  const widgetIds = useMemo(
-    () => (preferences ?? []).map((preference) => preference.widgetId).filter(isImplemented),
-    [preferences],
-  );
+  const { widgetIds, toolIds, programmeIds } = useWidgetTiers(preferences);
 
-  const toolIds = useMemo(
-    () => widgetIds.filter((id) => metaForWidget(id)?.tier === "tool"),
-    [widgetIds],
-  );
-
-  const programmeIds = useMemo(
-    () =>
-      PROGRAMME_ORDER.filter(
-        (id) => widgetIds.includes(id) && metaForWidget(id)?.tier === "programme",
-      ),
-    [widgetIds],
-  );
+  /**
+   * The rows have ARRIVED. `undefined` is not "you own nothing" - it is what the query
+   * holds while disabled (`enabled: Boolean(userId)`, briefly false on web hydration),
+   * while loading, and after an error.
+   *
+   * ☠️ Reading it as empty is not merely a flash of the wrong list: the chip run is
+   * derived by subtracting owned ids, so an unsettled query offers a chip for a widget
+   * you ALREADY have. `add_widget_preference` is idempotent, so the tap writes nothing -
+   * but it pushes an `add` onto the undo stack, and undoing an add REMOVES the widget.
+   * One tap in that window, one undo, and a row the user never touched is gone. Reachable
+   * by a web reload or a deep link straight onto `/arrange`, which is the same entry the
+   * `canGoBack` fallback in `finish` already anticipates.
+   */
+  const preferencesSettled = preferences !== undefined;
 
   /**
    * Every id not already on the dashboard, in registry order, complete.
@@ -243,8 +237,9 @@ export default function ArrangeScreen() {
    * monotonically as you add.
    */
   const addableIds = useMemo(
-    () => Object.keys(WIDGET_META).filter((id) => !widgetIds.includes(id)),
-    [widgetIds],
+    () =>
+      preferencesSettled ? Object.keys(WIDGET_META).filter((id) => !widgetIds.includes(id)) : [],
+    [preferencesSettled, widgetIds],
   );
 
   const mutationPending =
@@ -327,17 +322,14 @@ export default function ArrangeScreen() {
 
   /**
    * `Done` is `router.back()`, which is what makes hardware back and browser back Done by
-   * construction rather than by a second handler that has to be kept in step. The
-   * `canGoBack` fallback covers the one case back cannot serve: arrange opened as the
-   * first entry in the stack (a deep link, or a web reload on `/arrange`).
+   * construction rather than by a second handler that has to be kept in step.
+   *
+   * Through the shared `backWithFallback` (#475) rather than a local `canGoBack` branch:
+   * a back with no stack behind it silently no-ops, and the screen just sits there looking
+   * like the button is broken. Arrange reaches that state the same way every other screen
+   * does - a deep link, a bookmark, or a web refresh on `/arrange`.
    */
-  const finish = () => {
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-    router.replace("/");
-  };
+  const finish = () => backWithFallback("/");
 
   const hasRows = toolIds.length > 0 || programmeIds.length > 0;
 
@@ -345,6 +337,13 @@ export default function ArrangeScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <View testID="arrange-layout" className="flex-1">
         <AnimatedScrollView ref={scrollableRef} contentContainerStyle={{ padding: PADDING }}>
+          {/*
+            672px, matching `settings-screen` and `notifications-screen` - the two screens
+            arrange sits beside in the user's head, and the two it is built like. It is
+            NOT one of `layout.ts`'s shell columns because arrange rides neither shell:
+            those widths come with `ModuleHomeHeader` (720) and `ScreenTopBar` (620), and
+            this screen carries its own header so it can put `Done` in it.
+          */}
           <View className="mx-auto w-full max-w-2xl gap-6">
             <View className="flex-row items-center justify-between gap-3">
               <Text
@@ -395,6 +394,18 @@ export default function ArrangeScreen() {
             ) : null}
 
             {/*
+              A loading surface never claims emptiness, and here it would claim more than
+              that - see `preferencesSettled`. The spinner holds every section until the
+              rows arrive; `isLoading` alone would not, because a disabled or errored query
+              leaves it false with no data.
+            */}
+            {isLoading || !preferencesSettled ? (
+              <View className="items-center py-8">
+                <ActivityIndicator />
+              </View>
+            ) : null}
+
+            {/*
               `Your tools`, named with home's own tier name. No heading when empty - a
               heading over nothing is a claim about a list that is not there.
 
@@ -422,7 +433,7 @@ export default function ArrangeScreen() {
                           <DragHandle
                             id={id}
                             title={title}
-                            disabled={mutationPending || toolIds.length < 2}
+                            canMove={toolIds.length > 1}
                             onMove={(offset) => moveWidget(id, offset)}
                             t={t}
                           />
@@ -480,38 +491,45 @@ export default function ArrangeScreen() {
               losing their explanations is a real cost - paid because a chip tap has exactly
               one meaning and is reversible in one tap, in view.
             */}
-            <View className="gap-2.5">
-              <SectionHeading>{t("home.arrange.addHeading")}</SectionHeading>
-              {addableIds.length === 0 ? (
-                <Text variant="muted" className="text-[13px]">
-                  {t("home.arrange.allAdded")}
-                </Text>
-              ) : (
-                <View testID="arrange-chip-run" className="flex-row flex-wrap gap-2">
-                  {addableIds.map((id) => {
-                    const meta = metaForWidget(id);
-                    const title = meta ? t(meta.titleKey) : id;
-                    return (
-                      <Pressable
-                        key={id}
-                        accessibilityRole="button"
-                        accessibilityLabel={t("home.arrange.addChip", { title })}
-                        testID={`arrange-chip-${id}`}
-                        disabled={mutationPending}
-                        onPress={() => addWidget(id)}
-                        className={cn(
-                          "flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 active:bg-accent disabled:opacity-40",
-                          Platform.select({ web: "hover:bg-accent" }),
-                        )}
-                      >
-                        <Icon name="add" className="size-4 shrink-0 text-primary" />
-                        <Text className="text-[13px] font-medium">{title}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              )}
-            </View>
+            {!preferencesSettled ? null : (
+              <View className="gap-2.5">
+                {/*
+                  Tier-neutral copy, because the run is not tier-neutral in content: both
+                  `-programme` ids appear in it, so a heading reading "Add a tool" would
+                  hand back a CBT programme under the wrong noun.
+                */}
+                <SectionHeading>{t("home.arrange.addHeading")}</SectionHeading>
+                {addableIds.length === 0 ? (
+                  <Text variant="muted" className="text-[13px]">
+                    {t("home.arrange.allAdded")}
+                  </Text>
+                ) : (
+                  <View testID="arrange-chip-run" className="flex-row flex-wrap gap-2">
+                    {addableIds.map((id) => {
+                      const meta = metaForWidget(id);
+                      const title = meta ? t(meta.titleKey) : id;
+                      return (
+                        <Pressable
+                          key={id}
+                          accessibilityRole="button"
+                          accessibilityLabel={t("home.arrange.addChip", { title })}
+                          testID={`arrange-chip-${id}`}
+                          disabled={mutationPending}
+                          onPress={() => addWidget(id)}
+                          className={cn(
+                            "flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 active:bg-accent disabled:opacity-40",
+                            Platform.select({ web: "hover:bg-accent" }),
+                          )}
+                        >
+                          <Icon name="add" className="size-4 shrink-0 text-primary" />
+                          <Text className="text-[13px] font-medium">{title}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         </AnimatedScrollView>
       </View>

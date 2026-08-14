@@ -1,5 +1,6 @@
 import { fireEvent, screen, within } from "@testing-library/react-native";
 import type { ReactNode } from "react";
+import { ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 
 import ArrangeScreen from "./arrange-screen";
@@ -12,6 +13,11 @@ import { renderWithProviders } from "@/test/render-with-providers";
  */
 let mockWidgetIds: string[] = [];
 let mockUnimplementedIds: string[] = [];
+let mockIsLoading = false;
+/** The query settled with no data: disabled, or errored. `isLoading` is false in both. */
+let mockPreferencesUndefined = false;
+/** A write is in flight - transient, and deliberately NOT the same thing as "cannot move". */
+let mockMutationPending = false;
 const mockAddWidget = jest.fn();
 const mockRemoveWidget = jest.fn();
 const mockRestoreWidget = jest.fn();
@@ -59,12 +65,15 @@ jest.mock("@/src/providers/session-provider", () => ({
 
 jest.mock("@/src/features/home/queries", () => ({
   useWidgetPreferences: () => ({
-    data: mockWidgetIds.map((widgetId, position) => ({ widgetId, position })),
+    data: mockPreferencesUndefined
+      ? undefined
+      : mockWidgetIds.map((widgetId, position) => ({ widgetId, position })),
+    isLoading: mockIsLoading,
   }),
-  useAddWidget: () => ({ mutate: mockAddWidget, isPending: false }),
+  useAddWidget: () => ({ mutate: mockAddWidget, isPending: mockMutationPending }),
   useRemoveWidget: () => ({ mutate: mockRemoveWidget, isPending: false }),
   useRestoreWidget: () => ({ mutate: mockRestoreWidget, isPending: false }),
-  useReorderWidgets: () => ({ mutate: mockReorderWidgets, isPending: false }),
+  useReorderWidgets: () => ({ mutate: mockReorderWidgets, isPending: mockMutationPending }),
 }));
 
 /**
@@ -92,6 +101,9 @@ jest.mock("@/src/features/home/widget-registry", () => ({
 beforeEach(() => {
   mockWidgetIds = [];
   mockUnimplementedIds = [];
+  mockIsLoading = false;
+  mockPreferencesUndefined = false;
+  mockMutationPending = false;
   jest.clearAllMocks();
   mockCanGoBack.mockReturnValue(true);
   for (const mutation of [mockAddWidget, mockRemoveWidget, mockRestoreWidget, mockReorderWidgets]) {
@@ -261,6 +273,43 @@ describe("ArrangeScreen reorder", () => {
 
     expect(screen.getByTestId("arrange-handle-mood-checkin").props.onKeyDown).toBeUndefined();
   });
+
+  /**
+   * ☠️ Reordering by keyboard has to work more than ONCE per row.
+   *
+   * `focusable` is `tabIndex` under react-native-web, so folding "a write is in flight"
+   * into it takes the focused handle out of the tab order while the reorder settles - the
+   * user's second Arrow press lands on the document and the row stops moving. `canMove` is
+   * therefore structural only; the in-flight guard lives in `reorderWidgets`, where a
+   * rejected move costs a no-op rather than the focus ring.
+   */
+  it("keeps the handle focusable while a write is in flight", () => {
+    mockMutationPending = true;
+    renderArrange(["mood-checkin", "sleep-latest"]);
+
+    expect(screen.getByTestId("arrange-handle-mood-checkin").props.focusable).toBe(true);
+  });
+
+  it("still refuses the move itself while a write is in flight", () => {
+    mockMutationPending = true;
+    renderArrange(["mood-checkin", "sleep-latest"]);
+
+    moveVia("mood-checkin", "moveLater");
+
+    expect(mockReorderWidgets).not.toHaveBeenCalled();
+  });
+
+  it("moves the same row twice in a row", () => {
+    // Three rows, so the second move has somewhere to go. The mocked mutation resolves
+    // synchronously and the mocked query does not re-order, so this asserts the second
+    // press is ACCEPTED rather than the final resting order.
+    renderArrange(["mood-checkin", "sleep-latest", "journal-week"]);
+
+    moveVia("mood-checkin", "moveLater");
+    moveVia("mood-checkin", "moveLater");
+
+    expect(mockReorderWidgets).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("ArrangeScreen chip run", () => {
@@ -295,6 +344,36 @@ describe("ArrangeScreen chip run", () => {
     );
   });
 
+  /**
+   * ☠️ The chip run is derived by SUBTRACTING owned ids, so an unsettled query does not
+   * merely flash the wrong list - it offers a chip for a widget you already have.
+   * `add_widget_preference` is idempotent so the tap writes nothing, but it pushes an
+   * `add` onto the undo stack, and undoing an add REMOVES the widget. One tap in that
+   * window and one undo deletes a row the user never touched.
+   */
+  it("withholds the whole run until the preference rows arrive", () => {
+    mockPreferencesUndefined = true;
+    renderArrange(["sleep-latest"]);
+
+    expect(screen.queryByTestId("arrange-chip-run")).toBeNull();
+    expect(screen.queryByTestId("arrange-chip-sleep-latest")).toBeNull();
+    expect(screen.queryByTestId("arrange-chip-mood-checkin")).toBeNull();
+    // And it does not claim the opposite either - "everything is added" is a statement
+    // about rows nobody has read yet.
+    expect(screen.queryByText("Everything is already on your home screen.")).toBeNull();
+    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+  });
+
+  it("shows the spinner while loading and never falls through to a section", () => {
+    mockIsLoading = true;
+    mockPreferencesUndefined = true;
+    renderArrange([]);
+
+    expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+    expect(screen.queryByText("Your tools")).toBeNull();
+    expect(screen.queryByTestId("arrange-chip-run")).toBeNull();
+  });
+
   it("says so rather than running an empty row once everything is added", () => {
     renderArrange([
       "mood-checkin",
@@ -305,7 +384,19 @@ describe("ArrangeScreen chip run", () => {
     ]);
 
     expect(screen.queryByTestId("arrange-chip-run")).toBeNull();
-    expect(screen.getByText("Every tool is already on your home screen.")).toBeTruthy();
+    expect(screen.getByText("Everything is already on your home screen.")).toBeTruthy();
+  });
+
+  /**
+   * The run holds both `-programme` ids, so its copy cannot say "tool" - a re-added CBT
+   * programme would arrive under the wrong noun. #980 is explicit about tier naming, and
+   * the two tier headings above are the place tier words belong.
+   */
+  it("heads the run with tier-neutral copy, since it offers programmes too", () => {
+    renderArrange(["mood-checkin"]);
+
+    expect(screen.getByText("Add to your home screen")).toBeTruthy();
+    expect(screen.getByTestId("arrange-chip-cbt-programme")).toBeTruthy();
   });
 
   it("carries no search field and no descriptions", () => {
@@ -400,7 +491,11 @@ describe("ArrangeScreen Done", () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  /** The one case back cannot serve: arrange opened as the first entry in the stack. */
+  /**
+   * The one case back cannot serve: arrange opened as the first entry in the stack, where
+   * `router.back()` silently no-ops and the button looks broken. Handled by the shared
+   * `backWithFallback` (#475), not by a second local `canGoBack` branch.
+   */
   it("falls back to home when there is no history to go back to", () => {
     mockCanGoBack.mockReturnValue(false);
     renderArrange();
