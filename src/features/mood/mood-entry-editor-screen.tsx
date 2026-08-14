@@ -637,9 +637,11 @@ export function MoodEntryEditorScreen({
                 </View>
               ) : null}
 
-              {/* The invitation, verbatim from the design. "no pressure to" is guardrail
-                  copy, not decoration: this is the one place the product suggests more
-                  work, and the sentence is what keeps it an offer. */}
+              {/* The invitation. This is the one place the product suggests MORE work, so
+                  what keeps it an offer is load-bearing - but #963 established that the
+                  offer has to come from "you can", not from the product announcing that it
+                  will not pressure you. Naming the absent pressure is what puts it in the
+                  room (#711). */}
               <View className="gap-2.5">
                 <Text variant="muted" className="text-[13px]">
                   {t("mood.goDeeperInvite")}
