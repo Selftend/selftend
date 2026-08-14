@@ -13,7 +13,7 @@
     "home": "Начало",
     "progress": "Наблюдения",
     "routines": "Рутини",
-    "notifications": "Известия",
+    "notifications": "Напомняния",
     "settings": "Настройки",
     "support": "Поддръжка",
     "cbtHistory": "История",
@@ -421,7 +421,7 @@
   },
   "headerButton": {
     "tune": "Настройки",
-    "notifications": "Известия",
+    "notifications": "Напомняния",
     "program": "КПТ програма",
     "info": "За този модул"
   },

@@ -176,7 +176,10 @@ test.describe("settings - notification toggles", () => {
 
     // Navigate to /notifications via the "Open notifications" button.
     await page.getByRole("button", { name: "Open notifications", exact: true }).click();
-    await expect(page.getByText("Notifications", { exact: true }).first()).toBeVisible({
+    // The screen's h1 is "Reminders" (#981). Asserted as the HEADING, not as text: the
+    // sidebar's nav link carries the same word now, so a text match would pass on the door
+    // instead of the room.
+    await expect(page.getByRole("heading", { name: "Reminders", exact: true })).toBeVisible({
       timeout: 10_000,
     });
 
@@ -236,8 +239,10 @@ test.describe("settings - notification toggles", () => {
     await page.reload();
     await page.goto("/notifications");
 
-    // The CBT switch is the first "Enable reminders" switch (CBT is first in MODULES section).
-    const cbtSwitch = page.getByRole("switch", { name: "Enable reminders", exact: true }).first();
+    // Each switch is named for its target now, so this asserts the CBT row specifically.
+    // The old shared "Enable reminders" name plus `.first()` kept this green while
+    // asserting nothing about which row it found (#981).
+    const cbtSwitch = page.getByRole("switch", { name: "CBT", exact: true });
     await expect(cbtSwitch).toHaveAttribute("aria-checked", "true", { timeout: 8_000 });
   });
 });

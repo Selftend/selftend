@@ -19,7 +19,7 @@ import {
 } from "@/src/features/routines/queries";
 import type { RoutineWithSteps } from "@/src/features/routines/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import { cancelReminder, scheduleReminder } from "@/src/lib/notifications";
+import { ensureReminderChannel } from "@/src/lib/notifications";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { router } from "expo-router";
 
@@ -73,8 +73,7 @@ jest.mock("@/src/features/settings/queries", () => ({
 }));
 
 jest.mock("@/src/lib/notifications", () => ({
-  scheduleReminder: jest.fn(),
-  cancelReminder: jest.fn(),
+  ensureReminderChannel: jest.fn(),
   getReminderTimeZone: jest.fn(() => "Europe/Sofia"),
 }));
 
@@ -82,8 +81,9 @@ const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof 
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
-const mockScheduleReminder = scheduleReminder as jest.MockedFunction<typeof scheduleReminder>;
-const mockCancelReminder = cancelReminder as jest.MockedFunction<typeof cancelReminder>;
+const mockEnsureChannel = ensureReminderChannel as jest.MockedFunction<
+  typeof ensureReminderChannel
+>;
 const mockUseRoutine = useRoutine as jest.MockedFunction<typeof useRoutine>;
 const mockUseRoutines = useRoutines as jest.MockedFunction<typeof useRoutines>;
 const mockUseCreateRoutine = useCreateRoutine as jest.MockedFunction<typeof useCreateRoutine>;
@@ -144,8 +144,7 @@ describe("RoutineEditorScreen", () => {
       isPending: false,
     } as unknown as ReturnType<typeof useUpdateUserPreferences>);
     updatePreferences.mockResolvedValue(undefined);
-    mockScheduleReminder.mockResolvedValue({ enabled: true });
-    mockCancelReminder.mockResolvedValue(undefined);
+    mockEnsureChannel.mockResolvedValue({ enabled: true });
     mockUseRoutines.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useRoutines>);
     mockUseRoutine.mockReturnValue({ data: null, isLoading: false } as unknown as ReturnType<
       typeof useRoutine
@@ -457,7 +456,7 @@ describe("RoutineEditorScreen", () => {
         cadence: "on-demand",
       }),
     );
-    expect(mockScheduleReminder).not.toHaveBeenCalled();
+    expect(mockEnsureChannel).not.toHaveBeenCalled();
   });
 
   it("switching an existing routine to On demand disables its reminder in the patch", async () => {
@@ -496,7 +495,7 @@ describe("RoutineEditorScreen", () => {
         },
       }),
     );
-    expect(mockScheduleReminder).not.toHaveBeenCalled();
+    expect(mockEnsureChannel).not.toHaveBeenCalled();
   });
 
   // ----- Routine reminder (#47) -----
@@ -511,7 +510,7 @@ describe("RoutineEditorScreen", () => {
     fireEvent.press(screen.getByText("Save"));
 
     await waitFor(() => expect(createRoutine).toHaveBeenCalledWith({ name: "My daily routine" }));
-    expect(mockScheduleReminder).not.toHaveBeenCalled();
+    expect(mockEnsureChannel).not.toHaveBeenCalled();
     expect(updatePreferences).not.toHaveBeenCalled();
   });
 
@@ -531,7 +530,7 @@ describe("RoutineEditorScreen", () => {
         reminderTimezone: "Europe/Sofia",
       }),
     );
-    expect(mockScheduleReminder).toHaveBeenCalledWith("routine", 19, 0, "user-1");
+    expect(mockEnsureChannel).toHaveBeenCalledWith("user-1");
     // Enabling is the explicit opt-in: consent is recorded (default prefs had none).
     expect(updatePreferences).toHaveBeenCalledWith(
       expect.objectContaining({ reminderConsent: true }),
@@ -561,11 +560,11 @@ describe("RoutineEditorScreen", () => {
         },
       }),
     );
-    expect(mockScheduleReminder).toHaveBeenCalledWith("routine", 19, 0, "user-1");
+    expect(mockEnsureChannel).toHaveBeenCalledWith("user-1");
   });
 
   it("saves the reminder OFF and explains when the channel can't be enabled", async () => {
-    mockScheduleReminder.mockResolvedValue({ enabled: false, reason: "permission-denied" });
+    mockEnsureChannel.mockResolvedValue({ enabled: false, reason: "permission-denied" });
 
     renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
 
@@ -640,6 +639,5 @@ describe("RoutineEditorScreen", () => {
     );
     // Exactly one write, scoped to the tapped tool - journal's reminder is untouched.
     expect(updatePreferences).toHaveBeenCalledTimes(1);
-    expect(mockCancelReminder).toHaveBeenCalledWith("mood", "user-1");
   });
 });

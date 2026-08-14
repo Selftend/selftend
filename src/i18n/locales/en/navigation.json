@@ -13,7 +13,7 @@
     "home": "Home",
     "progress": "Insights",
     "routines": "Routines",
-    "notifications": "Notifications",
+    "notifications": "Reminders",
     "settings": "Settings",
     "support": "Support",
     "cbtHistory": "History",
@@ -421,7 +421,7 @@
   },
   "headerButton": {
     "tune": "Customise",
-    "notifications": "Notifications",
+    "notifications": "Reminders",
     "program": "CBT program",
     "info": "About this module"
   },

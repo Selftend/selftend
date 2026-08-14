@@ -6,17 +6,9 @@ import {
 import { appEnv } from "@/src/lib/env";
 import { disableDevicePushToken, ensureDevicePushToken } from "@/src/lib/push-token";
 
-export type ReminderTarget =
-  | "cbt"
-  | "meditation"
-  | "act"
-  | "mood"
-  | "journal"
-  | "gratitude"
-  | "grounding"
-  | "breathing"
-  | "sleep"
-  | "habits";
+// `ReminderTarget` lived here as a second list of the ten reminder targets, existing only
+// because `scheduleReminder` took a target it then ignored. With the channel API taking just
+// a user (#981), `NotificationTargetKey` in the notifications registry is the only list.
 
 const WEB_PUSH_WORKER_PATH = "/selftend-push-worker.js";
 type NotificationsModule = typeof import("expo-notifications");
@@ -33,6 +25,20 @@ export type ReminderScheduleFailureReason =
 
 export type ReminderScheduleResult =
   { enabled: true } | { enabled: false; reason: ReminderScheduleFailureReason };
+
+/**
+ * What this device's reminder channel can do *right now*, read without prompting.
+ *
+ * The whole reminders screen branches on this before a control is touched (#981):
+ * `granted` means a column write needs no channel call at all, `prompt-needed` means the
+ * next enable has to be shaped as a request rather than a switch.
+ *
+ *   - `granted`      - a channel can be armed silently (permission already given).
+ *   - `prompt-needed` - arming it will show the browser/OS permission dialog.
+ *   - `blocked`      - the user said no; only they can undo it, in system settings.
+ *   - `unsupported`  - no channel exists on this device/build at all.
+ */
+export type ReminderChannelStatus = "granted" | "prompt-needed" | "blocked" | "unsupported";
 
 // `pushManager.subscribe()` with a valid VAPID key can hang forever when the
 // browser's push service is blocked or unreachable (Brave-style configs,
@@ -316,16 +322,71 @@ async function unsubscribeWebPushIfPresent(userId?: string | null) {
 // ----- Public API (server-driven on every platform) -----
 
 /**
- * "Enables" a reminder for the current channel. Reminder content + timing are server-driven
- * (read from user_preferences - or, for `"routine"`, the per-routine reminder fields on the
- * routines rows - by the send-web-reminders edge function); this only ensures the channel is
- * registered: a web push subscription on web, a device push token on native. The hour/minute
- * params are unused on native and kept for the web/signature compatibility.
+ * Reads what the channel can do without asking the user anything.
+ *
+ * Synchronous on web (`Notification.permission` is a plain property); native has to await
+ * `getPermissionsAsync()`, so callers get a promise on both platforms and the hook that
+ * wraps this seeds its first render from {@link peekReminderChannelStatus}.
  */
-export async function scheduleReminder(
-  target: ReminderTarget | "routine",
-  _hour: number,
-  _minute: number,
+export async function getReminderChannelStatus(): Promise<ReminderChannelStatus> {
+  if (Platform.OS === "web") {
+    return readWebChannelStatus();
+  }
+
+  const Notifications = getNativeNotifications();
+  if (!Notifications) return "unsupported";
+
+  try {
+    const permissions = await Notifications.getPermissionsAsync();
+    if (permissions.granted) return "granted";
+    // `canAskAgain` false is iOS's "the user declined and the dialog will never show
+    // again" - the same dead end as the browser's `denied`, and the only difference
+    // that matters to a caller deciding whether a tap can succeed.
+    return permissions.canAskAgain ? "prompt-needed" : "blocked";
+  } catch {
+    return "unsupported";
+  }
+}
+
+/**
+ * The synchronously-knowable part of {@link getReminderChannelStatus}.
+ *
+ * Web answers exactly; native cannot answer without an await, so it reports the
+ * conservative `prompt-needed` until the async read lands. Conservative is the safe
+ * direction: it shapes one enable as a request that could have been instant, where the
+ * optimistic guess would write a column for a channel that then prompts.
+ */
+export function peekReminderChannelStatus(): ReminderChannelStatus {
+  if (Platform.OS === "web") {
+    return readWebChannelStatus();
+  }
+  return "prompt-needed";
+}
+
+function readWebChannelStatus(): ReminderChannelStatus {
+  if (!appEnv.webPushVapidPublicKey) return "unsupported";
+
+  const globals = getWebPushGlobals();
+  if (!globals?.notification || !globals.serviceWorker || !("PushManager" in window)) {
+    return "unsupported";
+  }
+
+  if (globals.notification.permission === "granted") return "granted";
+  if (globals.notification.permission === "denied") return "blocked";
+  return "prompt-needed";
+}
+
+/**
+ * Registers this device's reminder channel: a web push subscription on web, a device push
+ * token on native. Prompts for permission if it has not been given yet.
+ *
+ * Reminder content and timing are server-driven - the send-web-reminders edge function reads
+ * `user_preferences` (and, for routines, the per-routine reminder fields on the routines rows)
+ * at send time - so there is nothing per-target or per-time to register here. That is why this
+ * takes only a user: the old `scheduleReminder(target, hour, minute, userId)` signature ignored
+ * its first three arguments, which is what made a time change look like it could fail (#981).
+ */
+export async function ensureReminderChannel(
   userId?: string | null,
 ): Promise<ReminderScheduleResult> {
   if (Platform.OS === "web") {
@@ -334,18 +395,61 @@ export async function scheduleReminder(
 
   const result = await ensureDevicePushToken(userId ?? null);
   if (result.enabled) return { enabled: true };
-  return {
-    enabled: false,
-    reason: result.reason === "permission-denied" ? "permission-denied" : "unsupported",
-  };
+  // `missing-user` and `permission-denied` carry through, because each has its own wording
+  // and its own remedy; the remaining native reasons (no project id, registration failure)
+  // have no user-actionable difference, so they collapse onto `unsupported`.
+  if (result.reason === "permission-denied" || result.reason === "missing-user") {
+    return { enabled: false, reason: result.reason };
+  }
+  return { enabled: false, reason: "unsupported" };
 }
 
 /**
- * Disabling a single target is reflected in user_preferences and honored server-side, so there
- * is nothing to cancel per-target on either channel (web's subscription is shared; native's
- * token serves all targets). No-op by design.
+ * The endpoint + timezone last reconciled in this page session, so a tab the user keeps
+ * flipping back to does not re-upsert an unchanged row on every focus. Deliberately in
+ * memory only: a reload should reconcile again, since the subscription can be revoked by
+ * the browser while the page is gone.
  */
-export async function cancelReminder(_target: ReminderTarget, _userId?: string | null) {}
+let lastReconciled: string | null = null;
+
+/**
+ * Re-arms the web push subscription **without ever prompting**.
+ *
+ * The hole this closes: `cancelAllReminders` deletes the `web_push_subscriptions` row (master
+ * off, and every ordinary sign-out), master-on writes only the preference, and
+ * `useNotificationSync` returns early on web - so every reminder went silently dead with the
+ * browser's permission still granted and nothing on the client ever registering again.
+ *
+ * Gated on `permission === "granted"` so it is a repair, not an ask. Also refreshes
+ * `subscription.time_zone`, which is the zone the edge function actually reads
+ * (`web-reminders.ts:294` prefers it over the per-target columns) - a device fact that used
+ * to ride along on every save and now has nowhere else to be refreshed.
+ */
+export async function reconcileWebReminderChannel(userId?: string | null): Promise<void> {
+  if (Platform.OS !== "web" || !userId) return;
+  if (readWebChannelStatus() !== "granted") return;
+
+  const fingerprint = `${userId}|${getCurrentTimeZone() ?? ""}`;
+  try {
+    const globals = getWebPushGlobals();
+    if (!globals?.serviceWorker) return;
+    const registration = await globals.serviceWorker.getRegistration();
+    const existing = await registration?.pushManager.getSubscription();
+    if (existing && lastReconciled === `${fingerprint}|${existing.endpoint}`) return;
+
+    const result = await ensureWebPushSubscription(userId);
+    if (!result.enabled) return;
+    const subscription = await (await globals.serviceWorker.ready).pushManager.getSubscription();
+    lastReconciled = subscription ? `${fingerprint}|${subscription.endpoint}` : null;
+  } catch {
+    // Best-effort repair; the next focus tries again.
+  }
+}
+
+/** Test seam: the reconciliation memo is module state that outlives a test's mocks. */
+export function resetWebReminderReconciliation() {
+  lastReconciled = null;
+}
 
 /**
  * Turns the channel off entirely when the user disables the global master: unsubscribe the web
@@ -353,6 +457,8 @@ export async function cancelReminder(_target: ReminderTarget, _userId?: string |
  */
 export async function cancelAllReminders(userId?: string | null) {
   if (Platform.OS === "web") {
+    // The subscription this memo describes is about to stop existing.
+    lastReconciled = null;
     await unsubscribeWebPushIfPresent(userId);
     return;
   }

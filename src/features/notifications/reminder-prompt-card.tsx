@@ -24,11 +24,9 @@ import {
   type NotificationTargetKey,
 } from "@/src/features/notifications/registry";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
-import {
-  getReminderTimeZone,
-  scheduleReminder,
-  type ReminderTarget,
-} from "@/src/lib/notifications";
+import { reminderChannelErrorKey } from "@/src/features/notifications/channel-errors";
+import { enableTargetPatch } from "@/src/features/notifications/enable-patch";
+import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { useSession } from "@/src/providers/session-provider";
 import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
@@ -53,6 +51,9 @@ export function ReminderPromptCard() {
 
   const { data: preferences } = useUserPreferences(userId);
   const updatePreferences = useUpdateUserPreferences(userId);
+  // This card IS the ask (#981): the meditation wizard's switch was dropped, so the
+  // contextual prompt after a completed session is where the channel gets armed.
+  const channel = useReminderChannel(userId);
   const showToast = useToastStore((state) => state.showToast);
   const request = useReminderPromptStore((state) => state.request);
   const dismissRequest = useReminderPromptStore((state) => state.dismissReminderPrompt);
@@ -97,30 +98,27 @@ export function ReminderPromptCard() {
     setSaving(true);
     const { hour, minute } = clampTime(time);
     try {
-      const result = await scheduleReminder(activeTarget as ReminderTarget, hour, minute, userId);
+      const result = await channel.ensure();
       if (!result.enabled) {
-        // Same mapping as the notifications screen: the raw reason slug never
-        // reaches the user.
+        // Same mapping as the reminders screen: the raw reason slug never reaches the
+        // user, and the wording names this platform's settings rather than a browser's.
         showToast({
           title: t("feedback.problem"),
-          description: t(`saveErrors.${result.reason}`),
+          description: t(reminderChannelErrorKey(result.reason)),
           tone: "error",
         });
         return;
       }
       const patch: Partial<UserPreferences> = {
-        reminderConsent: true,
-        reminderConsentUpdatedAt: preferences.reminderConsent
-          ? preferences.reminderConsentUpdatedAt
-          : new Date().toISOString(),
+        ...enableTargetPatch(preferences, target, { hour, minute }),
         reminderPromptedTools: promptedToolsIncluding(preferences, activeTarget),
       };
-      if (target.enabledField) patch[target.enabledField] = true;
-      if (target.hourField) patch[target.hourField] = hour;
-      if (target.minuteField) patch[target.minuteField] = minute;
-      if (target.timezoneField) patch[target.timezoneField] = getReminderTimeZone();
       await persistPreferences(patch);
-      showToast({ title: t("feedback.saved"), description: t(target.labelKey), tone: "success" });
+      showToast({
+        title: t("common:feedback.saved"),
+        description: t(target.labelKey),
+        tone: "success",
+      });
       setActiveTarget(null);
     } catch {
       // The thrown message is a backend/internal string - translated copy only.
@@ -168,7 +166,7 @@ export function ReminderPromptCard() {
           <View className="flex-row gap-3">
             <Button className="flex-1" disabled={saving} onPress={() => void handleAccept()}>
               {saving ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{saving ? t("actions.saving") : t("reminderPrompt.accept")}</Text>
+              <Text>{t("reminderPrompt.accept")}</Text>
             </Button>
             <Button
               className="flex-1"

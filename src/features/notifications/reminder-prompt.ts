@@ -16,7 +16,6 @@ export function isReminderPromptEligible(
   targetKey: NotificationTargetKey,
 ): boolean {
   const target = getNotificationTarget(targetKey);
-  if (target.status !== "live") return false;
   if (!preferences.notificationsEnabledGlobal) return false;
   if (readEnabled(preferences, target)) return false;
   if (preferences.reminderPromptedTools.includes(targetKey)) return false;
