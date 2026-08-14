@@ -210,29 +210,23 @@ describe("countCommittedActions", () => {
     expect(eqStatus).toHaveBeenCalledWith("status", "active");
   });
 
-  it("counts every status when none is given", async () => {
-    const eqUser = jest.fn().mockResolvedValue({ count: 7, error: null });
-    const select = jest.fn(() => ({ eq: eqUser }));
-    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
-
-    await expect(countCommittedActions("u1")).resolves.toBe(7);
-  });
-
   it("reads as nothing recorded when ACT is not migrated yet", async () => {
-    const eqUser = jest
+    const eqStatus = jest
       .fn()
       .mockResolvedValue({ count: null, error: { code: "PGRST205", message: "schema cache" } });
+    const eqUser = jest.fn(() => ({ eq: eqStatus }));
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
 
-    await expect(countCommittedActions("u1")).resolves.toBe(0);
+    await expect(countCommittedActions("u1", "active")).resolves.toBe(0);
   });
 
   it("throws a real error rather than reporting zero", async () => {
-    const eqUser = jest.fn().mockResolvedValue({ count: null, error: { code: "23505" } });
+    const eqStatus = jest.fn().mockResolvedValue({ count: null, error: { code: "23505" } });
+    const eqUser = jest.fn(() => ({ eq: eqStatus }));
     const select = jest.fn(() => ({ eq: eqUser }));
     mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
 
-    await expect(countCommittedActions("u1")).rejects.toEqual({ code: "23505" });
+    await expect(countCommittedActions("u1", "active")).rejects.toEqual({ code: "23505" });
   });
 });

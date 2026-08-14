@@ -51,19 +51,14 @@ function mapCommittedAction(row: CommittedActionRow): CommittedAction {
  * the base table so nothing decrypts. `listCommittedActions` has no `.limit()` at all,
  * which made this the one row whose cost grew without bound with the user's history.
  */
-export async function countCommittedActions(
-  userId: string,
-  status?: ActionStatus,
-): Promise<number> {
+export async function countCommittedActions(userId: string, status: ActionStatus): Promise<number> {
   const client = requireSupabase();
-  let query = client
+  const { count, error } = await client
     .from("act_committed_actions")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .eq("status", status);
 
-  if (status) query = query.eq("status", status);
-
-  const { count, error } = await query;
   if (error) {
     // ACT not migrated yet reads as "nothing recorded", matching the list reads.
     if (isMissingACTSchemaError(error)) return 0;

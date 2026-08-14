@@ -103,7 +103,7 @@ describe("fetchLatestActivity", () => {
       userId: "user-1",
       column: "created_at",
       match: { technique: "dropAnchor" },
-      isNull: ["archived_at"],
+      isNull: "archived_at",
     });
 
     expect(builder.eq).toHaveBeenCalledWith("technique", "dropAnchor");

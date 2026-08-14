@@ -81,6 +81,18 @@ export async function listThoughtRecords(userId: string) {
  * plausible while it does. This needs no function or migration; PostgREST answers it
  * exactly under RLS, which is the `countJournalEntries` precedent.
  */
+export async function countThoughtRecords(userId: string): Promise<number> {
+  const client = requireSupabase();
+  const { count, error } = await client
+    .from("thought_records")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("archived_at", null);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 /**
  * When the user last wrote a thought record, for Home's one-line row (#990).
  *
@@ -94,20 +106,8 @@ export function getLatestThoughtRecordAt(userId: string) {
     userId,
     column: "created_at",
     offsetColumn: "created_offset_minutes",
-    isNull: ["archived_at"],
+    isNull: "archived_at",
   });
-}
-
-export async function countThoughtRecords(userId: string): Promise<number> {
-  const client = requireSupabase();
-  const { count, error } = await client
-    .from("thought_records")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .is("archived_at", null);
-
-  if (error) throw error;
-  return count ?? 0;
 }
 
 export async function countThoughtRecordsSince(userId: string, sinceIso: string): Promise<number> {

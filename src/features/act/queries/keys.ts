@@ -40,7 +40,7 @@ export const actKeys = {
   // Prefix matcher used by mutations to invalidate every status filter at once.
   committedActionListPrefix: (userId: string | null) =>
     ["act", "committedAction", "list", u(userId)] as const,
-  committedActionCount: (userId: string | null, status?: ActionStatus) =>
+  committedActionCount: (userId: string | null, status: ActionStatus) =>
     ["act", "committedAction", "list", u(userId), status, "count"] as const,
   committedActionDetail: (userId: string | null, actionId: string | null) =>
     ["act", "committedAction", "detail", u(userId), u(actionId)] as const,

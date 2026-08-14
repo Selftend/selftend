@@ -198,14 +198,6 @@ export async function listSessions(userId: string, itemId: string) {
  * Newest sessions across every item - the routines derive engine needs "any
  * session completed on day X" without knowing item ids (mirrors listAllItems).
  */
-/**
- * When the user last ran an exposure, for Home's one-line row (#990). Sessions, never
- * hierarchies - a hierarchy is a plan, and the row reports what was done.
- */
-export function getLatestExposureSessionAt(userId: string) {
-  return fetchLatestActivity({ table: "exposure_sessions", userId, column: "completed_at" });
-}
-
 export async function listRecentSessions(userId: string, limit = 250) {
   const client = requireSupabase();
   const { data, error } = await client
@@ -217,6 +209,14 @@ export async function listRecentSessions(userId: string, limit = 250) {
 
   if (error) throw error;
   return (data as SessionRow[]).map(mapSession);
+}
+
+/**
+ * When the user last ran an exposure, for Home's one-line row (#990). Sessions, never
+ * hierarchies - a hierarchy is a plan, and the row reports what was done.
+ */
+export function getLatestExposureSessionAt(userId: string) {
+  return fetchLatestActivity({ table: "exposure_sessions", userId, column: "completed_at" });
 }
 
 export async function deleteHierarchy(userId: string, hierarchyId: string) {

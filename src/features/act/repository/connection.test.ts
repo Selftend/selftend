@@ -152,14 +152,6 @@ describe("getLatestConnectionLogAt", () => {
     });
   });
 
-  it("reads every technique when none is given", async () => {
-    mockFetchLatestActivity.mockResolvedValue(null);
-
-    await getLatestConnectionLogAt("u1");
-
-    expect(mockFetchLatestActivity).toHaveBeenCalledWith(expect.objectContaining({ match: {} }));
-  });
-
   it("degrades to no record when ACT is not migrated yet", async () => {
     mockFetchLatestActivity.mockRejectedValue({ code: "PGRST205", message: "schema cache" });
 
@@ -169,7 +161,7 @@ describe("getLatestConnectionLogAt", () => {
   it("rethrows a real error rather than reporting no record", async () => {
     mockFetchLatestActivity.mockRejectedValue({ code: "23505", message: "duplicate" });
 
-    await expect(getLatestConnectionLogAt("u1")).rejects.toEqual({
+    await expect(getLatestConnectionLogAt("u1", "dropAnchor")).rejects.toEqual({
       code: "23505",
       message: "duplicate",
     });

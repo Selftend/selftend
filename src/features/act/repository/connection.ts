@@ -44,14 +44,14 @@ function mapConnectionLog(row: ConnectionLogRow): ConnectionLog {
  * row's client-side filter documented and accepted: a user with 30 newer connection logs
  * of other techniques read as having never dropped anchor.
  */
-export function getLatestConnectionLogAt(userId: string, technique?: ConnectionTechnique) {
+export function getLatestConnectionLogAt(userId: string, technique: ConnectionTechnique) {
   return degradeMissingSchema(
     () =>
       fetchLatestActivity({
         table: "act_connection_logs",
         userId,
         column: "created_at",
-        match: technique ? { technique } : {},
+        match: { technique },
       }),
     null,
   );

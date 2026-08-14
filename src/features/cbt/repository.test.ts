@@ -456,7 +456,7 @@ describe("getLatestThoughtRecordAt", () => {
       userId: "user-1",
       column: "created_at",
       offsetColumn: "created_offset_minutes",
-      isNull: ["archived_at"],
+      isNull: "archived_at",
     });
   });
 });

@@ -46,8 +46,8 @@ export interface LatestActivityQuery {
   offsetColumn?: string;
   /** Extra plaintext equality filters, e.g. `{ technique: "dropAnchor" }`. */
   match?: Record<string, string>;
-  /** Plaintext columns that must be null, e.g. `archived_at` for a non-archived record. */
-  isNull?: string[];
+  /** A plaintext column that must be null, e.g. `archived_at` for a non-archived record. */
+  isNull?: string;
 }
 
 /**
@@ -62,7 +62,7 @@ export async function fetchLatestActivity({
   column,
   offsetColumn,
   match = {},
-  isNull = [],
+  isNull,
 }: LatestActivityQuery): Promise<LatestActivity | null> {
   const client = requireSupabase();
   let query = client
@@ -73,9 +73,7 @@ export async function fetchLatestActivity({
   for (const [filterColumn, value] of Object.entries(match)) {
     query = query.eq(filterColumn, value);
   }
-  for (const nullColumn of isNull) {
-    query = query.is(nullColumn, null);
-  }
+  if (isNull) query = query.is(isNull, null);
 
   const { data, error } = await query
     // Descending order puts NULLs first in Postgres, so a nullable timestamp
