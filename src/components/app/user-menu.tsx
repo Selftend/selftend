@@ -263,7 +263,7 @@ export function UserMenu() {
                 size="sm"
                 onPress={() => {
                   popoverTriggerRef.current?.close();
-                  router.push("/(app)/settings");
+                  router.push("/(app)/settings", { dangerouslySingular: true }); // lateral jump (#1027)
                 }}
               >
                 <Icon name="settings" className="size-4" />
@@ -274,7 +274,7 @@ export function UserMenu() {
                 size="sm"
                 onPress={() => {
                   popoverTriggerRef.current?.close();
-                  router.push("/(app)/support");
+                  router.push("/(app)/support", { dangerouslySingular: true }); // lateral jump (#1027)
                 }}
               >
                 <Icon name="feedback" className="size-4" />

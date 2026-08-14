@@ -15,7 +15,8 @@ type LinkButtonProps = Omit<ButtonProps, "role" | "accessibilityRole"> & {
  */
 export function LinkButton({ href, ...props }: LinkButtonProps) {
   return (
-    <Link href={href} asChild>
+    // Footer peers cross-link to each other, so every one of these is lateral (#1027).
+    <Link href={href} dangerouslySingular asChild>
       <Button accessibilityRole="link" role="link" {...props} />
     </Link>
   );

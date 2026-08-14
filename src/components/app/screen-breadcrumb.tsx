@@ -55,7 +55,11 @@ export function ScreenBreadcrumb({ backIcon = "arrow-back" }: ScreenBreadcrumbPr
             <Pressable
               accessibilityRole="link"
               hitSlop={4}
-              onPress={() => router.push(crumb.href as never)}
+              // A crumb targets an ANCESTOR, so the destination is in the stack by
+              // definition and a plain push mounted a second copy of it every time
+              // (#1027). Marked here rather than on the destination screens because
+              // breadcrumbs reach routes the layouts never declare.
+              onPress={() => router.push(crumb.href as never, { dangerouslySingular: true })}
             >
               <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground active:opacity-70">
                 {crumb.label}
