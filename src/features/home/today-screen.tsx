@@ -2,6 +2,7 @@ import { ActivityIndicator, Platform, Pressable, RefreshControl, View } from "re
 import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import Sortable from "react-native-sortables";
@@ -37,6 +38,8 @@ import { cn } from "@/lib/utils";
 import { useAccentHsl } from "@/src/lib/theme-palette";
 
 const PADDING = 24;
+/** The `Guided programmes` tier's fixed order. */
+const PROGRAMME_ORDER = ["cbt-programme", "act-programme"];
 type WidgetEditAction =
   | { type: "add"; widgetId: string }
   | { type: "remove"; widgetId: string; position: number }
@@ -48,6 +51,37 @@ type WidgetEditAction =
 const WidgetContent = memo(function WidgetContent({ id, userId }: { id: string; userId: string }) {
   return resolveWidget(id, userId);
 });
+
+/** The edit-mode remove control, shared by both tiers. */
+function RemoveWidgetButton({
+  id,
+  disabled,
+  onRemove,
+  t,
+}: {
+  id: string;
+  disabled: boolean;
+  onRemove: (id: string) => void;
+  t: TFunction;
+}) {
+  const meta = metaForWidget(id);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t("today.dashboard.removeWidget", {
+        title: meta ? t(meta.titleKey) : id,
+      })}
+      disabled={disabled}
+      onPress={() => onRemove(id)}
+      className={cn(
+        "size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
+        Platform.select({ web: "hover:bg-destructive/10" }),
+      )}
+    >
+      <Icon name="close" className="size-4 text-destructive" />
+    </Pressable>
+  );
+}
 
 /**
  * One tier's sortable list. Rows are inert while dragging is available, so the row's own
@@ -135,18 +169,7 @@ function TierSection({
             >
               <Icon name="keyboard-arrow-down" className="size-4 text-primary" />
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("today.dashboard.removeWidget", { title })}
-              disabled={mutationPending}
-              onPress={() => onRemove(id)}
-              className={cn(
-                "size-7 items-center justify-center rounded-full border border-destructive/35 bg-card active:bg-destructive/10 disabled:opacity-40",
-                Platform.select({ web: "hover:bg-destructive/10" }),
-              )}
-            >
-              <Icon name="close" className="size-4 text-destructive" />
-            </Pressable>
+            <RemoveWidgetButton id={id} disabled={mutationPending} onRemove={onRemove} t={t} />
           </View>
         );
       }}
@@ -251,8 +274,22 @@ export default function HomeScreen() {
     () => widgetIds.filter((id) => metaForWidget(id)?.tier === "tool"),
     [widgetIds],
   );
+  /**
+   * Fixed order, CBT then ACT (#977) - deliberately NOT `position` order like the tool
+   * tier. Onboarding writes these ids in the order the user tapped the module chips, so
+   * `position` would seat ACT first for anyone who picked it first, and the tier is two
+   * cards with no reason to vary.
+   *
+   * ⚠️ It follows that the programme tier is not user-orderable, so it is rendered as a
+   * plain list rather than a sortable one - a drag that writes a position the renderer
+   * then ignores is the row-snaps-back lie #975 removed from the tool tier. #980's
+   * arrange screen has to reckon with that; raised on the ticket.
+   */
   const programmeIds = useMemo(
-    () => widgetIds.filter((id) => metaForWidget(id)?.tier === "programme"),
+    () =>
+      PROGRAMME_ORDER.filter(
+        (id) => widgetIds.includes(id) && metaForWidget(id)?.tier === "programme",
+      ),
     [widgetIds],
   );
 
@@ -448,12 +485,16 @@ export default function HomeScreen() {
           ) : (
             <View className="mt-1 gap-7">
               {/*
-                Two tiers over ONE ordered list. Each is its own sortable list so a drag
-                can only ever reorder within a tier - see `reorderWidgets`.
+                Two tiers over ONE ordered list. A drag can only ever reorder within a
+                tier, because the sortable is given that tier's ids alone - see
+                `reorderWidgets`.
 
                 `Sortable.Grid columns={1}`, never `Sortable.Flex`: Flex drops
                 re-measures of 1px or less, which is exactly the delta between two rows
                 of the same height.
+
+                Only the TOOL tier is sortable. The programme tier below renders in a
+                fixed order (#977), so it is a plain list - see `programmeIds`.
               */}
               <TierSection
                 ids={toolIds}
@@ -471,21 +512,23 @@ export default function HomeScreen() {
                   <Text variant="h2" className="text-xl font-bold tracking-tight">
                     {t("home.tiers.programmes")}
                   </Text>
-                  {/*
-                    The programme tier keeps its existing cards until S6 (#977) reshapes
-                    them. Building the partition here rather than leaving two ids
-                    homeless is the whole reason home stays whole across this slice.
-                  */}
-                  <TierSection
-                    ids={programmeIds}
-                    editMode={editMode}
-                    mutationPending={mutationPending}
-                    scrollableRef={scrollableRef}
-                    onDragEnd={(next) => reorderWidgets(programmeIds, next)}
-                    onMove={(id, offset) => moveWidget(programmeIds, id, offset)}
-                    onRemove={removeWidget}
-                    renderRow={(id) => <WidgetContent id={id} userId={userId ?? ""} />}
-                  />
+                  {programmeIds.map((id) => (
+                    <View key={id} className="flex-row items-center gap-1">
+                      <View className="min-w-0 flex-1" pointerEvents={editMode ? "none" : "auto"}>
+                        <WidgetContent id={id} userId={userId ?? ""} />
+                      </View>
+                      {/* Remove only: there is no drag handle and no move buttons,
+                          because the order is not the user's to set. */}
+                      {editMode ? (
+                        <RemoveWidgetButton
+                          id={id}
+                          disabled={mutationPending}
+                          onRemove={removeWidget}
+                          t={t}
+                        />
+                      ) : null}
+                    </View>
+                  ))}
                 </View>
               ) : null}
             </View>

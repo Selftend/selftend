@@ -68,17 +68,24 @@ test.describe("CBT and ACT programme widgets", () => {
     }
   });
 
-  test("shows explicit not-started, active-goal, and completed states", async ({ page }) => {
+  test("shows no badge before starting, an ordinal while running, and Complete after", async ({
+    page,
+  }) => {
     const admin = createServiceClient();
     await page.goto("/");
     await dismissPostSignInModals(page);
 
-    await expect(page.getByText("CBT programme", { exact: true })).toBeVisible();
-    await expect(page.getByText("ACT programme", { exact: true })).toBeVisible();
-    await expect(page.getByText("View programme", { exact: true })).toHaveCount(2);
+    // --- Never started: a card with no badge, describing the module ---------
+    // Migrated for #977. This block used to pin `View programme` / `Open module` CTA
+    // buttons, the task list, and "Programme complete - well done."; the card now
+    // presses whole, carries an ordinal badge, and has no button of its own.
+    await expect(page.getByText("CBT programme", { exact: true }).last()).toBeVisible();
+    await expect(page.getByText("ACT programme", { exact: true }).last()).toBeVisible();
+    await expect(page.getByText(/A guided path through the CBT module/).last()).toBeVisible();
+    await expect(page.getByText(/^Phase \d+ of \d+$/)).toHaveCount(0);
 
-    // Viewing the full programme is not enrollment; that choice remains explicit there.
-    await page.getByRole("button", { name: "View programme", exact: true }).first().click();
+    // Opening the card is not enrollment; that choice stays explicit on the module.
+    await page.getByTestId("programme-card-cbt").last().click();
     await expect(page).toHaveURL(/\/modules\/cbt$/);
     const { data: notStarted } = await admin
       .from("user_preferences")
@@ -87,12 +94,14 @@ test.describe("CBT and ACT programme widgets", () => {
       .single();
     expect(notStarted?.cbt_program_started_at).toBeNull();
 
+    // --- Running: an honest ordinal, and the phase theme ---------------------
     const startedAt = new Date().toISOString();
     const { error: activeError } = await admin
       .from("user_preferences")
       .update({
         cbt_program_started_at: startedAt,
         cbt_program_completed_at: null,
+        cbt_program_phase_index: 1,
         act_program_started_at: startedAt,
         act_program_completed_at: null,
       })
@@ -101,19 +110,32 @@ test.describe("CBT and ACT programme widgets", () => {
 
     await page.goto("/");
     await page.reload();
+    await expect(page.getByTestId("programme-badge-cbt").last()).toHaveText("Phase 2 of 5");
+    // No task list survives on this card - the launcher widget keeps one, home does not.
     await expect(
       page.getByRole("button", { name: /Notice your thoughts, feelings & behaviours today/ }),
-    ).toBeVisible();
-    await expect(page.getByRole("button", { name: /Set 1-2 goals/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Drop anchor today/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Map your first choice point/ })).toBeVisible();
-    await page.getByRole("button", { name: /Drop anchor today/ }).click();
-    await expect(page).toHaveURL(/\/modules\/act\/connection\/drop-anchor$/);
+    ).toHaveCount(0);
 
+    // --- Abandoned: started_at cleared, phase_index left stale ---------------
+    // The trap this slice exists to avoid: gating on phase_index alone would meet a
+    // user who quit in phase 2 with a cheerful ordinal.
+    const { error: abandonError } = await admin
+      .from("user_preferences")
+      .update({ cbt_program_started_at: null })
+      .eq("user_id", userId);
+    if (abandonError) throw new Error(abandonError.message);
+
+    await page.goto("/");
+    await page.reload();
+    await expect(page.getByText("CBT programme", { exact: true }).last()).toBeVisible();
+    await expect(page.getByTestId("programme-badge-cbt")).toHaveCount(0);
+
+    // --- Complete ------------------------------------------------------------
     const completedAt = new Date().toISOString();
     const { error: completedError } = await admin
       .from("user_preferences")
       .update({
+        cbt_program_started_at: startedAt,
         cbt_program_completed_at: completedAt,
         act_program_completed_at: completedAt,
       })
@@ -122,9 +144,8 @@ test.describe("CBT and ACT programme widgets", () => {
 
     await page.goto("/");
     await page.reload();
-    await expect(page.getByText("Programme complete - well done.", { exact: true })).toHaveCount(2);
-    await expect(page.getByRole("button", { name: "Open module", exact: true })).toHaveCount(2);
-    await page.getByRole("button", { name: "Open module", exact: true }).first().click();
+    await expect(page.getByTestId("programme-badge-cbt").last()).toHaveText("Complete");
+    await page.getByTestId("programme-card-cbt").last().click();
     await expect(page).toHaveURL(/\/modules\/cbt$/);
   });
 });
