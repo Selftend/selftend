@@ -9,17 +9,16 @@ import {
 import { useToastStore } from "@/src/stores/toast-store";
 
 /**
- * Settings' two explicit onboarding actions and their shared feedback handling.
+ * Settings' two explicit onboarding actions and their feedback.
  *
- * `setErrorMessage`/`setSuccessMessage` are injected from the screen so the
- * feedback stays the single shared banner pair that `useSignOut` also writes to
- * (R7): the reset clears both banners at the start, then sets exactly one.
+ * The `setErrorMessage`/`setSuccessMessage` injection is gone with the R7 banner
+ * pair. Both outcomes were already toasting from here; the banners repeated the
+ * same sentence 200px further up the page, and neither outcome is a state that
+ * persists - the introduction either replays on the next Home visit or it does not.
  */
 export function useOnboardingActions(
   user: User | null,
   previousCompletionVia: "finish" | "skip" | null | undefined,
-  setErrorMessage: (message: string) => void,
-  setSuccessMessage: (message: string) => void,
 ) {
   const { t } = useTranslation("settings");
   const showToast = useToastStore((state) => state.showToast);
@@ -35,12 +34,8 @@ export function useOnboardingActions(
     }
 
     try {
-      setErrorMessage("");
-      setSuccessMessage("");
-
       await updateOnboarding.mutateAsync(patch);
 
-      setSuccessMessage(t(successKey));
       showToast({
         title: t("common:feedback.saved"),
         description: t(successKey),
@@ -48,9 +43,8 @@ export function useOnboardingActions(
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : t(errorKey);
-      setErrorMessage(message);
       showToast({
-        title: t("problem"),
+        title: t("common:feedback.problem"),
         description: message,
         tone: "error",
       });

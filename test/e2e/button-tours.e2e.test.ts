@@ -231,9 +231,14 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
     await setTourState([...HOME_TOUR_KEYS]);
 
     await page.goto("/settings");
+    // `Show tips again` survives #982 verbatim as a button name; only the `Onboarding`
+    // card heading around it disappeared, and this spec never asserted that heading.
     await page.getByRole("button", { name: "Show tips again", exact: true }).click();
 
-    await expect(page.getByText(/button tips.*can appear again/i).first()).toBeVisible();
+    // Toast-only now that the shared feedback banner is gone.
+    await expect(
+      page.getByTestId("app-toast").getByText(/button tips.*can appear again/i),
+    ).toBeVisible();
     await expect.poll(getShownButtonTours).toEqual([]);
   });
 });

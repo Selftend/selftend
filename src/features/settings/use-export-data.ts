@@ -1,20 +1,26 @@
 import { Platform } from "react-native";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useExportUserData } from "@/src/features/settings/queries";
 import { buildExportFileName, serializeExport } from "@/src/features/settings/export-data";
+import { useToastStore } from "@/src/stores/toast-store";
 import { currentDateKey } from "@/src/utils/date";
 
 /**
- * Export mutation + platform-specific delivery, extracted verbatim from
- * `ExportDataButton`. Web builds a Blob + anchor download; native dynamic-imports
- * `Share`. Pure filename/serialization live in `export-data.ts`.
+ * Export mutation + platform-specific delivery. Web builds a Blob + anchor
+ * download; native dynamic-imports `Share`. Pure filename/serialization live in
+ * `export-data.ts`.
+ *
+ * Both outcomes toast, which is what let the R7 banner pair die at zero cost:
+ * export was the one writer of feedback on this screen that had no toast of its
+ * own, and its two permanent `Text` nodes were the only thing keeping the pair
+ * alive. An export is transient by nature - the file either arrived or it did
+ * not - so there is no state left for the page to hold once the toast has gone.
  */
 export function useExportData() {
   const { t } = useTranslation("settings");
   const exportMutation = useExportUserData();
-  const [exported, setExported] = useState(false);
+  const showToast = useToastStore((state) => state.showToast);
 
   const exportData = async () => {
     try {
@@ -39,16 +45,25 @@ export function useExportData() {
         });
       }
 
-      setExported(true);
+      // Fired after delivery, not after the mutation: the download or share sheet
+      // is the part the user asked for, so a serialization or delivery failure
+      // must not report success.
+      showToast({
+        title: t("common:feedback.saved"),
+        description: t("account.exported"),
+        tone: "success",
+      });
     } catch {
-      // Error handled by mutation state
+      showToast({
+        title: t("common:feedback.problem"),
+        description: t("account.exportError"),
+        tone: "error",
+      });
     }
   };
 
   return {
     exportData,
     isPending: exportMutation.isPending,
-    isError: exportMutation.isError,
-    exported,
   };
 }

@@ -147,6 +147,19 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
     "src/features/notifications/notification-target-row.tsx",
     "src/features/notifications/registry.ts",
   ],
+  // #982: eleven settings rows, four labelled runs. It joins the reminders screen
+  // for the same reason - one row grammar, one neutral leading glyph - and it is
+  // the surface where the question was actually contested: the style picker's
+  // eight cards show three swatches each. Those are not hues from this palette
+  // (they are eight OTHER palettes' resolved tokens, read through THEME_HEXES),
+  // so the picker is not exempted here; the settings screen and its row are, and
+  // the reasoning is recorded in src/lib/theme/encoding.ts under "asked and
+  // refused".
+  "the settings rows": [
+    "src/features/settings/settings-screen.tsx",
+    "src/features/settings/components/settings-row.tsx",
+    "src/features/settings/components/settings-run.tsx",
+  ],
 };
 
 /**

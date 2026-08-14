@@ -73,6 +73,32 @@ describe("StylePicker", () => {
     expect(new Set(swatches).size).toBe(STYLE_NAMES.length);
   });
 
+  // #982 restyled this in place rather than forking it: settings gets a 4-up
+  // desktop grid and no caption, and the user menu's call site is untouched. The
+  // defaults are what make that true, so they are what is asserted.
+  describe("the two layout props settings passes", () => {
+    it("defaults to the user menu's two-up grid with its caption", () => {
+      render(<StylePicker />);
+
+      expect(screen.getByTestId(`style-item-${DEFAULT_STYLE}`).props.className).toBe("w-1/2 p-1");
+      // The caption is `t("styleToggle.toggle")`, which renders as the bare key
+      // here since the test mounts without translations.
+      expect(screen.getAllByText("styleToggle.toggle").length).toBeGreaterThan(0);
+    });
+
+    it("takes settings' 4-up grid and drops the caption, keeping the group named", () => {
+      render(<StylePicker itemClassName="w-1/2 md:w-1/4 p-1" heading={false} />);
+
+      expect(screen.getByTestId(`style-item-${DEFAULT_STYLE}`).props.className).toBe(
+        "w-1/2 md:w-1/4 p-1",
+      );
+      // Hiding the caption must not leave the radiogroup unnamed - the group's
+      // own accessibilityLabel is the thing a screen reader announces.
+      expect(screen.queryByText("styleToggle.toggle")).toBeNull();
+      expect(screen.getByLabelText("styleToggle.toggle")).toBeTruthy();
+    });
+  });
+
   // Palette names are proper nouns and are deliberately NOT run through i18n;
   // the chrome around them is. A label rendered through `t()` would come back as
   // the key here, since the test renders without translations loaded.

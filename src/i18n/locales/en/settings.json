@@ -1,18 +1,22 @@
 {
   "title": "Settings",
-  "loading": "Loading settings...",
-  "problem": "Settings problem",
-  "saved": "Saved",
+  "openSource": "open source",
+  "runs": {
+    "app": "App",
+    "data": "Your data",
+    "help": "Help",
+    "account": "Account"
+  },
   "profile": {
-    "title": "Profile",
-    "description": "Your display name and profile picture. You can restore your Google photo after choosing or removing a custom photo.",
     "displayNameLabel": "Display name",
+    "editName": "Edit name",
     "namePlaceholder": "Your name (optional)",
     "saveName": "Save name",
     "savingName": "Saving...",
     "nameSaved": "Display name saved.",
     "nameError": "Unable to save display name.",
     "change": "Change photo",
+    "pickPhoto": "Choose a photo",
     "uploading": "Uploading...",
     "permissionNeeded": "Photo library access is needed to choose a profile picture.",
     "tooLarge": "Choose an image smaller than 5 MB.",
@@ -28,9 +32,8 @@
     "loadError": "Unable to load profile picture."
   },
   "reminders": {
-    "title": "Reminders & notifications",
-    "description": "Reminders stay explicit and off by default. They should support use, not create pressure.",
-    "openNotifications": "Open notifications"
+    "title": "Reminders",
+    "description": "Reminders stay explicit and off by default. They should support use, not create pressure."
   },
   "onboarding": {
     "saving": "Saving...",
@@ -89,32 +92,27 @@
     }
   },
   "onboardingSection": {
-    "title": "Onboarding",
-    "description": "Replay the app introduction or make optional contextual tips available again.",
     "replayIntroduction": "Replay introduction",
     "showTipsAgain": "Show tips again"
   },
   "security": {
-    "title": "Security",
-    "description": "Protect this device and learn how your data is kept safe.",
     "appLock": "App lock",
     "appLockDescription": "Require your fingerprint, face, or device passcode to open the app.",
     "appLockUnavailable": "Set up device biometrics or a passcode to enable the app lock.",
-    "appLockConfirm": "Confirm to turn on the app lock",
-    "openSecurity": "How we protect your data"
+    "appLockConfirm": "Confirm to turn on the app lock"
+  },
+  "privacy": {
+    "title": "Privacy",
+    "description": "What we store, and how it is handled."
   },
   "support": {
-    "title": "Support and project links",
-    "openSupport": "Open support page",
-    "openLegal": "Open legal and boundaries",
-    "cookiePreferences": "Cookie preferences",
-    "openGithub": "Open GitHub repo"
+    "support": "Support",
+    "legal": "Legal and boundaries",
+    "cookies": "Cookies"
   },
   "account": {
     "eyebrow": "Account",
     "intro": "Quiet defaults, and control over your account and data.",
-    "title": "Account",
-    "signedIn": "Signed-in account",
     "exporting": "Exporting...",
     "exportButton": "Export my data",
     "exportShareTitle": "Selftend data export",
@@ -127,6 +125,7 @@
     "deleteFailed": "Deletion failed. Please try again or contact support.",
     "deleting": "Deleting...",
     "deleteButton": "Delete my account",
+    "deleteHint": "This cannot be undone.",
     "cancel": "Cancel",
     "signOut": "Sign out",
     "signOutError": "Unable to sign out.",
@@ -236,7 +235,6 @@
     "joinDiscord": "Join our Discord"
   },
   "appearance": {
-    "title": "Appearance",
-    "description": "Choose a palette. It applies on this device only."
+    "description": "Choose a palette. This device only."
   }
 }

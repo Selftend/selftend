@@ -5,16 +5,16 @@ import { cancelAllReminders } from "@/src/lib/notifications";
 import { useToastStore } from "@/src/stores/toast-store";
 
 /**
- * Sign-out handler, extracted verbatim from the screen. Deregisters this
- * device's push channel (`cancelAllReminders`) BEFORE `signOut` while the RLS
- * context is still valid, so server-driven reminders stop for a device the user
- * has left.
+ * Sign-out handler. Deregisters this device's push channel
+ * (`cancelAllReminders`) BEFORE `signOut` while the RLS context is still valid,
+ * so server-driven reminders stop for a device the user has left.
  *
- * `setErrorMessage` is injected from the screen so the failure banner remains the
- * single shared `errorMessage` banner that `useResetOnboarding` also writes to
- * (R7). Extracting a private error state here would produce two banners.
+ * A failure toasts and nothing else. The injected `setErrorMessage` this used to
+ * take existed only to write the screen's shared error banner (R7), and that pair
+ * is gone: the toast was already firing beside it, so the banner was a second
+ * rendering of the same sentence on a page the user is about to leave.
  */
-export function useSignOut(userId: string | null, setErrorMessage: (message: string) => void) {
+export function useSignOut(userId: string | null) {
   const { t } = useTranslation("settings");
   const showToast = useToastStore((state) => state.showToast);
 
@@ -26,9 +26,8 @@ export function useSignOut(userId: string | null, setErrorMessage: (message: str
       await signOut();
     } catch (error) {
       const message = error instanceof Error ? error.message : t("account.signOutError");
-      setErrorMessage(message);
       showToast({
-        title: t("problem"),
+        title: t("common:feedback.problem"),
         description: message,
         tone: "error",
       });
