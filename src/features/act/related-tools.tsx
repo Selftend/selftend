@@ -29,7 +29,9 @@ export function RelatedTools({ tools }: RelatedToolsProps) {
             key={tool.nameKey}
             accessibilityRole="link"
             accessibilityLabel={tNav(`sidebar.${tool.nameKey}`)}
-            onPress={() => router.push(tool.href)}
+            // "Related" is lateral by definition - the tool you jump to may be the
+            // one you came from two hops ago (#1027).
+            onPress={() => router.push(tool.href, { dangerouslySingular: true })}
             className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 active:bg-accent/40"
           >
             <Icon name={tool.icon} className="size-3.5 text-muted-foreground" />

@@ -83,7 +83,9 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByLabelText("Open account menu"));
     fireEvent.press(screen.getByText("Send feedback"));
 
-    expect(mockPush).toHaveBeenCalledWith("/(app)/support");
+    // Lateral jump to a panel destination, so it must reuse the screen already in the
+    // stack rather than push a second copy (#1027).
+    expect(mockPush).toHaveBeenCalledWith("/(app)/support", { dangerouslySingular: true });
   });
 
   it("shows the compact get-the-app section on web", () => {
