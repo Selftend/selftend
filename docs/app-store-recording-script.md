@@ -8,6 +8,15 @@ Companion to [`app-store-review-information.md`](./app-store-review-information.
 
 ---
 
+## For whoever hands the phone over — not for the person recording
+
+Two things to settle before the helper starts, because neither is discoverable from the phone.
+
+1. **Which way does sign-up go in production?** `sign-up-form.tsx` branches on whether Supabase returns a session immediately: an **autoconfirm** project drops the new user straight into the app, a **confirmation-mode** project sends them to a _"Verify your email"_ screen. Step 2 covers both, but ⚠️ the autoconfirm branch puts a **brand-new, empty account** on screen — the exact thing a _2.1 App Completeness_ rejection is about — so if that is the live setting, make sure the helper has read step 2(b) and knows to sign out at once. Checking takes seconds in the Supabase dashboard; guessing does not.
+2. **Hand over the two passwords** (`demo@selftend.org`, `vasil.yoshev+delete-demo@gmail.com`) and confirm both still sign in. ⚠️ **Never trigger a password reset, resend or recovery against `demo@selftend.org`** — it is SQL-created and non-deliverable, and the bounce damages the project's sender reputation.
+
+---
+
 ## Before you start
 
 **Record `0.11.1 (6)`. Not the newest build.** TestFlight offers the newest build by default, and this app's internal group also holds **0.13.0 (9)**, which has a redesigned home screen that is **not** the one Apple is reviewing. Recording it would show App Review something that does not exist in the submission.
@@ -18,13 +27,13 @@ Companion to [`app-store-review-information.md`](./app-store-review-information.
 
 **Three accounts. They are not interchangeable, and one of them must never be deleted.**
 
-| Where it is used             | Account                                   | Note                                                                                                                                            |
-| ---------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Step 2 — registration        | **a brand-new address you will be given** | Created live on camera. Stop at the "check your email" screen; do not verify it                                                                 |
-| Steps 4–10 — the walkthrough | **`demo@selftend.org`**                   | ☠️ **Never approach a delete control while signed in as this account.** It is App Review's own sign-in; deleting it would lock the reviewer out |
-| Step 11 — deletion           | **`vasil.yoshev+delete-demo@gmail.com`**  | Exists already, sign-in verified, and holds a few entries so the deletion visibly removes something                                             |
+| Where it is used             | Account                                    | Note                                                                                                                                                                                |
+| ---------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Step 2 — registration        | **`vasil.yoshev+review-signup@gmail.com`** | Created live on camera. Deliverable, so the confirmation mail lands somewhere real — ⚠️ never invent an address, a bounce damages the project's sender reputation. Do not verify it |
+| Steps 4–10 — the walkthrough | **`demo@selftend.org`**                    | ☠️ **Never approach a delete control while signed in as this account.** It is App Review's own sign-in; deleting it would lock the reviewer out                                     |
+| Step 11 — deletion           | **`vasil.yoshev+delete-demo@gmail.com`**   | Exists already, sign-in verified, and holds a few entries so the deletion visibly removes something                                                                                 |
 
-You will be given the two passwords separately. ⚠️ **Passwords in this app are at least 12 characters** — the one you invent at step 2 must be too, or the form will reject it on camera.
+You will be given the two passwords separately. ⚠️ **The one you invent at step 2 has to clear two checks** — at least 12 characters, and not a password known from a public breach. See step 2.
 
 **Recording settings**
 
@@ -57,16 +66,30 @@ Tap **Sign up** (at the bottom of the form, after _"Don't have an account?"_).
 On **"Create an account"**:
 
 - **Display name** — anything, or leave it; it is optional.
-- **Email** — the new address you were given.
-- **Password** and **Confirm password** — the same value, **at least 12 characters**.
+- **Email** — the address you were given for this step (see _Three accounts_ above).
+- **Password** and **Confirm password** — the same value.
+
+> ☠️ **Two ways the password gets rejected on camera.** It must be **at least 12 characters**, and it is checked against a database of passwords exposed in real breaches — so `Password1234` and friends come back with _"This password appears in known data breaches."_ **Invent something unmemorable**: three unrelated words plus a number works. Decide it before you start recording, not in the field.
+>
+> ⚠️ If you get _"An account with this email already exists"_, the address has been used before. **Don't stop** — add something to it before the `@`, e.g. `…+review-signup2@…`, and carry on. It is not worth a retake.
 
 Tap **Sign up**.
 
-You reach **"Verify your email"**, saying a verification link was sent. **Stop here.** Do not open the mailbox and do not verify. This shot exists to show that registration works and that the app asks for confirmation — nothing more.
+**What happens next depends on a server setting, so both are normal. Follow whichever you get:**
+
+**(a) You reach a screen saying "Verify your email".** ✅ **Stop here.** Do not open the mailbox and do not verify. The shot is complete — it shows registration works and that the app asks for confirmation.
+
+**(b) You land straight in the app, on a home screen, with a banner asking you to verify your email.** Also fine — the account was created and you are signed in as it. But:
+
+> ☠️ **Do not explore, and do not record this screen for longer than a couple of seconds.** This is a brand-new account with nothing in it, and an empty app is precisely what Apple's complaint is about. **Sign out immediately** — open the navigation, then the account menu, then **Sign Out** — and go to step 3.
+
+Either way you must **not** verify the email address.
 
 ### 3. Sign in as the demo account
 
-Navigate back to sign-in. Sign in with **`demo@selftend.org`** and its password. Tap **Continue**.
+Get back to the sign-in form — from **(a)**, tap **Back to sign in**; from **(b)**, you are already signed out and looking at it.
+
+Sign in with **`demo@selftend.org`** and its password. Tap **Continue**.
 
 ⚠️ From here until step 10 you are signed in as the account App Review will use. **Do not open Settings › Account, and do not tap anything called Delete.**
 
@@ -167,7 +190,7 @@ Every item below must be visible in the footage. A recording missing one is wors
 - [ ] The recording is of **0.11.1 (6)**
 - [ ] Cold launch, from a force-quit state
 - [ ] **Crisis guidance link visible before sign-in**, on the first screen
-- [ ] Registration completed to the "verify your email" screen
+- [ ] Registration completed — either to the "verify your email" screen, or into the app followed by an **immediate** sign-out
 - [ ] Sign-in with `demo@selftend.org` succeeding
 - [ ] A populated home dashboard
 - [ ] A mood entry created **and** shown in its history
