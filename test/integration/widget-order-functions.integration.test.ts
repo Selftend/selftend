@@ -50,6 +50,46 @@ describe("widget order functions (integration)", () => {
     expect(error).toBeNull();
   }
 
+  // One INSERT per row, so every row gets a distinct `created_at` in insertion order.
+  // A single multi-row insert shares one transaction timestamp, which would leave
+  // `widget_id` as the only tiebreak and make the `created_at` leg untestable.
+  async function seedSequentially(rows: { widget_id: string; position: number }[]) {
+    await reset();
+    for (const row of rows) {
+      const { error } = await client.from("widget_preferences").insert({ ...row, user_id: userId });
+      expect(error).toBeNull();
+    }
+  }
+
+  async function runOrderQuery(query: PromiseLike<{ data: unknown; error: unknown }>) {
+    const { data, error } = await query;
+    expect(error).toBeNull();
+    return ((data ?? []) as { widget_id: string }[]).map((row) => row.widget_id);
+  }
+
+  function orderQuery() {
+    return client
+      .from("widget_preferences")
+      .select("widget_id")
+      .eq("user_id", userId)
+      .order("position", { ascending: true });
+  }
+
+  // The order a client actually reads with (#986): `position` first, then the `created_at`
+  // and `widget_id` tiebreaks that keep the read total even while two rows share a
+  // position.
+  async function readOrderWithTiebreak() {
+    return runOrderQuery(
+      orderQuery().order("created_at", { ascending: true }).order("widget_id", { ascending: true }),
+    );
+  }
+
+  // `position` alone. Total only once positions are distinct, which is what healing
+  // guarantees - so this and the above must agree on a healed list.
+  async function readOrderByPositionAlone() {
+    return runOrderQuery(orderQuery());
+  }
+
   beforeAll(async () => {
     const owner = await createSignedInUser(email);
     userId = owner.id;
@@ -165,7 +205,13 @@ describe("widget order functions (integration)", () => {
 
     // The property that makes a partitioned renderer safe: a caller that can only see
     // part of the list cannot disturb the part it cannot see.
-    it("leaves every unnamed row's position untouched", async () => {
+    //
+    // Note what this pins and what it does not. The seed is already contiguous 0..4, so
+    // normalizing (#986) is a no-op here and the literal position VALUES survive. That is
+    // a property of this seed, not a guarantee - a gapped or duplicated list renumbers,
+    // and the guarantee that survives is the unnamed row's rank. See "leaves the unnamed
+    // row's rank alone even though its position value changes" below for that case.
+    it("leaves every unnamed row's position untouched when the list is already contiguous", async () => {
       const { error } = await client.rpc("set_widget_order", { p_widget_ids: ["e", "a"] });
       expect(error).toBeNull();
 
@@ -260,6 +306,144 @@ describe("widget order functions (integration)", () => {
       const anon = createAnonClient();
       const { error } = await anon.rpc("set_widget_order", { p_widget_ids: ["a"] });
       expect(error).not.toBeNull();
+    });
+  });
+
+  // #986. `position` is not constrained unique and RLS lets any client write it directly,
+  // so a duplicate can still arrive from outside these two functions - most realistically
+  // from a pre-#974 build, which still rewrites positions 0..n-1 over a filtered view of
+  // the list. Before this slice a duplicate was permanent: `set_widget_order` preserves
+  // the multiset of positions, so no reorder could ever heal one.
+  //
+  // Every seed here writes the duplicate the way such a client would - a direct insert
+  // under the user's own RLS policy.
+  describe("duplicate positions arriving from outside these functions", () => {
+    // `z` is inserted before `a` so insertion order and alphabetical order disagree.
+    // Healing follows (position, created_at, widget_id), so `z` must come first; if
+    // `widget_id` were doing the work the pair would come back the other way round.
+    const duplicated = [
+      { widget_id: "z", position: 0 },
+      { widget_id: "a", position: 0 },
+      { widget_id: "c", position: 1 },
+    ];
+
+    it("add_widget_preference renumbers them before appending", async () => {
+      await seedSequentially([
+        { widget_id: "z", position: 0 },
+        { widget_id: "a", position: 0 },
+      ]);
+
+      const { error } = await client.rpc("add_widget_preference", { p_widget_id: "m" });
+      expect(error).toBeNull();
+
+      // Without healing the new row lands on `max(position) + 1` = 1, next to `a`, and
+      // the pair at 0 stays duplicated forever.
+      expect(await positions(client, userId)).toEqual([
+        { widget_id: "z", position: 0 },
+        { widget_id: "a", position: 1 },
+        { widget_id: "m", position: 2 },
+      ]);
+    });
+
+    it("set_widget_order renumbers them before redistributing slots", async () => {
+      await seedSequentially(duplicated);
+
+      const { error } = await client.rpc("set_widget_order", { p_widget_ids: ["a", "z"] });
+      expect(error).toBeNull();
+
+      // Healed to z=0, a=1, c=2 first; only then do the named rows swap the slots
+      // {0, 1} they hold. Without healing both named rows hold 0, so the "swap" hands
+      // 0 back to each of them and the duplicate survives.
+      expect(await positions(client, userId)).toEqual([
+        { widget_id: "a", position: 0 },
+        { widget_id: "z", position: 1 },
+        { widget_id: "c", position: 2 },
+      ]);
+    });
+
+    it("leaves the unnamed row's rank alone even though its position value changes", async () => {
+      await seedSequentially([
+        { widget_id: "z", position: 0 },
+        { widget_id: "a", position: 0 },
+        { widget_id: "c", position: 5 },
+      ]);
+
+      const { error } = await client.rpc("set_widget_order", { p_widget_ids: ["a", "z"] });
+      expect(error).toBeNull();
+
+      // `c` was never named, and it is still last. Healing closes its gap (5 -> 2), so
+      // the guarantee an unnamed row gets is that its RANK is untouched, not its
+      // literal position value.
+      expect(await positions(client, userId)).toEqual([
+        { widget_id: "a", position: 0 },
+        { widget_id: "z", position: 1 },
+        { widget_id: "c", position: 2 },
+      ]);
+    });
+
+    // Both new functions are reachable over PostgREST, so they get the same grant check
+    // the two functions in 20260813010000 carry.
+    it("exposes neither new function to an anonymous caller", async () => {
+      const anon = createAnonClient();
+
+      const normalize = await anon.rpc("normalize_widget_positions");
+      expect(normalize.error).not.toBeNull();
+
+      const lockKey = await anon.rpc("widget_order_lock_key", {
+        p_user_id: "11111111-1111-4111-8111-111111111111",
+      });
+      expect(lockKey.error).not.toBeNull();
+    });
+
+    // Signed in, normalizing is scoped to the caller by `auth.uid()` alone - it takes no
+    // arguments, so there is nothing to point at another account.
+    it("normalizes only the caller's own rows", async () => {
+      await seedSequentially(duplicated);
+      const seeded = await otherClient.from("widget_preferences").insert([
+        { user_id: otherUserId, widget_id: "x", position: 0 },
+        { user_id: otherUserId, widget_id: "y", position: 0 },
+      ]);
+      expect(seeded.error).toBeNull();
+
+      const { error } = await client.rpc("normalize_widget_positions");
+      expect(error).toBeNull();
+
+      expect(await positions(client, userId)).toEqual([
+        { widget_id: "z", position: 0 },
+        { widget_id: "a", position: 1 },
+        { widget_id: "c", position: 2 },
+      ]);
+      // The other user's duplicate is untouched - theirs to heal on their own next write.
+      const otherRows = await otherClient
+        .from("widget_preferences")
+        .select("widget_id, position")
+        .eq("user_id", otherUserId)
+        .order("widget_id", { ascending: true });
+      expect(otherRows.error).toBeNull();
+      expect(otherRows.data).toEqual([
+        { widget_id: "x", position: 0 },
+        { widget_id: "y", position: 0 },
+      ]);
+
+      await otherClient.from("widget_preferences").delete().eq("user_id", otherUserId);
+    });
+
+    // The contract that lets the read keep its tiebreak and the write keep healing
+    // without the two disagreeing: healing is invisible. This derives the expectation
+    // from an actual pre-heal read rather than restating the ordering.
+    it("heals into exactly the order the read already showed", async () => {
+      await seedSequentially(duplicated);
+      const beforeHeal = await readOrderWithTiebreak();
+
+      // Re-adding a widget the user already has is a heal and nothing else: the insert
+      // hits `on conflict do nothing`.
+      const { error } = await client.rpc("add_widget_preference", { p_widget_id: "z" });
+      expect(error).toBeNull();
+
+      // Read back with no tiebreak at all - positions are distinct now, so they alone
+      // are total. Same sequence, so no dashboard reshuffles when a duplicate heals.
+      expect(await readOrderByPositionAlone()).toEqual(beforeHeal);
+      expect(beforeHeal).toEqual(["z", "a", "c"]);
     });
   });
 });
