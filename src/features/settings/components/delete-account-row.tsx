@@ -27,7 +27,10 @@ export function DeleteAccountRow() {
     try {
       await deleteMutation.mutateAsync();
       setOpen(false);
-      await signOut();
+      // The one place `global` is the honest scope (#968): the account row is
+      // gone, so every device's session is already dead server-side and this
+      // says so rather than pretending only this device was left.
+      await signOut("global");
     } catch {
       // Error is shown in the modal.
     }

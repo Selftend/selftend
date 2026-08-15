@@ -101,7 +101,14 @@ export function useSettingsSync(userId: string | null, preferences: UserPreferen
             // errors and stop. Signing out clears the zombie JWT and lands the user
             // on sign-in instead of a half-working app.
             if (isStaleSessionError(error)) {
-              void supabase?.auth.signOut();
+              // `local`, and explicitly (#968): this clears a zombie JWT off THIS
+              // device. The default `global` would post to /logout for a user row
+              // that no longer exists - the very 23503 that got us here - so it
+              // buys a doomed round trip and nothing else. Calls the client
+              // directly rather than the `signOut` wrapper because this is
+              // fire-and-forget: the wrapper throws, and there is no one here to
+              // catch it.
+              void supabase?.auth.signOut({ scope: "local" });
             }
           },
         },

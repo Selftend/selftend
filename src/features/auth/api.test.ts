@@ -484,7 +484,7 @@ describe("signOut", () => {
     const signOutFn = jest.fn().mockResolvedValue({ error: null });
     mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
 
-    await expect(signOut()).resolves.toBeUndefined();
+    await expect(signOut("local")).resolves.toBeUndefined();
     expect(signOutFn).toHaveBeenCalledTimes(1);
   });
 
@@ -493,6 +493,30 @@ describe("signOut", () => {
     const signOutFn = jest.fn().mockResolvedValue({ error });
     mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
 
-    await expect(signOut()).rejects.toBe(error);
+    await expect(signOut("local")).rejects.toBe(error);
+  });
+
+  // The point of the wrapper (#968). supabase-js defaults to `scope: 'global'`,
+  // which revokes EVERY refresh token the user holds - signing out on the laptop
+  // ends the session on the phone. These two pin that the scope reaching auth-js
+  // is the one the caller asked for, never an omitted argument falling back to
+  // that default. Assert the whole options object, not `objectContaining`: an
+  // extra key here would be another silent default riding along.
+  it("passes scope 'local' straight through, so other devices keep their session", async () => {
+    const signOutFn = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
+
+    await signOut("local");
+
+    expect(signOutFn).toHaveBeenCalledWith({ scope: "local" });
+  });
+
+  it("passes scope 'global' straight through, for the post-deletion call", async () => {
+    const signOutFn = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
+
+    await signOut("global");
+
+    expect(signOutFn).toHaveBeenCalledWith({ scope: "global" });
   });
 });

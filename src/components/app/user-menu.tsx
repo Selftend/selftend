@@ -97,7 +97,8 @@ export function UserMenu() {
     // Deregister this device's push channel BEFORE sign-out (while RLS context is still
     // valid), so server-driven reminders stop firing for a device the user has left.
     await cancelAllReminders(user?.id ?? null);
-    await signOut();
+    // `local`: this device only - the same "Sign out" as the settings row (#968).
+    await signOut("local");
   }
 
   return (

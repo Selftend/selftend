@@ -335,6 +335,10 @@ describe("useSettingsSync", () => {
     act(() => options.onError({ code: "23503" }));
 
     expect(mockSignOut).toHaveBeenCalledTimes(1);
+    // Scoped to this device (#968). The user row is already gone, so `global` -
+    // supabase-js's silent default - would only add a doomed /logout round trip;
+    // what this call is for is clearing the zombie JWT off this disk.
+    expect(mockSignOut).toHaveBeenCalledWith({ scope: "local" });
   });
 
   it.each([

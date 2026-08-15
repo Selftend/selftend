@@ -36,6 +36,8 @@ describe("useSignOut", () => {
 
     expect(mockCancel).toHaveBeenCalledWith("user-1");
     expect(mockSignOut).toHaveBeenCalledTimes(1);
+    // This device only (#968) - leaving the user signed in on their phone.
+    expect(mockSignOut).toHaveBeenCalledWith("local");
     // Order matters: reminders must be deregistered while the session is still valid.
     expect(mockCancel.mock.invocationCallOrder[0]).toBeLessThan(
       mockSignOut.mock.invocationCallOrder[0],

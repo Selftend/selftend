@@ -348,9 +348,28 @@ export async function markEmailVerifiedFromCallback() {
   await updateUserPreferences(user.id, { emailVerified: true });
 }
 
-export async function signOut() {
+/**
+ * Which sessions a sign-out ends.
+ *
+ * - `local` - this device only. Every other device the user is signed in on
+ *   keeps working. What "Sign out" means to a person.
+ * - `global` - revokes every refresh token the user holds, everywhere.
+ */
+export type SignOutScope = "local" | "global";
+
+/**
+ * Sign the user out.
+ *
+ * ⚠️ `scope` is REQUIRED and deliberately has no default. supabase-js's own
+ * default is `{ scope: 'global' }` (`GoTrueClient._signOut`), so every call that
+ * omitted it was ending the session on the user's other devices too - a laptop
+ * sign-out logging the phone out, which nothing in the product ever asked for
+ * and no copy ever mentioned (#968). Leaving the argument mandatory is the
+ * point: a new call site cannot inherit that default by saying nothing.
+ */
+export async function signOut(scope: SignOutScope) {
   const client = requireSupabase();
-  const { error } = await client.auth.signOut();
+  const { error } = await client.auth.signOut({ scope });
   if (error) {
     throw error;
   }

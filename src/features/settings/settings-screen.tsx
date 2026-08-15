@@ -167,15 +167,16 @@ export default function SettingsScreen() {
 
             <SettingsRun label={t("runs.account")} testID="settings-run-account">
               {/*
-                No description. The drawn "You'll stay signed in on other devices."
-                is exactly backwards - `signOut()` takes supabase-js's
-                `scope: 'global'` default at all three call sites (#968) - and it is
-                DELETED rather than rewritten, because writing the true sentence
-                here would pre-commit the scope question that ticket has to answer.
+                The drawn "You'll stay signed in on other devices." is back, and
+                now true. It was deleted while `signOut()` still took supabase-js's
+                `scope: 'global'` default, which made the sentence exactly backwards;
+                #968 settled the scope as per-device, so the description says what
+                the row does again.
               */}
               <SettingsRow
                 icon="logout"
                 label={t("account.signOut")}
+                description={t("account.signOutHint")}
                 trailing={{ kind: "act" }}
                 onPress={() => void handleSignOut()}
                 testID="settings-row-sign-out"
