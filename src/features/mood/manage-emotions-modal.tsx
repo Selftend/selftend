@@ -259,7 +259,11 @@ function EmotionReorderHandle({ emotion, canMove, onMove }: EmotionReorderHandle
         // `accessibilityHint` at all, so this string reaches ONLY native AT - where
         // VoiceOver and TalkBack drive the rotor actions and there are no arrow keys to
         // press. It states the outcome, which is true on both platforms.
-        accessibilityHint={t("emotions.manage.reorderHint")}
+        //
+        // Withheld on a lone list, where `reorderMoveProps` withholds every move: a hint is
+        // read AFTER the label, and an outcome nothing can produce is worse there than
+        // silence, since native AT is the one listener that hears it at all (#1049).
+        accessibilityHint={canMove ? t("emotions.manage.reorderHint") : undefined}
         {...reorderMoveProps({
           canMove,
           earlierLabel: t("emotions.manage.moveEarlier", { name: emotion.name }),

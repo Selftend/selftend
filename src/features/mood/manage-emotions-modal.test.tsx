@@ -16,40 +16,30 @@ const mockUpsertEmotion = jest.fn();
 const mockReorderEmotions = jest.fn();
 let mockReorderPending = false;
 
+function mockEmotionRow(emotionId: string, position: number) {
+  return {
+    id: emotionId,
+    userId: "user-1",
+    emotionId,
+    name: null,
+    emoji: null,
+    position,
+    removed: false,
+    isCustom: false,
+  };
+}
+
+/**
+ * Three rows is what every case renders except the lone-row one, which shortens it - the
+ * list is settable rather than inlined so "there is nowhere to move to" has a fixture at
+ * all. `beforeEach` puts the three back.
+ */
+const mockFullEmotionList = ["anxious", "grateful", "sad"].map(mockEmotionRow);
+let mockEmotionList = mockFullEmotionList;
+
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
   useEmotionPreferences: () => ({
-    data: [
-      {
-        id: "anxious",
-        userId: "user-1",
-        emotionId: "anxious",
-        name: null,
-        emoji: null,
-        position: 0,
-        removed: false,
-        isCustom: false,
-      },
-      {
-        id: "grateful",
-        userId: "user-1",
-        emotionId: "grateful",
-        name: null,
-        emoji: null,
-        position: 1,
-        removed: false,
-        isCustom: false,
-      },
-      {
-        id: "sad",
-        userId: "user-1",
-        emotionId: "sad",
-        name: null,
-        emoji: null,
-        position: 2,
-        removed: false,
-        isCustom: false,
-      },
-    ],
+    data: mockEmotionList,
     isLoading: false,
   }),
   useEmotionUsageCounts: jest.fn(() => ({ data: { anxious: 3 } })),
@@ -115,6 +105,7 @@ describe("ManageEmotionsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockReorderPending = false;
+    mockEmotionList = mockFullEmotionList;
     mockUseEmotionUsageCounts.mockReturnValue({
       data: { anxious: 3 },
     } as unknown as ReturnType<typeof useEmotionUsageCounts>);
@@ -265,6 +256,37 @@ describe("ManageEmotionsModal", () => {
 
     it("still refuses the move itself while a write is in flight", () => {
       mockReorderPending = true;
+      open();
+
+      moveVia("anxious", "moveLater");
+
+      expect(mockReorderEmotions).not.toHaveBeenCalled();
+    });
+
+    /**
+     * ☠️ The keyboard half was withheld on a one-emotion list from the start and the rotor
+     * half was not, so VoiceOver and TalkBack were still offered "Move Anxious earlier" /
+     * "Move Anxious later" on a list with nowhere to move to, and both did nothing (#1049).
+     * `focusable: false` hid the whole handle from the keyboard, which is why this reached
+     * native AT only. The hint goes with them: it is read AFTER the label, and native AT is
+     * the only listener that hears it, so an outcome nothing can produce is worse than
+     * silence. `arrange-screen.test.tsx` holds the matching assertions for home's handle.
+     */
+    it("offers a one-emotion list's handle no move, and no hint either", () => {
+      mockEmotionList = [mockFullEmotionList[0]];
+      open();
+
+      const handle = screen.getByTestId("emotion-reorder-handle-anxious");
+      expect(handle.props.accessibilityActions).toEqual([]);
+      expect(handle.props.accessibilityHint).toBeUndefined();
+      expect(handle.props.focusable).toBe(false);
+      // The label stays - the handle is still there to drag against, once there is a
+      // second row to drag past.
+      expect(handle.props.accessibilityLabel).toBe("Reorder Anxious");
+    });
+
+    it("writes nothing when a one-emotion list's move is dispatched anyway", () => {
+      mockEmotionList = [mockFullEmotionList[0]];
       open();
 
       moveVia("anxious", "moveLater");

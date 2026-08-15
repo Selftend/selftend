@@ -111,6 +111,13 @@ interface ReorderMoveOptions {
  * A pointer-only user with no keyboard still has drag alone, so it stays a PARTIAL answer
  * to SC 2.5.7.
  *
+ * `canMove: false` withholds EVERY path - the action pair, the focus, the keys, and the
+ * move itself (#1049). One question, one answer: a lone row must not be offered a move on
+ * any of them, because an action a screen reader reads out and then declines to perform is
+ * worse than no action - the user cannot tell it apart from a bug in their own gesture.
+ * One path stays the caller's: withhold the `accessibilityHint` there too, since a hint is
+ * read AFTER the label and a lone row has no outcome left to describe.
+ *
  * ☠️ `canMove` must NOT fold in "a write is in flight". react-native-web reads `focusable`
  * as `tabIndex`, so flipping it while a write settles takes the focused handle out of the
  * tab order mid-move: the user's next Arrow press lands on the document and reordering by
@@ -126,11 +133,18 @@ export function reorderMoveProps({
   return {
     accessibilityRole: "button" as const,
     focusable: canMove,
-    accessibilityActions: [
-      { name: "moveEarlier", label: earlierLabel },
-      { name: "moveLater", label: laterLabel },
-    ],
+    // Withheld, not offered-and-refused: a lone row has nowhere to move to, and an empty
+    // set is what keeps "Move X earlier" out of the rotor rather than in it doing nothing.
+    accessibilityActions: canMove
+      ? [
+          { name: "moveEarlier", label: earlierLabel },
+          { name: "moveLater", label: laterLabel },
+        ]
+      : [],
     onAccessibilityAction: (event: AccessibilityActionEvent) => {
+      // ⚠️ Not redundant with the empty set above. Whether a platform dispatches an action
+      // it was not offered is the platform's business - the two differ in how long a
+      // node's action set is cached across a re-render - and refusing costs a comparison.
       if (!canMove) return;
       if (event.nativeEvent.actionName === "moveEarlier") onMove(-1);
       if (event.nativeEvent.actionName === "moveLater") onMove(1);

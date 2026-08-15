@@ -274,6 +274,43 @@ describe("ArrangeScreen reorder", () => {
   });
 
   /**
+   * ☠️ The keyboard half was withheld on a lone row from the start and the rotor half was
+   * not, so native AT was still offered "Move X earlier" / "Move X later" on the one row
+   * that has nowhere to go - and both returned early and did nothing (#1049). An action a
+   * screen reader reads out and then declines to perform is worse than no action: the user
+   * cannot tell it apart from a bug in their own gesture. `focusable: false` hid the whole
+   * thing from the keyboard, which is why this only ever reached VoiceOver and TalkBack.
+   */
+  it("offers the lone row's handle no move at all - both would have refused", () => {
+    renderArrange(["mood-checkin"]);
+
+    expect(screen.getByTestId("arrange-handle-mood-checkin").props.accessibilityActions).toEqual(
+      [],
+    );
+  });
+
+  /**
+   * And the hint goes with them. It is read AFTER the label, so on a lone row it followed
+   * "Drag to reorder X" with an outcome - "Moves this tool up or down in the list." - that
+   * nothing on the row could produce. Nothing to describe, nothing said.
+   */
+  it("withholds the lone row's hint - there is no outcome left to describe", () => {
+    renderArrange(["mood-checkin"]);
+
+    expect(
+      screen.getByTestId("arrange-handle-mood-checkin").props.accessibilityHint,
+    ).toBeUndefined();
+  });
+
+  it("writes nothing when a lone row's move is dispatched anyway", () => {
+    renderArrange(["mood-checkin"]);
+
+    moveVia("mood-checkin", "moveLater");
+
+    expect(mockReorderWidgets).not.toHaveBeenCalled();
+  });
+
+  /**
    * The arrow keys are the WEB half of the same two moves, and jest runs the native
    * platform - so the assertion here is that the fork exists and native carries no
    * `onKeyDown` (the shape `consent-gate.test.tsx` uses for the same reason). The keys
