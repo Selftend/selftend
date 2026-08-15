@@ -37,7 +37,7 @@
       "back": "Back to the list",
       "editEmotion": "Edit {{name}}",
       "reorderEmotion": "Reorder {{name}}",
-      "reorderHint": "Use the up and down arrow keys to move this emotion.",
+      "reorderHint": "Moves this emotion up or down in the list.",
       "moveEarlier": "Move {{name}} earlier",
       "moveLater": "Move {{name}} later",
       "confirmDelete": {

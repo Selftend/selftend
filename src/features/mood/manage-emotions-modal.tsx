@@ -23,8 +23,8 @@ import { cn } from "@/lib/utils";
 import { NARROW_STEP_INDICATOR_BREAKPOINT } from "@/src/constants/layout";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import {
-  arrowKeyMoveProps,
   DEFAULT_INTERACTIVE_HIT_SLOP,
+  reorderMoveProps,
   useReduceMotionEnabled,
 } from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
@@ -215,7 +215,13 @@ function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorV
 
 interface EmotionReorderHandleProps {
   emotion: EmotionDisplay;
-  /** Structural only: false when there is nowhere to move to. Never "a write is in flight". */
+  /**
+   * Structural only, and list-level rather than row-level: false when the list is too
+   * short to reorder at all. Never "a write is in flight" (see `reorderMoveProps`). The
+   * first and last rows therefore still offer both moves, one of which no-ops - the same
+   * shape `arrange-screen` ships, and preferable to a handle whose action set changes as
+   * rows move past it.
+   */
   canMove: boolean;
   onMove: (offset: -1 | 1) => void;
 }
@@ -231,14 +237,15 @@ interface EmotionReorderHandleProps {
  * Stated honestly: this closes the screen-reader and keyboard cases. A pointer-only user
  * with no keyboard still has drag alone, so it remains a PARTIAL answer to SC 2.5.7.
  *
- * A `View` rather than a `Pressable`, with `accessible` and `focusable` set: pressing a
- * drag handle does nothing - the gesture is the pointer path - and a button whose press
- * does nothing would be a lie. `accessible` is safe on a leaf like this; only on a group
- * wrapper would it collapse children into one node.
+ * The two moves come from `reorderMoveProps`, which carries both halves and the ☠️ warning
+ * about what `canMove` may and may not mean; the in-flight guard lives in `moveEmotion`.
+ * `accessible` is set here rather than there, because only the call site knows this is a
+ * leaf and not a group wrapper that would collapse its children into one node.
  *
- * ☠️ `canMove` is STRUCTURAL and must not fold in "a write is in flight" - see
- * `arrowKeyMoveProps`. The in-flight guard lives in `moveEmotion`, where a rejected move
- * costs a no-op rather than the focus ring.
+ * The row deliberately does NOT grow the arrange screen's `size-9` pill: six hit targets
+ * across a 22-row list is what #702 removed from here, and per-row chrome is what it cost
+ * to fit 360dp. The web focus ring is the affordance instead - it costs no width and only
+ * paints while the handle is focused.
  */
 function EmotionReorderHandle({ emotion, canMove, onMove }: EmotionReorderHandleProps) {
   const { t } = useTranslation("mood");
@@ -247,23 +254,24 @@ function EmotionReorderHandle({ emotion, canMove, onMove }: EmotionReorderHandle
     <Sortable.Handle>
       <View
         accessible
-        focusable={canMove}
-        accessibilityRole="button"
         accessibilityLabel={t("emotions.manage.reorderEmotion", { name: emotion.name })}
+        // ⚠️ The hint names no keys, deliberately. react-native-web does not implement
+        // `accessibilityHint` at all, so this string reaches ONLY native AT - where
+        // VoiceOver and TalkBack drive the rotor actions and there are no arrow keys to
+        // press. It states the outcome, which is true on both platforms.
         accessibilityHint={t("emotions.manage.reorderHint")}
-        accessibilityActions={[
-          { name: "moveEarlier", label: t("emotions.manage.moveEarlier", { name: emotion.name }) },
-          { name: "moveLater", label: t("emotions.manage.moveLater", { name: emotion.name }) },
-        ]}
-        onAccessibilityAction={(event) => {
-          if (!canMove) return;
-          if (event.nativeEvent.actionName === "moveEarlier") onMove(-1);
-          if (event.nativeEvent.actionName === "moveLater") onMove(1);
-        }}
-        {...(canMove ? arrowKeyMoveProps(onMove) : {})}
+        {...reorderMoveProps({
+          canMove,
+          earlierLabel: t("emotions.manage.moveEarlier", { name: emotion.name }),
+          laterLabel: t("emotions.manage.moveLater", { name: emotion.name }),
+          onMove,
+        })}
         testID={`emotion-reorder-handle-${emotion.id}`}
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        className={cn("py-2.5", !canMove && "opacity-40")}
+        className={cn(
+          "rounded-md py-2.5",
+          !canMove && "opacity-40",
+          Platform.select({ web: "focus-visible:ring-[3px] focus-visible:ring-ring/50" }),
+        )}
       >
         <Icon name="drag-indicator" className="size-4 text-muted-foreground opacity-50" />
       </View>
@@ -499,7 +507,22 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                   <View>
                     {/* `Sortable.Grid columns={1}`, explicitly, never `Sortable.Flex`:
                         Flex drops sub-pixel re-measures, so a row can end up one pixel off
-                        and never settle. */}
+                        and never settle.
+
+                        ☠️ There is deliberately NO `sortEnabled={!reorderEmotions.isPending}`
+                        here, though `arrange-screen` carries the equivalent and a reviewer
+                        will suggest it. MEASURED, not reasoned: adding it makes the second
+                        keyboard move stop writing - `manage-emotions-reorder.e2e` fails on
+                        exactly the "and AGAIN, without re-focusing" press, and passes with
+                        the prop removed and nothing else changed. Binding `sortEnabled` to a
+                        flag that flips on every write re-renders the grid mid-move, and the
+                        handle element Sortable is holding goes stale (the same family as the
+                        stale-prop duplicate #975 hit). Jest cannot see any of this: the
+                        Sortable mock renders each row exactly once.
+
+                        The window this leaves open is a DRAG that lands while a keyboard
+                        write is settling. That is worth strictly less than the keyboard path
+                        working at all, and the keyboard guard in `moveEmotion` stays. */}
                     <Sortable.Grid
                       columns={1}
                       data={allEmotions}

@@ -1,5 +1,10 @@
 import { useSyncExternalStore } from "react";
-import { AccessibilityInfo, Platform, type Insets } from "react-native";
+import {
+  AccessibilityInfo,
+  Platform,
+  type AccessibilityActionEvent,
+  type Insets,
+} from "react-native";
 
 export const DEFAULT_INTERACTIVE_HIT_SLOP: Insets = {
   bottom: 8,
@@ -55,22 +60,13 @@ interface WebArrowKeyEvent {
 }
 
 /**
- * Web-only Up/Down activation for a drag handle. Native gets the same two moves through
- * `accessibilityActions`; this is the keyboard half, and `preventDefault` stops the arrows
- * from scrolling the page out from under the row being moved. No-op on native.
+ * Web-only Up/Down activation for a drag handle. `preventDefault` stops the arrows from
+ * scrolling the page out from under the row being moved. No-op on native.
  *
- * Drag-alone reordering fails WCAG 2.2 SC 2.5.7 (Dragging Movements, AA), and every
- * reorderable surface in the app answers it the same way: this helper plus a pair of
- * `accessibilityActions` on the handle. Shared rather than copied so the two shapes cannot
- * drift - `arrange-screen` and `manage-emotions-modal` are both callers.
- *
- * ☠️ Whatever gates the caller's moves must NOT also gate `focusable`. react-native-web
- * reads `focusable` as `tabIndex`, so flipping it while a write settles takes the focused
- * handle out of the tab order mid-move: the next Arrow press lands on the document and
- * reordering by keyboard works exactly once. Keep `focusable` structural and reject the
- * move itself further in.
+ * Not called directly by screens - `reorderMoveProps` is the whole answer, and this is
+ * only its keyboard half.
  */
-export function arrowKeyMoveProps(onMove: (offset: -1 | 1) => void) {
+function arrowKeyMoveProps(onMove: (offset: -1 | 1) => void) {
   if (Platform.OS !== "web") return {};
 
   return {
@@ -83,6 +79,63 @@ export function arrowKeyMoveProps(onMove: (offset: -1 | 1) => void) {
         onMove(1);
       }
     },
+  };
+}
+
+interface ReorderMoveOptions {
+  /**
+   * ☠️ STRUCTURAL only - "is there anywhere to move to" - and never "a write is in
+   * flight". See the focus warning below.
+   */
+  canMove: boolean;
+  /** Localized action labels a screen reader reads out, in the caller's own namespace. */
+  earlierLabel: string;
+  laterLabel: string;
+  onMove: (offset: -1 | 1) => void;
+}
+
+/**
+ * Every prop that turns a drag handle into a handle you can also work without dragging.
+ *
+ * Drag-alone reordering fails WCAG 2.2 SC 2.5.7 (Dragging Movements, AA), and every
+ * reorderable surface answers it the same way: a named `accessibilityActions` pair for
+ * screen readers, plus Up/Down keys for the keyboard. Both halves live here rather than
+ * being copied per screen - `arrange-screen` (#956) and `manage-emotions-modal` (#965) are
+ * the callers, and a copied `actionName` cascade is a cascade that can drift.
+ *
+ * Spread onto a `View`, not a `Pressable`: pressing a drag handle does nothing - the
+ * gesture is the pointer path - and a button whose press does nothing would be a lie.
+ * The caller keeps its own styling, `accessibilityLabel` and `testID`.
+ *
+ * Stated honestly wherever this is used: it closes the screen-reader and keyboard cases.
+ * A pointer-only user with no keyboard still has drag alone, so it stays a PARTIAL answer
+ * to SC 2.5.7.
+ *
+ * ☠️ `canMove` must NOT fold in "a write is in flight". react-native-web reads `focusable`
+ * as `tabIndex`, so flipping it while a write settles takes the focused handle out of the
+ * tab order mid-move: the user's next Arrow press lands on the document and reordering by
+ * keyboard works exactly ONCE per row. Keep `canMove` structural and reject the move
+ * itself inside `onMove`, where a refused move costs a press rather than the focus ring.
+ */
+export function reorderMoveProps({
+  canMove,
+  earlierLabel,
+  laterLabel,
+  onMove,
+}: ReorderMoveOptions) {
+  return {
+    accessibilityRole: "button" as const,
+    focusable: canMove,
+    accessibilityActions: [
+      { name: "moveEarlier", label: earlierLabel },
+      { name: "moveLater", label: laterLabel },
+    ],
+    onAccessibilityAction: (event: AccessibilityActionEvent) => {
+      if (!canMove) return;
+      if (event.nativeEvent.actionName === "moveEarlier") onMove(-1);
+      if (event.nativeEvent.actionName === "moveLater") onMove(1);
+    },
+    ...(canMove ? arrowKeyMoveProps(onMove) : {}),
   };
 }
 

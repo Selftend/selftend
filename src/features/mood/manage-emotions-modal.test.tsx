@@ -71,12 +71,14 @@ jest.mock("react-native-sortables", () => {
         data,
         renderItem,
         keyExtractor,
+        sortEnabled,
       }: {
         data: { id: string }[];
         renderItem: (arg: { item: { id: string } }) => React.ReactNode;
         keyExtractor: (item: { id: string }) => string;
+        sortEnabled?: boolean;
       }) => (
-        <View>
+        <View testID="emotion-sortable-grid" sortEnabled={sortEnabled}>
           {data.map((item) => (
             <View key={keyExtractor(item)}>{renderItem({ item })}</View>
           ))}
@@ -222,6 +224,20 @@ describe("ManageEmotionsModal", () => {
     });
 
     /**
+     * ⚠️ The hint must not name the arrow keys. react-native-web does not implement
+     * `accessibilityHint` at all, so the string reaches ONLY native AT - where the rotor
+     * actions are the path and there are no arrow keys to press. `home.arrange.handleHint`
+     * still says "use the up and down arrow keys"; this one states the outcome instead.
+     */
+    it("hints at the outcome, not at keys the platform reading it does not have", () => {
+      open();
+
+      const hint = screen.getByTestId("emotion-reorder-handle-anxious").props.accessibilityHint;
+      expect(hint).toBe("Moves this emotion up or down in the list.");
+      expect(hint).not.toMatch(/arrow|key/i);
+    });
+
+    /**
      * The arrow keys are the WEB half of the same two moves, and jest runs the native
      * platform - so what is asserted here is that the fork exists and native carries no
      * `onKeyDown`. Same shape `arrange-screen.test.tsx` uses for the shared helper.
@@ -253,6 +269,26 @@ describe("ManageEmotionsModal", () => {
       moveVia("anxious", "moveLater");
 
       expect(mockReorderEmotions).not.toHaveBeenCalled();
+    });
+
+    /**
+     * ☠️ A tripwire, not a proof - and the reason is worth more than the assertion.
+     *
+     * `arrange-screen` passes `sortEnabled={!mutationPending}` and it is the obvious thing
+     * to mirror here, so a reviewer will ask for it. MEASURED: adding it makes the SECOND
+     * keyboard move stop writing. `manage-emotions-reorder.e2e` fails on exactly the "and
+     * AGAIN, without re-focusing" press and passes with the prop removed and nothing else
+     * changed - binding it to a flag that flips on every write re-renders the grid mid-move
+     * and the handle element Sortable holds goes stale.
+     *
+     * This test cannot catch that: the Sortable mock above renders each row exactly once,
+     * so the whole failure is structurally invisible to jest. It only pins the decision so
+     * the next person meets the reasoning before the e2e meets them.
+     */
+    it("leaves the grid's sortEnabled unbound - see the e2e, jest cannot see why", () => {
+      open();
+
+      expect(screen.getByTestId("emotion-sortable-grid").props.sortEnabled).toBeUndefined();
     });
 
     /**

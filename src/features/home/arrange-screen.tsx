@@ -10,7 +10,7 @@ import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { arrowKeyMoveProps } from "@/src/lib/accessibility";
+import { reorderMoveProps } from "@/src/lib/accessibility";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
 import { useSession } from "@/src/providers/session-provider";
@@ -73,18 +73,9 @@ function ArrangeRow({ id, t }: { id: string; t: TFunction }) {
  * Stated honestly: this closes the screen-reader and keyboard cases. A pointer-only user
  * still has only drag, so it remains a PARTIAL answer to SC 2.5.7.
  *
- * A `View` rather than a `Pressable`, with `accessible` and `focusable` set: a button
- * whose press does nothing would be a lie, and pressing a drag handle does nothing - the
- * gesture is the pointer path. `accessible` is safe on a leaf like this; it is only on a
- * group wrapper that it would collapse children into one node.
- *
- * ☠️ `canMove` is STRUCTURAL and must not fold in "a write is in flight". Both would
- * suppress the same two moves, but only one may touch `focusable`: react-native-web reads
- * it as `tabIndex`, so flipping it while a reorder settles takes the focused handle out of
- * the tab order mid-move and drops focus. The keyboard user's second Arrow press then goes
- * to the document, and reordering by keyboard works exactly once per row. The in-flight
- * guard lives in `reorderWidgets` instead, where a rejected move is a no-op rather than a
- * lost focus ring.
+ * The two moves themselves come from `reorderMoveProps`, which carries both halves and the
+ * ☠️ warning about what `canMove` may and may not mean. `accessible` is set here rather
+ * than there: it is safe on a leaf like this, but only the call site knows it is a leaf.
  */
 function DragHandle({
   id,
@@ -102,20 +93,14 @@ function DragHandle({
   return (
     <View
       accessible
-      focusable={canMove}
-      accessibilityRole="button"
       accessibilityLabel={t("home.arrange.handle", { title })}
       accessibilityHint={t("home.arrange.handleHint")}
-      accessibilityActions={[
-        { name: "moveEarlier", label: t("today.dashboard.moveEarlier", { title }) },
-        { name: "moveLater", label: t("today.dashboard.moveLater", { title }) },
-      ]}
-      onAccessibilityAction={(event) => {
-        if (!canMove) return;
-        if (event.nativeEvent.actionName === "moveEarlier") onMove(-1);
-        if (event.nativeEvent.actionName === "moveLater") onMove(1);
-      }}
-      {...(canMove ? arrowKeyMoveProps(onMove) : {})}
+      {...reorderMoveProps({
+        canMove,
+        earlierLabel: t("today.dashboard.moveEarlier", { title }),
+        laterLabel: t("today.dashboard.moveLater", { title }),
+        onMove,
+      })}
       testID={`arrange-handle-${id}`}
       className={cn(
         "size-9 items-center justify-center rounded-full border border-primary/35 bg-card",
