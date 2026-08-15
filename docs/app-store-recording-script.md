@@ -33,7 +33,7 @@ Two things to settle before the helper starts, because neither is discoverable f
 | Steps 4–10 — the walkthrough | **`demo@selftend.org`**                    | ☠️ **Never approach a delete control while signed in as this account.** It is App Review's own sign-in; deleting it would lock the reviewer out                                     |
 | Step 11 — deletion           | **`vasil.yoshev+delete-demo@gmail.com`**   | Exists already, sign-in verified, and holds a few entries so the deletion visibly removes something                                                                                 |
 
-You will be given the two passwords separately. ⚠️ **Passwords in this app are at least 12 characters** — the one you invent at step 2 must be too, or the form will reject it on camera.
+You will be given the two passwords separately. ⚠️ **The one you invent at step 2 has to clear two checks** — at least 12 characters, and not a password known from a public breach. See step 2.
 
 **Recording settings**
 
