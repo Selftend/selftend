@@ -22,7 +22,11 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { NARROW_STEP_INDICATOR_BREAKPOINT } from "@/src/constants/layout";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
+import {
+  DEFAULT_INTERACTIVE_HIT_SLOP,
+  reorderMoveProps,
+  useReduceMotionEnabled,
+} from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 import {
   useAddCustomEmotion,
@@ -207,6 +211,74 @@ function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorV
   );
 }
 
+// ─── Reorder handle ──────────────────────────────────────────────────────────
+
+interface EmotionReorderHandleProps {
+  emotion: EmotionDisplay;
+  /**
+   * Structural only, and list-level rather than row-level: false when the list is too
+   * short to reorder at all. Never "a write is in flight" (see `reorderMoveProps`). The
+   * first and last rows therefore still offer both moves, one of which no-ops - the same
+   * shape `arrange-screen` ships, and preferable to a handle whose action set changes as
+   * rows move past it.
+   */
+  canMove: boolean;
+  onMove: (offset: -1 | 1) => void;
+}
+
+/**
+ * The drag handle, and the non-drag path with it (#965).
+ *
+ * Order is the whole point of this surface - it decides the picker's arrangement - and
+ * a drag was the only way to change it, which fails WCAG 2.2 SC 2.5.7 (Dragging
+ * Movements, AA). The same two moves home's arrange row carries now ride here too: named
+ * `accessibilityActions` for screen readers, Up/Down keys for keyboard.
+ *
+ * Stated honestly: this closes the screen-reader and keyboard cases. A pointer-only user
+ * with no keyboard still has drag alone, so it remains a PARTIAL answer to SC 2.5.7.
+ *
+ * The two moves come from `reorderMoveProps`, which carries both halves and the ☠️ warning
+ * about what `canMove` may and may not mean; the in-flight guard lives in `moveEmotion`.
+ * `accessible` is set here rather than there, because only the call site knows this is a
+ * leaf and not a group wrapper that would collapse its children into one node.
+ *
+ * The row deliberately does NOT grow the arrange screen's `size-9` pill: six hit targets
+ * across a 22-row list is what #702 removed from here, and per-row chrome is what it cost
+ * to fit 360dp. The web focus ring is the affordance instead - it costs no width and only
+ * paints while the handle is focused.
+ */
+function EmotionReorderHandle({ emotion, canMove, onMove }: EmotionReorderHandleProps) {
+  const { t } = useTranslation("mood");
+
+  return (
+    <Sortable.Handle>
+      <View
+        accessible
+        accessibilityLabel={t("emotions.manage.reorderEmotion", { name: emotion.name })}
+        // ⚠️ The hint names no keys, deliberately. react-native-web does not implement
+        // `accessibilityHint` at all, so this string reaches ONLY native AT - where
+        // VoiceOver and TalkBack drive the rotor actions and there are no arrow keys to
+        // press. It states the outcome, which is true on both platforms.
+        accessibilityHint={t("emotions.manage.reorderHint")}
+        {...reorderMoveProps({
+          canMove,
+          earlierLabel: t("emotions.manage.moveEarlier", { name: emotion.name }),
+          laterLabel: t("emotions.manage.moveLater", { name: emotion.name }),
+          onMove,
+        })}
+        testID={`emotion-reorder-handle-${emotion.id}`}
+        className={cn(
+          "rounded-md py-2.5",
+          !canMove && "opacity-40",
+          Platform.select({ web: "focus-visible:ring-[3px] focus-visible:ring-ring/50" }),
+        )}
+      >
+        <Icon name="drag-indicator" className="size-4 text-muted-foreground opacity-50" />
+      </View>
+    </Sortable.Handle>
+  );
+}
+
 // ─── Shell ───────────────────────────────────────────────────────────────────
 
 interface ManageEmotionsShellProps {
@@ -300,6 +372,31 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   }, []);
 
   /**
+   * The non-drag half of reordering: swap with the neighbour and write the whole order,
+   * exactly what `onDragEnd` writes.
+   *
+   * ⚠️ Refused while a write is in flight, and that guard is not decorative.
+   * `setEmotionOrder` writes the WHOLE order as one upsert per row, so two of them racing
+   * are resolved per row by arrival time - the later press can be overwritten by the
+   * earlier one's rows and the list settles on an order the user never asked for. The
+   * mutation is optimistic, so the row has already moved on screen and a refused press
+   * costs a press, not a wrong order. This guard must never reach `canMove` - see
+   * `EmotionReorderHandle`.
+   */
+  const moveEmotion = useCallback(
+    (emotionId: string, offset: -1 | 1) => {
+      if (reorderEmotions.isPending) return;
+      const ids = allEmotions.map((e) => e.id);
+      const currentIndex = ids.indexOf(emotionId);
+      const nextIndex = currentIndex + offset;
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= ids.length) return;
+      [ids[currentIndex], ids[nextIndex]] = [ids[nextIndex], ids[currentIndex]];
+      reorderEmotions.mutate(ids);
+    },
+    [allEmotions, reorderEmotions],
+  );
+
+  /**
    * Two hit targets, and that is the whole point (#702).
    *
    * The row used to carry a drag handle, an edit button and a delete button. Six targets
@@ -310,15 +407,19 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
    * The handle sits BESIDE the press target, never inside it (#915): on web,
    * gesture-handler's pan does not cancel an enclosing Pressable the way native gesture
    * arbitration does, and the dragged row travels with the cursor, so a drag that starts
-   * on a handle inside the Pressable also fires the row press on release.
+   * on a handle inside the Pressable also fires the row press on release. That still holds
+   * now the handle is interactive (#965) - if anything more so, since a focusable control
+   * nested in a Pressable is also a second announcement of the same row.
    */
   const renderEmotionRow = useCallback(
     ({ item: emotion }: { item: EmotionDisplay }) => {
       return (
         <View className="flex-row items-center gap-3.5 border-t border-border px-1.5">
-          <Sortable.Handle>
-            <Icon name="drag-indicator" className="size-4 text-muted-foreground opacity-50" />
-          </Sortable.Handle>
+          <EmotionReorderHandle
+            emotion={emotion}
+            canMove={allEmotions.length > 1}
+            onMove={(offset) => moveEmotion(emotion.id, offset)}
+          />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("emotions.manage.editEmotion", { name: emotion.name })}
@@ -333,7 +434,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
         </View>
       );
     },
-    [openEditor, t],
+    [allEmotions.length, moveEmotion, openEditor, t],
   );
 
   // ⚠️ The RPC returns no row for an emotion with no uses, so a missing key means zero —
@@ -406,7 +507,22 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                   <View>
                     {/* `Sortable.Grid columns={1}`, explicitly, never `Sortable.Flex`:
                         Flex drops sub-pixel re-measures, so a row can end up one pixel off
-                        and never settle. */}
+                        and never settle.
+
+                        ☠️ There is deliberately NO `sortEnabled={!reorderEmotions.isPending}`
+                        here, though `arrange-screen` carries the equivalent and a reviewer
+                        will suggest it. MEASURED, not reasoned: adding it makes the second
+                        keyboard move stop writing - `manage-emotions-reorder.e2e` fails on
+                        exactly the "and AGAIN, without re-focusing" press, and passes with
+                        the prop removed and nothing else changed. Binding `sortEnabled` to a
+                        flag that flips on every write re-renders the grid mid-move, and the
+                        handle element Sortable is holding goes stale (the same family as the
+                        stale-prop duplicate #975 hit). Jest cannot see any of this: the
+                        Sortable mock renders each row exactly once.
+
+                        The window this leaves open is a DRAG that lands while a keyboard
+                        write is settling. That is worth strictly less than the keyboard path
+                        working at all, and the keyboard guard in `moveEmotion` stays. */}
                     <Sortable.Grid
                       columns={1}
                       data={allEmotions}
