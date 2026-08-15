@@ -226,8 +226,9 @@ describe("ManageEmotionsModal", () => {
     /**
      * ⚠️ The hint must not name the arrow keys. react-native-web does not implement
      * `accessibilityHint` at all, so the string reaches ONLY native AT - where the rotor
-     * actions are the path and there are no arrow keys to press. `home.arrange.handleHint`
-     * still says "use the up and down arrow keys"; this one states the outcome instead.
+     * actions are the path and there are no arrow keys to press. This one states the
+     * outcome instead; `home.arrange.handleHint` was brought to the same shape in #1047,
+     * and `arrange-screen.test.tsx` holds the matching assertion.
      */
     it("hints at the outcome, not at keys the platform reading it does not have", () => {
       open();

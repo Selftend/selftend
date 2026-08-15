@@ -137,7 +137,7 @@
     "arrange": {
       "hint": "Drag to reorder, or remove what you don't check in with.",
       "handle": "Reorder {{title}}",
-      "handleHint": "Use the up and down arrow keys to move this tool.",
+      "handleHint": "Moves this tool up or down in the list.",
       "addHeading": "Add to your home screen",
       "addChip": "Add {{title}}",
       "allAdded": "Everything is already on your home screen."

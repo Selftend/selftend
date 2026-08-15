@@ -251,6 +251,22 @@ describe("ArrangeScreen reorder", () => {
     expect(handle.props.focusable).toBe(true);
   });
 
+  /**
+   * ⚠️ The hint must not name the arrow keys. react-native-web does not implement
+   * `accessibilityHint` at all - the string appears nowhere in `react-native-web/dist` - so
+   * it reaches ONLY native AT, and native is the one platform with no arrow keys to press:
+   * there the path is the rotor's `moveEarlier` / `moveLater`. Naming the keys told the
+   * only listener to do the one thing it cannot. State the outcome instead. Mirrors
+   * `manage-emotions-modal.test.tsx` for the emotion list's half of the same pair (#1047).
+   */
+  it("hints at the outcome, not at keys the platform reading it does not have", () => {
+    renderArrange(["mood-checkin", "sleep-latest"]);
+
+    const hint = screen.getByTestId("arrange-handle-mood-checkin").props.accessibilityHint;
+    expect(hint).toBe("Moves this tool up or down in the list.");
+    expect(hint).not.toMatch(/arrow|key/i);
+  });
+
   it("leaves the lone row's handle unfocusable - there is nowhere to move it", () => {
     renderArrange(["mood-checkin"]);
 
