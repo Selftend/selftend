@@ -1,4 +1,4 @@
-import { ActivityIndicator, Modal, View } from "react-native";
+import { ActivityIndicator, Modal, Platform, View } from "react-native";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -39,7 +39,8 @@ export function ConfirmDialog({
   const reduceMotionEnabled = useReduceMotionEnabled();
 
   /**
-   * ⚠️ Unmounted when closed, NOT handed `visible={false}` (#1034).
+   * ⚠️ On WEB, a closed dialog is unmounted rather than handed `visible={false}`
+   * (#1034).
    *
    * react-native-web's `Modal` keeps a DISMISSED dialog in the tree for the whole
    * 250ms fade-out, and it is not inert while it lingers. It is a full-viewport
@@ -53,21 +54,29 @@ export function ConfirmDialog({
    * could not have caused it.
    *
    * Returning null tears the whole portal down on the same commit that closes the
-   * dialog, so there is no window at all. The cost is the fade-OUT, which played
-   * over a dialog the user had already dismissed; the fade-in is untouched.
+   * dialog, so there is no window at all. It also makes "one dialog on screen at
+   * a time" true by construction, which a screen mounting three of these (habit
+   * detail) was not - closed dialogs stayed queryable and their labels collided
+   * with the open one's.
    *
-   * This also makes "one dialog on screen at a time" true by construction, which
-   * a screen mounting three of these (habit detail) previously was not - closed
-   * dialogs stayed queryable, and their labels collided with the open one's.
+   * ⚠️ Gated to web ON PURPOSE, rather than unmounting everywhere. The cost of
+   * unmounting is the fade-OUT, and none of the above is a native problem: there
+   * is no `document`, no `ModalFocusTrap`, and no Radix popover to dismiss.
+   * Paying a polish cost on iOS and Android to fix a react-native-web bug would
+   * be charging the two platforms that ship the product for a defect neither has.
+   * The entrance animation is untouched on every platform.
    */
-  if (!visible) return null;
+  if (!visible && Platform.OS === "web") return null;
 
   return (
     <Modal
       animationType={reduceMotionEnabled ? "none" : "fade"}
       onRequestClose={onCancel}
       transparent
-      visible
+      // Still driven by the prop: on native this component is reached with
+      // `visible` false (only web returns null above), and hardcoding true here
+      // would leave every dialog permanently open on iOS and Android.
+      visible={visible}
     >
       <View className="flex-1 items-center justify-center bg-black/50 p-6">
         <Card className="w-full max-w-md">
