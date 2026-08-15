@@ -8,6 +8,25 @@ Submission `ea996c51-00d9-4382-9a90-1449ad70f61c` (0.11.1, build 6) was rejected
 
 ---
 
+## ✅ SENT — 2026-08-15 10:49
+
+The reply went out on submission `ea996c51-00d9-4382-9a90-1449ad70f61c`, **3,983 of 4,000 characters**, with the screen recording attached directly (8.4 MB, H.264, audio stripped, one ~6-second cut removing a red "Something did not save" validation banner). App Store Connect shows **Messages (2)** and the attachment on the sent message.
+
+Two things were changed at send time, both recorded here so the next submission inherits the corrected version rather than the draft:
+
+- **Item 1 was rewritten against the footage.** The draft claimed a journal entry, a timed breathing session, both permission prompts, the crisis screen and sign-in as the demo account — none are in the recording. What went out describes only what is on screen. (The same correction landed independently in #1042.)
+- **The device placeholders were filled from the device's own crash report**: `iPhone (iPhone18,3)`, iOS `26.6`. The model identifier was used rather than a marketing name, which could not be confirmed — an unambiguous identifier beats a wrong product name in a statement to Apple.
+
+Before sending, Sign-In Information was switched to **`demo@selftend.org`** (owner-only; it needs a password typed into a field), which is what makes item 4's "populated home screen" claim true.
+
+**The Notes field was also updated** — 3,049 characters, the block below plus the Guideline 4.8 / Sign in with Apple section the previous Notes carried. Apple's letter asks for this information in Notes "for future submissions", so it is now there independently of this reply.
+
+⚠️ The submission still reads **Unresolved Issues** with `Last Updated By: Apple`, and "Resubmit to App Review" stays disabled. That is expected: no build changed, so the reply is the whole mechanism and the status only moves when a reviewer picks it up.
+
+☠️ **Attachment trap.** Uploading to App Store Connect's file input registers the file but renders **no visible chip**, so it looks like it failed. Retrying left **three** copies of the same video on the draft, visible only by reading the dialog's DOM (each carries its own `aria-label="Delete"`). Two were deleted before sending. Check the DOM, not the screenshot.
+
+---
+
 ## ⚠️ This document describes build 6, not `dev`
 
 Apple is reviewing **0.11.1 build 6**. `dev` is already at 0.13.0 and differs — the tools hub gained a tenth entry, the mood tool was relabelled "Check-in", and the home screen was redesigned. **Every claim below was verified against the `v0.11.1` tag**, not the working tree, and nothing in the reply may describe behaviour that only exists on `dev`.
