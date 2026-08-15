@@ -17,15 +17,21 @@ Two corrections this produced, recorded so no later session re-inherits them:
 - The shot-list on [Grilling: what must each recording show, shot by shot?](https://github.com/Selftend/selftend/issues/1004) says the tools index shows **ten** tools. In build 6 it shows **eight**. The tenth-tool count is a `dev` fact.
 - That same shot-list names `vasil.yoshev+demo@gmail.com` as the reviewer account. Superseded by [Task: verify and record reviewer access to Selftend](https://github.com/Selftend/selftend/issues/1005): the reviewer gets **`demo@selftend.org`**.
 
-## ⚠️ Item 2 is not yet answerable
+## The recording, and what item 1 may claim about it
 
-**Devices and operating systems tested on** cannot be filled in until a capture session has actually run, because the device model is whatever the cloud farm allocates. It is marked `«DEVICE»` / `«IOS_VERSION»` in the paste blocks below, and is filled from [Task: provision BrowserStack App Live and sign in to TestFlight](https://github.com/Selftend/selftend/issues/1016), which records the real values.
+**The recording exists**: `selftend-0.11.1-build6-review.mp4`, 2 min 54 s, silent, 1206×2622 at 30 fps — the native screen of the iPhone it was taken on. Build 6 is confirmed on screen (`Selftend v0.11.1` in Settings; CBT and ACT badged **Beta**, DBT **Soon**, all of which `dev` has since removed).
 
-**Do not guess it.** Item 2 is a factual claim about testing that did or did not happen.
+⚠️ **Item 1 has been rewritten to describe this footage rather than the shot-list.** The take predates [the recording script](./app-store-recording-script.md) — it was made while the device was being set up — so it follows a different path, and the reply now says what the video actually contains. Nothing below claims a shot the footage does not hold.
 
-Known already: the route cannot cover **iPad**. TestFlight installation on the farm is restricted to iPhone, so the answer says iPhone-only, truthfully — even though `app.config.ts` sets `supportsTablet: true` and the listing ships iPad screenshots.
+**What it shows:** the signed-out screen including its crisis-guidance link · account creation via Sign in with Apple · the home dashboard · the tools hub with all eight tools · the CBT module, its programme and a goal saved · a mood check-in saved and shown in its history and 7-day trend · the Notifications screen with every reminder off by default · Settings · account deletion end to end, returning to the signed-out screen.
 
-The same codebase is also exercised on **Android** (in production on Google Play) and on the **web** build at <https://selftend.org>. Those are stated as context, never as iOS coverage.
+**What it does not show, and which item 1 therefore does not claim:** email/password registration · sign-in as the reviewer account · a journal entry or a breathing session · the notification and photo-library permission prompts · the crisis page itself.
+
+🔴 **The account in the video is created on camera, so most tools read "No entries yet".** Item 1 states this plainly and points at the pre-seeded reviewer account, so the empty states are explained rather than left to be discovered. ⚠️ It is the weakest part of the reply against a _2.1 App Completeness_ citation, and it is why item 4's populated-account answer is load-bearing.
+
+⚠️ **The device string is not verifiable from the file.** It was re-encoded (`Lavf61.7.100`), so the original iOS capture metadata is gone. `iPhone 17` / `iOS 26.6` comes from the crash log taken on the same phone the same day — **confirm it against Settings › General › About before sending**, since item 2 states it to Apple as fact.
+
+**iPad** is not covered, truthfully — even though `app.config.ts` sets `supportsTablet: true` and the listing ships iPad screenshots. The same codebase is also exercised on **Android** (in production on Google Play) and on the **web** build at <https://selftend.org>. Those are stated as context, never as iOS coverage.
 
 ---
 
@@ -56,7 +62,7 @@ The **DBT** module is a nav entry badged **"Soon"** leading to a screen headed _
 
 A copy change cannot reach build 6, so the only lever is the reply, which therefore names DBT as an educational overview of a planned module rather than leaving the reviewer to discover it.
 
-⚠️ **Everything above this line describes build 6 and must stay that way until the next release ships.** Whether the placeholder should survive was settled on [#1020](https://github.com/Selftend/selftend/issues/1020): it does not. On `dev`, the "Soon" badge, the "On the roadmap" screen and the **"Beta"** badges on CBT and ACT are all gone — DBT is now framed as an overview of the approach, which is what the screen always was. None of that reaches build 6, so **this document must not be updated to match `dev` until the release that carries it is the build under review** — the reply quoted below is sized and worded against build 6, and item 3 is measured with only 73 characters to spare.
+⚠️ **Everything above this line describes build 6 and must stay that way until the next release ships.** Whether the placeholder should survive was settled on [#1020](https://github.com/Selftend/selftend/issues/1020): it does not. On `dev`, the "Soon" badge, the "On the roadmap" screen and the **"Beta"** badges on CBT and ACT are all gone — DBT is now framed as an overview of the approach, which is what the screen always was. None of that reaches build 6, so **this document must not be updated to match `dev` until the release that carries it is the build under review** — the reply quoted below is sized and worded against build 6, and it is measured with only 9 characters to spare.
 
 ## Item 4 — Setting up and accessing the main features
 
@@ -129,7 +135,7 @@ The app contains **no protected third-party material**. All content is written b
 
 ## Paste block — App Store Connect **Notes** field
 
-Replaces the current Notes content, which covers only part of this. Replace `«DEVICE»` and `«IOS_VERSION»` before pasting. Credentials go in the Sign-In Information fields, never here.
+Replaces the current Notes content, which covers only part of this. Device values are filled in. Credentials go in the Sign-In Information fields, never here.
 
 **2,498 characters** as written.
 
@@ -161,12 +167,12 @@ REGIONS
 Identical in every region; nothing is geo-gated and there is no geo-detection. The interface is localised in English and Bulgarian, following the device locale.
 
 TESTED ON
-«DEVICE» running iOS «IOS_VERSION».
+iPhone 17 running iOS 26.6.
 ```
 
 ## Paste block — App Review **reply**
 
-Answers items 1–7 in Apple's order so a reviewer can tick them off. Attach the screen recording to the same reply. Replace `«DEVICE»` and `«IOS_VERSION»` before sending.
+Answers items 1–7 in Apple's order so a reviewer can tick them off. Attach `selftend-0.11.1-build6-review.mp4` to the same reply. Device values are filled in; re-measure if the confirmed model name is longer than "iPhone 17".
 
 ⚠️ **The shot index carries no timestamps.** [Grilling: what must each recording show, shot by shot?](https://github.com/Selftend/selftend/issues/1004) decided the reply would index the recording by time. It does not, and cannot: at 73 characters spare there is no room for ten `mm:ss` markers, and timestamps would have to be re-derived from every re-take. The index is in shot order instead, which matches the recording exactly and survives a re-cut. If timestamps are wanted, something else has to come out.
 
@@ -176,24 +182,24 @@ Answers items 1–7 in Apple's order so a reviewer can tick them off. Attach the
 Answering each item in order.
 
 1. SCREEN RECORDING
-Attached, captured on a physical «DEVICE» running iOS «IOS_VERSION», beginning at app launch. It shows the signed-out sign-in screen with its crisis-guidance link; registration; sign-in with the demo account; the home dashboard; a mood check-in, a journal entry and a timed breathing session, each saved and shown in its history; the tools hub and both modules; enabling a reminder and setting a profile picture, raising the notification and photo prompts; crisis guidance; and account deletion end to end on a throwaway account.
+Attached, captured on a physical iPhone 17 running iOS 26.6, from app launch. It shows the signed-out screen with its crisis-guidance link; account creation; the home dashboard; the tools hub with all eight tools; the CBT module, its programme and a goal saved; a mood check-in saved and shown in its history and 7-day trend; the Notifications screen with every reminder off by default; Settings; and account deletion end to end, returning to the signed-out screen. The account is created on camera, so tools it never used show empty states - the reviewer account in Sign-In Information is pre-seeded.
 
 2. DEVICES AND OS TESTED
-«DEVICE», iOS «IOS_VERSION». iPhone only for this submission. The app supports iPad but iPad was not exercised in this round. The same codebase also runs on Android and on the web at https://selftend.org.
+iPhone 17, iOS 26.6. iPhone only for this submission. The app supports iPad but iPad was not exercised in this round. The same codebase also runs on Android and on the web at https://selftend.org.
 
 3. FUNCTION AND AUDIENCE
-Selftend is a free, non-profit, open-source wellness and guided self-help app for adults and older teenagers who want structure they can run themselves. It provides eight tools - mood tracker, journal, breathing, gratitude log, grounding, meditation, sleep and habit tracking - each recording entries and showing their history; two modules of educational CBT and ACT exercises; user-built routines; an insights screen; and a home dashboard assembled from 28 widgets. No in-app purchases or subscriptions.
+Selftend is a free, non-profit, open-source wellness and guided self-help app for adults and older teenagers who want structure they can run themselves. It provides eight tools - mood tracker, journal, breathing, gratitude log, grounding, meditation, sleep and habit tracking - each recording entries and showing their history; two modules of educational CBT and ACT exercises; user-built routines; an insights screen; and a home dashboard of 28 widgets. No in-app purchases or subscriptions.
 
-One screen is intentionally an overview rather than a feature: the DBT module is labelled "On the roadmap" and describes a planned module. Everything else is fully implemented and usable.
+Two labels in this build are cosmetic rather than functional gaps: DBT is an overview marked "On the roadmap" and is the only planned module, and CBT and ACT are tagged "Beta" though both are complete and usable. Everything else is fully implemented.
 
 4. SETUP AND ACCESS
-An account is required; credentials are in the Sign-In Information fields. It is staged, belongs to no real person, and is pre-seeded with sample entries; onboarding is completed and the current policy accepted, so no wizard or consent screen appears and the reviewer lands on a populated home screen. Sign-in also offers Sign in with Apple and Google Sign-In, either creating a fresh account. Reminders are in Settings and on the Notifications screen; data export and account deletion are in Settings > Account, deletion also at https://selftend.org/account-deletion.
+An account is required; credentials are in the Sign-In Information fields. It is staged, belongs to no real person, and is pre-seeded; onboarding is completed and the current policy accepted, so no wizard or consent screen appears and the reviewer lands on a populated home screen. Sign-in also offers Sign in with Apple and Google Sign-In, either creating a fresh account. Reminders are in Settings and on the Notifications screen; data export and account deletion are in Settings > Account, deletion also at https://selftend.org/account-deletion.
 
 5. EXTERNAL SERVICES
-Supabase for database, authentication, storage and edge functions, with entry fields encrypted at rest. AWS SES for transactional email. Sentry for crash reports, which never receives entry content. Cloudflare for web hosting. Expo/EAS for builds, and the Expo push service, which forwards enabled reminders to APNs. Sign in with Apple and Google Sign-In for auth. There is no AI service of any kind, and no analytics, advertising or payment processing.
+Supabase for database, authentication, storage and edge functions, with entry fields encrypted at rest. AWS SES for transactional email. Sentry for crash reports, which never receives entry content. Cloudflare for web hosting. Expo/EAS for builds, and Expo push, which forwards enabled reminders to APNs. Sign in with Apple and Google Sign-In for auth. There is no AI service, and no analytics, advertising or payment processing.
 
 6. REGIONAL DIFFERENCES
-The app functions identically in every region. No feature, screen or content is gated by country, and there is no geo-detection. The interface is localised in English and Bulgarian, following the device locale. Crisis guidance is deliberately country-neutral: instead of per-country helpline numbers it links to the Find A Helpline directory and says to call your local emergency number.
+The app functions identically in every region. No feature, screen or content is gated by country, and there is no geo-detection. The interface is localised in English and Bulgarian, following the device locale. Crisis guidance is deliberately country-neutral: instead of per-country helplines it links to the Find A Helpline directory and says to call your local emergency number.
 
 7. REGULATED INDUSTRY / PROTECTED MATERIAL
 No. Selftend is a wellness and guided self-help app in the Health & Fitness category. No licence is required to operate it: it does not diagnose, treat, prescribe, or give medical or professional advice, and it makes no clinical or outcome claims. It teaches techniques drawn from CBT and ACT and includes educational material describing what those approaches are used for - descriptive, never diagnostic; the app never assesses a user or assigns a condition. That boundary is stated to users in Settings, Support, onboarding, the privacy policy and the FAQ at https://selftend.org/faq. Crisis guidance is separate from the self-help features and points to external emergency services. There is no protected third-party material: all content is written by the project, which is open source (AGPL-3.0). No data providers, no AI services.
