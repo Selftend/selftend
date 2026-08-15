@@ -25,13 +25,20 @@ export async function listWidgetPreferences(userId: string): Promise<WidgetPrefe
     .from("widget_preferences")
     .select("*")
     .eq("user_id", userId)
-    // No tiebreak: `position` alone is total. Positions are assigned by the server
-    // (`add_widget_preference`) under a per-user lock, and `set_widget_order` only ever
-    // permutes positions that already exist, so two rows cannot share one. The
-    // `created_at` tiebreak that used to sit here covered the old client-side
-    // `max(position) + 1` race, and 20260813010000 renumbered the legacy rows it was
-    // covering - using that very ordering, so no existing dashboard changed order (#974).
-    .order("position", { ascending: true });
+    // `position` is server-assigned and every server writer keeps it distinct (#974), but
+    // it is not constrained UNIQUE and RLS still lets a client write it directly - a
+    // pre-v0.14 build does exactly that. So a duplicate can arrive from outside the write
+    // functions, and two rows sharing a position have NO defined order: the list would
+    // reshuffle between reads with no write in between (#986).
+    //
+    // These three keys are the same ordering `normalize_widget_positions()` heals into,
+    // which is what makes the repair invisible - the read already showed the order the
+    // heal makes durable. This is not the #974 race coming back: that race was a racy
+    // WRITER, and it is dead. This is the read declining to depend on an invariant the
+    // database does not enforce.
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true })
+    .order("widget_id", { ascending: true });
   if (error) throw error;
   return (data as WidgetPreferenceRow[]).map(mapWidgetPreference);
 }
