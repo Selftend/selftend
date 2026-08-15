@@ -94,7 +94,10 @@ function DragHandle({
     <View
       accessible
       accessibilityLabel={t("home.arrange.handle", { title })}
-      accessibilityHint={t("home.arrange.handleHint")}
+      // A hint is read AFTER the label, so on a lone row it would follow the label with an
+      // outcome nothing on the row can produce - `reorderMoveProps` withholds every move
+      // there. Nothing to describe, nothing said (#1049).
+      accessibilityHint={canMove ? t("home.arrange.handleHint") : undefined}
       {...reorderMoveProps({
         canMove,
         earlierLabel: t("today.dashboard.moveEarlier", { title }),
