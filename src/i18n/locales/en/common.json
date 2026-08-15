@@ -32,6 +32,8 @@
   "feedback": {
     "saved": "Saved",
     "problem": "Something did not save",
+    "invalid": "Some answers need a fix",
+    "invalidMoved": "We moved you back to the step that needs it.",
     "archived": "Archived",
     "deleted": "Deleted"
   },
