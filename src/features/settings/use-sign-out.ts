@@ -23,7 +23,9 @@ export function useSignOut(userId: string | null) {
       // Deregister this device's push channel BEFORE sign-out (RLS context still valid)
       // so server-driven reminders stop firing for a device the user has left.
       await cancelAllReminders(userId);
-      await signOut();
+      // `local`: this row signs the user out of THIS device, not out of their
+      // phone as well (#968).
+      await signOut("local");
     } catch (error) {
       const message = error instanceof Error ? error.message : t("account.signOutError");
       showToast({

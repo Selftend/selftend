@@ -1,9 +1,11 @@
-import { fireEvent, screen, within } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
 import { UserMenu } from "./user-menu";
+import { signOut } from "@/src/features/auth/api";
 import { appEnv } from "@/src/lib/env";
+import { cancelAllReminders } from "@/src/lib/notifications";
 import { openExternalUrl } from "@/src/lib/linking";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -47,6 +49,8 @@ jest.mock("@/src/lib/linking", () => ({
 
 const mockPush = router.push as jest.MockedFunction<typeof router.push>;
 const mockOpen = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
+const mockSignOut = signOut as jest.MockedFunction<typeof signOut>;
+const mockCancelAllReminders = cancelAllReminders as jest.MockedFunction<typeof cancelAllReminders>;
 
 const originalDiscordUrl = appEnv.discordUrl;
 const originalRedditUrl = appEnv.redditUrl;
@@ -234,6 +238,25 @@ describe("UserMenu", () => {
 
     expect(screen.getByText("Sign Out")).toBeTruthy();
     expect(screen.getByText("Settings")).toBeTruthy();
+  });
+
+  // #968: supabase-js's `signOut()` defaults to `scope: 'global'`, which revokes
+  // every refresh token the user holds - pressing Sign Out on the laptop ended
+  // the session on the phone. Nothing in the product ever asked for that. The
+  // scope is now an explicit argument, and this pins the one this menu passes.
+  it("signs out of this device only, leaving other devices signed in", async () => {
+    mockCancelAllReminders.mockResolvedValue(undefined);
+    mockSignOut.mockResolvedValue(undefined);
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+    fireEvent.press(screen.getByText("Sign Out"));
+
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalledWith("local"));
+    // And still after the reminder deregistration, which needs a live RLS context.
+    expect(mockCancelAllReminders.mock.invocationCallOrder[0]).toBeLessThan(
+      mockSignOut.mock.invocationCallOrder[0],
+    );
   });
 });
 

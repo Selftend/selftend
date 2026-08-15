@@ -67,12 +67,10 @@ test.describe("edit and delete a habit", () => {
     // item opens the same ConfirmDialog the old top-level button did.
     await page.getByRole("button", { name: "More actions", exact: true }).click();
     await page.getByRole("button", { name: "Archive", exact: true }).click();
-    // Both archive and delete ConfirmDialogs are mounted simultaneously. The archive dialog
-    // is the first one (its confirm button reads "Archive"); click the visible one.
-    await page
-      .getByTestId("confirm-dialog-confirm")
-      .filter({ hasText: /Archive/ })
-      .click();
+    // Exactly one ConfirmDialog is on screen at a time (#1034): a closed one is
+    // unmounted, not merely `visible={false}`, so no `hasText` filter is needed to
+    // tell three dialogs apart any more.
+    await page.getByTestId("confirm-dialog-confirm").click();
     // After archiving, the "Archived" badge appears in the header. Match it exactly
     // (so the archive dialog's body "Archived habits leave today's list..." is excluded)
     // and take .last() (so a hidden stale detail instance Expo Router keeps mounted
@@ -82,21 +80,28 @@ test.describe("edit and delete a habit", () => {
     });
 
     // --- DELETE ---
+    // ⚠️ The hand-off that made this spec flaky (#1034). The badge above can paint
+    // while the archive dialog is still on screen - both come from the same
+    // mutation - so reopening the menu here used to race the dialog's teardown.
+    // react-native-web kept the dismissed dialog mounted for its 250ms fade-out
+    // with its focus trap still armed, and the trap's unmount refocus dismissed
+    // the menu that had just opened. Wait for the dialog to be GONE, which is now
+    // a real event, rather than trusting the badge to have outlasted it.
+    await expect(page.getByTestId("confirm-dialog-confirm")).toHaveCount(0, { timeout: 10_000 });
+
     // The menu closes when its item fires, so it has to be reopened. It now
     // offers "Restore" where it offered "Archive", which is the archive having
     // landed on the server rather than only in the header badge.
     await page.getByRole("button", { name: "More actions", exact: true }).click();
-    // ⚠️ Deliberately NOT asserting the item now reads "Restore" here. The
-    // archive ConfirmDialog is still matched and still visible at this point -
-    // its confirm label follows `archivedAt`, so it reads "Restore" too, and
-    // every scoping attempt resolved to both. The Archive/Restore swap is
-    // pinned at unit level instead (habit-detail-screen.test.tsx).
+    // Now assertable: with the archive dialog unmounted, "Restore" names the menu
+    // item and nothing else. This is what the old comment here said it could not
+    // check, because the closed dialog's confirm label followed `archivedAt` too
+    // and matched alongside it.
+    await expect(page.getByRole("button", { name: "Restore", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     await page.getByRole("button", { name: "Delete", exact: true }).click();
-    // The delete dialog's confirm button reads "Delete".
-    await page
-      .getByTestId("confirm-dialog-confirm")
-      .filter({ hasText: /Delete/ })
-      .click();
+    await page.getByTestId("confirm-dialog-confirm").click();
 
     // After deletion, redirected to the habits list.
     await expect(page).toHaveURL(/\/tools\/habits$/, { timeout: 15_000 });
