@@ -114,9 +114,11 @@ export async function restoreWidgetPreference(
   await setWidgetOrder(orderedWidgetIds);
 }
 
-// Reorder by handing the named ids the positions they already hold, in this order. Rows
-// not named keep their positions, so a caller holding a filtered view of the list cannot
-// disturb the rows it cannot see.
+// Reorder by handing the named ids the positions they already hold, in this order. A row
+// the caller did not name keeps its RANK - it cannot be moved past, or landed on, by a
+// caller holding a filtered view of the list. Its literal `position` value may still
+// change: the server normalizes positions before it reorders (#986), which closes any gap
+// beneath it. Nothing reads the value except as an ordering key.
 export async function setWidgetOrder(orderedWidgetIds: string[]): Promise<void> {
   const client = requireSupabase();
   const { error } = await client.rpc("set_widget_order", { p_widget_ids: orderedWidgetIds });

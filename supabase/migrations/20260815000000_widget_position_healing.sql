@@ -75,6 +75,20 @@
 -- that its RANK is untouched, not its literal position value, because healing may close a
 -- gap beneath it. Nothing reads the value except as an ordering key.
 
+-- The advisory lock key, in one place. Four functions now serialize on it, and the failure
+-- mode of writing it out four times is silent in a way tests cannot reach: two writers
+-- computing DIFFERENT keys still both "take a lock" and simply stop excluding each other.
+-- Nothing observable distinguishes that from correct locking. Each writer still calls
+-- `pg_advisory_xact_lock` visibly at its own call site - only the key derivation moves.
+create or replace function public.widget_order_lock_key(p_user_id uuid)
+returns bigint
+language sql
+immutable
+set search_path = pg_catalog, public
+as $$
+  select hashtextextended('widget_preferences_order:' || p_user_id::text, 0);
+$$;
+
 create or replace function public.normalize_widget_positions()
 returns void
 language plpgsql
@@ -91,7 +105,7 @@ begin
   -- Held for the rest of the transaction. Re-requesting a lock this session already holds
   -- always succeeds, so callers that took it themselves are unaffected; the request here
   -- is for the case where this function is called on its own.
-  perform pg_advisory_xact_lock(hashtextextended('widget_preferences_order:' || uid::text, 0));
+  perform pg_advisory_xact_lock(public.widget_order_lock_key(uid));
 
   with renumbered as (
     select
@@ -130,7 +144,7 @@ begin
 
   -- Serialize concurrent adds for this user only; released at transaction end.
   -- Without it, one statement is still two snapshots (see 20260813010000).
-  perform pg_advisory_xact_lock(hashtextextended('widget_preferences_order:' || uid::text, 0));
+  perform pg_advisory_xact_lock(public.widget_order_lock_key(uid));
 
   perform public.normalize_widget_positions();
 
@@ -179,7 +193,7 @@ begin
   end if;
 
   -- Serializes reorder against reorder, and now against the suggestions wizard too.
-  perform pg_advisory_xact_lock(hashtextextended('widget_preferences_order:' || uid::text, 0));
+  perform pg_advisory_xact_lock(public.widget_order_lock_key(uid));
 
   perform public.normalize_widget_positions();
 
@@ -257,7 +271,7 @@ begin
   -- commits fully before this runs (and is deleted below, which is what replacing the list
   -- means) or fully after it (and computes its `max(position) + 1` against the list this
   -- function committed). Interleaving is what produced a collision.
-  perform pg_advisory_xact_lock(hashtextextended('widget_preferences_order:' || uid::text, 0));
+  perform pg_advisory_xact_lock(public.widget_order_lock_key(uid));
 
   delete from public.widget_preferences where user_id = uid;
 
@@ -320,6 +334,14 @@ update public.widget_preferences as preference
   from renumbered
  where renumbered.id = preference.id
    and preference.position is distinct from renumbered.new_position;
+
+revoke all on function public.widget_order_lock_key(uuid) from public;
+revoke execute on function public.widget_order_lock_key(uuid) from anon;
+-- The `security invoker` callers execute as the caller, so `authenticated` needs EXECUTE
+-- on both of these for the write functions to work at all. It grants nothing extra: the
+-- key function is a pure hash of a uuid the caller already knows, and normalize is scoped
+-- to `auth.uid()` and idempotent.
+grant execute on function public.widget_order_lock_key(uuid) to authenticated;
 
 revoke all on function public.normalize_widget_positions() from public;
 -- Older Supabase images granted execute to `anon` directly, where `revoke ... from public`
