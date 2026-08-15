@@ -49,6 +49,43 @@ export function spaceKeyActivationProps(onPress: () => void) {
   };
 }
 
+interface WebArrowKeyEvent {
+  key: string;
+  preventDefault: () => void;
+}
+
+/**
+ * Web-only Up/Down activation for a drag handle. Native gets the same two moves through
+ * `accessibilityActions`; this is the keyboard half, and `preventDefault` stops the arrows
+ * from scrolling the page out from under the row being moved. No-op on native.
+ *
+ * Drag-alone reordering fails WCAG 2.2 SC 2.5.7 (Dragging Movements, AA), and every
+ * reorderable surface in the app answers it the same way: this helper plus a pair of
+ * `accessibilityActions` on the handle. Shared rather than copied so the two shapes cannot
+ * drift - `arrange-screen` and `manage-emotions-modal` are both callers.
+ *
+ * ☠️ Whatever gates the caller's moves must NOT also gate `focusable`. react-native-web
+ * reads `focusable` as `tabIndex`, so flipping it while a write settles takes the focused
+ * handle out of the tab order mid-move: the next Arrow press lands on the document and
+ * reordering by keyboard works exactly once. Keep `focusable` structural and reject the
+ * move itself further in.
+ */
+export function arrowKeyMoveProps(onMove: (offset: -1 | 1) => void) {
+  if (Platform.OS !== "web") return {};
+
+  return {
+    onKeyDown: (event: WebArrowKeyEvent) => {
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        onMove(-1);
+      } else if (event.key === "ArrowDown") {
+        event.preventDefault();
+        onMove(1);
+      }
+    },
+  };
+}
+
 /**
  * Toggle-button state for a Pressable: aria-pressed is the valid ARIA on web,
  * but React Native core has no pressed state, so native keeps the selected

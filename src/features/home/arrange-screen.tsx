@@ -10,6 +10,7 @@ import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { arrowKeyMoveProps } from "@/src/lib/accessibility";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
 import { useSession } from "@/src/providers/session-provider";
@@ -36,31 +37,6 @@ type WidgetEditAction =
   | { type: "add"; widgetId: string }
   | { type: "remove"; widgetId: string; position: number }
   | { type: "reorder"; widgetIds: string[] };
-
-interface WebArrowKeyEvent {
-  key: string;
-  preventDefault: () => void;
-}
-
-/**
- * Web-only Up/Down activation for the drag handle. Native gets the same two moves through
- * `accessibilityActions`; this is the keyboard half, and `preventDefault` stops the arrows
- * from scrolling the page out from under the row being moved. No-op on native.
- */
-function arrowKeyMoveProps(onMove: (offset: -1 | 1) => void) {
-  if (Platform.OS !== "web") return {};
-  return {
-    onKeyDown: (event: WebArrowKeyEvent) => {
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        onMove(-1);
-      } else if (event.key === "ArrowDown") {
-        event.preventDefault();
-        onMove(1);
-      }
-    },
-  };
-}
 
 /**
  * One arranged row: glyph and name, and nothing else.
@@ -89,10 +65,10 @@ function ArrangeRow({ id, t }: { id: string; t: TFunction }) {
 /**
  * The drag handle, and the non-drag path with it.
  *
- * Home is the app's only reorderable surface, and drag-alone fails WCAG 2.2 SC 2.5.7
- * (Dragging Movements, AA). The chevron pair this replaced answered that with two more
- * controls per row; the handle answers it with none, by carrying the same two moves as
- * `accessibilityActions` (screen readers) and Up/Down keys (keyboard).
+ * Drag-alone fails WCAG 2.2 SC 2.5.7 (Dragging Movements, AA). The chevron pair this
+ * replaced answered that with two more controls per row; the handle answers it with none,
+ * by carrying the same two moves as `accessibilityActions` (screen readers) and Up/Down
+ * keys (keyboard). The emotion list's handle carries the same pair (#965).
  *
  * Stated honestly: this closes the screen-reader and keyboard cases. A pointer-only user
  * still has only drag, so it remains a PARTIAL answer to SC 2.5.7.

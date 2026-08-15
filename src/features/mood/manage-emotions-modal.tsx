@@ -22,7 +22,11 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { NARROW_STEP_INDICATOR_BREAKPOINT } from "@/src/constants/layout";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
+import {
+  arrowKeyMoveProps,
+  DEFAULT_INTERACTIVE_HIT_SLOP,
+  useReduceMotionEnabled,
+} from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 import {
   useAddCustomEmotion,
@@ -207,6 +211,66 @@ function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorV
   );
 }
 
+// ─── Reorder handle ──────────────────────────────────────────────────────────
+
+interface EmotionReorderHandleProps {
+  emotion: EmotionDisplay;
+  /** Structural only: false when there is nowhere to move to. Never "a write is in flight". */
+  canMove: boolean;
+  onMove: (offset: -1 | 1) => void;
+}
+
+/**
+ * The drag handle, and the non-drag path with it (#965).
+ *
+ * Order is the whole point of this surface - it decides the picker's arrangement - and
+ * a drag was the only way to change it, which fails WCAG 2.2 SC 2.5.7 (Dragging
+ * Movements, AA). The same two moves home's arrange row carries now ride here too: named
+ * `accessibilityActions` for screen readers, Up/Down keys for keyboard.
+ *
+ * Stated honestly: this closes the screen-reader and keyboard cases. A pointer-only user
+ * with no keyboard still has drag alone, so it remains a PARTIAL answer to SC 2.5.7.
+ *
+ * A `View` rather than a `Pressable`, with `accessible` and `focusable` set: pressing a
+ * drag handle does nothing - the gesture is the pointer path - and a button whose press
+ * does nothing would be a lie. `accessible` is safe on a leaf like this; only on a group
+ * wrapper would it collapse children into one node.
+ *
+ * ☠️ `canMove` is STRUCTURAL and must not fold in "a write is in flight" - see
+ * `arrowKeyMoveProps`. The in-flight guard lives in `moveEmotion`, where a rejected move
+ * costs a no-op rather than the focus ring.
+ */
+function EmotionReorderHandle({ emotion, canMove, onMove }: EmotionReorderHandleProps) {
+  const { t } = useTranslation("mood");
+
+  return (
+    <Sortable.Handle>
+      <View
+        accessible
+        focusable={canMove}
+        accessibilityRole="button"
+        accessibilityLabel={t("emotions.manage.reorderEmotion", { name: emotion.name })}
+        accessibilityHint={t("emotions.manage.reorderHint")}
+        accessibilityActions={[
+          { name: "moveEarlier", label: t("emotions.manage.moveEarlier", { name: emotion.name }) },
+          { name: "moveLater", label: t("emotions.manage.moveLater", { name: emotion.name }) },
+        ]}
+        onAccessibilityAction={(event) => {
+          if (!canMove) return;
+          if (event.nativeEvent.actionName === "moveEarlier") onMove(-1);
+          if (event.nativeEvent.actionName === "moveLater") onMove(1);
+        }}
+        {...(canMove ? arrowKeyMoveProps(onMove) : {})}
+        testID={`emotion-reorder-handle-${emotion.id}`}
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        className={cn("py-2.5", !canMove && "opacity-40")}
+      >
+        <Icon name="drag-indicator" className="size-4 text-muted-foreground opacity-50" />
+      </View>
+    </Sortable.Handle>
+  );
+}
+
 // ─── Shell ───────────────────────────────────────────────────────────────────
 
 interface ManageEmotionsShellProps {
@@ -300,6 +364,31 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   }, []);
 
   /**
+   * The non-drag half of reordering: swap with the neighbour and write the whole order,
+   * exactly what `onDragEnd` writes.
+   *
+   * ⚠️ Refused while a write is in flight, and that guard is not decorative.
+   * `setEmotionOrder` writes the WHOLE order as one upsert per row, so two of them racing
+   * are resolved per row by arrival time - the later press can be overwritten by the
+   * earlier one's rows and the list settles on an order the user never asked for. The
+   * mutation is optimistic, so the row has already moved on screen and a refused press
+   * costs a press, not a wrong order. This guard must never reach `canMove` - see
+   * `EmotionReorderHandle`.
+   */
+  const moveEmotion = useCallback(
+    (emotionId: string, offset: -1 | 1) => {
+      if (reorderEmotions.isPending) return;
+      const ids = allEmotions.map((e) => e.id);
+      const currentIndex = ids.indexOf(emotionId);
+      const nextIndex = currentIndex + offset;
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= ids.length) return;
+      [ids[currentIndex], ids[nextIndex]] = [ids[nextIndex], ids[currentIndex]];
+      reorderEmotions.mutate(ids);
+    },
+    [allEmotions, reorderEmotions],
+  );
+
+  /**
    * Two hit targets, and that is the whole point (#702).
    *
    * The row used to carry a drag handle, an edit button and a delete button. Six targets
@@ -310,15 +399,19 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
    * The handle sits BESIDE the press target, never inside it (#915): on web,
    * gesture-handler's pan does not cancel an enclosing Pressable the way native gesture
    * arbitration does, and the dragged row travels with the cursor, so a drag that starts
-   * on a handle inside the Pressable also fires the row press on release.
+   * on a handle inside the Pressable also fires the row press on release. That still holds
+   * now the handle is interactive (#965) - if anything more so, since a focusable control
+   * nested in a Pressable is also a second announcement of the same row.
    */
   const renderEmotionRow = useCallback(
     ({ item: emotion }: { item: EmotionDisplay }) => {
       return (
         <View className="flex-row items-center gap-3.5 border-t border-border px-1.5">
-          <Sortable.Handle>
-            <Icon name="drag-indicator" className="size-4 text-muted-foreground opacity-50" />
-          </Sortable.Handle>
+          <EmotionReorderHandle
+            emotion={emotion}
+            canMove={allEmotions.length > 1}
+            onMove={(offset) => moveEmotion(emotion.id, offset)}
+          />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("emotions.manage.editEmotion", { name: emotion.name })}
@@ -333,7 +426,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
         </View>
       );
     },
-    [openEditor, t],
+    [allEmotions.length, moveEmotion, openEditor, t],
   );
 
   // ⚠️ The RPC returns no row for an emotion with no uses, so a missing key means zero —

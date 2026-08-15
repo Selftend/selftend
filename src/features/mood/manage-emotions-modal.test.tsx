@@ -13,6 +13,8 @@ jest.mock("@/src/providers/session-provider", () => ({
 // be referenced from inside one.
 const mockRemoveEmotion = jest.fn();
 const mockUpsertEmotion = jest.fn();
+const mockReorderEmotions = jest.fn();
+let mockReorderPending = false;
 
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
   useEmotionPreferences: () => ({
@@ -37,12 +39,22 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
         removed: false,
         isCustom: false,
       },
+      {
+        id: "sad",
+        userId: "user-1",
+        emotionId: "sad",
+        name: null,
+        emoji: null,
+        position: 2,
+        removed: false,
+        isCustom: false,
+      },
     ],
     isLoading: false,
   }),
   useEmotionUsageCounts: jest.fn(() => ({ data: { anxious: 3 } })),
   useUpsertEmotionPreference: () => ({ mutate: mockUpsertEmotion }),
-  useReorderEmotions: () => ({ mutate: jest.fn() }),
+  useReorderEmotions: () => ({ mutate: mockReorderEmotions, isPending: mockReorderPending }),
   useRemoveEmotion: () => ({ mutate: mockRemoveEmotion }),
   useAddCustomEmotion: () => ({ mutate: jest.fn() }),
 }));
@@ -90,9 +102,17 @@ function open() {
   return renderWithProviders(<ManageEmotionsModal visible onClose={() => {}} />);
 }
 
+/** The handle is the only control carrying the a11y move actions. */
+function moveVia(emotionId: string, action: "moveEarlier" | "moveLater") {
+  fireEvent(screen.getByTestId(`emotion-reorder-handle-${emotionId}`), "accessibilityAction", {
+    nativeEvent: { actionName: action },
+  });
+}
+
 describe("ManageEmotionsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockReorderPending = false;
     mockUseEmotionUsageCounts.mockReturnValue({
       data: { anxious: 3 },
     } as unknown as ReturnType<typeof useEmotionUsageCounts>);
@@ -147,6 +167,107 @@ describe("ManageEmotionsModal", () => {
       // …but never inside the pressable that opens the editor.
       expect(
         within(screen.getByLabelText("Edit Anxious")).queryByTestId("sortable-handle"),
+      ).toBeNull();
+    });
+  });
+
+  /**
+   * Order is the whole point of this surface - it sets the picker's arrangement - and
+   * until #965 the only way to change it was a drag. That fails WCAG 2.2 SC 2.5.7
+   * (Dragging Movements, AA) and left a screen-reader or keyboard-only user able to add,
+   * rename and delete emotions but not to order them.
+   */
+  describe("the non-drag reorder path", () => {
+    it("moves an emotion later through the handle's move-later action", () => {
+      open();
+
+      moveVia("anxious", "moveLater");
+
+      expect(mockReorderEmotions).toHaveBeenCalledWith(["grateful", "anxious", "sad"]);
+    });
+
+    it("moves an emotion earlier through the handle's move-earlier action", () => {
+      open();
+
+      moveVia("sad", "moveEarlier");
+
+      expect(mockReorderEmotions).toHaveBeenCalledWith(["anxious", "sad", "grateful"]);
+    });
+
+    it("writes nothing when the move would leave the list", () => {
+      open();
+
+      moveVia("anxious", "moveEarlier");
+      moveVia("sad", "moveLater");
+
+      expect(mockReorderEmotions).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The labels a screen reader reads come from `mood:emotions.manage.*` and name the
+     * emotion, matching `editEmotion`'s shape - not borrowed from `navigation`, whose
+     * strings say "tool".
+     */
+    it("exposes both moves as named accessibility actions on the handle", () => {
+      open();
+
+      const handle = screen.getByTestId("emotion-reorder-handle-anxious");
+      expect(handle.props.accessibilityActions).toEqual([
+        { name: "moveEarlier", label: "Move Anxious earlier" },
+        { name: "moveLater", label: "Move Anxious later" },
+      ]);
+      expect(handle.props.accessibilityRole).toBe("button");
+      expect(handle.props.accessibilityLabel).toBe("Reorder Anxious");
+      expect(handle.props.focusable).toBe(true);
+    });
+
+    /**
+     * The arrow keys are the WEB half of the same two moves, and jest runs the native
+     * platform - so what is asserted here is that the fork exists and native carries no
+     * `onKeyDown`. Same shape `arrange-screen.test.tsx` uses for the shared helper.
+     */
+    it("carries no web key handler on native", () => {
+      open();
+
+      expect(screen.getByTestId("emotion-reorder-handle-anxious").props.onKeyDown).toBeUndefined();
+    });
+
+    /**
+     * ☠️ `focusable` is `tabIndex` under react-native-web, so folding "a write is in
+     * flight" into it takes the focused handle out of the tab order while the reorder
+     * settles - the user's second Arrow press lands on the document and reordering by
+     * keyboard works exactly once per row. The in-flight guard lives in the move instead,
+     * where a rejected move costs a no-op rather than the focus ring.
+     */
+    it("keeps the handle focusable while a write is in flight", () => {
+      mockReorderPending = true;
+      open();
+
+      expect(screen.getByTestId("emotion-reorder-handle-anxious").props.focusable).toBe(true);
+    });
+
+    it("still refuses the move itself while a write is in flight", () => {
+      mockReorderPending = true;
+      open();
+
+      moveVia("anxious", "moveLater");
+
+      expect(mockReorderEmotions).not.toHaveBeenCalled();
+    });
+
+    /**
+     * ⚠️ Making the handle interactive is exactly the change that tempts someone to fold
+     * it into the row `Pressable` - and that is the #915/#922 structural bug: on web
+     * gesture-handler's pan does not cancel an enclosing Pressable, so a drag would also
+     * open the editor on release. The handle stays a sibling.
+     */
+    it("keeps the now-interactive handle outside the row press target", () => {
+      open();
+
+      expect(
+        within(screen.getByLabelText("Edit Anxious")).queryByTestId(
+          "emotion-reorder-handle-anxious",
+        ),
       ).toBeNull();
     });
   });
