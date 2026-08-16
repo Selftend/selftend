@@ -55,7 +55,7 @@ export default function NotificationsScreen() {
         await cancelAllReminders(userId);
       }
     } catch {
-      showToast({ title: t("feedback.problem"), tone: "error" });
+      showToast({ title: t("common:feedback.wentWrong"), tone: "error" });
     }
   }
 
@@ -88,7 +88,7 @@ export default function NotificationsScreen() {
       const result = await channel.ensure();
       if (!result.enabled) {
         const message = t(reminderChannelErrorKey(result.reason));
-        showToast({ title: t("feedback.problem"), description: message, tone: "error" });
+        showToast({ title: t("common:feedback.wentWrong"), description: message, tone: "error" });
         return;
       }
       await writeMaster(true);

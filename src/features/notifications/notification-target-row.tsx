@@ -97,7 +97,7 @@ export function NotificationTargetRow({
 
   function reportFailure(message: string) {
     setErrorMessage(message);
-    showToast({ title: t("feedback.problem"), description: message, tone: "error" });
+    showToast({ title: t("common:feedback.wentWrong"), description: message, tone: "error" });
   }
 
   async function writePatch(patch: Partial<UserPreferences>) {
@@ -106,7 +106,7 @@ export function NotificationTargetRow({
       await updatePreferences.mutateAsync(patch);
     } catch {
       // The thrown message is a backend/internal string - translated copy only (i18n rule).
-      reportFailure(t("feedback.problem"));
+      reportFailure(t("common:feedback.wentWrong"));
     }
   }
 
@@ -135,7 +135,7 @@ export function NotificationTargetRow({
       }
       await writePatch(enableTargetPatch(preferences, target));
     } catch {
-      reportFailure(t("feedback.problem"));
+      reportFailure(t("common:feedback.wentWrong"));
     } finally {
       setRequestPending(false);
       onRequestChange(false);

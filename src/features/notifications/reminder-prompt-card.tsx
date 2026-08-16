@@ -103,7 +103,7 @@ export function ReminderPromptCard() {
         // Same mapping as the reminders screen: the raw reason slug never reaches the
         // user, and the wording names this platform's settings rather than a browser's.
         showToast({
-          title: t("feedback.problem"),
+          title: t("common:feedback.wentWrong"),
           description: t(reminderChannelErrorKey(result.reason)),
           tone: "error",
         });
@@ -122,7 +122,7 @@ export function ReminderPromptCard() {
       setActiveTarget(null);
     } catch {
       // The thrown message is a backend/internal string - translated copy only.
-      showToast({ title: t("feedback.problem"), tone: "error" });
+      showToast({ title: t("common:feedback.wentWrong"), tone: "error" });
     } finally {
       setSaving(false);
     }
