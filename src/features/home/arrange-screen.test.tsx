@@ -251,10 +251,63 @@ describe("ArrangeScreen reorder", () => {
     expect(handle.props.focusable).toBe(true);
   });
 
+  /**
+   * ⚠️ The hint must not name the arrow keys. react-native-web does not implement
+   * `accessibilityHint` at all - the string appears nowhere in `react-native-web/dist` - so
+   * it reaches ONLY native AT, and native is the one platform with no arrow keys to press:
+   * there the path is the rotor's `moveEarlier` / `moveLater`. Naming the keys told the
+   * only listener to do the one thing it cannot. State the outcome instead. Mirrors
+   * `manage-emotions-modal.test.tsx` for the emotion list's half of the same pair (#1047).
+   */
+  it("hints at the outcome, not at keys the platform reading it does not have", () => {
+    renderArrange(["mood-checkin", "sleep-latest"]);
+
+    const hint = screen.getByTestId("arrange-handle-mood-checkin").props.accessibilityHint;
+    expect(hint).toBe("Moves this tool up or down in the list.");
+    expect(hint).not.toMatch(/arrow|key/i);
+  });
+
   it("leaves the lone row's handle unfocusable - there is nowhere to move it", () => {
     renderArrange(["mood-checkin"]);
 
     expect(screen.getByTestId("arrange-handle-mood-checkin").props.focusable).toBe(false);
+  });
+
+  /**
+   * ☠️ The keyboard half was withheld on a lone row from the start and the rotor half was
+   * not, so native AT was still offered "Move X earlier" / "Move X later" on the one row
+   * that has nowhere to go - and both returned early and did nothing (#1049). An action a
+   * screen reader reads out and then declines to perform is worse than no action: the user
+   * cannot tell it apart from a bug in their own gesture. `focusable: false` hid the whole
+   * thing from the keyboard, which is why this only ever reached VoiceOver and TalkBack.
+   */
+  it("offers the lone row's handle no move at all - both would have refused", () => {
+    renderArrange(["mood-checkin"]);
+
+    expect(screen.getByTestId("arrange-handle-mood-checkin").props.accessibilityActions).toEqual(
+      [],
+    );
+  });
+
+  /**
+   * And the hint goes with them. It is read AFTER the label, so on a lone row it followed
+   * "Drag to reorder X" with an outcome - "Moves this tool up or down in the list." - that
+   * nothing on the row could produce. Nothing to describe, nothing said.
+   */
+  it("withholds the lone row's hint - there is no outcome left to describe", () => {
+    renderArrange(["mood-checkin"]);
+
+    expect(
+      screen.getByTestId("arrange-handle-mood-checkin").props.accessibilityHint,
+    ).toBeUndefined();
+  });
+
+  it("writes nothing when a lone row's move is dispatched anyway", () => {
+    renderArrange(["mood-checkin"]);
+
+    moveVia("mood-checkin", "moveLater");
+
+    expect(mockReorderWidgets).not.toHaveBeenCalled();
   });
 
   /**

@@ -85,6 +85,8 @@ export default function NewTaskScreen() {
     toastLabels: {
       saved: t("common:feedback.saved"),
       problem: t("common:feedback.problem"),
+      invalid: t("common:feedback.invalid"),
+      invalidMoved: t("common:feedback.invalidMoved"),
       fallbackError: t("tasks.saveError"),
     },
   });

@@ -81,6 +81,8 @@ const STEP_FIELDS = [["name"], ["description"]] as const;
 const TOAST_LABELS = {
   saved: "Saved!",
   problem: "There was a problem",
+  invalid: "Some answers need a fix",
+  invalidMoved: "Moved you back",
   fallbackError: "Unknown error",
 };
 
@@ -285,7 +287,7 @@ describe("useWizardDraft - handleSave", () => {
     expect(onSaved).toHaveBeenCalledTimes(1);
   });
 
-  it("jumps to the failing step and shows the problem toast when save-time validation fails", async () => {
+  it("jumps to the failing step and explains the jump when save-time validation fails", async () => {
     // A field on an EARLIER step can be invalid at save time (overlong paste,
     // rejected rehydrated draft); Save must not silently no-op.
     const onSave = jest.fn();
@@ -303,8 +305,35 @@ describe("useWizardDraft - handleSave", () => {
     // "name" belongs to step 0 - the wizard navigated back to it so the inline
     // error is visible.
     expect(hookResult.result.current.stepIndex).toBe(0);
+    // NOT the `problem` label: nothing was attempted, so nothing failed, and the
+    // draft is still held. Asserting the difference is the point of the test -
+    // the two paths shared one string, so an invalid field read as data loss.
     expect(showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "There was a problem", tone: "error" }),
+      expect.objectContaining({
+        title: "Some answers need a fix",
+        description: "Moved you back",
+        tone: "error",
+      }),
+    );
+    expect(showToast).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: "There was a problem" }),
+    );
+  });
+
+  it("omits the moved-you-back line when the invalid field is on the current step", async () => {
+    // The jump explanation must not appear when there was no jump; it would be
+    // describing navigation that never happened.
+    const { hookResult, showToast } = await setupHook({
+      onSave: jest.fn(),
+      initialStepIndex: 0,
+      invalidErrors: { name: { type: "max", message: "some.validation.key" } },
+    });
+
+    await act(() => hookResult.result.current.handleSave());
+
+    expect(hookResult.result.current.stepIndex).toBe(0);
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Some answers need a fix", description: undefined }),
     );
   });
 });

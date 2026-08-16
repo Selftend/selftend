@@ -64,4 +64,41 @@ describe("apply_widget_recommendations (integration)", () => {
       app_onboarding_completed_via: "finish",
     });
   });
+
+  // #986. End-state check: the wizard and `add_widget_preference` running together on one
+  // account leave a well-formed list - positions distinct and contiguous from 0.
+  //
+  // Read what this does NOT cover. It does not verify the advisory lock this function now
+  // takes. Measured against a lock-free build of the function, over eleven runs, it stayed
+  // green every time: `add_widget_preference` normalizes positions before it appends, so
+  // any collision the wizard caused is repaired by the very next add and never reaches the
+  // assertion. The lock is what stops the bad state existing at all rather than being
+  // healed afterwards, and nothing observable through PostgREST distinguishes the two -
+  // holding an advisory lock across HTTP requests is not something this suite can do.
+  it("leaves a well-formed list when a concurrent add runs alongside it", async () => {
+    const cleared = await client.from("widget_preferences").delete().eq("user_id", userId);
+    expect(cleared.error).toBeNull();
+
+    // Disjoint id sets: an added row that survives the wizard's DELETE must not also
+    // collide on UNIQUE (user_id, widget_id), or the test would fail for that reason
+    // instead of the one it is about.
+    const wizardIds = ["wizard-1", "wizard-2", "wizard-3", "wizard-4", "wizard-5"];
+    const addedIds = Array.from({ length: 8 }, (_, index) => `added-${index}`);
+
+    await Promise.all([
+      client.rpc("apply_widget_recommendations", { p_widget_ids: wizardIds }),
+      ...addedIds.map((widgetId) => client.rpc("add_widget_preference", { p_widget_id: widgetId })),
+    ]);
+
+    const { data, error } = await client
+      .from("widget_preferences")
+      .select("widget_id, position")
+      .eq("user_id", userId);
+    expect(error).toBeNull();
+
+    const stored = (data ?? []) as { widget_id: string; position: number }[];
+    expect(stored.length).toBeGreaterThan(0);
+    const heldPositions = stored.map((row) => row.position).sort((a, b) => a - b);
+    expect(heldPositions).toEqual([...stored.keys()]);
+  });
 });

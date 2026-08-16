@@ -15,8 +15,7 @@ import {
   PopoverTrigger,
 } from "@/src/components/react-native-reusables/popover";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { signOut } from "@/src/features/auth/api";
-import { cancelAllReminders } from "@/src/lib/notifications";
+import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { resolveAvatarUrl } from "@/src/features/profile/avatar-url";
 import { resolveDisplayName } from "@/src/features/profile/display-name";
 import { useUserProfile } from "@/src/features/profile/queries";
@@ -92,12 +91,16 @@ export function UserMenu() {
     openExternalUrl(url);
   }
 
-  async function onSignOut() {
+  // The same handler the settings row uses (#1053): the menu used to re-implement
+  // its body and, having no try/catch, swallowed every failure - it closed, said
+  // nothing, and left the user signed in. The hook reports through the toast,
+  // which is the only surface that outlives a dismissed menu.
+  const handleSignOut = useSignOut(user?.id ?? null);
+
+  function onSignOut() {
+    // Closing is the menu's own business, so it stays here rather than in the hook.
     popoverTriggerRef.current?.close();
-    // Deregister this device's push channel BEFORE sign-out (while RLS context is still
-    // valid), so server-driven reminders stop firing for a device the user has left.
-    await cancelAllReminders(user?.id ?? null);
-    await signOut();
+    void handleSignOut();
   }
 
   return (

@@ -129,7 +129,7 @@
     "deleteHint": "This cannot be undone.",
     "cancel": "Cancel",
     "signOut": "Sign out",
-    "signOutError": "Unable to sign out.",
+    "signOutHint": "You'll stay signed in on other devices.",
     "deleteWarning": "This action is permanent. Your account, profile, preferences, and app data will be deleted unless we are required to keep limited data for legal, security, or abuse-prevention reasons.",
     "deleteAccount": "Delete account",
     "version": "Selftend v{{version}}"

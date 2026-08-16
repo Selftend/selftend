@@ -156,6 +156,27 @@ describe("SettingsScreen structure", () => {
     expect(screen.queryByText(/loading/i)).toBeNull();
   });
 
+  /**
+   * #968. This sentence was deleted by #958 because it was false - `signOut()`
+   * was taking supabase-js's `scope: 'global'` default, so signing out here also
+   * ended the session on the user's phone. The scope is now `local`, which is
+   * what makes the copy true again, so the two have to stay tied: if the scope
+   * ever goes back to `global`, this row is lying and this test says so.
+   *
+   * The row's accessible NAME stays "Sign out" (SettingsRow passes the label
+   * alone to `accessibilityLabel` and the description to `accessibilityHint`),
+   * which is why the sign-out e2e spec still addresses it by that exact name.
+   */
+  it("tells the user that signing out leaves their other devices signed in", async () => {
+    mockPreferences(undefined, true);
+    renderWithProviders(<SettingsScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByText("You'll stay signed in on other devices.")).toBeTruthy(),
+    );
+    expect(screen.getByLabelText("Sign out")).toBeTruthy();
+  });
+
   it("waits only the two onboarding rows on the preferences query", async () => {
     mockPreferences(undefined, true);
     renderWithProviders(<SettingsScreen />);
