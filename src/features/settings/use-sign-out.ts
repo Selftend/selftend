@@ -11,11 +11,12 @@ import { useToastStore } from "@/src/stores/toast-store";
  * `signOut` while the RLS context is still valid, so server-driven reminders stop
  * for a device the user has left.
  *
- * A failure toasts and nothing else. The injected `setErrorMessage` this used to
- * take existed only to write the screen's shared error banner (R7), and that pair
- * is gone: the toast was already firing beside it, so the banner was a second
- * rendering of the same sentence on a page the user is about to leave. The toast
- * is also the only surface left once the header menu has dismissed itself.
+ * A failure toasts, and reports to Sentry unless it is the expected offline case.
+ * The injected `setErrorMessage` this used to take existed only to write the
+ * screen's shared error banner (R7), and that pair is gone: the toast was already
+ * firing beside it, so the banner was a second rendering of the same sentence on a
+ * page the user is about to leave. The toast is also the only surface left once
+ * the header menu has dismissed itself.
  */
 export function useSignOut(userId: string | null) {
   const { t } = useTranslation("settings");

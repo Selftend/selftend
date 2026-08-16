@@ -269,6 +269,10 @@ describe("UserMenu", () => {
   // to leave the user still signed in with nothing on screen to say so - the
   // failure existed only as an unhandled rejection in the console. The toast is
   // the only surface that survives a dismissed menu.
+  //
+  // These two asserted the thrown message ("boom") until #1055 made the toast say
+  // it in the user's language instead. What the menu owns is that a failure
+  // reaches the user at all - the wording is `useSignOut`'s, and pinned there.
   it("reports a failed sign-out through the toast", async () => {
     mockCancelAllReminders.mockResolvedValue(undefined);
     mockSignOut.mockRejectedValue(new Error("boom"));
@@ -277,12 +281,7 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByLabelText("Open account menu"));
     fireEvent.press(screen.getByText("Sign Out"));
 
-    await waitFor(() =>
-      expect(useToastStore.getState().toast).toMatchObject({
-        description: "boom",
-        tone: "error",
-      }),
-    );
+    await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: "error" }));
   });
 
   // `cancelAllReminders` is awaited first, so a failure there means `signOut`
@@ -295,12 +294,7 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByLabelText("Open account menu"));
     fireEvent.press(screen.getByText("Sign Out"));
 
-    await waitFor(() =>
-      expect(useToastStore.getState().toast).toMatchObject({
-        description: "reminders offline",
-        tone: "error",
-      }),
-    );
+    await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: "error" }));
     expect(mockSignOut).not.toHaveBeenCalled();
   });
 });
