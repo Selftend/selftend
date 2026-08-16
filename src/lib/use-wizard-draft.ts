@@ -24,7 +24,16 @@ interface UseWizardDraftArgs<TForm extends FieldValues, TSaved> {
   onError?: (message: string) => void;
   toastLabels: {
     saved: string;
+    /** A save that was attempted and failed - the mutation threw. */
     problem: string;
+    /**
+     * A save that was never attempted, because a field is invalid. Distinct from
+     * `problem` on purpose: nothing failed, and telling someone their answers
+     * "did not save" when the form simply needs a fix reads as data loss.
+     */
+    invalid: string;
+    /** Explains the step jump below, so it is not silent. Shown only when one happens. */
+    invalidMoved: string;
     fallbackError: string;
   };
 }
@@ -166,10 +175,19 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
         const failingStep = stepFields.findIndex((fields) =>
           fields.some((field) => field.split(".")[0] in fieldErrors),
         );
-        if (failingStep >= 0 && failingStep !== stepIndex) {
+        const moved = failingStep >= 0 && failingStep !== stepIndex;
+        if (moved) {
           setStepIndex(failingStep);
         }
-        showToast({ title: toastLabels.problem, tone: "error" });
+        // NOT `problem`. This branch is reached because a field is invalid, so
+        // the save was never attempted and nothing was lost - the draft is still
+        // held. "Something did not save" described a failure that did not happen,
+        // and on the step the user is already looking at it explained nothing.
+        showToast({
+          title: toastLabels.invalid,
+          description: moved ? toastLabels.invalidMoved : undefined,
+          tone: "error",
+        });
       },
     );
   // RHF's handleSubmit does NOT block re-entrant calls (isSubmitting is React state that

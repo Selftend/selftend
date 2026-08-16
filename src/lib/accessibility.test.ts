@@ -15,7 +15,7 @@
  */
 
 import { act, renderHook } from "@testing-library/react-native";
-import { AccessibilityInfo, Platform } from "react-native";
+import { AccessibilityInfo, Platform, type AccessibilityActionEvent } from "react-native";
 
 // We drive Platform.OS per describe block by mutating the property.
 
@@ -23,6 +23,7 @@ import {
   announceMessage,
   currentStateProps,
   politeLiveRegionProps,
+  reorderMoveProps,
   toggleButtonStateProps,
   useReduceMotionEnabled,
 } from "@/src/lib/accessibility";
@@ -256,6 +257,91 @@ describe("currentStateProps", () => {
 
     expect(currentStateProps(true, "page")).toEqual({ "aria-selected": true });
     expect(currentStateProps(false, "step")).toEqual({ "aria-selected": false });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// reorderMoveProps
+// ---------------------------------------------------------------------------
+
+/**
+ * `canMove` means "is there anywhere to move to", and every half of the handle has to
+ * agree with it. Focus, the arrow keys and the move itself always did; the
+ * `accessibilityActions` pair did not, so a lone row's handle offered VoiceOver and
+ * TalkBack two rotor moves that returned early and did nothing (#1049).
+ */
+describe("reorderMoveProps", () => {
+  const labels = { earlierLabel: "Move it earlier", laterLabel: "Move it later" };
+
+  beforeEach(() => {
+    setPlatform("ios");
+  });
+
+  afterEach(() => {
+    setPlatform("ios");
+  });
+
+  /** The rotor's dispatch, which is a bare `actionName` and nothing this reads. */
+  function dispatch(
+    props: ReturnType<typeof reorderMoveProps>,
+    actionName: "moveEarlier" | "moveLater",
+  ) {
+    props.onAccessibilityAction({ nativeEvent: { actionName } } as AccessibilityActionEvent);
+  }
+
+  it("offers both moves when there is somewhere to move to", () => {
+    const props = reorderMoveProps({ canMove: true, ...labels, onMove: jest.fn() });
+
+    expect(props.accessibilityActions).toEqual([
+      { name: "moveEarlier", label: "Move it earlier" },
+      { name: "moveLater", label: "Move it later" },
+    ]);
+    expect(props.focusable).toBe(true);
+  });
+
+  it("offers no move at all when there is nowhere to move to", () => {
+    const props = reorderMoveProps({ canMove: false, ...labels, onMove: jest.fn() });
+
+    expect(props.accessibilityActions).toEqual([]);
+    expect(props.focusable).toBe(false);
+  });
+
+  it("runs the matching move when one is dispatched", () => {
+    const onMove = jest.fn();
+    const props = reorderMoveProps({ canMove: true, ...labels, onMove });
+
+    dispatch(props, "moveEarlier");
+    dispatch(props, "moveLater");
+
+    expect(onMove.mock.calls).toEqual([[-1], [1]]);
+  });
+
+  /**
+   * ⚠️ The guard inside `onAccessibilityAction` is NOT dead now the pair is withheld, and
+   * deleting it as redundant is the tempting follow-up. Whether a platform will dispatch
+   * an action it was never offered is the platform's business, not ours - iOS and Android
+   * differ in how they cache a node's action set across a re-render, and the withheld pair
+   * is a re-render away from the offered one. A refused dispatch costs one comparison.
+   */
+  it("still refuses a move dispatched anyway when there is nowhere to move to", () => {
+    const onMove = jest.fn();
+    const props = reorderMoveProps({ canMove: false, ...labels, onMove });
+
+    dispatch(props, "moveEarlier");
+    dispatch(props, "moveLater");
+
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it("carries the web arrow keys only while there is somewhere to move to", () => {
+    setPlatform("web");
+
+    expect(reorderMoveProps({ canMove: true, ...labels, onMove: jest.fn() })).toHaveProperty(
+      "onKeyDown",
+    );
+    expect(reorderMoveProps({ canMove: false, ...labels, onMove: jest.fn() })).not.toHaveProperty(
+      "onKeyDown",
+    );
   });
 });
 

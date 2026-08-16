@@ -13,9 +13,6 @@
     "requesting": "Waiting for permission",
     "blockedTitle": "Notifications are turned off"
   },
-  "feedback": {
-    "problem": "Something went wrong"
-  },
   "copy": {
     "cbt": {
       "title": "CBT check-in",

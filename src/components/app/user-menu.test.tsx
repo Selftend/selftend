@@ -1,10 +1,13 @@
-import { fireEvent, screen, within } from "@testing-library/react-native";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
 import { UserMenu } from "./user-menu";
+import { signOut } from "@/src/features/auth/api";
 import { appEnv } from "@/src/lib/env";
+import { cancelAllReminders } from "@/src/lib/notifications";
 import { openExternalUrl } from "@/src/lib/linking";
+import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockPathname = "/";
@@ -47,6 +50,8 @@ jest.mock("@/src/lib/linking", () => ({
 
 const mockPush = router.push as jest.MockedFunction<typeof router.push>;
 const mockOpen = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
+const mockSignOut = signOut as jest.MockedFunction<typeof signOut>;
+const mockCancelAllReminders = cancelAllReminders as jest.MockedFunction<typeof cancelAllReminders>;
 
 const originalDiscordUrl = appEnv.discordUrl;
 const originalRedditUrl = appEnv.redditUrl;
@@ -59,7 +64,12 @@ afterEach(() => {
   appEnv.youtubeUrl = originalYoutubeUrl;
   mockPathname = "/";
   mockSession = signedInSession;
+  useToastStore.setState({ toast: null });
   jest.clearAllMocks();
+  // `clearAllMocks` wipes recorded calls but NOT implementations, so a
+  // `mockRejectedValue` set by one test would still be rejecting in the next.
+  mockCancelAllReminders.mockResolvedValue(undefined);
+  mockSignOut.mockResolvedValue(undefined);
 });
 
 describe("UserMenu", () => {
@@ -234,6 +244,58 @@ describe("UserMenu", () => {
 
     expect(screen.getByText("Sign Out")).toBeTruthy();
     expect(screen.getByText("Settings")).toBeTruthy();
+  });
+
+  // #968: supabase-js's `signOut()` defaults to `scope: 'global'`, which revokes
+  // every refresh token the user holds - pressing Sign Out on the laptop ended
+  // the session on the phone. Nothing in the product ever asked for that. The
+  // scope is now an explicit argument, and this pins the one this menu passes.
+  it("signs out of this device only, leaving other devices signed in", async () => {
+    mockCancelAllReminders.mockResolvedValue(undefined);
+    mockSignOut.mockResolvedValue(undefined);
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+    fireEvent.press(screen.getByText("Sign Out"));
+
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalledWith("local"));
+    // And still after the reminder deregistration, which needs a live RLS context.
+    expect(mockCancelAllReminders.mock.invocationCallOrder[0]).toBeLessThan(
+      mockSignOut.mock.invocationCallOrder[0],
+    );
+  });
+
+  // #1053: the menu closes first and unconditionally, so a rejected sign-out used
+  // to leave the user still signed in with nothing on screen to say so - the
+  // failure existed only as an unhandled rejection in the console. The toast is
+  // the only surface that survives a dismissed menu.
+  //
+  // These two asserted the thrown message ("boom") until #1055 made the toast say
+  // it in the user's language instead. What the menu owns is that a failure
+  // reaches the user at all - the wording is `useSignOut`'s, and pinned there.
+  it("reports a failed sign-out through the toast", async () => {
+    mockCancelAllReminders.mockResolvedValue(undefined);
+    mockSignOut.mockRejectedValue(new Error("boom"));
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+    fireEvent.press(screen.getByText("Sign Out"));
+
+    await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: "error" }));
+  });
+
+  // `cancelAllReminders` is awaited first, so a failure there means `signOut`
+  // never runs at all - "sign-out did nothing" does not require the sign-out
+  // call itself to be the thing that broke.
+  it("reports a failure that stopped sign-out from being attempted", async () => {
+    mockCancelAllReminders.mockRejectedValue(new Error("reminders offline"));
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+    fireEvent.press(screen.getByText("Sign Out"));
+
+    await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: "error" }));
+    expect(mockSignOut).not.toHaveBeenCalled();
   });
 });
 

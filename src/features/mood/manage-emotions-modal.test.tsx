@@ -13,36 +13,38 @@ jest.mock("@/src/providers/session-provider", () => ({
 // be referenced from inside one.
 const mockRemoveEmotion = jest.fn();
 const mockUpsertEmotion = jest.fn();
+const mockReorderEmotions = jest.fn();
+let mockReorderPending = false;
+
+function mockEmotionRow(emotionId: string, position: number) {
+  return {
+    id: emotionId,
+    userId: "user-1",
+    emotionId,
+    name: null,
+    emoji: null,
+    position,
+    removed: false,
+    isCustom: false,
+  };
+}
+
+/**
+ * Three rows is what every case renders except the lone-row one, which shortens it - the
+ * list is settable rather than inlined so "there is nowhere to move to" has a fixture at
+ * all. `beforeEach` puts the three back.
+ */
+const mockFullEmotionList = ["anxious", "grateful", "sad"].map(mockEmotionRow);
+let mockEmotionList = mockFullEmotionList;
 
 jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
   useEmotionPreferences: () => ({
-    data: [
-      {
-        id: "anxious",
-        userId: "user-1",
-        emotionId: "anxious",
-        name: null,
-        emoji: null,
-        position: 0,
-        removed: false,
-        isCustom: false,
-      },
-      {
-        id: "grateful",
-        userId: "user-1",
-        emotionId: "grateful",
-        name: null,
-        emoji: null,
-        position: 1,
-        removed: false,
-        isCustom: false,
-      },
-    ],
+    data: mockEmotionList,
     isLoading: false,
   }),
   useEmotionUsageCounts: jest.fn(() => ({ data: { anxious: 3 } })),
   useUpsertEmotionPreference: () => ({ mutate: mockUpsertEmotion }),
-  useReorderEmotions: () => ({ mutate: jest.fn() }),
+  useReorderEmotions: () => ({ mutate: mockReorderEmotions, isPending: mockReorderPending }),
   useRemoveEmotion: () => ({ mutate: mockRemoveEmotion }),
   useAddCustomEmotion: () => ({ mutate: jest.fn() }),
 }));
@@ -59,12 +61,14 @@ jest.mock("react-native-sortables", () => {
         data,
         renderItem,
         keyExtractor,
+        sortEnabled,
       }: {
         data: { id: string }[];
         renderItem: (arg: { item: { id: string } }) => React.ReactNode;
         keyExtractor: (item: { id: string }) => string;
+        sortEnabled?: boolean;
       }) => (
-        <View>
+        <View testID="emotion-sortable-grid" sortEnabled={sortEnabled}>
           {data.map((item) => (
             <View key={keyExtractor(item)}>{renderItem({ item })}</View>
           ))}
@@ -90,9 +94,18 @@ function open() {
   return renderWithProviders(<ManageEmotionsModal visible onClose={() => {}} />);
 }
 
+/** The handle is the only control carrying the a11y move actions. */
+function moveVia(emotionId: string, action: "moveEarlier" | "moveLater") {
+  fireEvent(screen.getByTestId(`emotion-reorder-handle-${emotionId}`), "accessibilityAction", {
+    nativeEvent: { actionName: action },
+  });
+}
+
 describe("ManageEmotionsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockReorderPending = false;
+    mockEmotionList = mockFullEmotionList;
     mockUseEmotionUsageCounts.mockReturnValue({
       data: { anxious: 3 },
     } as unknown as ReturnType<typeof useEmotionUsageCounts>);
@@ -147,6 +160,173 @@ describe("ManageEmotionsModal", () => {
       // …but never inside the pressable that opens the editor.
       expect(
         within(screen.getByLabelText("Edit Anxious")).queryByTestId("sortable-handle"),
+      ).toBeNull();
+    });
+  });
+
+  /**
+   * Order is the whole point of this surface - it sets the picker's arrangement - and
+   * until #965 the only way to change it was a drag. That fails WCAG 2.2 SC 2.5.7
+   * (Dragging Movements, AA) and left a screen-reader or keyboard-only user able to add,
+   * rename and delete emotions but not to order them.
+   */
+  describe("the non-drag reorder path", () => {
+    it("moves an emotion later through the handle's move-later action", () => {
+      open();
+
+      moveVia("anxious", "moveLater");
+
+      expect(mockReorderEmotions).toHaveBeenCalledWith(["grateful", "anxious", "sad"]);
+    });
+
+    it("moves an emotion earlier through the handle's move-earlier action", () => {
+      open();
+
+      moveVia("sad", "moveEarlier");
+
+      expect(mockReorderEmotions).toHaveBeenCalledWith(["anxious", "sad", "grateful"]);
+    });
+
+    it("writes nothing when the move would leave the list", () => {
+      open();
+
+      moveVia("anxious", "moveEarlier");
+      moveVia("sad", "moveLater");
+
+      expect(mockReorderEmotions).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The labels a screen reader reads come from `mood:emotions.manage.*` and name the
+     * emotion, matching `editEmotion`'s shape - not borrowed from `navigation`, whose
+     * strings say "tool".
+     */
+    it("exposes both moves as named accessibility actions on the handle", () => {
+      open();
+
+      const handle = screen.getByTestId("emotion-reorder-handle-anxious");
+      expect(handle.props.accessibilityActions).toEqual([
+        { name: "moveEarlier", label: "Move Anxious earlier" },
+        { name: "moveLater", label: "Move Anxious later" },
+      ]);
+      expect(handle.props.accessibilityRole).toBe("button");
+      expect(handle.props.accessibilityLabel).toBe("Reorder Anxious");
+      expect(handle.props.focusable).toBe(true);
+    });
+
+    /**
+     * ⚠️ The hint must not name the arrow keys. react-native-web does not implement
+     * `accessibilityHint` at all, so the string reaches ONLY native AT - where the rotor
+     * actions are the path and there are no arrow keys to press. This one states the
+     * outcome instead; `home.arrange.handleHint` was brought to the same shape in #1047,
+     * and `arrange-screen.test.tsx` holds the matching assertion.
+     */
+    it("hints at the outcome, not at keys the platform reading it does not have", () => {
+      open();
+
+      const hint = screen.getByTestId("emotion-reorder-handle-anxious").props.accessibilityHint;
+      expect(hint).toBe("Moves this emotion up or down in the list.");
+      expect(hint).not.toMatch(/arrow|key/i);
+    });
+
+    /**
+     * The arrow keys are the WEB half of the same two moves, and jest runs the native
+     * platform - so what is asserted here is that the fork exists and native carries no
+     * `onKeyDown`. Same shape `arrange-screen.test.tsx` uses for the shared helper.
+     */
+    it("carries no web key handler on native", () => {
+      open();
+
+      expect(screen.getByTestId("emotion-reorder-handle-anxious").props.onKeyDown).toBeUndefined();
+    });
+
+    /**
+     * ☠️ `focusable` is `tabIndex` under react-native-web, so folding "a write is in
+     * flight" into it takes the focused handle out of the tab order while the reorder
+     * settles - the user's second Arrow press lands on the document and reordering by
+     * keyboard works exactly once per row. The in-flight guard lives in the move instead,
+     * where a rejected move costs a no-op rather than the focus ring.
+     */
+    it("keeps the handle focusable while a write is in flight", () => {
+      mockReorderPending = true;
+      open();
+
+      expect(screen.getByTestId("emotion-reorder-handle-anxious").props.focusable).toBe(true);
+    });
+
+    it("still refuses the move itself while a write is in flight", () => {
+      mockReorderPending = true;
+      open();
+
+      moveVia("anxious", "moveLater");
+
+      expect(mockReorderEmotions).not.toHaveBeenCalled();
+    });
+
+    /**
+     * ☠️ The keyboard half was withheld on a one-emotion list from the start and the rotor
+     * half was not, so VoiceOver and TalkBack were still offered "Move Anxious earlier" /
+     * "Move Anxious later" on a list with nowhere to move to, and both did nothing (#1049).
+     * `focusable: false` hid the whole handle from the keyboard, which is why this reached
+     * native AT only. The hint goes with them: it is read AFTER the label, and native AT is
+     * the only listener that hears it, so an outcome nothing can produce is worse than
+     * silence. `arrange-screen.test.tsx` holds the matching assertions for home's handle.
+     */
+    it("offers a one-emotion list's handle no move, and no hint either", () => {
+      mockEmotionList = [mockFullEmotionList[0]];
+      open();
+
+      const handle = screen.getByTestId("emotion-reorder-handle-anxious");
+      expect(handle.props.accessibilityActions).toEqual([]);
+      expect(handle.props.accessibilityHint).toBeUndefined();
+      expect(handle.props.focusable).toBe(false);
+      // The label stays - the handle is still there to drag against, once there is a
+      // second row to drag past.
+      expect(handle.props.accessibilityLabel).toBe("Reorder Anxious");
+    });
+
+    it("writes nothing when a one-emotion list's move is dispatched anyway", () => {
+      mockEmotionList = [mockFullEmotionList[0]];
+      open();
+
+      moveVia("anxious", "moveLater");
+
+      expect(mockReorderEmotions).not.toHaveBeenCalled();
+    });
+
+    /**
+     * ☠️ A tripwire, not a proof - and the reason is worth more than the assertion.
+     *
+     * `arrange-screen` passes `sortEnabled={!mutationPending}` and it is the obvious thing
+     * to mirror here, so a reviewer will ask for it. MEASURED: adding it makes the SECOND
+     * keyboard move stop writing. `manage-emotions-reorder.e2e` fails on exactly the "and
+     * AGAIN, without re-focusing" press and passes with the prop removed and nothing else
+     * changed - binding it to a flag that flips on every write re-renders the grid mid-move
+     * and the handle element Sortable holds goes stale.
+     *
+     * This test cannot catch that: the Sortable mock above renders each row exactly once,
+     * so the whole failure is structurally invisible to jest. It only pins the decision so
+     * the next person meets the reasoning before the e2e meets them.
+     */
+    it("leaves the grid's sortEnabled unbound - see the e2e, jest cannot see why", () => {
+      open();
+
+      expect(screen.getByTestId("emotion-sortable-grid").props.sortEnabled).toBeUndefined();
+    });
+
+    /**
+     * ⚠️ Making the handle interactive is exactly the change that tempts someone to fold
+     * it into the row `Pressable` - and that is the #915/#922 structural bug: on web
+     * gesture-handler's pan does not cancel an enclosing Pressable, so a drag would also
+     * open the editor on release. The handle stays a sibling.
+     */
+    it("keeps the now-interactive handle outside the row press target", () => {
+      open();
+
+      expect(
+        within(screen.getByLabelText("Edit Anxious")).queryByTestId(
+          "emotion-reorder-handle-anxious",
+        ),
       ).toBeNull();
     });
   });

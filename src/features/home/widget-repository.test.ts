@@ -40,6 +40,28 @@ function mockMaybeSingle(result: { data: unknown; error: unknown }) {
   return { from, select, eq, maybeSingle };
 }
 
+// `listWidgetPreferences` chains more than one `.order()` (#986), so the mocked builder
+// has to be chainable AND awaitable: every `.order()` hands back the same chain, and the
+// chain resolves to `result`.
+interface OrderChain {
+  order: jest.Mock;
+  then: (
+    onFulfilled?: ((value: unknown) => unknown) | null,
+    onRejected?: ((reason: unknown) => unknown) | null,
+  ) => Promise<unknown>;
+}
+
+function mockOrderedSelect(result: { data: unknown; error: unknown }) {
+  const order: OrderChain["order"] = jest.fn(() => chain);
+  const chain: OrderChain = {
+    order,
+    then: (onFulfilled, onRejected) => Promise.resolve(result).then(onFulfilled, onRejected),
+  };
+  const eq = jest.fn(() => chain);
+  const select = jest.fn(() => ({ eq }));
+  return { order, eq, select };
+}
+
 const ROW = {
   id: "11111111-1111-4111-8111-111111111111",
   user_id: "u1",
@@ -85,13 +107,15 @@ describe("widget-repository getWidgetsSeeded", () => {
 describe("widget-repository listWidgetPreferences", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  // The `created_at` tiebreak is gone (#974): positions are server-assigned under a
-  // per-user lock and `set_widget_order` only permutes existing positions, so `position`
-  // alone is total. A second `.order` call here would mean the race is back.
-  it("orders by position alone, with no created_at tiebreak", async () => {
-    const orderPosition = jest.fn().mockResolvedValue({ data: [ROW], error: null });
-    const eq = jest.fn(() => ({ order: orderPosition }));
-    const select = jest.fn(() => ({ eq }));
+  // #974 dropped the `created_at` tiebreak on the grounds that server-assigned positions
+  // made `position` alone total. That is true of the two write functions, but `position`
+  // is not constrained unique and RLS still lets any client write it directly, so a
+  // duplicate can arrive from outside them (#986) - and two rows sharing a position have
+  // no defined order at all, which is worse than the wrong one. The tiebreak is back as
+  // the read's total-order guarantee, and it is the SAME ordering the write path heals
+  // into, so healing never reshuffles a dashboard.
+  it("orders by position, then created_at, then widget_id", async () => {
+    const { order, eq, select } = mockOrderedSelect({ data: [ROW], error: null });
     mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { select } }));
 
     const result = await listWidgetPreferences("u1");
@@ -105,14 +129,16 @@ describe("widget-repository listWidgetPreferences", () => {
       },
     ]);
     expect(eq).toHaveBeenCalledWith("user_id", "u1");
-    expect(orderPosition).toHaveBeenCalledTimes(1);
-    expect(orderPosition).toHaveBeenCalledWith("position", { ascending: true });
+    // The order of the keys is the whole point, so assert the sequence, not the set.
+    expect(order.mock.calls).toEqual([
+      ["position", { ascending: true }],
+      ["created_at", { ascending: true }],
+      ["widget_id", { ascending: true }],
+    ]);
   });
 
   it("throws when the query errors", async () => {
-    const orderPosition = jest.fn().mockResolvedValue({ data: null, error: { code: "08006" } });
-    const eq = jest.fn(() => ({ order: orderPosition }));
-    const select = jest.fn(() => ({ eq }));
+    const { select } = mockOrderedSelect({ data: null, error: { code: "08006" } });
     mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { select } }));
 
     await expect(listWidgetPreferences("u1")).rejects.toMatchObject({ code: "08006" });
@@ -211,15 +237,13 @@ describe("widget-repository restoreWidgetPreference", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("re-adds the widget then orders the full list around it", async () => {
-    const orderPosition = jest.fn().mockResolvedValue({
+    const { select } = mockOrderedSelect({
       data: [
         { ...ROW, widget_id: "a", position: 0 },
         { ...ROW, id: "22222222-2222-4222-8222-222222222222", widget_id: "c", position: 1 },
       ],
       error: null,
     });
-    const eq = jest.fn(() => ({ order: orderPosition }));
-    const select = jest.fn(() => ({ eq }));
     const rpc = jest.fn().mockResolvedValue({ error: null });
     mockRequireSupabase.mockReturnValue(buildClient({ widget_preferences: { select } }, rpc));
 
