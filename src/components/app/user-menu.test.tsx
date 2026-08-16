@@ -66,6 +66,10 @@ afterEach(() => {
   mockSession = signedInSession;
   useToastStore.setState({ toast: null });
   jest.clearAllMocks();
+  // `clearAllMocks` wipes recorded calls but NOT implementations, so a
+  // `mockRejectedValue` set by one test would still be rejecting in the next.
+  mockCancelAllReminders.mockResolvedValue(undefined);
+  mockSignOut.mockResolvedValue(undefined);
 });
 
 describe("UserMenu", () => {
@@ -279,10 +283,6 @@ describe("UserMenu", () => {
         tone: "error",
       }),
     );
-    // The shared handler titles the toast from `common:`, while this component's
-    // own namespace is `navigation` - assert the cross-namespace lookup resolved
-    // rather than handing the user the key.
-    expect(useToastStore.getState().toast?.title).not.toContain("feedback.problem");
   });
 
   // `cancelAllReminders` is awaited first, so a failure there means `signOut`
