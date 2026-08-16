@@ -130,7 +130,7 @@
     "cancel": "Cancel",
     "signOut": "Sign out",
     "signOutHint": "You'll stay signed in on other devices.",
-    "signOutError": "Unable to sign out.",
+    "signOutError": "Unable to sign out. Check your connection and try again.",
     "deleteWarning": "This action is permanent. Your account, profile, preferences, and app data will be deleted unless we are required to keep limited data for legal, security, or abuse-prevention reasons.",
     "deleteAccount": "Delete account",
     "version": "Selftend v{{version}}"

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 
 import { signOut } from "@/src/features/auth/api";
 import { cancelAllReminders } from "@/src/lib/notifications";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 import { useToastStore } from "@/src/stores/toast-store";
 
 /**
@@ -28,7 +29,15 @@ export function useSignOut(userId: string | null) {
       // `local`: signs the user out of THIS device, not out of their phone as
       // well (#968).
       await signOut("local");
-    } catch {
+    } catch (error) {
+      // The thrown message no longer reaches the screen, so without this a failed
+      // sign-out would be diagnosable from nothing at all: `signOut` is not a
+      // TanStack mutation, so query-client's global reporter never sees it.
+      // `isReportableError` keeps the expected offline case out of Sentry, exactly
+      // as it does there.
+      if (isReportableError(error)) {
+        captureError(error);
+      }
       showToast({
         // Not `common:feedback.problem` ("Something did not save"): signing out saves
         // nothing, so that sentence described an action the user never took (#1055).
