@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react-native";
 
 import { signOut } from "@/src/features/auth/api";
 import { cancelAllReminders } from "@/src/lib/notifications";
-import { useSignOut } from "@/src/features/settings/use-sign-out";
+import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { captureError } from "@/src/lib/sentry";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -85,7 +85,7 @@ describe("useSignOut", () => {
     await signOutFailingWith(new Error("Auth session missing!"));
 
     expect(showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ description: "account.signOutError" }),
+      expect.objectContaining({ description: "signOut.error" }),
     );
   });
 

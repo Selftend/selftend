@@ -17,7 +17,7 @@ import { SettingsProfileBlock } from "@/src/features/settings/components/setting
 import { SettingsRow } from "@/src/features/settings/components/settings-row";
 import { SettingsRun } from "@/src/features/settings/components/settings-run";
 import { useOnboardingActions } from "@/src/features/settings/use-reset-onboarding";
-import { useSignOut } from "@/src/features/settings/use-sign-out";
+import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 
 /**

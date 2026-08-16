@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { Dimensions, Platform, StyleSheet } from "react-native";
 
 import { UserMenu } from "./user-menu";
+import enAuth from "@/src/i18n/locales/en/auth.json";
 import { signOut } from "@/src/features/auth/api";
 import { appEnv } from "@/src/lib/env";
 import { cancelAllReminders } from "@/src/lib/notifications";
@@ -282,6 +283,12 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByText("Sign Out"));
 
     await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: "error" }));
+    // `useSignOut`'s own test mocks `t` to echo the key back, so it cannot tell
+    // whether the key still resolves - and #1056 moved this string to another
+    // namespace. Real i18n is live here, so compare against the bundle entry: it
+    // fails if the hook's namespace and key ever stop pointing at it, without
+    // pinning the copy itself.
+    expect(useToastStore.getState().toast?.description).toBe(enAuth.signOut.error);
   });
 
   // `cancelAllReminders` is awaited first, so a failure there means `signOut`

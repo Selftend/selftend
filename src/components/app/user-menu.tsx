@@ -15,7 +15,7 @@ import {
   PopoverTrigger,
 } from "@/src/components/react-native-reusables/popover";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useSignOut } from "@/src/features/settings/use-sign-out";
+import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { resolveAvatarUrl } from "@/src/features/profile/avatar-url";
 import { resolveDisplayName } from "@/src/features/profile/display-name";
 import { useUserProfile } from "@/src/features/profile/queries";

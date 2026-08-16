@@ -19,7 +19,7 @@ import { useToastStore } from "@/src/stores/toast-store";
  * the header menu has dismissed itself.
  */
 export function useSignOut(userId: string | null) {
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation("auth");
   const showToast = useToastStore((state) => state.showToast);
 
   const handleSignOut = async () => {
@@ -47,7 +47,7 @@ export function useSignOut(userId: string | null) {
         // `Error` - i.e. nearly always. Those are Supabase/network strings, English
         // for every user, and none of them names a step the user can take: sign-IN
         // maps its known messages to real next steps, sign-out has none to map.
-        description: t("account.signOutError"),
+        description: t("signOut.error"),
         tone: "error",
       });
     }
