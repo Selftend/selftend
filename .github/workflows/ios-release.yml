@@ -37,10 +37,10 @@ name: iOS TestFlight release
 #
 # Where this lands: TestFlight, not the App Store. Going public stays a
 # deliberate, separate act in App Store Connect - unlike the Android side,
-# which releases straight to the production track with a capped rollout (#371).
-# iOS has no equivalent staged rollout, so there is nothing to cap; the gate is
-# that a human promotes the build. test/ios-release-config.test.ts pins the
-# properties that keep all of the above true.
+# which releases straight to the production track, to every user (#371).
+# iOS has no equivalent staged rollout, so there was never anything to cap; the
+# gate is that a human promotes the build. test/ios-release-config.test.ts pins
+# the properties that keep all of the above true.
 #
 # GATED on the IOS_RELEASE_ENABLED variable: until the one-time Apple setup in
 # docs/releasing.md is done, this no-ops with a notice rather than failing every
