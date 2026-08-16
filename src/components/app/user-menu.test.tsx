@@ -7,6 +7,7 @@ import { signOut } from "@/src/features/auth/api";
 import { appEnv } from "@/src/lib/env";
 import { cancelAllReminders } from "@/src/lib/notifications";
 import { openExternalUrl } from "@/src/lib/linking";
+import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockPathname = "/";
@@ -63,6 +64,7 @@ afterEach(() => {
   appEnv.youtubeUrl = originalYoutubeUrl;
   mockPathname = "/";
   mockSession = signedInSession;
+  useToastStore.setState({ toast: null });
   jest.clearAllMocks();
 });
 
@@ -257,6 +259,49 @@ describe("UserMenu", () => {
     expect(mockCancelAllReminders.mock.invocationCallOrder[0]).toBeLessThan(
       mockSignOut.mock.invocationCallOrder[0],
     );
+  });
+
+  // #1053: the menu closes first and unconditionally, so a rejected sign-out used
+  // to leave the user still signed in with nothing on screen to say so - the
+  // failure existed only as an unhandled rejection in the console. The toast is
+  // the only surface that survives a dismissed menu.
+  it("reports a failed sign-out through the toast", async () => {
+    mockCancelAllReminders.mockResolvedValue(undefined);
+    mockSignOut.mockRejectedValue(new Error("boom"));
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+    fireEvent.press(screen.getByText("Sign Out"));
+
+    await waitFor(() =>
+      expect(useToastStore.getState().toast).toMatchObject({
+        description: "boom",
+        tone: "error",
+      }),
+    );
+    // The shared handler titles the toast from `common:`, while this component's
+    // own namespace is `navigation` - assert the cross-namespace lookup resolved
+    // rather than handing the user the key.
+    expect(useToastStore.getState().toast?.title).not.toContain("feedback.problem");
+  });
+
+  // `cancelAllReminders` is awaited first, so a failure there means `signOut`
+  // never runs at all - "sign-out did nothing" does not require the sign-out
+  // call itself to be the thing that broke.
+  it("reports a failure that stopped sign-out from being attempted", async () => {
+    mockCancelAllReminders.mockRejectedValue(new Error("reminders offline"));
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+    fireEvent.press(screen.getByText("Sign Out"));
+
+    await waitFor(() =>
+      expect(useToastStore.getState().toast).toMatchObject({
+        description: "reminders offline",
+        tone: "error",
+      }),
+    );
+    expect(mockSignOut).not.toHaveBeenCalled();
   });
 });
 
