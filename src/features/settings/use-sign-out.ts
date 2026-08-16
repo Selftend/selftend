@@ -28,11 +28,16 @@ export function useSignOut(userId: string | null) {
       // `local`: signs the user out of THIS device, not out of their phone as
       // well (#968).
       await signOut("local");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("account.signOutError");
+    } catch {
       showToast({
-        title: t("common:feedback.problem"),
-        description: message,
+        // Not `common:feedback.problem` ("Something did not save"): signing out saves
+        // nothing, so that sentence described an action the user never took (#1055).
+        title: t("common:feedback.wentWrong"),
+        // The thrown message used to be preferred over this one whenever it was an
+        // `Error` - i.e. nearly always. Those are Supabase/network strings, English
+        // for every user, and none of them names a step the user can take: sign-IN
+        // maps its known messages to real next steps, sign-out has none to map.
+        description: t("account.signOutError"),
         tone: "error",
       });
     }
