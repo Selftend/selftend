@@ -367,6 +367,11 @@ describe("NotificationsScreen arrival focus (#1071)", () => {
   it("does nothing when the param is absent", () => {
     renderWithProviders(<NotificationsScreen />);
 
+    // The anchors still measure (their handlers are unconditional - see the screen's
+    // hydration note), so this pins that measuring alone never triggers a scroll.
+    fireEvent(screen.getByTestId("notifications-column"), "layout", layoutEvent(24));
+    fireEvent(screen.getByTestId("notification-rows-card"), "layout", layoutEvent(320));
+
     expect(screen.queryByTestId(/notification-row-focus-/)).toBeNull();
     expect(mockScrollTo).not.toHaveBeenCalled();
   });

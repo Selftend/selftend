@@ -85,8 +85,12 @@ export default function NotificationsScreen() {
   const [highlightOpacity] = useState(() => new Animated.Value(0));
   const reduceMotionEnabled = useReduceMotionEnabled();
 
+  // NOT gated on `arrivalKey`: on the web static export the first hydration renders
+  // see empty search params, and the column/card fire their only layout event during
+  // that window - a handler attached once the param lands has nothing left to hear.
+  // (The row's handler can stay keyed: rows mount after preferences arrive, which is
+  // after the params have resolved.)
   function anchorLayoutHandler(part: keyof ArrivalAnchors) {
-    if (!arrivalKey) return undefined;
     return (event: LayoutChangeEvent) => {
       const { y } = event.nativeEvent.layout;
       setAnchors((prev) => (prev[part] === y ? prev : { ...prev, [part]: y }));
@@ -259,7 +263,16 @@ export default function NotificationsScreen() {
                     </View>
                   ))
                 : NOTIFICATION_TARGETS.map((target, index) => (
-                    <View key={target.key} className={cn(index > 0 && "border-t border-border")}>
+                    // Keyed apart from the real row's wrapper ON PURPOSE. With a shared
+                    // key React updates the mounted View in place, and react-native-web
+                    // only starts observing layout for a node whose onLayout existed at
+                    // mount - a handler attached by the update is never heard, and the
+                    // skeleton matching the row's height means no resize ever fires
+                    // either. Remounting is what arms the arrival anchor.
+                    <View
+                      key={`skeleton-${target.key}`}
+                      className={cn(index > 0 && "border-t border-border")}
+                    >
                       <NotificationRowSkeleton targetKey={target.key} />
                     </View>
                   ))}
