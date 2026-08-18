@@ -234,6 +234,22 @@ describe("NotificationsScreen", () => {
     expect(mockShowToast).toHaveBeenCalledWith(expect.objectContaining({ tone: "error" }));
   });
 
+  it("a failed master write toasts the save sentence, title-only (#1064)", async () => {
+    mockMutateAsync.mockRejectedValue(new Error("backend string"));
+    renderWithProviders(<NotificationsScreen />);
+
+    await act(async () => {
+      fireEvent(screen.getByLabelText("Notifications enabled"), "checkedChange", false);
+    });
+
+    // The master toggle is a preference write, so its failure is a failed SAVE -
+    // `feedback.problem`, not the generic `wentWrong` (#1055's distinction).
+    expect(mockShowToast).toHaveBeenCalledWith({
+      title: "Something did not save",
+      tone: "error",
+    });
+  });
+
   it("master on is a pure column write when there is nothing to re-arm", async () => {
     setPreferences({ notificationsEnabledGlobal: false });
     setChannel("prompt-needed");

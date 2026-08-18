@@ -175,6 +175,45 @@ describe("NotificationTargetRow - Path B (permission not given yet)", () => {
   });
 });
 
+describe("NotificationTargetRow - failure copy (#1064)", () => {
+  it("a failed preference write toasts the save sentence once, with no description", async () => {
+    mockMutateAsync.mockRejectedValue(new Error("backend string"));
+    renderRow({ status: "granted" });
+
+    await act(async () => {
+      fireEvent(screen.getByLabelText("Sleep"), "checkedChange", true);
+    });
+
+    // Title-only: a duplicate description made the toast say the sentence twice and a
+    // screen reader hear it three times. A failed toggle IS a failed save, so the title
+    // is the save sentence, not the generic one (#1055's distinction).
+    expect(mockShowToast).toHaveBeenCalledWith({
+      title: "Something did not save",
+      tone: "error",
+    });
+    // The row's own alert line stays as the persistent trace once the toast is gone.
+    expect(screen.getByText("Something did not save")).toBeTruthy();
+    expect(screen.queryByText("backend string")).toBeNull();
+  });
+
+  it("a channel request that throws toasts the generic sentence once, with no description", async () => {
+    mockEnsure.mockRejectedValue(new Error("push service exploded"));
+    renderRow({ status: "prompt-needed" });
+
+    await act(async () => {
+      fireEvent(screen.getByLabelText("Sleep"), "checkedChange", true);
+    });
+
+    // Nothing was written, so nothing failed to SAVE - this one keeps "went wrong".
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    expect(mockShowToast).toHaveBeenCalledWith({
+      title: "Something went wrong",
+      tone: "error",
+    });
+    expect(screen.queryByText("push service exploded")).toBeNull();
+  });
+});
+
 describe("NotificationTargetRow - the time", () => {
   async function pickTime(hour: number, minute: number) {
     fireEvent.press(screen.getByLabelText("Sleep reminder time"));
