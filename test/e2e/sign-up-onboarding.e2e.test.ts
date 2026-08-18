@@ -163,17 +163,30 @@ test.describe("sign-up + onboarding + first record", () => {
     await page.getByLabel("Verification code").fill(code);
     await page.getByRole("button", { name: "Verify", exact: true }).click();
 
-    // Verified: the banner unmounts and stays gone across a reload (the flag
-    // is persisted, not component state).
-    await expect(page.getByText("Verify your email to secure your account.")).toBeHidden({
+    // Verified: the banner unmounts. Asserted through the code-entry copy, NOT
+    // the title (#1051): from "Send code" onward the banner's visible text is
+    // "We emailed you a verification code.", so a title assertion here is
+    // vacuously hidden the whole time. That let the reload below fire ~80ms
+    // after Verify and ABORT the in-flight verification round trip — the flag
+    // was never written, and the "#548 flake" at the final assertion was really
+    // this race: deterministic red on machines where the verify POST outlives
+    // the click→reload gap (Windows Docker), green where it doesn't (CI).
+    // This copy leaves the DOM only when the banner itself unmounts, i.e.
+    // after verifyOtp succeeded AND user_preferences.email_verified came back
+    // written; on a failed verification the banner keeps it and shows an
+    // error, so this correctly stays red.
+    await expect(page.getByText("We emailed you a verification code.")).toBeHidden({
       timeout: 15_000,
     });
     await page.reload();
     await dismissCookieBanner(page);
     await expect(page.getByText(situation)).toBeVisible({ timeout: 15_000 });
 
-    // #548 lists this line as flaky. Worth being precise about what a failure
-    // here can and cannot mean, because the obvious reading is wrong:
+    // #548 listed this line as flaky; #1051 found the mechanism, and it was
+    // not this line at all — the vacuous pre-reload assertion above let the
+    // reload kill the verification mid-flight. With that fixed, a failure
+    // here means what this message says. Worth being precise about what it
+    // can and cannot mean, because the obvious reading is wrong:
     //
     // The query cache is NOT persisted on web - `createQueryPersister` returns
     // null for `Platform.OS === "web"` - so after a reload there is no stale
