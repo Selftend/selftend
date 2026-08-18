@@ -103,7 +103,13 @@ describe("groupHistorySections", () => {
   });
 
   it("carries no averages - a paged group average would only cover loaded rows (#705)", () => {
-    const [section] = groupHistorySections([log("2026-08-08"), log("2026-08-08", "18:00:00")]);
+    // Anchored like every other case: against the real clock these fixtures drift
+    // into a month section (gaining monthKey) once the calendar week rolls past
+    // them - which is exactly what happened on 2026-08-17.
+    const [section] = groupHistorySections(
+      [log("2026-08-08"), log("2026-08-08", "18:00:00")],
+      SATURDAY,
+    );
 
     expect(Object.keys(section).sort()).toEqual(["data", "key", "kind"]);
   });
