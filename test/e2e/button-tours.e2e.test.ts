@@ -122,6 +122,8 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
   });
 
   test("arriving with a target scrolls that module's row into view", async ({ page }) => {
+    await setTourState([]);
+
     // Grounding is the LAST of the ten rows, below the fold at the e2e viewport - so
     // this only passes if arrival actually scrolls (a plain visibility check would
     // pass without any scroll at all).

@@ -354,6 +354,28 @@ describe("NotificationsScreen arrival focus (#1071)", () => {
     expect(mockScrollTo).toHaveBeenCalledTimes(1);
   });
 
+  it("re-arms for a new target on a live instance, and never scrolls on the stale anchor", () => {
+    mockUseLocalSearchParams.mockReturnValue({ target: "sleep" });
+    const view = renderWithProviders(<NotificationsScreen />);
+    measureAnchors({ column: 24, card: 320, row: 616 });
+    expect(mockScrollTo).toHaveBeenCalledTimes(1);
+
+    mockUseLocalSearchParams.mockReturnValue({ target: "journal" });
+    view.rerender(<NotificationsScreen />);
+
+    // The highlight follows the new target immediately...
+    expect(screen.queryByTestId("notification-row-focus-sleep")).toBeNull();
+    expect(screen.getByTestId("notification-row-focus-journal")).toBeTruthy();
+    // ...but the scroll waits for the NEW row's own measurement - the sleep row's
+    // anchor must not stand in for journal's, or this scrolls to the wrong row.
+    expect(mockScrollTo).toHaveBeenCalledTimes(1);
+
+    fireEvent(screen.getByTestId("notification-row-journal"), "layout", layoutEvent(680));
+
+    expect(mockScrollTo).toHaveBeenCalledTimes(2);
+    expect(mockScrollTo).toHaveBeenLastCalledWith({ y: 24 + 320 + 680 - 16, animated: true });
+  });
+
   it("does not animate the scroll when reduce motion is on", () => {
     mockReduceMotionEnabled.mockReturnValue(true);
     mockUseLocalSearchParams.mockReturnValue({ target: "sleep" });
