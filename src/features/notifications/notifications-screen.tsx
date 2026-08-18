@@ -154,7 +154,8 @@ export default function NotificationsScreen() {
         await cancelAllReminders(userId);
       }
     } catch {
-      showToast({ title: t("common:feedback.wentWrong"), tone: "error" });
+      // The master toggle is a preference write, so its failure is a failed SAVE (#1055).
+      showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
   }
 

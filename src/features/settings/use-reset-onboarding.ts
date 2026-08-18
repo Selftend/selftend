@@ -41,11 +41,13 @@ export function useOnboardingActions(
         description: t(successKey),
         tone: "success",
       });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t(errorKey);
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
       showToast({
         title: t("common:feedback.problem"),
-        description: message,
+        description: t(errorKey),
         tone: "error",
       });
     }

@@ -95,8 +95,11 @@ export default function GratitudeDetailScreen() {
       setConfirmOpen(false);
       showToast({ title: t("feedback.deleted"), tone: "success" });
       router.replace("/tools/gratitude-log" as Parameters<typeof router.replace>[0]);
-    } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : t("detail.deleteError"));
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      setDeleteError(t("detail.deleteError"));
     }
   };
 
@@ -108,8 +111,11 @@ export default function GratitudeDetailScreen() {
         title: updated.starred ? t("feedback.favoriteAdded") : t("feedback.favoriteRemoved"),
         tone: "success",
       });
-    } catch (error) {
-      setFavoriteError(error instanceof Error ? error.message : t("detail.favoriteError"));
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      setFavoriteError(t("detail.favoriteError"));
     }
   };
 

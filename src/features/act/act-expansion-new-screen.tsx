@@ -100,9 +100,11 @@ export default function ActExpansionNewScreen() {
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("act:expansion.saveProblem");
-      setSubmitError(message);
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      setSubmitError(t("act:expansion.saveProblem"));
     }
   });
 

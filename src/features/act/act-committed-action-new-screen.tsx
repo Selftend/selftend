@@ -75,9 +75,11 @@ export default function ActCommittedActionNewScreen() {
         pathname: "/modules/act/committed-action/[id]",
         params: { id: saved.id },
       } as Parameters<typeof router.replace>[0]);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("act:committedAction.saveProblem");
-      setSubmitError(message);
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      setSubmitError(t("act:committedAction.saveProblem"));
     }
   });
 

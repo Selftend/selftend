@@ -28,6 +28,7 @@ import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { COMPACT_CONTROL_HIT_SLOP } from "@/src/lib/accessibility";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 import { useThemePalette } from "@/src/lib/theme-palette";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -90,7 +91,14 @@ export function SignInForm() {
         // "wrong password" is the most common dead end for them.
         setSubmitError(t("signIn.invalidCredentials"));
       } else {
-        setSubmitError(rawMessage || t("signIn.error"));
+        // An unmapped message is a Supabase/network string, English for every user,
+        // naming no step the user can take - translated copy only (#1060). The capture
+        // keeps it diagnosable (`signInWithPassword` is not a TanStack mutation);
+        // `isReportableError` drops the expected offline and <500 auth cases.
+        if (isReportableError(error)) {
+          captureError(error);
+        }
+        setSubmitError(t("signIn.error"));
       }
     }
   });
