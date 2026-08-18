@@ -24,10 +24,6 @@ jest.mock("expo-router", () => ({
   useFocusEffect: jest.fn(),
 }));
 
-jest.mock("@/src/components/app/notification-settings-modal", () => ({
-  NotificationSettingsModal: () => null,
-}));
-
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({
     user: {

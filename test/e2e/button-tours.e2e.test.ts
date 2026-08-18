@@ -105,14 +105,29 @@ test.describe("module-header buttons (per-page coach marks removed)", () => {
     ).toHaveCount(0);
   });
 
-  test("notifications action still fires onPress (opens its modal)", async ({ page }) => {
+  test("notifications action navigates to the Reminders screen with this module's target", async ({
+    page,
+  }) => {
     await setTourState([]);
     await page.goto("/tools/check-in");
 
     // See note above: the sidebar's own "Reminders" nav link shares this label, so
     // the module header's action button is the LAST match, not the first.
     await page.getByLabel("Reminders", { exact: true }).last().click();
+
+    // The bell is a door, not a modal (#967/#1071): the press lands on the central
+    // Reminders screen carrying the module's key.
+    await expect(page).toHaveURL(/\/notifications\?target=mood$/);
     await expect(page.getByRole("heading", { name: "Reminders", exact: true })).toBeVisible();
+  });
+
+  test("arriving with a target scrolls that module's row into view", async ({ page }) => {
+    // Grounding is the LAST of the ten rows, below the fold at the e2e viewport - so
+    // this only passes if arrival actually scrolls (a plain visibility check would
+    // pass without any scroll at all).
+    await page.goto("/notifications?target=grounding");
+
+    await expect(page.getByTestId("notification-row-grounding")).toBeInViewport();
   });
 
   test("info action still fires onPress (opens the module's onboarding)", async ({ page }) => {
