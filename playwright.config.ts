@@ -30,6 +30,13 @@ export default defineConfig({
 
   use: {
     baseURL: `http://localhost:${PORT}`,
+    // The app honors prefers-reduced-motion (src/lib/accessibility.ts), so this
+    // runs every modal with animationType="none" and removes the whole class of
+    // slide/fade races where a click lands on a still-moving element (#1051:
+    // Playwright's two-frame stability check can misfire mid-slide on a loaded
+    // CI runner, swallowing the press). Trade-off: the suite no longer
+    // exercises the animated variants of these transitions.
+    reducedMotion: "reduce",
     // retain-on-failure, not on-first-retry: with retries:0 a retry never
     // happens, so the flake family in #172 left no trace evidence. The trace
     // records the prefs network responses, which is exactly what diagnosing a
