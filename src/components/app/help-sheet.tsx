@@ -1,4 +1,4 @@
-import { Image, Modal, Pressable, ScrollView, View } from "react-native";
+import { Image, Modal, Platform, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -21,6 +21,13 @@ export function HelpSheet({ helpKey, visible, onDismiss }: HelpSheetProps) {
   const entry = HELP_CONTENT[helpKey];
   const title = t(entry.titleKey);
   const imageSource = HELP_IMAGES[helpKey];
+
+  // ⚠️ WEB: a closed sheet unmounts outright instead of lingering for its
+  // 250ms fade-out, during which react-native-web's Modal is a non-inert
+  // focus trap (#1034; swept in #1054 — the full story lives on
+  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
+  // this.
+  if (!visible && Platform.OS === "web") return null;
 
   return (
     <Modal

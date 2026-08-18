@@ -55,6 +55,13 @@ export function DateRangeField({
     [defaultStyles, theme],
   );
 
+  // ⚠️ WEB: a closed sheet unmounts outright instead of lingering for its
+  // 250ms fade-out, during which react-native-web's Modal is a non-inert
+  // focus trap (#1034; swept in #1054 — the full story lives on
+  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
+  // this.
+  if (!visible && Platform.OS === "web") return null;
+
   return (
     <Modal
       visible={visible}
