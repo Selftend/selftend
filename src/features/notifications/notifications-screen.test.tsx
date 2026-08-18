@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Dimensions } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 
 import { defaultUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import NotificationsScreen from "@/src/features/notifications/notifications-screen";
@@ -12,6 +13,50 @@ import i18n from "@/src/i18n";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockShowToast = jest.fn();
+const mockScrollTo = jest.fn();
+const mockReduceMotionEnabled = jest.fn(() => false);
+
+// The arrival scroll goes through the ScrollView's imperative handle, which jest's
+// renderer cannot reach from outside the screen - so the mock captures the ref and
+// exposes `scrollTo` as a spy (same react-native Proxy shape the repo has used for
+// Modal before).
+jest.mock("react-native", () => {
+  const React = require("react") as typeof import("react");
+  const actual = jest.requireActual("react-native");
+  const MockScrollView = React.forwardRef(function MockScrollView(
+    props: { children?: React.ReactNode },
+    ref: React.Ref<{ scrollTo: typeof mockScrollTo }>,
+  ) {
+    React.useImperativeHandle(ref, () => ({ scrollTo: mockScrollTo }));
+    return React.createElement(actual.View, props, props.children);
+  });
+
+  return new Proxy(actual, {
+    get(target, prop, receiver) {
+      if (prop === "ScrollView") {
+        return MockScrollView;
+      }
+
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+});
+
+jest.mock("expo-router", () => ({
+  router: {
+    back: jest.fn(),
+    canGoBack: jest.fn(() => false),
+    push: jest.fn(),
+    replace: jest.fn(),
+  },
+  useLocalSearchParams: jest.fn(() => ({})),
+  usePathname: () => "/notifications",
+}));
+
+jest.mock("@/src/lib/accessibility", () => ({
+  ...jest.requireActual("@/src/lib/accessibility"),
+  useReduceMotionEnabled: () => mockReduceMotionEnabled(),
+}));
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
@@ -36,6 +81,7 @@ jest.mock("@/src/stores/toast-store", () => ({
     selector({ showToast: mockShowToast }),
 }));
 
+const mockUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 const mockUseUserPreferences = jest.mocked(useUserPreferences);
 const mockUseUpdatePreferences = jest.mocked(useUpdateUserPreferences);
 const mockUseReminderChannel = jest.mocked(useReminderChannel);
@@ -49,6 +95,8 @@ beforeAll(async () => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockUseLocalSearchParams.mockReturnValue({});
+  mockReduceMotionEnabled.mockReturnValue(false);
   mockMutateAsync.mockResolvedValue(undefined);
   mockEnsure.mockResolvedValue({ enabled: true });
   mockUseUpdatePreferences.mockReturnValue({
@@ -259,5 +307,102 @@ describe("NotificationsScreen", () => {
     expect(screen.queryByText("Save")).toBeNull();
     expect(screen.queryByText("Modules")).toBeNull();
     expect(screen.queryByText("Tools")).toBeNull();
+  });
+});
+
+describe("NotificationsScreen arrival focus (#1071)", () => {
+  function layoutEvent(y: number) {
+    return { nativeEvent: { layout: { x: 0, y, width: 600, height: 64 } } };
+  }
+
+  /** Fires the three anchor layouts the scroll needs: column, rows card, target row. */
+  function measureAnchors({ column, card, row }: { column: number; card: number; row: number }) {
+    fireEvent(screen.getByTestId("notifications-column"), "layout", layoutEvent(column));
+    fireEvent(screen.getByTestId("notification-rows-card"), "layout", layoutEvent(card));
+    fireEvent(screen.getByTestId("notification-row-sleep"), "layout", layoutEvent(row));
+  }
+
+  it("renders the quiet highlight on the target row only, letting touches through", () => {
+    mockUseLocalSearchParams.mockReturnValue({ target: "sleep" });
+    renderWithProviders(<NotificationsScreen />);
+
+    const overlay = screen.getByTestId("notification-row-focus-sleep");
+    // The prop, not a style: pointerEvents in style is a silent no-op on native.
+    expect(overlay.props.pointerEvents).toBe("none");
+    for (const target of NOTIFICATION_TARGETS.filter((t) => t.key !== "sleep")) {
+      expect(screen.queryByTestId(`notification-row-focus-${target.key}`)).toBeNull();
+    }
+  });
+
+  it("scrolls to the row once every anchor has measured, and only once", () => {
+    mockUseLocalSearchParams.mockReturnValue({ target: "sleep" });
+    renderWithProviders(<NotificationsScreen />);
+
+    fireEvent(screen.getByTestId("notifications-column"), "layout", layoutEvent(24));
+    fireEvent(screen.getByTestId("notification-rows-card"), "layout", layoutEvent(320));
+    // Two of three anchors known: the row's own offset is still missing.
+    expect(mockScrollTo).not.toHaveBeenCalled();
+
+    fireEvent(screen.getByTestId("notification-row-sleep"), "layout", layoutEvent(616));
+
+    // 24 + 320 + 616 - 16 of breathing room above the row.
+    expect(mockScrollTo).toHaveBeenCalledTimes(1);
+    expect(mockScrollTo).toHaveBeenCalledWith({ y: 944, animated: true });
+
+    // A later re-layout (rotation, width change) must not yank the user back.
+    fireEvent(screen.getByTestId("notification-row-sleep"), "layout", layoutEvent(700));
+    expect(mockScrollTo).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-arms for a new target on a live instance, and never scrolls on the stale anchor", () => {
+    mockUseLocalSearchParams.mockReturnValue({ target: "sleep" });
+    const view = renderWithProviders(<NotificationsScreen />);
+    measureAnchors({ column: 24, card: 320, row: 616 });
+    expect(mockScrollTo).toHaveBeenCalledTimes(1);
+
+    mockUseLocalSearchParams.mockReturnValue({ target: "journal" });
+    view.rerender(<NotificationsScreen />);
+
+    // The highlight follows the new target immediately...
+    expect(screen.queryByTestId("notification-row-focus-sleep")).toBeNull();
+    expect(screen.getByTestId("notification-row-focus-journal")).toBeTruthy();
+    // ...but the scroll waits for the NEW row's own measurement - the sleep row's
+    // anchor must not stand in for journal's, or this scrolls to the wrong row.
+    expect(mockScrollTo).toHaveBeenCalledTimes(1);
+
+    fireEvent(screen.getByTestId("notification-row-journal"), "layout", layoutEvent(680));
+
+    expect(mockScrollTo).toHaveBeenCalledTimes(2);
+    expect(mockScrollTo).toHaveBeenLastCalledWith({ y: 24 + 320 + 680 - 16, animated: true });
+  });
+
+  it("does not animate the scroll when reduce motion is on", () => {
+    mockReduceMotionEnabled.mockReturnValue(true);
+    mockUseLocalSearchParams.mockReturnValue({ target: "sleep" });
+    renderWithProviders(<NotificationsScreen />);
+
+    measureAnchors({ column: 24, card: 320, row: 616 });
+
+    expect(mockScrollTo).toHaveBeenCalledWith({ y: 944, animated: false });
+  });
+
+  it("does nothing when the param is absent", () => {
+    renderWithProviders(<NotificationsScreen />);
+
+    // The anchors still measure (their handlers are unconditional - see the screen's
+    // hydration note), so this pins that measuring alone never triggers a scroll.
+    fireEvent(screen.getByTestId("notifications-column"), "layout", layoutEvent(24));
+    fireEvent(screen.getByTestId("notification-rows-card"), "layout", layoutEvent(320));
+
+    expect(screen.queryByTestId(/notification-row-focus-/)).toBeNull();
+    expect(mockScrollTo).not.toHaveBeenCalled();
+  });
+
+  it("ignores a target key the registry does not know", () => {
+    mockUseLocalSearchParams.mockReturnValue({ target: "definitely-not-a-module" });
+    renderWithProviders(<NotificationsScreen />);
+
+    expect(screen.queryByTestId(/notification-row-focus-/)).toBeNull();
+    expect(mockScrollTo).not.toHaveBeenCalled();
   });
 });

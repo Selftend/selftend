@@ -28,10 +28,6 @@ jest.mock("expo-router", () => ({
   useFocusEffect: jest.fn(),
 }));
 
-jest.mock("@/src/components/app/notification-settings-modal", () => ({
-  NotificationSettingsModal: () => null,
-}));
-
 // Stubbed to its contract - `visible` in, `onComplete` out. The real shell is a
 // four-step wizard with its own tests; driving it here would test the wizard's
 // step order rather than what this screen does when it finishes.

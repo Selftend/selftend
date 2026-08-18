@@ -59,9 +59,6 @@ jest.mock("@/src/components/app/meditation-onboarding-modal", () => ({
   MeditationOnboarding: () => null,
 }));
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
-jest.mock("@/src/components/app/notification-settings-modal", () => ({
-  NotificationSettingsModal: () => null,
-}));
 jest.mock("@/src/components/app/add-to-home-button", () => ({ AddToHomeButton: () => null }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
