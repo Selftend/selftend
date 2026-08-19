@@ -39,17 +39,22 @@ Do not add a second broad UI kit without a specific reason. `daisyUI` is web-DOM
 
 Supported languages: English (`en`) and Bulgarian (`bg`). English is the fallback.
 
-Translation files live in `src/i18n/locales/{lang}/` with seven namespaces:
+Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON file each, all translated on [Weblate](https://hosted.weblate.org/projects/selftend/). The authoritative list is the `ns` array in `src/i18n/index.ts`. Ten cover app-level surfaces:
 
-| Namespace    | Scope                                     |
-| ------------ | ----------------------------------------- |
-| `common`     | shared UI strings                         |
-| `auth`       | sign-in, sign-up, verification, passwords |
-| `cbt`        | CBT module screens and records            |
-| `settings`   | settings, profile, consent, cookie banner |
-| `navigation` | tabs, sidebar, header, not-found          |
-| `policies`   | policy page chrome and section content    |
-| `errors`     | error messages                            |
+| Namespace       | Scope                                          |
+| --------------- | ---------------------------------------------- |
+| `common`        | shared UI strings                              |
+| `auth`          | sign-in, sign-up, verification, passwords      |
+| `settings`      | settings, profile, consent, cookie banner      |
+| `navigation`    | tabs, sidebar, header, not-found               |
+| `policies`      | policy page chrome and section content         |
+| `errors`        | error messages                                 |
+| `notifications` | reminder and notification settings             |
+| `security`      | app lock and security settings                 |
+| `help`          | in-app help content for tools and programs     |
+| `modules`       | module copy without a dedicated tool namespace |
+
+The other ten are one per tool or module: `act`, `cbt`, `gratitude`, `habits`, `journal`, `meditation`, `mood`, `routines`, `sleep`, `timer`.
 
 Components use `useTranslation("namespace")`; non-component code may import `i18n.t()` directly. Policy screens use `t(sectionKey, { returnObjects: true })` for structured arrays.
 
@@ -57,7 +62,7 @@ Language preference is stored in AsyncStorage (`selftend:language`) and synced t
 
 To add a language:
 
-1. Create all seven namespace files under `src/i18n/locales/{code}/`.
+1. Create all 20 namespace files under `src/i18n/locales/{code}/` (mirror `src/i18n/locales/en/`).
 2. Register the locale in `src/i18n/index.ts`.
 3. Add the option to `src/components/app/language-toggle.tsx`.
 4. Coordinate translation through [Weblate](https://hosted.weblate.org/projects/selftend/).
