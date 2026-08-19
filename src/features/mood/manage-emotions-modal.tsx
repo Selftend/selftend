@@ -1,7 +1,6 @@
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   TextInput,
@@ -11,6 +10,7 @@ import {
 import { useCallback, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import Sortable from "react-native-sortables";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -472,7 +472,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   if (!visible && Platform.OS === "web") return null;
 
   return (
-    <Modal
+    <PressShieldModal
       animationType={reduceMotionEnabled ? "none" : isDesktopWeb ? "fade" : "slide"}
       onRequestClose={handleRequestClose}
       presentationStyle={isWeb ? undefined : "pageSheet"}
@@ -566,6 +566,6 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
           </View>
         )}
       </ManageEmotionsShell>
-    </Modal>
+    </PressShieldModal>
   );
 }

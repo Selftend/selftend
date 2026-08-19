@@ -51,6 +51,12 @@ const EXEMPT: Record<string, string> = {
   // fade-out is the wanted exit animation. The #1054 table listed this file,
   // but the premise did not survive the platform fork.
   "src/components/app/time-field.tsx": "web ships time-field.web.tsx instead",
+  // The #1108 press-shield wrapper forwards `visible` to the raw Modal it
+  // owns; whether a closed Modal lingers is its call sites' decision, and
+  // those call sites render <PressShieldModal>, which this suite matches
+  // exactly like a raw <Modal>.
+  "src/components/app/press-shield-modal.tsx":
+    "forwarding wrapper; the gate is each call site's job",
 };
 
 /** `if (!visible && Platform.OS === "web") return null;` (any prop name). */
@@ -59,17 +65,29 @@ const RETURN_NULL_GATE = /if\s*\(!\w+\s*&&\s*Platform\.OS === "web"\)\s*return n
 /** `{!open && Platform.OS === "web" ? null : (` — the sibling-Modal form. */
 const INLINE_GATE = /!\w+\s*&&\s*Platform\.OS === "web"\s*\?\s*null\s*:/;
 
-/** JSX use of `<Modal` (word-bounded, so `<ModalFocusTrap` never matches). */
-const RENDERS_RAW_MODAL = /<Modal[\s/>]/;
+/**
+ * JSX use of `<Modal` or `<PressShieldModal` (word-bounded, so
+ * `<ModalFocusTrap` never matches). The #1108 press-shield wrapper forwards
+ * `visible` to the raw Modal it owns, so a call site rendering it has the
+ * exact same lingering-close hazard as one rendering `<Modal>` directly.
+ */
+const RENDERS_A_MODAL = /<(?:Modal|PressShieldModal)[\s/>]/;
 
 /** `Modal` named in an import from "react-native" (single or multi-line). */
 const IMPORTS_RN_MODAL = /import\s*\{[^}]*\bModal\b[^}]*\}\s*from\s*"react-native"/;
+
+/** The #1108 wrapper, imported from its own module. */
+const IMPORTS_SHIELD_MODAL =
+  /import\s*\{[^}]*\bPressShieldModal\b[^}]*\}\s*from\s*"@\/src\/components\/app\/press-shield-modal"/;
 
 const files = sourceFiles(ROOT, { dirs: ["src", "app"] });
 
 const modalFiles = files.filter((file) => {
   const source = readFileSync(join(ROOT, file), "utf8");
-  return IMPORTS_RN_MODAL.test(source) && RENDERS_RAW_MODAL.test(stripComments(source));
+  return (
+    (IMPORTS_RN_MODAL.test(source) || IMPORTS_SHIELD_MODAL.test(source)) &&
+    RENDERS_A_MODAL.test(stripComments(source))
+  );
 });
 
 describe("raw react-native Modals unmount on web when closed (#1034 → #1054)", () => {

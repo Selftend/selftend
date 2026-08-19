@@ -1,16 +1,10 @@
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  View,
-} from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
@@ -111,7 +105,7 @@ function SessionSheet({
   if (!visible && Platform.OS === "web") return null;
 
   return (
-    <Modal
+    <PressShieldModal
       animationType={reduceMotionEnabled ? "none" : "slide"}
       onRequestClose={onClose}
       visible={visible}
@@ -221,7 +215,7 @@ function SessionSheet({
           </KeyboardAwareScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </Modal>
+    </PressShieldModal>
   );
 }
 

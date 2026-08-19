@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { Platform, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AMBIENT_SOUNDS, BREATH_SOUNDS } from "@/src/constants/breathing-sounds";
@@ -50,7 +51,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
   if (!visible && Platform.OS === "web") return null;
 
   return (
-    <Modal
+    <PressShieldModal
       animationType={reduceMotionEnabled ? "none" : "slide"}
       visible={visible}
       onRequestClose={onDismiss}
@@ -103,7 +104,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
           </ScrollView>
         </SafeAreaView>
       </View>
-    </Modal>
+    </PressShieldModal>
   );
 }
 

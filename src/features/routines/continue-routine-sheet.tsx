@@ -1,8 +1,9 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { Platform, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { TimeField } from "@/src/components/app/time-field";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -130,7 +131,7 @@ export function ContinueRoutineSheet({
   }
 
   return (
-    <Modal
+    <PressShieldModal
       animationType={reduceMotion ? "none" : "slide"}
       onRequestClose={onClose}
       transparent
@@ -311,6 +312,6 @@ export function ContinueRoutineSheet({
           </ScrollView>
         </View>
       </View>
-    </Modal>
+    </PressShieldModal>
   );
 }
