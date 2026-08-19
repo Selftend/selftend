@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.15.0](https://github.com/Selftend/selftend/compare/v0.14.1...v0.15.0) (2026-08-19)
+
+
+### Features
+
+* **android:** offer the update Play is actually serving ([#388](https://github.com/Selftend/selftend/issues/388)) ([#1070](https://github.com/Selftend/selftend/issues/1070)) ([6965a81](https://github.com/Selftend/selftend/commit/6965a817ff4497e5287d36421f60c2064c592167))
+* **notifications:** the module-home bell opens the Reminders screen ([#1071](https://github.com/Selftend/selftend/issues/1071)) ([#1073](https://github.com/Selftend/selftend/issues/1073)) ([8d7d704](https://github.com/Selftend/selftend/commit/8d7d70498ed0a006dd41fe6357eb991152e9a62f))
+
+
+### Bug Fixes
+
+* a dismissed modal on web unmounts instead of lingering as a focus trap ([#1054](https://github.com/Selftend/selftend/issues/1054)) ([#1075](https://github.com/Selftend/selftend/issues/1075)) ([e2d28a4](https://github.com/Selftend/selftend/commit/e2d28a437ee684014330dd5e519a750c06931995))
+* error toasts speak the user's language, and say each sentence once ([#1064](https://github.com/Selftend/selftend/issues/1064), [#1060](https://github.com/Selftend/selftend/issues/1060)) ([#1074](https://github.com/Selftend/selftend/issues/1074)) ([b3be6e4](https://github.com/Selftend/selftend/commit/b3be6e41746317e78b5fd8be0cab053c1aeb5b92))
+
 ## [0.14.1](https://github.com/Selftend/selftend/compare/v0.14.0...v0.14.1) (2026-08-16)
 
 
