@@ -1,6 +1,8 @@
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, Animated, Platform, ScrollView, View } from "react-native";
+import type { LayoutChangeEvent, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -19,12 +21,45 @@ import {
 import { reminderChannelErrorKey } from "@/src/features/notifications/channel-errors";
 import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { cancelAllReminders } from "@/src/lib/notifications";
+import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
 /** Which control owns the open permission prompt, if any. */
 type PendingControl = "master" | NotificationTargetKey | null;
+
+/**
+ * The three nested offsets that add up to the arrived-at row's position in the scroll
+ * content: the column inside the content, the rows card inside the column, the row
+ * inside the card. Measured, not derived - row heights change with the breakpoint.
+ * The row anchor carries the key it was measured FOR: if the mounted screen ever
+ * receives a new target, a bare number would satisfy the arrival effect with the
+ * previous row's offset and scroll to the wrong row.
+ */
+type ArrivalAnchors = {
+  column?: number;
+  card?: number;
+  row?: { key: NotificationTargetKey; y: number };
+};
+
+/** Breathing room above the arrived-at row, so it doesn't land flush with the top edge. */
+const ARRIVAL_SCROLL_INSET = 16;
+
+const HIGHLIGHT_FADE_IN_MS = 250;
+const HIGHLIGHT_HOLD_MS = 1200;
+const HIGHLIGHT_FADE_OUT_MS = 700;
+
+// Reaches 8px past the row's edges so the wash reads as "around the row", not as a
+// stripe butted against the card's padding. Layout only - the ink lives on the themed
+// child below, where NativeWind classes resolve per theme.
+const focusOverlayStyle: ViewStyle = {
+  position: "absolute",
+  top: 0,
+  bottom: 0,
+  left: -8,
+  right: -8,
+};
 
 export default function NotificationsScreen() {
   const { t } = useTranslation("notifications");
@@ -43,6 +78,70 @@ export default function NotificationsScreen() {
    */
   const [pendingControl, setPendingControl] = useState<PendingControl>(null);
 
+  /**
+   * Arrival focus (#1071): a module-home bell lands here with `?target=<key>` and the
+   * screen brings that module's row into view with a brief, quiet highlight that fades
+   * on its own. No reorder, no persistent state; an absent or unknown key does nothing.
+   */
+  const { target: targetParam } = useLocalSearchParams<{ target?: string }>();
+  const arrivalKey = NOTIFICATION_TARGETS.find((target) => target.key === targetParam)?.key ?? null;
+
+  const scrollRef = useRef<ScrollView>(null);
+  const arrivedForRef = useRef<NotificationTargetKey | null>(null);
+  const [anchors, setAnchors] = useState<ArrivalAnchors>({});
+  const [highlightOpacity] = useState(() => new Animated.Value(0));
+  const reduceMotionEnabled = useReduceMotionEnabled();
+
+  // NOT gated on `arrivalKey`: on the web static export the first hydration renders
+  // see empty search params, and the column/card fire their only layout event during
+  // that window - a handler attached once the param lands has nothing left to hear.
+  function anchorLayoutHandler(part: "column" | "card") {
+    return (event: LayoutChangeEvent) => {
+      const { y } = event.nativeEvent.layout;
+      setAnchors((prev) => (prev[part] === y ? prev : { ...prev, [part]: y }));
+    };
+  }
+
+  function rowLayoutHandler(key: NotificationTargetKey) {
+    return (event: LayoutChangeEvent) => {
+      const { y } = event.nativeEvent.layout;
+      setAnchors((prev) =>
+        prev.row?.key === key && prev.row.y === y ? prev : { ...prev, row: { key, y } },
+      );
+    };
+  }
+
+  const { column: columnTop, card: cardTop, row: rowAnchor } = anchors;
+  useEffect(() => {
+    // Once per target, on the first render where all three anchors are known - which
+    // is also how arrival waits out the skeleton phase: the row's anchor only exists
+    // once the row does. Later re-layouts (rotation, breakpoint change) must not yank
+    // the user back, but a NEW target on a live instance re-arms.
+    if (!arrivalKey || arrivedForRef.current === arrivalKey) return;
+    if (columnTop === undefined || cardTop === undefined || rowAnchor?.key !== arrivalKey) return;
+    arrivedForRef.current = arrivalKey;
+
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, columnTop + cardTop + rowAnchor.y - ARRIVAL_SCROLL_INSET),
+      animated: !reduceMotionEnabled,
+    });
+    // Opacity only - no bounce, no movement - so it stays quiet under reduce motion too.
+    highlightOpacity.setValue(0);
+    Animated.sequence([
+      Animated.timing(highlightOpacity, {
+        toValue: 1,
+        duration: HIGHLIGHT_FADE_IN_MS,
+        useNativeDriver: Platform.OS !== "web",
+      }),
+      Animated.delay(HIGHLIGHT_HOLD_MS),
+      Animated.timing(highlightOpacity, {
+        toValue: 0,
+        duration: HIGHLIGHT_FADE_OUT_MS,
+        useNativeDriver: Platform.OS !== "web",
+      }),
+    ]).start();
+  }, [arrivalKey, columnTop, cardTop, rowAnchor, reduceMotionEnabled, highlightOpacity]);
+
   const globalEnabled = preferences?.notificationsEnabledGlobal ?? true;
   const masterPending = pendingControl === "master";
 
@@ -55,7 +154,8 @@ export default function NotificationsScreen() {
         await cancelAllReminders(userId);
       }
     } catch {
-      showToast({ title: t("common:feedback.wentWrong"), tone: "error" });
+      // The master toggle is a preference write, so its failure is a failed SAVE (#1055).
+      showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
   }
 
@@ -99,8 +199,12 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-      <ScrollView contentContainerClassName="grow p-6">
-        <View className="mx-auto w-full max-w-2xl gap-6">
+      <ScrollView ref={scrollRef} contentContainerClassName="grow p-6">
+        <View
+          testID="notifications-column"
+          className="mx-auto w-full max-w-2xl gap-6"
+          onLayout={anchorLayoutHandler("column")}
+        >
           <View className="gap-2">
             <ScreenHeader title={t("title")} />
             <Text variant="muted" className="max-w-[64ch]">
@@ -141,25 +245,58 @@ export default function NotificationsScreen() {
           </View>
 
           {isLoading || preferences ? (
-            <View className="rounded-xl border border-border bg-card px-4">
+            <View
+              testID="notification-rows-card"
+              className="rounded-xl border border-border bg-card px-4"
+              onLayout={anchorLayoutHandler("card")}
+            >
               {preferences
-                ? NOTIFICATION_TARGETS.map((target, index) => (
-                    <View key={target.key} className={cn(index > 0 && "border-t border-border")}>
-                      <NotificationTargetRow
-                        target={target}
-                        preferences={preferences}
-                        userId={userId}
-                        masterEnabled={globalEnabled}
-                        channel={channel}
-                        locked={Boolean(pendingControl)}
-                        onRequestChange={(pending) =>
-                          setPendingControl(pending ? target.key : null)
-                        }
-                      />
-                    </View>
-                  ))
+                ? NOTIFICATION_TARGETS.map((target, index) => {
+                    const isArrival = target.key === arrivalKey;
+                    return (
+                      // The arrival target folds into the key so becoming (or ceasing to
+                      // be) the target REMOUNTS the wrapper - react-native-web only
+                      // observes layout for nodes whose onLayout existed at mount, so a
+                      // handler attached to an already-mounted wrapper is never heard.
+                      <View
+                        key={isArrival ? `${target.key}-arrival` : target.key}
+                        className={cn(index > 0 && "border-t border-border")}
+                        onLayout={isArrival ? rowLayoutHandler(target.key) : undefined}
+                      >
+                        {isArrival ? (
+                          <Animated.View
+                            pointerEvents="none"
+                            testID={`notification-row-focus-${target.key}`}
+                            style={[focusOverlayStyle, { opacity: highlightOpacity }]}
+                          >
+                            <View className="flex-1 rounded-lg bg-primary/10" />
+                          </Animated.View>
+                        ) : null}
+                        <NotificationTargetRow
+                          target={target}
+                          preferences={preferences}
+                          userId={userId}
+                          masterEnabled={globalEnabled}
+                          channel={channel}
+                          locked={Boolean(pendingControl)}
+                          onRequestChange={(pending) =>
+                            setPendingControl(pending ? target.key : null)
+                          }
+                        />
+                      </View>
+                    );
+                  })
                 : NOTIFICATION_TARGETS.map((target, index) => (
-                    <View key={target.key} className={cn(index > 0 && "border-t border-border")}>
+                    // Keyed apart from the real row's wrapper ON PURPOSE. With a shared
+                    // key React updates the mounted View in place, and react-native-web
+                    // only starts observing layout for a node whose onLayout existed at
+                    // mount - a handler attached by the update is never heard, and the
+                    // skeleton matching the row's height means no resize ever fires
+                    // either. Remounting is what arms the arrival anchor.
+                    <View
+                      key={`skeleton-${target.key}`}
+                      className={cn(index > 0 && "border-t border-border")}
+                    >
                       <NotificationRowSkeleton targetKey={target.key} />
                     </View>
                   ))}

@@ -4,6 +4,7 @@ import { Linking, Platform } from "react-native";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import { useUpdateAvailability } from "@/src/lib/use-update-availability";
+import { checkAndroidStoreUpdate } from "@/src/lib/android-store-update";
 import { fetchVersionDocument, getRunningVersion } from "@/src/lib/update-availability";
 
 jest.mock("@/src/lib/update-availability", () => ({
@@ -11,9 +12,13 @@ jest.mock("@/src/lib/update-availability", () => ({
   fetchVersionDocument: jest.fn(),
   getRunningVersion: jest.fn(),
 }));
+jest.mock("@/src/lib/android-store-update", () => ({ checkAndroidStoreUpdate: jest.fn() }));
 
 const mockFetchDocument = fetchVersionDocument as jest.MockedFunction<typeof fetchVersionDocument>;
 const mockRunningVersion = getRunningVersion as jest.MockedFunction<typeof getRunningVersion>;
+const mockStoreUpdate = checkAndroidStoreUpdate as jest.MockedFunction<
+  typeof checkAndroidStoreUpdate
+>;
 
 // Timing and persistence for the update hook (#388 section 3). jest-expo runs
 // the web branch (Platform.OS === "web"), which skips the native grace window
@@ -112,11 +117,17 @@ describe("useUpdateAvailability", () => {
 // store has this build", which is wrong indefinitely rather than merely early.
 // Caught in review on PR #532, before it reached a user.
 //
-// These tests pin the SUPPRESSION, so re-enabling native offers cannot happen
-// silently - it has to come with a deliberate change here, which is the point
-// at which someone has to confront that /version.json still lacks real
-// per-platform availability.
-describe("useUpdateAvailability (native offers are suppressed)", () => {
+// Android is now ON, sourced from Google Play rather than from the version
+// document - see `checkAndroidStoreUpdate`. iOS stays suppressed, and these
+// tests pin that asymmetry so neither half moves silently.
+//
+// The Android case is asserted through a MOCKED checkAndroidStoreUpdate. It
+// has to be: jest-expo runs with `__DEV__` true, so the real function returns
+// null on every platform and an "android never offers" assertion would keep
+// passing after the feature shipped - green, and measuring nothing. (That is
+// exactly what happened to the old assertion here on the first run of this
+// change.) The real guards are covered in android-store-update.test.ts.
+describe("useUpdateAvailability (Android offers via Play, iOS suppressed)", () => {
   const HOUR = 60 * 60 * 1000;
   let nativeSpy: jest.ReplaceProperty<typeof Platform.OS> | undefined;
   let playStoreUrl: string;
@@ -146,20 +157,75 @@ describe("useUpdateAvailability (native offers are suppressed)", () => {
     platformSpy = jest.replaceProperty(Platform, "OS", "web");
   });
 
-  it.each(["android", "ios"] as const)(
-    "never offers on %s, even a month past the grace window",
-    async (os) => {
-      nativeSpy = jest.replaceProperty(Platform, "OS", os);
+  it("never offers on ios, even a month past what used to be the grace window", async () => {
+    nativeSpy = jest.replaceProperty(Platform, "OS", "ios");
 
-      const { result } = renderHook(() => useUpdateAvailability());
-      await new Promise((resolve) => setTimeout(resolve, 60));
+    const { result } = renderHook(() => useUpdateAvailability());
+    await new Promise((resolve) => setTimeout(resolve, 60));
 
-      expect(result.current.available).toBe(false);
-      // Not merely unoffered - the document is never even fetched, so a native
-      // build does not ask a question it will not act on.
-      expect(mockFetchDocument).not.toHaveBeenCalled();
-    },
-  );
+    expect(result.current.available).toBe(false);
+    // Not merely unoffered - the document is never even fetched, so an iOS
+    // build does not ask a question it will not act on. Nothing on the device
+    // can observe an App Store promotion, so there is no answer to be had.
+    expect(mockFetchDocument).not.toHaveBeenCalled();
+  });
+
+  it("offers on android when Play is serving a newer build to this device", async () => {
+    nativeSpy = jest.replaceProperty(Platform, "OS", "android");
+    mockStoreUpdate.mockResolvedValue("18");
+
+    const { result } = renderHook(() => useUpdateAvailability());
+
+    await waitFor(() => expect(result.current.available).toBe(true));
+    expect(result.current.version).toBe("18");
+    // Android never reads the version document: a web deploy timestamp says
+    // nothing about what Play is serving, which is why the offer was off.
+    expect(mockFetchDocument).not.toHaveBeenCalled();
+  });
+
+  it("stays quiet on android when Play reports nothing to install", async () => {
+    nativeSpy = jest.replaceProperty(Platform, "OS", "android");
+    mockStoreUpdate.mockResolvedValue(null);
+
+    const { result } = renderHook(() => useUpdateAvailability());
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    expect(result.current.available).toBe(false);
+  });
+
+  // A Play versionCode, not a semver - the dismissal key has to work for both.
+  it("dismissal on android is per versionCode and survives a remount", async () => {
+    nativeSpy = jest.replaceProperty(Platform, "OS", "android");
+    mockStoreUpdate.mockResolvedValue("18");
+
+    const first = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(first.result.current.available).toBe(true));
+    act(() => first.result.current.dismiss());
+    expect(first.result.current.available).toBe(false);
+
+    const second = renderHook(() => useUpdateAvailability());
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(second.result.current.available).toBe(false);
+
+    // ...and a NEWER build gets through the same latch.
+    mockStoreUpdate.mockResolvedValue("19");
+    const third = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(third.result.current.available).toBe(true));
+  });
+
+  it("offers nothing on android when no Play URL is configured", async () => {
+    nativeSpy = jest.replaceProperty(Platform, "OS", "android");
+    appEnv.playStoreUrl = "";
+    mockStoreUpdate.mockResolvedValue("18");
+
+    const { result } = renderHook(() => useUpdateAvailability());
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    expect(result.current.available).toBe(false);
+    // Nowhere to send them is the same as nothing to offer - and Play is not
+    // even asked, so a misconfigured build makes no native call at all.
+    expect(mockStoreUpdate).not.toHaveBeenCalled();
+  });
 
   // The per-platform store mapping is retained for when availability data
   // exists, so it stays covered: it is the piece that must NOT regress back to

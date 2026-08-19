@@ -69,6 +69,7 @@
     "defaultName": "My daily routine",
     "nameRequired": "Give the routine a short name.",
     "saveError": "Could not save the routine. Please try again.",
+    "deleteError": "Could not delete the routine. Please try again.",
     "stepsLabel": "Steps",
     "stepsHelp": "Each step points at a tool. It completes on days you use that tool - nothing to tick off.",
     "stepsEmpty": "No steps yet. Add a tool below.",

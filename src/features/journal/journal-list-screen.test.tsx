@@ -23,9 +23,6 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
-jest.mock("@/src/components/app/notification-settings-modal", () => ({
-  NotificationSettingsModal: () => null,
-}));
 jest.mock("@/src/components/app/add-to-home-button", () => ({ AddToHomeButton: () => null }));
 jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: () => ({ data: undefined }),

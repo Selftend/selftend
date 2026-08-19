@@ -4,12 +4,13 @@ import { resolve } from "node:path";
 // #371 / #372 - a merge to `main` releases Android to the Play **production**
 // track automatically, with no human gate on the release itself.
 //
-// It currently ships as `inProgress` with a `rollout` fraction: automatic, but
-// capped, introduced for the first release under this pipeline (72 commits, 12
-// migrations). `completed` - live to everyone - is the intended end state per
-// #371. When that flip happens, the rollout assertion below is replaced by
-// `expect(releaseStatus).toBe("completed")`, and docs/releasing.md changes with
-// it.
+// It ships as `completed` - live to everyone, no human gate anywhere in the
+// pipeline. That is the end state #371 decided on, reached 2026-08-16 after the
+// capped mode ran cleanly through v0.11.0 to v0.14.1. The cap existed for the
+// first releases under this pipeline (72 commits, 12 migrations) and for the
+// releases that followed it; keeping it past that point meant every release
+// stalling at 20% until someone remembered to bump it, which is how 80% of
+// Android users ended up two versions behind on 0.12.0.
 //
 // What is pinned here is the property that survives either mode: **the release
 // must actually reach users**. Two ways that could silently break:
@@ -57,21 +58,21 @@ describe("Android production submit profile (#371)", () => {
     expect(["inProgress", "completed"]).toContain(profile?.releaseStatus);
   });
 
-  it("ships the exact capped rollout this pipeline currently runs", () => {
+  it("ships uncapped, and carries no leftover rollout fraction", () => {
     // Pinned EXACTLY, not as a range, and with no early return for the other
     // status - both would make this vacuous the moment the policy drifted.
     //
-    // The cap is a policy, not an implementation detail: `docs/releasing.md`
-    // ("Getting from 20% to everyone"), the workflow header and the job summary
-    // all state it, and the rollback runbook tells an operator to halt a 20%
-    // rollout as the first mitigation. A config-only edit that removed the cap
-    // would leave CI green while four places described a rollout that no longer
-    // existed - and an operator would reach for a halt that does nothing.
-    //
-    // Flipping to `completed` is a deliberate change with a documented exit.
-    // Edit this expectation and those four places in the same commit.
-    expect(profile?.releaseStatus).toBe("inProgress");
-    expect(profile?.rollout).toBe(0.2);
+    // The mode is a policy, not an implementation detail: `docs/releasing.md`
+    // ("How Android reaches users" and the rollback runbook), the workflow
+    // header and the job summary all describe it. A config-only edit would
+    // leave CI green while four places described a pipeline that no longer
+    // existed - and under the old cap an operator would reach for a halt that
+    // does nothing. Edit this expectation and those four places together.
+    expect(profile?.releaseStatus).toBe("completed");
+    // `rollout` is meaningless outside `inProgress`, and a stale one left
+    // beside `completed` is a live trap: it reads as "still capped at 20%" to
+    // anyone checking why a release did or did not reach someone.
+    expect(profile?.rollout).toBeUndefined();
   });
 });
 

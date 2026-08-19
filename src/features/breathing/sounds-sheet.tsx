@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -41,6 +41,13 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
     BREATH_SOUNDS.find((s) => s.id === effective.breathSoundId) ?? BREATH_SOUNDS[0];
   const ambientSound =
     AMBIENT_SOUNDS.find((s) => s.id === effective.ambientSoundId) ?? AMBIENT_SOUNDS[0];
+
+  // ⚠️ WEB: a closed sheet unmounts outright instead of lingering for its
+  // 250ms fade-out, during which react-native-web's Modal is a non-inert
+  // focus trap (#1034; swept in #1054 — the full story lives on
+  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
+  // this.
+  if (!visible && Platform.OS === "web") return null;
 
   return (
     <Modal

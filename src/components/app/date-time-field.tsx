@@ -114,60 +114,67 @@ export function DateTimeField({
         </Pressable>
       )}
 
-      <Modal
-        visible={open}
-        transparent
-        animationType={reduceMotionEnabled ? "none" : "fade"}
-        onRequestClose={() => setOpen(false)}
-      >
-        <View className="flex-1 items-center justify-center p-6">
-          {/* Dimmed backdrop - tap anywhere outside the card to close. A sibling
-              behind the card rather than a wrapper: a wrapping button would nest
-              the picker's buttons inside a <button> on web, which the DOM forbids. */}
-          <Pressable
-            accessibilityLabel={t("close")}
-            accessibilityRole="button"
-            className="absolute inset-0 bg-black/50"
-            onPress={() => setOpen(false)}
-            role="button"
-            // Out of the web Tab order (invisible to sighted keyboard users, who
-            // have Escape); touch-exploration screen readers keep a labeled close.
-            {...(Platform.OS === "web" ? { tabIndex: -1 as const } : {})}
-          />
-          <View className="w-full max-w-[340px] rounded-2xl bg-card p-3">
-            <DateTimePicker
-              mode="single"
-              date={parsedDate}
-              maxDate={maxDate}
-              timePicker={true}
-              onChange={({ date }) => {
-                if (!date) return;
-                const next = dayjs(date);
-                if (!next.isValid()) return;
-                // Clamp inside the display frame, then shift the result back to a
-                // real instant.
-                const picked = (next.isAfter(maxDate) ? maxDate : next).toDate();
-                onChange(
-                  (framedOffset === null
-                    ? picked
-                    : shiftFromOffsetFrame(picked, framedOffset)
-                  ).toISOString(),
-                );
-              }}
-              styles={pickerStyles}
-              components={{
-                IconPrev: <Icon name="chevron-left" className="size-5 text-foreground" />,
-                IconNext: <Icon name="chevron-right" className="size-5 text-foreground" />,
-              }}
+      {/* ⚠️ WEB: a closed picker unmounts outright instead of lingering for
+          its 250ms fade-out, during which react-native-web's Modal is a
+          non-inert focus trap (#1034; swept in #1054 — the full story lives
+          on ConfirmDialog's gate). The inline form of that gate, because the
+          Modal here is a sibling of the always-rendered trigger. */}
+      {!open && Platform.OS === "web" ? null : (
+        <Modal
+          visible={open}
+          transparent
+          animationType={reduceMotionEnabled ? "none" : "fade"}
+          onRequestClose={() => setOpen(false)}
+        >
+          <View className="flex-1 items-center justify-center p-6">
+            {/* Dimmed backdrop - tap anywhere outside the card to close. A sibling
+                behind the card rather than a wrapper: a wrapping button would nest
+                the picker's buttons inside a <button> on web, which the DOM forbids. */}
+            <Pressable
+              accessibilityLabel={t("close")}
+              accessibilityRole="button"
+              className="absolute inset-0 bg-black/50"
+              onPress={() => setOpen(false)}
+              role="button"
+              // Out of the web Tab order (invisible to sighted keyboard users, who
+              // have Escape); touch-exploration screen readers keep a labeled close.
+              {...(Platform.OS === "web" ? { tabIndex: -1 as const } : {})}
             />
-            <View className="mt-2">
-              <Button onPress={() => setOpen(false)}>
-                <Text>{t("done")}</Text>
-              </Button>
+            <View className="w-full max-w-[340px] rounded-2xl bg-card p-3">
+              <DateTimePicker
+                mode="single"
+                date={parsedDate}
+                maxDate={maxDate}
+                timePicker={true}
+                onChange={({ date }) => {
+                  if (!date) return;
+                  const next = dayjs(date);
+                  if (!next.isValid()) return;
+                  // Clamp inside the display frame, then shift the result back to a
+                  // real instant.
+                  const picked = (next.isAfter(maxDate) ? maxDate : next).toDate();
+                  onChange(
+                    (framedOffset === null
+                      ? picked
+                      : shiftFromOffsetFrame(picked, framedOffset)
+                    ).toISOString(),
+                  );
+                }}
+                styles={pickerStyles}
+                components={{
+                  IconPrev: <Icon name="chevron-left" className="size-5 text-foreground" />,
+                  IconNext: <Icon name="chevron-right" className="size-5 text-foreground" />,
+                }}
+              />
+              <View className="mt-2">
+                <Button onPress={() => setOpen(false)}>
+                  <Text>{t("done")}</Text>
+                </Button>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </>
   );
 }

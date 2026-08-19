@@ -55,7 +55,9 @@ export function useExportData() {
       });
     } catch {
       showToast({
-        title: t("common:feedback.problem"),
+        // Not `feedback.problem` ("Something did not save"): an export saves nothing,
+        // so that title described an action the user never took (#1060).
+        title: t("common:feedback.wentWrong"),
         description: t("account.exportError"),
         tone: "error",
       });

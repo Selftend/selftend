@@ -242,10 +242,11 @@ export default function MeditationHomeScreen() {
         enabledModules: addModule(preferences.enabledModules, "meditation"),
       });
       setForceWizard(false);
-    } catch (error) {
-      const fallback = t("onboarding.commit.error");
-      const detail = error instanceof Error ? error.message : null;
-      setOnboardingError(detail ? `${fallback} (${detail})` : fallback);
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      setOnboardingError(t("onboarding.commit.error"));
     }
   }
 

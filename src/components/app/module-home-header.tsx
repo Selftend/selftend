@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
+import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
-import { NotificationSettingsModal } from "@/src/components/app/notification-settings-modal";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
@@ -84,15 +83,12 @@ export function ModuleHomeHeader({
   stats,
   addWidgetCategory,
 }: ModuleHomeHeaderProps) {
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  const notificationsAction = actions.find(
-    (a): a is NotificationsAction => a.type === "notifications",
-  );
-
   function handleActionPress(action: HeaderAction) {
     if (action.type === "notifications") {
-      setShowNotifications(true);
+      // The bell is a door to the central Reminders screen, not a surface of its
+      // own (#967): one ruling for all ten bells, and the glyph stays stateless.
+      // `target` lets the screen bring this module's row into view on arrival.
+      router.push({ pathname: "/notifications", params: { target: action.targetKey } });
     } else {
       action.onPress();
     }
@@ -100,14 +96,6 @@ export function ModuleHomeHeader({
 
   return (
     <View className="gap-2">
-      {notificationsAction ? (
-        <NotificationSettingsModal
-          targetKey={notificationsAction.targetKey}
-          visible={showNotifications}
-          onDismiss={() => setShowNotifications(false)}
-        />
-      ) : null}
-
       {/* Actions ride the breadcrumb row rather than an overflow menu (#692):
           burying the info action would bury the only path back to the
           onboarding replay. */}

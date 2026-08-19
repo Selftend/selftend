@@ -68,8 +68,11 @@ export default function ThoughtRecordDetailScreen() {
         tone: "success",
       });
       router.replace("/modules/cbt/history" as Parameters<typeof router.replace>[0]);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("detail.archiveError");
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      const message = t("detail.archiveError");
       setArchiveError(message);
       showToast({
         title: t("detail.archiveProblem"),

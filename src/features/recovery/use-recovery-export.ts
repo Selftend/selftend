@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { deliverMarkdown } from "@/src/features/recovery/export-target";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 import { useToastStore } from "@/src/stores/toast-store";
 import { currentDateKey } from "@/src/utils/date";
 
@@ -35,8 +36,20 @@ export function useRecoveryExport(buildExportText: () => string) {
         tone: "success",
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("recovery.export.exportError");
-      showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
+      // The thrown message no longer reaches the screen (translated copy only, #1060),
+      // and `deliverMarkdown` is platform IO outside TanStack, so the mutation cache's
+      // global reporter never sees this - capture here or lose it, as #1055 did for
+      // sign-out. `isReportableError` keeps the expected offline case out of Sentry.
+      if (isReportableError(error)) {
+        captureError(error);
+      }
+      showToast({
+        // Not `feedback.problem` ("Something did not save"): an export saves nothing,
+        // so that title described an action the user never took (#1060).
+        title: t("common:feedback.wentWrong"),
+        description: t("recovery.export.exportError"),
+        tone: "error",
+      });
     } finally {
       setIsExporting(false);
     }

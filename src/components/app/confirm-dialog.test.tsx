@@ -1,38 +1,17 @@
 import { render, screen } from "@testing-library/react-native";
-import { Platform } from "react-native";
 
 import { ConfirmDialog } from "./confirm-dialog";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 
 jest.mock("@/src/lib/accessibility", () => ({
   ...jest.requireActual("@/src/lib/accessibility"),
   useReduceMotionEnabled: () => false,
 }));
 
-/**
- * ⚠️ react-native's own `Modal` renders null in jest whenever `visible` is false,
- * which makes it impossible to tell "the component returned null" (the web fix)
- * from "a mounted Modal rendered nothing" (native, where the exit animation still
- * has to run). That is the exact distinction #1034 turns on, so the stock mock
- * would let a test pass against the bug.
- *
- * This stand-in keeps a marker in the tree whenever a Modal ELEMENT exists, and
- * renders the children only while it is open - the shape the real Modal has on
- * native. `modal-root` present therefore means "a Modal is mounted", not "a
- * dialog is showing".
- */
-jest.mock("react-native", () => {
-  const RN = jest.requireActual("react-native");
-  const MockModal = ({ children, visible }: { children: React.ReactNode; visible?: boolean }) => (
-    <RN.View testID="modal-root">{visible ? children : null}</RN.View>
-  );
-  // ⚠️ A Proxy, not `{ ...RN }`. The react-native barrel exposes its components
-  // as lazy getters; spreading it evaluates every one eagerly and dies in a
-  // circular require (Button -> css-interop -> ActivityIndicator -> ...).
-  return new Proxy(RN, {
-    get: (target, prop, receiver) =>
-      prop === "Modal" ? MockModal : Reflect.get(target, prop, receiver),
-  });
-});
+// Marker Modal: the stock jest Modal cannot distinguish "returned null" (the
+// web fix) from "mounted but closed" (native) — the exact distinction #1034
+// turns on. See the helper's docs.
+jest.mock("react-native", () => require("@/test/modal-marker-mock").reactNativeWithModalMarker());
 
 const props = {
   isPending: false,
@@ -44,18 +23,14 @@ const props = {
   onConfirm: jest.fn(),
 };
 
-function setPlatform(os: "web" | "ios") {
-  Object.defineProperty(Platform, "OS", { configurable: true, value: os });
-}
-
 afterEach(() => {
-  setPlatform("ios");
+  setPlatformOS("ios");
   jest.clearAllMocks();
 });
 
 describe("ConfirmDialog", () => {
   it("renders its content when open", () => {
-    setPlatform("web");
+    setPlatformOS("web");
     render(<ConfirmDialog {...props} visible />);
 
     expect(screen.getByText("Delete this?")).toBeTruthy();
@@ -73,7 +48,7 @@ describe("ConfirmDialog", () => {
    * and "there is no Modal at all", which is the whole fix.
    */
   it("leaves no Modal mounted when closed on web", () => {
-    setPlatform("web");
+    setPlatformOS("web");
     const view = render(<ConfirmDialog {...props} visible={false} />);
 
     expect(screen.queryByTestId("modal-root")).toBeNull();
@@ -87,14 +62,14 @@ describe("ConfirmDialog", () => {
    * lost the fade-out to fix a bug neither platform has.
    */
   it("keeps the Modal mounted when closed on native, preserving the exit animation", () => {
-    setPlatform("ios");
+    setPlatformOS("ios");
     render(<ConfirmDialog {...props} visible={false} />);
 
     expect(screen.queryByTestId("modal-root")).not.toBeNull();
   });
 
   it("does not open the dialog on native just because the Modal stays mounted", () => {
-    setPlatform("ios");
+    setPlatformOS("ios");
     render(<ConfirmDialog {...props} visible={false} />);
 
     // The regression this guards: hardcoding `visible` on the Modal while the
