@@ -42,6 +42,7 @@ Nouns for titles and breadcrumbs, imperative for buttons:
 Surface-appropriate variants confirmed as deliberate:
 
 - `Dismiss` — `Затвори` (close a banner) / `Скрий` (hide a card)
+- `Done today` — `Направено днес` (dashboard stat: a count of things done) / `Готово за днес` (routine step state: this step is done for today)
 - `FAQ` — `ЧЗВ` (tight footer link) / `Често задавани въпроси` (page title)
 - `Finish` — `Завърши` (end a session) / `Готово` (wizard finish)
 - `Mood check-in` — full `Проверка на настроението` (notification title) / `Настроение` (width-limited tool chip)
