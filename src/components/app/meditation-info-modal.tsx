@@ -1,6 +1,7 @@
-import { Image, Modal, Platform, ScrollView, View } from "react-native";
+import { Image, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -27,7 +28,7 @@ export function MeditationInfo({ visible, onComplete, onDismiss }: MeditationInf
   if (!visible && Platform.OS === "web") return null;
 
   return (
-    <Modal
+    <PressShieldModal
       animationType={reduceMotionEnabled ? "none" : "slide"}
       onRequestClose={onDismiss ?? (() => undefined)}
       visible={visible}
@@ -108,6 +109,6 @@ export function MeditationInfo({ visible, onComplete, onDismiss }: MeditationInf
           </View>
         </ScrollView>
       </SafeAreaView>
-    </Modal>
+    </PressShieldModal>
   );
 }

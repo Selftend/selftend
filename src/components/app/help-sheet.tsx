@@ -1,7 +1,8 @@
-import { Image, Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { Image, Platform, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { HelpSections } from "@/src/components/app/help-sections";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -30,7 +31,7 @@ export function HelpSheet({ helpKey, visible, onDismiss }: HelpSheetProps) {
   if (!visible && Platform.OS === "web") return null;
 
   return (
-    <Modal
+    <PressShieldModal
       animationType={reduceMotion ? "none" : "slide"}
       visible={visible}
       onRequestClose={onDismiss}
@@ -63,6 +64,6 @@ export function HelpSheet({ helpKey, visible, onDismiss }: HelpSheetProps) {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </Modal>
+    </PressShieldModal>
   );
 }

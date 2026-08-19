@@ -1,7 +1,8 @@
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
@@ -125,7 +126,7 @@ export function MeditationOnboarding({
   if (!visible && Platform.OS === "web") return null;
 
   return (
-    <Modal
+    <PressShieldModal
       animationType={reduceMotionEnabled ? "none" : "slide"}
       onRequestClose={onDismiss ?? (() => undefined)}
       visible={visible}
@@ -431,7 +432,7 @@ export function MeditationOnboarding({
           ) : null}
         </ScrollView>
       </SafeAreaView>
-    </Modal>
+    </PressShieldModal>
   );
 }
 
