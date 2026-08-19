@@ -33,6 +33,28 @@ CI runners are UTC, and runs happen at any hour. Two rules keep specs green:
   the same glyph in a picker and in a history entry; a bare `getByText`
   becomes a strict-mode violation (or a race) once the list paints.
 
+## Web push and notification permission
+
+The build bakes a committed test VAPID public key (`playwright.config.ts`, its
+private half was discarded at generation), so the web reminder channel reads
+`prompt-needed` — matching a real deployment — instead of `unsupported`. The
+web server verifies the key actually landed in the exported bundle (Metro's
+transformer cache can silently bake a stale value) and records the baked env
+in `dist-e2e/e2e-baked-env.json`; `reminder-rearm.e2e.test.ts` starts with a
+canary against that manifest.
+
+Rules that keep the rest of the suite quiet:
+
+- **Only `reminder-rearm.e2e.test.ts` may call
+  `grantPermissions(["notifications"])`.** A granted permission is only safe
+  under that file's `PushManager` stub — anywhere else, every window focus
+  attempts a real `subscribe()`, which always rejects in bundled Chromium (no
+  push backend) and fills the run with AbortError noise.
+- **Saving a routine with its reminder on while the global toggle is on calls
+  `ensureReminderChannel` and blocks navigation on failure** — a spec that
+  does this without the stub + grant hangs on `waitForURL`
+  (`routine-editor-screen.tsx`).
+
 ## Layout
 
 - `fixtures.ts` — per-worker pool users (`e2e-w<n>`), auto sign-in.

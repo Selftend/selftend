@@ -383,6 +383,41 @@ describe("Reminder notifications", () => {
     expect(mockUpsertWebPushSubscription).toHaveBeenCalledTimes(1);
   });
 
+  it("re-upserts when the timezone changes between focuses", async () => {
+    // The memo keys on userId|timezone|endpoint, so a device that moved zones must
+    // re-upsert even though the subscription itself is unchanged - time_zone is what
+    // the edge function reads at send time. The skip above only proves the same-zone
+    // half; without this, nothing drives the zone-change half.
+    setPlatformOS("web");
+    const { notification, pushManager, subscription } = createWebPushMocks();
+    notification.permission = "granted";
+    pushManager.subscribe.mockImplementation(async () => {
+      pushManager.getSubscription.mockResolvedValue(subscription);
+      return subscription;
+    });
+
+    let timeZone = "Europe/Sofia";
+    const dateTimeFormatSpy = jest
+      .spyOn(Intl, "DateTimeFormat")
+      .mockImplementation(
+        () => ({ resolvedOptions: () => ({ timeZone }) }) as unknown as Intl.DateTimeFormat,
+      );
+
+    try {
+      await reconcileWebReminderChannel("user-1");
+      timeZone = "Asia/Tokyo";
+      await reconcileWebReminderChannel("user-1");
+    } finally {
+      dateTimeFormatSpy.mockRestore();
+    }
+
+    expect(mockUpsertWebPushSubscription).toHaveBeenCalledTimes(2);
+    expect(mockUpsertWebPushSubscription).toHaveBeenLastCalledWith(
+      "user-1",
+      expect.objectContaining({ timeZone: "Asia/Tokyo" }),
+    );
+  });
+
   it("is a no-op on native and without a user", async () => {
     setPlatformOS("android");
     await reconcileWebReminderChannel("user-1");
