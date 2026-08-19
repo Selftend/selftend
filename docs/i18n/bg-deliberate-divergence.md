@@ -33,7 +33,7 @@ Same English word, different meaning — one Bulgarian word would be a bug:
 
 ## Surface register
 
-Nouns for titles and breadcrumbs, imperative for buttons:
+Nouns for titles and breadcrumbs, imperative for buttons — with one decided exception: **Cancel = `Отказ` everywhere**, buttons included (#1096 convention 1; `Отказ` is the standard Bulgarian UI label for Cancel):
 
 - `Edit` — `Редактирай` (buttons) / `Редактиране` (breadcrumb)
 - `Edit activity`, `Edit goal` — `Редактиране на …` (screen title) / `Редактирай …` (button)
