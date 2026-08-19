@@ -43,11 +43,21 @@ transformer cache can silently bake a stale value) and records the baked env
 in `dist-e2e/e2e-baked-env.json`; `reminder-rearm.e2e.test.ts` starts with a
 canary against that manifest.
 
+`push-worker.e2e.test.ts` covers the service worker's own `push` and
+`notificationclick` handlers by dispatching real push events through the CDP
+command `ServiceWorker.deliverPushMessage`, which needs no push subscription
+(see `docs/research/playwright-web-push-ceiling.md` on the
+`research/playwright-web-push-ceiling` branch). Headless Chromium refuses
+`registration.showNotification` even under a granted permission, so those
+specs assert through a spy over the call, and drive `notificationclick` with
+a synthetic duck-typed event.
+
 Rules that keep the rest of the suite quiet:
 
-- **Only `reminder-rearm.e2e.test.ts` may call
+- **Only `reminder-rearm.e2e.test.ts` and `push-worker.e2e.test.ts` may call
   `grantPermissions(["notifications"])`.** A granted permission is only safe
-  under that file's `PushManager` stub — anywhere else, every window focus
+  under reminder-rearm's `PushManager` stub, or (push-worker's case) in a spec
+  that never boots an authenticated shell — anywhere else, every window focus
   attempts a real `subscribe()`, which always rejects in bundled Chromium (no
   push backend) and fills the run with AbortError noise.
 - **Saving a routine with its reminder on while the global toggle is on calls
