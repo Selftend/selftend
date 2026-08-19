@@ -7,7 +7,7 @@ import { Modal, Platform, StyleSheet, View, type ModalProps } from "react-native
  * animationend — a permanently inert modal would be far worse than the
  * swallowed tap the shield prevents (#1108).
  */
-const ENTRANCE_FALLBACK_MS = 600;
+export const ENTRANCE_FALLBACK_MS = 600;
 
 /**
  * A `Modal` whose content cannot half-receive a press while it is still

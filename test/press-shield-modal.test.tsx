@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react-native";
 import { Modal, Platform, Text } from "react-native";
 
-import { PressShieldModal } from "@/src/components/app/press-shield-modal";
+import { ENTRANCE_FALLBACK_MS, PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
 /**
@@ -133,7 +133,7 @@ describe("PressShieldModal", () => {
       screen.getByTestId("modal-entrance-shield", { includeHiddenElements: true }),
     ).toBeTruthy();
     act(() => {
-      jest.advanceTimersByTime(600);
+      jest.advanceTimersByTime(ENTRANCE_FALLBACK_MS);
     });
     expect(
       screen.queryByTestId("modal-entrance-shield", { includeHiddenElements: true }),

@@ -71,7 +71,7 @@ const INLINE_GATE = /!\w+\s*&&\s*Platform\.OS === "web"\s*\?\s*null\s*:/;
  * `visible` to the raw Modal it owns, so a call site rendering it has the
  * exact same lingering-close hazard as one rendering `<Modal>` directly.
  */
-const RENDERS_RAW_MODAL = /<(?:Modal|PressShieldModal)[\s/>]/;
+const RENDERS_A_MODAL = /<(?:Modal|PressShieldModal)[\s/>]/;
 
 /** `Modal` named in an import from "react-native" (single or multi-line). */
 const IMPORTS_RN_MODAL = /import\s*\{[^}]*\bModal\b[^}]*\}\s*from\s*"react-native"/;
@@ -86,7 +86,7 @@ const modalFiles = files.filter((file) => {
   const source = readFileSync(join(ROOT, file), "utf8");
   return (
     (IMPORTS_RN_MODAL.test(source) || IMPORTS_SHIELD_MODAL.test(source)) &&
-    RENDERS_RAW_MODAL.test(stripComments(source))
+    RENDERS_A_MODAL.test(stripComments(source))
   );
 });
 
