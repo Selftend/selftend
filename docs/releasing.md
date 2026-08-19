@@ -4,12 +4,14 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 
 ## Branch model
 
-| Branch | Role                                                                                                                                                                                     |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dev`  | Integration. All feature PRs land here via **squash merge** (one Conventional Commit per PR).                                                                                            |
-| `main` | Release / production. Default branch. Only receives the `dev→main` promotion PR, `hotfix/*` PRs, release-please's release PR, and the `main→dev` back-merge counterpart after a release. |
+| Branch | Role                                                                                                                                                                                                                            |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dev`  | Integration. All feature PRs land here via **squash merge** (one Conventional Commit per PR).                                                                                                                                   |
+| `main` | Release / production. Default branch. Only receives the `dev→main` promotion PR, `hotfix/*` PRs, release-please's release PR, Weblate translation PRs (`weblate/*`), and the `main→dev` back-merge counterpart after a release. |
 
 `main` stays the default branch because GitHub runs `on: release`, `schedule`, and `workflow_dispatch` workflows from the default branch, and release-please runs on `main`. New PRs therefore default to `main` in the GitHub UI — retarget them to `dev`.
+
+[Weblate](https://hosted.weblate.org/projects/selftend/) opens translation PRs from `weblate/*` branches straight into `main` (translation-only changes, gated by `verify` like everything else — this targeting is deliberate, since Weblate tracks `main`). Merge them with a **merge commit, never squash** — squash-merging strands Weblate's branch and wedges the component in "repository outdated". The next release's back-merge carries them into `dev`.
 
 ## Everyday contributor flow
 
@@ -199,6 +201,6 @@ It is deliberately **not a required check** — it reads a system a human can le
 
 ## Invariants
 
-1. Never squash the `dev→main` promotion PR or a `hotfix/*` PR — merge commits only.
+1. Never squash the `dev→main` promotion PR, a `hotfix/*` PR, or a Weblate translation PR — merge commits only.
 2. The tag and GitHub Release are always created by the PAT (`RELEASE_PLEASE_TOKEN`), never `GITHUB_TOKEN` — `GITHUB_TOKEN`-authored events do not trigger `on: release` workflows, so deploys would silently not run.
 3. The maintainer may bypass the review requirement, never the required checks.
