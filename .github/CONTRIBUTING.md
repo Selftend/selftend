@@ -57,7 +57,7 @@ To contribute translations:
 3. Translate in Weblate.
 4. Weblate opens a GitHub PR for review.
 
-To add a language, request it in Weblate or open a GitHub issue. New languages need all seven namespaces listed in [docs/stack.md](../docs/stack.md).
+To add a language, request it in Weblate or open a GitHub issue. New languages need all 20 namespaces listed in [docs/stack.md](../docs/stack.md).
 
 ## Which Issue Template To Use
 

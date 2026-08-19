@@ -1,7 +1,8 @@
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
@@ -11,7 +12,6 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { suggestStageFromAssessment } from "@/src/features/meditation/stages";
 import type { StageNumber } from "@/src/features/meditation/types";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 
 type Step = "welcome" | "attention" | "assessment" | "gardener" | "commit";
@@ -62,7 +62,6 @@ export function MeditationOnboarding({
   onDismiss,
 }: Props) {
   const { t } = useTranslation("meditation");
-  const reduceMotionEnabled = useReduceMotionEnabled();
 
   const [step, setStep] = useState<Step>("welcome");
   const [answers, setAnswers] = useState<AssessmentAnswers>(EMPTY_ANSWERS);
@@ -116,20 +115,8 @@ export function MeditationOnboarding({
     });
   }
 
-  // ⚠️ WEB: a closed wizard unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
-  // this. Wizard state (step, answers) survives a close on both platforms —
-  // this return only drops the rendered tree.
-  if (!visible && Platform.OS === "web") return null;
-
   return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={onDismiss ?? (() => undefined)}
-      visible={visible}
-    >
+    <PressShieldModal onRequestClose={onDismiss ?? (() => undefined)} visible={visible}>
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
           {step === "welcome" ? (
@@ -431,7 +418,7 @@ export function MeditationOnboarding({
           ) : null}
         </ScrollView>
       </SafeAreaView>
-    </Modal>
+    </PressShieldModal>
   );
 }
 

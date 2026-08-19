@@ -114,7 +114,7 @@ Prepared label set:
 See [releasing.md](releasing.md) for the full branch and release model. In short:
 
 - `dev` is the integration branch: branch off it, PR into it, squash-merge
-- `main` is the release branch: it only receives the `dev→main` promotion PR (merge commit), `hotfix/*` PRs, and release-please's PRs
+- `main` is the release branch: it only receives the `dev→main` promotion PR (merge commit), `hotfix/*` PRs, release-please's PRs, and Weblate translation PRs (merge commit, never squash)
 - both branches are protected; prefer draft PRs for larger work
 
 ## Repository setup checklist

@@ -1,16 +1,10 @@
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  View,
-} from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
@@ -39,7 +33,6 @@ import type { ExposureItem } from "@/src/features/exposure/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
@@ -75,7 +68,6 @@ function SessionSheet({
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
-  const reduceMotionEnabled = useReduceMotionEnabled();
   const saveMutation = useSaveExposureSession(user?.id ?? null, hierarchyId);
   const [form, setForm] = useState<SessionFormState>(emptySession);
 
@@ -103,19 +95,8 @@ function SessionSheet({
     }
   });
 
-  // ⚠️ WEB: a closed session sheet unmounts outright instead of lingering for
-  // its 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
-  // this.
-  if (!visible && Platform.OS === "web") return null;
-
   return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={onClose}
-      visible={visible}
-    >
+    <PressShieldModal onRequestClose={onClose} visible={visible}>
       <SafeAreaView className="flex-1 bg-background">
         <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
           <KeyboardAwareScrollView contentContainerClassName="gap-6 p-6 pb-12">
@@ -221,7 +202,7 @@ function SessionSheet({
           </KeyboardAwareScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </Modal>
+    </PressShieldModal>
   );
 }
 

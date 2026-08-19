@@ -2,18 +2,17 @@ import { type ReactNode } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   View,
   type ImageSourcePropType,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 
 interface RichOnboardingShellProps {
@@ -43,13 +42,11 @@ export function RichOnboardingShell({
   children,
   footerSlot,
 }: RichOnboardingShellProps) {
-  const reduceMotionEnabled = useReduceMotionEnabled();
   const ctaOnPress = ctaAlwaysCompletes ? onComplete : (onDismiss ?? onComplete);
 
   return (
-    <Modal
+    <PressShieldModal
       accessibilityLabel={accessibilityLabel}
-      animationType={reduceMotionEnabled ? "none" : "slide"}
       onRequestClose={onDismiss ?? (() => undefined)}
       visible={visible}
     >
@@ -73,7 +70,7 @@ export function RichOnboardingShell({
           </KeyboardAwareScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </Modal>
+    </PressShieldModal>
   );
 }
 

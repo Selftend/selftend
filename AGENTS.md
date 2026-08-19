@@ -45,7 +45,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Navigation support: react-native-screens, react-native-safe-area-context
 - Builds and submission: EAS Build and EAS Submit
 - Web deployment: Cloudflare Workers (static assets; `wrangler.toml` prod / `wrangler.staging.toml` staging)
-- i18n: i18next + react-i18next + expo-localization, seven namespaces in `src/i18n/locales/`
+- i18n: i18next + react-i18next + expo-localization, 20 namespaces in `src/i18n/locales/`, all translated on Weblate
 - Testing: Jest + @testing-library/react-native + jest-expo
 - Code quality: ESLint, Prettier, Husky (pre-commit hooks)
 
@@ -116,6 +116,7 @@ https://github.com/vasilyoshev/control-tower/blob/main/docs/architecture-rule.md
 - Direct pushes to `main` only when the user explicitly asks for that; otherwise changes reach `main` through PRs and the required `verify` check.
 - Agents may merge PRs without asking once every required check is green (policy changed 2026-08-06; merging was previously human-only).
 - Never force-push, never skip hooks (`--no-verify`), never merge over a failing or pending required check.
+- Weblate translation PRs (branch `weblate/*`, targeting `main`) merge with a regular **merge commit, never squash** — squash-merging strands Weblate's branch and wedges the component in "repository outdated".
 
 ## Product discipline
 
