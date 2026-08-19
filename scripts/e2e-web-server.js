@@ -65,6 +65,9 @@ const distIndex = path.join(process.cwd(), OUTPUT_DIR, "index.html");
 // test was baked with the expected key.
 const BAKED_ENV_MANIFEST = "e2e-baked-env.json";
 const manifestPath = path.join(process.cwd(), OUTPUT_DIR, BAKED_ENV_MANIFEST);
+// The manifest records every baked EXPO_PUBLIC_* for debuggability, but only
+// the VAPID key is guarded (skip-build refusal + bundle verification): it is
+// the one value whose absence makes a whole suite silently test nothing.
 const BAKED_ENV_KEYS = [
   "EXPO_PUBLIC_SUPABASE_URL",
   "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY",

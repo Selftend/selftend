@@ -3,6 +3,9 @@ import type { BrowserContext, Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import { createServiceClient } from "./helpers";
 import { E2E_WEB_PUSH_VAPID_PUBLIC_KEY } from "../../playwright.config";
+// Relative import like fixtures.ts's policy-content import: registry.ts has
+// type-only imports and no runtime dependencies, so it is safe in Node.
+import { NOTIFICATION_TARGETS } from "../../src/features/notifications/registry";
 
 // Reminder channel re-arm coverage (#966, spec on #1114).
 //
@@ -137,18 +140,14 @@ async function waitForAppShell(page: Page) {
   });
 }
 
-const ALL_TARGETS_OFF = {
-  act_reminders_enabled: false,
-  breathing_reminders_enabled: false,
-  cbt_reminders_enabled: false,
-  gratitude_reminders_enabled: false,
-  grounding_reminders_enabled: false,
-  habits_reminders_enabled: false,
-  journal_reminders_enabled: false,
-  meditation_reminders_enabled: false,
-  mood_reminders_enabled: false,
-  sleep_reminders_enabled: false,
-} as const;
+// Derived from the live registry (camelCase enabledField → snake_case column),
+// so a target added later can never silently escape this cleanup.
+const ALL_TARGETS_OFF: Record<string, boolean> = Object.fromEntries(
+  NOTIFICATION_TARGETS.map((target) => [
+    target.enabledField.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`),
+    false,
+  ]),
+);
 
 // Cleanup is mandatory: settings-account.e2e.test.ts's master-switch-back-ON
 // assertion holds only because the clean seed leaves all ten targets off -
@@ -179,7 +178,10 @@ test.afterEach(async ({ user }) => {
 // trap) or one built outside webServer.env would leave every test below
 // silently exercising the unsupported early-return - no UI renders differently
 // (there is no unsupported copy), so only this fails loudly. The manifest is
-// written by scripts/e2e-web-server.js from the exact env the build saw.
+// written by scripts/e2e-web-server.js only after verifying the key is in the
+// exported JS. Deliberately a proxy: it asserts the two INPUTS of the status
+// computation (baked key, browser push primitives), because the app computes
+// the status internally and exposes no unsupported-state UI to assert on.
 test("canary: the bundle under test was baked with the e2e VAPID key", async ({ page }) => {
   const response = await page.request.get("/e2e-baked-env.json");
   expect(
