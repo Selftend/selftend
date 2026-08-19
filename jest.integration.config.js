@@ -12,11 +12,16 @@
 
 module.exports = {
   testEnvironment: "node",
-  testMatch: ["<rootDir>/test/integration/**/*.integration.test.ts"],
+  // A relative glob, not "<rootDir>/test/integration/**": jest's glob conversion
+  // keeps the backslash before a dot-directory in a Windows rootDir, so an
+  // anchored pattern silently matches nothing when the repo checkout lives under
+  // .claude/worktrees/ (agent worktrees). The .claude ignore below keeps a main-
+  // checkout run from sweeping worktree duplicates instead.
+  testMatch: ["**/test/integration/**/*.integration.test.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
-  testPathIgnorePatterns: ["/node_modules/", "/dist/"],
+  testPathIgnorePatterns: ["/node_modules/", "/dist/", "<rootDir>/\\.claude/"],
   testTimeout: 30000,
   globalSetup: "<rootDir>/test/integration/global-setup.ts",
 };
