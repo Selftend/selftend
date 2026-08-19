@@ -25,7 +25,9 @@ import { NOTIFICATION_TARGETS } from "../../src/features/notifications/registry"
 // the baked-env canary all stay in THIS file. A suite-wide grant would make
 // every window focus in every spec attempt a real subscribe() and fail with
 // AbortError noise everywhere - only this file carries the stub that makes a
-// granted permission safe.
+// granted permission safe. (push-worker.e2e.test.ts also grants, safely for a
+// different reason: it never boots an authenticated shell, so no reconcile
+// can attempt a subscribe there.)
 
 // Pinned so every DB timezone assertion is deterministic on any machine and in
 // CI, and distinct from the wrong zone test 3 seeds.
