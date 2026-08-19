@@ -53,6 +53,16 @@ _Avoid_: session, cycle
 
 > Note: there is intentionally no "run" term. A routine has a definition and a status derived per day; there is no separate object representing one day's execution.
 
+### Reminder channel
+
+**Reminder channel**:
+The device-scoped capability that lets reminders reach a device: the platform's notification permission together with that device's push registration, taken as one thing. There is one channel per device, shared by every reminder — it is not a property of any single reminder, and enabling a tenth reminder never asks the user again. A reminder can be "on" while the channel is absent; nothing is delivered until the channel exists again.
+_Avoid_: subscription (only half the channel), per-reminder permission
+
+**Re-arm**:
+Restoring a lost reminder channel for a user who has already said yes, without asking again. A re-arm never prompts; when consent cannot be presumed, what happens instead is a fresh request, not a re-arm.
+_Avoid_: re-subscribe (names the mechanism, not the promise), re-prompt (the thing a re-arm must never do)
+
 ### Design language ("Color field")
 
 The app-wide visual direction (decided on the design redesign map, first shipped by the mood workstream).
