@@ -13,7 +13,6 @@ import { OnboardingIllustration } from "@/src/components/app/onboarding-illustra
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 
 interface RichOnboardingShellProps {
@@ -43,13 +42,11 @@ export function RichOnboardingShell({
   children,
   footerSlot,
 }: RichOnboardingShellProps) {
-  const reduceMotionEnabled = useReduceMotionEnabled();
   const ctaOnPress = ctaAlwaysCompletes ? onComplete : (onDismiss ?? onComplete);
 
   return (
     <PressShieldModal
       accessibilityLabel={accessibilityLabel}
-      animationType={reduceMotionEnabled ? "none" : "slide"}
       onRequestClose={onDismiss ?? (() => undefined)}
       visible={visible}
     >

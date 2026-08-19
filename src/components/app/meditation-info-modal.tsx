@@ -1,11 +1,10 @@
-import { Image, Platform, ScrollView, View } from "react-native";
+import { Image, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
 const meditationPath = require("../../../assets/images/onboarding/mind_illuminated_ten_stage_path.png");
 const meditationCircles = require("../../../assets/images/onboarding/mind_illuminated_breath_focus.png");
@@ -18,21 +17,9 @@ interface MeditationInfoProps {
 
 export function MeditationInfo({ visible, onComplete, onDismiss }: MeditationInfoProps) {
   const { t } = useTranslation("meditation");
-  const reduceMotionEnabled = useReduceMotionEnabled();
-
-  // ⚠️ WEB: a closed modal unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
-  // this.
-  if (!visible && Platform.OS === "web") return null;
 
   return (
-    <PressShieldModal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={onDismiss ?? (() => undefined)}
-      visible={visible}
-    >
+    <PressShieldModal onRequestClose={onDismiss ?? (() => undefined)} visible={visible}>
       <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
           <View className="items-center gap-3">

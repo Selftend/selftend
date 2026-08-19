@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Platform, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -11,7 +11,7 @@ import { mergeUserPreferences, type UserPreferences } from "@/src/features/modul
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
-import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 
 interface SoundsSheetProps {
@@ -22,7 +22,6 @@ interface SoundsSheetProps {
 // Sound *selection* only - volume is handled by the always-visible sliders on the session screen.
 export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
   const { t } = useTranslation("cbt");
-  const reduceMotionEnabled = useReduceMotionEnabled();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: prefs } = useUserPreferences(userId);
@@ -43,20 +42,8 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
   const ambientSound =
     AMBIENT_SOUNDS.find((s) => s.id === effective.ambientSoundId) ?? AMBIENT_SOUNDS[0];
 
-  // ⚠️ WEB: a closed sheet unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
-  // this.
-  if (!visible && Platform.OS === "web") return null;
-
   return (
-    <PressShieldModal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      visible={visible}
-      onRequestClose={onDismiss}
-      transparent
-    >
+    <PressShieldModal visible={visible} onRequestClose={onDismiss} transparent>
       <View className="flex-1 justify-end bg-black/40">
         <SafeAreaView edges={["bottom"]} className="rounded-t-2xl bg-background">
           <ScrollView contentContainerClassName="gap-6 p-6">
