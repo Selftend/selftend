@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.14.1](https://github.com/Selftend/selftend/compare/v0.14.0...v0.14.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* **a11y:** stop a lone row offering two rotor moves that refuse ([#1049](https://github.com/Selftend/selftend/issues/1049)) ([#1050](https://github.com/Selftend/selftend/issues/1050)) ([2b67a93](https://github.com/Selftend/selftend/commit/2b67a931ec870e695a3f6381a21110033924154b))
+* **auth:** stop the header menu swallowing a failed sign-out ([#1053](https://github.com/Selftend/selftend/issues/1053)) ([#1057](https://github.com/Selftend/selftend/issues/1057)) ([7a4c078](https://github.com/Selftend/selftend/commit/7a4c078194e73a2a1d5b2306171f02f530446cf1))
+* **cbt:** a field that needs fixing no longer reads as data loss ([#1045](https://github.com/Selftend/selftend/issues/1045)) ([9406d2d](https://github.com/Selftend/selftend/commit/9406d2d50fefb58b144fd4b542e0f04b13fdce02))
+* **home:** heal duplicate widget positions instead of leaving them permanent ([#986](https://github.com/Selftend/selftend/issues/986)) ([#1043](https://github.com/Selftend/selftend/issues/1043)) ([ab5acae](https://github.com/Selftend/selftend/commit/ab5acae5caeeefa3d0f6aa8d2b2c7429d0fc7024))
+* **home:** tell the arrange handle's hint reader something it can act on ([#1047](https://github.com/Selftend/selftend/issues/1047)) ([#1048](https://github.com/Selftend/selftend/issues/1048)) ([7f8a5ff](https://github.com/Selftend/selftend/commit/7f8a5fff83acea520a91781bd8a7f90f1dea0fba))
+* **i18n:** say what actually failed when sign-out fails ([#1055](https://github.com/Selftend/selftend/issues/1055)) ([#1058](https://github.com/Selftend/selftend/issues/1058)) ([c280e00](https://github.com/Selftend/selftend/commit/c280e008c7743bf19531752f74d98a7967a7740a))
+* **mood:** give the emotion list a reorder path that is not a drag ([#965](https://github.com/Selftend/selftend/issues/965)) ([#1046](https://github.com/Selftend/selftend/issues/1046)) ([dc01fe3](https://github.com/Selftend/selftend/commit/dc01fe366bd2bb14cb4078a969e0f79086f80dfb))
+* unmount dismissed dialogs on web, and scope sign-out to this device ([#1034](https://github.com/Selftend/selftend/issues/1034), [#968](https://github.com/Selftend/selftend/issues/968)) ([#1052](https://github.com/Selftend/selftend/issues/1052)) ([a5a698d](https://github.com/Selftend/selftend/commit/a5a698d20d6213254cfdbb12c1db62cd8a7d23f5))
+
 ## [0.14.0](https://github.com/Selftend/selftend/compare/v0.13.0...v0.14.0) (2026-08-14)
 
 
