@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 
 import { signInWithApple } from "@/src/features/auth/api";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 
 interface RunAppleSignInArgs {
   setSubmitError: (message: string) => void;
@@ -32,7 +33,13 @@ export async function runAppleSignIn({
     }
   } catch (error) {
     recordFailure(error);
-    setSubmitError(error instanceof Error ? error.message : errorFallback);
+    // Same shape as runGoogleSignIn: translated copy only (#1060), with the capture
+    // standing in for the message the screen no longer shows. A dismissed sheet never
+    // lands here - `signInWithApple` swallows the cancellation and returns false.
+    if (isReportableError(error)) {
+      captureError(error);
+    }
+    setSubmitError(errorFallback);
   } finally {
     setIsAppleSubmitting(false);
   }

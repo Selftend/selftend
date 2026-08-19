@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 
 import { signInWithGoogle } from "@/src/features/auth/api";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 
 interface RunGoogleSignInArgs {
   setSubmitError: (message: string) => void;
@@ -27,7 +28,15 @@ export async function runGoogleSignIn({
     }
   } catch (error) {
     recordFailure(error);
-    setSubmitError(error instanceof Error ? error.message : errorFallback);
+    // The thrown message no longer reaches the screen: OAuth/Supabase strings are
+    // English for every user and name no step the user can take (#1060). Capture
+    // keeps them diagnosable - `signInWithGoogle` is not a TanStack mutation, so
+    // no global reporter sees it - while `isReportableError` drops the expected
+    // offline and <500 auth cases.
+    if (isReportableError(error)) {
+      captureError(error);
+    }
+    setSubmitError(errorFallback);
   } finally {
     setIsGoogleSubmitting(false);
   }

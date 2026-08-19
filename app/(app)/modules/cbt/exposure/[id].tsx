@@ -1,5 +1,12 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, KeyboardAvoidingView, Modal, ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -95,6 +102,13 @@ function SessionSheet({
       showToast({ title: t("common:feedback.problem"), tone: "error" });
     }
   });
+
+  // ⚠️ WEB: a closed session sheet unmounts outright instead of lingering for
+  // its 250ms fade-out, during which react-native-web's Modal is a non-inert
+  // focus trap (#1034; swept in #1054 — the full story lives on
+  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
+  // this.
+  if (!visible && Platform.OS === "web") return null;
 
   return (
     <Modal

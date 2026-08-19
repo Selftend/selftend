@@ -75,8 +75,12 @@ export function RoutineDetailScreen({ routineId }: RoutineDetailScreenProps) {
       await deleteMutation.mutateAsync(routineId);
       setDeleteOpen(false);
       router.replace("/routines" as Parameters<typeof router.replace>[0]);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : t("form.saveError"));
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      // Not `form.saveError`: a failed DELETE claiming a failed save is the #1060 bug.
+      setActionError(t("form.deleteError"));
     }
   }
 

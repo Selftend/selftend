@@ -95,9 +95,15 @@ export function NotificationTargetRow({
   const time = draftTime ?? storedTime;
   const disabled = !masterEnabled || locked || requestPending || !userId;
 
-  function reportFailure(message: string) {
-    setErrorMessage(message);
-    showToast({ title: t("common:feedback.wentWrong"), description: message, tone: "error" });
+  /**
+   * `message` is only for callers with something specific to say (the channel-reason
+   * mapping). Without one the toast is title-only: repeating the title as its own
+   * description made a screen reader hear the same sentence three times over the
+   * toast label and the row's inline alert (#1064).
+   */
+  function reportFailure(title: string, message?: string) {
+    setErrorMessage(message ?? title);
+    showToast({ title, description: message, tone: "error" });
   }
 
   async function writePatch(patch: Partial<UserPreferences>) {
@@ -106,7 +112,8 @@ export function NotificationTargetRow({
       await updatePreferences.mutateAsync(patch);
     } catch {
       // The thrown message is a backend/internal string - translated copy only (i18n rule).
-      reportFailure(t("common:feedback.wentWrong"));
+      // A failed toggle IS a failed save, so the save sentence, not `wentWrong` (#1055).
+      reportFailure(t("common:feedback.problem"));
     }
   }
 
@@ -130,11 +137,12 @@ export function NotificationTargetRow({
       const result = await channel.ensure();
       if (!result.enabled) {
         // Nothing is written: the switch was never on, so there is no state to undo.
-        reportFailure(t(reminderChannelErrorKey(result.reason)));
+        reportFailure(t("common:feedback.wentWrong"), t(reminderChannelErrorKey(result.reason)));
         return;
       }
       await writePatch(enableTargetPatch(preferences, target));
     } catch {
+      // The channel threw before anything was written, so nothing failed to SAVE.
       reportFailure(t("common:feedback.wentWrong"));
     } finally {
       setRequestPending(false);

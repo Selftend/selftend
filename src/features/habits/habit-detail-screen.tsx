@@ -167,8 +167,12 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
         await archive.mutateAsync(habitId);
       }
       setArchiveOpen(false);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : t("errors.delete"));
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      // Not `errors.delete`: this catch covers archive and restore, neither deletes.
+      setActionError(t("errors.update"));
     }
   }
 
@@ -178,8 +182,11 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
       await deleteMutation.mutateAsync(habitId);
       setDeleteOpen(false);
       router.replace("/tools/habits" as Parameters<typeof router.replace>[0]);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : t("errors.delete"));
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      setActionError(t("errors.delete"));
     }
   }
 

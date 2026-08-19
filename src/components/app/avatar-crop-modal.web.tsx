@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Modal, View, StyleSheet } from "react-native";
+import { Modal, Platform, View, StyleSheet } from "react-native";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { useTranslation } from "react-i18next";
@@ -31,6 +31,13 @@ export function AvatarCropModal({ imageUri, onCancel, onCrop, visible }: AvatarC
       onCrop(croppedAreaPixels);
     }
   };
+
+  // ⚠️ WEB: a closed modal unmounts outright instead of lingering for its
+  // 250ms fade-out, during which react-native-web's Modal is a non-inert
+  // focus trap (#1034; swept in #1054 — the full story lives on
+  // ConfirmDialog's gate). The Platform check is tautological in a .web file
+  // but keeps the gate in the same grep-able shape as the rest of the sweep.
+  if (!visible && Platform.OS === "web") return null;
 
   return (
     <Modal

@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { TimeField } from "@/src/components/app/time-field";
@@ -74,6 +74,15 @@ export function ContinueRoutineSheet({
       firstOpenRoutineView(views)?.routine.id ?? initialRoutineId ?? views[0]?.routine.id ?? null,
     );
   }
+
+  // ⚠️ WEB: a closed sheet unmounts outright instead of lingering for its
+  // 250ms fade-out, during which react-native-web's Modal is a non-inert
+  // focus trap that would steal focus from the FAB re-rendering behind it
+  // (#1034; swept in #1054 — the full story lives on ConfirmDialog's gate).
+  // Native keeps its exit animation: it has none of this. The reset block
+  // above still runs on BOTH platforms — this return only drops the rendered
+  // tree, never the component's state.
+  if (!visible && Platform.OS === "web") return null;
 
   // Pre-pin fallback goes through the SAME selector the FAB counts with
   // (#121): a naive first-scheduled-open pick could disagree for the first

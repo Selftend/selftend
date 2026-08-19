@@ -1,4 +1,4 @@
-import { ActivityIndicator, KeyboardAvoidingView, Modal, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, View } from "react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -46,6 +46,14 @@ export function DeleteAccountModal({
   }
 
   const canSubmit = confirmInput === DELETE_CONFIRMATION && !isPending;
+
+  // ⚠️ WEB: a closed modal unmounts outright instead of lingering for its
+  // 250ms fade-out, during which react-native-web's Modal is a non-inert
+  // focus trap (#1034; swept across every raw Modal in #1054 — the full story
+  // lives on ConfirmDialog's gate). Native keeps its exit animation: it has
+  // none of this. The reset block above still runs on BOTH platforms — this
+  // return only drops the rendered tree, never the component's state.
+  if (!visible && Platform.OS === "web") return null;
 
   return (
     <Modal

@@ -5,6 +5,7 @@ import bgAuth from "@/src/i18n/locales/bg/auth.json";
 import i18n from "@/src/i18n";
 import { SignInForm } from "./sign-in-form";
 import { signInWithPassword } from "@/src/features/auth/api";
+import { captureError } from "@/src/lib/sentry";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -13,6 +14,13 @@ jest.mock("expo-router", () => ({
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ hasSupabaseConfig: true }),
+}));
+
+jest.mock("@/src/lib/sentry", () => ({
+  captureError: jest.fn(),
+  // The real predicate, so "offline is not reported" is tested against the rule
+  // the rest of the app reports by rather than against a stub of it.
+  isReportableError: jest.requireActual("@/src/lib/sentry").isReportableError,
 }));
 
 jest.mock("@/src/features/auth/api", () => ({
@@ -70,16 +78,37 @@ describe("SignInForm", () => {
     expect(screen.queryByText("Resend verification email")).toBeNull();
   });
 
-  it("shows the raw error and no resend link for other sign-in failures", async () => {
+  // This asserted the raw thrown message reaching the user until #1060 - English
+  // whatever their language, naming no step they can take. That contract is
+  // deliberately gone, not weakened: unmapped failures show the translated sentence,
+  // and the raw error goes to Sentry instead (below).
+  it("translates other sign-in failures instead of showing the raw message", async () => {
+    mockSignIn.mockRejectedValue(new Error("Some GoTrue internals exploded"));
+    renderWithProviders(<SignInForm />);
+
+    fillCredentials();
+    fireEvent.press(screen.getByText("Continue"));
+
+    expect(await screen.findByText("Unable to sign in.")).toBeTruthy();
+    expect(screen.queryByText("Some GoTrue internals exploded")).toBeNull();
+    expect(screen.queryByText(NOT_CONFIRMED_MESSAGE)).toBeNull();
+    expect(screen.queryByText("Resend verification email")).toBeNull();
+    // The message the screen no longer shows stays diagnosable: `signInWithPassword`
+    // is not a TanStack mutation, so no global reporter sees it.
+    expect(captureError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Some GoTrue internals exploded" }),
+    );
+  });
+
+  it("does not report the expected offline failure to Sentry, but still tells the user", async () => {
     mockSignIn.mockRejectedValue(new Error("Network request failed"));
     renderWithProviders(<SignInForm />);
 
     fillCredentials();
     fireEvent.press(screen.getByText("Continue"));
 
-    expect(await screen.findByText("Network request failed")).toBeTruthy();
-    expect(screen.queryByText(NOT_CONFIRMED_MESSAGE)).toBeNull();
-    expect(screen.queryByText("Resend verification email")).toBeNull();
+    expect(await screen.findByText("Unable to sign in.")).toBeTruthy();
+    expect(captureError).not.toHaveBeenCalled();
   });
 
   it("gives the email and password inputs accessible names", () => {

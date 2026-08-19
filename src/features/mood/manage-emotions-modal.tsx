@@ -461,6 +461,16 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   // gesture: the editor peels first, the surface itself only closes from the list (#743).
   const handleRequestClose = editorState ? closeEditor : onClose;
 
+  // ⚠️ WEB: a closed surface unmounts outright instead of lingering for its
+  // 250ms fade-out, during which react-native-web's Modal is a non-inert
+  // focus trap (#1034; swept in #1054 — the full story lives on
+  // ConfirmDialog's gate). This surface is the most focus-sensitive of the
+  // sweep: its rows carry a keyboard reorder path (#965/#1046). Native keeps
+  // its exit animation: it has none of this. This return only drops the
+  // rendered tree — `editorState` and the rest of the component's state
+  // survive a close on both platforms, exactly as before.
+  if (!visible && Platform.OS === "web") return null;
+
   return (
     <Modal
       animationType={reduceMotionEnabled ? "none" : isDesktopWeb ? "fade" : "slide"}

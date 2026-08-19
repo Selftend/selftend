@@ -1,26 +1,8 @@
 import { fireEvent, screen, within } from "@testing-library/react-native";
+import { router } from "expo-router";
 
 import { ModuleHomeHeader } from "./module-home-header";
 import { renderWithProviders } from "@/test/render-with-providers";
-
-jest.mock("react-native", () => {
-  const React = require("react") as typeof import("react");
-  const actual = jest.requireActual("react-native");
-  function MockModal({ children, visible }: { children?: React.ReactNode; visible?: boolean }) {
-    return visible === false ? null : React.createElement(actual.View, null, children);
-  }
-  MockModal.displayName = "MockModal";
-
-  return new Proxy(actual, {
-    get(target, prop, receiver) {
-      if (prop === "Modal") {
-        return MockModal;
-      }
-
-      return Reflect.get(target, prop, receiver);
-    },
-  });
-});
 
 jest.mock("expo-router", () => {
   const React = require("react") as typeof import("react");
@@ -38,10 +20,6 @@ jest.mock("expo-router", () => {
     },
   };
 });
-
-jest.mock("@/src/components/app/notification-settings-modal", () => ({
-  NotificationSettingsModal: () => null,
-}));
 
 function renderHeader({ includeProgram = false }: { includeProgram?: boolean } = {}) {
   const onPressTune = jest.fn();
@@ -76,6 +54,19 @@ describe("ModuleHomeHeader action buttons", () => {
     expect(screen.getByLabelText("Reminders")).toBeTruthy();
     expect(screen.getByLabelText("CBT program")).toBeTruthy();
     expect(screen.getByLabelText("About this module")).toBeTruthy();
+  });
+
+  it("navigates the bell to the Reminders screen with this module's target (#1071)", () => {
+    // The bell is a door, not a surface of its own (#967): no modal mounts here any
+    // more, the press hands the module's key to the central Reminders screen.
+    renderHeader();
+
+    fireEvent.press(screen.getByLabelText("Reminders"));
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/notifications",
+      params: { target: "cbt" },
+    });
   });
 
   it("fires onPress for a plain action button (tune)", () => {

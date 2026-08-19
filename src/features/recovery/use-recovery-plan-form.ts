@@ -83,9 +83,15 @@ export function useRecoveryPlanForm({
     try {
       await upsertRecoveryMutation.mutateAsync(sanitizeRecoveryValues(values));
       showToast({ title: t("common:feedback.saved"), tone: "success" });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("recovery.saveError");
-      showToast({ title: t("common:feedback.problem"), description: message, tone: "error" });
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      showToast({
+        title: t("common:feedback.problem"),
+        description: t("recovery.saveError"),
+        tone: "error",
+      });
     }
   });
 

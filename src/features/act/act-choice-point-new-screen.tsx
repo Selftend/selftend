@@ -131,9 +131,12 @@ export default function ActChoicePointNewScreen() {
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("act:choicePoint.save");
-      setSubmitError(message);
+    } catch {
+      // The thrown message is a backend/internal string, English for every user -
+      // translated copy only (i18n rule, #1060). The mutation cache's global onError
+      // already reports the failure to Sentry.
+      // The old fallback was `choicePoint.save` - the Save BUTTON label, not a sentence.
+      setSubmitError(t("act:choicePoint.saveProblem"));
     }
   });
 

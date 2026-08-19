@@ -200,7 +200,8 @@
     }
   },
   "errors": {
-    "delete": "Couldn't delete the habit. Try again."
+    "delete": "Couldn't delete the habit. Try again.",
+    "update": "Couldn't update the habit. Try again."
   },
   "insights": {
     "rhythmTitle": "Weekly rhythm",
