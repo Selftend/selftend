@@ -58,4 +58,4 @@ body:
     id: context
     attributes:
       label: Context and review notes
-      description: Mention tone, mental-health terminology, crisis-resource risk, RTL needs, or whether all seven namespaces are affected.
+      description: Mention tone, mental-health terminology, crisis-resource risk, RTL needs, or whether multiple namespaces are affected.
