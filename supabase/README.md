@@ -182,7 +182,7 @@ Coverage lives in `test/integration/*.integration.test.ts`. Highlights:
 
 - one `*-repository.integration.test.ts` per module (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, goals, beliefs, exposure, worry, anger, procrastination, self-care, mindfulness, plan, values, home widgets, activities, profile, settings) - CRUD, ordering, and constraint behavior against the real schema
 - `rls.integration.test.ts` - cross-user isolation across all owner-scoped tables and the storage bucket
-- `db-functions.integration.test.ts` - `export_user_data()` and `delete_user_account()` coverage plus access control on the `send-web-reminders` cron RPCs
+- `db-functions.integration.test.ts` - `export_user_data()` and `delete_user_account()` coverage, access control on the `send-web-reminders` cron RPCs, and the CBT/ACT delete-cascade guard (every foreign key among those tables must cascade, because `scripts/seed-demo-data.mjs` wipes parents only and lets the cascades reclaim the children)
 - `auth.integration.test.ts` - sign-in success/failure, sign-up, password-reset email landing in Mailpit (`http://localhost:54324`)
 - `edge-web-reminders.integration.test.ts` - the `send-web-reminders` edge function against the local stack
 
