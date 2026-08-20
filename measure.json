@@ -1,0 +1,5749 @@
+{
+ "errors": [],
+ "results": [
+  {
+   "viewport": {
+    "w": 320,
+    "h": 568
+   },
+   "docScrollWidth": 320,
+   "horizontalPageOverflow": false,
+   "cards": {
+    "A-shipped": {
+     "card": {
+      "w": 272,
+      "h": 421
+     },
+     "contentWidth": 248,
+     "maxWidthReached": false,
+     "availableModalHeight": 520,
+     "fitsVertically": true,
+     "verticalSlackPx": 99,
+     "picker": {
+      "w": 248,
+      "h": 349,
+      "left": 36,
+      "right": 284,
+      "top": 124,
+      "bottom": 473
+     },
+     "grid": {
+      "daysBox": {
+       "w": 248,
+       "h": 300,
+       "left": 36,
+       "right": 284,
+       "top": 198,
+       "bottom": 498
+      },
+      "weekdaysBox": {
+       "w": 248,
+       "h": 25,
+       "left": 36,
+       "right": 284,
+       "top": 173,
+       "bottom": 198
+      },
+      "wrapperCount": 32,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       4
+      ],
+      "wrapper": {
+       "w": 35.4,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 32.4,
+       "h": 42.8,
+       "maxW": 32.4
+      },
+      "weekdayCellW": 35.4,
+      "weekdayLabels": [
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       },
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 92,
+       "right": 171.3,
+       "top": 135.5,
+       "bottom": 156.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 176.3,
+       "right": 211.9,
+       "top": 135.5,
+       "bottom": 156.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 132,
+       "bottom": 160
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 248,
+       "right": 279,
+       "top": 132,
+       "bottom": 160
+      }
+     },
+     "footer": null,
+     "footerClear": null,
+     "footerDone": null,
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-en": {
+     "card": {
+      "w": 272,
+      "h": 473
+     },
+     "contentWidth": 248,
+     "maxWidthReached": false,
+     "availableModalHeight": 520,
+     "fitsVertically": true,
+     "verticalSlackPx": 47,
+     "picker": {
+      "w": 248,
+      "h": 349,
+      "left": 36,
+      "right": 284,
+      "top": 2589,
+      "bottom": 2938
+     },
+     "grid": {
+      "daysBox": {
+       "w": 248,
+       "h": 300,
+       "left": 36,
+       "right": 284,
+       "top": 2663,
+       "bottom": 2963
+      },
+      "weekdaysBox": {
+       "w": 248,
+       "h": 25,
+       "left": 36,
+       "right": 284,
+       "top": 2638,
+       "bottom": 2663
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 35.4,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 32.4,
+       "h": 42.8,
+       "maxW": 32.4
+      },
+      "weekdayCellW": 35.4,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 100.1,
+       "right": 179.3,
+       "top": 2600.5,
+       "bottom": 2621.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 184.3,
+       "right": 219.9,
+       "top": 2600.5,
+       "bottom": 2621.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 2597,
+       "bottom": 2625
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 248,
+       "right": 279,
+       "top": 2597,
+       "bottom": 2625
+      }
+     },
+     "footer": {
+      "w": 248,
+      "h": 36,
+      "left": 36,
+      "right": 284,
+      "top": 3002,
+      "bottom": 3038
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 3002,
+      "bottom": 3038
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 188,
+      "right": 284,
+      "top": 3002,
+      "bottom": 3038
+     },
+     "timeControl": {
+      "w": 248,
+      "h": 48,
+      "left": 36,
+      "right": 284,
+      "top": 2946,
+      "bottom": 2994
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 127.3,
+      "right": 217,
+      "top": 2956,
+      "bottom": 2984
+     },
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-bg": {
+     "card": {
+      "w": 272,
+      "h": 473
+     },
+     "contentWidth": 248,
+     "maxWidthReached": false,
+     "availableModalHeight": 520,
+     "fitsVertically": true,
+     "verticalSlackPx": 47,
+     "picker": {
+      "w": 248,
+      "h": 349,
+      "left": 36,
+      "right": 284,
+      "top": 5314,
+      "bottom": 5663
+     },
+     "grid": {
+      "daysBox": {
+       "w": 248,
+       "h": 300,
+       "left": 36,
+       "right": 284,
+       "top": 5388,
+       "bottom": 5688
+      },
+      "weekdaysBox": {
+       "w": 248,
+       "h": 25,
+       "left": 36,
+       "right": 284,
+       "top": 5363,
+       "bottom": 5388
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 35.4,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 32.4,
+       "h": 42.8,
+       "maxW": 32.4
+      },
+      "weekdayCellW": 35.4,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 99.5,
+       "right": 180,
+       "top": 5325.5,
+       "bottom": 5346.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 185,
+       "right": 220.5,
+       "top": 5325.5,
+       "bottom": 5346.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 5322,
+       "bottom": 5350
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 248,
+       "right": 279,
+       "top": 5322,
+       "bottom": 5350
+      }
+     },
+     "footer": {
+      "w": 248,
+      "h": 36,
+      "left": 36,
+      "right": 284,
+      "top": 5727,
+      "bottom": 5763
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 5727,
+      "bottom": 5763
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 188,
+      "right": 284,
+      "top": 5727,
+      "bottom": 5763
+     },
+     "timeControl": {
+      "w": 248,
+      "h": 48,
+      "left": 36,
+      "right": 284,
+      "top": 5671,
+      "bottom": 5719
+     },
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-en": {
+     "card": {
+      "w": 272,
+      "h": 417
+     },
+     "contentWidth": 248,
+     "maxWidthReached": false,
+     "availableModalHeight": 520,
+     "fitsVertically": true,
+     "verticalSlackPx": 103,
+     "picker": {
+      "w": 248,
+      "h": 349,
+      "left": 36,
+      "right": 284,
+      "top": 8039,
+      "bottom": 8388
+     },
+     "grid": {
+      "daysBox": {
+       "w": 248,
+       "h": 300,
+       "left": 36,
+       "right": 284,
+       "top": 8113,
+       "bottom": 8413
+      },
+      "weekdaysBox": {
+       "w": 248,
+       "h": 25,
+       "left": 36,
+       "right": 284,
+       "top": 8088,
+       "bottom": 8113
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 35.4,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 32.4,
+       "h": 42.8,
+       "maxW": 32.4
+      },
+      "weekdayCellW": 35.4,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 100.1,
+       "right": 179.3,
+       "top": 8050.5,
+       "bottom": 8071.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 184.3,
+       "right": 219.9,
+       "top": 8050.5,
+       "bottom": 8071.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 8047,
+       "bottom": 8075
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 248,
+       "right": 279,
+       "top": 8047,
+       "bottom": 8075
+      }
+     },
+     "footer": {
+      "w": 248,
+      "h": 36,
+      "left": 36,
+      "right": 284,
+      "top": 8396,
+      "bottom": 8432
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 8396,
+      "bottom": 8432
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 188,
+      "right": 284,
+      "top": 8396,
+      "bottom": 8432
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-bg": {
+     "card": {
+      "w": 272,
+      "h": 417
+     },
+     "contentWidth": 248,
+     "maxWidthReached": false,
+     "availableModalHeight": 520,
+     "fitsVertically": true,
+     "verticalSlackPx": 103,
+     "picker": {
+      "w": 248,
+      "h": 349,
+      "left": 36,
+      "right": 284,
+      "top": 10484,
+      "bottom": 10833
+     },
+     "grid": {
+      "daysBox": {
+       "w": 248,
+       "h": 300,
+       "left": 36,
+       "right": 284,
+       "top": 10558,
+       "bottom": 10858
+      },
+      "weekdaysBox": {
+       "w": 248,
+       "h": 25,
+       "left": 36,
+       "right": 284,
+       "top": 10533,
+       "bottom": 10558
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 35.4,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 32.4,
+       "h": 42.8,
+       "maxW": 32.4
+      },
+      "weekdayCellW": 35.4,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 99.5,
+       "right": 180,
+       "top": 10495.5,
+       "bottom": 10516.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 185,
+       "right": 220.5,
+       "top": 10495.5,
+       "bottom": 10516.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 10492,
+       "bottom": 10520
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 248,
+       "right": 279,
+       "top": 10492,
+       "bottom": 10520
+      }
+     },
+     "footer": {
+      "w": 248,
+      "h": 36,
+      "left": 36,
+      "right": 284,
+      "top": 10841,
+      "bottom": 10877
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 10841,
+      "bottom": 10877
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 188,
+      "right": 284,
+      "top": 10841,
+      "bottom": 10877
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    }
+   },
+   "rows": {
+    "d-bg-12": {
+     "row": {
+      "w": 238,
+      "h": 88,
+      "left": 41,
+      "right": 279,
+      "top": 12918,
+      "bottom": 13006
+     },
+     "body": {
+      "w": 158,
+      "h": 60,
+      "left": 75,
+      "right": 233,
+      "top": 12932,
+      "bottom": 12992
+     },
+     "label": {
+      "w": 158,
+      "h": 20,
+      "left": 75,
+      "right": 233,
+      "top": 12932,
+      "bottom": 12952
+     },
+     "labelClipped": true,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 12956,
+      "bottom": 12992
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 12964.5,
+      "bottom": 12983.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 12960,
+      "bottom": 12988
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 247,
+      "right": 279,
+      "top": 12952.8,
+      "bottom": 12971.2
+     },
+     "stacked": true,
+     "bodySlackPx": -17.5,
+     "cardInnerRight": 280,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-bg-24": {
+     "row": {
+      "w": 238,
+      "h": 88,
+      "left": 41,
+      "right": 279,
+      "top": 13006,
+      "bottom": 13094
+     },
+     "body": {
+      "w": 158,
+      "h": 60,
+      "left": 75,
+      "right": 233,
+      "top": 13020,
+      "bottom": 13080
+     },
+     "label": {
+      "w": 158,
+      "h": 20,
+      "left": 75,
+      "right": 233,
+      "top": 13020,
+      "bottom": 13040
+     },
+     "labelClipped": true,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 77.8,
+      "h": 36,
+      "left": 75,
+      "right": 152.8,
+      "top": 13044,
+      "bottom": 13080
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13052.5,
+      "bottom": 13071.5
+     },
+     "meridiem": null,
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 247,
+      "right": 279,
+      "top": 13040.8,
+      "bottom": 13059.2
+     },
+     "stacked": true,
+     "bodySlackPx": 80.2,
+     "cardInnerRight": 280,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-en-12": {
+     "row": {
+      "w": 238,
+      "h": 88,
+      "left": 41,
+      "right": 279,
+      "top": 13094,
+      "bottom": 13182
+     },
+     "body": {
+      "w": 158,
+      "h": 60,
+      "left": 75,
+      "right": 233,
+      "top": 13108,
+      "bottom": 13168
+     },
+     "label": {
+      "w": 126.1,
+      "h": 20,
+      "left": 75,
+      "right": 201.1,
+      "top": 13108,
+      "bottom": 13128
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 126,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 13132,
+      "bottom": 13168
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13140.5,
+      "bottom": 13159.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 13136,
+      "bottom": 13164
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 247,
+      "right": 279,
+      "top": 13128.8,
+      "bottom": 13147.2
+     },
+     "stacked": true,
+     "bodySlackPx": -17.5,
+     "cardInnerRight": 280,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    }
+   }
+  },
+  {
+   "viewport": {
+    "w": 360,
+    "h": 640
+   },
+   "docScrollWidth": 360,
+   "horizontalPageOverflow": false,
+   "cards": {
+    "A-shipped": {
+     "card": {
+      "w": 312,
+      "h": 421
+     },
+     "contentWidth": 288,
+     "maxWidthReached": false,
+     "availableModalHeight": 592,
+     "fitsVertically": true,
+     "verticalSlackPx": 171,
+     "picker": {
+      "w": 288,
+      "h": 349,
+      "left": 36,
+      "right": 324,
+      "top": 617,
+      "bottom": 966
+     },
+     "grid": {
+      "daysBox": {
+       "w": 288,
+       "h": 300,
+       "left": 36,
+       "right": 324,
+       "top": 691,
+       "bottom": 991
+      },
+      "weekdaysBox": {
+       "w": 288,
+       "h": 25,
+       "left": 36,
+       "right": 324,
+       "top": 666,
+       "bottom": 691
+      },
+      "wrapperCount": 32,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       4
+      ],
+      "wrapper": {
+       "w": 41.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 38.1,
+       "h": 42.8,
+       "maxW": 38.1
+      },
+      "weekdayCellW": 41.1,
+      "weekdayLabels": [
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       },
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 98.4,
+       "right": 177.7,
+       "top": 628.5,
+       "bottom": 649.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 182.7,
+       "right": 218.2,
+       "top": 628.5,
+       "bottom": 649.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 625,
+       "bottom": 653
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 288,
+       "right": 319,
+       "top": 625,
+       "bottom": 653
+      }
+     },
+     "footer": null,
+     "footerClear": null,
+     "footerDone": null,
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-en": {
+     "card": {
+      "w": 312,
+      "h": 473
+     },
+     "contentWidth": 288,
+     "maxWidthReached": false,
+     "availableModalHeight": 592,
+     "fitsVertically": true,
+     "verticalSlackPx": 119,
+     "picker": {
+      "w": 288,
+      "h": 349,
+      "left": 36,
+      "right": 324,
+      "top": 3134,
+      "bottom": 3483
+     },
+     "grid": {
+      "daysBox": {
+       "w": 288,
+       "h": 300,
+       "left": 36,
+       "right": 324,
+       "top": 3208,
+       "bottom": 3508
+      },
+      "weekdaysBox": {
+       "w": 288,
+       "h": 25,
+       "left": 36,
+       "right": 324,
+       "top": 3183,
+       "bottom": 3208
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 41.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 38.1,
+       "h": 42.8,
+       "maxW": 38.1
+      },
+      "weekdayCellW": 41.1,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 120.1,
+       "right": 199.3,
+       "top": 3145.5,
+       "bottom": 3166.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 204.3,
+       "right": 239.9,
+       "top": 3145.5,
+       "bottom": 3166.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 3142,
+       "bottom": 3170
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 288,
+       "right": 319,
+       "top": 3142,
+       "bottom": 3170
+      }
+     },
+     "footer": {
+      "w": 288,
+      "h": 36,
+      "left": 36,
+      "right": 324,
+      "top": 3547,
+      "bottom": 3583
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 3547,
+      "bottom": 3583
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 228,
+      "right": 324,
+      "top": 3547,
+      "bottom": 3583
+     },
+     "timeControl": {
+      "w": 288,
+      "h": 48,
+      "left": 36,
+      "right": 324,
+      "top": 3491,
+      "bottom": 3539
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 127.3,
+      "right": 217,
+      "top": 3501,
+      "bottom": 3529
+     },
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-bg": {
+     "card": {
+      "w": 312,
+      "h": 473
+     },
+     "contentWidth": 288,
+     "maxWidthReached": false,
+     "availableModalHeight": 592,
+     "fitsVertically": true,
+     "verticalSlackPx": 119,
+     "picker": {
+      "w": 288,
+      "h": 349,
+      "left": 36,
+      "right": 324,
+      "top": 5859,
+      "bottom": 6208
+     },
+     "grid": {
+      "daysBox": {
+       "w": 288,
+       "h": 300,
+       "left": 36,
+       "right": 324,
+       "top": 5933,
+       "bottom": 6233
+      },
+      "weekdaysBox": {
+       "w": 288,
+       "h": 25,
+       "left": 36,
+       "right": 324,
+       "top": 5908,
+       "bottom": 5933
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 41.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 38.1,
+       "h": 42.8,
+       "maxW": 38.1
+      },
+      "weekdayCellW": 41.1,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 119.5,
+       "right": 200,
+       "top": 5870.5,
+       "bottom": 5891.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 205,
+       "right": 240.5,
+       "top": 5870.5,
+       "bottom": 5891.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 5867,
+       "bottom": 5895
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 288,
+       "right": 319,
+       "top": 5867,
+       "bottom": 5895
+      }
+     },
+     "footer": {
+      "w": 288,
+      "h": 36,
+      "left": 36,
+      "right": 324,
+      "top": 6272,
+      "bottom": 6308
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 6272,
+      "bottom": 6308
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 228,
+      "right": 324,
+      "top": 6272,
+      "bottom": 6308
+     },
+     "timeControl": {
+      "w": 288,
+      "h": 48,
+      "left": 36,
+      "right": 324,
+      "top": 6216,
+      "bottom": 6264
+     },
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-en": {
+     "card": {
+      "w": 312,
+      "h": 417
+     },
+     "contentWidth": 288,
+     "maxWidthReached": false,
+     "availableModalHeight": 592,
+     "fitsVertically": true,
+     "verticalSlackPx": 175,
+     "picker": {
+      "w": 288,
+      "h": 349,
+      "left": 36,
+      "right": 324,
+      "top": 8528,
+      "bottom": 8877
+     },
+     "grid": {
+      "daysBox": {
+       "w": 288,
+       "h": 300,
+       "left": 36,
+       "right": 324,
+       "top": 8602,
+       "bottom": 8902
+      },
+      "weekdaysBox": {
+       "w": 288,
+       "h": 25,
+       "left": 36,
+       "right": 324,
+       "top": 8577,
+       "bottom": 8602
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 41.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 38.1,
+       "h": 42.8,
+       "maxW": 38.1
+      },
+      "weekdayCellW": 41.1,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 120.1,
+       "right": 199.3,
+       "top": 8539.5,
+       "bottom": 8560.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 204.3,
+       "right": 239.9,
+       "top": 8539.5,
+       "bottom": 8560.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 8536,
+       "bottom": 8564
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 288,
+       "right": 319,
+       "top": 8536,
+       "bottom": 8564
+      }
+     },
+     "footer": {
+      "w": 288,
+      "h": 36,
+      "left": 36,
+      "right": 324,
+      "top": 8885,
+      "bottom": 8921
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 8885,
+      "bottom": 8921
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 228,
+      "right": 324,
+      "top": 8885,
+      "bottom": 8921
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-bg": {
+     "card": {
+      "w": 312,
+      "h": 417
+     },
+     "contentWidth": 288,
+     "maxWidthReached": false,
+     "availableModalHeight": 592,
+     "fitsVertically": true,
+     "verticalSlackPx": 175,
+     "picker": {
+      "w": 288,
+      "h": 349,
+      "left": 36,
+      "right": 324,
+      "top": 10973,
+      "bottom": 11322
+     },
+     "grid": {
+      "daysBox": {
+       "w": 288,
+       "h": 300,
+       "left": 36,
+       "right": 324,
+       "top": 11047,
+       "bottom": 11347
+      },
+      "weekdaysBox": {
+       "w": 288,
+       "h": 25,
+       "left": 36,
+       "right": 324,
+       "top": 11022,
+       "bottom": 11047
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 41.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 38.1,
+       "h": 42.8,
+       "maxW": 38.1
+      },
+      "weekdayCellW": 41.1,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 119.5,
+       "right": 200,
+       "top": 10984.5,
+       "bottom": 11005.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 205,
+       "right": 240.5,
+       "top": 10984.5,
+       "bottom": 11005.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 10981,
+       "bottom": 11009
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 288,
+       "right": 319,
+       "top": 10981,
+       "bottom": 11009
+      }
+     },
+     "footer": {
+      "w": 288,
+      "h": 36,
+      "left": 36,
+      "right": 324,
+      "top": 11330,
+      "bottom": 11366
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 11330,
+      "bottom": 11366
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 228,
+      "right": 324,
+      "top": 11330,
+      "bottom": 11366
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    }
+   },
+   "rows": {
+    "d-bg-12": {
+     "row": {
+      "w": 278,
+      "h": 88,
+      "left": 41,
+      "right": 319,
+      "top": 12918,
+      "bottom": 13006
+     },
+     "body": {
+      "w": 198,
+      "h": 60,
+      "left": 75,
+      "right": 273,
+      "top": 12932,
+      "bottom": 12992
+     },
+     "label": {
+      "w": 198,
+      "h": 20,
+      "left": 75,
+      "right": 273,
+      "top": 12932,
+      "bottom": 12952
+     },
+     "labelClipped": true,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 12956,
+      "bottom": 12992
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 12964.5,
+      "bottom": 12983.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 12960,
+      "bottom": 12988
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 287,
+      "right": 319,
+      "top": 12952.8,
+      "bottom": 12971.2
+     },
+     "stacked": true,
+     "bodySlackPx": 22.5,
+     "cardInnerRight": 320,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-bg-24": {
+     "row": {
+      "w": 278,
+      "h": 88,
+      "left": 41,
+      "right": 319,
+      "top": 13006,
+      "bottom": 13094
+     },
+     "body": {
+      "w": 198,
+      "h": 60,
+      "left": 75,
+      "right": 273,
+      "top": 13020,
+      "bottom": 13080
+     },
+     "label": {
+      "w": 198,
+      "h": 20,
+      "left": 75,
+      "right": 273,
+      "top": 13020,
+      "bottom": 13040
+     },
+     "labelClipped": true,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 77.8,
+      "h": 36,
+      "left": 75,
+      "right": 152.8,
+      "top": 13044,
+      "bottom": 13080
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13052.5,
+      "bottom": 13071.5
+     },
+     "meridiem": null,
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 287,
+      "right": 319,
+      "top": 13040.8,
+      "bottom": 13059.2
+     },
+     "stacked": true,
+     "bodySlackPx": 120.2,
+     "cardInnerRight": 320,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-en-12": {
+     "row": {
+      "w": 278,
+      "h": 88,
+      "left": 41,
+      "right": 319,
+      "top": 13094,
+      "bottom": 13182
+     },
+     "body": {
+      "w": 198,
+      "h": 60,
+      "left": 75,
+      "right": 273,
+      "top": 13108,
+      "bottom": 13168
+     },
+     "label": {
+      "w": 126.1,
+      "h": 20,
+      "left": 75,
+      "right": 201.1,
+      "top": 13108,
+      "bottom": 13128
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 126,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 13132,
+      "bottom": 13168
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13140.5,
+      "bottom": 13159.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 13136,
+      "bottom": 13164
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 287,
+      "right": 319,
+      "top": 13128.8,
+      "bottom": 13147.2
+     },
+     "stacked": true,
+     "bodySlackPx": 22.5,
+     "cardInnerRight": 320,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    }
+   }
+  },
+  {
+   "viewport": {
+    "w": 375,
+    "h": 667
+   },
+   "docScrollWidth": 375,
+   "horizontalPageOverflow": false,
+   "cards": {
+    "A-shipped": {
+     "card": {
+      "w": 327,
+      "h": 421
+     },
+     "contentWidth": 303,
+     "maxWidthReached": false,
+     "availableModalHeight": 619,
+     "fitsVertically": true,
+     "verticalSlackPx": 198,
+     "picker": {
+      "w": 303,
+      "h": 349,
+      "left": 36,
+      "right": 339,
+      "top": 1110,
+      "bottom": 1459
+     },
+     "grid": {
+      "daysBox": {
+       "w": 303,
+       "h": 300,
+       "left": 36,
+       "right": 339,
+       "top": 1184,
+       "bottom": 1484
+      },
+      "weekdaysBox": {
+       "w": 303,
+       "h": 25,
+       "left": 36,
+       "right": 339,
+       "top": 1159,
+       "bottom": 1184
+      },
+      "wrapperCount": 32,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       4
+      ],
+      "wrapper": {
+       "w": 43.2,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 40.2,
+       "h": 42.8,
+       "maxW": 40.2
+      },
+      "weekdayCellW": 43.2,
+      "weekdayLabels": [
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       },
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 103.4,
+       "right": 182.7,
+       "top": 1121.5,
+       "bottom": 1142.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 187.7,
+       "right": 223.2,
+       "top": 1121.5,
+       "bottom": 1142.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 1118,
+       "bottom": 1146
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 303,
+       "right": 334,
+       "top": 1118,
+       "bottom": 1146
+      }
+     },
+     "footer": null,
+     "footerClear": null,
+     "footerDone": null,
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-en": {
+     "card": {
+      "w": 327,
+      "h": 473
+     },
+     "contentWidth": 303,
+     "maxWidthReached": false,
+     "availableModalHeight": 619,
+     "fitsVertically": true,
+     "verticalSlackPx": 146,
+     "picker": {
+      "w": 303,
+      "h": 349,
+      "left": 36,
+      "right": 339,
+      "top": 3679,
+      "bottom": 4028
+     },
+     "grid": {
+      "daysBox": {
+       "w": 303,
+       "h": 300,
+       "left": 36,
+       "right": 339,
+       "top": 3753,
+       "bottom": 4053
+      },
+      "weekdaysBox": {
+       "w": 303,
+       "h": 25,
+       "left": 36,
+       "right": 339,
+       "top": 3728,
+       "bottom": 3753
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 43.2,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 40.2,
+       "h": 42.8,
+       "maxW": 40.2
+      },
+      "weekdayCellW": 43.2,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 127.6,
+       "right": 206.8,
+       "top": 3690.5,
+       "bottom": 3711.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 211.8,
+       "right": 247.4,
+       "top": 3690.5,
+       "bottom": 3711.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 3687,
+       "bottom": 3715
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 303,
+       "right": 334,
+       "top": 3687,
+       "bottom": 3715
+      }
+     },
+     "footer": {
+      "w": 303,
+      "h": 36,
+      "left": 36,
+      "right": 339,
+      "top": 4092,
+      "bottom": 4128
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 4092,
+      "bottom": 4128
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 243,
+      "right": 339,
+      "top": 4092,
+      "bottom": 4128
+     },
+     "timeControl": {
+      "w": 303,
+      "h": 48,
+      "left": 36,
+      "right": 339,
+      "top": 4036,
+      "bottom": 4084
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 127.3,
+      "right": 217,
+      "top": 4046,
+      "bottom": 4074
+     },
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-bg": {
+     "card": {
+      "w": 327,
+      "h": 473
+     },
+     "contentWidth": 303,
+     "maxWidthReached": false,
+     "availableModalHeight": 619,
+     "fitsVertically": true,
+     "verticalSlackPx": 146,
+     "picker": {
+      "w": 303,
+      "h": 349,
+      "left": 36,
+      "right": 339,
+      "top": 6404,
+      "bottom": 6753
+     },
+     "grid": {
+      "daysBox": {
+       "w": 303,
+       "h": 300,
+       "left": 36,
+       "right": 339,
+       "top": 6478,
+       "bottom": 6778
+      },
+      "weekdaysBox": {
+       "w": 303,
+       "h": 25,
+       "left": 36,
+       "right": 339,
+       "top": 6453,
+       "bottom": 6478
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 43.2,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 40.2,
+       "h": 42.8,
+       "maxW": 40.2
+      },
+      "weekdayCellW": 43.2,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 127,
+       "right": 207.5,
+       "top": 6415.5,
+       "bottom": 6436.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 212.5,
+       "right": 248,
+       "top": 6415.5,
+       "bottom": 6436.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 6412,
+       "bottom": 6440
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 303,
+       "right": 334,
+       "top": 6412,
+       "bottom": 6440
+      }
+     },
+     "footer": {
+      "w": 303,
+      "h": 36,
+      "left": 36,
+      "right": 339,
+      "top": 6817,
+      "bottom": 6853
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 6817,
+      "bottom": 6853
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 243,
+      "right": 339,
+      "top": 6817,
+      "bottom": 6853
+     },
+     "timeControl": {
+      "w": 303,
+      "h": 48,
+      "left": 36,
+      "right": 339,
+      "top": 6761,
+      "bottom": 6809
+     },
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-en": {
+     "card": {
+      "w": 327,
+      "h": 417
+     },
+     "contentWidth": 303,
+     "maxWidthReached": false,
+     "availableModalHeight": 619,
+     "fitsVertically": true,
+     "verticalSlackPx": 202,
+     "picker": {
+      "w": 303,
+      "h": 349,
+      "left": 36,
+      "right": 339,
+      "top": 9017,
+      "bottom": 9366
+     },
+     "grid": {
+      "daysBox": {
+       "w": 303,
+       "h": 300,
+       "left": 36,
+       "right": 339,
+       "top": 9091,
+       "bottom": 9391
+      },
+      "weekdaysBox": {
+       "w": 303,
+       "h": 25,
+       "left": 36,
+       "right": 339,
+       "top": 9066,
+       "bottom": 9091
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 43.2,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 40.2,
+       "h": 42.8,
+       "maxW": 40.2
+      },
+      "weekdayCellW": 43.2,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 127.6,
+       "right": 206.8,
+       "top": 9028.5,
+       "bottom": 9049.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 211.8,
+       "right": 247.4,
+       "top": 9028.5,
+       "bottom": 9049.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 9025,
+       "bottom": 9053
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 303,
+       "right": 334,
+       "top": 9025,
+       "bottom": 9053
+      }
+     },
+     "footer": {
+      "w": 303,
+      "h": 36,
+      "left": 36,
+      "right": 339,
+      "top": 9374,
+      "bottom": 9410
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 9374,
+      "bottom": 9410
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 243,
+      "right": 339,
+      "top": 9374,
+      "bottom": 9410
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-bg": {
+     "card": {
+      "w": 327,
+      "h": 417
+     },
+     "contentWidth": 303,
+     "maxWidthReached": false,
+     "availableModalHeight": 619,
+     "fitsVertically": true,
+     "verticalSlackPx": 202,
+     "picker": {
+      "w": 303,
+      "h": 349,
+      "left": 36,
+      "right": 339,
+      "top": 11462,
+      "bottom": 11811
+     },
+     "grid": {
+      "daysBox": {
+       "w": 303,
+       "h": 300,
+       "left": 36,
+       "right": 339,
+       "top": 11536,
+       "bottom": 11836
+      },
+      "weekdaysBox": {
+       "w": 303,
+       "h": 25,
+       "left": 36,
+       "right": 339,
+       "top": 11511,
+       "bottom": 11536
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 43.2,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 40.2,
+       "h": 42.8,
+       "maxW": 40.2
+      },
+      "weekdayCellW": 43.2,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 127,
+       "right": 207.5,
+       "top": 11473.5,
+       "bottom": 11494.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 212.5,
+       "right": 248,
+       "top": 11473.5,
+       "bottom": 11494.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 41,
+       "right": 72,
+       "top": 11470,
+       "bottom": 11498
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 303,
+       "right": 334,
+       "top": 11470,
+       "bottom": 11498
+      }
+     },
+     "footer": {
+      "w": 303,
+      "h": 36,
+      "left": 36,
+      "right": 339,
+      "top": 11819,
+      "bottom": 11855
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 36,
+      "right": 94.6,
+      "top": 11819,
+      "bottom": 11855
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 243,
+      "right": 339,
+      "top": 11819,
+      "bottom": 11855
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    }
+   },
+   "rows": {
+    "d-bg-12": {
+     "row": {
+      "w": 293,
+      "h": 88,
+      "left": 41,
+      "right": 334,
+      "top": 12918,
+      "bottom": 13006
+     },
+     "body": {
+      "w": 213,
+      "h": 60,
+      "left": 75,
+      "right": 288,
+      "top": 12932,
+      "bottom": 12992
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 12932,
+      "bottom": 12952
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 12956,
+      "bottom": 12992
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 12964.5,
+      "bottom": 12983.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 12960,
+      "bottom": 12988
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 302,
+      "right": 334,
+      "top": 12952.8,
+      "bottom": 12971.2
+     },
+     "stacked": true,
+     "bodySlackPx": 37.5,
+     "cardInnerRight": 335,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-bg-24": {
+     "row": {
+      "w": 293,
+      "h": 88,
+      "left": 41,
+      "right": 334,
+      "top": 13006,
+      "bottom": 13094
+     },
+     "body": {
+      "w": 213,
+      "h": 60,
+      "left": 75,
+      "right": 288,
+      "top": 13020,
+      "bottom": 13080
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 13020,
+      "bottom": 13040
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 77.8,
+      "h": 36,
+      "left": 75,
+      "right": 152.8,
+      "top": 13044,
+      "bottom": 13080
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13052.5,
+      "bottom": 13071.5
+     },
+     "meridiem": null,
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 302,
+      "right": 334,
+      "top": 13040.8,
+      "bottom": 13059.2
+     },
+     "stacked": true,
+     "bodySlackPx": 135.2,
+     "cardInnerRight": 335,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-en-12": {
+     "row": {
+      "w": 293,
+      "h": 88,
+      "left": 41,
+      "right": 334,
+      "top": 13094,
+      "bottom": 13182
+     },
+     "body": {
+      "w": 213,
+      "h": 60,
+      "left": 75,
+      "right": 288,
+      "top": 13108,
+      "bottom": 13168
+     },
+     "label": {
+      "w": 126.1,
+      "h": 20,
+      "left": 75,
+      "right": 201.1,
+      "top": 13108,
+      "bottom": 13128
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 126,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 13132,
+      "bottom": 13168
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13140.5,
+      "bottom": 13159.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 13136,
+      "bottom": 13164
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 302,
+      "right": 334,
+      "top": 13128.8,
+      "bottom": 13147.2
+     },
+     "stacked": true,
+     "bodySlackPx": 37.5,
+     "cardInnerRight": 335,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    }
+   }
+  },
+  {
+   "viewport": {
+    "w": 390,
+    "h": 844
+   },
+   "docScrollWidth": 390,
+   "horizontalPageOverflow": false,
+   "cards": {
+    "A-shipped": {
+     "card": {
+      "w": 340,
+      "h": 421
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 796,
+     "fitsVertically": true,
+     "verticalSlackPx": 375,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 37,
+      "right": 353,
+      "top": 1603,
+      "bottom": 1952
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 37,
+       "right": 353,
+       "top": 1677,
+       "bottom": 1977
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 37,
+       "right": 353,
+       "top": 1652,
+       "bottom": 1677
+      },
+      "wrapperCount": 32,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       4
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       },
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 108.7,
+       "right": 188,
+       "top": 1614.5,
+       "bottom": 1635.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 193,
+       "right": 228.6,
+       "top": 1614.5,
+       "bottom": 1635.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 42,
+       "right": 73,
+       "top": 1611,
+       "bottom": 1639
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 317,
+       "right": 348,
+       "top": 1611,
+       "bottom": 1639
+      }
+     },
+     "footer": null,
+     "footerClear": null,
+     "footerDone": null,
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-en": {
+     "card": {
+      "w": 340,
+      "h": 473
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 796,
+     "fitsVertically": true,
+     "verticalSlackPx": 323,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 37,
+      "right": 353,
+      "top": 4224,
+      "bottom": 4573
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 37,
+       "right": 353,
+       "top": 4298,
+       "bottom": 4598
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 37,
+       "right": 353,
+       "top": 4273,
+       "bottom": 4298
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 135.1,
+       "right": 214.3,
+       "top": 4235.5,
+       "bottom": 4256.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 219.3,
+       "right": 254.9,
+       "top": 4235.5,
+       "bottom": 4256.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 42,
+       "right": 73,
+       "top": 4232,
+       "bottom": 4260
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 317,
+       "right": 348,
+       "top": 4232,
+       "bottom": 4260
+      }
+     },
+     "footer": {
+      "w": 316,
+      "h": 36,
+      "left": 37,
+      "right": 353,
+      "top": 4637,
+      "bottom": 4673
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 37,
+      "right": 95.6,
+      "top": 4637,
+      "bottom": 4673
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 257,
+      "right": 353,
+      "top": 4637,
+      "bottom": 4673
+     },
+     "timeControl": {
+      "w": 316,
+      "h": 48,
+      "left": 37,
+      "right": 353,
+      "top": 4581,
+      "bottom": 4629
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 128.3,
+      "right": 218,
+      "top": 4591,
+      "bottom": 4619
+     },
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-bg": {
+     "card": {
+      "w": 340,
+      "h": 473
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 796,
+     "fitsVertically": true,
+     "verticalSlackPx": 323,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 37,
+      "right": 353,
+      "top": 6949,
+      "bottom": 7298
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 37,
+       "right": 353,
+       "top": 7023,
+       "bottom": 7323
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 37,
+       "right": 353,
+       "top": 6998,
+       "bottom": 7023
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 134.5,
+       "right": 215,
+       "top": 6960.5,
+       "bottom": 6981.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 220,
+       "right": 255.5,
+       "top": 6960.5,
+       "bottom": 6981.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 42,
+       "right": 73,
+       "top": 6957,
+       "bottom": 6985
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 317,
+       "right": 348,
+       "top": 6957,
+       "bottom": 6985
+      }
+     },
+     "footer": {
+      "w": 316,
+      "h": 36,
+      "left": 37,
+      "right": 353,
+      "top": 7362,
+      "bottom": 7398
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 37,
+      "right": 95.6,
+      "top": 7362,
+      "bottom": 7398
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 257,
+      "right": 353,
+      "top": 7362,
+      "bottom": 7398
+     },
+     "timeControl": {
+      "w": 316,
+      "h": 48,
+      "left": 37,
+      "right": 353,
+      "top": 7306,
+      "bottom": 7354
+     },
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-en": {
+     "card": {
+      "w": 340,
+      "h": 417
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 796,
+     "fitsVertically": true,
+     "verticalSlackPx": 379,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 37,
+      "right": 353,
+      "top": 9506,
+      "bottom": 9855
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 37,
+       "right": 353,
+       "top": 9580,
+       "bottom": 9880
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 37,
+       "right": 353,
+       "top": 9555,
+       "bottom": 9580
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 135.1,
+       "right": 214.3,
+       "top": 9517.5,
+       "bottom": 9538.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 219.3,
+       "right": 254.9,
+       "top": 9517.5,
+       "bottom": 9538.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 42,
+       "right": 73,
+       "top": 9514,
+       "bottom": 9542
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 317,
+       "right": 348,
+       "top": 9514,
+       "bottom": 9542
+      }
+     },
+     "footer": {
+      "w": 316,
+      "h": 36,
+      "left": 37,
+      "right": 353,
+      "top": 9863,
+      "bottom": 9899
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 37,
+      "right": 95.6,
+      "top": 9863,
+      "bottom": 9899
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 257,
+      "right": 353,
+      "top": 9863,
+      "bottom": 9899
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-bg": {
+     "card": {
+      "w": 340,
+      "h": 417
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 796,
+     "fitsVertically": true,
+     "verticalSlackPx": 379,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 37,
+      "right": 353,
+      "top": 11951,
+      "bottom": 12300
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 37,
+       "right": 353,
+       "top": 12025,
+       "bottom": 12325
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 37,
+       "right": 353,
+       "top": 12000,
+       "bottom": 12025
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 134.5,
+       "right": 215,
+       "top": 11962.5,
+       "bottom": 11983.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 220,
+       "right": 255.5,
+       "top": 11962.5,
+       "bottom": 11983.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 42,
+       "right": 73,
+       "top": 11959,
+       "bottom": 11987
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 317,
+       "right": 348,
+       "top": 11959,
+       "bottom": 11987
+      }
+     },
+     "footer": {
+      "w": 316,
+      "h": 36,
+      "left": 37,
+      "right": 353,
+      "top": 12308,
+      "bottom": 12344
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 37,
+      "right": 95.6,
+      "top": 12308,
+      "bottom": 12344
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 257,
+      "right": 353,
+      "top": 12308,
+      "bottom": 12344
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    }
+   },
+   "rows": {
+    "d-bg-12": {
+     "row": {
+      "w": 308,
+      "h": 88,
+      "left": 41,
+      "right": 349,
+      "top": 12918,
+      "bottom": 13006
+     },
+     "body": {
+      "w": 228,
+      "h": 60,
+      "left": 75,
+      "right": 303,
+      "top": 12932,
+      "bottom": 12992
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 12932,
+      "bottom": 12952
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 12956,
+      "bottom": 12992
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 12964.5,
+      "bottom": 12983.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 12960,
+      "bottom": 12988
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 317,
+      "right": 349,
+      "top": 12952.8,
+      "bottom": 12971.2
+     },
+     "stacked": true,
+     "bodySlackPx": 52.5,
+     "cardInnerRight": 350,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-bg-24": {
+     "row": {
+      "w": 308,
+      "h": 88,
+      "left": 41,
+      "right": 349,
+      "top": 13006,
+      "bottom": 13094
+     },
+     "body": {
+      "w": 228,
+      "h": 60,
+      "left": 75,
+      "right": 303,
+      "top": 13020,
+      "bottom": 13080
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 13020,
+      "bottom": 13040
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 77.8,
+      "h": 36,
+      "left": 75,
+      "right": 152.8,
+      "top": 13044,
+      "bottom": 13080
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13052.5,
+      "bottom": 13071.5
+     },
+     "meridiem": null,
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 317,
+      "right": 349,
+      "top": 13040.8,
+      "bottom": 13059.2
+     },
+     "stacked": true,
+     "bodySlackPx": 150.2,
+     "cardInnerRight": 350,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-en-12": {
+     "row": {
+      "w": 308,
+      "h": 88,
+      "left": 41,
+      "right": 349,
+      "top": 13094,
+      "bottom": 13182
+     },
+     "body": {
+      "w": 228,
+      "h": 60,
+      "left": 75,
+      "right": 303,
+      "top": 13108,
+      "bottom": 13168
+     },
+     "label": {
+      "w": 126.1,
+      "h": 20,
+      "left": 75,
+      "right": 201.1,
+      "top": 13108,
+      "bottom": 13128
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 126,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 13132,
+      "bottom": 13168
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13140.5,
+      "bottom": 13159.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 13136,
+      "bottom": 13164
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 317,
+      "right": 349,
+      "top": 13128.8,
+      "bottom": 13147.2
+     },
+     "stacked": true,
+     "bodySlackPx": 52.5,
+     "cardInnerRight": 350,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    }
+   }
+  },
+  {
+   "viewport": {
+    "w": 430,
+    "h": 932
+   },
+   "docScrollWidth": 430,
+   "horizontalPageOverflow": false,
+   "cards": {
+    "A-shipped": {
+     "card": {
+      "w": 340,
+      "h": 421
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 884,
+     "fitsVertically": true,
+     "verticalSlackPx": 463,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 57,
+      "right": 373,
+      "top": 2096,
+      "bottom": 2445
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 57,
+       "right": 373,
+       "top": 2170,
+       "bottom": 2470
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 57,
+       "right": 373,
+       "top": 2145,
+       "bottom": 2170
+      },
+      "wrapperCount": 32,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       4
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       },
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 128.7,
+       "right": 208,
+       "top": 2107.5,
+       "bottom": 2128.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 213,
+       "right": 248.6,
+       "top": 2107.5,
+       "bottom": 2128.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 62,
+       "right": 93,
+       "top": 2104,
+       "bottom": 2132
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 337,
+       "right": 368,
+       "top": 2104,
+       "bottom": 2132
+      }
+     },
+     "footer": null,
+     "footerClear": null,
+     "footerDone": null,
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-en": {
+     "card": {
+      "w": 340,
+      "h": 473
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 884,
+     "fitsVertically": true,
+     "verticalSlackPx": 411,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 57,
+      "right": 373,
+      "top": 4769,
+      "bottom": 5118
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 57,
+       "right": 373,
+       "top": 4843,
+       "bottom": 5143
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 57,
+       "right": 373,
+       "top": 4818,
+       "bottom": 4843
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 155.1,
+       "right": 234.3,
+       "top": 4780.5,
+       "bottom": 4801.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 239.3,
+       "right": 274.9,
+       "top": 4780.5,
+       "bottom": 4801.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 62,
+       "right": 93,
+       "top": 4777,
+       "bottom": 4805
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 337,
+       "right": 368,
+       "top": 4777,
+       "bottom": 4805
+      }
+     },
+     "footer": {
+      "w": 316,
+      "h": 36,
+      "left": 57,
+      "right": 373,
+      "top": 5182,
+      "bottom": 5218
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 57,
+      "right": 115.6,
+      "top": 5182,
+      "bottom": 5218
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 277,
+      "right": 373,
+      "top": 5182,
+      "bottom": 5218
+     },
+     "timeControl": {
+      "w": 316,
+      "h": 48,
+      "left": 57,
+      "right": 373,
+      "top": 5126,
+      "bottom": 5174
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 148.3,
+      "right": 238,
+      "top": 5136,
+      "bottom": 5164
+     },
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "B-datetime-bg": {
+     "card": {
+      "w": 340,
+      "h": 473
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 884,
+     "fitsVertically": true,
+     "verticalSlackPx": 411,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 57,
+      "right": 373,
+      "top": 7494,
+      "bottom": 7843
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 57,
+       "right": 373,
+       "top": 7568,
+       "bottom": 7868
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 57,
+       "right": 373,
+       "top": 7543,
+       "bottom": 7568
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 154.5,
+       "right": 235,
+       "top": 7505.5,
+       "bottom": 7526.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 240,
+       "right": 275.5,
+       "top": 7505.5,
+       "bottom": 7526.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 62,
+       "right": 93,
+       "top": 7502,
+       "bottom": 7530
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 337,
+       "right": 368,
+       "top": 7502,
+       "bottom": 7530
+      }
+     },
+     "footer": {
+      "w": 316,
+      "h": 36,
+      "left": 57,
+      "right": 373,
+      "top": 7907,
+      "bottom": 7943
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 57,
+      "right": 115.6,
+      "top": 7907,
+      "bottom": 7943
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 277,
+      "right": 373,
+      "top": 7907,
+      "bottom": 7943
+     },
+     "timeControl": {
+      "w": 316,
+      "h": 48,
+      "left": 57,
+      "right": 373,
+      "top": 7851,
+      "bottom": 7899
+     },
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-en": {
+     "card": {
+      "w": 340,
+      "h": 417
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 884,
+     "fitsVertically": true,
+     "verticalSlackPx": 467,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 57,
+      "right": 373,
+      "top": 9995,
+      "bottom": 10344
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 57,
+       "right": 373,
+       "top": 10069,
+       "bottom": 10369
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 57,
+       "right": 373,
+       "top": 10044,
+       "bottom": 10069
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "Mo",
+        "w": 19.8,
+        "clipped": false
+       },
+       {
+        "t": "Tu",
+        "w": 14.5,
+        "clipped": false
+       },
+       {
+        "t": "We",
+        "w": 17.3,
+        "clipped": false
+       },
+       {
+        "t": "Th",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "Fr",
+        "w": 13,
+        "clipped": false
+       },
+       {
+        "t": "Sa",
+        "w": 14.1,
+        "clipped": false
+       },
+       {
+        "t": "Su",
+        "w": 14.6,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 79.3,
+       "h": 21,
+       "left": 155.1,
+       "right": 234.3,
+       "top": 10006.5,
+       "bottom": 10027.5
+      },
+      "monthText": {
+       "t": "September",
+       "w": 79.3,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 239.3,
+       "right": 274.9,
+       "top": 10006.5,
+       "bottom": 10027.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 62,
+       "right": 93,
+       "top": 10003,
+       "bottom": 10031
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 337,
+       "right": 368,
+       "top": 10003,
+       "bottom": 10031
+      }
+     },
+     "footer": {
+      "w": 316,
+      "h": 36,
+      "left": 57,
+      "right": 373,
+      "top": 10352,
+      "bottom": 10388
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 57,
+      "right": 115.6,
+      "top": 10352,
+      "bottom": 10388
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 277,
+      "right": 373,
+      "top": 10352,
+      "bottom": 10388
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    },
+    "C-dateonly-bg": {
+     "card": {
+      "w": 340,
+      "h": 417
+     },
+     "contentWidth": 316,
+     "maxWidthReached": true,
+     "availableModalHeight": 884,
+     "fitsVertically": true,
+     "verticalSlackPx": 467,
+     "picker": {
+      "w": 316,
+      "h": 349,
+      "left": 57,
+      "right": 373,
+      "top": 12440,
+      "bottom": 12789
+     },
+     "grid": {
+      "daysBox": {
+       "w": 316,
+       "h": 300,
+       "left": 57,
+       "right": 373,
+       "top": 12514,
+       "bottom": 12814
+      },
+      "weekdaysBox": {
+       "w": 316,
+       "h": 25,
+       "left": 57,
+       "right": 373,
+       "top": 12489,
+       "bottom": 12514
+      },
+      "wrapperCount": 31,
+      "perRow": [
+       7,
+       7,
+       7,
+       7,
+       3
+      ],
+      "wrapper": {
+       "w": 45.1,
+       "h": 45.8
+      },
+      "tapTarget": {
+       "count": 30,
+       "w": 42.1,
+       "h": 42.8,
+       "maxW": 42.1
+      },
+      "weekdayCellW": 45.1,
+      "weekdayLabels": [
+       {
+        "t": "пн",
+        "w": 17.1,
+        "clipped": false
+       },
+       {
+        "t": "вт",
+        "w": 13.2,
+        "clipped": false
+       },
+       {
+        "t": "ср",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "чт",
+        "w": 14.2,
+        "clipped": false
+       },
+       {
+        "t": "пт",
+        "w": 14.8,
+        "clipped": false
+       },
+       {
+        "t": "сб",
+        "w": 14.3,
+        "clipped": false
+       },
+       {
+        "t": "нд",
+        "w": 16.8,
+        "clipped": false
+       }
+      ]
+     },
+     "header": {
+      "month": {
+       "w": 80.5,
+       "h": 21,
+       "left": 154.5,
+       "right": 235,
+       "top": 12451.5,
+       "bottom": 12472.5
+      },
+      "monthText": {
+       "t": "септември",
+       "w": 80.5,
+       "clipped": false
+      },
+      "year": {
+       "w": 35.6,
+       "h": 21,
+       "left": 240,
+       "right": 275.5,
+       "top": 12451.5,
+       "bottom": 12472.5
+      },
+      "prev": {
+       "w": 31,
+       "h": 28,
+       "left": 62,
+       "right": 93,
+       "top": 12448,
+       "bottom": 12476
+      },
+      "next": {
+       "w": 31,
+       "h": 28,
+       "left": 337,
+       "right": 368,
+       "top": 12448,
+       "bottom": 12476
+      }
+     },
+     "footer": {
+      "w": 316,
+      "h": 36,
+      "left": 57,
+      "right": 373,
+      "top": 12797,
+      "bottom": 12833
+     },
+     "footerClear": {
+      "w": 58.6,
+      "h": 36,
+      "left": 57,
+      "right": 115.6,
+      "top": 12797,
+      "bottom": 12833
+     },
+     "footerDone": {
+      "w": 96,
+      "h": 36,
+      "left": 277,
+      "right": 373,
+      "top": 12797,
+      "bottom": 12833
+     },
+     "timeControl": null,
+     "meridiem": null,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     },
+     "clipped": []
+    }
+   },
+   "rows": {
+    "d-bg-12": {
+     "row": {
+      "w": 348,
+      "h": 88,
+      "left": 41,
+      "right": 389,
+      "top": 12918,
+      "bottom": 13006
+     },
+     "body": {
+      "w": 268,
+      "h": 60,
+      "left": 75,
+      "right": 343,
+      "top": 12932,
+      "bottom": 12992
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 12932,
+      "bottom": 12952
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 12956,
+      "bottom": 12992
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 12964.5,
+      "bottom": 12983.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 12960,
+      "bottom": 12988
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 357,
+      "right": 389,
+      "top": 12952.8,
+      "bottom": 12971.2
+     },
+     "stacked": true,
+     "bodySlackPx": 92.5,
+     "cardInnerRight": 390,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-bg-24": {
+     "row": {
+      "w": 348,
+      "h": 88,
+      "left": 41,
+      "right": 389,
+      "top": 13006,
+      "bottom": 13094
+     },
+     "body": {
+      "w": 268,
+      "h": 60,
+      "left": 75,
+      "right": 343,
+      "top": 13020,
+      "bottom": 13080
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 13020,
+      "bottom": 13040
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 77.8,
+      "h": 36,
+      "left": 75,
+      "right": 152.8,
+      "top": 13044,
+      "bottom": 13080
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13052.5,
+      "bottom": 13071.5
+     },
+     "meridiem": null,
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 357,
+      "right": 389,
+      "top": 13040.8,
+      "bottom": 13059.2
+     },
+     "stacked": true,
+     "bodySlackPx": 190.2,
+     "cardInnerRight": 390,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-en-12": {
+     "row": {
+      "w": 348,
+      "h": 88,
+      "left": 41,
+      "right": 389,
+      "top": 13094,
+      "bottom": 13182
+     },
+     "body": {
+      "w": 268,
+      "h": 60,
+      "left": 75,
+      "right": 343,
+      "top": 13108,
+      "bottom": 13168
+     },
+     "label": {
+      "w": 126.1,
+      "h": 20,
+      "left": 75,
+      "right": 201.1,
+      "top": 13108,
+      "bottom": 13128
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 126,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 13132,
+      "bottom": 13168
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13140.5,
+      "bottom": 13159.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 13136,
+      "bottom": 13164
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 357,
+      "right": 389,
+      "top": 13128.8,
+      "bottom": 13147.2
+     },
+     "stacked": true,
+     "bodySlackPx": 92.5,
+     "cardInnerRight": 390,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    }
+   }
+  },
+  {
+   "viewport": {
+    "w": 639,
+    "h": 900
+   },
+   "docScrollWidth": 639,
+   "horizontalPageOverflow": false,
+   "cards": {},
+   "rows": {
+    "d-bg-12": {
+     "row": {
+      "w": 557,
+      "h": 88,
+      "left": 41,
+      "right": 598,
+      "top": 12918,
+      "bottom": 13006
+     },
+     "body": {
+      "w": 477,
+      "h": 60,
+      "left": 75,
+      "right": 552,
+      "top": 12932,
+      "bottom": 12992
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 12932,
+      "bottom": 12952
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 12956,
+      "bottom": 12992
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 12964.5,
+      "bottom": 12983.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 12960,
+      "bottom": 12988
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 566,
+      "right": 598,
+      "top": 12952.8,
+      "bottom": 12971.2
+     },
+     "stacked": true,
+     "bodySlackPx": 301.5,
+     "cardInnerRight": 599,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-bg-24": {
+     "row": {
+      "w": 557,
+      "h": 88,
+      "left": 41,
+      "right": 598,
+      "top": 13006,
+      "bottom": 13094
+     },
+     "body": {
+      "w": 477,
+      "h": 60,
+      "left": 75,
+      "right": 552,
+      "top": 13020,
+      "bottom": 13080
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 13020,
+      "bottom": 13040
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 77.8,
+      "h": 36,
+      "left": 75,
+      "right": 152.8,
+      "top": 13044,
+      "bottom": 13080
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13052.5,
+      "bottom": 13071.5
+     },
+     "meridiem": null,
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 566,
+      "right": 598,
+      "top": 13040.8,
+      "bottom": 13059.2
+     },
+     "stacked": true,
+     "bodySlackPx": 399.2,
+     "cardInnerRight": 599,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-en-12": {
+     "row": {
+      "w": 557,
+      "h": 88,
+      "left": 41,
+      "right": 598,
+      "top": 13094,
+      "bottom": 13182
+     },
+     "body": {
+      "w": 477,
+      "h": 60,
+      "left": 75,
+      "right": 552,
+      "top": 13108,
+      "bottom": 13168
+     },
+     "label": {
+      "w": 126.1,
+      "h": 20,
+      "left": 75,
+      "right": 201.1,
+      "top": 13108,
+      "bottom": 13128
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 126,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 75,
+      "right": 250.5,
+      "top": 13132,
+      "bottom": 13168
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 86,
+      "right": 108,
+      "top": 13140.5,
+      "bottom": 13159.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 149.8,
+      "right": 239.5,
+      "top": 13136,
+      "bottom": 13164
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 566,
+      "right": 598,
+      "top": 13128.8,
+      "bottom": 13147.2
+     },
+     "stacked": true,
+     "bodySlackPx": 301.5,
+     "cardInnerRight": 599,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    }
+   }
+  },
+  {
+   "viewport": {
+    "w": 640,
+    "h": 900
+   },
+   "docScrollWidth": 640,
+   "horizontalPageOverflow": false,
+   "cards": {},
+   "rows": {
+    "d-bg-12": {
+     "row": {
+      "w": 558,
+      "h": 64,
+      "left": 41,
+      "right": 599,
+      "top": 12818,
+      "bottom": 12882
+     },
+     "body": {
+      "w": 478,
+      "h": 36,
+      "left": 75,
+      "right": 553,
+      "top": 12832,
+      "bottom": 12868
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 12840,
+      "bottom": 12860
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 299.8,
+      "right": 475.3,
+      "top": 12832,
+      "bottom": 12868
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 310.8,
+      "right": 332.8,
+      "top": 12840.5,
+      "bottom": 12859.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 374.5,
+      "right": 464.3,
+      "top": 12836,
+      "bottom": 12864
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 567,
+      "right": 599,
+      "top": 12840.8,
+      "bottom": 12859.2
+     },
+     "stacked": false,
+     "bodySlackPx": 77.7,
+     "cardInnerRight": 600,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-bg-24": {
+     "row": {
+      "w": 558,
+      "h": 64,
+      "left": 41,
+      "right": 599,
+      "top": 12882,
+      "bottom": 12946
+     },
+     "body": {
+      "w": 478,
+      "h": 36,
+      "left": 75,
+      "right": 553,
+      "top": 12896,
+      "bottom": 12932
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 75,
+      "right": 287.8,
+      "top": 12904,
+      "bottom": 12924
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 77.8,
+      "h": 36,
+      "left": 299.8,
+      "right": 377.5,
+      "top": 12896,
+      "bottom": 12932
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 310.8,
+      "right": 332.8,
+      "top": 12904.5,
+      "bottom": 12923.5
+     },
+     "meridiem": null,
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 567,
+      "right": 599,
+      "top": 12904.8,
+      "bottom": 12923.2
+     },
+     "stacked": false,
+     "bodySlackPx": 175.5,
+     "cardInnerRight": 600,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-en-12": {
+     "row": {
+      "w": 558,
+      "h": 64,
+      "left": 41,
+      "right": 599,
+      "top": 12946,
+      "bottom": 13010
+     },
+     "body": {
+      "w": 478,
+      "h": 36,
+      "left": 75,
+      "right": 553,
+      "top": 12960,
+      "bottom": 12996
+     },
+     "label": {
+      "w": 150,
+      "h": 20,
+      "left": 75,
+      "right": 225,
+      "top": 12968,
+      "bottom": 12988
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 150,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 237,
+      "right": 412.5,
+      "top": 12960,
+      "bottom": 12996
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 248,
+      "right": 270,
+      "top": 12968.5,
+      "bottom": 12987.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 311.8,
+      "right": 401.5,
+      "top": 12964,
+      "bottom": 12992
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 567,
+      "right": 599,
+      "top": 12968.8,
+      "bottom": 12987.2
+     },
+     "stacked": false,
+     "bodySlackPx": 140.5,
+     "cardInnerRight": 600,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    }
+   }
+  },
+  {
+   "viewport": {
+    "w": 768,
+    "h": 900
+   },
+   "docScrollWidth": 768,
+   "horizontalPageOverflow": false,
+   "cards": {},
+   "rows": {
+    "d-bg-12": {
+     "row": {
+      "w": 638,
+      "h": 64,
+      "left": 65,
+      "right": 703,
+      "top": 12818,
+      "bottom": 12882
+     },
+     "body": {
+      "w": 558,
+      "h": 36,
+      "left": 99,
+      "right": 657,
+      "top": 12832,
+      "bottom": 12868
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 99,
+      "right": 311.8,
+      "top": 12840,
+      "bottom": 12860
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 323.8,
+      "right": 499.3,
+      "top": 12832,
+      "bottom": 12868
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 334.8,
+      "right": 356.8,
+      "top": 12840.5,
+      "bottom": 12859.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 398.5,
+      "right": 488.3,
+      "top": 12836,
+      "bottom": 12864
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 671,
+      "right": 703,
+      "top": 12840.8,
+      "bottom": 12859.2
+     },
+     "stacked": false,
+     "bodySlackPx": 157.7,
+     "cardInnerRight": 704,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-bg-24": {
+     "row": {
+      "w": 638,
+      "h": 64,
+      "left": 65,
+      "right": 703,
+      "top": 12882,
+      "bottom": 12946
+     },
+     "body": {
+      "w": 558,
+      "h": 36,
+      "left": 99,
+      "right": 657,
+      "top": 12896,
+      "bottom": 12932
+     },
+     "label": {
+      "w": 212.8,
+      "h": 20,
+      "left": 99,
+      "right": 311.8,
+      "top": 12904,
+      "bottom": 12924
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 213,
+     "time": {
+      "w": 77.8,
+      "h": 36,
+      "left": 323.8,
+      "right": 401.5,
+      "top": 12896,
+      "bottom": 12932
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 334.8,
+      "right": 356.8,
+      "top": 12904.5,
+      "bottom": 12923.5
+     },
+     "meridiem": null,
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 671,
+      "right": 703,
+      "top": 12904.8,
+      "bottom": 12923.2
+     },
+     "stacked": false,
+     "bodySlackPx": 255.5,
+     "cardInnerRight": 704,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    },
+    "d-en-12": {
+     "row": {
+      "w": 638,
+      "h": 64,
+      "left": 65,
+      "right": 703,
+      "top": 12946,
+      "bottom": 13010
+     },
+     "body": {
+      "w": 558,
+      "h": 36,
+      "left": 99,
+      "right": 657,
+      "top": 12960,
+      "bottom": 12996
+     },
+     "label": {
+      "w": 150,
+      "h": 20,
+      "left": 99,
+      "right": 249,
+      "top": 12968,
+      "bottom": 12988
+     },
+     "labelClipped": false,
+     "labelNeedsPx": 150,
+     "time": {
+      "w": 175.5,
+      "h": 36,
+      "left": 261,
+      "right": 436.5,
+      "top": 12960,
+      "bottom": 12996
+     },
+     "timeH": 36,
+     "hh": {
+      "w": 22,
+      "h": 19,
+      "left": 272,
+      "right": 294,
+      "top": 12968.5,
+      "bottom": 12987.5
+     },
+     "meridiem": {
+      "w": 89.8,
+      "h": 28,
+      "left": 335.8,
+      "right": 425.5,
+      "top": 12964,
+      "bottom": 12992
+     },
+     "switch": {
+      "w": 32,
+      "h": 18.4,
+      "left": 671,
+      "right": 703,
+      "top": 12968.8,
+      "bottom": 12987.2
+     },
+     "stacked": false,
+     "bodySlackPx": 220.5,
+     "cardInnerRight": 704,
+     "overflow": {
+      "px": 0,
+      "node": ""
+     }
+    }
+   }
+  }
+ ]
+}
