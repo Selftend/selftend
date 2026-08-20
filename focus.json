@@ -1,0 +1,456 @@
+{
+ "focusOnOpen": {
+  "tag": "button",
+  "tid": "sheet-backdrop",
+  "role": "button",
+  "ariaLabel": "Close",
+  "text": "",
+  "tabIndex": -1,
+  "inSheet": true
+ },
+ "sheetPresent": true,
+ "tabCycle": [
+  {
+   "tag": "button",
+   "tid": "btn-prev",
+   "role": "button",
+   "ariaLabel": "Prev",
+   "text": "",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "btn-month",
+   "role": "button",
+   "ariaLabel": "September",
+   "text": "September",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "btn-year",
+   "role": "button",
+   "ariaLabel": "2026",
+   "text": "2026",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "btn-next",
+   "role": "button",
+   "ariaLabel": "Next",
+   "text": "",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "1",
+   "text": "1",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "2",
+   "text": "2",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "3",
+   "text": "3",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "4",
+   "text": "4",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "5",
+   "text": "5",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "6",
+   "text": "6",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "7",
+   "text": "7",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "8",
+   "text": "8",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "9",
+   "text": "9",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "10",
+   "text": "10",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "11",
+   "text": "11",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "12",
+   "text": "12",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "13",
+   "text": "13",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "14",
+   "text": "14",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "15",
+   "text": "15",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "16",
+   "text": "16",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "17",
+   "text": "17",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "18",
+   "text": "18",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "19",
+   "text": "19",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "20",
+   "text": "20",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "21",
+   "text": "21",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "22",
+   "text": "22",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "23",
+   "text": "23",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "24",
+   "text": "24",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "25",
+   "text": "25",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "26",
+   "text": "26",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "27",
+   "text": "27",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "28",
+   "text": "28",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "29",
+   "text": "29",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "30",
+   "text": "30",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "sheet-clear",
+   "role": "button",
+   "ariaLabel": null,
+   "text": "Clear",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "sheet-done",
+   "role": "button",
+   "ariaLabel": null,
+   "text": "Done",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "sheet-backdrop",
+   "role": "button",
+   "ariaLabel": "Close",
+   "text": "",
+   "tabIndex": -1,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "btn-prev",
+   "role": "button",
+   "ariaLabel": "Prev",
+   "text": "",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "btn-month",
+   "role": "button",
+   "ariaLabel": "September",
+   "text": "September",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "btn-year",
+   "role": "button",
+   "ariaLabel": "2026",
+   "text": "2026",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": "btn-next",
+   "role": "button",
+   "ariaLabel": "Next",
+   "text": "",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "1",
+   "text": "1",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "2",
+   "text": "2",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "3",
+   "text": "3",
+   "tabIndex": 0,
+   "inSheet": true
+  },
+  {
+   "tag": "button",
+   "tid": null,
+   "role": "button",
+   "ariaLabel": "4",
+   "text": "4",
+   "tabIndex": 0,
+   "inSheet": true
+  }
+ ],
+ "everLeftSheet": false,
+ "afterEscape": {
+  "sheetPresent": false,
+  "active": {
+   "tag": "button",
+   "tid": "open-trigger",
+   "role": "button",
+   "ariaLabel": null,
+   "text": "Open picker",
+   "tabIndex": 0,
+   "inSheet": false
+  }
+ },
+ "afterDone": {
+  "sheetPresent": false,
+  "active": {
+   "tag": "button",
+   "tid": "open-trigger",
+   "role": "button",
+   "ariaLabel": null,
+   "text": "Open picker",
+   "tabIndex": 0,
+   "inSheet": false
+  }
+ },
+ "afterBackdrop": {
+  "sheetPresent": false,
+  "active": {
+   "tag": "button",
+   "tid": "open-trigger",
+   "role": "button",
+   "ariaLabel": null,
+   "text": "Open picker",
+   "tabIndex": 0,
+   "inSheet": false
+  }
+ }
+}
