@@ -60,9 +60,12 @@ end.setHours(12, 0, 0, 0);
 // tripping the DB's occurrence-time guard ("Occurrence time cannot be in the
 // future") and failing the whole seed. Clamp to just-passed instead — today's
 // rows bunch up near "now", which only shows when seeding at odd hours and
-// only on today's rows.
+// only on today's rows. The margin absorbs the clock drift between building a
+// row here and the database checking it.
+const FUTURE_MARGIN_MS = 120_000;
+
 function clampToPast(millis) {
-  return new Date(Math.min(millis, Date.now() - 120_000)).toISOString();
+  return new Date(Math.min(millis, Date.now() - FUTURE_MARGIN_MS)).toISOString();
 }
 
 /** The calendar date at day index i (0 = oldest), as a machine-local Date. */
@@ -88,9 +91,11 @@ function at(dayIndex, hour, minute = 0) {
  * to record which was meant, so their rows must be pinned to UTC instead of
  * inheriting whatever clock the seeding machine happened to have. Applies the
  * same future-clamp as `at()`.
+ *
+ * Unused today: it lands with the groundwork (#1280) and its first callers are
+ * the CBT and ACT content slices that follow.
  */
-// eslint-disable-next-line no-unused-vars -- lands with the groundwork (#1280);
-// its first callers are the CBT and ACT content slices that follow.
+// eslint-disable-next-line no-unused-vars -- see the note above
 function atUtc(dayIndex, hour, minute = 0) {
   const d = dayAt(dayIndex);
   return clampToPast(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute, 0, 0));
@@ -108,6 +113,9 @@ function atUtc(dayIndex, hour, minute = 0) {
  * a window that spans a daylight-saving change still describes each row
  * correctly. Only the stored integer varies by machine — the resolved picture
  * is identical everywhere, because consumers read the day through the pair.
+ *
+ * Takes either an ISO string from `at()` or a `Date` — the sleep window builds
+ * its own Dates rather than going through `at()`.
  */
 function offsetMinutesFor(timestamp) {
   return -new Date(timestamp).getTimezoneOffset();
@@ -500,7 +508,7 @@ let customExerciseId;
       // Seeding at an odd hour can push the newest night's wake time past
       // "now", which the DB rejects ("Sleep end cannot be in the future").
       // The window is a 50% opt-in anyway — skip it rather than distort it.
-      if (ended.getTime() <= Date.now() - 120_000) {
+      if (ended.getTime() <= Date.now() - FUTURE_MARGIN_MS) {
         sleepWindow = JSON.stringify({
           startedAt: started.toISOString(),
           startedOffsetMinutes: offsetMinutesFor(started),
@@ -672,10 +680,16 @@ let customExerciseId;
 // exposure_items, exposure_sessions, task_steps, challenge_plans and
 // act_action_steps — are deliberately absent, because every foreign key among
 // these tables declares `on delete cascade` and deleting the parent reclaims
-// them. That assumption is not left to trust: the cascade guard in
-// test/integration/db-functions.integration.test.ts holds it against the live
-// catalogue, so a migration that adds a non-cascading child fails there instead
-// of silently orphaning rows on the demo account.
+// them.
+//
+// That rests on two separate links, proven separately. THE KEYS CASCADE is held
+// against the live catalogue by the guard in
+// test/integration/db-functions.integration.test.ts, so a migration that adds a
+// non-cascading child fails there rather than silently orphaning rows here.
+// THE DELETE REACHES THOSE KEYS is the other half: `wipe()` goes through the
+// encrypted view, not the `_data` base table the keys sit on, so the cascade
+// only fires because the view's INSTEAD OF trigger deletes from `_data` first.
+// That was verified live on #1182; the guard does NOT cover it.
 //
 // The list is empty today — this groundwork adds no CBT or ACT content (#1280).
 // Each later slice adds the parents and standalone tables it seeds.
@@ -686,17 +700,22 @@ for (const table of CBT_ACT_WIPE_TABLES) {
 }
 
 // ---------------------------------------------------------------------- done
-console.log("Seeded demo@test.local:");
-for (const [table, n] of Object.entries(counts)) console.log(`  ${table}: ${n}`);
-
 // Wiping a table without refilling it is how the demo account quietly loses a
 // surface forever: the rows go, nothing replaces them, and the only symptom is
 // an empty screen nobody happens to open. Every table this run cleared must end
 // it with rows.
+//
+// Checked BEFORE the summary prints, so a failed run never opens with a line
+// claiming the account was seeded.
 const wipedButEmpty = CBT_ACT_WIPE_TABLES.filter((table) => !counts[table]);
 if (wipedButEmpty.length > 0) {
+  console.error("Insert counts for this run:");
+  for (const [table, n] of Object.entries(counts)) console.error(`  ${table}: ${n}`);
   throw new Error(
     `Wiped but not re-seeded: ${wipedButEmpty.join(", ")}. ` +
       "Every table in CBT_ACT_WIPE_TABLES must end the run with a non-zero insert count.",
   );
 }
+
+console.log("Seeded demo@test.local:");
+for (const [table, n] of Object.entries(counts)) console.log(`  ${table}: ${n}`);
