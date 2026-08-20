@@ -1,6 +1,8 @@
 // Seed the LOCAL demo account (demo@test.local) with ~3 months of realistic
-// data across all eight tools, so redesigned surfaces can be reviewed with
-// real density: paging, heatmap depth, distribution spread, week history.
+// data across the eight tools and the CBT module, so redesigned surfaces can be
+// reviewed with real density: paging, heatmap depth, distribution spread, week
+// history, and every technique, status and category variant rendered at least
+// once.
 //
 // Usage:  node scripts/seed-demo-data.mjs
 //
@@ -80,6 +82,42 @@ function at(dayIndex, hour, minute = 0) {
   const d = dayAt(dayIndex);
   d.setHours(hour, minute, 0, 0);
   return clampToPast(d.getTime());
+}
+
+/**
+ * The seeding machine's civil date at day index i, as `YYYY-MM-DD`.
+ *
+ * For the date-typed columns — `self_care_logs.log_date`,
+ * `core_beliefs.next_review_date` — which are a calendar day rather than an
+ * instant. Built from the LOCAL getters, never by slicing an ISO string: an
+ * evening timestamp west of Greenwich serialises to the following UTC date, so
+ * `at(d, 21).slice(0, 10)` files the row on the wrong day on half the planet.
+ *
+ * Accepts indices past the end of the window, which is how a review date lands
+ * in the future.
+ */
+function dayKeyAt(dayIndex) {
+  const d = dayAt(dayIndex);
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * A civil day AFTER today, at local hour/minute.
+ *
+ * The one thing `at()` cannot express, because it clamps every timestamp into
+ * the past — everything else this script writes records something that already
+ * happened. A SCHEDULED activity is the exception: planning ahead is what
+ * behavioural activation is, and the activities screen fills its "Upcoming"
+ * section only from plans dated after today. The database agrees — the
+ * occurrence guard on `activity_logs` validates `completed_at` and checks only
+ * the RANGE of `scheduled_offset_minutes`, never the scheduled instant.
+ */
+function atFuture(daysAfterToday, hour, minute = 0) {
+  const d = dayAt(DAYS - 1);
+  d.setDate(d.getDate() + daysAfterToday);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
 }
 
 /**
@@ -691,12 +729,702 @@ let customExerciseId;
 // only fires because the view's INSTEAD OF trigger deletes from `_data` first.
 // That was verified live on #1182; the guard does NOT cover it.
 //
-// The list is empty today — this groundwork adds no CBT or ACT content (#1280).
-// Each later slice adds the parents and standalone tables it seeds.
-const CBT_ACT_WIPE_TABLES = [];
+// Each slice adds the parents and standalone tables it seeds. All four below
+// are standalone — the CBT thinking spine has no chains (#1281).
+const CBT_ACT_WIPE_TABLES = ["thought_records", "core_beliefs", "activity_logs", "self_care_logs"];
 
 for (const table of CBT_ACT_WIPE_TABLES) {
   await wipe(table);
+}
+
+// ------------------------------------------------- CBT: the thinking spine
+// Thought records, core beliefs, behavioural-activation activities and the
+// self-care log (#1281).
+//
+// ONE LIFE, not a bag of fillers: this continues the person the rest of the
+// seed already describes — work-based social-evaluative anxiety, avoidance as
+// the maintaining behaviour, core belief "I'll be found out." THE RATINGS CARRY
+// THE ARC AND THE PROSE DOES NOT: distress falls across the window with one
+// setback around the two-thirds mark, where the rows also cluster, because a
+// struggling stretch is when someone logs more.
+//
+// The content ceiling (#1180) is distress about performance, standing and
+// relationships — never about living. Every distressing row keeps its answering
+// field filled, and every row is ROLE-ONLY: no names, no identifiable third
+// parties, no diagnostic self-labels.
+//
+// Demo's ten thought records used to live in `supabase/seed.sql`. They moved
+// here in the same change that added the rest of this section, so one file owns
+// them (#1211). Bob's five stayed behind: they are load-bearing for the export
+// tests.
+
+// The current CBT phase start, as a day index into the rolling window (#1178).
+// The rows below are generated to SATISFY it — one activity completed after it,
+// none today — so `behavioural` reads partially complete with today's practice
+// still open. #1282 writes the anchor to `user_preferences` and asserts the
+// derived programme state back against these rows.
+const CBT_PHASE_STARTED_DAY = 76;
+
+const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating, isHotThought });
+
+// -------------------------------------------------------- thought records
+{
+  // Every day index is explicit rather than strided. Five of these rows exist
+  // for a SHAPE the screens branch on — archived, multi-NAT, a very long
+  // situation, an empty outcome note, and one carrying no expanded detail at
+  // all — and a stride cannot place those. The cluster at days 55-62 is the
+  // setback.
+  //
+  // ☠️ The history screen filters to `record.dayKey === selectedDate`: it is a
+  // PER-DAY view, not a list of everything. Without a record dated today it
+  // opens on its empty state however many rows exist, so the last row here is
+  // deliberately today's.
+  //
+  // ☠️ The archived row renders NOWHERE. `listThoughtRecords` filters
+  // `archived_at is null` and there is no archived view and no unarchive flow,
+  // so it is seeded for the paths that must EXCLUDE it — the list, the lifetime
+  // count, Home's "last written" row — and because the export carries it.
+  //
+  // "presentation" and "rest day" appear verbatim below. They are the sentinel
+  // phrases the export leak test reads, carried over from the rows that used to
+  // live in seed.sql; that test now asserts they are present here as well as
+  // absent from bob's export, so rewording one of these two situations fails it
+  // loudly instead of quietly voiding the check (#1211).
+  const longSituation =
+    "The scope on my piece of the release moved again on Thursday, and by Friday " +
+    "morning I had three half-finished branches and no clear answer to give in the " +
+    "stand-up. I spent most of the day rewriting the same paragraph of the handover " +
+    "note instead of asking whether the deadline could move, because asking felt " +
+    "like announcing that I could not manage it. By the time I did ask, it was late " +
+    "enough that the question itself looked like a problem. I notice I do this with " +
+    "anything that involves saying I need something: I would rather absorb it " +
+    "quietly and lose the whole day to the absorbing than spend two minutes on the " +
+    "conversation that would end it.";
+
+  // [day, hour, minute, situation, nats, emotions, distortions, evidenceFor,
+  //  evidenceAgainst, balancedThought, before, after, outcomeNotes, archivedDay]
+  const records = [
+    [
+      3,
+      8,
+      20,
+      "The team channel went quiet for two hours right after I posted my status update.",
+      [nat("They read it and decided I am not pulling my weight.", 85, true)],
+      ["anxious", "ashamed"],
+      ["mind-reading", "personalization"],
+      ["Nobody replied while I sat there watching."],
+      ["The channel is quiet most mornings.", "Two people picked it up in the afternoon."],
+      "A quiet channel is a quiet channel. I am reading a verdict into silence that nobody delivered.",
+      // Before only: the intensity block still renders, but with no shift to
+      // report — the one branch a fully-rated record never shows.
+      84,
+      null,
+      "Closed the tab and started the next task instead of refreshing it.",
+      null,
+    ],
+    [
+      9,
+      21,
+      10,
+      "Rehearsed the client presentation four times tonight and still felt sick about tomorrow.",
+      [nat("They will work out that I am not up to this.", 88, true)],
+      ["anxious", "fearful", "overwhelmed"],
+      ["fortune-telling", "catastrophizing"],
+      ["I lost my place once in the run-through."],
+      ["I have delivered this material before.", "The slides are checked and the numbers hold."],
+      "Nervous is not the same as unprepared. I know this material and the rehearsal showed it.",
+      88,
+      79,
+      // Empty outcome note: the detail screen drops the outcome card entirely.
+      "",
+      null,
+    ],
+    [
+      16,
+      12,
+      40,
+      "A senior colleague asked a question in the group review that I could not answer.",
+      // Multi-NAT: three thoughts, one of them hot, so the detail screen's
+      // sort-and-badge layout has something to sort.
+      [
+        nat("Everyone in the room revised their opinion of me downwards.", 80, true),
+        nat("I should have known that without being asked.", 72),
+        nat("Next time they will not bother asking me at all.", 58),
+      ],
+      ["ashamed", "anxious", "frustrated"],
+      ["mind-reading", "should-statements"],
+      ["I went blank and said I would follow up."],
+      [
+        "Following up is the normal answer to a question nobody prepared for.",
+        "Two people asked me for that follow-up by name.",
+      ],
+      "Not knowing one thing in a meeting is ordinary. Saying I would check is what a competent person does.",
+      86,
+      72,
+      "Sent the answer the same afternoon and it closed the thread.",
+      null,
+    ],
+    [
+      23,
+      19,
+      5,
+      longSituation,
+      [nat("Asking for more time proves I cannot handle the workload.", 78, true)],
+      ["anxious", "overwhelmed", "guilty"],
+      ["all-or-nothing", "labeling"],
+      ["I did lose most of a working day to it."],
+      [
+        "Scope moved twice, and that is not something I caused.",
+        "The two people I have seen ask for time are the two I rate most highly.",
+      ],
+      "Asking for time is information the plan needs, not a confession. The cost of not asking was the whole day.",
+      83,
+      68,
+      "Asked for the extra two days. It was granted in one line.",
+      null,
+    ],
+    [
+      30,
+      7,
+      50,
+      "Saw that my name was left off the invite for the planning session.",
+      [nat("They left me out because I am not needed on this any more.", 74, true)],
+      // No emotions, no distortions, no evidence, no intensities and no
+      // outcome: a rushed capture, and the only row that exercises the detail
+      // screen's "not filled" branches and its collapsed expanded-detail card.
+      [],
+      [],
+      [],
+      [],
+      "An invite list is admin, not a verdict. If I want to be on it, I can say so.",
+      null,
+      null,
+      "",
+      null,
+    ],
+    [
+      37,
+      13,
+      15,
+      "Compared my quarter against a colleague's while updating the tracker.",
+      [nat("Everyone else is producing more than me and it shows.", 76, true)],
+      ["frustrated", "sad"],
+      ["comparing", "discounting-the-positive"],
+      ["Their row on the tracker is longer than mine."],
+      [
+        "Their work is broken into smaller items than mine.",
+        "Two of my items took a month each and count as one line.",
+      ],
+      "A tracker counts rows, not effort. Reading it as a ranking is my addition, not the tracker's.",
+      79,
+      61,
+      "Wrote down what I actually shipped this quarter. It was more than I had been counting.",
+      null,
+    ],
+    [
+      41,
+      20,
+      0,
+      "Second-guessed the wording of a three-line message for twenty minutes before sending it.",
+      [nat("They will read the tone as pushy and think less of me.", 66, true)],
+      ["anxious"],
+      ["mind-reading", "perfectionistic-thinking"],
+      ["I rewrote it four times."],
+      ["Nobody has ever mentioned my tone.", "The reply came back friendly and immediate."],
+      "Three lines cannot carry that much meaning. Twenty minutes of editing bought nothing.",
+      70,
+      58,
+      "Sent it. Got a one-word friendly reply.",
+      // The archived row.
+      44,
+    ],
+    [
+      44,
+      9,
+      30,
+      "Was asked to take the notes in a meeting where I had expected to present.",
+      [nat("They moved me off it because they do not trust me with the room.", 72, true)],
+      ["ashamed", "irritated", "angry"],
+      ["mind-reading", "blaming"],
+      ["The change was made without telling me."],
+      [
+        "The agenda lost twenty minutes overnight.",
+        "I am still presenting the same work next week.",
+      ],
+      "A cut agenda is a cut agenda. I can ask what happened rather than decide what it meant.",
+      74,
+      55,
+      "Asked directly. The agenda had been cut for time, not for me.",
+      null,
+    ],
+    [
+      50,
+      18,
+      40,
+      "Turned down an invitation to speak at the internal show-and-tell.",
+      [nat("They will work out that I am not up to this.", 70, true)],
+      ["anxious", "guilty"],
+      ["fortune-telling", "emotional-reasoning"],
+      ["I felt sick when I read the invitation."],
+      ["Feeling sick is not evidence about the talk.", "The last thing I presented went fine."],
+      "Saying no because I am frightened is the avoidance keeping this going. The fear is not a forecast.",
+      72,
+      52,
+      "Asked to be put on the list for the next one instead.",
+      null,
+    ],
+    [
+      55,
+      22,
+      30,
+      "A restructure summary went out and my team's line was left blank.",
+      [nat("This is how they let people go without saying it.", 84, true)],
+      ["anxious", "fearful", "hopeless"],
+      ["catastrophizing", "fortune-telling"],
+      ["The line really was blank."],
+      ["Three other teams' lines were blank too.", "Nothing has changed about my work this week."],
+      "A blank line in a draft summary is a blank line. I am writing the ending myself and then reacting to it.",
+      87,
+      80,
+      "Listed what is confirmed in writing and what I am filling in myself. Most of it was the second.",
+      null,
+    ],
+    [
+      57,
+      7,
+      40,
+      "Read my own status update back and could not tell whether it sounded thin.",
+      [nat("They will work out that I am not up to this.", 82, true)],
+      ["anxious", "numb"],
+      ["emotional-reasoning", "perfectionistic-thinking"],
+      ["It is shorter than last week's."],
+      ["Last week covered two weeks of work.", "Nobody has ever commented on the length."],
+      "I cannot read my own update the way a stranger would, and a fifth rewrite will not change that.",
+      85,
+      78,
+      "Posted it unchanged.",
+      null,
+    ],
+    [
+      59,
+      21,
+      20,
+      "Cancelled on a friend at short notice for the third time this month.",
+      [nat("I am letting everyone down in every direction at once.", 80, true)],
+      ["guilty", "ashamed", "lonely"],
+      ["overgeneralization", "labeling"],
+      ["Three cancellations is three cancellations."],
+      ["They rearranged easily both previous times.", "I have not cancelled on anything at work."],
+      "A hard month is not a character. Three cancellations is a stretch of weeks, not who I am.",
+      82,
+      70,
+      "Told them the honest reason instead of inventing a better one.",
+      null,
+    ],
+    [
+      62,
+      12,
+      0,
+      "Handed over a piece of work knowing one corner of it was rushed.",
+      [nat("The rushed corner is the only part anyone will look at.", 76, true)],
+      ["anxious", "frustrated"],
+      ["discounting-the-positive", "fortune-telling"],
+      ["The corner really is rough."],
+      ["The rest took three weeks and holds up.", "Handovers are read for the whole, not audited."],
+      "One rough corner sits inside three weeks of work that is sound. Both are true at once.",
+      80,
+      64,
+      "Flagged the rushed corner myself in the handover note.",
+      null,
+    ],
+    [
+      68,
+      8,
+      15,
+      "Volunteered to run the retro and immediately wanted to take it back.",
+      [nat("Putting myself forward is how I get exposed.", 68, true)],
+      ["anxious", "hopeful"],
+      ["fortune-telling", "control-fallacy"],
+      ["I could not sleep properly the night after offering."],
+      ["Running a retro is facilitation, not performance.", "I have sat in twenty of them."],
+      "Wanting to take it back is the avoidance arriving on time. I can want that and still run it.",
+      70,
+      44,
+      "Ran it. It was fine and it finished early.",
+      null,
+    ],
+    [
+      74,
+      19,
+      45,
+      "Got a correction on a shared document from someone more senior.",
+      [nat("A correction from them means I am being watched.", 60, true)],
+      ["anxious", "irritated"],
+      ["mind-reading", "fairness-fallacy"],
+      ["They went into the document specifically to change my section."],
+      ["They corrected two other sections in the same pass.", "The correction was one word."],
+      "Editing a shared document is what a shared document is for. Being read is not being watched.",
+      66,
+      40,
+      "Took the correction, said thanks, moved on.",
+      null,
+    ],
+    [
+      78,
+      9,
+      10,
+      "Asked a question in a large meeting that I would have swallowed a month ago.",
+      [nat("The question will land as though I have not been following.", 55, true)],
+      ["anxious", "proud"],
+      ["mind-reading", "reward-fallacy"],
+      ["My voice was unsteady for the first sentence."],
+      [
+        "Two people said afterwards they had wanted to ask the same thing.",
+        "Nobody reacted to the unsteady sentence.",
+      ],
+      "Asking is the practice. Doing it badly and doing it are not the same measure.",
+      58,
+      32,
+      "Stayed for the rest of the meeting instead of going quiet.",
+      null,
+    ],
+    [
+      83,
+      20,
+      30,
+      "Took a rest day and spent the whole afternoon doing nothing useful.",
+      [nat("A rest day only counts if I have earned it.", 52, true)],
+      ["guilty", "relaxed"],
+      ["should-statements", "change-fallacy"],
+      ["I finished the afternoon with nothing to show."],
+      ["Rest is in the plan on purpose.", "The week before it I worked two evenings."],
+      "A rest day is not a payment against a debt. It is part of how the rest of the week works.",
+      55,
+      28,
+      "Stayed on the balcony until it got dark.",
+      null,
+    ],
+    [
+      DAYS - 1,
+      9,
+      5,
+      "Checked first thing whether anyone had replied to yesterday's proposal.",
+      [nat("No reply by now means it has already been dismissed.", 48, true)],
+      ["anxious", "hopeful"],
+      ["fortune-telling", "mind-reading"],
+      ["It has been eighteen hours."],
+      [
+        "It went out at six in the evening.",
+        "The last two proposals were answered within the week.",
+      ],
+      "Eighteen hours across one night is not a silence. I am reading a decision into a normal gap.",
+      52,
+      30,
+      "Left the tab closed and got on with the morning.",
+      null,
+    ],
+  ];
+
+  const rows = records.map(
+    ([
+      day,
+      hour,
+      minute,
+      situation,
+      nats,
+      emotions,
+      distortions,
+      evidenceFor,
+      evidenceAgainst,
+      balancedThought,
+      before,
+      after,
+      outcomeNotes,
+      archivedDay,
+    ]) => {
+      const createdAt = at(day, hour, minute);
+      return {
+        user_id: DEMO_USER_ID,
+        situation,
+        nats,
+        emotions,
+        distortions,
+        evidence_for: evidenceFor,
+        evidence_against: evidenceAgainst,
+        balanced_thought: balancedThought,
+        emotion_intensity_before: before,
+        emotion_intensity_after: after,
+        outcome_notes: outcomeNotes,
+        archived_at: archivedDay === null ? null : at(archivedDay, 21, 0),
+        created_at: createdAt,
+        // Never null: a null offset resolves the record to the VIEWER's local
+        // day instead of the one it was written on, silently and without error.
+        created_offset_minutes: offsetMinutesFor(createdAt),
+        // The history list orders by `updated_at` and stamps each card with it,
+        // so a row left to default would jump to the top under today's date.
+        updated_at: createdAt,
+      };
+    },
+  );
+  counts.thought_records = await insert("thought_records", rows);
+}
+
+// ------------------------------------------------------------ core beliefs
+{
+  // Three rather than two: the CBT home screen surfaces belief-review
+  // suggestions only once at least three beliefs exist.
+  const rows = [
+    {
+      day: 20,
+      reviewInDays: 4, // due inside a week, so the review suggestion has a target
+      belief_statement: "I'll be found out.",
+      triggering_situations: [
+        "Being asked something in front of a group",
+        "Showing work that is not finished",
+        "A quiet reply to something I sent",
+      ],
+      evidence_for: ["I have gone blank in a meeting.", "I avoid volunteering for visible work."],
+      evidence_against: [
+        "I have held the same role for four years.",
+        "The work I handed over is still in use.",
+        "The people who would notice keep asking me for more.",
+      ],
+      alternative_belief:
+        "I am competent and still learning, and both can be true in the same meeting.",
+      original_belief_strength: 85,
+      alternative_belief_strength: 45,
+      reinforcement_plan:
+        "When the thought arrives, write down what was actually said rather than what it meant.",
+    },
+    {
+      day: 34,
+      reviewInDays: 21,
+      belief_statement: "If I need help, I am not competent.",
+      triggering_situations: ["Being stuck for more than an hour", "Asking for more time"],
+      evidence_for: ["I put off asking until it was late."],
+      evidence_against: [
+        "Everyone I respect asks for help constantly.",
+        "The one time I asked early, it took ten minutes.",
+      ],
+      alternative_belief: "Asking early is what competent people do with the time it saves.",
+      original_belief_strength: 70,
+      alternative_belief_strength: 55,
+      reinforcement_plan:
+        "Set a one-hour limit before asking, and treat the limit as the decision.",
+    },
+    {
+      day: 57,
+      reviewInDays: 45,
+      belief_statement: "Getting it wrong once means I cannot be trusted with it.",
+      triggering_situations: ["A correction on my work", "Missing a detail in a review"],
+      evidence_for: ["A correction still lands like a verdict."],
+      evidence_against: ["Nothing has ever been taken off me after a correction."],
+      alternative_belief:
+        "Being corrected is how the work gets better, and it happens to everyone here.",
+      original_belief_strength: 62,
+      // Deliberately weak: an alternative under 30 is the other condition the
+      // review suggestion looks for, so the two branches are both covered.
+      alternative_belief_strength: 24,
+      reinforcement_plan: "Note what happened after the correction, not just that it happened.",
+    },
+  ].map(({ day, reviewInDays, ...belief }) => {
+    const createdAt = at(day, 20, 15);
+    return {
+      user_id: DEMO_USER_ID,
+      ...belief,
+      next_review_date: dayKeyAt(DAYS - 1 + reviewInDays),
+      created_at: createdAt,
+      updated_at: createdAt,
+    };
+  });
+  counts.core_beliefs = await insert("core_beliefs", rows);
+}
+
+// --------------------------------------------------------------- activities
+{
+  // Behavioural activation. The completed history is strided; the open rows are
+  // explicit, because they are what the screen's three sections branch on —
+  // "Today" takes anything scheduled today or overdue and still open, so both
+  // shapes are seeded, and "Upcoming" takes only plans dated after today.
+  //
+  // ☠️ `mood_before`/`mood_after` are 1-5 here, NOT the 1-10 the surface
+  // inventory recorded: the CHECK on `activity_logs_data` says 1-5.
+  const definitions = [
+    ["Swim at the harbour pool", "pleasure", "physical"],
+    ["Clear the inbox backlog", "mastery", "achievement"],
+    ["Call a friend for no reason", "pleasure", "connection"],
+    ["Finish the shelf in the kitchen", "mastery", "achievement"],
+    ["Walk the long way home", "pleasure", "physical"],
+    ["Cook something I have never made", "pleasure", "enjoyment"],
+    ["Read on the balcony for an hour", "pleasure", "enjoyment"],
+    ["Sort the paperwork drawer", "mastery", "achievement"],
+    ["Coffee with a colleague, no agenda", "pleasure", "connection"],
+    ["Run the coast path", "mastery", "physical"],
+    ["Sit in on the design critique", "mastery", "connection"],
+    ["Batch-cook for the week", "mastery", "enjoyment"],
+  ];
+  const activityNotes = [
+    "Nearly talked myself out of it on the way.",
+    "Easier once it had started.",
+    "Booked it the night before so it was harder to drop.",
+    "",
+    "",
+  ];
+
+  const rows = [];
+  const completedDays = [];
+  let definitionIndex = 0;
+  const nextDefinition = () => definitions[definitionIndex++ % definitions.length];
+
+  /** Scheduled earlier the same day, then done. */
+  const completed = (day, hour, lift) => {
+    const [activityName, category, paceCategory] = nextDefinition();
+    const scheduledAt = at(day, Math.max(6, hour - 2), 0);
+    const completedAt = at(day, hour, between(0, 50));
+    const withMood = chance(0.8);
+    const moodBefore = between(2, 3);
+    completedDays.push(day);
+    return {
+      user_id: DEMO_USER_ID,
+      activity_name: activityName,
+      category,
+      pace_category: paceCategory,
+      scheduled_at: scheduledAt,
+      scheduled_offset_minutes: offsetMinutesFor(scheduledAt),
+      completed_at: completedAt,
+      completed_offset_minutes: offsetMinutesFor(completedAt),
+      mood_before: withMood ? moodBefore : null,
+      mood_after: withMood ? Math.min(5, moodBefore + lift) : null,
+      notes: pick(activityNotes),
+      created_at: scheduledAt,
+    };
+  };
+
+  /**
+   * Planned and still open. The completion offset stays null on purpose: an
+   * offset with no instant beside it describes nothing, and the screen reads the
+   * missing `completed_at` as "not done yet". The offset that matters on an open
+   * row is the SCHEDULED one, and that is always written.
+   */
+  const planned = (scheduledAt) => {
+    const [activityName, category, paceCategory] = nextDefinition();
+    return {
+      user_id: DEMO_USER_ID,
+      activity_name: activityName,
+      category,
+      pace_category: paceCategory,
+      scheduled_at: scheduledAt,
+      scheduled_offset_minutes: offsetMinutesFor(scheduledAt),
+      completed_at: null,
+      completed_offset_minutes: null,
+      mood_before: between(2, 3),
+      mood_after: null,
+      notes: "",
+      created_at: at(DAYS - 3, 20, 0),
+    };
+  };
+
+  // The lift grows across the window and flattens through the setback, so the
+  // list reads as progress rather than noise.
+  for (let d = 12; d < DAYS - 3; d += between(3, 6)) {
+    const setback = d >= 53 && d <= 64;
+    const lift = setback
+      ? between(0, 1)
+      : d < 40
+        ? between(0, 1)
+        : d < 66
+          ? between(1, 2)
+          : between(2, 3);
+    rows.push(completed(d, between(9, 19), lift));
+  }
+  // Placed rather than left to the stride, because a programme signal rides on
+  // each: `behavioural`'s "complete one activity" milestone reads done only if
+  // something was completed at or after the phase start.
+  rows.push(completed(CBT_PHASE_STARTED_DAY + 3, 18, 2));
+  rows.push(completed(DAYS - 4, 8, 3));
+
+  // Overdue and today, both still open — the screen files both under "Today".
+  rows.push(planned(at(DAYS - 2, 18, 30)));
+  rows.push(planned(at(DAYS - 1, 7, 30)));
+  rows.push(planned(at(DAYS - 1, 19, 0)));
+  // Genuinely after today, the only way "Upcoming" renders.
+  rows.push(planned(atFuture(1, 18, 30)));
+  rows.push(planned(atFuture(2, 9, 0)));
+  rows.push(planned(atFuture(4, 11, 0)));
+
+  // Asserted here rather than left to reading the loop above: both of these are
+  // invisible until someone opens the programme card, and either one silently
+  // flipping is exactly the failure this dataset exists to prevent (#1178).
+  if (completedDays.includes(DAYS - 1)) {
+    throw new Error(
+      "An activity is completed today, so the CBT programme's daily practice would read done. " +
+        "It must stay open.",
+    );
+  }
+  if (!completedDays.some((day) => day >= CBT_PHASE_STARTED_DAY)) {
+    throw new Error(
+      "No activity is completed at or after the current CBT phase start, so that phase's " +
+        "'complete one activity' milestone would read open.",
+    );
+  }
+
+  counts.activity_logs = await insert("activity_logs", rows);
+}
+
+// ---------------------------------------------------------------- self-care
+{
+  // One row per day, capped by `unique (user_id, log_date)`. Strided rather
+  // than daily so the log has gaps, tightened through the setback, and always
+  // including today — ☠️ the self-care screen is a FORM for the selected date,
+  // not a list, so without today's row it opens blank on a fully seeded
+  // account.
+  const exerciseTypes = ["Swim", "Walk", "Run", "Cycling", "Stretching", "Weights"];
+  const socialNotes = [
+    "Long call in the evening.",
+    "Lunch outside with two people from the team.",
+    "Sat with a neighbour on the terrace.",
+    "A message thread that turned into a proper conversation.",
+  ];
+  const meaningfulActivities = [
+    "Finished the chapter I keep restarting.",
+    "Cooked properly instead of standing at the counter.",
+    "Went into the sea.",
+    "Cleared the balcony.",
+    "Wrote for twenty minutes.",
+    "Fixed the thing that has been annoying me for a month.",
+  ];
+
+  const days = new Set();
+  for (let d = 4; d < DAYS; d += d >= 52 && d <= 64 ? between(1, 2) : between(2, 4)) {
+    days.add(d);
+  }
+  days.add(DAYS - 1);
+
+  const rows = [...days]
+    .sort((a, b) => a - b)
+    .map((d) => {
+      // Both values have to appear across the recent rows or the CBT home
+      // screen's exercise/mood comparison has nothing to compare.
+      const exerciseDone = chance(0.55);
+      const socialConnectionMade = chance(0.6);
+      const createdAt = at(d, 21, 30);
+      return {
+        user_id: DEMO_USER_ID,
+        // A calendar day, not an instant: the screen looks this up by the day
+        // key it is showing.
+        log_date: dayKeyAt(d),
+        exercise_done: exerciseDone,
+        exercise_minutes: exerciseDone ? between(20, 60) : null,
+        exercise_type: exerciseDone ? pick(exerciseTypes) : "",
+        meals_structured: between(2, 5),
+        emotional_eating: chance(0.25),
+        social_connection_made: socialConnectionMade,
+        social_notes: socialConnectionMade ? pick(socialNotes) : "",
+        meaningful_activity: chance(0.7) ? pick(meaningfulActivities) : "",
+        created_at: createdAt,
+      };
+    });
+  counts.self_care_logs = await insert("self_care_logs", rows);
 }
 
 // ---------------------------------------------------------------------- done
