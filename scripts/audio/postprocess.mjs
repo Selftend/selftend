@@ -20,6 +20,7 @@
  * that is what every measurement on #1138 was taken with.
  */
 
+import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile, writeFile, rm, mkdir, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
