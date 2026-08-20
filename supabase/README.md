@@ -107,7 +107,7 @@ Run a full local Supabase stack (Postgres, Auth, Storage, Studio, Mailpit) via t
 ```bash
 npm run db:start    # boot the local stack (first run pulls images; later runs are fast)
 npm run db:status   # print URLs + the local anon key (copy into .env.local)
-npm run db:reset    # drop + re-apply migrations + run supabase/seed.sql
+npm run db:reset    # drop + re-apply migrations + run supabase/seed.sql + reseed the demo dataset
 npm run db:stop     # shut everything down
 ```
 
