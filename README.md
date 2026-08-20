@@ -10,6 +10,22 @@ Selftend is being built around private guided self-help. The current working sli
 
 Your entries are encrypted in the database at the field level; a leaked database backup exposes only ciphertext, not your content. See [.github/SECURITY.md](.github/SECURITY.md) for the full security posture.
 
+Selftend is guided self-help - not therapy, diagnosis, or crisis support. If things feel heavy, see [selftend.org/crisis](https://selftend.org/crisis).
+
+## Try it
+
+No setup needed - the app ships in English and Bulgarian on all three platforms:
+
+- **Web:** [selftend.org](https://selftend.org)
+- **iOS:** [App Store](https://apps.apple.com/app/selftend/id6796318929)
+- **Android:** [Google Play](https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend)
+
+## Community
+
+- [Discord](https://discord.gg/pdaAr9FhcQ) - questions, feedback, and contributor chat
+- [r/Selftend](https://www.reddit.com/r/Selftend/) - community on Reddit
+- [YouTube](https://www.youtube.com/@Selftend) - a short trailer plus a walkthrough of every tool
+
 ## Quick Start
 
 Requires Node `22.13.0+`.
