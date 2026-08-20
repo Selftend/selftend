@@ -246,14 +246,35 @@ export const VOICES = [
 ];
 
 /**
- * ⚠️ The intro wording is the second undecided piece of content on this map.
- * #1136 fixed the three cues and left the intro as "wording TBD at render".
+ * #1136 fixed the three phase cues; #1264 fixed the intro, the last undecided
+ * piece of copy on the map.
+ *
+ * ☠️ The intro must not say "get ready": the preroll screen is ALREADY showing
+ * `breathing.getReady` ("Get ready…") in 28px in a polite live region while this
+ * clip plays. And ☠️ that preroll exists ONLY because this clip exists —
+ * `handleStart` (app/(app)/tools/breathing/session.tsx) enters the preroll solely
+ * when `introAsset` is set, so every other breath sound starts instantly and
+ * `breathing.getReady` is reachable no other way.
+ *
+ * So the intro earns its ~3s by doing what the screen cannot: people breathe with
+ * their eyes closed, which makes audio the only live channel. It stays
+ * pattern-agnostic (one clip serves 4-7-8, box and coherent alike) and carries no
+ * coach framing — no "I", no "we", no claimed outcome.
+ *
+ * ⚠️ Both voices say the SAME script. Different wording would give a user a
+ * *content* reason to prefer one voice, contradicting #1136's framing of the pair
+ * as a pure gender axis.
+ *
+ * ⚠️ `introMs` is then set from the RENDERED clip's own header, never from this
+ * text (#1136 corrected #1134 on exactly this). Today's clip measures 3.08s
+ * against `introMs: 3300` — that 220ms of slop goes; the 1000ms
+ * POST_INTRO_PAUSE_MS settling beat after it stays, deliberately.
  */
 export const VOICE_CUES = [
   { id: "guide_inhale", text: "Breathe in" },
   { id: "guide_hold", text: "Hold" }, // holdOut reuses this — confirmed, not deferred
   { id: "guide_exhale", text: "Breathe out" },
-  { id: "guide_intro", text: null, draft: true },
+  { id: "guide_intro", text: "Find a comfortable position, and let your shoulders soften." },
 ];
 
 /** #1134 §6 — unhurried, low, warm; falling intonation; no performance. */
