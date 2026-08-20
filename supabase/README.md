@@ -126,13 +126,13 @@ Expo loads `.env.local` with priority over `.env`, so `npm start` will now talk 
 
 ### Seeded test users
 
-Each account has its own password (defined in `supabase/seed.sql`, mirrored in `SEED_USERS` in `test/integration/helpers.ts`). They are recreated on every `npm run db:reset`.
+Each account has its own password (defined in `supabase/seed.sql`, mirrored in `SEED_USERS` in `test/integration/helpers.ts`). They are recreated on every `npm run db:reset`, which also runs `scripts/seed-demo-data.mjs` to fill `demo@test.local` with a deterministic ~3-month dataset across all eight tools. To refresh just that dataset without a full reset, run `npm run db:seed:demo` (it wipes and re-inserts only the demo user's rows).
 
-| Email              | Password              | UUID      | State                                                |
-| ------------------ | --------------------- | --------- | ---------------------------------------------------- |
-| `alice@test.local` | `test-pass-alice-123` | `...0001` | Empty account, post-signup, CBT onboarding not done  |
-| `bob@test.local`   | `test-pass-bob-123`   | `...0002` | Mid-use, 5 thought records, reminders enabled        |
-| `demo@test.local`  | `test-pass-demo-123`  | `...0003` | Polished demo/screenshot account, 10 thought records |
+| Email              | Password              | UUID      | State                                                                                        |
+| ------------------ | --------------------- | --------- | -------------------------------------------------------------------------------------------- |
+| `alice@test.local` | `test-pass-alice-123` | `...0001` | Empty account, post-signup, CBT onboarding not done                                          |
+| `bob@test.local`   | `test-pass-bob-123`   | `...0002` | Mid-use, 5 thought records, reminders enabled                                                |
+| `demo@test.local`  | `test-pass-demo-123`  | `...0003` | Polished demo/screenshot account: 10 thought records plus ~3 months of data across all tools |
 
 > The sign-in form rejects passwords shorter than 12 characters, so these seed passwords are intentionally ≥12 chars. If you change them in `seed.sql`, keep them long enough and update `SEED_USERS` to match.
 
