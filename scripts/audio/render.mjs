@@ -25,6 +25,7 @@ import { writeFile, mkdir, appendFile, access } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { measure } from "./postprocess.mjs";
 import {
   BELLS,
   SFX_MODEL,
@@ -33,6 +34,9 @@ import {
   TTS_VOICE_SETTINGS,
   VOICES,
   VOICE_CUES,
+  TTS_OUTPUT_FORMATS,
+  TTS_CANDIDATE_SEEDS,
+  CREDITS_PER_SECOND,
   clipsForRound,
   composePrompt,
   creditEstimate,
@@ -354,7 +358,9 @@ async function render(round, go) {
           contentType,
           derivedChannels: channels,
           channelRatio: Number(ratio.toFixed(3)),
-          creditsEstimate: clip.durationSeconds * 40,
+          // ☠️ 3.3/sec MEASURED on #1159, not the 40/sec #1134 assumed. Writing
+          // the stale figure here put a number ~12x too high into the permanent record.
+          creditsEstimate: Math.round(clip.durationSeconds * CREDITS_PER_SECOND),
         })}\n`,
       );
       console.log(`ok   ${name}  ${buffer.length} bytes  ~${channels}ch`);
@@ -366,6 +372,235 @@ async function render(round, go) {
     "Archive EVERY candidate — winners and rejects alike — to Drive\n" +
       "Selftend/app-audio-masters/ per #1141. A rejected take is exactly as\n" +
       "unreproducible as a chosen one.",
+  );
+
+  // ☠️ This command renders SOUND EFFECTS only. `clipsForRound` filters
+  // SFX_CLIPS, so the eight voice cues are not in it and never were — Round B
+  // is 11 clips here and 8 more from `render-voices`. Saying so out loud is the
+  // point: a silent 11 reads as a finished 19.
+  if (round === "B") {
+    const missing = VOICES.filter((voice) => !voice.voiceId).map((voice) => voice.id);
+    console.log(
+      `\nThis rendered SOUND EFFECTS only — ${clips.length} clips. The 8 voice cues are separate:\n` +
+        (missing.length
+          ? `  still need a voiceId in catalog.mjs: ${missing.join(", ")}\n` +
+            "  then:  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"
+          : "  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"),
+    );
+  }
+}
+
+/**
+ * Generate a short take of every prompt and measure it, BEFORE the real pass.
+ *
+ * ☠️ This exists because Round B was rendered and came back mostly silent
+ * (#1316). Negation suppresses output level in Sound Effects and it compounds:
+ * the `night` prompt measured -47.4 dBFS peak with the full shared tail, -4.7
+ * without it, and "No sudden events." alone cost ~17 dB. Twenty of 27 masters
+ * were unusable and ~1,881 credits went with them.
+ *
+ * A 4s take of each clip costs about a seventh of a full pass, so there is no
+ * reason ever to discover this again after spending. Run it after ANY prompt
+ * change.
+ */
+const PREFLIGHT_SECONDS = 4;
+const PREFLIGHT_SILENT_DBTP = -30; // measured: silent takes land at -40..-47
+const PREFLIGHT_QUIET_DBTP = -12; // measured: healthy takes land at -1..-6
+const PREFLIGHT_TAKES = 2;
+
+/**
+ * ☠️ One take proves nothing, and finding that out was the whole point.
+ *
+ * The first preflight scored `night` at -3.79 dBTP and `ocean` at -7.44 — both
+ * "ok" — when those exact prompts had just come back SILENT across all three
+ * candidates of the real pass. The failure is STOCHASTIC: negation biases a
+ * prompt toward silence, it does not doom it. So a prompt is only condemned when
+ * EVERY take fails, and a prompt whose takes disagree is reported separately,
+ * because that is a different defect with a different fix:
+ *
+ *   every take bad  -> the prompt is broken, rewrite it (#1316)
+ *   takes disagree  -> the prompt is a coin flip, so the RENDER needs a
+ *                      per-candidate level gate and a re-roll, not new words
+ */
+async function preflight(round, takes = PREFLIGHT_TAKES) {
+  const key = apiKey();
+  const clips = clipsForRound(round);
+  const dir = join(OUT_DIR, "preflight", `round-${round}`);
+  await mkdir(dir, { recursive: true });
+
+  console.log(
+    `Probing ${clips.length} prompts x ${takes} takes at ${PREFLIGHT_SECONDS}s ` +
+      `(~${Math.round(clips.length * takes * PREFLIGHT_SECONDS * CREDITS_PER_SECOND)} credits).\n`,
+  );
+  console.log("clip                          dBTP per take        verdict");
+
+  const broken = [];
+  const flaky = [];
+  for (const clip of clips) {
+    const peaks = [];
+    for (let take = 1; take <= takes; take += 1) {
+      const path = join(dir, `${clip.id}-t${take}.pcm`);
+      if (!(await exists(path))) {
+        const { buffer } = await soundEffect(key, {
+          text: composePrompt(clip.text),
+          durationSeconds: PREFLIGHT_SECONDS,
+          promptInfluence: clip.promptInfluence,
+          loop: clip.loop,
+        });
+        await writeFile(path, buffer);
+      }
+      peaks.push((await measure(path)).dbtp);
+    }
+
+    const usable = peaks.filter((p) => p >= PREFLIGHT_QUIET_DBTP).length;
+    const anySilent = peaks.some((p) => p < PREFLIGHT_SILENT_DBTP);
+    let verdict;
+    if (usable === 0) {
+      verdict = "BROKEN";
+      broken.push({ id: clip.id, peaks });
+    } else if (usable < peaks.length) {
+      verdict = anySilent ? "FLAKY (a take was silent)" : "FLAKY";
+      flaky.push({ id: clip.id, peaks });
+    } else {
+      verdict = "ok";
+    }
+    console.log(
+      clip.id.padEnd(26) + peaks.map((p) => String(p).padStart(8)).join("") + "   " + verdict,
+    );
+  }
+
+  console.log("");
+  if (flaky.length) {
+    console.log(
+      `${flaky.length} prompt(s) are a coin flip - some takes usable, some not:\n` +
+        flaky.map((f) => `  ${f.id} - ${f.peaks.join(", ")} dBTP`).join("\n") +
+        "\n  These need a per-candidate level gate at render time, not new words.\n",
+    );
+  }
+  if (broken.length) {
+    console.error(
+      `${broken.length} prompt(s) produced NO usable take:\n` +
+        broken.map((b) => `  ${b.id} - ${b.peaks.join(", ")} dBTP`).join("\n") +
+        "\n\nFix these before spending on the full pass. Negation is the usual cause\n" +
+        "- describe what the sound IS, not what it is not (#1316).",
+    );
+    process.exit(1);
+  }
+  console.log("Every prompt produced at least one usable take.");
+}
+
+/** Extension for a TTS output_format id, so masters are not all called .wav. */
+function formatExtension(format) {
+  return format.startsWith("mp3") ? "mp3" : "wav";
+}
+
+/**
+ * The eight voice cues: 4 cues x 2 voices, 2 candidates each (#1136, #1210).
+ *
+ * Separate from `render` because the voice PICK is Round B's own first task and
+ * needs a human ear, while the thirteen sound effects do not — so the sound
+ * effects must not sit blocked behind it.
+ *
+ * Unlike Sound Effects this is re-renderable: TTS takes a seed and the Voice
+ * Library voice persists, so a bad take here is recoverable in a way a bad bed
+ * never is.
+ */
+async function renderVoices(go) {
+  const missingVoice = VOICES.filter((voice) => !voice.voiceId);
+  const missingText = VOICE_CUES.filter((cue) => !cue.text);
+  if (missingVoice.length || missingText.length) {
+    console.error(
+      "Refusing to render voices.\n" +
+        (missingVoice.length
+          ? `  no voiceId for: ${missingVoice.map((v) => v.id).join(", ")}\n` +
+            "  #1136 fixed the criteria: Voice Library only (defaults expire 2026-12-31),\n" +
+            "  a matched female/male pair, auditioned on the shipping words.\n"
+          : "") +
+        (missingText.length ? `  no text for: ${missingText.map((c) => c.id).join(", ")}\n` : ""),
+    );
+    process.exit(1);
+  }
+
+  const total = VOICES.length * VOICE_CUES.length * TTS_CANDIDATE_SEEDS.length;
+  if (!go) {
+    console.error(
+      `Refusing to spend. ${total} generations (${VOICES.length} voices x ` +
+        `${VOICE_CUES.length} cues x ${TTS_CANDIDATE_SEEDS.length} candidates).\n` +
+        "Re-run with --go.",
+    );
+    process.exit(1);
+  }
+
+  const key = apiKey();
+  const runDir = join(OUT_DIR, "round-B");
+  const classDir = join(runDir, "voice");
+  await mkdir(classDir, { recursive: true });
+  const manifestPath = join(runDir, "manifest.jsonl");
+
+  for (const voice of VOICES) {
+    for (const cue of VOICE_CUES) {
+      for (const [index, seed] of TTS_CANDIDATE_SEEDS.entries()) {
+        const candidate = index + 1;
+        const stem = `${cue.id}-${voice.id}-c${String(candidate).padStart(2, "0")}`;
+
+        // The format is asked, not assumed: try lossless, fall back on rejection.
+        let rendered = null;
+        let usedFormat = null;
+        let lastError = null;
+        for (const format of TTS_OUTPUT_FORMATS) {
+          const path = join(classDir, `${stem}.${formatExtension(format)}`);
+          if (await exists(path)) {
+            console.log(`skip ${stem} — already exists`);
+            rendered = "skipped";
+            break;
+          }
+          try {
+            rendered = await textToSpeech(key, {
+              voiceId: voice.voiceId,
+              text: cue.text,
+              outputFormat: format,
+              seed,
+            });
+            usedFormat = format;
+            break;
+          } catch (error) {
+            lastError = error;
+          }
+        }
+        if (rendered === "skipped") continue;
+        if (!usedFormat) throw lastError;
+
+        const name = `${stem}.${formatExtension(usedFormat)}`;
+        await writeFile(join(classDir, name), rendered.buffer);
+        await appendFile(
+          manifestPath,
+          `${JSON.stringify({
+            clip: cue.id,
+            klass: "voice",
+            voice: voice.id,
+            axis: voice.axis,
+            voiceId: voice.voiceId,
+            candidate,
+            file: name,
+            text: cue.text,
+            model: TTS_MODEL,
+            voiceSettings: TTS_VOICE_SETTINGS,
+            outputFormat: usedFormat,
+            // TTS has one, which is why this class alone is re-renderable.
+            seed,
+            bytes: rendered.buffer.length,
+            contentType: rendered.contentType,
+          })}\n`,
+        );
+        console.log(`ok   ${name}  ${rendered.buffer.length} bytes  ${usedFormat}`);
+      }
+    }
+  }
+
+  console.log(`\nDone. Voice masters in ${classDir}`);
+  console.log(
+    "⚠️ Set each voice's introMs from the MEASURED duration of its chosen\n" +
+      "guide_intro clip (#1136) — never from an estimate.",
   );
 }
 
@@ -381,15 +616,25 @@ switch (command) {
   case "plan":
     plan(round);
     break;
+  case "preflight": {
+    const takesFlag = rest.indexOf("--takes");
+    await preflight(round, takesFlag === -1 ? PREFLIGHT_TAKES : Number(rest[takesFlag + 1]));
+    break;
+  }
   case "render":
     await render(round, go);
+    break;
+  case "render-voices":
+    await renderVoices(go);
     break;
   default:
     console.log(
       "usage:\n" +
         "  node scripts/audio/render.mjs probe\n" +
         "  node scripts/audio/render.mjs plan --round A|B\n" +
-        "  node scripts/audio/render.mjs render --round A|B --go",
+        "  node scripts/audio/render.mjs preflight --round A|B\n" +
+        "  node scripts/audio/render.mjs render --round A|B --go\n" +
+        "  node scripts/audio/render.mjs render-voices --go",
     );
     process.exit(BELLS.length && command ? 1 : 0);
 }
