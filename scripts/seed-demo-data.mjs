@@ -50,28 +50,67 @@ const pick = (arr) => arr[Math.floor(rng() * arr.length)];
 const chance = (p) => rng() < p;
 const between = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
 
-// Timezone: Bulgaria in summer (EEST, UTC+3). All captured-frame offsets use it.
-const OFFSET_MINUTES = 180;
-
 // The seeded window: ~3 months ending today. `new Date()` is fine here — the
 // script runs in plain Node, and the dataset should always end "today".
 const DAYS = 89;
 const end = new Date();
 end.setHours(12, 0, 0, 0);
 
-/** Local-civil-day at index i (0 = oldest), at local hour/minute. */
-function at(dayIndex, hour, minute = 0) {
+// Run early in the day and today's later entries would land in the future,
+// tripping the DB's occurrence-time guard ("Occurrence time cannot be in the
+// future") and failing the whole seed. Clamp to just-passed instead — today's
+// rows bunch up near "now", which only shows when seeding at odd hours and
+// only on today's rows.
+function clampToPast(millis) {
+  return new Date(Math.min(millis, Date.now() - 120_000)).toISOString();
+}
+
+/** The calendar date at day index i (0 = oldest), as a machine-local Date. */
+function dayAt(dayIndex) {
   const d = new Date(end);
   d.setDate(d.getDate() - (DAYS - 1 - dayIndex));
-  // The Date is built in this machine's local time; treat it as EEST wall time.
+  return d;
+}
+
+/** Local-civil-day at index i (0 = oldest), at local hour/minute. */
+function at(dayIndex, hour, minute = 0) {
+  const d = dayAt(dayIndex);
   d.setHours(hour, minute, 0, 0);
-  // Run early in the day and today's later entries would land in the future,
-  // tripping the DB's occurrence-time guard ("Occurrence time cannot be in
-  // the future") and failing the whole seed. Clamp to just-passed instead —
-  // today's rows bunch up near "now", which only shows when seeding at odd
-  // hours and only on today's rows.
-  const cap = Date.now() - 120_000;
-  return new Date(Math.min(d.getTime(), cap)).toISOString();
+  return clampToPast(d.getTime());
+}
+
+/**
+ * The same calendar day as `at()`, but at an explicit UTC hour/minute.
+ *
+ * `at()` stamps the SEEDING MACHINE's local clock, so it cannot express a fixed
+ * UTC wall time: `at(d, 11)` is 11:00 in Sofia on one machine and 11:00 in
+ * London on another. Tables that carry no captured-offset column have nowhere
+ * to record which was meant, so their rows must be pinned to UTC instead of
+ * inheriting whatever clock the seeding machine happened to have. Applies the
+ * same future-clamp as `at()`.
+ */
+// eslint-disable-next-line no-unused-vars -- lands with the groundwork (#1280);
+// its first callers are the CBT and ACT content slices that follow.
+function atUtc(dayIndex, hour, minute = 0) {
+  const d = dayAt(dayIndex);
+  return clampToPast(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute, 0, 0));
+}
+
+/**
+ * The captured UTC offset for a timestamp, in minutes east of UTC, derived from
+ * the seeding machine rather than hardcoded.
+ *
+ * `at()` builds every timestamp from the machine's local clock, so the offset
+ * stored beside it has to be that machine's. The hardcoded +180 (EEST) this
+ * replaces was a lie anywhere but UTC+3: the instant said one thing and the
+ * offset column said another, and every consumer that resolves a civil day from
+ * the pair landed on the wrong day. Derived per timestamp rather than once, so
+ * a window that spans a daylight-saving change still describes each row
+ * correctly. Only the stored integer varies by machine — the resolved picture
+ * is identical everywhere, because consumers read the day through the pair.
+ */
+function offsetMinutesFor(timestamp) {
+  return -new Date(timestamp).getTimezoneOffset();
 }
 
 const admin = createClient(LOCAL_SUPABASE_URL, LOCAL_SERVICE_ROLE_KEY, {
@@ -227,7 +266,7 @@ const counts = {};
         behaviours: chance(0.06) ? "Went quiet, avoided questions afterwards." : "",
         bodily_sensations: chance(0.06) ? "Tight chest, warm face." : "",
         logged_at: loggedAt,
-        logged_offset_minutes: OFFSET_MINUTES,
+        logged_offset_minutes: offsetMinutesFor(loggedAt),
         created_at: loggedAt,
       });
     }
@@ -284,7 +323,7 @@ const counts = {};
             "\n\nAnd a third paragraph to make this one properly long, the kind that tests clamping on the overview and the full read on the detail screen."
           : body,
       occurred_at: occurredAt,
-      occurred_offset_minutes: OFFSET_MINUTES,
+      occurred_offset_minutes: offsetMinutesFor(occurredAt),
       created_at: occurredAt,
     });
     day += between(2, 5);
@@ -345,7 +384,7 @@ let customExerciseId;
       mood_after: chance(0.5) ? between(3, 5) : null,
       feeling_after: null,
       completed_at: completedAt,
-      completed_offset_minutes: OFFSET_MINUTES,
+      completed_offset_minutes: offsetMinutesFor(completedAt),
       created_at: completedAt,
     });
   }
@@ -372,7 +411,7 @@ let customExerciseId;
       mood_after: null,
       feeling_after: chance(0.5) ? pick(["steadier", "calmer", "still shaky", "present"]) : null,
       completed_at: completedAt,
-      completed_offset_minutes: OFFSET_MINUTES,
+      completed_offset_minutes: offsetMinutesFor(completedAt),
       created_at: completedAt,
     });
   }
@@ -405,7 +444,7 @@ let customExerciseId;
       mood_after: chance(0.6) ? between(3, 5) : null,
       technique_used: pick(techniques),
       completed_at: completedAt,
-      completed_offset_minutes: OFFSET_MINUTES,
+      completed_offset_minutes: offsetMinutesFor(completedAt),
       created_at: completedAt,
     });
   }
@@ -464,9 +503,9 @@ let customExerciseId;
       if (ended.getTime() <= Date.now() - 120_000) {
         sleepWindow = JSON.stringify({
           startedAt: started.toISOString(),
-          startedOffsetMinutes: OFFSET_MINUTES,
+          startedOffsetMinutes: offsetMinutesFor(started),
           endedAt: ended.toISOString(),
-          endedOffsetMinutes: OFFSET_MINUTES,
+          endedOffsetMinutes: offsetMinutesFor(ended),
         });
       }
     }
@@ -485,7 +524,7 @@ let customExerciseId;
         : "",
       sleep_window: sleepWindow,
       logged_at: loggedAt,
-      logged_offset_minutes: OFFSET_MINUTES,
+      logged_offset_minutes: offsetMinutesFor(loggedAt),
       created_at: loggedAt,
     });
   }
@@ -606,7 +645,7 @@ let customExerciseId;
       note: chance(0.25) ? "Writing these down actually changes the evening." : "",
       starred: chance(0.15),
       logged_at: loggedAt,
-      logged_offset_minutes: OFFSET_MINUTES,
+      logged_offset_minutes: offsetMinutesFor(loggedAt),
       created_at: loggedAt,
     };
     if (level >= 2) {
@@ -624,6 +663,40 @@ let customExerciseId;
   counts.gratitude_entries = await insert("gratitude_entries", rows);
 }
 
+// ----------------------------------------------------------------- CBT and ACT
+// The teardown contract for the CBT and ACT surfaces: one declared list, wiped
+// in full before this section inserts anything, so a re-run replaces the demo
+// account's content rather than stacking a second copy on top of it.
+//
+// PARENTS AND STANDALONE TABLES ONLY. The chain children — milestones,
+// exposure_items, exposure_sessions, task_steps, challenge_plans and
+// act_action_steps — are deliberately absent, because every foreign key among
+// these tables declares `on delete cascade` and deleting the parent reclaims
+// them. That assumption is not left to trust: the cascade guard in
+// test/integration/db-functions.integration.test.ts holds it against the live
+// catalogue, so a migration that adds a non-cascading child fails there instead
+// of silently orphaning rows on the demo account.
+//
+// The list is empty today — this groundwork adds no CBT or ACT content (#1280).
+// Each later slice adds the parents and standalone tables it seeds.
+const CBT_ACT_WIPE_TABLES = [];
+
+for (const table of CBT_ACT_WIPE_TABLES) {
+  await wipe(table);
+}
+
 // ---------------------------------------------------------------------- done
 console.log("Seeded demo@test.local:");
 for (const [table, n] of Object.entries(counts)) console.log(`  ${table}: ${n}`);
+
+// Wiping a table without refilling it is how the demo account quietly loses a
+// surface forever: the rows go, nothing replaces them, and the only symptom is
+// an empty screen nobody happens to open. Every table this run cleared must end
+// it with rows.
+const wipedButEmpty = CBT_ACT_WIPE_TABLES.filter((table) => !counts[table]);
+if (wipedButEmpty.length > 0) {
+  throw new Error(
+    `Wiped but not re-seeded: ${wipedButEmpty.join(", ")}. ` +
+      "Every table in CBT_ACT_WIPE_TABLES must end the run with a non-zero insert count.",
+  );
+}
