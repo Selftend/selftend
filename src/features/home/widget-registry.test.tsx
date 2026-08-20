@@ -10,6 +10,8 @@ import {
 } from "@/src/features/home/widget-registry";
 import { CONCERN_KEYS, resolveConcernWidgetIds } from "@/src/features/onboarding/concerns";
 import { SHARED_TOOL_WIDGET_IDS } from "@/src/features/onboarding/recommendations";
+import type { ModuleTagKey } from "@/src/features/home/widget-registry";
+import { MODULE_TAG_KEYS } from "@/src/features/home/module-tag-copy";
 import enNavigation from "@/src/i18n/locales/en/navigation.json";
 import bgNavigation from "@/src/i18n/locales/bg/navigation.json";
 
@@ -71,8 +73,8 @@ const SURVIVOR_ROUTES: Record<string, string> = {
 // guards read the real copy rather than a fixture, because the invariant they hold is
 // about what a translator wrote, not about what this file expects them to write.
 const LOCALE_BUNDLES = [
-  { locale: "en", bundle: enNavigation as unknown },
-  { locale: "bg", bundle: bgNavigation as unknown },
+  { locale: "en", bundle: enNavigation },
+  { locale: "bg", bundle: bgNavigation },
 ] as const;
 
 /** The string at a dotted key path, or `undefined` if nothing string-shaped sits there. */
@@ -102,9 +104,21 @@ function copyAt(bundle: unknown, keyPath: string): string | undefined {
  */
 const ACRONYM_AS_A_WORD = /(?<![\p{L}\p{N}])(CBT|ACT|КПТ)(?![\p{L}\p{N}])/gu;
 
-/** Where the arrange chip's two strings per module live, as the screen composes them. */
-const moduleTagLabelKey = (tag: string) => `home.arrange.moduleTag.${tag}`;
-const moduleTagA11yKey = (tag: string) => `home.arrange.moduleTag.${tag}A11y`;
+/**
+ * The arrange chip's two key paths per module, READ from the screen's own map rather
+ * than rebuilt here (#1247).
+ *
+ * ☠️ This is the whole reason `MODULE_TAG_KEYS` lives in its own module. A guard that
+ * reconstructed `home.arrange.moduleTag.${tag}` would prove only that its own
+ * reconstruction resolves - a typo in the real map would leave it green while a raw key
+ * path shipped to a user. For `cbt` and `act` the arrange suite happens to pin both
+ * strings literally, but its stub catalogue knows only those two modules, so for the
+ * THIRD module this ticket exists to protect, nothing else would notice.
+ */
+const TAG_COPY_KEYS = [
+  { kind: "printed", of: (tag: ModuleTagKey) => MODULE_TAG_KEYS[tag]?.label },
+  { kind: "spoken", of: (tag: ModuleTagKey) => MODULE_TAG_KEYS[tag]?.a11y },
+] as const;
 
 describe("widget registry", () => {
   it("exposes the daily check-in (mood-checkin) meta", () => {
@@ -460,10 +474,13 @@ describe("widget registry", () => {
      * Verified by mutation: deleting `home.arrange.moduleTag.cbt` from `en/navigation.json`
      * leaves that guard green.
      *
-     * ⚠️ English only, and that is not an oversight. `src/i18n/locale-parity.test.ts`
-     * enforces en↔bg key-path parity with an empty `KNOWN_GAPS`, so once a key exists in
-     * English it cannot stay out of Bulgarian - verified by mutation there too. A
-     * cross-locale sweep here would be a second, rotting copy of that guard.
+     * ⚠️ Both locales, but this is NOT the cross-locale key sweep #1247's comment rightly
+     * warned against. `src/i18n/locale-parity.test.ts` owns key-path parity (empty
+     * `KNOWN_GAPS`, verified by mutation), so re-checking that a path EXISTS in Bulgarian
+     * would be a second, rotting copy of that guard. What parity structurally cannot see
+     * is an empty VALUE: it compares paths, and `""` is a perfectly good leaf path. So the
+     * division of labour is - parity proves the key is there, this proves a translator
+     * actually wrote something at it, in the language the chip will be read in.
      *
      * The tags are derived from the real registry rather than restated, so "can return"
      * means what a widget can actually make it return - a key in `ModuleTagKey` that no
@@ -471,24 +488,27 @@ describe("widget registry", () => {
      * the non-vacuity gate: an empty derivation would leave `missingCopy` empty too.
      */
     it("every tag the predicate can return has both of its strings", () => {
-      const tags = [
+      const tags: ModuleTagKey[] = [
         ...new Set(
           Object.keys(WIDGET_META)
             .map((id) => moduleTagFor(id))
-            .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined),
+            .filter((tag): tag is ModuleTagKey => tag !== undefined),
         ),
       ].sort();
 
       const missingCopy = tags.flatMap((tag) =>
-        [
-          { kind: "printed", key: moduleTagLabelKey(tag) },
-          { kind: "spoken", key: moduleTagA11yKey(tag) },
-        ]
-          .filter(({ key }) => copyAt(enNavigation, key) === undefined)
-          .map(
-            ({ kind, key }) =>
-              `${tag}: no ${kind} string at "${key}" in en/navigation.json, so a tagged chip would render that key path to a user. Coin the copy - do not drop the key.`,
-          ),
+        TAG_COPY_KEYS.flatMap(({ kind, of }) => {
+          const key = of(tag);
+          if (key === undefined) {
+            return [
+              `${tag}: the predicate can return this tag but MODULE_TAG_KEYS has no entry for it, so the chip has no ${kind} string to reach for at all.`,
+            ];
+          }
+          return LOCALE_BUNDLES.filter(({ bundle }) => !copyAt(bundle, key)?.trim()).map(
+            ({ locale }) =>
+              `${tag}: no ${kind} string at "${key}" in ${locale}/navigation.json, so a tagged chip would render that key path to a user. Coin the copy - do not drop the key.`,
+          );
+        }),
       );
 
       expect(tags.length).toBeGreaterThan(0);
