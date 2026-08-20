@@ -2,10 +2,24 @@ import { render } from "@testing-library/react-native";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
+import i18n from "@/src/i18n";
 
-jest.mock("@/src/components/app/screen-breadcrumb", () => ({ ScreenBreadcrumb: () => null }));
+jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
+jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
+
+const mockUseBreadcrumbs = useBreadcrumbs as jest.MockedFunction<typeof useBreadcrumbs>;
+
+beforeAll(async () => {
+  await i18n.changeLanguage("en");
+});
 
 describe("ScreenHeader", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseBreadcrumbs.mockReturnValue([{ label: "Tools", href: "/tools" }, { label: "Check-in" }]);
+  });
+
   it("renders the title", () => {
     const { getByText } = render(<ScreenHeader title="Mindfulness" />);
     expect(getByText("Mindfulness")).toBeTruthy();
@@ -14,5 +28,23 @@ describe("ScreenHeader", () => {
   it("renders the right slot when provided", () => {
     const { getByText } = render(<ScreenHeader title="Habit" right={<Text>Archived</Text>} />);
     expect(getByText("Archived")).toBeTruthy();
+  });
+
+  // G1 (#1250): the chrome renders exactly one Escape, and renders it
+  // unconditionally. "Exactly one" is R1 - two exits are two promises;
+  // "unconditionally" is what lets a source walk answer the coverage question.
+  it("renders exactly one Escape", () => {
+    const { getAllByTestId } = render(<ScreenHeader title="Mindfulness" />);
+    expect(getAllByTestId("screen-escape")).toHaveLength(1);
+  });
+
+  it("still renders the Escape on a one-crumb screen, where the trail hides", () => {
+    // `/notifications`, `/settings`, `/support` and the rest of the eight: the
+    // reported symptom was that these had no way out at all.
+    mockUseBreadcrumbs.mockReturnValue([{ label: "Reminders" }]);
+    const { getAllByTestId, queryByText } = render(<ScreenHeader title="Reminders" />);
+    expect(getAllByTestId("screen-escape")).toHaveLength(1);
+    // The trail itself is still hidden - only the Escape was decoupled from it.
+    expect(queryByText("Tools")).toBeNull();
   });
 });

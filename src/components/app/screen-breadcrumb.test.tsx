@@ -45,24 +45,20 @@ describe("ScreenBreadcrumb", () => {
     expect(router.push).toHaveBeenCalledWith("/tools", { dangerouslySingular: true });
   });
 
-  // #495, revised on owner decision (2026-07-29): the back affordance is
-  // STRUCTURAL - always one step up the trail (Material's "Up"), never
-  // history. Browser/system back covers history on every platform; this
-  // arrow's job is the deterministic single hop the trail promises.
-  it("renders a back button that climbs to the deepest ancestor crumb", () => {
+  // R7 (#1250): this component is the trail and nothing else. The leading
+  // affordance moved out to `ScreenEscape` precisely because living in here made
+  // it vanish on every one-crumb screen - so it must not creep back in.
+  it("renders no Escape of its own - that slot belongs to the chrome", () => {
     mockUseBreadcrumbs.mockReturnValue([
       { label: "Tools", href: "/tools" },
       { label: "Gratitude log", href: "/tools/gratitude-log" },
       { label: "Entry" },
     ]);
-    const { getByLabelText } = render(<ScreenBreadcrumb />);
-    fireEvent.press(getByLabelText("Go back"));
-    expect(router.replace).toHaveBeenCalledWith("/tools/gratitude-log");
-  });
-
-  it("hides the back button along with a hidden trail", () => {
-    mockUseBreadcrumbs.mockReturnValue([{ label: "Home" }]);
-    const { queryByLabelText } = render(<ScreenBreadcrumb />);
+    const { queryByTestId, queryByLabelText } = render(<ScreenBreadcrumb />);
+    expect(queryByTestId("screen-escape")).toBeNull();
     expect(queryByLabelText("Go back")).toBeNull();
+    expect(queryByLabelText("Close")).toBeNull();
+    // And it never navigates by `replace` - the crumbs push, the Escape replaces.
+    expect(router.replace).not.toHaveBeenCalled();
   });
 });

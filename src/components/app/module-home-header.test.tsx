@@ -4,6 +4,8 @@ import { router } from "expo-router";
 import { ModuleHomeHeader } from "./module-home-header";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+let mockPathname = "/modules/cbt";
+
 jest.mock("expo-router", () => {
   const React = require("react") as typeof import("react");
 
@@ -14,7 +16,7 @@ jest.mock("expo-router", () => {
       push: jest.fn(),
       replace: jest.fn(),
     },
-    usePathname: () => "/modules/cbt",
+    usePathname: () => mockPathname,
     useFocusEffect: (callback: () => void | (() => void)) => {
       React.useEffect(callback, [callback]);
     },
@@ -112,6 +114,24 @@ describe("ModuleHomeHeader action buttons", () => {
 describe("ModuleHomeHeader shell", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockPathname = "/modules/cbt";
+  });
+
+  // G1 (#1250): exactly one Escape, rendered unconditionally.
+  it("renders exactly one Escape", () => {
+    renderWithProviders(<ModuleHomeHeader title="CBT" />);
+
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+  });
+
+  it("still renders the Escape on a one-crumb screen, where the trail hides", () => {
+    // A module home reached directly - and the eight one-crumb routes generally.
+    mockPathname = "/notifications";
+    renderWithProviders(<ModuleHomeHeader title="Reminders" />);
+
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+    // The trail is still hidden at one crumb - only the Escape was decoupled.
+    expect(screen.queryByText("Modules")).toBeNull();
   });
 
   it("renders breadcrumb, h1 and tagline", () => {
