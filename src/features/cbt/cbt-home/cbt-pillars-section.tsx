@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { PillarCard } from "@/src/components/app/pillar-card";
+import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
 import { PILLAR_STRATEGIES, SHARED_TOOLS_BY_PILLAR } from "./cbt-home-config";
-import { SharedToolsRow } from "./shared-tools-row";
 
 export function CbtPillarsSection() {
   const { t } = useTranslation("cbt");
@@ -45,7 +45,10 @@ export function CbtPillarsSection() {
           </PillarCard>
           {SHARED_TOOLS_BY_PILLAR[pillar].length > 0 ? (
             <View className="ml-5 mr-2">
-              <SharedToolsRow tools={SHARED_TOOLS_BY_PILLAR[pillar]} />
+              <SharedToolsRow
+                heading={t("pillars.usesSharedTools")}
+                tools={SHARED_TOOLS_BY_PILLAR[pillar]}
+              />
             </View>
           ) : null}
         </View>

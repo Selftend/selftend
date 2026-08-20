@@ -2,7 +2,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { SharedToolsRow } from "./shared-tools-row";
-import { SHARED_TOOLS_BY_PILLAR } from "./cbt-home-config";
+import { SHARED_TOOLS_BY_PILLAR } from "@/src/features/cbt/cbt-home/cbt-home-config";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -24,7 +24,7 @@ describe("SharedToolsRow", () => {
     "opens the tool's own route when a %s chip is pressed",
     (pillar) => {
       const tools = SHARED_TOOLS_BY_PILLAR[pillar];
-      renderWithProviders(<SharedToolsRow tools={tools} />);
+      renderWithProviders(<SharedToolsRow heading="Uses these shared tools" tools={tools} />);
 
       const chips = screen.getAllByRole("button");
       expect(chips).toHaveLength(tools.length);
@@ -36,4 +36,13 @@ describe("SharedToolsRow", () => {
       });
     },
   );
+
+  // The heading is the caller's copy, not a key this component owns - that is
+  // what lets a second module reuse the row without inheriting `cbt.json`.
+  it("renders the heading it is given rather than a CBT string", () => {
+    renderWithProviders(<SharedToolsRow heading="Also try" tools={SHARED_TOOLS_BY_PILLAR.think} />);
+
+    expect(screen.getByText("Also try")).toBeTruthy();
+    expect(screen.queryByText("Uses these shared tools")).toBeNull();
+  });
 });
