@@ -1393,6 +1393,16 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
     "Wrote for twenty minutes.",
     "Fixed the thing that has been annoying me for a month.",
   ];
+  // The self-compassion card (#1283) asks what you would say to a friend in the
+  // same situation, so every one of these is the KIND REPLY and never the
+  // criticism it answers - the field is not built to hold the criticism.
+  const selfCompassionNotes = [
+    "You had a hard week and you still showed up for the parts that mattered.",
+    "You would not hold this against anyone else. Give yourself the same reading.",
+    "One rushed piece of work is not the measure of the month.",
+    "Tired is a reason, not an excuse you have to justify.",
+    "You asked for what you needed today. That was the difficult bit.",
+  ];
 
   const days = new Set();
   for (let d = 4; d < DAYS; d += d >= 52 && d <= 64 ? between(1, 2) : between(2, 4)) {
@@ -1407,6 +1417,10 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
       // screen's exercise/mood comparison has nothing to compare.
       const exerciseDone = chance(0.55);
       const socialConnectionMade = chance(0.6);
+      // All three states the self-compassion card can hold: untouched, noticed
+      // with nothing written, and noticed with a reply. Ticking it and writing
+      // nothing is a complete entry by design, so it has to appear.
+      const selfCriticismNoticed = chance(0.45);
       const createdAt = at(d, 21, 30);
       return {
         user_id: DEMO_USER_ID,
@@ -1421,6 +1435,8 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
         social_connection_made: socialConnectionMade,
         social_notes: socialConnectionMade ? pick(socialNotes) : "",
         meaningful_activity: chance(0.7) ? pick(meaningfulActivities) : "",
+        self_criticism_noticed: selfCriticismNoticed,
+        self_compassion_note: selfCriticismNoticed && chance(0.75) ? pick(selfCompassionNotes) : "",
         created_at: createdAt,
       };
     });
