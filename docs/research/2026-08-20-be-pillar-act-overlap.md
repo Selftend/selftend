@@ -137,6 +137,15 @@ The ticket asks for this explicitly, including the answer "nothing".
 - _not_ implemented anywhere: ACT has no self-compassion tool, and `loving-kindness` is a seated meditation rather than a restructuring exercise,
 - and it sits naturally next to the existing `Think` tools (`beliefs` already handles recurring self-critical themes) — which is a boundary question for the tool-definition ticket, not this one.
 
+> **Corrected 2026-08-20 while resolving [#1201](https://github.com/Selftend/selftend/issues/1201).** Both bullets above are overstated, and the section heading with them. What is uncovered is the **capture**, not the exercise.
+>
+> 1. **"Specified in the Gillihan doc (twice)" is misleading.** `cbt-gillihan-made-simple.md` has exactly ten `### Strategy` headings and none is self-compassion. Line 154 is a key-concept bullet inside **Strategy 3: Thought Records** (pillar `Think`); line 477 is one inside **Strategy 9: Self-Care** (pillar `Be`). Neither carries tool features or a user-inputs table. The doc does not ask for a tool — it asks for a concept inside two tools that both already ship.
+> 2. **"Not implemented anywhere" is false at the copy level.** The re-voicing prompt ships in three flows: `record.disputePrompt2` (_"What would you tell a close friend who had this thought?"_) renders unconditionally as one of five bullets in the thought record's Evidence step (`src/features/cbt/steps/evidence-step.tsx:36`); `weeklyReview.reflection.prompt2` is a fixed weekly-review prompt; `progress.prompt3` asks it monthly. `record.balancedThoughtPlaceholder` even steers the output — _"believable and kinder, not forced positivity."_
+>
+> All three are **static hint text**: nothing is stored, nothing re-rated, nothing reviewable. That absence of capture is the real gap, and it was judged too small to justify a strategy. [#1201](https://github.com/Selftend/selftend/issues/1201) resolved it as a **field on the existing Self-care screen**, not a new tool.
+>
+> A third correction found in the same pass: **`self_care_logs` no longer holds sleep or gratitude.** `20260553_checkin_and_selfcare_dedup.sql:13` dropped `sleep_hours`, `sleep_quality` and `gratitude` — _"now owned by the shared Sleep + Gratitude tools"_ — but the **screen** still represents them, as link rows into `/tools/sleep` and `/tools/gratitude-log` (`self-care.tsx:128`, `:145`). So Gillihan's six Strategy-9 factors are three fields + two links + one absent in both forms.
+
 Also uncovered: **mindful walking** and **mindful eating**, the two Gillihan exercises that never shipped. Both are instruction-only ("with a meal", "10/20 min") and would be additions to `/tools/meditation`'s practice list, not new `Be` strategies.
 
 ---
@@ -160,5 +169,5 @@ Also uncovered: **mindful walking** and **mindful eating**, the two Gillihan exe
 
 - [Decide how CBT-native Be tools coexist with ACT duplicates](https://github.com/Selftend/selftend/issues/1197) now has to price duplication against **two** existing surfaces per tool, not one — and one of those surfaces (`/tools/grounding`, `/tools/meditation`) is _already inside the `Be` card_. A CBT-native `Be` tool would sit directly above a shared tool that does the same thing.
 - [Define Grounding and Presence…](https://github.com/Selftend/selftend/issues/1200) has a strong evidence-backed "no new tool — promote the existing Grounding tool into a strategy slot" answer available.
-- [Define the Acceptance and Self-Compassion tool](https://github.com/Selftend/selftend/issues/1201) should probably split: acceptance is covered, self-compassion is the one real gap.
+- [Define the Acceptance and Self-Compassion tool](https://github.com/Selftend/selftend/issues/1201) should probably split: acceptance is covered, self-compassion is the one real gap. **— Resolved: it did split, and neither half became a tool.** Acceptance was ruled covered by ACT's Expansion (#1197); self-compassion became a card on the existing Self-care screen. See the correction block in §3.
 - [Decide how far the mindfulness relocation is reversed](https://github.com/Selftend/selftend/issues/1198) is now the load-bearing ticket. The relocation is not just a doc note — it is visible in `practices.ts:11` and in the pillar-named hue tokens. Deciding how far to reverse it largely determines what is left for the per-tool tickets to define.
