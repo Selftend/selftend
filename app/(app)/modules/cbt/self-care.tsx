@@ -36,6 +36,8 @@ interface FormState {
   socialConnectionMade: boolean;
   socialNotes: string;
   meaningfulActivity: string;
+  selfCriticismNoticed: boolean;
+  selfCompassionNote: string;
 }
 
 const emptyForm: FormState = {
@@ -47,6 +49,8 @@ const emptyForm: FormState = {
   socialConnectionMade: false,
   socialNotes: "",
   meaningfulActivity: "",
+  selfCriticismNoticed: false,
+  selfCompassionNote: "",
 };
 
 export default function SelfCareScreen() {
@@ -73,6 +77,8 @@ export default function SelfCareScreen() {
         socialConnectionMade: existing.socialConnectionMade,
         socialNotes: existing.socialNotes,
         meaningfulActivity: existing.meaningfulActivity,
+        selfCriticismNoticed: existing.selfCriticismNoticed,
+        selfCompassionNote: existing.selfCompassionNote,
       });
     } else {
       // No log for the selected day - clear the form so a previous day's
@@ -94,6 +100,8 @@ export default function SelfCareScreen() {
         socialConnectionMade: form.socialConnectionMade,
         socialNotes: form.socialNotes,
         meaningfulActivity: form.meaningfulActivity,
+        selfCriticismNoticed: form.selfCriticismNoticed,
+        selfCompassionNote: form.selfCompassionNote,
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
     } catch {
@@ -275,6 +283,48 @@ export default function SelfCareScreen() {
                 value={form.meaningfulActivity}
               />
             </View>
+          </CardContent>
+        </Card>
+
+        {/*
+          Self-compassion, last: the target framework puts it after social connection.
+          The checkbox is a neutral observation, not a prompt to find fault - leaving it
+          untouched is a complete answer. The note is optional and holds only the kind
+          reply; there is deliberately no "what did you say to yourself" field beside it,
+          which would let a bare self-criticism be saved with no reply (#1283).
+        */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("selfCare.selfCompassion")}</CardTitle>
+          </CardHeader>
+          <CardContent className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <Checkbox
+                accessibilityLabel={t("selfCare.selfCriticismNoticed")}
+                checked={form.selfCriticismNoticed}
+                onCheckedChange={(c) =>
+                  setForm((p) => ({ ...p, selfCriticismNoticed: Boolean(c) }))
+                }
+              />
+              <Label
+                onPress={() =>
+                  setForm((p) => ({ ...p, selfCriticismNoticed: !p.selfCriticismNoticed }))
+                }
+              >
+                {t("selfCare.selfCriticismNoticed")}
+              </Label>
+            </View>
+            {form.selfCriticismNoticed ? (
+              <View className="gap-2">
+                <Label>{t("selfCare.selfCompassionNote")}</Label>
+                <Textarea
+                  accessibilityLabel={t("selfCare.selfCompassionNote")}
+                  onChangeText={(text) => setForm((p) => ({ ...p, selfCompassionNote: text }))}
+                  placeholder={t("selfCare.selfCompassionNotePlaceholder")}
+                  value={form.selfCompassionNote}
+                />
+              </View>
+            ) : null}
           </CardContent>
         </Card>
       </View>
