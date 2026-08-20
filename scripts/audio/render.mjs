@@ -25,6 +25,7 @@ import { writeFile, mkdir, appendFile, access } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { measure } from "./postprocess.mjs";
 import {
   BELLS,
   SFX_MODEL,
@@ -389,6 +390,105 @@ async function render(round, go) {
   }
 }
 
+/**
+ * Generate a short take of every prompt and measure it, BEFORE the real pass.
+ *
+ * ☠️ This exists because Round B was rendered and came back mostly silent
+ * (#1316). Negation suppresses output level in Sound Effects and it compounds:
+ * the `night` prompt measured -47.4 dBFS peak with the full shared tail, -4.7
+ * without it, and "No sudden events." alone cost ~17 dB. Twenty of 27 masters
+ * were unusable and ~1,881 credits went with them.
+ *
+ * A 4s take of each clip costs about a seventh of a full pass, so there is no
+ * reason ever to discover this again after spending. Run it after ANY prompt
+ * change.
+ */
+const PREFLIGHT_SECONDS = 4;
+const PREFLIGHT_SILENT_DBTP = -30; // measured: silent takes land at -40..-47
+const PREFLIGHT_QUIET_DBTP = -12; // measured: healthy takes land at -1..-6
+const PREFLIGHT_TAKES = 2;
+
+/**
+ * ☠️ One take proves nothing, and finding that out was the whole point.
+ *
+ * The first preflight scored `night` at -3.79 dBTP and `ocean` at -7.44 — both
+ * "ok" — when those exact prompts had just come back SILENT across all three
+ * candidates of the real pass. The failure is STOCHASTIC: negation biases a
+ * prompt toward silence, it does not doom it. So a prompt is only condemned when
+ * EVERY take fails, and a prompt whose takes disagree is reported separately,
+ * because that is a different defect with a different fix:
+ *
+ *   every take bad  -> the prompt is broken, rewrite it (#1316)
+ *   takes disagree  -> the prompt is a coin flip, so the RENDER needs a
+ *                      per-candidate level gate and a re-roll, not new words
+ */
+async function preflight(round, takes = PREFLIGHT_TAKES) {
+  const key = apiKey();
+  const clips = clipsForRound(round);
+  const dir = join(OUT_DIR, "preflight", `round-${round}`);
+  await mkdir(dir, { recursive: true });
+
+  console.log(
+    `Probing ${clips.length} prompts x ${takes} takes at ${PREFLIGHT_SECONDS}s ` +
+      `(~${Math.round(clips.length * takes * PREFLIGHT_SECONDS * CREDITS_PER_SECOND)} credits).\n`,
+  );
+  console.log("clip                          dBTP per take        verdict");
+
+  const broken = [];
+  const flaky = [];
+  for (const clip of clips) {
+    const peaks = [];
+    for (let take = 1; take <= takes; take += 1) {
+      const path = join(dir, `${clip.id}-t${take}.pcm`);
+      if (!(await exists(path))) {
+        const { buffer } = await soundEffect(key, {
+          text: composePrompt(clip.text),
+          durationSeconds: PREFLIGHT_SECONDS,
+          promptInfluence: clip.promptInfluence,
+          loop: clip.loop,
+        });
+        await writeFile(path, buffer);
+      }
+      peaks.push((await measure(path)).dbtp);
+    }
+
+    const usable = peaks.filter((p) => p >= PREFLIGHT_QUIET_DBTP).length;
+    const anySilent = peaks.some((p) => p < PREFLIGHT_SILENT_DBTP);
+    let verdict;
+    if (usable === 0) {
+      verdict = "BROKEN";
+      broken.push({ id: clip.id, peaks });
+    } else if (usable < peaks.length) {
+      verdict = anySilent ? "FLAKY (a take was silent)" : "FLAKY";
+      flaky.push({ id: clip.id, peaks });
+    } else {
+      verdict = "ok";
+    }
+    console.log(
+      clip.id.padEnd(26) + peaks.map((p) => String(p).padStart(8)).join("") + "   " + verdict,
+    );
+  }
+
+  console.log("");
+  if (flaky.length) {
+    console.log(
+      `${flaky.length} prompt(s) are a coin flip - some takes usable, some not:\n` +
+        flaky.map((f) => `  ${f.id} - ${f.peaks.join(", ")} dBTP`).join("\n") +
+        "\n  These need a per-candidate level gate at render time, not new words.\n",
+    );
+  }
+  if (broken.length) {
+    console.error(
+      `${broken.length} prompt(s) produced NO usable take:\n` +
+        broken.map((b) => `  ${b.id} - ${b.peaks.join(", ")} dBTP`).join("\n") +
+        "\n\nFix these before spending on the full pass. Negation is the usual cause\n" +
+        "- describe what the sound IS, not what it is not (#1316).",
+    );
+    process.exit(1);
+  }
+  console.log("Every prompt produced at least one usable take.");
+}
+
 /** Extension for a TTS output_format id, so masters are not all called .wav. */
 function formatExtension(format) {
   return format.startsWith("mp3") ? "mp3" : "wav";
@@ -516,6 +616,11 @@ switch (command) {
   case "plan":
     plan(round);
     break;
+  case "preflight": {
+    const takesFlag = rest.indexOf("--takes");
+    await preflight(round, takesFlag === -1 ? PREFLIGHT_TAKES : Number(rest[takesFlag + 1]));
+    break;
+  }
   case "render":
     await render(round, go);
     break;
@@ -527,6 +632,7 @@ switch (command) {
       "usage:\n" +
         "  node scripts/audio/render.mjs probe\n" +
         "  node scripts/audio/render.mjs plan --round A|B\n" +
+        "  node scripts/audio/render.mjs preflight --round A|B\n" +
         "  node scripts/audio/render.mjs render --round A|B --go\n" +
         "  node scripts/audio/render.mjs render-voices --go",
     );
