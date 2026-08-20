@@ -18,20 +18,42 @@
  * only reproducible thing about the render. Treat them as the source.
  */
 
-/** #1134 §2 — pasted verbatim into every Sound Effects prompt. */
-export const PALETTE =
-  "Close and dry, as if recorded in a small soft room. No reverb, no echo, no large or cathedral space. Dark and warm in tone, with no bright or glassy high end. Very low noise floor. No music and no melody.";
+/**
+ * ☠️ #1134 §2 (palette) and §3 (must-not) CANNOT be used as written.
+ *
+ * Sound Effects rejects any prompt over 450 characters, server-side — it binds
+ * the API and the web UI identically. The two blocks together are 434
+ * characters, 96% of the budget, leaving 16 for the sound itself. Every one of
+ * the thirteen clips composed to 634-859 and was refused.
+ *
+ * The reasoning in §2 survives: sixteen independently-prompted clips from a
+ * non-deterministic model really would arrive as a stock-library grab-bag. Only
+ * the mechanism changes — the shared identity is carried in 176 characters
+ * instead of 434. Most of what was cut was redundant either with itself ("no
+ * reverb, no echo, no large or cathedral space" is one constraint stated three
+ * times) or with the per-clip texts, which already list their own exclusions.
+ *
+ * Recorded on #1134.
+ */
+export const SHARED_TAIL =
+  "Close, dry, small soft room. No reverb. Dark and warm, no glassy highs. Very low noise floor. No music, no speech. No sudden events. No silence at start or end. No wide stereo.";
 
-/** #1134 §3 — appended to every non-voice prompt. */
-export const MUST_NOT =
-  "No sudden or startling attack. No melody and no discernible pitch movement. No recognisable music. No speech, singing, or speech-like sounds. No sudden discrete events. No silence at the beginning or end. No wide stereo effects.";
+/** The hard cap the API enforces. */
+export const MAX_PROMPT_CHARS = 450;
 
 /**
- * Compose a Sound Effects prompt the way #1134 §6 specifies: the per-clip text
- * "used as-is with §2 and §3 appended".
+ * Compose a Sound Effects prompt. Throws rather than letting an over-long
+ * prompt reach the API, so the cap is caught by `plan` and by tests instead of
+ * by a failed generation.
  */
 export function composePrompt(clipText) {
-  return [clipText, PALETTE, MUST_NOT].join(" ");
+  const composed = `${clipText} ${SHARED_TAIL}`;
+  if (composed.length > MAX_PROMPT_CHARS) {
+    throw new Error(
+      `prompt is ${composed.length} chars, over the ${MAX_PROMPT_CHARS} limit: ${clipText.slice(0, 60)}...`,
+    );
+  }
+  return composed;
 }
 
 /**
@@ -56,8 +78,12 @@ export const SFX_OUTPUT_FORMAT = "pcm_48000";
 export const TTS_MODEL = "eleven_multilingual_v2";
 export const SFX_MODEL = "eleven_text_to_sound_v2";
 
-/** 40 credits/second when duration is explicit (#1134 §4). */
-export const CREDITS_PER_SECOND = 40;
+/**
+ * ☠️ MEASURED at ~3.3 credits/second, not the 40/sec #1134 costed everything at.
+ * The composer prices 2.0s at 7 credits and 7.0s at 23. That makes the whole
+ * pass ~2,000 credits rather than ~24,600. Recorded on #1159.
+ */
+export const CREDITS_PER_SECOND = 3.3;
 
 export const BELLS = [
   {
@@ -71,7 +97,7 @@ export const BELLS = [
     // #1139: the shared start/end bell. Renders at 7s and is trimmed by ear at
     // the gate — final length is a listening judgement, not a fixed number.
     loudnessTarget: "-20 LUFS-I, <= -3 dBTP",
-    text: "A single struck bronze meditation bowl, one strike only, with a soft padded mallet. A warm low fundamental with no bright metallic clang. The strike is gentle — the sound emerges rather than cracks. A long, smooth decay that fades continuously to silence over about six seconds and never swells, pulses, or blooms again after the initial strike. One strike and nothing else: no second strike, no handling noise, no room tone.",
+    text: "A single struck bronze meditation bowl, one gentle strike with a soft padded mallet. Warm low fundamental, no bright metallic clang. A long smooth decay fading continuously to silence over about six seconds, never swelling again. No second strike, no handling noise.",
   },
   {
     id: "interval-temple-block",
@@ -147,8 +173,8 @@ const TEXTURE_FAMILIES = [
   {
     id: "soft-breath",
     inhale:
-      "A steady, continuous stream of soft warm air, as through slightly parted lips, held at one constant intensity for the whole duration. This is a sustained texture, not a breath being taken — no rise, no fall, no swell, no beginning and no end. No voice, no vocal character, no sighing.",
-    exhaleModifier: "Lower, darker and warmer in tone.",
+      "A steady continuous stream of soft warm air, as through slightly parted lips, held at one constant intensity throughout. A sustained texture, not a breath being taken: no rise, no fall. No voice, no sighing.",
+    exhaleModifier: "Lower, darker and warmer.",
   },
   {
     id: "ocean-swell",
