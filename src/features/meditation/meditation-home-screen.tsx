@@ -17,6 +17,7 @@ import {
 } from "@/src/components/app/meditation-onboarding-modal";
 import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/timer/interval";
 import { DurationSlider } from "@/src/features/meditation/duration-slider";
+import { VolumeSlider } from "@/src/components/app/volume-slider";
 import { computeWindowInsights } from "@/src/features/meditation/insights";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
@@ -90,6 +91,8 @@ export default function MeditationHomeScreen() {
   // Same null-until-picked shape as the length above, and for the same reason:
   // the stored bell arrives with the preferences query, after first paint.
   const bellMinutes = pickedBell ?? preferences?.meditationIntervalBellMinutes ?? 0;
+  const [pickedBellVolume, setPickedBellVolume] = useState<number | null>(null);
+  const bellVolume = pickedBellVolume ?? preferences?.bellVolume ?? 1;
 
   // The loaded sessions only stand in until the server median arrives (undefined while
   // loading); once it does it wins, including a genuine null for "no sessions yet".
@@ -216,6 +219,13 @@ export default function MeditationHomeScreen() {
     void updatePreferences
       .mutateAsync({ meditationIntervalBellMinutes: minutes })
       .catch(() => undefined);
+  }
+
+  // Volume drags like the length does, so it persists on commit for the same
+  // reason: a drag emits per pan move (#1188).
+  function commitBellVolume(volume: number) {
+    if (!userId) return;
+    void updatePreferences.mutateAsync({ bellVolume: volume }).catch(() => undefined);
   }
 
   // The same clock reading, so the last column advances with the query bound
@@ -365,6 +375,27 @@ export default function MeditationHomeScreen() {
                 value={bellMinutes}
                 onChange={pickBell}
               />
+              {/* The one lane with no control was the loudest sound in the app
+                  (#1188): every bell fired at a hardcoded 1 while both breathing
+                  lanes had a slider. It governs all three bells - start, end and
+                  interval - not just the interval row above it, which is why the
+                  label says "bell" and not "interval bell". 0 is off. */}
+              <View className="gap-2" testID="sit-bell-volume">
+                <View className="flex-row items-baseline justify-between gap-3">
+                  <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                    {t("timer:bell.volumeLabel")}
+                  </Text>
+                  <Text className="text-[13px] font-semibold tabular-nums text-foreground">
+                    {bellVolume > 0 ? `${Math.round(bellVolume * 100)}%` : t("timer:bell.muted")}
+                  </Text>
+                </View>
+                <VolumeSlider
+                  value={bellVolume}
+                  onChange={setPickedBellVolume}
+                  onCommit={commitBellVolume}
+                  accessibilityLabel={t("timer:bell.volumeLabel")}
+                />
+              </View>
               {/* `lg`, so the screen's primary action clears the 44dp touch
                   floor on a phone - the default button is 40dp tall. The rows
                   above ARE the setup; Begin hands both choices to the sitting
