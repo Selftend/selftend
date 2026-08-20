@@ -469,7 +469,13 @@
     "edit": "Edit",
     "log": "Log",
     "favorites": "Favorites",
-    "back": "Go back"
+    "back": "Go back",
+    "saved": "Saved",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "resetPassword": "Reset password",
+    "updatePassword": "Update password",
+    "verifyEmail": "Verify email"
   },
   "modulesPage": {
     "title": "Modules",

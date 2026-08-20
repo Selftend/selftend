@@ -15,9 +15,11 @@ const STATIC_ROUTES: Record<string, string> = {
 
   "/modules": "sidebar.modules",
   "/modules/act": "sidebar.act",
+  "/modules/act/choice-point": "act:choicePoint.title",
   "/modules/act/committed-action": "breadcrumb.committedAction",
   "/modules/act/committed-action/new": "breadcrumb.new",
   "/modules/act/connection": "breadcrumb.connection",
+  "/modules/act/connection/drop-anchor": "act:dropAnchor.title",
   "/modules/act/connection/new": "breadcrumb.new",
   "/modules/act/defusion": "breadcrumb.defusion",
   "/modules/act/defusion/new": "breadcrumb.new",
@@ -50,6 +52,10 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/cbt/worry/new": "breadcrumb.new",
   "/modules/cbt/self-care": "breadcrumb.selfCare",
   "/modules/cbt/recovery": "breadcrumb.recovery",
+  // `cbt:saved.title` is the screen's headline - "You examined a thought." - so
+  // it cannot serve as a crumb: the trail would read *Modules · CBT · You
+  // examined a thought.* This is the one new label the escape spec adds (#1251).
+  "/modules/cbt/saved": "breadcrumb.saved",
   "/modules/dbt": "sidebar.dbt",
 
   "/tools": "sidebar.tools",
@@ -88,6 +94,25 @@ const STATIC_ROUTES: Record<string, string> = {
   "/tools/habits/new": "breadcrumb.new",
   "/tools/habits/history": "breadcrumb.history",
   "/tools/habits/learn": "breadcrumb.learn",
+
+  // The (auth) group. These are leaves off the root, so they are one-crumb
+  // screens whose trail hides and NOTHING changes on screen (#1251, T3). The
+  // entries exist so the generic "Entry" fallback is not live on them - an
+  // Escape that names its destination (#1253) would otherwise say "Entry".
+  // Inventing a *Home / Sign in* trail would describe a hierarchy that does not
+  // exist, which is why they get a crumb but never a trail.
+  //
+  // Note the pairing, which reads backwards: `/reset-password` renders the
+  // FORGOT-password form (ask for a link) and `/update-password` renders the
+  // reset form (set the new password). Labelled by what the screen does.
+  "/sign-in": "breadcrumb.signIn",
+  "/sign-up": "breadcrumb.signUp",
+  "/reset-password": "breadcrumb.resetPassword",
+  "/update-password": "breadcrumb.updatePassword",
+  "/verify-email": "breadcrumb.verifyEmail",
+  // A transient OAuth-resolution screen: it IS the sign-in completing, so it
+  // reuses that label rather than earning a string of its own.
+  "/auth-callback": "breadcrumb.signIn",
 };
 
 // Path segments that group sub-routes but have no own breadcrumb
@@ -97,6 +122,11 @@ const TRANSPARENT_SEGMENTS = new Set(["session"]);
 const KNOWN_SUB_SEGMENTS: Record<string, string> = {
   edit: "breadcrumb.edit",
   log: "breadcrumb.log",
+  // Every `…/new` route that exists today is claimed by STATIC_ROUTES above,
+  // which wins first - so this changes nothing for them. It is here so that a
+  // `new` sitting under an UNMAPPED parent reads "New" rather than a second
+  // "Entry" once the swallow fix stops dropping it (#1251).
+  new: "breadcrumb.new",
 };
 
 // Detail routes whose dynamic segment is a known slug (not an opaque id): map the
@@ -105,8 +135,25 @@ const KNOWN_SUB_SEGMENTS: Record<string, string> = {
 const SLUG_LABEL_KEYS: Record<string, (slug: string) => string> = {
   "/tools/breathing": (slug) => `cbt:breathing.exercises.${slug}.title`,
   "/tools/grounding": (slug) => `cbt:grounding.techniques.${slug}.title`,
+  "/tools/habits/learn": (slug) => `habits:learn.cards.${slug}.title`,
 };
 
+/**
+ * The trail for a pathname, and the data the Escape's destination is read from.
+ *
+ * **Invariant: the trail always terminates in an href-less crumb** (#1251, T1a).
+ * That absent href IS this module's marker for "you are here", and `ScreenEscape`
+ * hops to the deepest crumb that still has one. A trailing href therefore makes
+ * the Escape read one crumb too shallow - the current screen would be mistaken
+ * for its own parent.
+ *
+ * The bug this replaced: an unmapped segment set `prevWasKnown` false and the
+ * final branch then silently SKIPPED the segment after it, so
+ * `/modules/act/choice-point/new` produced *Modules · ACT · Entry* with no crumb
+ * for `new` and an href on the last crumb. Naming `choice-point` alone would
+ * have hidden that until the next unmapped segment, so the rule is structural:
+ * **a terminal segment always gets a crumb**, whatever the tables know about it.
+ */
 export function computeBreadcrumbs(pathname: string, t: (key: string) => string): Breadcrumb[] {
   if (pathname === "/" || pathname === "") return [];
 
@@ -122,12 +169,14 @@ export function computeBreadcrumbs(pathname: string, t: (key: string) => string)
     if (STATIC_ROUTES[path] !== undefined) {
       crumbs.push({ label: t(STATIC_ROUTES[path]), href: isLast ? undefined : path });
       prevWasKnown = true;
-    } else if (TRANSPARENT_SEGMENTS.has(segment)) {
-      // transparent group - skip but keep prevWasKnown
+    } else if (TRANSPARENT_SEGMENTS.has(segment) && !isLast) {
+      // transparent group - skip but keep prevWasKnown. Never when it lands
+      // last: skipping the final segment would leave the PARENT as the terminal
+      // crumb, still carrying its href, and break the invariant below.
     } else if (KNOWN_SUB_SEGMENTS[segment] !== undefined) {
       crumbs.push({ label: t(KNOWN_SUB_SEGMENTS[segment]), href: isLast ? undefined : path });
       prevWasKnown = true;
-    } else if (prevWasKnown) {
+    } else if (prevWasKnown || isLast) {
       // Dynamic segment following a known path. A slug-based route resolves to a
       // real title; an opaque id falls back to the generic label.
       const parentPath = "/" + segments.slice(0, i).join("/");
@@ -136,7 +185,8 @@ export function computeBreadcrumbs(pathname: string, t: (key: string) => string)
       crumbs.push({ label, href: isLast ? undefined : path });
       prevWasKnown = false;
     }
-    // unknown segment after already-unknown parent → skip
+    // An unmapped segment in the MIDDLE of a path still collapses into its
+    // predecessor's crumb, so a trail cannot read "Entry · Entry · Entry".
   }
 
   return crumbs;
