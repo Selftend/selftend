@@ -511,6 +511,15 @@ describe("ArrangeScreen chip run", () => {
    *
    * Both modules, because a single case cannot tell a working predicate from a hardcoded
    * string in the screen.
+   *
+   * ☠️ This test is also the ONLY thing standing between a missing tag key and a raw
+   * `home.arrange.moduleTag.act` rendered to a user. The static i18n coverage guard does
+   * NOT cover these four keys, contrary to what is easy to assume: it matches string
+   * literals sitting directly inside a `t(...)` call, and ours live in `MODULE_TAG_KEYS`,
+   * so `t(MODULE_TAG_KEYS[tag].label)` presents it with no literal at all. The map earns
+   * its place by making the set total at COMPILE time, not by being visible to that guard.
+   * Do not delete this on the grounds that key resolution is already guarded. (Cross-LOCALE
+   * completeness is a different hole again, and is #1247's.)
    */
   it("prints the acronym of the module each tagged chip comes from", () => {
     renderArrange(["sleep-latest"]);

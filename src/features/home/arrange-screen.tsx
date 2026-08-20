@@ -31,10 +31,11 @@ const PADDING = 24;
 /**
  * What a module tag prints, and what a screen reader hears instead (#1246).
  *
- * Two literal maps rather than one interpolated key each. The i18n coverage guard only
- * sees string-literal keys, so `home.arrange.moduleTag.${tag}` would be invisible to it
- * and these four strings would be free to rot unnoticed. `ModuleTagKey` makes both maps
- * total by construction, so a third module cannot compile without a decision here.
+ * One literal map rather than an interpolated key each. The i18n coverage guard only sees
+ * string-literal keys, so `home.arrange.moduleTag.${tag}` would be invisible to it and
+ * these four strings would be free to rot unnoticed. `ModuleTagKey` makes the map total by
+ * construction, so a third module cannot compile without a decision here - and pairing the
+ * two keys per module keeps the seen and heard forms of one tag from drifting apart.
  *
  * ☠️ The printed tag is Latin in BOTH locales, and Bulgarian is deliberately asymmetric:
  * prose elsewhere in the app keeps the Cyrillic `КПТ` (sidebar, breadcrumb, programme
@@ -48,14 +49,9 @@ const PADDING = 24;
  * `{{module}}` is one whole composed phrase per module rather than a slot-filling
  * template, because word order is not stable across locales.
  */
-const MODULE_TAG_KEYS: Record<ModuleTagKey, string> = {
-  cbt: "home.arrange.moduleTag.cbt",
-  act: "home.arrange.moduleTag.act",
-};
-
-const MODULE_TAG_A11Y_KEYS: Record<ModuleTagKey, string> = {
-  cbt: "home.arrange.moduleTag.cbtA11y",
-  act: "home.arrange.moduleTag.actA11y",
+const MODULE_TAG_KEYS: Record<ModuleTagKey, { label: string; a11y: string }> = {
+  cbt: { label: "home.arrange.moduleTag.cbt", a11y: "home.arrange.moduleTag.cbtA11y" },
+  act: { label: "home.arrange.moduleTag.act", a11y: "home.arrange.moduleTag.actA11y" },
 };
 
 /**
@@ -489,8 +485,8 @@ export default function ArrangeScreen() {
               Add-only, and no descriptions: a chip tap has exactly one meaning and is
               reversible in one tap, in view.
 
-              The jargon that cost paid for is answered by the module tag (#1246), not by
-              restoring the descriptions. 14 of the 25 chips print a muted trailing acronym
+              That cost is answered by the module tag (#1246), not by restoring the
+              descriptions. 14 of the 25 chips print a muted trailing acronym
               naming the module they come from, so `Defusion`, `Make room` and `Choice
               point` read as one family rather than three novelties. It GROUPS, it does not
               teach - the acronyms are already glossed in the onboarding wizard, in a better
@@ -522,7 +518,7 @@ export default function ArrangeScreen() {
                             moduleTag
                               ? t("home.arrange.addChipTagged", {
                                   title,
-                                  module: t(MODULE_TAG_A11Y_KEYS[moduleTag]),
+                                  module: t(MODULE_TAG_KEYS[moduleTag].a11y),
                                 })
                               : t("home.arrange.addChip", { title })
                           }
@@ -545,7 +541,7 @@ export default function ArrangeScreen() {
                                   CHROME_MUTED_TEXT,
                                 )}
                               >
-                                {t(MODULE_TAG_KEYS[moduleTag])}
+                                {t(MODULE_TAG_KEYS[moduleTag].label)}
                               </Text>
                             </>
                           ) : null}
