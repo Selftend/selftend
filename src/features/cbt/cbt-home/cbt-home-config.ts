@@ -1,6 +1,7 @@
 import { type Href } from "expo-router";
 
 import { type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import type { SharedTool } from "@/src/components/app/shared-tools-row";
 import type { HelpKey } from "@/src/features/help/help-content";
 
 export type Pillar = "think" | "act" | "be";
@@ -12,17 +13,6 @@ export interface PillarStrategy {
   labelKey: string;
   descKey: string;
   helpKey: HelpKey;
-}
-
-// A shared tool is a plain link. It used to be a union - `helpKey` meant "open
-// the route", `infoKey` meant "pop a guide modal instead" - and the row branched
-// on which one was present. Every chip opens its tool now, so there is nothing
-// left to discriminate.
-export interface SharedTool {
-  key: string;
-  route: Href;
-  icon: MaterialIconName;
-  labelKey: string;
 }
 
 export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
