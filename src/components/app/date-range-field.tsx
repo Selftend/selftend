@@ -1,15 +1,7 @@
-import { useMemo, useState } from "react";
-import { Modal, Platform, Pressable, View } from "react-native";
-import { useTranslation } from "react-i18next";
-import DateTimePicker, { useDefaultStyles } from "react-native-ui-datepicker";
-import dayjs, { type Dayjs } from "dayjs";
+import dayjs from "dayjs";
 
-import { Button } from "@/src/components/react-native-reusables/button";
-import { Icon } from "@/src/components/react-native-reusables/icon";
-import { Text } from "@/src/components/react-native-reusables/text";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
-import { useThemePalette } from "@/src/lib/theme-palette";
+import { PickerSheet } from "@/src/components/app/picker-sheet";
+import { ThemedCalendar, type CalendarRange } from "@/src/components/app/themed-calendar";
 
 export interface DateRange {
   /** Local date key, YYYY-MM-DD, inclusive. */
@@ -29,8 +21,9 @@ interface DateRangeFieldProps {
 }
 
 /**
- * Range-mode calendar in the same themed modal sheet as DateTimeField. Draft
- * selection only commits on Done, so an abandoned sheet leaves the range as-is.
+ * The mood tracker's custom range, in the shared picker sheet. Everything
+ * about chrome and drafting lives in `PickerSheet`; what is left here is the
+ * marshalling between the app's local date keys and the calendar's dayjs.
  */
 export function DateRangeField({
   visible,
@@ -40,119 +33,32 @@ export function DateRangeField({
   minDateKey,
   maxDateKey,
 }: DateRangeFieldProps) {
-  const reduceMotionEnabled = useReduceMotionEnabled();
-
-  const scheme = useColorSchemeName();
-  const defaultStyles = useDefaultStyles(scheme);
-  const theme = useThemePalette();
-  const pickerStyles = useMemo(
-    () => ({
-      ...defaultStyles,
-      today: { borderColor: theme.primary, borderWidth: 1 },
-      selected: { backgroundColor: theme.primary },
-      selected_label: { color: theme.primaryForeground },
-    }),
-    [defaultStyles, theme],
-  );
-
-  // ⚠️ WEB: a closed sheet unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
-  // this.
-  if (!visible && Platform.OS === "web") return null;
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType={reduceMotionEnabled ? "none" : "fade"}
-      onRequestClose={onClose}
-    >
-      {/* The sheet unmounts on close, so each open seeds a fresh draft from the
-          active range — reopening adjusts the current selection, never a stale draft. */}
-      {visible ? (
-        <RangeSheet
-          value={value}
-          onChange={onChange}
-          onClose={onClose}
-          minDateKey={minDateKey}
-          maxDateKey={maxDateKey}
-          pickerStyles={pickerStyles}
-        />
-      ) : null}
-    </Modal>
-  );
-}
-
-interface RangeSheetProps extends Omit<DateRangeFieldProps, "visible"> {
-  pickerStyles: ReturnType<typeof useDefaultStyles>;
-}
-
-function RangeSheet({
-  value,
-  onChange,
-  onClose,
-  minDateKey,
-  maxDateKey,
-  pickerStyles,
-}: RangeSheetProps) {
-  const { t, i18n } = useTranslation("common");
-  const [draft, setDraft] = useState<{ start: Dayjs | null; end: Dayjs | null }>(() => ({
+  const initialDraft: CalendarRange = {
     start: value ? dayjs(value.start) : null,
     end: value ? dayjs(value.end) : null,
-  }));
-
-  const apply = () => {
-    if (draft.start?.isValid()) {
-      const end = draft.end?.isValid() ? draft.end : draft.start;
-      onChange({ start: draft.start.format("YYYY-MM-DD"), end: end.format("YYYY-MM-DD") });
-    }
-    onClose();
   };
 
   return (
-    <View className="flex-1 items-center justify-center p-6">
-      {/* Dimmed backdrop - tap anywhere outside the card to close without
-          applying. A sibling behind the card rather than a wrapper: a wrapping
-          button would nest the picker's buttons inside a <button> on web, which
-          the DOM forbids. */}
-      <Pressable
-        accessibilityLabel={t("close")}
-        accessibilityRole="button"
-        className="absolute inset-0 bg-black/50"
-        onPress={onClose}
-        role="button"
-        // Out of the web Tab order (invisible to sighted keyboard users, who
-        // have Escape); touch-exploration screen readers keep a labeled close.
-        {...(Platform.OS === "web" ? { tabIndex: -1 as const } : {})}
-      />
-      <View className="w-full max-w-[340px] rounded-2xl bg-card p-3">
-        <DateTimePicker
+    <PickerSheet
+      visible={visible}
+      onClose={onClose}
+      initialDraft={initialDraft}
+      onConfirm={(draft) => {
+        if (!draft.start?.isValid()) return;
+        // A single tap leaves the range open-ended; commit it as that one day.
+        const end = draft.end?.isValid() ? draft.end : draft.start;
+        onChange({ start: draft.start.format("YYYY-MM-DD"), end: end.format("YYYY-MM-DD") });
+      }}
+    >
+      {(draft, setDraft) => (
+        <ThemedCalendar
           mode="range"
-          locale={i18n.language}
-          startDate={draft.start ?? undefined}
-          endDate={draft.end ?? undefined}
+          value={draft}
+          onChange={setDraft}
           minDate={minDateKey ? dayjs(minDateKey) : undefined}
           maxDate={dayjs(maxDateKey)}
-          onChange={({ startDate, endDate }) => {
-            setDraft({
-              start: startDate ? dayjs(startDate) : null,
-              end: endDate ? dayjs(endDate) : null,
-            });
-          }}
-          styles={pickerStyles}
-          components={{
-            IconPrev: <Icon name="chevron-left" className="size-5 text-foreground" />,
-            IconNext: <Icon name="chevron-right" className="size-5 text-foreground" />,
-          }}
         />
-        <View className="mt-2">
-          <Button onPress={apply}>
-            <Text>{t("done")}</Text>
-          </Button>
-        </View>
-      </View>
-    </View>
+      )}
+    </PickerSheet>
   );
 }
