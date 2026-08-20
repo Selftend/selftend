@@ -102,9 +102,12 @@ const STATIC_ROUTES: Record<string, string> = {
   // Inventing a *Home / Sign in* trail would describe a hierarchy that does not
   // exist, which is why they get a crumb but never a trail.
   //
-  // Note the pairing, which reads backwards: `/reset-password` renders the
-  // FORGOT-password form (ask for a link) and `/update-password` renders the
-  // reset form (set the new password). Labelled by what the screen does.
+  // ⚠️ The route names and the form names are crossed, so check the screen
+  // before "correcting" either label: `/reset-password` renders
+  // `ForgotPasswordForm` (ask for a reset link) and `/update-password` renders
+  // `ResetPasswordForm` (set the new password). Each label names the STEP the
+  // user is on, which is why they happen to read straight even though the
+  // components behind them do not.
   "/sign-in": "breadcrumb.signIn",
   "/sign-up": "breadcrumb.signUp",
   "/reset-password": "breadcrumb.resetPassword",
@@ -122,10 +125,12 @@ const TRANSPARENT_SEGMENTS = new Set(["session"]);
 const KNOWN_SUB_SEGMENTS: Record<string, string> = {
   edit: "breadcrumb.edit",
   log: "breadcrumb.log",
-  // Every `…/new` route that exists today is claimed by STATIC_ROUTES above,
-  // which wins first - so this changes nothing for them. It is here so that a
-  // `new` sitting under an UNMAPPED parent reads "New" rather than a second
-  // "Entry" once the swallow fix stops dropping it (#1251).
+  // LOAD-BEARING, do not delete as redundant. Most `…/new` routes have their
+  // own STATIC_ROUTES row above, which wins first - but `/modules/act/choice-
+  // point/new` does not, and it is the ticket's own headline example: without
+  // this entry it renders "… / Choice point / Entry" (#1251). It also gives any
+  // future `new` under an unmapped parent a real label instead of a second
+  // "Entry" once the swallow fix stops dropping it.
   new: "breadcrumb.new",
 };
 
@@ -186,7 +191,10 @@ export function computeBreadcrumbs(pathname: string, t: (key: string) => string)
       prevWasKnown = false;
     }
     // An unmapped segment in the MIDDLE of a path still collapses into its
-    // predecessor's crumb, so a trail cannot read "Entry · Entry · Entry".
+    // predecessor's crumb, which keeps a long unmapped path from reading as a
+    // run of "Entry"s. A terminal one is always kept, so a wholly unmapped
+    // two-segment tail can still read "Entry · Entry" - that is the invariant
+    // being paid for, and today it only happens on `<Redirect>` stubs.
   }
 
   return crumbs;
