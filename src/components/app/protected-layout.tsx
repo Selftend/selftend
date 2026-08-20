@@ -202,7 +202,21 @@ export default function ProtectedLayout() {
 
                 ⚠️ Screen-level does NOT cover navigation that crosses a group boundary:
                 #989 measured that the panel's `/(app)` links still duplicated Home with
-                this prop set here, which is why those carry it on the `Link` instead. */}
+                this prop set here, which is why those carry it on the `Link` instead.
+
+                ☠️ It also covers only what this list DECLARES. An undeclared route is
+                auto-registered with default options, so it is not single-instance and
+                nothing says so - the guard iterates these declarations, so a route absent
+                here is absent from its assertions too. Journal, grounding, habits,
+                breathing and sleep were all missing, which is six of the eight
+                destinations `SharedToolsRow` links to from the CBT home: pushing one from
+                a module while it already sat deeper in the stack mounted it TWICE (#1216).
+                They are declared below, and `nav-singular.test.ts` now requires every
+                shared-tool destination to appear here so the omission cannot recur.
+
+                Meditation stays deliberately plain among them: it is keyed by `?practice=`
+                and holds per-visit state, so it is the query-keyed exception above, not an
+                oversight. */}
             <Stack.Screen name="index" dangerouslySingular />
             <Stack.Screen name="arrange" dangerouslySingular />
             <Stack.Screen name="settings" dangerouslySingular />
@@ -244,6 +258,11 @@ export default function ProtectedLayout() {
             <Stack.Screen name="tools/meditation/index" />
             <Stack.Screen name="tools/act" dangerouslySingular />
             <Stack.Screen name="tools/gratitude-log/index" dangerouslySingular />
+            <Stack.Screen name="tools/journal/index" dangerouslySingular />
+            <Stack.Screen name="tools/grounding/index" dangerouslySingular />
+            <Stack.Screen name="tools/habits/index" dangerouslySingular />
+            <Stack.Screen name="tools/breathing/index" dangerouslySingular />
+            <Stack.Screen name="tools/sleep/index" dangerouslySingular />
             <Stack.Screen name="support" dangerouslySingular />
             <Stack.Screen name="legal" dangerouslySingular />
             <Stack.Screen name="progress" dangerouslySingular />
