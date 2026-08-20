@@ -113,7 +113,7 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
     // tool listing wearing a different frame: both took the owning pillar's hue,
     // and both sit on the same screen, so leaving either would have shown the
     // half-swept look on the module the app leads with.
-    "src/features/cbt/cbt-home/shared-tools-row.tsx",
+    "src/components/app/shared-tools-row.tsx",
     "src/features/cbt/cbt-home/cbt-pillars-section.tsx",
   ],
   "the signed-out module surfaces": [

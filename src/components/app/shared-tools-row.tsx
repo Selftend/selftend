@@ -1,14 +1,28 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
-import type { SharedTool } from "./cbt-home-config";
+
+// A shared tool is a plain link. It used to be a union - `helpKey` meant "open
+// the route", `infoKey` meant "pop a guide modal instead" - and the row branched
+// on which one was present. Every chip opens its tool now, so there is nothing
+// left to discriminate.
+export interface SharedTool {
+  key: string;
+  route: Href;
+  icon: MaterialIconName;
+  labelKey: string;
+}
 
 interface SharedToolsRowProps {
+  // Resolved copy, not a key. The row is module-agnostic and the heading is the
+  // one thing that is not - CBT says "Uses these shared tools" out of `cbt.json`
+  // - so the caller translates it, the way `PillarCard` takes its title.
+  heading: string;
   tools: SharedTool[];
 }
 
@@ -24,15 +38,20 @@ interface SharedToolsRowProps {
 // whose whole job was to warn you which kind you were about to press. Every one
 // of those guides is already rendered by the tool screen itself, so the detour
 // is gone, and the icon that announced it has nothing left to distinguish.
-export function SharedToolsRow({ tools }: SharedToolsRowProps) {
-  const { t } = useTranslation(["navigation", "cbt"]);
+//
+// It lives here rather than under `features/cbt` because nothing in it is CBT's:
+// it takes its heading and its tools as props. CBT is its only caller today.
+// Whether ACT's `Also try` row (`features/act/related-tools.tsx`) converges onto
+// it is #1216, and is not decided.
+export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
+  const { t } = useTranslation("navigation");
 
   return (
     <View className="ml-1 flex-row flex-wrap items-center gap-2">
       <View className="flex-row items-center gap-1">
         <Icon name="auto-awesome" size={11} className="text-muted-foreground" />
         <Text variant="muted" className="text-[11px] font-semibold uppercase tracking-wider">
-          {t("cbt:pillars.usesSharedTools")}
+          {heading}
         </Text>
       </View>
       {tools.map((tool) => (
