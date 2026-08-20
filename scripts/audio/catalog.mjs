@@ -85,6 +85,48 @@ export const SFX_MODEL = "eleven_text_to_sound_v2";
  */
 export const CREDITS_PER_SECOND = 3.3;
 
+/**
+ * The finished-file spec, fixed by #1138 and amended for the bells by #1139.
+ *
+ * The post-processor (`postprocess.mjs`) is the only consumer. `loudnessTarget`
+ * on each clip is *derived* from this via `loudnessLabel()`, so the human-readable
+ * string in `plan` output and the number the pipeline actually normalises to can
+ * never drift apart.
+ *
+ * ☠️ A downmix is a REQUIRED step, not an option: #1159 found Sound Effects
+ * returns STEREO, while #1138 planned mono for bells, textures and voice and
+ * sized the whole bundle on mono sources.
+ */
+export const TRUE_PEAK_CEILING_DBTP = -3;
+export const OUTPUT_SAMPLE_RATE = 44100; // #1138: 44.1k throughout — TTS cannot exceed it
+export const AAC_ENCODER = "aac"; // pinned: ffmpeg's native encoder, what #1138 measured with
+
+/**
+ * ☠️ The fold TRIMS. `seamless(sig, n, cf)` in generate-breathing-sounds.py folds
+ * `sig[n..n+cf]` into the head, and the generator makes `n + cf` samples on purpose
+ * (8.4s kept as 8.0s). A rendered bed has no spare tail — Sound Effects caps at 30s
+ * — so the fold takes the last `cf` from inside the clip and the loop comes out
+ * `cf` shorter: a 30s render becomes a 29.6s bed. Nothing requires exactly 30s.
+ */
+export const BED_FOLD_SECONDS = 0.4; // CF in generate-breathing-sounds.py:154
+
+const CLASS_OUTPUT = {
+  beds: { channels: 2, bitrate: "128k", lufs: -20 },
+  textures: { channels: 1, bitrate: "96k", lufs: -20 },
+  voice: { channels: 1, bitrate: "64k", lufs: -16 },
+};
+
+/** The `-20 LUFS-I, <= -3 dBTP` string `plan` prints, built from the numbers. */
+export function loudnessLabel(lufs) {
+  return `${lufs} LUFS-I, <= ${TRUE_PEAK_CEILING_DBTP} dBTP`;
+}
+
+/** Bells are per-clip, not per-class: #1139 split the shared bell from the interval one. */
+const BELL_OUTPUT = {
+  "meditation-bell": { channels: 1, bitrate: "128k", lufs: -20 },
+  "interval-temple-block": { channels: 1, bitrate: "128k", lufs: -23 },
+};
+
 export const BELLS = [
   {
     id: "meditation-bell",
@@ -96,7 +138,6 @@ export const BELLS = [
     candidates: 5,
     // #1139: the shared start/end bell. Renders at 7s and is trimmed by ear at
     // the gate — final length is a listening judgement, not a fixed number.
-    loudnessTarget: "-20 LUFS-I, <= -3 dBTP",
     text: "A single struck bronze meditation bowl, one gentle strike with a soft padded mallet. Warm low fundamental, no bright metallic clang. A long smooth decay fading continuously to silence over about six seconds, never swelling again. No second strike, no handling noise.",
   },
   {
@@ -107,10 +148,13 @@ export const BELLS = [
     promptInfluence: 0.6,
     loop: LOOP,
     candidates: 5,
-    loudnessTarget: "-23 LUFS-I, <= -3 dBTP",
     text: "A single soft wooden temple block, struck once with a padded beater. A hollow, muted, woody knock with a short natural decay under one second. No pitch, no ring, no metallic character, no sharp click on the attack. Gentle — a quiet marker, not an alert. One strike only.",
   },
-];
+].map((bell) => ({
+  ...bell,
+  output: BELL_OUTPUT[bell.id],
+  loudnessTarget: loudnessLabel(BELL_OUTPUT[bell.id].lufs),
+}));
 
 export const BEDS = [
   {
@@ -171,7 +215,10 @@ export const BEDS = [
   promptInfluence: 0.6,
   loop: LOOP,
   candidates: 3,
-  loudnessTarget: "-20 LUFS-I, <= -3 dBTP",
+  output: CLASS_OUTPUT.beds,
+  loudnessTarget: loudnessLabel(CLASS_OUTPUT.beds.lufs),
+  // The only class the fold applies to — and the only one whose seam is gated.
+  foldSeconds: BED_FOLD_SECONDS,
 }));
 
 /**
@@ -226,7 +273,8 @@ export const TEXTURES = TEXTURE_FAMILIES.flatMap((family) => [
   promptInfluence: 0.3, // the default; creative variety is fine for a texture
   loop: LOOP,
   candidates: 2,
-  loudnessTarget: "-20 LUFS-I, <= -3 dBTP",
+  output: CLASS_OUTPUT.textures,
+  loudnessTarget: loudnessLabel(CLASS_OUTPUT.textures.lufs),
 }));
 
 /**
@@ -286,6 +334,40 @@ export const TTS_VOICE_SETTINGS = {
 };
 
 export const SFX_CLIPS = [...BELLS, ...BEDS, ...TEXTURES];
+
+/**
+ * Every clip the post-processor can be asked about, keyed by id — the thirteen
+ * sound effects plus the four voice cues. Voice cues carry no prompt-side fields
+ * (no duration, no candidates); they exist here only so `postprocess` can look up
+ * the channels, bitrate and loudness target a `guide_*` file has to hit.
+ */
+export const OUTPUT_CLIPS = new Map([
+  ...SFX_CLIPS.map((clip) => [clip.id, clip]),
+  ...VOICE_CUES.map((cue) => [
+    cue.id,
+    {
+      ...cue,
+      klass: "voice",
+      output: CLASS_OUTPUT.voice,
+      loudnessTarget: loudnessLabel(CLASS_OUTPUT.voice.lufs),
+    },
+  ]),
+]);
+
+/**
+ * The finished-file spec for one clip id. Throws on an unknown id rather than
+ * quietly defaulting — encoding a bed at the voice bitrate would be silent damage
+ * to an unrepeatable master.
+ */
+export function outputSpecFor(clipId) {
+  const clip = OUTPUT_CLIPS.get(clipId);
+  if (!clip) {
+    throw new Error(
+      `unknown clip id "${clipId}" — expected one of: ${[...OUTPUT_CLIPS.keys()].join(", ")}`,
+    );
+  }
+  return { ...clip.output, klass: clip.klass, foldSeconds: clip.foldSeconds ?? null };
+}
 
 export function clipsForRound(round) {
   return SFX_CLIPS.filter((clip) => clip.round === round);
