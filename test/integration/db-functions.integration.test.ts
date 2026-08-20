@@ -487,3 +487,97 @@ describe("schedule_send_web_reminders_cron() - access control + idempotency (int
     expect(second.error).toBeNull();
   });
 });
+
+// The CBT and ACT tables, by their logical (view) name. The encrypted ones
+// store their rows in a same-named `_data` base table, which is where the
+// foreign keys actually live; `act_bulls_eye_snapshots` is unencrypted and is
+// its own base table. Kept as logical names so this list reads like the module
+// inventory rather than like the storage layer.
+const CBT_ACT_TABLES = [
+  // ACT
+  "act_action_steps",
+  "act_bulls_eye_snapshots",
+  "act_choice_points",
+  "act_committed_actions",
+  "act_connection_logs",
+  "act_defusion_logs",
+  "act_expansion_logs",
+  "act_observing_self_sessions",
+  "act_program_state",
+  "act_urge_surf_logs",
+  "act_value_entries",
+  // CBT
+  "activity_logs",
+  "anger_logs",
+  "challenge_plans",
+  "core_beliefs",
+  "exposure_hierarchies",
+  "exposure_items",
+  "exposure_sessions",
+  "goals",
+  "milestones",
+  "procrastination_tasks",
+  "recovery_plans",
+  "self_care_logs",
+  "task_steps",
+  "thought_records",
+  "values_profile",
+  "worry_entries",
+];
+
+interface ForeignKeyDeleteRule {
+  child_table: string;
+  constraint_name: string;
+  parent_table: string;
+  delete_rule: string;
+}
+
+/** `thought_records_data` -> `thought_records`; unencrypted tables pass through. */
+function logicalTableName(storageTable: string): string {
+  return storageTable.replace(/_data$/, "");
+}
+
+describe("CBT and ACT delete cascades (integration)", () => {
+  // The demo seed's teardown wipes PARENTS and standalone tables only, and lets
+  // the cascades reclaim the chain children (#1280). That is only safe while
+  // every key among these tables actually cascades. A migration that adds a
+  // child with a non-cascading delete rule, or re-creates a key without one,
+  // would orphan demo rows silently and forever - and no other test would
+  // notice, because the orphans are invisible until someone looks at the
+  // account.
+  //
+  // A single catalogue query, deliberately: no fixtures and no seeded rows, so
+  // this cannot be defeated by run order or by another suite's cleanup.
+  let rules: ForeignKeyDeleteRule[];
+
+  beforeAll(async () => {
+    const service = createServiceClient();
+    const { data, error } = await service.rpc("app_foreign_key_delete_rules");
+    expect(error).toBeNull();
+    rules = (data ?? []) as ForeignKeyDeleteRule[];
+  });
+
+  it("finds foreign keys on every CBT and ACT table", () => {
+    // Guards the assertion below against passing vacuously: if a table were
+    // renamed, or the storage-name mapping drifted, the cascade check would
+    // filter down to nothing and stay green while proving nothing. Every one of
+    // these tables carries at least a `user_id` key, so every one must appear.
+    const covered = new Set(rules.map((rule) => logicalTableName(rule.child_table)));
+    const missing = CBT_ACT_TABLES.filter((table) => !covered.has(table));
+
+    expect(missing).toEqual([]);
+  });
+
+  it("every foreign key among the CBT and ACT tables deletes on cascade", () => {
+    const offenders = rules
+      .filter((rule) => CBT_ACT_TABLES.includes(logicalTableName(rule.child_table)))
+      .filter((rule) => rule.delete_rule !== "CASCADE")
+      .map(
+        (rule) =>
+          `${rule.child_table}.${rule.constraint_name} -> ${rule.parent_table} ` +
+          `is ${rule.delete_rule}, not CASCADE`,
+      );
+
+    expect(offenders).toEqual([]);
+  });
+});
