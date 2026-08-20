@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { cn } from "@/lib/utils";
 
 export interface PickerSheetProps<TDraft> {
   visible: boolean;
@@ -111,22 +112,19 @@ function SheetBody<TDraft>({
       />
       <View className="w-full max-w-[340px] rounded-2xl bg-card p-3">
         {children(draft, setDraft)}
-        {onClear ? (
-          <View className="mt-2 flex-row gap-2">
+        {/* One Done, two shapes: alone it spans the card; beside Clear the two
+            share the row. Said once, so the commit affordance cannot drift
+            between the two footers. */}
+        <View className={cn("mt-2", onClear && "flex-row gap-2")}>
+          {onClear ? (
             <Button variant="ghost" className="flex-1" onPress={clear}>
               <Text>{t("clear")}</Text>
             </Button>
-            <Button className="flex-1" onPress={confirm}>
-              <Text>{t("done")}</Text>
-            </Button>
-          </View>
-        ) : (
-          <View className="mt-2">
-            <Button onPress={confirm}>
-              <Text>{t("done")}</Text>
-            </Button>
-          </View>
-        )}
+          ) : null}
+          <Button className={cn(onClear && "flex-1")} onPress={confirm}>
+            <Text>{t("done")}</Text>
+          </Button>
+        </View>
       </View>
     </ScrollView>
   );

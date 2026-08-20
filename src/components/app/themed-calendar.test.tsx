@@ -67,6 +67,9 @@ describe("ThemedCalendar", () => {
 
     expect(weekdayLabels()).toEqual(["пн", "вт", "ср", "чт", "пт", "сб", "нд"]);
     expect(within(screen.getByTestId("btn-month")).getByText("март")).toBeTruthy();
+    // The global mutation, caught in the act — this is what the next test
+    // proves has been undone, and without it that test would be vacuous.
+    expect(dayjs.locale()).toBe("bg");
   });
 
   it("leaves the global dayjs locale as it found it", () => {
