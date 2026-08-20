@@ -6,6 +6,7 @@ import {
   WIDGET_REGISTRY,
   isImplemented,
   metaForWidget,
+  moduleTagFor,
 } from "@/src/features/home/widget-registry";
 import { CONCERN_KEYS, resolveConcernWidgetIds } from "@/src/features/onboarding/concerns";
 import { SHARED_TOOL_WIDGET_IDS } from "@/src/features/onboarding/recommendations";
@@ -268,6 +269,59 @@ describe("widget registry", () => {
     it("the programme cards press to their module home", () => {
       expect(WIDGET_META["cbt-programme"].route).toBe("/modules/cbt");
       expect(WIDGET_META["act-programme"].route).toBe("/modules/act");
+    });
+
+    /**
+     * The set the arrange chip run tags, as an exact sorted list (#1246).
+     *
+     * A list rather than a count, deliberately: the map that decided this feature
+     * miscounted the set twice while charting it ("17 of 25", and "the untagged eight"
+     * while naming nine). A count can be miscounted into agreement; a list cannot.
+     *
+     * It follows that adding a module-derived widget churns this array, and that is the
+     * point rather than the cost - the tier-based exemption is a *proxy* for "the title
+     * already says it", so a new entry deserves one human glance.
+     *
+     * ☠️ `self-care` belongs here despite carrying no `cbt-` prefix. Every other tagged id
+     * is prefixed, which makes this one look like a mistake on sight. It is not: it routes
+     * into the CBT module and declares the CBT tool key.
+     */
+    it("tags exactly these 14 module-derived tools", () => {
+      const tagged = Object.keys(WIDGET_META)
+        .filter((id) => moduleTagFor(id) !== undefined)
+        .sort();
+
+      expect(tagged).toEqual([
+        "act-acceptance-prompt",
+        "act-choice-point",
+        "act-committed-actions",
+        "act-defusion",
+        "act-drop-anchor",
+        "act-observing-self",
+        "cbt-activities",
+        "cbt-beliefs",
+        "cbt-distortion-guide",
+        "cbt-exposure",
+        "cbt-goals",
+        "cbt-open-record",
+        "cbt-worry",
+        "self-care",
+      ]);
+    });
+
+    it("leaves the two programme cards untagged - their own titles carry the acronym", () => {
+      expect(moduleTagFor("cbt-programme")).toBeUndefined();
+      expect(moduleTagFor("act-programme")).toBeUndefined();
+    });
+
+    it("returns the module key rather than a display string", () => {
+      expect(moduleTagFor("cbt-open-record")).toBe("cbt");
+      expect(moduleTagFor("act-defusion")).toBe("act");
+    });
+
+    it("has no tag for a standalone tool or an unknown id", () => {
+      expect(moduleTagFor("breathing-suggested")).toBeUndefined();
+      expect(moduleTagFor("no-such-widget")).toBeUndefined();
     });
 
     // S3 (#973) collapsed three ids away, and the migration that rewrote the
