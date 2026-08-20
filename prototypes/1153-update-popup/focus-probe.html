@@ -1,0 +1,32 @@
+<!doctype html><html><body>
+<button id="outside">outside</button>
+<div id="trap">
+  <div><div><div>
+    <div id="scrim"></div>
+    <div id="card"><div><div>Title</div><div>Body</div></div>
+      <div>
+        <button id="later" role="button" tabindex="0">Later</button>
+        <button id="update" role="button" tabindex="0">Update</button>
+      </div>
+    </div>
+  </div></div></div>
+</div>
+<script>
+function attemptFocus(el){ try{ el.focus(); }catch(e){} return document.activeElement===el; }
+function focusFirstDescendant(el){
+  for(var i=0;i<el.childNodes.length;i++){var c=el.childNodes[i];
+    if(attemptFocus(c)||focusFirstDescendant(c))return true;}
+  return false;
+}
+// variant: how the scrim node is configured
+window.probe=function(variant){
+  var s=document.getElementById('scrim');
+  s.removeAttribute('role'); s.removeAttribute('tabindex'); s.removeAttribute('aria-hidden');
+  if(variant==='pressable'){ s.setAttribute('role','button'); s.setAttribute('tabindex','0'); }
+  if(variant==='focusable-false'){ s.setAttribute('role','button'); s.setAttribute('tabindex','-1'); }
+  if(variant==='no-role'){ /* Pressable with role stripped: no tabindex at all */ }
+  document.getElementById('outside').focus();
+  focusFirstDescendant(document.getElementById('trap'));
+  return document.activeElement.id;
+};
+</script></body></html>
