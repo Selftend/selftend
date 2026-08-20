@@ -44,13 +44,13 @@ export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
   const crumbs = useBreadcrumbs();
 
   // The deepest crumb that still carries an href - the same hop the arrow made
-  // from inside the trail. Usually that is the parent, because the terminal
-  // crumb is the current screen and carries no href; but do not read that as an
-  // invariant, because it is not one yet. A transparent segment
-  // (`/tools/breathing/session`) is skipped rather than crumbed, leaving the
-  // last crumb with an href of its own - and there this resolves to that crumb,
-  // which is the right destination anyway. Making "every trail ends href-less"
-  // true is a later ticket's job (T1a on the spec, #1167).
+  // from inside the trail. That is the parent, because the terminal crumb is the
+  // current screen and carries no href: `computeBreadcrumbs` now guarantees a
+  // trail always ends href-less, which is what #1251 fixed (T1a). Before it, an
+  // unmapped segment could swallow the one after it and strand an href on the
+  // last crumb, and this lookup then read one crumb too shallow.
+  //
+  // The repo-wide assertion that keeps it true ships with the gate suite (#1263).
   //
   // A one-crumb screen has no ancestor crumb at all, and its Up is the root -
   // which is what CONTEXT.md's "Up" entry records.
