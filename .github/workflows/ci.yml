@@ -103,6 +103,15 @@ jobs:
       - name: Apply seed
         run: supabase db reset
 
+      - name: Seed the demo account
+        # `supabase db reset` applies seed.sql only, and seed.sql gives
+        # demo@test.local nothing but a profile and preferences - every record it
+        # holds comes from this script (#1281). Locally `npm run db:reset` chains
+        # it; here it is a step of its own, because that wrapper also restarts
+        # docker containers this job does not need. The export leak test reads
+        # demo's seeded content as its sentinel and fails loudly without it.
+        run: node scripts/seed-demo-data.mjs
+
       - name: Run integration tests
         run: npm run test:integration
 
