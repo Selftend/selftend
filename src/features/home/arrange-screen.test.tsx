@@ -77,9 +77,25 @@ jest.mock("@/src/features/home/queries", () => ({
 }));
 
 /**
- * A three-id catalogue in a deliberate order, so "registry order" is an assertion rather
- * than a coincidence of alphabetisation. The id IS the title key, so every control is
- * labelled with the id and no test pins shipped copy.
+ * The registry, stubbed - this suite proves RENDERING, never selection.
+ *
+ * A small catalogue in a deliberate order, so "registry order" is an assertion rather than
+ * a coincidence of alphabetisation. The id IS the title key, so every control is labelled
+ * with the id and no test pins shipped copy.
+ *
+ * ☠️ The catalogue below gained `cbt-open-record` and `act-defusion` for #1246, and that
+ * was not optional. Every other entry synthesises its route as a slash plus the id, which
+ * is never a module route, so before those two existed the real predicate could not have
+ * fired for any of them: a tag-presence assertion would have failed and a tag-ABSENCE
+ * assertion would have passed for entirely the wrong reason. Vacuously green either way.
+ *
+ * ☠️ `moduleTagFor` is stubbed as a blunt id lookup, and is deliberately NOT dressed in
+ * realistic `route`/`toolKey` fields that a re-implemented predicate could read. Wiring it
+ * to look real would invite the next reader to believe this suite still proves WHICH
+ * widgets get tagged. It does not, and cannot - it would only be interrogating a fixture
+ * the test itself wrote. That correctness lives in widget-registry.test.tsx, against the
+ * real registry with no mocks. One module each, so the printed acronym is proven to come
+ * from the predicate's answer rather than from a hardcoded string in the screen.
  */
 jest.mock("@/src/features/home/widget-registry", () => ({
   WIDGET_META: {
@@ -88,6 +104,8 @@ jest.mock("@/src/features/home/widget-registry", () => ({
     "cbt-programme": { id: "cbt-programme" },
     "act-programme": { id: "act-programme" },
     "journal-week": { id: "journal-week" },
+    "cbt-open-record": { id: "cbt-open-record" },
+    "act-defusion": { id: "act-defusion" },
   },
   isImplemented: (widgetId: string) => !mockUnimplementedIds.includes(widgetId),
   metaForWidget: (widgetId: string) => ({
@@ -96,6 +114,8 @@ jest.mock("@/src/features/home/widget-registry", () => ({
     route: `/${widgetId}`,
     tier: widgetId.endsWith("-programme") ? "programme" : "tool",
   }),
+  moduleTagFor: (widgetId: string) =>
+    ({ "cbt-open-record": "cbt", "act-defusion": "act" })[widgetId],
 }));
 
 beforeEach(() => {
@@ -377,6 +397,8 @@ describe("ArrangeScreen chip run", () => {
       "arrange-chip-cbt-programme",
       "arrange-chip-act-programme",
       "arrange-chip-journal-week",
+      "arrange-chip-cbt-open-record",
+      "arrange-chip-act-defusion",
     ]);
   });
 
@@ -434,6 +456,8 @@ describe("ArrangeScreen chip run", () => {
       "cbt-programme",
       "act-programme",
       "journal-week",
+      "cbt-open-record",
+      "act-defusion",
     ]);
 
     expect(screen.queryByTestId("arrange-chip-run")).toBeNull();
@@ -452,13 +476,99 @@ describe("ArrangeScreen chip run", () => {
     expect(screen.getByTestId("arrange-chip-cbt-programme")).toBeTruthy();
   });
 
-  it("carries no search field and no descriptions", () => {
+  /**
+   * ☠️ This guard used to claim more than it protected. It sampled ONE standalone widget,
+   * asserted a single text node, and its comment read "the chip is its name and nothing
+   * else" - an invariant #1246 breaks for 14 of the 25 shipped chips. Because the sample
+   * happened to be untagged, it would have stayed green while its stated claim went false.
+   * It is now two tests, and the comments claim what they actually hold: NO DESCRIPTION,
+   * which is what #980 removed and what must not creep back - not "nothing else".
+   */
+  it("carries no search field, and an untagged chip is its name alone", () => {
     renderArrange(["sleep-latest"]);
 
     expect(screen.queryByPlaceholderText(/search/i)).toBeNull();
-    // The chip is its name and nothing else: one text node inside the pressable.
+    // One text node: the title. No description, and no tag - `mood-checkin` is standalone,
+    // and absence of a tag is how the run says so.
     const chip = screen.getByTestId("arrange-chip-mood-checkin");
     expect(within(chip).getAllByText(/./)).toHaveLength(1);
+  });
+
+  it("gives a tagged chip its title, a separator and the acronym - and still no description", () => {
+    renderArrange(["sleep-latest"]);
+
+    // Exactly three text nodes. A fourth would mean a description had crept back in; two
+    // would mean the tag had collapsed into the title as one interpolated string.
+    const chip = screen.getByTestId("arrange-chip-act-defusion");
+    expect(within(chip).getAllByText(/./)).toHaveLength(3);
+  });
+
+  /**
+   * Asserted by TEXT rather than by a test id. The text proves presence and correctness in
+   * one go, where an id would prove only that something is there - and an id-based ABSENCE
+   * assertion rots silently the day the id is renamed, which is the failure mode that has
+   * bitten this repo before.
+   *
+   * Both modules, because a single case cannot tell a working predicate from a hardcoded
+   * string in the screen.
+   */
+  it("prints the acronym of the module each tagged chip comes from", () => {
+    renderArrange(["sleep-latest"]);
+
+    expect(within(screen.getByTestId("arrange-chip-act-defusion")).getByText("ACT")).toBeTruthy();
+    expect(
+      within(screen.getByTestId("arrange-chip-cbt-open-record")).getByText("CBT"),
+    ).toBeTruthy();
+  });
+
+  /**
+   * ☠️ Before #1246 this suite had ZERO accessible-name assertions across its whole length,
+   * so even the untagged label it has always shipped was ungated.
+   *
+   * Both names are pinned literally, and that pairing is the assertion: it is what goes red
+   * if a regression reaches for the tagged key on every chip, or collapses the two keys
+   * back into one. Either would be invisible to a test that only checked the tagged case.
+   */
+  it("announces a tagged chip with the module expanded, and leaves an untagged one alone", () => {
+    renderArrange(["sleep-latest"]);
+
+    expect(
+      screen.getByLabelText("Add act-defusion, ACT - Acceptance and Commitment Therapy"),
+    ).toBeTruthy();
+    expect(screen.getByLabelText("Add mood-checkin")).toBeTruthy();
+  });
+
+  /**
+   * WCAG 2.5.3 (Label in Name), computed rather than restated so it survives copy edits: a
+   * voice-control user speaks what they can see, so every visible word in a chip has to
+   * appear in that chip's accessible name.
+   *
+   * ☠️ The naive form of this test - loop over every visible text node - FAILS, and
+   * correctly so. The middot is decoration and is deliberately absent from the accessible
+   * name, where the spoken separator is " - " instead. Punctuation-only nodes are filtered
+   * because 2.5.3 concerns label TEXT; drop that filter and this goes red on the separator
+   * rather than on any real defect.
+   */
+  it("keeps every visible word of a chip inside its accessible name", () => {
+    renderArrange(["sleep-latest"]);
+
+    const chips = within(screen.getByTestId("arrange-chip-run")).getAllByRole("button");
+    expect(chips.length).toBeGreaterThan(0);
+
+    for (const chip of chips) {
+      const accessibleName = chip.props.accessibilityLabel as string;
+      const visibleWords = within(chip)
+        .getAllByText(/./)
+        .map((node) => node.props.children as string)
+        .filter((text) => /\p{L}|\p{N}/u.test(text));
+
+      expect(visibleWords.length).toBeGreaterThan(0);
+      for (const word of visibleWords) {
+        expect({ chip: chip.props.testID, accessibleName, word }).toMatchObject({
+          accessibleName: expect.stringContaining(word),
+        });
+      }
+    }
   });
 });
 

@@ -12,9 +12,10 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { reorderMoveProps } from "@/src/lib/accessibility";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
-import { CHROME_MARK } from "@/src/lib/theme/chrome";
+import { CHROME_MARK, CHROME_MUTED_TEXT } from "@/src/lib/theme/chrome";
 import { useSession } from "@/src/providers/session-provider";
-import { WIDGET_META, metaForWidget } from "@/src/features/home/widget-registry";
+import type { ModuleTagKey } from "@/src/features/home/widget-registry";
+import { WIDGET_META, metaForWidget, moduleTagFor } from "@/src/features/home/widget-registry";
 import { useWidgetTiers } from "@/src/features/home/widget-tiers";
 import {
   useAddWidget,
@@ -26,6 +27,36 @@ import {
 import { cn } from "@/lib/utils";
 
 const PADDING = 24;
+
+/**
+ * What a module tag prints, and what a screen reader hears instead (#1246).
+ *
+ * Two literal maps rather than one interpolated key each. The i18n coverage guard only
+ * sees string-literal keys, so `home.arrange.moduleTag.${tag}` would be invisible to it
+ * and these four strings would be free to rot unnoticed. `ModuleTagKey` makes both maps
+ * total by construction, so a third module cannot compile without a decision here.
+ *
+ * ☠️ The printed tag is Latin in BOTH locales, and Bulgarian is deliberately asymmetric:
+ * prose elsewhere in the app keeps the Cyrillic `КПТ` (sidebar, breadcrumb, programme
+ * title, landing kicker), because that form is established Bulgarian while a Cyrillic ACT
+ * form is not, and the bare lowercase word is a common noun. Do not "fix" this into
+ * agreement.
+ *
+ * The spoken form carries the acronym AS WELL AS its expansion. That is WCAG 2.5.3 (Label
+ * in Name), not redundancy: a voice-control user speaks what they can see, so dropping
+ * `ACT` from the accessible name would leave "tap Defusion ACT" matching nothing. Each
+ * `{{module}}` is one whole composed phrase per module rather than a slot-filling
+ * template, because word order is not stable across locales.
+ */
+const MODULE_TAG_KEYS: Record<ModuleTagKey, string> = {
+  cbt: "home.arrange.moduleTag.cbt",
+  act: "home.arrange.moduleTag.act",
+};
+
+const MODULE_TAG_A11Y_KEYS: Record<ModuleTagKey, string> = {
+  cbt: "home.arrange.moduleTag.cbtA11y",
+  act: "home.arrange.moduleTag.actA11y",
+};
 
 /**
  * An arrange edit, for the visit-scoped undo stack.
@@ -197,8 +228,12 @@ export default function ArrangeScreen() {
    * omitted six real ids, which would make them unreachable now that the three-level modal
    * is gone. Registry-ordered and unsearched: a ranking would be product-authored
    * curriculum, and searching a list you can see in full is chrome. The failure mode is
-   * height (16 lines at 390dp with nothing added), not truncation, and it shrinks
-   * monotonically as you add.
+   * height - measured at 390dp the full run is 12 lines in English and 16 in Bulgarian,
+   * and #1246's module tags push both up (English 14 -> 18 at 360dp, Bulgarian 19 -> 21).
+   * ☠️ Not truncation: chip flex-shrink defaults to zero and the title sets no line limit,
+   * so a title long enough to exceed the run's width OVERFLOWS its pill rather than
+   * ellipsing. Measured headroom in the tightest case is 14px, at 320dp in Bulgarian.
+   * It shrinks monotonically as you add.
    */
   const addableIds = useMemo(
     () =>
@@ -451,9 +486,15 @@ export default function ArrangeScreen() {
               branch that never rendered (nothing is `status: "soon"`) and a preview of the
               200px card this redesign retired.
 
-              Add-only, and no descriptions. Ten of the 25 names are module jargon and
-              losing their explanations is a real cost - paid because a chip tap has exactly
-              one meaning and is reversible in one tap, in view.
+              Add-only, and no descriptions: a chip tap has exactly one meaning and is
+              reversible in one tap, in view.
+
+              The jargon that cost paid for is answered by the module tag (#1246), not by
+              restoring the descriptions. 14 of the 25 chips print a muted trailing acronym
+              naming the module they come from, so `Defusion`, `Make room` and `Choice
+              point` read as one family rather than three novelties. It GROUPS, it does not
+              teach - the acronyms are already glossed in the onboarding wizard, in a better
+              form than a legend would manage. Absence of a tag means standalone.
             */}
             {!preferencesSettled ? null : (
               <View className="gap-2.5">
@@ -472,11 +513,19 @@ export default function ArrangeScreen() {
                     {addableIds.map((id) => {
                       const meta = metaForWidget(id);
                       const title = meta ? t(meta.titleKey) : id;
+                      const moduleTag = moduleTagFor(id);
                       return (
                         <Pressable
                           key={id}
                           accessibilityRole="button"
-                          accessibilityLabel={t("home.arrange.addChip", { title })}
+                          accessibilityLabel={
+                            moduleTag
+                              ? t("home.arrange.addChipTagged", {
+                                  title,
+                                  module: t(MODULE_TAG_A11Y_KEYS[moduleTag]),
+                                })
+                              : t("home.arrange.addChip", { title })
+                          }
                           testID={`arrange-chip-${id}`}
                           disabled={mutationPending}
                           onPress={() => addWidget(id)}
@@ -487,6 +536,19 @@ export default function ArrangeScreen() {
                         >
                           <Icon name="add" className="size-4 shrink-0 text-primary" />
                           <Text className="text-[13px] font-medium">{title}</Text>
+                          {moduleTag ? (
+                            <>
+                              <Text className={cn("text-[11px]", CHROME_MUTED_TEXT)}>·</Text>
+                              <Text
+                                className={cn(
+                                  "text-[11px] font-bold uppercase tracking-[0.1em]",
+                                  CHROME_MUTED_TEXT,
+                                )}
+                              >
+                                {t(MODULE_TAG_KEYS[moduleTag])}
+                              </Text>
+                            </>
+                          ) : null}
                         </Pressable>
                       );
                     })}

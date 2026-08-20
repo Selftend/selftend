@@ -140,6 +140,13 @@
       "handleHint": "Moves this tool up or down in the list.",
       "addHeading": "Add to your home screen",
       "addChip": "Add {{title}}",
+      "addChipTagged": "Add {{title}}, {{module}}",
+      "moduleTag": {
+        "cbt": "CBT",
+        "act": "ACT",
+        "cbtA11y": "CBT - Cognitive Behavioral Therapy",
+        "actA11y": "ACT - Acceptance and Commitment Therapy"
+      },
       "allAdded": "Everything is already on your home screen."
     },
     "addToHome": {
