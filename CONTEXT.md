@@ -104,3 +104,42 @@ Another module's hue appearing as an accent inside a room (e.g. the act-green mo
 **Routine vs. Habit**:
 Selftend keeps both, as distinct features. The line is _who reports completion_: a **routine** step completes when the app sees a real record in its in-app tool (auto-derived, never marked); a **habit** is a behaviour the user marks done themselves (a self-report tick that can stand for anything, including off-app behaviour). If the app can see it, it's a routine; if only the user knows, it's a habit. They coexist in v1; folding habits into routines is a deliberately deferred option, not a v1 goal.
 _Avoid_: treating "routine" and "habit" as synonyms; calling a self-tracked habit a routine.
+
+### Navigation ("the way out")
+
+The vocabulary for how a user leaves a screen (#1160/#1163). Four words that were previously all
+called "back", which is why they rotted.
+
+**Escape**:
+The single leading affordance that lets a user leave the screen they are on. Exactly one per
+screen — never two — and present on every screen except the app's root (`/(app)` signed in, `/`
+signed out). Where it _leads_ varies; that it is _there_ does not. Distinct from the
+`InvisibleHeader` brand link, which is always a jump to the root and discards where the user was.
+_Avoid_: back button, close button (those name a glyph, not the role)
+
+**Up**:
+The Escape's default destination: one deterministic hop along the screen's own breadcrumb trail,
+Material's "Up" (#495). Never history — a fixed hop cannot bounce. On a screen whose trail has a
+single crumb, Up is the root.
+_Avoid_: parent, back (Up is a structural claim, back is a temporal one)
+
+**Origin**:
+The route an off-trail arrival came from — off-trail meaning it is not on the destination screen's
+own breadcrumb trail. When an arrival carries one, the Escape leads to the Origin instead of Up,
+because Up would land somewhere the user has never been. It is always an explicitly carried value
+and is **never** inferred from navigation history: `dangerouslySingular` replaces history entries
+rather than adding them, and the Escape itself navigates with `replace`, so history here does not
+describe where the user came from.
+_Avoid_: referrer, previous page, back stack
+
+**Close**:
+The Escape wearing its X glyph, on a create/edit form, where the promise is "abandon this" rather
+than "go up a level" (#733). Same rule and same destination logic — only the promise and the glyph
+differ.
+_Avoid_: cancel, dismiss (those name what happens to the _data_, not to the navigation)
+
+**Completion** (not an Escape):
+A "Done"-after-save action that happens to navigate (`backWithFallback`, #475). It is a content
+action reporting that a task is finished, not a way out of a screen, so neither the Escape rule nor
+its enforcement gate governs it. A screen may carry both.
+_Avoid_: calling Done an escape hatch; a screen is not exempt from an Escape because it has a Done.
