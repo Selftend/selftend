@@ -211,8 +211,17 @@ export default function ProtectedLayout() {
                 breathing and sleep were all missing, which is six of the eight
                 destinations `SharedToolsRow` links to from the CBT home: pushing one from
                 a module while it already sat deeper in the stack mounted it TWICE (#1216).
-                They are declared below, and `nav-singular.test.ts` now requires every
-                shared-tool destination to appear here so the omission cannot recur.
+
+                So the list is COMPLETE now - every route file appears here, and
+                `nav-singular.test.ts` fails until a new one does. Absence used to be a
+                silent default; it is now a build error.
+
+                ⚠️ That completeness added a THIRD exception the other two cannot derive:
+                a screen holding the user's unsaved WORK must remount, or singular hands
+                them back a half-finished exercise. `useState` is not the test - plenty of
+                overview screens below hold benign view state and reuse it happily. Only
+                two screens qualify (urge surfing, the bulls-eye), they are marked plain
+                inline, and the guard's `HOLDS_UNSAVED_WORK` keeps them honest.
 
                 Meditation stays deliberately plain among them: it is keyed by `?practice=`
                 and holds per-visit state, so it is the query-keyed exception above, not an
@@ -252,6 +261,31 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/cbt/self-care" dangerouslySingular />
             <Stack.Screen name="modules/cbt/recovery" dangerouslySingular />
             <Stack.Screen name="modules/act/index" dangerouslySingular />
+            <Stack.Screen name="modules/act/choice-point/index" dangerouslySingular />
+            <Stack.Screen name="modules/act/choice-point/new" />
+            <Stack.Screen name="modules/act/choice-point/[id]" />
+            <Stack.Screen name="modules/act/committed-action/index" dangerouslySingular />
+            <Stack.Screen name="modules/act/committed-action/new" />
+            <Stack.Screen name="modules/act/committed-action/[id]" />
+            <Stack.Screen name="modules/act/connection/index" dangerouslySingular />
+            <Stack.Screen name="modules/act/connection/drop-anchor" dangerouslySingular />
+            <Stack.Screen name="modules/act/connection/new" />
+            <Stack.Screen name="modules/act/connection/[id]" />
+            <Stack.Screen name="modules/act/defusion/index" dangerouslySingular />
+            <Stack.Screen name="modules/act/defusion/new" />
+            <Stack.Screen name="modules/act/defusion/[id]" />
+            <Stack.Screen name="modules/act/expansion/index" dangerouslySingular />
+            {/* Plain: a nine-state exercise, mid-practice. See HOLDS_UNSAVED_WORK. */}
+            <Stack.Screen name="modules/act/expansion/urge-surfing" />
+            <Stack.Screen name="modules/act/expansion/new" />
+            <Stack.Screen name="modules/act/expansion/[id]" />
+            <Stack.Screen name="modules/act/observing-self/index" dangerouslySingular />
+            <Stack.Screen name="modules/act/observing-self/new" />
+            <Stack.Screen name="modules/act/observing-self/[id]" />
+            <Stack.Screen name="modules/act/values/index" dangerouslySingular />
+            {/* Plain: holds unsaved domain ratings. See HOLDS_UNSAVED_WORK. */}
+            <Stack.Screen name="modules/act/values/bulls-eye" />
+            <Stack.Screen name="modules/act/values/[domain]" />
             <Stack.Screen name="modules/dbt" dangerouslySingular />
             <Stack.Screen name="tools/index" dangerouslySingular />
             <Stack.Screen name="tools/check-in/index" dangerouslySingular />
@@ -263,6 +297,54 @@ export default function ProtectedLayout() {
             <Stack.Screen name="tools/habits/index" dangerouslySingular />
             <Stack.Screen name="tools/breathing/index" dangerouslySingular />
             <Stack.Screen name="tools/sleep/index" dangerouslySingular />
+            <Stack.Screen name="tools/journal/entries" dangerouslySingular />
+            <Stack.Screen name="tools/journal/new" />
+            <Stack.Screen name="tools/journal/[id]/index" />
+            <Stack.Screen name="tools/journal/[id]/edit" />
+            <Stack.Screen name="tools/grounding/history" dangerouslySingular />
+            <Stack.Screen name="tools/grounding/[slug]" />
+            <Stack.Screen name="tools/habits/history" dangerouslySingular />
+            <Stack.Screen name="tools/habits/learn/index" dangerouslySingular />
+            <Stack.Screen name="tools/habits/learn/[slug]" />
+            <Stack.Screen name="tools/habits/new" />
+            <Stack.Screen name="tools/habits/[id]/index" />
+            <Stack.Screen name="tools/habits/[id]/edit" />
+            <Stack.Screen name="tools/habits/[id]/log" />
+            <Stack.Screen name="tools/breathing/history" dangerouslySingular />
+            <Stack.Screen name="tools/breathing/new" />
+            <Stack.Screen name="tools/breathing/session" />
+            <Stack.Screen name="tools/sleep/history" dangerouslySingular />
+            <Stack.Screen name="tools/sleep/new" />
+            <Stack.Screen name="tools/sleep/[id]/index" />
+            <Stack.Screen name="tools/sleep/[id]/edit" />
+            <Stack.Screen name="tools/check-in/history" dangerouslySingular />
+            <Stack.Screen name="tools/check-in/new" />
+            <Stack.Screen name="tools/check-in/[id]/index" />
+            <Stack.Screen name="tools/check-in/[id]/edit" />
+            <Stack.Screen name="tools/gratitude-log/entries/index" dangerouslySingular />
+            <Stack.Screen name="tools/gratitude-log/favorites" dangerouslySingular />
+            <Stack.Screen name="tools/gratitude-log/new" />
+            <Stack.Screen name="tools/gratitude-log/[id]/index" />
+            <Stack.Screen name="tools/gratitude-log/[id]/edit" />
+            <Stack.Screen name="tools/meditation/learn" dangerouslySingular />
+            <Stack.Screen name="tools/meditation/daily-life" dangerouslySingular />
+            <Stack.Screen name="tools/meditation/sessions/index" dangerouslySingular />
+            <Stack.Screen name="tools/meditation/sessions/[id]" />
+            <Stack.Screen name="tools/meditation/stages/index" dangerouslySingular />
+            <Stack.Screen name="tools/meditation/stages/[n]" />
+            <Stack.Screen name="tools/meditation/practices" />
+            <Stack.Screen name="tools/meditation/session/index" />
+            <Stack.Screen name="tools/mood-tracker/index" />
+            <Stack.Screen name="tools/mood-tracker/new" />
+            <Stack.Screen name="tools/mood-tracker/[id]/index" />
+            <Stack.Screen name="tools/mood-tracker/[id]/edit" />
+            <Stack.Screen name="routines/index" dangerouslySingular />
+            <Stack.Screen name="routines/new" />
+            <Stack.Screen name="routines/[id]/index" />
+            <Stack.Screen name="routines/[id]/edit" />
+            <Stack.Screen name="notifications" />
+            <Stack.Screen name="modules/cbt/saved/[id]" />
+            <Stack.Screen name="modules/cbt/worry/[id]" />
             <Stack.Screen name="support" dangerouslySingular />
             <Stack.Screen name="legal" dangerouslySingular />
             <Stack.Screen name="progress" dangerouslySingular />
