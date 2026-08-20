@@ -42,9 +42,11 @@ describe("ScreenHeader", () => {
     // `/notifications`, `/settings`, `/support` and the rest of the eight: the
     // reported symptom was that these had no way out at all.
     mockUseBreadcrumbs.mockReturnValue([{ label: "Reminders" }]);
-    const { getAllByTestId, queryByText } = render(<ScreenHeader title="Reminders" />);
+    const { getAllByTestId, getAllByText } = render(<ScreenHeader title="Reminders" />);
     expect(getAllByTestId("screen-escape")).toHaveLength(1);
     // The trail itself is still hidden - only the Escape was decoupled from it.
-    expect(queryByText("Tools")).toBeNull();
+    // A rendered lone crumb would put "Reminders" on screen twice, which is the
+    // exact repetition the trail's hiding rule exists to avoid.
+    expect(getAllByText("Reminders")).toHaveLength(1);
   });
 });

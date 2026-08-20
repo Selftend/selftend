@@ -79,7 +79,9 @@ describe("ScreenTopBar", () => {
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
     // The trail is still hidden at one crumb - only the Escape was decoupled.
-    expect(screen.queryByText("Tools")).toBeNull();
+    // The bar renders no title of its own, so "Reminders" appearing at all would
+    // mean the lone crumb rendered.
+    expect(screen.queryByText("Reminders")).toBeNull();
   });
 
   it("renders no h1 - the screen's own heading sits in the column below", () => {

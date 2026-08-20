@@ -131,7 +131,9 @@ describe("ModuleHomeHeader shell", () => {
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
     // The trail is still hidden at one crumb - only the Escape was decoupled.
-    expect(screen.queryByText("Modules")).toBeNull();
+    // A rendered lone crumb would put "Reminders" on screen twice, above a title
+    // that already says it.
+    expect(screen.getAllByText("Reminders")).toHaveLength(1);
   });
 
   it("renders breadcrumb, h1 and tagline", () => {
