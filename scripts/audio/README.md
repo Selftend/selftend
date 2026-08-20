@@ -49,22 +49,51 @@ Voice Library voice id.
 
 The pass splits once, at the known risk (#1134 §5).
 
-|                                                                         | What                                              | Cost                      |
-| ----------------------------------------------------------------------- | ------------------------------------------------- | ------------------------- |
-| **Round A** — [#1159](https://github.com/Selftend/selftend/issues/1159) | Two bells, 5 candidates each, plus the API probes | 45s ≈ **1,800 credits**   |
-| **Round B** — [#1210](https://github.com/Selftend/selftend/issues/1210) | 5 beds, 6 texture files, 8 voice cues             | 570s ≈ **22,800 credits** |
+|                                                                         | What                                              | Cost                     |
+| ----------------------------------------------------------------------- | ------------------------------------------------- | ------------------------ |
+| **Round A** — [#1159](https://github.com/Selftend/selftend/issues/1159) | Two bells, 5 candidates each, plus the API probes | 45s ≈ **150 credits**    |
+| **Round B** — [#1210](https://github.com/Selftend/selftend/issues/1210) | 5 beds, 6 texture files, 8 voice cues             | 570s ≈ **1,880 credits** |
 
-≈**24,600 credits** total against Creator's 121,000/month.
+≈**2,030 credits** total, against 93,179 remaining on the Creator plan.
 
-> The map still carries #1134's older ~17,500 estimate. It is stale twice over:
-> it predates #1137 adding a fifth bed and lengthening textures to 10s, and its
-> bell row costs only the 7s bell, forgetting the 2s temple block.
+> ☠️ The map carries #1134's ~17,500 estimate, which is wrong three times over:
+> it predates #1137's fifth bed and 10s textures, its bell row forgets the 2s
+> temple block, and above all it prices Sound Effects at **40 credits/second**.
+> The composer actually charges 7 credits for 2.0s and 23 for 7.0s — about
+> **3.3/sec**. Cost was never a constraint and is an order of magnitude less of
+> one than the map assumed.
 
 **Round A is a gate, not just the first batch.** Generative FX models reliably
 nail an attack and muddy the long tail, which is the entire character of a
 meditation bell. If no candidate has a clean, smooth, monotonic decay, the bells
 fall back to a non-ElevenLabs source and #1133 reopens for that one class —
-before ~22,800 credits of beds are committed to an unrepeatable render.
+before the beds are committed to an unrepeatable render.
+
+## ☠️ The 450-character cap
+
+Sound Effects **rejects any prompt over 450 characters**, server-side — the API
+and the web UI enforce it identically.
+
+#1134's §2 palette (204 chars) plus its §3 must-not list (228) come to **434 of
+that 450 budget on their own**, leaving 16 characters for the sound. Every one
+of the thirteen clips composed to 634–859 and was refused. The mechanism could
+not work; it was not merely tight.
+
+`SHARED_TAIL` now carries the same identity in **176** characters, and
+`composePrompt()` **throws** rather than letting an over-long prompt reach the
+API, so the cap is caught by `plan` instead of by a failed generation. Composed
+lengths currently run 377–447.
+
+## ☠️ Two composer defaults that corrupt the pass
+
+If you generate through the web UI rather than the script, both must be changed:
+
+1. **"Automatically improves short or unclear prompts" defaults ON.** It
+   rewrites the prompt before generating — so on a seedless pass whose only
+   reproducible artifact is the prompt text, the manifest would record a prompt
+   that was never sent.
+2. **"Generations may be shared to Explore page for other users to download"
+   defaults ON**, publishing the app's audio publicly. Disabled 2026-08-20.
 
 ## Two pieces of content are still undecided
 
