@@ -29,9 +29,15 @@ export function RelatedTools({ tools }: RelatedToolsProps) {
             key={tool.nameKey}
             accessibilityRole="link"
             accessibilityLabel={tNav(`sidebar.${tool.nameKey}`)}
-            // "Related" is lateral by definition - the tool you jump to may be the
-            // one you came from two hops ago (#1027).
-            onPress={() => router.push(tool.href, { dangerouslySingular: true })}
+            // "Related" is lateral by definition - the tool you jump to may be the one you
+            // came from two hops ago (#1027) - but singularity is the LAYOUT's call, made
+            // once for every caller. This row used to force it per push, which was the only
+            // thing holding three of these routes up while they went undeclared, and was
+            // wrong for the fourth: `/tools/meditation` is keyed by `?practice=` and holds
+            // per-visit state, so the layout leaves it plain on purpose and forcing singular
+            // here REUSED an existing instance instead of mounting a fresh one. The routes
+            // are declared now (#1278), so this pushes plainly.
+            onPress={() => router.push(tool.href)}
             className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 active:bg-accent/40"
           >
             <Icon name={tool.icon} className="size-3.5 text-muted-foreground" />
