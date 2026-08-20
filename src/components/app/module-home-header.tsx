@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
+import { ScreenEscape } from "@/src/components/app/screen-escape";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
@@ -100,7 +101,11 @@ export function ModuleHomeHeader({
           burying the info action would bury the only path back to the
           onboarding replay. */}
       <View className="flex-row items-center gap-2">
-        <View className="flex-1">
+        {/* The Escape renders unconditionally - never wrap it in a condition
+            (#1250). The trail beside it still hides at one crumb, so on a
+            one-crumb screen the glyph sits on this row alone. */}
+        <View className="flex-1 flex-row flex-wrap items-center gap-2">
+          <ScreenEscape />
           <ScreenBreadcrumb />
         </View>
         {actions.length > 0 || addWidgetCategory ? (

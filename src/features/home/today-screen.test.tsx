@@ -314,6 +314,15 @@ describe("HomeScreen greeting", () => {
  * closes.
  */
 describe("HomeScreen header actions (#979)", () => {
+  // R3 (#1250): the Escape is present on every screen BELOW the root, and this is
+  // the root. Home renders no chrome component, so it gets no Escape by
+  // construction - there is nowhere above it to escape to.
+  it("renders no Escape - this is the root", () => {
+    renderPopulatedHome();
+
+    expect(screen.queryByTestId("screen-escape")).toBeNull();
+  });
+
   it("renders neither action while the tool tier is empty", () => {
     renderWithProviders(<HomeScreen />);
 
