@@ -48,17 +48,19 @@ describe("ScreenBreadcrumb", () => {
   // R7 (#1250): this component is the trail and nothing else. The leading
   // affordance moved out to `ScreenEscape` precisely because living in here made
   // it vanish on every one-crumb screen - so it must not creep back in.
-  it("renders no Escape of its own - that slot belongs to the chrome", () => {
+  it("renders links only - the leading affordance is not its to draw", () => {
     mockUseBreadcrumbs.mockReturnValue([
       { label: "Tools", href: "/tools" },
       { label: "Gratitude log", href: "/tools/gratitude-log" },
       { label: "Entry" },
     ]);
-    const { queryByTestId, queryByLabelText } = render(<ScreenBreadcrumb />);
-    expect(queryByTestId("screen-escape")).toBeNull();
+    const { queryByRole, queryByLabelText } = render(<ScreenBreadcrumb />);
+    // Deliberately NOT `queryByTestId("screen-escape")`: this component does not
+    // import `ScreenEscape`, so that assertion could never fail - it would read
+    // as a guard while guarding nothing. These three can fail, because they catch
+    // an affordance re-added here in any shape rather than one exact testID.
+    expect(queryByRole("button")).toBeNull();
     expect(queryByLabelText("Go back")).toBeNull();
     expect(queryByLabelText("Close")).toBeNull();
-    // And it never navigates by `replace` - the crumbs push, the Escape replaces.
-    expect(router.replace).not.toHaveBeenCalled();
   });
 });

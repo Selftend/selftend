@@ -36,8 +36,8 @@ interface ScreenTopBarProps {
  * 2px here.
  *
  * The recorded "48px tall and empty - no trail and no close affordance" gap is
- * gone, not guarded: the Escape is a slot of its own now and renders whatever
- * the trail does (#1250). Keep it unconditional.
+ * gone, not guarded: the Escape is a slot of its own now and renders whether or
+ * not the trail does (#1250). Keep it unconditional.
  */
 export function ScreenTopBar({ leading = "back", className }: ScreenTopBarProps) {
   return (
@@ -45,8 +45,10 @@ export function ScreenTopBar({ leading = "back", className }: ScreenTopBarProps)
       testID="screen-top-bar"
       className={cn("h-12 justify-center border-b border-border bg-card px-5", className)}
     >
-      {/* No `flex-wrap` here, unlike the other chrome: this row lives in a fixed
-          48px bar, so a wrapped second line would be clipped rather than shown. */}
+      {/* This row adds no `flex-wrap` of its own, unlike the other chrome: it
+          lives in a fixed 48px bar, so it must not be the thing that pushes the
+          trail onto a second line. (The trail still wraps internally, exactly as
+          it did before the Escape moved out - unchanged here, not fixed here.) */}
       <View className="flex-row items-center gap-2">
         <ScreenEscape glyph={leading === "close" ? "close" : "arrow-back"} />
         <ScreenBreadcrumb />

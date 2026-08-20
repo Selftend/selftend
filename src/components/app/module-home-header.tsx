@@ -102,8 +102,8 @@ export function ModuleHomeHeader({
           onboarding replay. */}
       <View className="flex-row items-center gap-2">
         {/* The Escape renders unconditionally - never wrap it in a condition
-            (#1250). The trail beside it still hides at one crumb, which on a
-            module home leaves the glyph alone on the row. */}
+            (#1250). The trail beside it still hides at one crumb, so on a
+            one-crumb screen the glyph sits on this row alone. */}
         <View className="flex-1 flex-row flex-wrap items-center gap-2">
           <ScreenEscape />
           <ScreenBreadcrumb />
