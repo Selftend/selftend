@@ -341,9 +341,10 @@ describe("MeditationHomeScreen", () => {
     it("offers the interval bell with Off selected by default", () => {
       renderWithProviders(<MeditationHomeScreen />);
 
-      expect(bells().getAllByRole("radio")).toHaveLength(4);
+      // Five since #1189 added half-time: Off, Half-time, 5, 10, 15.
+      expect(bells().getAllByRole("radio")).toHaveLength(5);
       // A bell that rings without being asked for is a notification nobody opted
-      // into; Off is the default and the other three are one tap away.
+      // into; Off is the default and the rest are one tap away.
       expect(bells().getByText("Off").props.className).toContain("text-primary-ink");
     });
 
@@ -375,9 +376,52 @@ describe("MeditationHomeScreen", () => {
       fireEvent.press(bells().getByText("5 min"));
 
       // A discrete choice has no travel, so its change already is its commit.
+      // Both columns are written every time (#1189), so the pair cannot drift.
       await waitFor(() =>
-        expect(updatePreferences).toHaveBeenCalledWith({ meditationIntervalBellMinutes: 5 }),
+        expect(updatePreferences).toHaveBeenCalledWith({
+          meditationIntervalBellMinutes: 5,
+          meditationBellAtHalf: false,
+        }),
       );
+    });
+
+    it("offers half-time, which no minute spacing could express", async () => {
+      // Half of a 25-minute sit is 12.5 minutes. TMI asks for exactly this
+      // ("optional silent half-time bell", meditation-tmi.md:119) and a list of
+      // whole-minute spacings cannot hold it (#1189).
+      renderWithProviders(<MeditationHomeScreen />);
+
+      fireEvent.press(bells().getByText("Half-time"));
+
+      await waitFor(() =>
+        expect(updatePreferences).toHaveBeenCalledWith({
+          meditationIntervalBellMinutes: 0,
+          meditationBellAtHalf: true,
+        }),
+      );
+    });
+
+    it("starts on half-time when that is what was stored", () => {
+      setStoredPreferences({ meditationIntervalBellMinutes: 0, meditationBellAtHalf: true });
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(bells().getByText("Half-time").props.className).toContain("text-primary-ink");
+      expect(bells().getByText("Off").props.className).not.toContain("text-primary-ink");
+    });
+
+    it("hands half-time to the sitting screen as a key, not as a minute count", () => {
+      const { router } = jest.requireMock<{ router: { push: jest.Mock } }>("expo-router");
+      setStoredPreferences({ meditationIntervalBellMinutes: 0, meditationBellAtHalf: true });
+
+      renderWithProviders(<MeditationHomeScreen />);
+      fireEvent.press(screen.getByText("Begin"));
+
+      // `12.5` would not survive the integer param; the sit resolves the key.
+      expect(router.push).toHaveBeenCalledWith({
+        pathname: "/tools/meditation/session",
+        params: { duration: "20", bell: "half" },
+      });
     });
 
     it("keeps the picked value when the write fails, and says nothing", async () => {
