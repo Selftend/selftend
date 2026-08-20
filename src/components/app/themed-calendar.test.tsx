@@ -69,6 +69,14 @@ describe("ThemedCalendar", () => {
     expect(within(screen.getByTestId("btn-month")).getByText("март")).toBeTruthy();
   });
 
+  it("leaves the global dayjs locale as it found it", () => {
+    // Order-dependent on purpose: this runs straight after the Bulgarian test,
+    // and the library set the GLOBAL dayjs locale to `bg` while rendering it.
+    // Without the afterEach restore, every later test in this file — and any
+    // dayjs formatting inside one — silently inherits Bulgarian.
+    expect(dayjs("2026-03-15").format("MMMM")).toBe("March");
+  });
+
   it("keeps the English calendar English, so the Bulgarian proof above is not vacuous", () => {
     renderWithProviders(
       <ThemedCalendar
