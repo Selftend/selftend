@@ -96,6 +96,14 @@ export interface UserPreferences {
   ambientVolume: number;
   lastBreathingPatternId: string | null;
   breathingCycles: number | null;
+  /**
+   * Interval-bell spacing for a meditation sit, in minutes; 0 is off (#1190).
+   * A playback preference rather than programme progress, which is why it sits
+   * beside the breathing audio columns and not on meditation_program_state.
+   * Never chosen and explicitly off are the same thing to every reader, so the
+   * null column collapses to 0 here rather than widening the type.
+   */
+  meditationIntervalBellMinutes: number;
   // The app's own mailbox-ownership flag (#489). Under mailer_autoconfirm,
   // auth's email_confirmed_at is stamped at signup and proves nothing; this
   // is set after an OTP code entry or an emailed-link round trip. Advisory -
@@ -182,6 +190,7 @@ export const defaultUserPreferences: UserPreferences = {
   ambientVolume: 0.5,
   lastBreathingPatternId: null,
   breathingCycles: null,
+  meditationIntervalBellMinutes: 0,
   emailVerified: false,
 };
 

@@ -85,8 +85,11 @@ export default function MeditationHomeScreen() {
   // Null until the user picks, so a preference arriving after first paint still
   // lands - but a pick made before it arrives is never overwritten.
   const [pickedDuration, setPickedDuration] = useState<number | null>(null);
-  const [bellMinutes, setBellMinutes] = useState<number>(0);
+  const [pickedBell, setPickedBell] = useState<number | null>(null);
   const durationMinutes = pickedDuration ?? preferredDuration ?? DEFAULT_DURATION;
+  // Same null-until-picked shape as the length above, and for the same reason:
+  // the stored bell arrives with the preferences query, after first paint.
+  const bellMinutes = pickedBell ?? preferences?.meditationIntervalBellMinutes ?? 0;
 
   // The loaded sessions only stand in until the server median arrives (undefined while
   // loading); once it does it wins, including a genuine null for "no sessions yet".
@@ -187,6 +190,32 @@ export default function MeditationHomeScreen() {
   function pickDuration(minutes: number) {
     setPickedDuration(minutes);
     setNowMs(Date.now());
+  }
+
+  // Both of the card's controls used to forget on every visit (#1190): the
+  // length was written only by the onboarding wizard, and the bell was stored
+  // nowhere at all.
+  //
+  // Writes are best-effort, exactly like the breathing session's volume writes:
+  // the local pick is authoritative for this visit, so a failed write must not
+  // surface as an error or become an unhandled rejection.
+  //
+  // The length persists on COMMIT, not on change - a drag emits once per whole
+  // minute it crosses, which would be a write per minute of travel. The bell is
+  // a discrete choice, so its change already is its commit.
+  function commitDuration(minutes: number) {
+    if (!userId) return;
+    void upsertProgramState
+      .mutateAsync({ preferredDurationMinutes: minutes })
+      .catch(() => undefined);
+  }
+
+  function pickBell(minutes: number) {
+    setPickedBell(minutes);
+    if (!userId) return;
+    void updatePreferences
+      .mutateAsync({ meditationIntervalBellMinutes: minutes })
+      .catch(() => undefined);
   }
 
   // The same clock reading, so the last column advances with the query bound
@@ -320,6 +349,7 @@ export default function MeditationHomeScreen() {
                 testID="sit-length-slider"
                 value={durationMinutes}
                 onChange={pickDuration}
+                onCommit={commitDuration}
               />
               <ChoiceRow
                 testID="sit-bell-choices"
@@ -333,7 +363,7 @@ export default function MeditationHomeScreen() {
                       : t("duration.minutes", { count: minutes }),
                 }))}
                 value={bellMinutes}
-                onChange={setBellMinutes}
+                onChange={pickBell}
               />
               {/* `lg`, so the screen's primary action clears the 44dp touch
                   floor on a phone - the default button is 40dp tall. The rows
