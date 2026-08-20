@@ -95,21 +95,26 @@ If you generate through the web UI rather than the script, both must be changed:
 2. **"Generations may be shared to Explore page for other users to download"
    defaults ON**, publishing the app's audio publicly. Disabled 2026-08-20.
 
-## Two pieces of content are still undecided
+## Both content gaps are now closed
 
-`plan --round B` will warn about both, and `render` refuses to spend on the
-first:
+`plan --round B` used to warn about two undecided pieces of content and `render`
+refused to spend on one of them. Both are settled:
 
-- **The `ocean` bed prompt is a draft.** #1137 added this bed after #1134 had
-  written the per-clip briefs, so it is the only clip on the map with no agreed
-  prompt text. The direction is fixed — wide and distant, no discrete breaking
-  events, separated _by distance in the prompt_ from the close, dry
-  `ocean-swell` texture so the two can be selected together. The wording in
-  `catalog.mjs` follows the house style but needs sign-off.
-- **The `guide_intro` wording**, left by #1136 as "TBD at render", and the two
-  Voice Library voice ids, which #1136 routed to the render session on stated
-  criteria (Library only — defaults expire 2026-12-31; a matched pair;
-  auditioned on the shipping words, not the demo reel).
+- **The `ocean` bed prompt** — settled on
+  [#1262](https://github.com/Selftend/selftend/issues/1262). ☠️ #1137 said the
+  bed and the `ocean-swell` texture separate _by distance in the prompt_. That
+  mechanism never existed: `composePrompt()` appends `SHARED_TAIL` to every
+  Sound Effects prompt, beds included, and it opens "Close, dry, small soft
+  room." No bed can be distant. They separate by **content** instead — the bed
+  is open water with no shoreline at all, the texture keeps surf on sand.
+- **The `guide_intro` wording** — settled on
+  [#1264](https://github.com/Selftend/selftend/issues/1264): _"Find a
+  comfortable position, and let your shoulders soften."_, the same script for
+  both voices. ☠️ It cannot say "get ready" — the preroll screen is already
+  showing `breathing.getReady` while the clip plays.
+
+`plan --round B` now warns only that no voice has been chosen, which is Round
+B's own first task (#1136 routed the pick there deliberately, not to a ticket).
 
 ## Output
 
@@ -124,3 +129,72 @@ in the **same session** as the render, deliberately. #1137's seam gate is an
 automated wrap check plus a 10x listen on web and native, and both run on the
 _post-processed_ loop. Defer post-processing and a bed failing its seam gate
 would need a re-render that is no longer possible in matching style.
+
+## Post-processing
+
+`postprocess.mjs` turns one raw master into the finished clip, in the order
+#1138 fixed. It was built and calibrated **before** the render pass
+([#1296](https://github.com/Selftend/selftend/issues/1296)) — running it in the
+same session as the render is required, but _authoring_ it there would mean an
+untested pipeline meeting non-reproducible masters.
+
+```bash
+# One clip. --clip picks the channels, bitrate and loudness target from catalog.mjs.
+node scripts/audio/postprocess.mjs run audio-masters/rain-2.wav --clip rain --out assets/sounds/breathing/rain.m4a
+
+# Just the numbers.
+node scripts/audio/postprocess.mjs measure assets/sounds/meditation-bell.wav
+node scripts/audio/postprocess.mjs seamcheck assets/sounds/breathing/rain.wav
+```
+
+Requires **ffmpeg** on PATH. That is a deliberate `scripts/`-only dependency:
+#1138 retired the post-processor's "pure stdlib" property because Python's
+`wave` decodes no MP3 and encodes no AAC.
+
+### Three things measurement changed
+
+☠️ **The fold trims, and it is equal-power, not linear.** `seamless()` in
+`generate-breathing-sounds.py` folds `sig[n..n+cf]` into the head and the
+generator makes `n + cf` samples on purpose. A rendered bed has no spare tail —
+Sound Effects caps at 30s — so the last 0.4s is folded in and a 30s render
+becomes a **29.6s** bed. And the crossfade weights are `sqrt`, where
+`seamless()` is linear: the two halves of a fold are decorrelated noise, so
+linear weights sum to ~0.707x mid-fold, a level dip that recurs at **every loop
+point** — exactly the recurring audible event #1137's eventless-bed rule exists
+to remove. Measured against untouched material in the same clip:
+
+| bed         | linear   | equal-power |
+| ----------- | -------- | ----------- |
+| rain        | -3.29 dB | -0.20 dB    |
+| forest      | -3.57 dB | -0.53 dB    |
+| brown-noise | -7.92 dB | -4.87 dB    |
+
+☠️ **Loudness is one computed gain, not ffmpeg's `loudnorm`.** `linear=true` is
+a request, not a guarantee: when the source LRA exceeds the target LRA,
+`loudnorm` silently falls back to _dynamic_ mode and compresses. On the shipped
+meditation bell (LRA 12.8) that landed the file **2.61 LU** from target while
+reporting success — and compressing a bell would flatten the attack #1139 relies
+on. A single gain is exactly predictable, because scaling by G dB moves both
+integrated loudness and true peak by G, so the -3 dBTP ceiling is arithmetic
+rather than a limiter.
+
+☠️ **The seam gate's limits are calibrated, and one gap is a true negative.**
+`calibrate-seam.mjs` scores the shipped beds three ways — as they ship, hard-cut,
+and folded by the pipeline — and fails if the pipeline's own output does not
+clear the gate, if a tonal splice is not caught, or if equal-power folding stops
+beating the shipped linear fold. Run it after touching a threshold, a window
+length or the fold.
+
+A hard cut of **stochastic** material is not caught (it scores 1.08-1.22x) and
+that is deliberate: splicing two independent stretches of dense noise produces a
+step whose broadband energy is indistinguishable from the material's own. #1137
+reached the same conclusion from the other direction — `brown-noise`'s 8s loop is
+_already_ undetectable, and the loop tell is event-driven, not seam-driven. What
+the gate catches is the case that is actually audible: a **tonal** bed whose loop
+phase jumps, which scores 5.29x.
+
+⚠️ **If a rendered bed comes back tonal, the fold will make it worse, not
+better.** Crossfading two different phases of the same tone beats and cancels;
+`night` — a phase-locked drone — scores 13.85x folded against 5.29x hard-cut. The
+gate catches this, which is the point, but the fix is a re-render toward
+noise-like material, not a longer fold.
