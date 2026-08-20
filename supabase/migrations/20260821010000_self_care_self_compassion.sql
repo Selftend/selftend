@@ -27,9 +27,12 @@
 --
 -- export_user_data() is re-declared in full, rebuilt from 20260820010000, the
 -- newest declaration on dev, with ONLY the two new columns added to the
--- selfCareLogs projection - verified by diff. Versioned 20260821000000: full
+-- selfCareLogs projection - verified by diff. Versioned 20260821010000: full
 -- 14 digits, later than every existing version, sharing a prefix with none
--- (supabase/README.md "Migration versions").
+-- (supabase/README.md "Migration versions"). The 010000 slot because
+-- 20260821000000 was taken by foreign_key_delete_rules while this was in
+-- review; that migration touches neither self_care_logs nor export_user_data,
+-- so ordering after it changes nothing but the filename.
 
 -- === Step A: columns on the base table ===
 alter table public.self_care_logs_data
