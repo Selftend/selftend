@@ -1,0 +1,1181 @@
+
+########## LIGHT ##########
+
+quiet-lilac / light / onbg / A / success
+    card rgb(252, 252, 253) over rgb(244, 242, 248)  surface-only edge 1.08
+    border width=0px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(124, 73, 212)
+
+quiet-lilac / light / onbg / A / error
+    card rgb(252, 252, 253) over rgb(244, 242, 248)  surface-only edge 1.08
+    border width=0px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+quiet-lilac / light / onbg / B / success
+    card rgb(252, 252, 253) over rgb(244, 242, 248)  surface-only edge 1.08
+    border width=1px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card 1.36  vs under 1.25
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(124, 73, 212)
+
+quiet-lilac / light / onbg / B / error
+    card rgb(252, 252, 253) over rgb(244, 242, 248)  surface-only edge 1.08
+    border width=1px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card 1.36  vs under 1.25
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+quiet-lilac / light / onbg / C / success
+    card rgb(252, 252, 253) over rgb(244, 242, 248)  surface-only edge 1.08
+    border width=1px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card 1.36  vs under 1.25
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+quiet-lilac / light / onbg / C / error
+    card rgb(252, 252, 253) over rgb(244, 242, 248)  surface-only edge 1.08
+    border width=1px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card 1.36  vs under 1.25
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+quiet-lilac / light / oncard / A / success
+    card rgb(252, 252, 253) over rgb(252, 252, 253)  surface-only edge 1.00
+    border width=0px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(124, 73, 212)
+
+quiet-lilac / light / oncard / A / error
+    card rgb(252, 252, 253) over rgb(252, 252, 253)  surface-only edge 1.00
+    border width=0px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+quiet-lilac / light / oncard / B / success
+    card rgb(252, 252, 253) over rgb(252, 252, 253)  surface-only edge 1.00
+    border width=1px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card 1.36  vs under 1.36
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(124, 73, 212)
+
+quiet-lilac / light / oncard / B / error
+    card rgb(252, 252, 253) over rgb(252, 252, 253)  surface-only edge 1.00
+    border width=1px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card 1.36  vs under 1.36
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+quiet-lilac / light / oncard / C / success
+    card rgb(252, 252, 253) over rgb(252, 252, 253)  surface-only edge 1.00
+    border width=1px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card 1.36  vs under 1.36
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+quiet-lilac / light / oncard / C / error
+    card rgb(252, 252, 253) over rgb(252, 252, 253)  surface-only edge 1.00
+    border width=1px colour=rgb(220, 217, 226) (token rgb(220, 217, 226)) vs card 1.36  vs under 1.36
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+ink-ivory / light / onbg / A / success
+    card rgb(255, 255, 255) over rgb(250, 250, 250)  surface-only edge 1.04
+    border width=0px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(48, 88, 217)
+
+ink-ivory / light / onbg / A / error
+    card rgb(255, 255, 255) over rgb(250, 250, 250)  surface-only edge 1.04
+    border width=0px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+ink-ivory / light / onbg / B / success
+    card rgb(255, 255, 255) over rgb(250, 250, 250)  surface-only edge 1.04
+    border width=1px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card 1.40  vs under 1.34
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(48, 88, 217)
+
+ink-ivory / light / onbg / B / error
+    card rgb(255, 255, 255) over rgb(250, 250, 250)  surface-only edge 1.04
+    border width=1px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card 1.40  vs under 1.34
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+ink-ivory / light / onbg / C / success
+    card rgb(255, 255, 255) over rgb(250, 250, 250)  surface-only edge 1.04
+    border width=1px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card 1.40  vs under 1.34
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+ink-ivory / light / onbg / C / error
+    card rgb(255, 255, 255) over rgb(250, 250, 250)  surface-only edge 1.04
+    border width=1px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card 1.40  vs under 1.34
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+ink-ivory / light / oncard / A / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(48, 88, 217)
+
+ink-ivory / light / oncard / A / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+ink-ivory / light / oncard / B / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card 1.40  vs under 1.40
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(48, 88, 217)
+
+ink-ivory / light / oncard / B / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card 1.40  vs under 1.40
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+ink-ivory / light / oncard / C / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card 1.40  vs under 1.40
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+ink-ivory / light / oncard / C / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(217, 218, 222) (token rgb(217, 218, 222)) vs card 1.40  vs under 1.40
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+atlas / light / onbg / A / success
+    card rgb(255, 254, 250) over rgb(247, 244, 238)  surface-only edge 1.09
+    border width=0px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(166, 85, 58)
+
+atlas / light / onbg / A / error
+    card rgb(255, 254, 250) over rgb(247, 244, 238)  surface-only edge 1.09
+    border width=0px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+atlas / light / onbg / B / success
+    card rgb(255, 254, 250) over rgb(247, 244, 238)  surface-only edge 1.09
+    border width=1px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card 1.34  vs under 1.23
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(166, 85, 58)
+
+atlas / light / onbg / B / error
+    card rgb(255, 254, 250) over rgb(247, 244, 238)  surface-only edge 1.09
+    border width=1px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card 1.34  vs under 1.23
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+atlas / light / onbg / C / success
+    card rgb(255, 254, 250) over rgb(247, 244, 238)  surface-only edge 1.09
+    border width=1px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card 1.34  vs under 1.23
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+atlas / light / onbg / C / error
+    card rgb(255, 254, 250) over rgb(247, 244, 238)  surface-only edge 1.09
+    border width=1px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card 1.34  vs under 1.23
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+atlas / light / oncard / A / success
+    card rgb(255, 254, 250) over rgb(255, 254, 250)  surface-only edge 1.00
+    border width=0px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(166, 85, 58)
+
+atlas / light / oncard / A / error
+    card rgb(255, 254, 250) over rgb(255, 254, 250)  surface-only edge 1.00
+    border width=0px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+atlas / light / oncard / B / success
+    card rgb(255, 254, 250) over rgb(255, 254, 250)  surface-only edge 1.00
+    border width=1px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card 1.34  vs under 1.34
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(166, 85, 58)
+
+atlas / light / oncard / B / error
+    card rgb(255, 254, 250) over rgb(255, 254, 250)  surface-only edge 1.00
+    border width=1px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card 1.34  vs under 1.34
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+atlas / light / oncard / C / success
+    card rgb(255, 254, 250) over rgb(255, 254, 250)  surface-only edge 1.00
+    border width=1px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card 1.34  vs under 1.34
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+atlas / light / oncard / C / error
+    card rgb(255, 254, 250) over rgb(255, 254, 250)  surface-only edge 1.00
+    border width=1px colour=rgb(227, 221, 206) (token rgb(227, 221, 206)) vs card 1.34  vs under 1.34
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+deep-field / light / onbg / A / success
+    card rgb(255, 255, 255) over rgb(238, 241, 246)  surface-only edge 1.13
+    border width=0px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(12, 125, 118)
+
+deep-field / light / onbg / A / error
+    card rgb(255, 255, 255) over rgb(238, 241, 246)  surface-only edge 1.13
+    border width=0px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+deep-field / light / onbg / B / success
+    card rgb(255, 255, 255) over rgb(238, 241, 246)  surface-only edge 1.13
+    border width=1px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card 1.29  vs under 1.14
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(12, 125, 118)
+
+deep-field / light / onbg / B / error
+    card rgb(255, 255, 255) over rgb(238, 241, 246)  surface-only edge 1.13
+    border width=1px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card 1.29  vs under 1.14
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+deep-field / light / onbg / C / success
+    card rgb(255, 255, 255) over rgb(238, 241, 246)  surface-only edge 1.13
+    border width=1px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card 1.29  vs under 1.14
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+deep-field / light / onbg / C / error
+    card rgb(255, 255, 255) over rgb(238, 241, 246)  surface-only edge 1.13
+    border width=1px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card 1.29  vs under 1.14
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+deep-field / light / oncard / A / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(12, 125, 118)
+
+deep-field / light / oncard / A / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+deep-field / light / oncard / B / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card 1.29  vs under 1.29
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(12, 125, 118)
+
+deep-field / light / oncard / B / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card 1.29  vs under 1.29
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+deep-field / light / oncard / C / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card 1.29  vs under 1.29
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+deep-field / light / oncard / C / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(221, 227, 238) (token rgb(221, 227, 238)) vs card 1.29  vs under 1.29
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+sage-garden / light / onbg / A / success
+    card rgb(255, 255, 255) over rgb(242, 245, 240)  surface-only edge 1.10
+    border width=0px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(62, 126, 85)
+
+sage-garden / light / onbg / A / error
+    card rgb(255, 255, 255) over rgb(242, 245, 240)  surface-only edge 1.10
+    border width=0px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+sage-garden / light / onbg / B / success
+    card rgb(255, 255, 255) over rgb(242, 245, 240)  surface-only edge 1.10
+    border width=1px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card 1.31  vs under 1.19
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(62, 126, 85)
+
+sage-garden / light / onbg / B / error
+    card rgb(255, 255, 255) over rgb(242, 245, 240)  surface-only edge 1.10
+    border width=1px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card 1.31  vs under 1.19
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+sage-garden / light / onbg / C / success
+    card rgb(255, 255, 255) over rgb(242, 245, 240)  surface-only edge 1.10
+    border width=1px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card 1.31  vs under 1.19
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+sage-garden / light / onbg / C / error
+    card rgb(255, 255, 255) over rgb(242, 245, 240)  surface-only edge 1.10
+    border width=1px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card 1.31  vs under 1.19
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+sage-garden / light / oncard / A / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(62, 126, 85)
+
+sage-garden / light / oncard / A / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+sage-garden / light / oncard / B / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card 1.31  vs under 1.31
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(62, 126, 85)
+
+sage-garden / light / oncard / B / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card 1.31  vs under 1.31
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+sage-garden / light / oncard / C / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card 1.31  vs under 1.31
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+sage-garden / light / oncard / C / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(221, 227, 217) (token rgb(221, 227, 217)) vs card 1.31  vs under 1.31
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+plum-manuscript / light / onbg / A / success
+    card rgb(255, 255, 255) over rgb(247, 245, 250)  surface-only edge 1.08
+    border width=0px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(110, 64, 196)
+
+plum-manuscript / light / onbg / A / error
+    card rgb(255, 255, 255) over rgb(247, 245, 250)  surface-only edge 1.08
+    border width=0px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+plum-manuscript / light / onbg / B / success
+    card rgb(255, 255, 255) over rgb(247, 245, 250)  surface-only edge 1.08
+    border width=1px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card 1.32  vs under 1.22
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(110, 64, 196)
+
+plum-manuscript / light / onbg / B / error
+    card rgb(255, 255, 255) over rgb(247, 245, 250)  surface-only edge 1.08
+    border width=1px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card 1.32  vs under 1.22
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+plum-manuscript / light / onbg / C / success
+    card rgb(255, 255, 255) over rgb(247, 245, 250)  surface-only edge 1.08
+    border width=1px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card 1.32  vs under 1.22
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+plum-manuscript / light / onbg / C / error
+    card rgb(255, 255, 255) over rgb(247, 245, 250)  surface-only edge 1.08
+    border width=1px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card 1.32  vs under 1.22
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+plum-manuscript / light / oncard / A / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(110, 64, 196)
+
+plum-manuscript / light / oncard / A / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+plum-manuscript / light / oncard / B / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card 1.32  vs under 1.32
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(110, 64, 196)
+
+plum-manuscript / light / oncard / B / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card 1.32  vs under 1.32
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+plum-manuscript / light / oncard / C / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card 1.32  vs under 1.32
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+plum-manuscript / light / oncard / C / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(229, 221, 238) (token rgb(229, 221, 238)) vs card 1.32  vs under 1.32
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+amber-noir / light / onbg / A / success
+    card rgb(255, 255, 255) over rgb(247, 245, 237)  surface-only edge 1.09
+    border width=0px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(159, 110, 20)
+
+amber-noir / light / onbg / A / error
+    card rgb(255, 255, 255) over rgb(247, 245, 237)  surface-only edge 1.09
+    border width=0px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+amber-noir / light / onbg / B / success
+    card rgb(255, 255, 255) over rgb(247, 245, 237)  surface-only edge 1.09
+    border width=1px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card 1.36  vs under 1.25
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(159, 110, 20)
+
+amber-noir / light / onbg / B / error
+    card rgb(255, 255, 255) over rgb(247, 245, 237)  surface-only edge 1.09
+    border width=1px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card 1.36  vs under 1.25
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+amber-noir / light / onbg / C / success
+    card rgb(255, 255, 255) over rgb(247, 245, 237)  surface-only edge 1.09
+    border width=1px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card 1.36  vs under 1.25
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+amber-noir / light / onbg / C / error
+    card rgb(255, 255, 255) over rgb(247, 245, 237)  surface-only edge 1.09
+    border width=1px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card 1.36  vs under 1.25
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+amber-noir / light / oncard / A / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(159, 110, 20)
+
+amber-noir / light / oncard / A / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+amber-noir / light / oncard / B / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card 1.36  vs under 1.36
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(159, 110, 20)
+
+amber-noir / light / oncard / B / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card 1.36  vs under 1.36
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+amber-noir / light / oncard / C / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card 1.36  vs under 1.36
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+amber-noir / light / oncard / C / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(227, 220, 206) (token rgb(227, 220, 206)) vs card 1.36  vs under 1.36
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+glacier / light / onbg / A / success
+    card rgb(255, 255, 255) over rgb(241, 245, 249)  surface-only edge 1.10
+    border width=0px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(15, 111, 163)
+
+glacier / light / onbg / A / error
+    card rgb(255, 255, 255) over rgb(241, 245, 249)  surface-only edge 1.10
+    border width=0px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+glacier / light / onbg / B / success
+    card rgb(255, 255, 255) over rgb(241, 245, 249)  surface-only edge 1.10
+    border width=1px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card 1.29  vs under 1.18
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(15, 111, 163)
+
+glacier / light / onbg / B / error
+    card rgb(255, 255, 255) over rgb(241, 245, 249)  surface-only edge 1.10
+    border width=1px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card 1.29  vs under 1.18
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+glacier / light / onbg / C / success
+    card rgb(255, 255, 255) over rgb(241, 245, 249)  surface-only edge 1.10
+    border width=1px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card 1.29  vs under 1.18
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+glacier / light / onbg / C / error
+    card rgb(255, 255, 255) over rgb(241, 245, 249)  surface-only edge 1.10
+    border width=1px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card 1.29  vs under 1.18
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+glacier / light / oncard / A / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(15, 111, 163)
+
+glacier / light / oncard / A / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=0px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card n/a  vs under n/a
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+glacier / light / oncard / B / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card 1.29  vs under 1.29
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(15, 111, 163)
+
+glacier / light / oncard / B / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card 1.29  vs under 1.29
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=true (expected true) colour=rgb(211, 34, 34)
+
+glacier / light / oncard / C / success
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card 1.29  vs under 1.29
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+glacier / light / oncard / C / error
+    card rgb(255, 255, 255) over rgb(255, 255, 255)  surface-only edge 1.00
+    border width=1px colour=rgb(218, 228, 236) (token rgb(218, 228, 236)) vs card 1.29  vs under 1.29
+    shadow paints=true  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 3px 10px 0px
+    bar present=false (expected false) colour=null
+
+########## DARK ##########
+
+quiet-lilac / dark / onbg / A / success
+    card rgb(39, 34, 47) over rgb(21, 18, 28)  surface-only edge 1.19
+    border width=0px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(173, 132, 235)
+
+quiet-lilac / dark / onbg / A / error
+    card rgb(39, 34, 47) over rgb(21, 18, 28)  surface-only edge 1.19
+    border width=0px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+quiet-lilac / dark / onbg / B / success
+    card rgb(39, 34, 47) over rgb(21, 18, 28)  surface-only edge 1.19
+    border width=1px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card 1.33  vs under 1.59
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(173, 132, 235)
+
+quiet-lilac / dark / onbg / B / error
+    card rgb(39, 34, 47) over rgb(21, 18, 28)  surface-only edge 1.19
+    border width=1px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card 1.33  vs under 1.59
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+quiet-lilac / dark / onbg / C / success
+    card rgb(39, 34, 47) over rgb(21, 18, 28)  surface-only edge 1.19
+    border width=1px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card 1.33  vs under 1.59
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+quiet-lilac / dark / onbg / C / error
+    card rgb(39, 34, 47) over rgb(21, 18, 28)  surface-only edge 1.19
+    border width=1px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card 1.33  vs under 1.59
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+quiet-lilac / dark / oncard / A / success
+    card rgb(39, 34, 47) over rgb(39, 34, 47)  surface-only edge 1.00
+    border width=0px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(173, 132, 235)
+
+quiet-lilac / dark / oncard / A / error
+    card rgb(39, 34, 47) over rgb(39, 34, 47)  surface-only edge 1.00
+    border width=0px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+quiet-lilac / dark / oncard / B / success
+    card rgb(39, 34, 47) over rgb(39, 34, 47)  surface-only edge 1.00
+    border width=1px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card 1.33  vs under 1.33
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(173, 132, 235)
+
+quiet-lilac / dark / oncard / B / error
+    card rgb(39, 34, 47) over rgb(39, 34, 47)  surface-only edge 1.00
+    border width=1px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card 1.33  vs under 1.33
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+quiet-lilac / dark / oncard / C / success
+    card rgb(39, 34, 47) over rgb(39, 34, 47)  surface-only edge 1.00
+    border width=1px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card 1.33  vs under 1.33
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+quiet-lilac / dark / oncard / C / error
+    card rgb(39, 34, 47) over rgb(39, 34, 47)  surface-only edge 1.00
+    border width=1px colour=rgb(59, 54, 69) (token rgb(59, 54, 69)) vs card 1.33  vs under 1.33
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+ink-ivory / dark / onbg / A / success
+    card rgb(28, 29, 33) over rgb(18, 19, 22)  surface-only edge 1.10
+    border width=0px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(142, 166, 245)
+
+ink-ivory / dark / onbg / A / error
+    card rgb(28, 29, 33) over rgb(18, 19, 22)  surface-only edge 1.10
+    border width=0px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+ink-ivory / dark / onbg / B / success
+    card rgb(28, 29, 33) over rgb(18, 19, 22)  surface-only edge 1.10
+    border width=1px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card 1.26  vs under 1.39
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(142, 166, 245)
+
+ink-ivory / dark / onbg / B / error
+    card rgb(28, 29, 33) over rgb(18, 19, 22)  surface-only edge 1.10
+    border width=1px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card 1.26  vs under 1.39
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+ink-ivory / dark / onbg / C / success
+    card rgb(28, 29, 33) over rgb(18, 19, 22)  surface-only edge 1.10
+    border width=1px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card 1.26  vs under 1.39
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+ink-ivory / dark / onbg / C / error
+    card rgb(28, 29, 33) over rgb(18, 19, 22)  surface-only edge 1.10
+    border width=1px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card 1.26  vs under 1.39
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+ink-ivory / dark / oncard / A / success
+    card rgb(28, 29, 33) over rgb(28, 29, 33)  surface-only edge 1.00
+    border width=0px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(142, 166, 245)
+
+ink-ivory / dark / oncard / A / error
+    card rgb(28, 29, 33) over rgb(28, 29, 33)  surface-only edge 1.00
+    border width=0px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+ink-ivory / dark / oncard / B / success
+    card rgb(28, 29, 33) over rgb(28, 29, 33)  surface-only edge 1.00
+    border width=1px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card 1.26  vs under 1.26
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(142, 166, 245)
+
+ink-ivory / dark / oncard / B / error
+    card rgb(28, 29, 33) over rgb(28, 29, 33)  surface-only edge 1.00
+    border width=1px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card 1.26  vs under 1.26
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+ink-ivory / dark / oncard / C / success
+    card rgb(28, 29, 33) over rgb(28, 29, 33)  surface-only edge 1.00
+    border width=1px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card 1.26  vs under 1.26
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+ink-ivory / dark / oncard / C / error
+    card rgb(28, 29, 33) over rgb(28, 29, 33)  surface-only edge 1.00
+    border width=1px colour=rgb(45, 47, 52) (token rgb(45, 47, 52)) vs card 1.26  vs under 1.26
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+atlas / dark / onbg / A / success
+    card rgb(42, 38, 29) over rgb(31, 27, 20)  surface-only edge 1.14
+    border width=0px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(208, 138, 108)
+
+atlas / dark / onbg / A / error
+    card rgb(42, 38, 29) over rgb(31, 27, 20)  surface-only edge 1.14
+    border width=0px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+atlas / dark / onbg / B / success
+    card rgb(42, 38, 29) over rgb(31, 27, 20)  surface-only edge 1.14
+    border width=1px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card 2.01  vs under 2.28
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(208, 138, 108)
+
+atlas / dark / onbg / B / error
+    card rgb(42, 38, 29) over rgb(31, 27, 20)  surface-only edge 1.14
+    border width=1px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card 2.01  vs under 2.28
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+atlas / dark / onbg / C / success
+    card rgb(42, 38, 29) over rgb(31, 27, 20)  surface-only edge 1.14
+    border width=1px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card 2.01  vs under 2.28
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+atlas / dark / onbg / C / error
+    card rgb(42, 38, 29) over rgb(31, 27, 20)  surface-only edge 1.14
+    border width=1px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card 2.01  vs under 2.28
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+atlas / dark / oncard / A / success
+    card rgb(42, 38, 29) over rgb(42, 38, 29)  surface-only edge 1.00
+    border width=0px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(208, 138, 108)
+
+atlas / dark / oncard / A / error
+    card rgb(42, 38, 29) over rgb(42, 38, 29)  surface-only edge 1.00
+    border width=0px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+atlas / dark / oncard / B / success
+    card rgb(42, 38, 29) over rgb(42, 38, 29)  surface-only edge 1.00
+    border width=1px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card 2.01  vs under 2.01
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(208, 138, 108)
+
+atlas / dark / oncard / B / error
+    card rgb(42, 38, 29) over rgb(42, 38, 29)  surface-only edge 1.00
+    border width=1px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card 2.01  vs under 2.01
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+atlas / dark / oncard / C / success
+    card rgb(42, 38, 29) over rgb(42, 38, 29)  surface-only edge 1.00
+    border width=1px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card 2.01  vs under 2.01
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+atlas / dark / oncard / C / error
+    card rgb(42, 38, 29) over rgb(42, 38, 29)  surface-only edge 1.00
+    border width=1px colour=rgb(91, 84, 67) (token rgb(91, 84, 67)) vs card 2.01  vs under 2.01
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+deep-field / dark / onbg / A / success
+    card rgb(20, 26, 47) over rgb(13, 18, 33)  surface-only edge 1.08
+    border width=0px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(88, 208, 200)
+
+deep-field / dark / onbg / A / error
+    card rgb(20, 26, 47) over rgb(13, 18, 33)  surface-only edge 1.08
+    border width=0px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+deep-field / dark / onbg / B / success
+    card rgb(20, 26, 47) over rgb(13, 18, 33)  surface-only edge 1.08
+    border width=1px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card 1.39  vs under 1.50
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(88, 208, 200)
+
+deep-field / dark / onbg / B / error
+    card rgb(20, 26, 47) over rgb(13, 18, 33)  surface-only edge 1.08
+    border width=1px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card 1.39  vs under 1.50
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+deep-field / dark / onbg / C / success
+    card rgb(20, 26, 47) over rgb(13, 18, 33)  surface-only edge 1.08
+    border width=1px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card 1.39  vs under 1.50
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+deep-field / dark / onbg / C / error
+    card rgb(20, 26, 47) over rgb(13, 18, 33)  surface-only edge 1.08
+    border width=1px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card 1.39  vs under 1.50
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+deep-field / dark / oncard / A / success
+    card rgb(20, 26, 47) over rgb(20, 26, 47)  surface-only edge 1.00
+    border width=0px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(88, 208, 200)
+
+deep-field / dark / oncard / A / error
+    card rgb(20, 26, 47) over rgb(20, 26, 47)  surface-only edge 1.00
+    border width=0px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+deep-field / dark / oncard / B / success
+    card rgb(20, 26, 47) over rgb(20, 26, 47)  surface-only edge 1.00
+    border width=1px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card 1.39  vs under 1.39
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(88, 208, 200)
+
+deep-field / dark / oncard / B / error
+    card rgb(20, 26, 47) over rgb(20, 26, 47)  surface-only edge 1.00
+    border width=1px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card 1.39  vs under 1.39
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+deep-field / dark / oncard / C / success
+    card rgb(20, 26, 47) over rgb(20, 26, 47)  surface-only edge 1.00
+    border width=1px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card 1.39  vs under 1.39
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+deep-field / dark / oncard / C / error
+    card rgb(20, 26, 47) over rgb(20, 26, 47)  surface-only edge 1.00
+    border width=1px colour=rgb(42, 51, 80) (token rgb(42, 51, 80)) vs card 1.39  vs under 1.39
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+sage-garden / dark / onbg / A / success
+    card rgb(41, 50, 41) over rgb(32, 39, 32)  surface-only edge 1.15
+    border width=0px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(127, 184, 143)
+
+sage-garden / dark / onbg / A / error
+    card rgb(41, 50, 41) over rgb(32, 39, 32)  surface-only edge 1.15
+    border width=0px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(229, 118, 118)
+
+sage-garden / dark / onbg / B / success
+    card rgb(41, 50, 41) over rgb(32, 39, 32)  surface-only edge 1.15
+    border width=1px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card 1.33  vs under 1.53
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(127, 184, 143)
+
+sage-garden / dark / onbg / B / error
+    card rgb(41, 50, 41) over rgb(32, 39, 32)  surface-only edge 1.15
+    border width=1px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card 1.33  vs under 1.53
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(229, 118, 118)
+
+sage-garden / dark / onbg / C / success
+    card rgb(41, 50, 41) over rgb(32, 39, 32)  surface-only edge 1.15
+    border width=1px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card 1.33  vs under 1.53
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+sage-garden / dark / onbg / C / error
+    card rgb(41, 50, 41) over rgb(32, 39, 32)  surface-only edge 1.15
+    border width=1px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card 1.33  vs under 1.53
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+sage-garden / dark / oncard / A / success
+    card rgb(41, 50, 41) over rgb(41, 50, 41)  surface-only edge 1.00
+    border width=0px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(127, 184, 143)
+
+sage-garden / dark / oncard / A / error
+    card rgb(41, 50, 41) over rgb(41, 50, 41)  surface-only edge 1.00
+    border width=0px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(229, 118, 118)
+
+sage-garden / dark / oncard / B / success
+    card rgb(41, 50, 41) over rgb(41, 50, 41)  surface-only edge 1.00
+    border width=1px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card 1.33  vs under 1.33
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(127, 184, 143)
+
+sage-garden / dark / oncard / B / error
+    card rgb(41, 50, 41) over rgb(41, 50, 41)  surface-only edge 1.00
+    border width=1px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card 1.33  vs under 1.33
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(229, 118, 118)
+
+sage-garden / dark / oncard / C / success
+    card rgb(41, 50, 41) over rgb(41, 50, 41)  surface-only edge 1.00
+    border width=1px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card 1.33  vs under 1.33
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+sage-garden / dark / oncard / C / error
+    card rgb(41, 50, 41) over rgb(41, 50, 41)  surface-only edge 1.00
+    border width=1px colour=rgb(59, 69, 59) (token rgb(59, 69, 59)) vs card 1.33  vs under 1.33
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+plum-manuscript / dark / onbg / A / success
+    card rgb(43, 35, 56) over rgb(34, 26, 46)  surface-only edge 1.12
+    border width=0px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(171, 140, 232)
+
+plum-manuscript / dark / onbg / A / error
+    card rgb(43, 35, 56) over rgb(34, 26, 46)  surface-only edge 1.12
+    border width=0px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 105, 105)
+
+plum-manuscript / dark / onbg / B / success
+    card rgb(43, 35, 56) over rgb(34, 26, 46)  surface-only edge 1.12
+    border width=1px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card 1.29  vs under 1.44
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(171, 140, 232)
+
+plum-manuscript / dark / onbg / B / error
+    card rgb(43, 35, 56) over rgb(34, 26, 46)  surface-only edge 1.12
+    border width=1px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card 1.29  vs under 1.44
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 105, 105)
+
+plum-manuscript / dark / onbg / C / success
+    card rgb(43, 35, 56) over rgb(34, 26, 46)  surface-only edge 1.12
+    border width=1px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card 1.29  vs under 1.44
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+plum-manuscript / dark / onbg / C / error
+    card rgb(43, 35, 56) over rgb(34, 26, 46)  surface-only edge 1.12
+    border width=1px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card 1.29  vs under 1.44
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+plum-manuscript / dark / oncard / A / success
+    card rgb(43, 35, 56) over rgb(43, 35, 56)  surface-only edge 1.00
+    border width=0px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(171, 140, 232)
+
+plum-manuscript / dark / oncard / A / error
+    card rgb(43, 35, 56) over rgb(43, 35, 56)  surface-only edge 1.00
+    border width=0px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 105, 105)
+
+plum-manuscript / dark / oncard / B / success
+    card rgb(43, 35, 56) over rgb(43, 35, 56)  surface-only edge 1.00
+    border width=1px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card 1.29  vs under 1.29
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(171, 140, 232)
+
+plum-manuscript / dark / oncard / B / error
+    card rgb(43, 35, 56) over rgb(43, 35, 56)  surface-only edge 1.00
+    border width=1px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card 1.29  vs under 1.29
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 105, 105)
+
+plum-manuscript / dark / oncard / C / success
+    card rgb(43, 35, 56) over rgb(43, 35, 56)  surface-only edge 1.00
+    border width=1px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card 1.29  vs under 1.29
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+plum-manuscript / dark / oncard / C / error
+    card rgb(43, 35, 56) over rgb(43, 35, 56)  surface-only edge 1.00
+    border width=1px colour=rgb(62, 52, 80) (token rgb(62, 52, 80)) vs card 1.29  vs under 1.29
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+amber-noir / dark / onbg / A / success
+    card rgb(28, 26, 23) over rgb(19, 18, 17)  surface-only edge 1.08
+    border width=0px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 165, 60)
+
+amber-noir / dark / onbg / A / error
+    card rgb(28, 26, 23) over rgb(19, 18, 17)  surface-only edge 1.08
+    border width=0px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+amber-noir / dark / onbg / B / success
+    card rgb(28, 26, 23) over rgb(19, 18, 17)  surface-only edge 1.08
+    border width=1px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card 1.35  vs under 1.45
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 165, 60)
+
+amber-noir / dark / onbg / B / error
+    card rgb(28, 26, 23) over rgb(19, 18, 17)  surface-only edge 1.08
+    border width=1px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card 1.35  vs under 1.45
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+amber-noir / dark / onbg / C / success
+    card rgb(28, 26, 23) over rgb(19, 18, 17)  surface-only edge 1.08
+    border width=1px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card 1.35  vs under 1.45
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+amber-noir / dark / onbg / C / error
+    card rgb(28, 26, 23) over rgb(19, 18, 17)  surface-only edge 1.08
+    border width=1px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card 1.35  vs under 1.45
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+amber-noir / dark / oncard / A / success
+    card rgb(28, 26, 23) over rgb(28, 26, 23)  surface-only edge 1.00
+    border width=0px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 165, 60)
+
+amber-noir / dark / oncard / A / error
+    card rgb(28, 26, 23) over rgb(28, 26, 23)  surface-only edge 1.00
+    border width=0px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+amber-noir / dark / oncard / B / success
+    card rgb(28, 26, 23) over rgb(28, 26, 23)  surface-only edge 1.00
+    border width=1px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card 1.35  vs under 1.35
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 165, 60)
+
+amber-noir / dark / oncard / B / error
+    card rgb(28, 26, 23) over rgb(28, 26, 23)  surface-only edge 1.00
+    border width=1px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card 1.35  vs under 1.35
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+amber-noir / dark / oncard / C / success
+    card rgb(28, 26, 23) over rgb(28, 26, 23)  surface-only edge 1.00
+    border width=1px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card 1.35  vs under 1.35
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+amber-noir / dark / oncard / C / error
+    card rgb(28, 26, 23) over rgb(28, 26, 23)  surface-only edge 1.00
+    border width=1px colour=rgb(54, 49, 43) (token rgb(54, 49, 43)) vs card 1.35  vs under 1.35
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+glacier / dark / onbg / A / success
+    card rgb(24, 39, 52) over rgb(16, 26, 35)  surface-only edge 1.15
+    border width=0px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(95, 177, 221)
+
+glacier / dark / onbg / A / error
+    card rgb(24, 39, 52) over rgb(16, 26, 35)  surface-only edge 1.15
+    border width=0px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+glacier / dark / onbg / B / success
+    card rgb(24, 39, 52) over rgb(16, 26, 35)  surface-only edge 1.15
+    border width=1px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card 1.29  vs under 1.49
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(95, 177, 221)
+
+glacier / dark / onbg / B / error
+    card rgb(24, 39, 52) over rgb(16, 26, 35)  surface-only edge 1.15
+    border width=1px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card 1.29  vs under 1.49
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+glacier / dark / onbg / C / success
+    card rgb(24, 39, 52) over rgb(16, 26, 35)  surface-only edge 1.15
+    border width=1px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card 1.29  vs under 1.49
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+glacier / dark / onbg / C / error
+    card rgb(24, 39, 52) over rgb(16, 26, 35)  surface-only edge 1.15
+    border width=1px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card 1.29  vs under 1.49
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+glacier / dark / oncard / A / success
+    card rgb(24, 39, 52) over rgb(24, 39, 52)  surface-only edge 1.00
+    border width=0px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(95, 177, 221)
+
+glacier / dark / oncard / A / error
+    card rgb(24, 39, 52) over rgb(24, 39, 52)  surface-only edge 1.00
+    border width=0px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card n/a  vs under n/a
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+glacier / dark / oncard / B / success
+    card rgb(24, 39, 52) over rgb(24, 39, 52)  surface-only edge 1.00
+    border width=1px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card 1.29  vs under 1.29
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(95, 177, 221)
+
+glacier / dark / oncard / B / error
+    card rgb(24, 39, 52) over rgb(24, 39, 52)  surface-only edge 1.00
+    border width=1px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card 1.29  vs under 1.29
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=true (expected true) colour=rgb(226, 101, 101)
+
+glacier / dark / oncard / C / success
+    card rgb(24, 39, 52) over rgb(24, 39, 52)  surface-only edge 1.00
+    border width=1px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card 1.29  vs under 1.29
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+glacier / dark / oncard / C / error
+    card rgb(24, 39, 52) over rgb(24, 39, 52)  surface-only edge 1.00
+    border width=1px colour=rgb(42, 57, 71) (token rgb(42, 57, 71)) vs card 1.29  vs under 1.29
+    shadow paints=false  raw=rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px
+    bar present=false (expected false) colour=null
+
+########## RANGES ##########
+light  A-onbg-surfaceEdge           1.04 – 1.13   (n=16)
+light  B-borderVsCard               1.29 – 1.40   (n=32)
+light  B-borderVsUnder              1.14 – 1.40   (n=32)
+light  B-onbg-surfaceEdge           1.04 – 1.13   (n=16)
+light  C-borderVsCard               1.29 – 1.40   (n=32)
+light  C-borderVsUnder              1.14 – 1.40   (n=32)
+light  C-onbg-surfaceEdge           1.04 – 1.13   (n=16)
+light  A-oncard-surfaceEdge         1.00 – 1.00   (n=16)
+light  B-oncard-surfaceEdge         1.00 – 1.00   (n=16)
+light  C-oncard-surfaceEdge         1.00 – 1.00   (n=16)
+dark   A-onbg-surfaceEdge           1.08 – 1.19   (n=16)
+dark   B-borderVsCard               1.26 – 2.01   (n=32)
+dark   B-borderVsUnder              1.26 – 2.28   (n=32)
+dark   B-onbg-surfaceEdge           1.08 – 1.19   (n=16)
+dark   C-borderVsCard               1.26 – 2.01   (n=32)
+dark   C-borderVsUnder              1.26 – 2.28   (n=32)
+dark   C-onbg-surfaceEdge           1.08 – 1.19   (n=16)
+dark   A-oncard-surfaceEdge         1.00 – 1.00   (n=16)
+dark   B-oncard-surfaceEdge         1.00 – 1.00   (n=16)
+dark   C-oncard-surfaceEdge         1.00 – 1.00   (n=16)
+
+########## PROBLEMS ##########
+none
