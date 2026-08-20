@@ -77,6 +77,14 @@ jest.mock("@/src/lib/native-audio", () => ({
   playOneShot: (asset: number, volume: number) => mockPlayOneShot(asset, volume),
 }));
 
+// Only the one hook is replaced - the rest of the module stays real, because
+// other things in this screen's import graph use it.
+const mockPreferences: { data: { bellVolume?: number } | undefined } = { data: undefined };
+jest.mock("@/src/features/settings/queries", () => ({
+  ...jest.requireActual("@/src/features/settings/queries"),
+  useUserPreferences: () => mockPreferences,
+}));
+
 jest.mock("@/src/lib/color-scheme", () => ({ useColorSchemeName: () => "light" }));
 
 jest.mock("@/src/stores/toast-store", () => ({
@@ -98,6 +106,7 @@ beforeEach(() => {
   beforeRemoveListeners.length = 0;
   router.replace.mockClear();
   mockPlayOneShot.mockClear();
+  mockPreferences.data = undefined;
   mockUpdateMutateAsync.mockClear();
   mockSaveMutateAsync.mockReset().mockImplementation(async (input: MeditationSessionInput) => ({
     id: "sit-1",
@@ -206,6 +215,37 @@ describe("Meditation sitting (7b)", () => {
     });
     await advance(250);
     expect(mockPlayOneShot).toHaveBeenCalledTimes(1);
+  });
+
+  it("rings every bell at the stored volume, not at a hardcoded 1", async () => {
+    // All three fired at 1 until #1188, which measured them as the loudest
+    // sound in the app - louder than either breathing lane, both of which had a
+    // slider. Start and interval are covered here; the end bell rides the same
+    // ref.
+    mockPreferences.data = { bellVolume: 0.4 };
+    renderWithProviders(<MeditationSitScreen />);
+
+    expect(mockPlayOneShot).toHaveBeenLastCalledWith(expect.anything(), 0.4);
+
+    mockPlayOneShot.mockClear();
+    await advance(5 * 60_000 + 250);
+    expect(mockPlayOneShot).toHaveBeenLastCalledWith(expect.anything(), 0.4);
+  });
+
+  it("passes 0 through when the bells are off, rather than falling back to 1", async () => {
+    // 0 is a real choice, not a missing value - a `?? 1` that treated it as
+    // absent would turn the bells back on for the one user who muted them.
+    mockPreferences.data = { bellVolume: 0 };
+    renderWithProviders(<MeditationSitScreen />);
+
+    expect(mockPlayOneShot).toHaveBeenLastCalledWith(expect.anything(), 0);
+  });
+
+  it("rings at full volume until the preference has loaded", async () => {
+    // The query resolves after first paint, and the start bell does not wait.
+    renderWithProviders(<MeditationSitScreen />);
+
+    expect(mockPlayOneShot).toHaveBeenLastCalledWith(expect.anything(), 1);
   });
 
   it("records the sit at completion, before the reflection is offered", async () => {

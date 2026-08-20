@@ -24,6 +24,11 @@ export async function ensureNativeAudioMode(audio: ExpoAudioModule): Promise<voi
  * when playback finishes. Best-effort: audio must never crash a session.
  */
 export function playOneShot(asset: number, volume: number): void {
+  // Silence is not a quiet sound: at 0 there is nothing to hear, so skip the
+  // work entirely (#1188). On native that also means never reaching
+  // ensureNativeAudioMode - a user who turns the bells off does not have the
+  // app's global audio session configured on their behalf for nothing.
+  if (!(volume > 0)) return;
   if (Platform.OS === "web") {
     try {
       const el = new window.Audio(asset as unknown as string);

@@ -407,6 +407,52 @@ describe("MeditationHomeScreen", () => {
       });
     });
 
+    it("offers a bell volume, starting from the stored one", () => {
+      // Until #1188 the bells were the one lane with no control - and measured
+      // as the loudest sound in the app, louder than either breathing lane.
+      setStoredPreferences({ bellVolume: 0.4 });
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const volume = within(screen.getByTestId("sit-bell-volume"));
+      expect(volume.getByText("40%")).toBeTruthy();
+      expect(volume.getByLabelText("Bell volume").props.accessibilityValue).toEqual({
+        min: 0,
+        max: 100,
+        now: 40,
+      });
+    });
+
+    it("starts at full volume when nothing has been stored", () => {
+      // Deliberately not quieter: #1130 owns absolute loudness and is
+      // re-rendering the clips down, so a quiet default here would stack.
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(within(screen.getByTestId("sit-bell-volume")).getByText("100%")).toBeTruthy();
+    });
+
+    it("reads Off rather than 0% when the bells are muted", () => {
+      setStoredPreferences({ bellVolume: 0 });
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const volume = within(screen.getByTestId("sit-bell-volume"));
+      expect(volume.getByText("Off")).toBeTruthy();
+      expect(volume.queryByText("0%")).toBeNull();
+    });
+
+    it("persists the bell volume when the drag settles, not while it moves", async () => {
+      setStoredPreferences({ bellVolume: 0.6 });
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const slider = within(screen.getByTestId("sit-bell-volume")).getByLabelText("Bell volume");
+      expect(updatePreferences).not.toHaveBeenCalled();
+
+      fireEvent(slider, "responderRelease");
+
+      await waitFor(() => expect(updatePreferences).toHaveBeenCalledWith({ bellVolume: 0.6 }));
+    });
+
     it("hands both choices to the sitting screen when the sit begins", () => {
       const { router } = jest.requireMock<{ router: { push: jest.Mock } }>("expo-router");
       renderWithProviders(<MeditationHomeScreen />);
