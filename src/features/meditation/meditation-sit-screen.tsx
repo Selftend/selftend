@@ -29,6 +29,7 @@ import { FORM_COLUMN } from "@/src/lib/layout";
 import { playOneShot } from "@/src/lib/native-audio";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useUserPreferences } from "@/src/features/settings/queries";
+import { bellChoiceFromKey, bellSecondsFor } from "@/src/features/timer/interval";
 import { useAccentHsl, useThemeHex } from "@/src/lib/theme-palette";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
@@ -104,10 +105,14 @@ export function MeditationSitScreen() {
     DEFAULT_DURATION_MINUTES,
     MAX_DURATION_MINUTES,
   );
-  // A bell spaced at or past the sit's whole length would never ring; treat it as off.
-  const rawBell = safeMinutes(params.bell, 0, MAX_DURATION_MINUTES);
-  const bellMinutes = rawBell >= durationMinutes ? 0 : rawBell;
   const totalSeconds = durationMinutes * 60;
+  // `half` cannot travel as a minute count - half of a 25-minute sit is 12.5,
+  // which the integer param would drop on the floor (#1189). It travels as a
+  // key instead, and only becomes a number here, where the length is known.
+  // The "a spacing at or past the whole length never rings" rule moved into
+  // bellSecondsFor with it.
+  const bellChoice = bellChoiceFromKey(params.bell);
+  const bellSeconds = bellSecondsFor(bellChoice, totalSeconds);
 
   const { data: programState, isFetched, isError } = useMeditationProgramState(userId);
   const currentStage: StageNumber = (programState?.currentStage ?? 1) as StageNumber;
@@ -265,8 +270,7 @@ export function MeditationSitScreen() {
         }
         return;
       }
-      if (bellMinutes > 0) {
-        const bellSeconds = bellMinutes * 60;
+      if (bellSeconds > 0) {
         const boundary = Math.floor(elapsed / bellSeconds);
         if (boundary > bellCountRef.current) {
           // Ring only a boundary crossed just now. One crossed minutes ago
@@ -386,9 +390,14 @@ export function MeditationSitScreen() {
           subline={
             paused
               ? t("sit.paused")
-              : bellMinutes > 0
-                ? t("sit.progressWithBell", { minutes: durationMinutes, bell: bellMinutes })
-                : t("sit.progress", { minutes: durationMinutes })
+              : bellSeconds <= 0
+                ? t("sit.progress", { minutes: durationMinutes })
+                : bellChoice.kind === "half"
+                  ? t("sit.progressWithHalfBell", { minutes: durationMinutes })
+                  : t("sit.progressWithBell", {
+                      minutes: durationMinutes,
+                      bell: bellSeconds / 60,
+                    })
           }
         />
       </View>

@@ -248,6 +248,45 @@ describe("Meditation sitting (7b)", () => {
     expect(mockPlayOneShot).toHaveBeenLastCalledWith(expect.anything(), 1);
   });
 
+  it("rings half-time at the midpoint, at a minute no spacing list could hold", async () => {
+    // 25-minute sit: half is 12.5 minutes = 750 seconds. This is the case that
+    // made half-time a mode rather than a fifth entry in [0, 5, 10, 15] - the
+    // integer route param would have dropped the .5 on the floor (#1189).
+    mockParams.duration = "25";
+    mockParams.bell = "half";
+    renderWithProviders(<MeditationSitScreen />);
+    mockPlayOneShot.mockClear(); // drop the start bell
+
+    await advance(749_000);
+    expect(mockPlayOneShot).not.toHaveBeenCalled();
+
+    await advance(1_250);
+    expect(mockPlayOneShot).toHaveBeenCalledTimes(1);
+  });
+
+  it("rings half-time exactly once, never again before the end", async () => {
+    // "A single quiet chime" (meditation-tmi.md:472). The next boundary is the
+    // sit's own end, where the end bell plays instead.
+    mockParams.duration = "12";
+    mockParams.bell = "half";
+    renderWithProviders(<MeditationSitScreen />);
+    mockPlayOneShot.mockClear();
+
+    await advance(6 * 60_000 + 250);
+    expect(mockPlayOneShot).toHaveBeenCalledTimes(1);
+
+    await advance(5 * 60_000);
+    expect(mockPlayOneShot).toHaveBeenCalledTimes(1);
+  });
+
+  it("says the bell is at half-time rather than naming a minute", async () => {
+    mockParams.duration = "25";
+    mockParams.bell = "half";
+    renderWithProviders(<MeditationSitScreen />);
+
+    expect(screen.getByText("of 25 min · bell at half-time")).toBeTruthy();
+  });
+
   it("records the sit at completion, before the reflection is offered", async () => {
     renderWithProviders(<MeditationSitScreen />);
 
