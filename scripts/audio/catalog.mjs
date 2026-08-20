@@ -71,11 +71,39 @@ export function composePrompt(clipText) {
  */
 const LOOP = false;
 
-/** #1141 — Creator's best lossless SFX master. `pcm_44100` would need Pro. */
+/**
+ * Creator's lossless SFX master.
+ *
+ * ☠️ #1141 said `pcm_44100` "would need Pro". It does not — probed live on
+ * 2026-08-21, it returns 176,400 bytes for 1s (44100 x 2ch x 16-bit) on this
+ * Creator key. 48k is kept regardless: a higher-rate master is the better
+ * archive, the ship rate is 44.1k either way (#1138), and `postprocess.mjs`
+ * already resamples. Recording it so the Pro question stays closed.
+ */
 export const SFX_OUTPUT_FORMAT = "pcm_48000";
 
 /** #1134 §6 — the docs still recommend this for narration quality. */
 export const TTS_MODEL = "eleven_multilingual_v2";
+
+/**
+ * #1141: WAV output needs Pro, so the eight voice cues were costed as
+ * `mp3_44100_192` on Creator. #1210 left it conditional on #1159's probe. Rather
+ * than hard-code the pessimistic answer, `render-voices` ASKS: it tries the
+ * lossless format first and falls back on rejection, recording which one each
+ * clip actually used in the manifest.
+ *
+ * A lossy voice master is the one place that is tolerable, and only because TTS
+ * is RE-RENDERABLE — it takes a seed and the Voice Library voice persists — where
+ * a lossy Sound Effects master would be a permanent defect.
+ */
+export const TTS_OUTPUT_FORMATS = ["wav_44100", "mp3_44100_192"];
+
+/**
+ * Two candidates per cue per voice (#1210). TTS honours a seed, so each candidate
+ * gets a fixed one: the pass becomes reproducible, which is exactly what the
+ * thirteen Sound Effects clips can never be.
+ */
+export const TTS_CANDIDATE_SEEDS = [1130, 1210];
 export const SFX_MODEL = "eleven_text_to_sound_v2";
 
 /**

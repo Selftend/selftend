@@ -33,6 +33,9 @@ import {
   TTS_VOICE_SETTINGS,
   VOICES,
   VOICE_CUES,
+  TTS_OUTPUT_FORMATS,
+  TTS_CANDIDATE_SEEDS,
+  CREDITS_PER_SECOND,
   clipsForRound,
   composePrompt,
   creditEstimate,
@@ -354,7 +357,9 @@ async function render(round, go) {
           contentType,
           derivedChannels: channels,
           channelRatio: Number(ratio.toFixed(3)),
-          creditsEstimate: clip.durationSeconds * 40,
+          // ☠️ 3.3/sec MEASURED on #1159, not the 40/sec #1134 assumed. Writing
+          // the stale figure here put a number ~12x too high into the permanent record.
+          creditsEstimate: Math.round(clip.durationSeconds * CREDITS_PER_SECOND),
         })}\n`,
       );
       console.log(`ok   ${name}  ${buffer.length} bytes  ~${channels}ch`);
@@ -366,6 +371,136 @@ async function render(round, go) {
     "Archive EVERY candidate — winners and rejects alike — to Drive\n" +
       "Selftend/app-audio-masters/ per #1141. A rejected take is exactly as\n" +
       "unreproducible as a chosen one.",
+  );
+
+  // ☠️ This command renders SOUND EFFECTS only. `clipsForRound` filters
+  // SFX_CLIPS, so the eight voice cues are not in it and never were — Round B
+  // is 11 clips here and 8 more from `render-voices`. Saying so out loud is the
+  // point: a silent 11 reads as a finished 19.
+  if (round === "B") {
+    const missing = VOICES.filter((voice) => !voice.voiceId).map((voice) => voice.id);
+    console.log(
+      `\nThis rendered SOUND EFFECTS only — ${clips.length} clips. The 8 voice cues are separate:\n` +
+        (missing.length
+          ? `  still need a voiceId in catalog.mjs: ${missing.join(", ")}\n` +
+            "  then:  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"
+          : "  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"),
+    );
+  }
+}
+
+/** Extension for a TTS output_format id, so masters are not all called .wav. */
+function formatExtension(format) {
+  return format.startsWith("mp3") ? "mp3" : "wav";
+}
+
+/**
+ * The eight voice cues: 4 cues x 2 voices, 2 candidates each (#1136, #1210).
+ *
+ * Separate from `render` because the voice PICK is Round B's own first task and
+ * needs a human ear, while the thirteen sound effects do not — so the sound
+ * effects must not sit blocked behind it.
+ *
+ * Unlike Sound Effects this is re-renderable: TTS takes a seed and the Voice
+ * Library voice persists, so a bad take here is recoverable in a way a bad bed
+ * never is.
+ */
+async function renderVoices(go) {
+  const missingVoice = VOICES.filter((voice) => !voice.voiceId);
+  const missingText = VOICE_CUES.filter((cue) => !cue.text);
+  if (missingVoice.length || missingText.length) {
+    console.error(
+      "Refusing to render voices.\n" +
+        (missingVoice.length
+          ? `  no voiceId for: ${missingVoice.map((v) => v.id).join(", ")}\n` +
+            "  #1136 fixed the criteria: Voice Library only (defaults expire 2026-12-31),\n" +
+            "  a matched female/male pair, auditioned on the shipping words.\n"
+          : "") +
+        (missingText.length ? `  no text for: ${missingText.map((c) => c.id).join(", ")}\n` : ""),
+    );
+    process.exit(1);
+  }
+
+  const total = VOICES.length * VOICE_CUES.length * TTS_CANDIDATE_SEEDS.length;
+  if (!go) {
+    console.error(
+      `Refusing to spend. ${total} generations (${VOICES.length} voices x ` +
+        `${VOICE_CUES.length} cues x ${TTS_CANDIDATE_SEEDS.length} candidates).\n` +
+        "Re-run with --go.",
+    );
+    process.exit(1);
+  }
+
+  const key = apiKey();
+  const runDir = join(OUT_DIR, "round-B");
+  const classDir = join(runDir, "voice");
+  await mkdir(classDir, { recursive: true });
+  const manifestPath = join(runDir, "manifest.jsonl");
+
+  for (const voice of VOICES) {
+    for (const cue of VOICE_CUES) {
+      for (const [index, seed] of TTS_CANDIDATE_SEEDS.entries()) {
+        const candidate = index + 1;
+        const stem = `${cue.id}-${voice.id}-c${String(candidate).padStart(2, "0")}`;
+
+        // The format is asked, not assumed: try lossless, fall back on rejection.
+        let rendered = null;
+        let usedFormat = null;
+        let lastError = null;
+        for (const format of TTS_OUTPUT_FORMATS) {
+          const path = join(classDir, `${stem}.${formatExtension(format)}`);
+          if (await exists(path)) {
+            console.log(`skip ${stem} — already exists`);
+            rendered = "skipped";
+            break;
+          }
+          try {
+            rendered = await textToSpeech(key, {
+              voiceId: voice.voiceId,
+              text: cue.text,
+              outputFormat: format,
+              seed,
+            });
+            usedFormat = format;
+            break;
+          } catch (error) {
+            lastError = error;
+          }
+        }
+        if (rendered === "skipped") continue;
+        if (!usedFormat) throw lastError;
+
+        const name = `${stem}.${formatExtension(usedFormat)}`;
+        await writeFile(join(classDir, name), rendered.buffer);
+        await appendFile(
+          manifestPath,
+          `${JSON.stringify({
+            clip: cue.id,
+            klass: "voice",
+            voice: voice.id,
+            axis: voice.axis,
+            voiceId: voice.voiceId,
+            candidate,
+            file: name,
+            text: cue.text,
+            model: TTS_MODEL,
+            voiceSettings: TTS_VOICE_SETTINGS,
+            outputFormat: usedFormat,
+            // TTS has one, which is why this class alone is re-renderable.
+            seed,
+            bytes: rendered.buffer.length,
+            contentType: rendered.contentType,
+          })}\n`,
+        );
+        console.log(`ok   ${name}  ${rendered.buffer.length} bytes  ${usedFormat}`);
+      }
+    }
+  }
+
+  console.log(`\nDone. Voice masters in ${classDir}`);
+  console.log(
+    "⚠️ Set each voice's introMs from the MEASURED duration of its chosen\n" +
+      "guide_intro clip (#1136) — never from an estimate.",
   );
 }
 
@@ -384,12 +519,16 @@ switch (command) {
   case "render":
     await render(round, go);
     break;
+  case "render-voices":
+    await renderVoices(go);
+    break;
   default:
     console.log(
       "usage:\n" +
         "  node scripts/audio/render.mjs probe\n" +
         "  node scripts/audio/render.mjs plan --round A|B\n" +
-        "  node scripts/audio/render.mjs render --round A|B --go",
+        "  node scripts/audio/render.mjs render --round A|B --go\n" +
+        "  node scripts/audio/render.mjs render-voices --go",
     );
     process.exit(BELLS.length && command ? 1 : 0);
 }
