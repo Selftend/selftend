@@ -10,6 +10,8 @@ export interface SelfCareLog {
   socialConnectionMade: boolean;
   socialNotes: string;
   meaningfulActivity: string;
+  selfCriticismNoticed: boolean;
+  selfCompassionNote: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,4 +26,6 @@ export interface SelfCareLogInput {
   socialConnectionMade: boolean;
   socialNotes: string;
   meaningfulActivity: string;
+  selfCriticismNoticed: boolean;
+  selfCompassionNote: string;
 }
