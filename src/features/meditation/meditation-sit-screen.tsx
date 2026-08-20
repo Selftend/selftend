@@ -28,6 +28,7 @@ import { announceMessage } from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { playOneShot } from "@/src/lib/native-audio";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import { useUserPreferences } from "@/src/features/settings/queries";
 import { useAccentHsl, useThemeHex } from "@/src/lib/theme-palette";
 import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
@@ -96,6 +97,7 @@ export function MeditationSitScreen() {
   const navigation = useNavigation();
   const showToast = useToastStore((state) => state.showToast);
   const params = useLocalSearchParams<{ duration?: string; bell?: string }>();
+  const { data: preferences } = useUserPreferences(userId);
 
   const durationMinutes = safeMinutes(
     params.duration,
@@ -156,6 +158,14 @@ export function MeditationSitScreen() {
   // instead of replayed after a background stretch: three missed bells on
   // foreground would be noise, not timekeeping.
   const bellCountRef = useRef(0);
+  // Bell volume rides a ref, not the closure: the tick and the focus effect are
+  // created once per sit, so a value read directly would be the one that
+  // happened to be loaded at the time - and the preferences query resolves
+  // after first paint. 1 until it arrives, which is the pre-#1188 behaviour.
+  const bellVolumeRef = useRef(1);
+  useEffect(() => {
+    bellVolumeRef.current = preferences?.bellVolume ?? 1;
+  }, [preferences?.bellVolume]);
   // The end bell and the finish request fire once per sit: a pause/resume while
   // the finish waits on the stage query resubscribes the tick, and an unguarded
   // completion branch would ring the end bell again.
@@ -250,7 +260,7 @@ export function MeditationSitScreen() {
         intervalRef.current = null;
         if (!completionRef.current) {
           completionRef.current = true;
-          playOneShot(bellSound, 1);
+          playOneShot(bellSound, bellVolumeRef.current);
           setFinishRequested("after");
         }
         return;
@@ -265,7 +275,7 @@ export function MeditationSitScreen() {
           // not timekeeping.
           const sinceBoundarySeconds = elapsed - boundary * bellSeconds;
           if (boundary - bellCountRef.current === 1 && sinceBoundarySeconds < 2) {
-            playOneShot(intervalSound, 1);
+            playOneShot(intervalSound, bellVolumeRef.current);
           }
           bellCountRef.current = boundary;
         }
@@ -309,7 +319,7 @@ export function MeditationSitScreen() {
       bellCountRef.current = 0;
       completionRef.current = false;
       finishingRef.current = false;
-      playOneShot(bellSound, 1);
+      playOneShot(bellSound, bellVolumeRef.current);
       setFocused(true);
       return () => {
         if (intervalRef.current) {
