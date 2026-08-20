@@ -100,3 +100,49 @@ describe.each([
     expect(wronglyMarked).toEqual([]);
   });
 });
+
+/**
+ * ☠️ The assertions above only ever look at routes a layout DECLARES. A route it never
+ * declares is auto-registered with default options — so it is never single-instance — and is
+ * absent from `screens`, so it is not asserted about either. The blindness is silent.
+ *
+ * The rows linking a module out to the standalone tools are where that bit. They push a
+ * plain `router.push(route)`, and their targets are lateral by nature: arriving at a tool
+ * from a module while that tool already sits deeper in the stack is an ordinary flow, not a
+ * contrived one. Six of `SharedToolsRow`'s eight destinations were undeclared (#1216).
+ *
+ * So this pins the set rather than the symptom: every shared-tool destination must be
+ * declared, which hands it to the marking rules above — including the one that keeps
+ * query-keyed `/tools/meditation` plain.
+ *
+ * The config is read as SOURCE, like everything else here, so the guard never depends on the
+ * module graph loading under jest.
+ */
+describe("every shared-tool destination is declared", () => {
+  const CONFIG = "src/features/cbt/cbt-home/cbt-home-config.ts";
+
+  const toolRoutes = [
+    ...fs
+      .readFileSync(path.join(REPO, CONFIG), "utf8")
+      .matchAll(/const \w+_SHARED_TOOLS: SharedTool\[\] = \[([\s\S]*?)\n\];/g),
+  ].flatMap((block) => [...block[1].matchAll(/route: "([^"]+)"/g)].map((m) => m[1]));
+
+  const declared = new Set(
+    declaredScreens("src/components/app/protected-layout.tsx").map(([name]) => name),
+  );
+
+  it("finds the rows' routes at all, so the assertion below cannot pass vacuously", () => {
+    expect(toolRoutes.length).toBeGreaterThan(5);
+  });
+
+  it("declares each of them, so the marking rules above apply to it", () => {
+    // `/tools/journal` is declared as either `tools/journal` or `tools/journal/index`,
+    // following the resolution expo-router itself uses.
+    const undeclared = toolRoutes.filter((route) => {
+      const name = route.replace(/^\//, "");
+      return !declared.has(name) && !declared.has(`${name}/index`);
+    });
+
+    expect(undeclared).toEqual([]);
+  });
+});
