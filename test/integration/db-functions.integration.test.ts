@@ -46,7 +46,7 @@ const OCCURRED = "2026-05-15T19:00:00.000Z";
 // Phrases that appear in demo's seeded thought records and in nobody else's.
 // The leak test reads them from both ends - present on demo, absent from bob -
 // so they are a sentinel that cannot rot unnoticed. Carried verbatim from the
-// rows that used to live in supabase/seed.sql (#1211); if a seeded situation is
+// rows that used to live in supabase/seed.sql (#1281); if a seeded situation is
 // reworded, change it here in the same commit.
 const DEMO_SENTINEL_PHRASES = ["presentation", "rest day"];
 
@@ -276,7 +276,7 @@ describe("export_user_data() (integration)", () => {
     }
   });
 
-  it("never leaks another user's data", async () => {
+  it("keeps demo's records on demo and out of bob's export", async () => {
     // Both halves belong in one test. "bob's export mentions neither phrase" is
     // a NEGATIVE assertion about bob, so on its own it stays green when demo's
     // rows are deleted or reworded - the sentinel evaporates and the check keeps

@@ -755,8 +755,8 @@ for (const table of CBT_ACT_WIPE_TABLES) {
 //
 // Demo's ten thought records used to live in `supabase/seed.sql`. They moved
 // here in the same change that added the rest of this section, so one file owns
-// them (#1211). Bob's five stayed behind: they are load-bearing for the export
-// tests.
+// them (#1281, ruled on #1211). Bob's five stayed behind: they are load-bearing
+// for the export tests.
 
 // The current CBT phase start, as a day index into the rolling window (#1178).
 // The rows below are generated to SATISFY it — one activity completed after it,
@@ -765,6 +765,18 @@ for (const table of CBT_ACT_WIPE_TABLES) {
 // derived programme state back against these rows.
 const CBT_PHASE_STARTED_DAY = 76;
 
+// The setback: the one difficult stretch, two thirds through the window, where
+// the ratings stop improving and the rows cluster because a struggling stretch
+// is when someone logs more.
+//
+// Declared once. Three surfaces read it — the thought records cluster inside it
+// by hand, the activity mood lift flattens across it, the self-care stride
+// tightens through it — and three hand-copied ranges drift apart the first time
+// one of them is nudged.
+const SETBACK_FROM_DAY = 53;
+const SETBACK_TO_DAY = 64;
+const inSetback = (dayIndex) => dayIndex >= SETBACK_FROM_DAY && dayIndex <= SETBACK_TO_DAY;
+
 const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating, isHotThought });
 
 // -------------------------------------------------------- thought records
@@ -772,8 +784,8 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
   // Every day index is explicit rather than strided. Five of these rows exist
   // for a SHAPE the screens branch on — archived, multi-NAT, a very long
   // situation, an empty outcome note, and one carrying no expanded detail at
-  // all — and a stride cannot place those. The cluster at days 55-62 is the
-  // setback.
+  // all — and a stride cannot place those. The four rows clustered between
+  // SETBACK_FROM_DAY and SETBACK_TO_DAY are the setback.
   //
   // ☠️ The history screen filters to `record.dayKey === selectedDate`: it is a
   // PER-DAY view, not a list of everything. Without a record dated today it
@@ -789,7 +801,7 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
   // phrases the export leak test reads, carried over from the rows that used to
   // live in seed.sql; that test now asserts they are present here as well as
   // absent from bob's export, so rewording one of these two situations fails it
-  // loudly instead of quietly voiding the check (#1211).
+  // loudly instead of quietly voiding the check (#1281, ruled on #1211).
   const longSituation =
     "The scope on my piece of the release moved again on Thursday, and by Friday " +
     "morning I had three half-finished branches and no clear answer to give in the " +
@@ -801,371 +813,395 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
     "quietly and lose the whole day to the absorbing than spend two minutes on the " +
     "conversation that would end it.";
 
-  // [day, hour, minute, situation, nats, emotions, distortions, evidenceFor,
-  //  evidenceAgainst, balancedThought, before, after, outcomeNotes, archivedDay]
+  // Named fields, not a positional tuple: with fourteen values a row, two
+  // adjacent intensity numbers and two adjacent evidence arrays are one slip
+  // apart, and a mis-slotted row is silent.
   const records = [
-    [
-      3,
-      8,
-      20,
-      "The team channel went quiet for two hours right after I posted my status update.",
-      [nat("They read it and decided I am not pulling my weight.", 85, true)],
-      ["anxious", "ashamed"],
-      ["mind-reading", "personalization"],
-      ["Nobody replied while I sat there watching."],
-      ["The channel is quiet most mornings.", "Two people picked it up in the afternoon."],
-      "A quiet channel is a quiet channel. I am reading a verdict into silence that nobody delivered.",
+    {
+      day: 3,
+      hour: 8,
+      minute: 20,
+      situation: "The team channel went quiet for two hours right after I posted my status update.",
+      nats: [nat("They read it and decided I am not pulling my weight.", 85, true)],
+      emotions: ["anxious", "ashamed"],
+      distortions: ["mind-reading", "personalization"],
+      evidenceFor: ["Nobody replied while I sat there watching."],
+      evidenceAgainst: [
+        "The channel is quiet most mornings.",
+        "Two people picked it up in the afternoon.",
+      ],
+      balancedThought:
+        "A quiet channel is a quiet channel. I am reading a verdict into silence that nobody delivered.",
       // Before only: the intensity block still renders, but with no shift to
       // report — the one branch a fully-rated record never shows.
-      84,
-      null,
-      "Closed the tab and started the next task instead of refreshing it.",
-      null,
-    ],
-    [
-      9,
-      21,
-      10,
-      "Rehearsed the client presentation four times tonight and still felt sick about tomorrow.",
-      [nat("They will work out that I am not up to this.", 88, true)],
-      ["anxious", "fearful", "overwhelmed"],
-      ["fortune-telling", "catastrophizing"],
-      ["I lost my place once in the run-through."],
-      ["I have delivered this material before.", "The slides are checked and the numbers hold."],
-      "Nervous is not the same as unprepared. I know this material and the rehearsal showed it.",
-      88,
-      79,
+      before: 84,
+      after: null,
+      outcomeNotes: "Closed the tab and started the next task instead of refreshing it.",
+    },
+    {
+      day: 9,
+      hour: 21,
+      minute: 10,
+      situation:
+        "Rehearsed the client presentation four times tonight and still felt sick about tomorrow.",
+      nats: [nat("They will work out that I am not up to this.", 88, true)],
+      emotions: ["anxious", "fearful", "overwhelmed"],
+      distortions: ["fortune-telling", "catastrophizing"],
+      evidenceFor: ["I lost my place once in the run-through."],
+      evidenceAgainst: [
+        "I have delivered this material before.",
+        "The slides are checked and the numbers hold.",
+      ],
+      balancedThought:
+        "Nervous is not the same as unprepared. I know this material and the rehearsal showed it.",
+      before: 88,
+      after: 79,
       // Empty outcome note: the detail screen drops the outcome card entirely.
-      "",
-      null,
-    ],
-    [
-      16,
-      12,
-      40,
-      "A senior colleague asked a question in the group review that I could not answer.",
+      outcomeNotes: "",
+    },
+    {
+      day: 16,
+      hour: 12,
+      minute: 40,
+      situation: "A senior colleague asked a question in the group review that I could not answer.",
       // Multi-NAT: three thoughts, one of them hot, so the detail screen's
       // sort-and-badge layout has something to sort.
-      [
+      nats: [
         nat("Everyone in the room revised their opinion of me downwards.", 80, true),
         nat("I should have known that without being asked.", 72),
         nat("Next time they will not bother asking me at all.", 58),
       ],
-      ["ashamed", "anxious", "frustrated"],
-      ["mind-reading", "should-statements"],
-      ["I went blank and said I would follow up."],
-      [
+      emotions: ["ashamed", "anxious", "frustrated"],
+      distortions: ["mind-reading", "should-statements"],
+      evidenceFor: ["I went blank and said I would follow up."],
+      evidenceAgainst: [
         "Following up is the normal answer to a question nobody prepared for.",
         "Two people asked me for that follow-up by name.",
       ],
-      "Not knowing one thing in a meeting is ordinary. Saying I would check is what a competent person does.",
-      86,
-      72,
-      "Sent the answer the same afternoon and it closed the thread.",
-      null,
-    ],
-    [
-      23,
-      19,
-      5,
-      longSituation,
-      [nat("Asking for more time proves I cannot handle the workload.", 78, true)],
-      ["anxious", "overwhelmed", "guilty"],
-      ["all-or-nothing", "labeling"],
-      ["I did lose most of a working day to it."],
-      [
+      balancedThought:
+        "Not knowing one thing in a meeting is ordinary. Saying I would check is what a competent person does.",
+      before: 86,
+      after: 72,
+      outcomeNotes: "Sent the answer the same afternoon and it closed the thread.",
+    },
+    {
+      day: 23,
+      hour: 19,
+      minute: 5,
+      situation: longSituation,
+      nats: [nat("Asking for more time proves I cannot handle the workload.", 78, true)],
+      emotions: ["anxious", "overwhelmed", "guilty"],
+      distortions: ["all-or-nothing", "labeling"],
+      evidenceFor: ["I did lose most of a working day to it."],
+      evidenceAgainst: [
         "Scope moved twice, and that is not something I caused.",
         "The two people I have seen ask for time are the two I rate most highly.",
       ],
-      "Asking for time is information the plan needs, not a confession. The cost of not asking was the whole day.",
-      83,
-      68,
-      "Asked for the extra two days. It was granted in one line.",
-      null,
-    ],
-    [
-      30,
-      7,
-      50,
-      "Saw that my name was left off the invite for the planning session.",
-      [nat("They left me out because I am not needed on this any more.", 74, true)],
+      balancedThought:
+        "Asking for time is information the plan needs, not a confession. The cost of not asking was the whole day.",
+      before: 83,
+      after: 68,
+      outcomeNotes: "Asked for the extra two days. It was granted in one line.",
+    },
+    {
+      day: 30,
+      hour: 7,
+      minute: 50,
+      situation: "Saw that my name was left off the invite for the planning session.",
+      nats: [nat("They left me out because I am not needed on this any more.", 74, true)],
       // No emotions, no distortions, no evidence, no intensities and no
       // outcome: a rushed capture, and the only row that exercises the detail
       // screen's "not filled" branches and its collapsed expanded-detail card.
-      [],
-      [],
-      [],
-      [],
-      "An invite list is admin, not a verdict. If I want to be on it, I can say so.",
-      null,
-      null,
-      "",
-      null,
-    ],
-    [
-      37,
-      13,
-      15,
-      "Compared my quarter against a colleague's while updating the tracker.",
-      [nat("Everyone else is producing more than me and it shows.", 76, true)],
-      ["frustrated", "sad"],
-      ["comparing", "discounting-the-positive"],
-      ["Their row on the tracker is longer than mine."],
-      [
+      emotions: [],
+      distortions: [],
+      evidenceFor: [],
+      evidenceAgainst: [],
+      balancedThought:
+        "An invite list is admin, not a verdict. If I want to be on it, I can say so.",
+      before: null,
+      after: null,
+      outcomeNotes: "",
+    },
+    {
+      day: 37,
+      hour: 13,
+      minute: 15,
+      situation: "Compared my quarter against a colleague's while updating the tracker.",
+      nats: [nat("Everyone else is producing more than me and it shows.", 76, true)],
+      emotions: ["frustrated", "sad"],
+      distortions: ["comparing", "discounting-the-positive"],
+      evidenceFor: ["Their row on the tracker is longer than mine."],
+      evidenceAgainst: [
         "Their work is broken into smaller items than mine.",
         "Two of my items took a month each and count as one line.",
       ],
-      "A tracker counts rows, not effort. Reading it as a ranking is my addition, not the tracker's.",
-      79,
-      61,
-      "Wrote down what I actually shipped this quarter. It was more than I had been counting.",
-      null,
-    ],
-    [
-      41,
-      20,
-      0,
-      "Second-guessed the wording of a three-line message for twenty minutes before sending it.",
-      [nat("They will read the tone as pushy and think less of me.", 66, true)],
-      ["anxious"],
-      ["mind-reading", "perfectionistic-thinking"],
-      ["I rewrote it four times."],
-      ["Nobody has ever mentioned my tone.", "The reply came back friendly and immediate."],
-      "Three lines cannot carry that much meaning. Twenty minutes of editing bought nothing.",
-      70,
-      58,
-      "Sent it. Got a one-word friendly reply.",
+      balancedThought:
+        "A tracker counts rows, not effort. Reading it as a ranking is my addition, not the tracker's.",
+      before: 79,
+      after: 61,
+      outcomeNotes:
+        "Wrote down what I actually shipped this quarter. It was more than I had been counting.",
+    },
+    {
+      day: 41,
+      hour: 20,
+      minute: 0,
+      situation:
+        "Second-guessed the wording of a three-line message for twenty minutes before sending it.",
+      nats: [nat("They will read the tone as pushy and think less of me.", 66, true)],
+      emotions: ["anxious"],
+      distortions: ["mind-reading", "perfectionistic-thinking"],
+      evidenceFor: ["I rewrote it four times."],
+      evidenceAgainst: [
+        "Nobody has ever mentioned my tone.",
+        "The reply came back friendly and immediate.",
+      ],
+      balancedThought:
+        "Three lines cannot carry that much meaning. Twenty minutes of editing bought nothing.",
+      before: 70,
+      after: 58,
+      outcomeNotes: "Sent it. Got a one-word friendly reply.",
       // The archived row.
-      44,
-    ],
-    [
-      44,
-      9,
-      30,
-      "Was asked to take the notes in a meeting where I had expected to present.",
-      [nat("They moved me off it because they do not trust me with the room.", 72, true)],
-      ["ashamed", "irritated", "angry"],
-      ["mind-reading", "blaming"],
-      ["The change was made without telling me."],
-      [
+      archivedDay: 44,
+    },
+    {
+      day: 44,
+      hour: 9,
+      minute: 30,
+      situation: "Was asked to take the notes in a meeting where I had expected to present.",
+      nats: [nat("They moved me off it because they do not trust me with the room.", 72, true)],
+      emotions: ["ashamed", "irritated", "angry"],
+      distortions: ["mind-reading", "blaming"],
+      evidenceFor: ["The change was made without telling me."],
+      evidenceAgainst: [
         "The agenda lost twenty minutes overnight.",
         "I am still presenting the same work next week.",
       ],
-      "A cut agenda is a cut agenda. I can ask what happened rather than decide what it meant.",
-      74,
-      55,
-      "Asked directly. The agenda had been cut for time, not for me.",
-      null,
-    ],
-    [
-      50,
-      18,
-      40,
-      "Turned down an invitation to speak at the internal show-and-tell.",
-      [nat("They will work out that I am not up to this.", 70, true)],
-      ["anxious", "guilty"],
-      ["fortune-telling", "emotional-reasoning"],
-      ["I felt sick when I read the invitation."],
-      ["Feeling sick is not evidence about the talk.", "The last thing I presented went fine."],
-      "Saying no because I am frightened is the avoidance keeping this going. The fear is not a forecast.",
-      72,
-      52,
-      "Asked to be put on the list for the next one instead.",
-      null,
-    ],
-    [
-      55,
-      22,
-      30,
-      "A restructure summary went out and my team's line was left blank.",
-      [nat("This is how they let people go without saying it.", 84, true)],
-      ["anxious", "fearful", "hopeless"],
-      ["catastrophizing", "fortune-telling"],
-      ["The line really was blank."],
-      ["Three other teams' lines were blank too.", "Nothing has changed about my work this week."],
-      "A blank line in a draft summary is a blank line. I am writing the ending myself and then reacting to it.",
-      87,
-      80,
-      "Listed what is confirmed in writing and what I am filling in myself. Most of it was the second.",
-      null,
-    ],
-    [
-      57,
-      7,
-      40,
-      "Read my own status update back and could not tell whether it sounded thin.",
-      [nat("They will work out that I am not up to this.", 82, true)],
-      ["anxious", "numb"],
-      ["emotional-reasoning", "perfectionistic-thinking"],
-      ["It is shorter than last week's."],
-      ["Last week covered two weeks of work.", "Nobody has ever commented on the length."],
-      "I cannot read my own update the way a stranger would, and a fifth rewrite will not change that.",
-      85,
-      78,
-      "Posted it unchanged.",
-      null,
-    ],
-    [
-      59,
-      21,
-      20,
-      "Cancelled on a friend at short notice for the third time this month.",
-      [nat("I am letting everyone down in every direction at once.", 80, true)],
-      ["guilty", "ashamed", "lonely"],
-      ["overgeneralization", "labeling"],
-      ["Three cancellations is three cancellations."],
-      ["They rearranged easily both previous times.", "I have not cancelled on anything at work."],
-      "A hard month is not a character. Three cancellations is a stretch of weeks, not who I am.",
-      82,
-      70,
-      "Told them the honest reason instead of inventing a better one.",
-      null,
-    ],
-    [
-      62,
-      12,
-      0,
-      "Handed over a piece of work knowing one corner of it was rushed.",
-      [nat("The rushed corner is the only part anyone will look at.", 76, true)],
-      ["anxious", "frustrated"],
-      ["discounting-the-positive", "fortune-telling"],
-      ["The corner really is rough."],
-      ["The rest took three weeks and holds up.", "Handovers are read for the whole, not audited."],
-      "One rough corner sits inside three weeks of work that is sound. Both are true at once.",
-      80,
-      64,
-      "Flagged the rushed corner myself in the handover note.",
-      null,
-    ],
-    [
-      68,
-      8,
-      15,
-      "Volunteered to run the retro and immediately wanted to take it back.",
-      [nat("Putting myself forward is how I get exposed.", 68, true)],
-      ["anxious", "hopeful"],
-      ["fortune-telling", "control-fallacy"],
-      ["I could not sleep properly the night after offering."],
-      ["Running a retro is facilitation, not performance.", "I have sat in twenty of them."],
-      "Wanting to take it back is the avoidance arriving on time. I can want that and still run it.",
-      70,
-      44,
-      "Ran it. It was fine and it finished early.",
-      null,
-    ],
-    [
-      74,
-      19,
-      45,
-      "Got a correction on a shared document from someone more senior.",
-      [nat("A correction from them means I am being watched.", 60, true)],
-      ["anxious", "irritated"],
-      ["mind-reading", "fairness-fallacy"],
-      ["They went into the document specifically to change my section."],
-      ["They corrected two other sections in the same pass.", "The correction was one word."],
-      "Editing a shared document is what a shared document is for. Being read is not being watched.",
-      66,
-      40,
-      "Took the correction, said thanks, moved on.",
-      null,
-    ],
-    [
-      78,
-      9,
-      10,
-      "Asked a question in a large meeting that I would have swallowed a month ago.",
-      [nat("The question will land as though I have not been following.", 55, true)],
-      ["anxious", "proud"],
-      ["mind-reading", "reward-fallacy"],
-      ["My voice was unsteady for the first sentence."],
-      [
+      balancedThought:
+        "A cut agenda is a cut agenda. I can ask what happened rather than decide what it meant.",
+      before: 74,
+      after: 55,
+      outcomeNotes: "Asked directly. The agenda had been cut for time, not for me.",
+    },
+    {
+      day: 50,
+      hour: 18,
+      minute: 40,
+      situation: "Turned down an invitation to speak at the internal show-and-tell.",
+      nats: [nat("They will work out that I am not up to this.", 70, true)],
+      emotions: ["anxious", "guilty"],
+      distortions: ["fortune-telling", "emotional-reasoning"],
+      evidenceFor: ["I felt sick when I read the invitation."],
+      evidenceAgainst: [
+        "Feeling sick is not evidence about the talk.",
+        "The last thing I presented went fine.",
+      ],
+      balancedThought:
+        "Saying no because I am frightened is the avoidance keeping this going. The fear is not a forecast.",
+      before: 72,
+      after: 52,
+      outcomeNotes: "Asked to be put on the list for the next one instead.",
+    },
+    {
+      day: 55,
+      hour: 22,
+      minute: 30,
+      situation: "A restructure summary went out and my team's line was left blank.",
+      nats: [nat("This is how they let people go without saying it.", 84, true)],
+      emotions: ["anxious", "fearful", "hopeless"],
+      distortions: ["catastrophizing", "fortune-telling"],
+      evidenceFor: ["The line really was blank."],
+      evidenceAgainst: [
+        "Three other teams' lines were blank too.",
+        "Nothing has changed about my work this week.",
+      ],
+      balancedThought:
+        "A blank line in a draft summary is a blank line. I am writing the ending myself and then reacting to it.",
+      before: 87,
+      after: 80,
+      outcomeNotes:
+        "Listed what is confirmed in writing and what I am filling in myself. Most of it was the second.",
+    },
+    {
+      day: 57,
+      hour: 7,
+      minute: 40,
+      situation: "Read my own status update back and could not tell whether it sounded thin.",
+      nats: [nat("They will work out that I am not up to this.", 82, true)],
+      emotions: ["anxious", "numb"],
+      distortions: ["emotional-reasoning", "perfectionistic-thinking"],
+      evidenceFor: ["It is shorter than last week's."],
+      evidenceAgainst: [
+        "Last week covered two weeks of work.",
+        "Nobody has ever commented on the length.",
+      ],
+      balancedThought:
+        "I cannot read my own update the way a stranger would, and a fifth rewrite will not change that.",
+      before: 85,
+      after: 78,
+      outcomeNotes: "Posted it unchanged.",
+    },
+    {
+      day: 59,
+      hour: 21,
+      minute: 20,
+      situation: "Cancelled on a friend at short notice for the third time this month.",
+      nats: [nat("I am letting everyone down in every direction at once.", 80, true)],
+      emotions: ["guilty", "ashamed", "lonely"],
+      distortions: ["overgeneralization", "labeling"],
+      evidenceFor: ["Three cancellations is three cancellations."],
+      evidenceAgainst: [
+        "They rearranged easily both previous times.",
+        "I have not cancelled on anything at work.",
+      ],
+      balancedThought:
+        "A hard month is not a character. Three cancellations is a stretch of weeks, not who I am.",
+      before: 82,
+      after: 70,
+      outcomeNotes: "Told them the honest reason instead of inventing a better one.",
+    },
+    {
+      day: 62,
+      hour: 12,
+      minute: 0,
+      situation: "Handed over a piece of work knowing one corner of it was rushed.",
+      nats: [nat("The rushed corner is the only part anyone will look at.", 76, true)],
+      emotions: ["anxious", "frustrated"],
+      distortions: ["discounting-the-positive", "fortune-telling"],
+      evidenceFor: ["The corner really is rough."],
+      evidenceAgainst: [
+        "The rest took three weeks and holds up.",
+        "Handovers are read for the whole, not audited.",
+      ],
+      balancedThought:
+        "One rough corner sits inside three weeks of work that is sound. Both are true at once.",
+      before: 80,
+      after: 64,
+      outcomeNotes: "Flagged the rushed corner myself in the handover note.",
+    },
+    {
+      day: 68,
+      hour: 8,
+      minute: 15,
+      situation: "Volunteered to run the retro and immediately wanted to take it back.",
+      nats: [nat("Putting myself forward is how I get exposed.", 68, true)],
+      emotions: ["anxious", "hopeful"],
+      distortions: ["fortune-telling", "control-fallacy"],
+      evidenceFor: ["I could not sleep properly the night after offering."],
+      evidenceAgainst: [
+        "Running a retro is facilitation, not performance.",
+        "I have sat in twenty of them.",
+      ],
+      balancedThought:
+        "Wanting to take it back is the avoidance arriving on time. I can want that and still run it.",
+      before: 70,
+      after: 44,
+      outcomeNotes: "Ran it. It was fine and it finished early.",
+    },
+    {
+      day: 74,
+      hour: 19,
+      minute: 45,
+      situation: "Got a correction on a shared document from someone more senior.",
+      nats: [nat("A correction from them means I am being watched.", 60, true)],
+      emotions: ["anxious", "irritated"],
+      distortions: ["mind-reading", "fairness-fallacy"],
+      evidenceFor: ["They went into the document specifically to change my section."],
+      evidenceAgainst: [
+        "They corrected two other sections in the same pass.",
+        "The correction was one word.",
+      ],
+      balancedThought:
+        "Editing a shared document is what a shared document is for. Being read is not being watched.",
+      before: 66,
+      after: 40,
+      outcomeNotes: "Took the correction, said thanks, moved on.",
+    },
+    {
+      day: 78,
+      hour: 9,
+      minute: 10,
+      situation: "Asked a question in a large meeting that I would have swallowed a month ago.",
+      nats: [nat("The question will land as though I have not been following.", 55, true)],
+      emotions: ["anxious", "proud"],
+      distortions: ["mind-reading", "reward-fallacy"],
+      evidenceFor: ["My voice was unsteady for the first sentence."],
+      evidenceAgainst: [
         "Two people said afterwards they had wanted to ask the same thing.",
         "Nobody reacted to the unsteady sentence.",
       ],
-      "Asking is the practice. Doing it badly and doing it are not the same measure.",
-      58,
-      32,
-      "Stayed for the rest of the meeting instead of going quiet.",
-      null,
-    ],
-    [
-      83,
-      20,
-      30,
-      "Took a rest day and spent the whole afternoon doing nothing useful.",
-      [nat("A rest day only counts if I have earned it.", 52, true)],
-      ["guilty", "relaxed"],
-      ["should-statements", "change-fallacy"],
-      ["I finished the afternoon with nothing to show."],
-      ["Rest is in the plan on purpose.", "The week before it I worked two evenings."],
-      "A rest day is not a payment against a debt. It is part of how the rest of the week works.",
-      55,
-      28,
-      "Stayed on the balcony until it got dark.",
-      null,
-    ],
-    [
-      DAYS - 1,
-      9,
-      5,
-      "Checked first thing whether anyone had replied to yesterday's proposal.",
-      [nat("No reply by now means it has already been dismissed.", 48, true)],
-      ["anxious", "hopeful"],
-      ["fortune-telling", "mind-reading"],
-      ["It has been eighteen hours."],
-      [
+      balancedThought:
+        "Asking is the practice. Doing it badly and doing it are not the same measure.",
+      before: 58,
+      after: 32,
+      outcomeNotes: "Stayed for the rest of the meeting instead of going quiet.",
+    },
+    {
+      day: 83,
+      hour: 20,
+      minute: 30,
+      situation: "Took a rest day and spent the whole afternoon doing nothing useful.",
+      nats: [nat("A rest day only counts if I have earned it.", 52, true)],
+      emotions: ["guilty", "relaxed"],
+      distortions: ["should-statements", "change-fallacy"],
+      evidenceFor: ["I finished the afternoon with nothing to show."],
+      evidenceAgainst: [
+        "Rest is in the plan on purpose.",
+        "The week before it I worked two evenings.",
+      ],
+      balancedThought:
+        "A rest day is not a payment against a debt. It is part of how the rest of the week works.",
+      before: 55,
+      after: 28,
+      outcomeNotes: "Stayed on the balcony until it got dark.",
+    },
+    {
+      day: DAYS - 1,
+      hour: 9,
+      minute: 5,
+      situation: "Checked first thing whether anyone had replied to yesterday's proposal.",
+      nats: [nat("No reply by now means it has already been dismissed.", 48, true)],
+      emotions: ["anxious", "hopeful"],
+      distortions: ["fortune-telling", "mind-reading"],
+      evidenceFor: ["It has been eighteen hours."],
+      evidenceAgainst: [
         "It went out at six in the evening.",
         "The last two proposals were answered within the week.",
       ],
-      "Eighteen hours across one night is not a silence. I am reading a decision into a normal gap.",
-      52,
-      30,
-      "Left the tab closed and got on with the morning.",
-      null,
-    ],
+      balancedThought:
+        "Eighteen hours across one night is not a silence. I am reading a decision into a normal gap.",
+      before: 52,
+      after: 30,
+      outcomeNotes: "Left the tab closed and got on with the morning.",
+    },
   ];
 
-  const rows = records.map(
-    ([
-      day,
-      hour,
-      minute,
-      situation,
-      nats,
-      emotions,
-      distortions,
-      evidenceFor,
-      evidenceAgainst,
-      balancedThought,
-      before,
-      after,
-      outcomeNotes,
-      archivedDay,
-    ]) => {
-      const createdAt = at(day, hour, minute);
-      return {
-        user_id: DEMO_USER_ID,
-        situation,
-        nats,
-        emotions,
-        distortions,
-        evidence_for: evidenceFor,
-        evidence_against: evidenceAgainst,
-        balanced_thought: balancedThought,
-        emotion_intensity_before: before,
-        emotion_intensity_after: after,
-        outcome_notes: outcomeNotes,
-        archived_at: archivedDay === null ? null : at(archivedDay, 21, 0),
-        created_at: createdAt,
-        // Never null: a null offset resolves the record to the VIEWER's local
-        // day instead of the one it was written on, silently and without error.
-        created_offset_minutes: offsetMinutesFor(createdAt),
-        // The history list orders by `updated_at` and stamps each card with it,
-        // so a row left to default would jump to the top under today's date.
-        updated_at: createdAt,
-      };
-    },
-  );
+  const rows = records.map((record) => {
+    const createdAt = at(record.day, record.hour, record.minute);
+    return {
+      user_id: DEMO_USER_ID,
+      situation: record.situation,
+      nats: record.nats,
+      emotions: record.emotions,
+      distortions: record.distortions,
+      evidence_for: record.evidenceFor,
+      evidence_against: record.evidenceAgainst,
+      balanced_thought: record.balancedThought,
+      emotion_intensity_before: record.before,
+      emotion_intensity_after: record.after,
+      outcome_notes: record.outcomeNotes,
+      // Absent on all but one row, which is the point: `archivedDay` names the
+      // single archived record rather than trailing a null through eighteen.
+      archived_at: record.archivedDay === undefined ? null : at(record.archivedDay, 21, 0),
+      created_at: createdAt,
+      // Never null: a null offset resolves the record to the VIEWER's local
+      // day instead of the one it was written on, silently and without error.
+      created_offset_minutes: offsetMinutesFor(createdAt),
+      // The history list orders by `updated_at` and stamps each card with it,
+      // so a row left to default would jump to the top under today's date.
+      updated_at: createdAt,
+    };
+  });
   counts.thought_records = await insert("thought_records", rows);
 }
 
@@ -1327,7 +1363,7 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
   // The lift grows across the window and flattens through the setback, so the
   // list reads as progress rather than noise.
   for (let d = 12; d < DAYS - 3; d += between(3, 6)) {
-    const setback = d >= 53 && d <= 64;
+    const setback = inSetback(d);
     const lift = setback
       ? between(0, 1)
       : d < 40
@@ -1405,7 +1441,7 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
   ];
 
   const days = new Set();
-  for (let d = 4; d < DAYS; d += d >= 52 && d <= 64 ? between(1, 2) : between(2, 4)) {
+  for (let d = 4; d < DAYS; d += inSetback(d) ? between(1, 2) : between(2, 4)) {
     days.add(d);
   }
   days.add(DAYS - 1);
