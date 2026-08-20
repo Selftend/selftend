@@ -16,6 +16,15 @@ const PORT = Number(process.env.E2E_PORT ?? 8099);
 const LOCAL_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
 
+// Real-format P-256 VAPID public key generated once for the e2e suite; the private
+// half was discarded at generation, so this can never push to anyone. Never a real
+// environment's key. Injected via webServer.env (not a `?? fallback` in
+// scripts/e2e-web-server.js) so local and CI bake the SAME constant - local e2e
+// bundles must not silently absorb the real key from .env. Without it the web
+// reminder channel reads `unsupported` and the re-arm suite tests nothing (#966).
+export const E2E_WEB_PUSH_VAPID_PUBLIC_KEY =
+  "BFB21JovGgXTOEO4dScrQkLFKM64920GMVyPY6gWXFWIKUc03W-ZFMox55qbbww2sm06RARAsHRSVWJBmc2Q0vs";
+
 export default defineConfig({
   testDir: "./test/e2e",
   testMatch: /.*\.e2e\.test\.ts$/,
@@ -68,6 +77,7 @@ export default defineConfig({
       // the real listing URL.
       EXPO_PUBLIC_PLAY_STORE_URL:
         "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend",
+      EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY: E2E_WEB_PUSH_VAPID_PUBLIC_KEY,
     },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: process.env.E2E_REUSE_EXISTING_SERVER === "1",

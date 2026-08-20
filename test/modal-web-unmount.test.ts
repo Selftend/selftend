@@ -27,6 +27,14 @@ import { sourceFiles, stripComments } from "./source-scan";
  *
  *   {!open && Platform.OS === "web" ? null : ( <Modal ... /> )}
  *
+ * Since #1118 the #1108 press-shield wrapper carries the gate itself, so a
+ * call site rendering `<PressShieldModal>` needs no per-site line — this
+ * suite only polices files that render a raw `<Modal>` (the wrapper's own
+ * source among them: its internal gate is what every wrapper call site
+ * inherits, so this suite enforcing it there is what keeps the #1054 regime
+ * intact for all of them; PressShieldModal's behavioral suite covers the
+ * gate's runtime semantics).
+ *
  * This suite DERIVES the file list from source rather than pinning it, so a
  * new raw `<Modal>` lands already gated or fails CI here.
  */
@@ -43,9 +51,6 @@ const EXEMPT: Record<string, string> = {
   // Hardcodes `visible` on the Modal; home-tour.tsx gates mounting with
   // `if (!current || !targetRect) return null;`.
   "src/features/tours/tour-overlay.tsx": "mounted only while a tour step is active",
-  // protected-layout.tsx conditionally renders the onboarding wizard, so it
-  // unmounts outright.
-  "src/components/app/rich-onboarding-shell.tsx": "conditionally rendered by protected-layout",
   // The web bundle resolves time-field.web.tsx (an <input type="time">, no
   // Modal), so this Modal only ever renders on native — where the lingering
   // fade-out is the wanted exit animation. The #1054 table listed this file,
@@ -59,8 +64,13 @@ const RETURN_NULL_GATE = /if\s*\(!\w+\s*&&\s*Platform\.OS === "web"\)\s*return n
 /** `{!open && Platform.OS === "web" ? null : (` — the sibling-Modal form. */
 const INLINE_GATE = /!\w+\s*&&\s*Platform\.OS === "web"\s*\?\s*null\s*:/;
 
-/** JSX use of `<Modal` (word-bounded, so `<ModalFocusTrap` never matches). */
-const RENDERS_RAW_MODAL = /<Modal[\s/>]/;
+/**
+ * JSX use of `<Modal` (word-bounded, so neither `<ModalFocusTrap` nor
+ * `<PressShieldModal` matches). Call sites of the #1108 press-shield wrapper
+ * are deliberately out of scope: since #1118 the wrapper gates its own raw
+ * Modal, so they inherit the unmount instead of each repeating the line.
+ */
+const RENDERS_A_MODAL = /<Modal[\s/>]/;
 
 /** `Modal` named in an import from "react-native" (single or multi-line). */
 const IMPORTS_RN_MODAL = /import\s*\{[^}]*\bModal\b[^}]*\}\s*from\s*"react-native"/;
@@ -69,7 +79,7 @@ const files = sourceFiles(ROOT, { dirs: ["src", "app"] });
 
 const modalFiles = files.filter((file) => {
   const source = readFileSync(join(ROOT, file), "utf8");
-  return IMPORTS_RN_MODAL.test(source) && RENDERS_RAW_MODAL.test(stripComments(source));
+  return IMPORTS_RN_MODAL.test(source) && RENDERS_A_MODAL.test(stripComments(source));
 });
 
 describe("raw react-native Modals unmount on web when closed (#1034 → #1054)", () => {
@@ -78,6 +88,15 @@ describe("raw react-native Modals unmount on web when closed (#1034 → #1054)",
     // below passes vacuously — this canary turns that silent blindness into a
     // failure.
     expect(modalFiles).toContain("src/components/app/confirm-dialog.tsx");
+  });
+
+  it("still polices the press-shield wrapper's own raw Modal (#1118)", () => {
+    // Every `<PressShieldModal>` call site relies on the wrapper's internal
+    // gate instead of a per-site line, so the wrapper dropping out of this
+    // suite's derived list would silently un-police the gate all of them
+    // inherit. If the wrapper's file moves, update this path — the property
+    // under test is that its raw Modal stays inside the regime.
+    expect(modalFiles).toContain("src/components/app/press-shield-modal.tsx");
   });
 
   it("every non-exempt Modal renderer carries the web unmount gate", () => {
@@ -90,9 +109,10 @@ describe("raw react-native Modals unmount on web when closed (#1034 → #1054)",
 
     // Each listed file keeps a dismissed Modal mounted on web for its 250ms
     // fade-out, where its focus trap steals focus from whatever opens next
-    // (#1034). Add the one-line gate (see this suite's header), or — only if
-    // the file's Modal genuinely never lingers on web — add it to EXEMPT with
-    // the reason.
+    // (#1034). Add the one-line gate (see this suite's header), render
+    // through <PressShieldModal> (which carries the gate, #1118), or — only
+    // if the file's Modal genuinely never lingers on web — add it to EXEMPT
+    // with the reason.
     expect(offenders).toEqual([]);
   });
 

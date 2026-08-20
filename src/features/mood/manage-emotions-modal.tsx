@@ -1,7 +1,6 @@
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   TextInput,
@@ -11,6 +10,7 @@ import {
 import { useCallback, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import Sortable from "react-native-sortables";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -22,11 +22,7 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { NARROW_STEP_INDICATOR_BREAKPOINT } from "@/src/constants/layout";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import {
-  DEFAULT_INTERACTIVE_HIT_SLOP,
-  reorderMoveProps,
-  useReduceMotionEnabled,
-} from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, reorderMoveProps } from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 import {
   useAddCustomEmotion,
@@ -354,7 +350,6 @@ interface ManageEmotionsModalProps {
 
 export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalProps) {
   const { t } = useTranslation("mood");
-  const reduceMotionEnabled = useReduceMotionEnabled();
   const { allEmotions, isLoading } = useEmotionDisplay();
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -461,19 +456,14 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   // gesture: the editor peels first, the surface itself only closes from the list (#743).
   const handleRequestClose = editorState ? closeEditor : onClose;
 
-  // ⚠️ WEB: a closed surface unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). This surface is the most focus-sensitive of the
-  // sweep: its rows carry a keyboard reorder path (#965/#1046). Native keeps
-  // its exit animation: it has none of this. This return only drops the
-  // rendered tree — `editorState` and the rest of the component's state
-  // survive a close on both platforms, exactly as before.
-  if (!visible && Platform.OS === "web") return null;
-
   return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : isDesktopWeb ? "fade" : "slide"}
+    // PressShieldModal owns the #1054 web-unmount gate, and only its own
+    // render is gated — `editorState` and the rest of this component's state
+    // survive a close on both platforms, exactly as with the per-site gate
+    // this surface used to carry (it is the most focus-sensitive of the
+    // #1054 sweep: its rows carry a keyboard reorder path, #965/#1046).
+    <PressShieldModal
+      animation={isDesktopWeb ? "fade" : "slide"}
       onRequestClose={handleRequestClose}
       presentationStyle={isWeb ? undefined : "pageSheet"}
       transparent={isWeb}
@@ -566,6 +556,6 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
           </View>
         )}
       </ManageEmotionsShell>
-    </Modal>
+    </PressShieldModal>
   );
 }
