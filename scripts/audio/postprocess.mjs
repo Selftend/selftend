@@ -28,6 +28,7 @@ import { join, dirname, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import {
+  SFX_MASTER_PCM,
   outputSpecFor,
   OUTPUT_SAMPLE_RATE,
   TRUE_PEAK_CEILING_DBTP,
@@ -104,6 +105,20 @@ async function ffmpeg(args) {
 // WAV read/write - float32 only, which is all this pipeline ever hands itself
 // ---------------------------------------------------------------------------
 
+/**
+ * ffmpeg input arguments for one file.
+ *
+ * ☠️ `render` writes Sound Effects masters as RAW `.pcm` — no header, no
+ * container — so `ffmpeg -i` fails outright with "Invalid data found when
+ * processing input". Raw input needs its format declared before `-i`, and the
+ * parameters have to come from the catalog because the bytes carry none.
+ */
+function inputArgs(file) {
+  if (!file.toLowerCase().endsWith(".pcm")) return ["-i", file];
+  const { codec, sampleRate, channels } = SFX_MASTER_PCM;
+  return ["-f", codec, "-ar", String(sampleRate), "-ac", String(channels), "-i", file];
+}
+
 export function parseWav(buf) {
   if (buf.toString("ascii", 0, 4) !== "RIFF" || buf.toString("ascii", 8, 12) !== "WAVE") {
     throw new Error("not a RIFF/WAVE file");
@@ -160,8 +175,7 @@ function writeWavBuffer(samples, channels, sampleRate) {
 
 export async function decodeToFloatWav(input, out, { channels, sampleRate }) {
   await ffmpeg([
-    "-i",
-    input,
+    ...inputArgs(input),
     "-ac",
     String(channels),
     "-ar",
@@ -232,8 +246,7 @@ export async function measure(file) {
   const res = await run("ffmpeg", [
     "-hide_banner",
     "-nostdin",
-    "-i",
-    file,
+    ...inputArgs(file),
     "-af",
     `loudnorm=I=-20:TP=${TRUE_PEAK_CEILING_DBTP}:print_format=json`,
     "-f",
@@ -341,7 +354,7 @@ async function seamCheckFile(file) {
   const dir = await mkdtemp(join(tmpdir(), "seam-"));
   try {
     const wav = join(dir, "decoded.wav");
-    await ffmpeg(["-i", file, "-c:a", "pcm_f32le", "-f", "wav", wav]);
+    await ffmpeg([...inputArgs(file), "-c:a", "pcm_f32le", "-f", "wav", wav]);
     const parsed = parseWav(await readFile(wav));
     return seamMetrics(parsed.samples, parsed.channels, parsed.sampleRate);
   } finally {
