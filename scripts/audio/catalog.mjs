@@ -138,19 +138,30 @@ export const BEDS = [
   },
   {
     id: "ocean",
-    // ⚠️ DRAFT — NOT YET APPROVED BY THE OWNER.
+    // ☠️ #1137 separated this bed from the `ocean-swell` texture "by distance in
+    // the prompt" — bed wide and distant, texture close. That mechanism does not
+    // exist: SHARED_TAIL is appended to *every* SFX prompt, beds included, and it
+    // opens "Close, dry, small soft room. No reverb." A distant bed contradicts
+    // its own tail. #1137 checked the texture side of the palette and not the bed
+    // side; the other four beds are all framed as interiors ("through a closed
+    // window", "forest interior", "indoors") precisely because they were written
+    // under that palette. Settled on #1262.
     //
-    // #1137 added this bed after #1134 had written the per-clip briefs, so it
-    // is the one clip on the map with no prompt text decided for it. #1137 gave
-    // direction only: the bed is "wide and distant, with no discrete breaking
-    // events", deliberately separated *by distance in the prompt* from the
-    // close, dry `ocean-swell` texture so the two can be selected together and
-    // read as depth rather than as one ocean glitching over another.
+    // So the two ocean clips separate by CONTENT, both inside the same close, dry
+    // room: this bed is open water with no shoreline at all, while the texture is
+    // surf on sand at the ear. The shoreline ban is the fence — "no surf on sand"
+    // alone let the model drift into the texture's territory.
     //
-    // Written here in the house style so Round B is runnable; it must be
-    // signed off before the render pass spends credits on it.
-    draft: true,
-    text: "A wide, distant expanse of open sea heard from far away, a continuous even wash of water held at one constant level for the full thirty seconds. No individual waves breaking, no surf on sand, no swell rising or falling, no gulls, no wind, no voices, no boats.",
+    // ⚠️ Swell is still barred, and not only for #1137's loop-tell reason: the
+    // seam gate measures short-time energy delta across the wrap, SFX is
+    // non-deterministic so a swell cannot be phase-aligned to 30s, and a
+    // mid-cycle swell at the wrap fails that check by construction.
+    //
+    // ⚠️ Open risk, deliberately deferred to the audition (#1262): stripped of
+    // distance, breaking, swell and sand, this may be indistinguishable from
+    // `brown-noise` — the very redundancy that got a warm drone rejected in
+    // #1137. Three candidates cost ~297 credits, so the call is made by ear.
+    text: "A deep, continuous body of open water, a smooth even wash held at one constant level for the full thirty seconds. No shoreline, no sand, no surf, no waves breaking, no swell rising or falling, no gulls, no wind, no voices, no boats.",
   },
 ].map((bed) => ({
   ...bed,
@@ -178,8 +189,12 @@ const TEXTURE_FAMILIES = [
   },
   {
     id: "ocean-swell",
-    // Close and dry, at the ear — the near half of the pair whose far half is
-    // the `ocean` bed above. Separation is by distance, not by name (#1137).
+    // The shoreline half of the ocean pair whose open-water half is the `ocean`
+    // bed above. ☠️ #1137 said the separation was by distance; #1262 found that
+    // distance is unavailable (SHARED_TAIL forces every clip close and dry) and
+    // moved it to content. Surf on sand is what this clip owns, and what the bed
+    // is now explicitly forbidden. Still not by name (#1137) — renaming costs a
+    // Weblate string in en and bg and disguises the pairing rather than fixing it.
     inhale:
       "A continuous even wash of surf on sand, held at one constant level. No individual waves breaking, no swell rising or falling, no gulls, no wind, no voices. A sustained band of water noise, unchanging for the whole duration.",
     exhaleModifier: "Lower and darker.",
@@ -231,14 +246,35 @@ export const VOICES = [
 ];
 
 /**
- * ⚠️ The intro wording is the second undecided piece of content on this map.
- * #1136 fixed the three cues and left the intro as "wording TBD at render".
+ * #1136 fixed the three phase cues; #1264 fixed the intro, the last undecided
+ * piece of copy on the map.
+ *
+ * ☠️ The intro must not say "get ready": the preroll screen is ALREADY showing
+ * `breathing.getReady` ("Get ready…") in 28px in a polite live region while this
+ * clip plays. And ☠️ that preroll exists ONLY because this clip exists —
+ * `handleStart` (app/(app)/tools/breathing/session.tsx) enters the preroll solely
+ * when `introAsset` is set, so every other breath sound starts instantly and
+ * `breathing.getReady` is reachable no other way.
+ *
+ * So the intro earns its ~3s by doing what the screen cannot: people breathe with
+ * their eyes closed, which makes audio the only live channel. It stays
+ * pattern-agnostic (one clip serves 4-7-8, box and coherent alike) and carries no
+ * coach framing — no "I", no "we", no claimed outcome.
+ *
+ * ⚠️ Both voices say the SAME script. Different wording would give a user a
+ * *content* reason to prefer one voice, contradicting #1136's framing of the pair
+ * as a pure gender axis.
+ *
+ * ⚠️ `introMs` is then set from the RENDERED clip's own header, never from this
+ * text (#1136 corrected #1134 on exactly this). Today's clip measures 3.08s
+ * against `introMs: 3300` — that 220ms of slop goes; the 1000ms
+ * POST_INTRO_PAUSE_MS settling beat after it stays, deliberately.
  */
 export const VOICE_CUES = [
   { id: "guide_inhale", text: "Breathe in" },
   { id: "guide_hold", text: "Hold" }, // holdOut reuses this — confirmed, not deferred
   { id: "guide_exhale", text: "Breathe out" },
-  { id: "guide_intro", text: null, draft: true },
+  { id: "guide_intro", text: "Find a comfortable position, and let your shoulders soften." },
 ];
 
 /** #1134 §6 — unhurried, low, warm; falling intonation; no performance. */
