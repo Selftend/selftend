@@ -121,6 +121,11 @@ _Avoid_: back button, close button (those name a glyph, not the role)
 The Escape's default destination: one deterministic hop along the screen's own breadcrumb trail,
 Material's "Up" (#495). Never history — a fixed hop cannot bounce. On a screen whose trail has a
 single crumb, Up is the root.
+
+Up is read off the trail by one rule: **the deepest crumb that still carries an href**. That rests
+on an invariant of `computeBreadcrumbs` — **a trail always ends in a crumb with no href**, because an
+absent href is how the trail marks "you are here" (#1251). A trailing href would make every Escape
+on that route land one crumb too shallow, mistaking the current screen for its own parent.
 _Avoid_: parent, back (Up is a structural claim, back is a temporal one)
 
 **Origin**:
