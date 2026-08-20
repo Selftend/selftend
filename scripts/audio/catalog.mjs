@@ -82,6 +82,18 @@ const LOOP = false;
  */
 export const SFX_OUTPUT_FORMAT = "pcm_48000";
 
+/**
+ * ☠️ `pcm_*` output is RAW — no RIFF header, no container, nothing telling a
+ * decoder how to read it. `render` writes it straight to `.pcm`, so `ffmpeg -i`
+ * fails with "Invalid data found when processing input" and every downstream
+ * tool needs these parameters supplied by hand.
+ *
+ * 16-bit little-endian at the format's rate, and STEREO — #1159 found Sound
+ * Effects returns two channels whatever the prompt asks for, re-confirmed by
+ * live probe on 2026-08-21 (192,000 bytes for 1s at 48k = 48000 x 2 x 2).
+ */
+export const SFX_MASTER_PCM = { codec: "s16le", sampleRate: 48000, channels: 2 };
+
 /** #1134 §6 — the docs still recommend this for narration quality. */
 export const TTS_MODEL = "eleven_multilingual_v2";
 
