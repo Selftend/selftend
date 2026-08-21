@@ -26,6 +26,15 @@ export interface ThoughtRecord {
   balancedThought: string;
   emotionIntensityAfter: number | null;
   outcomeNotes: string;
+  /**
+   * How strongly the hot thought is believed after working the record, 0-100
+   * (#1376). Null on every record written before the column existed, and on any
+   * record whose author left the rating untouched - nothing may assume it is
+   * present. Compare against the hot thought's own `beliefRating` to get the
+   * shift; the pair is the only reason this is plaintext rather than another
+   * value inside the encrypted `nats` blob, which SQL cannot aggregate.
+   */
+  beliefAfter: number | null;
   createdAt: string;
   /** Minutes east of UTC where the record was written; null when never captured. */
   createdOffsetMinutes: CapturedOffsetMinutes;
@@ -50,6 +59,8 @@ export interface ThoughtRecordInput {
   balancedThought: string;
   emotionIntensityAfter: number | null;
   outcomeNotes: string;
+  /** How strongly the hot thought is believed afterwards, 0-100; null when unrated. */
+  beliefAfter: number | null;
   /**
    * Create mode only, and always sent as a pair: the instant the record was
    * written and the UTC offset in force at that instant. Editing an existing

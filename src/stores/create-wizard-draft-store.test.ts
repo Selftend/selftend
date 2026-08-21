@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
   createWizardDraftStore,
+  WIZARD_DRAFT_PERSIST_VERSION,
   WIZARD_DRAFT_TTL_MS,
 } from "@/src/stores/create-wizard-draft-store";
 import {
@@ -163,7 +164,7 @@ describe("createWizardDraftStore - persistence", () => {
           values: { name: "day-old draft" },
           updatedAt: Date.now() - WIZARD_DRAFT_TTL_MS - 1000,
         },
-        version: 1,
+        version: WIZARD_DRAFT_PERSIST_VERSION,
       }),
     );
 
@@ -193,7 +194,7 @@ describe("createWizardDraftStore - persistence", () => {
           values: "not-an-object",
           updatedAt: Date.now(),
         },
-        version: 1,
+        version: WIZARD_DRAFT_PERSIST_VERSION,
       }),
     );
 
@@ -243,7 +244,7 @@ describe("createWizardDraftStore - persistence", () => {
           values: { name: "previous user's private text" },
           updatedAt: Date.now(),
         },
-        version: 1,
+        version: WIZARD_DRAFT_PERSIST_VERSION,
       }),
     );
     // An unrelated key must survive the purge untouched.

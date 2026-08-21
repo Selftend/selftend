@@ -22,6 +22,9 @@ interface ThoughtRecordRow {
   balanced_thought: string;
   emotion_intensity_after: number | null;
   outcome_notes: string | null;
+  // Optional for the same reason as the offset below: a response served before
+  // the column existed omits it entirely, which is not the same as a null value.
+  belief_after?: number | null;
   created_at: string;
   // Optional: absent from a response served before the column existed.
   created_offset_minutes?: number | null;
@@ -44,6 +47,7 @@ function mapThoughtRecord(row: ThoughtRecordRow): ThoughtRecord {
     balancedThought: row.balanced_thought,
     emotionIntensityAfter: row.emotion_intensity_after,
     outcomeNotes: row.outcome_notes ?? "",
+    beliefAfter: row.belief_after ?? null,
     createdAt: row.created_at,
     createdOffsetMinutes,
     dayKey: entryDayKey(row.created_at, createdOffsetMinutes),
@@ -161,6 +165,9 @@ export async function saveThoughtRecord(
     balanced_thought: input.balancedThought.trim(),
     emotion_intensity_after: input.emotionIntensityAfter,
     outcome_notes: input.outcomeNotes.trim(),
+    // Written on both the insert and the update path, so an edit can clear the
+    // rating back to null as well as set it (#1376).
+    belief_after: input.beliefAfter,
   };
 
   // Create mode sends the creation instant and its offset together, or neither:

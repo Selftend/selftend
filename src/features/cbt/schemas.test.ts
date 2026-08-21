@@ -15,6 +15,7 @@ describe("thought record schema", () => {
         evidenceAgainst: [],
         balancedThought: "I do not know what the message means yet.",
         emotionIntensityAfter: null,
+        beliefAfter: null,
         outcomeNotes: "",
       }),
     ).not.toThrow();
@@ -36,6 +37,7 @@ describe("thought record schema", () => {
         evidenceAgainst: ["I received positive feedback."],
         balancedThought: "I am disappointed but this is one situation.",
         emotionIntensityAfter: 40,
+        beliefAfter: null,
         outcomeNotes: "Feeling calmer after writing it out.",
       }),
     ).not.toThrow();
@@ -55,6 +57,7 @@ describe("thought record schema", () => {
       evidenceAgainst: [],
       balancedThought: "",
       emotionIntensityAfter: null,
+      beliefAfter: null,
       outcomeNotes: "",
     });
     expect(result.success).toBe(true);
@@ -71,6 +74,7 @@ describe("thought record schema", () => {
       evidenceAgainst: [],
       balancedThought: "balanced view",
       emotionIntensityAfter: null,
+      beliefAfter: null,
       outcomeNotes: "notes\uDC00 tail",
     });
 
@@ -93,6 +97,7 @@ describe("thought record schema", () => {
       evidenceAgainst: [],
       balancedThought: "b".repeat(4001),
       emotionIntensityAfter: null,
+      beliefAfter: null,
       outcomeNotes: "n".repeat(4001),
     });
 
@@ -117,6 +122,7 @@ describe("thought record schema", () => {
         evidenceAgainst: [],
         balancedThought: "",
         emotionIntensityAfter: null,
+        beliefAfter: null,
         outcomeNotes: "",
       }),
     ).toThrow();
@@ -134,8 +140,53 @@ describe("thought record schema", () => {
         evidenceAgainst: [],
         balancedThought: "A more balanced view.",
         emotionIntensityAfter: null,
+        beliefAfter: null,
         outcomeNotes: "",
       }),
     ).not.toThrow();
+  });
+});
+
+// `beliefAfter` re-rates the hot thought at the end of the record (#1376). It is
+// the first field added to this schema since the wizard gained a persisted
+// draft, which is what the "absent key" case below is about.
+describe("thought record schema - beliefAfter", () => {
+  const base = {
+    situation: "test",
+    nats: [{ text: "some thought", beliefRating: 80, isHotThought: true }],
+    emotions: [],
+    emotionIntensityBefore: null,
+    distortions: [],
+    evidenceFor: [],
+    evidenceAgainst: [],
+    balancedThought: "",
+    emotionIntensityAfter: null,
+    outcomeNotes: "",
+  };
+
+  it("accepts a belief-after value in 0..100", () => {
+    expect(thoughtRecordFormSchema.parse({ ...base, beliefAfter: 40 }).beliefAfter).toBe(40);
+    expect(thoughtRecordFormSchema.parse({ ...base, beliefAfter: 0 }).beliefAfter).toBe(0);
+    expect(thoughtRecordFormSchema.parse({ ...base, beliefAfter: 100 }).beliefAfter).toBe(100);
+  });
+
+  it("rejects a belief-after value outside 0..100", () => {
+    expect(thoughtRecordFormSchema.safeParse({ ...base, beliefAfter: 101 }).success).toBe(false);
+    expect(thoughtRecordFormSchema.safeParse({ ...base, beliefAfter: -1 }).success).toBe(false);
+  });
+
+  it("accepts null - the form is never gated on this field", () => {
+    expect(thoughtRecordFormSchema.parse({ ...base, beliefAfter: null }).beliefAfter).toBeNull();
+  });
+
+  it("REQUIRES the key to be present, which is why the draft persist version was bumped", () => {
+    // Pins the reason WIZARD_DRAFT_PERSIST_VERSION moved to 2. A draft persisted
+    // by the previous build carries no `beliefAfter` key; if such a draft were
+    // ever reset back into the form it would fail the outcome step's trigger()
+    // with an issue that step does not render - a dead Save button and no
+    // visible reason. The version bump makes those drafts unreachable instead.
+    // If this ever starts passing, the bump has been undone or the field made
+    // optional, and that trap is live again.
+    expect(thoughtRecordFormSchema.safeParse(base).success).toBe(false);
   });
 });
