@@ -11,6 +11,14 @@
   "edit": "Edit",
   "close": "Close",
   "noDateSet": "No date set",
+  "time": {
+    "hourField": "{{label}}, hour",
+    "minuteField": "{{label}}, minute",
+    "meridiemField": "{{label}}, AM or PM",
+    "am": "AM",
+    "pm": "PM",
+    "reverted": "Reverted to {{time}}"
+  },
   "or": "or",
   "orContinueWithEmail": "or continue with email",
   "never": "never",

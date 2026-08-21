@@ -276,8 +276,9 @@ describe("NotificationTargetRow - state it renders", () => {
     const control = screen.getByLabelText("Sleep");
     expect(control.props.accessibilityState.checked).toBe(true);
     expect(control.props.accessibilityState.disabled).toBe(true);
-    // The real time, not "Off": the row shows what it IS.
-    expect(screen.getByText("22:30")).toBeTruthy();
+    // The real time, not "Off": the row shows what it IS - written the way the
+    // locale writes it (en is a 12-hour clock), not in the 24-hour wire format.
+    expect(screen.getByText("10:30 PM")).toBeTruthy();
   });
 
   it("locks out while another control on the page owns the permission prompt", () => {
