@@ -11,11 +11,16 @@ interface NavigationOriginState {
   pending: NavigationOrigin | null;
   recordOrigin: (entry: NavigationOrigin) => void;
   /**
-   * Read the Origin recorded for `pathname` and clear it in one step.
-   * Returns `null` - and leaves the store untouched - when the pending entry was
-   * recorded for a different screen.
+   * The Origin recorded for `pathname`, or `null` when the pending entry was
+   * recorded for a different screen. A pure read: it changes nothing, so it is
+   * safe to call during render and safe to call twice.
    */
-  consumeOrigin: (pathname: string) => string | null;
+  peekOrigin: (pathname: string) => string | null;
+  /**
+   * Drop the pending entry if it belongs to `pathname`. Paired with `peekOrigin`
+   * by the reader, which clears in a mount effect rather than during render.
+   */
+  clearOrigin: (pathname: string) => void;
 }
 
 /**
@@ -54,19 +59,32 @@ interface NavigationOriginState {
  * to Up. Deliberately not the `banner-inset-store` unmount-cleanup pattern,
  * which patches a store that *can* go stale; this one cannot.
  *
- * A mismatched read leaves the entry in place rather than clearing it. The
- * recording call site pushes in the same handler, so the target is the very next
- * screen to mount; treating some other screen's mount as a consumption would
- * throw away an Origin that was never delivered.
+ * ⚠️ The read and the clear are **two operations, not one**, and that split is
+ * load-bearing. A single clear-on-read would have to run during render to give
+ * the Escape its destination on the first paint - and a render that React
+ * discards and retries (it may, and the React Compiler is on repo-wide) would
+ * have cleared the store before the retry, losing the Origin permanently with
+ * nothing to show for it. `peekOrigin` is pure and idempotent; `clearOrigin`
+ * runs from the reader's mount effect, which only ever fires for a render that
+ * actually committed.
+ *
+ * A mismatched read or clear leaves the entry in place. The recording call site
+ * pushes in the same handler, so the target is the very next screen to mount;
+ * treating some other screen's mount as a consumption would throw away an Origin
+ * that was never delivered.
  */
 export const useNavigationOriginStore = create<NavigationOriginState>((set, get) => ({
   pending: null,
   recordOrigin: (entry) => set({ pending: entry }),
-  consumeOrigin: (pathname) => {
+  peekOrigin: (pathname) => {
     const { pending } = get();
     if (!pending || pending.forPathname !== pathname) return null;
-    set({ pending: null });
     return pending.origin;
+  },
+  clearOrigin: (pathname) => {
+    const { pending } = get();
+    if (!pending || pending.forPathname !== pathname) return;
+    set({ pending: null });
   },
 }));
 
@@ -75,6 +93,10 @@ export function recordOrigin(entry: NavigationOrigin) {
   useNavigationOriginStore.getState().recordOrigin(entry);
 }
 
-export function consumeOrigin(pathname: string): string | null {
-  return useNavigationOriginStore.getState().consumeOrigin(pathname);
+export function peekOrigin(pathname: string): string | null {
+  return useNavigationOriginStore.getState().peekOrigin(pathname);
+}
+
+export function clearOrigin(pathname: string) {
+  useNavigationOriginStore.getState().clearOrigin(pathname);
 }

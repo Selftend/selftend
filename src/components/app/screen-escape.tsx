@@ -4,9 +4,11 @@ import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { CHROME_EYEBROW_TYPE } from "@/src/components/app/screen-breadcrumb";
 import { isOffTrail, nameOrigin, useEscapeOrigin } from "@/src/lib/escape-origin";
 import { findUpCrumb } from "@/src/lib/breadcrumbs";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
+import { cn } from "@/lib/utils";
 
 interface ScreenEscapeProps {
   /**
@@ -70,15 +72,21 @@ export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
   // subtree Up and the Origin are the same route, so an unconditional Origin
   // rule could only ever differ by being wrong - which is why recording a push
   // is opt-out and needs no judgement at the call site.
-  //
-  // An Origin the route map cannot name is dropped back to Up rather than
-  // followed. Leading somewhere while showing a bare arrow is the silent
-  // divergence R5 exists to close, and showing the generic fallback instead
-  // would put "Entry" on screen as if it were a place (O6).
   const originHref =
     carriedOrigin && isOffTrail(carriedOrigin, pathname, crumbs, upHref) ? carriedOrigin : null;
+  // `null` where the route map has no name for the Origin - an opaque record,
+  // say. The Escape still GOES there and simply does not name it: naming is the
+  // announcement's problem, never the destination's. Redirecting to Up instead
+  // would be the worse failure of the two, because the whole point of the rule
+  // is that a user who crossed subtrees gets back to what they were doing - a
+  // journal entry someone left for `/crisis` is exactly the case where being
+  // returned to Home instead is least acceptable.
+  //
+  // The Origin then reuses #1253's naming path unchanged, "Go back" fallback
+  // included. What it must never do is render the generic crumb label, which
+  // would put "Entry" beside the arrow as though it were a place (O6).
   const originName = originHref ? nameOrigin(originHref, t) : null;
-  const escapeHref = originName ? originHref : upHref;
+  const escapeHref = originHref ?? upHref;
 
   // What the Escape promises out loud (#1253). An explicit `accessibilityLabel`
   // REPLACES a pressable's children for a screen reader, so a glyph-only label
@@ -95,7 +103,12 @@ export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
   // With no ancestor crumb at all the hop is to the root, which does have a
   // name. That covers the one-crumb screens and the whole `(auth)` group.
   const upName = upCrumb ? (upCrumb.unresolved ? null : upCrumb.label) : t("sidebar.home");
-  const destination = originName ?? upName;
+  // The name follows the DESTINATION, so an unnameable Origin announces "Go
+  // back" rather than borrowing Up's name. Falling back to `upName` here would
+  // announce "Back to Home" on a press that goes to the journal entry instead -
+  // precisely the divergence between promise and destination this rule exists
+  // to close, reintroduced in the announcement.
+  const destination = originHref ? originName : upName;
 
   return (
     <Pressable
@@ -140,10 +153,7 @@ export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
           in a tighter host predictable - one line, ellipsis at the end, never a
           mid-word break and never a row pushed past the screen edge. */}
       {glyph === "arrow-back" && originName ? (
-        <Text
-          numberOfLines={1}
-          className="shrink text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
-        >
+        <Text numberOfLines={1} className={cn(CHROME_EYEBROW_TYPE, "shrink text-muted-foreground")}>
           {originName}
         </Text>
       ) : null}

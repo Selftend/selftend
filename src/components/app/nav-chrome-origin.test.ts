@@ -11,13 +11,16 @@ import path from "node:path";
  * correctly, and an Escape reading "Back to CBT" on Settings would compete with
  * the sidebar itself as the way back.
  *
- * ⚠️ Today they opt out **structurally, not by choice**: all three navigate with
- * `<Link href>`, which never reaches the helper, so there is no call to leave
- * out. That makes the rule invisible in the source - nothing in these files says
- * "no Origin here" - and a future refactor to `router.push` would start
- * recording with nothing on screen to notice, since the failure of an Origin
- * rule is always a quiet one. Hence this guard, which fails on the refactor
- * rather than on the bug it would cause.
+ * ⚠️ Today they opt out **structurally, not by choice**. The sidebar's rows and
+ * the brand home link navigate with `<Link href>`, which never reaches the
+ * helper; the hamburger does not navigate at all - it calls `onMenuPress` and
+ * opens the navigation panel. So there is no call to leave out anywhere here.
+ *
+ * That makes the rule invisible in the source - nothing in these files says "no
+ * Origin here" - and a future refactor to `router.push` would start recording
+ * with nothing on screen to notice, since the failure of an Origin rule is
+ * always a quiet one. Hence this guard, which fails on the refactor rather than
+ * on the bug it would cause.
  *
  * A source scan rather than a render: `<Link>` navigation cannot be exercised
  * against a mocked router the way a press handler can, and what is being pinned

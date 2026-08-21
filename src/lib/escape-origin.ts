@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { router, usePathname, type Href } from "expo-router";
 
 import { computeBreadcrumbs, type Breadcrumb } from "./breadcrumbs";
-import { consumeOrigin, recordOrigin } from "@/src/stores/navigation-origin-store";
+import { clearOrigin, peekOrigin, recordOrigin } from "@/src/stores/navigation-origin-store";
 
 type ParamsRecord = Record<string, unknown>;
 
@@ -125,15 +125,28 @@ export function nameOrigin(origin: string, t: (key: string) => string): string |
  * and lose the Origin before the second - which is why the value is parked in
  * local state here rather than read from the store where it is used.
  *
- * A `useState` initialiser rather than an effect: it runs exactly once for the
- * component instance, and it runs *before* the first paint, so the Escape never
- * renders a bare Up arrow for a frame and then grows a name beside it.
+ * Split into a pure `peekOrigin` during render and a `clearOrigin` in a mount
+ * effect, rather than one clearing read. Reading during render is what gives the
+ * Escape its destination on the *first* paint, so it never shows a bare Up arrow
+ * for a frame and then grows a name beside it - but a read that also cleared
+ * would be a side effect in render, and a render React discards and retries
+ * (it may, and the React Compiler is on repo-wide) would lose the Origin for
+ * good. The effect only runs for a render that actually committed.
+ *
+ * `useState` still holds the value for the screen's lifetime: the clear lands
+ * right after mount, so every later render peeks an empty store, and only the
+ * captured value keeps the Escape pointing where the user came from.
  *
  * A web reload loses the Origin and the Escape falls back to Up. That is
  * correct, not merely tolerated (O7) - a reload *is* a cold arrival, and so is a
  * deep link from a notification.
  */
 export function useEscapeOrigin(pathname: string): string | null {
-  const [origin] = useState(() => consumeOrigin(pathname));
+  const [origin] = useState(() => peekOrigin(pathname));
+
+  useEffect(() => {
+    clearOrigin(pathname);
+  }, [pathname]);
+
   return origin;
 }

@@ -186,19 +186,34 @@ describe("ScreenEscape - an off-trail Origin", () => {
   });
 
   /**
-   * O6: the label comes from the route map. An Origin the map cannot name falls
-   * back to Up rather than being followed - leading somewhere from behind a bare
-   * arrow is the silent divergence R5 closes, and rendering the generic fallback
-   * would put "Entry" on screen as though it were a place.
+   * O6: the label comes from the route map - and where the map has no name, the
+   * Origin reuses #1253's naming path unchanged, "Go back" fallback included.
+   *
+   * ⚠️ Naming is the announcement's problem, never the destination's. The Escape
+   * still GOES to the Origin: a user who left an unnameable record for `/crisis`
+   * is the case where being returned to Home instead is least acceptable. What
+   * it must not do is render the generic crumb label, which would put "Entry"
+   * beside the arrow as though it were a place.
    */
-  it("falls back to Up when the route map cannot name the Origin", () => {
+  it("still leads to an Origin the route map cannot name", () => {
     arriveFrom("/routines/3f9a-uuid");
     const { getByLabelText, queryByText } = render(<ScreenEscape />);
 
-    expect(getByLabelText("Back to Home")).toBeTruthy();
+    expect(getByLabelText("Go back")).toBeTruthy();
+    fireEvent.press(getByLabelText("Go back"));
+    expect(router.replace).toHaveBeenCalledWith("/routines/3f9a-uuid");
+  });
+
+  it("shows no borrowed name for an Origin it cannot name", () => {
+    arriveFrom("/routines/3f9a-uuid");
+    const { queryByText, queryByLabelText } = render(<ScreenEscape />);
+
+    // Not the generic fallback word, and not Up's name either - announcing
+    // "Back to Home" on a press that goes to the record would put the promise
+    // and the destination back out of step.
     expect(queryByText("Entry")).toBeNull();
-    fireEvent.press(getByLabelText("Back to Home"));
-    expect(router.replace).toHaveBeenCalledWith("/");
+    expect(queryByLabelText("Back to Entry")).toBeNull();
+    expect(queryByLabelText("Back to Home")).toBeNull();
   });
 });
 
