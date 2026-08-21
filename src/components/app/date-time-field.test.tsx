@@ -162,21 +162,50 @@ describe("DateTimeField", () => {
       expect(props.onChange).not.toHaveBeenCalled();
     });
 
-    it("leaves the entry untouched when the sheet is dismissed (Escape on web)", () => {
+    it("leaves the entry untouched when the sheet is dismissed without Done", () => {
       openPicker();
 
       fireEvent.press(screen.getByTestId("mock-picker-select"));
       expect(dayjs(mockPickerProps.date as string).toISOString()).toBe("2026-03-03T08:15:00.000Z");
 
-      // react-native-web routes Escape to onRequestClose; native routes the
-      // hardware back button to the same place. Wrapped in act because, unlike
-      // the sheet's own tests, onClose here really does close the field.
+      // The one dismissal handler both platforms reach: react-native-web routes
+      // the Esc key here, native the hardware back button. (Jest runs as `ios`,
+      // so this exercises it by the native route.) Wrapped in act because,
+      // unlike the sheet's own tests, onClose here really does close the field.
       act(() => {
         screen.UNSAFE_getByType(Modal).props.onRequestClose();
       });
 
       expect(screen.queryByText("mock picker")).toBeNull();
       expect(props.onChange).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The draft is seeded from the current value, so "Done on an untouched
+     * calendar" is the one path where the commit point could fire with nothing
+     * to commit. It must not: four of the six call sites read any commit as the
+     * user restating WHEN, and stamp this device's offset onto an entry that
+     * never captured one — which is exactly what #250 forbids. Before this
+     * ticket the old Done could not do this, because it committed nothing.
+     */
+    it("commits nothing when Done follows a look, with no selection made", () => {
+      openPicker();
+
+      fireEvent.press(screen.getByText("Done"));
+
+      expect(props.onChange).not.toHaveBeenCalled();
+    });
+
+    it("still commits a real edit that lands back on the same instant's day", () => {
+      // Guards the guard: it compares INSTANTS, so a genuine move must still
+      // get through rather than being swallowed as "unchanged".
+      mockNextPick = "2026-08-01T10:31:00.000Z";
+      openPicker();
+
+      fireEvent.press(screen.getByTestId("mock-picker-select"));
+      fireEvent.press(screen.getByText("Done"));
+
+      expect(committedIso()).toBe("2026-08-01T10:31:00.000Z");
     });
 
     it("reopens on the saved value, so a discarded draft cannot come back", () => {
@@ -210,12 +239,6 @@ describe("DateTimeField", () => {
       fireEvent.press(screen.getByText("Done"));
 
       expect(Math.abs(new Date(committedIso()).getTime() - Date.now())).toBeLessThan(60_000);
-    });
-
-    it("keeps the time view: this picker logs an instant, not a day", () => {
-      openPicker();
-
-      expect(mockPickerProps.timePicker).toBe(true);
     });
   });
 

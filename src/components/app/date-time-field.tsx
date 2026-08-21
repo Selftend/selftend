@@ -9,6 +9,20 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { formatAtOffset, shiftFromOffsetFrame, shiftToOffsetFrame } from "@/src/utils/date";
 
+/**
+ * Read a real instant as the captured frame shows it, and write it back. The
+ * picker speaks the device's frame only, so these are the two edges where a
+ * captured offset is applied and undone; with no captured offset both are the
+ * identity. Module scope so the memos below can use them without listing them.
+ */
+function intoFrame(instant: Date, offsetMinutes: number | null): Date {
+  return offsetMinutes === null ? instant : shiftToOffsetFrame(instant, offsetMinutes);
+}
+
+function outOfFrame(framed: Date, offsetMinutes: number | null): Date {
+  return offsetMinutes === null ? framed : shiftFromOffsetFrame(framed, offsetMinutes);
+}
+
 interface DateTimeFieldProps {
   value: string; // ISO string
   onChange: (iso: string) => void;
@@ -64,14 +78,11 @@ export function DateTimeField({
   const parsedDate = useMemo(() => {
     const parsed = dayjs(value);
     const base = parsed.isValid() ? parsed.toDate() : new Date();
-    return dayjs(framedOffset === null ? base : shiftToOffsetFrame(base, framedOffset));
+    return dayjs(intoFrame(base, framedOffset));
   }, [value, framedOffset]);
 
   // "Now" in the same frame, so the future-date clamp means what the user sees.
-  const maxDate = useMemo(() => {
-    const now = new Date();
-    return dayjs(framedOffset === null ? now : shiftToOffsetFrame(now, framedOffset));
-  }, [framedOffset]);
+  const maxDate = useMemo(() => dayjs(intoFrame(new Date(), framedOffset)), [framedOffset]);
 
   const display = useMemo(() => {
     try {
@@ -88,9 +99,14 @@ export function DateTimeField({
     // Clamp inside the display frame, then shift the result back to a real
     // instant.
     const picked = (draft.isAfter(maxDate) ? maxDate : draft).toDate();
-    onChange(
-      (framedOffset === null ? picked : shiftFromOffsetFrame(picked, framedOffset)).toISOString(),
-    );
+    const next = outOfFrame(picked, framedOffset).toISOString();
+    // ⚠️ Done on a calendar the user only LOOKED at is not an edit. The draft
+    // is seeded from the current value, so without this the sheet would commit
+    // an identical instant — and four of the six call sites read any commit as
+    // the user restating when, stamping this device's offset onto an entry
+    // that never captured one. #250 forbids exactly that.
+    if (new Date(value).getTime() === new Date(next).getTime()) return;
+    onChange(next);
   };
 
   return (

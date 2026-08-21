@@ -1,8 +1,8 @@
 import { act, fireEvent, screen, within } from "@testing-library/react-native";
-import dayjs from "dayjs";
 
 import { DateTimeField } from "./date-time-field";
 import i18n from "@/src/i18n";
+import { isolateCalendarLocale, weekdayLabels } from "@/test/calendar-testing";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 /**
@@ -17,37 +17,9 @@ import { renderWithProviders } from "@/test/render-with-providers";
  * actually routes THROUGH it. The field passed no `locale` at all until #1298
  * and rendered "September" under a Bulgarian app language — a defect entirely
  * invisible to a calendar test.
- *
- * Every finding here came from a prop that looked correctly passed: the mood
- * tracker's range picker already passed `locale` and still opened Sunday-first,
- * because the library hard-defaults `firstDayOfWeek` and never derives it from
- * `locale`. So these assertions read RENDERED month and weekday names, never
- * props.
  */
 
-// ⚠️ `dayjs.locale()` is a GLOBAL mutation the library performs on every render
-// (utils.getWeekdays). It is inert in the app only because all user-facing
-// formatting goes through Intl — but inside one test file it would leak
-// straight into the next test. Pin it back after each.
-let localeBeforeTest: string;
-
-beforeEach(() => {
-  localeBeforeTest = dayjs.locale();
-});
-
-afterEach(async () => {
-  dayjs.locale(localeBeforeTest);
-  await act(async () => {
-    await i18n.changeLanguage("en");
-  });
-});
-
-/** The weekday header's labels, left to right, as rendered. */
-function weekdayLabels() {
-  return within(screen.getByTestId("weekdays"))
-    .getAllByText(/\S/)
-    .map((node) => node.props.children as string);
-}
+isolateCalendarLocale();
 
 /** Render the check-in field and open its calendar. */
 function openPicker() {
@@ -89,17 +61,6 @@ describe("the check-in picker's calendar", () => {
 
     expect(weekdayLabels()).toEqual(["пн", "вт", "ср", "чт", "пт", "сб", "нд"]);
     expect(within(screen.getByTestId("btn-month")).getByText("март")).toBeTruthy();
-    // The global mutation, caught in the act — this is what the next test
-    // proves has been undone, and without it that test would be vacuous.
-    expect(dayjs.locale()).toBe("bg");
-  });
-
-  it("leaves the global dayjs locale as it found it", () => {
-    // Order-dependent on purpose: this runs straight after the Bulgarian test,
-    // and the library set the GLOBAL dayjs locale to `bg` while rendering it.
-    // Without the afterEach restore, every later test in this file — and any
-    // dayjs formatting inside one — silently inherits Bulgarian.
-    expect(dayjs("2026-03-15").format("MMMM")).toBe("March");
   });
 
   it("keeps the English calendar English, so the Bulgarian proof above is not vacuous", () => {

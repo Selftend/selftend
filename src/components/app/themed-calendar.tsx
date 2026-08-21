@@ -30,9 +30,11 @@ interface ThemedCalendarBaseProps {
 }
 
 type ThemedCalendarProps = ThemedCalendarBaseProps &
+  // One arm, not two: the single-value modes differ only in whether the
+  // time view is shown, so splitting them here would duplicate the shape
+  // without documenting a difference.
   (
-    | { mode: "date"; value: Dayjs | null; onChange: (next: Dayjs | null) => void }
-    | { mode: "datetime"; value: Dayjs | null; onChange: (next: Dayjs | null) => void }
+    | { mode: "date" | "datetime"; value: Dayjs | null; onChange: (next: Dayjs | null) => void }
     | { mode: "range"; value: CalendarRange; onChange: (next: CalendarRange) => void }
   );
 
