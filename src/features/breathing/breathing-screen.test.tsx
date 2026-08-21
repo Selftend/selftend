@@ -208,7 +208,7 @@ describe("Breathing overview (4a)", () => {
 
   it("links to the new-pattern screen from the section header", () => {
     renderWithProviders(<BreathingScreen />);
-    fireEvent.press(screen.getByLabelText("New pattern →"));
+    fireEvent.press(screen.getByLabelText("New pattern"));
     expect(router.push).toHaveBeenCalledWith("/tools/breathing/new");
   });
 

@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HelpSheet } from "@/src/components/app/help-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
@@ -186,11 +187,16 @@ export default function BreathingScreen() {
                   accessibilityLabel={t("breathing.overview.newPattern")}
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() => router.push("/tools/breathing/new")}
+                  className="flex-row items-center gap-1 active:opacity-70"
                   role="button"
                 >
                   <Text variant="muted" className="shrink-0 text-[12.5px] font-semibold">
                     {t("breathing.overview.newPattern")}
                   </Text>
+                  {/* This one baked its arrow into the string too, which put a glyph in
+                    the accessible name right beside a door that had just stopped doing
+                    that. Decorative icon here as well; `Icon` is aria-hidden. */}
+                  <Icon name="arrow-forward" className="size-3.5 text-muted-foreground" />
                 </Pressable>
               }
             />

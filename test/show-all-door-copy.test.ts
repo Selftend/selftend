@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
 
 /**
  * **The arrow on a "show all" door is the component's job, never part of the string.**
@@ -35,42 +34,8 @@ const DOOR_KEY_PATTERNS = [
  */
 const ARROWS = /[→➔➜⟶⇒»›▸▶]|->|=>|>>/;
 
-type Locale = "en" | "bg";
-
-/** Every leaf string in a namespace, keyed by its dotted path. */
-function flatten(value: unknown, prefix = ""): [string, string][] {
-  if (typeof value === "string") return [[prefix, value]];
-  if (Array.isArray(value)) {
-    return value.flatMap((item, i) => flatten(item, `${prefix}[${i}]`));
-  }
-  if (value && typeof value === "object") {
-    return Object.entries(value).flatMap(([key, child]) =>
-      flatten(child, prefix ? `${prefix}.${key}` : key),
-    );
-  }
-  return [];
-}
-
-/** Read the namespaces off disk so a newly-added one is covered without an import. */
-function loadLocale(locale: Locale): { namespace: string; key: string; text: string }[] {
-  const dir = path.join(__dirname, "..", "src", "i18n", "locales", locale);
-  return fs
-    .readdirSync(dir)
-    .filter((file) => file.endsWith(".json"))
-    .flatMap((file) => {
-      const namespace = file.replace(/\.json$/, "");
-      const parsed = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
-      return flatten(parsed).map(([key, text]) => ({ namespace, key, text }));
-    });
-}
-
-const STRINGS: Record<Locale, ReturnType<typeof loadLocale>> = {
-  en: loadLocale("en"),
-  bg: loadLocale("bg"),
-};
-
 function doors(locale: Locale) {
-  return STRINGS[locale].filter(({ key }) => DOOR_KEY_PATTERNS.some((p) => p.test(key)));
+  return LOCALE_STRINGS[locale].filter(({ key }) => DOOR_KEY_PATTERNS.some((p) => p.test(key)));
 }
 
 describe("a show-all door's arrow is an icon, not a character in the string", () => {
@@ -107,17 +72,27 @@ describe("a show-all door's arrow is an icon, not a character in the string", ()
   });
 
   /**
-   * The two the extraction fixed. Pinned by value, because "contains no arrow" is also
-   * satisfied by deleting the string, and because these two are the ones a Weblate
+   * The strings the extraction fixed. Pinned by value, because "contains no arrow" is
+   * also satisfied by deleting the string, and because these are the ones a Weblate
    * round-trip could quietly restore.
+   *
+   * `newPattern` is here rather than in `DOOR_KEY_PATTERNS` because it is not a
+   * show-all door - it is breathing's creation link, which happens to sit in the same
+   * section-header slot as one. It baked its arrow in the same way, and leaving it
+   * would have put a glyph in one accessible name directly beside a door that had just
+   * stopped doing that. A key-shaped rule cannot generalise from one creation link, so
+   * it is named.
    */
-  it("the two strings that baked their arrow in read as plain labels in both locales", () => {
+  it("the strings that baked their arrow in read as plain labels in both locales", () => {
     const find = (locale: Locale, namespace: string, key: string) =>
-      STRINGS[locale].find((entry) => entry.namespace === namespace && entry.key === key)?.text;
+      LOCALE_STRINGS[locale].find((entry) => entry.namespace === namespace && entry.key === key)
+        ?.text;
 
     expect(find("en", "cbt", "breathing.overview.showAll")).toBe("Show all sessions");
     expect(find("bg", "cbt", "breathing.overview.showAll")).toBe("Виж всички сесии");
     expect(find("en", "gratitude", "home.viewAll")).toBe("Show all entries");
     expect(find("bg", "gratitude", "home.viewAll")).toBe("Виж всички записи");
+    expect(find("en", "cbt", "breathing.overview.newPattern")).toBe("New pattern");
+    expect(find("bg", "cbt", "breathing.overview.newPattern")).toBe("Нов модел");
   });
 });

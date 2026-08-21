@@ -1511,7 +1511,7 @@
     },
     "overview": {
       "patternsTitle": "Patterns",
-      "newPattern": "New pattern →",
+      "newPattern": "New pattern",
       "recentTitle": "Recent sessions",
       "showAll": "Show all sessions",
       "noPatterns": "No patterns yet.",

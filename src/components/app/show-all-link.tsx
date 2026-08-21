@@ -6,7 +6,8 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 /**
- * The one "show all" door in the product (#1375).
+ * The shared "show all" door (#1375). Eight call sites so far: check-in's three,
+ * sleep's two, gratitude's two and breathing's one.
  *
  * It started as check-in's entrance to all-history (#696), was adopted by sleep
  * (#775) by copying the file, and both copies carried a docblock promising the two
@@ -14,6 +15,12 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
  * byte-identical components could not keep, having already drifted into two
  * components. CBT and ACT adopting the same pattern would have made it four, so the
  * copies were folded into this one.
+ *
+ * ⚠️ It is not yet every door. Grounding, journal (twice), meditation (twice) and
+ * ACT's defusion link still roll their own, in three different type sizes, and ACT's
+ * says "All logs" where the rest say "Show all …". #1375 scoped this change to the
+ * component plus the arrow fixes, so those adopt it as their screens are redesigned -
+ * `test/show-all-door-copy.test.ts` already watches their strings.
  *
  * **The arrow is this component's job and never part of the string.** Two shipped
  * strings baked it into the translated value - breathing's "Show all sessions →" and
