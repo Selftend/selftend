@@ -101,6 +101,21 @@ async function ffmpeg(args) {
   return res;
 }
 
+/**
+ * Fail before anything expensive happens if ffmpeg is not on PATH.
+ *
+ * ☠️ `render` now measures every take it generates (#1320), which makes ffmpeg a
+ * hard dependency of a pass that spends unreproducible credits. Discovering it is
+ * missing *after* the first generation would mean paying for takes nothing can
+ * grade. Callers run this before their first API call, never after.
+ */
+export async function assertFfmpeg() {
+  const res = await run("ffmpeg", ["-hide_banner", "-version"]);
+  if (res.code !== 0) {
+    throw new Error(`ffmpeg is on PATH but exited ${res.code}:\n${res.stderr.slice(-500)}`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // WAV read/write - float32 only, which is all this pipeline ever hands itself
 // ---------------------------------------------------------------------------
