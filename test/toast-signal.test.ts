@@ -83,6 +83,20 @@ describe("expectSuccessToast", () => {
     await expect(pending).rejects.toThrow(/1234/);
   });
 
+  it("surfaces the underlying Playwright error rather than calling everything a timeout", async () => {
+    const { page, waiters, settled } = createFakePage();
+
+    const pending = expectSuccessToast(page, "Saved");
+    await settled();
+    // A locator matching two nodes rejects like this, and it is NOT a timeout.
+    // Reporting it as one would hide the real cause behind a wrong explanation.
+    waiters
+      .get("Saved")
+      ?.reject(new Error('strict mode violation: getByText("Saved") resolved to 2 elements'));
+
+    await expect(pending).rejects.toThrow(/strict mode violation/);
+  });
+
   it("scopes both locators to the toast, so page copy cannot satisfy it", async () => {
     const { page, waiters, scopes, queried, settled } = createFakePage();
 

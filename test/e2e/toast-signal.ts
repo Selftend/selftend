@@ -49,6 +49,12 @@ export async function expectSuccessToast(
   // as copy rather than as a sentence fragment.
   const described = typeof text === "string" ? `"${text}"` : String(text);
 
+  // Not every rejection here is a timeout: a locator matching two nodes (title AND
+  // description, say) throws a strict-mode violation instead, and swallowing that
+  // into a bare "timed out" would hide the actual cause - the diagnostic regression
+  // this helper exists to prevent.
+  let underlying: unknown;
+
   // Promise.race subscribes to both, so the loser's eventual timeout rejection is
   // observed and never surfaces as an unhandled rejection in a later test.
   const outcome = await Promise.race([
@@ -60,7 +66,10 @@ export async function expectSuccessToast(
       .getByText(SAVE_FAILED_TOAST_TITLE)
       .waitFor({ state: "visible", timeout })
       .then(() => "saveFailed" as const),
-  ]).catch(() => "timeout" as const);
+  ]).catch((error: unknown) => {
+    underlying = error;
+    return "timeout" as const;
+  });
 
   if (outcome === "saveFailed") {
     throw new Error(
@@ -72,11 +81,12 @@ export async function expectSuccessToast(
   }
 
   if (outcome === "timeout") {
+    const reason = underlying instanceof Error ? underlying.message : String(underlying);
     throw new Error(
-      `Timed out after ${timeout}ms waiting for the success toast ${described} inside ` +
-        `testID="app-toast". No save-failed toast appeared either, so the mutation most likely ` +
-        `never fired - or the toast's copy changed and this expectation is now looking for ` +
-        `something nothing renders.`,
+      `Never saw the success toast ${described} inside testID="app-toast" (waited up to ` +
+        `${timeout}ms), and no save-failed toast appeared either. Either the mutation never ` +
+        `fired, the toast's copy changed, or the locator matched more than one node. ` +
+        `Underlying Playwright error: ${reason}`,
     );
   }
 }
