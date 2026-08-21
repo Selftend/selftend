@@ -21,7 +21,7 @@
 //   encryption layer does its own work — never the *_data base tables.
 // - Run `npx supabase migration up` first if the stack has been reset.
 //
-// WHAT THIS CANNOT REACH (the four known gaps, also in supabase/README.md):
+// WHAT THIS CANNOT REACH (the known gaps, also in supabase/README.md):
 // - The thought-record intro card. `selftend:cbt:thoughtRecordIntroDismissed`
 //   is AsyncStorage plus zustand, device-local by design; no server-side seed
 //   can dismiss it.
@@ -31,6 +31,10 @@
 //   scheduled-ness gates Home's widget, the progress button and the continue
 //   sheet, and any other cadence would make those depend on the weekday the
 //   seed ran.
+// - Home's widget layout. `widget_preferences` is written only by onboarding's
+//   concern resolution and by the Add-Widget flow, and demo is seeded with
+//   onboarding already complete, so Home renders no tool rows until someone
+//   adds them by hand — the routines row included (#1352).
 // - UTC+13 and UTC+14. The ACT tables carry no captured-offset column, so their
 //   rows are pinned to a UTC band that resolves to the intended civil day from
 //   −11 through +12 and can slip a day further east.
