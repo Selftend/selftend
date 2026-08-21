@@ -25,7 +25,8 @@ import { join } from "node:path";
 // because every path in manifest.mjs is resolved lazily (import.meta.url is null
 // under babel), so AUDIO_MASTERS_DIR set per-test is still honoured.
 import { archive, write } from "../scripts/audio/manifest.mjs";
-import { composePrompt } from "../scripts/audio/catalog.mjs";
+import { clipsForRound, composePrompt, voiceSlotSpec } from "../scripts/audio/catalog.mjs";
+import { voiceIdentity, voiceSlots } from "../scripts/audio/audition-plan.mjs";
 
 const RAIN_TEXT = "Steady, even rainfall";
 
@@ -92,6 +93,92 @@ describe("the manifest CLI", () => {
     await expect(write("B", { out: out(), check: true })).resolves.toBe(false);
     expect(log.mock.calls.flat().join("\n")).toContain("never been written");
   });
+
+  it("☠️ nor does it pass a FINISHED round whose committed record has gone stale", async () => {
+    // The other half of the same gate, and the half with no natural fixture: a
+    // pass can be genuinely complete and the committed file still wrong, because
+    // `audio-masters/` is gitignored and only this machine can tell. Completeness
+    // alone would call that current; currency alone would call an untouched pass
+    // finished. The check needs both, so both need a test.
+    await seedCompleteRoundB();
+    await archive("B", { all: true });
+    await expect(write("B", { out: out() })).resolves.toBe(true);
+    await expect(write("B", { out: out(), check: true })).resolves.toBe(true);
+
+    // Now the record says something the disk no longer does.
+    const doc = JSON.parse(await readFile(out(), "utf8"));
+    doc.units[0].settledOn = "a prompt nobody is asking for";
+    await writeFile(out(), `${JSON.stringify(doc, null, 2)}\n`);
+
+    await expect(write("B", { out: out(), check: true })).resolves.toBe(false);
+    expect(log.mock.calls.flat().join("\n")).toContain("STALE");
+  });
+
+  /**
+   * Every unit of round B rendered, picked, and on disk — the only state in which
+   * `write` returns true. Built from the real catalog rather than a fixture list
+   * so it cannot drift from what the round actually is (19 units, both halves).
+   */
+  async function seedCompleteRoundB() {
+    const rows: string[] = [];
+    const choices: string[] = [];
+    const at = "2026-08-21T12:00:00.000Z";
+
+    for (const clip of clipsForRound("B")) {
+      const prompt = composePrompt(clip.text);
+      const file = `${clip.id}-c01-a01.pcm`;
+      rows.push(
+        JSON.stringify({
+          clip: clip.id,
+          klass: clip.klass,
+          candidate: 1,
+          attempt: 1,
+          file,
+          prompt,
+          seed: null,
+          dbtp: -6,
+          accepted: true,
+        }),
+      );
+      choices.push(
+        JSON.stringify({ record: "chosen", clip: clip.id, candidate: 1, file, prompt, at }),
+      );
+      await mkdir(join(dir, "round-B", clip.klass), { recursive: true });
+      await writeFile(join(dir, "round-B", clip.klass, file), "");
+    }
+
+    for (const slot of voiceSlots(voiceSlotSpec("B"))) {
+      const file = `${slot.clipId}-${slot.voice}-c01.mp3`;
+      rows.push(
+        JSON.stringify({
+          clip: slot.clipId,
+          klass: "voice",
+          voice: slot.voice,
+          voiceId: slot.voiceId,
+          candidate: 1,
+          file,
+          text: slot.text,
+          seed: 1130,
+        }),
+      );
+      choices.push(
+        JSON.stringify({
+          record: "chosen",
+          clip: slot.clipId,
+          voice: slot.voice,
+          candidate: 1,
+          file,
+          prompt: voiceIdentity(slot),
+          at,
+        }),
+      );
+      await mkdir(join(dir, "round-B", "voice"), { recursive: true });
+      await writeFile(join(dir, "round-B", "voice", file), "");
+    }
+
+    await writeFile(join(dir, "round-B", "manifest.jsonl"), `${rows.join("\n")}\n`);
+    await writeFile(join(dir, "round-B", "choices.jsonl"), `${choices.join("\n")}\n`);
+  }
 
   it("attests only a take whose master is actually on this disk", async () => {
     // ⚠️ Nothing here can read Drive, so this is the one mechanical check there
