@@ -40,6 +40,11 @@ export interface PickerSheetProps<TDraft> {
  * Cross-cutting modal behaviour is inherited, not restated: rendering through
  * `PressShieldModal` brings the #1054 web-unmount gate and the reduce-motion
  * collapse with it, so neither appears in this file.
+ *
+ * `surface="sheet"`: a centred card over a dimmed backdrop, not a full-screen
+ * modal, so it declines the wrapper's pinned escape row (#1252) — a 48px
+ * `bg-background` bar above the backdrop would be chrome for a screen this
+ * sheet never covers. Its way out is the labelled backdrop plus Escape.
  */
 export function PickerSheet<TDraft>({
   visible,
@@ -50,7 +55,13 @@ export function PickerSheet<TDraft>({
   children,
 }: PickerSheetProps<TDraft>) {
   return (
-    <PressShieldModal visible={visible} transparent animation="fade" onRequestClose={onClose}>
+    <PressShieldModal
+      surface="sheet"
+      visible={visible}
+      transparent
+      animation="fade"
+      onRequestClose={onClose}
+    >
       {/* The body unmounts on close, so each open seeds a fresh draft from the
           committed value — reopening adjusts what was saved, never a stale draft. */}
       {visible ? (

@@ -96,8 +96,12 @@ function SessionSheet({
   });
 
   return (
-    <PressShieldModal onRequestClose={onClose} visible={visible}>
-      <SafeAreaView className="flex-1 bg-background">
+    // A form wearing a modal, so its Escape is an X under R5 rather than a
+    // new rule of its own. ☠️ Declared inline in a route file, which is why no
+    // sweep of the components directory ever found it.
+    <PressShieldModal onEscape={onClose} onRequestClose={onClose} visible={visible}>
+      {/* No "top": the wrapper's escape row already sits in the top inset. */}
+      <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
         <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
           <KeyboardAwareScrollView contentContainerClassName="gap-6 p-6 pb-12">
             <View className="gap-2">
