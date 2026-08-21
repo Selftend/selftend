@@ -19,8 +19,17 @@ export function MeditationInfo({ visible, onComplete, onDismiss }: MeditationInf
   const { t } = useTranslation("meditation");
 
   return (
-    <PressShieldModal onRequestClose={onDismiss ?? (() => undefined)} visible={visible}>
-      <SafeAreaView className="flex-1 bg-background">
+    <PressShieldModal
+      // Same callback the bottom CTA fires (M3) — this is a Guide, so closing
+      // persists nothing either way. W21/#1259 folds this hand-rolled clone
+      // into `RichOnboardingShell`, which is where the dialog name it still
+      // lacks comes from.
+      onEscape={onDismiss ?? onComplete}
+      onRequestClose={onDismiss ?? (() => undefined)}
+      visible={visible}
+    >
+      {/* No "top": the wrapper's escape row already sits in the top inset. */}
+      <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
         <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
           <View className="items-center gap-3">
             <Text variant="h2" className="text-center">
