@@ -19,9 +19,15 @@ export const goalFormSchema = z.object({
   title: userText(2000, { min: 3, message: "goals.validation.title" }),
   description: userText(4000),
   // `target_date` is a real Postgres `date`, so anything that isn't a day key
-  // fails the whole save with a generic error and no field to point at. The
-  // picker cannot produce one, but the form still validates: the column is the
-  // only thing that has ever rejected these, and it rejects them too late.
+  // fails the whole save with a generic error and no field to point at — the
+  // column is the only thing that has ever rejected these, and it rejects them
+  // too late to name the field.
+  //
+  // Not merely defensive: the picker cannot emit a bad key, but the picker is
+  // not the only way a value reaches this form. The wizard rehydrates a
+  // persisted draft straight into `defaultValues`
+  // (`create-wizard-draft-store.ts`), so a draft written by an older build — or
+  // edited on disk — arrives having never passed through `DateField`.
   targetDate: z
     .string()
     .refine(isValidDayKey, { message: "goals.validation.targetDate" })

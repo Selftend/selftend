@@ -8,7 +8,7 @@ import { PickerSheet } from "@/src/components/app/picker-sheet";
 import { ThemedCalendar } from "@/src/components/app/themed-calendar";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { formatDayKey, localDateKey, parseLocalNoon } from "@/src/utils/date";
+import { currentDateKey, formatDayKey, localDateKey, parseLocalNoon } from "@/src/utils/date";
 
 interface DateFieldProps {
   /** A `YYYY-MM-DD` day key, or null for no date. */
@@ -45,7 +45,8 @@ export function DateField({ value, onChange, accessibilityLabel }: DateFieldProp
   // a DST boundary.
   const seed = useMemo(() => (value ? dayjs(parseLocalNoon(value)) : null), [value]);
 
-  const todayKey = useMemo(() => localDateKey(new Date()), []);
+  // Read once, so the clamp cannot shift under the user mid-pick.
+  const todayKey = useMemo(() => currentDateKey(), []);
 
   const disabledDates = useCallback(
     (date: DateType) => {
