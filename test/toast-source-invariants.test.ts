@@ -56,7 +56,11 @@ describe("app-toast.tsx keeps the properties no render test can see", () => {
     // lives INSIDE the Card, so "the Card subtree contains no onPress" is not a
     // property this component can have. One handler in the whole file, on the
     // one Pressable, is the same guarantee and survives re-nesting.
-    expect(code.match(/onPress/g) ?? []).toHaveLength(1);
+    //
+    // The negative lookahead matters: a bare /onPress/ also counts `onPressIn`
+    // and `onPressOut`, so adding a press-in highlight would trip a gate that
+    // has nothing to say about press-in highlights.
+    expect(code.match(/onPress(?![A-Za-z])/g) ?? []).toHaveLength(1);
 
     const openingTag = /<Card\b[\s\S]*?\n\s*>/.exec(code)?.[0] ?? "";
     expect(openingTag).toContain('testID="app-toast"');
@@ -67,16 +71,10 @@ describe("app-toast.tsx keeps the properties no render test can see", () => {
     expect(dismissButton).toContain("onPress={dismissToast}");
   });
 
-  // ☠️ On iOS an accessibility element HIDES its descendants, so a card that was
-  // both labelled and `accessible` would take the X away from VoiceOver - on the
-  // one platform this repo has no test layer for (`.maestro/` is screenshots
-  // only; there is no Detox). Nothing but this can catch it.
-  it("labels the card without marking it accessible", () => {
-    const openingTag = /<Card\b[\s\S]*?\n\s*>/.exec(code)?.[0] ?? "";
-
-    expect(openingTag).toContain("accessibilityLabel={label}");
-    expect(openingTag).not.toMatch(/\baccessible\b/);
-  });
+  // Deliberately NOT gated here: "the card is labelled but NOT `accessible`".
+  // That one IS visible to a render test - `app-toast.test.tsx` reads it off the
+  // rendered card's props - and this file's charter is the properties no render
+  // can see. A second copy would blunt the charter rather than add cover.
 
   it("leaves the dismiss button's focusability alone", () => {
     // Any `focusable` at all is the smell: the trap is binding it to state, and
@@ -85,8 +83,14 @@ describe("app-toast.tsx keeps the properties no render test can see", () => {
     expect(code).not.toContain("focusable");
   });
 
-  it("pins the native fade at 200ms", () => {
+  it("pins the fade at 200ms on both platforms", () => {
+    // The 200 is stated in four places and does NOT reduce to one constant:
+    // reanimated wants a call argument, Tailwind wants the LITERAL class
+    // `duration-200` (a `duration-${ms}` template compiles to nothing - this
+    // repo has shipped classes that silently emitted no CSS), and the e2e reads
+    // CSS's "0.2s". Pinning both halves here is what keeps them equal.
     expect(code).toContain("FadeIn.duration(200)");
+    expect(code).toContain("duration-200");
   });
 
   // ☠️ RN bakes `Platform.select` per platform - the iOS build's is literally

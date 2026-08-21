@@ -1,5 +1,7 @@
 import { act, fireEvent, screen } from "@testing-library/react-native";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
+
+import { Icon } from "@/src/components/react-native-reusables/icon";
 
 import { AppToast } from "@/src/components/app/app-toast";
 import { SUCCESS_TOAST_MS, useToastStore } from "@/src/stores/toast-store";
@@ -179,6 +181,75 @@ describe("AppToast - the dismiss timer", () => {
     rerender(<AppToast />);
 
     expect(toastTimers()).toHaveLength(1);
+  });
+});
+
+describe("AppToast - the tone accent", () => {
+  const cardClasses = () => String(screen.getByTestId("app-toast").props.className);
+
+  /** The 4px rule down the left inset - the only `w-1` box in the card. */
+  const accentBar = () =>
+    screen.UNSAFE_getAllByType(View).find((node) => {
+      const className = String(node.props.className ?? "");
+      return className.includes("w-1 ") || className.endsWith("w-1");
+    });
+
+  // Read off `Icon`, not off MaterialIcons: `Icon`'s cssInterop consumes
+  // className and hands the glyph resolved `color`/`size` props, so the class
+  // is gone by the time it reaches the family component.
+  const iconNamed = (name: string) =>
+    screen.UNSAFE_getAllByType(Icon).find((icon) => icon.props.name === name);
+
+  it.each([
+    ["success", "check-circle", "bg-primary", "text-primary-ink"],
+    ["error", "error", "bg-destructive", "text-destructive"],
+  ] as const)("paints a %s with its own glyph and bar", (tone, glyph, bar, ink) => {
+    useToastStore.getState().showToast({ title: "Message", tone });
+    renderWithProviders(<AppToast />);
+
+    expect(iconNamed(glyph)).toBeDefined();
+    expect(String(accentBar()?.props.className)).toContain(bar);
+    // ☠️ The ink asymmetry is deliberate: there is no `--destructive-ink`,
+    // because contrast.ts already gates raw `--destructive` at AA on card while
+    // raw `--primary` is not - which is why `--primary-ink` exists at all.
+    expect(String(iconNamed(glyph)?.props.className)).toContain(ink);
+  });
+
+  it("shows one tone glyph and one close glyph, never the other tone's", () => {
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    expect(screen.UNSAFE_getAllByType(Icon).map((icon) => icon.props.name)).toEqual([
+      "check-circle",
+      "close",
+    ]);
+  });
+
+  it("keeps the bar 4px and inset on all three sides", () => {
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    const className = String(accentBar()?.props.className);
+    expect(className).toContain("w-1");
+    expect(className).toContain("rounded-full");
+    // 12px from top, bottom and left - a rule, not a full-bleed edge.
+    for (const inset of ["top-3", "bottom-3", "left-3"]) {
+      expect(className).toContain(inset);
+    }
+  });
+
+  // #1238 already had to delete a `border-0` here once: the toast was the app's
+  // only borderless floating surface. Nothing pinned it afterwards, so it could
+  // have gone straight back.
+  it("wears the default card border, neutral and not tone-coloured", () => {
+    useToastStore.getState().showToast({ title: "Something did not save", tone: "error" });
+    renderWithProviders(<AppToast />);
+
+    expect(cardClasses()).toContain("border-border");
+    expect(cardClasses()).not.toContain("border-0");
+    // A tone ring would state severity a third time, after the bar and the icon.
+    expect(cardClasses()).not.toContain("border-destructive");
+    expect(cardClasses()).not.toContain("border-primary");
   });
 });
 

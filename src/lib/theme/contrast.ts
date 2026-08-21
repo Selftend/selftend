@@ -27,6 +27,21 @@ export const AA_TEXT = 4.5;
 export const AA_MARK = 3;
 
 /**
+ * A component's boundary against the surface behind it. Unlike its two
+ * neighbours this answers to no standard - 1.4.11's 3:1 is for marks whose
+ * SHAPE carries information, and a card edge is not one, so 3:1 would fail
+ * every pair here and most shipped design systems.
+ *
+ * It is a RATCHET: measured from the palettes that ship, set just under the
+ * worst of them, and there to catch a derived `--border` collapsing toward the
+ * surface it sits on - an edge going to 1.00 with every other gate still green.
+ * The shipped pairs run 1.14 (worst, on background) to 2.01. #1337 proposed
+ * 1.2, which would have failed three styles the day it landed; do not raise it
+ * without re-running the numbers.
+ */
+export const BOUNDARY_RATCHET = 1.1;
+
+/**
  * What the solver aims for, deliberately above the 4.5 floor it has to clear.
  *
  * At a 4.5 target the tightest style lands on 4.51 — passing with no headroom,
@@ -323,18 +338,13 @@ export function auditTokens(tokens: ThemeTokens, inkFloor: number = AA_TEXT): Co
   // `--border` with anything before #1337 restored the toast's border, so a
   // palette could drift it into invisibility with every existing gate green.
   //
-  // This is a RATCHET, not a standard. There is no WCAG floor for it: 1.4.11's
-  // 3:1 covers marks whose SHAPE conveys information, and a card boundary is not
-  // that - 3:1 would fail every pair here and most shipped design systems. What
-  // it catches is the real regression: a derived palette whose --border collapses
-  // toward the surface behind it, taking the edge to 1.00 silently.
-  //
-  // 1.1 is measured, not chosen. #1337 proposed 1.2; across the shipped styles
-  // these pairs run 1.14 (worst, on background) to 2.01, so 1.2 would have failed
-  // three palettes on the day it landed. The floor sits just under the real worst
-  // - which is what a ratchet is - so do not "tidy" it upward without re-running
-  // the numbers.
-  record("component boundary", worstAgainst(tripleToRgb(tokens["--border"]), neutralSurfaces), 1.1);
+  // See BOUNDARY_RATCHET for why this floor answers to no standard, and where
+  // its number came from.
+  record(
+    "component boundary",
+    worstAgainst(tripleToRgb(tokens["--border"]), neutralSurfaces),
+    BOUNDARY_RATCHET,
+  );
 
   return findings;
 }

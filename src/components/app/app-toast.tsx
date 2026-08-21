@@ -128,7 +128,7 @@ export function AppToast() {
             accessibilityLabel={label}
             accessibilityLiveRegion={toast.tone === "error" ? "assertive" : "polite"}
             className={cn(
-              "w-full gap-0 py-4 shadow-md dark:shadow-none",
+              "w-full gap-0 py-4 pl-3 pr-2 shadow-md dark:shadow-none",
               // `animate-in fade-in-0` alone is transform-free. Do NOT reach for
               // popover's class list: it carries `zoom-in-95` and
               // `slide-in-from-top-2`, exactly the transform this rework forbids.
@@ -159,7 +159,12 @@ export function AppToast() {
               `items-center` for the one- and two-line cases alike: 66 of the
               app's 90 toasts are title-only, so one line is the common case.
             */}
-            <View className="flex-row items-center gap-3 pl-7 pr-3">
+            {/*
+              `pl-4` inside the card's `pl-3` puts the copy at 28px - clear of
+              the bar, which ends at 16px. The right gutter is the card's `pr-2`
+              alone, so the X sits 8px in.
+            */}
+            <View className="flex-row items-center gap-3 pl-4">
               <Icon name={tone.icon} className={cn("size-5", tone.ink)} />
               <View className="flex-1 gap-1">
                 <CardTitle>{toast.title}</CardTitle>
