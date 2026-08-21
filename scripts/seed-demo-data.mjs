@@ -4709,9 +4709,13 @@ const SEEDED_ROUTINES = [
 // disagree with the app. That half is held by the app's own suite, which
 // derives the same statuses through `deriveRoutine` from the same columns.
 {
-  const EXPECTED_TODAY = {
-    "Morning reset": "in_progress",
-    "Steadying myself": "complete",
+  // Restated from #1290, step order included: `nextStep` is the FIRST not-done
+  // step in routine order, and that is the step the continue sheet opens on and
+  // the floating button names. Order is advisory to the derivation and load
+  // bearing for what a reviewer is handed.
+  const EXPECTED = {
+    "Morning reset": { today: "in_progress", steps: ["mood", "meditation", "cbt"] },
+    "Steadying myself": { today: "complete", steps: ["connection", "choicePoint"] },
   };
   // "Two to three lit days per routine": not zero, which reads as a dead
   // surface, and not seven, which reads as a streak trophy the feature refuses
@@ -4733,7 +4737,7 @@ const SEEDED_ROUTINES = [
   if (stepsError) throw new Error(`read routine_steps: ${stepsError.message}`);
 
   const names = seededRoutines.map((routine) => routine.name).sort();
-  const wanted = Object.keys(EXPECTED_TODAY).sort();
+  const wanted = Object.keys(EXPECTED).sort();
   if (JSON.stringify(names) !== JSON.stringify(wanted)) {
     throw new Error(
       `The demo account holds routines [${names.join(", ")}], not [${wanted.join(", ")}]. ` +
@@ -4778,10 +4782,19 @@ const SEEDED_ROUTINES = [
       );
     }
 
-    const today = statusOn(steps, DAYS - 1);
-    if (today !== EXPECTED_TODAY[routine.name]) {
+    const expected = EXPECTED[routine.name];
+    if (JSON.stringify(steps) !== JSON.stringify(expected.steps)) {
       throw new Error(
-        `"${routine.name}" derives as ${today} today, not ${EXPECTED_TODAY[routine.name]}. ` +
+        `"${routine.name}" came back with steps [${steps.join(", ")}], not ` +
+          `[${expected.steps.join(", ")}]. The continue sheet opens on the first not-done ` +
+          "step in this order, so the order is what a reviewer is handed, not a detail.",
+      );
+    }
+
+    const today = statusOn(steps, DAYS - 1);
+    if (today !== expected.today) {
+      throw new Error(
+        `"${routine.name}" derives as ${today} today, not ${expected.today}. ` +
           `Its steps are ${steps.join(", ")}, of which ` +
           `${steps.filter((toolId) => dayIndexes[toolId].has(DAYS - 1)).join(", ") || "none"} ` +
           "landed today.",
