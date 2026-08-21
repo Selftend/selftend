@@ -80,9 +80,21 @@ describe("OutcomeStep - belief after", () => {
     expect(values().beliefAfter).toBeNull();
   });
 
-  it("shows a saved value when an existing record is edited", () => {
+  it("seeds the control from an existing record's value rather than resetting it", () => {
+    // Named for what it asserts: the field survives into form state when the
+    // editor resets a saved record in. It does NOT prove the selection is
+    // rendered - NumberRating signals the current value through a `variant`
+    // className, and className never becomes an inspectable style in RNTL.
     renderWithProviders(<Harness initial={{ beliefAfter: 30 }} />);
     expect(values().beliefAfter).toBe(30);
+  });
+
+  it("renders without a value when a pre-existing draft has no belief key at all", () => {
+    // The `.nullish()` arm: `value` arrives undefined, and NumberRating's prop
+    // is `number | null`. A crash here means the `?? null` fallback was dropped.
+    renderWithProviders(<Harness initial={{ beliefAfter: undefined }} />);
+    expect(beliefRating().getByText("50")).toBeTruthy();
+    expect(values().beliefAfter).toBeUndefined();
   });
 
   it("still renders the emotion intensity and outcome notes fields (ruling F3)", () => {

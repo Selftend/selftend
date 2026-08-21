@@ -10,19 +10,17 @@ type DraftMode = "create" | "edit";
 // stored state whose version differs (no migrate function on purpose - a lost
 // draft beats a wrongly-migrated one).
 //
-// 2 (#1376): the thought record form gained a required-but-nullable
-// `beliefAfter`. A version-1 draft has no such key, and `use-wizard-draft`
-// resets a stored draft straight back into the form, so it would reach
-// zodResolver half-shaped and fail the outcome step's trigger() with an issue
-// that step does not render. This constant is shared by every wizard, so the
-// bump drops all in-flight drafts once - which is the trade the comment above
-// already accepts, and they are TTL'd to 24h regardless.
+// Bumping is a BLUNT instrument: this constant is shared by every wizard, so a
+// bump discards in-flight drafts in every flow, not just the one whose shape
+// changed. #1376 added a field to the thought record form and reached for a bump
+// first; making that field `.nullish()` in the CBT schema kept the fix local and
+// left this at 1. Prefer tolerating the older shape in the flow's own schema.
 //
 // Exported so tests can write fixtures at the CURRENT version. A fixture that
 // hardcodes a number silently stops testing what it claims the moment this is
 // bumped: zustand discards a version-mismatched blob before any of the TTL or
 // shape guards below ever run, so the test would pass for the wrong reason.
-export const WIZARD_DRAFT_PERSIST_VERSION = 2;
+export const WIZARD_DRAFT_PERSIST_VERSION = 1;
 
 // Drafts older than this are dropped on rehydrate. A day-old half-filled wizard
 // is more likely stale intent than a work-in-progress, and the guard doubles as

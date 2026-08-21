@@ -179,14 +179,20 @@ describe("thought record schema - beliefAfter", () => {
     expect(thoughtRecordFormSchema.parse({ ...base, beliefAfter: null }).beliefAfter).toBeNull();
   });
 
-  it("REQUIRES the key to be present, which is why the draft persist version was bumped", () => {
-    // Pins the reason WIZARD_DRAFT_PERSIST_VERSION moved to 2. A draft persisted
-    // by the previous build carries no `beliefAfter` key; if such a draft were
-    // ever reset back into the form it would fail the outcome step's trigger()
-    // with an issue that step does not render - a dead Save button and no
-    // visible reason. The version bump makes those drafts unreachable instead.
-    // If this ever starts passing, the bump has been undone or the field made
-    // optional, and that trap is live again.
-    expect(thoughtRecordFormSchema.safeParse(base).success).toBe(false);
+  it("accepts an ABSENT key, so a draft persisted before the field existed still validates", () => {
+    // `use-wizard-draft` resets a draft up to 24h old straight back into the
+    // form with no shape migration, so a draft written by the previous build
+    // reaches zodResolver with no `beliefAfter` key at all. Required-but-nullable
+    // would fail the outcome step's trigger() with an issue that step does not
+    // render - a dead Save button and no visible reason. This is also what keeps
+    // the field from becoming the form's first required exception.
+    const result = thoughtRecordFormSchema.safeParse(base);
+    expect(result.success).toBe(true);
+    expect(result.data!.beliefAfter).toBeUndefined();
+  });
+
+  it("still enforces the range on an absent-key-tolerant field", () => {
+    // Tolerating a missing key must not become tolerating a bad value.
+    expect(thoughtRecordFormSchema.safeParse({ ...base, beliefAfter: 250 }).success).toBe(false);
   });
 });

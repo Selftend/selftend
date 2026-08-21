@@ -1075,3 +1075,17 @@ begin
   return result;
 end;
 $$;
+
+-- Carried from 20260821020000 with the rest of the declaration. `create or
+-- replace function` preserves the existing ACL, so these are a no-op on an
+-- already-deployed database - but they are what makes the function's grants
+-- correct on a database built from migrations alone, and every prior
+-- declaration carries them.
+revoke execute on function public.export_user_data() from public, anon;
+grant execute on function public.export_user_data() to authenticated;
+
+-- PostgREST caches the schema. Without this the recreated view's new column is
+-- invisible to the client until the cache happens to reload - an insert would
+-- succeed, return a row, and silently drop `belief_after`, which is exactly the
+-- failure mode the view had to be re-listed to avoid.
+notify pgrst, 'reload schema';

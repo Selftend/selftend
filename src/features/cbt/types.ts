@@ -59,8 +59,13 @@ export interface ThoughtRecordInput {
   balancedThought: string;
   emotionIntensityAfter: number | null;
   outcomeNotes: string;
-  /** How strongly the hot thought is believed afterwards, 0-100; null when unrated. */
-  beliefAfter: number | null;
+  /**
+   * How strongly the hot thought is believed afterwards, 0-100; null when
+   * unrated. Optional because the form schema accepts an absent key (a draft
+   * persisted before the field existed); the repository coalesces it to an
+   * explicit null so an edit can still clear a stored rating.
+   */
+  beliefAfter?: number | null;
   /**
    * Create mode only, and always sent as a pair: the instant the record was
    * written and the UTC offset in force at that instant. Editing an existing

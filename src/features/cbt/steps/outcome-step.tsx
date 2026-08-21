@@ -35,7 +35,9 @@ export function OutcomeStep({ control, errors }: OutcomeStepProps) {
             <Label>{t("record.beliefAfter")}</Label>
             {hotThought?.text ? <Text variant="muted">{hotThought.text}</Text> : null}
             <Text variant="muted">{t("record.beliefAfterHint")}</Text>
-            <NumberRating min={0} max={100} step={10} value={value} onChange={onChange} />
+            {/* `?? null` because the schema is `.nullish()`: a draft persisted
+                before this field existed restores with no value at all. */}
+            <NumberRating min={0} max={100} step={10} value={value ?? null} onChange={onChange} />
           </View>
         )}
       />

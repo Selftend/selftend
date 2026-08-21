@@ -165,9 +165,11 @@ export async function saveThoughtRecord(
     balanced_thought: input.balancedThought.trim(),
     emotion_intensity_after: input.emotionIntensityAfter,
     outcome_notes: input.outcomeNotes.trim(),
-    // Written on both the insert and the update path, so an edit can clear the
-    // rating back to null as well as set it (#1376).
-    belief_after: input.beliefAfter,
+    // Coalesced to an EXPLICIT null, never left undefined: PostgREST omits an
+    // undefined key, and an omitted key on the update path leaves the stored
+    // rating standing - so clearing a rating would silently do nothing. Written
+    // on both paths, so an edit can clear it as well as set it (#1376).
+    belief_after: input.beliefAfter ?? null,
   };
 
   // Create mode sends the creation instant and its offset together, or neither:
