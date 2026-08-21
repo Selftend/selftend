@@ -224,7 +224,7 @@ describe("Breathing overview (4a)", () => {
     expect(screen.getAllByText("6 cycles")).toHaveLength(5);
     expect(screen.queryByText(/Load \d+ more/)).toBeNull();
 
-    fireEvent.press(screen.getByLabelText("Show all sessions →"));
+    fireEvent.press(screen.getByRole("link", { name: "Show all sessions" }));
     expect(router.push).toHaveBeenCalledWith("/tools/breathing/history");
   });
 

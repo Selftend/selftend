@@ -29,7 +29,7 @@ import { SleepDurationChart } from "@/src/features/sleep/sleep-duration-chart";
 import { SleepQualityMix } from "@/src/features/sleep/sleep-quality-mix";
 import { SleepWeekdayChart } from "@/src/features/sleep/sleep-weekday-chart";
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
-import { ShowAllSleepLink } from "@/src/features/sleep/show-all-sleep-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 
 export default function SleepTrackerScreen() {
   const { t, i18n } = useTranslation("sleep");
@@ -175,7 +175,7 @@ export default function SleepTrackerScreen() {
                 action={
                   /* The door beside its own room: all-history replaces the old
                    expand-in-place toggle (#775, pattern from #696). */
-                  <ShowAllSleepLink />
+                  <ShowAllLink label={t("allHistory.link")} route="/tools/sleep/history" />
                 }
               >
                 <SleepRecentList logs={allLogs} />

@@ -13,7 +13,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { useDeleteSleepLog, useSleepLog, useSleepLogs } from "@/src/features/sleep/queries";
-import { ShowAllSleepLink } from "@/src/features/sleep/show-all-sleep-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { FORM_COLUMN } from "@/src/lib/layout";
@@ -175,7 +175,7 @@ export default function SleepDetailScreen() {
             ) : null}
 
             <View className="items-end">
-              <ShowAllSleepLink />
+              <ShowAllLink label={t("allHistory.link")} route="/tools/sleep/history" />
             </View>
           </View>
         </ScrollView>
