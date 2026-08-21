@@ -169,13 +169,16 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     await page.getByRole("button", { name: "Health", exact: true }).click();
     await page.getByRole("button", { name: "Do more of", exact: true }).click();
 
-    const courageous = page.getByRole("button", { name: "Courageous", exact: true });
+    // Role is checkbox, not button: the value chips are togglable and carry their
+    // selection in aria-checked (the two single-selects above them do not).
+    const courageous = page.getByRole("checkbox", { name: "Courageous", exact: true });
     await expect(courageous).toBeVisible({ timeout: 10_000 });
+    await expect(courageous).not.toBeChecked();
     // Only the ranked priority values are offered. "Accepting" is in the full
     // adjective list but is not one of alice's priorities, so it must not appear.
-    await expect(page.getByRole("button", { name: "Accepting", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("checkbox", { name: "Accepting", exact: true })).toHaveCount(0);
     await courageous.click();
-    await expect(page.getByRole("button", { name: "Clear value", exact: true })).toBeVisible();
+    await expect(courageous).toBeChecked();
 
     await page.getByRole("button", { name: "Continue", exact: true }).click();
     await page.getByRole("textbox", { name: "Goal title" }).fill("Swim once a week");
@@ -188,12 +191,13 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     // ── Re-open for edit: the anchor must come back prefilled ──────────────────
     await page.getByRole("button", { name: "Edit goal", exact: true }).click();
     await expect(page).toHaveURL(/\/modules\/cbt\/goals\/new\?goalId=/, { timeout: 15_000 });
-    await expect(page.getByRole("button", { name: "Clear value", exact: true })).toBeVisible({
-      timeout: 15_000,
-    });
+    const editChip = page.getByRole("checkbox", { name: "Courageous", exact: true });
+    await expect(editChip).toBeVisible({ timeout: 15_000 });
+    await expect(editChip).toBeChecked();
 
     // ── And it can be cleared back to "anchored to nothing" ───────────────────
     await page.getByRole("button", { name: "Clear value", exact: true }).click();
+    await expect(editChip).not.toBeChecked();
     await expect(page.getByRole("button", { name: "Clear value", exact: true })).toHaveCount(0);
   });
 });

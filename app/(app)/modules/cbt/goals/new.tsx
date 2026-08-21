@@ -229,9 +229,18 @@ export default function NewGoalScreen() {
               <>
                 <View className="flex-row flex-wrap gap-2">
                   {valueOptions.map((key) => (
+                    // Announced as a checkbox, not a button: unlike the two
+                    // single-selects above, pressing a chosen value again clears
+                    // it, and `aria-checked` is the only thing carrying that state
+                    // to a screen reader - the fill alone does not. Same contract
+                    // as the shared `SelectableChip`; the Button styling stays so
+                    // the three questions on this step read as one group.
                     <Button
                       key={key}
+                      accessibilityRole="checkbox"
+                      aria-checked={selectedValue === key}
                       onPress={() => setValue("valueKey", selectedValue === key ? null : key)}
+                      role="checkbox"
                       size="sm"
                       variant={selectedValue === key ? "default" : "outline"}
                     >
