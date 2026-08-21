@@ -1,8 +1,10 @@
 # CBT Doc Reconciliation — `cbt.md` vs `cbt-gillihan-made-simple.md`
 
-**Status:** Recommendation (drafted). No files edited yet.
+**Status:** Recommendation (drafted) — the `cbt.md` edits recommended below are still
+un-applied. The one exception is "Where shipped copy deliberately diverges from the
+spec", appended later as a live record of decisions that have shipped.
 **Author:** doc-reconciliation follow-up
-**Date:** 2026-07-11
+**Date:** 2026-07-11 (divergence record appended 2026-08-21)
 
 ## TL;DR
 
@@ -83,6 +85,42 @@ equivalent yet — they belong in the spec, not in the as-built doc:
 - Program milestone/timeline model. Code has a 5-week `CBT_PROGRAM` scaffold
   (`program-definition.ts`: assessment → formulation → thinking → behavioural →
   resilience) that does **not** match the spec's Week 1 / 2-4 / 4-8 / 8-12 table.
+
+### Where shipped copy deliberately diverges from the spec
+
+Unlike the rest of this document, this section is a **record of shipped decisions**, not a
+recommendation. These wordings do not match `cbt-gillihan-made-simple.md` **on purpose**;
+they are listed here so a later reader does not mistake either for drift and revert it.
+Recorded 2026-08-21.
+
+- **`Be`'s pillar kicker reads "Wellbeing", not "Mindfulness".** The spec's pillar table
+  (`cbt-gillihan-made-simple.md` line 19) labels the pillar `Be | Mindfulness`; the
+  shipped string (`pillars.be.sub` in `src/i18n/locales/*/cbt.json`) says "Wellbeing".
+  The kicker was narrower than the pillar's own contents — all six of `Be`'s reachable
+  routes tend a baseline state and only some concern present-moment attention, so a sleep
+  log and a self-care check covering movement, meals and connection sat under a heading
+  called "Mindfulness". "Wellbeing" also keeps the parallel with `Think`'s "Cognitive"
+  and `Act`'s "Behavioral".
+  **The counter-evidence, recorded so a later reader does not have to rediscover it:**
+  §10's concern-to-approach table (line 902) _does_ carry per-pillar strategy columns for
+  `Think`, `Act` and `Be`, and every cell of its `Be` column is mindfulness, breathing or
+  acceptance — its only sleep mention sits in an **`Act`** cell. So the spec
+  does lean on a narrow reading of `Be`. What it never does is assign one of its **ten
+  numbered Strategies** to a pillar: §10 prescribes per-concern _approaches_ for the
+  onboarding assessment, not a taxonomy of which module belongs to which pillar, and
+  Self-care (Strategy 9) is placed in `Be` neither there nor anywhere else. The
+  strategy-to-pillar mapping is therefore ours, and the kicker's job is to describe the
+  pillar **as we have populated it** — six routes, one of them a sleep log — rather than
+  as §10 would have populated it. Self-care's placement is unchanged by this decision;
+  nothing moved between pillars.
+- **`Be`'s description drops the phrase "without judgment".** The spec uses
+  "Present-moment awareness without judgment" both in the pillar table (line 19) and in
+  Strategy 5 (line 254); `pillars.be.description` no longer does. It was rewritten to
+  describe the pillar rather than list the tools it leans on — it was the only pillar
+  description that named products, and its second sentence existed to compensate for a
+  card that used to look empty. The non-judgment framing is not lost from the product: it
+  still ships in ACT's body-awareness copy and in the gratitude tool, and it belongs to
+  Strategy 5 rather than to the pillar as a whole.
 
 ### Minor drift inside `cbt.md` itself (worth a touch-up, not a rewrite)
 
