@@ -14,7 +14,7 @@
   "calendar": {
     "previousMonth": "Previous month",
     "nextMonth": "Next month",
-    "today": "Today"
+    "todayNamed": "Today, {{date}}"
   },
   "time": {
     "hourField": "{{label}}, hour",

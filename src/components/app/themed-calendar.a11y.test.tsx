@@ -1,8 +1,9 @@
 import { act, fireEvent, screen, within } from "@testing-library/react-native";
+import { AccessibilityInfo, Platform } from "react-native";
 import dayjs from "dayjs";
 
 import { ThemedCalendar } from "./themed-calendar";
-import { isolateCalendarLocale } from "@/test/calendar-testing";
+import { isolateCalendarLocale, weekdayLabels } from "@/test/calendar-testing";
 import { setLanguage } from "@/test/i18n-language";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -33,6 +34,14 @@ const TODAY = new Date("2026-03-10T12:00:00.000Z");
  */
 const SELECTED = dayjs("2026-03-15");
 
+/**
+ * ⚠️ `setPlatformOS` mutates the SHARED `Platform` object, so a test that moves
+ * it hands the new value to every test after it. Without this restore the
+ * platform-specific cases below pass only because of the order they happen to
+ * run in — reorder them and the assertions quietly change platform.
+ */
+const ORIGINAL_OS = Platform.OS;
+
 beforeEach(() => {
   jest.useFakeTimers({ doNotFake: ["nextTick"] });
   jest.setSystemTime(TODAY);
@@ -40,6 +49,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.useRealTimers();
+  setPlatformOS(ORIGINAL_OS as "web" | "ios" | "android");
 });
 
 function renderCalendar() {
@@ -108,6 +118,34 @@ describe("ThemedCalendar accessibility", () => {
     expect(blocked.props.accessibilityRole).toBe("button");
     // Already correct before this ticket — pinned so the patch cannot regress it.
     expect(blocked.props.accessibilityState?.disabled).toBe(true);
+    expect(allowed.props.accessibilityState?.disabled).toBe(false);
+
+    // ⚠️ `aria-disabled` and the tab order are NOT asserted here, and cannot be:
+    // jest renders React Native's `Pressable`, not react-native-web's, so the
+    // DOM attributes RNW derives from `disabled` never exist in this
+    // environment. `accessibilityState.disabled` is the input RNW maps from,
+    // which is the most this layer can prove. #1205 measured the rendered
+    // attributes on a real browser modal.
+  });
+
+  it("hides the weekday header from assistive technology without removing it", () => {
+    renderCalendar();
+
+    // Still there for the eye, unchanged.
+    expect(weekdayLabels()).toEqual(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]);
+
+    // The library gives these no roles and no association with the columns
+    // below, so to a screen reader they were a row of stray letters. The
+    // weekday now travels inside each day's own name instead.
+    const header = within(screen.getByTestId("weekdays")).getAllByText(/\S/, {
+      includeHiddenElements: true,
+    });
+    expect(header).toHaveLength(7);
+    for (const label of header) {
+      expect(label.props["aria-hidden"]).toBe(true);
+      expect(label.props.accessibilityElementsHidden).toBe(true);
+      expect(label.props.importantForAccessibility).toBe("no-hide-descendants");
+    }
   });
 
   it("announces the visible month when it changes", () => {
@@ -138,6 +176,52 @@ describe("ThemedCalendar accessibility", () => {
     // The month index alone would say "January 2026" — the year has to travel
     // with it, which is why both library callbacks are wired.
     expect(screen.getByTestId("calendar-month-announcement").props.children).toBe("January 2027");
+  });
+
+  it("announces a month picked from the header selector, not just the arrows", () => {
+    renderCalendar();
+
+    // ☠️ Found by review. The arrows fire both library callbacks, but
+    // `onSelectMonth` fires only `onMonthChange` — so an announcement that
+    // waits for month AND year stayed silent for anyone who used the selector
+    // first. The visible date is seeded on mount so one callback is enough.
+    act(() => {
+      fireEvent.press(screen.getByTestId("btn-month"));
+    });
+    act(() => {
+      fireEvent.press(screen.getByLabelText("June"));
+    });
+
+    expect(screen.getByTestId("calendar-month-announcement").props.children).toBe("June 2026");
+  });
+
+  it("speaks the month change on iOS, where a live region is inert", () => {
+    setPlatformOS("ios");
+    const announce = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
+    renderCalendar();
+
+    act(() => {
+      fireEvent.press(screen.getByTestId("btn-next"));
+    });
+
+    // `accessibilityLiveRegion` is Android-only in RN core (#1337), so on iOS
+    // the region alone says nothing at all.
+    expect(announce).toHaveBeenCalledWith("April 2026");
+    announce.mockRestore();
+  });
+
+  it("stays quiet on the platforms whose live region already speaks", () => {
+    setPlatformOS("android");
+    const announce = jest.spyOn(AccessibilityInfo, "announceForAccessibility");
+    renderCalendar();
+
+    act(() => {
+      fireEvent.press(screen.getByTestId("btn-next"));
+    });
+
+    // Android has both mechanisms and would otherwise announce twice.
+    expect(announce).not.toHaveBeenCalled();
+    announce.mockRestore();
   });
 
   it("announces month navigation in Bulgarian under a Bulgarian app language", async () => {

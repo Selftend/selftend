@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AccessibilityInfo, Platform, Text, View } from "react-native";
+import { AccessibilityInfo, Platform, Text, View, type TextStyle } from "react-native";
 import DateTimePicker, { useDefaultStyles, type DateType } from "react-native-ui-datepicker";
 import dayjs, { type Dayjs } from "dayjs";
 
@@ -119,7 +119,18 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
     (day: CalendarDayInfo) => {
       const spelled = formatCalendarDayName(dayjs(day.date).toDate(), language);
       return {
-        accessibilityLabel: day.isToday ? `${t("calendar.today")}, ${spelled}` : spelled,
+        // An unparseable date yields "", and an EMPTY accessible name is worse
+        // than the bare number this replaces — a button with no name at all. So
+        // omit the key entirely and let the library's own label stand.
+        ...(spelled
+          ? {
+              // Interpolated, not concatenated: the joiner and the word order
+              // belong to the translation, not to this component.
+              accessibilityLabel: day.isToday
+                ? t("calendar.todayNamed", { date: spelled })
+                : spelled,
+            }
+          : null),
         // Selection reaches AT as state rather than as the background colour
         // the library paints (WCAG 1.4.1 / 4.1.2). `aria-pressed` on web
         // because these stay real buttons and `aria-selected` is not valid on
@@ -141,6 +152,40 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
     [language, t],
   );
 
+  /**
+   * The visible weekday header, hidden from assistive technology.
+   *
+   * The library gives those seven labels no roles and no association with the
+   * columns beneath them, so a screen reader reads them as a row of stray
+   * letters — "S M T W T F S" — before the grid. Associating them properly
+   * would need `columnheader`s inside a real `grid`, and there is no grid to
+   * put them in: the library renders 42 FLAT sibling days in one wrapping
+   * container, with no row elements at all.
+   *
+   * So the weekday travels in each day's own name instead ("Monday, 8
+   * September 2026"), which is the information a column header would have
+   * carried, and this row becomes what it already is visually — decoration.
+   *
+   * ⚠️ Reached through the library's PUBLIC `components.Weekday` hook, not the
+   * patch. Keep the rendered text identical: it is what sighted users read, and
+   * what `weekdayLabels()` asserts.
+   */
+  const renderWeekday = useCallback(
+    (weekday: { name: { min: string } }) => (
+      <Text
+        // The library types every entry in its style bag as one
+        // ViewStyle|TextStyle|ImageStyle union; this slot is a Text's.
+        style={styles.weekday_label as TextStyle}
+        aria-hidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        {weekday.name.min}
+      </Text>
+    ),
+    [styles.weekday_label],
+  );
+
   const navProps = useMemo(
     () => ({
       prevButtonProps: { accessibilityLabel: t("calendar.previousMonth") },
@@ -156,6 +201,20 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
   // handler announces.
   const visibleRef = useRef<{ month?: number; year?: number }>({});
   const [monthAnnouncement, setMonthAnnouncement] = useState("");
+
+  // ⚠️ Seeded on mount, not left empty. The arrows fire both callbacks, but the
+  // header's month and year SELECTORS each fire only their own
+  // (`onSelectMonth` / `onSelectYear`), so a user who picks a month from the
+  // selector before ever touching an arrow would leave the other half unset —
+  // and an announcement that needs both would stay silent for them.
+  const initialVisible = props.mode === "range" ? props.value.start : props.value;
+  useEffect(() => {
+    const seed = initialVisible ?? dayjs();
+    visibleRef.current = { month: seed.month(), year: seed.year() };
+    // Mount only: after this the callbacks own it, and re-seeding from a
+    // changing `value` would fight the month the user has paged to.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const announceVisibleMonth = useCallback(() => {
     const { month, year } = visibleRef.current;
@@ -213,6 +272,7 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
       IconPrev: <Icon name="chevron-left" className="size-5 text-foreground" />,
       IconNext: <Icon name="chevron-right" className="size-5 text-foreground" />,
       dayProps,
+      Weekday: renderWeekday,
       ...navProps,
     },
   };

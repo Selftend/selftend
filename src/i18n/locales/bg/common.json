@@ -14,7 +14,7 @@
   "calendar": {
     "previousMonth": "Предишен месец",
     "nextMonth": "Следващ месец",
-    "today": "Днес"
+    "todayNamed": "Днес, {{date}}"
   },
   "time": {
     "hourField": "{{label}}, час",
