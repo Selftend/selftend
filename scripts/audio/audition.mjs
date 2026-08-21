@@ -29,9 +29,9 @@ import {
   clipsForRound,
   composePrompt,
   OUTPUT_CLIPS,
-  TTS_CANDIDATE_SEEDS,
   VOICES,
   VOICE_CUES,
+  voiceSlotSpec,
 } from "./catalog.mjs";
 import { rowsBySlot } from "./take-gate.mjs";
 import { assertFfmpeg, postprocess, repeatLoop } from "./postprocess.mjs";
@@ -100,16 +100,11 @@ async function survey(round, { all = false } = {}) {
 
   const sfx = planAudition({ clips, promptFor, history: rowsBySlot(rows), all });
 
-  // Round A is the two bells and its own API probes (#1159); the voice cues are
-  // Round B's, alongside the beds and textures.
-  const slots =
-    round === "B"
-      ? voiceSlots({
-          voices: VOICES,
-          cues: VOICE_CUES,
-          candidates: TTS_CANDIDATE_SEEDS.length,
-        })
-      : [];
+  // Which units a round has at all is `voiceSlotSpec`'s answer and no longer
+  // this file's — the manifest (#1210) asks the same question, and three
+  // subsystems each deciding for themselves is how the voice half went missing
+  // from two of them.
+  const slots = voiceSlots(voiceSlotSpec(round));
   const voice = planVoiceAudition({ slots, history: voiceRowsBySlot(rows), all });
 
   return {

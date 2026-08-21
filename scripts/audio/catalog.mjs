@@ -572,6 +572,30 @@ export function clipsForRound(round) {
   return SFX_CLIPS.filter((clip) => clip.round === round);
 }
 
+/**
+ * The VOICE half of a round, in the shape `voiceSlots` takes.
+ *
+ * ☠️ THIS CONDITIONAL IS WHY THE FUNCTION EXISTS. "A round is `clipsForRound`
+ * plus, if it is B, the voice cues" has been re-derived by every subsystem that
+ * needed it and got it wrong twice — `render` produced eleven clips of nineteen
+ * and said nothing (#1317), and the audition's own `status` meter would have
+ * printed "every clip has a pick" with the whole voice half untouched (#1393).
+ * There is now one place that answers it, and a third consumer cannot disagree
+ * with the first two.
+ *
+ * Round A is the two bells and their gate (#1159); the cues are Round B's, which
+ * is where #1136 routed the voice pick itself. An empty spec yields no slots, so
+ * callers need no conditional of their own.
+ *
+ * @param {string} round
+ * @returns {{voices: typeof VOICES, cues: typeof VOICE_CUES, candidates: number}}
+ */
+export function voiceSlotSpec(round) {
+  return round === "B"
+    ? { voices: VOICES, cues: VOICE_CUES, candidates: TTS_CANDIDATE_SEEDS.length }
+    : { voices: [], cues: [], candidates: 0 };
+}
+
 /** Total Sound Effects seconds, which is what the credit cost is priced on. */
 export function creditEstimate(clips) {
   const seconds = clips.reduce((total, clip) => total + clip.durationSeconds * clip.candidates, 0);

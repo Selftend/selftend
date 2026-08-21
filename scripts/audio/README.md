@@ -202,21 +202,40 @@ Masters go to Drive `Selftend/app-audio-masters/` (#1141); the repo keeps the
 prompts and `manifest.jsonl`. Only the finished `.m4a` clips under
 `assets/sounds/` are ever committed.
 
-> ☠️ **KNOWN GAP, still open: the repo-side manifest has no writer, and nowhere
-> records a Drive path.** #1210's definition of done asks for "the `scripts/`
-> manifest written with each clip's prompt, parameters, TTS seed where one exists,
-> chosen candidate, and the Drive path" — the repo-side half of the split this
-> section describes. But `manifest.jsonl` and `choices.jsonl` both live _inside_
-> `audio-masters/`, which is gitignored, so the artifact the split promises is not
-> in the repo; and no row in either file has ever had a field for where a master
-> was archived. `render` prints an instruction to archive every take and nothing
-> records that it happened.
->
-> It is deliberately not built yet. Unlike the audition — which has to exist
-> _before_ `--go`, because a pass whose output cannot be heard is unrepeatable
-> waste — this artifact can be authored after the render with nothing lost, since
-> everything it needs is already recorded in the two JSONL files. Build it when the
-> pass is done, from those.
+### The repo-side manifest
+
+`manifest.jsonl`, `choices.jsonl` and `archive.jsonl` all live _inside_
+`audio-masters/`, which is gitignored — so on their own they are not the repo half
+of anything. `manifest.mjs` is what makes the split real:
+
+```bash
+node scripts/audio/manifest.mjs write   --round B [--out <path>] [--check]
+node scripts/audio/manifest.mjs archive --round B --all [--note "..."]
+node scripts/audio/manifest.mjs archive --round B --file <name> [--note "..."]
+```
+
+`write` rebuilds `scripts/audio/round-<R>.manifest.json` — committed, and holding
+#1210's definition of done for every unit: the prompt asked for today, each take's
+parameters and its TTS seed where one exists, the chosen candidate, and the Drive
+path. It **exits 1 while any unit is unpicked or any take unarchived**, so a
+half-finished pass cannot read as a finished one.
+
+`archive` records that masters reached Drive. ⚠️ It **attests, it does not
+upload** — nothing in this repo talks to Drive, so the row is a person's claim
+that they did it. A take whose master is not on this disk is refused rather than
+attested, because an attestation given for free is worth nothing.
+
+> ☠️ **`--check` is local-only and no CI gate can replace it.** Everything the
+> record derives from is gitignored and lives on whichever machine ran the pass, so
+> nothing on a clean checkout can notice a stale manifest. That is the price of the
+> split #1141 chose, and it is worth stating rather than implying a guard exists.
+
+> ⚠️ **Round A's masters are not on this machine.** `write --round A` reports two
+> units and **zero takes**: #1159's bell gate passed and spent 120 credits, but
+> `audio-masters/` is gitignored and per-worktree, and the worktree that rendered
+> them is gone. Whether those two bells still exist depends entirely on whether
+> someone uploaded them to Drive — and nothing recorded it, which is exactly the
+> hole `archive` closes for Round B.
 
 Post-processing — the fold, loudness normalisation, true-peak limiting and AAC
 encode fixed by [#1138](https://github.com/Selftend/selftend/issues/1138) — runs
