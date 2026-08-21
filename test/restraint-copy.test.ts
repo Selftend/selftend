@@ -119,6 +119,16 @@ const STRINGS: Record<Locale, ReturnType<typeof loadLocale>> = {
   bg: loadLocale("bg"),
 };
 
+/** Every string in `locale` whose text `pattern` matches. */
+function matching(locale: Locale, pattern: RegExp) {
+  return STRINGS[locale].filter(({ text }) => pattern.test(text));
+}
+
+/** Renders offenders for a failure message: which key said it, and what it said. */
+function describeEntries(entries: ReturnType<typeof loadLocale>) {
+  return entries.map(({ namespace, key, text }) => `${namespace}:${key} - ${text}`);
+}
+
 describe("product copy states the record instead of advertising restraint", () => {
   it("reads every namespace, so a new one is covered the day it is added", () => {
     const namespaces = new Set(STRINGS.en.map((entry) => entry.namespace));
@@ -131,12 +141,14 @@ describe("product copy states the record instead of advertising restraint", () =
   });
 
   it.each(RESTRAINT_CLAIMS)("$locale copy never matches $pattern", ({ locale, pattern }) => {
-    const offenders = STRINGS[locale]
-      .filter(({ text }) => pattern.test(text))
-      .filter(({ namespace, key }) => !isAllowed(locale, namespace, key))
-      .map(({ namespace, key, text }) => `${namespace}:${key} - ${text}`);
+    // The allowlist applies HERE and not to the false-claim scan below: a
+    // restraint phrasing can be a copy call still awaiting an owner, but a
+    // sentence that misreports the user's own number is never exemptable.
+    const offenders = matching(locale, pattern).filter(
+      ({ namespace, key }) => !isAllowed(locale, namespace, key),
+    );
 
-    expect(offenders).toEqual([]);
+    expect(describeEntries(offenders)).toEqual([]);
   });
 
   it("every allowlisted entry still breaks a rule, so a stale exemption cannot hide a new offence", () => {
@@ -183,6 +195,12 @@ describe("product copy states the record instead of advertising restraint", () =
    * ⚠️ The bg patterns are the **phrasings**, not translations of the English
    * regex - `остана на` and `падна от` are what the retired strings actually
    * said. A locale-blind reading would have called bg clean.
+   *
+   * ⚠️ These four phrasings are restated as one regex in
+   * `src/features/act/act-before-after-note-absent.test.tsx`, which scans the
+   * four *rendered* screens rather than the JSON. A fifth phrasing belongs in
+   * both places: this guard cannot see a sentence hardcoded in a component, and
+   * that one cannot see a string no screen renders yet.
    */
   const BEFORE_AFTER_READINGS: { locale: Locale; pattern: RegExp }[] = [
     { locale: "en", pattern: /stayed at/i },
@@ -194,20 +212,21 @@ describe("product copy states the record instead of advertising restraint", () =
   it.each(BEFORE_AFTER_READINGS)(
     "$locale copy never reads a before/after pair back as $pattern (#1367)",
     ({ locale, pattern }) => {
-      const offenders = STRINGS[locale]
-        .filter(({ text }) => pattern.test(text))
-        .map(({ namespace, key, text }) => `${namespace}:${key} - ${text}`);
-
-      expect(offenders).toEqual([]);
+      expect(describeEntries(matching(locale, pattern))).toEqual([]);
     },
   );
 
   it("the retired 'stayed at' family is gone from both locales, not just from en (#1367)", () => {
-    // Named individually because the family shipped as TWO strings across FOUR
-    // screens: a sweep that fixed defusion and forgot expansion left half the
-    // false claim in place, and nothing in the suite could see it.
-    const retired = ["defusion.fusionDrop", "defusion.noFusionDrop"];
-    const retiredExpansion = ["expansion.intensityDrop", "expansion.noIntensityDrop"];
+    // Listed as four keys rather than two, because the family shipped as TWO
+    // strings across FOUR screens: a sweep that fixed defusion and forgot
+    // expansion left half the false claim in place, and nothing in the suite
+    // could see it.
+    const RETIRED_KEYS = [
+      "defusion.fusionDrop",
+      "defusion.noFusionDrop",
+      "expansion.intensityDrop",
+      "expansion.noIntensityDrop",
+    ];
 
     for (const locale of ["en", "bg"] as const) {
       const actKeys = new Set(
@@ -216,7 +235,7 @@ describe("product copy states the record instead of advertising restraint", () =
       // Positive control: the namespace really did load.
       expect(actKeys.size).toBeGreaterThan(0);
 
-      for (const key of [...retired, ...retiredExpansion]) {
+      for (const key of RETIRED_KEYS) {
         expect(actKeys.has(key)).toBe(false);
       }
     }

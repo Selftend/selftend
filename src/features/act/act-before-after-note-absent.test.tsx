@@ -32,8 +32,27 @@ import { renderWithProviders } from "@/test/render-with-providers";
  * split on, and each absence assertion is paired with a positive control - the
  * value the note used to sit under - so a screen that failed to render cannot
  * pass by rendering nothing at all.
+ *
+ * This file covers four screens, so it is named for the behaviour rather than
+ * for any one of them: `act-defusion-new-screen`, `act-defusion-detail-screen`,
+ * `act-expansion-new-screen`, `act-expansion-detail-screen`.
+ *
+ * ⚠️ Its sibling guard is `test/restraint-copy.test.ts`, which scans the locale
+ * JSON for the same phrasings. Neither subsumes the other: that one cannot see a
+ * sentence hardcoded in a component, and this one cannot see a string no screen
+ * renders yet. A fifth phrasing belongs in both.
  */
-const NOTE_PHRASING = /stayed at|dropped from|остана на|падна от/i;
+/**
+ * The note in every form it could come back in.
+ *
+ * ☠️ The sentences alone are NOT enough, and a three-of-four deletion is exactly
+ * how you find that out. If the keys are retired but one screen keeps its JSX,
+ * i18next has nothing to resolve and renders the **key** - `defusion.noFusionDrop`
+ * - which no amount of "stayed at" matching will ever see. So the key names are
+ * part of the pattern: `fusionDrop` covers `noFusionDrop` too, and likewise for
+ * intensity.
+ */
+const NOTE_PHRASING = /stayed at|dropped from|остана на|падна от|fusionDrop|intensityDrop/i;
 
 /**
  * The offending sentences as plain text.
