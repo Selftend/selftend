@@ -485,10 +485,6 @@
       "overview": "Overview"
     }
   },
-  "dateBar": {
-    "selectDate": "Select date",
-    "clear": "Clear date"
-  },
   "plan": {
     "wizard": {
       "toolBreathing": "Breathing exercise",
