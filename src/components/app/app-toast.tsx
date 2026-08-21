@@ -47,9 +47,19 @@ function composeLabel({ title, description }: Toast): string {
 /**
  * Lifts the toast into its own `UIWindow` layer on iOS, so a toast raised while a
  * modal is open is painted ABOVE it rather than underneath (#1338). Off iOS it is
- * a passthrough: `FullWindowOverlay` has no Android or web implementation, and RN's
- * `ReactModalHostView` never sets `FLAG_NOT_TOUCH_MODAL`, so the Android equivalent
- * would block every touch below the toast. That gap is recorded, not worked around.
+ * a passthrough, and deliberately so. Per the charting on #1143 (not re-verified
+ * here): `FullWindowOverlay` has no Android or web implementation, and RN's
+ * `ReactModalHostView` never sets `FLAG_NOT_TOUCH_MODAL`, so the obvious Android
+ * substitute - a toast in its own `Modal` - would block every touch below it. That
+ * gap is recorded there as a deliberate one with no ticket behind it; do not
+ * "finish the job" without reopening the decision.
+ *
+ * The card still paints the active palette in here. Native NativeWind resolves
+ * `vars()` through REACT context, which the overlay does not interrupt - the split
+ * is in the native view hierarchy, not the React tree. `popover.tsx` has shipped
+ * themed content inside one of these since before this existed. (The `documentElement`
+ * mirroring that `docs/architecture.md` describes is a WEB portal concern and does
+ * not apply.)
  *
  * ☠️ A COMPONENT, not `popover.tsx:14`'s alias
  * (`Platform.OS === "ios" ? RNFullWindowOverlay : React.Fragment`). Two reasons,

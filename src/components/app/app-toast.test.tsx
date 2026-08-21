@@ -465,11 +465,10 @@ describe("AppToast - riding above an iOS modal", () => {
     expect(within(overlays()[0]).getByTestId("app-toast")).toBeTruthy();
   });
 
-  // ☠️☠️ The native default is YES. Left unset, a visible toast marks itself a
-  // modal accessibility container and hides the ENTIRE APP from VoiceOver - and an
-  // error toast no longer expires on its own, so "indefinitely" is literal.
-  // `popover.tsx` deliberately omits this because a popover IS modal; the two are
-  // not to be aligned.
+  // ☠️☠️ Why this matters is stated once, on `ToastOverlay` in `app-toast.tsx`;
+  // the short version is that the native default hides the whole app from
+  // VoiceOver. Asserted on an ERROR because that is the toast that never expires
+  // on its own, which is what turns the bug from a flicker into a lockout.
   it("declares itself NOT a modal accessibility container", () => {
     setPlatformOS("ios");
     useToastStore.getState().showToast({ title: "Something did not save", tone: "error" });
@@ -514,14 +513,19 @@ describe("AppToast - riding above an iOS modal", () => {
   });
 
   /**
-   * The control, and the reason the test above is not vacuous: the same overlay,
-   * driven by the same store, with the key removed. Promotion changes only its
-   * children, so React reconciles one element in place and the native container
-   * keeps the UIWindow position it took when the FIRST toast appeared - back
-   * underneath any modal presented since. Without this, "the key remounts it"
-   * would be indistinguishable from "React remounts things".
+   * Calibration for the recorder above, and nothing more - read the claim
+   * narrowly. It is NOT evidence about `AppToast`: what pins the host's own
+   * dependence on the key is the test above, which fails outright if the key is
+   * removed or moved down onto the Card (verified by mutation).
+   *
+   * What this adds is the other half of that instrument's reading: that
+   * ["mount", "unmount", "mount"] is a result the recorder can distinguish from
+   * ["mount"] in the first place. Promotion changes only this overlay's children,
+   * so React reconciles one element in place and the native container keeps the
+   * UIWindow position it took when the FIRST toast appeared. Without it, "the key
+   * remounts it" reads the same as "React remounts things".
    */
-  function KeylessHost() {
+  function UnkeyedOverlayControl() {
     const toast = useToastStore((state) => state.visible);
 
     if (!toast) {
@@ -539,14 +543,14 @@ describe("AppToast - riding above an iOS modal", () => {
     setPlatformOS("ios");
     useToastStore.getState().showToast({ title: "First", tone: "success" });
     useToastStore.getState().showToast({ title: "Second", tone: "success" });
-    const { rerender } = renderWithProviders(<KeylessHost />);
+    const { rerender } = renderWithProviders(<UnkeyedOverlayControl />);
 
     expect(lifecycleLog).toEqual(["mount"]);
 
     act(() => {
       useToastStore.getState().dismissToast();
     });
-    rerender(<KeylessHost />);
+    rerender(<UnkeyedOverlayControl />);
 
     // The promotion definitely happened - it just did not move the container.
     expect(screen.getByText("Second")).toBeTruthy();
