@@ -24,6 +24,7 @@ const mockCancel = cancelAllReminders as jest.MockedFunction<typeof cancelAllRem
 const mockCaptureError = captureError as jest.MockedFunction<typeof captureError>;
 const mockUseToastStore = useToastStore as unknown as jest.Mock;
 const showToast = jest.fn();
+const clearToasts = jest.fn();
 
 /** Runs a sign-out that fails at `signOut` with `error`. */
 async function signOutFailingWith(error: unknown) {
@@ -38,8 +39,9 @@ async function signOutFailingWith(error: unknown) {
 describe("useSignOut", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseToastStore.mockImplementation((selector: (s: { showToast: unknown }) => unknown) =>
-      selector({ showToast }),
+    mockUseToastStore.mockImplementation(
+      (selector: (s: { showToast: unknown; clearToasts: unknown }) => unknown) =>
+        selector({ showToast, clearToasts }),
     );
     mockCancel.mockResolvedValue(undefined);
     mockSignOut.mockResolvedValue(undefined);
@@ -109,6 +111,42 @@ describe("useSignOut", () => {
     await signOutFailingWith(error);
 
     expect(mockCaptureError).toHaveBeenCalledWith(error);
+  });
+
+  // #1336: `AppToast` lives in the ROOT layout, so it outlives the session. Now
+  // that an error toast never auto-dismisses, an unread failure from this account
+  // would sit in the slot waiting for whoever signs in next.
+  it("tears down the toast slot so a sticky error cannot leak into the next session", async () => {
+    const { result } = renderHook(() => useSignOut("user-1"));
+
+    await act(async () => {
+      await result.current();
+    });
+
+    expect(clearToasts).toHaveBeenCalledTimes(1);
+  });
+
+  // The clear is scoped to the success path for exactly this reason: a `finally`
+  // - or a clear placed before `signOut` resolved - would wipe the failure toast
+  // raised right after it, which is the only surface a failed sign-out has left.
+  it("leaves the failure toast standing when sign-out fails", async () => {
+    await signOutFailingWith(new Error("boom"));
+
+    expect(clearToasts).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not clear when the failure stopped sign-out from being attempted", async () => {
+    mockCancel.mockRejectedValue(new Error("reminders offline"));
+    const { result } = renderHook(() => useSignOut("user-1"));
+
+    await act(async () => {
+      await result.current();
+    });
+
+    expect(mockSignOut).not.toHaveBeenCalled();
+    expect(clearToasts).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledTimes(1);
   });
 
   // Being offline is expected operation, not an incident - the same rule
