@@ -237,7 +237,9 @@ async function choose(round, clipId, candidate, note, voice) {
       );
     }
     if (!VOICES.some((v) => v.id === voice)) {
-      throw new Error(`unknown voice "${voice}" — expected ${VOICES.map((v) => v.id).join(" or ")}`);
+      throw new Error(
+        `unknown voice "${voice}" — expected ${VOICES.map((v) => v.id).join(" or ")}`,
+      );
     }
   } else if (voice) {
     throw new Error(`--voice does not apply to ${clipId}, which is a sound effect`);

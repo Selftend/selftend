@@ -449,8 +449,9 @@ export const VOICES = [
  * moment a different voice is written in for real, so a shortlist can never leak
  * into the winner's candidates.
  *
- * @param voices the catalog pair
- * @param pairs `id=voiceId` strings, as passed on the command line
+ * @param {{id: string, axis: string, voiceId: string|null}[]} voices the catalog pair
+ * @param {string[]} pairs `id=voiceId` strings, as passed on the command line
+ * @returns {{id: string, axis: string, voiceId: string|null}[]}
  */
 export function resolveVoices(voices, pairs = []) {
   const overrides = new Map();

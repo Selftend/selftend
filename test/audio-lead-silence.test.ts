@@ -20,7 +20,7 @@
  * which is what the limit has to sit above.
  */
 import { LEAD_SILENCE_LIMIT_MS, report } from "../scripts/audio/postprocess.mjs";
-import { outputSpecFor } from "../scripts/audio/catalog.mjs";
+import { OUTPUT_SAMPLE_RATE, outputSpecFor } from "../scripts/audio/catalog.mjs";
 
 const VOICE = outputSpecFor("guide_inhale");
 const BELL = outputSpecFor("meditation-bell");
@@ -68,6 +68,24 @@ describe("the limit itself", () => {
     // `guide_hold` is 3.2 ms — the least of the four, and the one a loose limit
     // would wave through.
     expect(LEAD_SILENCE_LIMIT_MS).toBeLessThan(3.2);
+  });
+
+  it("is not expressible in whole samples, so its boundary can never be reached", () => {
+    // ☠️ FOUND BY MUTATION TESTING: flipping the gate's `>` to `>=` survived every
+    // test, and the reason is arithmetic rather than a missing case. `edgeSilence`
+    // returns `(firstAudibleFrame / sampleRate) * 1000`, so a measured lead can only
+    // ever be a whole number of samples — at 44.1 kHz a 1.0 ms lead is 44.1 samples
+    // and the two nearest reachable values are 0.9977 and 1.0204 ms. Nothing can
+    // measure exactly the limit, so the two comparisons cannot disagree about any
+    // real file, and writing a test for `leadMs === LEAD_SILENCE_LIMIT_MS` would be
+    // asserting on an input the pipeline cannot produce.
+    //
+    // ⚠️ That is a property of these two numbers together, not a law. This test is
+    // the alarm: change the limit or the output rate to a pair where the boundary IS
+    // reachable and it fails, at which point `>` versus `>=` becomes a decision
+    // somebody has to make deliberately rather than a difference nobody can observe.
+    const samplesAtTheLimit = (LEAD_SILENCE_LIMIT_MS * OUTPUT_SAMPLE_RATE) / 1000;
+    expect(Number.isInteger(samplesAtTheLimit)).toBe(false);
   });
 });
 

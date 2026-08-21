@@ -252,7 +252,12 @@ describe("previewName for a voice take", () => {
   it("separates two voices of one cue, which would otherwise overwrite each other", () => {
     // ☠️ Without the voice in the name both write `guide_inhale-c01.m4a`, and the
     // second silently replaces the first — a comparison against itself.
-    const female = previewName({ clipId: "guide_inhale", voice: "guided", candidate: 1, attempt: null });
+    const female = previewName({
+      clipId: "guide_inhale",
+      voice: "guided",
+      candidate: 1,
+      attempt: null,
+    });
     const male = previewName({
       clipId: "guide_inhale",
       voice: "guided-male",

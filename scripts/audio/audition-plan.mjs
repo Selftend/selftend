@@ -185,6 +185,16 @@ export function previewName(entry, { repeats = null } = {}) {
  * Cue-major order, so the matched pair is heard back to back on the same words.
  * Grouping by voice instead puts the two halves of #1136's comparison four players
  * apart.
+ *
+ * @param {{
+ *   voices: {id: string, axis: string, voiceId: string|null}[],
+ *   cues: {id: string, text: string}[],
+ *   candidates: number,
+ * }} args
+ * @returns {{
+ *   id: string, clipId: string, klass: string, voice: string, axis: string,
+ *   voiceId: string|null, text: string, candidates: number,
+ * }[]}
  */
 export function voiceSlots({ voices, cues, candidates }) {
   return cues.flatMap((cue) =>
@@ -215,6 +225,9 @@ export function voiceSlots({ voices, cues, candidates }) {
  *
  * Human-readable on purpose: it is what the audition page prints above the
  * players, so the string that decides supersession is the one being read.
+ *
+ * @param {{voiceId?: string|null, text: string}} take
+ * @returns {string}
  */
 export function voiceIdentity({ voiceId, text }) {
   return `${voiceId ?? "(no voice chosen)"} — ${text}`;
@@ -262,8 +275,15 @@ export function statusOfVoice(row, identity) {
  * Mirrors `planAudition` and reports its gaps the same way: a slot with no take is
  * named rather than skipped, because a silent 4-of-8 reads as a finished pass.
  *
- * @param slots from `voiceSlots`
- * @param history Map from `voiceRowsBySlot`
+ * @param {{
+ *   slots: ReturnType<typeof voiceSlots>,
+ *   history: Map<string, Record<string, any>[]>,
+ *   all?: boolean,
+ * }} args `slots` from `voiceSlots`, `history` from `voiceRowsBySlot`
+ * @returns {{
+ *   entries: Record<string, any>[],
+ *   missing: {clipId: string, voice: string, candidate: number, drawn: number}[],
+ * }}
  */
 export function planVoiceAudition({ slots, history, all = false }) {
   const entries = [];
@@ -275,7 +295,9 @@ export function planVoiceAudition({ slots, history, all = false }) {
       const rows = history.get(`${slot.clipId}|${slot.voice}|${candidate}`) ?? [];
       const graded = rows.map((row) => ({ row, status: statusOfVoice(row, identity) }));
       const accepted = graded.filter((entry) => entry.status === STATUS.accepted);
-      const takes = all ? [...accepted, ...graded.filter((e) => e.status !== STATUS.accepted)] : accepted;
+      const takes = all
+        ? [...accepted, ...graded.filter((e) => e.status !== STATUS.accepted)]
+        : accepted;
 
       if (!takes.length) {
         missing.push({
@@ -507,6 +529,11 @@ export function renderIndexHtml({ round, repeats, results, missing = [], choices
  * corrupting the survey that quotes the cost of an unrepeatable spend. The record
  * that decides how much money a run costs does not get new row shapes added to it
  * by a tool that spends nothing.
+ *
+ * @param {{
+ *   clipId: string, candidate: number, file: string, prompt: string, at: string,
+ *   note?: string|null, voice?: string|null,
+ * }} args
  */
 export function choiceRow({ clipId, candidate, file, prompt, note = null, at, voice = null }) {
   return {
@@ -531,6 +558,9 @@ export function choiceRow({ clipId, candidate, file, prompt, note = null, at, vo
  * cues, so `guide_inhale` is owed two picks — keyed on the clip, choosing the
  * female take would mark the male one settled and half the voice set would ship
  * unheard.
+ *
+ * @param {{clip: string, voice?: string|null}} row
+ * @returns {string}
  */
 export function choiceKey({ clip, voice = null }) {
   return voice ? `${clip}|${voice}` : clip;

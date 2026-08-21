@@ -1167,7 +1167,9 @@ async function main() {
     }
     case "render-voices": {
       // Repeatable: one flag per voice, so a whole shortlisted pair goes in one run.
-      const overrides = rest.flatMap((arg, index) => (arg === "--voice-id" ? [rest[index + 1]] : []));
+      const overrides = rest.flatMap((arg, index) =>
+        arg === "--voice-id" ? [rest[index + 1]] : [],
+      );
       await renderVoices(go, overrides);
       break;
     }
