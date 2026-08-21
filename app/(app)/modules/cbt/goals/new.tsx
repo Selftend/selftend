@@ -103,6 +103,10 @@ export default function NewGoalScreen() {
           lifeDomain: values.lifeDomain,
           goalType: values.goalType,
           targetDate: values.targetDate,
+          // No picker yet, so every goal saved from this form is anchored to nothing.
+          // #1289 adds the field and must prefill it from the loaded goal when editing -
+          // `saveGoal` overwrites the whole payload, so passing null there would clear it.
+          valueKey: null,
         },
         goalId: goalId ?? undefined,
         milestones: values.milestones,

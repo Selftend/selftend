@@ -17,6 +17,7 @@ interface GoalRow {
   goal_type: string;
   target_date: string | null;
   status: string;
+  value_key: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,6 +43,7 @@ function mapGoal(row: GoalRow): Goal {
     goalType: row.goal_type,
     targetDate: row.target_date,
     status: row.status as GoalStatus,
+    valueKey: row.value_key ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -117,6 +119,9 @@ export async function saveGoal(userId: string, input: GoalInput, goalId?: string
     life_domain: input.lifeDomain,
     goal_type: input.goalType,
     target_date: input.targetDate ?? null,
+    // Written on every save, like every other field in this payload: an edit that omits
+    // the key clears the anchor rather than silently keeping a stale one (#1287).
+    value_key: input.valueKey ?? null,
   };
 
   const query = goalId
