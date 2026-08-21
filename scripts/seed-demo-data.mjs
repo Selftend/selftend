@@ -187,6 +187,23 @@ function offsetMinutesFor(timestamp) {
   return -new Date(timestamp).getTimezoneOffset();
 }
 
+/**
+ * The civil day an instant was captured on, read off the PAIR a row stores —
+ * the same shift the client's `entryDayKey` and the server's
+ * `public.occurrence_day_key` both apply.
+ *
+ * A null offset falls back to the seeding machine's local day, which is exactly
+ * where the RPC's `coalesce` and the client's `toLocalDateKey` put such a row.
+ * Declared once and shared: two copies of this rule can disagree about a day
+ * without either one looking wrong, and every check that reads a row back out
+ * of the database resolves its day through here.
+ */
+function capturedDayKey(instant, offsetMinutes) {
+  return offsetMinutes == null
+    ? localDayKey(new Date(instant))
+    : new Date(new Date(instant).getTime() + offsetMinutes * 60_000).toISOString().slice(0, 10);
+}
+
 const admin = createClient(LOCAL_SUPABASE_URL, LOCAL_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
@@ -786,7 +803,7 @@ let customExerciseId;
 // NOT here — each is reclaimed when its parent goes. Adding one would look like
 // a tightening and would in fact be the first child wipe in the list, breaking
 // the contract the paragraph above states.
-const CBT_ACT_WIPE_TABLES = [
+const DEMO_SEED_WIPE_TABLES = [
   "thought_records",
   "core_beliefs",
   "activity_logs",
@@ -811,7 +828,7 @@ const CBT_ACT_WIPE_TABLES = [
   "routines",
 ];
 
-for (const table of CBT_ACT_WIPE_TABLES) {
+for (const table of DEMO_SEED_WIPE_TABLES) {
   await wipe(table);
 }
 
@@ -842,11 +859,14 @@ const DAY_INDEX_BY_KEY = new Map(Array.from({ length: DAYS }, (_, i) => [dayKeyA
  * dates the row by, the captured-offset column beside it where the table has
  * one, and the column that must be null for the row to count at all.
  *
- * ☠️ The pairs are the APP's, not the schema's. `activity_logs` dates by
- * `completed_at` because a scheduled activity is not a done one; a thought
- * record with `archived_at` set is excluded by `listThoughtRecords` and so
- * cannot complete a step. Getting either wrong makes every check below agree
- * with a screen that shows something else.
+ * ☠️ The pairs are the APP's, not the schema's: a thought record with
+ * `archived_at` set is excluded by `listThoughtRecords` and so cannot complete a
+ * step, however well dated it is. Getting one wrong makes every check below
+ * agree with a screen that shows something else.
+ *
+ * Only the tools the two seeded routines actually step through are listed. A new
+ * step id needs its entry here, and the read-back below fails loudly rather than
+ * skipping a tool it cannot resolve.
  */
 const ROUTINE_STEP_SOURCES = {
   mood: { table: "mood_logs", timestamp: "logged_at", offset: "logged_offset_minutes" },
@@ -865,18 +885,11 @@ const ROUTINE_STEP_SOURCES = {
   choicePoint: { table: "act_choice_points", timestamp: "created_at" },
 };
 
-/**
- * The civil day a seeded row files under, exactly as the app resolves it: through
- * the offset captured beside the timestamp where the table has one (`entryDayKey`),
- * and through the reader's local clock where it does not (`toLocalDateKey`).
- * Never by slicing the ISO string — see `dayKeyAt` for why that loses a day.
- */
+/** The civil day a seeded row files under, through the shared `capturedDayKey`. */
 function seededDayKey(row, source) {
   const iso = row[source.timestamp];
   if (!iso) return null;
-  const offset = source.offset ? row[source.offset] : null;
-  if (offset === null || offset === undefined) return localDayKey(new Date(iso));
-  return new Date(new Date(iso).getTime() + offset * 60_000).toISOString().slice(0, 10);
+  return capturedDayKey(iso, source.offset ? row[source.offset] : null);
 }
 
 /** Which day indices `source` already carries a countable row on. */
@@ -2886,16 +2899,8 @@ const CBT_PROGRAM_PHASE_INDEX = CBT_PHASE_KEYS.indexOf(CBT_PROGRAM_PHASE_KEY);
     prefs.cbt_program_phase_started_at ?? prefs.cbt_program_started_at,
   ).getTime();
 
-  /**
-   * The civil day an instant was captured on, from the pair the row stores —
-   * the same shift `public.occurrence_day_key` applies. A null offset falls back
-   * to the seeding machine's local day, which is where the RPC's `coalesce` and
-   * the client's `toLocalDateKey` both put such a row.
-   */
-  const capturedDayKey = (instant, offsetMinutes) =>
-    offsetMinutes == null
-      ? localDayKey(new Date(instant))
-      : new Date(new Date(instant).getTime() + offsetMinutes * 60_000).toISOString().slice(0, 10);
+  // The civil day comes from the module-scope `capturedDayKey`, shared with the
+  // routine-strip checks: this block used to carry its own copy of that rule.
 
   // What the seeded rows have to make each of the anchored phase's legs read.
   // Keyed by PHASE, and only the seeded phase is declared: every phase has
@@ -4667,6 +4672,10 @@ const SEEDED_ROUTINES = [
 
 {
   const stepRows = [];
+  // Counted off the ids the database handed back, never off the array that asked
+  // for them: every other `counts.*` here is an insert's own return, and a count
+  // restated from the input reports two routines whatever the database did.
+  const insertedIds = [];
   for (const routine of SEEDED_ROUTINES) {
     const createdAt = at(routine.createdDay, 7, 45);
     // Through the VIEW with an EXPLICIT user id: `routines` is encrypted
@@ -4684,6 +4693,7 @@ const SEEDED_ROUTINES = [
       custom_days: [],
       created_at: createdAt,
     });
+    if (routine.id) insertedIds.push(routine.id);
 
     routine.steps.forEach((toolId, position) => {
       stepRows.push({
@@ -4697,7 +4707,7 @@ const SEEDED_ROUTINES = [
     });
   }
 
-  counts.routines = SEEDED_ROUTINES.length;
+  counts.routines = insertedIds.length;
   counts.routine_steps = await insert("routine_steps", stepRows);
 }
 
@@ -4837,13 +4847,13 @@ const SEEDED_ROUTINES = [
 //
 // Checked BEFORE the summary prints, so a failed run never opens with a line
 // claiming the account was seeded.
-const wipedButEmpty = CBT_ACT_WIPE_TABLES.filter((table) => !counts[table]);
+const wipedButEmpty = DEMO_SEED_WIPE_TABLES.filter((table) => !counts[table]);
 if (wipedButEmpty.length > 0) {
   console.error("Insert counts for this run:");
   for (const [table, n] of Object.entries(counts)) console.error(`  ${table}: ${n}`);
   throw new Error(
     `Wiped but not re-seeded: ${wipedButEmpty.join(", ")}. ` +
-      "Every table in CBT_ACT_WIPE_TABLES must end the run with a non-zero insert count.",
+      "Every table in DEMO_SEED_WIPE_TABLES must end the run with a non-zero insert count.",
   );
 }
 

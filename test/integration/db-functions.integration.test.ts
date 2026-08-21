@@ -525,7 +525,7 @@ describe("schedule_send_web_reminders_cron() - access control + idempotency (int
 // `routines` and `routine_steps` are here because the seed's two routines are
 // composed of CBT and ACT practices and are wiped by the same parents-only
 // contract (#1290) - the sixth chain, and the last one to join this guard.
-const CBT_ACT_TABLES = [
+const DEMO_SEED_TABLES = [
   // ACT
   "act_action_steps",
   "act_bulls_eye_snapshots",
@@ -598,14 +598,14 @@ describe("demo seed delete cascades (integration)", () => {
     // filter down to nothing and stay green while proving nothing. Every one of
     // these tables carries at least a `user_id` key, so every one must appear.
     const covered = new Set(rules.map((rule) => logicalTableName(rule.child_table)));
-    const missing = CBT_ACT_TABLES.filter((table) => !covered.has(table));
+    const missing = DEMO_SEED_TABLES.filter((table) => !covered.has(table));
 
     expect(missing).toEqual([]);
   });
 
   it("every foreign key among the demo seed's tables deletes on cascade", () => {
     const offenders = rules
-      .filter((rule) => CBT_ACT_TABLES.includes(logicalTableName(rule.child_table)))
+      .filter((rule) => DEMO_SEED_TABLES.includes(logicalTableName(rule.child_table)))
       .filter((rule) => rule.delete_rule !== "CASCADE")
       .map(
         (rule) =>
