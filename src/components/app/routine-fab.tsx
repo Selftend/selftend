@@ -18,7 +18,7 @@ import {
   useReduceMotionEnabled,
 } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
-import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
+import { INSET_LAYER, useInsetBelow, useInsetPublisher } from "@/src/stores/layered-inset-store";
 
 // Invariant (#90): the FAB never renders over data-entry screens. Its job is
 // nudging from browsing contexts; on form screens it sat on top of
@@ -87,10 +87,23 @@ export function RoutineFab() {
   const today = useRoutinesToday(userId);
   const pathname = usePathname();
   const reduceMotion = useReduceMotionEnabled();
-  // Ride above the bottom-anchored banner strip (#670): a visible banner
-  // would otherwise sit under the handle. 0 while no banner is visible, so
-  // the handle settles back to its base position on its own.
-  const bannerInset = useBannerInsetStore((state) => state.height);
+  // Ride above everything on the layers BELOW this one (#1339): the keyboard
+  // (layer 0) and the in-flow strips (layer 1) - a visible banner, the cookie
+  // banner or a form's sticky footer would otherwise sit under the handle.
+  // 0 while nothing is down there, so the handle settles back to its base
+  // position on its own.
+  //
+  // ☠️ Strictly below, never a flat max. This component is itself a layer-2
+  // publisher; a flat max would include its own top edge, push it up, and it
+  // would climb forever. `useInsetBelow(floater)` cannot see layer 2 at all.
+  const insetBelow = useInsetBelow(INSET_LAYER.floater);
+  const hostBottom = Math.max(insets.bottom, insetBelow) + 16;
+  // hostBottom is the revision: on web onLayout is a ResizeObserver, so the
+  // handle moving without resizing would never re-publish its own top edge.
+  const { attachHost: attachFab, onLayout: onFabLayout } = useInsetPublisher(
+    INSET_LAYER.floater,
+    hostBottom,
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const [showCompleted, setShowCompleted] = useState(false);
@@ -166,10 +179,12 @@ export function RoutineFab() {
     <>
       {showCount && firstOpen ? (
         <View
+          onLayout={onFabLayout}
+          ref={attachFab}
           testID="routine-fab-host"
           pointerEvents="box-none"
           className="absolute right-4 z-[60]"
-          style={{ bottom: insets.bottom + 16 + bannerInset }}
+          style={{ bottom: hostBottom }}
         >
           <Fab
             icon="repeat"
@@ -191,10 +206,12 @@ export function RoutineFab() {
         </View>
       ) : showCompleted && !isDataEntryPath(pathname) ? (
         <View
+          onLayout={onFabLayout}
+          ref={attachFab}
           testID="routine-fab-complete-host"
           pointerEvents="box-none"
           className="absolute right-4 z-[60]"
-          style={{ bottom: insets.bottom + 16 + bannerInset }}
+          style={{ bottom: hostBottom }}
         >
           <Animated.View style={{ opacity: completedOpacity }}>
             <Fab

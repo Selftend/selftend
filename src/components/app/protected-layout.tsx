@@ -26,7 +26,7 @@ import { useNotificationSync } from "@/src/features/notifications/use-notificati
 import { useRoutines } from "@/src/features/routines/queries";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
-import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
+import { INSET_LAYER, useInsetPublisher } from "@/src/stores/layered-inset-store";
 import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync";
 import { AppLockGate } from "@/src/features/security/app-lock-gate";
 import { useAppLockStore } from "@/src/features/security/app-lock-store";
@@ -45,16 +45,15 @@ export default function ProtectedLayout() {
   const pathname = usePathname();
 
   const hydrateAppLock = useAppLockStore((s) => s.hydrate);
-  const setBannerInset = useBannerInsetStore((s) => s.setHeight);
   const insets = useSafeAreaInsets();
+  // The strip is layer 1 of the bottom-inset ladder (#1339): it publishes its
+  // own top edge, and the hook clears the entry when this layout unmounts, so a
+  // stale inset cannot outlive the strip that measured it (sign-out).
+  const { attachHost: attachStrip, onLayout: onStripLayout } = useInsetPublisher(INSET_LAYER.strip);
   // Measured height of the banner strip's CONTENT (the strip's safe-area
-  // padding excluded); 0 while no banner renders. Drives both the store and
-  // the conditional padding below.
+  // padding excluded); 0 while no banner renders. Drives the conditional
+  // padding below - the published edge is measured, not derived from this.
   const [bannerContentHeight, setBannerContentHeight] = useState(0);
-
-  // A stale inset must not outlive the strip that measured it (sign-out
-  // unmounts this layout while the store persists).
-  useEffect(() => () => useBannerInsetStore.getState().setHeight(0), []);
 
   useSettingsSync(user?.id ?? null, preferences);
   // Routine reminders live on routines rows (not user_preferences), so fold them into
@@ -350,28 +349,29 @@ export default function ProtectedLayout() {
             <Stack.Screen name="progress" dangerouslySingular />
           </Stack>
           {/* Banner strips anchor at the bottom of the content column (#660):
-              the top of the screen belongs to the invisible header. Their
-              measured height feeds the banner-inset store so bottom-floating
-              widgets (reminder prompt card; RoutineFab, #670) ride above
-              visible banners instead of covering their controls.
+              the top of the screen belongs to the invisible header. The PADDED
+              strip publishes its top edge into layer 1 of the inset ladder
+              (#1339), so bottom-floating widgets (reminder prompt card;
+              RoutineFab, #670) and the toast ride above visible banners
+              instead of covering their controls.
 
               The home-indicator inset is reserved only while a banner is
               actually visible (#670): a blanket paddingBottom would hold
               empty inset-height space under the content column at all times.
-              The store gets the CONTENT height only — the floating widgets'
-              base offset already includes insets.bottom, so adding the
-              padded strip's total would double-count it. */}
+
+              The publisher sits on the OUTER view so the measured edge covers
+              that conditional padding too, and so the padding change itself
+              triggers a fresh layout pass. The inner onLayout still supplies
+              the CONTENT height, which is what decides the padding. */}
           <View
+            onLayout={onStripLayout}
+            ref={attachStrip}
             testID="bottom-banner-strip"
             style={{ paddingBottom: bannerContentHeight > 0 ? insets.bottom : 0 }}
           >
             <View
               testID="bottom-banner-strip-content"
-              onLayout={(event) => {
-                const { height } = event.nativeEvent.layout;
-                setBannerContentHeight(height);
-                setBannerInset(height);
-              }}
+              onLayout={(event) => setBannerContentHeight(event.nativeEvent.layout.height)}
             >
               <OfflineBanner />
               <VerifyEmailBanner />

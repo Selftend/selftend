@@ -24,6 +24,7 @@ import { AppShell } from "@/src/components/app/app-shell";
 import { AppErrorBoundary } from "@/src/components/app/app-error-boundary";
 import { AppToast } from "@/src/components/app/app-toast";
 import { CookieConsentBanner } from "@/src/components/app/cookie-consent-banner";
+import { KeyboardInsetPublisher } from "@/src/components/app/keyboard-inset-publisher";
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
 import { useColorSchemeDriver, useColorSchemeName } from "@/src/lib/color-scheme";
 import { useStyleDriver, useStyleName } from "@/src/lib/style";
@@ -93,6 +94,10 @@ export default Sentry.wrap(function RootLayout() {
           <View className="flex-1 bg-background" style={THEME_VARIABLES[style][colorScheme]}>
             <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
             <AppErrorBoundary>
+              {/* Layer 0 of the bottom-inset ladder (#1339): the soft keyboard
+                  overlays the layout viewport on all three platforms, so the
+                  bottom-anchored floaters below have to be told where it is. */}
+              <KeyboardInsetPublisher />
               <AppShell />
               <CookieConsentBanner />
               <ReminderPromptCard />

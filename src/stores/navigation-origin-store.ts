@@ -56,7 +56,7 @@ interface NavigationOriginState {
  * reaches `/notifications` from the sidebar an hour later, and a render-time
  * guard would hand over a long-dead CBT. Consuming on mount closes that
  * structurally - the later arrival finds an empty store and correctly falls back
- * to Up. Deliberately not the `banner-inset-store` unmount-cleanup pattern,
+ * to Up. Deliberately not the `layered-inset-store` detach-cleanup pattern,
  * which patches a store that *can* go stale; this one cannot.
  *
  * ⚠️ The read and the clear are **two operations, not one**, and that split is
