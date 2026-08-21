@@ -2983,6 +2983,82 @@ function bandOpensAt(dayIndex) {
   return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), ACT_BAND_START_HOUR, 0, 0, 0);
 }
 
+/**
+ * The declared columns of every row the demo account owns in `table`.
+ *
+ * The ACT checks all READ BACK rather than inspecting the arrays that built the
+ * rows, because reading back is what makes them cover the encrypted views: a
+ * value a write trigger's `coalesce` default quietly replaced looks correct in
+ * memory and wrong here. `label` names the check in the error so a failure says
+ * which of them was asking.
+ */
+async function actRowsFor(table, columns, label) {
+  const { data, error } = await admin
+    .from(table)
+    .select(columns.join(","))
+    .eq("user_id", DEMO_USER_ID);
+  if (error) throw new Error(`act ${label} read-back (${table}): ${error.message}`);
+  if (data.length === 0) throw new Error(`act ${label} read-back (${table}): no rows came back.`);
+  return data;
+}
+
+/** Every `created_at` the demo account holds in `table`, as epoch millis. */
+async function actCreatedMillis(table, label) {
+  const rows = await actRowsFor(table, ["created_at"], label);
+  return rows.map((row) => new Date(row.created_at).getTime());
+}
+
+/**
+ * Fail unless every declared variant of each `[table, column, variants]` triple
+ * appears among the rows the database returns.
+ *
+ * The failure this prevents is a technique card, status badge or category label
+ * that never renders on the demo account, which is invisible until someone opens
+ * the one screen that would have shown it.
+ */
+async function requireEveryVariantInDb(checks) {
+  for (const [table, column, variants] of checks) {
+    const rows = await actRowsFor(table, [column], "variant");
+    requireEveryVariant(`${table}.${column}`, variants, rows, column);
+  }
+}
+
+/**
+ * Fail unless every declared `[table, columns]` timestamp sits inside the
+ * 10:00-12:00 UTC band.
+ *
+ * These tables store no captured offset, so a row placed with `at()` instead of
+ * `inBand()` changes civil day for viewers the band was chosen to cover. Null
+ * columns are skipped — several are genuinely optional. The excused instants are
+ * today's rows the future-clamp pulled back out of the band; ☠️ they are matched
+ * by EPOCH MILLIS rather than by string, because PostgREST returns a different
+ * ISO format than the script wrote.
+ */
+async function requireRowsInBand(entries) {
+  const strays = [];
+  for (const [table, columns] of entries) {
+    for (const row of await actRowsFor(table, columns, "band")) {
+      for (const column of columns) {
+        if (row[column] === null) continue;
+        const millis = new Date(row[column]).getTime();
+        if (clampedOutOfBand.has(millis)) continue;
+        const hour = new Date(millis).getUTCHours();
+        if (hour < ACT_BAND_START_HOUR || hour >= ACT_BAND_END_HOUR) {
+          strays.push(`${table}.${column} at ${new Date(millis).toISOString()}`);
+        }
+      }
+    }
+  }
+  if (strays.length > 0) {
+    throw new Error(
+      `${strays.length} ACT row(s) sit outside the ${ACT_BAND_START_HOUR}:00-` +
+        `${ACT_BAND_END_HOUR}:00 UTC band — ${strays.slice(0, 3).join("; ")}. These tables store ` +
+        "no captured offset, so a row outside the band changes civil day for viewers the band " +
+        "was chosen to cover. Place it with `inBand`, not `at`.",
+    );
+  }
+}
+
 /** The UTC instant the band CLOSES on day `dayIndex`, in epoch millis. */
 function bandClosesAt(dayIndex) {
   const d = dayAt(dayIndex);
@@ -3485,19 +3561,8 @@ const ACT_TODAY = DAYS - 1;
     "act_choice_points",
   ];
 
-  /** Every `created_at` the demo account holds in `table`, as epoch millis. */
-  async function createdAtMillis(table) {
-    const { data, error } = await admin
-      .from(table)
-      .select("created_at")
-      .eq("user_id", DEMO_USER_ID);
-    if (error) throw new Error(`act band read-back (${table}): ${error.message}`);
-    if (data.length === 0) throw new Error(`act band read-back (${table}): no rows came back.`);
-    return data.map((row) => new Date(row.created_at).getTime());
-  }
-
   const seeded = {};
-  for (const table of bandTables) seeded[table] = await createdAtMillis(table);
+  for (const table of bandTables) seeded[table] = await actCreatedMillis(table, "band");
 
   // VARIANT COVERAGE, off the rows the database returns rather than the arrays
   // that built them. The enum columns are plaintext pass-throughs on the `_data`
@@ -3505,38 +3570,16 @@ const ACT_TODAY = DAYS - 1;
   // this cover the encrypted views too: a variant that a write trigger's
   // `coalesce` default quietly replaced looks correct in memory and wrong here,
   // which is the whole reason the band check below reads back as well.
-  const variantChecks = [
+  await requireEveryVariantInDb([
     ["act_defusion_logs", "technique_used", DEFUSION_TECHNIQUES],
     ["act_defusion_logs", "thought_category", THOUGHT_CATEGORIES],
     ["act_expansion_logs", "technique_used", EXPANSION_TECHNIQUES],
     ["act_expansion_logs", "discomfort_type", DISCOMFORT_TYPES],
     ["act_connection_logs", "technique", CONNECTION_TECHNIQUES],
     ["act_observing_self_sessions", "technique_used", OBSERVING_TECHNIQUES],
-  ];
-  for (const [table, column, variants] of variantChecks) {
-    const { data, error } = await admin.from(table).select(column).eq("user_id", DEMO_USER_ID);
-    if (error) throw new Error(`act variant read-back (${table}.${column}): ${error.message}`);
-    requireEveryVariant(`${table}.${column}`, variants, data, column);
-  }
+  ]);
 
-  const strays = [];
-  for (const table of bandTables) {
-    for (const millis of seeded[table]) {
-      if (clampedOutOfBand.has(millis)) continue;
-      const hour = new Date(millis).getUTCHours();
-      if (hour < ACT_BAND_START_HOUR || hour >= ACT_BAND_END_HOUR) {
-        strays.push(`${table} at ${new Date(millis).toISOString()}`);
-      }
-    }
-  }
-  if (strays.length > 0) {
-    throw new Error(
-      `${strays.length} ACT row(s) sit outside the ${ACT_BAND_START_HOUR}:00-` +
-        `${ACT_BAND_END_HOUR}:00 UTC band — ${strays.slice(0, 3).join("; ")}. These tables store ` +
-        "no captured offset, so a row outside the band changes civil day for viewers the band " +
-        "was chosen to cover. Place it with `inBand`, not `at`.",
-    );
-  }
+  await requireRowsInBand(bandTables.map((table) => [table, ["created_at"]]));
 
   // The two margins, each measured band edge to band edge. A row is late if it
   // reaches PAST the close of the band on its deadline day, which is a two-day
@@ -4103,6 +4146,19 @@ function alignmentFor(domain, dayIndex) {
     },
   };
 
+  // The stored index against the one this script wrote, stated OUTRIGHT rather
+  // than left to fall out of the lookup below. It does fall out today — only
+  // `openUp` declares expectations, so any other index lands on "no expectations
+  // declared" — but that is equality holding by SIDE EFFECT, and it stops
+  // holding the moment a second phase is declared, which is exactly the kind of
+  // quietly-weakened assertion this block exists to prevent.
+  if (prefs.act_program_phase_index !== ACT_PROGRAM_PHASE_INDEX) {
+    throw new Error(
+      `The database holds ACT phase index ${prefs.act_program_phase_index} but this run wrote ` +
+        `${ACT_PROGRAM_PHASE_INDEX} ('${ACT_PROGRAM_PHASE_KEY}'). The anchor did not land.`,
+    );
+  }
+
   const anchoredPhaseKey = ACT_PHASE_KEYS[prefs.act_program_phase_index];
   const phaseExpectation = phaseExpectations[anchoredPhaseKey];
   if (!phaseExpectation) {
@@ -4203,19 +4259,34 @@ function alignmentFor(domain, dayIndex) {
       dayKeyAtOffset(utcDayStart, edge.offsetMinutes),
       dayKeyAtOffset(utcDayEnd, edge.offsetMinutes),
     ]);
-    const unhookedToday = defusion.filter((ms) =>
+    // All THREE tables the daily leg counts, not just defusion: `openUp`'s
+    // practice is "unhooked OR made room", so an expansion or urge-surf row that
+    // reached a viewer's today would tick it just as surely. Checking only
+    // defusion would be sound today — the phase-start check below is stricter
+    // about the other two — but only by leaning on a second check, and that
+    // dependency lives nowhere the next reader would find it.
+    const practisedToday = [...defusion, ...expansion, ...urgeSurf].filter((ms) =>
       todayThere.has(dayKeyAtOffset(ms, edge.offsetMinutes)),
     );
-    if (unhookedToday.length > 0) {
+    if (practisedToday.length > 0) {
       throw new Error(
-        `At ${edge.label} ${unhookedToday.length} defusion row(s) fall on ` +
-          `${[...todayThere].join(" or ")}, which that viewer calls today at some point during ` +
-          "this UTC day, so `openUp`'s daily practice would read DONE there. It is deliberately " +
-          "open, and the last defusion row is meant to sit two days clear of today so no viewer " +
-          "clock can reach it.",
+        `At ${edge.label} ${practisedToday.length} defusion, expansion or urge-surf row(s) fall ` +
+          `on ${[...todayThere].join(" or ")}, which that viewer calls today at some point ` +
+          "during this UTC day, so `openUp`'s daily practice would read DONE there. It is " +
+          "deliberately open, and the last of those rows is meant to sit two days clear of today " +
+          "so no viewer clock can reach it.",
       );
     }
 
+    // ☠️ THIS ONE IS A MARGIN GUARD, NOT A LEG THAT CAN FLIP. `makeRoomOnce`
+    // compares INSTANTS (`atOrAfter` in program-definition.ts), and an instant
+    // comparison is timezone-independent by construction — no viewer clock can
+    // move it. Checked at DAY granularity anyway, and so deliberately stricter
+    // than the app: the two-day gap is what keeps the milestone safe if that leg
+    // is ever day-keyed the way every daily practice already is, and a check
+    // that mirrored today's instant comparison would pass right up to the moment
+    // that change made it wrong. Mutation-tested: an expansion row one day
+    // short of the margin trips it at UTC-11:00.
     const phaseStartThere = dayKeyAtOffset(phaseStart, edge.offsetMinutes);
     const roomMadeSince = [...expansion, ...urgeSurf].filter(
       (ms) => dayKeyAtOffset(ms, edge.offsetMinutes) >= phaseStartThere,
@@ -4235,31 +4306,17 @@ function alignmentFor(domain, dayIndex) {
 // the practice-logs section does it: reading back is what makes these checks
 // cover the encrypted views as well as the code that built the rows.
 {
-  /** The declared columns of `table`, for every row the demo account owns. */
-  async function readBack(table, columns) {
-    const { data, error } = await admin
-      .from(table)
-      .select(columns.join(","))
-      .eq("user_id", DEMO_USER_ID);
-    if (error) throw new Error(`act structured read-back (${table}): ${error.message}`);
-    if (data.length === 0)
-      throw new Error(`act structured read-back (${table}): no rows came back.`);
-    return data;
-  }
+  const readBack = (table, columns) => actRowsFor(table, columns, "structured");
 
   // VARIANT COVERAGE. The three life-domain columns carry the schema's four-value
   // CHECK and the status column its three-value one; a variant with no row is a
   // card or a section header that never renders on the demo account.
-  const variantChecks = [
+  await requireEveryVariantInDb([
     ["act_value_entries", "life_domain", ACT_LIFE_DOMAINS],
     ["act_bulls_eye_snapshots", "domain", ACT_LIFE_DOMAINS],
     ["act_committed_actions", "life_domain", ACT_LIFE_DOMAINS],
     ["act_committed_actions", "status", ACTION_STATUSES],
-  ];
-  for (const [table, column, variants] of variantChecks) {
-    const rows = await readBack(table, [column]);
-    requireEveryVariant(`${table}.${column}`, variants, rows, column);
-  }
+  ]);
 
   // ☠️ The schema caps value entries at four — `unique (user_id, life_domain)`
   // over a four-value CHECK — so "all four domains present" and "exactly four
@@ -4373,14 +4430,10 @@ function alignmentFor(domain, dayIndex) {
     );
   }
 
-  // THE BAND. These tables store no captured offset, so a row placed with `at()`
-  // instead of `inBand()` changes civil day for viewers the band was chosen to
-  // cover: `reviewed_at` is printed as a date on the history, `completed_at` is
-  // compared against the selected day, and the rest are the timestamps a future
-  // check would reach for. The excused instants are today's rows the future-clamp
-  // pulled back out of the band, compared by epoch millis because PostgREST
-  // returns a different ISO format than the script wrote.
-  const bandColumns = [
+  // THE BAND, over every timestamp column this slice writes: `reviewed_at` is
+  // printed as a date on the history, `completed_at` is compared against the
+  // selected day, and the rest are the ones a future check would reach for.
+  await requireRowsInBand([
     ["act_bulls_eye_snapshots", ["reviewed_at", "created_at"]],
     ["act_value_entries", ["created_at", "updated_at"]],
     ["act_committed_actions", ["created_at", "updated_at"]],
@@ -4389,29 +4442,7 @@ function alignmentFor(domain, dayIndex) {
       "act_program_state",
       ["created_at", "updated_at", "onboarding_completed_at", "last_check_in_at"],
     ],
-  ];
-  const strays = [];
-  for (const [table, columns] of bandColumns) {
-    for (const row of await readBack(table, columns)) {
-      for (const column of columns) {
-        if (row[column] === null) continue;
-        const millis = new Date(row[column]).getTime();
-        if (clampedOutOfBand.has(millis)) continue;
-        const hour = new Date(millis).getUTCHours();
-        if (hour < ACT_BAND_START_HOUR || hour >= ACT_BAND_END_HOUR) {
-          strays.push(`${table}.${column} at ${new Date(millis).toISOString()}`);
-        }
-      }
-    }
-  }
-  if (strays.length > 0) {
-    throw new Error(
-      `${strays.length} ACT row(s) sit outside the ${ACT_BAND_START_HOUR}:00-` +
-        `${ACT_BAND_END_HOUR}:00 UTC band — ${strays.slice(0, 3).join("; ")}. These tables store ` +
-        "no captured offset, so a row outside the band changes civil day for viewers the band " +
-        "was chosen to cover. Place it with `inBand`, not `at`.",
-    );
-  }
+  ]);
 }
 
 // ---------------------------------------------------------------------- done
