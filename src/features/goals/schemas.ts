@@ -15,7 +15,27 @@ export const goalFormSchema = z.object({
   title: userText(2000, { min: 3, message: "goals.validation.title" }),
   description: userText(4000),
   targetDate: z.string().nullable(),
+  /**
+   * Which of the user's priority values this goal serves, or null for none (#1289).
+   *
+   * Optional as well as nullable, with no validation of any kind. Two reasons it can
+   * never be made stricter: the shipped programme's first week sets goals *before*
+   * values clarification, so the intended path writes a goal with no priority values
+   * in existence; and a draft persisted before this field shipped rehydrates without
+   * the key, which a required field would reject outright.
+   */
+  valueKey: z.string().nullable().optional(),
   milestones: z.array(milestoneSchema).min(1, "goals.validation.milestones"),
 });
 
 export type GoalFormSchema = z.infer<typeof goalFormSchema>;
+
+/**
+ * The form's shape with `valueKey` made non-optional.
+ *
+ * Every object that SEEDS the form - the create defaults and the edit-mode reset -
+ * is typed with this rather than `GoalFormSchema`, so forgetting the value key is a
+ * compile error. Omitting it from the edit reset would silently clear the anchor of
+ * every goal that has one, because `saveGoal` overwrites the whole payload.
+ */
+export type GoalFormSeed = Required<GoalFormSchema>;
