@@ -21,8 +21,9 @@ import path from "node:path";
  *   `/modules/cbt/new` additionally reads its check-in handoff once per MOUNT, so a
  *   reused instance drops the seeded emotions with nothing failing.
  *
- * The third — a screen holding the user's unsaved WORK — cannot be derived, and is restated
- * in `HOLDS_UNSAVED_WORK` below with the reasoning for each entry.
+ * The third — a screen whose MOUNT is the point, because it holds unsaved work or performs a
+ * once-only side effect — cannot be derived, and is restated in `MUST_REMOUNT` below with the
+ * reasoning for each entry.
  *
  * The rule this encodes: LIST and OVERVIEW screens are single-instance; screens holding
  * per-visit state — creation, editing, dynamic records, unsaved work — are not, because
@@ -66,44 +67,59 @@ function readsSearchParams(file: string, depth = 0): boolean {
 }
 
 /**
- * The THIRD exception, and the only one that cannot be derived.
+ * The THIRD exception, and the only one that cannot be derived: screens whose MOUNT IS THE
+ * POINT. Singular reuses a route rather than remounting it, so whatever these screens do or
+ * hold on the way in simply does not happen the second time.
  *
- * A screen holding unsaved user work must remount, exactly like a `new` route — singular
- * reuse would drop you back into a half-finished exercise instead of starting it. Neither
- * signal above finds these: they carry no dynamic segment, no `new`, no query param.
+ * Two shapes qualify, and neither is visible to the signals above — no dynamic segment, no
+ * `new`, no `useLocalSearchParams`:
+ *
+ * - the screen holds the user's unsaved WORK, so reuse hands back something half-finished;
+ * - the screen's mount RUNS something once, so reuse silently skips it.
  *
  * ☠️ `useState` is NOT the test, which is why this cannot be derived. Plenty of marked
  * overview screens hold benign view state — breathing's `helpOpen`, routines'
  * `starterDismissed`, the stage list's `openStage` — and reusing those is harmless or even
- * wanted. What disqualifies a screen is state that is the user's WORK: entered, unsaved,
- * and surprising to find waiting.
+ * wanted. What disqualifies a screen is state that is the user's WORK, or a side effect the
+ * route exists to perform.
  *
  * So this list is restated rather than derived, and the assertions below keep it honest:
  * every entry must be declared, and must actually be plain.
  */
-const HOLDS_UNSAVED_WORK: Record<string, string> = {
+const MUST_REMOUNT: Record<string, string> = {
   // Nine pieces of state driving a timed practice; re-entering mid-surf is not a resume.
   "modules/act/expansion/urge-surfing": "in-progress exercise",
   // `ratings` is a full bulls-eye the user has filled in and not yet saved.
   "modules/act/values/bulls-eye": "unsaved domain ratings",
+  // ☠️ Reads the callback URL and completes the redirect behind a once-only `useRef` guard,
+  // then scrubs the auth material from history. A reused instance would never process a
+  // second, different code — and it reads `window.location.href`, not `useLocalSearchParams`,
+  // so the query-keyed derivation above is blind to it.
+  "auth-callback": "mount performs the auth callback",
 };
 
-describe.each([
+/** Every layout that declares screens, with the directory its route names resolve against. */
+const LAYOUTS: [string, string][] = [
   ["src/components/app/protected-layout.tsx", "app/(app)"],
   ["src/components/app/app-shell.tsx", "app"],
-])("%s declares single-instance screens", (layoutFile, routesDir) => {
+  ["app/(auth)/_layout.tsx", "app/(auth)"],
+];
+
+describe.each(LAYOUTS)("%s declares single-instance screens", (layoutFile, routesDir) => {
   const screens = declaredScreens(layoutFile);
 
+  // Low enough to clear the smallest layout (the six auth routes) with room to spare: this
+  // only has to catch a regex that stopped matching, not police how many routes exist.
   it("declares screens at all, so the assertions below cannot pass vacuously", () => {
-    expect(screens.length).toBeGreaterThan(5);
+    expect(screens.length).toBeGreaterThan(3);
   });
 
-  it("marks every screen that is neither dynamic, query-keyed, nor holding unsaved work", () => {
+  it("marks every screen that is neither dynamic, query-keyed, nor required to remount", () => {
     const shouldBeMarked = screens.filter(([name]) => {
       // Groups route elsewhere and `index` is a landing/redirect route, never a push target.
       if (name.startsWith("(") || name === "index") return false;
       if (name.includes("[") || name.endsWith("/new")) return false;
-      if (name in HOLDS_UNSAVED_WORK) return false;
+      if (name in MUST_REMOUNT) return false;
       const file = routeFile(routesDir, name);
       return file !== null && !readsSearchParams(file);
     });
@@ -115,12 +131,12 @@ describe.each([
     expect(missing).toEqual([]);
   });
 
-  it("leaves dynamic, query-keyed and unsaved-work screens plain", () => {
+  it("leaves dynamic, query-keyed and must-remount screens plain", () => {
     const wronglyMarked = screens
       .filter(([name, rest]) => {
         if (!rest.includes("dangerouslySingular")) return false;
         if (name.includes("[") || name.endsWith("/new")) return true;
-        if (name in HOLDS_UNSAVED_WORK) return true;
+        if (name in MUST_REMOUNT) return true;
         const file = routeFile(routesDir, name);
         return file !== null && readsSearchParams(file);
       })
@@ -139,37 +155,42 @@ describe.each([
  * each one through the marking rules above rather than letting it inherit a default nobody
  * chose. Adding a screen now fails here until it is declared.
  */
-describe("every route is declared by a layout", () => {
-  const routeNames = (routesDir: string, prefix = ""): string[] =>
-    fs.readdirSync(path.join(REPO, routesDir, prefix), { withFileTypes: true }).flatMap((entry) => {
-      const name = prefix ? `${prefix}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) return routeNames(routesDir, name);
-      // `_layout` and other underscored files are configuration, not push targets.
-      return entry.name.endsWith(".tsx") && !name.split("/").some((s) => s.startsWith("_"))
-        ? [name.replace(/\.tsx$/, "")]
-        : [];
-    });
+/** Every route name a layout is responsible for, relative to its own directory. */
+const routeNames = (routesDir: string, prefix = ""): string[] =>
+  fs.readdirSync(path.join(REPO, routesDir, prefix), { withFileTypes: true }).flatMap((entry) => {
+    const name = prefix ? `${prefix}/${entry.name}` : entry.name;
+    // A `(group)` has its own layout and is declared by name as one entry, not walked into.
+    if (entry.isDirectory()) {
+      return entry.name.startsWith("(") ? [entry.name] : routeNames(routesDir, name);
+    }
+    if (!entry.name.endsWith(".tsx")) return [];
+    // `_layout` is configuration; `+not-found` is expo's catch-all, reached by failing to
+    // match rather than by a push, so it has no second instance to prevent.
+    if (entry.name.startsWith("_") || entry.name.startsWith("+")) return [];
+    return [name.replace(/\.tsx$/, "")];
+  });
 
-  const declared = new Set([
-    ...declaredScreens("src/components/app/protected-layout.tsx").map(([name]) => name),
-    ...declaredScreens("src/components/app/app-shell.tsx").map(([name]) => name),
-  ]);
-
-  const routes = routeNames("app/(app)");
+describe.each(LAYOUTS)("%s declares every route it owns", (layoutFile, routesDir) => {
+  const declared = new Set(declaredScreens(layoutFile).map(([name]) => name));
+  const routes = routeNames(routesDir);
 
   it("finds the route files at all, so the assertion below cannot pass vacuously", () => {
-    expect(routes.length).toBeGreaterThan(50);
+    expect(routes.length).toBeGreaterThan(4);
   });
 
   it("declares each of them", () => {
     expect(routes.filter((route) => !declared.has(route))).toEqual([]);
   });
+});
 
-  // A restated list rots the moment a route is renamed, and a stale key would silently stop
-  // excusing anything. Every exception must still name a real, declared route.
-  it("keeps the unsaved-work exceptions pointing at real routes", () => {
-    expect(Object.keys(HOLDS_UNSAVED_WORK).filter((name) => !declared.has(name))).toEqual([]);
-  });
+// A restated list rots the moment a route is renamed, and a stale key would silently stop
+// excusing anything. Every exception must still name a route some layout declares.
+it("keeps the must-remount exceptions pointing at real routes", () => {
+  const declared = new Set(
+    LAYOUTS.flatMap(([file]) => declaredScreens(file).map(([name]) => name)),
+  );
+
+  expect(Object.keys(MUST_REMOUNT).filter((name) => !declared.has(name))).toEqual([]);
 });
 
 /**
