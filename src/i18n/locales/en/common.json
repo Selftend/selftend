@@ -11,6 +11,11 @@
   "edit": "Edit",
   "close": "Close",
   "noDateSet": "No date set",
+  "calendar": {
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "today": "Today"
+  },
   "time": {
     "hourField": "{{label}}, hour",
     "minuteField": "{{label}}, minute",
