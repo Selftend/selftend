@@ -5,7 +5,11 @@ import { RoutineFab } from "@/src/components/app/routine-fab";
 import { useRoutines } from "@/src/features/routines/queries";
 import type { RoutineWithSteps } from "@/src/features/routines/types";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
-import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
+import {
+  INSET_LAYER,
+  type InsetLayer,
+  useLayeredInsetStore,
+} from "@/src/stores/layered-inset-store";
 import { currentDateKey } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -88,7 +92,7 @@ describe("RoutineFab", () => {
     jest.clearAllMocks();
     mockUsePathname.mockReturnValue("/");
     mockUseRoutineToolRecords.mockReturnValue({});
-    useBannerInsetStore.setState({ height: 0 });
+    useLayeredInsetStore.setState({ edges: {} });
   });
 
   it("renders nothing at zero routines", () => {
@@ -454,10 +458,19 @@ describe("RoutineFab", () => {
   // #670: the banner strips anchor at the bottom of the content column, where
   // the handle floats — it must offset above any visible banner, and settle
   // back to base when the banner goes away, all without a reload.
-  describe("banner-strip offset", () => {
+  describe("layered bottom inset (#1339)", () => {
     function hostBottom() {
       const host = screen.getByTestId("routine-fab-host");
       return (StyleSheet.flatten(host.props.style) as { bottom?: number }).bottom;
+    }
+
+    /**
+     * Publish a measured top edge into the ladder. Direct store writes, because
+     * jest's View is a class mock with no measureInWindow — the publisher hook's
+     * own contract is covered in `layered-inset-store.test.tsx`.
+     */
+    function publishBelow(id: string, layer: InsetLayer, edge: number) {
+      act(() => useLayeredInsetStore.getState().publishInset(id, layer, edge));
     }
 
     it("keeps its base position while no banner is visible", () => {
@@ -467,6 +480,9 @@ describe("RoutineFab", () => {
 
       // Insets are 0 under the test SafeAreaProvider: base offset only.
       expect(hostBottom()).toBe(16);
+      // Layer 2 published on the FIRST frame: RNW decides at mount whether a
+      // view is observed, so a handler attached later is never heard.
+      expect(screen.getByTestId("routine-fab-host").props.onLayout).toEqual(expect.any(Function));
     });
 
     it("rides above a visible banner and settles back when it disappears", () => {
@@ -474,10 +490,46 @@ describe("RoutineFab", () => {
 
       renderWithProviders(<RoutineFab />);
 
-      act(() => useBannerInsetStore.setState({ height: 40 }));
+      publishBelow("banner-strip", INSET_LAYER.strip, 40);
       expect(hostBottom()).toBe(56);
 
-      act(() => useBannerInsetStore.setState({ height: 0 }));
+      act(() => useLayeredInsetStore.getState().clearInset("banner-strip"));
+      expect(hostBottom()).toBe(16);
+    });
+
+    it("clears the soft keyboard (#1339 layer 0)", () => {
+      setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
+
+      renderWithProviders(<RoutineFab />);
+
+      publishBelow("keyboard", INSET_LAYER.keyboard, 336);
+      expect(hostBottom()).toBe(352);
+    });
+
+    it("maxes overlapping layer-1 publishers rather than summing them", () => {
+      setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
+
+      renderWithProviders(<RoutineFab />);
+
+      // The cookie banner is `fixed bottom-0`, so it OVERLAPS the banner strip
+      // instead of stacking on it; summing 40 + 120 would be 64px too high.
+      publishBelow("banner-strip", INSET_LAYER.strip, 40);
+      publishBelow("cookie-banner", INSET_LAYER.strip, 120);
+
+      expect(hostBottom()).toBe(136);
+    });
+
+    it("☠️ cannot see its own layer — the climbing loop is structurally unreachable", () => {
+      setRoutines([makeRoutine("r-1", "Morning reset", ["mood"])]);
+
+      renderWithProviders(<RoutineFab />);
+
+      // What a flat max would do: the FAB publishes its own top edge, reads it
+      // back, moves up, publishes higher - forever. Layer 2 is invisible to a
+      // layer-2 consumer, so this changes nothing at all.
+      publishBelow("reminder-prompt", INSET_LAYER.floater, 500);
+      publishBelow("routine-fab-itself", INSET_LAYER.floater, 900);
+
       expect(hostBottom()).toBe(16);
     });
   });
