@@ -18,6 +18,7 @@ import {
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
   deleteAllRoutinesForUser,
+  deleteAllValuesProfileForUser,
 } from "../integration/helpers";
 
 export {
@@ -36,6 +37,7 @@ export {
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
   deleteAllRoutinesForUser,
+  deleteAllValuesProfileForUser,
 };
 
 // Waiting on a success toast as a DB-commit signal: re-exported here so specs keep

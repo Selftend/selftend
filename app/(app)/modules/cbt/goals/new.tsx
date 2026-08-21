@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,17 +18,24 @@ import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { goalTypes } from "@/src/constants/goal-types";
 import { lifeDomains } from "@/src/constants/life-domains";
 import { useGoal, useMilestones, useSaveGoal } from "@/src/features/goals/queries";
-import { goalFormSchema, type GoalFormSchema } from "@/src/features/goals/schemas";
+import {
+  goalFormSchema,
+  type GoalFormSchema,
+  type GoalFormSeed,
+} from "@/src/features/goals/schemas";
+import { useValuesProfile } from "@/src/features/values/queries";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useWizardDraft, selectWizardDraftValues } from "@/src/lib/use-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
 import { useGoalDraftStore } from "@/src/stores/goal-draft-store";
 
-const defaultValues: GoalFormSchema = {
+const defaultValues: GoalFormSeed = {
   lifeDomain: "",
   goalType: "",
   title: "",
   description: "",
   targetDate: null,
+  valueKey: null,
   milestones: [{ description: "", targetDate: null }],
 };
 
@@ -64,15 +71,33 @@ export default function NewGoalScreen() {
   const { fields, append, remove } = useFieldArray({ control, name: "milestones" });
   const selectedDomain = useWatch({ control, name: "lifeDomain" });
   const selectedType = useWatch({ control, name: "goalType" });
+  const selectedValue = useWatch({ control, name: "valueKey" });
+
+  // Reuse of the values screen's own query - there is deliberately no goal-side
+  // query layer for this, and nothing here writes to the profile.
+  const { data: valuesProfile, isLoading: valuesLoading } = useValuesProfile(user?.id ?? null);
+  const priorityValues = valuesProfile?.priorityValues ?? [];
+  // A value that has since dropped out of the priority list is still offered, and
+  // still shown as selected: re-ranking on another screen must never silently
+  // rewrite a goal that was anchored before the re-rank.
+  const valueOptions =
+    selectedValue && !priorityValues.includes(selectedValue)
+      ? [...priorityValues, selectedValue]
+      : priorityValues;
 
   useEffect(() => {
     if (!existingGoal || !existingMilestones || storedDraftValues) return;
-    reset({
+    // Typed as the seed shape on purpose, so the compiler rejects a reset that
+    // forgets `valueKey`. `saveGoal` overwrites every field of its payload, so
+    // omitting it here would clear the anchor of every goal that has one the
+    // first time it is edited.
+    const seed: GoalFormSeed = {
       lifeDomain: existingGoal.lifeDomain,
       goalType: existingGoal.goalType,
       title: existingGoal.title,
       description: existingGoal.description,
       targetDate: existingGoal.targetDate,
+      valueKey: existingGoal.valueKey,
       milestones:
         existingMilestones.length > 0
           ? existingMilestones.map((m) => ({
@@ -80,11 +105,12 @@ export default function NewGoalScreen() {
               targetDate: m.targetDate,
             }))
           : [{ description: "", targetDate: null }],
-    });
+    };
+    reset(seed);
   }, [existingGoal, existingMilestones, reset, storedDraftValues]);
 
   const steps: { title: string; fields: readonly (keyof GoalFormSchema)[] }[] = [
-    { title: t("goals.step1"), fields: ["lifeDomain", "goalType"] },
+    { title: t("goals.step1"), fields: ["lifeDomain", "goalType", "valueKey"] },
     { title: t("goals.step2"), fields: ["title", "description", "targetDate"] },
     { title: t("goals.step3"), fields: ["milestones"] },
   ];
@@ -103,10 +129,9 @@ export default function NewGoalScreen() {
           lifeDomain: values.lifeDomain,
           goalType: values.goalType,
           targetDate: values.targetDate,
-          // No picker yet, so every goal saved from this form is anchored to nothing.
-          // #1289 adds the field and must prefill it from the loaded goal when editing -
-          // `saveGoal` overwrites the whole payload, so passing null there would clear it.
-          valueKey: null,
+          // `?? null` covers a draft persisted before this field existed, which
+          // rehydrates without the key at all - not a user choosing no value.
+          valueKey: values.valueKey ?? null,
         },
         goalId: goalId ?? undefined,
         milestones: values.milestones,
@@ -188,6 +213,71 @@ export default function NewGoalScreen() {
             {errors.goalType?.message ? (
               <Text className="text-sm text-destructive">{t(errors.goalType.message)}</Text>
             ) : null}
+          </View>
+
+          {/*
+            Optional, and never a gate: the programme's first week sets goals before
+            it clarifies values, so the intended path reaches this with nothing to
+            pick from. Only the user's own ranked priority values are offered, in
+            their order - never the full adjective list, which would turn a quick
+            choice into a second sorting exercise.
+          */}
+          <View className="gap-3">
+            <Label>{t("goals.value")}</Label>
+            <Text variant="muted">{t("goals.valueHint")}</Text>
+            {valuesLoading ? null : valueOptions.length > 0 ? (
+              <>
+                <View className="flex-row flex-wrap gap-2">
+                  {valueOptions.map((key) => (
+                    // Announced as a checkbox, not a button: unlike the two
+                    // single-selects above, pressing a chosen value again clears
+                    // it, and `aria-checked` is the only thing carrying that state
+                    // to a screen reader - the fill alone does not. Same contract
+                    // as the shared `SelectableChip`; the Button styling stays so
+                    // the three questions on this step read as one group.
+                    <Button
+                      key={key}
+                      accessibilityRole="checkbox"
+                      aria-checked={selectedValue === key}
+                      onPress={() => setValue("valueKey", selectedValue === key ? null : key)}
+                      role="checkbox"
+                      size="sm"
+                      variant={selectedValue === key ? "default" : "outline"}
+                    >
+                      <Text>{t(`personalValues.${key}.label`)}</Text>
+                    </Button>
+                  ))}
+                </View>
+                {selectedValue ? (
+                  <Button
+                    className="self-start"
+                    onPress={() => setValue("valueKey", null)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <Text>{t("goals.valueClear")}</Text>
+                  </Button>
+                ) : null}
+              </>
+            ) : (
+              // A quiet link, not an empty control and not a prompt to go and do
+              // homework first. The wizard draft is persisted, so leaving for the
+              // values screen and coming back keeps whatever has been filled in.
+              <View className="gap-1">
+                <Text variant="muted">{t("goals.valueEmpty")}</Text>
+                <Pressable
+                  accessibilityLabel={t("goals.valueEmptyLink")}
+                  accessibilityRole="link"
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => router.push("/modules/cbt/values")}
+                  className="self-start"
+                >
+                  <Text className="text-sm text-primary underline">
+                    {t("goals.valueEmptyLink")}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         </View>
       ) : null}
