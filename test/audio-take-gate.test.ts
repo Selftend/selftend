@@ -91,6 +91,19 @@ describe("planSlot", () => {
     expect(plan.nextIndex).toBe(1);
   });
 
+  it("does not spend budget on an UNGRADED take, even of the current prompt", () => {
+    // Two different reasons a row is not evidence, and the prompt check only
+    // covers one of them: a take written before the gate existed was never
+    // measured, so nothing is known about it. Counting it against the bound
+    // would silently buy the slot one fewer draw than it is owed.
+    const plan = planSlot({ rows: [legacy(PROMPT)], prompt: PROMPT });
+
+    expect(plan.accepted).toBeNull();
+    expect(plan.spent).toBe(0);
+    expect(plan.superseded).toBe(1);
+    expect(plan.remaining).toBe(MAX_ATTEMPTS);
+  });
+
   it("ignores even an ACCEPTED take when it was generated from another prompt", () => {
     const plan = planSlot({
       rows: [graded(1, { dbtp: -3, accepted: true, prompt: OLD_PROMPT })],

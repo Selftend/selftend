@@ -29,7 +29,7 @@
 import { Buffer } from "node:buffer";
 import { writeFile, readFile, mkdir, appendFile, access } from "node:fs/promises";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { measure, assertFfmpeg } from "./postprocess.mjs";
 import {
@@ -59,8 +59,21 @@ import {
 } from "./catalog.mjs";
 
 const API = "https://api.elevenlabs.io/v1";
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const OUT_DIR = join(ROOT, "audio-masters");
+/**
+ * Where masters land. Overridable only so `test/audio-render-reroll.test.ts` can
+ * drive the real spending loop into a scratch directory — the re-roll and the
+ * attempt bound are the two things in this file that decide how much money a run
+ * costs, and neither can be exercised against the live path without either real
+ * credits or clobbering the archive.
+ *
+ * ☠️ The repo-relative fallback sits on the right of `??` on purpose, so it is
+ * never evaluated when the override is set: babel's CJS transform leaves
+ * `import.meta.url` as `null`, and eagerly resolving it would throw at import
+ * time and make this module unloadable from jest.
+ */
+const OUT_DIR =
+  process.env.AUDIO_MASTERS_DIR ??
+  join(dirname(fileURLToPath(import.meta.url)), "../../audio-masters");
 
 function apiKey() {
   const key = process.env.ELEVENLABS_API_KEY;
@@ -767,44 +780,65 @@ async function renderVoices(go) {
   );
 }
 
-const [command, ...rest] = process.argv.slice(2);
-const roundFlag = rest.indexOf("--round");
-const round = roundFlag === -1 ? "A" : rest[roundFlag + 1];
-const go = rest.includes("--go");
+// `render` is exported so test/audio-render-reroll.test.ts can drive the actual
+// spending loop — the re-roll and the attempt bound decide what a run costs, and
+// neither is provable from the outside.
+export { render };
 
-switch (command) {
-  case "probe":
-    await probe();
-    break;
-  case "plan":
-    plan(round);
-    break;
-  case "preflight": {
-    const takesFlag = rest.indexOf("--takes");
-    await preflight(round, takesFlag === -1 ? PREFLIGHT_TAKES : Number(rest[takesFlag + 1]));
-    break;
-  }
-  case "render": {
-    const attemptsFlag = rest.indexOf("--attempts");
-    const attempts = attemptsFlag === -1 ? MAX_ATTEMPTS : Number(rest[attemptsFlag + 1]);
-    if (!Number.isInteger(attempts) || attempts < 1) {
-      console.error(`--attempts must be a positive integer, got: ${rest[attemptsFlag + 1]}`);
-      process.exit(1);
+async function main() {
+  const [command, ...rest] = process.argv.slice(2);
+  const roundFlag = rest.indexOf("--round");
+  const round = roundFlag === -1 ? "A" : rest[roundFlag + 1];
+  const go = rest.includes("--go");
+
+  switch (command) {
+    case "probe":
+      await probe();
+      break;
+    case "plan":
+      plan(round);
+      break;
+    case "preflight": {
+      const takesFlag = rest.indexOf("--takes");
+      await preflight(round, takesFlag === -1 ? PREFLIGHT_TAKES : Number(rest[takesFlag + 1]));
+      break;
     }
-    await render(round, go, attempts);
-    break;
+    case "render": {
+      const attemptsFlag = rest.indexOf("--attempts");
+      const attempts = attemptsFlag === -1 ? MAX_ATTEMPTS : Number(rest[attemptsFlag + 1]);
+      if (!Number.isInteger(attempts) || attempts < 1) {
+        console.error(`--attempts must be a positive integer, got: ${rest[attemptsFlag + 1]}`);
+        process.exit(1);
+      }
+      await render(round, go, attempts);
+      break;
+    }
+    case "render-voices":
+      await renderVoices(go);
+      break;
+    default:
+      console.log(
+        "usage:\n" +
+          "  node scripts/audio/render.mjs probe\n" +
+          "  node scripts/audio/render.mjs plan --round A|B\n" +
+          "  node scripts/audio/render.mjs preflight --round A|B\n" +
+          "  node scripts/audio/render.mjs render --round A|B --go [--attempts N]\n" +
+          "  node scripts/audio/render.mjs render-voices --go",
+      );
+      process.exit(BELLS.length && command ? 1 : 0);
   }
-  case "render-voices":
-    await renderVoices(go);
-    break;
-  default:
-    console.log(
-      "usage:\n" +
-        "  node scripts/audio/render.mjs probe\n" +
-        "  node scripts/audio/render.mjs plan --round A|B\n" +
-        "  node scripts/audio/render.mjs preflight --round A|B\n" +
-        "  node scripts/audio/render.mjs render --round A|B --go [--attempts N]\n" +
-        "  node scripts/audio/render.mjs render-voices --go",
-    );
-    process.exit(BELLS.length && command ? 1 : 0);
+}
+
+// Only run the CLI when invoked directly, the same guard postprocess.mjs carries
+// so calibrate-seam.mjs can import it. Without this, importing `render` to test it
+// would run the argv-driven switch instead.
+//
+// ☠️ Wrapped in `main()` rather than left as top-level `await`: babel's CJS
+// transform cannot compile top-level await, so a bare `await probe()` here makes
+// the whole module unimportable from jest and the loop untestable.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
 }
