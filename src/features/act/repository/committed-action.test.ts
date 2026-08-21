@@ -229,4 +229,27 @@ describe("countCommittedActions", () => {
 
     await expect(countCommittedActions("u1", "active")).rejects.toEqual({ code: "23505" });
   });
+
+  /**
+   * ACT home's third stat counts every action ever made, not the active ones (#1378).
+   *
+   * The sibling stats are past-tense activity - points *mapped*, thoughts *unhooked* -
+   * so an active-only third mixes tenses in one run. Decisively: completing your only
+   * action would make it fall 1 → 0. A counter that goes down when you succeed reads
+   * as punishment for finishing.
+   */
+  it("omits the status filter entirely when no status is given", async () => {
+    const eqStatus = jest.fn();
+    const eqUser = jest.fn(() =>
+      Object.assign(Promise.resolve({ count: 7, error: null }), { eq: eqStatus }),
+    );
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
+
+    await expect(countCommittedActions("u1")).resolves.toBe(7);
+
+    expect(eqUser).toHaveBeenCalledWith("user_id", "u1");
+    // Not `.eq("status", undefined)`, which PostgREST would send as a real filter.
+    expect(eqStatus).not.toHaveBeenCalled();
+  });
 });

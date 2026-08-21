@@ -12,7 +12,13 @@
     "frameworkDescription": "Четири стълба, които изграждат психологична гъвкавост.",
     "recentDefusionTitle": "Скорошни дефузии",
     "noDefusionLogs": "Още няма записи. Докосни „Дефузирай мисъл“ при следваща натрапчива мисъл.",
-    "viewAllDefusion": "Всички записи"
+    "viewAllDefusion": "Всички записи",
+    "statChoicePoints_one": "изборна точка нанесена",
+    "statChoicePoints_other": "изборни точки нанесени",
+    "statDefusion_one": "мисъл откачена",
+    "statDefusion_other": "мисли откачени",
+    "statActions_one": "ангажирано действие",
+    "statActions_other": "ангажирани действия"
   },
   "principles": {
     "defusion": {

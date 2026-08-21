@@ -7,7 +7,14 @@ import type {
 import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
-import { degradeMissingSchema, mutateVoid, selectList, selectMaybe, writeSingle } from "./helpers";
+import {
+  countRows,
+  degradeMissingSchema,
+  mutateVoid,
+  selectList,
+  selectMaybe,
+  writeSingle,
+} from "./helpers";
 
 interface DefusionLogRow {
   id: string;
@@ -44,6 +51,18 @@ export function getLatestDefusionLogAt(userId: string) {
   return degradeMissingSchema(
     () => fetchLatestActivity({ table: "act_defusion_logs", userId, column: "created_at" }),
     null,
+  );
+}
+
+/**
+ * Every thought this user has ever unhooked from, for ACT home's second stat (#1378).
+ *
+ * ☠️ Not `logs.length`. ACT home asks `useDefusionLogs` for 50, so a length read reports
+ * 50 for a user with 60 — the stat would silently stop counting at the list's cap.
+ */
+export async function countDefusionLogs(userId: string) {
+  return countRows((c) =>
+    c.from("act_defusion_logs").select("id", { count: "exact", head: true }).eq("user_id", userId),
   );
 }
 

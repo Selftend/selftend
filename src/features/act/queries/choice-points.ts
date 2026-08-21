@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countChoicePoints,
   deleteChoicePoint,
   getChoicePoint,
   getLatestChoicePointAt,
@@ -16,6 +17,21 @@ export function useChoicePoints(userId: string | null, limit = 30) {
   return useQuery({
     queryKey: actKeys.choicePointList(userId),
     queryFn: () => listChoicePoints(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * ACT home's "N choice points mapped" stat - an exact head count (#1378).
+ *
+ * ☠️ Never `useChoicePoints(userId).data?.length`. This hook's list sibling leaves its
+ * `limit` out of its query key, so home shares one cache entry with the list screen's
+ * 30 and a length read renders 30 for every user past their thirtieth.
+ */
+export function useChoicePointCount(userId: string | null) {
+  return useQuery({
+    queryKey: actKeys.choicePointCount(userId),
+    queryFn: () => countChoicePoints(userId!),
     enabled: Boolean(userId),
   });
 }

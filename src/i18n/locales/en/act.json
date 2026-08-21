@@ -12,7 +12,13 @@
     "frameworkDescription": "Four pillars that build psychological flexibility.",
     "recentDefusionTitle": "Recent defusion logs",
     "noDefusionLogs": "No defusion logs yet. Tap \"Defuse a thought\" whenever a sticky thought shows up.",
-    "viewAllDefusion": "All logs"
+    "viewAllDefusion": "All logs",
+    "statChoicePoints_one": "choice point mapped",
+    "statChoicePoints_other": "choice points mapped",
+    "statDefusion_one": "thought unhooked",
+    "statDefusion_other": "thoughts unhooked",
+    "statActions_one": "committed action",
+    "statActions_other": "committed actions"
   },
   "principles": {
     "defusion": {
