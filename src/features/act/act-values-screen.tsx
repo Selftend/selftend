@@ -53,8 +53,10 @@ export default function ActValuesScreen() {
   const { t } = useTranslation("act");
   const { formatDate } = useLocaleFormats();
   const { user } = useSession();
-  const { data: entries, isLoading } = useValueEntries(user?.id ?? null);
-  const { data: latestRatings } = useLatestBullsEyeByDomain(user?.id ?? null);
+  const { data: entries, isLoading: entriesLoading } = useValueEntries(user?.id ?? null);
+  const { data: latestRatings, isLoading: latestLoading } = useLatestBullsEyeByDomain(
+    user?.id ?? null,
+  );
   const { data: snapshots } = useBullsEyeSnapshots(user?.id ?? null);
 
   const entryForDomain = (domain: ACTLifeDomain) =>
@@ -66,13 +68,25 @@ export default function ActValuesScreen() {
    * this is the one place it is still read: a user who rated a domain in the old form
    * and has never done a check-in for it would otherwise watch their number disappear.
    * Genuinely two sources, in that order - not a fallback that can never be reached.
+   *
+   * ☠️ `undefined` is NOT "no check-in". The read is still in flight, or it failed -
+   * and treating either as an absence hands the row the retired column, which is the
+   * exact contradiction this fold exists to kill, flashed on first paint and left
+   * standing forever after an error. The alignment line is optional (an unrated domain
+   * simply has none), so the honest degradation is to say nothing until the answer
+   * arrives.
    */
-  const alignmentFor = (domain: ACTLifeDomain): number | null =>
-    latestRatings?.[domain] ?? entryForDomain(domain)?.currentAlignmentRating ?? null;
+  const alignmentFor = (domain: ACTLifeDomain): number | null => {
+    if (latestRatings === undefined) return null;
+    return latestRatings[domain] ?? entryForDomain(domain)?.currentAlignmentRating ?? null;
+  };
 
   const recentSnapshots = snapshots?.slice(0, HISTORY_ROWS) ?? [];
 
-  if (isLoading) {
+  // Both reads gate the screen, not just the entries: they fire in parallel, so waiting
+  // for the slower costs nothing, and it keeps the rows from painting once without an
+  // alignment line and again with one.
+  if (entriesLoading || latestLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <LoadingState title={t("values.listTitle")} />
@@ -213,6 +227,15 @@ function AlignmentBar({ rating }: { rating: number }) {
   );
 }
 
+/**
+ * ⚠️ `{rating}/10` is built in the component rather than from a translation key, which
+ * the i18n rule would normally forbid. It is carried over verbatim from the check-in
+ * screen this fold deleted, and it is one of FIVE identical `${n}/10` templates in ACT
+ * alone - the connection and observing-self list and detail screens are the other four.
+ * Translating this one would leave the family inconsistent and the rule still unstated,
+ * so the gap is named here instead of half-closed. The row above does NOT share it: its
+ * label is the interpolated `values.alignmentLabel`, because that one carries a word.
+ */
 function AlignmentPill({ rating }: { rating: number }) {
   return (
     <View className="items-center justify-center rounded-full bg-muted px-3 py-1">

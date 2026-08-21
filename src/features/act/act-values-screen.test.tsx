@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 import type { ReactElement } from "react";
 import { Pressable, Text } from "react-native";
@@ -102,6 +102,25 @@ describe("ActValuesScreen - which alignment number the row shows", () => {
     renderWithProviders(<ActValuesScreen />);
 
     expect(screen.getByText("Alignment: 4/10")).toBeTruthy();
+  });
+
+  /**
+   * ☠️ `undefined` from the latest read is "not answered yet", never "no check-in".
+   * Let it fall through to the entry's retired column and the row renders the exact
+   * number this fold exists to stop showing - a flash of it on first paint, and a
+   * permanent one if the read failed, since a settled error also leaves data undefined.
+   */
+  it("shows no alignment at all while the latest read has not answered", () => {
+    mockEntries.mockReturnValue({
+      data: [{ lifeDomain: "work", valueStatement: "Careful work", currentAlignmentRating: 4 }],
+      isLoading: false,
+    } as never);
+    mockLatest.mockReturnValue({ data: undefined });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.queryByText("Alignment: 4/10")).toBeNull();
+    expect(screen.queryByText(/Alignment:/)).toBeNull();
   });
 
   it("says nothing at all for a domain with neither", () => {
@@ -223,6 +242,26 @@ describe("ActValuesScreen - a partial failure survives leaving the screen", () =
  * that outlives the component, and be cleared on sign-out with the rest of the drafts.
  */
 describe("ActValuesScreen - unsaved ratings", () => {
+  /**
+   * ☠️ The draft store's `setValues` takes a VALUE, not an updater, so a handler that
+   * spread the `ratings` it closed over would lose the earlier of two ratings set
+   * inside one batch - silently, and only for the user quick enough to do it.
+   */
+  it("keeps both ratings when two are set inside a single batch", () => {
+    renderWithProviders(<ActValuesScreen />);
+    const rateButtons = screen.getAllByText("rate");
+
+    act(() => {
+      fireEvent.press(rateButtons[0]); // work
+      fireEvent.press(rateButtons[1]); // leisure
+    });
+
+    expect(useActValuesCheckInDraftStore.getState().values).toMatchObject({
+      work: 5,
+      leisure: 5,
+    });
+  });
+
   it("keeps typed ratings in the draft store and restores them on a remount", () => {
     const { unmount } = renderWithProviders(<ActValuesScreen />);
     fireEvent.press(screen.getAllByText("rate")[2]);

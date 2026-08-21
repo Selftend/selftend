@@ -285,7 +285,6 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/act/observing-self/new" />
             <Stack.Screen name="modules/act/observing-self/[id]" />
             <Stack.Screen name="modules/act/values/index" dangerouslySingular />
-            {/* Plain: holds unsaved domain ratings. See HOLDS_UNSAVED_WORK. */}
             {/* A `<Redirect>` stub since #1379 - marked like `tools/act`, the other
                 pure redirect here. It never stays mounted, so singular is inert on it;
                 it is stated rather than left blank so the guard's marking rules cover

@@ -33,7 +33,9 @@ export function useSaveBullsEyeSnapshot(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: BullsEyeSnapshotInput) => saveBullsEyeSnapshot(userId!, input),
-    meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
+    // A check-in saves each domain separately, so the global toast would fire once per
+    // failed domain and still not say WHICH. The screen names them in a card instead.
+    meta: { suppressGlobalErrorToast: true },
     onSuccess: async () => {
       if (!userId) return;
       // Non-exact by default, and `bullsEyeLatest` sits under this prefix, so this one

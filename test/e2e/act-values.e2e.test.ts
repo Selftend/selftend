@@ -171,4 +171,37 @@ test.describe("ACT values: edit a domain value and save an alignment check-in", 
       timeout: 15_000,
     });
   });
+
+  test("at 360dp all four rating tracks are usable and nothing is truncated", async ({ page }) => {
+    // ⚠️ The project's default e2e viewport is Desktop Chrome, so a phone-width defect
+    // is invisible to every other test here. The constraint at this width is VERTICAL
+    // - `NumberRating` already wraps its ten buttons to two lines, so four tracks are
+    // roughly eight button rows - but that is a claim, and it was asserted only in
+    // prose until this test.
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto("/modules/act/values");
+
+    // All 40 rating buttons exist and the extremes of the FIRST and LAST track are
+    // reachable - i.e. nothing is clipped off the top or bottom of the fold.
+    const sevens = page.getByRole("button", { name: "7", exact: true });
+    await expect(sevens).toHaveCount(4, { timeout: 15_000 });
+    await sevens.nth(0).scrollIntoViewIfNeeded();
+    await expect(sevens.nth(0)).toBeVisible();
+    await sevens.nth(3).scrollIntoViewIfNeeded();
+    await expect(sevens.nth(3)).toBeVisible();
+
+    // And it really is usable: the last track's button takes a press.
+    await sevens.nth(3).click();
+    const save = page.getByRole("button", { name: "Save ratings", exact: true });
+    await save.scrollIntoViewIfNeeded();
+    await expect(save).toBeEnabled();
+
+    // ☠️ Nothing is truncated horizontally. A row that overflows its width does not
+    // fail any assertion above - it just pushes content out of reach sideways, which
+    // is exactly how a too-wide hairline row would present.
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
 });

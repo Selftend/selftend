@@ -53,8 +53,18 @@ export async function listBullsEyeSnapshots(userId: string, limit = 50) {
  *
  * Four `limit 1` reads rather than one wide one: PostgREST has no DISTINCT ON, and
  * each of these is a single seek on `act_bulls_eye_snapshots_user_domain_reviewed`
- * (user_id, domain, reviewed_at DESC), which the table already carries. So this needs
- * no RPC and no migration.
+ * (user_id, domain, reviewed_at DESC), which the table already carries.
+ *
+ * ⚠️ ADR-0001 sends "extremes" to a SQL function, and this is deliberately not one.
+ * The ADR governs a STATISTIC computed client-side over a capped fetch — the failure
+ * it names is a figure that truncates silently once a user outgrows the cap. This is
+ * a row LOOKUP whose selection happens on the server: `order … limit 1` returns the
+ * one row Postgres picked, so there is no window to outgrow and nothing to truncate.
+ * That is already the repo's shape for "newest row per key" — `fetchLatestActivity`
+ * (`src/lib/latest-activity.ts`) is the same `order(desc).limit(1).maybeSingle()`,
+ * and `getLatestConnectionLogAt` uses its `match` to key one per technique exactly as
+ * this keys one per domain. So: no RPC and no migration, by precedent rather than by
+ * exemption.
  */
 export async function getLatestBullsEyeByDomain(
   userId: string,

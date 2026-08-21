@@ -67,7 +67,13 @@ export function ActValuesCheckIn() {
   }, [hydrateDraft]);
 
   function setRating(domain: ACTLifeDomain, value: number | null) {
-    setDraftValues({ ...ratings, [domain]: value });
+    // ☠️ Read the store, not the `ratings` render closure. The screen this replaced
+    // used a functional `setRatings((prev) => ...)`, which is safe by construction;
+    // the draft store's `setValues` takes a VALUE, so two ratings changed inside one
+    // tick would both spread the same stale snapshot and the first would vanish
+    // silently. `getState()` in an event handler is the store's own answer to that.
+    const current = useActValuesCheckInDraftStore.getState().values ?? EMPTY_RATINGS;
+    setDraftValues({ ...current, [domain]: value });
   }
 
   const handleSave = useSingleFlight(async () => {
