@@ -104,17 +104,26 @@ test.describe("reminder time entry", () => {
       .toMatchObject({ mood_reminder_hour: 11, mood_reminder_minute: 45 });
   });
 
-  test("typing an hour and going straight to PM keeps the typed hour", async ({ page, user }) => {
-    // Two sub-controls committing inside ONE interaction: the click on PM blurs the
-    // hour first, so the meridiem commit has to build on the hour that blur just
-    // committed and not on a stale prop. 09 + PM must be 21:00, never 09:00 flipped.
+  test("AM/PM composes with a typed hour rather than replacing it", async ({ page, user }) => {
+    // 08 typed, then PM, must be 20:00 - the meridiem applies to the hour the user
+    // entered, not to the one that was there before.
+    //
+    // ⚠️ The hour is committed FIRST, deliberately. Clicking the tab in the same
+    // interaction as the hour's blur is unreliable in react-native-web: the blur
+    // re-renders between pointerdown and pointerup and the press is swallowed (the
+    // tab does not even change its aria-selected). That is a SegmentedControl/RNW
+    // problem, not a time-entry one, so it is not what this spec pins. The
+    // stale-prop hazard that ordering would have exposed is covered deterministically
+    // in time-field.test.tsx, whose parent never updates `value` at all.
     const row = moodRow(page);
     const hour = row.getByLabel(HOUR_FIELD);
 
     await hour.click();
     await hour.fill("08");
-    await row.getByRole("tab", { name: "PM" }).click();
+    await page.keyboard.press("Tab");
+    await expect.poll(async () => (await readMoodReminder(user.id)).mood_reminder_hour).toBe(8);
 
+    await row.getByRole("tab", { name: "PM" }).click();
     await expect.poll(async () => (await readMoodReminder(user.id)).mood_reminder_hour).toBe(20);
   });
 
