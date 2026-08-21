@@ -1,8 +1,14 @@
 // Seed the LOCAL demo account (demo@test.local) with ~3 months of realistic
-// data across the eight tools, the CBT module and the ACT practice logs, so
-// redesigned surfaces can be reviewed with real density: paging, heatmap depth,
-// distribution spread, week history, and every technique, status and category
-// variant rendered at least once.
+// data across the eight tools, the CBT module, the ACT module and the routines
+// built from both, so redesigned surfaces can be reviewed with real density:
+// paging, heatmap depth, distribution spread, week history, and every technique,
+// status and category variant rendered at least once.
+//
+// EVERY WORD OF THE CONTENT BELOW IS FABRICATED. It describes one invented
+// person consistently — that is what makes the screens readable — but no real
+// person, employer, event or relationship is recorded here, and nothing in it is
+// clinical material. It is also local-only and never reaches public media: the
+// store and marketing pipelines all run against the production demo account.
 //
 // Usage:  node scripts/seed-demo-data.mjs
 //
@@ -14,6 +20,20 @@
 // - Inserts go through the PLAINTEXT VIEWS (mood_logs, sleep_logs, …) so the
 //   encryption layer does its own work — never the *_data base tables.
 // - Run `npx supabase migration up` first if the stack has been reset.
+//
+// WHAT THIS CANNOT REACH (the four known gaps, also in supabase/README.md):
+// - The thought-record intro card. `selftend:cbt:thoughtRecordIntroDismissed`
+//   is AsyncStorage plus zustand, device-local by design; no server-side seed
+//   can dismiss it.
+// - The routine reminder UI. Both seeded routines have reminders off on
+//   purpose, so the time picker and its permission prompt never render.
+// - Routine cadence, one variant of four. Both routines are `daily`, because
+//   scheduled-ness gates Home's widget, the progress button and the continue
+//   sheet, and any other cadence would make those depend on the weekday the
+//   seed ran.
+// - UTC+13 and UTC+14. The ACT tables carry no captured-offset column, so their
+//   rows are pinned to a UTC band that resolves to the intended civil day from
+//   −11 through +12 and can slip a day further east.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -752,12 +772,15 @@ let customExerciseId;
 // `goals` -> milestones, `procrastination_tasks` -> task_steps,
 // `exposure_hierarchies` -> exposure_items -> exposure_sessions, and
 // `recovery_plans` -> challenge_plans. The six after those are ACT's practice
-// logs (#1284), all standalone. The last four are ACT's structured work
+// logs (#1284), all standalone. The four after those are ACT's structured work
 // (#1286): `act_committed_actions` heads the fifth chain, to act_action_steps.
+// `routines` is last and heads the sixth, to routine_steps (#1290) — it belongs
+// to this section rather than to the tools above it because both of the demo
+// account's routines are composed of CBT and ACT practices.
 //
-// ☠️ `act_action_steps` is the child and is deliberately NOT here — it is
-// reclaimed when its committed action goes. Adding it would look like a
-// tightening and would in fact be the first child wipe in the list, breaking
+// ☠️ `act_action_steps` and `routine_steps` are children and are deliberately
+// NOT here — each is reclaimed when its parent goes. Adding one would look like
+// a tightening and would in fact be the first child wipe in the list, breaking
 // the contract the paragraph above states.
 const CBT_ACT_WIPE_TABLES = [
   "thought_records",
@@ -781,11 +804,142 @@ const CBT_ACT_WIPE_TABLES = [
   "act_bulls_eye_snapshots",
   "act_committed_actions",
   "act_program_state",
+  "routines",
 ];
 
 for (const table of CBT_ACT_WIPE_TABLES) {
   await wipe(table);
 }
+
+// ------------------------------------ the routine strips: PLACED, never added
+// Two routines close this section (#1290) and both are composed of CBT and ACT
+// practices. Each one's seven-day strip lights a day only when EVERY step was
+// done on it, and the strip ignores cadence entirely, so the only way to light
+// a day is to have every step's row already dated it.
+//
+// ☠️ PLACED, NEVER ADDED. The per-surface row counts are fixed (#1181) and this
+// slice may not raise any of them, so nothing below writes an extra row: the CBT
+// and ACT blocks read which recent days the tools seed ALREADY covered and move
+// their own newest rows onto those days. The eight tools blocks are untouched.
+//
+// Read back OUT of the database rather than re-derived: their `rows` arrays are
+// block-scoped, and a second copy of a stride is a restatement of the generator
+// rather than an observation of it — it would agree with itself after any nudge.
+const ROUTINE_STRIP_DAYS = 7;
+
+/** The strip's day indices, oldest first — the last seven, today included. */
+const stripWindow = () =>
+  Array.from({ length: ROUTINE_STRIP_DAYS }, (_, i) => DAYS - ROUTINE_STRIP_DAYS + i);
+
+const DAY_INDEX_BY_KEY = new Map(Array.from({ length: DAYS }, (_, i) => [dayKeyAt(i), i]));
+
+/**
+ * Where a step's completions live: the table, the timestamp the owning screen
+ * dates the row by, the captured-offset column beside it where the table has
+ * one, and the column that must be null for the row to count at all.
+ *
+ * ☠️ The pairs are the APP's, not the schema's. `activity_logs` dates by
+ * `completed_at` because a scheduled activity is not a done one; a thought
+ * record with `archived_at` set is excluded by `listThoughtRecords` and so
+ * cannot complete a step. Getting either wrong makes every check below agree
+ * with a screen that shows something else.
+ */
+const ROUTINE_STEP_SOURCES = {
+  mood: { table: "mood_logs", timestamp: "logged_at", offset: "logged_offset_minutes" },
+  meditation: {
+    table: "meditation_sessions",
+    timestamp: "completed_at",
+    offset: "completed_offset_minutes",
+  },
+  cbt: {
+    table: "thought_records",
+    timestamp: "created_at",
+    offset: "created_offset_minutes",
+    requireNull: "archived_at",
+  },
+  connection: { table: "act_connection_logs", timestamp: "created_at" },
+  choicePoint: { table: "act_choice_points", timestamp: "created_at" },
+};
+
+/**
+ * The civil day a seeded row files under, exactly as the app resolves it: through
+ * the offset captured beside the timestamp where the table has one (`entryDayKey`),
+ * and through the reader's local clock where it does not (`toLocalDateKey`).
+ * Never by slicing the ISO string — see `dayKeyAt` for why that loses a day.
+ */
+function seededDayKey(row, source) {
+  const iso = row[source.timestamp];
+  if (!iso) return null;
+  const offset = source.offset ? row[source.offset] : null;
+  if (offset === null || offset === undefined) return localDayKey(new Date(iso));
+  return new Date(new Date(iso).getTime() + offset * 60_000).toISOString().slice(0, 10);
+}
+
+/** Which day indices `source` already carries a countable row on. */
+async function seededDayIndexes(source) {
+  const columns = [source.timestamp, source.offset, source.requireNull].filter(Boolean).join(",");
+  const { data, error } = await admin
+    .from(source.table)
+    .select(columns)
+    .eq("user_id", DEMO_USER_ID);
+  if (error) throw new Error(`read ${source.table}: ${error.message}`);
+
+  const days = new Set();
+  for (const row of data) {
+    if (source.requireNull && row[source.requireNull] !== null) continue;
+    const index = DAY_INDEX_BY_KEY.get(seededDayKey(row, source));
+    if (index !== undefined) days.add(index);
+  }
+  return days;
+}
+
+/**
+ * The days inside the strip window, BEFORE today, that every one of `stepIds`
+ * already covers — oldest first.
+ *
+ * Oldest first on purpose: the lit days then sit at the far end of the strip
+ * rather than running up to today, which is what a streak looks like and what
+ * this feature refuses to draw.
+ */
+async function daysAlreadyCoveredBy(stepIds) {
+  const sets = [];
+  for (const stepId of stepIds) sets.push(await seededDayIndexes(ROUTINE_STEP_SOURCES[stepId]));
+  return stripWindow()
+    .filter((day) => day < DAYS - 1)
+    .filter((day) => sets.every((set) => set.has(day)));
+}
+
+/** The lit days this slice claims, or a loud failure naming what moved. */
+function requireLitDays(days, wanted, routine, steps) {
+  if (days.length < wanted) {
+    throw new Error(
+      `Only ${days.length} of the last ${ROUTINE_STRIP_DAYS} days already carry ${steps}, ` +
+        `so "${routine}" cannot light ${wanted} strip days without a row this slice is not ` +
+        "allowed to add. The tools seed's stride moved under it (#1290).",
+    );
+  }
+  return days.slice(0, wanted);
+}
+
+// "Morning reset" is mood, meditation and a thought record. Mood and meditation
+// are the tools seed's own rows, so the thought records go where those two
+// already agree — two days, out of the three that qualify.
+//
+// ⚠️ #1290 SPECIFIED GRATITUDE HERE AND IT CANNOT BE. Mood and gratitude
+// co-occur on only two days of the strip window, and one of them is today; a
+// routine holding both can therefore light at most ONE day that is not today,
+// against a target of two to three. Today's must not be lit either, because
+// #1290 wants this routine reading "in progress" — and mood, gratitude and
+// today's thought record (which #1281 pins so the per-day history opens on
+// something) are all present today, which derives as COMPLETE. Meditation is
+// the nearest tool that is absent today by the tools seed's own stride and
+// present with mood on three window days, so it takes gratitude's place.
+const MORNING_RESET_LIT_DAYS = requireLitDays(
+  await daysAlreadyCoveredBy(["mood", "meditation"]),
+  2,
+  "Morning reset",
+  "both a mood log and a meditation session",
+);
 
 // ------------------------------------------------- CBT: the thinking spine
 // Thought records, core beliefs, behavioural-activation activities and the
@@ -1224,7 +1378,13 @@ function requireEveryVariant(column, variants, rows, field = "status") {
       outcomeNotes: "Took the correction, said thanks, moved on.",
     },
     {
-      day: 78,
+      // The two newest records before today are dated by the routine strip
+      // rather than by hand (#1290): they sit on days the tools seed already
+      // covers with a mood log and a meditation session, which is what lights
+      // "Morning reset" without a nineteenth record being written. Both are
+      // still later than day 74 and earlier than today, so the run of days here
+      // stays in order.
+      day: MORNING_RESET_LIT_DAYS[0],
       hour: 9,
       minute: 10,
       situation: "Asked a question in a large meeting that I would have swallowed a month ago.",
@@ -1243,7 +1403,7 @@ function requireEveryVariant(column, variants, rows, field = "status") {
       outcomeNotes: "Stayed for the rest of the meeting instead of going quiet.",
     },
     {
-      day: 83,
+      day: MORNING_RESET_LIT_DAYS[1],
       hour: 20,
       minute: 30,
       situation: "Took a rest day and spent the whole afternoon doing nothing useful.",
@@ -3472,6 +3632,18 @@ const ACT_TODAY = DAYS - 1;
   counts.act_observing_self_sessions = await insert("act_observing_self_sessions", rows);
 }
 
+// "Steadying myself" is a connection log and a choice-point worksheet. Both are
+// this section's own rows, but connection is placed by a stride and choice
+// points are sparse enough to place by hand, so the worksheet moves to meet the
+// connection log rather than the other way round. One day is enough: today is
+// already lit by both surfaces, which makes two (#1290 asks for two to three).
+const [STEADYING_LIT_DAY] = requireLitDays(
+  await daysAlreadyCoveredBy(["connection"]),
+  1,
+  "Steadying myself",
+  "a connection log",
+);
+
 // -------------------------------------------------------- choice points
 {
   // Hook, away move, toward move — the three columns the worksheet asks for, and
@@ -3525,6 +3697,21 @@ const ACT_TODAY = DAYS - 1;
   for (let d = 9; d < ACT_TODAY; d += inSetback(d) ? between(3, 5) : between(8, 14)) {
     days.add(d);
   }
+
+  // The newest worksheet before today MOVES onto a day that already carries a
+  // connection log (#1290), so "Steadying myself" lights a second strip day
+  // without a tenth worksheet being written. Deleted before it is re-added: a
+  // Set silently absorbs a collision, and a collision here would drop the count
+  // by one — which is a thinner surface, not a placed row.
+  const newestBeforeToday = Math.max(...days);
+  if (days.has(STEADYING_LIT_DAY)) {
+    throw new Error(
+      `Day ${STEADYING_LIT_DAY} already carries a choice point, so moving the newest ` +
+        "worksheet onto it would lose a row rather than place one (#1290).",
+    );
+  }
+  days.delete(newestBeforeToday);
+  days.add(STEADYING_LIT_DAY);
   days.add(ACT_TODAY);
 
   const rows = [...days]
@@ -4443,6 +4630,186 @@ function alignmentFor(domain, dayIndex) {
       ["created_at", "updated_at", "onboarding_completed_at", "last_check_in_at"],
     ],
   ]);
+}
+
+// ------------------------------------------------------------------ routines
+// Two routines whose steps are CBT and ACT practices (#1290). Nothing seeded
+// routines before this, so the /routines list, Home's routines widget, the
+// native widget snapshot, the floating progress button and the continue sheet
+// all rendered empty on the demo account while twelve of the twenty steppable
+// tools — with a picker group each — sat behind them.
+//
+// BOTH ARE `daily`, deliberately. Scheduled-ness gates the widget, the button
+// and the sheet (`isScheduledOn`), so a weekday or custom cadence would make
+// those three surfaces depend on which weekday the seed happened to run —
+// breaking determinism exactly where a reviewer looks first.
+//
+// BOTH HAVE REMINDERS OFF, and must: the editor defaults them off, the seed
+// already sets reminder consent to false, and a demo account shipping a
+// default-on notification sits against the standing guardrail that
+// notifications are explicit and quiet by default.
+//
+// ☠️ Activity, defusion, expansion and urge-surf steps are deliberately absent.
+// Activities is the current CBT phase's own daily practice and the other three
+// are pinned dark by #1284's margins, so a step on any of them would render a
+// deliberately-open state a SECOND time on another screen, where it reads as a
+// bug rather than as the one row a reviewer is invited to fill in.
+const SEEDED_ROUTINES = [
+  // Order is oldest first; the list orders by `created_at` descending, so
+  // "Steadying myself" heads the /routines list and "Morning reset" follows.
+  { name: "Morning reset", createdDay: 26, steps: ["mood", "meditation", "cbt"] },
+  { name: "Steadying myself", createdDay: 44, steps: ["connection", "choicePoint"] },
+];
+
+{
+  const stepRows = [];
+  for (const routine of SEEDED_ROUTINES) {
+    const createdAt = at(routine.createdDay, 7, 45);
+    // Through the VIEW with an EXPLICIT user id: `routines` is encrypted
+    // (`name_enc` on `routines_data`) and the INSTEAD OF insert trigger falls
+    // back to `auth.uid()`, which is null under the service-role client.
+    //
+    // ☠️ `updated_at` cannot be backdated here — the trigger hard-sets it to
+    // now() with no coalesce, the same shape `values_profile` has. Nothing
+    // renders a routine's `updated_at`, so this is recorded, not worked around.
+    routine.id = await insertReturningId("routines", {
+      user_id: DEMO_USER_ID,
+      name: routine.name,
+      reminder_enabled: false,
+      cadence: "daily",
+      custom_days: [],
+      created_at: createdAt,
+    });
+
+    routine.steps.forEach((toolId, position) => {
+      stepRows.push({
+        routine_id: routine.id,
+        user_id: DEMO_USER_ID,
+        tool_id: toolId,
+        position,
+        created_at: createdAt,
+        updated_at: createdAt,
+      });
+    });
+  }
+
+  counts.routines = SEEDED_ROUTINES.length;
+  counts.routine_steps = await insert("routine_steps", stepRows);
+}
+
+// ----------------------------- the routine strips, read back out of the DB
+// A routine's status is derived, never stored, so the only way to know what a
+// reviewer will see is to re-derive it from the rows the database actually
+// holds. Everything checked here is RESTATED from #1290 rather than read off the
+// placement above: the expectations below share no constant with the code that
+// dated the rows, so a nudge to either one has something to disagree with.
+//
+// ⚠️ What this cannot catch on its own is a wrong day mapping in
+// `seededDayKey` — placement and check would then agree with each other and
+// disagree with the app. That half is held by the app's own suite, which
+// derives the same statuses through `deriveRoutine` from the same columns.
+{
+  const EXPECTED_TODAY = {
+    "Morning reset": "in_progress",
+    "Steadying myself": "complete",
+  };
+  // "Two to three lit days per routine": not zero, which reads as a dead
+  // surface, and not seven, which reads as a streak trophy the feature refuses
+  // to draw.
+  const LIT_DAYS_MIN = 2;
+  const LIT_DAYS_MAX = 3;
+
+  const { data: seededRoutines, error: routinesError } = await admin
+    .from("routines")
+    .select("id,name,reminder_enabled,cadence,custom_days")
+    .eq("user_id", DEMO_USER_ID);
+  if (routinesError) throw new Error(`read routines: ${routinesError.message}`);
+
+  const { data: seededSteps, error: stepsError } = await admin
+    .from("routine_steps")
+    .select("routine_id,tool_id,position")
+    .eq("user_id", DEMO_USER_ID)
+    .order("position", { ascending: true });
+  if (stepsError) throw new Error(`read routine_steps: ${stepsError.message}`);
+
+  const names = seededRoutines.map((routine) => routine.name).sort();
+  const wanted = Object.keys(EXPECTED_TODAY).sort();
+  if (JSON.stringify(names) !== JSON.stringify(wanted)) {
+    throw new Error(
+      `The demo account holds routines [${names.join(", ")}], not [${wanted.join(", ")}]. ` +
+        "Every check below keys off the names, so it would pass over the wrong routines.",
+    );
+  }
+
+  // One read per referenced tool, then the derivation `deriveRoutine` performs:
+  // a day is complete only when EVERY step landed on it, and an empty routine
+  // is never complete.
+  const referenced = [...new Set(seededSteps.map((step) => step.tool_id))];
+  const dayIndexes = {};
+  for (const toolId of referenced) {
+    const source = ROUTINE_STEP_SOURCES[toolId];
+    if (!source) {
+      throw new Error(
+        `Step tool "${toolId}" has no entry in ROUTINE_STEP_SOURCES, so its completions ` +
+          "cannot be read back and every strip check below would silently skip it.",
+      );
+    }
+    dayIndexes[toolId] = await seededDayIndexes(source);
+  }
+
+  const statusOn = (steps, day) => {
+    const done = steps.filter((toolId) => dayIndexes[toolId].has(day)).length;
+    if (steps.length === 0 || done === 0) return "not_started";
+    return done === steps.length ? "complete" : "in_progress";
+  };
+
+  let openStepsToday = 0;
+  for (const routine of seededRoutines) {
+    const steps = seededSteps
+      .filter((step) => step.routine_id === routine.id)
+      .map((step) => step.tool_id);
+
+    if (routine.reminder_enabled || routine.cadence !== "daily" || routine.custom_days.length > 0) {
+      throw new Error(
+        `"${routine.name}" came back as cadence ${routine.cadence} with reminders ` +
+          `${routine.reminder_enabled ? "ON" : "off"}. Both routines are daily with reminders ` +
+          "off: a weekday cadence makes Home's widget depend on the day the seed ran, and a " +
+          "default-on reminder is a notification nobody asked for.",
+      );
+    }
+
+    const today = statusOn(steps, DAYS - 1);
+    if (today !== EXPECTED_TODAY[routine.name]) {
+      throw new Error(
+        `"${routine.name}" derives as ${today} today, not ${EXPECTED_TODAY[routine.name]}. ` +
+          `Its steps are ${steps.join(", ")}, of which ` +
+          `${steps.filter((toolId) => dayIndexes[toolId].has(DAYS - 1)).join(", ") || "none"} ` +
+          "landed today.",
+      );
+    }
+
+    const lit = stripWindow().filter((day) => statusOn(steps, day) === "complete");
+    if (lit.length < LIT_DAYS_MIN || lit.length > LIT_DAYS_MAX) {
+      throw new Error(
+        `"${routine.name}" lights ${lit.length} of the last ${ROUTINE_STRIP_DAYS} days ` +
+          `(${lit.join(", ") || "none"}), outside the ${LIT_DAYS_MIN}-${LIT_DAYS_MAX} this ` +
+          "slice keeps. Zero reads as a dead surface and a full strip reads as a streak.",
+      );
+    }
+
+    openStepsToday += steps.filter((toolId) => !dayIndexes[toolId].has(DAYS - 1)).length;
+  }
+
+  // The floating progress button is visible ONLY while a scheduled routine has
+  // an open step today, so "the FAB renders" is this number being above zero —
+  // a separate fact from any one routine's status, and the one that goes first
+  // if both routines ever derive complete.
+  if (openStepsToday === 0) {
+    throw new Error(
+      "Every seeded routine step is done today, so the floating routine-progress button and " +
+        "the continue sheet behind it never appear on the demo account.",
+    );
+  }
 }
 
 // ---------------------------------------------------------------------- done
