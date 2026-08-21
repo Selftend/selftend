@@ -5,18 +5,27 @@ import { SharedToolsRow } from "./shared-tools-row";
 import { SHARED_TOOLS_BY_PILLAR } from "@/src/features/cbt/cbt-home/cbt-home-config";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { targetPathname } from "@/src/lib/escape-origin";
+import { ScreenEscape } from "./screen-escape";
+import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+let mockPathname = "/modules/cbt";
+
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn() },
-  usePathname: () => "/modules/cbt",
+  router: { push: jest.fn(), replace: jest.fn() },
+  usePathname: () => mockPathname,
 }));
 
 const pushMock = router.push as jest.Mock;
 
+beforeAll(async () => {
+  await setLanguage("en");
+});
+
 beforeEach(() => {
-  pushMock.mockClear();
+  jest.clearAllMocks();
   useNavigationOriginStore.setState({ pending: null });
+  mockPathname = "/modules/cbt";
 });
 
 describe("SharedToolsRow", () => {
@@ -78,5 +87,48 @@ describe("SharedToolsRow", () => {
 
     expect(screen.getByText("Also try")).toBeTruthy();
     expect(screen.queryByText("Uses these shared tools")).toBeNull();
+  });
+});
+
+/**
+ * AC2 of #1266, end to end: "opening a shared tool from a CBT chip and escaping
+ * returns to CBT, named."
+ *
+ * ⚠️ The criterion belongs to #1266 but the code that satisfies it shipped with
+ * #1265, because these chips render through `SharedToolsRow`, which lives in
+ * `src/components/app` - batch 1's territory, not the therapy modules'. The
+ * ticket for batch 2 called them "the one genuinely off-trail set in this
+ * batch"; they had already been migrated one batch early. The set that was
+ * actually still crossing out of CBT unmigrated was `self-care.tsx`, which the
+ * ticket never mentions (see `src/features/self-care/self-care-origin.test.tsx`).
+ *
+ * Recording alone was already pinned above. What is added here is the other end
+ * of the journey - the arrival - which nothing asserted: that the Escape waiting
+ * on the tool screen actually names CBT and actually goes back there.
+ */
+describe("escaping a shared tool returns to CBT, named", () => {
+  it.each([
+    ["/tools/journal", "journal"],
+    ["/tools/breathing", "breathing"],
+  ])("returns from %s to the module the chip was pressed in", (route) => {
+    const tool = SHARED_TOOLS_BY_PILLAR.think
+      .concat(SHARED_TOOLS_BY_PILLAR.act, SHARED_TOOLS_BY_PILLAR.be)
+      .find((candidate) => targetPathname(candidate.route) === route);
+    if (!tool) throw new Error(`no shared-tool chip targets ${route}`);
+
+    const session = renderWithProviders(
+      <SharedToolsRow heading="Uses these shared tools" tools={[tool]} />,
+    );
+    fireEvent.press(screen.getByRole("button"));
+    // The module screen is really gone before the tool mounts, so nothing below
+    // can match a leftover node from the departed tree.
+    session.unmount();
+
+    mockPathname = route;
+    renderWithProviders(<ScreenEscape />);
+
+    expect(screen.getByText("CBT")).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("Back to CBT"));
+    expect(router.replace).toHaveBeenCalledWith("/modules/cbt");
   });
 });
