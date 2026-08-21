@@ -162,7 +162,7 @@ describe("channelReading refuses to guess", () => {
   });
 });
 
-describe("the credit question is answered from the balance, not assumed", () => {
+describe("the credit question is matched against both billing models", () => {
   const hypotheses = creditHypotheses({
     requestedSeconds: 60,
     returnedSeconds: 75,
@@ -175,8 +175,8 @@ describe("the credit question is answered from the balance, not assumed", () => 
   });
 
   it("names which one the measured spend matches", () => {
-    expect(creditVerdict({ spent: 198, hypotheses })).toContain("REQUESTED");
-    expect(creditVerdict({ spent: 248, hypotheses })).toContain("RETURNED");
+    expect(creditVerdict({ credits: 198, hypotheses })).toContain("REQUESTED");
+    expect(creditVerdict({ credits: 248, hypotheses })).toContain("RETURNED");
   });
 
   /**
@@ -185,7 +185,7 @@ describe("the credit question is answered from the balance, not assumed", () => 
    * settle on the cheaper story.
    */
   it("reports an unreadable balance as unknown", () => {
-    expect(creditVerdict({ spent: NaN, hypotheses })).toContain("unknown");
+    expect(creditVerdict({ credits: NaN, hypotheses })).toContain("unknown");
   });
 
   it("admits when the call it was given cannot separate the two", () => {
@@ -194,11 +194,11 @@ describe("the credit question is answered from the balance, not assumed", () => 
       returnedSeconds: 30,
       creditsPerSecond: 3.3,
     });
-    expect(creditVerdict({ spent: 99, hypotheses: same })).toContain("cannot separate");
+    expect(creditVerdict({ credits: 99, hypotheses: same })).toContain("cannot separate");
   });
 
   it("says so when the spend matches neither", () => {
-    expect(creditVerdict({ spent: 4000, hypotheses })).toContain("neither");
+    expect(creditVerdict({ credits: 4000, hypotheses })).toContain("neither");
   });
 });
 

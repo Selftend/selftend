@@ -28,7 +28,7 @@ A fixed prompt varies **16–26 dB** run to run, measured on
 than the +15–22 dB that rewriting a prompt buys, so **good prompts still throw
 unusable takes** — and being seedless, a good draw can never be reproduced after
 the fact. Round B drew 27 times from that distribution with nothing inspecting
-the bytes: 20 masters came back unusable for ~1,881 credits.
+the bytes: 20 masters came back unusable for ~6,270 credits.
 
 So `render` measures every take as it lands
 ([#1320](https://github.com/Selftend/selftend/issues/1320)):
@@ -77,7 +77,8 @@ ELEVENLABS_API_KEY=... node scripts/audio/render.mjs probe
 node scripts/audio/render.mjs plan --round A
 
 # #1347. One bed prompt rendered twice — `loop: true` and a paired control —
-# and every measurement that separates them. ~198 credits. Dry run without --go.
+# and every measurement that separates them. ~660 credits. Dry run without --go.
+# It has RUN and ruled: beds loop natively (#1347). Kept for the tonal follow-up.
 ELEVENLABS_API_KEY=... node scripts/audio/render.mjs loopprobe --clip brown-noise --go
 
 # Grades every prompt at 4s before any real spend. Run after ANY prompt change.
@@ -99,17 +100,31 @@ The pass splits once, at the known risk (#1134 §5).
 
 |                                                                         | What                                              | Cost                     |
 | ----------------------------------------------------------------------- | ------------------------------------------------- | ------------------------ |
-| **Round A** — [#1159](https://github.com/Selftend/selftend/issues/1159) | Two bells, 5 candidates each, plus the API probes | 45s ≈ **150 credits**    |
-| **Round B** — [#1210](https://github.com/Selftend/selftend/issues/1210) | 5 beds, 6 texture files, 8 voice cues             | 570s ≈ **1,880 credits** |
+| **Round A** — [#1159](https://github.com/Selftend/selftend/issues/1159) | Two bells, 5 candidates each, plus the API probes | 45s ≈ **495 credits**    |
+| **Round B** — [#1210](https://github.com/Selftend/selftend/issues/1210) | 5 beds, 6 texture files, 8 voice cues             | 570s ≈ **6,270 credits** |
 
-≈**2,030 credits** total, against 93,179 remaining on the Creator plan.
+≈**6,765 credits** if every slot passes on its first draw. ⚠️ The number that
+matters before `--go` is the **worst** case — every slot re-rolling to the bound
+of 4 attempts — which is ≈**25,080 credits** for Round B, about a third of the
+81,168 remaining on the Creator plan. `render --round B` prints both.
 
-> ☠️ The map carries #1134's ~17,500 estimate, which is wrong three times over:
-> it predates #1137's fifth bed and 10s textures, its bell row forgets the 2s
-> temple block, and above all it prices Sound Effects at **40 credits/second**.
-> The composer actually charges 7 credits for 2.0s and 23 for 7.0s — about
-> **3.3/sec**. Cost was never a constraint and is an order of magnitude less of
-> one than the map assumed.
+> ☠️☠️ **The rate is 11 credits/second, and this file said 3.3 until
+> [#1359](https://github.com/Selftend/selftend/issues/1359).** Measured twice on
+> the live API from the `character-cost` response header: **330 credits for 30s,
+> 22 for 2s**. The 3.3 was real but came from watching the **web composer** price
+> a generation (7 credits for 2.0s, 23 for 7.0s), and the composer prices
+> differently from the API. Nothing ever compared the two, so every quote this
+> tooling printed was understated **3.3x**. #1134's ~17,500 estimate is wrong for
+> its own separate reasons: it predates #1137's fifth bed and 10s textures, its
+> bell row forgets the 2s temple block, and it prices at 40 credits/second.
+>
+> ☠️ **Read cost from the header, never from the balance.** `/user/subscription`
+> **lags** — across a real 22-credit call it did not move at all, then reconciled
+> later — so a delta taken around a call can report zero for a spend that cannot
+> be repeated. `credits.mjs` holds both instruments and the preference between
+> them; `render` records `character-cost` per take in the manifest
+> (`creditsCharged`, beside the `creditsEstimate` quote) and prints the pass total
+> as a floor when any call came back unpriced.
 
 **Round A is a gate, not just the first batch.** Generative FX models reliably
 nail an attack and muddy the long tail, which is the entire character of a
@@ -188,7 +203,13 @@ untested pipeline meeting non-reproducible masters.
 
 ```bash
 # One clip. --clip picks the channels, bitrate and loudness target from catalog.mjs.
+# A bed ships unfolded at 30.0s, because it was rendered loop: true (#1347).
 node scripts/audio/postprocess.mjs run audio-masters/rain-2.wav --clip rain --out assets/sounds/breathing/rain.m4a
+
+# The seam-gate FALLBACK, for a bed that failed the gate above. Costs 0.4s of the
+# master (30.0s -> 29.6s), so compare the two and keep whichever measures better.
+# Refused on a bell or a texture rather than silently ignored.
+node scripts/audio/postprocess.mjs run audio-masters/rain-2.wav --clip rain --fold --out /tmp/rain-folded.m4a
 
 # Just the numbers.
 node scripts/audio/postprocess.mjs measure assets/sounds/meditation-bell.wav
@@ -199,13 +220,25 @@ Requires **ffmpeg** on PATH. That is a deliberate `scripts/`-only dependency:
 #1138 retired the post-processor's "pure stdlib" property because Python's
 `wave` decodes no MP3 and encodes no AAC.
 
-### Three things measurement changed
+### What measurement changed
+
+⚠️ **The fold is the fallback now, not the path** (#1347, wired by
+[#1359](https://github.com/Selftend/selftend/issues/1359)). Beds render
+`loop: true` and ship **unfolded at the full 30.0s**; `postprocess run` only folds
+when handed `--fold`, and refuses it on a bell or a texture rather than ignoring
+it. The seam gate still runs on **every** bed however it was rendered, and a bed
+that fails it is what `--fold` exists for — the run says so in its own failure
+message. ☠️ On **tonal** material the fold makes the seam _worse_ (`night` scored
+13.85x folded against 5.29x hard-cut), so it is an offer to measure, never an
+instruction to ship. A bed that passes neither way needs a re-render toward
+noise-like material.
 
 ☠️ **The fold trims, and it is equal-power, not linear.** `seamless()` in
 `generate-breathing-sounds.py` folds `sig[n..n+cf]` into the head and the
 generator makes `n + cf` samples on purpose. A rendered bed has no spare tail —
 Sound Effects caps at 30s — so the last 0.4s is folded in and a 30s render
-becomes a **29.6s** bed. And the crossfade weights are `sqrt`, where
+becomes a **29.6s** bed. That trim is why the fold stopped being automatic: it
+costs 0.4s of an unrepeatable master. And the crossfade weights are `sqrt`, where
 `seamless()` is linear: the two halves of a fold are decorrelated noise, so
 linear weights sum to ~0.707x mid-fold, a level dip that recurs at **every loop
 point** — exactly the recurring audible event #1137's eventless-bed rule exists
@@ -239,8 +272,28 @@ and hard-cut its three takes score **19.09x / 8.63x / 13.13x** the median wrap
 step — three to six times the 3.0x limit. The pipeline's fold rescues it, but
 only to **2.85x**, inside the limit by 5%. That is the measured cost of the
 non-looping path and the reason [#1347](https://github.com/Selftend/selftend/issues/1347)
-re-opened the question: `loop: true` is accepted with lossless PCM, and a render
-that loops natively needs no fold, no 0.4s trim and no mid-fold dip.
+re-opened the question.
+
+☠️☠️ **It was re-opened and ANSWERED: beds render natively looping.** Probed live
+over six generations, `brown-noise` at 30s came back with a **0.67x** wrap step
+and **0.05x** head/tail, against its own paired `loop: false` control — same
+prompt, same session — at **14.34x / 4.15x**. Both are scale-invariant ratios, so
+the level gap between two seedless draws cannot explain it, and native looping
+beats the folded path's best-ever 2.85x by four times. `loop: true` is accepted
+with lossless `pcm_48000` on Creator, honours 30s exactly (5,760,000 bytes =
+30.000s stereo), returns **zero lead and zero tail**, and costs no premium.
+
+⚠️ **The tonal case is not cleared, which is why `fold()` still exists.** All
+three `night` draws landed under the level gate, and of the two carrying signal
+the join was fine while the **head/tail energy ratio failed** — loop mode gives a
+clean join without guaranteeing one level end to end.
+
+⚠️ **Loop mode rounds a returned duration up to the next 0.75s multiple** — 1s
+came back 1.5s, 2s came back 2.25s, 30s came back 30.000s. Beds are untouched only
+because 30 = 40 x 0.75 **exactly**; a 10s clip would come back 10.5s. That is a
+property of the number, not of beds, so `loopReturnedSeconds` in `loop-probe.mjs`
+is the arithmetic and `test/audio-native-loop.test.ts` holds every looping clip to
+a length loop mode honours.
 
 ⚠️ That does not overturn the true negative below. The generated `brown-noise` is
 deep and heavily band-limited (LRA 0.4 at 0.01 dBTP), so its median adjacent-sample

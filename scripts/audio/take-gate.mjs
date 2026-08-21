@@ -11,8 +11,9 @@
  * was 16-26 dB - larger than the +15..+22 dB that rewriting the prompt bought.
  * Good prompts still throw silent takes. Round B drew 27 times from that
  * distribution with nothing looking at the bytes, and 20 masters came back
- * unusable for ~1,881 credits. Wording cannot fix a distribution; measuring each
- * draw and drawing again can.
+ * unusable for ~6,270 credits - a spend recorded as 1,881 until #1359 corrected
+ * the rate. Wording cannot fix a distribution; measuring each draw and drawing
+ * again can.
  */
 
 /**

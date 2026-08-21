@@ -17,6 +17,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { CREDITS_PER_SECOND } from "../scripts/audio/catalog.mjs";
+
 const decodeCalls: { out: string; options: Record<string, unknown> }[] = [];
 
 jest.mock("../scripts/audio/postprocess.mjs", () => {
@@ -49,6 +51,8 @@ type Results = {
   prompt: string;
   requestedSeconds: number;
   creditsSpent: number | null;
+  creditsCharged: number | null;
+  creditSource: string;
   creditVerdict: string;
   channelReading: { reading: string; ratio: number | null };
   takes: { loop: boolean; bytes: number; shape: { secondsIfStereo: number } }[];
@@ -65,6 +69,8 @@ let fetchMock: jest.Mock;
 let sentBodies: Record<string, unknown>[];
 let sentUrls: string[];
 let used: number;
+/** What the stubbed generation responds with; null means "no character-cost". */
+let responseHeaders: Map<string, string> | null;
 
 function results(clipId: string, seconds: number): Results {
   return JSON.parse(
@@ -94,6 +100,7 @@ beforeEach(() => {
   sentBodies = [];
   sentUrls = [];
   used = 1000;
+  responseHeaders = null;
 
   fetchMock = jest.fn(async (url: string, init?: { body?: string }) => {
     sentUrls.push(url);
@@ -109,11 +116,17 @@ beforeEach(() => {
     // loop call and exactly what was asked for the control — the shape the probe
     // has to be able to describe.
     const seconds = body.duration_seconds * (body.loop ? 1.5 : 1);
-    used += Math.round(seconds * 3.3);
+    // ☠️ The rate is IMPORTED, never written out here. This stub is a model of the
+    // API's billing, and a hard-coded 3.3 in it is what let the real constant sit
+    // 3.3x under the truth for a week with a green suite (#1359).
+    used += Math.round(seconds * CREDITS_PER_SECOND);
     return {
       ok: true,
       arrayBuffer: async () => new ArrayBuffer(seconds * STEREO_BYTES_PER_SECOND),
-      headers: { get: () => "audio/pcm" },
+      // A bare object, not a Headers: the default stub carries no `character-cost`,
+      // so the probe has to fall back to the balance. The tests that need the
+      // header replace this with an iterable Map.
+      headers: responseHeaders ?? { get: () => "audio/pcm" },
     };
   });
   globalThis.fetch = fetchMock as unknown as typeof fetch;
@@ -159,14 +172,103 @@ describe("the loop probe asks exactly one question", () => {
     expect(sentUrls.filter((url) => url.includes("output_format=pcm_48000"))).toHaveLength(2);
   });
 
-  it("reads the balance either side, so the credit question is measured", async () => {
+  it("falls back to the balance when the response carries no cost header", async () => {
     await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
 
     expect(sentUrls.filter((url) => url.includes("/user/subscription"))).toHaveLength(2);
     const recorded = results("brown-noise", PROBE_SECONDS);
     // 2s requested + 3s returned for the loop call, 2s each way for the control.
-    expect(recorded.creditsSpent).toBe(Math.round(3 * 3.3) + Math.round(2 * 3.3));
+    const billed = Math.round(3 * CREDITS_PER_SECOND) + Math.round(2 * CREDITS_PER_SECOND);
+    expect(recorded.creditsSpent).toBe(billed);
     expect(recorded.creditVerdict).toContain("RETURNED");
+    // No header came back, so nothing exact was recorded and the source says which
+    // of the two instruments actually spoke.
+    expect(recorded.creditsCharged).toBeNull();
+    expect(recorded.creditSource).toMatch(/balance/);
+  });
+
+  /**
+   * ☠️ THE BALANCE LAGS AND THE HEADER DOES NOT. Across a real 22-credit call
+   * `/user/subscription` did not move at all, then reconciled later — so a delta
+   * read straight after a call can report ZERO for a call that spent real,
+   * unrepeatable credits. This stubs exactly that: a balance that does not move,
+   * and a `character-cost` that says what was charged.
+   */
+  it("prefers the character-cost header to a balance that has not caught up", async () => {
+    responseHeaders = new Map([
+      ["content-type", "audio/pcm"],
+      // 2s requested each way, at the API's own rate — the answer #1347 measured.
+      ["character-cost", String(PROBE_SECONDS * CREDITS_PER_SECOND)],
+    ]);
+    // The lagging balance: frozen across both calls.
+    fetchMock.mockImplementation(async (url: string, init?: { body?: string }) => {
+      sentUrls.push(url);
+      if (url.includes("/user/subscription")) {
+        return {
+          ok: true,
+          json: async () => ({ tier: "creator", character_count: 1000, character_limit: 100000 }),
+        };
+      }
+      const body = JSON.parse(init?.body ?? "{}");
+      sentBodies.push(body);
+      const seconds = body.duration_seconds * (body.loop ? 1.5 : 1);
+      return {
+        ok: true,
+        arrayBuffer: async () => new ArrayBuffer(seconds * STEREO_BYTES_PER_SECOND),
+        headers: responseHeaders,
+      };
+    });
+
+    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+
+    const recorded = results("brown-noise", PROBE_SECONDS);
+    // Both calls priced, summed: 2s x 2 at the API rate.
+    expect(recorded.creditsCharged).toBe(2 * PROBE_SECONDS * CREDITS_PER_SECOND);
+    expect(recorded.creditSource).toMatch(/character-cost/);
+    // The frozen balance says nothing was spent, and is not what the verdict reads.
+    expect(recorded.creditsSpent).toBe(0);
+    expect(recorded.creditVerdict).toContain("REQUESTED");
+  });
+
+  /**
+   * ☠️ A PARTIAL SUM LOOKS EXACTLY LIKE A TOTAL, and understating an unrepeatable
+   * spend is the one direction that misleads. If only some calls come back priced,
+   * adding up the ones that did produces a confident number that is too small — so
+   * the header reading is withheld entirely and the run says which instrument it
+   * fell back to, rather than quoting a fraction as if it were the whole.
+   */
+  it("withholds the header total when only some of the calls were priced", async () => {
+    let call = 0;
+    fetchMock.mockImplementation(async (url: string, init?: { body?: string }) => {
+      sentUrls.push(url);
+      if (url.includes("/user/subscription")) {
+        return {
+          ok: true,
+          json: async () => ({ tier: "creator", character_count: used, character_limit: 100000 }),
+        };
+      }
+      const body = JSON.parse(init?.body ?? "{}");
+      sentBodies.push(body);
+      const seconds = body.duration_seconds * (body.loop ? 1.5 : 1);
+      used += Math.round(seconds * CREDITS_PER_SECOND);
+      // Only the first generation carries a cost header; the second does not.
+      const headers = new Map<string, string>([["content-type", "audio/pcm"]]);
+      if (call === 0) headers.set("character-cost", String(PROBE_SECONDS * CREDITS_PER_SECOND));
+      call += 1;
+      return {
+        ok: true,
+        arrayBuffer: async () => new ArrayBuffer(seconds * STEREO_BYTES_PER_SECOND),
+        headers,
+      };
+    });
+
+    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+
+    const recorded = results("brown-noise", PROBE_SECONDS);
+    // NOT `PROBE_SECONDS * CREDITS_PER_SECOND` — the one priced call's figure must
+    // not be recorded as the pass's cost.
+    expect(recorded.creditsCharged).toBeNull();
+    expect(recorded.creditSource).toMatch(/balance/);
   });
 
   it("records both readings of what came back", async () => {
