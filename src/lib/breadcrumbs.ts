@@ -214,3 +214,24 @@ export function computeBreadcrumbs(pathname: string, t: (key: string) => string)
 
   return crumbs;
 }
+
+/**
+ * Up, read off the trail: **the deepest crumb that still carries an href**.
+ *
+ * That is the parent, because the terminal crumb is the current screen and
+ * carries no href - the invariant `computeBreadcrumbs` guarantees above. Before
+ * #1251 an unmapped segment could strand an href on the last crumb, and this
+ * lookup then read one crumb too shallow, mistaking the current screen for its
+ * own parent.
+ *
+ * `undefined` means the screen has no ancestor crumb at all - a one-crumb screen,
+ * whose Up is the root. Callers own that fallback; the trail never emits a crumb
+ * for the root.
+ *
+ * Lives here rather than inside `ScreenEscape` so the rule has ONE definition:
+ * a test that re-derived it would silently follow the implementation wherever it
+ * went, and the enforcement gate (#1263) needs a single symbol to assert on.
+ */
+export function findUpCrumb(crumbs: Breadcrumb[]): Breadcrumb | undefined {
+  return [...crumbs].reverse().find((crumb) => crumb.href);
+}

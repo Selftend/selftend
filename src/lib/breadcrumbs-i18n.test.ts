@@ -1,6 +1,6 @@
 import { computeBreadcrumbs } from "@/src/lib/breadcrumbs";
 import i18n, { type SupportedLanguage } from "@/src/i18n";
-import { useLanguage } from "@/test/i18n-language";
+import { setLanguage } from "@/test/i18n-language";
 
 /**
  * The trail's labels come from table VALUES - `t(STATIC_ROUTES[path])` and the
@@ -49,11 +49,11 @@ describe.each(["en", "bg"])("breadcrumb labels resolve in %s", (language) => {
     // switch leaves every lookup falling through `fallbackLng: "en"`. This suite
     // ran its whole "bg" half against English copy until #1253 - a missing
     // Bulgarian crumb label could not have failed it.
-    await useLanguage(language as SupportedLanguage);
+    await setLanguage(language as SupportedLanguage);
   });
 
   afterAll(async () => {
-    await useLanguage("en");
+    await setLanguage("en");
   });
 
   it.each(PATHS)("resolves every crumb on %s to real copy", (path) => {

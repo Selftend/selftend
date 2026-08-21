@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { findUpCrumb } from "@/src/lib/breadcrumbs";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 
 interface ScreenEscapeProps {
@@ -43,18 +44,12 @@ export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
   const { t: tc } = useTranslation("common");
   const crumbs = useBreadcrumbs();
 
-  // The deepest crumb that still carries an href - the same hop the arrow made
-  // from inside the trail. That is the parent, because the terminal crumb is the
-  // current screen and carries no href: `computeBreadcrumbs` now guarantees a
-  // trail always ends href-less, which is what #1251 fixed (T1a). Before it, an
-  // unmapped segment could swallow the one after it and strand an href on the
-  // last crumb, and this lookup then read one crumb too shallow.
-  //
-  // The repo-wide assertion that keeps it true ships with the gate suite (#1263).
-  //
-  // A one-crumb screen has no ancestor crumb at all, and its Up is the root -
-  // which is what CONTEXT.md's "Up" entry records.
-  const upCrumb = [...crumbs].reverse().find((crumb) => crumb.href);
+  // The same hop the arrow made from inside the trail; the rule itself lives on
+  // `findUpCrumb` so nothing re-derives it. A one-crumb screen has no ancestor
+  // crumb at all, and its Up is the root - which is what CONTEXT.md's "Up" entry
+  // records. The repo-wide assertion keeping the invariant true that this rests
+  // on ships with the gate suite (#1263).
+  const upCrumb = findUpCrumb(crumbs);
   const upHref = upCrumb?.href ?? "/";
 
   // What the Escape promises out loud (#1253). An explicit `accessibilityLabel`

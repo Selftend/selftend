@@ -1,4 +1,5 @@
-import { computeBreadcrumbs } from "@/src/lib/breadcrumbs";
+import { computeBreadcrumbs, findUpCrumb } from "@/src/lib/breadcrumbs";
+import { UNNAMED_DESTINATION_FORMS } from "@/test/escape-forms";
 
 // Minimal label table covering the keys these paths resolve to. Unknown keys fall
 // through to the key itself, which would surface as a bug in an assertion.
@@ -268,20 +269,15 @@ describe("computeBreadcrumbs - the generic fallback is marked unresolved (#1253)
 
   /**
    * The seven routes the spec charted: every `[id]/edit` and `[id]/log` form in
-   * the app hops up to a record whose crumb has no name. `mood-tracker/[id]/edit`
-   * is absent on purpose - it is a `<Redirect>` stub that renders no UI.
+   * the app hops up to a record whose crumb has no name.
+   *
+   * Through `findUpCrumb`, not a hand-rolled reverse-find: re-deriving the Up
+   * rule here would make this test follow the implementation wherever it went.
    */
-  it.each([
-    ["/routines/3f9a-uuid/edit"],
-    ["/tools/check-in/3f9a-uuid/edit"],
-    ["/tools/gratitude-log/3f9a-uuid/edit"],
-    ["/tools/habits/3f9a-uuid/edit"],
-    ["/tools/habits/3f9a-uuid/log"],
-    ["/tools/journal/3f9a-uuid/edit"],
-    ["/tools/sleep/3f9a-uuid/edit"],
-  ])("%s hops up to an unresolved crumb", (path) => {
-    const crumbs = computeBreadcrumbs(path, t);
-    const upCrumb = [...crumbs].reverse().find((crumb) => crumb.href);
-    expect(upCrumb?.unresolved).toBe(true);
-  });
+  it.each(UNNAMED_DESTINATION_FORMS.map((form) => [form.pathname]))(
+    "%s hops up to an unresolved crumb",
+    (pathname) => {
+      expect(findUpCrumb(computeBreadcrumbs(pathname, t))?.unresolved).toBe(true);
+    },
+  );
 });

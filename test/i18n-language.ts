@@ -17,7 +17,7 @@ import { bgResources } from "@/src/i18n/locales/bg";
  * so calling it from a test throws "A dynamic import callback was invoked
  * without --experimental-vm-modules". This registers the same barrel statically.
  */
-export async function useLanguage(language: SupportedLanguage): Promise<void> {
+export async function setLanguage(language: SupportedLanguage): Promise<void> {
   if (language === "bg") {
     for (const [namespace, resources] of Object.entries(bgResources)) {
       if (!i18n.hasResourceBundle("bg", namespace)) {

@@ -3,7 +3,7 @@ import { router } from "expo-router";
 
 import { ScreenEscape } from "@/src/components/app/screen-escape";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
-import { useLanguage } from "@/test/i18n-language";
+import { setLanguage } from "@/test/i18n-language";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
 jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
@@ -11,7 +11,7 @@ jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
 const mockUseBreadcrumbs = useBreadcrumbs as jest.MockedFunction<typeof useBreadcrumbs>;
 
 beforeAll(async () => {
-  await useLanguage("en");
+  await setLanguage("en");
 });
 
 describe("ScreenEscape", () => {
@@ -142,11 +142,11 @@ describe("ScreenEscape - naming the destination in Bulgarian", () => {
   beforeAll(async () => {
     // Via the helper, never a bare `changeLanguage`: bg's bundles are lazy, and
     // without them these assertions would run against English and go vacuous.
-    await useLanguage("bg");
+    await setLanguage("bg");
   });
 
   afterAll(async () => {
-    await useLanguage("en");
+    await setLanguage("en");
   });
 
   it("interpolates the name rather than concatenating English around it", () => {

@@ -3,7 +3,8 @@ import { usePathname } from "expo-router";
 
 import { ScreenEscape } from "@/src/components/app/screen-escape";
 import i18n, { type SupportedLanguage } from "@/src/i18n";
-import { useLanguage } from "@/test/i18n-language";
+import { UNNAMED_DESTINATION_FORMS } from "@/test/escape-forms";
+import { setLanguage } from "@/test/i18n-language";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), replace: jest.fn() },
@@ -45,11 +46,11 @@ describe.each([
     // Via the helper, never a bare `changeLanguage`: bg's bundles are lazy, and
     // without them these assertions would run against English copy and pass
     // whatever the implementation did.
-    await useLanguage(copy.language as SupportedLanguage);
+    await setLanguage(copy.language as SupportedLanguage);
   });
 
   afterAll(async () => {
-    await useLanguage("en");
+    await setLanguage("en");
   });
 
   beforeEach(() => jest.clearAllMocks());
@@ -81,26 +82,50 @@ describe.each([
   });
 
   /**
-   * The seven forms that hop up to an unnamed record. Each would otherwise
-   * announce "Back to Entry" - and the nearest named ancestor ("Back to
-   * Journal") would name a screen the Escape does not go to.
+   * The seven forms that hop up to an unnamed record, each rendered with the
+   * glyph its screen ACTUALLY ships.
+   *
+   * ⚠️ The ticket's acceptance criteria say all seven announce "Go back". They
+   * do not, and the code is right: five of them are forms wearing the X, and the
+   * label follows the glyph, not the destination - which the same ticket states
+   * ("The X glyph keeps announcing 'Close'"). The two criteria collide on those
+   * five and the glyph wins. Rendering a hard-coded arrow for all seven would
+   * have made this suite agree with the ticket instead of with the app.
+   *
+   * What holds across all seven, and is the point of the fallback, is the
+   * negative: no route in this set announces the word "Entry", and none names
+   * the ancestor above the record either.
    */
-  it.each([
-    ["/routines/3f9a-uuid/edit"],
-    ["/tools/check-in/3f9a-uuid/edit"],
-    ["/tools/gratitude-log/3f9a-uuid/edit"],
-    ["/tools/habits/3f9a-uuid/edit"],
-    ["/tools/habits/3f9a-uuid/log"],
-    ["/tools/journal/3f9a-uuid/edit"],
-    ["/tools/sleep/3f9a-uuid/edit"],
-  ])("says 'Go back' on %s", (pathname) => {
-    mockUsePathname.mockReturnValue(pathname);
-    const { getByLabelText, queryByLabelText } = render(<ScreenEscape />);
-    expect(getByLabelText(copy.goBack)).toBeTruthy();
-    // The generic fallback's own translated word never appears in the label, in
-    // either locale - not "Back to Entry", not "Назад към Запис".
-    expect(queryByLabelText(new RegExp(i18n.t("navigation:breadcrumb.entry")))).toBeNull();
-    // Nor the nearest NAMED ancestor, which is a screen the Escape skips past.
-    expect(queryByLabelText(copy.backToJournal)).toBeNull();
-  });
+  it.each(UNNAMED_DESTINATION_FORMS.map((form) => [form.pathname, form] as const))(
+    "announces no borrowed name on %s",
+    (_pathname, form) => {
+      mockUsePathname.mockReturnValue(form.pathname);
+      const { getByLabelText, queryByLabelText } = render(<ScreenEscape glyph={form.glyph} />);
+
+      expect(
+        getByLabelText(form.glyph === "close" ? i18n.t("common:close") : copy.goBack),
+      ).toBeTruthy();
+      // The generic fallback's own translated word never appears in the label,
+      // in either locale - not "Back to Entry", not "Назад към Запис".
+      expect(queryByLabelText(new RegExp(i18n.t("navigation:breadcrumb.entry")))).toBeNull();
+      // Nor the nearest NAMED ancestor, which is a screen the Escape skips past.
+      expect(queryByLabelText(copy.backToJournal)).toBeNull();
+    },
+  );
+
+  /**
+   * The trail's half of the same seven, held separately from the glyph above:
+   * whatever glyph a screen happens to ship today, the trail supplies no name
+   * for any of these destinations. This is what would change if a record's crumb
+   * ever became nameable - and it is deliberately NOT coupled to which of the
+   * five editors currently wears an X.
+   */
+  it.each(UNNAMED_DESTINATION_FORMS.map((form) => [form.pathname]))(
+    "has no name to offer for the destination of %s",
+    (pathname) => {
+      mockUsePathname.mockReturnValue(pathname);
+      const { getByLabelText } = render(<ScreenEscape glyph="arrow-back" />);
+      expect(getByLabelText(copy.goBack)).toBeTruthy();
+    },
+  );
 });
