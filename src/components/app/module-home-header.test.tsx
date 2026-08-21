@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { ModuleHomeHeader } from "./module-home-header";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockPathname = "/modules/cbt";
@@ -47,6 +48,7 @@ function renderHeader({ includeProgram = false }: { includeProgram?: boolean } =
 describe("ModuleHomeHeader action buttons", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useNavigationOriginStore.setState({ pending: null });
   });
 
   it("renders every provided action button", () => {
@@ -68,6 +70,26 @@ describe("ModuleHomeHeader action buttons", () => {
     expect(router.push).toHaveBeenCalledWith({
       pathname: "/notifications",
       params: { target: "cbt" },
+    });
+  });
+
+  /**
+   * The originally reported symptom, closed at its source (#1261): Reminders
+   * sits at the root, so its Up is Home, and a user who came from CBT lost their
+   * place. The bell records where it left from, and the Escape over there reads
+   * it back as "Back to CBT".
+   *
+   * This is the tracer bullet for the helper - the one migrated call site of the
+   * ~89 that the later batches move off a bare `router.push`.
+   */
+  it("records the module it left as the Origin for Reminders", () => {
+    renderHeader();
+
+    fireEvent.press(screen.getByLabelText("Reminders"));
+
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/modules/cbt",
+      forPathname: "/notifications",
     });
   });
 
