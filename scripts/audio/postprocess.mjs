@@ -128,9 +128,9 @@ export async function assertFfmpeg() {
  * processing input". Raw input needs its format declared before `-i`, and the
  * parameters have to come from the catalog because the bytes carry none.
  */
-function inputArgs(file) {
+function inputArgs(file, pcm = SFX_MASTER_PCM) {
   if (!file.toLowerCase().endsWith(".pcm")) return ["-i", file];
-  const { codec, sampleRate, channels } = SFX_MASTER_PCM;
+  const { codec, sampleRate, channels } = pcm;
   return ["-f", codec, "-ar", String(sampleRate), "-ac", String(channels), "-i", file];
 }
 
@@ -188,9 +188,17 @@ function writeWavBuffer(samples, channels, sampleRate) {
   return Buffer.concat([header, Buffer.from(samples.buffer, samples.byteOffset, bytes)]);
 }
 
-export async function decodeToFloatWav(input, out, { channels, sampleRate }) {
+/**
+ * ⚠️ `inputPcm` declares how the RAW BYTES ARE READ; `channels`/`sampleRate`
+ * declare what comes out. They are usually the same and the default keeps them
+ * so — but #1347 has to read one headerless buffer *both* ways (as the stereo
+ * #1159 established, and as the mono the byte count also admits), and a downmix
+ * of the stereo reading is a different signal from the mono reading of the same
+ * bytes. Only an input-side override can express that.
+ */
+export async function decodeToFloatWav(input, out, { channels, sampleRate, inputPcm }) {
   await ffmpeg([
-    ...inputArgs(input),
+    ...inputArgs(input, inputPcm ?? SFX_MASTER_PCM),
     "-ac",
     String(channels),
     "-ar",
@@ -277,6 +285,61 @@ export async function measure(file) {
     dbtp: Number(parsed.input_tp),
     lra: Number(parsed.input_lra),
     thresh: Number(parsed.input_thresh),
+  };
+}
+
+/**
+ * The absolute floor below which a frame counts as silence.
+ *
+ * Absolute rather than relative to the clip's own peak, because a master is
+ * normalised later (#1138) — "quiet" and "silent" have to be separated *before*
+ * the gain that would move them together. -60 dBFS is two orders of magnitude
+ * under the quietest lane the app ships (#1138's beds at -23 LUFS-I).
+ */
+export const SILENCE_FLOOR_DBFS = -60;
+
+/**
+ * How much silence sits at each end of a clip.
+ *
+ * ☠️ NOTHING IN THIS DIRECTORY MEASURED THIS BEFORE. #1134 made zero leading
+ * silence a HARD rule — the app's triggers are already up to 250ms late — and
+ * #1316 re-phrased it positively inside `SHARED_TAIL` rather than dropping it.
+ * But `preflight` and the take gate grade LEVEL, and a clip with a 300ms lead
+ * passes a level bar comfortably: the one rule with the word "hard" on it was the
+ * one rule with no instrument. Added for #1347, where the open question is
+ * whether a natively looping render pads its own head.
+ */
+export function edgeSilence(samples, channels, sampleRate, floorDbfs = SILENCE_FLOOR_DBFS) {
+  const frames = samples.length / channels;
+  const floor = Math.pow(10, floorDbfs / 20);
+  const ms = (count) => (count / sampleRate) * 1000;
+
+  let first = -1;
+  let last = -1;
+  let peak = 0;
+  for (let f = 0; f < frames; f++) {
+    let level = 0;
+    for (let c = 0; c < channels; c++) {
+      const magnitude = Math.abs(samples[f * channels + c]);
+      if (magnitude > level) level = magnitude;
+    }
+    if (level > peak) peak = level;
+    if (level >= floor) {
+      if (first === -1) first = f;
+      last = f;
+    }
+  }
+
+  const peakDbfs = 20 * Math.log10(peak || Number.EPSILON);
+  if (first === -1) {
+    return { silent: true, leadMs: ms(frames), tailMs: ms(frames), peakDbfs, floorDbfs };
+  }
+  return {
+    silent: false,
+    leadMs: ms(first),
+    tailMs: ms(frames - 1 - last),
+    peakDbfs,
+    floorDbfs,
   };
 }
 
@@ -627,6 +690,7 @@ Usage:
   node scripts/audio/postprocess.mjs run <input> --clip <id> [--out <file.m4a>]
   node scripts/audio/postprocess.mjs measure <file>
   node scripts/audio/postprocess.mjs seamcheck <file>
+  node scripts/audio/postprocess.mjs edges <file>
 
 <id> is a clip id from catalog.mjs - a bell, bed, texture or guide_* cue.
 Requires ffmpeg on PATH (#1138).
@@ -670,6 +734,22 @@ async function main() {
           (ok ? "PASS" : "FAIL"),
       );
       process.exit(ok ? 0 : 1);
+    } else if (command === "edges") {
+      if (!target) throw new Error(USAGE);
+      const dir = await mkdtemp(join(tmpdir(), "edges-"));
+      try {
+        const wav = join(dir, "decoded.wav");
+        const { codec: _codec, ...pcm } = SFX_MASTER_PCM;
+        const decoded = await decodeToFloatWav(target, wav, pcm);
+        const edges = edgeSilence(decoded.samples, decoded.channels, decoded.sampleRate);
+        console.log(
+          `${basename(target)}: lead ${edges.leadMs.toFixed(1)} ms · tail ${edges.tailMs.toFixed(1)} ms · ` +
+            `peak ${edges.peakDbfs.toFixed(1)} dBFS (floor ${edges.floorDbfs} dBFS)` +
+            (edges.silent ? " · SILENT" : ""),
+        );
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
     } else {
       console.log(USAGE);
       process.exit(1);
