@@ -41,6 +41,8 @@ import {
 } from "./postprocess.mjs";
 import {
   SFX_MAX_DURATION_SECONDS,
+  chargedCredits,
+  costReading,
   channelReading,
   creditHypotheses,
   creditVerdict,
@@ -458,6 +460,10 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
   let generated = 0;
   let rerolled = 0;
   let recovered = 0;
+  /** The pass's real cost, summed from the response headers rather than quoted. */
+  let charged = 0;
+  /** Calls that came back without a `character-cost`, so `charged` is a floor. */
+  let unpriced = 0;
 
   for (const slot of open) {
     const { clip, prompt, candidate } = slot;
@@ -478,18 +484,27 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
       // rather than paying for them a second time.
       let buffer;
       let contentType = null;
+      let creditsCharged = null;
       let fromDisk = false;
       if (await exists(path)) {
         buffer = await readFile(path);
         fromDisk = true;
         recovered += 1;
       } else {
-        ({ buffer, contentType } = await soundEffect(key, {
+        let headers;
+        ({ buffer, contentType, headers } = await soundEffect(key, {
           text: prompt,
           durationSeconds: clip.durationSeconds,
           promptInfluence: clip.promptInfluence,
           loop: clip.loop,
         }));
+        // ☠️ What this take ACTUALLY cost, off the response. Read here and not
+        // from the balance because `/user/subscription` LAGS — it did not move at
+        // all across a 22-credit call and reconciled only later, so a delta taken
+        // around a pass would understate a spend that can never be repeated.
+        creditsCharged = chargedCredits(headers);
+        charged += creditsCharged ?? 0;
+        if (creditsCharged == null) unpriced += 1;
         await writeFile(path, buffer);
         generated += 1;
         if (spent > 0) rerolled += 1;
@@ -534,9 +549,17 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
           contentType,
           derivedChannels: channels,
           channelRatio: Number(ratio.toFixed(3)),
-          // ☠️ 3.3/sec MEASURED on #1159, not the 40/sec #1134 assumed. Writing
-          // the stale figure here put a number ~12x too high into the permanent record.
+          // The QUOTE, from the catalog's rate — 11 credits/second, measured on the
+          // API (#1347). ☠️ It read 3.3 until #1359: that figure was the WEB
+          // COMPOSER's price, and it put a number 3.3x too low into a permanent
+          // record of an unrepeatable spend.
           creditsEstimate: Math.round(clip.durationSeconds * CREDITS_PER_SECOND),
+          // ☠️ What the API said this take cost, exactly, from the `character-cost`
+          // response header — so a pass's true spend is a sum of recorded facts and
+          // never arithmetic on a lagging balance. `null` for a take recovered from
+          // disk (no call was made, and `recovered` already says so) and for a
+          // response that carried no such header.
+          creditsCharged,
         })}\n`,
       );
 
@@ -557,6 +580,13 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
   console.log(
     `\n${generated} generation(s), of which ${rerolled} were re-rolls` +
       `${recovered ? `; ${recovered} take(s) recovered from disk unpaid` : ""}.`,
+  );
+  // ⚠️ Reported as a floor, not a total, whenever a call came back unpriced — an
+  // understated spend on an unrepeatable pass is the one direction that misleads.
+  console.log(
+    `credits charged: ${unpriced ? "at least " : ""}${charged} ` +
+      `(from the character-cost header on ${generated - unpriced} of ${generated} call(s))` +
+      `${unpriced ? `; ${unpriced} carried no header` : ""}.`,
   );
   console.log(`Masters in ${runDir}`);
   console.log(
@@ -603,7 +633,8 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
  * (#1316). Negation suppresses output level in Sound Effects and it compounds:
  * the `night` prompt measured -47.4 dBFS peak with the full shared tail, -4.7
  * without it, and "No sudden events." alone cost ~17 dB. Twenty of 27 masters
- * were unusable and ~1,881 credits went with them.
+ * were unusable and ~6,270 credits went with them. ☠️ That figure read 1,881 until
+ * #1359: the pass cost 3.3x what the tooling said it did.
  *
  * A 4s take of each clip costs about a seventh of a full pass, so there is no
  * reason ever to discover this again after spending. Run it after ANY prompt
@@ -880,9 +911,10 @@ async function analyseTake({ pcmPath, wavStem, bytes, requestedSeconds }) {
  * ⚠️ A PROBE, NOT A PASS. It renders one clip twice — once `loop: true`, once
  * `loop: false` as the paired control — because Sound Effects is seedless, so the
  * only honest comparison for a stochastic draw is another draw of the same prompt
- * at the same duration. At 3.3 credits/second that is ~198 credits against the
- * 93,179 the plan carries; what it protects is 450s of unrepeatable bed render
- * committed to a path chosen on a premise the repo already contradicts.
+ * at the same duration. At 11 credits/second that is ~660 credits — what it
+ * protects is 450s of unrepeatable bed render committed to a path chosen on a
+ * premise the repo already contradicts. ☠️ The quote said ~198 until #1359,
+ * because `CREDITS_PER_SECOND` carried the web composer's 3.3.
  */
 async function loopProbe({ clipId, seconds, go, withControl }) {
   const clip = SFX_CLIPS.find((candidate) => candidate.id === clipId);
@@ -960,6 +992,19 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
 
   const after = await readSubscription(key);
   const spent = before.ok && after.ok ? after.used - before.used : NaN;
+  // ☠️ THE HEADER IS THE INSTRUMENT, THE BALANCE IS THE CORROBORATION. Summed
+  // across the probe's calls, `character-cost` is exact and immediate; the
+  // balance did not move at all across a 22-credit call and reconciled only
+  // later, so the delta below is recorded and named, never trusted (#1359).
+  const perTake = takes.map((take) => chargedCredits(take.responseHeaders));
+  const priced = perTake.filter((credits) => credits != null);
+  const cost = costReading({
+    // ⚠️ null unless EVERY call was priced. A partial sum looks like a total and
+    // would understate the spend — the one direction that misleads on a pass
+    // nobody can repeat.
+    charged: priced.length === takes.length ? priced.reduce((a, b) => a + b, 0) : null,
+    spent,
+  });
 
   for (const take of takes) {
     Object.assign(
@@ -1013,7 +1058,11 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
   console.log(
     `\nchannel reading: ${reading.reading}${reading.ratio ? ` (${reading.ratio.toFixed(2)}x the control's crossing rate)` : ""}`,
   );
-  console.log(`credits spent:   ${creditVerdict({ spent, hypotheses })}`);
+  console.log(
+    `credits spent:   ${Number.isFinite(cost.credits) ? `${cost.credits} — ` : ""}` +
+      `${creditVerdict({ spent: cost.credits, hypotheses })} (${cost.source})` +
+      `${cost.note ? `; ${cost.note}` : ""}`,
+  );
 
   const results = {
     ticket: 1347,
@@ -1023,9 +1072,13 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
     outputFormat: SFX_OUTPUT_FORMAT,
     balanceBefore: before,
     balanceAfter: after,
+    // Both instruments are recorded side by side on purpose: the disagreement
+    // between them IS the finding about which one to believe.
+    creditsCharged: Number.isFinite(cost.credits) && cost.exact ? cost.credits : null,
     creditsSpent: Number.isFinite(spent) ? spent : null,
+    creditSource: cost.source,
     creditHypotheses: hypotheses,
-    creditVerdict: creditVerdict({ spent, hypotheses }),
+    creditVerdict: creditVerdict({ spent: cost.credits, hypotheses }),
     channelReading: reading,
     takes: takes.map(({ pcmPath, ...rest }) => ({ file: pcmPath, ...rest })),
   };

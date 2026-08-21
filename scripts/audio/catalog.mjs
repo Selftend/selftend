@@ -75,19 +75,39 @@ export function composePrompt(clipText) {
 }
 
 /**
- * ☠️ Textures render non-looping even though they are steady loops.
+ * ☠️ WHETHER A CLIP RENDERS `loop: true` IS PER-CLASS. It used to be one module
+ * constant shared by all thirteen, which made #1347's ruling look like a
+ * one-character edit that would in fact have flipped two classes nobody asked
+ * about.
  *
- * #1134 §4 originally said `loop: true` for textures. Two later decisions
- * overtook it: #1137 established that textures never actually loop at runtime
- * (at 10s they outlast the longest phase they must cover — the 8s 4-7-8 exhale
- * — so they play once, start to finish), and #1138 made the non-looping render
- * the default path for everything because `loop: true` and the zero-silence
- * rule are mutually exclusive on this API.
+ * **Beds loop (#1347, wired by #1359).** #1138 made the non-looping render the
+ * default for everything on the belief — inherited from #1131 — that `loop: true`
+ * forces MP3 and so collides with #1134's zero-leading-silence rule. That belief
+ * is false: probed live, loop mode is accepted with lossless `pcm_48000` on
+ * Creator, honours 30s exactly, returns zero lead and zero tail, and costs no
+ * premium. And it genuinely loops. `brown-noise` at 30s scored a **0.67x** wrap
+ * step against its own paired `loop: false` control's **14.34x** — both
+ * scale-invariant ratios, so the level gap between two seedless draws cannot
+ * explain it — and beat the folded path's best-ever 2.85x by four times.
  *
- * Beds are the only class where the seam matters at all, and they too render
- * non-looping and get folded by the post-processor.
+ * **Bells do not.** They are one-shots: a struck bowl and a struck block, each
+ * rendered to decay into silence. Looping one is meaningless.
+ *
+ * **Textures do not.** #1134 §4 originally said `loop: true` for textures and
+ * #1137 overtook it: at 10s a texture outlasts the longest phase it must cover
+ * (the 8s 4-7-8 exhale), so it plays once, start to finish, and never loops at
+ * runtime at all. ⚠️ It would also be actively wrong here — loop mode rounds a
+ * returned duration UP to the next 0.75s multiple (1s -> 1.5s, 2s -> 2.25s), so a
+ * 10s texture would come back 10.5s. Beds are untouched only because 30 = 40 x
+ * 0.75 exactly. `loopReturnedSeconds` in loop-probe.mjs is that arithmetic, and
+ * test/audio-native-loop.test.ts holds every looping clip to a length loop mode
+ * honours.
  */
-const LOOP = false;
+export const CLASS_LOOP = {
+  bells: false,
+  beds: true,
+  textures: false,
+};
 
 /**
  * Creator's lossless SFX master.
@@ -137,11 +157,25 @@ export const TTS_CANDIDATE_SEEDS = [1130, 1210];
 export const SFX_MODEL = "eleven_text_to_sound_v2";
 
 /**
- * ☠️ MEASURED at ~3.3 credits/second, not the 40/sec #1134 costed everything at.
- * The composer prices 2.0s at 7 credits and 7.0s at 23. That makes the whole
- * pass ~2,000 credits rather than ~24,600. Recorded on #1159.
+ * ☠️☠️ 11 CREDITS/SECOND ON THE API — NOT the 3.3 this file carried, and not the
+ * 40/sec #1134 costed everything at.
+ *
+ * Measured twice against the live `character-cost` response header, which is
+ * exact and immediate: **330 credits for 30s, 22 for 2s**. The 3.3 was real but
+ * came from watching the WEB COMPOSER price a generation (#1159: 7 credits for
+ * 2.0s, 23 for 7.0s) — and the composer prices differently from the API. Nothing
+ * ever checked the two against each other, so every quote this tooling printed
+ * was understated 3.3x: Round B's pre-`--go` message said 1,881 best / 7,524
+ * worst where the truth is ~6,270 / ~25,080. #1320's whole point is that the
+ * worst case must be on screen BEFORE the irreversible spend, and a third of the
+ * real number is not that. Corrected on #1347, wired by #1359.
+ *
+ * ⚠️ This constant is a QUOTE, used before a call. What a call actually cost
+ * comes back on the response — see `chargedCredits` in loop-probe.mjs. Prefer the
+ * header wherever cost is reported after the fact; never the balance delta, which
+ * lags (it did not move at all across a 22-credit call).
  */
-export const CREDITS_PER_SECOND = 3.3;
+export const CREDITS_PER_SECOND = 11;
 
 /**
  * The finished-file spec, fixed by #1138 and amended for the bells by #1139.
@@ -160,11 +194,22 @@ export const OUTPUT_SAMPLE_RATE = 44100; // #1138: 44.1k throughout — TTS cann
 export const AAC_ENCODER = "aac"; // pinned: ffmpeg's native encoder, what #1138 measured with
 
 /**
- * ☠️ The fold TRIMS. `seamless(sig, n, cf)` in generate-breathing-sounds.py folds
+ * How long a fold is WHEN ONE RUNS. ⚠️ Since #1359 a fold is no longer the bed
+ * path — it is the seam-gate fallback, reached by `postprocess run --fold`.
+ *
+ * ☠️ The fold TRIMS, which is why it is not free and why it stopped being
+ * automatic. `seamless(sig, n, cf)` in generate-breathing-sounds.py folds
  * `sig[n..n+cf]` into the head, and the generator makes `n + cf` samples on purpose
  * (8.4s kept as 8.0s). A rendered bed has no spare tail — Sound Effects caps at 30s
  * — so the fold takes the last `cf` from inside the clip and the loop comes out
- * `cf` shorter: a 30s render becomes a 29.6s bed. Nothing requires exactly 30s.
+ * `cf` shorter: a 30s render becomes a 29.6s bed, and dips -0.20 to -4.87 dB at
+ * every loop point. A natively looping bed ships the full **30.0s** with neither.
+ *
+ * ⚠️ It is NOT deleted. #1347 could not clear the TONAL case — all three `night`
+ * draws landed under #1320's usable gate, and of the two carrying signal the join
+ * was fine but the head/tail energy ratio failed. Loop mode gives a clean join
+ * without guaranteeing one level end to end. So the seam gate runs on every bed
+ * however it was rendered, and a bed that fails it can still be folded.
  */
 export const BED_FOLD_SECONDS = 0.4; // CF in generate-breathing-sounds.py:154
 
@@ -192,7 +237,7 @@ export const BELLS = [
     round: "A",
     durationSeconds: 7,
     promptInfluence: 0.6,
-    loop: LOOP,
+    loop: CLASS_LOOP.bells,
     candidates: 5,
     // #1139: the shared start/end bell. Renders at 7s and is trimmed by ear at
     // the gate — final length is a listening judgement, not a fixed number.
@@ -204,7 +249,7 @@ export const BELLS = [
     round: "A",
     durationSeconds: 2,
     promptInfluence: 0.6,
-    loop: LOOP,
+    loop: CLASS_LOOP.bells,
     candidates: 5,
     text: "A single soft wooden temple block, struck once with a padded beater. A hollow, muted, woody knock with a short natural decay under one second. No pitch, no ring, no metallic character, no sharp click on the attack. Gentle — a quiet marker, not an alert. One strike only.",
   },
@@ -290,11 +335,14 @@ export const BEDS = [
   round: "B",
   durationSeconds: 30, // the API maximum (#1134); 3.75x today's repeat period
   promptInfluence: 0.6,
-  loop: LOOP,
+  loop: CLASS_LOOP.beds,
   candidates: 3,
   output: CLASS_OUTPUT.beds,
   loudnessTarget: loudnessLabel(CLASS_OUTPUT.beds.lufs),
-  // The only class the fold applies to — and the only one whose seam is gated.
+  // The only class whose seam is gated, and the only one the fold can apply to.
+  // ⚠️ Carrying a fold length is no longer the same as folding: since #1359 this
+  // is the length available to the fallback, and `foldPlan` decides whether it
+  // runs. A bed rendered `loop: true` ships unfolded unless its seam gate fails.
   foldSeconds: BED_FOLD_SECONDS,
 }));
 
@@ -362,7 +410,7 @@ export const TEXTURES = TEXTURE_FAMILIES.flatMap((family) => [
   // never loop and why seam quality stops mattering for this lane entirely.
   durationSeconds: 10,
   promptInfluence: 0.3, // the default; creative variety is fine for a texture
-  loop: LOOP,
+  loop: CLASS_LOOP.textures,
   candidates: 2,
   output: CLASS_OUTPUT.textures,
   loudnessTarget: loudnessLabel(CLASS_OUTPUT.textures.lufs),
@@ -457,7 +505,15 @@ export function outputSpecFor(clipId) {
       `unknown clip id "${clipId}" — expected one of: ${[...OUTPUT_CLIPS.keys()].join(", ")}`,
     );
   }
-  return { ...clip.output, klass: clip.klass, foldSeconds: clip.foldSeconds ?? null };
+  return {
+    ...clip.output,
+    klass: clip.klass,
+    foldSeconds: clip.foldSeconds ?? null,
+    // ⚠️ How the master was RENDERED, which since #1359 is what decides whether the
+    // post-processor folds it. Voice cues carry no prompt-side fields at all, so
+    // the absent flag means the same thing as a false one: this was not looped.
+    loop: clip.loop ?? false,
+  };
 }
 
 export function clipsForRound(round) {

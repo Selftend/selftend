@@ -17,6 +17,8 @@ import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { CREDITS_PER_SECOND } from "../scripts/audio/catalog.mjs";
+
 const mockMeasure = jest.fn();
 
 jest.mock("../scripts/audio/postprocess.mjs", () => ({
@@ -39,11 +41,15 @@ type ManifestRow = {
   accepted: boolean;
   rejectedFor: string | null;
   dbtp: number | null;
+  creditsEstimate: number;
+  creditsCharged: number | null;
 };
 
 let outDir: string;
 let render: (round: string, go: boolean, maxAttempts?: number) => Promise<void>;
 let fetchMock: jest.Mock;
+/** false makes the stubbed API answer without a `character-cost`, as some do. */
+let priceCalls: boolean;
 
 function manifest(): ManifestRow[] {
   return readFileSync(join(outDir, "round-A", "manifest.jsonl"), "utf8")
@@ -68,12 +74,25 @@ beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(() => {});
   process.exitCode = undefined;
 
-  fetchMock = jest.fn(async () => ({
-    ok: true,
-    // Bytes the loop only ever measures and counts, never decodes.
-    arrayBuffer: async () => new ArrayBuffer(4096),
-    headers: { get: () => "audio/pcm" },
-  }));
+  priceCalls = true;
+  fetchMock = jest.fn(async (_url: string, init?: { body?: string }) => {
+    const seconds = JSON.parse(init?.body ?? "{}").duration_seconds ?? 0;
+    return {
+      ok: true,
+      // Bytes the loop only ever measures and counts, never decodes.
+      arrayBuffer: async () => new ArrayBuffer(4096),
+      // ☠️ A Map, not a plain object — `allHeaders()` builds the row's headers with
+      // `Object.fromEntries`, which needs an iterable. A bare `{ get() {} }` stub
+      // makes that throw, `allHeaders` returns null, and every cost assertion below
+      // would pass vacuously against a recorded `null`.
+      headers: new Map<string, string>([
+        ["content-type", "audio/pcm"],
+        ...(priceCalls
+          ? ([["character-cost", String(seconds * CREDITS_PER_SECOND)]] as [string, string][])
+          : []),
+      ]),
+    };
+  });
   globalThis.fetch = fetchMock as unknown as typeof fetch;
 
   // Two duds then a keeper for every slot, so the re-roll has to actually happen
@@ -128,6 +147,33 @@ describe("render re-rolls takes that come back below the gate", () => {
     expect(process.exitCode).toBe(1);
   });
 
+  /**
+   * ☠️ WHAT THE PASS ACTUALLY COST, PER TAKE, FROM THE RESPONSE ITSELF (#1359).
+   *
+   * The manifest used to carry only a quote — duration x a module constant — and
+   * that constant was 3.3x under the truth for a week without anything noticing,
+   * because nothing ever compared it to what the API said. `character-cost` comes
+   * back on every generation: exact, immediate, free. The balance endpoint is not
+   * an alternative — it LAGS, and did not move at all across a real 22-credit call.
+   */
+  it("records what the API charged for each take, not only what it quoted", () => {
+    const rows = manifest();
+    const bells = rows.filter((row) => row.clip === "meditation-bell");
+    const blocks = rows.filter((row) => row.clip === BROKEN);
+
+    // 7s and 2s at the API's own rate — the two durations Round A renders.
+    expect(bells.every((row) => row.creditsCharged === 7 * CREDITS_PER_SECOND)).toBe(true);
+    expect(blocks.every((row) => row.creditsCharged === 2 * CREDITS_PER_SECOND)).toBe(true);
+
+    // ⚠️ A REJECTED take is charged exactly like a kept one, so its cost is on the
+    // record too — omitting it is how a pass understates an unrepeatable spend.
+    expect(rows.filter((row) => !row.accepted && row.creditsCharged == null)).toHaveLength(0);
+
+    // The quote and the charge agree here only because the constant was corrected;
+    // they are recorded separately so the next disagreement is visible.
+    expect(rows.every((row) => row.creditsEstimate === row.creditsCharged)).toBe(true);
+  });
+
   it("keeps every rejected take on disk under its own name", async () => {
     const files = readdirSync(join(outDir, "round-A", "bells"));
 
@@ -159,5 +205,20 @@ describe("render re-rolls takes that come back below the gate", () => {
     const brokenRows = manifest().filter((row) => row.clip === BROKEN && row.candidate === 1);
     expect(brokenRows).toHaveLength(5);
     expect(brokenRows.at(-1)?.file).toBe(`${BROKEN}-c01-a05.pcm`);
+  });
+
+  it("records null rather than a guess when a response carried no cost header", async () => {
+    // ☠️ The alternative is falling back to the quote and calling it a charge,
+    // which is how a wrong constant survives: the record would agree with itself
+    // whatever the API actually did. An absent measurement is written as absent.
+    priceCalls = false;
+    await render("A", true, 6);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const last = manifest().at(-1);
+    expect(last?.file).toBe(`${BROKEN}-c01-a06.pcm`);
+    expect(last?.creditsCharged).toBeNull();
+    // The quote is still there — it is what the pass was budgeted against.
+    expect(last?.creditsEstimate).toBe(2 * CREDITS_PER_SECOND);
   });
 });

@@ -32,6 +32,98 @@ const DURATION_TOLERANCE_SECONDS = 0.01;
 export const SFX_MAX_DURATION_SECONDS = 30;
 
 /**
+ * ☠️ LOOP MODE ROUNDS THE RETURNED DURATION UP TO THE NEXT 0.75s MULTIPLE.
+ *
+ * Measured three times for three, on the live API: 1s came back 1.5s, 2s came
+ * back 2.25s, 30s came back 30.000s exactly. The "1.5x" the #1214 probe recorded
+ * is real but is not a multiplier — it is what quantising 1s up to 1.5s looks
+ * like from a single sample. 2s -> 2.25s is 1.125x, which no multiplier explains.
+ *
+ * ⚠️ 30s SURVIVES BY ARITHMETIC, NOT BY CLASS. 30 = 40 x 0.75 exactly, so beds
+ * are untouched — but a 10s clip would come back 10.5s, and anything that ever
+ * asks loop mode for a non-multiple gets more audio than it requested. Billing is
+ * on the REQUESTED seconds, so the surplus is free; what it costs is the length
+ * of an unrepeatable master, which `outputSpecFor`'s numbers and #1138's bundle
+ * arithmetic both assume they know.
+ *
+ * Exported so the catalog's durations can be held to it by test rather than by
+ * anyone remembering this paragraph.
+ */
+export const LOOP_DURATION_QUANTUM_SECONDS = 0.75;
+
+/** What loop mode would actually return for a request of `requestedSeconds`. */
+export function loopReturnedSeconds(requestedSeconds) {
+  const quanta = requestedSeconds / LOOP_DURATION_QUANTUM_SECONDS;
+  // ☠️ Rounded before the ceiling, deliberately. 30 / 0.75 is 40.00000000000001 in
+  // binary floating point, and a bare `Math.ceil` turns that into 41 quanta —
+  // reporting the one duration that is known to be honoured exactly as a
+  // half-second stretch. The epsilon is the arithmetic, not a fudge.
+  const whole =
+    Math.abs(quanta - Math.round(quanta)) < 1e-9 ? Math.round(quanta) : Math.ceil(quanta);
+  return whole * LOOP_DURATION_QUANTUM_SECONDS;
+}
+
+/** The response header that says what a generation actually cost. */
+export const CHARGED_CREDITS_HEADER = "character-cost";
+
+/**
+ * ☠️☠️ WHAT A CALL ACTUALLY COST, off the response itself.
+ *
+ * `character-cost` is a response header: exact, immediate, and free to read. It
+ * answered #1347's billing question — requested seconds, no loop-mode premium —
+ * even though the key on hand lacked `user_read` and 401'd on the balance
+ * endpoint entirely. Prefer it over a balance delta everywhere cost is reported
+ * (#1359); `costReading` is where that preference lives.
+ *
+ * Takes anything header-shaped: a `Headers`, a `Map`, or the plain object
+ * `allHeaders()` produces. `fetch` lower-cases header names but a stub or a
+ * replayed recording need not, so the lookup is case-insensitive — a missed
+ * header degrades silently to the lagging instrument, which is the failure this
+ * whole function exists to prevent.
+ */
+export function chargedCredits(headers) {
+  if (!headers) return null;
+  const entries =
+    typeof headers.entries === "function" ? [...headers.entries()] : Object.entries(headers);
+  const hit = entries.find(([name]) => String(name).toLowerCase() === CHARGED_CREDITS_HEADER);
+  if (!hit) return null;
+  const raw = String(hit[1]).trim();
+  const value = Number(raw);
+  // ☠️ null, never NaN. A NaN reaches a manifest row as `null` anyway but poisons
+  // any total it is summed into, silently erasing every other take's real cost.
+  // `Number("")` is 0, so an empty header has to be caught before the conversion.
+  return raw !== "" && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Which cost instrument to believe, and say so out loud.
+ *
+ * ☠️ THE BALANCE LAGS AND IS NOT A COST INSTRUMENT. Across a 22-credit call
+ * `/user/subscription` did not move at all — 38,893 before, 38,893 after — and
+ * then reconciled exactly by the end of the session. A delta read straight after
+ * a call can therefore report ZERO for a call that spent real, unrepeatable
+ * credits. It stays as the fallback for a response with no header, and every
+ * reading names the instrument it came from so a surprising number can be
+ * attributed rather than argued with.
+ */
+export function costReading({ charged, spent }) {
+  if (Number.isFinite(charged)) {
+    return {
+      credits: charged,
+      source: `${CHARGED_CREDITS_HEADER} header`,
+      exact: true,
+      // The lag is evidence about the instrument, so it is reported rather than
+      // dropped — a disagreement here is the expected behaviour, not a fault.
+      note: Number.isFinite(spent) && spent !== charged ? `balance delta says ${spent}` : null,
+    };
+  }
+  if (Number.isFinite(spent)) {
+    return { credits: spent, source: "balance delta (lags)", exact: false, note: null };
+  }
+  return { credits: NaN, source: "unavailable", exact: false, note: null };
+}
+
+/**
  * Every reading a raw PCM buffer admits, and which of them honours the request.
  *
  * The point is not to guess: it is to state the two candidate durations side by
@@ -134,12 +226,14 @@ export function creditHypotheses({ requestedSeconds, returnedSeconds, creditsPer
 /**
  * Which hypothesis the measured spend matches, if either.
  *
- * `null` in means the balance could not be read — the recorded key lacks the
- * `user_read` permission (`probe-results.json` carries the 401), so this has to
- * report "unknown" rather than silently pick the cheaper story.
+ * Fed the figure `costReading` chose — the `character-cost` header where there is
+ * one, the balance delta otherwise. A non-finite number in means neither
+ * instrument spoke (the recorded key lacks `user_read` and `probe-results.json`
+ * carries the 401), so this has to report "unknown" rather than silently pick the
+ * cheaper story.
  */
 export function creditVerdict({ spent, hypotheses, tolerance = 1 }) {
-  if (!Number.isFinite(spent)) return "unknown — balance unavailable";
+  if (!Number.isFinite(spent)) return "unknown — no cost reading available";
   const near = (value) => Math.abs(spent - value) <= tolerance;
   if (near(hypotheses.ifChargedOnRequested) && near(hypotheses.ifChargedOnReturned))
     return "requested and returned agree — this call cannot separate them";
