@@ -10,7 +10,11 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
-  useToastStore.setState({ visible: null, queue: [] });
+  // The real teardown, not a hand-written `setState`: the slot is two fields now,
+  // and a reset that spelled out only `visible: null` would leave a queued toast
+  // to surface in the next test - and an error toast, which no longer expires on
+  // its own, to sit there for the rest of the file.
+  useToastStore.getState().clearToasts();
 });
 
 describe("AppToast - the accessibility label", () => {

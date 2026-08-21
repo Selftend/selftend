@@ -17,6 +17,9 @@ function show(title: string, tone: "success" | "error") {
 const queuedTitles = () => useToastStore.getState().queue.map((toast) => toast.title);
 
 beforeEach(() => {
+  // Deliberately NOT `clearToasts()`, which every other suite resets with: this
+  // file is what proves `clearToasts` works, and a teardown that called it would
+  // make a broken one hide its own failures.
   useToastStore.setState({ visible: null, queue: [] });
 });
 

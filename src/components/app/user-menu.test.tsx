@@ -64,7 +64,9 @@ afterEach(() => {
   appEnv.youtubeUrl = originalYoutubeUrl;
   mockPathname = "/";
   mockSession = signedInSession;
-  useToastStore.setState({ visible: null, queue: [] });
+  // The real teardown rather than a hand-written `setState`: the slot is two
+  // fields now, and an error toast no longer expires on its own.
+  useToastStore.getState().clearToasts();
   jest.clearAllMocks();
   // `clearAllMocks` wipes recorded calls but NOT implementations, so a
   // `mockRejectedValue` set by one test would still be rejecting in the next.

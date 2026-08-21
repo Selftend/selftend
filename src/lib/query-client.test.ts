@@ -98,7 +98,10 @@ describe("query cache persistence", () => {
 
 describe("global mutation failure toast", () => {
   beforeEach(() => {
-    useToastStore.setState({ visible: null, queue: [] });
+    // The real teardown rather than a hand-written `setState`: the slot is two
+    // fields now, and the error toast this suite raises is sticky, so a reset
+    // that missed a field would have the NEXT test asserting on this one's toast.
+    useToastStore.getState().clearToasts();
   });
 
   async function runFailingMutation(meta?: { suppressGlobalErrorToast?: boolean }) {
