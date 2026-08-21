@@ -1,6 +1,18 @@
 export interface Breadcrumb {
   label: string;
   href?: string;
+  /**
+   * Set when the label is the generic fallback - an opaque-id segment no table
+   * could name, rendered as "Entry". The crumb still has a correct href; it is
+   * only its *name* that is missing.
+   *
+   * The Escape reads this to choose between "Back to {name}" and a bare "Go
+   * back" (#1253). It has to be carried structurally: once the crumb is built,
+   * a fallback label is indistinguishable from a real one, and recovering the
+   * distinction by comparing against the translated word "Entry" would be right
+   * in English and wrong in Bulgarian ("Запис").
+   */
+  unresolved?: true;
 }
 
 // Map of exact static paths to their i18n label keys
@@ -186,8 +198,11 @@ export function computeBreadcrumbs(pathname: string, t: (key: string) => string)
       // real title; an opaque id falls back to the generic label.
       const parentPath = "/" + segments.slice(0, i).join("/");
       const resolveKey = SLUG_LABEL_KEYS[parentPath];
-      const label = resolveKey ? t(resolveKey(segment)) : t("breadcrumb.entry");
-      crumbs.push({ label, href: isLast ? undefined : path });
+      crumbs.push(
+        resolveKey
+          ? { label: t(resolveKey(segment)), href: isLast ? undefined : path }
+          : { label: t("breadcrumb.entry"), href: isLast ? undefined : path, unresolved: true },
+      );
       prevWasKnown = false;
     }
     // An unmapped segment in the MIDDLE of a path still collapses into its
@@ -198,4 +213,25 @@ export function computeBreadcrumbs(pathname: string, t: (key: string) => string)
   }
 
   return crumbs;
+}
+
+/**
+ * Up, read off the trail: **the deepest crumb that still carries an href**.
+ *
+ * That is the parent, because the terminal crumb is the current screen and
+ * carries no href - the invariant `computeBreadcrumbs` guarantees above. Before
+ * #1251 an unmapped segment could strand an href on the last crumb, and this
+ * lookup then read one crumb too shallow, mistaking the current screen for its
+ * own parent.
+ *
+ * `undefined` means the screen has no ancestor crumb at all - a one-crumb screen,
+ * whose Up is the root. Callers own that fallback; the trail never emits a crumb
+ * for the root.
+ *
+ * Lives here rather than inside `ScreenEscape` so the rule has ONE definition:
+ * a test that re-derived it would silently follow the implementation wherever it
+ * went, and the enforcement gate (#1263) needs a single symbol to assert on.
+ */
+export function findUpCrumb(crumbs: Breadcrumb[]): Breadcrumb | undefined {
+  return [...crumbs].reverse().find((crumb) => crumb.href);
 }

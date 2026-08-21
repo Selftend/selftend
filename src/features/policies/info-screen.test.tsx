@@ -41,7 +41,8 @@ describe("InfoScreen", () => {
     );
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
-    expect(screen.getByLabelText("Go back")).toBeTruthy();
+    // `/crisis` is a leaf off the root, so the Escape names the root (#1253).
+    expect(screen.getByLabelText("Back to Home")).toBeTruthy();
     // The trail is still hidden at one crumb, so the title is not repeated above
     // itself - only the Escape was decoupled from the trail.
     expect(screen.getAllByText("Crisis support")).toHaveLength(1);

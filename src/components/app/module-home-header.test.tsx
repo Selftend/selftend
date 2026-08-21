@@ -142,7 +142,7 @@ describe("ModuleHomeHeader shell", () => {
     );
 
     // The breadcrumb eyebrow, which the field header used to render in white ink.
-    expect(screen.getByLabelText("Go back")).toBeTruthy();
+    expect(screen.getByLabelText("Back to Modules")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(screen.getByText("Log how you're feeling.")).toBeTruthy();
   });

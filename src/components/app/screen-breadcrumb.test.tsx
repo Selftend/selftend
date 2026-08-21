@@ -60,6 +60,9 @@ describe("ScreenBreadcrumb", () => {
     // as a guard while guarding nothing. These three can fail, because they catch
     // an affordance re-added here in any shape rather than one exact testID.
     expect(queryByRole("button")).toBeNull();
+    // Every shape the Escape's label takes: the destination-naming one (#1253),
+    // the unnamed-destination fallback, and the form's X.
+    expect(queryByLabelText(/^Back to /)).toBeNull();
     expect(queryByLabelText("Go back")).toBeNull();
     expect(queryByLabelText("Close")).toBeNull();
   });

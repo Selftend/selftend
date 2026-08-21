@@ -1,4 +1,5 @@
-import { computeBreadcrumbs } from "@/src/lib/breadcrumbs";
+import { computeBreadcrumbs, findUpCrumb } from "@/src/lib/breadcrumbs";
+import { UNNAMED_DESTINATION_FORMS } from "@/test/escape-forms";
 
 // Minimal label table covering the keys these paths resolve to. Unknown keys fall
 // through to the key itself, which would surface as a bug in an assertion.
@@ -234,4 +235,49 @@ describe("computeBreadcrumbs - an unmapped segment never swallows the next (#125
     // "deepest crumb with an href" lookup would skip past a real ancestor.
     for (const crumb of crumbs.slice(0, -1)) expect(crumb.href).toBeDefined();
   });
+});
+
+/**
+ * The Escape announces "Back to {name}" (#1253), so it has to tell a crumb that
+ * carries a real name from one that fell through to the generic label. "Entry"
+ * is not a name; it is the absence of one, and announcing "Back to Entry" would
+ * put a word in front of screen-reader users that no sighted user is ever shown.
+ *
+ * The distinction is carried STRUCTURALLY, on the crumb, precisely because the
+ * alternative - comparing the label against the translated word "Entry" - is
+ * only ever right in English.
+ */
+describe("computeBreadcrumbs - the generic fallback is marked unresolved (#1253)", () => {
+  it("marks the opaque-id crumb that fell through to the generic label", () => {
+    const crumbs = computeBreadcrumbs("/tools/gratitude-log/3f9a-uuid/edit", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "Entry", "Edit"]);
+    expect(crumbs[2].unresolved).toBe(true);
+  });
+
+  it("leaves a slug-resolved dynamic crumb resolved", () => {
+    // The same branch of the resolver, but the slug table names it - so it IS a name.
+    const crumbs = computeBreadcrumbs("/tools/habits/learn/compounding", t);
+    expect(crumbs.at(-1)?.label).toBe("The 1% compounding effect");
+    expect(crumbs.at(-1)?.unresolved).toBeUndefined();
+  });
+
+  it("leaves static and known-sub-segment crumbs resolved", () => {
+    const crumbs = computeBreadcrumbs("/tools/gratitude-log/new", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "New"]);
+    for (const crumb of crumbs) expect(crumb.unresolved).toBeUndefined();
+  });
+
+  /**
+   * The seven routes the spec charted: every `[id]/edit` and `[id]/log` form in
+   * the app hops up to a record whose crumb has no name.
+   *
+   * Through `findUpCrumb`, not a hand-rolled reverse-find: re-deriving the Up
+   * rule here would make this test follow the implementation wherever it went.
+   */
+  it.each(UNNAMED_DESTINATION_FORMS.map((form) => [form.pathname]))(
+    "%s hops up to an unresolved crumb",
+    (pathname) => {
+      expect(findUpCrumb(computeBreadcrumbs(pathname, t))?.unresolved).toBe(true);
+    },
+  );
 });

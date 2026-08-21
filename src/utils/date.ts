@@ -153,6 +153,32 @@ export function formatTimestamp(value: string): string {
 }
 
 /**
+ * A `YYYY-MM-DD` day key as a sentence-ready date — `Tue, Sep 1, 2026`.
+ *
+ * For the day a user PICKED rather than a moment something happened: the CBT
+ * goal target date and ACT's committed-action date. A day key names a civil day
+ * and carries no instant, so there is no captured offset to honour here; the
+ * noon anchoring is what keeps the rendered day equal to the key across DST.
+ *
+ * The weekday is part of the shape on purpose — a target date is something the
+ * user plans around, and "Tue" is the half of it they act on.
+ *
+ * ⚠️ Fenced to those two surfaces. The other `parseLocalNoon` callers
+ * (`insights.ts`, `history-groups.ts`) render denser formats deliberately, and
+ * this must not be retrofitted onto them.
+ */
+export function formatDayKey(dateKey: string, lang: string = i18n.language): string {
+  const date = parseLocalNoon(dateKey);
+  if (Number.isNaN(date.getTime())) return dateKey;
+  return new Intl.DateTimeFormat(lang || undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+/**
  * An entry's timestamp rendered at the UTC offset captured with it, so it reads
  * as the time the user actually logged it — and agrees with the civil day it is
  * filed under. Showing a Tokyo 23:30 check-in as "14:30" under a heading for the

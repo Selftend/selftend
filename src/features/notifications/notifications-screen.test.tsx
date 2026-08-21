@@ -133,7 +133,7 @@ describe("NotificationsScreen", () => {
     renderWithProviders(<NotificationsScreen />);
 
     expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
-    expect(screen.getByLabelText("Go back")).toBeTruthy();
+    expect(screen.getByLabelText("Back to Home")).toBeTruthy();
     // The trail itself stays hidden: a lone current-page crumb just repeats the
     // title, which is what "Reminders" appearing exactly once asserts.
     expect(screen.getAllByText("Reminders")).toHaveLength(1);
