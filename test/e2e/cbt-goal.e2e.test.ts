@@ -1,3 +1,5 @@
+import type { Page } from "@playwright/test";
+
 import { expect, test } from "./fixtures";
 
 import {
@@ -20,6 +22,18 @@ function triggerText(d: Date): string {
     month: "short",
     year: "numeric",
   }).format(d);
+}
+
+/**
+ * A day cell in the open calendar.
+ *
+ * ⚠️ Matched on the TAIL of the accessible name, and scoped to the grid. Since
+ * #1301 a day is named in full — "Sunday, March 15, 2026", with a "Today, "
+ * prefix on today — so the bare number identifies nothing. The scoping matters
+ * because the trigger reads "Tue, Mar 15, 2026" and ends the same way.
+ */
+function calendarDay(page: Page, day: number) {
+  return page.getByTestId("days").getByRole("button", { name: new RegExp(`\\b${day}, \\d{4}$`) });
 }
 
 /**
@@ -49,8 +63,11 @@ function tenthOfLastMonth(): Date {
  *                               targetDate is a boxed trigger opening the app's
  *                               own calendar sheet, named
  *                               "Target date (optional): <value|No date set>".
- *                               Grid nav: getByTestId("btn-prev"/"btn-next");
- *                               days are buttons named by their number.
+ *                               Grid nav: getByTestId("btn-prev"/"btn-next")
+ *                               (the buttons' names are translated since #1301);
+ *                               days are buttons named IN FULL since #1301 -
+ *                               "Sunday, March 15, 2026", today prefixed
+ *                               "Today, " - not by their number.
  *   step3 "3. Milestones"     - milestones field array
  *
  * Key labels (cbt.json > goals):
@@ -131,12 +148,13 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     // Last month is entirely in the past, so this is stable whatever day the
     // run lands on: every one of its days is disabled.
     await page.getByTestId("btn-prev").click();
-    await expect(page.getByRole("button", { name: "15", exact: true })).toBeDisabled();
+    const fifteenth = calendarDay(page, 15);
+    await expect(fifteenth).toBeDisabled();
 
     // Forward to next month, where every day is selectable.
     await page.getByTestId("btn-next").click();
     await page.getByTestId("btn-next").click();
-    await page.getByRole("button", { name: "15", exact: true }).click();
+    await fifteenth.click();
     await page.getByRole("button", { name: "Done", exact: true }).click();
 
     // Committed on Done, and read back through the trigger.
@@ -213,9 +231,9 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     // The calendar opens on the stored month. The saved day stays tappable;
     // every other past day around it stays shut — `minDate` set to the earlier
     // of today and the stored value would have unlocked all of them.
-    await expect(page.getByRole("button", { name: "10", exact: true })).toBeEnabled();
-    await expect(page.getByRole("button", { name: "9", exact: true })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "11", exact: true })).toBeDisabled();
+    await expect(calendarDay(page, 10)).toBeEnabled();
+    await expect(calendarDay(page, 9)).toBeDisabled();
+    await expect(calendarDay(page, 11)).toBeDisabled();
 
     // Dismissing discards: the stored date is untouched by a look.
     await page.keyboard.press("Escape");

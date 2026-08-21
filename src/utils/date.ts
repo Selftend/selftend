@@ -179,6 +179,29 @@ export function formatDayKey(dateKey: string, lang: string = i18n.language): str
 }
 
 /**
+ * A calendar day spelled out in full, for a screen reader rather than the eye:
+ * "Monday, 8 September 2026".
+ *
+ * A sibling of `formatDayKey` rather than an option on it, because the two
+ * serve opposite constraints. The visible trigger wants the SHORT form — it
+ * sits in a field and the width is measured (#1231). An accessible name has no
+ * width, and abbreviations are exactly what makes a date picker unusable by
+ * ear: "Mon, 8 Sep 2026" is read out as a string of fragments.
+ *
+ * ⚠️ Fenced to the calendar grid's day labels (#1301). Nothing visible should
+ * render this — a long date in a 42-cell grid is not a layout anyone wants.
+ */
+export function formatCalendarDayName(date: Date, lang: string = i18n.language): string {
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(lang || undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+/**
  * An entry's timestamp rendered at the UTC offset captured with it, so it reads
  * as the time the user actually logged it — and agrees with the civil day it is
  * filed under. Showing a Tokyo 23:30 check-in as "14:30" under a heading for the
