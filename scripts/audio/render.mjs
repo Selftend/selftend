@@ -11,6 +11,12 @@
  * overwrite, defaults to a dry run, and writes the manifest incrementally so a
  * crash never loses the record of credits already spent.
  *
+ * ☠️ AND IT DRAWS FROM A DISTRIBUTION WITH A SILENT TAIL. The same prompt varies
+ * 16-26 dB run to run, so good prompts still throw unusable takes. `render`
+ * therefore measures every take as it lands and draws again when one comes back
+ * too quiet, up to a bound — see take-gate.mjs (#1320). Nothing here grades
+ * whether a take is *good*; that stays a human audition call (#1210).
+ *
  * Usage:
  *   node scripts/audio/render.mjs probe              # no credits, answers #1159's probes
  *   node scripts/audio/render.mjs plan --round A     # print prompts + cost, spend nothing
@@ -21,11 +27,21 @@
  */
 
 import { Buffer } from "node:buffer";
-import { writeFile, mkdir, appendFile, access } from "node:fs/promises";
+import { writeFile, readFile, mkdir, appendFile, access } from "node:fs/promises";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { measure } from "./postprocess.mjs";
+import { measure, assertFfmpeg } from "./postprocess.mjs";
+import {
+  MAX_ATTEMPTS,
+  SILENT_DBTP,
+  USABLE_DBTP,
+  attemptFile,
+  classifyTake,
+  planSlot,
+  rowsBySlot,
+  slotKey,
+} from "./take-gate.mjs";
 import {
   BELLS,
   SFX_MODEL,
@@ -43,8 +59,21 @@ import {
 } from "./catalog.mjs";
 
 const API = "https://api.elevenlabs.io/v1";
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const OUT_DIR = join(ROOT, "audio-masters");
+/**
+ * Where masters land. Overridable only so `test/audio-render-reroll.test.ts` can
+ * drive the real spending loop into a scratch directory — the re-roll and the
+ * attempt bound are the two things in this file that decide how much money a run
+ * costs, and neither can be exercised against the live path without either real
+ * credits or clobbering the archive.
+ *
+ * ☠️ The repo-relative fallback sits on the right of `??` on purpose, so it is
+ * never evaluated when the override is set: babel's CJS transform leaves
+ * `import.meta.url` as `null`, and eagerly resolving it would throw at import
+ * time and make this module unloadable from jest.
+ */
+const OUT_DIR =
+  process.env.AUDIO_MASTERS_DIR ??
+  join(dirname(fileURLToPath(import.meta.url)), "../../audio-masters");
 
 function apiKey() {
   const key = process.env.ELEVENLABS_API_KEY;
@@ -265,6 +294,13 @@ function plan(round) {
   }
 
   console.log(`\n--- Round ${round}: ${clips.length} clips, ${seconds}s, ~${credits} credits`);
+  // ⚠️ That figure is one draw per candidate. Since #1320 `render` re-rolls a take
+  // that comes back below the level gate, so the ceiling is a multiple of it — and
+  // `render` itself quotes the real best/worst for what is still unfilled.
+  console.log(
+    `    re-roll bound is ${MAX_ATTEMPTS} attempts per candidate, so at most ` +
+      `~${Math.round(credits * MAX_ATTEMPTS)} credits from empty.`,
+  );
 
   const drafts = clips.filter((clip) => clip.draft);
   if (drafts.length > 0) {
@@ -284,13 +320,77 @@ function plan(round) {
   }
 }
 
-async function render(round, go) {
+/** The run's own record of what has already been generated and paid for. */
+async function readManifest(path) {
+  try {
+    return (await readFile(path, "utf8"))
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => JSON.parse(line));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Work out what is left to do for every candidate slot in the round.
+ *
+ * Deliberately separate from the spending loop and run BEFORE the `--go` gate:
+ * the cost quoted to the human has to be the cost of the run they are actually
+ * approving, which after #1320 is neither the full round (some slots are done)
+ * nor one generation per slot (some will be re-rolled).
+ */
+async function surveyRound(round, maxAttempts) {
   const clips = clipsForRound(round);
-  const { seconds, credits } = creditEstimate(clips);
+  const manifestPath = join(OUT_DIR, `round-${round}`, "manifest.jsonl");
+  const history = rowsBySlot(await readManifest(manifestPath));
+
+  const slots = [];
+  for (const clip of clips) {
+    const prompt = composePrompt(clip.text);
+    for (let candidate = 1; candidate <= clip.candidates; candidate += 1) {
+      const rows = history.get(slotKey(clip.id, candidate)) ?? [];
+      slots.push({ clip, prompt, candidate, ...planSlot({ rows, prompt, maxAttempts }) });
+    }
+  }
+  return { clips, manifestPath, slots, open: slots.filter((slot) => !slot.accepted) };
+}
+
+async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
+  const { clips, manifestPath, slots, open } = await surveyRound(round, maxAttempts);
+  const superseded = slots.reduce((total, slot) => total + slot.superseded, 0);
+  const runDir = join(OUT_DIR, `round-${round}`);
+
+  if (superseded > 0) {
+    console.log(
+      `${superseded} take(s) already on disk were generated from a prompt this catalog no\n` +
+        "longer composes, or before the level gate existed. They are NOT reused and NOT\n" +
+        "deleted — they stay where they are, and the slots they filled are rendered again.\n" +
+        `Audition them by hand if you want to salvage one: node scripts/audio/postprocess.mjs measure <file>\n`,
+    );
+  }
+
+  if (open.length === 0) {
+    console.log(`Nothing to render — every candidate slot in round ${round} has an accepted take.`);
+    console.log(`Masters in ${runDir}`);
+    return;
+  }
+
+  // Best case is one draw per open slot; worst is every open slot exhausting its
+  // remaining attempts. ⚠️ The bound is what makes the worst case a number at all.
+  const bestSeconds = open.reduce((total, slot) => total + slot.clip.durationSeconds, 0);
+  const worstSeconds = open.reduce(
+    (total, slot) => total + slot.clip.durationSeconds * slot.remaining,
+    0,
+  );
+  const cost = (secs) => Math.round(secs * CREDITS_PER_SECOND);
 
   if (!go) {
     console.error(
-      `Refusing to spend. Round ${round} is ${seconds}s ≈ ${credits} credits and CANNOT BE REPEATED.\n` +
+      `Refusing to spend. ${open.length} of ${slots.length} candidate slots in round ${round}\n` +
+        `still need a take, and every generation CANNOT BE REPEATED.\n\n` +
+        `  best case  ${bestSeconds}s ≈ ${cost(bestSeconds)} credits (every slot passes first draw)\n` +
+        `  worst case ${worstSeconds}s ≈ ${cost(worstSeconds)} credits (every slot re-rolls to the bound of ${maxAttempts})\n\n` +
         `Review with:  node scripts/audio/render.mjs plan --round ${round}\n` +
         `Then re-run with --go.`,
     );
@@ -308,43 +408,75 @@ async function render(round, go) {
   }
 
   const key = apiKey();
-  const runDir = join(OUT_DIR, `round-${round}`);
+  // ⚠️ Before the first generation, never after: the pass now grades every take,
+  // so a missing ffmpeg discovered mid-run means paying for takes nothing can read.
+  await assertFfmpeg();
   await mkdir(runDir, { recursive: true });
-  const manifestPath = join(runDir, "manifest.jsonl");
 
-  for (const clip of clips) {
+  console.log(
+    `${open.length} slot(s) to fill, bound ${maxAttempts} attempts each ` +
+      `(≤ ${cost(worstSeconds)} credits).\n`,
+  );
+
+  const exhausted = [];
+  let generated = 0;
+  let rerolled = 0;
+  let recovered = 0;
+
+  for (const slot of open) {
+    const { clip, prompt, candidate } = slot;
     const classDir = join(runDir, clip.klass);
     await mkdir(classDir, { recursive: true });
 
-    for (let n = 1; n <= clip.candidates; n += 1) {
-      const name = `${clip.id}-c${String(n).padStart(2, "0")}.pcm`;
+    let index = slot.nextIndex;
+    let spent = slot.spent;
+    let accepted = null;
+
+    while (!accepted && spent < maxAttempts) {
+      const name = attemptFile(clip.id, candidate, index);
       const path = join(classDir, name);
 
       // Never overwrite. A generation that already exists cost real credits and
-      // can never be reproduced; clobbering one is unrecoverable.
+      // can never be reproduced. A file sitting at this index with no manifest
+      // row is a crash between the write and the append — grade those bytes
+      // rather than paying for them a second time.
+      let buffer;
+      let contentType = null;
+      let fromDisk = false;
       if (await exists(path)) {
-        console.log(`skip ${name} — already exists`);
-        continue;
+        buffer = await readFile(path);
+        fromDisk = true;
+        recovered += 1;
+      } else {
+        ({ buffer, contentType } = await soundEffect(key, {
+          text: prompt,
+          durationSeconds: clip.durationSeconds,
+          promptInfluence: clip.promptInfluence,
+          loop: clip.loop,
+        }));
+        await writeFile(path, buffer);
+        generated += 1;
+        if (spent > 0) rerolled += 1;
       }
 
-      const prompt = composePrompt(clip.text);
-      const { buffer, contentType } = await soundEffect(key, {
-        text: prompt,
-        durationSeconds: clip.durationSeconds,
-        promptInfluence: clip.promptInfluence,
-        loop: clip.loop,
-      });
-      await writeFile(path, buffer);
-
+      const measured = await measure(path);
+      const verdict = classifyTake(measured.dbtp);
       const { channels, ratio } = derivePcmChannels(buffer.length, clip.durationSeconds, 48000);
-      // Appended per clip, not written at the end: a crash mid-pass must not
-      // lose the record of what has already been generated and paid for.
+
+      // Appended per take, not written at the end: a crash mid-pass must not lose
+      // the record of what has already been generated and paid for.
+      //
+      // ⚠️ REJECTED TAKES ARE RECORDED TOO. One cost exactly as many credits as a
+      // kept one and is exactly as unreproducible, so omitting it would understate
+      // the spend — and a clip's rejection rate is the signal that separates a
+      // broken prompt from an unlucky one.
       await appendFile(
         manifestPath,
         `${JSON.stringify({
           clip: clip.id,
           klass: clip.klass,
-          candidate: n,
+          candidate,
+          attempt: index,
           file: name,
           prompt,
           model: SFX_MODEL,
@@ -354,6 +486,14 @@ async function render(round, go) {
           loop: clip.loop,
           loudnessTarget: clip.loudnessTarget,
           seed: null, // Sound Effects has none — this is why the masters are the source
+          // ☠️ null, not a number, when the take is digitally silent: loudnorm
+          // prints -inf and Number() makes that NaN. `classifyTake` reads the raw
+          // value; the manifest records the honest absence.
+          dbtp: Number.isFinite(measured.dbtp) ? measured.dbtp : null,
+          lufs: Number.isFinite(measured.lufs) ? measured.lufs : null,
+          accepted: verdict.accepted,
+          rejectedFor: verdict.rejectedFor,
+          recovered: fromDisk,
           bytes: buffer.length,
           contentType,
           derivedChannels: channels,
@@ -363,13 +503,28 @@ async function render(round, go) {
           creditsEstimate: Math.round(clip.durationSeconds * CREDITS_PER_SECOND),
         })}\n`,
       );
-      console.log(`ok   ${name}  ${buffer.length} bytes  ~${channels}ch`);
+
+      const level = Number.isFinite(measured.dbtp) ? `${measured.dbtp} dBTP` : "silent";
+      console.log(
+        `${verdict.accepted ? "keep" : "roll"} ${name.padEnd(34)} ${level.padStart(11)}  ` +
+          `${verdict.rejectedFor ?? "ok"}${fromDisk ? "  (recovered from disk, no credits)" : ""}`,
+      );
+
+      spent += 1;
+      index += 1;
+      if (verdict.accepted) accepted = name;
     }
+
+    if (!accepted) exhausted.push({ id: clip.id, candidate, attempts: spent });
   }
 
-  console.log(`\nDone. Masters in ${runDir}`);
   console.log(
-    "Archive EVERY candidate — winners and rejects alike — to Drive\n" +
+    `\n${generated} generation(s), of which ${rerolled} were re-rolls` +
+      `${recovered ? `; ${recovered} take(s) recovered from disk unpaid` : ""}.`,
+  );
+  console.log(`Masters in ${runDir}`);
+  console.log(
+    "Archive EVERY take — kept and rejected alike — to Drive\n" +
       "Selftend/app-audio-masters/ per #1141. A rejected take is exactly as\n" +
       "unreproducible as a chosen one.",
   );
@@ -388,6 +543,21 @@ async function render(round, go) {
           : "  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"),
     );
   }
+
+  // ☠️ A slot that burned its whole attempt bound is not unlucky, it is broken.
+  // The run fails so this cannot be mistaken for a finished pass — the previous
+  // version's silence about exactly this is what let 20 unusable masters through.
+  if (exhausted.length > 0) {
+    console.error(
+      `\n${exhausted.length} candidate slot(s) exhausted ${maxAttempts} attempts without a\n` +
+        "usable take:\n" +
+        exhausted.map((e) => `  ${e.id} candidate ${e.candidate}`).join("\n") +
+        "\n\nThose prompts are broken, not unlucky. Take them back to #1316 — every\n" +
+        "attempt is in the manifest with its measured level. Re-running will NOT\n" +
+        "retry them: the bound is per slot and it is spent.",
+    );
+    process.exitCode = 1;
+  }
 }
 
 /**
@@ -404,9 +574,9 @@ async function render(round, go) {
  * change.
  */
 const PREFLIGHT_SECONDS = 4;
-const PREFLIGHT_SILENT_DBTP = -30; // measured: silent takes land at -40..-47
-const PREFLIGHT_QUIET_DBTP = -12; // measured: healthy takes land at -1..-6
 const PREFLIGHT_TAKES = 2;
+// The thresholds live in take-gate.mjs now, because `render` grades every take
+// against them too (#1320) — a prompt that clears preflight faces the same bar.
 
 /**
  * ☠️ One take proves nothing, and finding that out was the whole point.
@@ -432,6 +602,10 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
     `Probing ${clips.length} prompts x ${takes} takes at ${PREFLIGHT_SECONDS}s ` +
       `(~${Math.round(clips.length * takes * PREFLIGHT_SECONDS * CREDITS_PER_SECOND)} credits).\n`,
   );
+  console.log(
+    `Gate: usable at >= ${USABLE_DBTP} dBTP, silent below ${SILENT_DBTP} — the same bar ` +
+      "`render` applies to every take.\n",
+  );
   console.log("clip                          dBTP per take        verdict");
 
   const broken = [];
@@ -452,8 +626,8 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
       peaks.push((await measure(path)).dbtp);
     }
 
-    const usable = peaks.filter((p) => p >= PREFLIGHT_QUIET_DBTP).length;
-    const anySilent = peaks.some((p) => p < PREFLIGHT_SILENT_DBTP);
+    const usable = peaks.filter((p) => classifyTake(p).accepted).length;
+    const anySilent = peaks.some((p) => classifyTake(p).rejectedFor === "silent");
     let verdict;
     if (usable === 0) {
       verdict = "BROKEN";
@@ -474,7 +648,9 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
     console.log(
       `${flaky.length} prompt(s) are a coin flip - some takes usable, some not:\n` +
         flaky.map((f) => `  ${f.id} - ${f.peaks.join(", ")} dBTP`).join("\n") +
-        "\n  These need a per-candidate level gate at render time, not new words.\n",
+        `\n  These do not need new words. \`render\` grades every take against the same\n` +
+        `  two thresholds and re-rolls a failure up to ${MAX_ATTEMPTS} times per slot (#1320),\n` +
+        "  so a coin-flip prompt costs extra credits rather than a silent master.\n",
     );
   }
   if (broken.length) {
@@ -604,37 +780,65 @@ async function renderVoices(go) {
   );
 }
 
-const [command, ...rest] = process.argv.slice(2);
-const roundFlag = rest.indexOf("--round");
-const round = roundFlag === -1 ? "A" : rest[roundFlag + 1];
-const go = rest.includes("--go");
+// `render` is exported so test/audio-render-reroll.test.ts can drive the actual
+// spending loop — the re-roll and the attempt bound decide what a run costs, and
+// neither is provable from the outside.
+export { render };
 
-switch (command) {
-  case "probe":
-    await probe();
-    break;
-  case "plan":
-    plan(round);
-    break;
-  case "preflight": {
-    const takesFlag = rest.indexOf("--takes");
-    await preflight(round, takesFlag === -1 ? PREFLIGHT_TAKES : Number(rest[takesFlag + 1]));
-    break;
+async function main() {
+  const [command, ...rest] = process.argv.slice(2);
+  const roundFlag = rest.indexOf("--round");
+  const round = roundFlag === -1 ? "A" : rest[roundFlag + 1];
+  const go = rest.includes("--go");
+
+  switch (command) {
+    case "probe":
+      await probe();
+      break;
+    case "plan":
+      plan(round);
+      break;
+    case "preflight": {
+      const takesFlag = rest.indexOf("--takes");
+      await preflight(round, takesFlag === -1 ? PREFLIGHT_TAKES : Number(rest[takesFlag + 1]));
+      break;
+    }
+    case "render": {
+      const attemptsFlag = rest.indexOf("--attempts");
+      const attempts = attemptsFlag === -1 ? MAX_ATTEMPTS : Number(rest[attemptsFlag + 1]);
+      if (!Number.isInteger(attempts) || attempts < 1) {
+        console.error(`--attempts must be a positive integer, got: ${rest[attemptsFlag + 1]}`);
+        process.exit(1);
+      }
+      await render(round, go, attempts);
+      break;
+    }
+    case "render-voices":
+      await renderVoices(go);
+      break;
+    default:
+      console.log(
+        "usage:\n" +
+          "  node scripts/audio/render.mjs probe\n" +
+          "  node scripts/audio/render.mjs plan --round A|B\n" +
+          "  node scripts/audio/render.mjs preflight --round A|B\n" +
+          "  node scripts/audio/render.mjs render --round A|B --go [--attempts N]\n" +
+          "  node scripts/audio/render.mjs render-voices --go",
+      );
+      process.exit(BELLS.length && command ? 1 : 0);
   }
-  case "render":
-    await render(round, go);
-    break;
-  case "render-voices":
-    await renderVoices(go);
-    break;
-  default:
-    console.log(
-      "usage:\n" +
-        "  node scripts/audio/render.mjs probe\n" +
-        "  node scripts/audio/render.mjs plan --round A|B\n" +
-        "  node scripts/audio/render.mjs preflight --round A|B\n" +
-        "  node scripts/audio/render.mjs render --round A|B --go\n" +
-        "  node scripts/audio/render.mjs render-voices --go",
-    );
-    process.exit(BELLS.length && command ? 1 : 0);
+}
+
+// Only run the CLI when invoked directly, the same guard postprocess.mjs carries
+// so calibrate-seam.mjs can import it. Without this, importing `render` to test it
+// would run the argv-driven switch instead.
+//
+// ☠️ Wrapped in `main()` rather than left as top-level `await`: babel's CJS
+// transform cannot compile top-level await, so a bare `await probe()` here makes
+// the whole module unimportable from jest and the loop untestable.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
 }
