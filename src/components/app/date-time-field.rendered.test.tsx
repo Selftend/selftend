@@ -1,16 +1,28 @@
-import { act, screen, within } from "@testing-library/react-native";
+import { act, fireEvent, screen, within } from "@testing-library/react-native";
 import dayjs from "dayjs";
 
-import { ThemedCalendar } from "./themed-calendar";
+import { DateTimeField } from "./date-time-field";
 import i18n from "@/src/i18n";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 /**
- * The real calendar, deliberately unmocked. Every finding this file pins was
- * produced by a prop that LOOKED correctly passed: the range picker already
- * passed `locale` and still opened on Sunday, because the library hard-defaults
- * `firstDayOfWeek` to 0 and never derives it from `locale`. So these assertions
- * read the RENDERED month and weekday names, never the props.
+ * The check-in picker with the REAL calendar in the tree.
+ *
+ * Separate from `date-time-field.test.tsx` because `jest.mock` is per FILE:
+ * the commit-semantics tests there need a drivable probe in place of the
+ * library, and these need the library itself.
+ *
+ * Not a duplicate of `themed-calendar.test.tsx` either. That file proves the
+ * shared wrapper is configured correctly; this one proves the check-in field
+ * actually routes THROUGH it. The field passed no `locale` at all until #1298
+ * and rendered "September" under a Bulgarian app language — a defect entirely
+ * invisible to a calendar test.
+ *
+ * Every finding here came from a prop that looked correctly passed: the mood
+ * tracker's range picker already passed `locale` and still opened Sunday-first,
+ * because the library hard-defaults `firstDayOfWeek` and never derives it from
+ * `locale`. So these assertions read RENDERED month and weekday names, never
+ * props.
  */
 
 // ⚠️ `dayjs.locale()` is a GLOBAL mutation the library performs on every render
@@ -37,19 +49,35 @@ function weekdayLabels() {
     .map((node) => node.props.children as string);
 }
 
-describe("ThemedCalendar", () => {
+/** Render the check-in field and open its calendar. */
+function openPicker() {
+  renderWithProviders(
+    <DateTimeField
+      value="2026-03-15T09:00:00.000Z"
+      onChange={jest.fn()}
+      accessibilityLabel="Entry time"
+    />,
+  );
+  fireEvent.press(screen.getByLabelText("Entry time"));
+}
+
+describe("the check-in picker's calendar", () => {
   it("opens the week on Monday, matching every other date surface in the app", () => {
-    renderWithProviders(
-      <ThemedCalendar
-        mode="range"
-        value={{ start: dayjs("2026-03-15"), end: null }}
-        onChange={jest.fn()}
-      />,
-    );
+    openPicker();
 
     // Sunday-first would read ["Su", "Mo", ...]; the app is unconditionally
     // Monday-first (mondayKeyOf, src/utils/date.ts).
     expect(weekdayLabels()).toEqual(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]);
+  });
+
+  it("offers the time view, because a check-in logs an instant and not a day", () => {
+    openPicker();
+
+    // The library's time affordance, labelled with the entry's own time —
+    // 09:00Z read in the suite's Asia/Kolkata frame. Rendered rather than
+    // asserted on the `timePicker` prop, which produces this button only in
+    // single mode and would otherwise pass while producing nothing.
+    expect(screen.getByLabelText("14:30")).toBeTruthy();
   });
 
   it("renders Bulgarian month and weekday names under a Bulgarian app language", async () => {
@@ -57,13 +85,7 @@ describe("ThemedCalendar", () => {
       await i18n.changeLanguage("bg");
     });
 
-    renderWithProviders(
-      <ThemedCalendar
-        mode="range"
-        value={{ start: dayjs("2026-03-15"), end: null }}
-        onChange={jest.fn()}
-      />,
-    );
+    openPicker();
 
     expect(weekdayLabels()).toEqual(["пн", "вт", "ср", "чт", "пт", "сб", "нд"]);
     expect(within(screen.getByTestId("btn-month")).getByText("март")).toBeTruthy();
@@ -81,38 +103,8 @@ describe("ThemedCalendar", () => {
   });
 
   it("keeps the English calendar English, so the Bulgarian proof above is not vacuous", () => {
-    renderWithProviders(
-      <ThemedCalendar
-        mode="range"
-        value={{ start: dayjs("2026-03-15"), end: null }}
-        onChange={jest.fn()}
-      />,
-    );
+    openPicker();
 
     expect(within(screen.getByTestId("btn-month")).getByText("March")).toBeTruthy();
-  });
-
-  it("opens the week on Monday in date mode too", () => {
-    renderWithProviders(
-      <ThemedCalendar mode="date" value={dayjs("2026-03-15")} onChange={jest.fn()} />,
-    );
-
-    expect(weekdayLabels()).toEqual(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]);
-  });
-
-  it("adds the time view in datetime mode, and only there", () => {
-    // The two single-value modes share a branch and differ by one prop, so the
-    // difference is worth pinning on rendered output: the library's time
-    // affordance is labelled with the value's own time.
-    const { unmount } = renderWithProviders(
-      <ThemedCalendar mode="datetime" value={dayjs("2026-03-15T14:30:00")} onChange={jest.fn()} />,
-    );
-    expect(screen.getByLabelText("14:30")).toBeTruthy();
-    unmount();
-
-    renderWithProviders(
-      <ThemedCalendar mode="date" value={dayjs("2026-03-15T14:30:00")} onChange={jest.fn()} />,
-    );
-    expect(screen.queryByLabelText("14:30")).toBeNull();
   });
 });
