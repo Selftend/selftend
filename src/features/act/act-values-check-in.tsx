@@ -54,11 +54,12 @@ export function ActValuesCheckIn() {
   const resetDraft = useActValuesCheckInDraftStore((state) => state.reset);
   const setDraftValues = useActValuesCheckInDraftStore((state) => state.setValues);
 
-  // Domains whose save rejected on the last attempt. While non-empty, the save
-  // button retries ONLY these - the fulfilled ones are already on the server and
-  // must not be duplicated. Deliberately NOT in the draft store: a failure belongs
-  // to one attempt, and carrying it across a remount would re-accuse a domain the
-  // user may since have saved elsewhere.
+  // Domains whose save rejected on the last attempt, for the card that names them.
+  // ☠️ This is display state ONLY - it must never be the thing that decides what a
+  // retry saves. It is `useState`, so it dies on a remount, while the ratings now
+  // outlive one in the draft store; a retry filtered by it would then save an
+  // already-fulfilled domain a SECOND time. What still needs saving is whatever is
+  // left in the draft, and the save below prunes the draft to exactly that.
   const [failedDomains, setFailedDomains] = useState<ACTLifeDomain[]>([]);
 
   useEffect(() => {
@@ -71,8 +72,7 @@ export function ActValuesCheckIn() {
 
   const handleSave = useSingleFlight(async () => {
     if (!user) return;
-    const candidates = failedDomains.length > 0 ? failedDomains : ACT_LIFE_DOMAINS;
-    const domainsToSave = candidates.filter((d) => ratings[d] !== null);
+    const domainsToSave = ACT_LIFE_DOMAINS.filter((d) => ratings[d] !== null);
     if (domainsToSave.length === 0) return;
     // allSettled (not Promise.all) so one rejected domain doesn't hide the fate
     // of the others: fulfilled ones are saved for real, and only the rejected
@@ -84,7 +84,20 @@ export function ActValuesCheckIn() {
     );
     const failed = domainsToSave.filter((_, index) => results[index].status === "rejected");
     setFailedDomains(failed);
-    if (failed.length > 0) return; // keep the ratings on screen; the card lists them
+
+    if (failed.length > 0) {
+      // The draft keeps ONLY what did not reach the server. The fulfilled ratings have
+      // moved up to the rows above and must not be sent a second time - so pressing
+      // Save again retries exactly the failed ones, whether or not the card that names
+      // them survived (see `failedDomains`). The cleared tracks are the feedback: what
+      // saved is now a number on a row, what did not is still in the control.
+      setDraftValues(
+        Object.fromEntries(
+          ACT_LIFE_DOMAINS.map((d) => [d, failed.includes(d) ? ratings[d] : null]),
+        ) as ActValuesCheckInDraft,
+      );
+      return;
+    }
 
     showToast({ title: t("values.bullsEye.savedToast"), tone: "success" });
     // The check-in is done and its numbers are now on the rows above, read back from

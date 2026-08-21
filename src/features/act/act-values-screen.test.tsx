@@ -171,6 +171,53 @@ describe("ActValuesScreen - partial save failure", () => {
 });
 
 /**
+ * ☠️ The failure mode the draft store introduces, and the reason the retry set is
+ * derived from the DRAFT rather than from the error card's list. The ratings now
+ * outlive a remount; the card's list does not. Filter the retry by the card and a
+ * user who hits a partial failure, walks away and comes back saves the domain that
+ * already succeeded a SECOND time - a duplicate snapshot, with nothing failing.
+ */
+describe("ActValuesScreen - a partial failure survives leaving the screen", () => {
+  it("retries only the failed domain after a remount, never the one that saved", async () => {
+    let leisureShouldFail = true;
+    const mutateAsync = jest.fn(({ domain }: { domain: string; alignmentRating: number }) =>
+      domain === "leisure" && leisureShouldFail
+        ? Promise.reject(new Error("boom"))
+        : Promise.resolve({} as never),
+    );
+    mockUseSave.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useSaveBullsEyeSnapshot>);
+
+    const { unmount } = renderWithProviders(<ActValuesScreen />);
+    const rateButtons = screen.getAllByText("rate");
+    fireEvent.press(rateButtons[0]); // work
+    fireEvent.press(rateButtons[1]); // leisure
+    fireEvent.press(screen.getByText("Save ratings"));
+    expect(await screen.findByText("Could not save")).toBeTruthy();
+
+    // Work reached the server; only leisure is still owed.
+    expect(useActValuesCheckInDraftStore.getState().values).toMatchObject({
+      work: null,
+      leisure: 5,
+    });
+
+    // Leave and come back: the card is gone with the component, the rating is not.
+    unmount();
+    mutateAsync.mockClear();
+    leisureShouldFail = false;
+    renderWithProviders(<ActValuesScreen />);
+    expect(screen.queryByText("Could not save")).toBeNull();
+
+    fireEvent.press(screen.getByText("Save ratings"));
+
+    await waitFor(() => expect(mockShowToast).toHaveBeenCalled());
+    expect(mutateAsync.mock.calls.map((call) => call[0].domain)).toEqual(["leisure"]);
+  });
+});
+
+/**
  * The values route is single-instance, so leaving it and coming back REUSES the
  * instance rather than remounting it. Ratings therefore have to survive in a place
  * that outlives the component, and be cleared on sign-out with the rest of the drafts.
