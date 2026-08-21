@@ -3,25 +3,57 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { personalValuesList } from "@/src/constants/personal-values-list";
 
 /**
- * The one line that says what a goal is anchored to, or null when it is anchored
- * to nothing (#1291).
+ * The keys a goal may be anchored to.
  *
- * Split out from the component so the goals list can pass the same sentence as the
- * card's accessibility hint: the card's `accessibilityLabel` is the goal title, and
- * on both platforms that label replaces the card's contents for a screen reader, so
- * a value rendered only as a child would be seen by sighted users alone.
+ * `value_key` is free text to Postgres and `string | null` in TypeScript, and the
+ * label is looked up by interpolating the key into a translation path - so a key the
+ * static list does not carry would render the raw path, `personalValues.foo.label`,
+ * straight to the user. Checking against the list the labels come from is what stops
+ * that.
+ */
+const VALUE_KEYS = new Set(personalValuesList.map((value) => value.key));
+
+/**
+ * The one line that says what a goal is anchored to, or null when it is anchored to
+ * nothing - or to something the static value list no longer carries (#1291).
  *
- * The label is looked up in the static value list's own translations - the same
- * `personalValues.*` keys the values screen renders. Nothing here reads the user's
- * values profile, which is what makes a demoted value a non-event: there is no
- * priority list to compare against, so there is nothing to warn about and nothing
- * to clear.
+ * Split out from the component so the goals list can build the same sentence into
+ * its card's accessible name.
+ *
+ * Nothing here reads the user's values profile, which is what makes a demoted value
+ * a non-event: there is no priority list to compare against, so there is nothing to
+ * warn about and nothing to clear.
  */
 export function goalValueText(t: TFunction<"cbt">, valueKey: string | null): string | null {
-  if (!valueKey) return null;
+  if (!valueKey || !VALUE_KEYS.has(valueKey)) return null;
   return t("goals.valueAnchor", { value: t(`personalValues.${valueKey}.label`) });
+}
+
+/**
+ * The accessible name for a goal's row in the goals list.
+ *
+ * The value has to be part of the NAME rather than an `accessibilityHint`, for two
+ * reasons pointing the same way. The row sets its name explicitly, and an explicit
+ * name replaces the row's contents for a screen reader - so the value line inside it
+ * is never read out. And `react-native-web` does not implement `accessibilityHint`
+ * at all (see the note in `mood/manage-emotions-modal.tsx`), so a hint would carry
+ * this on native and silently drop it on web, which is the platform the suite
+ * actually exercises. `docs/accessibility.md` also reserves the hint for what an
+ * action will do, which this is not.
+ *
+ * Composed with a literal separator, as `values.tsx` already composes a value's
+ * label with its tier.
+ */
+export function goalRowAccessibleName(
+  t: TFunction<"cbt">,
+  title: string,
+  valueKey: string | null,
+): string {
+  const text = goalValueText(t, valueKey);
+  return text ? `${title}, ${text}` : title;
 }
 
 interface GoalValueLineProps {

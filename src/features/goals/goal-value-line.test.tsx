@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react-native";
 
-import { GoalValueLine, goalValueText } from "./goal-value-line";
+import { GoalValueLine, goalRowAccessibleName, goalValueText } from "./goal-value-line";
 import i18n from "@/src/i18n";
 import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -40,6 +40,29 @@ describe("GoalValueLine", () => {
 
     expect(screen.toJSON()).toBeNull();
   });
+
+  it("renders nothing for a key the static value list does not carry", () => {
+    // `value_key` is free text to Postgres and `string` in TypeScript, so an
+    // unrecognised key is reachable. Without the guard the label lookup falls
+    // through and the raw path is what the user reads.
+    renderWithProviders(<GoalValueLine valueKey="not-a-value" />);
+
+    expect(screen.toJSON()).toBeNull();
+  });
+});
+
+describe("goalRowAccessibleName", () => {
+  it("carries the value, which the row's own name would otherwise hide", () => {
+    expect(
+      goalRowAccessibleName(i18n.getFixedT(null, "cbt"), "Swim once a week", "courageous"),
+    ).toBe("Swim once a week, Guiding value: Courageous");
+  });
+
+  it("is the bare title when the goal is anchored to nothing", () => {
+    expect(goalRowAccessibleName(i18n.getFixedT(null, "cbt"), "Swim once a week", null)).toBe(
+      "Swim once a week",
+    );
+  });
 });
 
 describe("goalValueText", () => {
@@ -47,7 +70,7 @@ describe("goalValueText", () => {
     expect(goalValueText(i18n.getFixedT(null, "cbt"), null)).toBeNull();
   });
 
-  it("is the same line the component renders, for use as an accessibility hint", () => {
+  it("is the same line the component renders, so the two surfaces cannot drift", () => {
     expect(goalValueText(i18n.getFixedT(null, "cbt"), "courageous")).toBe(
       "Guiding value: Courageous",
     );
