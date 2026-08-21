@@ -1,17 +1,29 @@
 import { fireEvent, render } from "@testing-library/react-native";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 
 import { ScreenEscape } from "@/src/components/app/screen-escape";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { setLanguage } from "@/test/i18n-language";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn(), replace: jest.fn() },
+  usePathname: jest.fn(),
+}));
 jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
 
 const mockUseBreadcrumbs = useBreadcrumbs as jest.MockedFunction<typeof useBreadcrumbs>;
+const mockUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;
 
 beforeAll(async () => {
   await setLanguage("en");
+});
+
+beforeEach(() => {
+  // No Origin unless a test records one: every arrival in this file is a cold
+  // one, which is the overwhelmingly common case and the fallback R2 defines.
+  useNavigationOriginStore.setState({ pending: null });
+  mockUsePathname.mockReturnValue("/somewhere");
 });
 
 describe("ScreenEscape", () => {
