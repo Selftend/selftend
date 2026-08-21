@@ -42,7 +42,11 @@ describe("patch-package patches still match their installed dependency", () => {
   it("finds the patches (canary: the calendar accessibility patch is one of them)", () => {
     // If this directory listing rots, the version check below iterates nothing
     // and passes vacuously.
-    expect(patchFiles).toContain("react-native-ui-datepicker+3.3.0.patch");
+    //
+    // Matched by PREFIX, not by full filename: a legitimate version bump
+    // renames the file, and this canary failing alongside the real check would
+    // just be noise pointing at the same fact.
+    expect(patchFiles.some((file) => file.startsWith("react-native-ui-datepicker+"))).toBe(true);
     expect(patchFiles.length).toBeGreaterThanOrEqual(2);
   });
 
