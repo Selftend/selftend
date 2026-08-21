@@ -51,9 +51,9 @@ describe("SharedToolsRow", () => {
   );
 
   /**
-   * These chips are the nine off-trail pushes #1192 landed hours after the
-   * escape rule was charted - the growth that made recording opt-out rather
-   * than opt-in (#1265, O3). A chip leaves CBT for a tool that lives under
+   * These chips are the off-trail pushes #1192 landed hours after the escape
+   * rule was charted - the growth that made recording opt-out rather than
+   * opt-in (#1265, O3). A chip leaves CBT for a tool that lives under
    * `/tools`, so the tool's own Up climbs to `/tools` and never back to the
    * module the user was working in.
    *
@@ -79,6 +79,32 @@ describe("SharedToolsRow", () => {
       });
     },
   );
+
+  /**
+   * The chip count, pinned - because the prose describing this row has already
+   * carried a wrong one.
+   *
+   * #1192 landed NINE chips ("eight of the nine chips never went anywhere");
+   * the config holds EIGHT today, so every later comment saying "the nine
+   * chips" describes a set that no longer exists. #1266's own ticket inherited
+   * the stale number and called them "nine pushes from the CBT home".
+   *
+   * ⚠️ If this fails, a shared tool was added or removed - which is fine. Update
+   * the number here and the sentence in `shared-tools-row.tsx` that states it,
+   * so the two cannot drift apart again.
+   */
+  it("renders one chip per configured shared tool - eight of them today", () => {
+    const configured = [
+      ...SHARED_TOOLS_BY_PILLAR.think,
+      ...SHARED_TOOLS_BY_PILLAR.act,
+      ...SHARED_TOOLS_BY_PILLAR.be,
+    ];
+
+    expect(configured).toHaveLength(8);
+
+    renderWithProviders(<SharedToolsRow heading="Uses these shared tools" tools={configured} />);
+    expect(screen.getAllByRole("button")).toHaveLength(8);
+  });
 
   // The heading is the caller's copy, not a key this component owns - that is
   // what lets a second module reuse the row without inheriting `cbt.json`.
