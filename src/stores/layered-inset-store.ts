@@ -132,11 +132,51 @@ export function useInsetPublisher(
   const [node, setNode] = useState<View | null>(null);
 
   const measure = useCallback(
-    (target: View) => {
-      target.measureInWindow((_x, top) => {
-        const { height } = Dimensions.get("window");
-        const edge = height - top;
+    // `isStale` defaults to never-stale: only the effect has a generation that
+    // can be superseded, and it is the only caller that passes one. A layout
+    // pass has no such generation, so `onLayout` reads as `measure(node)`.
+    (target: View, isStale: () => boolean = () => false) => {
+      target.measureInWindow((_x, top, _width, height) => {
+        // ☠️☠️ RNW's `measureInWindow` defers its callback through
+        // `setTimeout(..., 0)` and - unlike its own `measureLayout` right above
+        // it in the same file - never checks `node.isConnected` first. A host
+        // that detaches inside that tick still gets measured, and
+        // `getBoundingClientRect()` on a detached node answers all zeros. Top 0
+        // is the TOP OF THE WINDOW here, so the publish lands as
+        // `height - 0` - the largest edge expressible - and it lands AFTER the
+        // detach already cleared the entry. Nothing re-measures a node that no
+        // longer exists, so the phantom is permanent and every consumer above
+        // this layer anchors a full screen off the bottom.
+        //
+        // Not hypothetical: `CookieConsentBanner` renders on the first frame
+        // (its `accepted` flag hydrates in an effect), unmounts as soon as the
+        // stored consent arrives, and left `RoutineFab` floating off the top of
+        // the screen on web (#1340; the model shipped in #1339).
+        //
+        // Two guards, because they cover different paths, and each is killed on
+        // its own by a test. `isStale` closes the effect path - the cookie
+        // banner's, and the one RoutineFab and ReminderPromptCard take every
+        // time they render null between appearances - where our cleanup has
+        // already run and a late callback would resurrect the entry that detach
+        // just cleared. The zero-box check below closes the `onLayout` path,
+        // where no cleanup has run and only the measurement itself says the node
+        // is gone.
+        if (isStale()) {
+          return;
+        }
+
+        const { height: windowHeight } = Dimensions.get("window");
+        const edge = windowHeight - top;
         if (!Number.isFinite(edge)) {
+          return;
+        }
+        // `getBoundingClientRect()` on a node that has left the document answers
+        // all zeros, and top 0 here means the TOP OF THE WINDOW - so taking it at
+        // face value publishes the largest edge expressible. Publishers do
+        // legitimately collapse to height 0 (the banner strip with no banner in
+        // it), but they do it AT the bottom of the window, which reads as an edge
+        // of 0. The PAIR is what tells the two apart; neither half would.
+        if (height === 0 && top === 0) {
           return;
         }
         useLayeredInsetStore.getState().publishInset(id, layer, Math.max(0, edge));
@@ -156,7 +196,11 @@ export function useInsetPublisher(
 
     // ☠️ The first layout pass fires with the handler captured BEFORE the node
     // landed, so `onLayout` alone would never measure the first frame.
-    measure(node);
+    let stale = false;
+    measure(node, () => stale);
+    return () => {
+      stale = true;
+    };
   }, [id, measure, node, revision]);
 
   // Separate from the measuring effect: folding the two together would clear
