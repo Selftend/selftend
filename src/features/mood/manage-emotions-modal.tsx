@@ -466,6 +466,12 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
       animation={isDesktopWeb ? "fade" : "slide"}
       onRequestClose={handleRequestClose}
       presentationStyle={isWeb ? undefined : "pageSheet"}
+      // Neither platform presents this full-screen — `pageSheet` on native, a
+      // card or drawer over its own backdrop on web — and it already pins its
+      // X above the scroller on both, which is the shape the modal rule names
+      // as the one to copy (#1165). So it declines the wrapper's row rather
+      // than growing a second header above its own (#1252).
+      surface="sheet"
       transparent={isWeb}
       visible={visible}
     >

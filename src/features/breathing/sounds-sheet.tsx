@@ -43,7 +43,11 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
     AMBIENT_SOUNDS.find((s) => s.id === effective.ambientSoundId) ?? AMBIENT_SOUNDS[0];
 
   return (
-    <PressShieldModal visible={visible} onRequestClose={onDismiss} transparent>
+    // A bottom sheet, not a full-screen modal: the breathing session stays
+    // visible behind it, so the wrapper pins no row and the X below is this
+    // sheet's Escape. W20/#1257 is what moves that X out of the `ScrollView`
+    // it currently scrolls away with.
+    <PressShieldModal surface="sheet" visible={visible} onRequestClose={onDismiss} transparent>
       <View className="flex-1 justify-end bg-black/40">
         <SafeAreaView edges={["bottom"]} className="rounded-t-2xl bg-background">
           <ScrollView contentContainerClassName="gap-6 p-6">
