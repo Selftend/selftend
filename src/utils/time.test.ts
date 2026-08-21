@@ -1,4 +1,14 @@
-import { clampTime, dateToTime, formatHHmm, parseHHmm, timeToDate } from "@/src/utils/time";
+import {
+  clampTime,
+  dateToTime,
+  formatHHmm,
+  formatTimeOfDay,
+  fromTwelveHour,
+  parseHHmm,
+  timeToDate,
+  toTwelveHour,
+  usesTwelveHourClock,
+} from "@/src/utils/time";
 
 describe("clampTime", () => {
   it("keeps valid times", () => {
@@ -39,5 +49,54 @@ describe("parseHHmm", () => {
 describe("timeToDate / dateToTime", () => {
   it("round-trips", () => {
     expect(dateToTime(timeToDate({ hour: 9, minute: 30 }))).toEqual({ hour: 9, minute: 30 });
+  });
+});
+
+describe("usesTwelveHourClock", () => {
+  it("is true for English and false for Bulgarian", () => {
+    expect(usesTwelveHourClock("en")).toBe(true);
+    expect(usesTwelveHourClock("bg")).toBe(false);
+  });
+  it("reads the locale, not the language family", () => {
+    // en-GB is a 24-hour English, so "starts with en" would get it wrong.
+    expect(usesTwelveHourClock("en-GB")).toBe(false);
+  });
+  it("falls back to 24-hour for an unknown tag rather than throwing", () => {
+    expect(usesTwelveHourClock("not a locale")).toBe(false);
+  });
+});
+
+describe("formatTimeOfDay", () => {
+  it("renders 12-hour with a day period in English", () => {
+    // A non-breaking space separates the two in some ICU versions.
+    expect(formatTimeOfDay({ hour: 19, minute: 5 }, "en")).toMatch(/^7:05\s?PM$/);
+  });
+  it("renders 24-hour in Bulgarian", () => {
+    expect(formatTimeOfDay({ hour: 19, minute: 5 }, "bg")).toBe("19:05");
+  });
+  it("clamps like the wire format does", () => {
+    expect(formatTimeOfDay({ hour: 99, minute: -3 }, "bg")).toBe("23:00");
+  });
+  it("never emits the wire format's zero-padded 24-hour text in a 12-hour locale", () => {
+    // The whole reason this is a SIBLING of formatHHmm: `preferred_time_of_day`
+    // is a wire column and must never receive "7:05 PM".
+    expect(formatHHmm({ hour: 19, minute: 5 })).toBe("19:05");
+  });
+});
+
+describe("toTwelveHour / fromTwelveHour", () => {
+  it("maps both midnights onto 12", () => {
+    expect(toTwelveHour(0)).toEqual({ hour: 12, meridiem: "am" });
+    expect(toTwelveHour(12)).toEqual({ hour: 12, meridiem: "pm" });
+  });
+  it("maps the ordinary hours", () => {
+    expect(toTwelveHour(7)).toEqual({ hour: 7, meridiem: "am" });
+    expect(toTwelveHour(19)).toEqual({ hour: 7, meridiem: "pm" });
+  });
+  it("round-trips every hour of the day", () => {
+    for (let hour = 0; hour < 24; hour += 1) {
+      const { hour: shown, meridiem } = toTwelveHour(hour);
+      expect(fromTwelveHour(shown, meridiem)).toBe(hour);
+    }
   });
 });

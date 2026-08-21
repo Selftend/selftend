@@ -11,6 +11,17 @@ Accessibility is part of the app foundation, not a polish pass. Users must be ab
 - Keep text scalable. Do not set `allowFontScaling={false}` unless there is a documented safety reason.
 - Use theme tokens instead of one-off colors, then verify contrast in light and dark modes.
 - Prefer 44 x 44 visual targets. If a compact visual control is smaller, use shared hit slop so the touch target remains forgiving on native.
+- On web, `hitSlop` does nothing: react-native-web targets the DOM box. A web control that must clear the 24 x 24 WCAG 2.5.8 AA floor has to get there through real padding or a real height.
+
+## Supported width floor
+
+**The narrowest supported viewport is 360dp.** 320dp is explicitly **not** supported, and the difference is not cosmetic: below roughly 324px the compact 12-hour time control on the reminders screen paints over that row's switch (measured 3.5px of overlap at 320px). That was ruled acceptable rather than fixed, so it is written down here — the failure is silent otherwise, and the next person to measure it would read it as a bug.
+
+Two consequences for anything laid out narrow:
+
+- Design and measure against 360dp, not 320dp. Widths that only work above 375dp are still bugs.
+- A phone-width regression test should set the viewport to 360 (`test/e2e/journal-overview.e2e.test.ts` is the existing example), because the jest default of 750px and Playwright's Desktop Chrome default both hide every phone branch.
+
 - Respect reduced motion for modals, menus, and animated wrappers.
 - Keep crisis and safety guidance reachable without sign-in.
 
