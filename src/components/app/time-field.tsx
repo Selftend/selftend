@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import DateTimePicker, {
@@ -120,7 +120,33 @@ function TypedTimeField({
   const hourValue = hourText ?? pad(shown.hour);
   const minuteValue = minuteText ?? pad(value.minute);
 
+  /**
+   * The value this field last committed, kept only until the `value` prop agrees.
+   *
+   * ☠️ Each sub-control commits a PARTIAL update, and two of them can fire inside
+   * one interaction: clicking AM/PM blurs the hour first. The parent's write is
+   * often an async mutation (the reminders row goes through TanStack), so at the
+   * moment of the second commit the prop can still hold the PRE-blur hour, and
+   * rebuilding from it silently discards what the user just typed.
+   *
+   * Measured, not theorised: typing 08 and clicking PM stored 21:00, not 20:00.
+   */
+  const lastCommitted = useRef<TimeOfDay | null>(null);
+
+  /** The time a partial commit must build on - the in-flight one, else the prop. */
+  function baseTime(): TimeOfDay {
+    const pending = lastCommitted.current;
+    if (!pending) return value;
+    if (pending.hour === value.hour && pending.minute === value.minute) {
+      // The prop caught up, so it is the single source of truth again.
+      lastCommitted.current = null;
+      return value;
+    }
+    return pending;
+  }
+
   function commit(next: TimeOfDay) {
+    lastCommitted.current = next;
     setRevertNotice("");
     onChange(next);
   }
@@ -151,9 +177,10 @@ function TypedTimeField({
       revert();
       return;
     }
+    const base = baseTime();
     commit({
-      hour: twelveHour ? fromTwelveHour(typed, shown.meridiem) : typed,
-      minute: value.minute,
+      hour: twelveHour ? fromTwelveHour(typed, toTwelveHour(base.hour).meridiem) : typed,
+      minute: base.minute,
     });
   }
 
@@ -165,12 +192,13 @@ function TypedTimeField({
       revert();
       return;
     }
-    commit({ hour: value.hour, minute: typed });
+    commit({ hour: baseTime().hour, minute: typed });
   }
 
   // A discrete two-state control, so it commits on press rather than on blur.
   function commitMeridiem(next: Meridiem) {
-    commit({ hour: fromTwelveHour(shown.hour, next), minute: value.minute });
+    const base = baseTime();
+    commit({ hour: fromTwelveHour(toTwelveHour(base.hour).hour, next), minute: base.minute });
   }
 
   /**
@@ -199,6 +227,10 @@ function TypedTimeField({
       >
         <Input
           accessibilityLabel={t("time.hourField", { label: accessibilityLabel })}
+          // `editable={false}` alone is react-native-web's `readOnly`, which still
+          // reads as a live text box. The state has to be said as well as enforced,
+          // and it stays focusable on purpose so its value is still reachable.
+          aria-disabled={disabled}
           className={digitInput}
           editable={!disabled}
           inputMode="numeric"
@@ -212,6 +244,7 @@ function TypedTimeField({
         <Text className={cn("text-muted-foreground", compact && "text-sm")}>:</Text>
         <Input
           accessibilityLabel={t("time.minuteField", { label: accessibilityLabel })}
+          aria-disabled={disabled}
           className={digitInput}
           editable={!disabled}
           inputMode="numeric"
@@ -237,6 +270,9 @@ function TypedTimeField({
           </View>
         ) : null}
       </View>
+      {/* Single-surface on purpose: the usual pairing with `announceMessage()` is
+          for cross-platform announcements, and this branch only ever runs on web,
+          where that helper is a no-op. The visible node IS the announcement here. */}
       {revertNotice ? (
         <Text className="text-xs text-muted-foreground" {...politeLiveRegionProps()}>
           {revertNotice}

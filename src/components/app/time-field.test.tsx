@@ -156,6 +156,22 @@ describe("TimeField on web: the typed HH:MM pair", () => {
     expect(onChange).toHaveBeenCalledWith({ hour: 7, minute: 0 });
   });
 
+  it("builds the AM/PM commit on the hour just typed, not on a prop that has not caught up", () => {
+    // ☠️ Clicking a meridiem tab BLURS the hour first, so two partial commits land
+    // in one interaction. This probe is the worst case on purpose: `value` never
+    // moves here, exactly like a parent whose write is still in flight. Before the
+    // hand-off this stored 7 PM - the OLD hour flipped - discarding the typed 08.
+    const { onChange } = renderField();
+    const hour = screen.getByLabelText(`${LABEL}, hour`);
+
+    fireEvent.changeText(hour, "08");
+    fireEvent(hour, "blur");
+    expect(onChange).toHaveBeenLastCalledWith({ hour: 20, minute: 0 });
+
+    fireEvent.press(screen.getByRole("tab", { name: "AM" }));
+    expect(onChange).toHaveBeenLastCalledWith({ hour: 8, minute: 0 });
+  });
+
   it("offers no AM/PM in a 24-hour locale, and takes hours up to 23 there", async () => {
     await setLanguage("bg");
     const { onChange } = renderField();
@@ -196,6 +212,20 @@ describe("TimeField on web: the typed HH:MM pair", () => {
     const tab = screen.getByRole("tab", { name: "AM" });
     expect(tab.props.className).toContain("py-1.5");
     expect(tab.props.hitSlop).toBeUndefined();
+  });
+
+  it("sizes the COMPACT variant's inputs too, which is the one that measured 22 x 19", () => {
+    // The reminders row is the only compact site and the one #1231 measured under
+    // the floor, so asserting only the full-width variant would miss the regression
+    // the floor exists to catch. h-8 is 32px, comfortably over 24.
+    renderField({ compact: true });
+
+    for (const name of ["hour", "minute"]) {
+      const input = screen.getByLabelText(`${LABEL}, ${name}`);
+      expect(input.props.className).toContain("h-8");
+      expect(input.props.className).toContain("w-9");
+      expect(input.props.hitSlop).toBeUndefined();
+    }
   });
 
   it("goes inert but stays legible while disabled", () => {
