@@ -4186,17 +4186,33 @@ function alignmentFor(domain, dayIndex) {
   const dayKeyAtOffset = (millis, offsetMinutes) =>
     new Date(millis + offsetMinutes * 60_000).toISOString().slice(0, 10);
 
+  // The UTC day the run falls in, as an inclusive span of instants. ☠️ The
+  // daily-practice invariant is checked against BOTH ENDS of it rather than
+  // against `Date.now()`: a viewer at a band edge sees their civil day roll over
+  // partway through the UTC day, so a single sample answers "would this flip at
+  // this exact minute" — which lets a row that flips the leg for the first half
+  // of the day pass a seed that happens to run in the afternoon. Two samples
+  // make it "would this flip at any point today", which is both the claim worth
+  // making and the one that does not depend on when the seed was run.
+  const now = new Date();
+  const utcDayStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const utcDayEnd = utcDayStart + 24 * 60 * 60 * 1000 - 1;
+
   for (const edge of SUPPORTED_BAND_EDGES) {
-    const todayThere = dayKeyAtOffset(Date.now(), edge.offsetMinutes);
-    const unhookedToday = defusion.filter(
-      (ms) => dayKeyAtOffset(ms, edge.offsetMinutes) === todayThere,
+    const todayThere = new Set([
+      dayKeyAtOffset(utcDayStart, edge.offsetMinutes),
+      dayKeyAtOffset(utcDayEnd, edge.offsetMinutes),
+    ]);
+    const unhookedToday = defusion.filter((ms) =>
+      todayThere.has(dayKeyAtOffset(ms, edge.offsetMinutes)),
     );
     if (unhookedToday.length > 0) {
       throw new Error(
-        `At ${edge.label} ${unhookedToday.length} defusion row(s) fall on ${todayThere}, that ` +
-          "viewer's today, so `openUp`'s daily practice would read DONE there. It is " +
-          "deliberately open, and the last defusion row is meant to sit two days clear of today " +
-          "so no viewer clock can reach it.",
+        `At ${edge.label} ${unhookedToday.length} defusion row(s) fall on ` +
+          `${[...todayThere].join(" or ")}, which that viewer calls today at some point during ` +
+          "this UTC day, so `openUp`'s daily practice would read DONE there. It is deliberately " +
+          "open, and the last defusion row is meant to sit two days clear of today so no viewer " +
+          "clock can reach it.",
       );
     }
 
