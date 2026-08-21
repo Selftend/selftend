@@ -88,6 +88,13 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.restoreAllMocks();
+  // ☠️ MUST be reset AFTER each test, not only before. `render` signals an
+  // exhausted slot by setting `process.exitCode`, and that is jest's own process:
+  // left set by the last test, it makes the entire suite exit 1 while reporting
+  // every test passed — `npm run verify` fails with no message anywhere. It also
+  // silently voids any mutation testing of this file, since every run would exit
+  // non-zero whether or not the mutation was caught.
+  process.exitCode = undefined;
 });
 
 describe("render re-rolls takes that come back below the gate", () => {
