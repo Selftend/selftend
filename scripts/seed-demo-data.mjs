@@ -1,8 +1,8 @@
 // Seed the LOCAL demo account (demo@test.local) with ~3 months of realistic
-// data across the eight tools and the CBT module, so redesigned surfaces can be
-// reviewed with real density: paging, heatmap depth, distribution spread, week
-// history, and every technique, status and category variant rendered at least
-// once.
+// data across the eight tools, the CBT module and the ACT practice logs, so
+// redesigned surfaces can be reviewed with real density: paging, heatmap depth,
+// distribution spread, week history, and every technique, status and category
+// variant rendered at least once.
 //
 // Usage:  node scripts/seed-demo-data.mjs
 //
@@ -134,10 +134,10 @@ function atFuture(daysAfterToday, hour, minute = 0) {
  * inheriting whatever clock the seeding machine happened to have. Applies the
  * same future-clamp as `at()`.
  *
- * Unused today: it lands with the groundwork (#1280) and its first callers are
- * the CBT and ACT content slices that follow.
+ * Every caller today goes through `inBand()` in the ACT section, which is where
+ * the tables with no captured-offset column live (#1284). Reach for it directly
+ * only for a table with the same problem and a different intended time.
  */
-// eslint-disable-next-line no-unused-vars -- see the note above
 function atUtc(dayIndex, hour, minute = 0) {
   const d = dayAt(dayIndex);
   return clampToPast(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute, 0, 0));
@@ -764,6 +764,12 @@ const CBT_ACT_WIPE_TABLES = [
   "procrastination_tasks",
   "exposure_hierarchies",
   "recovery_plans",
+  "act_defusion_logs",
+  "act_expansion_logs",
+  "act_urge_surf_logs",
+  "act_connection_logs",
+  "act_observing_self_sessions",
+  "act_choice_points",
 ];
 
 for (const table of CBT_ACT_WIPE_TABLES) {
@@ -2792,6 +2798,789 @@ const CBT_PROGRAM_PHASE_INDEX = CBT_PHASE_KEYS.indexOf(CBT_PROGRAM_PHASE_KEY);
     throw new Error(
       `Today's practice for '${anchoredPhaseKey}' is expected done. It is deliberately left ` +
         "open — it is the one row a reviewer can exercise on the demo account themselves.",
+    );
+  }
+}
+
+// --------------------------------------------------- ACT: the practice logs
+// The six ACT surfaces a person practises ON — defusion, expansion, urge
+// surfing, connection, observing self and choice points (#1284) — as opposed to
+// the values and committed-action work that follows in #1286.
+//
+// Same life as the CBT sections above and the same content ceiling: distress
+// about performance, standing and relationships, ROLE-ONLY, never about living,
+// and every distressing row keeps its answering field filled. The hooks are the
+// same ones the rest of the seed already describes — put on the spot in the
+// stand-up, the reorg rumours, the review that went badly — met with a
+// different move.
+//
+// VARIANT COVERAGE IS THE POINT OF THIS SLICE (#1181). These tables carry the
+// largest set of CHECK-constrained technique columns in the app, and a technique
+// card that never renders is exactly the failure this dataset exists to prevent.
+// All seven defusion techniques, all six thought categories, all three expansion
+// techniques, both discomfort types, all five connection techniques INCLUDING
+// `dropAnchor`, and all three observing techniques each get at least one row,
+// and `requireEveryVariant` reads that back off the rows rather than off the
+// loop that built them.
+
+// The enum-valued columns on this slice's tables. Each list mirrors the CHECK
+// constraint on the matching `_data` table and the TypeScript union the app
+// reads it through, in src/features/act/types.ts:
+//
+//   act_defusion_logs.technique_used            DEFUSION_TECHNIQUES
+//   act_defusion_logs.thought_category          THOUGHT_CATEGORIES
+//   act_expansion_logs.technique_used           EXPANSION_TECHNIQUES
+//   act_expansion_logs.discomfort_type          DiscomfortType
+//   act_connection_logs.technique               CONNECTION_TECHNIQUES
+//   act_observing_self_sessions.technique_used  OBSERVING_TECHNIQUES
+//
+// ⚠️ Mirrored, not read from the live constraints — the same gap the CBT lists
+// above carry, and for the same reason: reading CHECK bodies back needs an RPC
+// no migration in this repo provides. ☠️ Two of these have already drifted from
+// the migration that CREATED them and are only correct as of a later one —
+// `act_connection_logs.technique` gained `dropAnchor` and `bodyScan` in
+// 20260550, and `act_observing_self_sessions.technique_used` renamed
+// `observingFromBoard` to `skyAndWeather` in 20260557. Read the newest migration
+// that touches a column, never the one that introduced it.
+const DEFUSION_TECHNIQUES = [
+  "havingTheThoughtThat",
+  "musicalThoughts",
+  "namingTheStory",
+  "thankingYourMind",
+  "sillyVoices",
+  "televisionScreen",
+  "subtitles",
+];
+const THOUGHT_CATEGORIES = [
+  "selfJudgment",
+  "worry",
+  "pastRegret",
+  "prediction",
+  "ruleStatement",
+  "other",
+];
+const EXPANSION_TECHNIQUES = ["fourStepExpansion", "acceptanceSelfTalk", "acceptanceImagery"];
+const DISCOMFORT_TYPES = ["clean", "dirty"];
+const CONNECTION_TECHNIQUES = [
+  "noticeFiveThings",
+  "mindfulActivity",
+  "tenDeepBreaths",
+  "dropAnchor",
+  "bodyScan",
+];
+const OBSERVING_TECHNIQUES = ["tenDeepBreaths", "skyAndWeather", "bodyAwareness"];
+
+// ☠️ NONE of these six tables carries an occurrence-offset column, so nothing
+// records which clock a row was captured on. Every consumer — the five per-day
+// list screens, `didOnDate` in the ACT programme, and the server twin
+// `program_widget_task_status` — buckets the instant through the VIEWER's
+// current timezone instead. Two consequences, and both shape the placement
+// below.
+//
+// FIRST: every row goes in a 10:00-12:00 UTC BAND, via `atUtc` rather than
+// `at`. A band centred on 11:00 UTC keeps its intended civil day for 92 of the
+// 101 real-world quarter-hour offsets at the 10:00 edge and 97 at the 11:59
+// edge; the evening bands the tools blocks use would hold for as few as 64.
+// Supported range is UTC-11 through UTC+12:45 — UTC+13 and UTC+14 are knowingly
+// unsupported for exact day placement, which is a choice this comment records
+// rather than a bug.
+//
+// SECOND: two BOUNDARY MARGINS, which are the only things a drift can actually
+// break. Maximum drift is one day, so a two-day margin survives it even outside
+// the supported band:
+//   - the last defusion row sits two days before today, so "nothing unhooked
+//     today" cannot flip; and
+//   - the last expansion and urge-surf rows sit two days before the phase
+//     start, so "nothing since the phase began" cannot flip.
+// Together they keep `openUp`'s make-room milestone legitimately open and its
+// daily practice open, which is #1178's ruling and the one row a reviewer can
+// exercise on the demo account themselves.
+const ACT_BAND_START_HOUR = 10;
+const ACT_BAND_END_HOUR = 12;
+const ACT_BAND_MINUTES = (ACT_BAND_END_HOUR - ACT_BAND_START_HOUR) * 60;
+
+// The current ACT phase start, as a day index into the rolling window (#1178):
+// `openUp`, index 2 of 4, a couple of days behind CBT's phase start rather than
+// on the same day, because one person taking up two programmes on the same
+// afternoon is the tell of generated data. The rows below are generated to
+// SATISFY it — defusion rows well inside it so `unhookOnce` reads done, and no
+// expansion or urge-surf row after it so `makeRoomOnce` stays open.
+//
+// ⚠️ Kept LATE on purpose. Everything expansion and urge surfing are allowed to
+// hold stops two days before this day, so the stretch between it and today is
+// one those two surfaces cannot fill — and it is exactly as long as the phase is
+// old. A phase start early in the window would leave them looking abandoned for
+// a third of it. The gap is the STORY here (they entered `openUp`, unhooked, and
+// have not made room yet), so it is kept as short as the ruling allows rather
+// than removed.
+//
+// ☠️ #1286 writes the anchor to `user_preferences` and asserts the derived
+// programme state back against these rows, exactly as #1282 did for CBT. It must
+// anchor FROM THIS CONSTANT rather than declare its own: nothing in this slice
+// persists the anchor, so a second, different day chosen there would move the
+// phase out from under the margins below without anything failing.
+const ACT_PHASE_STARTED_DAY = 78;
+
+// The instants the future-clamp pulled out of the band, by epoch millisecond.
+//
+// Only ever TODAY's rows, and only on a run that starts before the band closes:
+// `atUtc` clamps a future instant back to just-passed, which is the same trade
+// every other block in this script makes for today's rows. Recorded rather than
+// waved through so the band check below can excuse exactly these and nothing
+// else.
+const clampedOutOfBand = new Set();
+
+/** A timestamp `minutesIntoBand` into the 10:00-12:00 UTC band on day `dayIndex`. */
+function inBand(dayIndex, minutesIntoBand) {
+  if (
+    !Number.isInteger(minutesIntoBand) ||
+    minutesIntoBand < 0 ||
+    minutesIntoBand >= ACT_BAND_MINUTES
+  ) {
+    throw new Error(
+      `inBand() takes 0-${ACT_BAND_MINUTES - 1} minutes into the band, got ${minutesIntoBand}.`,
+    );
+  }
+  const iso = atUtc(dayIndex, ACT_BAND_START_HOUR, minutesIntoBand);
+  if (new Date(iso).getUTCHours() < ACT_BAND_START_HOUR) {
+    clampedOutOfBand.add(new Date(iso).getTime());
+  }
+  return iso;
+}
+
+/**
+ * Anywhere inside the band on day `dayIndex` — what almost every row here wants.
+ *
+ * Urge surfing is the one caller that does not use it, because its completion
+ * lands up to twenty minutes after its start and both have to stay in the band.
+ */
+function somewhereInBand(dayIndex) {
+  return inBand(dayIndex, between(0, ACT_BAND_MINUTES - 1));
+}
+
+/**
+ * The UTC instant the band OPENS on day `dayIndex`, in epoch millis.
+ *
+ * The margin checks compare band edge to band edge rather than counting 48
+ * hours back from `now`: every row sits somewhere inside a two-hour band, so a
+ * fixed-hours comparison rejects a correctly placed row whenever the run starts
+ * earlier in the day than the row it is measuring. Unclamped on purpose — these
+ * are boundaries to measure against, not timestamps to store.
+ */
+function bandOpensAt(dayIndex) {
+  const d = dayAt(dayIndex);
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), ACT_BAND_START_HOUR, 0, 0, 0);
+}
+
+/** The UTC instant the band CLOSES on day `dayIndex`, in epoch millis. */
+function bandClosesAt(dayIndex) {
+  const d = dayAt(dayIndex);
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), ACT_BAND_END_HOUR, 0, 0, 0);
+}
+
+// ☠️ ALL FIVE ACT LIST SCREENS ARE PER-DAY VIEWS, and `useSelectedDate()` is
+// hardcoded to `currentDateKey()` with no setter anywhere in the app — so they
+// can only ever show TODAY. A row on any other day is unreachable through the
+// UI, which is why connection, observing self and choice points each get a row
+// dated today below. (Urge surfing is the exception that proves it: it has no
+// list route at all, only an inline recent strip, and that strip is not
+// day-filtered.)
+//
+// Defusion and expansion CANNOT have a row today. Both feed `openUp`'s daily
+// practice, which #1178 rules deliberately open, so their list screens open on
+// their empty state even on a fully seeded account. That is a genuine conflict
+// inside #1284's own acceptance criteria — "all six screens render seeded
+// content" against the two boundary margins — and the margins win, because they
+// are the constraint with a reason and an owner ruling behind them. Raised on
+// the issue: it wants a product decision about the per-day views, not a quieter
+// seed.
+const ACT_TODAY = DAYS - 1;
+
+// ------------------------------------------------------------- defusion
+{
+  // The fused thought has to belong to the category filed against it, so the
+  // pools are keyed by category rather than drawn from one bag — a `pastRegret`
+  // row carrying a prediction reads fine in a list and wrong the moment anyone
+  // opens it.
+  const fusedThoughts = {
+    selfJudgment: [
+      "I'm the least capable person on that call.",
+      "I only got here because nobody looked closely.",
+      "I sound like someone doing an impression of knowing.",
+    ],
+    worry: [
+      "If this slips it lands on me, and everyone will see whose it was.",
+      "The reorg rumours mean my name is on a list somewhere.",
+      "Someone is going to ask the one question I can't answer.",
+    ],
+    pastRegret: [
+      "I should have said something in that review and I sat there.",
+      "I let the wrong version go out and I still think about it.",
+      "I went quiet after the stand-up instead of clearing it up.",
+    ],
+    prediction: [
+      "Tomorrow's demo is going to come apart in front of everyone.",
+      "They'll read the summary and see how thin it is.",
+      "I'll freeze again the moment it's my turn.",
+    ],
+    ruleStatement: [
+      "I have to have the answer ready before anyone asks for it.",
+      "I should never need something explained twice.",
+      "I must not be the one who slows the room down.",
+    ],
+    other: [
+      "Everyone can tell how hard I'm working to look calm.",
+      "The room went quiet because of something I did.",
+      "There's a version of me who finds this easy and it isn't this one.",
+    ],
+  };
+
+  // The defused version is the ANSWERING FIELD every distressing row has to keep
+  // filled (#1180), and it is technique-shaped: the whole point of the seven is
+  // that they do the same job differently.
+  const defusedVersions = {
+    havingTheThoughtThat:
+      "I'm having the thought that this goes badly. Said that way it sits still.",
+    musicalThoughts: "Sang it to the birthday tune on the walk in. Same words, no weight left.",
+    namingTheStory: "There it is — the “I'll be found out” story, running again.",
+    thankingYourMind: "Thanks, mind. You're trying to keep me safe. I can take this bit from here.",
+    sillyVoices: "Ran it in a cartoon voice until I heard how much of it was auditioning.",
+    televisionScreen: "Put it on a screen across the room and let it scroll past me.",
+    subtitles: "Read it as a subtitle along the bottom and kept watching the picture.",
+  };
+
+  // Empty is a complete row — the form does not require a note — so the pool
+  // carries one, which is the only way that shape ever renders.
+  const notes = [
+    "Did it in the ten minutes before the call rather than picking it apart after.",
+    "Easier standing on the balcony than sitting at the desk with it.",
+    "Took two goes. The second one landed.",
+    "Wrote it down first. Saying it out loud was too much today.",
+    "Went back into the meeting instead of drafting a message about the meeting.",
+    "",
+    "",
+  ];
+
+  // A stride, not a count (#1181): roughly twice a week, tightening through the
+  // setback because a struggling stretch is when someone logs more, and running
+  // right up to the margin so the dataset does not peter out into what reads as
+  // an abandoned account.
+  //
+  // ☠️ The last row must land on or before ACT_TODAY - 2, and one has to land
+  // well inside the current phase. A stride cannot be trusted to hit either, so
+  // both days are added explicitly and both are asserted after the insert.
+  const lastDefusionDay = ACT_TODAY - 2;
+  const days = new Set();
+  for (let d = 6; d <= lastDefusionDay; d += inSetback(d) ? between(1, 2) : between(3, 6)) {
+    days.add(d);
+  }
+  days.add(ACT_PHASE_STARTED_DAY + 2);
+  days.add(lastDefusionDay);
+
+  const rows = [...days]
+    .sort((a, b) => a - b)
+    .map((d, i) => {
+      // Cycled rather than picked, so coverage holds at any row count: seven
+      // techniques against six categories are coprime, so the pairing keeps
+      // moving for 42 rows before it repeats itself.
+      const technique = DEFUSION_TECHNIQUES[i % DEFUSION_TECHNIQUES.length];
+      const category = THOUGHT_CATEGORIES[i % THOUGHT_CATEGORIES.length];
+      const arc = improvement(d);
+      // Fusion falls as the skill comes in, and the drop is a PROPORTION of
+      // where the row started: a fixed subtraction takes a mild row to zero and
+      // reads as a bug the first time it does.
+      const before = Math.max(20, Math.min(100, Math.round(88 - 24 * arc) + between(-6, 6)));
+      const after = Math.max(5, Math.round(before * (0.74 - 0.2 * arc)));
+      const createdAt = somewhereInBand(d);
+      return {
+        user_id: DEMO_USER_ID,
+        fused_thought: pick(fusedThoughts[category]),
+        thought_category: category,
+        fusion_level_before: before,
+        technique_used: technique,
+        defused_version: defusedVersions[technique],
+        fusion_level_after: after,
+        notes: pick(notes),
+        created_at: createdAt,
+        updated_at: createdAt,
+      };
+    });
+
+  counts.act_defusion_logs = await insert("act_defusion_logs", rows);
+}
+
+// ------------------------------------------------------------ expansion
+{
+  const emotions = [
+    "Dread",
+    "Shame",
+    "Anxiety",
+    "Frustration",
+    "Restlessness",
+    "Flatness",
+    "Embarrassment",
+  ];
+  const bodySensations = [
+    "Tight band across the chest.",
+    "Stomach dropping, like missing a stair.",
+    "Jaw locked without noticing.",
+    "Hands cold and buzzing.",
+    "Throat narrowing when it was my turn.",
+    "Shoulders up somewhere near my ears.",
+  ];
+  const notes = [
+    "Sat with it for four minutes on the balcony instead of finding something to do.",
+    "Breathed around it rather than into it. That was the difference.",
+    "It moved. Not away — just around, which was enough to carry on.",
+    "Named it out loud once. Felt daft, worked anyway.",
+    "Made room for it and answered the message anyway.",
+    "",
+  ];
+
+  // ☠️ Every row on or before ACT_PHASE_STARTED_DAY - 2, so `makeRoomOnce` stays
+  // open however the viewer's clock is set. The setback sits inside that window,
+  // so the cluster still lands where the rest of the seed bends.
+  const lastExpansionDay = ACT_PHASE_STARTED_DAY - 2;
+  const days = new Set();
+  for (let d = 4; d <= lastExpansionDay; d += inSetback(d) ? between(1, 2) : between(3, 6)) {
+    days.add(d);
+  }
+  days.add(lastExpansionDay);
+
+  const rows = [...days]
+    .sort((a, b) => a - b)
+    .map((d, i) => {
+      const technique = EXPANSION_TECHNIQUES[i % EXPANSION_TECHNIQUES.length];
+      const arc = improvement(d);
+      const before = Math.max(20, Math.min(100, Math.round(82 - 20 * arc) + between(-6, 6)));
+      // One row where the intensity does NOT come down. The detail screen has a
+      // whole branch for that — `noIntensityDrop` — and sitting with something
+      // that stays put is the honest half of this practice, not a failure of it.
+      const stuck = i === 2;
+      const after = stuck
+        ? Math.min(100, before + between(0, 4))
+        : Math.max(8, Math.round(before * (0.78 - 0.18 * arc)));
+      // The struggle switch is a three-state field: on, off, and never asked.
+      // ☠️ The detail screen renders `discomfort_type` only INSIDE the switch
+      // block, so a row with a null switch draws no discomfort type however it
+      // is filled — which is why the null row leaves the type null too rather
+      // than carrying a variant nothing will ever render.
+      const switchAsked = i !== 5;
+      const createdAt = somewhereInBand(d);
+      return {
+        user_id: DEMO_USER_ID,
+        emotion: emotions[i % emotions.length],
+        body_sensation: pick(bodySensations),
+        intensity_before: before,
+        struggle_switch_on: switchAsked ? arc < 0.5 || chance(0.35) : null,
+        discomfort_type: switchAsked ? DISCOMFORT_TYPES[i % DISCOMFORT_TYPES.length] : null,
+        technique_used: technique,
+        intensity_after: after,
+        notes: pick(notes),
+        created_at: createdAt,
+        updated_at: createdAt,
+      };
+    });
+
+  counts.act_expansion_logs = await insert("act_expansion_logs", rows);
+}
+
+// ------------------------------------------------------------ urge surf
+{
+  // The urge here is the AVOIDANCE urge the rest of the seed already names as
+  // the maintaining behaviour — the pull to get out of the room — rather than
+  // anything that would read as a substance narrative (#1180).
+  const urges = [
+    "Send the “shall we do this async?” message and skip the meeting.",
+    "Rewrite the update a sixth time before posting it.",
+    "Open the laptop at 2am to check nobody replied badly.",
+    "Move the one-to-one again.",
+    "Reply to the feedback straight away with a defence.",
+    "Leave the terrace mid-conversation and go back to the desk.",
+    "Take the meeting off my calendar and hope it isn't noticed.",
+    "Say I'll follow up in writing so I don't have to answer now.",
+  ];
+  const triggers = [
+    "Calendar invite landed with no agenda on it.",
+    "Reorg rumours in the group chat again.",
+    "A one-word reply on a thread I'd worked hard on.",
+    "Asked to present at short notice.",
+    "Silence after I finished speaking.",
+    "Someone else's name on the piece I thought was mine.",
+  ];
+  const surfingNotes = [
+    "Rode it for about eight minutes on the balcony. It peaked and came down on its own.",
+    "Counted it up and counted it down. Never got as high as it felt at the start.",
+    "Stayed in the chair. The urge got bored before I did.",
+    "Watched it like weather rather than an instruction.",
+    "It came back twice. Smaller each time.",
+  ];
+
+  // ☠️ Same margin as expansion — `makeRoomOnce` counts expansion AND urge-surf
+  // rows since the phase start, so a single late urge-surf row closes the
+  // milestone on its own.
+  //
+  // ⚠️ This feature has NO list route: it surfaces only as the inline recent
+  // strip on the urge-surf screen itself, at `useUrgeSurfLogs(userId, 5)`. Only
+  // the newest five are ever visible, so the stride only has to clear five — but
+  // it clears it comfortably rather than exactly, because a dataset sized to the
+  // current limit breaks on the day the limit moves.
+  const lastUrgeDay = ACT_PHASE_STARTED_DAY - 2;
+  const days = new Set();
+  for (let d = 7; d <= lastUrgeDay; d += inSetback(d) ? between(2, 3) : between(5, 9)) {
+    days.add(d);
+  }
+  days.add(lastUrgeDay);
+
+  const rows = [...days]
+    .sort((a, b) => a - b)
+    .map((d, i) => {
+      const arc = improvement(d);
+      // Capped short of the band's end so the completion, which lands 8-20
+      // minutes later, stays inside the band too.
+      const createdAt = inBand(d, between(0, ACT_BAND_MINUTES - 25));
+      const completedAt = new Date(
+        new Date(createdAt).getTime() + between(8, 20) * 60_000,
+      ).toISOString();
+      return {
+        user_id: DEMO_USER_ID,
+        urge_description: urges[i % urges.length],
+        trigger: pick(triggers),
+        peak_intensity: Math.max(25, Math.min(100, Math.round(84 - 22 * arc) + between(-7, 7))),
+        surfing_notes: pick(surfingNotes),
+        // Acting on it is where this starts, and it thins out rather than
+        // stopping dead — the early rows are mostly a description of the
+        // avoidance, the later ones of riding it out.
+        urge_acted_on: chance(0.55 - 0.45 * arc),
+        completed_at: completedAt,
+        created_at: createdAt,
+        updated_at: createdAt,
+      };
+    });
+  counts.act_urge_surf_logs = await insert("act_urge_surf_logs", rows);
+}
+
+// ----------------------------------------------------------- connection
+{
+  const activityContexts = [
+    "Washing up after dinner.",
+    "Walking down to the tram.",
+    "Waiting for the call to start.",
+    "On the terrace before anyone else was up.",
+    "In the sea, early, before the beach filled up.",
+    "Standing in the queue at the bakery.",
+    "Folding washing on the balcony.",
+  ];
+  // Blank is a complete row, and the detail screen FALLS BACK to the technique
+  // name for its heading when it is — a branch nothing renders unless a blank
+  // row exists.
+  const noticings = [
+    "Warm water, the weight of the plate, the noise off the street below.",
+    "Five things I could see, four I could hear, the rail cold under my hand.",
+    "Salt, the drag of the water, my own breathing louder than I expected.",
+    "The chair under me. Feet on the floor. The room, still there.",
+    "Bread, coffee, someone laughing two people ahead in the queue.",
+    "",
+  ];
+  const notes = [
+    "Two minutes was enough to stop the spin.",
+    "Did it before the meeting rather than after it went badly.",
+    "Kept drifting off and coming back. Coming back is the exercise.",
+    "N. was there and didn't need it explaining.",
+    "Anchored, then went back in and asked my question.",
+    "",
+  ];
+
+  const buildRow = (d, i) => {
+    const arc = improvement(d);
+    const createdAt = somewhereInBand(d);
+    return {
+      user_id: DEMO_USER_ID,
+      technique: CONNECTION_TECHNIQUES[i % CONNECTION_TECHNIQUES.length],
+      activity_context: pick(activityContexts),
+      notices_from_senses: pick(noticings),
+      duration_minutes: between(2, 15),
+      mood_after: Math.max(1, Math.min(10, Math.round(5 + 2.5 * arc) + between(-1, 1))),
+      notes: pick(notes),
+      created_at: createdAt,
+      updated_at: createdAt,
+    };
+  };
+
+  // No margin here — nothing in the CURRENT phase reads connection logs, so
+  // these run right up to and including today. `dropAnchorDaily` and
+  // `bePresentDaily` belong to `foundation` and `bePresent`, and only the
+  // current phase ever renders.
+  const days = new Set();
+  for (let d = 3; d < ACT_TODAY; d += inSetback(d) ? between(1, 2) : between(2, 5)) {
+    days.add(d);
+  }
+
+  const rows = [...days].sort((a, b) => a - b).map(buildRow);
+
+  // TODAY, twice. The reason is the LIST SCREEN, which shows only today: a
+  // single row opens it on one entry, a thinner picture than this account has
+  // and one that reads as a surface barely used.
+  //
+  // Two of a KIND rather than two of anything, because `dropAnchor` is a subset
+  // of connection rather than a separate table and the app splits the table on
+  // it in two places — `getLatestConnectionLogAt` filters by technique for
+  // Home's drop-anchor row, and the `foundation` and `bePresent` daily legs
+  // partition it between `technique = 'dropAnchor'` and everything else.
+  // ⚠️ Those two legs do NOT render at the seeded phase, which is `openUp`, so
+  // this is not what keeps them open today — it is what keeps the picture honest
+  // if the account is ever re-phased, and it is what puts drop-anchor in front of
+  // a reviewer at all.
+  rows.push(
+    { ...buildRow(ACT_TODAY, rows.length), technique: "dropAnchor" },
+    { ...buildRow(ACT_TODAY, rows.length + 1), technique: "mindfulActivity" },
+  );
+
+  counts.act_connection_logs = await insert("act_connection_logs", rows);
+}
+
+// ------------------------------------------------------- observing self
+{
+  const observations = [
+    "The thoughts kept arriving. The part of me watching them didn't change size.",
+    "Ten breaths and the dread was still there, but I was bigger than the room again.",
+    "Storm over the top, sky underneath it, unbothered.",
+    "Noticed my hands before I noticed the story about my hands.",
+    "The “I'll be found out” line went past like weather rather than news.",
+    "",
+  ];
+  const notes = [
+    "Easier lying down than sitting.",
+    "Set a timer so I'd stop checking how long was left.",
+    "Did it on the balcony at first light.",
+    "Harder on a bad day, which is presumably the point.",
+    "",
+  ];
+
+  // Runs to today: `observeSelfOnce` is a `bePresent` milestone and the account
+  // sits in `openUp`, so nothing in the current phase reads these.
+  const days = new Set();
+  for (let d = 5; d < ACT_TODAY; d += inSetback(d) ? between(2, 3) : between(4, 8)) {
+    days.add(d);
+  }
+  days.add(ACT_TODAY);
+
+  const rows = [...days]
+    .sort((a, b) => a - b)
+    .map((d, i) => {
+      const arc = improvement(d);
+      const createdAt = somewhereInBand(d);
+      return {
+        user_id: DEMO_USER_ID,
+        technique_used: OBSERVING_TECHNIQUES[i % OBSERVING_TECHNIQUES.length],
+        what_was_observed: pick(observations),
+        duration_minutes: between(3, 20),
+        mood_after: Math.max(1, Math.min(10, Math.round(5 + 2.5 * arc) + between(-1, 1))),
+        notes: pick(notes),
+        created_at: createdAt,
+        updated_at: createdAt,
+      };
+    });
+
+  counts.act_observing_self_sessions = await insert("act_observing_self_sessions", rows);
+}
+
+// -------------------------------------------------------- choice points
+{
+  // Hook, away move, toward move — the three columns the worksheet asks for, and
+  // the away move is never left as the last word: every one of these carries the
+  // toward move that answers it.
+  const worksheets = [
+    {
+      hooks: ["Put on the spot in the stand-up", "“I'll be found out”"],
+      awayMoves: ["Went quiet", "Avoided the follow-up questions afterwards"],
+      towardMoves: ["Asked for a minute to think", "Gave the honest half-answer"],
+      notes: "The half-answer was fine. Nobody wanted the whole thing on the spot.",
+    },
+    {
+      hooks: ["Reorg rumours back in the group chat"],
+      awayMoves: ["Refreshed the thread all afternoon", "Rewrote a message I never sent"],
+      towardMoves: ["Closed the tab and finished the work in front of me"],
+      notes: "Nothing I did to the thread changed the thread.",
+    },
+    {
+      hooks: ["Feedback on the summary"],
+      awayMoves: ["Started a defence in my head before I'd finished reading it"],
+      towardMoves: ["Read it twice", "Asked which part they meant"],
+      notes: "It was one paragraph, not the whole document.",
+    },
+    {
+      hooks: ["Asked to present at short notice"],
+      awayMoves: ["Looked for a reason to hand it over"],
+      towardMoves: ["Said yes and blocked an hour to prepare"],
+      notes: "",
+    },
+    {
+      hooks: ["Quiet evening at home after a hard day"],
+      awayMoves: ["Went back to the laptop rather than sit with it"],
+      towardMoves: ["Stayed on the balcony with N.", "Said what the day had actually been like"],
+      notes: "Saying it out loud took less time than the evening I'd have spent not saying it.",
+    },
+    {
+      // Empty hooks: the list screen and the detail screen both branch on
+      // whether there are any, and a worksheet started from the moves rather
+      // than the hook is a complete one.
+      hooks: [],
+      awayMoves: ["Skipped the retro"],
+      towardMoves: ["Went to the next one and put my thing on the board first"],
+      notes: "",
+    },
+  ];
+
+  // Sparser than the practice logs on purpose: a choice-point worksheet is a
+  // sit-down piece of work rather than something done in the gaps of a day.
+  const days = new Set();
+  for (let d = 9; d < ACT_TODAY; d += inSetback(d) ? between(3, 5) : between(8, 14)) {
+    days.add(d);
+  }
+  days.add(ACT_TODAY);
+
+  const rows = [...days]
+    .sort((a, b) => a - b)
+    .map((d, i) => {
+      const worksheet = worksheets[i % worksheets.length];
+      const createdAt = somewhereInBand(d);
+      return {
+        user_id: DEMO_USER_ID,
+        hooks: worksheet.hooks,
+        away_moves: worksheet.awayMoves,
+        toward_moves: worksheet.towardMoves,
+        notes: worksheet.notes,
+        created_at: createdAt,
+        updated_at: createdAt,
+      };
+    });
+  counts.act_choice_points = await insert("act_choice_points", rows);
+}
+
+// -------------------------------- ACT band and boundary margins, read back
+// Read back OUT of the database rather than checked against the arrays above:
+// that also proves the rows survived the encrypted views carrying the timestamps
+// they were given, which is the other way this can silently go wrong. Everything
+// here is about WHEN, because when is the only thing these tables cannot record
+// for themselves.
+{
+  const bandTables = [
+    "act_defusion_logs",
+    "act_expansion_logs",
+    "act_urge_surf_logs",
+    "act_connection_logs",
+    "act_observing_self_sessions",
+    "act_choice_points",
+  ];
+
+  /** Every `created_at` the demo account holds in `table`, as epoch millis. */
+  async function createdAtMillis(table) {
+    const { data, error } = await admin
+      .from(table)
+      .select("created_at")
+      .eq("user_id", DEMO_USER_ID);
+    if (error) throw new Error(`act band read-back (${table}): ${error.message}`);
+    if (data.length === 0) throw new Error(`act band read-back (${table}): no rows came back.`);
+    return data.map((row) => new Date(row.created_at).getTime());
+  }
+
+  const seeded = {};
+  for (const table of bandTables) seeded[table] = await createdAtMillis(table);
+
+  // VARIANT COVERAGE, off the rows the database returns rather than the arrays
+  // that built them. The enum columns are plaintext pass-throughs on the `_data`
+  // tables, so they come back readable — and reading them back is what makes
+  // this cover the encrypted views too: a variant that a write trigger's
+  // `coalesce` default quietly replaced looks correct in memory and wrong here,
+  // which is the whole reason the band check below reads back as well.
+  const variantChecks = [
+    ["act_defusion_logs", "technique_used", DEFUSION_TECHNIQUES],
+    ["act_defusion_logs", "thought_category", THOUGHT_CATEGORIES],
+    ["act_expansion_logs", "technique_used", EXPANSION_TECHNIQUES],
+    ["act_expansion_logs", "discomfort_type", DISCOMFORT_TYPES],
+    ["act_connection_logs", "technique", CONNECTION_TECHNIQUES],
+    ["act_observing_self_sessions", "technique_used", OBSERVING_TECHNIQUES],
+  ];
+  for (const [table, column, variants] of variantChecks) {
+    const { data, error } = await admin.from(table).select(column).eq("user_id", DEMO_USER_ID);
+    if (error) throw new Error(`act variant read-back (${table}.${column}): ${error.message}`);
+    requireEveryVariant(`${table}.${column}`, variants, data, column);
+  }
+
+  const strays = [];
+  for (const table of bandTables) {
+    for (const millis of seeded[table]) {
+      if (clampedOutOfBand.has(millis)) continue;
+      const hour = new Date(millis).getUTCHours();
+      if (hour < ACT_BAND_START_HOUR || hour >= ACT_BAND_END_HOUR) {
+        strays.push(`${table} at ${new Date(millis).toISOString()}`);
+      }
+    }
+  }
+  if (strays.length > 0) {
+    throw new Error(
+      `${strays.length} ACT row(s) sit outside the ${ACT_BAND_START_HOUR}:00-` +
+        `${ACT_BAND_END_HOUR}:00 UTC band — ${strays.slice(0, 3).join("; ")}. These tables store ` +
+        "no captured offset, so a row outside the band changes civil day for viewers the band " +
+        "was chosen to cover. Place it with `inBand`, not `at`.",
+    );
+  }
+
+  // The two margins, each measured band edge to band edge. A row is late if it
+  // reaches PAST the close of the band on its deadline day, which is a two-day
+  // gap however early in the day the seed happens to run.
+  const makeRoomOnce =
+    "`makeRoomOnce`, which counts expansion and urge-surf rows since the phase start";
+  // ☠️ The deadline days here are RESTATED rather than shared with the loops that
+  // built the rows, and that is the point: a check reading the same constant the
+  // generator read moves with it, so nudging the generator would nudge the
+  // deadline and the check would pass on any placement at all. Two independent
+  // statements of the same rule is what gives this something to disagree with.
+  const margins = [
+    {
+      table: "act_defusion_logs",
+      latestAllowedDay: ACT_TODAY - 2,
+      breaks:
+        "“nothing unhooked today” — `openUp`'s daily practice would read done on a " +
+        "viewer clock a day behind the seeding machine's",
+    },
+    {
+      table: "act_expansion_logs",
+      latestAllowedDay: ACT_PHASE_STARTED_DAY - 2,
+      breaks: makeRoomOnce,
+    },
+    {
+      table: "act_urge_surf_logs",
+      latestAllowedDay: ACT_PHASE_STARTED_DAY - 2,
+      breaks: makeRoomOnce,
+    },
+  ];
+
+  for (const margin of margins) {
+    const latest = Math.max(...seeded[margin.table]);
+    const deadline = bandClosesAt(margin.latestAllowedDay);
+    if (latest > deadline) {
+      throw new Error(
+        `The newest ${margin.table} row is ${new Date(latest).toISOString()}, past the ` +
+          `${new Date(deadline).toISOString()} boundary this slice keeps two days clear. ` +
+          `A timezone drift of one day would then flip ${margin.breaks}.`,
+      );
+    }
+  }
+
+  // The other side of the same ruling: `unhookOnce` is DONE, so a defusion row
+  // has to sit comfortably INSIDE the phase. Two days clear of the phase start
+  // for the same reason the deadlines are — #1286 writes that anchor off the
+  // machine's local clock while these rows are pinned to UTC, so the two can sit
+  // up to a day apart before anything is actually wrong.
+  const insidePhase = seeded.act_defusion_logs.filter(
+    (millis) => millis >= bandOpensAt(ACT_PHASE_STARTED_DAY + 2),
+  );
+  if (insidePhase.length === 0) {
+    throw new Error(
+      "No defusion row lands inside the current ACT phase, so `unhookOnce` would read undone. " +
+        "#1178 rules `openUp` PARTIALLY complete: unhooked once, room not yet made.",
     );
   }
 }
