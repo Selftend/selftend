@@ -22,7 +22,7 @@
 
 import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, writeFile, rm, mkdir, stat } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, rm, mkdir, stat, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname, basename } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -35,6 +35,14 @@ import {
   AAC_ENCODER,
   BED_FOLD_SECONDS,
 } from "./catalog.mjs";
+import {
+  SHIP_BUDGET_BYTES,
+  SHIP_FILE_COUNT,
+  predictShipping,
+  shipFileName,
+  shippingUnits,
+  surveyShipping,
+} from "./ship-plan.mjs";
 
 /**
  * How far the finished file may sit from its target before the run fails.
@@ -858,14 +866,127 @@ function flag(name, fallback = null) {
   return i === -1 ? fallback : process.argv[i + 1];
 }
 
+/**
+ * Where the finished set lives while the pass is running.
+ *
+ * The same default `run --out` has always used. Named here because `budget` has
+ * to look in the same place `run` writes to, and two literals that must agree is
+ * one literal that will not.
+ */
+export const SHIP_DIR = join("audio-masters", "finished");
+
+/** How long each shipped clip runs, for the half of the set the catalog does not fix. */
+async function secondsOf(file) {
+  const res = await run("ffprobe", [
+    "-v",
+    "error",
+    "-show_entries",
+    "format=duration",
+    "-of",
+    "csv=p=0",
+    file,
+  ]);
+  if (res.code !== 0) return null;
+  const seconds = Number.parseFloat(res.stdout.trim());
+  return Number.isFinite(seconds) ? seconds : null;
+}
+
+const mib = (bytes) => `${(bytes / 1024 / 1024).toFixed(3)} MiB`;
+
+/**
+ * #1210's budget acceptance check: twenty-one files, under #1138's 4.0 MiB.
+ *
+ * Prints two facts and keeps them apart, the way `manifest --check` has to keep
+ * currency and completeness apart:
+ *
+ *   PREDICTED — what the set weighs on paper, from the catalog's own durations and
+ *   bitrates. Runnable before a single byte is rendered, which is the only time
+ *   the answer can still change anything: the render is unrepeatable.
+ *
+ *   MEASURED — what is actually in the ship directory. Only this one can fail the
+ *   command, and it fails on a missing unit just as readily as on the byte count.
+ *   ☠️ A set that fits because four of its files were never written is not a set
+ *   that fits, and 20 of 21 is exactly what the voice-name collision used to
+ *   produce.
+ *
+ * The voice cues' lengths come from the clips shipping today, which say the same
+ * words. That is an estimate and it is labelled as one — TTS decides the real
+ * number, and it does not exist until the pass has run.
+ */
+export async function budget(dir, { measureSeconds = secondsOf } = {}) {
+  const units = shippingUnits();
+
+  const shippedToday = new Map();
+  for (const unit of units.filter((u) => u.voice)) {
+    if (shippedToday.has(unit.clip)) continue;
+    shippedToday.set(
+      unit.clip,
+      await measureSeconds(join("assets", "sounds", "breathing", `${unit.clip}.wav`)),
+    );
+  }
+  const predicted = predictShipping(units, (unit) => shippedToday.get(unit.clip) ?? null);
+
+  console.log(`PREDICTED (${SHIP_FILE_COUNT} files, from catalog.mjs)`);
+  console.log(
+    `  ${mib(predicted.totalBytes)} of ${mib(SHIP_BUDGET_BYTES)} · ` +
+      `${mib(predicted.headroomBytes)} spare · ${predicted.over ? "OVER" : "fits"}`,
+  );
+  console.log(
+    predicted.complete
+      ? `  voice lengths estimated from the clips shipping today (#1136 measures the real ones)`
+      : `  ⚠️ ${predicted.unknown.length} unit(s) have no length — the total above is a FLOOR`,
+  );
+  // ⚠️ Payload only. The .m4a container adds a few KB of moov per file, and #1138's
+  // published 3.21 MB was computed the same way — so this agrees with the number
+  // that set the ceiling, and must not be read as precision it does not have.
+  console.log(`  payload only; the container adds a few KB per file`);
+
+  let names = [];
+  try {
+    names = (await readdir(dir)).filter((name) => name.endsWith(".m4a"));
+  } catch {
+    console.log(`\nMEASURED\n  nothing at ${dir}/ — the pass has not written a finished set yet`);
+    return false;
+  }
+
+  const files = [];
+  for (const name of names) {
+    files.push({ name, bytes: (await stat(join(dir, name))).size });
+  }
+  const survey = surveyShipping(units, files);
+
+  console.log(`\nMEASURED (${dir}/)`);
+  console.log(
+    `  ${survey.rows.filter((row) => row.present).length}/${SHIP_FILE_COUNT} files · ` +
+      `${mib(survey.totalBytes)} of ${mib(SHIP_BUDGET_BYTES)} · ` +
+      `${mib(survey.headroomBytes)} spare · ${survey.over ? "OVER" : "fits"}`,
+  );
+  for (const gap of survey.gaps) {
+    console.log(`  ${gap.kind.padEnd(12)} ${gap.file ?? gap.unit ?? ""} — ${gap.detail}`);
+  }
+  console.log(
+    survey.complete ? `  the set is complete and fits` : `  the set is NOT ready to ship`,
+  );
+  return survey.complete;
+}
+
 const USAGE = `
 Usage:
-  node scripts/audio/postprocess.mjs run <input> --clip <id> [--out <file.m4a>] [--fold]
+  node scripts/audio/postprocess.mjs run <input> --clip <id> [--voice <v>] [--out <file.m4a>] [--fold]
   node scripts/audio/postprocess.mjs measure <file>
   node scripts/audio/postprocess.mjs seamcheck <file>
   node scripts/audio/postprocess.mjs edges <file>
+  node scripts/audio/postprocess.mjs budget [--dir <d>]
 
 <id> is a clip id from catalog.mjs - a bell, bed, texture or guide_* cue.
+
+--voice is REQUIRED on a guide_* cue and refused on a sound effect: each cue ships
+once per voice (#1136), and without it both takes default to the same output path
+and the second silently overwrites the first.
+
+budget is #1210's size acceptance check - 21 files under #1138's 4.0 MiB ceiling.
+It prints what the catalog predicts (runnable before the render) and what is
+actually in the ship directory, and fails on a missing unit as well as on bytes.
 
 --fold is the seam-gate FALLBACK, not the path. Beds render loop: true and ship
 unfolded at the full 30.0s (#1347); reach for --fold only when a bed fails its seam
@@ -892,7 +1013,17 @@ async function main() {
     if (command === "run") {
       const clipId = flag("clip");
       if (!target || !clipId) throw new Error(USAGE);
-      const out = flag("out", join("audio-masters", "finished", `${clipId}.m4a`));
+      // ☠️ The default output name carries the voice, and `shipFileName` throws
+      // when a cue arrives without one. It used to be `${clipId}.m4a` for every
+      // clip, so post-processing the male take of a cue wrote over the female's
+      // finished file — 20 files where the set needs 21, and nothing counted them.
+      //
+      // ⚠️ Computed only when it is needed. `flag(name, fallback)` evaluates its
+      // fallback eagerly, so building the default inline would make an explicit
+      // --out on a cue throw for want of a --voice it does not need.
+      const explicitOut = flag("out");
+      const out =
+        explicitOut ?? join(SHIP_DIR, shipFileName({ clip: clipId, voice: flag("voice") }));
       // Named for what it is, not `fold` — that is the module-scope function this
       // very call reaches through `postprocess`.
       const foldRequested = process.argv.includes("--fold");
@@ -931,6 +1062,8 @@ async function main() {
       } finally {
         await rm(dir, { recursive: true, force: true });
       }
+    } else if (command === "budget") {
+      process.exit((await budget(flag("dir", SHIP_DIR))) ? 0 : 1);
     } else {
       console.log(USAGE);
       process.exit(1);
