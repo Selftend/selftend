@@ -4,7 +4,7 @@ import { defaultUserPreferences, type UserPreferences } from "@/src/features/mod
 import { ReminderPromptCard } from "@/src/features/notifications/reminder-prompt-card";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { ensureReminderChannel } from "@/src/lib/notifications";
-import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
+import { INSET_LAYER, useLayeredInsetStore } from "@/src/stores/layered-inset-store";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -57,7 +57,7 @@ describe("ReminderPromptCard", () => {
     jest.clearAllMocks();
     act(() => {
       useReminderPromptStore.getState().dismissReminderPrompt();
-      useBannerInsetStore.getState().setHeight(0);
+      useLayeredInsetStore.setState({ edges: {} });
     });
   });
 
@@ -190,9 +190,7 @@ describe("ReminderPromptCard", () => {
   it("rides above the bottom banner strip by the published inset (#667)", async () => {
     setPreferences();
     setUpdateMutation();
-    act(() => {
-      useBannerInsetStore.getState().setHeight(40);
-    });
+    act(() => useLayeredInsetStore.getState().publishInset("strip", INSET_LAYER.strip, 40));
 
     renderWithProviders(<ReminderPromptCard />);
     requestPrompt("mood");
@@ -201,5 +199,38 @@ describe("ReminderPromptCard", () => {
     const host = screen.getByTestId("reminder-prompt-host");
     // Insets are 0 under the test SafeAreaProvider: base 16 + banner 40.
     expect(host.props.style).toEqual(expect.objectContaining({ bottom: 56 }));
+    // Published at mount, not on a later frame: RNW never hears an onLayout
+    // handler attached after the view is created.
+    expect(host.props.onLayout).toEqual(expect.any(Function));
+  });
+
+  it("clears the soft keyboard (#1339 layer 0)", async () => {
+    setPreferences();
+    setUpdateMutation();
+    act(() => useLayeredInsetStore.getState().publishInset("keyboard", INSET_LAYER.keyboard, 336));
+
+    renderWithProviders(<ReminderPromptCard />);
+    requestPrompt("mood");
+
+    await screen.findByText("Set reminder");
+    const host = screen.getByTestId("reminder-prompt-host");
+    expect(host.props.style).toEqual(expect.objectContaining({ bottom: 352 }));
+  });
+
+  it("☠️ ignores its own layer, so the two floaters cannot push each other up", async () => {
+    setPreferences();
+    setUpdateMutation();
+    // RoutineFab is the other layer-2 member. Under a flat max each would read
+    // the other's top edge, both would rise, and both would climb forever.
+    act(() =>
+      useLayeredInsetStore.getState().publishInset("routine-fab", INSET_LAYER.floater, 400),
+    );
+
+    renderWithProviders(<ReminderPromptCard />);
+    requestPrompt("mood");
+
+    await screen.findByText("Set reminder");
+    const host = screen.getByTestId("reminder-prompt-host");
+    expect(host.props.style).toEqual(expect.objectContaining({ bottom: 16 }));
   });
 });

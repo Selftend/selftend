@@ -28,7 +28,7 @@ import { reminderChannelErrorKey } from "@/src/features/notifications/channel-er
 import { enableTargetPatch } from "@/src/features/notifications/enable-patch";
 import { useReminderChannel } from "@/src/features/notifications/use-reminder-channel";
 import { useSession } from "@/src/providers/session-provider";
-import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
+import { INSET_LAYER, useInsetBelow, useInsetPublisher } from "@/src/stores/layered-inset-store";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { clampTime, type TimeOfDay } from "@/src/utils/time";
@@ -57,7 +57,17 @@ export function ReminderPromptCard() {
   const showToast = useToastStore((state) => state.showToast);
   const request = useReminderPromptStore((state) => state.request);
   const dismissRequest = useReminderPromptStore((state) => state.dismissReminderPrompt);
-  const bannerInset = useBannerInsetStore((state) => state.height);
+  // Layer 2 of the bottom-inset ladder (#1339): reads only the layers strictly
+  // below it (keyboard, in-flow strips) and publishes its own top edge for the
+  // toast above. It can never see itself, so it cannot climb.
+  const insetBelow = useInsetBelow(INSET_LAYER.floater);
+  const hostBottom = Math.max(insets.bottom, insetBelow) + 16;
+  // hostBottom is the revision: on web onLayout is a ResizeObserver, so this
+  // card moving without resizing would never re-publish its own top edge.
+  const { attachHost: attachCard, onLayout: onCardLayout } = useInsetPublisher(
+    INSET_LAYER.floater,
+    hostBottom,
+  );
 
   const [activeTarget, setActiveTarget] = useState<NotificationTargetKey | null>(null);
   const [time, setTime] = useState<TimeOfDay>({ hour: 19, minute: 0 });
@@ -138,9 +148,12 @@ export function ReminderPromptCard() {
       testID="reminder-prompt-host"
       pointerEvents="box-none"
       className="absolute inset-x-0 z-[70] items-center px-4"
-      // Ride above the bottom-anchored banner strip (#667): a visible banner
-      // would otherwise sit under this card and lose its controls to it.
-      style={{ bottom: insets.bottom + 16 + bannerInset }}
+      onLayout={onCardLayout}
+      ref={attachCard}
+      // Ride above the bottom-anchored banner strip (#667) and the soft
+      // keyboard (#1339): either would otherwise sit under this card and take
+      // its controls with it.
+      style={{ bottom: hostBottom }}
     >
       <Card className="w-full max-w-xl shadow-md dark:shadow-none">
         <CardHeader className="gap-1">

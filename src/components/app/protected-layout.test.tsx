@@ -12,7 +12,6 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
-import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 type MockSessionState = {
@@ -364,7 +363,7 @@ describe("ProtectedLayout headerless shell (#667)", () => {
     expect(stackAt).toBeLessThan(output.indexOf("Update banner"));
   });
 
-  it("publishes the strip's content height and reserves the safe area only while visible", async () => {
+  it("reserves the safe area only while a banner is visible", async () => {
     renderWithProviders(<ProtectedLayout />);
 
     const content = await screen.findByTestId("bottom-banner-strip-content");
@@ -380,19 +379,26 @@ describe("ProtectedLayout headerless shell (#667)", () => {
     expect(stripPadding()).toBe(0);
 
     fireEvent(content, "layout", { nativeEvent: { layout: { height: 40 } } });
-    // The store gets the CONTENT height only — floating widgets add
-    // insets.bottom themselves — while the strip pads the mocked 34px inset.
-    expect(useBannerInsetStore.getState().height).toBe(40);
+    // The inner layout decides the padding only; the published inset is the
+    // OUTER strip's measured edge, which covers this padding as well.
     expect(stripPadding()).toBe(34);
 
-    // Banner gone: padding released, store cleared.
+    // Banner gone: padding released.
     fireEvent(content, "layout", { nativeEvent: { layout: { height: 0 } } });
-    expect(useBannerInsetStore.getState().height).toBe(0);
     expect(stripPadding()).toBe(0);
+  });
 
-    // Sign-out unmounts the layout; a stale inset must not survive it.
-    fireEvent(content, "layout", { nativeEvent: { layout: { height: 40 } } });
-    screen.unmount();
-    expect(useBannerInsetStore.getState().height).toBe(0);
+  it("publishes the padded strip's top edge into layer 1 from its first frame", async () => {
+    renderWithProviders(<ProtectedLayout />);
+
+    const strip = await screen.findByTestId("bottom-banner-strip");
+
+    // ☠️ RNW decides at MOUNT whether a view is observed, so the handler has to
+    // be on the very first frame — attaching it once a banner appears would
+    // never be heard. What the handler then measures (and that it clears on
+    // unmount, which sign-out depends on) is covered in
+    // `layered-inset-store.test.tsx`: jest's View is a class mock with no
+    // measureInWindow, so no rendered publisher can measure here.
+    expect(strip.props.onLayout).toEqual(expect.any(Function));
   });
 });
