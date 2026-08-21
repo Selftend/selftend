@@ -8,13 +8,6 @@ export const SUCCESS_TOAST_MS = 2500;
 /** Visible + queued. A toast arriving over a full queue is dropped. */
 export const MAX_TOASTS = 3;
 
-export interface Toast {
-  id: number;
-  title: string;
-  description?: string;
-  tone: ToastTone;
-}
-
 export interface ToastInput {
   title: string;
   description?: string;
@@ -24,6 +17,14 @@ export interface ToastInput {
    * required means no future call can inherit a dead default.
    */
   tone: ToastTone;
+}
+
+/**
+ * A toast that has entered the store. By extension rather than restatement, so a
+ * field added to the input cannot quietly fail to reach the shown toast.
+ */
+export interface Toast extends ToastInput {
+  id: number;
 }
 
 interface ToastState {
@@ -73,7 +74,12 @@ export const useToastStore = create<ToastState>((set) => ({
       const { visible, queue } = state;
 
       if (!visible) {
-        return { visible: incoming };
+        // `queue: []` is not redundant. It holds unconditionally rather than
+        // leaning on "a non-empty queue implies something is visible" - an
+        // invariant true of every path here, but one a `setState` in a test can
+        // break, and a toast shown in front of a stale queue would be the kind
+        // of state nothing else in this machine could explain.
+        return { visible: incoming, queue: [] };
       }
 
       if (incoming.tone === "error") {

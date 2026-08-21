@@ -31,6 +31,21 @@ describe("useToastStore - the transition table", () => {
     expect(useToastStore.getState().queue).toEqual([]);
   });
 
+  // The `queue: []` on that branch reads as redundant - every path in the machine
+  // keeps the queue empty while nothing is visible - so this pins the one case
+  // that makes it load-bearing, and stops it being tidied away later.
+  it("an empty slot clears a queue that should not have been there", () => {
+    useToastStore.setState({
+      visible: null,
+      queue: [{ id: -1, title: "Orphan", tone: "success" }],
+    });
+
+    show("Saved", "success");
+
+    expect(useToastStore.getState().visible).toMatchObject({ title: "Saved" });
+    expect(useToastStore.getState().queue).toEqual([]);
+  });
+
   it("a success behind a visible success waits its turn rather than clobbering it", () => {
     show("First", "success");
     show("Second", "success");
