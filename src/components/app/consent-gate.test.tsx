@@ -2,10 +2,12 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { Platform } from "react-native";
 
 import { ConsentGate } from "./consent-gate";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
+  usePathname: () => "/modules/cbt",
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -88,5 +90,27 @@ describe("ConsentGate", () => {
     } finally {
       setPlatform("ios");
     }
+  });
+
+  /**
+   * The gate stands over whatever route the user was heading for, so reading a
+   * policy from it is a jump out and back (#1265, O3). Both policy routes sit at
+   * the root, so without the Origin the way out of one lands on Home rather than
+   * returning to the gate the user still has to clear.
+   *
+   * On the store rather than on `router.push`: the helper pushes through
+   * `router.push`, so a push assertion cannot tell a migrated call site from an
+   * unmigrated one.
+   */
+  it("records the gated screen as the Origin for a policy it sends the user to read", () => {
+    useNavigationOriginStore.setState({ pending: null });
+    renderWithProviders(<ConsentGate onAccepted={jest.fn()} />);
+
+    fireEvent.press(screen.getByText("Read Privacy Policy"));
+
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/modules/cbt",
+      forPathname: "/privacy",
+    });
   });
 });

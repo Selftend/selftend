@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRef, useState } from "react";
 import { Pressable, View } from "react-native";
@@ -21,6 +20,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import type { HelpKey } from "@/src/features/help/help-content";
 import type { ProgramStatus, ProgramTaskView } from "@/src/features/modules/program-types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 type ProgramCardView = {
   status: ProgramStatus;
@@ -77,12 +77,18 @@ const ACCENT_CLASSES = {
 function TaskRow({ task, ns }: { task: ProgramTaskView; ns: string }) {
   const { t } = useTranslation(ns);
   const label = t(task.labelKey);
+  // A program task can sit outside its own module - CBT's programme sends the user
+  // to `/tools/check-in/new`, whose Up climbs to `/tools` - so the row records
+  // where it left from (#1265, O3). An on-trail task records too and costs
+  // nothing: the off-trail test runs at the destination, and leaving the
+  // judgement to each call site is what makes an Origin rule fail invisibly.
+  const pushWithOrigin = usePushWithOrigin();
   return (
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(task.route)}
+      onPress={() => pushWithOrigin(task.route)}
       className={
         task.done
           ? ACCENT_CLASSES.taskRowDone

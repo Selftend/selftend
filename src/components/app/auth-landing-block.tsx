@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { Image, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -6,9 +5,16 @@ import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
 import { SignInForm } from "@/src/components/app/sign-in-form";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 export function AuthLandingBlock() {
   const { t } = useTranslation(["auth", "common", "policies"]);
+  // Recording is opt-out, so these record like any other cross-link (#1265, O3)
+  // even though the landing sits at the root and every destination here already
+  // has the root as its Up - the Escape's off-trail test simply ignores an
+  // Origin that leads where Up already goes. Deciding that per call site is what
+  // makes an Origin rule rot: the next link added here would forget.
+  const pushWithOrigin = usePushWithOrigin();
 
   return (
     <View className="gap-5">
@@ -28,16 +34,16 @@ export function AuthLandingBlock() {
           {t("common:safety.description")}
         </Text>
         <View className="flex-row flex-wrap items-center justify-center">
-          <Button onPress={() => router.push("/crisis")} variant="link" size="sm">
+          <Button onPress={() => pushWithOrigin("/crisis")} variant="link" size="sm">
             <Text className="text-xs">{t("common:safety.openCrisis")}</Text>
           </Button>
-          <Button onPress={() => router.push("/terms")} variant="link" size="sm">
+          <Button onPress={() => pushWithOrigin("/terms")} variant="link" size="sm">
             <Text className="text-xs">{t("policies:terms.pageTitle")}</Text>
           </Button>
-          <Button onPress={() => router.push("/privacy")} variant="link" size="sm">
+          <Button onPress={() => pushWithOrigin("/privacy")} variant="link" size="sm">
             <Text className="text-xs">{t("policies:privacy.pageTitle")}</Text>
           </Button>
-          <Button onPress={() => router.push("/cookies")} variant="link" size="sm">
+          <Button onPress={() => pushWithOrigin("/cookies")} variant="link" size="sm">
             <Text className="text-xs">{t("policies:cookies.pageTitle")}</Text>
           </Button>
         </View>

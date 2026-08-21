@@ -1,10 +1,11 @@
-import { router, type Href } from "expo-router";
+import { type Href } from "expo-router";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
 
 // A shared tool is a plain link. It used to be a union - `helpKey` meant "open
@@ -45,6 +46,11 @@ interface SharedToolsRowProps {
 // it is #1216, and is not decided.
 export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
   const { t } = useTranslation("navigation");
+  // A chip leaves the module for a tool rooted under `/tools`, so the tool's own
+  // Up climbs to `/tools` and never back to the module the user was working in.
+  // These are the nine off-trail pushes #1192 landed hours after the escape rule
+  // was charted - the growth that made recording opt-out rather than opt-in.
+  const pushWithOrigin = usePushWithOrigin();
 
   return (
     <View className="ml-1 flex-row flex-wrap items-center gap-2">
@@ -59,7 +65,7 @@ export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
           key={tool.key}
           accessibilityRole="button"
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => router.push(tool.route)}
+          onPress={() => pushWithOrigin(tool.route)}
           className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 active:bg-accent/40"
         >
           <Icon name={tool.icon} size={13} className={CHROME_MARK} />
