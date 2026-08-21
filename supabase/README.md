@@ -23,6 +23,7 @@ CBT:
 - `activity_logs`
 - `procrastination_tasks`, `task_steps`
 - `recovery_plans`, `challenge_plans`
+- `values_profile` (a per-user singleton; ACT's values are `act_value_entries`, a different table)
 
 ACT:
 
@@ -31,7 +32,6 @@ ACT:
 - `act_defusion_logs`, `act_expansion_logs`, `act_urge_surf_logs`
 - `act_connection_logs`, `act_observing_self_sessions`
 - `act_committed_actions`, `act_action_steps`
-- `values_profile`
 
 Other tools (shared across modules):
 
@@ -130,11 +130,11 @@ Each account has its own password (defined in `supabase/seed.sql`, mirrored in `
 
 `seed.sql` gives `demo@test.local` nothing but a profile and preferences — every record it holds comes from that script, so a bare `supabase db reset` leaves it empty. CI seeds it as a step of its own for the same reason.
 
-| Email              | Password              | UUID      | State                                                                                                                                                      |
-| ------------------ | --------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `alice@test.local` | `test-pass-alice-123` | `...0001` | Empty account, post-signup, CBT onboarding not done                                                                                                        |
-| `bob@test.local`   | `test-pass-bob-123`   | `...0002` | Mid-use, 5 thought records, reminders enabled                                                                                                              |
-| `demo@test.local`  | `test-pass-demo-123`  | `...0003` | Polished demo/screenshot account: ~3 months across the eight tools, plus the CBT thinking spine — thought records, core beliefs, activities, self-care log |
+| Email              | Password              | UUID      | State                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------ | --------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `alice@test.local` | `test-pass-alice-123` | `...0001` | Empty account, post-signup, CBT onboarding not done                                                                                                                                                                                                                                                                                                               |
+| `bob@test.local`   | `test-pass-bob-123`   | `...0002` | Mid-use, 5 thought records, reminders enabled                                                                                                                                                                                                                                                                                                                     |
+| `demo@test.local`  | `test-pass-demo-123`  | `...0003` | Polished demo/screenshot account: ~3 months across the eight tools, plus the whole CBT module — thought records, core beliefs, activities, self-care, goals and milestones, values, worry, anger, procrastination tasks and steps, the exposure ladder, and the recovery plan — sitting mid-programme in the `behavioural` phase with today's practice still open |
 
 > The sign-in form rejects passwords shorter than 12 characters, so these seed passwords are intentionally ≥12 chars. If you change them in `seed.sql`, keep them long enough and update `SEED_USERS` to match.
 
