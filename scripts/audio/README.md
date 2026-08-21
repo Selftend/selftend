@@ -19,7 +19,45 @@ prompt returns different audio every time, and there is no re-render path. So:
   may not survive contact with the finished set.
 - The script refuses to overwrite an existing file, refuses to spend without an
   explicit `--go`, refuses to render a prompt still marked draft, and appends to
-  the manifest per clip so a crash never loses the record of what was paid for.
+  the manifest per take so a crash never loses the record of what was paid for.
+
+## ☠️ The second fact: the model has a silent tail
+
+A fixed prompt varies **16–26 dB** run to run, measured on
+[#1316](https://github.com/Selftend/selftend/issues/1316). That spread is larger
+than the +15–22 dB that rewriting a prompt buys, so **good prompts still throw
+unusable takes** — and being seedless, a good draw can never be reproduced after
+the fact. Round B drew 27 times from that distribution with nothing inspecting
+the bytes: 20 masters came back unusable for ~1,881 credits.
+
+So `render` measures every take as it lands
+([#1320](https://github.com/Selftend/selftend/issues/1320)):
+
+- **Usable at ≥ −12 dBTP, silent below −30** — the same two thresholds
+  `preflight` grades with, so a prompt faces one bar. Healthy takes measure −1
+  to −6; duds measure −40 to −47. The gap between the thresholds is empty in
+  every take measured so far.
+- A take below the bar is **kept on disk and recorded**, and the slot is drawn
+  again — up to **4 attempts**, `--attempts N` to change it. ⚠️ The bound is the
+  safety property: an unbounded re-roll against a broken prompt is unbounded
+  spend. `render` quotes both the best and the worst case before `--go`.
+- **Every attempt goes in the manifest**, kept or rejected, with its measured
+  `dbtp`/`lufs` and `rejectedFor`. A rejected take cost the same credits and is
+  equally unreproducible, so omitting it would understate the spend — and a
+  clip's rejection rate is what separates a broken prompt from an unlucky one.
+- A slot that burns its whole bound **fails the run** (non-zero exit). That
+  prompt is broken, not unlucky, and belongs back on #1316.
+
+This is a **level** gate only. Whether a take is _good_ — the right character,
+no stray events — stays a human audition call (#1210).
+
+**Resume is keyed on the prompt, not the filename.** A slot is finished only
+when an accepted take **of the prompt the catalog composes today** exists. Takes
+from a superseded prompt are never reused and never deleted; they stay on disk
+and the slot is rendered again. Without that, the 27 masters the failed pass left
+behind — every one of their prompts since rewritten by #1316, two re-concepted
+into a different sound entirely — would read as "already done" and a re-run would
+render nothing at all.
 
 Text to Speech _does_ have a seed, so the eight voice cues are semi-reproducible
 where the thirteen sound effects permanently are not. The manifest records it.
@@ -38,9 +76,15 @@ ELEVENLABS_API_KEY=... node scripts/audio/render.mjs probe
 # Prints every composed prompt and the credit cost. Spends nothing.
 node scripts/audio/render.mjs plan --round A
 
-# The real thing.
+# Grades every prompt at 4s before any real spend. Run after ANY prompt change.
+ELEVENLABS_API_KEY=... node scripts/audio/render.mjs preflight --round A
+
+# The real thing. Measures each take and re-rolls the ones below the gate.
 ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render --round A --go
 ```
+
+Both `render` commands are resumable: re-running fills only the slots still
+without an accepted take, and re-quotes the cost of exactly that.
 
 To include the TTS format probe, also set `ELEVENLABS_PROBE_VOICE_ID` to any
 Voice Library voice id.
