@@ -2,7 +2,8 @@ import { fireEvent, screen, within } from "@testing-library/react-native";
 import { StyleSheet, Text as mockText } from "react-native";
 import type { ReactElement } from "react";
 
-import { InvisibleHeader } from "./invisible-header";
+import { INVISIBLE_HEADER_HEIGHT, InvisibleHeader } from "./invisible-header";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { getTourTarget, setTourTarget } from "@/src/features/tours/tour-targets";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -94,6 +95,42 @@ describe("InvisibleHeader", () => {
     // or the absolutely-positioned brand layer swallows hamburger/menu taps.
     const layer = screen.getByTestId("invisible-header-brand-layer");
     expect(layer.props.pointerEvents).toBe("box-none");
+  });
+
+  /**
+   * `INVISIBLE_HEADER_HEIGHT` is arithmetic on these classes, and the toast's
+   * clamp is arithmetic on it (#1340): past the clamp the toast stops climbing so
+   * its top edge lands exactly on this bar's bottom edge. Nothing measures the
+   * header at runtime - the toast is root-mounted outside AppShell and has no
+   * handle on it - so a padding change here would move the header and leave the
+   * clamp behind, silently, with every test still green.
+   *
+   * Pinned as classes rather than as a rendered height because jest's `View`
+   * measures nothing. The classes ARE the height on both platforms.
+   */
+  it("keeps the classes the exported header height is computed from", () => {
+    renderWithProviders(<InvisibleHeader homeHref="/(app)" onMenuPress={jest.fn()} />);
+
+    // py-2 = 8px top and bottom.
+    expect(screen.getByTestId("invisible-header").props.className).toContain("py-2");
+    // The tallest child, and the only one that decides the row: p-3 (12px) around
+    // a size-6 (24px) icon = 48px.
+    const hamburger = screen.getByLabelText("Open navigation");
+    expect(hamburger.props.className).toContain("p-3");
+    expect(within(hamburger).UNSAFE_getByType(Icon).props.className).toContain("size-6");
+
+    expect(INVISIBLE_HEADER_HEIGHT).toBe(8 + 48 + 8);
+  });
+
+  it("keeps the signed-out row the same height as the signed-in one", () => {
+    // The constant has to hold on BOTH branches or the toast's clamp is wrong on
+    // one of them. Signed out there is no hamburger, so the `size-12` spacer is
+    // what has to be 48px - the same number the arithmetic above assumes.
+    renderWithProviders(<InvisibleHeader homeHref="/" />);
+
+    expect(screen.getByTestId("invisible-header").props.className).toContain("py-2");
+    expect(screen.getByTestId("invisible-header-nav-spacer").props.className).toContain("size-12");
+    expect(INVISIBLE_HEADER_HEIGHT).toBe(8 + 48 + 8);
   });
 
   it("renders the account menu", () => {

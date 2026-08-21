@@ -9,6 +9,23 @@ import { UserMenu } from "@/src/components/app/user-menu";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useTourTargetRef } from "@/src/features/tours/tour-targets";
 
+/**
+ * How tall the header row is, below the status-bar inset - its `py-2` (8px each
+ * side) plus its tallest child, which is 48px either way: signed in that is the
+ * hamburger's `p-3` around a `size-6` icon (12 + 24 + 12), signed out it is the
+ * `size-12` spacer that stands in for it - both branches are pinned below. The
+ * UserMenu's `size-8` trigger is shorter than both, so it never decides the row;
+ * that one is not pinned, because the header suite stubs UserMenu out.
+ *
+ * Exported because #660's rule - "the top of the screen belongs to the
+ * invisible header" - needs a NUMBER at exactly one other place: the toast
+ * clamps its climb so its top edge never crosses under this bar (#1340). A
+ * measured height would be better still, but the toast is root-mounted outside
+ * AppShell and has no handle on the header; `invisible-header.test.tsx` pins
+ * the classes this arithmetic reads, so the constant cannot drift silently.
+ */
+export const INVISIBLE_HEADER_HEIGHT = 64;
+
 interface InvisibleHeaderProps {
   /**
    * Opens the navigation panel. Omit when signed out — there is no nav, so
