@@ -37,6 +37,7 @@ import {
   VOICES as CATALOG_VOICES,
   VOICE_CUES as CATALOG_CUES,
   resolveVoices,
+  voiceSlotSpec,
 } from "../scripts/audio/catalog.mjs";
 
 const FEMALE = "21m00Tcm4TlvDq8ikWAM";
@@ -491,5 +492,29 @@ describe("outstanding voice slots", () => {
     expect(outstanding({ clips: slotsFor(), promptFor: identityOf, choices })).toContain(
       "guide_inhale|guided",
     );
+  });
+});
+
+describe("voiceSlotSpec", () => {
+  // ☠️ WHY THIS IS TESTED AT ALL. "A round is `clipsForRound` plus, if it is B,
+  // the voice cues" was re-derived by every subsystem that needed it, and two of
+  // them got it wrong the same way: `render --round B` produced eleven clips of
+  // nineteen and said nothing (#1317), and the audition's own `status` meter would
+  // have reported "every clip has a pick" with the whole voice half untouched
+  // (#1393). This function is now the single answer, which makes it the one place
+  // a third consumer — #1210's committed manifest — could inherit the bug from.
+  // Both directions matter: too few units hides unfinished work, and too many puts
+  // eight speech cues into a round that is two bells and their gate (#1159).
+
+  it("gives round B every cue in both voices", () => {
+    const spec = voiceSlotSpec("B");
+    expect(spec.voices).toBe(CATALOG_VOICES);
+    expect(spec.cues).toBe(CATALOG_CUES);
+    expect(spec.candidates).toBe(TTS_CANDIDATE_SEEDS.length);
+    expect(voiceSlots(spec)).toHaveLength(CATALOG_CUES.length * CATALOG_VOICES.length);
+  });
+
+  it("gives round A no voice at all", () => {
+    expect(voiceSlots(voiceSlotSpec("A"))).toEqual([]);
   });
 });

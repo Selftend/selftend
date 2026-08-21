@@ -237,6 +237,11 @@ describe("buildManifest", () => {
     });
     expect(doc.gaps.map((gap) => gap.kind)).toContain("stale-pick");
     expect(doc.units.find((unit) => unit.id === "rain")?.chosen?.superseded).toBe(true);
+    // ☠️ And it does not count toward the tally either. `write` prints
+    // "chosen N/19" as its headline, so a superseded pick counted there would
+    // print `chosen 19/19` over a set nobody has actually settled — the summary
+    // saying finished while the gap list underneath says otherwise.
+    expect(doc.totals.chosen).toBe(0);
   });
 
   it("names a take that has never been archived, rejects included", () => {
