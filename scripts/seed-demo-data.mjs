@@ -2900,14 +2900,26 @@ const ACT_BAND_END_HOUR = 12;
 const ACT_BAND_MINUTES = (ACT_BAND_END_HOUR - ACT_BAND_START_HOUR) * 60;
 
 // The current ACT phase start, as a day index into the rolling window (#1178):
-// `openUp`, index 2 of 4, a few days ahead of CBT's phase start rather than on
-// the same day, because one person taking up two programmes on the same
+// `openUp`, index 2 of 4, a couple of days behind CBT's phase start rather than
+// on the same day, because one person taking up two programmes on the same
 // afternoon is the tell of generated data. The rows below are generated to
 // SATISFY it — defusion rows well inside it so `unhookOnce` reads done, and no
-// expansion or urge-surf row after it so `makeRoomOnce` stays open. #1286 writes
-// the anchor to `user_preferences` and asserts the derived programme state back
-// against these rows, exactly as #1282 did for CBT.
-const ACT_PHASE_STARTED_DAY = 72;
+// expansion or urge-surf row after it so `makeRoomOnce` stays open.
+//
+// ⚠️ Kept LATE on purpose. Everything expansion and urge surfing are allowed to
+// hold stops two days before this day, so the stretch between it and today is
+// one those two surfaces cannot fill — and it is exactly as long as the phase is
+// old. A phase start early in the window would leave them looking abandoned for
+// a third of it. The gap is the STORY here (they entered `openUp`, unhooked, and
+// have not made room yet), so it is kept as short as the ruling allows rather
+// than removed.
+//
+// ☠️ #1286 writes the anchor to `user_preferences` and asserts the derived
+// programme state back against these rows, exactly as #1282 did for CBT. It must
+// anchor FROM THIS CONSTANT rather than declare its own: nothing in this slice
+// persists the anchor, so a second, different day chosen there would move the
+// phase out from under the margins below without anything failing.
+const ACT_PHASE_STARTED_DAY = 78;
 
 // The instants the future-clamp pulled out of the band, by epoch millisecond.
 //
@@ -2934,6 +2946,16 @@ function inBand(dayIndex, minutesIntoBand) {
     clampedOutOfBand.add(new Date(iso).getTime());
   }
   return iso;
+}
+
+/**
+ * Anywhere inside the band on day `dayIndex` — what almost every row here wants.
+ *
+ * Urge surfing is the one caller that does not use it, because its completion
+ * lands up to twenty minutes after its start and both have to stay in the band.
+ */
+function somewhereInBand(dayIndex) {
+  return inBand(dayIndex, between(0, ACT_BAND_MINUTES - 1));
 }
 
 /**
@@ -3069,7 +3091,7 @@ const ACT_TODAY = DAYS - 1;
       // reads as a bug the first time it does.
       const before = Math.max(20, Math.min(100, Math.round(88 - 24 * arc) + between(-6, 6)));
       const after = Math.max(5, Math.round(before * (0.74 - 0.2 * arc)));
-      const createdAt = inBand(d, between(0, ACT_BAND_MINUTES - 1));
+      const createdAt = somewhereInBand(d);
       return {
         user_id: DEMO_USER_ID,
         fused_thought: pick(fusedThoughts[category]),
@@ -3084,18 +3106,6 @@ const ACT_TODAY = DAYS - 1;
       };
     });
 
-  requireEveryVariant(
-    "act_defusion_logs.technique_used",
-    DEFUSION_TECHNIQUES,
-    rows,
-    "technique_used",
-  );
-  requireEveryVariant(
-    "act_defusion_logs.thought_category",
-    THOUGHT_CATEGORIES,
-    rows,
-    "thought_category",
-  );
   counts.act_defusion_logs = await insert("act_defusion_logs", rows);
 }
 
@@ -3156,7 +3166,7 @@ const ACT_TODAY = DAYS - 1;
       // is filled — which is why the null row leaves the type null too rather
       // than carrying a variant nothing will ever render.
       const switchAsked = i !== 5;
-      const createdAt = inBand(d, between(0, ACT_BAND_MINUTES - 1));
+      const createdAt = somewhereInBand(d);
       return {
         user_id: DEMO_USER_ID,
         emotion: emotions[i % emotions.length],
@@ -3172,18 +3182,6 @@ const ACT_TODAY = DAYS - 1;
       };
     });
 
-  requireEveryVariant(
-    "act_expansion_logs.technique_used",
-    EXPANSION_TECHNIQUES,
-    rows,
-    "technique_used",
-  );
-  requireEveryVariant(
-    "act_expansion_logs.discomfort_type",
-    DISCOMFORT_TYPES,
-    rows,
-    "discomfort_type",
-  );
   counts.act_expansion_logs = await insert("act_expansion_logs", rows);
 }
 
@@ -3295,7 +3293,7 @@ const ACT_TODAY = DAYS - 1;
 
   const buildRow = (d, i) => {
     const arc = improvement(d);
-    const createdAt = inBand(d, between(0, ACT_BAND_MINUTES - 1));
+    const createdAt = somewhereInBand(d);
     return {
       user_id: DEMO_USER_ID,
       technique: CONNECTION_TECHNIQUES[i % CONNECTION_TECHNIQUES.length],
@@ -3320,18 +3318,24 @@ const ACT_TODAY = DAYS - 1;
 
   const rows = [...days].sort((a, b) => a - b).map(buildRow);
 
-  // TODAY, twice, and this is the one place the two kinds have to be told apart:
-  // `dropAnchor` is a SUBSET of connection rather than a separate table, and the
-  // two daily legs partition it — `dropAnchorDaily` counts
-  // `technique = 'dropAnchor'` and `bePresentDaily` counts everything else. One
-  // row of either kind leaves the other reading undone, so today carries one of
-  // each and the per-day list screen opens with two entries on it.
+  // TODAY, twice. The reason is the LIST SCREEN, which shows only today: a
+  // single row opens it on one entry, a thinner picture than this account has
+  // and one that reads as a surface barely used.
+  //
+  // Two of a KIND rather than two of anything, because `dropAnchor` is a subset
+  // of connection rather than a separate table and the app splits the table on
+  // it in two places — `getLatestConnectionLogAt` filters by technique for
+  // Home's drop-anchor row, and the `foundation` and `bePresent` daily legs
+  // partition it between `technique = 'dropAnchor'` and everything else.
+  // ⚠️ Those two legs do NOT render at the seeded phase, which is `openUp`, so
+  // this is not what keeps them open today — it is what keeps the picture honest
+  // if the account is ever re-phased, and it is what puts drop-anchor in front of
+  // a reviewer at all.
   rows.push(
     { ...buildRow(ACT_TODAY, rows.length), technique: "dropAnchor" },
     { ...buildRow(ACT_TODAY, rows.length + 1), technique: "mindfulActivity" },
   );
 
-  requireEveryVariant("act_connection_logs.technique", CONNECTION_TECHNIQUES, rows, "technique");
   counts.act_connection_logs = await insert("act_connection_logs", rows);
 }
 
@@ -3365,7 +3369,7 @@ const ACT_TODAY = DAYS - 1;
     .sort((a, b) => a - b)
     .map((d, i) => {
       const arc = improvement(d);
-      const createdAt = inBand(d, between(0, ACT_BAND_MINUTES - 1));
+      const createdAt = somewhereInBand(d);
       return {
         user_id: DEMO_USER_ID,
         technique_used: OBSERVING_TECHNIQUES[i % OBSERVING_TECHNIQUES.length],
@@ -3378,12 +3382,6 @@ const ACT_TODAY = DAYS - 1;
       };
     });
 
-  requireEveryVariant(
-    "act_observing_self_sessions.technique_used",
-    OBSERVING_TECHNIQUES,
-    rows,
-    "technique_used",
-  );
   counts.act_observing_self_sessions = await insert("act_observing_self_sessions", rows);
 }
 
@@ -3446,7 +3444,7 @@ const ACT_TODAY = DAYS - 1;
     .sort((a, b) => a - b)
     .map((d, i) => {
       const worksheet = worksheets[i % worksheets.length];
-      const createdAt = inBand(d, between(0, ACT_BAND_MINUTES - 1));
+      const createdAt = somewhereInBand(d);
       return {
         user_id: DEMO_USER_ID,
         hooks: worksheet.hooks,
@@ -3490,6 +3488,26 @@ const ACT_TODAY = DAYS - 1;
   const seeded = {};
   for (const table of bandTables) seeded[table] = await createdAtMillis(table);
 
+  // VARIANT COVERAGE, off the rows the database returns rather than the arrays
+  // that built them. The enum columns are plaintext pass-throughs on the `_data`
+  // tables, so they come back readable — and reading them back is what makes
+  // this cover the encrypted views too: a variant that a write trigger's
+  // `coalesce` default quietly replaced looks correct in memory and wrong here,
+  // which is the whole reason the band check below reads back as well.
+  const variantChecks = [
+    ["act_defusion_logs", "technique_used", DEFUSION_TECHNIQUES],
+    ["act_defusion_logs", "thought_category", THOUGHT_CATEGORIES],
+    ["act_expansion_logs", "technique_used", EXPANSION_TECHNIQUES],
+    ["act_expansion_logs", "discomfort_type", DISCOMFORT_TYPES],
+    ["act_connection_logs", "technique", CONNECTION_TECHNIQUES],
+    ["act_observing_self_sessions", "technique_used", OBSERVING_TECHNIQUES],
+  ];
+  for (const [table, column, variants] of variantChecks) {
+    const { data, error } = await admin.from(table).select(column).eq("user_id", DEMO_USER_ID);
+    if (error) throw new Error(`act variant read-back (${table}.${column}): ${error.message}`);
+    requireEveryVariant(`${table}.${column}`, variants, data, column);
+  }
+
   const strays = [];
   for (const table of bandTables) {
     for (const millis of seeded[table]) {
@@ -3512,6 +3530,13 @@ const ACT_TODAY = DAYS - 1;
   // The two margins, each measured band edge to band edge. A row is late if it
   // reaches PAST the close of the band on its deadline day, which is a two-day
   // gap however early in the day the seed happens to run.
+  const makeRoomOnce =
+    "`makeRoomOnce`, which counts expansion and urge-surf rows since the phase start";
+  // ☠️ The deadline days here are RESTATED rather than shared with the loops that
+  // built the rows, and that is the point: a check reading the same constant the
+  // generator read moves with it, so nudging the generator would nudge the
+  // deadline and the check would pass on any placement at all. Two independent
+  // statements of the same rule is what gives this something to disagree with.
   const margins = [
     {
       table: "act_defusion_logs",
@@ -3523,12 +3548,12 @@ const ACT_TODAY = DAYS - 1;
     {
       table: "act_expansion_logs",
       latestAllowedDay: ACT_PHASE_STARTED_DAY - 2,
-      breaks: "`makeRoomOnce`, which counts expansion and urge-surf rows since the phase start",
+      breaks: makeRoomOnce,
     },
     {
       table: "act_urge_surf_logs",
       latestAllowedDay: ACT_PHASE_STARTED_DAY - 2,
-      breaks: "`makeRoomOnce`, which counts expansion and urge-surf rows since the phase start",
+      breaks: makeRoomOnce,
     },
   ];
 
