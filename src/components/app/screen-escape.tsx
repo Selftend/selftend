@@ -116,7 +116,10 @@ export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
       testID="screen-escape"
       className="shrink flex-row items-center gap-1 active:opacity-70"
     >
-      <Icon name={glyph} className="size-4 text-muted-foreground" />
+      {/* `shrink-0`, because the row above shrinks: the glyph is the affordance
+          and must keep its full 16dp target however tight the row gets. Only the
+          name beside it gives way. */}
+      <Icon name={glyph} className="size-4 shrink-0 text-muted-foreground" />
       {/* R5: the arrow wears the destination's NAME when it leads to an Origin.
           A bare arrow identical to Up but leading elsewhere is a silent
           divergence - and on a one-crumb screen like Reminders the trail is
