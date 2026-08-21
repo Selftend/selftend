@@ -97,9 +97,13 @@ function at(dayIndex, hour, minute = 0) {
  * in the future.
  */
 function dayKeyAt(dayIndex) {
-  const d = dayAt(dayIndex);
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  return `${d.getFullYear()}-${month}-${String(d.getDate()).padStart(2, "0")}`;
+  return localDayKey(dayAt(dayIndex));
+}
+
+/** A `Date`'s civil day as `YYYY-MM-DD`, read off the LOCAL getters. */
+function localDayKey(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 /**
@@ -176,6 +180,20 @@ async function insert(table, rows) {
     if (error) throw new Error(`insert ${table} (chunk ${i}): ${error.message}`);
   }
   return rows.length;
+}
+
+/**
+ * Insert one parent row and hand back the id the database chose for it.
+ *
+ * The FK chains thread through this rather than through ids generated up here.
+ * Nothing displays an id and no test pins one, so a pre-generated uuid would add
+ * a second thing the seed has to keep stable for no gain — the contract is that
+ * a re-run reproduces the same PICTURE, and ids are not part of the picture.
+ */
+async function insertReturningId(table, row) {
+  const { data, error } = await admin.from(table).insert(row).select("id").single();
+  if (error) throw new Error(`insert ${table}: ${error.message}`);
+  return data.id;
 }
 
 const counts = {};
@@ -635,8 +653,7 @@ let customExerciseId;
   let logRows = 0;
   for (const h of habits) {
     const { adherence, ...habit } = h;
-    const { data, error } = await admin.from("habits").insert(habit).select("id").single();
-    if (error) throw new Error(`habits: ${error.message}`);
+    const habitId = await insertReturningId("habits", habit);
     habitRows++;
     const startDay = Math.round((new Date(habit.created_at) - new Date(at(0, 0))) / 86_400_000);
     const logs = [];
@@ -651,7 +668,7 @@ let customExerciseId;
       if (rng() < adherence) {
         logs.push({
           user_id: DEMO_USER_ID,
-          habit_id: data.id,
+          habit_id: habitId,
           logged_on: date.toISOString().slice(0, 10),
           note: chance(0.06) ? "Nearly skipped, glad I didn't." : "",
         });
@@ -729,9 +746,25 @@ let customExerciseId;
 // only fires because the view's INSTEAD OF trigger deletes from `_data` first.
 // That was verified live on #1182; the guard does NOT cover it.
 //
-// Each slice adds the parents and standalone tables it seeds. All four below
-// are standalone — the CBT thinking spine has no chains (#1281).
-const CBT_ACT_WIPE_TABLES = ["thought_records", "core_beliefs", "activity_logs", "self_care_logs"];
+// Each slice adds the parents and standalone tables it seeds. The first four
+// are standalone — the CBT thinking spine has no chains (#1281). The seven that
+// follow are the structured work (#1282), and four of them head a chain:
+// `goals` -> milestones, `procrastination_tasks` -> task_steps,
+// `exposure_hierarchies` -> exposure_items -> exposure_sessions, and
+// `recovery_plans` -> challenge_plans.
+const CBT_ACT_WIPE_TABLES = [
+  "thought_records",
+  "core_beliefs",
+  "activity_logs",
+  "self_care_logs",
+  "goals",
+  "values_profile",
+  "worry_entries",
+  "anger_logs",
+  "procrastination_tasks",
+  "exposure_hierarchies",
+  "recovery_plans",
+];
 
 for (const table of CBT_ACT_WIPE_TABLES) {
   await wipe(table);
@@ -777,7 +810,63 @@ const SETBACK_FROM_DAY = 53;
 const SETBACK_TO_DAY = 64;
 const inSetback = (dayIndex) => dayIndex >= SETBACK_FROM_DAY && dayIndex <= SETBACK_TO_DAY;
 
+/**
+ * How far along the improvement arc day `dayIndex` sits: 0 at the start of the
+ * window, 1 today — except through the setback, where it drops back to roughly
+ * where it stood three weeks earlier.
+ *
+ * The three rated series in the structured work ride this: worry probability
+ * estimates, anger arousal levels and exposure session distress. Each maps it
+ * onto its own scale, but they have to bend in the SAME place — three
+ * hand-rolled curves drift apart the first time one of them is nudged, and the
+ * setback stops reading as one bad stretch in one life and starts reading as
+ * noise. Nothing in either module charts a series (#1174), so this is legible
+ * only by reading numbers down a list, which is exactly why it has to be clean.
+ */
+function improvement(dayIndex) {
+  const effective = inSetback(dayIndex) ? SETBACK_FROM_DAY - 18 : dayIndex;
+  return Math.max(0, Math.min(1, effective / (DAYS - 1)));
+}
+
 const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating, isHotThought });
+
+// The enum-valued columns whose variants all have to render at least once. Each
+// list mirrors the CHECK constraint on the matching `_data` table, and the
+// matching TypeScript union the app reads it through:
+//
+//   goals.status                 20260514_cbt_phase1.sql      src/features/goals/types.ts
+//   procrastination_tasks.status 20260516000000_cbt_phase4.sql
+//                                                    src/features/procrastination/types.ts
+//   worry_entries.worry_category 20260515_cbt_phase3.sql      src/features/worry/types.ts
+//
+// ⚠️ Mirrored, not read from the live constraints. The parent spec (#1273)
+// asked for the variants to be read off the database so the list cannot rot
+// when an enum gains a variant; doing that needs an RPC exposing the CHECK
+// bodies, which no migration in this repo provides and which is nobody's ticket
+// yet. Until one exists, this catches the failure that actually happens — a
+// variant losing its only row — and a NEW variant still has to be added here by
+// hand. Adding it is what makes the check fail until something renders it.
+const GOAL_STATUSES = ["active", "completed", "paused", "abandoned"];
+const TASK_STATUSES = ["active", "completed", "abandoned"];
+const WORRY_CATEGORIES = ["hypothetical", "real_problem"];
+
+/**
+ * Fail unless every declared variant appears at least once among `rows`.
+ *
+ * The failure this prevents is a status badge or a category label that never
+ * renders on the demo account, which is invisible until someone opens the one
+ * screen that would have shown it. Reads the rows rather than the loop that
+ * built them, so deleting the last row carrying a variant trips it.
+ */
+function requireEveryVariant(column, variants, rows, field = "status") {
+  const seen = new Set(rows.map((row) => row[field]));
+  const missing = variants.filter((variant) => !seen.has(variant));
+  if (missing.length > 0) {
+    throw new Error(
+      `No seeded row uses ${column} = ${missing.join(" or ")}, so that variant never renders.`,
+    );
+  }
+}
 
 // -------------------------------------------------------- thought records
 {
@@ -1477,6 +1566,1234 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
       };
     });
   counts.self_care_logs = await insert("self_care_logs", rows);
+}
+
+// --------------------------------------------- CBT: the structured work
+// Goals and their milestones, the values profile, worry entries, anger logs,
+// procrastination tasks and their steps, the exposure hierarchies with their
+// items and sessions, and the recovery plan with its challenge plans (#1282).
+//
+// Same life as the thinking spine above, same content ceiling: distress about
+// performance, standing and relationships, role-only, never about living, and
+// every distressing row keeps its answering field filled.
+//
+// VARIANT COVERAGE IS THE FLOOR, not volume (#1181). Every enum-valued column
+// below shows every variant at least once — all four goal statuses, all three
+// task statuses, both worry categories — because a status badge or category
+// label that never renders is exactly the kind of thing that breaks unnoticed.
+//
+// FOUR FOREIGN-KEY CHAINS are threaded here, each by inserting the parent and
+// selecting its id back (`insertReturningId`), the same shape the habits block
+// above uses.
+
+// ------------------------------------------------------------------- goals
+{
+  // `completedDay: null` is an open milestone. Every status the goals screen
+  // branches on appears: `active` fills the main list, and `completed`,
+  // `paused` and `abandoned` are what the "Past goals" section renders — a
+  // section that stays invisible on an account with only active goals.
+  const goals = [
+    {
+      title: "Speak up once in every team meeting",
+      description:
+        "Not a speech. One question, one opinion, one 'can we come back to that' — anything " +
+        "that puts my voice in the room before the meeting ends.",
+      life_domain: "work",
+      goal_type: "doMore",
+      status: "active",
+      createdDay: 9,
+      targetDay: DAYS + 30,
+      milestones: [
+        ["Ask one clarifying question in a meeting", 20, 18],
+        ["Say one opinion out loud without rehearsing it first", 38, 41],
+        ["Volunteer to run one agenda item", 62, null],
+        ["Present a piece of work to the wider group", DAYS + 24, null],
+      ],
+    },
+    {
+      title: "Be in bed before midnight on work nights",
+      description:
+        "The 2am spiral costs me the whole next day, and the next day is where the work is. " +
+        "Lights out before midnight, Sunday to Thursday.",
+      life_domain: "health",
+      goal_type: "improveQuality",
+      status: "active",
+      createdDay: 16,
+      targetDay: DAYS + 14,
+      milestones: [
+        ["Phone charges in the kitchen, not by the bed", 24, 25],
+        ["No work email after nine", 44, null],
+        ["Three work nights in a row before midnight", 70, null],
+      ],
+    },
+    {
+      title: "Finish the evening course I keep deferring",
+      description:
+        "Eight sessions. I have started it twice and dropped it twice, both times in the week " +
+        "after a bad review.",
+      life_domain: "personalGrowth",
+      goal_type: "doMore",
+      status: "completed",
+      createdDay: 12,
+      targetDay: 70,
+      milestones: [
+        ["Enrol and pay, so dropping out costs something", 18, 17],
+        ["Get through the first four sessions", 40, 43],
+        ["Hand in the final piece", 68, 66],
+      ],
+    },
+    {
+      title: "Swim at the harbour pool twice a week",
+      description:
+        "Paused, not dropped: the pool is closed for repairs until the spring. It goes back on " +
+        "the list the week it reopens.",
+      life_domain: "leisure",
+      goal_type: "doMore",
+      status: "paused",
+      createdDay: 20,
+      targetDay: DAYS + 40,
+      milestones: [
+        ["Buy a ten-swim pass", 26, 27],
+        ["Two swims in the same week", 48, null],
+      ],
+    },
+    {
+      title: "Host something at home every month",
+      description:
+        "Dropped this one on purpose. It was a should rather than a want, and leaving it on the " +
+        "list was its own small weight.",
+      life_domain: "relationships",
+      goal_type: "improveRelationship",
+      status: "abandoned",
+      createdDay: 6,
+      targetDay: 60,
+      milestones: [["Pick a date and tell one person", 14, null]],
+    },
+    {
+      title: "Cut the late-night scrolling",
+      description:
+        "Not down to zero. Just not the hour between eleven and midnight, which is the hour it " +
+        "costs the most.",
+      life_domain: "other",
+      goal_type: "doLess",
+      status: "active",
+      createdDay: 34,
+      targetDay: DAYS + 8,
+      milestones: [
+        ["Move the apps off the home screen", 38, 39],
+        ["Charge the phone outside the bedroom on work nights", 56, null],
+      ],
+    },
+  ];
+
+  let goalRows = 0;
+  let milestoneRows = 0;
+  for (const goal of goals) {
+    const { createdDay, targetDay, milestones, ...fields } = goal;
+    const createdAt = at(createdDay, 20, 15);
+    const goalId = await insertReturningId("goals", {
+      user_id: DEMO_USER_ID,
+      ...fields,
+      // A calendar day, not an instant — and built through `dayKeyAt`, never by
+      // slicing an ISO string, which files evening rows on the wrong day west
+      // of Greenwich.
+      target_date: dayKeyAt(targetDay),
+      created_at: createdAt,
+      updated_at: createdAt,
+    });
+    goalRows++;
+
+    milestoneRows += await insert(
+      "milestones",
+      milestones.map(([description, milestoneTargetDay, completedDay]) => {
+        const milestoneCreatedAt = at(createdDay, 20, 30);
+        const completedAt = completedDay === null ? null : at(completedDay, between(9, 20), 0);
+        return {
+          user_id: DEMO_USER_ID,
+          goal_id: goalId,
+          description,
+          target_date: dayKeyAt(milestoneTargetDay),
+          completed_at: completedAt,
+          created_at: milestoneCreatedAt,
+          updated_at: completedAt ?? milestoneCreatedAt,
+        };
+      }),
+    );
+  }
+  requireEveryVariant("goals.status", GOAL_STATUSES, goals);
+  counts.goals = goalRows;
+  counts.milestones = milestoneRows;
+}
+
+// ---------------------------------------------------------------- values
+{
+  // ☠️ ONE ROW. `values_profile` is a per-user singleton — the `life_domain`
+  // column was dropped, the table carries a personal-values JSON column, and
+  // the base table's `unique (user_id)` is resolved by the view's insert
+  // trigger as a merge. A second insert would silently overwrite the first
+  // rather than adding to it.
+  //
+  // Seven values sit at tier 1 and six of them fill the priority list to its
+  // cap, so the screen renders BOTH branches that only appear at the cap: the
+  // "maximum priorities reached" note, and a tier-1 value still sitting outside
+  // a full list.
+  //
+  // ☠️ `updated_at` cannot be backdated through this view: the insert trigger
+  // hard-sets `timezone('utc', now())` with no coalesce. Inert here — the
+  // milestone that reads it, `clarifyValues`, belongs to phase 0 and the
+  // seeded account is on phase 3 — but a re-phasing would make a seeded values
+  // profile satisfy that milestone no matter what date it claims.
+  const tier = (keys, value) => keys.map((key) => ({ key, tier: value }));
+  const highlyImportant = [
+    "courageous",
+    "authentic",
+    "self-aware",
+    "honesty",
+    "caring",
+    "industrious",
+    "curious",
+  ];
+  const createdAt = at(10, 20, 45);
+  const valuesRows = await insert("values_profile", [
+    {
+      user_id: DEMO_USER_ID,
+      personal_values: [
+        ...tier(highlyImportant, 1),
+        ...tier(["encouraging", "flexible", "open-minded", "patient", "fitness", "gratitude"], 2),
+        ...tier(["conforming", "orderly", "safe", "humility"], 3),
+      ],
+      // Tier-1 only, in the order they were ranked. `curious` is deliberately
+      // left out: it keeps one candidate outside a full list.
+      priority_values: highlyImportant.slice(0, 6),
+      created_at: createdAt,
+    },
+  ]);
+  // Taken from the insert rather than written as a literal 1: the end-of-run
+  // "wiped but not re-seeded" gate reads these counts, and a hardcoded number
+  // beside a deleted insert makes that gate assert itself.
+  counts.values_profile = valuesRows;
+}
+
+// ----------------------------------------------------------------- worry
+{
+  // ☠️ The worry screen is a PER-DAY view — it filters to
+  // `toLocalDateKey(entry.createdAt) === selectedDate` — so however many
+  // entries exist, it opens EMPTY unless something is dated today. The last two
+  // rows below are today's, one of each category, so both the hypothetical and
+  // the real-problem card render on the screen as it first opens.
+  //
+  // Probability estimates ride the shared improvement arc: high early, falling
+  // across the window, and back up through the setback.
+  // Named fields rather than positional tuples: the two evidence lists and the
+  // action steps are three same-typed arrays in a row, and swapping the
+  // evidence for a worry with the evidence against it would invert the entry
+  // while every check here still passed.
+  //
+  // `actionSteps` belongs to a real problem — something that can be
+  // problem-solved — and stays empty on a hypothetical, which is the actual CBT
+  // distinction between the two categories rather than a gap. Both categories
+  // always carry a coping statement, because a distressing row without its
+  // answering field is not one this seed will write.
+  const entries = [
+    {
+      day: 4,
+      category: "hypothetical",
+      statement: "If the reorg goes through, I'm the one they cut.",
+      coping:
+        "I can't audit a rumour. I can keep the work visible and let the announcement be the " +
+        "announcement.",
+      evidenceFor: ["Two teams were merged last year.", "Nobody has said anything either way."],
+      evidenceAgainst: [
+        "My last three pieces of work shipped.",
+        "The rumour has come round twice and nothing followed.",
+      ],
+      actionSteps: [],
+      resolved: true,
+    },
+    {
+      day: 11,
+      category: "real_problem",
+      statement: "The handover doc is half-written and it is due Friday.",
+      coping: "Half-written is not unwritten.",
+      evidenceFor: ["Two sections are still bullet points."],
+      evidenceAgainst: ["The hard section is already done.", "Friday is four working days away."],
+      actionSteps: [
+        "Block ninety minutes first thing tomorrow.",
+        "Send the draft even if the last section stays in bullets.",
+        "Ask for a read-through by Thursday.",
+      ],
+      resolved: true,
+    },
+    {
+      day: 19,
+      category: "hypothetical",
+      statement: "If I ask for help they'll work out I have been struggling all quarter.",
+      coping:
+        "Asking is what people who are on top of their work do. It is the not-asking that reads " +
+        "as struggling.",
+      evidenceFor: ["I have not asked for anything in months."],
+      evidenceAgainst: ["Everyone else asks, constantly, and nobody thinks less of them."],
+      actionSteps: [],
+      resolved: true,
+    },
+    {
+      day: 26,
+      category: "real_problem",
+      statement: "I owe two people replies from last week.",
+      coping: "Late is recoverable. Silent is what turns it into a thing.",
+      evidenceFor: ["Both have been waiting six days."],
+      evidenceAgainst: ["Neither has chased.", "Both replies are five minutes of work."],
+      actionSteps: [
+        "Reply to both before lunch, badly if necessary.",
+        "Say sorry once, not three times.",
+      ],
+      resolved: true,
+    },
+    {
+      day: 33,
+      category: "hypothetical",
+      statement: "The quiet in the review meant they were being polite.",
+      coping: "Quiet is quiet. I am reading a whole verdict into an absence of words.",
+      evidenceFor: ["Nobody said much at the end."],
+      evidenceAgainst: [
+        "The written notes afterwards were specific and positive.",
+        "That meeting always runs short.",
+      ],
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 41,
+      category: "real_problem",
+      statement: "The bill for the flat repairs lands before payday.",
+      coping: "This one is arithmetic, not catastrophe.",
+      evidenceFor: ["The bill is due on the 28th and payday is the 1st."],
+      evidenceAgainst: ["There is enough in savings to bridge three days."],
+      actionSteps: [
+        "Move the standing order back by a week.",
+        "Ask whether they take payment on delivery.",
+      ],
+      resolved: true,
+    },
+    {
+      day: 48,
+      category: "hypothetical",
+      statement: "If I take the leave I have booked, the work piles up and it shows.",
+      coping:
+        "The work piles up whether I am there or not. Leave is not the thing that makes it " +
+        "visible.",
+      evidenceFor: ["Nobody is covering my queue."],
+      evidenceAgainst: [
+        "The queue survived the last two weeks I was off.",
+        "The leave was approved by the person who owns the queue.",
+      ],
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 55,
+      category: "hypothetical",
+      statement: "They have stopped asking me to the planning calls because I have slipped.",
+      coping:
+        "I was not on the last two invites. That is a fact about two invites, not about my " +
+        "standing.",
+      evidenceFor: ["Two invites in a row went out without me."],
+      evidenceAgainst: [
+        "Both were scoping calls for a project I am not on.",
+        "I was asked to the one that mattered.",
+      ],
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 58,
+      category: "real_problem",
+      statement: "I said yes to a piece of work I do not have room for.",
+      coping:
+        "Saying so now is a small awkward conversation. Saying so in three weeks is a big one.",
+      evidenceFor: ["My next two weeks are already full."],
+      evidenceAgainst: [
+        "It was scoped before the other thing landed, so the reason is real and checkable.",
+      ],
+      actionSteps: [
+        "Say today that the dates no longer work.",
+        "Offer the two weeks after, or offer to hand it on.",
+      ],
+      resolved: true,
+    },
+    {
+      day: 61,
+      category: "hypothetical",
+      statement: "One bad fortnight and the whole year gets read as a bad year.",
+      coping: "Nobody is holding a running average of me. I am the only one keeping that score.",
+      evidenceFor: ["The last two weeks have been thin."],
+      evidenceAgainst: [
+        "Nine months of the year were not thin.",
+        "Nobody has said a word about the last two weeks.",
+      ],
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 68,
+      category: "real_problem",
+      statement: "The talk I agreed to give is in three weeks and I have written nothing.",
+      coping: "Three weeks is enough if it starts being three weeks and not three days.",
+      evidenceFor: ["There is no outline yet."],
+      evidenceAgainst: [
+        "I have given this talk in pieces a dozen times.",
+        "Three weeks is six writing sessions.",
+      ],
+      actionSteps: ["Outline it on Sunday, badly.", "Book two hours a week in the calendar now."],
+      resolved: false,
+    },
+    {
+      day: 74,
+      category: "hypothetical",
+      statement: "If I get the presentation wrong, that is what they will remember.",
+      coping:
+        "People remember whether the thing was useful. I am the only one who will remember the " +
+        "wobble.",
+      evidenceFor: ["It is the biggest room I have presented to."],
+      evidenceAgainst: [
+        "I have never once remembered anyone else's wobble.",
+        "The material is the part they came for.",
+      ],
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 80,
+      category: "real_problem",
+      statement: "The course deadline and the release land in the same week.",
+      coping:
+        "Two hard things in one week is a scheduling problem, and scheduling problems have " +
+        "answers.",
+      evidenceFor: ["Both are fixed dates."],
+      evidenceAgainst: [
+        "The course piece can be finished a week early.",
+        "The release week is quiet after Tuesday.",
+      ],
+      actionSteps: [
+        "Finish the course piece by the weekend before.",
+        "Block Wednesday afternoon for the release.",
+      ],
+      resolved: false,
+    },
+    {
+      day: 86,
+      category: "hypothetical",
+      statement: "The new starter is faster than me and everyone can see it.",
+      coping: "Fast at week three is fast at the easy part. Nobody is running a comparison but me.",
+      evidenceFor: ["They cleared the intro queue in two days."],
+      evidenceAgainst: [
+        "That queue is the part I do in my sleep.",
+        "Speed on the easy work is not the job.",
+      ],
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: DAYS - 1,
+      category: "real_problem",
+      statement: "I have agreed to two things this week that overlap.",
+      coping: "One of them can move. I just have to be the one who says so.",
+      evidenceFor: ["Both are booked for Thursday afternoon."],
+      evidenceAgainst: ["One of the two has no fixed date at all."],
+      actionSteps: ["Move the flexible one to next week before the end of today."],
+      resolved: false,
+    },
+    {
+      day: DAYS - 1,
+      category: "hypothetical",
+      statement: "If I am the one who raises the problem, it becomes my problem.",
+      coping: "It is already everyone's problem. Naming it is not the same as owning it.",
+      evidenceFor: ["Nobody else has mentioned it."],
+      evidenceAgainst: [
+        "The last two things I raised were picked up by the people who owned them.",
+      ],
+      actionSteps: [],
+      resolved: false,
+    },
+  ];
+
+  const rows = entries.map((entry) => {
+    const createdAt = at(entry.day, between(8, 21), between(0, 59));
+    const estimate = Math.round(85 - 55 * improvement(entry.day)) + between(-6, 6);
+    return {
+      user_id: DEMO_USER_ID,
+      worry_statement: entry.statement,
+      worry_category: entry.category,
+      probability_estimate: Math.max(0, Math.min(100, estimate)),
+      evidence_for: entry.evidenceFor,
+      evidence_against: entry.evidenceAgainst,
+      coping_statement: entry.coping,
+      action_steps: entry.actionSteps,
+      resolved: entry.resolved,
+      created_at: createdAt,
+      updated_at: createdAt,
+    };
+  });
+
+  requireEveryVariant("worry_entries.worry_category", WORRY_CATEGORIES, rows, "worry_category");
+  counts.worry_entries = await insert("worry_entries", rows);
+}
+
+// ----------------------------------------------------------------- anger
+{
+  // ☠️ The anger screen is a PER-DAY view too, and it has a second branch a
+  // single row cannot reach: at three or more logs on the selected day it puts
+  // a count summary above the list. Three of the rows below are today's, so the
+  // screen opens on both the list AND the summary.
+  //
+  // Arousal falls across the window and climbs again through the setback;
+  // outcome ratings move the other way. One outcome is deliberately null —
+  // rating the aftermath is optional, and the detail screen has a branch for a
+  // log that was never rated.
+  // Named fields rather than positional tuples: five of these are same-typed
+  // strings sitting next to each other, and swapping the urge with the
+  // behaviour, or the consequence with the reappraisal, would invert what the
+  // row says about the person while every check here still passed.
+  const logs = [
+    {
+      day: 7,
+      trigger: "Talked over twice in the same meeting.",
+      interpretation: "They think what I have to say is filler.",
+      urge: "Say nothing for the rest of the hour and let them notice.",
+      chose: "Went quiet and stayed quiet.",
+      consequence: "Left angrier than I went in, and nobody noticed.",
+      timeOut: false,
+      alternative: "The agenda was overrunning and everyone was cutting everyone off.",
+    },
+    {
+      day: 15,
+      trigger: "A decision I had spent a week on was reversed in a two-line message.",
+      interpretation: "A week of my work is worth two lines to them.",
+      urge: "Reply immediately, at length, with receipts.",
+      chose: "Drafted the reply and did not send it.",
+      consequence: "Slept on it and asked one question the next morning instead.",
+      timeOut: true,
+      alternative:
+        "The message was two lines because they were between meetings, not because the work " +
+        "was worth two lines.",
+    },
+    {
+      day: 23,
+      trigger: "Someone repeated my point back to the room and it landed this time.",
+      interpretation: "It only counts when they say it.",
+      urge: "Say 'I literally just said that.'",
+      chose: "Said nothing and stewed.",
+      consequence: "Spent the rest of the meeting rehearsing what I should have said.",
+      timeOut: false,
+      alternative:
+        "The room was still catching up on the point; the second telling had the room's " +
+        "attention, not better content.",
+      // The one log with no outcome rating. Rating the aftermath is optional in
+      // the form, so the branch that renders a log without one has to be
+      // reachable — and marking the row is honest in a way that testing the
+      // loop index was not.
+      unrated: true,
+    },
+    {
+      day: 31,
+      trigger: "Chased for something I had already sent.",
+      interpretation: "They do not read anything I send.",
+      urge: "Forward the original with the timestamp visible.",
+      chose: "Forwarded it, then added a line saying no problem.",
+      consequence: "Fine, and over in a minute.",
+      timeOut: false,
+      alternative: "Their inbox is a mess and it has nothing to do with me.",
+    },
+    {
+      day: 39,
+      trigger: "The plan changed on the day, again.",
+      interpretation: "Nothing I schedule is safe.",
+      urge: "Point out this is the third time.",
+      chose: "Took ten minutes outside before responding.",
+      consequence:
+        "Came back and asked what had moved, which turned out to be a genuinely good reason.",
+      timeOut: true,
+      alternative: "The change came from outside the team and nobody chose it.",
+    },
+    {
+      day: 47,
+      trigger: "Cut off mid-sentence on a call.",
+      interpretation: "I am not worth waiting for.",
+      urge: "Talk over the top of them.",
+      chose: "Waited, then finished the sentence.",
+      consequence: "The point landed and the call moved on.",
+      timeOut: false,
+      alternative: "The lag on the call was two seconds and we both kept starting at once.",
+    },
+    {
+      day: 56,
+      trigger: "My name was not on the invite for the thing I built.",
+      interpretation: "They have written me out of it.",
+      urge: "Ask, pointedly, who put the list together.",
+      chose: "Sent a flat one-liner asking to be added.",
+      consequence: "Added within the minute, with an apology.",
+      timeOut: false,
+      alternative: "The list was copied from an old thread that predates my part of it.",
+    },
+    {
+      day: 60,
+      trigger: "A piece of feedback landed as a list with no first line.",
+      interpretation: "There was nothing worth putting in a first line.",
+      urge: "Reply asking whether any of it was any good.",
+      chose: "Read it twice, then closed the laptop for an hour.",
+      consequence:
+        "Came back and found four of the seven points were things I already planned to change.",
+      timeOut: true,
+      alternative: "They write every review as a list. There is never a first line, for anyone.",
+    },
+    {
+      day: 64,
+      trigger: "Interrupted at home while trying to finish something late.",
+      interpretation: "Nobody takes what I am doing seriously.",
+      urge: "Snap, and go back to the screen.",
+      chose: "Snapped, then came back ten minutes later and said so.",
+      consequence: "Sorted, but the ten minutes cost more than the interruption did.",
+      timeOut: true,
+      alternative:
+        "It was a question that took four seconds, and I had been at the screen for five hours.",
+    },
+    {
+      day: 71,
+      trigger: "The scope grew on the day of the handover.",
+      interpretation: "They will keep adding until I break.",
+      urge: "Accept it and work the weekend.",
+      chose: "Said what would fit and what would not, in writing.",
+      consequence: "Half of it moved to the next cycle without any argument at all.",
+      timeOut: false,
+      alternative:
+        "Nobody had a list of what was already in scope. Writing it down was the whole fix.",
+    },
+    {
+      day: 79,
+      trigger: "A question in the review that sounded like an accusation.",
+      interpretation: "They have decided the answer already.",
+      urge: "Get defensive and over-explain.",
+      chose: "Asked what was behind the question before answering it.",
+      consequence: "It was a genuine question, and the answer took one line.",
+      timeOut: false,
+      alternative: "Short questions sound sharp in a quiet room.",
+    },
+    {
+      day: DAYS - 1,
+      trigger: "Third message before nine asking where something is.",
+      interpretation: "They think I am the problem here.",
+      urge: "Reply with exactly how long the thing actually takes.",
+      chose: "Answered the question and put the deadline in the reply.",
+      consequence: "No further messages.",
+      timeOut: false,
+      alternative: "They are being chased by someone else and passing it straight down.",
+    },
+    {
+      day: DAYS - 1,
+      trigger: "A change to the afternoon's plan with no notice.",
+      interpretation: "My time is the flexible kind.",
+      urge: "Say yes and be quietly furious.",
+      chose: "Said the afternoon was booked and offered tomorrow.",
+      consequence: "Tomorrow was fine.",
+      timeOut: false,
+      alternative: "They did not know the afternoon was booked, because I had not said so.",
+    },
+    {
+      day: DAYS - 1,
+      trigger: "Read a message as sarcastic and lost twenty minutes to it.",
+      interpretation: "That was a dig.",
+      urge: "Screenshot it and show someone so they agree it was a dig.",
+      chose: "Left it alone and did something else for twenty minutes.",
+      consequence: "Reread it in the evening and could not find the dig anywhere in it.",
+      timeOut: true,
+      alternative: "There is no tone in a one-line message. I supplied the tone.",
+    },
+  ];
+
+  const rows = logs.map((log) => {
+    const createdAt = at(log.day, between(9, 21), between(0, 59));
+    const arousal = Math.round(9 - 5 * improvement(log.day)) + between(-1, 1);
+    const outcome = Math.round(3 + 5 * improvement(log.day)) + between(-1, 1);
+    return {
+      user_id: DEMO_USER_ID,
+      trigger_text: log.trigger,
+      interpretation: log.interpretation,
+      arousal_level: Math.max(1, Math.min(10, arousal)),
+      urge: log.urge,
+      behavior_chosen: log.chose,
+      consequence: log.consequence,
+      time_out_taken: log.timeOut,
+      alternative_interpretation: log.alternative,
+      outcome_rating: log.unrated ? null : Math.max(1, Math.min(10, outcome)),
+      notes: "",
+      created_at: createdAt,
+      updated_at: createdAt,
+    };
+  });
+
+  // Read off the BUILT ROWS, not off a flag the loop set: the flag version
+  // asked whether a hardcoded index had been visited, which a fixed-length
+  // literal array answers yes to no matter what the rows say. Both branches of
+  // the detail screen have to be reachable, so neither all-rated nor
+  // none-rated is a usable dataset.
+  const unrated = rows.filter((row) => row.outcome_rating === null).length;
+  if (unrated === 0 || unrated === rows.length) {
+    throw new Error(
+      `${unrated === 0 ? "Every" : "No"} anger log carries an outcome rating, so the detail ` +
+        "screen renders only one of its two branches.",
+    );
+  }
+  counts.anger_logs = await insert("anger_logs", rows);
+}
+
+// ------------------------------------------------------- procrastination
+{
+  // All three task statuses: `active` fills the main list, `completed` and
+  // `abandoned` are what the "Past" section renders.
+  const tasks = [
+    {
+      task_description: "Write the handover doc",
+      avoidance_reason: "It means admitting how much of it only lives in my head.",
+      fear_thought: "Writing it down shows how thin the actual system is.",
+      challenged_thought: "The gaps are the reason to write it, not the reason not to.",
+      reward: "A proper lunch away from the desk.",
+      status: "completed",
+      createdDay: 18,
+      deadlineDay: 30,
+      steps: [
+        ["List the sections without writing any of them", 15, 19],
+        ["Write the two sections I already know cold", 60, 21],
+        ["Write the section I have been avoiding", 90, 26],
+        ["Send it for one read-through", 10, 29],
+      ],
+    },
+    {
+      task_description: "Book the dentist",
+      avoidance_reason: "Six months of not booking it makes the call itself embarrassing.",
+      fear_thought: "They will ask why I left it this long.",
+      challenged_thought: "They book people who left it longer, every single day.",
+      reward: "Cross it off the list that has carried it since spring.",
+      status: "active",
+      createdDay: 44,
+      deadlineDay: null,
+      steps: [
+        ["Find the number", 5, 45],
+        ["Make the call before lunch", 10, null],
+        ["Put the appointment in the calendar", 2, null],
+      ],
+    },
+    {
+      task_description: "Draft the talk",
+      avoidance_reason: "Starting it makes it real, and unstarted it is still perfect.",
+      fear_thought: "Whatever I write first will be obviously thin.",
+      challenged_thought:
+        "The first draft is supposed to be thin. That is what a first draft is for.",
+      reward: "An afternoon off the week it is done.",
+      status: "active",
+      createdDay: 57,
+      deadlineDay: DAYS + 12,
+      steps: [
+        ["Write the one sentence the talk is about", 10, 59],
+        ["Outline five sections, badly", 45, null],
+        ["Draft the opening", 60, null],
+        ["Read it out loud once, alone", 30, null],
+      ],
+    },
+    {
+      task_description: "Rebuild the personal site",
+      avoidance_reason:
+        "Nobody is asking for it, so every hour on it feels like it needs justifying.",
+      fear_thought: "If I put it up and nothing happens, that says something.",
+      challenged_thought: "Nothing happening is the normal outcome and it says nothing at all.",
+      reward: "",
+      status: "abandoned",
+      createdDay: 29,
+      deadlineDay: null,
+      steps: [
+        ["Decide what the site is even for", 30, 31],
+        ["Pick a template and stop researching templates", 45, null],
+      ],
+    },
+    {
+      task_description: "Sort the paperwork drawer before the tax deadline",
+      avoidance_reason: "The drawer is a year of small avoided decisions in one place.",
+      fear_thought: "There is something in there I should have dealt with months ago.",
+      challenged_thought: "Whatever is in there gets worse by staying in there.",
+      reward: "The drawer closes properly again.",
+      status: "active",
+      createdDay: 81,
+      deadlineDay: DAYS + 26,
+      steps: [
+        ["Empty the drawer onto the table", 10, 82],
+        ["Three piles: keep, act, bin", 30, 85],
+        ["Deal with the act pile", 90, null],
+      ],
+    },
+  ];
+
+  let taskRows = 0;
+  let stepRows = 0;
+  for (const task of tasks) {
+    const { createdDay, deadlineDay, steps, ...fields } = task;
+    const createdAt = at(createdDay, 21, 0);
+    const taskId = await insertReturningId("procrastination_tasks", {
+      user_id: DEMO_USER_ID,
+      ...fields,
+      deadline: deadlineDay === null ? null : dayKeyAt(deadlineDay),
+      created_at: createdAt,
+      updated_at: createdAt,
+    });
+    taskRows++;
+
+    stepRows += await insert(
+      "task_steps",
+      steps.map(([description, estimatedMinutes, completedDay]) => {
+        const completedAt = completedDay === null ? null : at(completedDay, between(9, 20), 0);
+        return {
+          user_id: DEMO_USER_ID,
+          task_id: taskId,
+          description,
+          estimated_minutes: estimatedMinutes,
+          completed_at: completedAt,
+          created_at: createdAt,
+          updated_at: completedAt ?? createdAt,
+        };
+      }),
+    );
+  }
+  requireEveryVariant("procrastination_tasks.status", TASK_STATUSES, tasks);
+  counts.procrastination_tasks = taskRows;
+  counts.task_steps = stepRows;
+}
+
+// -------------------------------------------------------------- exposure
+{
+  // ☠️ BOTH HIERARCHIES ARE CREATED BEFORE THE CURRENT PHASE BEGAN, and none
+  // after. `behavioural`'s second milestone, `exposureLadder`, counts
+  // hierarchies created at or after the phase start — so a ladder built inside
+  // the current phase would tick that milestone, both milestones would be done,
+  // and the phase would read complete rather than partially complete. The
+  // assertion at the end of this section checks it rather than trusting the
+  // day indices below to stay put.
+  //
+  // Items are laddered across the distress range and the sessions climb them:
+  // pre-session distress falls both as the ladder is climbed and across the
+  // window, and the setback is a cluster of repeat attempts at rungs that were
+  // already cleared — going back down a step is what a bad fortnight looks
+  // like, and a struggling stretch is when someone logs more.
+  const hierarchies = [
+    {
+      title: "Being seen not knowing something",
+      anxiety_type: "Social and performance",
+      createdDay: 30,
+      items: [
+        ["Ask a colleague to repeat something I missed", 20, 34],
+        ["Say 'I don't know' in a meeting of three or four", 30, 38],
+        ["Ask a question in a meeting of more than six", 40, 45],
+        ["Send a draft before it is finished", 50, 52],
+        ["Disagree out loud with something I think is wrong", 60, 70],
+        ["Run one agenda item in the weekly", 70, 79],
+        ["Present to the wider group", 80, null],
+        ["Say 'I got that wrong' in front of the whole team", 90, null],
+      ],
+      // [itemIndex, day] — the climb, then the setback cluster back down it.
+      sessions: [
+        [0, 33],
+        [0, 34],
+        [1, 37],
+        [1, 38],
+        [2, 43],
+        [2, 45],
+        [3, 50],
+        [3, 52],
+        [3, 55],
+        [2, 57],
+        [4, 59],
+        [3, 62],
+        [4, 63],
+        [4, 70],
+        [5, 77],
+        [5, 79],
+        [6, 84],
+      ],
+    },
+    {
+      title: "Calls I keep putting off",
+      anxiety_type: "Everyday avoidance",
+      createdDay: 58,
+      items: [
+        ["Call to reschedule an appointment", 25, 62],
+        ["Call the landlord about the repairs", 40, 71],
+        ["Call back the number I have been ignoring", 55, null],
+        ["Make the call I have rehearsed six times", 70, null],
+      ],
+      sessions: [
+        [0, 61],
+        [0, 62],
+        [1, 69],
+        [1, 71],
+        [2, 83],
+      ],
+    },
+  ];
+
+  const sessionNotes = [
+    "Wanted to leave for the first few minutes and then forgot to.",
+    "Worse in the ten minutes before than at any point during.",
+    "Nothing happened. Which is the point, and still surprising.",
+    "",
+    "",
+  ];
+  const safetyBehaviours = [
+    "Wrote the sentence out first and read it.",
+    "Sat near the door.",
+    "Kept it short so there was no room for a follow-up question.",
+  ];
+
+  let hierarchyRows = 0;
+  let itemRows = 0;
+  let sessionRows = 0;
+  const hierarchyCreatedDays = [];
+  for (const hierarchy of hierarchies) {
+    const { createdDay, items, sessions, ...fields } = hierarchy;
+    const createdAt = at(createdDay, 20, 0);
+    hierarchyCreatedDays.push(createdDay);
+    const hierarchyId = await insertReturningId("exposure_hierarchies", {
+      user_id: DEMO_USER_ID,
+      ...fields,
+      created_at: createdAt,
+      updated_at: createdAt,
+    });
+    hierarchyRows++;
+
+    const itemIds = [];
+    const itemSuds = [];
+    for (const [description, sudsRating, completedDay] of items) {
+      const completedAt = completedDay === null ? null : at(completedDay, between(10, 19), 0);
+      itemIds.push(
+        await insertReturningId("exposure_items", {
+          user_id: DEMO_USER_ID,
+          hierarchy_id: hierarchyId,
+          description,
+          suds_rating: sudsRating,
+          completed_at: completedAt,
+          created_at: createdAt,
+          updated_at: completedAt ?? createdAt,
+        }),
+      );
+      itemSuds.push(sudsRating);
+      itemRows++;
+    }
+
+    sessionRows += await insert(
+      "exposure_sessions",
+      sessions.map(([itemIndex, day]) => {
+        const progress = improvement(day);
+        const pre = Math.max(
+          0,
+          Math.min(100, itemSuds[itemIndex] - Math.round(18 * progress) + between(-4, 4)),
+        );
+        // Habituation within the session, as a PROPORTION of where the session
+        // started rather than a fixed subtraction: the same fixed drop that
+        // reads as habituation on a 70 rung takes a 20 rung to zero, and a
+        // post-session zero does not read as "it settled", it reads as "nothing
+        // happened". The proportion deepens across the window, which is the
+        // ladder being climbed rather than merely repeated.
+        const post = Math.max(2, Math.round(pre * (0.68 - 0.26 * progress)) - between(0, 3));
+        // Safety behaviours drop away as the ladder is climbed: early sessions
+        // lean on them, later ones do not. Both branches of the detail card.
+        const usedSafetyBehaviour = progress < 0.5 && chance(0.7);
+        const completedAt = at(day, between(10, 19), between(0, 59));
+        return {
+          user_id: DEMO_USER_ID,
+          exposure_item_id: itemIds[itemIndex],
+          pre_suds: pre,
+          post_suds: post,
+          duration_minutes: between(10, 45),
+          safety_behaviors_used: usedSafetyBehaviour,
+          safety_behavior_description: usedSafetyBehaviour ? pick(safetyBehaviours) : "",
+          notes: pick(sessionNotes),
+          completed_at: completedAt,
+          created_at: completedAt,
+        };
+      }),
+    );
+  }
+
+  // Checked here as well as in the programme assertion below, because this is
+  // where the number that breaks it lives: nudging a `createdDay` past the
+  // phase start is a one-character edit with no visible symptom until someone
+  // opens the programme card and finds the phase reading complete.
+  const insideCurrentPhase = hierarchyCreatedDays.filter((day) => day >= CBT_PHASE_STARTED_DAY);
+  if (insideCurrentPhase.length > 0) {
+    throw new Error(
+      `Exposure hierarchies are created on day ${insideCurrentPhase.join(", ")}, at or after the ` +
+        `current CBT phase start (day ${CBT_PHASE_STARTED_DAY}), so that phase's ladder ` +
+        "milestone would read done. It must stay open.",
+    );
+  }
+
+  counts.exposure_hierarchies = hierarchyRows;
+  counts.exposure_items = itemRows;
+  counts.exposure_sessions = sessionRows;
+}
+
+// -------------------------------------------------------------- recovery
+{
+  // A per-user singleton, so one row — and the integration notes cover all
+  // eleven strategy keys. `resolveActiveStrategyKeys` infers which keys get a
+  // notes field from which record sources have data, and by this point in the
+  // seed nearly all of them do; a note for every key means no field on the
+  // screen renders blank whichever way that inference lands.
+  const createdAt = at(70, 21, 0);
+  const updatedAt = at(85, 21, 30);
+  const recoveryPlanId = await insertReturningId("recovery_plans", {
+    user_id: DEMO_USER_ID,
+    recovery_keys: [
+      "Catching the thought before the avoidance, not after it.",
+      "Saying the awkward thing early rather than perfectly.",
+      "Sleep first. Everything is worse on five hours.",
+      "One person told, every time it gets heavy.",
+    ],
+    personal_slogan: "Being found out was never the risk. Not showing up was.",
+    strategy_integration_notes: {
+      goals: "One goal at a time, and a milestone small enough to do on a bad day.",
+      activities: "Book it the night before, so the morning does not get a vote.",
+      thoughts: "A thought record on any day that ends with me replaying a conversation.",
+      values: "When two options both look fine, pick the one the top six would pick.",
+      beliefs: "Reread the alternative belief on the days the old one sounds like a fact.",
+      exposure: "Back down a rung is not off the ladder. Repeat the rung and carry on.",
+      worry: "Hypothetical or real problem, decided first. The answer is different for each.",
+      mindfulness: "Ten minutes before the hard meeting, not after it.",
+      tasks: "First step small enough to be embarrassing, or it does not get started.",
+      anger: "Ten minutes and a walk before any reply I would want to reread.",
+      selfCare: "The three that hold everything else up: sleep, moving, one conversation.",
+    },
+    maintenance_commitments: [
+      "One meeting a week where I say the first thing, not the safest thing.",
+      "The swim, or the walk, whichever the week allows.",
+      "A check-in with someone outside work every fortnight.",
+      "Reread this page whenever a fortnight starts going the wrong way.",
+    ],
+    created_at: createdAt,
+    updated_at: updatedAt,
+  });
+  // `insertReturningId` throws unless exactly one row came back, so the id
+  // existing IS the count; see the note beside `counts.values_profile`.
+  counts.recovery_plans = recoveryPlanId ? 1 : 0;
+
+  counts.challenge_plans = await insert(
+    "challenge_plans",
+    [
+      [
+        "A review lands badly.",
+        [
+          "Read it twice, then close the laptop for an hour.",
+          "Separate what is about the work from what I am adding about me.",
+          "Pick the two points I already agreed with and start there.",
+        ],
+      ],
+      [
+        "Reorg rumours start again.",
+        [
+          "Write down what is actually known, which is usually almost nothing.",
+          "Keep the work visible instead of trying to read the room.",
+          "Say it out loud to one person rather than running it at 2am.",
+        ],
+      ],
+      [
+        "A fortnight where nothing I make seems to land.",
+        [
+          "Log more, not less. The record is what makes a fortnight a fortnight.",
+          "Go back a rung on the ladder rather than off it.",
+          "Check the sleep before believing the conclusions.",
+        ],
+      ],
+    ].map(([challengeDescription, copingSteps]) => ({
+      user_id: DEMO_USER_ID,
+      recovery_plan_id: recoveryPlanId,
+      challenge_description: challengeDescription,
+      coping_steps: copingSteps,
+      created_at: createdAt,
+      updated_at: updatedAt,
+    })),
+  );
+}
+
+// ------------------------------------------------- CBT programme anchor
+// The anchor is the INPUT: it is written here, and the rows above and in the
+// thinking spine were generated to satisfy it (#1178). CBT sits in
+// `behavioural`, index 3 of 5, PARTIALLY complete — one activity completed
+// inside the phase ticks `activityOnce`, no hierarchy created inside it leaves
+// `exposureLadder` open, and nothing completed today leaves the daily practice
+// open, which is the one row a reviewer can exercise themselves.
+//
+// Pre-phase history stays: the earlier phases' rows are still there, they
+// simply sit before the current phase's start, which is what feeds the four
+// stat chips (they count from `started_at`, not from the phase start).
+const CBT_PROGRAM_STARTED_DAY = 8;
+
+// The five phase keys in order, mirroring CBT_PROGRAM in
+// src/features/cbt/program-definition.ts. Mirrored rather than imported: this
+// script is plain Node and that module is TypeScript behind a path alias.
+//
+// The index is derived from the KEY rather than written as a bare 3, because
+// the index on its own means nothing — each phase has its own milestones and
+// its own daily practice, and the checks further down are `behavioural`'s
+// specifically. Anchoring by name is what lets the assertion notice that the
+// two have come apart.
+const CBT_PHASE_KEYS = ["assessment", "formulation", "thinking", "behavioural", "resilience"];
+const CBT_PROGRAM_PHASE_KEY = "behavioural";
+const CBT_PROGRAM_PHASE_INDEX = CBT_PHASE_KEYS.indexOf(CBT_PROGRAM_PHASE_KEY);
+{
+  const { error } = await admin
+    .from("user_preferences")
+    .update({
+      cbt_program_started_at: at(CBT_PROGRAM_STARTED_DAY, 9, 0),
+      cbt_program_phase_index: CBT_PROGRAM_PHASE_INDEX,
+      cbt_program_phase_started_at: at(CBT_PHASE_STARTED_DAY, 9, 0),
+      // Null keeps the programme in progress. A completion date would graduate
+      // it and the phase card would stop rendering altogether.
+      cbt_program_completed_at: null,
+      // Cleared rather than left alone so a re-run reproduces the same picture:
+      // this column is set by a tap in the app, and a reviewer who dismissed the
+      // prompt would otherwise keep a dismissed prompt across every later seed.
+      cbt_program_prompt_dismissed_at: null,
+    })
+    .eq("user_id", DEMO_USER_ID);
+  if (error) throw new Error(`cbt program anchor: ${error.message}`);
+}
+
+// ☠️ `cbt_program_phase_index` is STORED, not derived, while every milestone
+// derives from the rows. Nothing in the app recomputes the index or rejects one
+// that contradicts its own rows — out-of-range values are silently clamped, not
+// refused — so a seeded index can sit there disagreeing with the data behind it
+// and the only symptom is a programme card that reads wrong.
+//
+// So derive it back OUT of the database and check the two agree. Read back
+// rather than reusing the arrays above: that also proves the rows survived the
+// encrypted views with the timestamps they were given, which is the other way
+// this can silently go wrong.
+{
+  const { data: prefs, error: prefsError } = await admin
+    .from("user_preferences")
+    .select(
+      "cbt_program_started_at, cbt_program_phase_index, cbt_program_phase_started_at, " +
+        "cbt_program_completed_at",
+    )
+    .eq("user_id", DEMO_USER_ID)
+    .single();
+  if (prefsError) throw new Error(`cbt program read-back: ${prefsError.message}`);
+
+  const { data: activities, error: activityError } = await admin
+    .from("activity_logs")
+    .select("completed_at, completed_offset_minutes")
+    .eq("user_id", DEMO_USER_ID)
+    .not("completed_at", "is", null);
+  if (activityError)
+    throw new Error(`cbt program read-back (activities): ${activityError.message}`);
+
+  const { data: ladders, error: ladderError } = await admin
+    .from("exposure_hierarchies")
+    .select("created_at")
+    .eq("user_id", DEMO_USER_ID);
+  if (ladderError) throw new Error(`cbt program read-back (exposure): ${ladderError.message}`);
+
+  // Milestones count from the phase start, falling back to the programme start
+  // exactly as `deriveCbtProgram` and `program_widget_task_status` both do.
+  const phaseStart = new Date(
+    prefs.cbt_program_phase_started_at ?? prefs.cbt_program_started_at,
+  ).getTime();
+
+  /**
+   * The civil day an instant was captured on, from the pair the row stores —
+   * the same shift `public.occurrence_day_key` applies. A null offset falls back
+   * to the seeding machine's local day, which is where the RPC's `coalesce` and
+   * the client's `toLocalDateKey` both put such a row.
+   */
+  const capturedDayKey = (instant, offsetMinutes) =>
+    offsetMinutes == null
+      ? localDayKey(new Date(instant))
+      : new Date(new Date(instant).getTime() + offsetMinutes * 60_000).toISOString().slice(0, 10);
+
+  // What the seeded rows have to make each of the anchored phase's legs read.
+  // Keyed by PHASE, and only the seeded phase is declared: every phase has
+  // different milestones and a different daily practice, so moving the anchor
+  // to another phase means choosing afresh which signals the rows now satisfy.
+  // An undeclared phase fails here rather than quietly checking `behavioural`'s
+  // legs against a `resilience` anchor and passing.
+  //
+  // Milestones and daily practice are declared SEPARATELY because "partially
+  // complete" is a claim about the milestones alone — the daily practice is not
+  // part of a phase's completion, and a check that had to name the daily leg to
+  // exclude it would stop excluding it the moment a phase called that leg
+  // something else.
+  const phaseExpectations = {
+    behavioural: {
+      milestones: { activityOnce: true, exposureLadder: false },
+      dailyPractice: { activityDaily: false },
+    },
+  };
+
+  const anchoredPhaseKey = CBT_PHASE_KEYS[prefs.cbt_program_phase_index];
+  const phaseExpectation = phaseExpectations[anchoredPhaseKey];
+  if (!phaseExpectation) {
+    throw new Error(
+      `The anchored CBT phase index ${prefs.cbt_program_phase_index} is ` +
+        `'${anchoredPhaseKey ?? "out of range"}', which this script declares no expectations ` +
+        `for — it seeds '${CBT_PROGRAM_PHASE_KEY}'. Re-phasing the account means re-choosing ` +
+        "which milestones and which daily practice the rows have to satisfy, because no two " +
+        "phases share them.",
+    );
+  }
+
+  const today = dayKeyAt(DAYS - 1);
+  const derived = {
+    started: prefs.cbt_program_started_at !== null,
+    graduated: prefs.cbt_program_completed_at !== null,
+    // `behavioural`'s two milestones and its daily practice, in the same shape
+    // src/features/cbt/program-definition.ts evaluates them.
+    activityOnce: activities.some((a) => new Date(a.completed_at).getTime() >= phaseStart),
+    exposureLadder: ladders.some((l) => new Date(l.created_at).getTime() >= phaseStart),
+    activityDaily: activities.some(
+      (a) => capturedDayKey(a.completed_at, a.completed_offset_minutes) === today,
+    ),
+  };
+  const expected = {
+    started: true,
+    graduated: false,
+    ...phaseExpectation.milestones,
+    ...phaseExpectation.dailyPractice,
+  };
+
+  const disagreements = Object.keys(expected)
+    .filter((key) => derived[key] !== expected[key])
+    .map((key) => `${key}: anchored ${expected[key]}, derived ${derived[key]}`);
+  if (disagreements.length > 0) {
+    throw new Error(
+      `The seeded CBT programme anchor ('${anchoredPhaseKey}') and the rows behind it ` +
+        `disagree — ${disagreements.join("; ")}. The anchor is the input and the rows are ` +
+        "generated to satisfy it, so whichever moved, they have to move together.",
+    );
+  }
+
+  // PARTIALLY complete: a claim about the phase rather than about any one leg,
+  // and read off the milestones only, which is what phase completion is made
+  // of. Every milestone done is a phase that reads finished, and the
+  // expectations above would all still hold if a future edit ticked the open
+  // one — this is the check that notices.
+  if (Object.values(phaseExpectation.milestones).every(Boolean)) {
+    throw new Error(
+      `Every milestone of '${anchoredPhaseKey}' is expected done, so the phase would read ` +
+        "complete rather than partially complete.",
+    );
+  }
+  if (Object.values(phaseExpectation.dailyPractice).some(Boolean)) {
+    throw new Error(
+      `Today's practice for '${anchoredPhaseKey}' is expected done. It is deliberately left ` +
+        "open — it is the one row a reviewer can exercise on the demo account themselves.",
+    );
+  }
 }
 
 // ---------------------------------------------------------------------- done
