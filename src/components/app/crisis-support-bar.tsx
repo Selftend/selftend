@@ -1,9 +1,9 @@
-import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 // Calm, persistent one-line affordance for exercise forms (not the destructive-red
 // full callout used on module home screens and the crisis page - see safety-callout.tsx).
@@ -15,12 +15,18 @@ import { Text } from "@/src/components/react-native-reusables/text";
 // visible, calm, separate from the self-help features) holds.
 export function CrisisSupportBar() {
   const { t } = useTranslation("common");
+  // Through the Origin-recording helper, never a bare `router.push` (#1265, O3).
+  // This bar renders on eleven screens - nine ACT exercises, the CBT new-record
+  // screen, grounding home, the mood entry editor - and `/crisis` sits at the
+  // root, so its Up is Home. Without the Origin, a user in distress mid-exercise
+  // who reaches for crisis support cannot get back to what they were doing.
+  const pushWithOrigin = usePushWithOrigin();
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={t("safety.barLabel")}
-      onPress={() => router.push("/crisis")}
+      onPress={() => pushWithOrigin("/crisis")}
       className="flex-row items-center gap-2.5 border-y border-border py-2.5 active:opacity-70"
     >
       <Icon name="info-outline" className="size-4 text-muted-foreground" />
