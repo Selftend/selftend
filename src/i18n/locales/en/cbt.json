@@ -313,11 +313,13 @@
       "notes": "Notes (optional)",
       "notesPlaceholder": "Anything worth remembering for next time.",
       "cancel": "Cancel",
-      "save": "Save session"
+      "save": "Save session",
+      "saveError": "Unable to save the session. Try again."
     },
     "deleteHierarchy": "Delete hierarchy",
     "deleteTitle": "Delete this hierarchy?",
     "deleteMessage": "This permanently removes the hierarchy and all of its items and session history. This can't be undone.",
+    "deleteError": "Unable to delete the hierarchy. Try again.",
     "validation": {
       "title": "Give the hierarchy a title.",
       "anxietyType": "Name the type of anxiety.",

@@ -7,7 +7,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
 import { PressShieldModal } from "@/src/components/app/press-shield-modal";
@@ -38,6 +38,28 @@ import { useSession } from "@/src/providers/session-provider";
 type EditorState = { mode: "add" } | { mode: "edit"; emotion: EmotionDisplay };
 
 /**
+ * How every write on this surface reports itself (#1335, spec §10).
+ *
+ * ☠️ Not a toast, and it cannot become one. This modal is an opaque `pageSheet` that
+ * stays OPEN across all four writes, and on Android there is no mechanism that lifts a
+ * toast over a native modal: `FullWindowOverlay` is iOS-only, and giving the toast its
+ * own Android `Modal` would block every touch below it, which the inert-body rule
+ * disqualifies. The mutations opt out of the global toast for the same reason.
+ *
+ * ⚠️ Both callbacks resolve to state on the LIST view, never on the editor, and that is
+ * structural. The editor fires its write and closes itself in the same handler, so it is
+ * already unmounted by the time any of these fail. MEASURED: a mutate-level `onError`
+ * still runs after its caller unmounts, which is what lets the editor's failures land on
+ * the list that outlived it.
+ */
+interface WriteReporter {
+  /** Clears the previous failure, so a retry never shows a stale one. */
+  onStart: () => void;
+  /** Raises this write's failure where the surface can actually show it. */
+  onError: () => void;
+}
+
+/**
  * On web the surface lives in a self-styled panel that hugs its content (#905, design
  * 2E), so every level between the panel and the scroll view must be allowed to shrink:
  * `flex-1` has flex-basis 0 and would collapse to nothing inside a content-sized panel,
@@ -58,6 +80,8 @@ interface EmotionEditorViewProps {
   addPosition: number;
   /** Lifetime uses of the emotion being edited, or null while the count is loading. */
   uses: number | null;
+  /** Raises this view's failures to the list, which outlives its own unmount. */
+  write: WriteReporter;
   onClose: () => void;
 }
 
@@ -68,7 +92,7 @@ interface EmotionEditorViewProps {
  * the first, which on a phone means two back gestures to get out of one task, and on web
  * two stacked focus traps.
  */
-function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorViewProps) {
+function EmotionEditorView({ state, addPosition, uses, write, onClose }: EmotionEditorViewProps) {
   const { t } = useTranslation("mood");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -84,28 +108,43 @@ function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorV
 
   const canSave = name.trim().length > 0 && emoji.trim().length > 0;
 
+  // ⚠️ Every `mutate` below carries `write.onError` and closes this view straight after,
+  // optimistically. The failure therefore surfaces on the list, not here - see
+  // `WriteReporter`, and do not "fix" it by keeping the editor open: the write is
+  // optimistic, so the change is already on screen behind it.
   const handleSave = () => {
     if (!canSave) return;
+    write.onStart();
     if (state.mode === "edit") {
-      upsertEmotion.mutate({
-        emotionId: state.emotion.id,
-        name: name.trim(),
-        emoji: emoji.trim(),
-      });
+      upsertEmotion.mutate(
+        {
+          emotionId: state.emotion.id,
+          name: name.trim(),
+          emoji: emoji.trim(),
+        },
+        { onError: write.onError },
+      );
     } else {
-      addEmotion.mutate({
-        emotionId: `custom_${Date.now()}`,
-        name: name.trim(),
-        emoji: emoji.trim(),
-        position: addPosition,
-      });
+      addEmotion.mutate(
+        {
+          emotionId: `custom_${Date.now()}`,
+          name: name.trim(),
+          emoji: emoji.trim(),
+          position: addPosition,
+        },
+        { onError: write.onError },
+      );
     }
     onClose();
   };
 
   const handleDelete = () => {
     if (state.mode !== "edit") return;
-    removeEmotion.mutate({ emotionId: state.emotion.id, isCustom: state.emotion.isCustom });
+    write.onStart();
+    removeEmotion.mutate(
+      { emotionId: state.emotion.id, isCustom: state.emotion.isCustom },
+      { onError: write.onError },
+    );
     setConfirmDeleteOpen(false);
     onClose();
   };
@@ -361,6 +400,17 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   const [editorState, setEditorState] = useState<EditorState | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // The one place a failed write on this surface can be seen at all - see `WriteReporter`
+  // for why it is here and not a toast, and why it is the list rather than the editor.
+  const write = useMemo<WriteReporter>(
+    () => ({
+      onStart: () => setErrorMessage(null),
+      onError: () => setErrorMessage(t("emotions.manage.saveError")),
+    }),
+    [t],
+  );
 
   const openEditor = useCallback((emotion: EmotionDisplay) => {
     setEditorState({ mode: "edit", emotion });
@@ -390,9 +440,10 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
       const nextIndex = currentIndex + offset;
       if (currentIndex < 0 || nextIndex < 0 || nextIndex >= ids.length) return;
       [ids[currentIndex], ids[nextIndex]] = [ids[nextIndex], ids[currentIndex]];
-      reorderEmotions.mutate(ids);
+      write.onStart();
+      reorderEmotions.mutate(ids, { onError: write.onError });
     },
-    [allEmotions, reorderEmotions],
+    [allEmotions, reorderEmotions, write],
   );
 
   /**
@@ -481,6 +532,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
             state={editorState}
             addPosition={allEmotions.length}
             uses={editingUses}
+            write={write}
             onClose={closeEditor}
           />
         ) : (
@@ -506,6 +558,19 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                 </Pressable>
               </View>
             </View>
+
+            {/* Pinned between the header and the scroller, never inside it: a failure
+                reported from a list scrolled halfway down would otherwise be raised
+                somewhere the user is not looking. */}
+            {errorMessage ? (
+              <View className="border-b border-border px-4 py-3">
+                <View className={FORM_COLUMN}>
+                  <Text className="text-sm text-destructive" role="alert">
+                    {errorMessage}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
 
             <AnimatedScrollView ref={scrollableRef} contentContainerClassName="p-4 pb-8">
               <View className={cn(FORM_COLUMN, "gap-4")}>
@@ -541,7 +606,13 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                       scrollableRef={scrollableRef}
                       customHandle
                       dragActivationDelay={0}
-                      onDragEnd={({ data }) => reorderEmotions.mutate(data.map((e) => e.id))}
+                      onDragEnd={({ data }) => {
+                        write.onStart();
+                        reorderEmotions.mutate(
+                          data.map((e) => e.id),
+                          { onError: write.onError },
+                        );
+                      }}
                       renderItem={renderEmotionRow}
                     />
                     {/* Closing hairline: the rows are top-ruled, so the last needs a floor. */}

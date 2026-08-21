@@ -24,11 +24,20 @@ export function DeleteEntryButton({
   const [visible, setVisible] = useState(false);
   const [pending, setPending] = useState(false);
 
+  /**
+   * A rejected `onConfirm` means "it failed, stay open" - the dialog closes only on a
+   * resolved one. Swallowing it here is what makes the `error` slot reachable at all
+   * (#1335): before this, a failing delete escaped as an unhandled rejection, so the
+   * only way to report it was a toast, and on Android a toast cannot rise above the
+   * native modal this dialog is. The caller renders the reason through `error`.
+   */
   const handleConfirm = async () => {
     setPending(true);
     try {
       await onConfirm();
       setVisible(false);
+    } catch {
+      // Reported by the caller through `error`; the confirmation stays open for it.
     } finally {
       setPending(false);
     }

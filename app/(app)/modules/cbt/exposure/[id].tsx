@@ -70,11 +70,21 @@ function SessionSheet({
   const showToast = useToastStore((state) => state.showToast);
   const saveMutation = useSaveExposureSession(user?.id ?? null, hierarchyId);
   const [form, setForm] = useState<SessionFormState>(emptySession);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Every route out of the sheet clears the error with it. The component is never
+  // unmounted - only `visible` flips - so a failure left behind would still be on
+  // screen the next time the sheet is opened.
+  const closeSheet = () => {
+    setErrorMessage(null);
+    onClose();
+  };
 
   const handleSave = useSingleFlight(async () => {
     if (!item || form.preSuds === null || form.postSuds === null) return;
     const duration = parseInt(form.durationMinutes || "0", 10);
     if (Number.isNaN(duration)) return;
+    setErrorMessage(null);
     try {
       await saveMutation.mutateAsync({
         itemId: item.id,
@@ -87,11 +97,17 @@ function SessionSheet({
           notes: form.notes,
         },
       });
+      // ⚠️ The success path toasts and THEN closes the sheet, so its toast lands on a
+      // screen with no modal over it. It is deliberately untouched (#1335).
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       setForm(emptySession);
-      onClose();
+      closeSheet();
     } catch {
-      showToast({ title: t("common:feedback.problem"), tone: "error" });
+      // ☠️ Inline, never a toast. This sheet stays OPEN on failure, and it is an opaque
+      // native modal: on Android nothing can lift a toast above one - `FullWindowOverlay`
+      // is iOS-only, and giving the toast its own Android `Modal` would block every touch
+      // below it, which the inert-body rule disqualifies (#1335, spec §10).
+      setErrorMessage(t("exposure.session.saveError"));
     }
   });
 
@@ -99,7 +115,7 @@ function SessionSheet({
     // A form wearing a modal, so its Escape is an X under R5 rather than a
     // new rule of its own. ☠️ Declared inline in a route file, which is why no
     // sweep of the components directory ever found it.
-    <PressShieldModal onEscape={onClose} onRequestClose={onClose} visible={visible}>
+    <PressShieldModal onEscape={closeSheet} onRequestClose={closeSheet} visible={visible}>
       {/* No "top": the wrapper's escape row already sits in the top inset. */}
       <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
         <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
@@ -185,9 +201,13 @@ function SessionSheet({
               />
             </View>
 
+            {/* Sits with the buttons that raised it, the only place in an opaque
+                modal a save failure can be seen at all. */}
+            {errorMessage ? <Text className="text-sm text-destructive">{errorMessage}</Text> : null}
+
             <View className="flex-row gap-3">
               <View className="flex-1">
-                <Button onPress={onClose} variant="ghost">
+                <Button onPress={closeSheet} variant="ghost">
                   <Text>{t("exposure.session.cancel")}</Text>
                 </Button>
               </View>
@@ -260,6 +280,7 @@ export default function ExposureHierarchyDetailScreen() {
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const [activeItem, setActiveItem] = useState<ExposureItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: hierarchy, isLoading: hierarchyLoading } = useHierarchy(
     user?.id ?? null,
@@ -268,9 +289,22 @@ export default function ExposureHierarchyDetailScreen() {
   const { data: items, isLoading: itemsLoading } = useExposureItems(user?.id ?? null, id ?? null);
   const deleteMutation = useDeleteHierarchy(user?.id ?? null);
 
+  // ☠️ The same rule as the session sheet, and the second path out of this file:
+  // `DeleteEntryButton` keeps its confirmation OPEN when the delete rejects, so the
+  // global save-failed toast would land behind a native modal (#1335, spec §10).
+  // `ConfirmDialog` already carries an `error` slot; the failure goes there. The
+  // success toast is safe - it fires as the screen is being replaced.
   const handleDelete = async () => {
     if (!hierarchy) return;
-    await deleteMutation.mutateAsync(hierarchy.id);
+    setDeleteError(null);
+    try {
+      await deleteMutation.mutateAsync(hierarchy.id);
+    } catch (error) {
+      setDeleteError(t("exposure.deleteError"));
+      // Rethrown on purpose: `DeleteEntryButton` closes its confirmation only when
+      // `onConfirm` RESOLVES, and a closed dialog has nowhere to show this.
+      throw error;
+    }
     showToast({ title: t("common:feedback.deleted"), tone: "success" });
     router.replace("/modules/cbt/exposure" as Parameters<typeof router.replace>[0]);
   };
@@ -327,6 +361,7 @@ export default function ExposureHierarchyDetailScreen() {
             )}
 
             <DeleteEntryButton
+              error={deleteError ?? undefined}
               label={t("exposure.deleteHierarchy")}
               title={t("exposure.deleteTitle")}
               message={t("exposure.deleteMessage")}

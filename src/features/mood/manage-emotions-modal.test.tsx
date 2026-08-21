@@ -14,7 +14,18 @@ jest.mock("@/src/providers/session-provider", () => ({
 const mockRemoveEmotion = jest.fn();
 const mockUpsertEmotion = jest.fn();
 const mockReorderEmotions = jest.fn();
+const mockAddEmotion = jest.fn();
 let mockReorderPending = false;
+
+/**
+ * Fails the write the way the real hook does: by calling back the `onError` the caller
+ * handed to `mutate`. The mutations themselves opt out of the global toast
+ * (`emotion-preferences-queries.test.tsx` proves it), so this callback is the ONLY
+ * channel a failure has to reach the user.
+ */
+const failWrite = (_variables: unknown, options?: { onError?: () => void }) => {
+  options?.onError?.();
+};
 
 function mockEmotionRow(emotionId: string, position: number) {
   return {
@@ -46,7 +57,7 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
   useUpsertEmotionPreference: () => ({ mutate: mockUpsertEmotion }),
   useReorderEmotions: () => ({ mutate: mockReorderEmotions, isPending: mockReorderPending }),
   useRemoveEmotion: () => ({ mutate: mockRemoveEmotion }),
-  useAddCustomEmotion: () => ({ mutate: jest.fn() }),
+  useAddCustomEmotion: () => ({ mutate: mockAddEmotion }),
 }));
 
 // Sortable renders through gesture-handler and reanimated worklets; the list semantics
@@ -62,13 +73,17 @@ jest.mock("react-native-sortables", () => {
         renderItem,
         keyExtractor,
         sortEnabled,
+        onDragEnd,
       }: {
         data: { id: string }[];
         renderItem: (arg: { item: { id: string } }) => React.ReactNode;
         keyExtractor: (item: { id: string }) => string;
         sortEnabled?: boolean;
+        onDragEnd?: (arg: { data: { id: string }[] }) => void;
       }) => (
-        <View testID="emotion-sortable-grid" sortEnabled={sortEnabled}>
+        // `onDragEnd` is forwarded so the drag path can be dispatched at all: it is the
+        // other half of reordering, and jest can never produce a real drag.
+        <View testID="emotion-sortable-grid" sortEnabled={sortEnabled} onDragEnd={onDragEnd}>
           {data.map((item) => (
             <View key={keyExtractor(item)}>{renderItem({ item })}</View>
           ))}
@@ -104,6 +119,17 @@ function moveVia(emotionId: string, action: "moveEarlier" | "moveLater") {
 describe("ManageEmotionsModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // ☠️ `clearAllMocks` clears CALLS but not implementations, so a `mockImplementation`
+    // set by one failure case is still the fallback in every case after it - which makes
+    // "the retry succeeded" unprovable. These four are reset outright.
+    for (const write of [
+      mockUpsertEmotion,
+      mockRemoveEmotion,
+      mockReorderEmotions,
+      mockAddEmotion,
+    ]) {
+      write.mockReset();
+    }
     mockReorderPending = false;
     mockEmotionList = mockFullEmotionList;
     mockUseEmotionUsageCounts.mockReturnValue({
@@ -176,7 +202,11 @@ describe("ManageEmotionsModal", () => {
 
       moveVia("anxious", "moveLater");
 
-      expect(mockReorderEmotions).toHaveBeenCalledWith(["grateful", "anxious", "sad"]);
+      // The `onError` rides along on every write: it is the only channel a failure has
+      // to reach the user from inside this modal (#1335).
+      expect(mockReorderEmotions).toHaveBeenCalledWith(["grateful", "anxious", "sad"], {
+        onError: expect.any(Function),
+      });
     });
 
     it("moves an emotion earlier through the handle's move-earlier action", () => {
@@ -184,7 +214,9 @@ describe("ManageEmotionsModal", () => {
 
       moveVia("sad", "moveEarlier");
 
-      expect(mockReorderEmotions).toHaveBeenCalledWith(["anxious", "sad", "grateful"]);
+      expect(mockReorderEmotions).toHaveBeenCalledWith(["anxious", "sad", "grateful"], {
+        onError: expect.any(Function),
+      });
     });
 
     it("writes nothing when the move would leave the list", () => {
@@ -409,7 +441,10 @@ describe("ManageEmotionsModal", () => {
       // The dialog's own confirm button, not the one that opened it.
       fireEvent.press(screen.getAllByText("Delete")[1]);
 
-      expect(mockRemoveEmotion).toHaveBeenCalledWith({ emotionId: "anxious", isCustom: false });
+      expect(mockRemoveEmotion).toHaveBeenCalledWith(
+        { emotionId: "anxious", isCustom: false },
+        { onError: expect.any(Function) },
+      );
     });
 
     it("says nothing is lost for an emotion that has never been used", () => {
@@ -443,6 +478,99 @@ describe("ManageEmotionsModal", () => {
 
       expect(screen.getByText("New emotion")).toBeTruthy();
       expect(screen.queryByText("Delete")).toBeNull();
+    });
+  });
+
+  /**
+   * ☠️ None of these four failures may be a toast (#1335, spec §10).
+   *
+   * This surface is an opaque `pageSheet` that stays OPEN across every one of them, and
+   * on Android nothing can lift a toast above a native modal: `FullWindowOverlay` is
+   * iOS-only, and giving the toast its own Android `Modal` would block every touch below
+   * it, which the inert-body rule disqualifies. So the error is rendered here instead.
+   *
+   * ⚠️ The error belongs to the LIST view, not the editor, and that is structural rather
+   * than cosmetic: the editor fires its write and closes itself in the same handler, so
+   * by the time any of these fail the editor is already unmounted. The list outlives it.
+   */
+  const SAVE_ERROR = "Couldn't save that change. Try again.";
+
+  describe("a failed write", () => {
+    it("shows nothing while every write is succeeding", () => {
+      open();
+
+      expect(screen.queryByText(SAVE_ERROR)).toBeNull();
+    });
+
+    it("reports a failed reorder inline on the list", () => {
+      mockReorderEmotions.mockImplementation(failWrite);
+      open();
+
+      moveVia("anxious", "moveLater");
+
+      expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
+    });
+
+    it("reports a failed drag-reorder inline too, not just the keyboard path", () => {
+      mockReorderEmotions.mockImplementation(failWrite);
+      open();
+
+      fireEvent(screen.getByTestId("emotion-sortable-grid"), "dragEnd", {
+        data: mockFullEmotionList.map((e) => ({ id: e.emotionId })),
+      });
+
+      expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
+    });
+
+    it("reports a failed rename on the list the editor closed into", () => {
+      mockUpsertEmotion.mockImplementation(failWrite);
+      open();
+
+      fireEvent.press(screen.getByLabelText("Edit Anxious"));
+      fireEvent.press(screen.getByText("Save"));
+
+      // The editor is gone - it closes itself on submit - and the error landed on the
+      // list that outlived it.
+      expect(screen.getByText("Manage emotions")).toBeTruthy();
+      expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
+    });
+
+    it("reports a failed add on the list", () => {
+      mockAddEmotion.mockImplementation(failWrite);
+      open();
+
+      fireEvent.press(screen.getByText("Add emotion"));
+      fireEvent.changeText(screen.getByLabelText("Name"), "Wistful");
+      // The emoji picker's own selection is what arms the save button (each tile is
+      // labelled with its emoji).
+      fireEvent.press(screen.getByLabelText("😊"));
+      fireEvent.press(screen.getByText("Add"));
+
+      expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
+    });
+
+    it("reports a failed delete on the list", () => {
+      mockRemoveEmotion.mockImplementation(failWrite);
+      open();
+
+      fireEvent.press(screen.getByLabelText("Edit Anxious"));
+      fireEvent.press(screen.getByText("Delete"));
+      fireEvent.press(screen.getAllByText("Delete")[1]);
+
+      expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
+    });
+
+    it("clears the error when the next write starts, rather than stacking stale ones", () => {
+      mockReorderEmotions.mockImplementationOnce(failWrite);
+      open();
+
+      moveVia("anxious", "moveLater");
+      expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
+
+      // The second move succeeds (the one-shot implementation is spent).
+      moveVia("anxious", "moveLater");
+
+      expect(screen.queryByText(SAVE_ERROR)).toBeNull();
     });
   });
 });

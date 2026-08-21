@@ -161,6 +161,9 @@ export function useDeleteHierarchy(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (hierarchyId: string) => deleteHierarchy(userId!, hierarchyId),
+    // The confirmation stays OPEN when this fails, and it is a native modal - so the
+    // detail screen renders the failure inline in the dialog rather than behind it (#1335).
+    meta: { suppressGlobalErrorToast: true },
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: exposureKeys.all });
