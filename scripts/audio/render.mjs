@@ -76,6 +76,7 @@ import {
   clipsForRound,
   composePrompt,
   creditEstimate,
+  resolveVoices,
 } from "./catalog.mjs";
 
 const API = "https://api.elevenlabs.io/v1";
@@ -760,8 +761,17 @@ function formatExtension(format) {
  * Library voice persists, so a bad take here is recoverable in a way a bad bed
  * never is.
  */
-async function renderVoices(go) {
-  const missingVoice = VOICES.filter((voice) => !voice.voiceId);
+async function renderVoices(go, voiceIdOverrides = []) {
+  // ⚠️ `--voice-id id=...` renders a SHORTLISTED voice without writing it into the
+  // catalog. #1136 requires the pick be auditioned on the shipping words rather
+  // than on a demo reel, and the only way to hear that was to edit the decisions
+  // file per trial — leaving a recorded decision behind for every trial abandoned.
+  const voices = resolveVoices(VOICES, voiceIdOverrides);
+  const trials = voices.filter(
+    (voice, index) => voice.voiceId && voice.voiceId !== VOICES[index].voiceId,
+  );
+
+  const missingVoice = voices.filter((voice) => !voice.voiceId);
   const missingText = VOICE_CUES.filter((cue) => !cue.text);
   if (missingVoice.length || missingText.length) {
     console.error(
@@ -769,21 +779,32 @@ async function renderVoices(go) {
         (missingVoice.length
           ? `  no voiceId for: ${missingVoice.map((v) => v.id).join(", ")}\n` +
             "  #1136 fixed the criteria: Voice Library only (defaults expire 2026-12-31),\n" +
-            "  a matched female/male pair, auditioned on the shipping words.\n"
+            "  a matched female/male pair, auditioned on the shipping words.\n" +
+            "  To hear a shortlist without deciding anything yet:\n" +
+            "    render-voices --voice-id guided=<id> --voice-id guided-male=<id> --go\n"
           : "") +
         (missingText.length ? `  no text for: ${missingText.map((c) => c.id).join(", ")}\n` : ""),
     );
     process.exit(1);
   }
 
-  const total = VOICES.length * VOICE_CUES.length * TTS_CANDIDATE_SEEDS.length;
+  const total = voices.length * VOICE_CUES.length * TTS_CANDIDATE_SEEDS.length;
   if (!go) {
     console.error(
-      `Refusing to spend. ${total} generations (${VOICES.length} voices x ` +
+      `Refusing to spend. ${total} generations (${voices.length} voices x ` +
         `${VOICE_CUES.length} cues x ${TTS_CANDIDATE_SEEDS.length} candidates).\n` +
         "Re-run with --go.",
     );
     process.exit(1);
+  }
+
+  if (trials.length) {
+    console.log(
+      `⚠️ Trial run: ${trials.map((v) => `${v.id}=${v.voiceId}`).join(", ")} came from\n` +
+        "   --voice-id, not from catalog.mjs. The manifest records the id actually\n" +
+        "   used, so these takes supersede themselves the moment a different voice is\n" +
+        "   written in for real — but nothing has been DECIDED by this run.\n",
+    );
   }
 
   const key = apiKey();
@@ -792,7 +813,7 @@ async function renderVoices(go) {
   await mkdir(classDir, { recursive: true });
   const manifestPath = join(runDir, "manifest.jsonl");
 
-  for (const voice of VOICES) {
+  for (const voice of voices) {
     for (const cue of VOICE_CUES) {
       for (const [index, seed] of TTS_CANDIDATE_SEEDS.entries()) {
         const candidate = index + 1;
@@ -1144,9 +1165,14 @@ async function main() {
       await render(round, go, attempts);
       break;
     }
-    case "render-voices":
-      await renderVoices(go);
+    case "render-voices": {
+      // Repeatable: one flag per voice, so a whole shortlisted pair goes in one run.
+      const overrides = rest.flatMap((arg, index) =>
+        arg === "--voice-id" ? [rest[index + 1]] : [],
+      );
+      await renderVoices(go, overrides);
       break;
+    }
     case "loopprobe": {
       const clipFlag = rest.indexOf("--clip");
       const secondsFlag = rest.indexOf("--seconds");
@@ -1173,7 +1199,7 @@ async function main() {
           "  node scripts/audio/render.mjs plan --round A|B\n" +
           "  node scripts/audio/render.mjs preflight --round A|B\n" +
           "  node scripts/audio/render.mjs render --round A|B --go [--attempts N]\n" +
-          "  node scripts/audio/render.mjs render-voices --go\n" +
+          "  node scripts/audio/render.mjs render-voices [--voice-id id=voiceId ...] --go\n" +
           "  node scripts/audio/render.mjs loopprobe [--clip <bed>] [--seconds 30] --go",
       );
       process.exit(BELLS.length && command ? 1 : 0);
