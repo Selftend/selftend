@@ -45,22 +45,45 @@ const LINK_NAV_CHROME = [
  * above, each of these is a call someone migrating a batch has to decide to
  * leave alone. #1265 moved every other push in `src/components/app` onto the
  * helper; these two are the declared exceptions, and neither was named by the
- * ticket.
+ * ticket, which named only the brand link.
  *
- * Both also pass `dangerouslySingular`, which `usePushWithOrigin` cannot express
- * - it forwards only an `Href`. So migrating either would silently drop the flag
- * and remount a screen that is already in the stack, the defect #1027/#989
- * fixed. That alone settles it, before the Origin argument below.
+ * ⚠️ The two rest on DIFFERENT arguments, and conflating them overstates the
+ * second. Both pass `dangerouslySingular`, which `usePushWithOrigin` cannot
+ * express - it forwards only an `Href` - but that flag is only load-bearing at
+ * one of these call sites. `protected-layout.tsx` and `app-shell.tsx` declare it
+ * **per screen** for every non-dynamic route, `/settings` and `/support`
+ * included, precisely so it "covers every one of them, including calls written
+ * later". So dropping it in `user-menu.tsx` would change nothing; the breadcrumb
+ * is the real case, because its crumbs "reach routes the layouts never declare".
+ *
+ * `user-menu.tsx` therefore stands on the Origin argument alone - the same one
+ * the helper makes for the sidebar, which its own docblock states in terms of
+ * this exact screen: an Escape reading "Back to CBT" on Settings would compete
+ * with the sidebar as the way back.
  */
 const PUSH_NAV_CHROME = [
   // The breadcrumb trail. Its crumbs target ANCESTORS - see the test below for
-  // what recording one would do to the screen it lands on.
+  // what recording one would do to the screen it lands on - and it is the one
+  // place where the `dangerouslySingular` at the call site is doing real work.
   "src/components/app/screen-breadcrumb.tsx",
   // The account menu in the persistent header, reachable from every route. Its
   // two destinations - Settings and Support - are top-level routes already
   // rooted correctly, which is the sidebar's own argument verbatim.
   "src/components/app/user-menu.tsx",
 ];
+
+/**
+ * A forward navigation that bypasses the helper.
+ *
+ * `navigate` as well as `push`, because the acceptance criterion is written over
+ * both and they are interchangeable at a call site - `useNotificationDeepLink`
+ * already uses `navigate` elsewhere in the app, so the next cross-link written
+ * here could reach for it and slip past a push-only scan without recording a
+ * thing. `replace` is deliberately NOT included: the Escape itself replaces (R4)
+ * and so do the post-auth redirects, and neither is a drill-down that leaves an
+ * Origin behind.
+ */
+const BARE_NAVIGATION = /router\.(push|navigate)\(/;
 
 const REPO = path.join(__dirname, "..", "..", "..");
 
@@ -86,8 +109,8 @@ describe("global nav chrome opts out of recording an Origin", () => {
     expect(read(file)).toMatch(/<Link\b/);
   });
 
-  it.each(PUSH_NAV_CHROME)("%s still pushes, so the check has a subject", (file) => {
-    expect(read(file)).toMatch(/router\.push\(/);
+  it.each(PUSH_NAV_CHROME)("%s still navigates, so the check has a subject", (file) => {
+    expect(read(file)).toMatch(BARE_NAVIGATION);
   });
 
   /**
@@ -102,12 +125,12 @@ describe("global nav chrome opts out of recording an Origin", () => {
    * the therapy modules and the tools tree are #1266 and #1267, and #1269 turns
    * the whole rule into lint once all three have landed.
    */
-  it("declares every remaining bare router.push in src/components/app", () => {
+  it("declares every remaining bare router navigation in src/components/app", () => {
     const dir = path.join(REPO, "src", "components", "app");
     const offenders = fs
       .readdirSync(dir, { recursive: true, encoding: "utf8" })
       .filter((name) => /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name))
-      .filter((name) => /router\.push\(/.test(fs.readFileSync(path.join(dir, name), "utf8")))
+      .filter((name) => BARE_NAVIGATION.test(fs.readFileSync(path.join(dir, name), "utf8")))
       .map((name) => `src/components/app/${name.split(path.sep).join("/")}`);
 
     expect(offenders.sort()).toEqual([...PUSH_NAV_CHROME].sort());

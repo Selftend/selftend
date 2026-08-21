@@ -16,7 +16,7 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
 export function CrisisSupportBar() {
   const { t } = useTranslation("common");
   // Through the Origin-recording helper, never a bare `router.push` (#1265, O3).
-  // This bar renders on eleven screens - nine ACT exercises, the CBT new-record
+  // This bar renders on eleven screens - eight ACT exercises, the CBT new-record
   // screen, grounding home, the mood entry editor - and `/crisis` sits at the
   // root, so its Up is Home. Without the Origin, a user in distress mid-exercise
   // who reaches for crisis support cannot get back to what they were doing.

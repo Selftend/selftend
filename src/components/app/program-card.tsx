@@ -77,7 +77,7 @@ const ACCENT_CLASSES = {
 function TaskRow({ task, ns }: { task: ProgramTaskView; ns: string }) {
   const { t } = useTranslation(ns);
   const label = t(task.labelKey);
-  // A program task can sit outside its own module - ACT's program sends the user
+  // A program task can sit outside its own module - CBT's programme sends the user
   // to `/tools/check-in/new`, whose Up climbs to `/tools` - so the row records
   // where it left from (#1265, O3). An on-trail task records too and costs
   // nothing: the off-trail test runs at the destination, and leaving the

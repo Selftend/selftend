@@ -64,7 +64,7 @@ describe("CrisisSupportBar", () => {
 /**
  * The product-guardrail case behind the whole escape spec (#1265, clause O3).
  *
- * This bar renders on eleven screens - nine ACT exercises, the CBT new-record
+ * This bar renders on eleven screens - eight ACT exercises, the CBT new-record
  * screen, grounding home, the mood entry editor - and `CrisisSupportCallout`
  * adds two module homes. That is thirteen cross-hierarchy jumps into `/crisis`
  * from deep inside a therapy tool, and `/crisis` sits at the root, so its Up is
@@ -94,18 +94,31 @@ describe("CrisisSupportBar records where it was reached from", () => {
    * The acceptance criterion end to end, through the real route map rather than
    * a mocked trail: leave a session screen for crisis support, and the Escape
    * over there both names that screen and goes back to it.
+   *
+   * Both origins are screens this bar actually renders on, and the ACT one is
+   * the guardrail case in the ticket's own words - "a user in distress,
+   * mid-exercise". Grounding home is the shallower shape: three segments deep
+   * versus one, and a `sidebar.*` label rather than a leaf `breadcrumb.*` one,
+   * so between them they cover both ways `nameOrigin` can reach a name.
    */
-  it("lets the Escape on /crisis return to that screen, named", () => {
-    renderWithProviders(<CrisisSupportBar />);
+  it.each([
+    ["/modules/act/expansion/urge-surfing", "Urge surfing"],
+    ["/tools/grounding", "Grounding"],
+  ])("lets the Escape on /crisis return to %s, named", (origin, name) => {
+    mockPathname = origin;
+    const session = renderWithProviders(<CrisisSupportBar />);
     fireEvent.press(screen.getByRole("button"));
+    // The screen the user left really is gone before the next one mounts, so
+    // nothing below can match a leftover node from the departed tree.
+    session.unmount();
 
     // The arrival. `/crisis` is a one-crumb screen, so its trail is hidden and
     // the Escape's own label is the only thing naming where the exit goes.
     mockPathname = "/crisis";
     renderWithProviders(<ScreenEscape />);
 
-    expect(screen.getByText("Grounding")).toBeTruthy();
-    fireEvent.press(screen.getByLabelText("Back to Grounding"));
-    expect(router.replace).toHaveBeenCalledWith("/tools/grounding");
+    expect(screen.getByText(name)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(`Back to ${name}`));
+    expect(router.replace).toHaveBeenCalledWith(origin);
   });
 });

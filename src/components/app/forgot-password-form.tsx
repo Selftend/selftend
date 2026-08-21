@@ -25,11 +25,9 @@ import { useSession } from "@/src/providers/session-provider";
 export function ForgotPasswordForm() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
-  // ⚠️ These hrefs carry their route group - `/(auth)/sign-in` - and `usePathname`
-  // never reports one, so a raw href would record a target that can never match
-  // and would fail silently, showing a plain Up. `targetPathname` inside the
-  // helper strips the group, which is exactly why the cross-links go through it
-  // rather than each spelling out a normalised path (#1265, O3).
+  // ⚠️ These hrefs carry their route group - `/(auth)/sign-in` - which the
+  // helper's `targetPathname` strips; see its docblock for why a raw one would
+  // record a target that can never match, silently (#1265, O3).
   const pushWithOrigin = usePushWithOrigin();
   const [submitError, setSubmitError] = useState("");
   const [sentTo, setSentTo] = useState("");
