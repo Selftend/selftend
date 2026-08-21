@@ -6,6 +6,8 @@ import { SEED_USERS, createServiceClient, deleteAllGoalsForUser, signInAs } from
 // - title + description round-trip plaintext through the same `goals` name, while
 //   `goals_data` holds only ciphertext (*_enc).
 // - pass-through columns (life_domain, goal_type, target_date, status) survive a round-trip.
+// - value_key round-trips encrypted, and a goal anchored to nothing keeps a NULL key
+//   through both triggers (#1287) - it can never gate goal creation.
 // - the title 300-char and description 4000-char caps are enforced in the trigger.
 // - RLS isolates a second user.
 
@@ -101,6 +103,94 @@ describe("goals encrypted view (integration)", () => {
     expect(afterCipher.length).toBeGreaterThan(0);
     expect(afterCipher).not.toEqual(beforeCipher);
     expect(afterCipher).not.toContain("secret-marker-NEW");
+  });
+
+  // #1287. The key is a pointer into the user's ranked priority values, encrypted at rest
+  // even though this table leaves its other enum-ish columns in plaintext: values_profile
+  // encrypts its own value list, and a plaintext pointer would put "anchored to honesty"
+  // in the clear anyway.
+  it("INSERT round-trips the value key while storing it as ciphertext", async () => {
+    const insert = await alice
+      .from("goals")
+      .insert({ ...baseRow(), value_key: "honest-secret-marker-VALUE" })
+      .select("*")
+      .single();
+    expect(insert.error).toBeNull();
+    expect(insert.data?.value_key).toBe("honest-secret-marker-VALUE");
+
+    const id = insert.data!.id as string;
+    const atRest = await admin.from("goals_data").select("value_key_enc").eq("id", id).single();
+    expect(atRest.error).toBeNull();
+    const cipher = cipherToText(atRest.data?.value_key_enc);
+    expect(cipher.length).toBeGreaterThan(0);
+    expect(cipher).not.toContain("secret-marker-VALUE");
+  });
+
+  // The programme's first week lists goal-setting BEFORE values clarification, so the
+  // first goal on the intended path is written with no priority values in existence.
+  // NULL must survive both triggers rather than becoming "": a coalesce anywhere on this
+  // path would turn "anchored to nothing" into "anchored to the empty string".
+  it("a goal anchored to nothing keeps a NULL key through INSERT and UPDATE", async () => {
+    const insert = await alice.from("goals").insert(baseRow()).select("*").single();
+    expect(insert.error).toBeNull();
+    expect(insert.data?.value_key).toBeNull();
+
+    const id = insert.data!.id as string;
+    const atRest = await admin.from("goals_data").select("value_key_enc").eq("id", id).single();
+    expect(atRest.error).toBeNull();
+    expect(atRest.data?.value_key_enc).toBeNull();
+
+    // Editing an unrelated field must not invent a key.
+    const updated = await alice
+      .from("goals")
+      .update({ status: "completed" })
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    expect(updated.error).toBeNull();
+    expect(updated.data?.value_key).toBeNull();
+  });
+
+  it("UPDATE encrypts the value key, and can clear it back to NULL", async () => {
+    const created = await alice
+      .from("goals")
+      .insert({ ...baseRow(), value_key: "caring" })
+      .select("id")
+      .single();
+    expect(created.error).toBeNull();
+    const id = created.data!.id as string;
+
+    const anchored = await alice
+      .from("goals")
+      .update({ value_key: "brave-secret-marker-VALUE" })
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    expect(anchored.error).toBeNull();
+    expect(anchored.data?.value_key).toBe("brave-secret-marker-VALUE");
+
+    const atRest = await admin.from("goals_data").select("value_key_enc").eq("id", id).single();
+    expect(cipherToText(atRest.data?.value_key_enc)).not.toContain("secret-marker-VALUE");
+
+    // Un-anchoring is a real state, not an empty string.
+    const cleared = await alice
+      .from("goals")
+      .update({ value_key: null })
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    expect(cleared.error).toBeNull();
+    expect(cleared.data?.value_key).toBeNull();
+
+    const clearedAtRest = await admin
+      .from("goals_data")
+      .select("value_key_enc")
+      .eq("id", id)
+      .single();
+    expect(clearedAtRest.data?.value_key_enc).toBeNull();
   });
 
   it("DELETE through the view removes the underlying base row", async () => {
