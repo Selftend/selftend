@@ -10,6 +10,7 @@
 import {
   SHIP_BUDGET_BYTES,
   SHIP_FILE_COUNT,
+  budgetVerdict,
   bytesForSeconds,
   predictShipping,
   shipFileName,
@@ -65,6 +66,31 @@ describe("the budget ceiling", () => {
   it("is not decimal megabytes", () => {
     expect(SHIP_BUDGET_BYTES).not.toBe(4_000_000);
     expect(2992420 / SHIP_BUDGET_BYTES).toBeCloseTo(0.713, 3);
+  });
+
+  /**
+   * ⚠️ The comparison lives in one function on purpose. It was inlined in both
+   * `predictShipping` and `surveyShipping` for one commit, and mutation-testing
+   * found that only the survey's copy had a boundary test — flipping the
+   * prediction's `>` to `>=` changed the verdict on an exactly-full set and nothing
+   * failed. Both now spread this, so the boundary is asserted once and holds for
+   * both.
+   */
+  it("counts a set exactly on the ceiling as under it", () => {
+    expect(budgetVerdict(SHIP_BUDGET_BYTES).over).toBe(false);
+    expect(budgetVerdict(SHIP_BUDGET_BYTES).headroomBytes).toBe(0);
+    expect(budgetVerdict(SHIP_BUDGET_BYTES + 1).over).toBe(true);
+    expect(budgetVerdict(SHIP_BUDGET_BYTES - 1).over).toBe(false);
+  });
+
+  it("is the same verdict wherever it is asked", () => {
+    const units: Unit[] = shippingUnits();
+    const predicted = predictShipping(units, withVoiceSeconds);
+    const surveyed = surveyShipping(units, [{ name: "x.m4a", bytes: predicted.totalBytes }]);
+
+    expect(surveyed.over).toBe(predicted.over);
+    expect(surveyed.headroomBytes).toBe(predicted.headroomBytes);
+    expect(surveyed.budgetBytes).toBe(predicted.budgetBytes);
   });
 });
 

@@ -119,6 +119,29 @@ export function shippingUnits() {
 }
 
 /**
+ * How a total stands against the ceiling — the one place that comparison lives.
+ *
+ * ⚠️ It was two places for one commit, once in the prediction and once in the
+ * survey, and mutation-testing found the asymmetry immediately: only the survey's
+ * copy had a boundary test, so flipping the prediction's `>` to `>=` changed the
+ * verdict on an exactly-full set and nothing failed. A ceiling implemented twice is
+ * a ceiling with two answers, which is the standards finding `/code-review` already
+ * raised once on this map (#1359, the billing helpers).
+ *
+ * The rule is "under the ceiling", and a set landing exactly on it is under it.
+ *
+ * @param {number} totalBytes
+ */
+export function budgetVerdict(totalBytes) {
+  return {
+    totalBytes,
+    budgetBytes: SHIP_BUDGET_BYTES,
+    headroomBytes: SHIP_BUDGET_BYTES - totalBytes,
+    over: totalBytes > SHIP_BUDGET_BYTES,
+  };
+}
+
+/**
  * Bytes a constant-bitrate stream of this many seconds occupies.
  *
  * ⚠️ A LOWER BOUND, and the prediction says so. It counts the audio payload only;
@@ -166,10 +189,7 @@ export function predictShipping(units, secondsFor = () => null) {
   return {
     rows,
     unknown,
-    totalBytes,
-    budgetBytes: SHIP_BUDGET_BYTES,
-    headroomBytes: SHIP_BUDGET_BYTES - totalBytes,
-    over: totalBytes > SHIP_BUDGET_BYTES,
+    ...budgetVerdict(totalBytes),
     // ☠️ A total with unknowns in it is a floor, and calling it anything else on a
     // set that sits at ~80% of its ceiling would be the whole point of the check
     // thrown away.
@@ -221,7 +241,8 @@ export function surveyShipping(units, files) {
       detail: "a finished file no shipping unit claims",
     });
   }
-  const over = totalBytes > SHIP_BUDGET_BYTES;
+  const verdict = budgetVerdict(totalBytes);
+  const { over } = verdict;
   if (over) {
     gaps.push({
       kind: "over-budget",
@@ -235,10 +256,7 @@ export function surveyShipping(units, files) {
     missing,
     unexpected,
     gaps,
-    totalBytes,
-    budgetBytes: SHIP_BUDGET_BYTES,
-    headroomBytes: SHIP_BUDGET_BYTES - totalBytes,
-    over,
+    ...verdict,
     // The set is finished only when every unit has a file, nothing else is in the
     // directory, and the whole thing fits. Two of those three were previously
     // unasked.
