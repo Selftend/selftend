@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
 
 /**
  * `show the record, don't read it` (#711), and its companion: **the framework may
@@ -81,43 +80,7 @@ function isAllowed(locale: Locale, namespace: string, key: string) {
   );
 }
 
-type Locale = "en" | "bg";
-
-/** Every leaf string in a namespace, keyed by its dotted path. */
-function flatten(value: unknown, prefix = ""): [string, string][] {
-  if (typeof value === "string") return [[prefix, value]];
-  if (Array.isArray(value)) {
-    return value.flatMap((item, i) => flatten(item, `${prefix}[${i}]`));
-  }
-  if (value && typeof value === "object") {
-    return Object.entries(value).flatMap(([key, child]) =>
-      flatten(child, prefix ? `${prefix}.${key}` : key),
-    );
-  }
-  return [];
-}
-
-function localeDir(locale: Locale) {
-  return path.join(__dirname, "..", "src", "i18n", "locales", locale);
-}
-
-/** Read the namespaces off disk so a newly-added one is covered without an import. */
-function loadLocale(locale: Locale): { namespace: string; key: string; text: string }[] {
-  const dir = localeDir(locale);
-  return fs
-    .readdirSync(dir)
-    .filter((file) => file.endsWith(".json"))
-    .flatMap((file) => {
-      const namespace = file.replace(/\.json$/, "");
-      const parsed = JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
-      return flatten(parsed).map(([key, text]) => ({ namespace, key, text }));
-    });
-}
-
-const STRINGS: Record<Locale, ReturnType<typeof loadLocale>> = {
-  en: loadLocale("en"),
-  bg: loadLocale("bg"),
-};
+const STRINGS = LOCALE_STRINGS;
 
 describe("product copy states the record instead of advertising restraint", () => {
   it("reads every namespace, so a new one is covered the day it is added", () => {

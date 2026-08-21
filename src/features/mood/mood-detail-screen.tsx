@@ -16,7 +16,7 @@ import { LoadingState } from "@/src/components/app/screen-state";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { useDeleteMoodLog, useMoodLog, useMoodLogs } from "@/src/features/mood/queries";
-import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import type { MoodLog } from "@/src/features/mood/types";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
@@ -253,7 +253,7 @@ export default function MoodDetailScreen() {
             ) : null}
 
             <View className="items-end">
-              <ShowAllHistoryLink />
+              <ShowAllLink label={t("allHistory.link")} route="/tools/check-in/history" />
             </View>
           </View>
         </ScrollView>
