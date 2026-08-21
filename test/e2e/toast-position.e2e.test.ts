@@ -174,14 +174,15 @@ test.describe("the toast at the bottom of a phone screen", () => {
     await page.context().setOffline(false);
     await expect(page.getByText(/you're offline/i)).toBeHidden({ timeout: 15_000 });
 
-    const settled = await page.evaluate(() => {
-      const host = document.querySelector('[data-testid="app-toast-host"]');
-      const fab = document.querySelector('[data-testid="routine-fab-host"]');
-      return {
-        hostBottom: host?.getBoundingClientRect().bottom ?? null,
-        fabTop: fab?.getBoundingClientRect().top ?? null,
-      };
-    });
+    const readSettled = () =>
+      page.evaluate(() => {
+        const host = document.querySelector('[data-testid="app-toast-host"]');
+        const fab = document.querySelector('[data-testid="routine-fab-host"]');
+        return {
+          hostBottom: host?.getBoundingClientRect().bottom ?? null,
+          fabTop: fab?.getBoundingClientRect().top ?? null,
+        };
+      });
 
     // ☠️ This is the assertion the whole layered model exists for, and the one a
     // stale measurement would silently pass in the other direction only. On web
@@ -190,9 +191,24 @@ test.describe("the toast at the bottom of a phone screen", () => {
     // leaves is exactly that shape, and `useInsetPublisher`'s `revision` is what
     // makes it re-measure. Without it the toast would stay parked where the
     // banner used to be.
+    //
+    // ☠️ Polled, not sampled once, and the difference is not flake-padding: the
+    // ladder settles ONE RUNG AT A TIME. The strip republishes, the FAB
+    // re-measures and drops, and only THEN can the toast - which reads the max of
+    // the layers BELOW it - see the lower edge, each rung costing a layout pass
+    // plus `measureInWindow`'s own `setTimeout(0)`. Reading a single instant the
+    // moment the banner's text disappears catches the FAB already down and the
+    // toast not yet (#1396: `687` against a FAB that had already moved 703 -> 740,
+    // with the failure screenshot a beat later showing the toast settled). A
+    // genuinely stale inset never arrives at all and still fails here, which is
+    // the property this guards.
+    await expect.poll(async () => (await readSettled()).hostBottom).toBeGreaterThan(host.bottom);
+
+    const settled = await readSettled();
     expect(settled.hostBottom).not.toBeNull();
     expect(settled.fabTop).not.toBeNull();
-    expect(settled.hostBottom!).toBeGreaterThan(host.bottom);
+    // The rung it stands on moved too, so re-check the ladder in the settled
+    // state rather than trusting the offline measurement of it.
     expect(settled.hostBottom!).toBeLessThanOrEqual(settled.fabTop!);
   });
 });
