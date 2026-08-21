@@ -39,6 +39,7 @@ const FULL_ROW = {
   balanced_thought: "It will probably be fine",
   emotion_intensity_after: 30,
   outcome_notes: "felt calmer",
+  belief_after: 25,
   created_at: "2026-05-10T07:00:00.000Z",
   updated_at: "2026-05-11T07:00:00.000Z",
   archived_at: null,
@@ -55,6 +56,7 @@ const NULL_ROW = {
   evidence_against: null,
   emotion_intensity_after: null,
   outcome_notes: null,
+  belief_after: null,
 };
 
 // The jest runner pins TZ to Asia/Kolkata (+05:30), so "the viewer's day" is
@@ -84,6 +86,7 @@ const INPUT: ThoughtRecordInput = {
   balancedThought: "  It will probably be fine  ",
   emotionIntensityAfter: 30,
   outcomeNotes: "  felt calmer  ",
+  beliefAfter: 25,
 };
 
 describe("cbt repository - countThoughtRecordsSince", () => {
@@ -168,6 +171,7 @@ describe("cbt repository - listThoughtRecords", () => {
       balancedThought: "It will probably be fine",
       emotionIntensityAfter: 30,
       outcomeNotes: "felt calmer",
+      beliefAfter: 25,
       createdAt: FULL_ROW.created_at,
       createdOffsetMinutes: null,
       dayKey: "2026-05-10",
@@ -185,6 +189,7 @@ describe("cbt repository - listThoughtRecords", () => {
       evidenceAgainst: [],
       emotionIntensityAfter: null,
       outcomeNotes: "",
+      beliefAfter: null,
     });
   });
 
@@ -308,6 +313,7 @@ describe("cbt repository - saveThoughtRecord", () => {
       balanced_thought: "It will probably be fine",
       emotion_intensity_after: 30,
       outcome_notes: "felt calmer",
+      belief_after: 25,
     });
     expect(payload).not.toHaveProperty("created_at");
     // Neither half alone: a server-defaulted instant with no offset records
@@ -388,6 +394,36 @@ describe("cbt repository - saveThoughtRecord", () => {
     expect(payload).not.toHaveProperty("created_at");
     expect(eqUser).toHaveBeenCalledWith("user_id", "u1");
     expect(eqId).toHaveBeenCalledWith("id", FULL_ROW.id);
+  });
+
+  it("carries belief_after on the UPDATE path too, including back to null", async () => {
+    // Both INSTEAD OF triggers were changed for this column, so both client
+    // paths have to exercise it. Clearing the rating on an edit has to reach the
+    // database as null rather than be dropped from the payload - a dropped key
+    // would leave the old value standing and silently refuse the change (#1376).
+    const maybeSingle = jest.fn().mockResolvedValue({ data: FULL_ROW, error: null });
+    const select = jest.fn(() => ({ maybeSingle }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ thought_records: { update } }));
+
+    await saveThoughtRecord("u1", { ...INPUT, beliefAfter: null }, FULL_ROW.id);
+
+    const payload = (update.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(payload).toHaveProperty("belief_after", null);
+  });
+
+  it("reads a record served WITHOUT the column back as null", async () => {
+    // Every record written before the migration has no belief-after value, and a
+    // response cached from before it has no such key at all. Neither may throw
+    // and neither may read as 0 - "unrated" and "no longer believed" are
+    // opposite outcomes.
+    const { belief_after: _dropped, ...legacyRow } = FULL_ROW;
+    listOne(legacyRow);
+
+    const [record] = await listThoughtRecords("u1");
+    expect(record.beliefAfter).toBeNull();
   });
 
   it("throws the not-found sentinel when the update returns no row", async () => {

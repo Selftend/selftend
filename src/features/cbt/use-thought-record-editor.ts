@@ -71,6 +71,7 @@ export function useThoughtRecordEditor() {
     reset({
       nats: existingRecord.nats,
       balancedThought: existingRecord.balancedThought,
+      beliefAfter: existingRecord.beliefAfter,
       distortions: existingRecord.distortions,
       emotionIntensityAfter: existingRecord.emotionIntensityAfter,
       emotionIntensityBefore: existingRecord.emotionIntensityBefore,
