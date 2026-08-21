@@ -51,8 +51,14 @@ export function targetPathname(href: Href): string {
  *
  * Recording is **opt-out, not opt-in**: every push through this helper records
  * `{ origin: <where you are>, forPathname: <where you are going> }`, and the
- * global nav chrome - `SidebarNav`, the hamburger, `InvisibleHeader`'s brand
- * link - keeps calling `router.push` directly. That inversion is deliberate. The
+ * global nav chrome does not go through it. That set is **five surfaces, and
+ * only two of them are a call anyone could forget to migrate**: `SidebarNav`'s
+ * rows and `InvisibleHeader`'s brand link navigate with `<Link href>` and the
+ * hamburger does not navigate at all, so there is nothing there to leave out;
+ * `UserMenu` and `ScreenBreadcrumb` do call `router.push` and stay bare on
+ * purpose (#1265). The whole set is enumerated, with the reasoning that
+ * distinguishes those two, in `src/components/app/nav-chrome-origin.test.ts`,
+ * which fails if any of them starts recording. That inversion is deliberate. The
  * cross-link set is actively growing (#1192 added nine off-trail pushes hours
  * after the rule was charted) and opt-in fails *invisibly*: a link that forgets
  * just quietly shows Up, with nothing on screen to notice. Opt-out is a small

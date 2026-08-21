@@ -26,6 +26,19 @@ import { budget } from "../scripts/audio/postprocess.mjs";
 import { SHIP_BUDGET_BYTES, predictShipping, shippingUnits } from "../scripts/audio/ship-plan.mjs";
 
 /**
+ * ☠️ Wall-clock, not logic — the same bound `audio-manifest-cli.test.ts` and
+ * `audio-render-reroll.test.ts` carry, for the same reason and now on the same
+ * evidence. These cases write a scratch tree of twenty-one real files EACH and
+ * finish in well under a second on an idle machine, but under a full suite run the
+ * workers compete for disk, and one of the sibling suites crossed jest's 5000ms
+ * default and reported a broken honesty check where there was none.
+ *
+ * Generous on purpose: nothing here should approach it, so a timeout after this
+ * means the command genuinely got slower rather than that the runner was busy.
+ */
+jest.setTimeout(60_000);
+
+/**
  * Derived from the module, never hand-written. ⚠️ A local shape plus an
  * `as Unit[]` cast would keep compiling after `shippingUnits` changed shape — the
  * cast silences exactly the drift these tests exist to catch.

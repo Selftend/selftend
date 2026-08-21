@@ -3,10 +3,12 @@ import { router } from "expo-router";
 
 import { CbtProgramCard } from "./cbt-program-card";
 import type { CbtProgramView, CurrentPhaseView } from "@/src/features/cbt/derive-cbt-program";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
+  usePathname: () => "/modules/cbt",
 }));
 
 jest.mock("expo-linear-gradient", () => {
@@ -195,6 +197,34 @@ describe("CbtProgramCard", () => {
       const practiceRow = screen.getByText("Notice your thoughts, feelings & behaviours today");
       fireEvent.press(practiceRow);
       expect(router.push).toHaveBeenCalledWith("/tools/check-in/new");
+    });
+
+    /**
+     * A programme task that leaves its own module (#1265, O3). CBT's daily
+     * practice is the shared check-in, which lives under `/tools`, so its Up
+     * climbs to `/tools` and drops the user out of the programme they were
+     * working through.
+     *
+     * On the store, not on `router.push`: the helper pushes through
+     * `router.push`, so the assertion above holds identically whether or not
+     * this row was ever migrated.
+     */
+    it("records the module it left as the Origin for an off-module task", () => {
+      useNavigationOriginStore.setState({ pending: null });
+      renderWithProviders(
+        <CbtProgramCard
+          program={makeProgram({ phaseReady: true, phase: assessmentPhase })}
+          onStart={jest.fn()}
+          onAdvance={jest.fn()}
+        />,
+      );
+
+      fireEvent.press(screen.getByText("Notice your thoughts, feelings & behaviours today"));
+
+      expect(useNavigationOriginStore.getState().pending).toEqual({
+        origin: "/modules/cbt",
+        forPathname: "/tools/check-in/new",
+      });
     });
   });
 
