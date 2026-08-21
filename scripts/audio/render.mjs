@@ -154,7 +154,26 @@ async function soundEffect(key, { text, durationSeconds, promptInfluence, loop, 
   return {
     buffer: Buffer.from(await response.arrayBuffer()),
     contentType: response.headers.get("content-type"),
+    headers: allHeaders(response),
   };
+}
+
+/**
+ * Every response header, or null where the caller stubbed a bare `get()`.
+ *
+ * ☠️ #1347's fourth question — is a generation billed on the seconds requested or
+ * the seconds returned? — is normally answered by reading the balance either side
+ * of the call, and the key on hand lacks `user_read` and 401s on that endpoint.
+ * Some of this API's cost accounting rides in response headers, and headers cost
+ * nothing to keep. The probe that opened #1347 recorded a byte count and threw
+ * everything else away; a week later that was the missing evidence. Keep it all.
+ */
+function allHeaders(response) {
+  try {
+    return Object.fromEntries(response.headers);
+  } catch {
+    return null;
+  }
 }
 
 async function textToSpeech(key, { voiceId, text, outputFormat, seed }) {
@@ -925,7 +944,7 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
   if (!before.ok) console.log(`⚠️ balance unavailable: ${before.error}`);
 
   for (const take of takes) {
-    const { buffer, contentType } = await soundEffect(key, {
+    const { buffer, contentType, headers } = await soundEffect(key, {
       text: prompt,
       durationSeconds: seconds,
       promptInfluence: clip.promptInfluence,
@@ -935,6 +954,7 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
     await writeFile(take.pcmPath, buffer);
     take.bytes = buffer.length;
     take.contentType = contentType;
+    take.responseHeaders = headers;
     console.log(`ok   ${take.label}  loop=${take.loop}  ${buffer.length} bytes  ${contentType}`);
   }
 
