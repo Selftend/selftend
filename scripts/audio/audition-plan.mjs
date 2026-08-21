@@ -109,6 +109,11 @@ export function planAudition({ clips, promptFor, history, all = false }) {
       }
       for (const { row, status } of takes) {
         entries.push({
+          // The key a pick is recorded under. For a sound effect that is the clip
+          // id itself; the voice half needs the voice too, and both halves are
+          // shown on one page, so every entry carries the key rather than the page
+          // guessing which shape it is holding.
+          unitId: clip.id,
           clipId: clip.id,
           klass: clip.klass,
           candidate,
@@ -139,14 +144,206 @@ export function planAudition({ clips, promptFor, history, all = false }) {
 /**
  * The preview filename for one entry. Distinct per attempt, so nothing collides.
  *
- * @param {{clipId: string, candidate: number, attempt: number|null}} entry
+ * ☠️ The voice segment is not decoration. Both voices say the same four cues
+ * (#1136 keeps one script for the pair deliberately, so a user never gets a
+ * *content* reason to prefer a voice), so `guide_inhale` candidate 1 exists twice.
+ * Without the voice in the name the second preview silently overwrites the first
+ * and the matched-pair comparison becomes a clip compared against itself.
+ *
+ * @param {{clipId: string, candidate: number, attempt: number|null, voice?: string|null}} entry
  * @param {{repeats?: number|null}} [options] `repeats` names the tiled loop file
  */
 export function previewName(entry, { repeats = null } = {}) {
+  const voice = entry.voice ? `-${entry.voice}` : "";
   const candidate = `c${String(entry.candidate).padStart(2, "0")}`;
   const attempt = entry.attempt === null ? "" : `-a${String(entry.attempt).padStart(2, "0")}`;
   const loop = repeats ? `-x${repeats}` : "";
-  return `${entry.clipId}-${candidate}${attempt}${loop}.m4a`;
+  return `${entry.clipId}${voice}-${candidate}${attempt}${loop}.m4a`;
+}
+
+// ---------------------------------------------------------------------------
+// the voice half (#1210)
+// ---------------------------------------------------------------------------
+
+/**
+ * ☠️ THE EIGHT VOICE CUES WERE NOT IN THE AUDITION AT ALL.
+ *
+ * `audition.mjs` builds its clip list from `clipsForRound`, which filters
+ * `SFX_CLIPS` — the voice cues have never been in it. Round B is 21 clips and the
+ * audition saw 11: `build` could not make a voice cue playable, `choose` threw on
+ * a `guide_*` id, and `status` printed "Every clip in round B has a pick" with the
+ * whole voice half untouched. That is #1317's "11 clips read as 19" one subsystem
+ * later, and it lands on the class #1210 calls its own FIRST task — #1136 routed
+ * the voice pick into the render session on the stated criterion that the pair is
+ * auditioned **on the shipping words**, not on the library's demo reel, and there
+ * was no instrument for that criterion.
+ *
+ * The unit a voice pick is made on is one cue **in one voice**, not one cue: both
+ * voices ship (#1136 makes the male voice purely additive, so nothing migrates and
+ * both are owed a pick).
+ *
+ * Cue-major order, so the matched pair is heard back to back on the same words.
+ * Grouping by voice instead puts the two halves of #1136's comparison four players
+ * apart.
+ *
+ * @param {{
+ *   voices: {id: string, axis: string, voiceId: string|null}[],
+ *   cues: {id: string, text: string}[],
+ *   candidates: number,
+ * }} args
+ * @returns {{
+ *   id: string, clipId: string, klass: string, voice: string, axis: string,
+ *   voiceId: string|null, text: string, candidates: number,
+ * }[]}
+ */
+export function voiceSlots({ voices, cues, candidates }) {
+  return cues.flatMap((cue) =>
+    voices.map((voice) => ({
+      id: `${cue.id}|${voice.id}`,
+      clipId: cue.id,
+      klass: "voice",
+      voice: voice.id,
+      axis: voice.axis,
+      voiceId: voice.voiceId,
+      text: cue.text,
+      candidates,
+    })),
+  );
+}
+
+/**
+ * What a voice take is OF — the voice that said it and the words it said.
+ *
+ * This is the voice half's answer to the composed SFX prompt, and it supersedes
+ * for the same two reasons: #1264 could rewrite the wording, and the voice itself
+ * is picked by auditioning a shortlist on the shipping words, so takes of a voice
+ * that lost must not sit among the winner's candidates.
+ *
+ * ⚠️ A null id — which is what the catalog ships, because #1136 deliberately left
+ * the pick to the render session — must never compare equal to a rendered take's
+ * real id, or an unchosen voice reads as settled.
+ *
+ * Human-readable on purpose: it is what the audition page prints above the
+ * players, so the string that decides supersession is the one being read.
+ *
+ * @param {{voiceId?: string|null, text: string}} take
+ * @returns {string}
+ */
+export function voiceIdentity({ voiceId, text }) {
+  return `${voiceId ?? "(no voice chosen)"} — ${text}`;
+}
+
+/**
+ * Group voice manifest rows by the slot they belong to.
+ *
+ * ☠️ NOT `rowsBySlot`, which keys on `clip|candidate`. Both voices say the same
+ * cue, so that key collapses the male take onto the female slot — one of them
+ * disappears and the other is auditioned twice.
+ */
+export function voiceRowsBySlot(rows) {
+  const map = new Map();
+  for (const row of rows) {
+    // Both halves of Round B append to one manifest.
+    if (row.klass !== "voice") continue;
+    const key = `${row.clip}|${row.voice}|${row.candidate}`;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(row);
+  }
+  return map;
+}
+
+/**
+ * Grade one TTS take against the cue and voice the catalog names today.
+ *
+ * ☠️ THERE IS NO LEVEL GATE HERE, DELIBERATELY. #1320's usable/silent thresholds
+ * exist for the seedless Sound Effects model's silent tail — a fixed prompt varies
+ * 16-26 dB run to run and a dud can never be re-drawn. Text to Speech takes a
+ * seed, returns a consistent level, and is re-renderable, so grading a voice take
+ * by dBTP would import a rule no ticket decided onto the one class that does not
+ * need it. What a voice take IS gated on happens later and by ear, plus the one
+ * measurement that has always been a voice-clip rule in practice: leading silence
+ * (#1134, #1138 — the four `guide_*` clips are the only files in the app that have
+ * ever had any). `postprocess` measures that on the finished file.
+ */
+export function statusOfVoice(row, identity) {
+  return voiceIdentity(row) === identity ? STATUS.accepted : STATUS.superseded;
+}
+
+/**
+ * Every voice preview an audition run should produce, in listening order.
+ *
+ * Mirrors `planAudition` and reports its gaps the same way: a slot with no take is
+ * named rather than skipped, because a silent 4-of-8 reads as a finished pass.
+ *
+ * @param {{
+ *   slots: ReturnType<typeof voiceSlots>,
+ *   history: Map<string, Record<string, any>[]>,
+ *   all?: boolean,
+ * }} args `slots` from `voiceSlots`, `history` from `voiceRowsBySlot`
+ * @returns {{
+ *   entries: Record<string, any>[],
+ *   missing: {clipId: string, voice: string, candidate: number, drawn: number}[],
+ * }}
+ */
+export function planVoiceAudition({ slots, history, all = false }) {
+  const entries = [];
+  const missing = [];
+
+  for (const slot of slots) {
+    const identity = voiceIdentity(slot);
+    for (let candidate = 1; candidate <= slot.candidates; candidate += 1) {
+      const rows = history.get(`${slot.clipId}|${slot.voice}|${candidate}`) ?? [];
+      const graded = rows.map((row) => ({ row, status: statusOfVoice(row, identity) }));
+      const accepted = graded.filter((entry) => entry.status === STATUS.accepted);
+      const takes = all
+        ? [...accepted, ...graded.filter((e) => e.status !== STATUS.accepted)]
+        : accepted;
+
+      if (!takes.length) {
+        missing.push({
+          clipId: slot.clipId,
+          voice: slot.voice,
+          candidate,
+          drawn: rows.length,
+        });
+        continue;
+      }
+
+      for (const { row, status } of takes) {
+        entries.push({
+          unitId: slot.id,
+          clipId: slot.clipId,
+          klass: "voice",
+          voice: slot.voice,
+          axis: slot.axis,
+          voiceId: row.voiceId ?? null,
+          candidate,
+          // TTS renders once per seed — there is no re-roll here, because there is
+          // nothing stochastic to re-roll against.
+          attempt: null,
+          file: row.file,
+          status,
+          rejectedFor: null,
+          // Not measured at render time: `render-voices` writes a container, not
+          // the raw PCM the level gate reads. The finished-file numbers come from
+          // the post-processing chain the audition runs.
+          dbtp: null,
+          lufs: null,
+          // ☠️ The one field that makes this class re-renderable where the thirteen
+          // sound effects permanently are not.
+          seed: row.seed ?? null,
+          outputFormat: row.outputFormat ?? null,
+          // ☠️ THE TAKE'S OWN IDENTITY, NOT THE SLOT'S — same rule, same reason as
+          // the sound-effect side: recording the current one on every entry makes a
+          // pick against a superseded voice read as settled.
+          prompt: voiceIdentity(row),
+          currentPrompt: identity,
+        });
+      }
+    }
+  }
+
+  return { entries, missing };
 }
 
 const escapeHtml = (value) =>
@@ -184,9 +381,12 @@ export function renderIndexHtml({ round, repeats, results, missing = [], choices
   }
 
   const sections = [...byClip.entries()].map(([clipId, rows]) => {
-    const chosen = choices.get(clipId);
     const cards = rows
       .map((row) => {
+        // ☠️ PER CARD, NOT PER SECTION. Both voices say the same cue, so one
+        // section holds two units with two independent picks — looking the choice
+        // up by clip id alone would paint the male take with the female's pick.
+        const chosen = choices.get(row.unitId ?? row.clipId);
         const isChosen = chosen && chosen.file === row.file;
         const flags = [];
         if (row.status !== STATUS.accepted) {
@@ -207,10 +407,24 @@ export function renderIndexHtml({ round, repeats, results, missing = [], choices
         const seam = row.seam
           ? `wrap ${num(row.seam.wrapStepRatio, 2)}× · head/tail ${num(row.seam.energyDeltaRatio, 2)}×`
           : "—";
+        // ⚠️ #1134's hard rule, on the finished file. In practice a voice-clip rule
+        // (#1138: only the four `guide_*` files have ever carried any lead), which
+        // is why it sits beside the player on the half that had no page at all.
+        const edges = row.edges
+          ? `lead ${num(row.edges.leadMs, 2)} ms · tail ${num(row.edges.tailMs, 2)} ms`
+          : "—";
+        // ⚠️ #1136: `introMs` is MEASURED from the chosen clip, never estimated.
+        // This is the only place that number is put in front of the person picking.
+        const length = Number.isFinite(row.durationSeconds)
+          ? `${num(row.durationSeconds, 3)} s`
+          : "—";
+        const chooseCmd =
+          `node scripts/audio/audition.mjs choose ${clipId} ${row.candidate} ` +
+          `--round ${round}${row.voice ? ` --voice ${row.voice}` : ""}`;
 
         return `
       <article class="cand${isChosen ? " is-chosen" : ""}">
-        <h3>candidate ${row.candidate}${row.attempt === null ? "" : ` · attempt ${row.attempt}`} ${flags.join(" ")}</h3>
+        <h3>${row.voice ? `${escapeHtml(row.voice)} · ` : ""}candidate ${row.candidate}${row.attempt === null ? "" : ` · attempt ${row.attempt}`} ${flags.join(" ")}</h3>
         ${row.preview ? `<audio controls preload="none" src="${escapeHtml(row.preview)}"></audio>` : '<p class="muted">no preview produced</p>'}
         ${
           row.loopPreview
@@ -222,18 +436,26 @@ export function renderIndexHtml({ round, repeats, results, missing = [], choices
           <div><dt>raw</dt><dd>${num(row.dbtp)} dBTP · ${num(row.lufs)} LUFS</dd></div>
           <div><dt>finished</dt><dd>${num(row.post?.dbtp)} dBTP · ${num(row.post?.lufs)} LUFS</dd></div>
           <div><dt>gain</dt><dd>${Number.isFinite(row.gain) ? `${row.gain >= 0 ? "+" : ""}${num(row.gain, 2)} dB` : "—"}</dd></div>
-          <div><dt>seam</dt><dd>${seam}</dd></div>
+          <div><dt>edges</dt><dd>${edges}</dd></div>
+          <div><dt>length</dt><dd>${length}</dd></div>
+          ${row.klass === "beds" ? `<div><dt>seam</dt><dd>${seam}</dd></div>` : ""}
+          ${row.seed == null ? "" : `<div><dt>seed</dt><dd>${escapeHtml(row.seed)}</dd></div>`}
           <div><dt>size</dt><dd>${num(row.sizeKb)} KB</dd></div>
         </dl>
-        <code>node scripts/audio/audition.mjs choose ${escapeHtml(clipId)} ${row.candidate} --round ${escapeHtml(round)}</code>
+        <code>${escapeHtml(chooseCmd)}</code>
       </article>`;
       })
       .join("");
 
+    // ⚠️ One section per CUE, not per cue-and-voice: #1136 asks for a MATCHED
+    // female/male pair auditioned on the shipping words, and the two halves of that
+    // comparison have to sit side by side to be a comparison at all.
+    const identities = [...new Set(rows.map((row) => row.currentPrompt ?? row.prompt))];
+
     return `
     <section>
       <h2>${escapeHtml(clipId)} <span class="muted">${escapeHtml(rows[0].klass)}</span></h2>
-      <p class="prompt">${escapeHtml(rows[0].currentPrompt ?? rows[0].prompt)}</p>
+      ${identities.map((identity) => `<p class="prompt">${escapeHtml(identity)}</p>`).join("")}
       <div class="cands">${cards}</div>
     </section>`;
   });
@@ -242,7 +464,7 @@ export function renderIndexHtml({ round, repeats, results, missing = [], choices
     ? `<section class="gap"><h2>No take to audition</h2><ul>${missing
         .map(
           (m) =>
-            `<li>${escapeHtml(m.clipId)} candidate ${m.candidate} — ${m.drawn} row(s) on file, none of the current prompt</li>`,
+            `<li>${escapeHtml(m.clipId)}${m.voice ? ` (${escapeHtml(m.voice)})` : ""} candidate ${m.candidate} — ${m.drawn} row(s) on file, none of the current prompt</li>`,
         )
         .join("")}</ul></section>`
     : "";
@@ -307,9 +529,41 @@ export function renderIndexHtml({ round, repeats, results, missing = [], choices
  * corrupting the survey that quotes the cost of an unrepeatable spend. The record
  * that decides how much money a run costs does not get new row shapes added to it
  * by a tool that spends nothing.
+ *
+ * @param {{
+ *   clipId: string, candidate: number, file: string, prompt: string, at: string,
+ *   note?: string|null, voice?: string|null,
+ * }} args
  */
-export function choiceRow({ clipId, candidate, file, prompt, note = null, at }) {
-  return { record: "chosen", clip: clipId, candidate, file, prompt, note, at };
+export function choiceRow({ clipId, candidate, file, prompt, note = null, at, voice = null }) {
+  return {
+    record: "chosen",
+    clip: clipId,
+    // ⚠️ Present only on a voice pick. `choices.jsonl` is append-only and may
+    // already hold sound-effect picks, so adding an always-present `voice: null`
+    // would leave one record in two shapes for no gain.
+    ...(voice ? { voice } : {}),
+    candidate,
+    file,
+    prompt,
+    note,
+    at,
+  };
+}
+
+/**
+ * The key one pick is filed under.
+ *
+ * ☠️ A voice pick cannot be keyed on the clip alone. Both voices say all four
+ * cues, so `guide_inhale` is owed two picks — keyed on the clip, choosing the
+ * female take would mark the male one settled and half the voice set would ship
+ * unheard.
+ *
+ * @param {{clip: string, voice?: string|null}} row
+ * @returns {string}
+ */
+export function choiceKey({ clip, voice = null }) {
+  return voice ? `${clip}|${voice}` : clip;
 }
 
 /**
@@ -320,12 +574,12 @@ export function choiceRow({ clipId, candidate, file, prompt, note = null, at }) 
  * final answer when a set is judged as a whole later.
  */
 export function currentChoices(rows) {
-  const byClip = new Map();
+  const byUnit = new Map();
   for (const row of rows) {
     if (row.record !== "chosen") continue;
-    byClip.set(row.clip, row);
+    byUnit.set(choiceKey(row), row);
   }
-  return byClip;
+  return byUnit;
 }
 
 /**
@@ -334,6 +588,12 @@ export function currentChoices(rows) {
  * ⚠️ A choice recorded against a prompt the catalog has since changed is NOT a
  * pick. It names a sound that is no longer being asked for, and treating it as
  * settled is how a rewritten prompt silently ships the old take's decision.
+ *
+ * Serves both halves of the round unchanged: a unit is identified by `id` and
+ * settled by the string `promptFor` returns for it. For a sound effect those are
+ * the clip id and the composed prompt; for a voice cue they are `cue|voice` and
+ * `voiceIdentity`, which is what makes a pick re-open when the voice is swapped as
+ * well as when the wording is.
  */
 export function outstanding({ clips, promptFor, choices }) {
   return clips

@@ -49,6 +49,34 @@ const LUFS_TOLERANCE = 1.0;
 const DBTP_EPSILON = 0.1;
 
 /**
+ * How much silence may sit in front of the FINISHED file, in milliseconds.
+ *
+ * ☠️ #1134 calls zero leading silence a HARD rule and #1210 makes it acceptance
+ * check number one — and until now nothing in this pipeline measured it.
+ * `edgeSilence` existed behind `postprocess edges <file>`, a separate command
+ * aimed at a file by hand, so the command that produces what the app ships could
+ * report PASS on a clip that starts late.
+ *
+ * ⚠️ It is in practice a VOICE-clip rule. #1138 measured the shipped set and only
+ * the four `guide_*` files carry any lead at all — 36.2 / 34.1 / 15.0 / 3.2 ms —
+ * while every bed, texture and bell measures 0.0. It matters because every trigger
+ * in the app is *already* up to 250 ms late (`TICK_MS` polling, #1134), so silence
+ * in the file adds to a lateness the user can already hear.
+ *
+ * The number is bracketed by two measurements, not chosen by feel. Above: #1138
+ * round-tripped AAC at **+8 samples, 0.18 ms**, so a tighter limit would fail every
+ * file this pipeline produces. Below: the smallest real lead in the shipped set is
+ * `guide_hold`'s **3.2 ms**, so a looser one waves the actual defect through. It
+ * also has to catch the 25.06 ms start_time #1138 measured on MP3, which is #1210's
+ * "confirm ffmpeg strips the encoder delay" case.
+ *
+ * ⚠️ The TAIL is measured and printed but never gated. A bell is a long smooth
+ * decay "fading continuously to silence" by #1139's own brief — gating its tail
+ * would fail the two clips whose entire character is a tail, for having one.
+ */
+export const LEAD_SILENCE_LIMIT_MS = 1.0;
+
+/**
  * Seam-gate thresholds, on the five beds only (#1137). Both are set from
  * measurement - `calibrate-seam.mjs` produces the table these came from.
  *
@@ -624,6 +652,27 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
     step("verify finished file");
     const post = await measure(outPath);
     const size = (await stat(outPath)).size;
+
+    // ☠️ #1134's ONE HARD RULE, measured here for the first time. `edgeSilence`
+    // has existed since #1347 but only behind `postprocess edges <file>` — a
+    // separate command aimed at a file by hand — so `run` could report PASS on a
+    // clip that starts late, on the one class that has ever started late (#1138:
+    // the four `guide_*` files carry 3.2-36.2 ms and nothing else carries any).
+    //
+    // ⚠️ On the FINISHED file, not the master. Encoding is where a delay would be
+    // introduced — #1210's own wording is "confirm ffmpeg strips the encoder delay"
+    // — so measuring the input would answer a question nobody asked.
+    step("lead-in check");
+    const finishedPath = join(dir, "finished.wav");
+    const finished = await decodeToFloatWav(outPath, finishedPath, {
+      channels: spec.channels,
+      sampleRate: OUTPUT_SAMPLE_RATE,
+    });
+    const edges = edgeSilence(finished.samples, finished.channels, finished.sampleRate);
+    // ⚠️ #1136 sets `introMs` from the MEASURED duration of the chosen guide_intro,
+    // never from an estimate — and this is the only place that number exists.
+    const durationSeconds = finished.samples.length / finished.channels / finished.sampleRate;
+
     if (spec.klass === "beds") step("seam gate");
     const seam = spec.klass === "beds" ? await seamCheckFile(outPath) : null;
 
@@ -633,6 +682,8 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
       post,
       size,
       seam,
+      edges,
+      durationSeconds,
       foldNote,
       gain,
       ceilingBound,
@@ -689,7 +740,8 @@ export async function repeatLoop(input, outPath, times, clipId) {
 }
 
 export function report(clipId, result) {
-  const { spec, pre, post, size, seam, foldNote, gain, ceilingBound } = result;
+  const { spec, pre, post, size, seam, edges, durationSeconds, foldNote, gain, ceilingBound } =
+    result;
   const failures = [];
   /** Things to try next. Printed, but never counted against the file. */
   const hints = [];
@@ -708,6 +760,31 @@ export function report(clipId, result) {
   }
   if (post.dbtp > TRUE_PEAK_CEILING_DBTP + DBTP_EPSILON) {
     failures.push(`true peak ${post.dbtp} dBTP is above the ${TRUE_PEAK_CEILING_DBTP} ceiling`);
+  }
+
+  // ☠️ A rule that was not measured is not a rule that passed. Reporting PASS on a
+  // result carrying no edges would restore exactly the silence this check removes.
+  if (!edges) {
+    failures.push(
+      "leading silence was not measured, so #1134's zero-lead rule is unverified for this file",
+    );
+  } else if (edges.leadMs > LEAD_SILENCE_LIMIT_MS) {
+    failures.push(
+      `starts ${edges.leadMs.toFixed(2)} ms late (limit ${LEAD_SILENCE_LIMIT_MS} ms). ` +
+        "#1134 makes zero leading silence a hard rule: every trigger in the app is " +
+        "already up to 250 ms late, and this adds to it.",
+    );
+    // ⚠️ The remedy is class-specific and it is not the same remedy. Text to
+    // Speech takes a seed, so a late voice cue is genuinely re-drawable for
+    // nothing. Sound Effects has none — naming a seed there would point at a path
+    // that does not exist, which is the whole reason the masters are the source.
+    hints.push(
+      spec.klass === "voice"
+        ? "voice is the one class that can be re-drawn: audition the other candidate, " +
+            "or re-render this cue with a different seed (TTS_CANDIDATE_SEEDS)."
+        : "this take cannot be re-drawn in matching style — trim the head of the master " +
+            "before re-running, or choose another candidate.",
+    );
   }
   if (seam) {
     if (seam.wrapStepRatio > SEAM_LIMITS.wrapStepRatio) {
@@ -751,6 +828,15 @@ export function report(clipId, result) {
     `   true peak ${pre.dbtp} -> ${post.dbtp} dBTP     (ceiling ${TRUE_PEAK_CEILING_DBTP})`,
   );
   console.log(`   size      ${(size / 1024).toFixed(1)} KB`);
+  if (edges) {
+    // ⚠️ The tail is printed and never gated — a bell decaying "continuously to
+    // silence" (#1139) has one by design. It is here because a texture that quietly
+    // ends early is invisible any other way.
+    console.log(
+      `   edges     lead ${edges.leadMs.toFixed(2)} ms · tail ${edges.tailMs.toFixed(2)} ms` +
+        (Number.isFinite(durationSeconds) ? `   (${durationSeconds.toFixed(3)}s)` : ""),
+    );
+  }
   if (seam) {
     console.log(
       `   seam      wrap step ${seam.wrapStepRatio.toFixed(2)}x median · ` +
