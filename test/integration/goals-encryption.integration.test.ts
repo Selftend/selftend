@@ -152,6 +152,31 @@ describe("goals encrypted view (integration)", () => {
     expect(updated.data?.value_key).toBeNull();
   });
 
+  // The repository's saveGoal overwrites the whole payload, but updateGoalStatus sends a
+  // PARTIAL update: PostgREST patches only `status`, Postgres builds NEW from OLD, and the
+  // trigger re-encrypts the key it already had. Marking a goal complete must never quietly
+  // un-anchor it.
+  it("a partial UPDATE of another column preserves the existing value key", async () => {
+    const created = await alice
+      .from("goals")
+      .insert({ ...baseRow(), value_key: "honest-secret-marker-VALUE" })
+      .select("id")
+      .single();
+    expect(created.error).toBeNull();
+    const id = created.data!.id as string;
+
+    const updated = await alice
+      .from("goals")
+      .update({ status: "completed" })
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    expect(updated.error).toBeNull();
+    expect(updated.data?.status).toBe("completed");
+    expect(updated.data?.value_key).toBe("honest-secret-marker-VALUE");
+  });
+
   it("UPDATE encrypts the value key, and can clear it back to NULL", async () => {
     const created = await alice
       .from("goals")
@@ -225,15 +250,24 @@ describe("goals encrypted view (integration)", () => {
   });
 
   it("RLS: a second user cannot read, update, or delete another user's goal", async () => {
-    const created = await alice.from("goals").insert(baseRow()).select("id").single();
+    const created = await alice
+      .from("goals")
+      .insert({ ...baseRow(), value_key: "honest-secret-marker-VALUE" })
+      .select("id")
+      .single();
     expect(created.error).toBeNull();
     const id = created.data!.id as string;
 
-    const bobRead = await bob.from("goals").select("id, title").eq("id", id);
+    // Named explicitly rather than relying on `select *`: the value key is the one column
+    // here that points at the values profile, and it must be as unreachable as the rest.
+    const bobRead = await bob.from("goals").select("id, title, value_key").eq("id", id);
     expect(bobRead.error).toBeNull();
     expect(bobRead.data).toEqual([]);
 
-    const bobUpd = await bob.from("goals").update({ title: "hacked" }).eq("id", id);
+    const bobUpd = await bob
+      .from("goals")
+      .update({ title: "hacked", value_key: "hijacked" })
+      .eq("id", id);
     expect(bobUpd.error).toBeNull();
 
     const bobDel = await bob.from("goals").delete().eq("id", id);
@@ -241,12 +275,13 @@ describe("goals encrypted view (integration)", () => {
 
     const aliceRead = await alice
       .from("goals")
-      .select("title, description, life_domain")
+      .select("title, description, life_domain, value_key")
       .eq("id", id)
       .single();
     expect(aliceRead.error).toBeNull();
     expect(aliceRead.data?.title).toBe(TITLE);
     expect(aliceRead.data?.description).toBe(DESCRIPTION);
     expect(aliceRead.data?.life_domain).toBe("health");
+    expect(aliceRead.data?.value_key).toBe("honest-secret-marker-VALUE");
   });
 });

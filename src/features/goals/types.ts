@@ -45,8 +45,16 @@ export interface GoalInput {
   lifeDomain: string;
   goalType: string;
   targetDate: string | null;
-  /** Optional as well as nullable, so a caller with no picker yet compiles unchanged (#1287). */
-  valueKey?: string | null;
+  /**
+   * Nullable, but NOT optional (#1287).
+   *
+   * `saveGoal` overwrites every field in this payload on an edit, so a caller that simply
+   * omitted the key would silently clear whatever the goal was anchored to. Making it
+   * required turns that into a compile error at each call site instead - which is the
+   * point, because the picker that can set a key lands separately in #1289. Pass `null`
+   * to mean "anchored to nothing"; there is no "leave whatever was there" value.
+   */
+  valueKey: string | null;
 }
 
 export interface MilestoneInput {

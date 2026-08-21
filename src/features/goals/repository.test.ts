@@ -85,6 +85,7 @@ describe("goals repository - goals", () => {
       lifeDomain: "health",
       goalType: "outcome",
       targetDate: "2026-09-01",
+      valueKey: null,
     });
     expect(insert).toHaveBeenCalledWith({
       user_id: "user-1",
@@ -149,6 +150,7 @@ describe("goals repository - goals", () => {
         lifeDomain: "health",
         goalType: "outcome",
         targetDate: null,
+        valueKey: null,
       },
       "g-1",
     );
@@ -347,6 +349,7 @@ describe("goals repository - error and guard paths", () => {
           lifeDomain: "health",
           goalType: "outcome",
           targetDate: null,
+          valueKey: null,
         },
         "missing-goal",
       ),
@@ -368,6 +371,7 @@ describe("goals repository - error and guard paths", () => {
         lifeDomain: "health",
         goalType: "outcome",
         targetDate: "2026-09-01",
+        valueKey: null,
       }),
     ).rejects.toMatchObject({ code: "23505" });
   });
