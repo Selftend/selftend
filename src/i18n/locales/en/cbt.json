@@ -653,7 +653,8 @@
       "lifeDomain": "Choose a life domain.",
       "goalType": "Choose a goal type.",
       "title": "Give the goal a short title.",
-      "milestones": "Add at least one milestone."
+      "milestones": "Add at least one milestone.",
+      "targetDate": "Pick the target date from the calendar."
     },
     "title": "Goals",
     "description": "Set meaningful goals and track them with milestones.",

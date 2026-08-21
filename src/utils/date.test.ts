@@ -5,6 +5,7 @@ import {
   dayRangeEndKey,
   formatAtOffset,
   formatCompactAtOffset,
+  formatDayKey,
   formatTimestamp,
   isValidDayKey,
   lastNDayKeys,
@@ -208,6 +209,33 @@ describe("formatAtOffset", () => {
 
   it("returns the input unchanged when it is not a date", () => {
     expect(formatAtOffset("nope", 120, "en")).toBe("nope");
+  });
+});
+
+describe("formatDayKey", () => {
+  // TZ is pinned to Asia/Kolkata, but a day key names a civil day and carries no
+  // instant, so the viewer's zone must not move it. Noon anchoring is what keeps
+  // the rendered day equal to the key.
+  it("renders the day the key names, with its weekday", () => {
+    expect(formatDayKey("2026-09-01", "en")).toBe("Tue, Sep 1, 2026");
+  });
+
+  it("follows the app language rather than the device locale", () => {
+    // Only the app language reaches Intl, so this is what a bg user sees whatever
+    // locale the OS reports. Bulgarian resolves this shape to a numeric date with
+    // a "г." year marker, so the weekday is what proves the language took.
+    expect(formatDayKey("2026-09-01", "bg")).toBe("вт, 1.09.2026 г.");
+  });
+
+  it("does not roll a date across the year boundary", () => {
+    expect(formatDayKey("2026-01-01", "en")).toContain("Jan 1, 2026");
+    expect(formatDayKey("2026-12-31", "en")).toContain("Dec 31, 2026");
+  });
+
+  it("returns an unparseable key unchanged rather than throwing", () => {
+    // An invalid Date reaching Intl.format throws a RangeError, which on a screen
+    // is a crash rather than an error state.
+    expect(formatDayKey("nope", "en")).toBe("nope");
   });
 });
 
