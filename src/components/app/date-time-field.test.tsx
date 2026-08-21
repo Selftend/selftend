@@ -9,16 +9,29 @@ import { renderWithProviders } from "@/test/render-with-providers";
 // helper's docs.
 jest.mock("react-native", () => require("@/test/modal-marker-mock").reactNativeWithModalMarker());
 
-// The calendar itself is third-party (react-native-ui-datepicker); mock it to
-// a marker so opening the picker is observable without walking month grids.
+/** What the probe below reports the user picked. Reset per test. */
+let mockNextPick = "2026-03-03T08:15:00.000Z";
+
+// The calendar itself is third-party (react-native-ui-datepicker); mock it to a
+// probe that both surfaces the props it was handed and lets a test drive a
+// selection, so commit semantics are observable without walking month grids.
 jest.mock("react-native-ui-datepicker", () => {
   const { createElement: h } = require("react");
-  const { Text } = require("react-native");
-  return {
-    __esModule: true,
-    default: () => h(Text, null, "mock picker"),
-    useDefaultStyles: () => ({}),
+  const { Pressable, Text } = require("react-native");
+  const MockPicker = (props: Record<string, unknown>) => {
+    return h(
+      Pressable,
+      {
+        testID: "mock-picker-select",
+        // ⚠️ `mockP`, not `p`: jest's module-factory guard reads even an erased
+        // TS parameter name as an out-of-scope reference unless it is prefixed.
+        onPress: () =>
+          (props.onChange as (mockP: { date: string }) => void)({ date: mockNextPick }),
+      },
+      h(Text, null, "mock picker"),
+    );
   };
+  return { __esModule: true, default: MockPicker, useDefaultStyles: () => ({}) };
 });
 
 jest.mock("@/src/lib/accessibility", () => ({
@@ -32,10 +45,20 @@ const props = {
   accessibilityLabel: "Entry time",
 };
 
+beforeEach(() => {
+  mockNextPick = "2026-03-03T08:15:00.000Z";
+});
+
 afterEach(() => {
   setPlatformOS("ios");
   jest.clearAllMocks();
 });
+
+/** Render the field and open its picker, the starting point of every commit test. */
+function openPicker(overrides: Partial<React.ComponentProps<typeof DateTimeField>> = {}) {
+  renderWithProviders(<DateTimeField {...props} {...overrides} />);
+  fireEvent.press(screen.getByLabelText("Entry time"));
+}
 
 describe("DateTimeField", () => {
   /**
@@ -70,5 +93,49 @@ describe("DateTimeField", () => {
 
     expect(screen.queryByTestId("modal-root")).not.toBeNull();
     expect(screen.getByText("mock picker")).toBeTruthy();
+  });
+
+  /**
+   * ⚠️ THIS BLOCK PINS SHIPPED BEHAVIOUR IN ORDER TO CHANGE IT, and every
+   * assertion in it is inverted by the very next commit (#1298). It is here
+   * so that inversion reads as the deliberate, specified behaviour change it
+   * is rather than as assertions quietly rewritten to match new code.
+   *
+   * As shipped, the field commits every change the moment the user touches
+   * the calendar, and Done only closes the sheet. So there is no way to back
+   * out: tapping the backdrop keeps whatever was last touched, and someone
+   * who opens the calendar merely to LOOK at a date leaves having edited
+   * their entry. Nothing in this file covered that before — the three tests
+   * above are the two platform gates and "opens the picker" — so inverting
+   * commit semantics across all six call sites would have shipped with the
+   * suite fully green.
+   */
+  describe("commit semantics as shipped today, pinned before inverting them", () => {
+    it("commits a selection live, before Done is ever pressed", () => {
+      openPicker();
+
+      fireEvent.press(screen.getByTestId("mock-picker-select"));
+
+      expect(props.onChange).toHaveBeenCalledWith("2026-03-03T08:15:00.000Z");
+    });
+
+    it("uses Done only to close the sheet: it commits nothing of its own", () => {
+      openPicker();
+
+      fireEvent.press(screen.getByText("Done"));
+
+      expect(props.onChange).not.toHaveBeenCalled();
+    });
+
+    it("keeps a selection the user backs out of, a live commit being unundoable", () => {
+      openPicker();
+
+      fireEvent.press(screen.getByTestId("mock-picker-select"));
+      fireEvent.press(screen.getByLabelText("Close"));
+
+      // The hole this ticket closes: dismissing the sheet leaves the entry
+      // edited anyway.
+      expect(props.onChange).toHaveBeenCalledWith("2026-03-03T08:15:00.000Z");
+    });
   });
 });
