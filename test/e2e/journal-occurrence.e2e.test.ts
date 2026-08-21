@@ -107,10 +107,7 @@ test.describe("journal occurrence date and time", () => {
     await page.getByRole("button", { name: "Date", exact: true }).click();
 
     await moveCalendarMonth(page, firstOccurrence, futureDate);
-    const futureDayButton = page.getByRole("button", {
-      name: String(futureDate.getDate()),
-      exact: true,
-    });
+    const futureDayButton = calendarDay(page, futureDate.getDate());
     await expect(futureDayButton).toHaveCount(1);
     await expect(futureDayButton).toBeDisabled();
 

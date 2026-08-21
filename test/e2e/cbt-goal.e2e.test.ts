@@ -1,3 +1,5 @@
+import type { Page } from "@playwright/test";
+
 import { expect, test } from "./fixtures";
 
 import {
@@ -20,6 +22,18 @@ function triggerText(d: Date): string {
     month: "short",
     year: "numeric",
   }).format(d);
+}
+
+/**
+ * A day cell in the open calendar.
+ *
+ * ⚠️ Matched on the TAIL of the accessible name, and scoped to the grid. Since
+ * #1301 a day is named in full — "Sunday, March 15, 2026", with a "Today, "
+ * prefix on today — so the bare number identifies nothing. The scoping matters
+ * because the trigger reads "Tue, Mar 15, 2026" and ends the same way.
+ */
+function calendarDay(page: Page, day: number) {
+  return page.getByTestId("days").getByRole("button", { name: new RegExp(`\\b${day}, \\d{4}$`) });
 }
 
 /**
@@ -134,10 +148,7 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     // Last month is entirely in the past, so this is stable whatever day the
     // run lands on: every one of its days is disabled.
     await page.getByTestId("btn-prev").click();
-    // ⚠️ Named in full since #1301 ("Sunday, March 15, 2026"), so the bare
-    // number identifies nothing. Scoped to the grid because the trigger's own
-    // label ends the same way once a date is set.
-    const fifteenth = page.getByTestId("days").getByRole("button", { name: /\b15, \d{4}$/ });
+    const fifteenth = calendarDay(page, 15);
     await expect(fifteenth).toBeDisabled();
 
     // Forward to next month, where every day is selectable.
@@ -220,9 +231,9 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     // The calendar opens on the stored month. The saved day stays tappable;
     // every other past day around it stays shut — `minDate` set to the earlier
     // of today and the stored value would have unlocked all of them.
-    await expect(page.getByRole("button", { name: "10", exact: true })).toBeEnabled();
-    await expect(page.getByRole("button", { name: "9", exact: true })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "11", exact: true })).toBeDisabled();
+    await expect(calendarDay(page, 10)).toBeEnabled();
+    await expect(calendarDay(page, 9)).toBeDisabled();
+    await expect(calendarDay(page, 11)).toBeDisabled();
 
     // Dismissing discards: the stored date is untouched by a look.
     await page.keyboard.press("Escape");
