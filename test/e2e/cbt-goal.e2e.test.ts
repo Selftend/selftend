@@ -49,8 +49,11 @@ function tenthOfLastMonth(): Date {
  *                               targetDate is a boxed trigger opening the app's
  *                               own calendar sheet, named
  *                               "Target date (optional): <value|No date set>".
- *                               Grid nav: getByTestId("btn-prev"/"btn-next");
- *                               days are buttons named by their number.
+ *                               Grid nav: getByTestId("btn-prev"/"btn-next")
+ *                               (the buttons' names are translated since #1301);
+ *                               days are buttons named IN FULL since #1301 -
+ *                               "Sunday, March 15, 2026", today prefixed
+ *                               "Today, " - not by their number.
  *   step3 "3. Milestones"     - milestones field array
  *
  * Key labels (cbt.json > goals):
@@ -131,12 +134,16 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     // Last month is entirely in the past, so this is stable whatever day the
     // run lands on: every one of its days is disabled.
     await page.getByTestId("btn-prev").click();
-    await expect(page.getByRole("button", { name: "15", exact: true })).toBeDisabled();
+    // ⚠️ Named in full since #1301 ("Sunday, March 15, 2026"), so the bare
+    // number identifies nothing. Scoped to the grid because the trigger's own
+    // label ends the same way once a date is set.
+    const fifteenth = page.getByTestId("days").getByRole("button", { name: /\b15, \d{4}$/ });
+    await expect(fifteenth).toBeDisabled();
 
     // Forward to next month, where every day is selectable.
     await page.getByTestId("btn-next").click();
     await page.getByTestId("btn-next").click();
-    await page.getByRole("button", { name: "15", exact: true }).click();
+    await fifteenth.click();
     await page.getByRole("button", { name: "Done", exact: true }).click();
 
     // Committed on Done, and read back through the trigger.
