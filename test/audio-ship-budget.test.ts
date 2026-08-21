@@ -193,6 +193,35 @@ describe("shipFileName", () => {
   });
 });
 
+describe("referenceClipFor", () => {
+  /**
+   * ⚠️ Pinned directly because the alternative is invisible. A sound effect's length
+   * is fixed by the catalog, so `predictShipping` never consults the probe for one —
+   * handing every unit a reference clip changes no number and no verdict, and only a
+   * test of the rule itself can say it is wrong. It IS wrong: it would shell out
+   * thirteen extra times to answer a question already answered, and would name
+   * `assets/sounds/breathing/meditation-bell.wav`, a path for a bell that lives one
+   * directory up.
+   */
+  it("is only for the units whose length nobody has decided", () => {
+    const units: Unit[] = shippingUnits();
+    for (const unit of units.filter((u) => !u.voice)) {
+      expect(referenceClipFor(unit)).toBeNull();
+    }
+    for (const unit of units.filter((u) => u.voice)) {
+      expect(referenceClipFor(unit)).toEqual(["assets", "sounds", "breathing", `${unit.clip}.wav`]);
+    }
+  });
+
+  /** Both voices of a cue estimate from the same clip — there is only one today. */
+  it("points both voices of a cue at the same shipped clip", () => {
+    const units: Unit[] = shippingUnits();
+    const pair = units.filter((unit) => unit.clip === "guide_intro");
+    expect(pair).toHaveLength(2);
+    expect(referenceClipFor(pair[0])).toEqual(referenceClipFor(pair[1]));
+  });
+});
+
 describe("bytesForSeconds", () => {
   it("is bitrate times seconds over eight", () => {
     expect(bytesForSeconds(30, "128k")).toBe(480000);
