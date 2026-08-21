@@ -41,7 +41,6 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/act/observing-self": "breadcrumb.observingSelf",
   "/modules/act/observing-self/new": "breadcrumb.new",
   "/modules/act/values": "breadcrumb.values",
-  "/modules/act/values/bulls-eye": "breadcrumb.bullsEye",
   "/modules/cbt": "sidebar.cbt",
   "/modules/cbt/history": "sidebar.cbtHistory",
   "/modules/cbt/new": "breadcrumb.newRecord",

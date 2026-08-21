@@ -89,8 +89,14 @@ function readsSearchParams(file: string, depth = 0): boolean {
 const MUST_REMOUNT: Record<string, string> = {
   // Nine pieces of state driving a timed practice; re-entering mid-surf is not a resume.
   "modules/act/expansion/urge-surfing": "in-progress exercise",
-  // `ratings` is a full bulls-eye the user has filled in and not yet saved.
-  "modules/act/values/bulls-eye": "unsaved domain ratings",
+  // ⚠️ `modules/act/values/bulls-eye` used to be here, for exactly the reason this list
+  // exists: it held four ratings the user had typed and not saved. #1379 folded that
+  // check-in onto `modules/act/values`, which is single-instance, so the entry is
+  // REMOVED rather than moved - the ratings now live in a draft store, where a reused
+  // instance hands the user back their own numbers and sign-out clears them. The route
+  // itself survives as a redirect stub, so the "points at a real route" assertion below
+  // would have kept passing on a stale entry: it checks that an exception names a
+  // declared route, not that the route still deserves excusing.
   // ☠️ Reads the callback URL and completes the redirect behind a once-only `useRef` guard,
   // then scrubs the auth material from history. A reused instance would never process a
   // second, different code — and it reads `window.location.href`, not `useLocalSearchParams`,
