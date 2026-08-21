@@ -1,6 +1,18 @@
 export interface Breadcrumb {
   label: string;
   href?: string;
+  /**
+   * Set when the label is the generic fallback - an opaque-id segment no table
+   * could name, rendered as "Entry". The crumb still has a correct href; it is
+   * only its *name* that is missing.
+   *
+   * The Escape reads this to choose between "Back to {name}" and a bare "Go
+   * back" (#1253). It has to be carried structurally: once the crumb is built,
+   * a fallback label is indistinguishable from a real one, and recovering the
+   * distinction by comparing against the translated word "Entry" would be right
+   * in English and wrong in Bulgarian ("Запис").
+   */
+  unresolved?: true;
 }
 
 // Map of exact static paths to their i18n label keys
@@ -186,8 +198,11 @@ export function computeBreadcrumbs(pathname: string, t: (key: string) => string)
       // real title; an opaque id falls back to the generic label.
       const parentPath = "/" + segments.slice(0, i).join("/");
       const resolveKey = SLUG_LABEL_KEYS[parentPath];
-      const label = resolveKey ? t(resolveKey(segment)) : t("breadcrumb.entry");
-      crumbs.push({ label, href: isLast ? undefined : path });
+      crumbs.push(
+        resolveKey
+          ? { label: t(resolveKey(segment)), href: isLast ? undefined : path }
+          : { label: t("breadcrumb.entry"), href: isLast ? undefined : path, unresolved: true },
+      );
       prevWasKnown = false;
     }
     // An unmapped segment in the MIDDLE of a path still collapses into its

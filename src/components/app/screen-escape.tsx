@@ -54,14 +54,38 @@ export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
   //
   // A one-crumb screen has no ancestor crumb at all, and its Up is the root -
   // which is what CONTEXT.md's "Up" entry records.
-  const upHref = [...crumbs].reverse().find((crumb) => crumb.href)?.href ?? "/";
+  const upCrumb = [...crumbs].reverse().find((crumb) => crumb.href);
+  const upHref = upCrumb?.href ?? "/";
+
+  // What the Escape promises out loud (#1253). An explicit `accessibilityLabel`
+  // REPLACES a pressable's children for a screen reader, so a glyph-only label
+  // would hide from screen-reader users the destination the arrow is about to
+  // name on screen (the off-trail Origin case).
+  //
+  // Where the trail has no name for the destination, the Escape says "Go back".
+  // Two alternatives were weighed and rejected: announcing the fallback word
+  // ("Back to Entry") puts a name in front of screen-reader users that is really
+  // the absence of one, and naming the nearest *named* ancestor ("Back to
+  // Journal") names a screen the Escape does not go to - the silent divergence
+  // between promise and destination that this whole rule exists to close.
+  //
+  // With no ancestor crumb at all the hop is to the root, which does have a
+  // name. That covers the one-crumb screens and the whole `(auth)` group.
+  const destination = upCrumb ? (upCrumb.unresolved ? null : upCrumb.label) : t("sidebar.home");
 
   return (
     <Pressable
-      // The label follows the glyph, not the destination: an X announced as
-      // "Go back" tells a screen-reader user the opposite of what the sighted
-      // promise is. Both do the same structural hop (#733).
-      accessibilityLabel={glyph === "close" ? tc("close") : t("breadcrumb.back")}
+      // The label follows the glyph, not the destination: on a form the promise
+      // is *abandoning* this, and where it lands is secondary - an X announced
+      // as "Back to Goals" sells the wrong thing. Both do the same structural
+      // hop (#733).
+      accessibilityLabel={
+        glyph === "close"
+          ? tc("close")
+          : destination
+            ? t("breadcrumb.backTo", { name: destination })
+            : t("breadcrumb.back")
+      }
       accessibilityRole="button"
       hitSlop={8}
       onPress={() => router.replace(upHref as never)}

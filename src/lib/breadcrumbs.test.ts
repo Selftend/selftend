@@ -235,3 +235,53 @@ describe("computeBreadcrumbs - an unmapped segment never swallows the next (#125
     for (const crumb of crumbs.slice(0, -1)) expect(crumb.href).toBeDefined();
   });
 });
+
+/**
+ * The Escape announces "Back to {name}" (#1253), so it has to tell a crumb that
+ * carries a real name from one that fell through to the generic label. "Entry"
+ * is not a name; it is the absence of one, and announcing "Back to Entry" would
+ * put a word in front of screen-reader users that no sighted user is ever shown.
+ *
+ * The distinction is carried STRUCTURALLY, on the crumb, precisely because the
+ * alternative - comparing the label against the translated word "Entry" - is
+ * only ever right in English.
+ */
+describe("computeBreadcrumbs - the generic fallback is marked unresolved (#1253)", () => {
+  it("marks the opaque-id crumb that fell through to the generic label", () => {
+    const crumbs = computeBreadcrumbs("/tools/gratitude-log/3f9a-uuid/edit", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "Entry", "Edit"]);
+    expect(crumbs[2].unresolved).toBe(true);
+  });
+
+  it("leaves a slug-resolved dynamic crumb resolved", () => {
+    // The same branch of the resolver, but the slug table names it - so it IS a name.
+    const crumbs = computeBreadcrumbs("/tools/habits/learn/compounding", t);
+    expect(crumbs.at(-1)?.label).toBe("The 1% compounding effect");
+    expect(crumbs.at(-1)?.unresolved).toBeUndefined();
+  });
+
+  it("leaves static and known-sub-segment crumbs resolved", () => {
+    const crumbs = computeBreadcrumbs("/tools/gratitude-log/new", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "New"]);
+    for (const crumb of crumbs) expect(crumb.unresolved).toBeUndefined();
+  });
+
+  /**
+   * The seven routes the spec charted: every `[id]/edit` and `[id]/log` form in
+   * the app hops up to a record whose crumb has no name. `mood-tracker/[id]/edit`
+   * is absent on purpose - it is a `<Redirect>` stub that renders no UI.
+   */
+  it.each([
+    ["/routines/3f9a-uuid/edit"],
+    ["/tools/check-in/3f9a-uuid/edit"],
+    ["/tools/gratitude-log/3f9a-uuid/edit"],
+    ["/tools/habits/3f9a-uuid/edit"],
+    ["/tools/habits/3f9a-uuid/log"],
+    ["/tools/journal/3f9a-uuid/edit"],
+    ["/tools/sleep/3f9a-uuid/edit"],
+  ])("%s hops up to an unresolved crumb", (path) => {
+    const crumbs = computeBreadcrumbs(path, t);
+    const upCrumb = [...crumbs].reverse().find((crumb) => crumb.href);
+    expect(upCrumb?.unresolved).toBe(true);
+  });
+});
