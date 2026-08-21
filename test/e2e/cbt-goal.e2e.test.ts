@@ -64,6 +64,9 @@ function tenthOfLastMonth(): Date {
  *   milestones "Milestones"
  *   valueClear "Clear value"          - rendered ONLY while a value is selected
  *   valueEmptyLink "Clarify your values"
+ *   valueAnchor "Guiding value: <label>" - the goal's value, read back on the detail
+ *                               view and on the active-goal row in the list; absent
+ *                               entirely when the goal is anchored to nothing
  *
  * Domains: "Work" | "Relationships" | "Health" | "Leisure" | "Personal Growth" | "Other"
  * Types: "Do more of" | "Do less of" | "Improve a relationship" | "Improve quality of life"
@@ -153,6 +156,13 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     await expect(page).toHaveURL(/\/modules\/cbt\/goals\/[^/]+$/, { timeout: 15_000 });
     await expect(page.getByText(originalTitle)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(milestoneDescription)).toBeVisible({ timeout: 10_000 });
+
+    // A goal anchored to nothing leaves no hole behind: no label, no empty slot,
+    // no placeholder. This user has no values profile at all, which is the state
+    // the shipped programme's first week actually produces. Anchored to the colon
+    // so it cannot accidentally be satisfied by the wizard's own "Guiding value
+    // (optional)" label if this ever runs before the save has routed away.
+    await expect(page.getByText(/^Guiding value:/)).toHaveCount(0);
 
     // ── Toggle milestone complete ──────────────────────────────────────────────
     // The milestone renders as a Checkbox with accessibilityLabel = milestone.description.
@@ -284,7 +294,26 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     await page.getByRole("textbox", { name: "What is this step?" }).fill("Book a lane");
     await page.getByRole("button", { name: "Save goal", exact: true }).click();
 
-    await expect(page).toHaveURL(/\/modules\/cbt\/goals\/[^/]+$/, { timeout: 15_000 });
+    // Deliberately NOT the bare `goals/[^/]+$` the assertions above settle for: that
+    // also matches the wizard's own `/goals/new`, so it can pass while the save is
+    // still in flight, and the URL read right after it is the page we came FROM.
+    await expect(page).toHaveURL(/\/modules\/cbt\/goals\/(?!new$)[^/]+$/, { timeout: 15_000 });
+    const detailPath = new URL(page.url()).pathname;
+
+    // ── The anchor is visible afterwards, on both surfaces (#1291) ─────────────
+    // An anchor nobody can see again is a claim about a moment, not a property of
+    // the goal.
+    await expect(page.getByText("Guiding value: Courageous").last()).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.goto("/modules/cbt/goals");
+    await expect(page.getByText("Swim once a week").last()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Guiding value: Courageous").last()).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.goto(detailPath);
 
     // ── Re-open for edit: the anchor must come back prefilled ──────────────────
     await page.getByRole("button", { name: "Edit goal", exact: true }).click();
@@ -297,5 +326,63 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     await page.getByRole("button", { name: "Clear value", exact: true }).click();
     await expect(editChip).not.toBeChecked();
     await expect(page.getByRole("button", { name: "Clear value", exact: true })).toHaveCount(0);
+  });
+
+  /**
+   * A value the user has since demoted (#1291).
+   *
+   * Re-ranking the values screen must not reach back and change a goal that was
+   * anchored before the re-rank - not by clearing it, and not by decorating it with
+   * a warning that turns a change of priorities into a chore. Seeded directly
+   * rather than driven through the wizard: the wizard can only offer values that
+   * *are* priorities, so the state under test is unreachable from the UI.
+   */
+  test("alice's goal keeps showing a value she has since dropped from her priorities", async ({
+    page,
+    user,
+  }) => {
+    const admin = createServiceClient();
+    // "courageous" is deliberately absent from both lists: it is not a priority,
+    // and it is not even ranked any more.
+    const { error: profileError } = await admin.from("values_profile").insert({
+      user_id: user.id,
+      personal_values: [{ key: "curious", tier: 1 }],
+      priority_values: ["curious"],
+    });
+    expect(profileError).toBeNull();
+
+    // `goals` is an encrypted view; the INSTEAD OF trigger encrypts `value_key`
+    // on the way in, exactly as it does for a goal saved from the wizard.
+    const { data: goal, error: goalError } = await admin
+      .from("goals")
+      .insert({
+        user_id: user.id,
+        title: "Speak up in the team meeting",
+        description: "",
+        life_domain: "work",
+        goal_type: "doMore",
+        status: "active",
+        value_key: "courageous",
+      })
+      .select("id")
+      .single();
+    if (goalError || !goal) throw new Error(`Seed goals failed: ${goalError?.message}`);
+
+    // The label comes from the static value list, so it resolves whatever the
+    // user's own rankings now say.
+    await page.goto("/modules/cbt/goals");
+    await expect(page.getByText("Speak up in the team meeting").last()).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Guiding value: Courageous").last()).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.goto(`/modules/cbt/goals/${goal.id as string}`);
+    await expect(page.getByText("Guiding value: Courageous").last()).toBeVisible({
+      timeout: 15_000,
+    });
+    // The life domain still reads as it always did, beside it.
+    await expect(page.getByText("Work").last()).toBeVisible({ timeout: 10_000 });
   });
 });
