@@ -28,9 +28,7 @@ export function RecentThoughtRecord({ record }: RecentThoughtRecordProps) {
       <AccessibleCardLink
         title={natText}
         description={balancedThought}
-        onPress={() =>
-          pushWithOrigin(`/modules/cbt/history/${record.id}` as Href)
-        }
+        onPress={() => pushWithOrigin(`/modules/cbt/history/${record.id}` as Href)}
       />
     </View>
   );

@@ -84,11 +84,7 @@ export default function WorryScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={entry.worryStatement}
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() =>
-                      pushWithOrigin(
-                        `/modules/cbt/worry/${entry.id}` as Href,
-                      )
-                    }
+                    onPress={() => pushWithOrigin(`/modules/cbt/worry/${entry.id}` as Href)}
                   >
                     <CardHeader>
                       <CardTitle>{entry.worryStatement}</CardTitle>

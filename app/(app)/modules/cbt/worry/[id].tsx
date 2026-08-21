@@ -95,11 +95,7 @@ export default function WorryDetailScreen() {
 
           <View className="gap-3">
             <Button
-              onPress={() =>
-                pushWithOrigin(
-                  `/modules/cbt/worry/new?entryId=${entry.id}` as Href,
-                )
-              }
+              onPress={() => pushWithOrigin(`/modules/cbt/worry/new?entryId=${entry.id}` as Href)}
               variant="secondary"
             >
               <Text>{t("common:edit")}</Text>
