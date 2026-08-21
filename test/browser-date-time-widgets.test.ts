@@ -20,9 +20,17 @@ import { sourceFiles, stripComments } from "./source-scan";
  *
  * This suite DERIVES its file list from source rather than pinning it, so a
  * newly added browser widget fails CI here instead of quietly shipping. It
- * carries no allowlist on purpose - the ruling is absolute, and every entry in
- * an allowlist is a hole. If a legitimate non-DOM `{ type: "date" }` ever trips
- * it, that is a conversation worth having, not a line to append.
+ * carries no allowlist on purpose - the baseline is clean by construction, so
+ * unlike the sibling `modal-web-unmount` gate there is nothing to exempt, and
+ * an empty allowlist is just a hole waiting for its first entry. If a
+ * legitimate non-DOM `{ type: "date" }` ever trips it, that is a conversation
+ * worth having, not a line to append.
+ *
+ * ⚠️ It matches SPELLINGS, not semantics, and a determined evasion beats it:
+ * `type={variable}`, a template literal, a ternary, or `setAttribute("type",
+ * "date")` all pass. That is the accepted trade for a matcher a contributor can
+ * read. It is aimed at the widget someone reaches for by habit, not at someone
+ * routing around a rule they have read.
  */
 
 const ROOT = join(__dirname, "..");
@@ -49,20 +57,28 @@ const BROWSER_WIDGET_TYPE = new RegExp(
 );
 
 /**
- * `showPicker` - the DOM call that opens the browser popup by hand.
+ * `showPicker` being CALLED - the DOM call that opens the browser popup by hand.
  *
- * Three spellings, because the plain `showPicker(` the ticket named is not the
- * only one: mutation-testing this guard caught `type: "time"` in a probe file
- * while walking straight past `el.showPicker?.()` on the line above it. So the
- * member-access and computed-access forms are matched too, which also covers
- * aliasing (`const open = el.showPicker`) and the `typeof el.showPicker ===
- * "function"` feature test the goal date field actually shipped.
+ * More than the plain `showPicker(` the ticket named, because mutation-testing
+ * this guard caught `type: "time"` in a probe file while walking straight past
+ * `el.showPicker?.()` on the line above it: an optional call puts `?.` between
+ * the name and the paren. `\b` already covers the `el.showPicker()` member form,
+ * so the arms here are the optional call and the computed access.
  *
- * Deliberately NOT a bare `\bshowPicker\b`: `const [showPicker, setShowPicker]
- * = useState(false)` is an entirely reasonable thing to write in an app full of
- * picker sheets, and a guard that fails on it teaches people to delete guards.
+ * ⚠️ Matching a CALL, not a mention. An earlier revision had a `\.\s*showPicker\b`
+ * arm to catch aliasing, and it made `store.showPicker` and `props.showPicker`
+ * findings - a Zustand selector, which AGENTS.md names as this repo's local-state
+ * default. With no allowlist here, that false positive would hard-block CI on
+ * innocent code, which is how guards get deleted. Aliasing (`const open =
+ * el.showPicker`) is the accepted miss; the feature test the goal date field
+ * shipped still matches, because that line calls it too:
+ *
+ *   if (typeof el.showPicker === "function") el.showPicker();
+ *
+ * The one false positive left is a local opener literally named `showPicker`.
+ * That spelling is reserved by the ticket, so name yours `openPicker`.
  */
-const SHOW_PICKER = /\.\s*showPicker\b|\bshowPicker\s*(?:\?\.)?\s*\(|\[\s*["']showPicker["']\s*\]/;
+const SHOW_PICKER = /\bshowPicker\s*(?:\?\.)?\s*\(|\[\s*["']showPicker["']\s*\]\s*(?:\?\.)?\s*\(/;
 
 const PATTERNS = [BROWSER_WIDGET_TYPE, SHOW_PICKER];
 
@@ -81,23 +97,35 @@ const GUIDANCE = [
 ].join("\n");
 
 /**
- * Lines of `source` that summon a browser widget, ignoring prose. String
- * literals are KEPT - `"date"` lives inside one, so blanking strings would
- * erase the very thing being looked for.
+ * Line numbers in `source` that summon a browser widget, ascending, ignoring
+ * prose. String literals are KEPT - `"date"` lives inside one, so blanking
+ * strings would erase the very thing being looked for.
+ *
+ * Matched over the whole source rather than line by line, so an attribute
+ * broken across lines is caught (`\s` spans newlines) and still reported at the
+ * line its match STARTS on. A per-line pass could only have reported such a
+ * match as "somewhere in this file", and would have dropped it entirely
+ * whenever the same file also held a single-line offender.
  */
 function offendingLines(source: string): number[] {
   const code = stripComments(source);
 
-  // Whole-source first, so an attribute split across lines is still caught even
-  // though the per-line pass below cannot see it.
-  if (!PATTERNS.some((pattern) => pattern.test(code))) return [];
+  // `stripComments` blanks with spaces and preserves newlines, so offsets into
+  // `code` are offsets into `source`.
+  const lineOf = (index: number) => {
+    let line = 1;
+    for (let i = 0; i < index; i += 1) if (code[i] === "\n") line += 1;
+    return line;
+  };
 
-  const lines = code
-    .split("\n")
-    .flatMap((line, index) => (PATTERNS.some((pattern) => pattern.test(line)) ? [index + 1] : []));
+  const hits = new Set<number>();
+  for (const pattern of PATTERNS) {
+    for (const match of code.matchAll(new RegExp(pattern.source, "g"))) {
+      hits.add(lineOf(match.index));
+    }
+  }
 
-  // A match spanning lines leaves no single offending line; report the file.
-  return lines.length > 0 ? lines : [0];
+  return [...hits].sort((a, b) => a - b);
 }
 
 const files = sourceFiles(ROOT, { dirs: ["src", "app"] });
@@ -106,9 +134,7 @@ const offenders = files.flatMap((file) => {
   const source = readFileSync(join(ROOT, file), "utf8");
   const raw = source.split("\n");
 
-  return offendingLines(source).map((line) =>
-    line === 0 ? `  ${file}` : `  ${file}:${line}: ${raw[line - 1].trim()}`,
-  );
+  return offendingLines(source).map((line) => `  ${file}:${line}: ${raw[line - 1].trim()}`);
 });
 
 describe("no browser date or time widget in app source (#1175)", () => {
@@ -145,35 +171,53 @@ describe("no browser date or time widget in app source (#1175)", () => {
     expect(offendingLines('<input type={"date"} />')).toEqual([1]);
   });
 
-  it("catches the showPicker spellings that are not a plain call", () => {
+  it("catches the showPicker calls that are not a plain call", () => {
     // Found by mutating this guard: it reported `type: "time"` two lines below
-    // `el.showPicker?.()` and said nothing about the call. An optional call, an
-    // alias, a feature test and a computed access are all the same DOM API.
+    // `el.showPicker?.()` and said nothing about the call. A member call, an
+    // optional call, a feature test and a computed call are the same DOM API.
+    expect(offendingLines("el.showPicker();")).toEqual([1]);
     expect(offendingLines("el.showPicker?.();")).toEqual([1]);
-    expect(offendingLines("const open = el.showPicker;")).toEqual([1]);
     expect(offendingLines('if (typeof el.showPicker === "function") el.showPicker();')).toEqual([
       1,
     ]);
     expect(offendingLines('el["showPicker"]();')).toEqual([1]);
   });
 
-  it("leaves a boolean named showPicker alone", () => {
+  it("leaves a boolean named showPicker alone, however it is reached", () => {
     // A guard that fails on this teaches people to delete guards. `showPicker`
-    // as local state is reasonable in an app full of picker sheets; only the
-    // DOM API's call and access shapes are forbidden.
+    // as state is reasonable in an app full of picker sheets, and only the DOM
+    // API's CALL shapes are forbidden - reading the value is not a call.
+    //
+    // The last two are why: an earlier revision matched any `.showPicker`
+    // member access, which made a Zustand selector and a prop read into CI
+    // failures on innocent code. Review caught it; these pin it.
     expect(offendingLines("const [showPicker, setShowPicker] = useState(false);")).toEqual([]);
     expect(offendingLines("setShowPicker(true);")).toEqual([]);
     expect(offendingLines("{showPicker ? <PickerSheet /> : null}")).toEqual([]);
+    expect(offendingLines("const open = useSheetStore((s) => s.showPicker);")).toEqual([]);
+    expect(offendingLines("{props.showPicker && <PickerSheet />}")).toEqual([]);
   });
 
   it("catches a quoted object key", () => {
     expect(offendingLines('{ "type": "date" }')).toEqual([1]);
   });
 
-  it("catches an attribute broken across lines", () => {
-    // The per-line pass cannot see this one; the whole-source pass can, and
-    // reports the file rather than a line.
-    expect(offendingLines('<input\n  type=\n    "date"\n/>')).toEqual([0]);
+  it("reports every offender in a file, ascending and deduplicated", () => {
+    // The previous per-line implementation dropped a cross-line match whenever
+    // the same file also held a single-line one, so the second offender was
+    // invisible on an already-red file - the kind of gap you only find by
+    // reading the output rather than the exit code.
+    const both = '<input\n  type=\n    "date"\n/>\nel.showPicker();\n<input type="time" />';
+
+    expect(offendingLines(both)).toEqual([2, 5, 6]);
+    // One line matching both patterns is still one entry.
+    expect(offendingLines('<input type="date" onFocus={() => el.showPicker()} />')).toEqual([1]);
+  });
+
+  it("catches an attribute broken across lines, at the line it starts on", () => {
+    // A per-line pass could not see this at all. Matching over the whole source
+    // both catches it and keeps a usable location.
+    expect(offendingLines('<input\n  type=\n    "date"\n/>')).toEqual([2]);
   });
 
   it("ignores prose, so notes about the retired approach do not trip it", () => {
