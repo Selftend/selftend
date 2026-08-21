@@ -134,7 +134,8 @@ export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
           rather than guessed (canvas `measureText`, the real Noto Sans 600 face):
           the widest name either shipped locale can put here is Bulgarian
           "Дневник на благодарността" at 216.5dp uppercase-and-tracked, against
-          312 − 16 (glyph) − 8 (gap) = 288dp of row on `/notifications` at 360dp.
+          360 − 48 (the screen's `p-6`) − 16 (glyph) − 4 (`gap-1`) = 292dp of row
+          on `/notifications` at 360dp, where the trail is hidden.
           It fits, so nothing truncates today; `numberOfLines` makes the fallback
           in a tighter host predictable - one line, ellipsis at the end, never a
           mid-word break and never a row pushed past the screen edge. */}

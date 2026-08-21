@@ -237,7 +237,7 @@ describe("ScreenEscape - an off-trail Origin in Bulgarian", () => {
    * reason the label was measured rather than guessed: "Дневник на
    * благодарността" is 216.5dp at the trail's eyebrow type (11px, weight 600,
    * uppercased, 0.14em tracking - canvas `measureText` against the real Noto
-   * Sans face), against 288dp of row on `/notifications` at 360dp. It fits, so
+   * Sans face), against 292dp of row on `/notifications` at 360dp. It fits, so
    * nothing truncates today; `numberOfLines={1}` keeps the fallback in a tighter
    * host predictable rather than letting it wrap or break mid-word.
    */
