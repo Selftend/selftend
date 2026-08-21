@@ -751,7 +751,14 @@ let customExerciseId;
 // follow are the structured work (#1282), and four of them head a chain:
 // `goals` -> milestones, `procrastination_tasks` -> task_steps,
 // `exposure_hierarchies` -> exposure_items -> exposure_sessions, and
-// `recovery_plans` -> challenge_plans.
+// `recovery_plans` -> challenge_plans. The six after those are ACT's practice
+// logs (#1284), all standalone. The last four are ACT's structured work
+// (#1286): `act_committed_actions` heads the fifth chain, to act_action_steps.
+//
+// ☠️ `act_action_steps` is the child and is deliberately NOT here — it is
+// reclaimed when its committed action goes. Adding it would look like a
+// tightening and would in fact be the first child wipe in the list, breaking
+// the contract the paragraph above states.
 const CBT_ACT_WIPE_TABLES = [
   "thought_records",
   "core_beliefs",
@@ -770,6 +777,10 @@ const CBT_ACT_WIPE_TABLES = [
   "act_connection_logs",
   "act_observing_self_sessions",
   "act_choice_points",
+  "act_value_entries",
+  "act_bulls_eye_snapshots",
+  "act_committed_actions",
+  "act_program_state",
 ];
 
 for (const table of CBT_ACT_WIPE_TABLES) {
@@ -3581,6 +3592,808 @@ const ACT_TODAY = DAYS - 1;
     throw new Error(
       "No defusion row lands inside the current ACT phase, so `unhookOnce` would read undone. " +
         "#1178 rules `openUp` PARTIALLY complete: unhooked once, room not yet made.",
+    );
+  }
+}
+
+// ------------------------------- ACT: the values, the bulls-eye and the plans
+// The structured half of ACT (#1286) — what this person has decided matters and
+// what they have committed to doing about it — as opposed to the six practice
+// surfaces above. Four value entries, the bulls-eye check-in history, one
+// committed action per life domain with its steps, and the singleton programme
+// state row. The ACT programme anchor is written and asserted back here too,
+// because the assertion needs these rows to exist before it can say anything.
+//
+// Same life and the same content ceiling as every section above: distress about
+// performance, standing and relationships, ROLE-ONLY, never about living, and
+// every distressing field answered by the one beside it. The values are the
+// other side of the same anxiety — what the avoidance is costing.
+
+// The four life domains, mirroring ACT_LIFE_DOMAINS in src/features/act/types.ts
+// and the CHECK on act_value_entries.life_domain, act_bulls_eye_snapshots.domain
+// and act_committed_actions.life_domain. ☠️ The schema caps value entries at
+// exactly this many rows — `unique (user_id, life_domain)` over a four-value
+// CHECK — so all four are present and there is no room for a fifth.
+const ACT_LIFE_DOMAINS = ["work", "leisure", "relationships", "personalGrowth"];
+
+// act_committed_actions.status, mirroring the CHECK in
+// 20260540_act_committed_action.sql and the ActionStatus union in
+// src/features/act/types.ts. The list screen renders one group per status, so a
+// status with no row is a section header nobody ever sees.
+//
+// ⚠️ Mirrored, not read from the live constraint — the same gap the CBT and ACT
+// lists above carry, and for the same reason.
+//
+// ☠️ act_action_steps has NO status column: a step is an `is_completed` boolean
+// plus a nullable `completed_at`, and `toggleActionStep` clears the timestamp
+// when a step is reopened, so there is no third step shape to seed. #1286's
+// acceptance criterion asking for "all three action-step statuses" is about THIS
+// column — the three statuses belong to the parent action, and one action per
+// domain across four domains is what makes room for all three.
+const ACTION_STATUSES = ["active", "completed", "abandoned"];
+
+// The ACT programme start, as a day index into the rolling window (#1178). A few
+// days behind CBT's day 8 rather than the same afternoon — one person taking up
+// two programmes on the same day is the tell of generated data. Only the four
+// summary stat chips count from this; the milestones count from the phase start.
+const ACT_PROGRAM_STARTED_DAY = 11;
+
+// The four ACT phase keys in order, mirroring ACT_PROGRAM in
+// src/features/act/program-definition.ts. Mirrored rather than imported: this
+// script is plain Node and that module is TypeScript behind a path alias.
+//
+// The index is derived from the KEY for the same reason CBT's is — each phase
+// has its own milestones and its own daily practice, and the checks below are
+// `openUp`'s specifically, so anchoring by name is what lets the assertion
+// notice that the anchor and the rows have come apart.
+const ACT_PHASE_KEYS = ["foundation", "bePresent", "openUp", "doWhatMatters"];
+const ACT_PROGRAM_PHASE_KEY = "openUp";
+const ACT_PROGRAM_PHASE_INDEX = ACT_PHASE_KEYS.indexOf(ACT_PROGRAM_PHASE_KEY);
+
+// The days the person sat down and re-rated all four domains.
+//
+// ☠️ THE HISTORY SCREEN RENDERS ONLY THE NEWEST TWELVE ROWS — `slice(0, 12)`
+// over a `reviewed_at desc` fetch — and a review is four rows, one per domain.
+// So exactly THREE review dates are ever visible, and a trajectory laid down on
+// an even stride would put every date that carries the setback off the bottom of
+// the screen: the account would read as a steady climb with no bad stretch in
+// it. The last three dates are therefore chosen so the visible twelve carry the
+// shape on their own — day 52 is the last reading before the setback, day 64 is
+// its last day, and today is the recovery. The month between the setback and
+// today is the stretch where the reviews stopped, which is what a bad month does
+// to a fortnightly habit; the newest row is still today, so this is a gap in the
+// middle rather than a tail that peters out.
+const ACT_BULLS_EYE_REVIEW_DAYS = [4, 12, 20, 28, 36, 44, 52, 64, DAYS - 1];
+
+// The first review that falls inside the setback, and the last one before it.
+// Both the generator and the read-back below need them, and a check that
+// recomputed them from its own copy of the review days would move whenever the
+// generator moved and agree with itself on any placement at all.
+const SETBACK_REVIEW_INDEX = ACT_BULLS_EYE_REVIEW_DAYS.findIndex(inSetback);
+if (SETBACK_REVIEW_INDEX < 1) {
+  throw new Error(
+    "No bulls-eye review falls inside the setback with a review before it to compare against. " +
+      "The dip is the one thing the only series UI in either module exists to show.",
+  );
+}
+
+/**
+ * The alignment rating domain `domain` reads on day `dayIndex`, 1-10.
+ *
+ * Rides the same `improvement(day)` arc as worry probability, anger arousal and
+ * exposure distress, so the bulls-eye bends where they bend. Each domain maps it
+ * onto its own band: work is the sore spot and stays lowest, relationships
+ * recovers furthest. The bands are five points wide because that is what makes
+ * the setback's rollback survive rounding to an integer — narrow them and every
+ * reading through the bad stretch collapses onto the one before it.
+ *
+ * Read by the snapshots AND by the value entries, so a value entry's stored
+ * alignment is the same arc evaluated on the day that entry was last edited
+ * rather than a second hand-picked number that drifts away from the history
+ * sitting behind it.
+ */
+const DOMAIN_ALIGNMENT_BAND = {
+  work: [2, 7],
+  leisure: [3, 8],
+  relationships: [4, 9],
+  personalGrowth: [3, 8],
+};
+function alignmentFor(domain, dayIndex) {
+  const [lo, hi] = DOMAIN_ALIGNMENT_BAND[domain];
+  return Math.max(1, Math.min(10, Math.round(lo + (hi - lo) * improvement(dayIndex))));
+}
+
+// ------------------------------------------------------------- value entries
+{
+  // Four rows, one per domain, at the schema's cap. Each value names what this
+  // person would do if the thought were not running the day, and the barrier
+  // field says what stops it — the same avoidance the rest of the seed
+  // describes, seen from the side of what it costs.
+  //
+  // ☠️ `leisure` carries a NULL current_alignment_rating on purpose. The values
+  // screen falls back to the newest bulls-eye snapshot for a domain whose entry
+  // has no rating (`entry?.currentAlignmentRating ?? latestRating(domain)`), and
+  // that fallback is a real branch with no other row to exercise it.
+  //
+  // Every `updated_at` here sits BEFORE the current ACT phase start. `openUp` is
+  // the anchored phase and `doWhatMatters` is the one after it, whose
+  // `clarifyValue` milestone counts value entries updated since that phase
+  // began — leaving it open means a reviewer who advances the phase lands on a
+  // card with open milestones and real content behind them, rather than one
+  // already ticked before they got there.
+  const entries = [
+    {
+      life_domain: "work",
+      value_statement:
+        "Do work I would be willing to explain out loud, and let people see it before it is finished.",
+      importance_rating: 9,
+      current_actions_note:
+        "Rewriting anything I have to present until the last possible minute, then reading it out word for word.",
+      desired_actions_note: "Share the rough version early and ask one real question about it.",
+      barriers: "Being found out. Every unfinished thing I show feels like the proof.",
+      createdDay: 22,
+      updatedDay: 74,
+    },
+    {
+      life_domain: "leisure",
+      value_statement: "Make room for things with no outcome attached to them.",
+      importance_rating: 6,
+      current_actions_note: "Weekends spent catching up on everything I avoided during the week.",
+      desired_actions_note: "One walk by the sea a week that I have not earned.",
+      barriers: "Resting feels like falling further behind.",
+      createdDay: 25,
+      updatedDay: 57,
+    },
+    {
+      life_domain: "relationships",
+      value_statement:
+        "Be here with the people at home, rather than still in a meeting that finished hours ago.",
+      importance_rating: 9,
+      current_actions_note: "Home by seven, still answering messages at nine.",
+      desired_actions_note:
+        "Put the laptop in the other room while we eat, and ask about their day first.",
+      barriers: "Replaying the day's conversations instead of listening to the one in front of me.",
+      createdDay: 22,
+      updatedDay: 71,
+    },
+    {
+      life_domain: "personalGrowth",
+      value_statement: "Learn in the open, at whatever pace it actually takes.",
+      importance_rating: 7,
+      current_actions_note:
+        "Reading up on the things I am behind on privately, so nobody sees me not knowing.",
+      desired_actions_note: "Ask the question in the room instead of looking it up afterwards.",
+      barriers: "Not knowing, in front of people who might be keeping score.",
+      createdDay: 25,
+      updatedDay: 76,
+    },
+  ];
+
+  counts.act_value_entries = await insert(
+    "act_value_entries",
+    entries.map(({ createdDay, updatedDay, ...fields }) => ({
+      user_id: DEMO_USER_ID,
+      ...fields,
+      // The alignment the arc gives on the day the entry was last edited, not
+      // today's. A value entry records what someone thought when they wrote it,
+      // and the bulls-eye has moved on since; the check further down holds it to
+      // "no better than the latest review", which is the only relationship
+      // between the two numbers that can actually be wrong.
+      current_alignment_rating:
+        fields.life_domain === "leisure" ? null : alignmentFor(fields.life_domain, updatedDay),
+      created_at: inBand(createdDay, 40),
+      updated_at: somewhereInBand(updatedDay),
+    })),
+  );
+}
+
+// -------------------------------------------------------- bulls-eye snapshots
+{
+  // The only series UI in either module: nothing in CBT or ACT is charted, so a
+  // trajectory is legible only by reading numbers down a list, and this history
+  // is the nearest thing to a chart the two modules have. Nine review dates
+  // across all four domains, alignment climbing across the window and dropping
+  // back through the setback.
+  //
+  // ☠️ WRITTEN DIRECTLY TO THE TABLE, not through an encrypted view. This is the
+  // one table in either module with no `_data` base and no decrypting view: all
+  // of its columns are numeric or enum, so there is nothing to encrypt. It is a
+  // deliberate exception to the rule every other insert in this section follows,
+  // recorded here so a reviewer does not "correct" it into a view that does not
+  // exist.
+  const rows = ACT_BULLS_EYE_REVIEW_DAYS.flatMap((day) => {
+    // One sitting: the screen saves every rated domain from a single Save, so
+    // the four rows of a review land within a few minutes of each other rather
+    // than scattered across the band.
+    const startedAt = between(0, ACT_BAND_MINUTES - ACT_LIFE_DOMAINS.length);
+    return ACT_LIFE_DOMAINS.map((domain, index) => {
+      const reviewedAt = inBand(day, startedAt + index);
+      return {
+        user_id: DEMO_USER_ID,
+        domain,
+        alignment_rating: alignmentFor(domain, day),
+        reviewed_at: reviewedAt,
+        created_at: reviewedAt,
+      };
+    });
+  });
+
+  counts.act_bulls_eye_snapshots = await insert("act_bulls_eye_snapshots", rows);
+}
+
+// ---------------------------------------------- committed actions and steps
+{
+  // One plan per life domain, which is what makes room for all three statuses on
+  // a four-row list: two live commitments, one finished and one let go. The list
+  // screen renders a group per status, so a status with no row is a section
+  // header that never appears on the demo account.
+  //
+  // The leisure plan was let go INSIDE the setback and the others were not,
+  // which is the same bad stretch the ratings bend around, said a different way.
+  // Everything here is dated before the current ACT phase start for the same
+  // reason the value entries are: `commitActionOnce` belongs to the phase after
+  // the anchored one and is left open.
+  //
+  // Step order IS list order — the detail screen fetches steps `created_at`
+  // ascending — so steps are placed at fixed, increasing minutes into the band
+  // rather than scattered through it.
+  const actions = [
+    {
+      life_domain: "work",
+      title: "Bring a half-finished draft to the Monday review",
+      description:
+        "Show the version I would normally hide, and say out loud which part I am unsure about.",
+      status: "active",
+      obstacles:
+        "The urge to polish it first, and the twenty minutes beforehand where I talk myself out of it.",
+      targetDay: DAYS - 1 + 12,
+      createdDay: 55,
+      updatedDay: 74,
+      steps: [
+        ["Pick the piece I would least want anyone to see", 58],
+        ["Write down the one question I actually want answered about it", 60],
+        ["Send it the night before, so there is no version of me that withdraws it", null],
+        ["Say the unsure part out loud in the room, not in a note afterwards", null],
+      ],
+    },
+    {
+      life_domain: "leisure",
+      title: "Swim before work on Tuesdays and Thursdays",
+      description: "Down to the sea early, twice a week, whatever the water is like.",
+      status: "abandoned",
+      obstacles: "Setting the alarm the night before, then finding a reason at six.",
+      // ☠️ No target date. Both the list and the detail screen branch on it, and
+      // this is the only row that takes the missing-date path.
+      targetDay: null,
+      createdDay: 24,
+      updatedDay: 57,
+      steps: [
+        ["Put the bag by the door the night before", 27],
+        ["Go on the first Tuesday, whatever the water is like", null],
+        ["Say out loud at home that I am going, so it is not only mine to keep", null],
+        ["Swim on a morning I do not feel like it", null],
+      ],
+    },
+    {
+      life_domain: "relationships",
+      title: "Ask about their day before I unpack mine",
+      description: "One real question at dinner, every evening, before the day gets replayed.",
+      status: "completed",
+      // Empty on purpose: the detail screen hides the obstacles card when this
+      // is blank, and a plan that is finished is the plausible row to have
+      // stopped filling it in on.
+      obstacles: "",
+      targetDay: 70,
+      createdDay: 30,
+      updatedDay: 72,
+      steps: [
+        ["Ask one question about their day before I unpack mine", 33],
+        ["Leave the laptop in the other room while we eat", 37],
+        ["Notice when I have stopped listening, and say so", 51],
+        ["Say the thing I am worried about instead of going quiet", 69],
+      ],
+    },
+    {
+      life_domain: "personalGrowth",
+      // Long on purpose: the list truncates a title at two lines and nothing
+      // else here is long enough to reach the second one.
+      title:
+        "Ask the question in the room, at the moment I lose the thread, instead of looking it up afterwards",
+      description:
+        "When I do not follow something, ask there and then rather than nodding and reading about it that evening.",
+      status: "active",
+      obstacles:
+        "“Everyone else already knows this” — the same thought as always, wearing a different coat.",
+      targetDay: DAYS - 1 + 25,
+      createdDay: 62,
+      updatedDay: 76,
+      steps: [
+        ["Write down the moment I lost the thread, in the meeting", 65],
+        ["Ask about it in the room the next time it happens", 73],
+        ["Say “I do not know that one” without softening it", null],
+        ["Ask a second question when the first answer does not land", null],
+      ],
+    },
+  ];
+
+  let actionRows = 0;
+  let stepRows = 0;
+  for (const action of actions) {
+    const { steps, targetDay, createdDay, updatedDay, ...fields } = action;
+    const actionId = await insertReturningId("act_committed_actions", {
+      user_id: DEMO_USER_ID,
+      ...fields,
+      // A calendar day, not an instant — and built through `dayKeyAt`, never by
+      // slicing an ISO string, which files the row on the wrong day west of
+      // Greenwich. `dayKeyAt` takes indices past the end of the window, which is
+      // how a live plan gets a target date in the future.
+      target_date: targetDay === null ? null : dayKeyAt(targetDay),
+      created_at: inBand(createdDay, 10),
+      updated_at: somewhereInBand(updatedDay),
+    });
+    actionRows++;
+
+    stepRows += await insert(
+      "act_action_steps",
+      steps.map(([description, completedDay], index) => {
+        const createdAt = inBand(createdDay, 20 + index * 3);
+        const completedAt = completedDay === null ? null : somewhereInBand(completedDay);
+        return {
+          user_id: DEMO_USER_ID,
+          action_id: actionId,
+          description,
+          is_completed: completedAt !== null,
+          completed_at: completedAt,
+          created_at: createdAt,
+          updated_at: completedAt ?? createdAt,
+        };
+      }),
+    );
+  }
+  counts.act_committed_actions = actionRows;
+  counts.act_action_steps = stepRows;
+}
+
+// ------------------------------------------------------------ programme state
+{
+  // A singleton keyed by user, and the one ACT table nothing renders: the
+  // repository reads and writes every column and no screen consumes any of them.
+  // It is seeded because the GDPR export carries it and the export-completeness
+  // gate holds that export to the live schema — an empty row there is a column
+  // the export has never been proven to carry for a real account.
+  //
+  // ☠️ Inserted through the view like everything else, but this view's INSTEAD OF
+  // trigger resolves the per-user merge itself (a view cannot be the target of
+  // INSERT ... ON CONFLICT). The wipe ahead of it means the run always takes the
+  // plain insert path, which is the one that honours a supplied `created_at` —
+  // the conflict path stamps `now()` instead.
+  //
+  // `last_check_in_at` is read back out of the snapshots rather than rebuilt
+  // here: the bulls-eye review IS the check-in on this module, and a second date
+  // computed alongside it would be a second statement of the same fact, free to
+  // drift.
+  const { data: latestReview, error: reviewError } = await admin
+    .from("act_bulls_eye_snapshots")
+    .select("reviewed_at")
+    .eq("user_id", DEMO_USER_ID)
+    .order("reviewed_at", { ascending: false })
+    .limit(1)
+    .single();
+  if (reviewError) throw new Error(`act program state (latest review): ${reviewError.message}`);
+
+  const onboardedAt = inBand(ACT_PROGRAM_STARTED_DAY, 30);
+  counts.act_program_state = await insert("act_program_state", [
+    {
+      user_id: DEMO_USER_ID,
+      // All six: every practice surface above carries rows, so every principle
+      // is one this account is actually working with.
+      active_principles: [
+        "defusion",
+        "expansion",
+        "connection",
+        "observingSelf",
+        "values",
+        "committedAction",
+      ],
+      // The same presenting problem the rest of the seed commits to, in this
+      // table's vocabulary. `anger` and `grief` are deliberately absent: the
+      // anger logs are a tool this person uses rather than a concern they named,
+      // and the bereavement is background rather than what they came in for.
+      primary_concerns: ["anxiety", "selfCriticism", "procrastination"],
+      myths_acknowledged: true,
+      onboarding_completed_at: onboardedAt,
+      last_check_in_at: latestReview.reviewed_at,
+      preferred_check_in_time: "20:30",
+      created_at: onboardedAt,
+      updated_at: latestReview.reviewed_at,
+    },
+  ]);
+}
+
+// ------------------------------------------------------------- ACT programme
+// The anchor is the INPUT: it is written here and the rows above and in the
+// practice-logs section were generated to satisfy it (#1178). ACT sits in
+// `openUp`, index 2 of 4, PARTIALLY complete — defusion rows well inside the
+// phase tick `unhookOnce`, no expansion or urge-surf row since it began leaves
+// `makeRoomOnce` open, and nothing at all today leaves the daily practice open,
+// which is the one row a reviewer can exercise themselves.
+//
+// ☠️ ANCHORED FROM `ACT_PHASE_STARTED_DAY`, the constant the practice-logs
+// section declares and places its margins against. A second day chosen here
+// would move the phase out from under those margins with nothing failing:
+// nothing in that section persists an anchor, so its checks and this one would
+// simply be measuring two different phases.
+{
+  const { error } = await admin
+    .from("user_preferences")
+    .update({
+      act_program_started_at: at(ACT_PROGRAM_STARTED_DAY, 9, 0),
+      act_program_phase_index: ACT_PROGRAM_PHASE_INDEX,
+      act_program_phase_started_at: at(ACT_PHASE_STARTED_DAY, 9, 0),
+      // Null keeps the programme in progress. A completion date would graduate
+      // it and the phase card would stop rendering altogether.
+      act_program_completed_at: null,
+      // Cleared rather than left alone so a re-run reproduces the same picture:
+      // this column is set by a tap in the app, and a reviewer who dismissed the
+      // prompt would otherwise keep a dismissed prompt across every later seed.
+      act_program_prompt_dismissed_at: null,
+    })
+    .eq("user_id", DEMO_USER_ID);
+  if (error) throw new Error(`act program anchor: ${error.message}`);
+}
+
+// ☠️ `act_program_phase_index` is STORED, not derived, while every milestone
+// derives from the rows. Nothing in the app recomputes the index or rejects one
+// that contradicts its own rows — out-of-range values are silently clamped, not
+// refused — so a seeded index can sit there disagreeing with the data behind it,
+// and the only symptom is a programme card that reads wrong.
+//
+// So derive it back OUT of the database and check the two agree, exactly as the
+// CBT block above does. Read back rather than reusing the arrays: that also
+// proves the rows survived the encrypted views with the timestamps they were
+// given, which is the other way this can silently go wrong.
+{
+  const { data: prefs, error: prefsError } = await admin
+    .from("user_preferences")
+    .select(
+      "act_program_started_at, act_program_phase_index, act_program_phase_started_at, " +
+        "act_program_completed_at",
+    )
+    .eq("user_id", DEMO_USER_ID)
+    .single();
+  if (prefsError) throw new Error(`act program read-back: ${prefsError.message}`);
+
+  /** Every `created_at` the demo account holds in `table`, as epoch millis. */
+  async function createdMillis(table) {
+    const { data, error } = await admin
+      .from(table)
+      .select("created_at")
+      .eq("user_id", DEMO_USER_ID);
+    if (error) throw new Error(`act program read-back (${table}): ${error.message}`);
+    if (data.length === 0) throw new Error(`act program read-back (${table}): no rows came back.`);
+    return data.map((row) => new Date(row.created_at).getTime());
+  }
+
+  const defusion = await createdMillis("act_defusion_logs");
+  const expansion = await createdMillis("act_expansion_logs");
+  const urgeSurf = await createdMillis("act_urge_surf_logs");
+
+  // Milestones count from the phase start, falling back to the programme start
+  // exactly as `deriveActProgram` does.
+  const phaseStart = new Date(
+    prefs.act_program_phase_started_at ?? prefs.act_program_started_at,
+  ).getTime();
+
+  // What the seeded rows have to make each of the anchored phase's legs read.
+  // Keyed by PHASE, and only the seeded phase is declared: every phase has
+  // different milestones and a different daily practice, so moving the anchor to
+  // another phase means choosing afresh which signals the rows now satisfy. An
+  // undeclared phase fails here rather than quietly checking `openUp`'s legs
+  // against a `doWhatMatters` anchor and passing.
+  //
+  // Milestones and daily practice are declared SEPARATELY because "partially
+  // complete" is a claim about the milestones alone — the daily practice is not
+  // part of a phase's completion, and a check that had to name the daily leg to
+  // exclude it would stop excluding it the moment a phase called that leg
+  // something else.
+  const phaseExpectations = {
+    openUp: {
+      milestones: { unhookOnce: true, makeRoomOnce: false },
+      dailyPractice: { unhookOrMakeRoomDaily: false },
+    },
+  };
+
+  const anchoredPhaseKey = ACT_PHASE_KEYS[prefs.act_program_phase_index];
+  const phaseExpectation = phaseExpectations[anchoredPhaseKey];
+  if (!phaseExpectation) {
+    throw new Error(
+      `The anchored ACT phase index ${prefs.act_program_phase_index} is ` +
+        `'${anchoredPhaseKey ?? "out of range"}', which this script declares no expectations ` +
+        `for — it seeds '${ACT_PROGRAM_PHASE_KEY}'. Re-phasing the account means re-choosing ` +
+        "which milestones and which daily practice the rows have to satisfy, because no two " +
+        "phases share them.",
+    );
+  }
+
+  // ☠️ ACT buckets its daily practice through the VIEWER's clock rather than a
+  // captured offset — none of these tables has an offset column — so the day key
+  // comes off the local getters here, matching `toLocalDateKey` on the client
+  // and the ACT legs of `program_widget_task_status` on the server.
+  const today = dayKeyAt(DAYS - 1);
+  const onToday = (instants) => instants.some((ms) => localDayKey(new Date(ms)) === today);
+  const derived = {
+    started: prefs.act_program_started_at !== null,
+    graduated: prefs.act_program_completed_at !== null,
+    // `openUp`'s two milestones and its daily practice, in the same shape
+    // src/features/act/program-definition.ts evaluates them.
+    unhookOnce: defusion.some((ms) => ms >= phaseStart),
+    makeRoomOnce:
+      expansion.some((ms) => ms >= phaseStart) || urgeSurf.some((ms) => ms >= phaseStart),
+    unhookOrMakeRoomDaily: onToday([...defusion, ...expansion, ...urgeSurf]),
+  };
+  const expected = {
+    started: true,
+    graduated: false,
+    ...phaseExpectation.milestones,
+    ...phaseExpectation.dailyPractice,
+  };
+
+  const disagreements = Object.keys(expected)
+    .filter((key) => derived[key] !== expected[key])
+    .map((key) => `${key}: anchored ${expected[key]}, derived ${derived[key]}`);
+  if (disagreements.length > 0) {
+    throw new Error(
+      `The seeded ACT programme anchor ('${anchoredPhaseKey}') and the rows behind it ` +
+        `disagree — ${disagreements.join("; ")}. The anchor is the input and the rows are ` +
+        "generated to satisfy it, so whichever moved, they have to move together.",
+    );
+  }
+
+  // PARTIALLY complete: a claim about the phase rather than about any one leg,
+  // and read off the milestones only, which is what phase completion is made of.
+  if (Object.values(phaseExpectation.milestones).every(Boolean)) {
+    throw new Error(
+      `Every milestone of '${anchoredPhaseKey}' is expected done, so the phase would read ` +
+        "complete rather than partially complete.",
+    );
+  }
+  if (Object.values(phaseExpectation.dailyPractice).some(Boolean)) {
+    throw new Error(
+      `Today's practice for '${anchoredPhaseKey}' is expected done. It is deliberately left ` +
+        "open — it is the one row a reviewer can exercise on the demo account themselves.",
+    );
+  }
+
+  // ------------------------------------------- the edges of the supported band
+  // The two boundary invariants are the only things a timezone drift can
+  // actually break, and both are statements about a CIVIL DAY: ACT tables carry
+  // no captured offset, so their day is resolved through whatever clock the
+  // viewer happens to have. Re-derive both at each edge of the supported band
+  // and fail if either flips there. Inert until ACT rows exist, which is why it
+  // lands in this slice rather than with the wipe contract that declared it.
+  //
+  // ☠️ UTC-11:00 through UTC+12:45 is the band the spec supports (#1273); UTC+13
+  // and UTC+14 are knowingly outside it and made harmless by the two-day margins
+  // rather than by exact placement. Restated as offsets in minutes rather than
+  // derived from the placement helpers, so a change to the band the rows are
+  // WRITTEN in cannot quietly move the band they are CHECKED against.
+  const SUPPORTED_BAND_EDGES = [
+    { label: "UTC-11:00", offsetMinutes: -660 },
+    { label: "UTC+12:45", offsetMinutes: 765 },
+  ];
+
+  /** The civil day an instant falls on for a viewer at `offsetMinutes`. */
+  const dayKeyAtOffset = (millis, offsetMinutes) =>
+    new Date(millis + offsetMinutes * 60_000).toISOString().slice(0, 10);
+
+  for (const edge of SUPPORTED_BAND_EDGES) {
+    const todayThere = dayKeyAtOffset(Date.now(), edge.offsetMinutes);
+    const unhookedToday = defusion.filter(
+      (ms) => dayKeyAtOffset(ms, edge.offsetMinutes) === todayThere,
+    );
+    if (unhookedToday.length > 0) {
+      throw new Error(
+        `At ${edge.label} ${unhookedToday.length} defusion row(s) fall on ${todayThere}, that ` +
+          "viewer's today, so `openUp`'s daily practice would read DONE there. It is " +
+          "deliberately open, and the last defusion row is meant to sit two days clear of today " +
+          "so no viewer clock can reach it.",
+      );
+    }
+
+    const phaseStartThere = dayKeyAtOffset(phaseStart, edge.offsetMinutes);
+    const roomMadeSince = [...expansion, ...urgeSurf].filter(
+      (ms) => dayKeyAtOffset(ms, edge.offsetMinutes) >= phaseStartThere,
+    );
+    if (roomMadeSince.length > 0) {
+      throw new Error(
+        `At ${edge.label} ${roomMadeSince.length} expansion or urge-surf row(s) fall on or after ` +
+          `${phaseStartThere}, the phase start there, so \`makeRoomOnce\` would read DONE and ` +
+          "`openUp` would read complete rather than partially complete.",
+      );
+    }
+  }
+}
+
+// ------------------------------ ACT structured work, read back out of the DB
+// Read back rather than checked against the arrays above, for the same reason
+// the practice-logs section does it: reading back is what makes these checks
+// cover the encrypted views as well as the code that built the rows.
+{
+  /** The declared columns of `table`, for every row the demo account owns. */
+  async function readBack(table, columns) {
+    const { data, error } = await admin
+      .from(table)
+      .select(columns.join(","))
+      .eq("user_id", DEMO_USER_ID);
+    if (error) throw new Error(`act structured read-back (${table}): ${error.message}`);
+    if (data.length === 0)
+      throw new Error(`act structured read-back (${table}): no rows came back.`);
+    return data;
+  }
+
+  // VARIANT COVERAGE. The three life-domain columns carry the schema's four-value
+  // CHECK and the status column its three-value one; a variant with no row is a
+  // card or a section header that never renders on the demo account.
+  const variantChecks = [
+    ["act_value_entries", "life_domain", ACT_LIFE_DOMAINS],
+    ["act_bulls_eye_snapshots", "domain", ACT_LIFE_DOMAINS],
+    ["act_committed_actions", "life_domain", ACT_LIFE_DOMAINS],
+    ["act_committed_actions", "status", ACTION_STATUSES],
+  ];
+  for (const [table, column, variants] of variantChecks) {
+    const rows = await readBack(table, [column]);
+    requireEveryVariant(`${table}.${column}`, variants, rows, column);
+  }
+
+  // ☠️ The schema caps value entries at four — `unique (user_id, life_domain)`
+  // over a four-value CHECK — so "all four domains present" and "exactly four
+  // rows" are not the same statement: the second is what notices a domain
+  // written twice and silently merged away by the view's ON CONFLICT path.
+  const valueEntries = await readBack("act_value_entries", [
+    "life_domain",
+    "current_alignment_rating",
+  ]);
+  if (valueEntries.length !== ACT_LIFE_DOMAINS.length) {
+    throw new Error(
+      `${valueEntries.length} value entries came back, not ${ACT_LIFE_DOMAINS.length}. The table ` +
+        "is capped at one row per life domain, so a different count means a domain was written " +
+        "twice and the view's conflict path merged it away.",
+    );
+  }
+
+  const snapshots = await readBack("act_bulls_eye_snapshots", [
+    "domain",
+    "alignment_rating",
+    "reviewed_at",
+  ]);
+
+  // THE ARC, off the rows the database returns. Two claims, because they fail
+  // differently: the history has to CLIMB across the window, and it has to DIP
+  // where the setback is. The dip is the fragile one — the setback rolls the
+  // shared improvement curve back about three weeks, which on a five-point band
+  // is barely more than one rating point, close enough that rounding to an
+  // integer can flatten it away and leave a history that only ever rises.
+  //
+  // Per domain rather than in aggregate: an arc that survives on three domains
+  // and collapses on the fourth is exactly what narrowing one band does. The two
+  // reviews compared are picked by POSITION in the seeded order, which is what
+  // lets this read the ratings back out of the database without having to
+  // re-derive a day index from a timestamp the band deliberately shifted.
+  for (const domain of ACT_LIFE_DOMAINS) {
+    const forDomain = snapshots
+      .filter((row) => row.domain === domain)
+      .sort((a, b) => new Date(a.reviewed_at) - new Date(b.reviewed_at));
+    if (forDomain.length !== ACT_BULLS_EYE_REVIEW_DAYS.length) {
+      throw new Error(
+        `${forDomain.length} bulls-eye snapshot(s) came back for ${domain}, not ` +
+          `${ACT_BULLS_EYE_REVIEW_DAYS.length}. Every review rates every domain, so a domain ` +
+          "with fewer rows leaves gaps down the one series UI either module has.",
+      );
+    }
+    const newest = forDomain[forDomain.length - 1];
+    const oldest = forDomain[0];
+    if (!(newest.alignment_rating > oldest.alignment_rating)) {
+      throw new Error(
+        `The bulls-eye history for ${domain} ends at ${newest.alignment_rating}/10 having ` +
+          `started at ${oldest.alignment_rating}/10, so it does not improve across the window.`,
+      );
+    }
+    const inSetbackReview = forDomain[SETBACK_REVIEW_INDEX];
+    const beforeSetback = forDomain[SETBACK_REVIEW_INDEX - 1];
+    if (!(inSetbackReview.alignment_rating < beforeSetback.alignment_rating)) {
+      throw new Error(
+        `The bulls-eye history for ${domain} does not dip at the setback: the review inside it ` +
+          `reads ${inSetbackReview.alignment_rating}/10 against ${beforeSetback.alignment_rating}` +
+          "/10 the review before. The setback is meant to be visible in the ratings, and on a " +
+          "five-point band integer rounding is what flattens it away.",
+      );
+    }
+  }
+
+  // A value entry's stored alignment is the shared arc read on the day that
+  // entry was last edited, so it is allowed to sit behind the newest check-in
+  // and never ahead of it. The values screen shows this number in place of the
+  // history's, so an entry claiming better alignment than the latest review is
+  // the one way these two surfaces can openly contradict each other.
+  for (const entry of valueEntries) {
+    if (entry.current_alignment_rating === null) continue;
+    const newestForDomain = snapshots
+      .filter((row) => row.domain === entry.life_domain)
+      .sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at))[0];
+    if (entry.current_alignment_rating > newestForDomain.alignment_rating) {
+      throw new Error(
+        `The ${entry.life_domain} value entry claims alignment ` +
+          `${entry.current_alignment_rating}/10 while the newest bulls-eye review for that ` +
+          `domain says ${newestForDomain.alignment_rating}/10. The values screen shows the ` +
+          "entry's number and the history shows the review's, so the two openly contradict " +
+          "each other.",
+      );
+    }
+  }
+
+  // Both step shapes have to render: a ticked step and an open one. The detail
+  // screen counts the ticked ones and strikes them through, and an action whose
+  // steps are all one way never shows the other.
+  const steps = await readBack("act_action_steps", ["is_completed", "completed_at"]);
+  if (!steps.some((row) => row.is_completed) || !steps.some((row) => !row.is_completed)) {
+    throw new Error(
+      "The seeded action steps are all one shape. Both a completed step and an open one have to " +
+        "exist, because the detail screen renders them differently.",
+    );
+  }
+  // ☠️ Deliberately none today. `valuesStepDaily` — `doWhatMatters`'s daily
+  // practice — is "a step completed on the selected day", so a step ticked today
+  // would make the ruling that today's practice stays open quietly stop being
+  // true of the phase after the anchored one.
+  const todayKey = dayKeyAt(DAYS - 1);
+  const completedToday = steps.filter(
+    (row) => row.completed_at !== null && localDayKey(new Date(row.completed_at)) === todayKey,
+  );
+  if (completedToday.length > 0) {
+    throw new Error(
+      `${completedToday.length} action step(s) were completed today, which ticks ` +
+        "`doWhatMatters`'s daily practice. #1178 leaves today's practice open on both " +
+        "programmes — it is the one row a reviewer can exercise themselves.",
+    );
+  }
+
+  // THE BAND. These tables store no captured offset, so a row placed with `at()`
+  // instead of `inBand()` changes civil day for viewers the band was chosen to
+  // cover: `reviewed_at` is printed as a date on the history, `completed_at` is
+  // compared against the selected day, and the rest are the timestamps a future
+  // check would reach for. The excused instants are today's rows the future-clamp
+  // pulled back out of the band, compared by epoch millis because PostgREST
+  // returns a different ISO format than the script wrote.
+  const bandColumns = [
+    ["act_bulls_eye_snapshots", ["reviewed_at", "created_at"]],
+    ["act_value_entries", ["created_at", "updated_at"]],
+    ["act_committed_actions", ["created_at", "updated_at"]],
+    ["act_action_steps", ["created_at", "updated_at", "completed_at"]],
+    [
+      "act_program_state",
+      ["created_at", "updated_at", "onboarding_completed_at", "last_check_in_at"],
+    ],
+  ];
+  const strays = [];
+  for (const [table, columns] of bandColumns) {
+    for (const row of await readBack(table, columns)) {
+      for (const column of columns) {
+        if (row[column] === null) continue;
+        const millis = new Date(row[column]).getTime();
+        if (clampedOutOfBand.has(millis)) continue;
+        const hour = new Date(millis).getUTCHours();
+        if (hour < ACT_BAND_START_HOUR || hour >= ACT_BAND_END_HOUR) {
+          strays.push(`${table}.${column} at ${new Date(millis).toISOString()}`);
+        }
+      }
+    }
+  }
+  if (strays.length > 0) {
+    throw new Error(
+      `${strays.length} ACT row(s) sit outside the ${ACT_BAND_START_HOUR}:00-` +
+        `${ACT_BAND_END_HOUR}:00 UTC band — ${strays.slice(0, 3).join("; ")}. These tables store ` +
+        "no captured offset, so a row outside the band changes civil day for viewers the band " +
+        "was chosen to cover. Place it with `inBand`, not `at`.",
     );
   }
 }
