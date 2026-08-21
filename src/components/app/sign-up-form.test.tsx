@@ -4,10 +4,12 @@ import { router } from "expo-router";
 
 import { SignUpForm } from "./sign-up-form";
 import { signUpWithPassword, LEAKED_PASSWORD_ERROR } from "@/src/features/auth/api";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { replace: jest.fn(), push: jest.fn() },
+  usePathname: () => "/sign-up",
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -92,5 +94,26 @@ describe("SignUpForm", () => {
     expect(screen.getByLabelText("Email").props.keyboardType).toBe("email-address");
     expect(screen.getByLabelText("Password").props.secureTextEntry).toBe(true);
     expect(screen.getByLabelText("Confirm password").props.secureTextEntry).toBe(true);
+  });
+
+  /**
+   * ⚠️ The href is written `/(auth)/sign-in` and `usePathname` never reports a
+   * route group, so recording it verbatim would set a `forPathname` no screen
+   * can ever match - and nothing would break, the sign-in screen would just
+   * quietly show a plain Up. That silent failure is what opt-out recording
+   * exists to prevent, so reintroducing it one call site at a time is the way
+   * this batch could go wrong. The helper's `targetPathname` strips the group
+   * (#1265, O3).
+   */
+  it("records a group-free target for the sign-in cross-link", () => {
+    useNavigationOriginStore.setState({ pending: null });
+    renderWithProviders(<SignUpForm />);
+
+    fireEvent.press(screen.getByText("Sign in"));
+
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/sign-up",
+      forPathname: "/sign-in",
+    });
   });
 });

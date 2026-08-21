@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -13,6 +12,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCookieConsentStore } from "@/src/stores/cookie-consent-store";
 import { INSET_LAYER, useInsetPublisher } from "@/src/stores/layered-inset-store";
 
@@ -26,6 +26,10 @@ export function CookieConsentBanner() {
   // share the one publisher: only one of them is ever mounted, and the hook
   // clears the entry the moment its host view detaches.
   const { attachHost, onLayout } = useInsetPublisher(INSET_LAYER.strip);
+  // The banner is app-wide, so its policy link is a jump out of wherever the
+  // user happens to be (#1265, O3). `/cookies` is rooted at the top, so without
+  // the Origin the way out of it strands them on Home.
+  const pushWithOrigin = usePushWithOrigin();
 
   useEffect(() => {
     hydrate();
@@ -63,7 +67,7 @@ export function CookieConsentBanner() {
           <Button onPress={() => setShowManage(true)} size="sm" variant="ghost">
             <Text>{t("cookieConsent.managePreferences")}</Text>
           </Button>
-          <Button onPress={() => router.push("/cookies")} size="sm" variant="ghost">
+          <Button onPress={() => pushWithOrigin("/cookies")} size="sm" variant="ghost">
             <Text>{t("cookieConsent.cookiePolicy")}</Text>
           </Button>
         </View>

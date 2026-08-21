@@ -19,6 +19,23 @@ import { join } from "node:path";
 
 import { CREDITS_PER_SECOND } from "../scripts/audio/catalog.mjs";
 
+/**
+ * ☠️ This file drives the whole render loop - 31 takes across nine slots, each
+ * one a stubbed fetch plus a real write into a temp dir - and its first test did
+ * all of that inside jest's default 5000ms. Unloaded it finishes in about that,
+ * which is why it has been green: the margin was wall-clock, not logic.
+ *
+ * Under a full-suite run the workers compete for CPU and disk and the first test
+ * crosses the line, and because every later test resumes from the manifest that
+ * one writes, a single timeout takes the other five down with it. That reads as
+ * five broken assertions about spending, which is alarming and entirely false.
+ *
+ * The bound is generous on purpose. Nothing here should ever approach it - if
+ * this file starts timing out again, the loop got slower and that is worth
+ * knowing, which a 5000ms default could never tell you apart from a busy runner.
+ */
+jest.setTimeout(60_000);
+
 const mockMeasure = jest.fn();
 
 jest.mock("../scripts/audio/postprocess.mjs", () => ({
