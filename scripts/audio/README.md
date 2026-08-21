@@ -281,11 +281,88 @@ node scripts/audio/postprocess.mjs run audio-masters/rain-2.wav --clip rain --fo
 # Just the numbers.
 node scripts/audio/postprocess.mjs measure assets/sounds/meditation-bell.wav
 node scripts/audio/postprocess.mjs seamcheck assets/sounds/breathing/rain.wav
+
+# The set, not one clip: #1210's size acceptance check. Runs before the render too.
+node scripts/audio/postprocess.mjs budget
 ```
 
 Requires **ffmpeg** on PATH. That is a deliberate `scripts/`-only dependency:
 #1138 retired the post-processor's "pure stdlib" property because Python's
 `wave` decodes no MP3 and encodes no AAC.
+
+### The size budget, and why a voice cue's filename carries its voice
+
+#1210's fifth acceptance check is "**Budget**: 21 files, ~3.21 MB, under the 4.0 MB
+ceiling", and it was the last item on that list with no instrument behind it —
+loudness and true peak are gated by `run`, leading silence by `edgeSilence` on the
+finished file, the seam by `seamcheck`, and the budget was a number in a ticket body.
+`postprocess.mjs budget` is that instrument. It prints two facts and keeps them apart:
+
+- **PREDICTED** — what the set weighs on paper, from `catalog.mjs`'s own durations
+  and bitrates. It needs no rendered byte and no ffmpeg, which is the only time the
+  answer can still change anything: the pass is unrepeatable. It lands at **3.196
+  MiB** against the **3.21 MB** #1138 published — agreeing to about 14 KB, which is
+  the container overhead neither number counts. That agreement is what says the model
+  behind the ceiling and the model behind the check are the same one; it is not a
+  reproduction to the byte, and the command does not claim one.
+- **MEASURED** — what is actually in `audio-masters/finished/`. Only this can fail
+  the command, and it fails on a **missing unit**, on a file **too small to be** its
+  unit, and on a **stray file**, as readily as on the total.
+
+☠️ **A set that fits because four of its files were never written is not a set that
+fits.** By byte count, twenty of twenty-one is the healthiest set the pass could
+possibly hand over.
+
+☠️ **Nor is a set of twenty-one empty files.** `/code-review` found this by running
+the command: twenty-one correctly named ZERO-BYTE files printed `21/21 files · the set
+is complete and fits` and exited **0**, because presence was only "a name matched".
+A present file must now also be big enough to be its unit — at least half its
+predicted size for the thirteen sound effects, whose lengths the catalog fixes, and
+simply non-empty for the eight cues, whose length TTS decides and where no honest
+floor exists yet. The floor is loose on purpose: it catches a truncated or failed
+encode, it does not grade one. ⚠️ `bytes === 0` is its own clause rather than a case
+of `bytes < floor` — a cue's floor is 0, `0 < 0` is false, and an empty cue slipped
+through the check written to stop empty files, in the half of the set that has been
+invisible to a subsystem twice before.
+
+☠️ **Every file in the directory is weighed, not just `*.m4a`.** Filtering by
+extension first made a 5 MB stray `.wav` weigh nothing and go unreported while the set
+still read "fits" — on a ceiling #1138 justifies by exactly that case, a single
+uncompressed bed blowing it instantly. It also made an uppercase `.M4A` vanish from
+the total while its own unit reported missing. ⚠️ A directory entry that is not a
+file is skipped: a _directory_ named `rain.m4a` used to survey as a present unit.
+
+☠️ **The ceiling is MEBIbytes.** #1138 reports today's set as "2.854 MB" and the
+sixteen shipped `.wav` files total 2,992,420 bytes — 2.854 MiB, 2.992 MB. Read as
+decimal the set would have 194 KB less headroom than it has, on a set already at
+~80% of its limit.
+
+☠️ **A voice cue's finished filename carries its voice** (`guide_inhale.guided.m4a`,
+`guide_inhale.guided-male.m4a`), and `run --voice` is required on a `guide_*` id and
+refused on a sound effect. Before this, `run --clip guide_inhale` defaulted its
+output to `guide_inhale.m4a` whichever voice the master came from — so
+post-processing the male take **wrote over the female's finished file**, and the pass
+ended with twenty files where it needs twenty-one, silently, because nothing counted
+them. Same shape as `render` producing eleven clips of nineteen (#1317) and the
+audition's own `status` reporting a settled set with the voice half untouched
+(#1393), one subsystem further along. Both voices carry the suffix: an asymmetric
+scheme is how "the default voice" quietly becomes "the only voice".
+
+⚠️ **`budget` is not a CI gate, and #1210 is why.** #1138 asked for the ceiling to be
+enforced "in `npm run verify`", but #1210 routes `scripts/check-audio-budget.js` — the
+guard over the assets the app actually ships — to `/to-tickets` along with the
+extension swap and `.gitattributes`. Those are different artifacts at different
+times: this measures the finished set in `audio-masters/finished/` during the pass,
+while the render can still be acted on. Wiring it into `verify` today would also fail
+every build until the pass has run. Said out loud here rather than leaving a later
+session to assume a guard exists, the same way `manifest --check` says it is
+local-only.
+
+⚠️ The predicted total is **payload only** — the `.m4a` container adds a few KB of
+`moov` per file, and #1138's figure was computed the same way. A prediction landing
+within a hair of the ceiling should be read as "too close", never as "it fits". And
+the eight voice lengths are **estimated** from the clips shipping today, which say
+the same words; TTS decides the real ones, and they do not exist until the pass runs.
 
 ### ☠️ Leading silence is gated on the FINISHED file
 
