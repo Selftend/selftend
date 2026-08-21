@@ -319,6 +319,23 @@ export function auditTokens(tokens: ThemeTokens, inkFloor: number = AA_TEXT): Co
     AA_MARK,
   );
 
+  // A component's own boundary against the surfaces it lands on. Nothing paired
+  // `--border` with anything before #1337 restored the toast's border, so a
+  // palette could drift it into invisibility with every existing gate green.
+  //
+  // This is a RATCHET, not a standard. There is no WCAG floor for it: 1.4.11's
+  // 3:1 covers marks whose SHAPE conveys information, and a card boundary is not
+  // that - 3:1 would fail every pair here and most shipped design systems. What
+  // it catches is the real regression: a derived palette whose --border collapses
+  // toward the surface behind it, taking the edge to 1.00 silently.
+  //
+  // 1.1 is measured, not chosen. #1337 proposed 1.2; across the shipped styles
+  // these pairs run 1.14 (worst, on background) to 2.01, so 1.2 would have failed
+  // three palettes on the day it landed. The floor sits just under the real worst
+  // - which is what a ratchet is - so do not "tidy" it upward without re-running
+  // the numbers.
+  record("component boundary", worstAgainst(tripleToRgb(tokens["--border"]), neutralSurfaces), 1.1);
+
   return findings;
 }
 

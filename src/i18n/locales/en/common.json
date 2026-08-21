@@ -41,7 +41,7 @@
     "deleted": "Deleted"
   },
   "toast": {
-    "dismissHint": "Dismiss this message"
+    "dismiss": "Dismiss message"
   },
   "safety": {
     "title": "Use urgent support for urgent risk",
