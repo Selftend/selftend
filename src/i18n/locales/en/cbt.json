@@ -102,7 +102,7 @@
       "activityMoodLiftDetail": "{{summary}} with before/after mood.",
       "activityMoodLiftItem": "{{category}} {{lift}} ({{count}})",
       "recurringThought": "Thought to explore: {{thought}}",
-      "recurringThoughtDetail": "This exact thought appears {{count}} times. Consider whether a core belief sits underneath it.",
+      "recurringThoughtDetail": "This exact thought appears {{count}} times.",
       "selfCareTrend": "Self-care trend: movement on {{exerciseDays}}/{{totalDays}} recent days",
       "selfCareTrendDetail": "{{socialDays}} social day(s), {{gratitudeDays}} gratitude day(s), {{averageSleep}}.",
       "sleepAverage": "{{hours}}h average sleep",
