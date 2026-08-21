@@ -29,11 +29,13 @@ export async function selectList<Row, T>(
 /**
  * An exact `head` count, degrading to 0 when ACT is not migrated yet.
  *
- * ☠️ ACT's stats cannot be `list.length`. Every ACT list hook takes a `limit`, and two
- * of them defeat a client-side count outright: `useChoicePoints` leaves its limit OUT of
- * its query key, so it shares one cache entry with the list screen's 30, and ACT home
- * asks `useDefusionLogs` for 50, which truncates. A head count has no cap to document
- * and is exact at any history size (#1378).
+ * ☠️ **This is the one place that explains why ACT's stats cannot be `list.length`, so
+ * that the reasoning lives once.** Every ACT list hook takes a `limit`, and two of them
+ * defeat a client-side count outright: `useChoicePoints` leaves its limit OUT of its
+ * query key, so it shares one cache entry with the list screen's 30, and ACT home asks
+ * `useDefusionLogs` for 50, which truncates. Both errors point the same way — a user's
+ * own history reads back smaller than it is. A head count has no cap to document and is
+ * exact at any history size (#1378).
  *
  * `head: true` fetches no rows, so nothing decrypts and nothing needs an RPC under
  * ADR-0001 — these tables filter on `user_id` and plaintext `status` only.

@@ -54,12 +54,7 @@ export function getLatestDefusionLogAt(userId: string) {
   );
 }
 
-/**
- * Every thought this user has ever unhooked from, for ACT home's second stat (#1378).
- *
- * ☠️ Not `logs.length`. ACT home asks `useDefusionLogs` for 50, so a length read reports
- * 50 for a user with 60 — the stat would silently stop counting at the list's cap.
- */
+/** Every thought this user has ever unhooked from, for ACT home's second stat (#1378). */
 export async function countDefusionLogs(userId: string) {
   return countRows((c) =>
     c.from("act_defusion_logs").select("id", { count: "exact", head: true }).eq("user_id", userId),

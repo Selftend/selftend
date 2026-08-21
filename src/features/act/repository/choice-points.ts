@@ -43,13 +43,7 @@ export function getLatestChoicePointAt(userId: string) {
   );
 }
 
-/**
- * Every choice point this user has ever mapped, for ACT home's first stat (#1378).
- *
- * ☠️ Not `useChoicePoints(...).data.length`. That hook leaves its `limit` OUT of its
- * query key, so home would share one cache entry with the list screen's 30 and read
- * exactly 30 for anyone past their thirtieth.
- */
+/** Every choice point this user has ever mapped, for ACT home's first stat (#1378). */
 export async function countChoicePoints(userId: string) {
   return countRows((c) =>
     c.from("act_choice_points").select("id", { count: "exact", head: true }).eq("user_id", userId),

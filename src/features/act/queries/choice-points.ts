@@ -22,11 +22,8 @@ export function useChoicePoints(userId: string | null, limit = 30) {
 }
 
 /**
- * ACT home's "N choice points mapped" stat - an exact head count (#1378).
- *
- * ☠️ Never `useChoicePoints(userId).data?.length`. This hook's list sibling leaves its
- * `limit` out of its query key, so home shares one cache entry with the list screen's
- * 30 and a length read renders 30 for every user past their thirtieth.
+ * ACT home's "N choice points mapped" stat - an exact head count, never
+ * `useChoicePoints(...).data?.length`; `countRows` explains why (#1378).
  */
 export function useChoicePointCount(userId: string | null) {
   return useQuery({

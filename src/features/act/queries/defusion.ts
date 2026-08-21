@@ -24,10 +24,8 @@ export function useDefusionLogs(userId: string | null, limit = 30) {
 }
 
 /**
- * ACT home's "N thoughts unhooked" stat - an exact head count (#1378).
- *
- * ☠️ Never `useDefusionLogs(userId, 50).data?.length`. ACT home asks for 50 rows, so a
- * length read would tell a user with 60 logs that they had 50.
+ * ACT home's "N thoughts unhooked" stat - an exact head count, never
+ * `useDefusionLogs(...).data?.length`; `countRows` explains why (#1378).
  */
 export function useDefusionLogCount(userId: string | null) {
   return useQuery({

@@ -130,33 +130,40 @@ export default function ActHomeScreen() {
   const { data: defusionLogs } = useDefusionLogs(userId, 50);
   const recentLogs = defusionLogs?.slice(0, 3) ?? [];
 
-  // ☠️ Head counts, never `list.length`. `useChoicePoints` keeps its limit OUT of its
-  // query key, so a client count shares the list screen's cache entry and renders 30;
-  // the defusion list above is capped at 50, so a length read truncates there. Both are
-  // wrong in the direction that makes a user's own history look smaller (#1378).
-  //
-  // Committed actions are counted at EVERY status: the sibling stats are past-tense
-  // activity, and an active-only count would fall 1 → 0 when someone completes their
-  // only action - a counter that goes down on success.
+  // Head counts, never `list.length` - see `countRows` for why a client-side count of
+  // either list reads back a wrong, too-small number (#1378).
   const { data: choicePointCount } = useChoicePointCount(userId);
   const { data: defusionCount } = useDefusionLogCount(userId);
+  // Every status, not just the active ones: an active-only count falls 1 → 0 when
+  // someone completes their only action, and a counter that goes down on success reads
+  // as punishment for finishing.
   const { data: committedActionCount } = useCommittedActionCount(userId);
 
-  // Zero is an honest value for a head count, so all three always render - including for
-  // a brand-new account, and including while a count is still loading. The number stays
-  // in `value` and the noun in a count-pluralised `label` (#749's pattern B), which is
-  // also what keeps the stat-shape guard green.
+  // Zero is an honest value for a head count, so all three always render - a brand-new
+  // account sees three zeroes rather than an empty header.
+  //
+  // ☠️ An unresolved count is NOT zero. `?? 0` in the value would tell a user with 200
+  // choice points they had none for as long as the query was in flight - the same
+  // history-looks-smaller lie the head counts exist to prevent. It renders an em dash
+  // until it knows, as gratitude's header does; only the label falls back to 0, because
+  // it needs some count to pluralise against and the plural form is the right guess.
+  //
+  // The number stays in `value` and the noun in a count-pluralised `label` (#749's
+  // pattern B), which is also what keeps the stat-shape guard green.
+  const statValue = (count: number | undefined) =>
+    count === undefined ? t("home.statLoadingValue") : String(count);
+
   const stats = [
     {
-      value: String(choicePointCount ?? 0),
+      value: statValue(choicePointCount),
       label: t("home.statChoicePoints", { count: choicePointCount ?? 0 }),
     },
     {
-      value: String(defusionCount ?? 0),
+      value: statValue(defusionCount),
       label: t("home.statDefusion", { count: defusionCount ?? 0 }),
     },
     {
-      value: String(committedActionCount ?? 0),
+      value: statValue(committedActionCount),
       label: t("home.statActions", { count: committedActionCount ?? 0 }),
     },
   ];
@@ -249,7 +256,14 @@ export default function ActHomeScreen() {
               />
             )}
 
-            {/* Framework */}
+            {/* Framework.
+
+                ⚠️ This heading stays at level 2 on purpose. #1378 asks for "every section
+                heading … with a level-3 role", but it is the ROLE-LESS one that ticket is
+                about: this is already a real heading, and it introduces the four pillars
+                below it. Flattening it to 3 would put it on a level with the section it
+                contains and leave the page with no outline structure at all - the opposite
+                of what the ticket wants. The outline reads h1 → h2 → h3. */}
             <View className="gap-6">
               <View>
                 <Text variant="h2" className="text-xl font-bold tracking-tight">

@@ -229,12 +229,18 @@ describe("ActHomeScreen", () => {
       expect(mockUseCommittedActionCount).toHaveBeenCalledWith("user-1");
     });
 
-    it("still renders a value while a count is loading rather than an empty run", () => {
+    /**
+     * ☠️ An unresolved count is not zero. Falling back to 0 in the value would tell a
+     * user with 200 choice points they had none for as long as the query was in flight -
+     * the same history-looks-smaller lie the head counts exist to prevent.
+     */
+    it("shows a dash, not a zero, while a count is still loading", () => {
       setCounts({});
 
       renderWithProviders(<ActHomeScreen />);
 
-      expect(screen.getByText("0 choice points mapped")).toBeTruthy();
+      expect(screen.getByText("— choice points mapped")).toBeTruthy();
+      expect(screen.queryByText("0 choice points mapped")).toBeNull();
     });
   });
 
