@@ -1,8 +1,10 @@
 # CBT Doc Reconciliation — `cbt.md` vs `cbt-gillihan-made-simple.md`
 
-**Status:** Recommendation (drafted). No files edited yet.
+**Status:** Recommendation (drafted) — the `cbt.md` edits recommended below are still
+un-applied. The one exception is "Where shipped copy deliberately diverges from the
+spec", appended later as a live record of decisions that have shipped.
 **Author:** doc-reconciliation follow-up
-**Date:** 2026-07-11
+**Date:** 2026-07-11 (divergence record appended 2026-08-21)
 
 ## TL;DR
 
@@ -96,11 +98,21 @@ Recorded 2026-08-21.
   shipped string (`pillars.be.sub` in `src/i18n/locales/*/cbt.json`) says "Wellbeing".
   The kicker was narrower than the pillar's own contents — all six of `Be`'s reachable
   routes tend a baseline state and only some concern present-moment attention, so a sleep
-  and exercise log under a heading called "Mindfulness" read as a mistake. "Wellbeing"
-  also keeps the parallel with `Think`'s "Cognitive" and `Act`'s "Behavioral". Note the
-  spec **never assigns a strategy to a pillar** (it defines the three pillars, then asks
-  the tool to surface which pillar each module belongs to), so the strategy-to-pillar
-  mapping is entirely ours and Self-care's placement in `Be` carries no doctrinal weight.
+  log and a self-care check covering movement, meals and connection sat under a heading
+  called "Mindfulness". "Wellbeing" also keeps the parallel with `Think`'s "Cognitive"
+  and `Act`'s "Behavioral".
+  **The counter-evidence, recorded so a later reader does not have to rediscover it:**
+  §10's concern-to-approach table (line 902) _does_ carry per-pillar strategy columns for
+  `Think`, `Act` and `Be`, and every cell of its `Be` column is mindfulness, breathing or
+  acceptance — its only sleep mention sits in an **`Act`** cell. So the spec
+  does lean on a narrow reading of `Be`. What it never does is assign one of its **ten
+  numbered Strategies** to a pillar: §10 prescribes per-concern _approaches_ for the
+  onboarding assessment, not a taxonomy of which module belongs to which pillar, and
+  Self-care (Strategy 9) is placed in `Be` neither there nor anywhere else. The
+  strategy-to-pillar mapping is therefore ours, and the kicker's job is to describe the
+  pillar **as we have populated it** — six routes, one of them a sleep log — rather than
+  as §10 would have populated it. Self-care's placement is unchanged by this decision;
+  nothing moved between pillars.
 - **`Be`'s description drops the phrase "without judgment".** The spec uses
   "Present-moment awareness without judgment" both in the pillar table (line 19) and in
   Strategy 5 (line 254); `pillars.be.description` no longer does. It was rewritten to
