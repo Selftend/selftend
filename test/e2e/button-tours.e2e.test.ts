@@ -1,6 +1,6 @@
 import { expect, NORMALIZED_GATE_PREFS, test } from "./fixtures";
 
-import { createServiceClient, resetWidgetPreferencesForUser } from "./helpers";
+import { createServiceClient, expectSuccessToast, resetWidgetPreferencesForUser } from "./helpers";
 import { policyVersion } from "../../src/features/policies/policy-content";
 
 // Home dashboard's two surviving first-run tips, in HOME_TOUR_STOPS order
@@ -253,9 +253,7 @@ test.describe("home dashboard tips (2 remaining stops)", () => {
     await page.getByRole("button", { name: "Show tips again", exact: true }).click();
 
     // Toast-only now that the shared feedback banner is gone.
-    await expect(
-      page.getByTestId("app-toast").getByText(/button tips.*can appear again/i),
-    ).toBeVisible();
+    await expectSuccessToast(page, /button tips.*can appear again/i);
     await expect.poll(getShownButtonTours).toEqual([]);
   });
 });

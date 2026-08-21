@@ -470,6 +470,7 @@
     "log": "Log",
     "favorites": "Favorites",
     "back": "Go back",
+    "backTo": "Back to {{name}}",
     "saved": "Saved",
     "signIn": "Sign in",
     "signUp": "Sign up",
@@ -484,10 +485,6 @@
     "stats": {
       "overview": "Overview"
     }
-  },
-  "dateBar": {
-    "selectDate": "Select date",
-    "clear": "Clear date"
   },
   "plan": {
     "wizard": {

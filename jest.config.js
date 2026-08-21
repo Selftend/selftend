@@ -16,6 +16,16 @@ module.exports = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },
+  transform: {
+    ...expoPreset.transform,
+    // The audio tooling in scripts/audio/ is ESM (`.mjs`, because the package is
+    // not `"type": "module"`), and its level gate is unit-tested (#1320). The
+    // preset's only JS transform key is `\.[jt]sx?$`, which does NOT match `.mjs`
+    // — without this jest feeds a raw `export` statement to the CJS runtime and
+    // the suite dies on "Unexpected token 'export'". Reuses the preset's own
+    // babel-jest entry verbatim so the two can never drift.
+    "\\.mjs$": expoPreset.transform["\\.[jt]sx?$"],
+  },
   // /.claude/ holds agent worktree copies of the repo (already ignored by
   // .prettierignore and eslint.config.js); without these, jest sweeps their
   // tests and its haste map resolves __mocks__/ manual mocks (and a second
