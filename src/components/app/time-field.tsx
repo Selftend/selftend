@@ -129,6 +129,18 @@ function TypedTimeField({
     setRevertNotice(t("time.reverted", { time: formatTimeOfDay(value, i18n.language) }));
   }
 
+  /**
+   * Typing again is what retires the notice - NOT focus. Tab from a reverted hour
+   * lands on the minute input, and clearing on focus would erase the explanation in
+   * the same keystroke that caused it, leaving the value silently changed after all.
+   */
+  function edit(setText: (next: string) => void) {
+    return (next: string) => {
+      setRevertNotice("");
+      setText(next);
+    };
+  }
+
   function commitHour() {
     // Never touched: leaving a field the user only tabbed through is not a commit.
     if (hourText === null) return;
@@ -193,8 +205,7 @@ function TypedTimeField({
           keyboardType="number-pad"
           maxLength={2}
           onBlur={commitHour}
-          onChangeText={setHourText}
-          onFocus={() => setRevertNotice("")}
+          onChangeText={edit(setHourText)}
           selectTextOnFocus
           value={hourValue}
         />
@@ -207,17 +218,14 @@ function TypedTimeField({
           keyboardType="number-pad"
           maxLength={2}
           onBlur={commitMinute}
-          onChangeText={setMinuteText}
-          onFocus={() => setRevertNotice("")}
+          onChangeText={edit(setMinuteText)}
           selectTextOnFocus
           value={minuteValue}
         />
         {twelveHour ? (
-          <View
-            accessibilityLabel={t("time.meridiemField", { label: accessibilityLabel })}
-            className="ml-1"
-          >
+          <View className="ml-1">
             <SegmentedControl<Meridiem>
+              accessibilityLabel={t("time.meridiemField", { label: accessibilityLabel })}
               disabled={disabled}
               onChange={commitMeridiem}
               options={[

@@ -16,6 +16,14 @@ import { createServiceClient } from "./helpers";
 const HOUR_FIELD = "Check-in reminder time, hour";
 const MINUTE_FIELD = "Check-in reminder time, minute";
 
+/**
+ * Every locator is scoped to one row. The screen renders ten reminder targets, so
+ * an unscoped `getByRole("tab", { name: "AM" })` matches ten identical tabs - the
+ * hour and minute inputs are the only sub-controls whose names carry the target.
+ */
+const moodRow = (page: import("@playwright/test").Page) =>
+  page.getByTestId("notification-row-mood");
+
 async function readMoodReminder(userId: string) {
   const admin = createServiceClient();
   const { data, error } = await admin
@@ -71,11 +79,12 @@ test.describe("reminder time entry", () => {
     // the browser's own widget any more.
     await expect(page.locator('input[type="time"]')).toHaveCount(0);
 
-    const hour = page.getByLabel(HOUR_FIELD);
-    const minute = page.getByLabel(MINUTE_FIELD);
+    const row = moodRow(page);
+    const hour = row.getByLabel(HOUR_FIELD);
+    const minute = row.getByLabel(MINUTE_FIELD);
     // en is a 12-hour locale, so 09:00 reads as 09 + AM.
     await expect(hour).toHaveValue("09");
-    await expect(page.getByRole("tab", { name: "AM" })).toHaveAttribute("aria-selected", "true");
+    await expect(row.getByRole("tab", { name: "AM" })).toHaveAttribute("aria-selected", "true");
 
     await hour.click();
     await hour.fill("11");
@@ -99,7 +108,8 @@ test.describe("reminder time entry", () => {
     page,
     user,
   }) => {
-    const hour = page.getByLabel(HOUR_FIELD);
+    const row = moodRow(page);
+    const hour = row.getByLabel(HOUR_FIELD);
 
     await hour.click();
     await hour.fill("99");
@@ -109,7 +119,9 @@ test.describe("reminder time entry", () => {
 
     await expect(hour).toHaveValue("09");
     // A silent revert would be an unidentified change; this one is announced.
-    await expect(page.getByText("Reverted to 9:00 AM")).toBeVisible();
+    // ⚠️ A regex, not a string: Chrome's ICU separates the time from the day period
+    // with a NARROW NO-BREAK SPACE (U+202F), which Playwright does not normalize.
+    await expect(row.getByText(/Reverted to 9:00\s*AM/)).toBeVisible();
     expect(await readMoodReminder(user.id)).toMatchObject({
       mood_reminder_hour: 9,
       mood_reminder_minute: 0,
@@ -117,16 +129,17 @@ test.describe("reminder time entry", () => {
   });
 
   test("the whole control is reachable and operable by keyboard alone", async ({ page, user }) => {
-    const hour = page.getByLabel(HOUR_FIELD);
+    const row = moodRow(page);
+    const hour = row.getByLabel(HOUR_FIELD);
 
     await hour.focus();
     await expect(hour).toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(page.getByLabel(MINUTE_FIELD)).toBeFocused();
+    await expect(row.getByLabel(MINUTE_FIELD)).toBeFocused();
     await page.keyboard.press("Tab");
     // The AM/PM group is one tab stop (roving tabindex), and its arrows move
     // between the two halves of the day.
-    await expect(page.getByRole("tab", { name: "AM" })).toBeFocused();
+    await expect(row.getByRole("tab", { name: "AM" })).toBeFocused();
 
     await page.keyboard.press("ArrowRight");
     await expect.poll(async () => (await readMoodReminder(user.id)).mood_reminder_hour).toBe(21);

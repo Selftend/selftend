@@ -130,7 +130,9 @@ describe("TimeField on web: the typed HH:MM pair", () => {
     expect(notice.props["aria-live"]).toBe("polite");
   });
 
-  it("clears the revert notice when the user comes back to the field", () => {
+  it("keeps the revert notice through a Tab to the next field, and drops it on the next keystroke", () => {
+    // Clearing on FOCUS would erase the explanation in the same keystroke that
+    // caused it: Tab out of a reverted hour lands on the minute input.
     renderField();
     const hour = screen.getByLabelText(`${LABEL}, hour`);
 
@@ -138,8 +140,10 @@ describe("TimeField on web: the typed HH:MM pair", () => {
     fireEvent(hour, "blur");
     expect(screen.queryByText(/Reverted to 7:00/)).not.toBeNull();
 
-    // `target` is required: the Input primitive's keep-visible-on-focus helper reads it.
-    fireEvent(screen.getByLabelText(`${LABEL}, hour`), "focus", { target: {} });
+    fireEvent(screen.getByLabelText(`${LABEL}, minute`), "focus", { target: {} });
+    expect(screen.queryByText(/Reverted to 7:00/)).not.toBeNull();
+
+    fireEvent.changeText(screen.getByLabelText(`${LABEL}, minute`), "3");
     expect(screen.queryByText(/Reverted to 7:00/)).toBeNull();
   });
 

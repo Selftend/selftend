@@ -14,6 +14,12 @@ interface SegmentedControlProps<T extends string | number> {
   value: T;
   onChange: (value: T) => void;
   /**
+   * Names the GROUP, for when the segments alone do not say what they choose
+   * between ("AM"/"PM" in one of ten reminder rows). It belongs on the tablist
+   * itself — an `aria-label` on a plain wrapping View names nothing.
+   */
+  accessibilityLabel?: string;
+  /**
    * Renders the group inert while still showing which segment is chosen — the
    * shape a dimmed-but-truthful row needs (the reminders row keeps displaying
    * its real time while the master switch is off).
@@ -33,6 +39,7 @@ export function SegmentedControl<T extends string | number>({
   options,
   value,
   onChange,
+  accessibilityLabel,
   disabled = false,
 }: SegmentedControlProps<T>) {
   const activeIndex = options.findIndex((opt) => opt.value === value);
@@ -45,6 +52,7 @@ export function SegmentedControl<T extends string | number>({
 
   return (
     <View
+      accessibilityLabel={accessibilityLabel}
       accessibilityRole="tablist"
       className="flex-row rounded-full bg-muted p-0.5"
       role="tablist"
