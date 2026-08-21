@@ -22,7 +22,7 @@ import {
   currentArchives,
   drivePath,
   takeKey,
-} from "../scripts/audio/manifest.mjs";
+} from "../scripts/audio/manifest-plan.mjs";
 import { voiceIdentity } from "../scripts/audio/audition-plan.mjs";
 
 const FEMALE = "21m00Tcm4TlvDq8ikWAM";

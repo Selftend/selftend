@@ -8,15 +8,22 @@
  * reproducible artifact there will ever be. The Drive half had an instruction.
  * The repo half had nothing at all: `manifest.jsonl` and `choices.jsonl` both sit
  * inside `audio-masters/`, which is **gitignored**, so the record of an
- * unrepeatable spend was one `rm -rf` from gone, and no row in either file has
- * ever had a field for where a master was archived. `render` prints "archive
- * every take" and nothing recorded that anyone did.
+ * unrepeatable spend was one deleted directory from gone, and no row in either
+ * file has ever had a field for where a master was archived. `render` prints
+ * "archive every take" and nothing recorded that anyone did.
+ *
+ * ☠️ That is not paperwork, and Round A is the proof: `write --round A` reports two
+ * units and ZERO takes. #1159's bell gate passed and spent 120 credits, but
+ * `audio-masters/` is per-worktree and the worktree that rendered them is gone.
+ * Whether those two seedless bells still exist anywhere depends entirely on
+ * whether someone uploaded them, and nothing recorded it.
  *
  *   node scripts/audio/manifest.mjs write   --round A|B [--out <path>] [--check]
  *   node scripts/audio/manifest.mjs archive --round A|B --all [--note "..."]
  *   node scripts/audio/manifest.mjs archive --round A|B --file <name> [--note "..."]
  *
- * Spends nothing, needs no ffmpeg and no API key.
+ * Spends nothing, needs no ffmpeg and no API key. The logic lives in
+ * `manifest-plan.mjs`; this file is the disk and the exit codes.
  *
  * ⚠️ THE COMMITTED FILE CANNOT BE VERIFIED IN CI. Everything it is derived from
  * is gitignored and local to the machine that ran the pass, so `--check` answers
@@ -30,341 +37,14 @@ import { join, dirname, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { clipsForRound, composePrompt, voiceSlotSpec } from "./catalog.mjs";
+import { currentChoices, voiceIdentity, voiceSlots } from "./audition-plan.mjs";
 import {
-  STATUS,
-  choiceKey,
-  currentChoices,
-  statusOf,
-  statusOfVoice,
-  voiceIdentity,
-  voiceSlots,
-} from "./audition-plan.mjs";
-
-/** The Drive layout #1141 accepted, a sibling of the Premiere folder. */
-export const DRIVE_ROOT = "Selftend/app-audio-masters";
-
-/**
- * The four folders that layout has, and the only classes a take can be filed
- * under. A fifth would be a typo, and a typo here records a path to a master that
- * cannot be re-made in a folder nobody will look in.
- */
-export const DRIVE_FOLDERS = ["bells", "beds", "textures", "voice"];
-
-/**
- * Fields copied from a manifest row onto its record, when the row carries them.
- *
- * A whitelist rather than a spread: the two halves of the pass write different
- * row shapes (a sound effect has an attempt index and a measurement, a voice cue
- * has a voiceId and a seed), and both shapes have grown fields across five
- * tickets. Naming them keeps the committed artifact stable when a new internal
- * field appears, and keeps `record: "chosen"` rows from ever being mistaken for
- * takes if one is read in by accident.
- */
-const TAKE_FIELDS = [
-  "candidate",
-  "attempt",
-  "file",
-  "klass",
-  "voice",
-  "axis",
-  "voiceId",
-  "prompt",
-  "text",
-  "model",
-  "voiceSettings",
-  "outputFormat",
-  "durationSeconds",
-  "promptInfluence",
-  "loop",
-  "loudnessTarget",
-  "seed",
-  "bytes",
-  "contentType",
-  "derivedChannels",
-  "channelRatio",
-  "dbtp",
-  "lufs",
-  "accepted",
-  "creditsCharged",
-  "creditsEstimate",
-];
-
-/**
- * Where one take lives in Drive.
- *
- * @param {string} klass one of {@link DRIVE_FOLDERS}
- * @param {string} file the master's filename, as `render` wrote it
- * @param {{root?: string}} [options]
- * @returns {string}
- */
-export function drivePath(klass, file, { root = DRIVE_ROOT } = {}) {
-  if (!DRIVE_FOLDERS.includes(klass)) {
-    throw new Error(
-      `unknown class "${klass}" — Drive holds ${DRIVE_FOLDERS.join(", ")} (#1141), and a ` +
-        `master filed outside them is a master nobody will find`,
-    );
-  }
-  return `${root}/${klass}/${file}`;
-}
-
-/** Same path, or null when the class is not one this layout has. */
-function drivePathOrNull(klass, file) {
-  try {
-    return drivePath(klass, file);
-  } catch {
-    return null;
-  }
-}
-
-/** The key one take is filed under, in both the archive log and the record. */
-export function takeKey({ klass, file }) {
-  return `${klass}/${file}`;
-}
-
-/**
- * An attestation that one master reached Drive.
- *
- * ☠️ THIS IS A THIRD FILE, NOT A MANIFEST ROW. `planSlot` classifies any row
- * without an `attempt` and a `dbtp` as a superseded take of its slot, so an
- * `archived` row appended to `manifest.jsonl` would be counted against the slot
- * and quietly corrupt the survey that quotes the cost of a spend nobody can
- * repeat — the same reason `choices.jsonl` is its own file (#1346). Archive rows
- * go in `archive.jsonl` and nothing else reads them.
- *
- * ⚠️ It is a CLAIM, not a check. Nothing here talks to Drive; the row records
- * that a person said the upload happened, and when.
- *
- * @param {{klass: string, file: string, at: string, note?: string|null, root?: string}} args
- * @returns {{record: string, klass: string, file: string, path: string, note: string|null, at: string}}
- */
-export function archiveRow({ klass, file, at, note = null, root = DRIVE_ROOT }) {
-  return { record: "archived", klass, file, path: drivePath(klass, file, { root }), note, at };
-}
-
-/**
- * The live attestation per take — last write wins, so re-uploading simply
- * supersedes. Append-only for the same reason choices are: the trail of what was
- * archived when is worth as much as the final state if a master ever goes missing.
- *
- * @param {Record<string, any>[]} rows
- * @returns {Map<string, Record<string, any>>}
- */
-export function currentArchives(rows) {
-  const byTake = new Map();
-  for (const row of rows) {
-    if (row.record !== "archived") continue;
-    byTake.set(takeKey(row), row);
-  }
-  return byTake;
-}
-
-/** Total of one numeric field across takes, ignoring the rows that lack it. */
-function sumField(placed, field) {
-  return placed.reduce(
-    (total, { take }) => total + (Number.isFinite(take[field]) ? take[field] : 0),
-    0,
-  );
-}
-
-/** One take, as the committed record holds it. */
-function takeRecord(row, { status, archived }) {
-  /** @type {Record<string, any>} */
-  const record = {};
-  for (const field of TAKE_FIELDS) {
-    // `in` rather than a truthiness test: `seed: null` and `dbtp: null` both mean
-    // something specific here — no seed exists for Sound Effects at all, and a
-    // null measurement is #1320's honest record of a digitally silent take.
-    if (field in row) record[field] = row[field];
-  }
-  record.status = status;
-  record.drivePath = drivePathOrNull(row.klass, row.file);
-  record.archivedAt = archived?.at ?? null;
-  return record;
-}
-
-/**
- * The whole round as one document, plus everything still owed on it.
- *
- * ☠️ THE ROUND IS BOTH HALVES. `clipsForRound` filters `SFX_CLIPS`, so a list
- * built from it alone is eleven units of nineteen — the omission that has now hit
- * `render` (#1317), the audition and its `status` meter (#1393), and would hit the
- * definition-of-done artifact here, which is the one place it would be permanent.
- * The voice cues are passed in as `slots` and counted the same as any bed.
- *
- * ⚠️ Nothing is dropped for being unusable. Superseded takes, takes below the
- * level gate and takes whose unit has left the catalog are all recorded, because
- * every one of them cost the same credits and none of them can be drawn again.
- *
- * @param {{
- *   round: string,
- *   clips: Record<string, any>[],
- *   slots: Record<string, any>[],
- *   promptFor: (clip: any) => string,
- *   identityFor: (slot: any) => string,
- *   rows: Record<string, any>[],
- *   choices: Map<string, Record<string, any>>,
- *   archives: Map<string, Record<string, any>>,
- *   at: string,
- * }} args
- */
-export function buildManifest({
-  round,
-  clips,
-  slots,
-  promptFor,
-  identityFor,
-  rows,
-  choices,
-  archives,
-  at,
-}) {
-  const specs = [
-    ...clips.map((clip) => ({
-      id: clip.id,
-      clip: clip.id,
-      klass: clip.klass,
-      voice: null,
-      voiceId: null,
-      settledOn: promptFor(clip),
-      candidates: clip.candidates ?? null,
-      /** @param {Record<string, any>} row */
-      grade: (row) => statusOf(row, promptFor(clip)),
-    })),
-    ...slots.map((slot) => ({
-      id: slot.id,
-      clip: slot.clipId,
-      klass: slot.klass,
-      voice: slot.voice,
-      voiceId: slot.voiceId ?? null,
-      settledOn: identityFor(slot),
-      candidates: slot.candidates ?? null,
-      /** @param {Record<string, any>} row */
-      grade: (row) => statusOfVoice(row, identityFor(slot)),
-    })),
-  ];
-
-  const byUnit = new Map();
-  for (const row of rows) {
-    const key = choiceKey({ clip: row.clip, voice: row.voice ?? null });
-    byUnit.set(key, [...(byUnit.get(key) ?? []), row]);
-  }
-
-  /** @type {{kind: string, unit: string|null, file?: string, detail?: string}[]} */
-  const gaps = [];
-  const units = specs.map((spec) => {
-    const takes = (byUnit.get(spec.id) ?? []).map((row) =>
-      takeRecord(row, { status: spec.grade(row), archived: archives.get(takeKey(row)) }),
-    );
-    const pick = choices.get(spec.id) ?? null;
-    const chosen = pick
-      ? {
-          candidate: pick.candidate,
-          file: pick.file,
-          // The prompt the chosen take came FROM, not the catalog's current one —
-          // that difference is the whole point of `superseded` below (#1346).
-          prompt: pick.prompt,
-          note: pick.note ?? null,
-          at: pick.at,
-          superseded: pick.prompt !== spec.settledOn,
-          drivePath: drivePathOrNull(spec.klass, pick.file),
-        }
-      : null;
-
-    if (!takes.some((take) => take.status !== STATUS.superseded)) {
-      gaps.push({
-        kind: "no-take",
-        unit: spec.id,
-        detail: "no take of the prompt asked for today",
-      });
-    }
-    if (!chosen) {
-      gaps.push({ kind: "no-pick", unit: spec.id, detail: "nobody has chosen a candidate" });
-    } else if (chosen.superseded) {
-      gaps.push({
-        kind: "stale-pick",
-        unit: spec.id,
-        detail: "the pick names a prompt the catalog has since rewritten",
-      });
-    }
-
-    return {
-      id: spec.id,
-      clip: spec.clip,
-      klass: spec.klass,
-      voice: spec.voice,
-      voiceId: spec.voiceId,
-      candidates: spec.candidates,
-      settledOn: spec.settledOn,
-      chosen,
-      takes,
-    };
-  });
-
-  // ☠️ A take whose unit is no longer in the catalog — a voice swapped out after a
-  // shortlist was heard, a clip renamed — is kept, not dropped. It was really
-  // rendered and really paid for, and the one thing this artifact exists to
-  // prevent is a spend disappearing from the record.
-  const known = new Set(specs.map((spec) => spec.id));
-  const orphanTakes = [];
-  /** @type {{unit: string, take: Record<string, any>}[]} */
-  const placed = units.flatMap((unit) => unit.takes.map((take) => ({ unit: unit.id, take })));
-  for (const [key, group] of byUnit) {
-    if (known.has(key)) continue;
-    for (const row of group) {
-      const take = takeRecord(row, {
-        status: STATUS.superseded,
-        archived: archives.get(takeKey(row)),
-      });
-      orphanTakes.push(take);
-      placed.push({ unit: key, take });
-    }
-    gaps.push({
-      kind: "orphan-take",
-      unit: key,
-      detail: "takes on file for a unit this round no longer has",
-    });
-  }
-
-  for (const { unit, take } of placed) {
-    if (take.archivedAt) continue;
-    // #1141: EVERY take is archived, kept and rejected alike — a rejected take is
-    // exactly as unreproducible as a chosen one (#1133).
-    gaps.push({
-      kind: "unarchived",
-      unit,
-      file: take.file,
-      detail: take.drivePath
-        ? `never attested to ${take.drivePath}`
-        : `no Drive folder for class "${take.klass}"`,
-    });
-  }
-
-  return {
-    round,
-    generatedAt: at,
-    driveRoot: DRIVE_ROOT,
-    totals: {
-      units: units.length,
-      chosen: units.filter((unit) => unit.chosen && !unit.chosen.superseded).length,
-      takes: placed.length,
-      archived: placed.filter(({ take }) => take.archivedAt).length,
-      // ☠️ CHARGED AND ESTIMATED ARE NOT INTERCHANGEABLE, and this record must
-      // never let one stand in for the other. What a take cost is read off the
-      // response's `character-cost` header (#1359); `creditsEstimate` is what the
-      // plan guessed beforehand, and the twenty-seven takes already on disk carry
-      // only the guess because they predate the header being read at all. Summing
-      // them together would report a measured spend the pass never measured.
-      credits: {
-        charged: sumField(placed, "creditsCharged"),
-        estimated: sumField(placed, "creditsEstimate"),
-      },
-    },
-    units,
-    orphanTakes,
-    gaps,
-    complete: gaps.length === 0,
-  };
-}
+  DRIVE_ROOT,
+  archiveRow,
+  buildManifest,
+  currentArchives,
+  takeKey,
+} from "./manifest-plan.mjs";
 
 // ---------------------------------------------------------------------------
 // I/O
@@ -378,14 +58,38 @@ export function buildManifest({
  * by keeping its fallback on the right of `??` and being handed
  * `AUDIO_MASTERS_DIR`; a function is the version that cannot be got wrong.
  */
-const moduleDir = () => dirname(fileURLToPath(import.meta.url));
+const moduleDir = () => (import.meta.url ? dirname(fileURLToPath(import.meta.url)) : null);
+
+/**
+ * The same directory, for the two callers that genuinely cannot do without it.
+ *
+ * ☠️ Says which knob to turn instead of dying inside `node:path` as
+ * `The "path" argument must be of type string ... Received null`, which is what
+ * a bare `fileURLToPath(null)` gives you and which names neither the cause nor
+ * the fix.
+ */
+function requireModuleDir() {
+  const dir = moduleDir();
+  if (dir) return dir;
+  throw new Error(
+    "cannot resolve this module's own directory (import.meta.url is null under " +
+      "babel/jest) — pass AUDIO_MASTERS_DIR and --out",
+  );
+}
 
 /** Same `AUDIO_MASTERS_DIR` override and repo-relative fallback as `render.mjs`. */
-const outDir = () => process.env.AUDIO_MASTERS_DIR ?? join(moduleDir(), "../../audio-masters");
+const outDir = () =>
+  process.env.AUDIO_MASTERS_DIR ?? join(requireModuleDir(), "../../audio-masters");
 
-/** A repo-relative path when the target is inside the repo, absolute when it is not. */
+/**
+ * A repo-relative path when the target is inside the repo, the full path when it
+ * is not — and the full path when the repo root cannot be resolved at all, since
+ * a cosmetic shortening is never worth failing a command over.
+ */
 const showPath = (target) => {
-  const rel = relative(join(moduleDir(), "../.."), target);
+  const root = moduleDir();
+  if (!root) return target;
+  const rel = relative(join(root, "../.."), target);
   return rel.startsWith("..") ? target : rel;
 };
 
@@ -393,7 +97,7 @@ const roundDir = (round) => join(outDir(), `round-${round}`);
 const archivePath = (round) => join(roundDir(round), "archive.jsonl");
 
 /** Where the committed record lives — beside the prompts it is the record of. */
-export const manifestPath = (round) => join(moduleDir(), `round-${round}.manifest.json`);
+export const manifestPath = (round) => join(requireModuleDir(), `round-${round}.manifest.json`);
 
 async function readJsonl(path) {
   try {
@@ -432,16 +136,62 @@ async function readRound(round) {
   const rows = await readJsonl(join(roundDir(round), "manifest.jsonl"));
   const choices = currentChoices(await readJsonl(join(roundDir(round), "choices.jsonl")));
   const archives = currentArchives(await readJsonl(archivePath(round)));
-  return { rows, choices, archives };
+  const measurements = await readMeasurements(round);
+  return { rows, choices, archives, measurements };
+}
+
+/**
+ * What each take measured once it had been through the shipping chain.
+ *
+ * ⚠️ #1136 sets each voice's `introMs` from the MEASURED duration of the chosen
+ * `guide_intro`, never from an estimate — and `postprocess run` is the only place
+ * that number is produced. Until now it existed solely on the audition page,
+ * which `build` overwrites on every run: the one measurement required to outlive
+ * the pass lived only in the artifact most likely to be thrown away.
+ *
+ * The lead silence rides along for the same reason. It is #1134's one hard rule
+ * and the four `guide_*` clips are the only files in the app that have ever
+ * carried any (#1138), so the record should say what the shipped file measured
+ * rather than only that it passed on the day.
+ *
+ * Absent until an audition has been built, which is honest — a take nobody has
+ * run through the chain has no measurement, and a zero would claim otherwise.
+ */
+async function readMeasurements(round) {
+  const path = join(outDir(), "audition", `round-${round}`, "audition.json");
+  const results = await readFile(path, "utf8")
+    .then(JSON.parse)
+    .catch(() => []);
+  const byTake = new Map();
+  for (const result of results) {
+    if (!result?.file || !result.klass || result.error) continue;
+    byTake.set(takeKey({ klass: result.klass, file: result.file }), {
+      durationSeconds: result.durationSeconds ?? null,
+      leadMs: result.edges?.leadMs ?? null,
+      tailMs: result.edges?.tailMs ?? null,
+    });
+  }
+  return byTake;
 }
 
 // ---------------------------------------------------------------------------
 // write
 // ---------------------------------------------------------------------------
 
-async function write(round, { out, check }) {
+/**
+ * Rebuild the committed record, or check the committed one against the disk.
+ *
+ * ⚠️ The options are typed rather than left to inference: `out = null` infers the
+ * type `null`, which then rejects the string every real caller passes. Same trap
+ * the voice pick hit one ticket ago — type the API, never cast at the call site.
+ *
+ * @param {string} round
+ * @param {{out?: string|null, check?: boolean}} [options]
+ * @returns {Promise<boolean>} whether the round is current AND finished
+ */
+export async function write(round, { out = null, check = false } = {}) {
   const { clips, slots } = unitsOf(round);
-  const { rows, choices, archives } = await readRound(round);
+  const { rows, choices, archives, measurements } = await readRound(round);
   const doc = buildManifest({
     round,
     clips,
@@ -451,6 +201,7 @@ async function write(round, { out, check }) {
     rows,
     choices,
     archives,
+    measurements,
     at: new Date().toISOString(),
   });
 
@@ -462,16 +213,21 @@ async function write(round, { out, check }) {
     // file that differs anywhere else means the pass moved on and nobody re-wrote
     // the record — which on a seedless pass is how a decision gets lost.
     const previous = await readFile(target, "utf8").catch(() => null);
-    const same =
+    const current =
       previous !== null &&
       JSON.stringify({ ...JSON.parse(previous), generatedAt: null }) ===
         JSON.stringify({ ...doc, generatedAt: null });
-    console.log(
-      same
-        ? `${showPath(target)} is current.`
-        : `⚠️ ${showPath(target)} is STALE — re-run without --check.`,
-    );
-    return same;
+    if (previous === null) console.log(`⚠️ ${showPath(target)} has never been written.`);
+    else if (current) console.log(`${showPath(target)} is current.`);
+    else console.log(`⚠️ ${showPath(target)} is STALE — re-run without --check.`);
+    reportGaps(doc, round);
+    // ☠️ BOTH CONDITIONS, AND DROPPING THE SECOND WAS A REAL BUG: `--check` exited 0
+    // against 65 gaps on a pass nobody had started. It is the obvious way to assert
+    // the gate without dirtying the tree, and USAGE and the README both promise
+    // `write` fails "while any unit is unpicked or any take unarchived" — a mode of
+    // `write` that quietly keeps half that contract is the same green light on a
+    // half-done pass this record exists to refuse (#1317, #1393).
+    return current && doc.complete;
   }
 
   await mkdir(dirname(target), { recursive: true });
@@ -487,9 +243,15 @@ async function write(round, { out, check }) {
   );
   console.log(`\nWritten: ${showPath(target)}`);
 
+  reportGaps(doc, round);
+  return doc.complete;
+}
+
+/** What #1210 still owes on this round, counted by kind. Shared by both branches. */
+function reportGaps(doc, round) {
   if (doc.complete) {
     console.log(`\nEvery unit of round ${round} is picked and every take is archived.`);
-    return true;
+    return;
   }
   const byKind = new Map();
   for (const gap of doc.gaps) byKind.set(gap.kind, (byKind.get(gap.kind) ?? 0) + 1);
@@ -499,7 +261,6 @@ async function write(round, { out, check }) {
     `\nnext: node scripts/audio/audition.mjs status --round ${round}\n` +
       `      node scripts/audio/manifest.mjs archive --round ${round} --all`,
   );
-  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -516,8 +277,12 @@ async function write(round, { out, check }) {
  * A take whose master is not on this disk is refused rather than attested: it
  * cannot have been uploaded from here, and an attestation is only worth anything
  * if it is never given for free.
+ *
+ * @param {string} round
+ * @param {{file?: string|null, note?: string|null, all?: boolean}} [options]
+ * @returns {Promise<boolean>} whether every wanted take is now attested
  */
-async function archive(round, { file, note, all }) {
+export async function archive(round, { file = null, note = null, all = false } = {}) {
   const { rows, archives } = await readRound(round);
   if (!rows.length) throw new Error(`no takes on file for round ${round} — nothing to archive`);
 

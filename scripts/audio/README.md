@@ -218,12 +218,28 @@ node scripts/audio/manifest.mjs archive --round B --file <name> [--note "..."]
 #1210's definition of done for every unit: the prompt asked for today, each take's
 parameters and its TTS seed where one exists, the chosen candidate, and the Drive
 path. It **exits 1 while any unit is unpicked or any take unarchived**, so a
-half-finished pass cannot read as a finished one.
+half-finished pass cannot read as a finished one. Each take also carries a
+`measured` block joined from the audition's `audition.json` — the finished file's
+duration and lead silence, which `postprocess run` alone produces and which #1136
+requires for `introMs`; without this they lived only on a page `build` overwrites.
 
 `archive` records that masters reached Drive. ⚠️ It **attests, it does not
 upload** — nothing in this repo talks to Drive, so the row is a person's claim
-that they did it. A take whose master is not on this disk is refused rather than
-attested, because an attestation given for free is worth nothing.
+that they did it, and the record says so in its own `archivedMeans` field. A take
+whose master is not on this disk is refused rather than attested, because an
+attestation given for free is worth nothing.
+
+The logic lives in `manifest-plan.mjs` and the disk and exit codes in
+`manifest.mjs`, the same split `audition-plan.mjs`/`audition.mjs` and
+`take-gate.mjs`/`render.mjs` already use, and for the same reason: the record has
+to be drivable from jest without ffmpeg, a key, or a rendered byte.
+
+> ☠️ **`--check` gates on BOTH currency and completeness**, and dropping the second
+> was a real bug: it exited 0 against 65 gaps on a pass nobody had started. It is
+> the obvious way to assert the gate without dirtying the tree, so a mode of
+> `write` that keeps half `write`'s contract is the same green light on a half-done
+> pass this record exists to refuse. "Current" and "finished" are reported as the
+> separate facts they are.
 
 > ☠️ **`--check` is local-only and no CI gate can replace it.** Everything the
 > record derives from is gitignored and lives on whichever machine ran the pass, so
