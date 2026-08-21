@@ -39,18 +39,20 @@ describe("ScreenTopBar", () => {
     expect(bar).toContain("border-border");
   });
 
-  it("labels the close glyph 'Close', not 'Go back'", () => {
-    // The glyph and its announced label have to promise the same thing.
+  it("labels the close glyph 'Close', never the destination", () => {
+    // The glyph and its announced label have to promise the same thing: on a
+    // form the promise is *abandoning* this, and where it lands is secondary.
     renderWithProviders(<ScreenTopBar leading="close" />);
 
     expect(screen.getByLabelText("Close")).toBeTruthy();
-    expect(screen.queryByLabelText("Go back")).toBeNull();
+    expect(screen.queryByLabelText("Back to Check-in")).toBeNull();
   });
 
-  it("keeps 'Go back' for the detail bar's arrow", () => {
+  it("names the destination on the detail bar's arrow", () => {
+    // `/tools/check-in/new` hops up to the check-in home, and says so (#1253).
     renderWithProviders(<ScreenTopBar leading="back" />);
 
-    expect(screen.getByLabelText("Go back")).toBeTruthy();
+    expect(screen.getByLabelText("Back to Check-in")).toBeTruthy();
   });
 
   it("climbs one step up the trail when the leading glyph is pressed", () => {

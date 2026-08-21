@@ -115,6 +115,13 @@ The single leading affordance that lets a user leave the screen they are on. Exa
 screen — never two — and present on every screen except the app's root (`/(app)` signed in, `/`
 signed out). Where it _leads_ varies; that it is _there_ does not. Distinct from the
 `InvisibleHeader` brand link, which is always a jump to the root and discards where the user was.
+
+It **says where it goes**: its accessible label names the destination — "Back to CBT" — because an
+explicit `accessibilityLabel` _replaces_ a pressable's children for a screen reader, so a glyph-only
+label would hide from screen-reader users the name the arrow shows on screen (#1253). Where the
+trail has no name for the destination it says "Go back". Never the fallback word "Entry", which is
+the absence of a name dressed as one, and never the nearest _named_ ancestor, which names a screen
+the Escape does not go to.
 _Avoid_: back button, close button (those name a glyph, not the role)
 
 **Up**:
@@ -126,6 +133,11 @@ Up is read off the trail by one rule: **the deepest crumb that still carries an 
 on an invariant of `computeBreadcrumbs` — **a trail always ends in a crumb with no href**, because an
 absent href is how the trail marks "you are here" (#1251). A trailing href would make every Escape
 on that route land one crumb too shallow, mistaking the current screen for its own parent.
+
+A crumb can have a correct href and still have no _name_: an opaque-id segment no table can label
+falls through to the generic "Entry". `computeBreadcrumbs` marks those `unresolved`, so the Escape
+can tell a real name from the fallback without comparing against a translated word (#1253). It is
+what the seven `[id]/edit` and `[id]/log` forms hop up to.
 _Avoid_: parent, back (Up is a structural claim, back is a temporal one)
 
 **Origin**:
@@ -139,8 +151,9 @@ _Avoid_: referrer, previous page, back stack
 
 **Close**:
 The Escape wearing its X glyph, on a create/edit form, where the promise is "abandon this" rather
-than "go up a level" (#733). Same rule and same destination logic — only the promise and the glyph
-differ.
+than "go up a level" (#733). Same rule and same destination logic — the promise, the glyph and the
+label differ. A Close announces "Close", never the destination: on a form what it promises is
+_abandoning this_, and where it lands is secondary.
 _Avoid_: cancel, dismiss (those name what happens to the _data_, not to the navigation)
 
 **Completion** (not an Escape):
