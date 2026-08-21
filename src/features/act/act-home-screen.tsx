@@ -1,4 +1,5 @@
-import { router, type Href } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -118,6 +119,7 @@ const PILLARS: PillarDef[] = [
 ];
 
 export default function ActHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const roomStyle = useRoomStyle("act");
   const { t } = useTranslation("act");
   const { formatDateTime } = useLocaleFormats();
@@ -236,7 +238,7 @@ export default function ActHomeScreen() {
                   description={t(`pillars.${pillar.key}.description`)}
                   onToolPress={(toolKey) => {
                     const tool = pillar.tools.find((x) => x.key === toolKey);
-                    if (tool?.route) router.push(tool.route);
+                    if (tool?.route) pushWithOrigin(tool.route);
                   }}
                 >
                   {pillar.tools.map((tool) => (
@@ -262,7 +264,7 @@ export default function ActHomeScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => router.push("/modules/act/defusion")}
+                    onPress={() => pushWithOrigin("/modules/act/defusion")}
                   >
                     <Text className="text-sm text-foreground">{t("home.viewAllDefusion")}</Text>
                   </Pressable>

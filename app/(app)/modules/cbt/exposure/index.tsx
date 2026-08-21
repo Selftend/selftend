@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -20,6 +20,7 @@ import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 
 export default function ExposureScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: hierarchies, isLoading } = useHierarchies(user?.id ?? null);
@@ -41,7 +42,7 @@ export default function ExposureScreen() {
               />
               <Text variant="muted">{t("exposure.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/modules/cbt/exposure/new")} size="sm">
+            <Button onPress={() => pushWithOrigin("/modules/cbt/exposure/new")} size="sm">
               <Text>{t("exposure.new")}</Text>
             </Button>
           </View>
@@ -62,7 +63,7 @@ export default function ExposureScreen() {
                   key={h.id}
                   title={h.title}
                   description={h.anxietyType}
-                  onPress={() => router.push(`/modules/cbt/exposure/${h.id}`)}
+                  onPress={() => pushWithOrigin(`/modules/cbt/exposure/${h.id}`)}
                 />
               ))}
             </View>
@@ -71,7 +72,7 @@ export default function ExposureScreen() {
           <AccessibleCardLink
             title={t("exposure.worryLink")}
             description={t("exposure.worryLinkDescription")}
-            onPress={() => router.push("/modules/cbt/worry")}
+            onPress={() => pushWithOrigin("/modules/cbt/worry")}
           />
         </View>
       </ScrollView>

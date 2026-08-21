@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -18,6 +19,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { formatAtOffset } from "@/src/utils/date";
 
 export default function ActivityDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
@@ -132,7 +134,7 @@ export default function ActivityDetailScreen() {
             <View className="gap-3">
               <Button
                 onPress={() =>
-                  router.push(
+                  pushWithOrigin(
                     `/tools/check-in/new?linkedStrategy=behavioral-activation&completeActivityId=${activity.id}` as Parameters<
                       typeof router.push
                     >[0],
@@ -142,7 +144,9 @@ export default function ActivityDetailScreen() {
                 <Text>{t("activities.markComplete")}</Text>
               </Button>
               <Button
-                onPress={() => router.push(`/modules/cbt/activities/new?activityId=${activity.id}`)}
+                onPress={() =>
+                  pushWithOrigin(`/modules/cbt/activities/new?activityId=${activity.id}`)
+                }
                 variant="secondary"
               >
                 <Text>{t("activities.edit")}</Text>
