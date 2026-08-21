@@ -242,3 +242,63 @@ better.** Crossfading two different phases of the same tone beats and cancels;
 `night` — a phase-locked drone — scores 13.85x folded against 5.29x hard-cut. The
 gate catches this, which is the point, but the fix is a re-render toward
 noise-like material, not a longer fold.
+
+☠️ **A take with no signal cannot be normalised, and used to fail obscurely.**
+loudnorm prints `-inf` for it, `Number()` makes that NaN, and the NaN reached
+ffmpeg as `volume=NaNdB` — dying behind a wall of filter-graph errors that named
+neither the file nor the cause. `normalisationGain` now refuses it by name. Found
+on `wind_exhale-c01.pcm`, a dud of the failed Round B: it measures -69.76 LUFS-I
+as stereo and drops under loudnorm's -70 LUFS gate only once downmixed to the
+mono a texture ships as — so measuring the raw master by hand shows a finite
+number and suggests nothing is wrong.
+
+## The audition
+
+`render` writes headerless raw PCM, so nothing on disk after a pass can be
+played. `audition.mjs` closes that gap
+([#1346](https://github.com/Selftend/selftend/issues/1346)): it puts every
+candidate through the real post-processing chain, tiles beds for the seam listen,
+writes a page with the measurements beside each player, and records the pick.
+
+```bash
+# Every accepted take -> a playable .m4a, plus a 10x loop for each bed,
+# plus index.html. Spends nothing; needs ffmpeg.
+node scripts/audio/audition.mjs build --round B
+
+# Also hear the takes below the level gate and the ones of superseded prompts.
+node scripts/audio/audition.mjs build --round B --all
+
+# Record the winner, and see what is still unpicked.
+node scripts/audio/audition.mjs choose rain 2 --round B --note "least eventful"
+node scripts/audio/audition.mjs status --round B
+```
+
+Output lands in `audio-masters/audition/round-<R>/` — `index.html` to open from
+disk, `audition.json` for the same data machine-readable.
+
+☠️ **The bed loop is tiled on decoded PCM, not by looping the `.m4a`.** Splicing
+AAC frames would put the codec's priming gap at every join — inventing precisely
+the artifact the listen exists to detect, and failing a bed for a defect the app
+would never play. #1138 established that no platform loops by buffer wrap anyway
+(iOS duplicates an `AVPlayerItem`, Android sets `REPEAT_MODE_ONE`, web sets
+`HTMLAudioElement.loop`), so what goes in front of an ear is the file's own seam,
+sample-exact and encoded once — the same join `seamMetrics` measures. Only beds
+are tiled: textures never loop (#1137) and bells are one-shots.
+
+☠️ **Choices go in `choices.jsonl`, never in `manifest.jsonl`.** `planSlot`
+classifies any row without an `attempt` and a `dbtp` as a superseded take, so a
+`chosen` row appended to the manifest would be counted against the slot and
+quietly corrupt the survey that quotes the cost of an unrepeatable spend. The
+record that decides how much money a run costs takes no new row shapes from a
+tool that spends nothing.
+
+☠️ **A pick is recorded against the prompt its take was generated from.** That is
+what lets `status` re-open a clip whose prompt changed after the pick — a choice
+made against a rewritten prompt names a sound nobody is asking for, and treating
+it as settled is how an old take's decision silently ships.
+
+⚠️ **Only the ear decides.** The level and the seam ratio sit beside the player
+to say where to be suspicious. Measurement can reject a bad clip and can never
+confirm a good one (#1159), and #1316's `forest` and `wind` re-concepts make the
+listen more load-bearing, not less. Listen on a phone speaker at low volume as
+well as headphones (#1134).

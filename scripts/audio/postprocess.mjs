@@ -384,7 +384,46 @@ async function seamCheckFile(file) {
 /** Stage progress on stderr, so a long run shows where it is rather than sitting mute. */
 const step = (msg) => process.stderr.write(`   · ${msg}\n`);
 
-async function postprocess(input, clipId, outPath) {
+/**
+ * The one gain that "normalise, then limit" actually means here.
+ *
+ * Scaling by G dB moves integrated loudness and true peak alike, so the ceiling
+ * is arithmetic rather than a limiter and no peak-squashing ever touches the
+ * audio. Whichever of the two bounds is lower wins; when it is the ceiling, the
+ * caller says so rather than reporting a loudness miss that looks like a fault.
+ *
+ * ☠️ NON-FINITE IN, CLEAR ERROR OUT. A take with no signal makes loudnorm print
+ * `-inf`, which `Number()` turns into NaN — and NaN propagates silently through
+ * this arithmetic into `volume=NaNdB`, where ffmpeg dies with "Invalid value NaN
+ * for volume" behind a wall of filter-graph errors naming neither the file nor
+ * the cause. #1320 met the same non-finite return in `classifyTake` and
+ * classified it deliberately; this is the other half of that trap. Found on
+ * `wind_exhale-c01.pcm`, a dud of the failed Round B: -69.76 LUFS-I as stereo,
+ * then under loudnorm's -70 LUFS absolute gate once downmixed to the mono a
+ * texture ships as — so the failure appears only after the downmix, which is why
+ * measuring the raw master by hand shows a finite number and suggests nothing is
+ * wrong.
+ */
+export function normalisationGain(pre, spec, label = "the take") {
+  if (!Number.isFinite(pre.lufs) || !Number.isFinite(pre.dbtp)) {
+    throw new Error(
+      `${label} has no measurable signal (loudness ${pre.lufs}, true peak ${pre.dbtp}). ` +
+        `The take is empty or below loudnorm's -70 LUFS gate; it cannot be normalised. ` +
+        `Re-render or pick another take.`,
+    );
+  }
+  const wantedGain = spec.lufs - pre.lufs;
+  const headroomGain = TRUE_PEAK_CEILING_DBTP - pre.dbtp;
+  const gain = Math.min(wantedGain, headroomGain);
+  return { gain, ceilingBound: gain < wantedGain - 1e-9 };
+}
+
+/**
+ * Exported so the audition (#1346) previews candidates through the real chain
+ * rather than a lookalike. A preview the owner picks a winner from has to be the
+ * same file the app would ship, or the pick is made on a sound that never exists.
+ */
+export async function postprocess(input, clipId, outPath) {
   const spec = outputSpecFor(clipId);
   const dir = await mkdtemp(join(tmpdir(), "postproc-"));
 
@@ -425,10 +464,7 @@ async function postprocess(input, clipId, outPath) {
     // and no peak-squashing ever touches the audio.
     step("measure source");
     const pre = await measure(working);
-    const wantedGain = spec.lufs - pre.lufs;
-    const headroomGain = TRUE_PEAK_CEILING_DBTP - pre.dbtp;
-    const gain = Math.min(wantedGain, headroomGain);
-    const ceilingBound = gain < wantedGain - 1e-9;
+    const { gain, ceilingBound } = normalisationGain(pre, spec, basename(input));
 
     const normalised = join(dir, "normalised.wav");
     await ffmpeg([
@@ -470,6 +506,51 @@ async function postprocess(input, clipId, outPath) {
     const seam = spec.klass === "beds" ? await seamCheckFile(outPath) : null;
 
     return { spec, pre, post, size, seam, foldNote, gain, ceilingBound };
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Tile a finished loop N times, for the listen #1137's seam gate asks for (#1346).
+ *
+ * ☠️ THE TILING HAPPENS ON DECODED PCM, NOT ON THE ENCODED FILE. Looping the
+ * `.m4a` would splice AAC frames, putting the codec's own priming gap at every
+ * join — inventing precisely the artifact the listen exists to detect, and
+ * failing a bed for a defect the app would never play. #1138 established that no
+ * platform loops by buffer wrap anyway (iOS duplicates an `AVPlayerItem`, Android
+ * sets `REPEAT_MODE_ONE`, web sets `HTMLAudioElement.loop`), so the honest thing
+ * to put in front of an ear is the file's own seam, sample-exact and once-encoded.
+ * That is also the join `seamMetrics` measures, so the ear and the ratio are
+ * judging the same boundary.
+ */
+export async function repeatLoop(input, outPath, times, clipId) {
+  if (!Number.isInteger(times) || times < 2) {
+    throw new Error(`repeat count must be an integer of 2 or more, got ${times}`);
+  }
+  const spec = outputSpecFor(clipId);
+  const dir = await mkdtemp(join(tmpdir(), "loop-"));
+  try {
+    const wav = join(dir, "decoded.wav");
+    await ffmpeg([...inputArgs(input), "-c:a", "pcm_f32le", "-f", "wav", wav]);
+    await mkdir(dirname(outPath), { recursive: true });
+    await ffmpeg([
+      "-stream_loop",
+      String(times - 1),
+      "-i",
+      wav,
+      "-c:a",
+      AAC_ENCODER,
+      "-b:a",
+      spec.bitrate,
+      "-ar",
+      String(OUTPUT_SAMPLE_RATE),
+      "-ac",
+      String(spec.channels),
+      "-movflags",
+      "+faststart",
+      outPath,
+    ]);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -551,14 +632,20 @@ Usage:
 Requires ffmpeg on PATH (#1138).
 `.trim();
 
-const command = process.argv[2];
-const target = process.argv[3];
+/**
+ * ☠️ Wrapped in `main()`, not run at the top level.
+ *
+ * A bare `await postprocess(...)` here is a top-level `await`, which babel's CJS
+ * transform cannot compile — it made this module unimportable from jest, which is
+ * why `test/audio-render-reroll.test.ts` has to mock it out wholesale to test
+ * `render`. #1320 applied the same fix to `render.mjs` for the same reason; this
+ * is the other half of it, and it is what lets `normalisationGain` be tested at
+ * all.
+ */
+async function main() {
+  const command = process.argv[2];
+  const target = process.argv[3];
 
-// Only run the CLI when invoked directly, so `fold` and `seamMetrics` can be
-// imported and measured by calibrate-seam.mjs without this file executing.
-const isMain = import.meta.url === pathToFileURL(process.argv[1] ?? "").href;
-
-if (isMain)
   try {
     if (command === "run") {
       const clipId = flag("clip");
@@ -591,3 +678,9 @@ if (isMain)
     console.error(err.message);
     process.exit(1);
   }
+}
+
+// Only run the CLI when invoked directly, so `fold`, `seamMetrics`,
+// `normalisationGain` and `postprocess` can be imported by calibrate-seam.mjs,
+// audition.mjs and the test suite without this file executing.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) main();

@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-import { deleteAllActLogsForUser } from "./helpers";
+import { deleteAllActLogsForUser, expectSuccessToast } from "./helpers";
 
 /**
  * Routes:
@@ -95,7 +95,7 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
     // Wait for the "Saved" toast - it appears only after mutateAsync resolves (i.e. the DB
     // write has committed). Without this, page.goto() can race the in-flight upsert under
     // parallel load and land on a list that reads stale/empty data from the DB.
-    await expect(page.getByText("Saved")).toBeVisible({ timeout: 15_000 });
+    await expectSuccessToast(page, "Saved");
 
     // Hard-navigate to the values list so the query runs fresh against the now-committed DB row.
     await page.goto("/modules/act/values");
@@ -139,7 +139,7 @@ test.describe("ACT values: edit a domain value and save a bulls-eye check-in", (
     await page.getByRole("button", { name: "Save ratings", exact: true }).click();
 
     // Wait for the "Ratings saved" toast - confirms the DB writes finished before reload.
-    await expect(page.getByText("Ratings saved")).toBeVisible({ timeout: 15_000 });
+    await expectSuccessToast(page, "Ratings saved");
 
     // Hard-navigate back to the bulls-eye screen to verify the history entry.
     await page.goto("/modules/act/values/bulls-eye");

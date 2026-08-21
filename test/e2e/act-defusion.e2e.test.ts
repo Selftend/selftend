@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-import { deleteAllActLogsForUser } from "./helpers";
+import { deleteAllActLogsForUser, expectSuccessToast } from "./helpers";
 
 /**
  * Routes:
@@ -76,7 +76,7 @@ test.describe("ACT defusion: create, view, delete", () => {
 
     // Wait for the "Saved" toast (fires after the DB write committed) before
     // the hard goto() - navigating earlier aborts the in-flight insert (#172).
-    await expect(page.getByText("Saved")).toBeVisible({ timeout: 15_000 });
+    await expectSuccessToast(page, "Saved");
 
     // After save, router.back() navigates away. Go directly to the list.
     await page.goto("/modules/act/defusion");

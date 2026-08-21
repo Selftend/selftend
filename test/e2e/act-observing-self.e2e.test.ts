@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-import { deleteAllActLogsForUser } from "./helpers";
+import { deleteAllActLogsForUser, expectSuccessToast } from "./helpers";
 
 /**
  * Routes:
@@ -60,7 +60,7 @@ test.describe("ACT observing-self: create, view, delete", () => {
     // (the DB write committed). goto() is a hard navigation in the static
     // export, so navigating earlier aborts the in-flight insert (#172: the
     // trace showed the POST cancelled and the list correctly reading []).
-    await expect(page.getByText("Saved")).toBeVisible({ timeout: 15_000 });
+    await expectSuccessToast(page, "Saved");
 
     // ── Navigate to list ───────────────────────────────────────────────────────
     await page.goto("/modules/act/observing-self");
