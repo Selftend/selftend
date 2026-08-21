@@ -5,7 +5,7 @@
  * Turns a raw ElevenLabs master into the finished clip the app ships, in the
  * order #1138 fixed:
  *
- *   decode -> resample to 44.1 kHz -> downmix -> seamless() fold (beds only)
+ *   decode -> resample to 44.1 kHz -> downmix -> seamless() fold (only when asked)
  *          -> loudness-normalise -> true-peak limit -> encode AAC
  *
  * Like `catalog.mjs`, this script decides nothing. Every number it applies comes
@@ -33,6 +33,7 @@ import {
   OUTPUT_SAMPLE_RATE,
   TRUE_PEAK_CEILING_DBTP,
   AAC_ENCODER,
+  BED_FOLD_SECONDS,
 } from "./catalog.mjs";
 
 /**
@@ -258,6 +259,60 @@ export function fold(samples, channels, foldFrames) {
     }
   }
   return out;
+}
+
+/**
+ * Whether this clip gets folded, and why — the decision, separated from the doing.
+ *
+ * ☠️ THE FOLD STOPPED BEING THE BED PATH ON #1347, AND DID NOT STOP EXISTING.
+ * It used to run for any clip whose spec carried a `foldSeconds`, which was every
+ * bed and only beds: always or never, decided by the catalog. Then `loop: true`
+ * turned out to be accepted with lossless PCM and to genuinely loop — `brown-noise`
+ * at 30s scored a 0.67x wrap step against its own paired non-looping control's
+ * 14.34x, four times better than the folded path's best-ever 2.85x — so a natively
+ * looping bed needs no fold at all, and folding one would cost 0.4s of an
+ * unrepeatable master and a -0.20..-4.87 dB dip at every loop point for nothing.
+ *
+ * ⚠️ BUT THE TONAL CASE IS NOT CLEARED. All three `night` draws landed under
+ * #1320's usable gate, and of the two carrying signal the join was fine while the
+ * head/tail energy ratio FAILED — loop mode gives a clean join without
+ * guaranteeing one level end to end. So the seam gate still runs on every bed
+ * however it was rendered, and the fold survives as what a bed that fails it can
+ * be put through: `postprocess run <in> --clip <bed> --fold`.
+ *
+ * Three states, and they have to stay coherent:
+ *
+ *   bed, rendered looping   -> no fold, unless asked (the seam-gate fallback)
+ *   bed, rendered non-looping -> fold, because a raw 30s render does not loop
+ *   anything else           -> never, and asking is an error rather than a no-op
+ *
+ * The middle row is not dead code: it is what this pipeline does if `CLASS_LOOP.beds`
+ * is ever put back to false, and without it that flip would ship the raw 14.34x cut.
+ */
+export function foldPlan(spec, { fold = false } = {}) {
+  if (spec.foldSeconds == null) {
+    // ☠️ An ignored `--fold` would report a fold that never ran. It is worse than
+    // useless on these classes — the fold trims 0.4s off the end, which on a 2s
+    // temple block is a fifth of its decay — so an operator who typed it gets an
+    // error naming the class, not silence.
+    if (fold) {
+      throw new Error(
+        `${spec.klass} are never folded — only beds have a seam to gate, and the fold ` +
+          `trims ${BED_FOLD_SECONDS}s off the end. Drop --fold.`,
+      );
+    }
+    return { foldSeconds: null, note: "not a bed, no fold" };
+  }
+  if (fold) {
+    return {
+      foldSeconds: spec.foldSeconds,
+      note: `${spec.foldSeconds}s fold (seam-gate fallback)`,
+    };
+  }
+  if (spec.loop) {
+    return { foldSeconds: null, note: "rendered loop: true, no fold (#1347)" };
+  }
+  return { foldSeconds: spec.foldSeconds, note: `${spec.foldSeconds}s fold (non-looping render)` };
 }
 
 // ---------------------------------------------------------------------------
@@ -486,8 +541,12 @@ export function normalisationGain(pre, spec, label = "the take") {
  * rather than a lookalike. A preview the owner picks a winner from has to be the
  * same file the app would ship, or the pick is made on a sound that never exists.
  */
-export async function postprocess(input, clipId, outPath) {
+export async function postprocess(input, clipId, outPath, { fold: foldRequested = false } = {}) {
   const spec = outputSpecFor(clipId);
+  // ☠️ Before the first ffmpeg call, not inside the chain: `--fold` on a bell is a
+  // refusal, and a refusal that arrives after three minutes of decoding is a
+  // refusal nobody reads.
+  const plan = foldPlan(spec, { fold: foldRequested });
   const dir = await mkdtemp(join(tmpdir(), "postproc-"));
 
   try {
@@ -499,17 +558,17 @@ export async function postprocess(input, clipId, outPath) {
       sampleRate: OUTPUT_SAMPLE_RATE,
     });
 
-    // 3. fold - beds only.
+    // 3. fold - beds only, and since #1359 only when `foldPlan` says so.
     let working = decodedPath;
-    let foldNote = "not a bed, no fold";
-    if (spec.foldSeconds) {
-      const foldFrames = Math.round(spec.foldSeconds * OUTPUT_SAMPLE_RATE);
+    let foldNote = plan.note;
+    if (plan.foldSeconds) {
+      const foldFrames = Math.round(plan.foldSeconds * OUTPUT_SAMPLE_RATE);
       const folded = fold(decoded.samples, decoded.channels, foldFrames);
       working = join(dir, "folded.wav");
       await writeFile(working, writeWavBuffer(folded, decoded.channels, decoded.sampleRate));
       const before = decoded.samples.length / decoded.channels / decoded.sampleRate;
       const after = folded.length / decoded.channels / decoded.sampleRate;
-      foldNote = `${spec.foldSeconds}s fold, ${before.toFixed(2)}s -> ${after.toFixed(2)}s`;
+      foldNote = `${plan.note}, ${before.toFixed(2)}s -> ${after.toFixed(2)}s`;
     }
 
     // 4. loudness-normalise, then true-peak limit - as one explicit constant gain.
@@ -568,7 +627,17 @@ export async function postprocess(input, clipId, outPath) {
     if (spec.klass === "beds") step("seam gate");
     const seam = spec.klass === "beds" ? await seamCheckFile(outPath) : null;
 
-    return { spec, pre, post, size, seam, foldNote, gain, ceilingBound };
+    return {
+      spec,
+      pre,
+      post,
+      size,
+      seam,
+      foldNote,
+      gain,
+      ceilingBound,
+      folded: plan.foldSeconds != null,
+    };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -619,9 +688,11 @@ export async function repeatLoop(input, outPath, times, clipId) {
   }
 }
 
-function report(clipId, result) {
+export function report(clipId, result) {
   const { spec, pre, post, size, seam, foldNote, gain, ceilingBound } = result;
   const failures = [];
+  /** Things to try next. Printed, but never counted against the file. */
+  const hints = [];
 
   const lufsOff = Math.abs(post.lufs - spec.lufs);
   if (ceilingBound) {
@@ -651,6 +722,21 @@ function report(clipId, result) {
           `window-to-window spread (limit ${SEAM_LIMITS.energyDeltaRatio})`,
       );
     }
+    // ⚠️ The fallback #1347 kept the fold for. A bed that fails the gate having
+    // been rendered `loop: true` has one more thing to try before it costs a
+    // re-render nobody can reproduce in matching style.
+    // ☠️ It is a HINT, not a failure — it goes in `hints`, never in `failures`.
+    // Pushing guidance into `failures` prints it as "FAIL:", which labels advice
+    // as a fault and pads the count of things actually wrong with the file.
+    // ☠️ On TONAL material the fold makes the seam WORSE, not better (#1296:
+    // `night` scored 13.85x folded against 5.29x hard-cut), so this is an offer to
+    // measure, never an instruction to ship.
+    if (failures.some((failure) => failure.startsWith("seam:")) && !result.folded) {
+      hints.push(
+        "the fold is the fallback: re-run with --fold and compare. On tonal material " +
+          "it makes the seam worse, so keep whichever measures better and re-render if neither passes.",
+      );
+    }
   }
 
   console.log(`\n=== ${clipId} (${spec.klass})`);
@@ -672,6 +758,7 @@ function report(clipId, result) {
     );
   }
   for (const failure of failures) console.log(`   FAIL: ${failure}`);
+  for (const hint of hints) console.log(`   next: ${hint}`);
   if (!failures.length) console.log("   PASS");
   return failures.length === 0;
 }
@@ -687,12 +774,17 @@ function flag(name, fallback = null) {
 
 const USAGE = `
 Usage:
-  node scripts/audio/postprocess.mjs run <input> --clip <id> [--out <file.m4a>]
+  node scripts/audio/postprocess.mjs run <input> --clip <id> [--out <file.m4a>] [--fold]
   node scripts/audio/postprocess.mjs measure <file>
   node scripts/audio/postprocess.mjs seamcheck <file>
   node scripts/audio/postprocess.mjs edges <file>
 
 <id> is a clip id from catalog.mjs - a bell, bed, texture or guide_* cue.
+
+--fold is the seam-gate FALLBACK, not the path. Beds render loop: true and ship
+unfolded at the full 30.0s (#1347); reach for --fold only when a bed fails its seam
+gate, and compare the two - on tonal material the fold makes the seam worse.
+
 Requires ffmpeg on PATH (#1138).
 `.trim();
 
@@ -715,7 +807,10 @@ async function main() {
       const clipId = flag("clip");
       if (!target || !clipId) throw new Error(USAGE);
       const out = flag("out", join("audio-masters", "finished", `${clipId}.m4a`));
-      const ok = report(clipId, await postprocess(target, clipId, out));
+      // Named for what it is, not `fold` — that is the module-scope function this
+      // very call reaches through `postprocess`.
+      const foldRequested = process.argv.includes("--fold");
+      const ok = report(clipId, await postprocess(target, clipId, out, { fold: foldRequested }));
       console.log(`\nwrote ${out}`);
       process.exit(ok ? 0 : 1);
     } else if (command === "measure") {

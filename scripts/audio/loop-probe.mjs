@@ -32,6 +32,59 @@ const DURATION_TOLERANCE_SECONDS = 0.01;
 export const SFX_MAX_DURATION_SECONDS = 30;
 
 /**
+ * ☠️ LOOP MODE ROUNDS THE RETURNED DURATION UP TO THE NEXT 0.75s MULTIPLE.
+ *
+ * Measured three times for three, on the live API: 1s came back 1.5s, 2s came
+ * back 2.25s, 30s came back 30.000s exactly. The "1.5x" the #1214 probe recorded
+ * is real but is not a multiplier — it is what quantising 1s up to 1.5s looks
+ * like from a single sample. 2s -> 2.25s is 1.125x, which no multiplier explains.
+ *
+ * ⚠️ 30s SURVIVES BY ARITHMETIC, NOT BY CLASS. 30 = 40 x 0.75 exactly, so beds
+ * are untouched — but a 10s clip would come back 10.5s, and anything that ever
+ * asks loop mode for a non-multiple gets more audio than it requested. Billing is
+ * on the REQUESTED seconds, so the surplus is free; what it costs is the length
+ * of an unrepeatable master, which `outputSpecFor`'s numbers and #1138's bundle
+ * arithmetic both assume they know.
+ *
+ * Exported so the catalog's durations can be held to it by test rather than by
+ * anyone remembering this paragraph.
+ */
+export const LOOP_DURATION_QUANTUM_SECONDS = 0.75;
+
+/**
+ * What loop mode would actually return for a request of `requestedSeconds`.
+ *
+ * ⚠️ No floating-point epsilon here, and none is needed: 0.75 is 3/4, which IEEE
+ * 754 represents exactly, so dividing an exact multiple of it by it is exact and
+ * `Math.ceil` cannot overshoot. (An epsilon was written in on the assumption that
+ * 30 / 0.75 lands at 40.00000000000001. It does not — it is exactly 40 — and the
+ * guard was unreachable by construction, which is how the mutation test found it.)
+ */
+export function loopReturnedSeconds(requestedSeconds) {
+  const quanta = Math.ceil(requestedSeconds / LOOP_DURATION_QUANTUM_SECONDS);
+  return quanta * LOOP_DURATION_QUANTUM_SECONDS;
+}
+
+/**
+ * The duration to actually ask this clip for, given the one you had in mind.
+ *
+ * ☠️ THE CATALOG'S DURATIONS ARE NOT THE ONLY DURATIONS ASKED FOR. `preflight`
+ * grades every prompt at 4s, and 4 is not a multiple of 0.75 — so once beds render
+ * `loop: true`, a bed asked for 4s comes back at 4.5s and the grader is measuring
+ * material half a second longer than it believes. Billing is on the requested
+ * seconds so the surplus is free; what it costs is an instrument that no longer
+ * knows the shape of its own input.
+ *
+ * ⚠️ The answer is to ask for the honoured length, NOT to grade beds with
+ * `loop: false`. A bed graded in a different render mode from the one it is
+ * clearing for spend is grading the wrong material — which is the whole reason
+ * #1347 had to be settled before Round B rather than after it.
+ */
+export function requestSecondsFor(clip, seconds) {
+  return clip.loop ? loopReturnedSeconds(seconds) : seconds;
+}
+
+/**
  * Every reading a raw PCM buffer admits, and which of them honours the request.
  *
  * The point is not to guess: it is to state the two candidate durations side by
@@ -132,18 +185,23 @@ export function creditHypotheses({ requestedSeconds, returnedSeconds, creditsPer
 }
 
 /**
- * Which hypothesis the measured spend matches, if either.
+ * Which hypothesis a measured cost matches, if either.
  *
- * `null` in means the balance could not be read — the recorded key lacks the
- * `user_read` permission (`probe-results.json` carries the 401), so this has to
- * report "unknown" rather than silently pick the cheaper story.
+ * ⚠️ The parameter is `credits`, not `spent`: it is fed whatever `costReading`
+ * chose — normally the `character-cost` header, and only otherwise a balance
+ * delta. Calling it "spent" invited the reading that this matches against the
+ * balance, which is the weaker instrument and not usually the one talking.
+ *
+ * A non-finite number in means neither instrument spoke (the recorded key lacks
+ * `user_read` and `probe-results.json` carries the 401), so this has to report
+ * "unknown" rather than silently pick the cheaper story.
  */
-export function creditVerdict({ spent, hypotheses, tolerance = 1 }) {
-  if (!Number.isFinite(spent)) return "unknown — balance unavailable";
-  const near = (value) => Math.abs(spent - value) <= tolerance;
+export function creditVerdict({ credits, hypotheses, tolerance = 1 }) {
+  if (!Number.isFinite(credits)) return "unknown — no cost reading available";
+  const near = (value) => Math.abs(credits - value) <= tolerance;
   if (near(hypotheses.ifChargedOnRequested) && near(hypotheses.ifChargedOnReturned))
     return "requested and returned agree — this call cannot separate them";
   if (near(hypotheses.ifChargedOnRequested)) return "charged on the REQUESTED seconds";
   if (near(hypotheses.ifChargedOnReturned)) return "charged on the RETURNED seconds";
-  return `matches neither hypothesis (${spent} credits)`;
+  return `matches neither hypothesis (${credits} credits)`;
 }
