@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -387,21 +386,6 @@ export default function ActDefusionNewScreen() {
                 onChange={setFusionLevelAfter}
               />
             </View>
-
-            {fusionLevelBefore !== null && fusionLevelAfter !== null ? (
-              <Card className="border-border bg-muted">
-                <CardContent className="pt-4">
-                  <Text className="text-center font-semibold text-foreground">
-                    {fusionLevelAfter < fusionLevelBefore
-                      ? t("act:defusion.fusionDrop", {
-                          before: fusionLevelBefore,
-                          after: fusionLevelAfter,
-                        })
-                      : t("act:defusion.noFusionDrop", { after: fusionLevelAfter })}
-                  </Text>
-                </CardContent>
-              </Card>
-            ) : null}
 
             <View className="gap-3">
               <View className="gap-1">
