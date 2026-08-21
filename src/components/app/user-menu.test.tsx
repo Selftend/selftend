@@ -10,17 +10,24 @@ import { openExternalUrl } from "@/src/lib/linking";
 import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+// ☠️ Load-bearing for exactly ONE test: "shows the compact get-the-app section on
+// web", which flips `Platform.OS` to "web". `popover.tsx` picks its wrapper at
+// MODULE LOAD (`Platform.OS === "ios" ? RNFullWindowOverlay : React.Fragment`),
+// and jest-expo loads with `defaultPlatform: "ios"` - so the alias is already
+// frozen to the real overlay by the time the test moves the platform, and the
+// overlay's own off-iOS branch then warns. Nothing else here needs it: verified
+// (#1338) that the real overlay renders silently under react-test-renderer on
+// iOS, which is why `app-toast.tsx`'s wrapper is tested against the REAL thing
+// and this mock deliberately stayed local rather than moving to `test/setup.js`.
+jest.mock("react-native-screens", () => ({
+  ...jest.requireActual("react-native-screens"),
+  FullWindowOverlay: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 let mockPathname = "/";
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
   usePathname: () => mockPathname,
-}));
-
-// The native overlay warns when react-test-renderer is not attached to a real iOS
-// window. The popover behavior itself remains exercised through rn-primitives.
-jest.mock("react-native-screens", () => ({
-  ...jest.requireActual("react-native-screens"),
-  FullWindowOverlay: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 const signedInSession = {

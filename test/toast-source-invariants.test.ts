@@ -26,6 +26,10 @@
 //      argument and answers `getDuration()` with a hardcoded 300 - so the real
 //      value is unobservable from jest, and this is the only place it can be
 //      pinned at all.
+//   5. The iOS overlay is NOT a modal accessibility container, and its wrapper
+//      is a component rather than popover's `React.Fragment` alias. `false` is
+//      the difference between a toast and a toast that hides the whole app from
+//      VoiceOver; the alias is what would make the prop impossible to pass.
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -75,6 +79,11 @@ describe("app-toast.tsx keeps the properties no render test can see", () => {
   // That one IS visible to a render test - `app-toast.test.tsx` reads it off the
   // rendered card's props - and this file's charter is the properties no render
   // can see. A second copy would blunt the charter rather than add cover.
+  //
+  // The `unstable_accessibilityContainerViewIsModal` gate below is the single
+  // exception to that rule, and it argues for itself there. If a third property
+  // ever wants the same exemption, re-read this paragraph first: the charter is
+  // worth more than any one extra net.
 
   it("leaves the dismiss button's focusability alone", () => {
     // Any `focusable` at all is the smell: the trap is binding it to state, and
@@ -100,5 +109,33 @@ describe("app-toast.tsx keeps the properties no render test can see", () => {
   it("branches the web fade on Platform.OS, not Platform.select", () => {
     expect(code).toContain('Platform.OS === "web"');
     expect(code).not.toContain("Platform.select");
+  });
+
+  // ☠️☠️ The one deliberate exception to the paragraph above, and the only one:
+  // `app-toast.test.tsx` DOES read this off the real `RNSFullWindowOverlay` host
+  // node, so a render test can see it. It is gated here anyway because it is the
+  // single property in this component whose loss is silent, total, and one word
+  // wide - drop it and the toast hides the ENTIRE APP from VoiceOver, on the one
+  // platform with no test layer. The reasoning lives on `ToastOverlay` itself.
+  it("marks the iOS overlay as NOT a modal accessibility container", () => {
+    expect(code).toContain("unstable_accessibilityContainerViewIsModal={false}");
+  });
+
+  // ☠️ The one shape that must never come back is popover's ALIAS,
+  // `Platform.OS === "ios" ? RNFullWindowOverlay : React.Fragment`. `React.Fragment`
+  // accepts only `key` and `children`, so it cannot carry the prop above - it would
+  // log `Invalid prop ... supplied to React.Fragment` on every Android and web
+  // render instead. The alias also resolves at MODULE LOAD, freezing whichever
+  // platform imported the file first.
+  //
+  // ⚠️ `react-dom/server` never runs Fragment prop validation, so a static render
+  // reports zero warnings; only the reconciler warns. Hence a source gate.
+  //
+  // Matched on the TERNARY rather than by banning the word `Fragment`: a blanket
+  // ban would also stop a future unrelated fragment, which this has nothing to
+  // say about.
+  it("forks the overlay in a component, never through a ternary alias", () => {
+    expect(code).toContain("function ToastOverlay");
+    expect(code).not.toMatch(/\?\s*RNFullWindowOverlay/);
   });
 });
