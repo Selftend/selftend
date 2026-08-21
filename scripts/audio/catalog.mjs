@@ -99,9 +99,11 @@ export function composePrompt(clipText) {
  * runtime at all. ⚠️ It would also be actively wrong here — loop mode rounds a
  * returned duration UP to the next 0.75s multiple (1s -> 1.5s, 2s -> 2.25s), so a
  * 10s texture would come back 10.5s. Beds are untouched only because 30 = 40 x
- * 0.75 exactly. `loopReturnedSeconds` in loop-probe.mjs is that arithmetic, and
- * test/audio-native-loop.test.ts holds every looping clip to a length loop mode
- * honours.
+ * 0.75 exactly. `loopReturnedSeconds` in loop-probe.mjs is that arithmetic;
+ * test/audio-native-loop.test.ts holds every looping clip's `durationSeconds` to a
+ * length loop mode honours, and the two paths that ask for a duration of their own
+ * — `preflight` and `loopprobe --seconds` — go through the same arithmetic rather
+ * than assuming the catalog's number.
  */
 export const CLASS_LOOP = {
   bells: false,
@@ -171,7 +173,7 @@ export const SFX_MODEL = "eleven_text_to_sound_v2";
  * real number is not that. Corrected on #1347, wired by #1359.
  *
  * ⚠️ This constant is a QUOTE, used before a call. What a call actually cost
- * comes back on the response — see `chargedCredits` in loop-probe.mjs. Prefer the
+ * comes back on the response — see `chargedCredits` in credits.mjs. Prefer the
  * header wherever cost is reported after the fact; never the balance delta, which
  * lags (it did not move at all across a 22-credit call).
  */

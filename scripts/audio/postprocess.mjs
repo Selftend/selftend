@@ -688,9 +688,11 @@ export async function repeatLoop(input, outPath, times, clipId) {
   }
 }
 
-function report(clipId, result) {
+export function report(clipId, result) {
   const { spec, pre, post, size, seam, foldNote, gain, ceilingBound } = result;
   const failures = [];
+  /** Things to try next. Printed, but never counted against the file. */
+  const hints = [];
 
   const lufsOff = Math.abs(post.lufs - spec.lufs);
   if (ceilingBound) {
@@ -723,11 +725,14 @@ function report(clipId, result) {
     // ⚠️ The fallback #1347 kept the fold for. A bed that fails the gate having
     // been rendered `loop: true` has one more thing to try before it costs a
     // re-render nobody can reproduce in matching style.
+    // ☠️ It is a HINT, not a failure — it goes in `hints`, never in `failures`.
+    // Pushing guidance into `failures` prints it as "FAIL:", which labels advice
+    // as a fault and pads the count of things actually wrong with the file.
     // ☠️ On TONAL material the fold makes the seam WORSE, not better (#1296:
     // `night` scored 13.85x folded against 5.29x hard-cut), so this is an offer to
     // measure, never an instruction to ship.
     if (failures.some((failure) => failure.startsWith("seam:")) && !result.folded) {
-      failures.push(
+      hints.push(
         "the fold is the fallback: re-run with --fold and compare. On tonal material " +
           "it makes the seam worse, so keep whichever measures better and re-render if neither passes.",
       );
@@ -753,6 +758,7 @@ function report(clipId, result) {
     );
   }
   for (const failure of failures) console.log(`   FAIL: ${failure}`);
+  for (const hint of hints) console.log(`   next: ${hint}`);
   if (!failures.length) console.log("   PASS");
   return failures.length === 0;
 }

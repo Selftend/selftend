@@ -16,8 +16,6 @@
 import {
   SFX_MAX_DURATION_SECONDS,
   channelReading,
-  chargedCredits,
-  costReading,
   creditHypotheses,
   creditVerdict,
   describeReturn,
@@ -164,7 +162,7 @@ describe("channelReading refuses to guess", () => {
   });
 });
 
-describe("the credit question is answered from the balance, not assumed", () => {
+describe("the credit question is matched against both billing models", () => {
   const hypotheses = creditHypotheses({
     requestedSeconds: 60,
     returnedSeconds: 75,
@@ -177,8 +175,8 @@ describe("the credit question is answered from the balance, not assumed", () => 
   });
 
   it("names which one the measured spend matches", () => {
-    expect(creditVerdict({ spent: 198, hypotheses })).toContain("REQUESTED");
-    expect(creditVerdict({ spent: 248, hypotheses })).toContain("RETURNED");
+    expect(creditVerdict({ credits: 198, hypotheses })).toContain("REQUESTED");
+    expect(creditVerdict({ credits: 248, hypotheses })).toContain("RETURNED");
   });
 
   /**
@@ -187,7 +185,7 @@ describe("the credit question is answered from the balance, not assumed", () => 
    * settle on the cheaper story.
    */
   it("reports an unreadable balance as unknown", () => {
-    expect(creditVerdict({ spent: NaN, hypotheses })).toContain("unknown");
+    expect(creditVerdict({ credits: NaN, hypotheses })).toContain("unknown");
   });
 
   it("admits when the call it was given cannot separate the two", () => {
@@ -196,91 +194,11 @@ describe("the credit question is answered from the balance, not assumed", () => 
       returnedSeconds: 30,
       creditsPerSecond: 3.3,
     });
-    expect(creditVerdict({ spent: 99, hypotheses: same })).toContain("cannot separate");
+    expect(creditVerdict({ credits: 99, hypotheses: same })).toContain("cannot separate");
   });
 
   it("says so when the spend matches neither", () => {
-    expect(creditVerdict({ spent: 4000, hypotheses })).toContain("neither");
-  });
-});
-
-/**
- * ☠️ THE BALANCE IS NOT A COST INSTRUMENT — it LAGS. Across a 22-credit call
- * `/user/subscription` did not move at all (38,893 -> 38,893) and then reconciled
- * exactly by the end of the session. A delta read straight after a call is
- * therefore capable of reporting zero for a call that cost real, unrepeatable
- * credits. `character-cost` comes back on the response itself: exact, immediate,
- * free, and it answered #1347's billing question even though the key on hand
- * lacked `user_read` entirely. Everything that reports cost prefers it (#1359).
- */
-describe("chargedCredits reads the exact figure off the response", () => {
-  it("reads the header the API actually sends", () => {
-    expect(chargedCredits(new Map([["character-cost", "330"]]))).toBe(330);
-  });
-
-  it("finds it however the header case came back", () => {
-    // `fetch` lower-cases header names, but a stub, a proxy or a replayed
-    // recording need not — and a missed header silently degrades to the lagging
-    // balance rather than failing.
-    expect(chargedCredits({ "Character-Cost": "22" })).toBe(22);
-  });
-
-  it("returns null rather than a number when the header is absent", () => {
-    expect(chargedCredits(new Map([["content-type", "audio/pcm"]]))).toBeNull();
-    expect(chargedCredits(null)).toBeNull();
-    expect(chargedCredits(undefined)).toBeNull();
-  });
-
-  it("returns null for a header that is not a number, never NaN", () => {
-    // NaN would propagate into a manifest row as `null` anyway, but into a total
-    // as NaN — poisoning the sum of every other take's real cost.
-    expect(chargedCredits({ "character-cost": "" })).toBeNull();
-    expect(chargedCredits({ "character-cost": "n/a" })).toBeNull();
-  });
-
-  it("keeps a zero, which is a real answer and not a missing one", () => {
-    expect(chargedCredits({ "character-cost": "0" })).toBe(0);
-  });
-});
-
-describe("costReading prefers the header over the balance delta", () => {
-  const hypotheses = creditHypotheses({
-    requestedSeconds: 60,
-    returnedSeconds: 75,
-    creditsPerSecond: 11,
-  });
-
-  it("takes the header when both are available", () => {
-    const reading = costReading({ charged: 330, spent: 0 });
-    expect(reading.credits).toBe(330);
-    expect(reading.exact).toBe(true);
-    expect(reading.source).toMatch(/character-cost/);
-  });
-
-  it("says the balance disagreed rather than hiding it", () => {
-    // The lag is evidence about the instrument, so it is reported, not dropped.
-    expect(costReading({ charged: 330, spent: 0 }).note).toMatch(/0/);
-    expect(costReading({ charged: 330, spent: 330 }).note).toBeNull();
-  });
-
-  it("falls back to the balance delta when no header came back", () => {
-    const reading = costReading({ charged: null, spent: 198 });
-    expect(reading.credits).toBe(198);
-    expect(reading.exact).toBe(false);
-    expect(reading.source).toMatch(/balance/);
-  });
-
-  it("reports nothing measurable rather than picking a story", () => {
-    const reading = costReading({ charged: null, spent: NaN });
-    expect(Number.isFinite(reading.credits)).toBe(false);
-    expect(reading.exact).toBe(false);
-    expect(creditVerdict({ spent: reading.credits, hypotheses })).toContain("unknown");
-  });
-
-  it("prefers a zero header to a plausible balance delta", () => {
-    // A header of 0 is the API saying this call was free. The balance delta is
-    // the weaker instrument even when it looks more like the expected answer.
-    expect(costReading({ charged: 0, spent: 198 }).credits).toBe(0);
+    expect(creditVerdict({ credits: 4000, hypotheses })).toContain("neither");
   });
 });
 

@@ -121,7 +121,8 @@ of 4 attempts — which is ≈**25,080 credits** for Round B, about a third of t
 > ☠️ **Read cost from the header, never from the balance.** `/user/subscription`
 > **lags** — across a real 22-credit call it did not move at all, then reconciled
 > later — so a delta taken around a call can report zero for a spend that cannot
-> be repeated. `render` records `character-cost` per take in the manifest
+> be repeated. `credits.mjs` holds both instruments and the preference between
+> them; `render` records `character-cost` per take in the manifest
 > (`creditsCharged`, beside the `creditsEstimate` quote) and prints the pass total
 > as a floor when any call came back unpriced.
 
@@ -219,7 +220,7 @@ Requires **ffmpeg** on PATH. That is a deliberate `scripts/`-only dependency:
 #1138 retired the post-processor's "pure stdlib" property because Python's
 `wave` decodes no MP3 and encodes no AAC.
 
-### Three things measurement changed
+### What measurement changed
 
 ⚠️ **The fold is the fallback now, not the path** (#1347, wired by
 [#1359](https://github.com/Selftend/selftend/issues/1359)). Beds render

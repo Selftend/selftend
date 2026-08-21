@@ -39,10 +39,11 @@ import {
   seamMetrics,
   SEAM_LIMITS,
 } from "./postprocess.mjs";
+import { chargedCredits, costReading, sumCharged } from "./credits.mjs";
 import {
   SFX_MAX_DURATION_SECONDS,
-  chargedCredits,
-  costReading,
+  loopReturnedSeconds,
+  requestSecondsFor,
   channelReading,
   creditHypotheses,
   creditVerdict,
@@ -460,10 +461,12 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
   let generated = 0;
   let rerolled = 0;
   let recovered = 0;
-  /** The pass's real cost, summed from the response headers rather than quoted. */
-  let charged = 0;
-  /** Calls that came back without a `character-cost`, so `charged` is a floor. */
-  let unpriced = 0;
+  /**
+   * What each generation was charged, in order, `null` where the response said
+   * nothing. Summed by `sumCharged`, which is the same policy the probe applies —
+   * a partial sum is never presented as a total.
+   */
+  const charges = [];
 
   for (const slot of open) {
     const { clip, prompt, candidate } = slot;
@@ -503,8 +506,7 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
         // all across a 22-credit call and reconciled only later, so a delta taken
         // around a pass would understate a spend that can never be repeated.
         creditsCharged = chargedCredits(headers);
-        charged += creditsCharged ?? 0;
-        if (creditsCharged == null) unpriced += 1;
+        charges.push(creditsCharged);
         await writeFile(path, buffer);
         generated += 1;
         if (spent > 0) rerolled += 1;
@@ -581,12 +583,16 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
     `\n${generated} generation(s), of which ${rerolled} were re-rolls` +
       `${recovered ? `; ${recovered} take(s) recovered from disk unpaid` : ""}.`,
   );
-  // ⚠️ Reported as a floor, not a total, whenever a call came back unpriced — an
+  // ⚠️ Printed as a FLOOR, not a total, whenever a call came back unpriced — an
   // understated spend on an unrepeatable pass is the one direction that misleads.
+  // The probe answers the same incompleteness by withholding its figure instead;
+  // both read it from `sumCharged`, so the difference is a presentation choice
+  // rather than two implementations that drifted.
+  const spend = sumCharged(charges);
   console.log(
-    `credits charged: ${unpriced ? "at least " : ""}${charged} ` +
-      `(from the character-cost header on ${generated - unpriced} of ${generated} call(s))` +
-      `${unpriced ? `; ${unpriced} carried no header` : ""}.`,
+    `credits charged: ${spend.complete ? "" : "at least "}${spend.total} ` +
+      `(from the character-cost header on ${spend.priced} of ${charges.length} call(s))` +
+      `${spend.unpriced ? `; ${spend.unpriced} carried no header` : ""}.`,
   );
   console.log(`Masters in ${runDir}`);
   console.log(
@@ -641,6 +647,7 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
  * change.
  */
 const PREFLIGHT_SECONDS = 4;
+
 const PREFLIGHT_TAKES = 2;
 // The thresholds live in take-gate.mjs now, because `render` grades every take
 // against them too (#1320) — a prompt that clears preflight faces the same bar.
@@ -667,7 +674,12 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
 
   console.log(
     `Probing ${clips.length} prompts x ${takes} takes at ${PREFLIGHT_SECONDS}s ` +
-      `(~${Math.round(clips.length * takes * PREFLIGHT_SECONDS * CREDITS_PER_SECOND)} credits).\n`,
+      `(beds at ${loopReturnedSeconds(PREFLIGHT_SECONDS)}s — loop mode rounds up to a 0.75s multiple) ` +
+      `(~${Math.round(
+        takes *
+          CREDITS_PER_SECOND *
+          clips.reduce((total, c) => total + requestSecondsFor(c, PREFLIGHT_SECONDS), 0),
+      )} credits).\n`,
   );
   console.log(
     `Gate: usable at >= ${USABLE_DBTP} dBTP, silent below ${SILENT_DBTP} — the same bar ` +
@@ -684,7 +696,7 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
       if (!(await exists(path))) {
         const { buffer } = await soundEffect(key, {
           text: composePrompt(clip.text),
-          durationSeconds: PREFLIGHT_SECONDS,
+          durationSeconds: requestSecondsFor(clip, PREFLIGHT_SECONDS),
           promptInfluence: clip.promptInfluence,
           loop: clip.loop,
         });
@@ -942,10 +954,20 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
 
   console.log(`\n#1347 loop probe — ${clipId} at ${seconds}s, ${calls} call(s)`);
   console.log(`prompt (${prompt.length} chars): ${prompt}\n`);
+  // ☠️ This used to quote a flat "1.5x", which #1347 disproved: loop mode does not
+  // multiply, it rounds UP to the next 0.75s multiple (1s -> 1.5s looks like 1.5x,
+  // but 2s -> 2.25s is 1.125x and 30s -> 30s is 1.0x). Quoting a model the same
+  // commit's own docblock calls false is exactly the understated-quote problem
+  // #1359 exists to fix, one question over.
+  const returned = loopReturnedSeconds(seconds);
   console.log(`cost if charged on the REQUESTED seconds: ~${Math.round(quoted)} credits`);
   console.log(
-    `cost if loop mode returns 1.5x and bills on what it RETURNS: ~${Math.round(
-      quoted + seconds * 0.5 * CREDITS_PER_SECOND,
+    `loop mode will return ${returned}s for a ${seconds}s request` +
+      `${returned === seconds ? " (an exact 0.75s multiple)" : " — rounded up to a 0.75s multiple"}`,
+  );
+  console.log(
+    `cost if it bills on what it RETURNS: ~${Math.round(
+      (returned + (withControl ? seconds : 0)) * CREDITS_PER_SECOND,
     )} credits`,
   );
   if (!go) {
@@ -996,15 +1018,11 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
   // across the probe's calls, `character-cost` is exact and immediate; the
   // balance did not move at all across a 22-credit call and reconciled only
   // later, so the delta below is recorded and named, never trusted (#1359).
-  const perTake = takes.map((take) => chargedCredits(take.responseHeaders));
-  const priced = perTake.filter((credits) => credits != null);
-  const cost = costReading({
-    // ⚠️ null unless EVERY call was priced. A partial sum looks like a total and
-    // would understate the spend — the one direction that misleads on a pass
-    // nobody can repeat.
-    charged: priced.length === takes.length ? priced.reduce((a, b) => a + b, 0) : null,
-    spent,
-  });
+  const spend = sumCharged(takes.map((take) => chargedCredits(take.responseHeaders)));
+  // ⚠️ null unless EVERY call was priced. A partial sum looks like a total and
+  // would understate the spend — the one direction that misleads on a pass nobody
+  // can repeat. `render` prints an incomplete sum as an explicit floor instead.
+  const cost = costReading({ charged: spend.complete ? spend.total : null, spent });
 
   for (const take of takes) {
     Object.assign(
@@ -1060,7 +1078,7 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
   );
   console.log(
     `credits spent:   ${Number.isFinite(cost.credits) ? `${cost.credits} — ` : ""}` +
-      `${creditVerdict({ spent: cost.credits, hypotheses })} (${cost.source})` +
+      `${creditVerdict({ credits: cost.credits, hypotheses })} (${cost.source})` +
       `${cost.note ? `; ${cost.note}` : ""}`,
   );
 
@@ -1078,7 +1096,7 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
     creditsSpent: Number.isFinite(spent) ? spent : null,
     creditSource: cost.source,
     creditHypotheses: hypotheses,
-    creditVerdict: creditVerdict({ spent: cost.credits, hypotheses }),
+    creditVerdict: creditVerdict({ credits: cost.credits, hypotheses }),
     channelReading: reading,
     takes: takes.map(({ pcmPath, ...rest }) => ({ file: pcmPath, ...rest })),
   };

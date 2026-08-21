@@ -14,7 +14,7 @@
  * why this is a pure function with its own tests rather than an `if` buried in a
  * 100-line ffmpeg chain.
  */
-import { foldPlan } from "../scripts/audio/postprocess.mjs";
+import { foldPlan, report } from "../scripts/audio/postprocess.mjs";
 import { outputSpecFor } from "../scripts/audio/catalog.mjs";
 
 const BED = outputSpecFor("brown-noise");
@@ -71,5 +71,53 @@ describe("nothing but a bed is ever folded", () => {
     // its decay — an operator who typed it deserves an error, not a no-op.
     expect(() => foldPlan(BELL, { fold: true })).toThrow(/bells/);
     expect(() => foldPlan(TEXTURE, { fold: true })).toThrow(/textures/);
+  });
+});
+
+/**
+ * ☠️ ADVICE IS NOT A FAULT. The seam-gate failure now points at `--fold`, and the
+ * first version of that pointed by pushing the sentence into `failures` — where it
+ * printed as "FAIL:" and padded the count of things actually wrong with the file.
+ * A bed with one seam problem was reported as having two. The hint is real and
+ * worth printing; it just must never be counted.
+ */
+describe("the fold hint is printed but never counted as a failure", () => {
+  const seamFail = (folded: boolean) => ({
+    spec: BED,
+    pre: { lufs: -21.5, dbtp: -8.6 },
+    post: { lufs: -20.1, dbtp: -7.1 },
+    size: 486_800,
+    // Over the head/tail limit, which is how a natively looping bed actually failed.
+    seam: { wrapStepRatio: 0.94, energyDeltaRatio: 2.05, headTailDb: 1.02, naturalDb: 0.5 },
+    foldNote: folded ? "0.4s fold (seam-gate fallback)" : "rendered loop: true, no fold (#1347)",
+    gain: 1.55,
+    ceilingBound: false,
+    folded,
+  });
+
+  let lines: string[];
+  beforeEach(() => {
+    lines = [];
+    jest.spyOn(console, "log").mockImplementation((line?: unknown) => {
+      lines.push(String(line));
+    });
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("counts exactly the one real problem, not the advice as well", () => {
+    expect(report("brown-noise", seamFail(false))).toBe(false);
+    expect(lines.filter((line) => line.includes("FAIL:"))).toHaveLength(1);
+  });
+
+  it("still prints the fallback, under its own label", () => {
+    report("brown-noise", seamFail(false));
+    const hint = lines.find((line) => line.includes("--fold"));
+    expect(hint).toBeDefined();
+    expect(hint).not.toContain("FAIL:");
+  });
+
+  it("does not offer the fold to a bed that was already folded", () => {
+    report("brown-noise", seamFail(true));
+    expect(lines.some((line) => line.includes("--fold"))).toBe(false);
   });
 });

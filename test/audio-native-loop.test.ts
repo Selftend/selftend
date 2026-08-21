@@ -24,7 +24,7 @@ import {
   creditEstimate,
   outputSpecFor,
 } from "../scripts/audio/catalog.mjs";
-import { loopReturnedSeconds } from "../scripts/audio/loop-probe.mjs";
+import { loopReturnedSeconds, requestSecondsFor } from "../scripts/audio/loop-probe.mjs";
 
 describe("only beds render loop: true", () => {
   it("asks the API to loop every bed", () => {
@@ -85,6 +85,39 @@ describe("a looping request is a duration loop mode will honour exactly", () => 
     // The failure this guards: 10s — a texture's length — comes back 10.5s, so a
     // future "beds are 10s now" would ship 0.5s nobody planned or measured.
     expect(loopReturnedSeconds(10)).toBeCloseTo(10.5, 6);
+  });
+});
+
+/**
+ * ☠️ THE CATALOG'S DURATIONS ARE NOT THE ONLY DURATIONS ASKED FOR. `preflight`
+ * grades prompts at 4s, and 4 is NOT a multiple of 0.75 — 4 / 0.75 = 5.33, so loop
+ * mode rounds up and a bed asked for 4s comes back at 4.5s. Making beds loop
+ * without touching preflight left it grading material half a second longer than it
+ * believed, which is the precise hazard #1347 flagged.
+ *
+ * The fix is to ask for the honoured length, not to stop looping: a bed graded
+ * with `loop: false` would be grading a different render mode from the one it is
+ * clearing for spend.
+ */
+describe("preflight asks for a duration loop mode will honour", () => {
+  /** `PREFLIGHT_SECONDS` in render.mjs — kept here so the suite need not import it. */
+  const PREFLIGHT_SECONDS = 4;
+
+  it("asks a bed for the rounded-up length, not the raw 4s", () => {
+    expect(requestSecondsFor(BEDS[0], PREFLIGHT_SECONDS)).toBe(4.5);
+    expect(requestSecondsFor(BEDS[0], PREFLIGHT_SECONDS)).toBe(loopReturnedSeconds(4));
+  });
+
+  it("leaves the non-looping classes at exactly 4s", () => {
+    expect(requestSecondsFor(TEXTURES[0], PREFLIGHT_SECONDS)).toBe(4);
+    expect(requestSecondsFor(BELLS[0], PREFLIGHT_SECONDS)).toBe(4);
+  });
+
+  it("asks every clip for a length its own render mode returns unchanged", () => {
+    for (const clip of SFX_CLIPS) {
+      const asked = requestSecondsFor(clip, PREFLIGHT_SECONDS);
+      if (clip.loop) expect(loopReturnedSeconds(asked)).toBe(asked);
+    }
   });
 });
 

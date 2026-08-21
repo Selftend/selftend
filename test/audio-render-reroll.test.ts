@@ -169,9 +169,10 @@ describe("render re-rolls takes that come back below the gate", () => {
     // record too — omitting it is how a pass understates an unrepeatable spend.
     expect(rows.filter((row) => !row.accepted && row.creditsCharged == null)).toHaveLength(0);
 
-    // The quote and the charge agree here only because the constant was corrected;
-    // they are recorded separately so the next disagreement is visible.
-    expect(rows.every((row) => row.creditsEstimate === row.creditsCharged)).toBe(true);
+    // ⚠️ Deliberately NOT asserting `creditsEstimate === creditsCharged` here. The
+    // stub prices a call with the same formula `creditsEstimate` uses, so that
+    // comparison can only restate the two assertions above it — it would look like
+    // a check on the quote and be a check on nothing.
   });
 
   it("keeps every rejected take on disk under its own name", async () => {

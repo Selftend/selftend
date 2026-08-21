@@ -65,64 +65,23 @@ export function loopReturnedSeconds(requestedSeconds) {
   return quanta * LOOP_DURATION_QUANTUM_SECONDS;
 }
 
-/** The response header that says what a generation actually cost. */
-export const CHARGED_CREDITS_HEADER = "character-cost";
-
 /**
- * ☠️☠️ WHAT A CALL ACTUALLY COST, off the response itself.
+ * The duration to actually ask this clip for, given the one you had in mind.
  *
- * `character-cost` is a response header: exact, immediate, and free to read. It
- * answered #1347's billing question — requested seconds, no loop-mode premium —
- * even though the key on hand lacked `user_read` and 401'd on the balance
- * endpoint entirely. Prefer it over a balance delta everywhere cost is reported
- * (#1359); `costReading` is where that preference lives.
+ * ☠️ THE CATALOG'S DURATIONS ARE NOT THE ONLY DURATIONS ASKED FOR. `preflight`
+ * grades every prompt at 4s, and 4 is not a multiple of 0.75 — so once beds render
+ * `loop: true`, a bed asked for 4s comes back at 4.5s and the grader is measuring
+ * material half a second longer than it believes. Billing is on the requested
+ * seconds so the surplus is free; what it costs is an instrument that no longer
+ * knows the shape of its own input.
  *
- * Takes anything header-shaped: a `Headers`, a `Map`, or the plain object
- * `allHeaders()` produces. `fetch` lower-cases header names but a stub or a
- * replayed recording need not, so the lookup is case-insensitive — a missed
- * header degrades silently to the lagging instrument, which is the failure this
- * whole function exists to prevent.
+ * ⚠️ The answer is to ask for the honoured length, NOT to grade beds with
+ * `loop: false`. A bed graded in a different render mode from the one it is
+ * clearing for spend is grading the wrong material — which is the whole reason
+ * #1347 had to be settled before Round B rather than after it.
  */
-export function chargedCredits(headers) {
-  if (!headers) return null;
-  const entries =
-    typeof headers.entries === "function" ? [...headers.entries()] : Object.entries(headers);
-  const hit = entries.find(([name]) => String(name).toLowerCase() === CHARGED_CREDITS_HEADER);
-  if (!hit) return null;
-  const raw = String(hit[1]).trim();
-  const value = Number(raw);
-  // ☠️ null, never NaN. A NaN reaches a manifest row as `null` anyway but poisons
-  // any total it is summed into, silently erasing every other take's real cost.
-  // `Number("")` is 0, so an empty header has to be caught before the conversion.
-  return raw !== "" && Number.isFinite(value) ? value : null;
-}
-
-/**
- * Which cost instrument to believe, and say so out loud.
- *
- * ☠️ THE BALANCE LAGS AND IS NOT A COST INSTRUMENT. Across a 22-credit call
- * `/user/subscription` did not move at all — 38,893 before, 38,893 after — and
- * then reconciled exactly by the end of the session. A delta read straight after
- * a call can therefore report ZERO for a call that spent real, unrepeatable
- * credits. It stays as the fallback for a response with no header, and every
- * reading names the instrument it came from so a surprising number can be
- * attributed rather than argued with.
- */
-export function costReading({ charged, spent }) {
-  if (Number.isFinite(charged)) {
-    return {
-      credits: charged,
-      source: `${CHARGED_CREDITS_HEADER} header`,
-      exact: true,
-      // The lag is evidence about the instrument, so it is reported rather than
-      // dropped — a disagreement here is the expected behaviour, not a fault.
-      note: Number.isFinite(spent) && spent !== charged ? `balance delta says ${spent}` : null,
-    };
-  }
-  if (Number.isFinite(spent)) {
-    return { credits: spent, source: "balance delta (lags)", exact: false, note: null };
-  }
-  return { credits: NaN, source: "unavailable", exact: false, note: null };
+export function requestSecondsFor(clip, seconds) {
+  return clip.loop ? loopReturnedSeconds(seconds) : seconds;
 }
 
 /**
@@ -226,20 +185,23 @@ export function creditHypotheses({ requestedSeconds, returnedSeconds, creditsPer
 }
 
 /**
- * Which hypothesis the measured spend matches, if either.
+ * Which hypothesis a measured cost matches, if either.
  *
- * Fed the figure `costReading` chose — the `character-cost` header where there is
- * one, the balance delta otherwise. A non-finite number in means neither
- * instrument spoke (the recorded key lacks `user_read` and `probe-results.json`
- * carries the 401), so this has to report "unknown" rather than silently pick the
- * cheaper story.
+ * ⚠️ The parameter is `credits`, not `spent`: it is fed whatever `costReading`
+ * chose — normally the `character-cost` header, and only otherwise a balance
+ * delta. Calling it "spent" invited the reading that this matches against the
+ * balance, which is the weaker instrument and not usually the one talking.
+ *
+ * A non-finite number in means neither instrument spoke (the recorded key lacks
+ * `user_read` and `probe-results.json` carries the 401), so this has to report
+ * "unknown" rather than silently pick the cheaper story.
  */
-export function creditVerdict({ spent, hypotheses, tolerance = 1 }) {
-  if (!Number.isFinite(spent)) return "unknown — no cost reading available";
-  const near = (value) => Math.abs(spent - value) <= tolerance;
+export function creditVerdict({ credits, hypotheses, tolerance = 1 }) {
+  if (!Number.isFinite(credits)) return "unknown — no cost reading available";
+  const near = (value) => Math.abs(credits - value) <= tolerance;
   if (near(hypotheses.ifChargedOnRequested) && near(hypotheses.ifChargedOnReturned))
     return "requested and returned agree — this call cannot separate them";
   if (near(hypotheses.ifChargedOnRequested)) return "charged on the REQUESTED seconds";
   if (near(hypotheses.ifChargedOnReturned)) return "charged on the RETURNED seconds";
-  return `matches neither hypothesis (${spent} credits)`;
+  return `matches neither hypothesis (${credits} credits)`;
 }
