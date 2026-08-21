@@ -239,6 +239,9 @@ export default function NewGoalScreen() {
                   onChange={onChange}
                   value={value}
                 />
+                {errors.targetDate?.message ? (
+                  <Text className="text-sm text-destructive">{t(errors.targetDate.message)}</Text>
+                ) : null}
               </View>
             )}
           />
@@ -279,6 +282,16 @@ export default function NewGoalScreen() {
                     </View>
                   )}
                 />
+
+                {/* ⚠️ `milestones.${index}.targetDate` has no Controller, and
+                    that is deliberate — not an oversight to wire up on the way
+                    past. A milestone is a step inside a goal that already has
+                    one target date; a second date per step is more calendar than
+                    the tool asks for. The field is round-tripped as null
+                    everywhere (form default, append, reset, save), and every
+                    `target_date` on `goal_milestones` in the database is null
+                    and always has been. Giving it a date picker is a product
+                    decision nobody has made (#1300). */}
 
                 {fields.length > 1 ? (
                   <Button onPress={() => remove(index)} size="sm" variant="ghost">
