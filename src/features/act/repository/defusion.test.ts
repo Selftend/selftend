@@ -1,4 +1,5 @@
 import {
+  countDefusionLogs,
   deleteDefusionLog,
   getDefusionLog,
   getLatestDefusionLogAt,
@@ -134,5 +135,40 @@ describe("getLatestDefusionLogAt", () => {
       userId: "u1",
       column: "created_at",
     });
+  });
+});
+
+describe("countDefusionLogs", () => {
+  /**
+   * ☠️ Not `logs.length`. ACT home asks `useDefusionLogs` for 50, so a length read
+   * TRUNCATES: a user with 60 logs would be told they had 50 (#1378).
+   */
+  it("counts with an exact head request and no row limit", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: 60, error: null });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_defusion_logs: { select } }));
+
+    await expect(countDefusionLogs("u1")).resolves.toBe(60);
+
+    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+    expect(eqUser).toHaveBeenCalledWith("user_id", "u1");
+  });
+
+  it("reads as nothing recorded when ACT is not migrated yet", async () => {
+    const eqUser = jest
+      .fn()
+      .mockResolvedValue({ count: null, error: { code: "PGRST205", message: "schema cache" } });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_defusion_logs: { select } }));
+
+    await expect(countDefusionLogs("u1")).resolves.toBe(0);
+  });
+
+  it("throws a real error rather than reporting zero", async () => {
+    const eqUser = jest.fn().mockResolvedValue({ count: null, error: { code: "23505" } });
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_defusion_logs: { select } }));
+
+    await expect(countDefusionLogs("u1")).rejects.toEqual({ code: "23505" });
   });
 });

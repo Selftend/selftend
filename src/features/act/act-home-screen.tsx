@@ -10,13 +10,18 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { PillarCard } from "@/src/components/app/pillar-card";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
+import { Section } from "@/src/components/app/section";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { ActInfo } from "@/src/components/app/act-onboarding-modal";
 import { ActProgramCard } from "@/src/components/app/act-program-card";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
-import { useDefusionLogs } from "@/src/features/act/queries";
+import {
+  useChoicePointCount,
+  useCommittedActionCount,
+  useDefusionLogCount,
+  useDefusionLogs,
+} from "@/src/features/act/queries";
 import { useActProgram } from "@/src/features/act/use-act-program";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -118,13 +123,50 @@ const PILLARS: PillarDef[] = [
 ];
 
 export default function ActHomeScreen() {
-  const roomStyle = useRoomStyle("act");
   const { t } = useTranslation("act");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: defusionLogs } = useDefusionLogs(userId, 50);
   const recentLogs = defusionLogs?.slice(0, 3) ?? [];
+
+  // Head counts, never `list.length` - see `countRows` for why a client-side count of
+  // either list reads back a wrong, too-small number (#1378).
+  const { data: choicePointCount } = useChoicePointCount(userId);
+  const { data: defusionCount } = useDefusionLogCount(userId);
+  // Every status, not just the active ones: an active-only count falls 1 → 0 when
+  // someone completes their only action, and a counter that goes down on success reads
+  // as punishment for finishing.
+  const { data: committedActionCount } = useCommittedActionCount(userId);
+
+  // Zero is an honest value for a head count, so all three always render - a brand-new
+  // account sees three zeroes rather than an empty header.
+  //
+  // ☠️ An unresolved count is NOT zero. `?? 0` in the value would tell a user with 200
+  // choice points they had none for as long as the query was in flight - the same
+  // history-looks-smaller lie the head counts exist to prevent. It renders an em dash
+  // until it knows, as gratitude's header does; only the label falls back to 0, because
+  // it needs some count to pluralise against and the plural form is the right guess.
+  //
+  // The number stays in `value` and the noun in a count-pluralised `label` (#749's
+  // pattern B), which is also what keeps the stat-shape guard green.
+  const statValue = (count: number | undefined) =>
+    count === undefined ? t("home.statLoadingValue") : String(count);
+
+  const stats = [
+    {
+      value: statValue(choicePointCount),
+      label: t("home.statChoicePoints", { count: choicePointCount ?? 0 }),
+    },
+    {
+      value: statValue(defusionCount),
+      label: t("home.statDefusion", { count: defusionCount ?? 0 }),
+    },
+    {
+      value: statValue(committedActionCount),
+      label: t("home.statActions", { count: committedActionCount ?? 0 }),
+    },
+  ];
 
   const {
     program,
@@ -163,11 +205,7 @@ export default function ActHomeScreen() {
         onComplete={() => setForceInfo(false)}
         onDismiss={() => setForceInfo(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
@@ -175,6 +213,7 @@ export default function ActHomeScreen() {
               title={t("home.fullTitle")}
               tourScope="act"
               description={t("home.description")}
+              stats={stats}
               actions={[
                 { type: "notifications", targetKey: "act" },
                 ...(program.status === "not_started"
@@ -217,7 +256,14 @@ export default function ActHomeScreen() {
               />
             )}
 
-            {/* Framework */}
+            {/* Framework.
+
+                ⚠️ This heading stays at level 2 on purpose. #1378 asks for "every section
+                heading … with a level-3 role", but it is the ROLE-LESS one that ticket is
+                about: this is already a real heading, and it introduces the four pillars
+                below it. Flattening it to 3 would put it on a level with the section it
+                contains and leave the page with no outline structure at all - the opposite
+                of what the ticket wants. The outline reads h1 → h2 → h3. */}
             <View className="gap-6">
               <View>
                 <Text variant="h2" className="text-xl font-bold tracking-tight">
@@ -252,13 +298,15 @@ export default function ActHomeScreen() {
               ))}
             </View>
 
-            {/* Recent defusion logs */}
-            <View className="gap-3">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("home.recentDefusionTitle")}
-                </Text>
-                {defusionLogs && defusionLogs.length > 0 ? (
+            {/* Recent defusion logs. The heading was a plain 14px text node with no role
+                at all, so this page had no outline for a screen reader to navigate by;
+                `Section` carries the same quiet eyebrow as a real level-3 heading (#1378). */}
+            <Section
+              ruled={false}
+              className="gap-3 py-0"
+              title={t("home.recentDefusionTitle")}
+              action={
+                defusionLogs && defusionLogs.length > 0 ? (
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
@@ -266,9 +314,9 @@ export default function ActHomeScreen() {
                   >
                     <Text className="text-sm text-foreground">{t("home.viewAllDefusion")}</Text>
                   </Pressable>
-                ) : null}
-              </View>
-
+                ) : null
+              }
+            >
               {recentLogs.length === 0 ? (
                 <Text variant="muted">{t("home.noDefusionLogs")}</Text>
               ) : (
@@ -288,7 +336,7 @@ export default function ActHomeScreen() {
                   ))}
                 </View>
               )}
-            </View>
+            </Section>
 
             <CrisisSupportCallout />
           </View>
