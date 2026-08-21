@@ -29,11 +29,18 @@ import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { captureError, isReportableError } from "@/src/lib/sentry";
 import { useThemePalette } from "@/src/lib/theme-palette";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useSession } from "@/src/providers/session-provider";
 
 export function SignUpForm() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
+  // ⚠️ These hrefs carry their route group - `/(auth)/sign-in` - and `usePathname`
+  // never reports one, so a raw href would record a target that can never match
+  // and would fail silently, showing a plain Up. `targetPathname` inside the
+  // helper strips the group, which is exactly why the cross-links go through it
+  // rather than each spelling out a normalised path (#1265, O3).
+  const pushWithOrigin = usePushWithOrigin();
   const theme = useThemePalette();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
@@ -267,7 +274,7 @@ export function SignUpForm() {
 
         <View className="flex-row flex-wrap items-center justify-center gap-x-1 pt-1">
           <Text className="text-sm text-muted-foreground">{t("signUp.hasAccount")}</Text>
-          <Button onPress={() => router.push("/(auth)/sign-in")} variant="link">
+          <Button onPress={() => pushWithOrigin("/(auth)/sign-in")} variant="link">
             <Text>{t("signUp.signInLink")}</Text>
           </Button>
         </View>
@@ -276,7 +283,7 @@ export function SignUpForm() {
           <Text className="text-center text-xs text-muted-foreground">
             {t("signUp.privacyReassurance")}
           </Text>
-          <Button onPress={() => router.push("/security")} variant="link" size="sm">
+          <Button onPress={() => pushWithOrigin("/security")} variant="link" size="sm">
             <Text className="text-xs">{t("signUp.privacyLink")}</Text>
           </Button>
         </View>
