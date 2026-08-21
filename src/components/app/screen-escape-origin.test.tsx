@@ -2,6 +2,7 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { router, usePathname } from "expo-router";
 
 import { ScreenEscape } from "@/src/components/app/screen-escape";
+import { CHROME_EYEBROW_TYPE } from "@/src/components/app/screen-breadcrumb";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { setLanguage } from "@/test/i18n-language";
@@ -197,7 +198,7 @@ describe("ScreenEscape - an off-trail Origin", () => {
    */
   it("still leads to an Origin the route map cannot name", () => {
     arriveFrom("/routines/3f9a-uuid");
-    const { getByLabelText, queryByText } = render(<ScreenEscape />);
+    const { getByLabelText } = render(<ScreenEscape />);
 
     expect(getByLabelText("Go back")).toBeTruthy();
     fireEvent.press(getByLabelText("Go back"));
@@ -249,12 +250,22 @@ describe("ScreenEscape - an off-trail Origin in Bulgarian", () => {
 
   /**
    * The widest name either shipped locale can put beside the arrow, and the
-   * reason the label was measured rather than guessed: "Дневник на
-   * благодарността" is 216.5dp at the trail's eyebrow type (11px, weight 600,
-   * uppercased, 0.14em tracking - canvas `measureText` against the real Noto
-   * Sans face), against 292dp of row on `/notifications` at 360dp. It fits, so
-   * nothing truncates today; `numberOfLines={1}` keeps the fallback in a tighter
-   * host predictable rather than letting it wrap or break mid-word.
+   * reason the label was measured rather than guessed.
+   *
+   * **The measurement.** Canvas `measureText` against the real face the app
+   * ships - `@expo-google-fonts/noto-sans/600SemiBold/NotoSans_600SemiBold.ttf`,
+   * embedded as a data URI and confirmed loaded via `document.fonts.check`
+   * before a single number was read - at `600 11px`, uppercased, plus 0.14em of
+   * tracking per character (`measureText` cannot apply letter-spacing itself).
+   * Bulgarian "Дневник на благодарността" measures **216.5dp**; the next widest
+   * is "Проследяване на навици" at 193.3dp, and the widest English is "Habit
+   * tracking" at 113.1dp.
+   *
+   * **The budget.** 360 − 48 (the screen's `p-6`) − 16 (glyph) − 4 (`gap-1`) =
+   * **292dp** of row on `/notifications` at 360dp, where the trail is hidden. It
+   * fits, so nothing truncates today; `numberOfLines={1}` keeps the fallback in
+   * a tighter host predictable - one line, ellipsis at the end, never a mid-word
+   * break and never a row pushed past the screen edge.
    */
   it("renders the longest Bulgarian origin name on one line", () => {
     useNavigationOriginStore.setState({
@@ -265,5 +276,26 @@ describe("ScreenEscape - an off-trail Origin in Bulgarian", () => {
     const label = getByText("Дневник на благодарността");
     expect(label).toBeTruthy();
     expect(label.props.numberOfLines).toBe(1);
+  });
+
+  /**
+   * The type the 216.5dp above was measured at. Pinned because the number is
+   * only true of this face, size, weight and tracking - change any of them and
+   * the budget written above is stale, silently, with the label still rendering
+   * and the suite still green.
+   *
+   * It is shared with the trail rather than spelled out here, which is the same
+   * fact from the design side: the Escape and the crumbs sit in one row and must
+   * be set in one type.
+   */
+  it("sets the name in the measured eyebrow type", () => {
+    expect(CHROME_EYEBROW_TYPE).toBe("text-[11px] font-semibold uppercase tracking-[0.14em]");
+
+    useNavigationOriginStore.setState({
+      pending: { origin: "/modules/cbt", forPathname: "/notifications" },
+    });
+    const { getByText } = render(<ScreenEscape />);
+
+    expect(getByText("КПТ").props.className).toContain(CHROME_EYEBROW_TYPE);
   });
 });
