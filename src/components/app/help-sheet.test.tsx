@@ -29,10 +29,28 @@ describe("HelpSheet", () => {
     expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
 
-  it("calls onDismiss when the close control is pressed", () => {
+  // Two "Close" controls, deliberately and temporarily (#1252): the wrapper's
+  // pinned Escape, plus the in-scroll X this sheet has always carried. That X
+  // is the affordance the whole escape effort was named after — it lives
+  // inside the ScrollView and scrolls away on the first swipe — and removing
+  // it (along with moving the title down into the body) is W19/#1257. Until
+  // then both must work, so both are pressed here rather than the assertion
+  // being loosened to whichever one comes first.
+  it("calls onDismiss from the pinned Escape", () => {
     const onDismiss = jest.fn();
     renderWithProviders(<HelpSheet helpKey="beliefs" visible onDismiss={onDismiss} />);
-    fireEvent.press(screen.getByLabelText("Close"));
+    fireEvent.press(screen.getByTestId("modal-escape"));
+    expect(onDismiss).toHaveBeenCalled();
+  });
+
+  it("calls onDismiss from the in-scroll close control", () => {
+    const onDismiss = jest.fn();
+    renderWithProviders(<HelpSheet helpKey="beliefs" visible onDismiss={onDismiss} />);
+    const inScroll = screen
+      .getAllByLabelText("Close")
+      .filter((node) => node.props.testID !== "modal-escape");
+    expect(inScroll).toHaveLength(1);
+    fireEvent.press(inScroll[0]);
     expect(onDismiss).toHaveBeenCalled();
   });
 

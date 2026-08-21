@@ -23,8 +23,12 @@ export function HelpSheet({ helpKey, visible, onDismiss }: HelpSheetProps) {
   const imageSource = HELP_IMAGES[helpKey];
 
   return (
-    <PressShieldModal visible={visible} onRequestClose={onDismiss}>
-      <SafeAreaView className="flex-1 bg-background">
+    // The in-scroll X below stays for now: several modals briefly show two
+    // exits, and de-duplicating them (along with moving this sheet's title
+    // down into the body, M5) is W19/#1257.
+    <PressShieldModal visible={visible} onEscape={onDismiss} onRequestClose={onDismiss}>
+      {/* No "top": the wrapper's escape row already sits in the top inset. */}
+      <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
         <ScrollView contentContainerClassName="p-6">
           <View testID="help-sheet-content" className="w-full max-w-2xl mx-auto gap-6">
             <View className="flex-row items-start justify-between gap-3">
