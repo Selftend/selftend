@@ -14,6 +14,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { ProgressBar } from "@/src/components/app/progress-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { GoalValueLine, goalRowAccessibleName } from "@/src/features/goals/goal-value-line";
 import { useGoals, useMilestones } from "@/src/features/goals/queries";
 import { useSession } from "@/src/providers/session-provider";
 import type { Goal } from "@/src/features/goals/types";
@@ -28,10 +29,15 @@ function GoalCard({ goal, userId }: { goal: Goal; userId: string }) {
   const total = milestones?.length ?? 0;
   const done = milestones?.filter((m) => m.completedAt !== null).length ?? 0;
   const progress = total > 0 ? done / total : 0;
+  // The value joins the card's NAME rather than riding a hint: an explicit name
+  // replaces the card's contents for a screen reader, so the value line below would
+  // otherwise reach sighted users only - and a hint would not rescue it, because
+  // react-native-web does not implement `accessibilityHint` at all.
+  const rowName = goalRowAccessibleName(t, goal.title, goal.valueKey);
 
   return (
     <Pressable
-      accessibilityLabel={goal.title}
+      accessibilityLabel={rowName}
       accessibilityRole="button"
       className="rounded-xl"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
@@ -44,6 +50,13 @@ function GoalCard({ goal, userId }: { goal: Goal; userId: string }) {
           {total > 0 ? (
             <CardDescription>{t("goals.milestoneProgress", { done, total })}</CardDescription>
           ) : null}
+          {/*
+            The row renders nothing else about how the goal was classified - no
+            life domain, no type - so the value is not sitting beside a precedent
+            here (#1291). One small line under the title, so a scan down the list
+            shows at a glance which goals reflect what the user said matters.
+          */}
+          <GoalValueLine className="text-xs" valueKey={goal.valueKey} />
         </CardHeader>
         {total > 0 ? <ProgressBar progress={progress} className="mx-6 mb-4 h-1.5" /> : null}
       </Card>

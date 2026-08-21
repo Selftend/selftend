@@ -690,6 +690,7 @@
     "valueClear": "Изчисти ценността",
     "valueEmpty": "Още нямаш избрани приоритетни ценности.",
     "valueEmptyLink": "Изясни ценностите си",
+    "valueAnchor": "Водеща ценност: {{value}}",
     "titleLabel": "Заглавие на целта",
     "titlePlaceholder": "Опиши целта с няколко думи.",
     "descriptionLabel": "Описание (по желание)",

@@ -690,6 +690,7 @@
     "valueClear": "Clear value",
     "valueEmpty": "You haven't chosen your priority values yet.",
     "valueEmptyLink": "Clarify your values",
+    "valueAnchor": "Guiding value: {{value}}",
     "titleLabel": "Goal title",
     "titlePlaceholder": "Describe the goal in a few words.",
     "descriptionLabel": "Description (optional)",
