@@ -5,7 +5,13 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 import i18n from "@/src/i18n";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn(), replace: jest.fn() },
+  // The Escape reads the current pathname to look up the Origin an off-trail
+  // arrival carried (#1261). Nothing here records one, so every render below is
+  // the cold arrival that falls back to Up.
+  usePathname: jest.fn(() => "/notifications"),
+}));
 jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
 
 const mockUseBreadcrumbs = useBreadcrumbs as jest.MockedFunction<typeof useBreadcrumbs>;
