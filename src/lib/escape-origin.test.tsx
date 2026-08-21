@@ -112,6 +112,25 @@ describe("targetPathname", () => {
       "/tools/journal/[id]",
     );
   });
+
+  /**
+   * ⚠️ Hrefs in this repo are routinely written with the route group in them -
+   * the sidebar's whole table is `/(app)/…` - and `usePathname()` never reports
+   * one. A migrated call site copying that form is the likeliest way to record a
+   * target that can never match, and the symptom would be silence.
+   */
+  it("strips a route group, which usePathname never reports", () => {
+    expect(targetPathname("/(app)/settings")).toBe("/settings");
+    expect(targetPathname({ pathname: "/(app)/notifications" } as Href)).toBe("/notifications");
+  });
+
+  it("strips a group that appears mid-path", () => {
+    expect(targetPathname("/(app)/(tabs)/tools/journal")).toBe("/tools/journal");
+  });
+
+  it("keeps the root a root when the group was the whole path", () => {
+    expect(targetPathname("/(app)")).toBe("/");
+  });
 });
 
 /**

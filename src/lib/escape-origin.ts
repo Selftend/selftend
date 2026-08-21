@@ -4,21 +4,39 @@ import { router, usePathname, type Href } from "expo-router";
 import { computeBreadcrumbs, type Breadcrumb } from "./breadcrumbs";
 import { consumeOrigin, recordOrigin } from "@/src/stores/navigation-origin-store";
 
+type ParamsRecord = Record<string, unknown>;
+
+/** An expo-router route group - `/(app)`, `/(tabs)` - which `usePathname` omits. */
+const GROUP_SEGMENT = /\/\([^)]*\)/g;
+
 /**
  * The pathname a push will land on, with the address-bar noise stripped.
  *
  * `router.push` takes either a string or `{ pathname, params }`, and the bell
  * uses the object form to bring a module's row into view. Only the pathname is
- * ever compared against `usePathname()`, so the query string and any dynamic
- * segment have to be resolved here: `/tools/journal/[id]` with `{ id: "3f9a" }`
- * arrives as `/tools/journal/3f9a`, and comparing the un-substituted form would
- * silently never match - the screen would just quietly show Up, which is exactly
- * the invisible failure mode O3 chose opt-out recording to avoid.
+ * ever compared against `usePathname()`, so everything `usePathname()` does not
+ * report has to come off here. Three things do not survive into it:
+ *
+ * - the **query string and fragment**, which the address bar carries and the
+ *   route does not;
+ * - a **dynamic segment**, which arrives substituted - `/tools/journal/[id]`
+ *   with `{ id: "3f9a" }` is reported as `/tools/journal/3f9a`;
+ * - a **route group**, which expo-router strips. ⚠️ Hrefs in this repo are
+ *   routinely written `/(app)/settings` rather than `/settings` - the sidebar's
+ *   whole table is - so a migrated call site copying that form is the likeliest
+ *   way to record a target that can never match.
+ *
+ * A mismatch does not throw. It just silently never matches, and the destination
+ * quietly shows Up - the invisible failure mode O3 chose opt-out recording to
+ * avoid, reintroduced one call site at a time.
  */
 export function targetPathname(href: Href): string {
-  if (typeof href === "string") return href.split("?")[0].split("#")[0];
+  const raw = typeof href === "string" ? href : href.pathname;
+  const params = typeof href === "string" ? undefined : (href.params as ParamsRecord | undefined);
 
-  const { pathname, params } = href as { pathname: string; params?: Record<string, unknown> };
+  const withoutQuery = raw.split("?")[0].split("#")[0];
+  const withoutGroups = withoutQuery.replace(GROUP_SEGMENT, "");
+  const pathname = withoutGroups === "" ? "/" : withoutGroups;
   if (!params) return pathname;
 
   return pathname.replace(/\[(?:\.\.\.)?([^\]]+)\]/g, (whole, name: string) => {
