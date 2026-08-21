@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { type Href } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -86,7 +86,7 @@ export default function WorryScreen() {
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                     onPress={() =>
                       pushWithOrigin(
-                        `/modules/cbt/worry/${entry.id}` as Parameters<typeof router.push>[0],
+                        `/modules/cbt/worry/${entry.id}` as Href,
                       )
                     }
                   >

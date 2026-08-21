@@ -2,8 +2,8 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { RelatedTools } from "./related-tools";
-import { ScreenEscape } from "@/src/components/app/screen-escape";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { expectEscapeReturnsTo } from "@/test/escape-round-trip";
 import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -84,11 +84,13 @@ describe("RelatedTools records the screen it was reached from", () => {
     // nothing below can match a leftover node from the departed tree.
     session.unmount();
 
-    mockPathname = "/tools/habits";
-    renderWithProviders(<ScreenEscape />);
-
-    expect(screen.getByText("Values")).toBeTruthy();
-    fireEvent.press(screen.getByLabelText("Back to Values"));
-    expect(router.replace).toHaveBeenCalledWith("/modules/act/values");
+    expectEscapeReturnsTo({
+      arriveAt: (pathname) => {
+        mockPathname = pathname;
+      },
+      destination: "/tools/habits",
+      name: "Values",
+      origin: "/modules/act/values",
+    });
   });
 });

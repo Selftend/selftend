@@ -5,7 +5,7 @@ import { SharedToolsRow } from "./shared-tools-row";
 import { SHARED_TOOLS_BY_PILLAR } from "@/src/features/cbt/cbt-home/cbt-home-config";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { targetPathname } from "@/src/lib/escape-origin";
-import { ScreenEscape } from "./screen-escape";
+import { expectEscapeReturnsTo } from "@/test/escape-round-trip";
 import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -107,28 +107,30 @@ describe("SharedToolsRow", () => {
  * on the tool screen actually names CBT and actually goes back there.
  */
 describe("escaping a shared tool returns to CBT, named", () => {
-  it.each([
-    ["/tools/journal", "journal"],
-    ["/tools/breathing", "breathing"],
-  ])("returns from %s to the module the chip was pressed in", (route) => {
-    const tool = SHARED_TOOLS_BY_PILLAR.think
-      .concat(SHARED_TOOLS_BY_PILLAR.act, SHARED_TOOLS_BY_PILLAR.be)
-      .find((candidate) => targetPathname(candidate.route) === route);
-    if (!tool) throw new Error(`no shared-tool chip targets ${route}`);
+  it.each(["/tools/journal", "/tools/breathing"])(
+    "returns from %s to the module the chip was pressed in",
+    (route) => {
+      const tool = SHARED_TOOLS_BY_PILLAR.think
+        .concat(SHARED_TOOLS_BY_PILLAR.act, SHARED_TOOLS_BY_PILLAR.be)
+        .find((candidate) => targetPathname(candidate.route) === route);
+      if (!tool) throw new Error(`no shared-tool chip targets ${route}`);
 
-    const session = renderWithProviders(
-      <SharedToolsRow heading="Uses these shared tools" tools={[tool]} />,
-    );
-    fireEvent.press(screen.getByRole("button"));
-    // The module screen is really gone before the tool mounts, so nothing below
-    // can match a leftover node from the departed tree.
-    session.unmount();
+      const session = renderWithProviders(
+        <SharedToolsRow heading="Uses these shared tools" tools={[tool]} />,
+      );
+      fireEvent.press(screen.getByRole("button"));
+      // The module screen is really gone before the tool mounts, so nothing below
+      // can match a leftover node from the departed tree.
+      session.unmount();
 
-    mockPathname = route;
-    renderWithProviders(<ScreenEscape />);
-
-    expect(screen.getByText("CBT")).toBeTruthy();
-    fireEvent.press(screen.getByLabelText("Back to CBT"));
-    expect(router.replace).toHaveBeenCalledWith("/modules/cbt");
-  });
+      expectEscapeReturnsTo({
+        arriveAt: (pathname) => {
+          mockPathname = pathname;
+        },
+        destination: route,
+        name: "CBT",
+        origin: "/modules/cbt",
+      });
+    },
+  );
 });

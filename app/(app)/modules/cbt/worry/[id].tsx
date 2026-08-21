@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, type Href } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -97,7 +97,7 @@ export default function WorryDetailScreen() {
             <Button
               onPress={() =>
                 pushWithOrigin(
-                  `/modules/cbt/worry/new?entryId=${entry.id}` as Parameters<typeof router.push>[0],
+                  `/modules/cbt/worry/new?entryId=${entry.id}` as Href,
                 )
               }
               variant="secondary"

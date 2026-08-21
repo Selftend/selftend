@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { type Href } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -29,7 +29,7 @@ export function RecentThoughtRecord({ record }: RecentThoughtRecordProps) {
         title={natText}
         description={balancedThought}
         onPress={() =>
-          pushWithOrigin(`/modules/cbt/history/${record.id}` as Parameters<typeof router.push>[0])
+          pushWithOrigin(`/modules/cbt/history/${record.id}` as Href)
         }
       />
     </View>

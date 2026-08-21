@@ -2,9 +2,9 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import SelfCareScreen from "../../../app/(app)/modules/cbt/self-care";
-import { ScreenEscape } from "@/src/components/app/screen-escape";
 import { useSelfCareLog, useUpsertSelfCareLog } from "@/src/features/self-care/queries";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { expectEscapeReturnsTo } from "@/test/escape-round-trip";
 import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -87,11 +87,13 @@ describe("self-care records the module it was left from", () => {
     fireEvent.press(screen.getByLabelText("Track sleep"));
     session.unmount();
 
-    mockPathname = "/tools/sleep";
-    renderWithProviders(<ScreenEscape />);
-
-    expect(screen.getByText("Self-care")).toBeTruthy();
-    fireEvent.press(screen.getByLabelText("Back to Self-care"));
-    expect(router.replace).toHaveBeenCalledWith("/modules/cbt/self-care");
+    expectEscapeReturnsTo({
+      arriveAt: (pathname) => {
+        mockPathname = pathname;
+      },
+      destination: "/tools/sleep",
+      name: "Self-care",
+      origin: "/modules/cbt/self-care",
+    });
   });
 });

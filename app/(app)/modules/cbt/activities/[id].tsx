@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, type Href } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -135,9 +135,7 @@ export default function ActivityDetailScreen() {
               <Button
                 onPress={() =>
                   pushWithOrigin(
-                    `/tools/check-in/new?linkedStrategy=behavioral-activation&completeActivityId=${activity.id}` as Parameters<
-                      typeof router.push
-                    >[0],
+                    `/tools/check-in/new?linkedStrategy=behavioral-activation&completeActivityId=${activity.id}` as Href,
                   )
                 }
               >

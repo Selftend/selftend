@@ -3,8 +3,8 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { CrisisSupportBar } from "./crisis-support-bar";
-import { ScreenEscape } from "./screen-escape";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { expectEscapeReturnsTo } from "@/test/escape-round-trip";
 import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -114,11 +114,13 @@ describe("CrisisSupportBar records where it was reached from", () => {
 
     // The arrival. `/crisis` is a one-crumb screen, so its trail is hidden and
     // the Escape's own label is the only thing naming where the exit goes.
-    mockPathname = "/crisis";
-    renderWithProviders(<ScreenEscape />);
-
-    expect(screen.getByText(name)).toBeTruthy();
-    fireEvent.press(screen.getByLabelText(`Back to ${name}`));
-    expect(router.replace).toHaveBeenCalledWith(origin);
+    expectEscapeReturnsTo({
+      arriveAt: (pathname) => {
+        mockPathname = pathname;
+      },
+      destination: "/crisis",
+      name,
+      origin,
+    });
   });
 });
