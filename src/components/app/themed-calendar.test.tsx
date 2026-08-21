@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 
 import { ThemedCalendar } from "./themed-calendar";
 import i18n from "@/src/i18n";
+import { isolateCalendarLocale, weekdayLabels } from "@/test/calendar-testing";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 /**
@@ -13,29 +14,7 @@ import { renderWithProviders } from "@/test/render-with-providers";
  * read the RENDERED month and weekday names, never the props.
  */
 
-// ⚠️ `dayjs.locale()` is a GLOBAL mutation the library performs on every render
-// (utils.getWeekdays). It is inert in the app only because all user-facing
-// formatting goes through Intl — but inside one test file it would leak
-// straight into the next test. Pin it back after each.
-let localeBeforeTest: string;
-
-beforeEach(() => {
-  localeBeforeTest = dayjs.locale();
-});
-
-afterEach(async () => {
-  dayjs.locale(localeBeforeTest);
-  await act(async () => {
-    await i18n.changeLanguage("en");
-  });
-});
-
-/** The weekday header's labels, left to right, as rendered. */
-function weekdayLabels() {
-  return within(screen.getByTestId("weekdays"))
-    .getAllByText(/\S/)
-    .map((node) => node.props.children as string);
-}
+isolateCalendarLocale();
 
 describe("ThemedCalendar", () => {
   it("opens the week on Monday, matching every other date surface in the app", () => {
@@ -98,5 +77,21 @@ describe("ThemedCalendar", () => {
     );
 
     expect(weekdayLabels()).toEqual(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]);
+  });
+
+  it("adds the time view in datetime mode, and only there", () => {
+    // The two single-value modes share a branch and differ by one prop, so the
+    // difference is worth pinning on rendered output: the library's time
+    // affordance is labelled with the value's own time.
+    const { unmount } = renderWithProviders(
+      <ThemedCalendar mode="datetime" value={dayjs("2026-03-15T14:30:00")} onChange={jest.fn()} />,
+    );
+    expect(screen.getByLabelText("14:30")).toBeTruthy();
+    unmount();
+
+    renderWithProviders(
+      <ThemedCalendar mode="date" value={dayjs("2026-03-15T14:30:00")} onChange={jest.fn()} />,
+    );
+    expect(screen.queryByLabelText("14:30")).toBeNull();
   });
 });
