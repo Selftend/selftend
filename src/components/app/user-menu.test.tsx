@@ -64,7 +64,7 @@ afterEach(() => {
   appEnv.youtubeUrl = originalYoutubeUrl;
   mockPathname = "/";
   mockSession = signedInSession;
-  useToastStore.setState({ toast: null });
+  useToastStore.setState({ visible: null, queue: [] });
   jest.clearAllMocks();
   // `clearAllMocks` wipes recorded calls but NOT implementations, so a
   // `mockRejectedValue` set by one test would still be rejecting in the next.
@@ -281,7 +281,7 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByLabelText("Open account menu"));
     fireEvent.press(screen.getByText("Sign Out"));
 
-    await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: "error" }));
+    await waitFor(() => expect(useToastStore.getState().visible).toMatchObject({ tone: "error" }));
   });
 
   // `cancelAllReminders` is awaited first, so a failure there means `signOut`
@@ -294,7 +294,7 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByLabelText("Open account menu"));
     fireEvent.press(screen.getByText("Sign Out"));
 
-    await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: "error" }));
+    await waitFor(() => expect(useToastStore.getState().visible).toMatchObject({ tone: "error" }));
     expect(mockSignOut).not.toHaveBeenCalled();
   });
 });

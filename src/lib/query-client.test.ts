@@ -98,7 +98,7 @@ describe("query cache persistence", () => {
 
 describe("global mutation failure toast", () => {
   beforeEach(() => {
-    useToastStore.setState({ toast: null });
+    useToastStore.setState({ visible: null, queue: [] });
   });
 
   async function runFailingMutation(meta?: { suppressGlobalErrorToast?: boolean }) {
@@ -122,12 +122,12 @@ describe("global mutation failure toast", () => {
   it("shows the fallback toast for an unhandled failing mutation", async () => {
     await runFailingMutation();
 
-    expect(useToastStore.getState().toast).toMatchObject({ tone: "error" });
+    expect(useToastStore.getState().visible).toMatchObject({ tone: "error" });
   });
 
   it("stays quiet when the mutation opts out", async () => {
     await runFailingMutation({ suppressGlobalErrorToast: true });
 
-    expect(useToastStore.getState().toast).toBeNull();
+    expect(useToastStore.getState().visible).toBeNull();
   });
 });
