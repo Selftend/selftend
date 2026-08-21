@@ -12,6 +12,8 @@ import {
   SHIP_FILE_COUNT,
   budgetVerdict,
   bytesForSeconds,
+  plausibleFloorBytes,
+  referenceClipFor,
   predictShipping,
   shipFileName,
   shippingUnits,
@@ -25,16 +27,12 @@ import {
   voiceSlotSpec,
 } from "../scripts/audio/catalog.mjs";
 
-type Unit = {
-  id: string;
-  clip: string;
-  klass: string;
-  voice: string | null;
-  file: string;
-  seconds: number | null;
-  bitrate: string;
-  channels: number;
-};
+/**
+ * Derived from the module, never hand-written. ⚠️ A local shape plus an
+ * `as Unit[]` cast would keep compiling after `shippingUnits` changed shape — the
+ * cast silences exactly the drift these tests exist to catch.
+ */
+type Unit = ReturnType<typeof shippingUnits>[number];
 
 /** The lengths the four cues take to say, measured off the clips shipping today. */
 const VOICE_SECONDS: Record<string, number> = {
@@ -48,9 +46,19 @@ const withVoiceSeconds = (unit: Unit) => VOICE_SECONDS[unit.clip] ?? null;
 
 const fileFor = (units: Unit[], id: string) => units.find((unit) => unit.id === id)!.file;
 
-/** A complete, comfortably-under-budget set, for the survey's happy path. */
-const completeSet = (units: Unit[], bytes = 1000) =>
-  units.map((unit) => ({ name: unit.file, bytes }));
+/**
+ * A complete set at realistic sizes, for the survey's happy path.
+ *
+ * ⚠️ Each file weighs what its unit is predicted to weigh, rather than a uniform
+ * token number. A flat 1 KB per file used to do, and stopped doing the moment a
+ * present file had to be big enough to BE that unit — 1 KB is a truncated 30s bed.
+ * A fixture that cannot pass the gate it is the happy path for is not a happy path.
+ */
+const completeSet = (units: Unit[], bytes?: number) =>
+  units.map((unit) => ({
+    name: unit.file,
+    bytes: bytes ?? predictShipping([unit], withVoiceSeconds).totalBytes,
+  }));
 
 describe("the budget ceiling", () => {
   it("is 4 MiB, the unit #1138 decided in", () => {
@@ -243,7 +251,7 @@ describe("surveyShipping", () => {
     const survey = surveyShipping(units, completeSet(units));
     expect(survey.complete).toBe(true);
     expect(survey.gaps).toEqual([]);
-    expect(survey.totalBytes).toBe(units.length * 1000);
+    expect(survey.totalBytes).toBe(predictShipping(units, withVoiceSeconds).totalBytes);
   });
 
   /**
@@ -275,7 +283,7 @@ describe("surveyShipping", () => {
       expect.objectContaining({ kind: "unexpected", file: "stray.m4a" }),
     );
     // ☠️ Counted against the ceiling regardless — bytes in the folder are bytes.
-    expect(survey.totalBytes).toBe(units.length * 1000 + 10);
+    expect(survey.totalBytes).toBe(predictShipping(units, withVoiceSeconds).totalBytes + 10);
   });
 
   it("fails a complete set that is over the ceiling", () => {
@@ -291,15 +299,91 @@ describe("surveyShipping", () => {
   /** A set exactly on the ceiling fits — the rule is "under", inclusive of equal. */
   it("allows a set that lands exactly on the ceiling", () => {
     const units: Unit[] = shippingUnits();
-    // Split exactly, not by dividing — 4 MiB over 21 files is not a whole number
-    // of bytes, and a rounding artifact here would test the float, not the rule.
-    const files = completeSet(units, 0);
-    files[0].bytes = SHIP_BUDGET_BYTES;
+    // Padded to the ceiling exactly, not divided into it — 4 MiB over 21 files is not
+    // a whole number of bytes, and a rounding artifact would test the float, not the
+    // rule. Every file still weighs at least what its unit must.
+    const files = completeSet(units);
+    const spare = SHIP_BUDGET_BYTES - files.reduce((sum, file) => sum + file.bytes, 0);
+    expect(spare).toBeGreaterThan(0);
+    files[0].bytes += spare;
     const survey = surveyShipping(units, files);
 
     expect(survey.totalBytes).toBe(SHIP_BUDGET_BYTES);
     expect(survey.over).toBe(false);
     expect(survey.complete).toBe(true);
+  });
+
+  /**
+   * ☠️ THE ONE `/code-review` FOUND BY RUNNING IT. Twenty-one files named exactly
+   * right, all zero bytes, reported "21/21 files · complete and fits" and exited 0 —
+   * because presence was only "a name matched". A pass that produced twenty-one
+   * failed encodes read as the finished set, in the one artifact where that would be
+   * permanent.
+   */
+  it("refuses a set of correctly-named empty files", () => {
+    const units: Unit[] = shippingUnits();
+    const survey = surveyShipping(units, completeSet(units, 0));
+
+    expect(survey.missing).toHaveLength(0);
+    expect(survey.undersized).toHaveLength(SHIP_FILE_COUNT);
+    expect(survey.complete).toBe(false);
+    expect(survey.gaps.every((gap: { kind: string }) => gap.kind === "undersized")).toBe(true);
+    expect(survey.gaps[0].detail).toMatch(/empty/);
+  });
+
+  it("refuses a sound effect truncated well under its own length", () => {
+    const units: Unit[] = shippingUnits();
+    const rain = units.find((unit) => unit.clip === "rain")!;
+    // A 30s bed at 128k is 480,000 bytes; 1 KB of it is a failed encode.
+    const survey = surveyShipping(
+      units,
+      completeSet(units, 480_000).map((file) =>
+        file.name === rain.file ? { ...file, bytes: 1000 } : file,
+      ),
+    );
+
+    expect(survey.undersized.map((row: { clip: string }) => row.clip)).toEqual(["rain"]);
+    expect(survey.complete).toBe(false);
+  });
+
+  /** ⚠️ The floor is loose on purpose — it catches truncation, it does not grade. */
+  it("accepts a file that is merely smaller than predicted", () => {
+    const units: Unit[] = shippingUnits();
+    const rain = units.find((unit) => unit.clip === "rain")!;
+    const survey = surveyShipping(
+      units,
+      completeSet(units, 480_000).map((file) =>
+        file.name === rain.file ? { ...file, bytes: 480_000 * 0.8 } : file,
+      ),
+    );
+
+    expect(survey.undersized).toHaveLength(0);
+  });
+
+  /**
+   * A voice cue gets no floor beyond "not empty": the only length available is an
+   * estimate off a different rendering of the same words, too soft to fail a file on.
+   */
+  it("holds a voice cue only to being non-empty", () => {
+    const units: Unit[] = shippingUnits();
+    const cue = units.find((unit) => unit.voice === "guided-male")!;
+    expect(plausibleFloorBytes(cue)).toBe(0);
+
+    const tiny = surveyShipping(
+      units,
+      completeSet(units, 480_000).map((file) =>
+        file.name === cue.file ? { ...file, bytes: 1 } : file,
+      ),
+    );
+    expect(tiny.undersized).toHaveLength(0);
+
+    const empty = surveyShipping(
+      units,
+      completeSet(units, 480_000).map((file) =>
+        file.name === cue.file ? { ...file, bytes: 0 } : file,
+      ),
+    );
+    expect(empty.undersized.map((row: { id: string }) => row.id)).toEqual([cue.id]);
   });
 
   it("finds nothing at all when the pass has not run", () => {

@@ -20,7 +20,18 @@
  */
 
 import { choiceKey } from "./audition-plan.mjs";
-import { SFX_CLIPS, VOICE_CUES, VOICES, outputSpecFor } from "./catalog.mjs";
+import { SFX_CLIPS, VOICE_CUES, VOICES, outputSpecFor, voiceSlotSpec } from "./catalog.mjs";
+
+/**
+ * The round whose voice half the app ships — all of it, both voices.
+ *
+ * #1136 routed the voice pick into Round B and that is where the cues live; the
+ * bells are Round A's. Named rather than inlined because `voiceSlotSpec("B")`
+ * appearing in a file about the whole ship reads like a scoping mistake, and it is
+ * the opposite: it is how this file avoids being a fourth opinion on round
+ * membership.
+ */
+const VOICE_ROUND = "B";
 
 /**
  * The ceiling #1138 fixed, in bytes.
@@ -99,9 +110,15 @@ export function shippingUnits() {
     };
   });
 
-  const voice = VOICE_CUES.flatMap((cue) => {
+  // ☠️ Built FROM `voiceSlotSpec`, not from `VOICE_CUES` x `VOICES` beside it. Its
+  // docblock says in as many words that "a third consumer cannot disagree with the
+  // first two" — and this is the third consumer. A test asserting the two agree is
+  // weaker than not being able to disagree: the assertion catches a drift after
+  // someone writes it, construction makes the drift unwritable.
+  const { cues, voices } = voiceSlotSpec(VOICE_ROUND);
+  const voice = cues.flatMap((cue) => {
     const spec = outputSpecFor(cue.id);
-    return VOICES.map((v) => ({
+    return voices.map((v) => ({
       id: choiceKey({ clip: cue.id, voice: v.id }),
       clip: cue.id,
       klass: spec.klass,
@@ -162,6 +179,59 @@ export function bytesForSeconds(seconds, bitrate) {
 }
 
 /**
+ * How far below its predicted size a finished file may land before it is not a
+ * finished file.
+ *
+ * ☠️ WITHOUT THIS THE INSTRUMENT PASSES AN EMPTY SET. `/code-review` ran the
+ * command against twenty-one ZERO-BYTE files named exactly right and it printed
+ * "21/21 files · the set is complete and fits" and exited **0** — because presence
+ * was `Boolean(found)` and nothing asked whether the bytes could be audio. That is
+ * the same green-light-on-a-half-done-pass as `manifest --check` exiting 0 against
+ * 65 gaps, in the one artifact where it would be permanent, and this file's own
+ * docblock claimed the opposite in as many words.
+ *
+ * Half is deliberately loose. `postprocess` encodes at a fixed `-b:a`, so a healthy
+ * file lands near its prediction and the slack is only there to absorb the
+ * container, VBR wobble and — for the eight cues — a spoken length that differs from
+ * the clip saying the same words today. The job here is catching a truncated or
+ * failed encode, not grading one: anything this catches is broken by a wide margin.
+ */
+export const PLAUSIBLE_SIZE_FRACTION = 0.5;
+
+/**
+ * The smallest a unit's finished file can be and still be that unit, or null when
+ * the unit's length is not known yet and no floor can be honest.
+ *
+ * ⚠️ Only the thirteen sound effects have a floor. A voice cue's length comes back
+ * from TTS, so the only number available is an estimate off a different rendering
+ * of the same words — too soft to fail a file on. An empty file is still caught,
+ * because zero is below every floor including the smallest one this can return.
+ *
+ * @param {{seconds: number|null, bitrate: string}} unit
+ * @returns {number|null}
+ */
+export function plausibleFloorBytes(unit) {
+  if (unit.seconds === null || !Number.isFinite(unit.seconds)) return 0;
+  return bytesForSeconds(unit.seconds, unit.bitrate) * PLAUSIBLE_SIZE_FRACTION;
+}
+
+/**
+ * The clip shipping today that says the same words as this unit — the only measured
+ * source for a voice cue's length before the pass has run.
+ *
+ * Lives here rather than in the command for the reason the rest of this file does:
+ * "a cue's length is estimated from the clip shipping today" is a rule about a
+ * shipping unit, not about reading a disk, and the command should not be the only
+ * place it can be read.
+ *
+ * @param {{voice: string|null, clip: string}} unit
+ * @returns {string[]|null} path segments, or null when the unit needs no estimate
+ */
+export function referenceClipFor(unit) {
+  return unit.voice ? ["assets", "sounds", "breathing", `${unit.clip}.wav`] : null;
+}
+
+/**
  * What the set is predicted to weigh, before any of it has been rendered.
  *
  * `secondsFor` fills in the lengths the catalog does not fix — in practice the
@@ -201,10 +271,17 @@ export function predictShipping(units, secondsFor = () => null) {
  * What the finished set on disk actually is.
  *
  * Matches by exact filename, so the two voices are two rows and a missing half is
- * a named gap rather than a count that happens to add up. Anything in the
- * directory that no unit claims is reported too: a stray file is either a unit
- * misnamed — in which case its real unit reads as missing — or bytes the app will
- * never ship being counted against a ceiling.
+ * a named gap rather than a count that happens to add up. Anything in `files` that
+ * no unit claims is reported too, and its bytes still count: a stray file is either
+ * a unit misnamed — in which case its real unit reads as missing — or weight in the
+ * directory that the ceiling has to see.
+ *
+ * ☠️ EVERY FILE, not every `.m4a`. The caller used to hand over a filtered list, so
+ * a 5 MB stray `.wav` was neither counted nor reported and the set still read
+ * "fits" — while #1138 justifies the ceiling on precisely that case, a single
+ * uncompressed bed blowing it instantly. It also made an uppercase `.M4A` vanish
+ * from the total while its unit reported missing. Case and extension are the
+ * caller's to get right; this counts what it is given.
  *
  * @param {ReturnType<typeof shippingUnits>} units
  * @param {{name: string, bytes: number}[]} files
@@ -216,10 +293,28 @@ export function surveyShipping(units, files) {
   const rows = units.map((unit) => {
     const found = byName.get(unit.file) ?? null;
     if (found) claimed.add(unit.file);
-    return { ...unit, present: Boolean(found), bytes: found ? found.bytes : null };
+    const bytes = found ? found.bytes : null;
+    const floor = plausibleFloorBytes(unit);
+    return {
+      ...unit,
+      present: Boolean(found),
+      bytes,
+      // A file can be present and still not be a clip. Kept as its own field rather
+      // than folded into `present` so the report can say which of the two it is.
+      //
+      // ☠️ `bytes === 0` is its own clause, not a case of `bytes < floor`. A voice
+      // cue's floor is 0 — no honest number exists for it before TTS — and `0 < 0`
+      // is false, so an empty cue slipped through the very check written to stop
+      // empty files, in exactly the half of the set that has been invisible to a
+      // subsystem twice before (#1317, #1393). The docblock claimed otherwise and
+      // the test proved it wrong.
+      undersized: bytes !== null && (bytes === 0 || (floor !== null && bytes < floor)),
+      floorBytes: floor,
+    };
   });
 
   const missing = rows.filter((row) => !row.present);
+  const undersized = rows.filter((row) => row.undersized);
   const unexpected = files.filter((file) => !claimed.has(file.name));
   const totalBytes = files.reduce((sum, file) => sum + file.bytes, 0);
 
@@ -231,6 +326,19 @@ export function surveyShipping(units, files) {
       unit: row.id,
       file: row.file,
       detail: "no finished file for this unit",
+    });
+  }
+  for (const row of undersized) {
+    gaps.push({
+      kind: "undersized",
+      unit: row.id,
+      file: row.file,
+      detail:
+        row.bytes === 0
+          ? "the file is empty — a failed encode, not a clip"
+          : `${row.bytes} bytes is far under the ${Math.round(
+              /** @type {number} */ (row.floorBytes),
+            )} this unit cannot plausibly encode below`,
     });
   }
   for (const file of unexpected) {
@@ -254,12 +362,12 @@ export function surveyShipping(units, files) {
   return {
     rows,
     missing,
+    undersized,
     unexpected,
     gaps,
     ...verdict,
-    // The set is finished only when every unit has a file, nothing else is in the
-    // directory, and the whole thing fits. Two of those three were previously
-    // unasked.
-    complete: missing.length === 0 && unexpected.length === 0 && !over,
+    // The set is finished only when every unit has a file, every file is big enough
+    // to be one, nothing else is in the directory, and the whole thing fits.
+    complete: missing.length === 0 && undersized.length === 0 && unexpected.length === 0 && !over,
   };
 }

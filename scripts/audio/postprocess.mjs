@@ -39,6 +39,7 @@ import {
   SHIP_BUDGET_BYTES,
   SHIP_FILE_COUNT,
   predictShipping,
+  referenceClipFor,
   shipFileName,
   shippingUnits,
   surveyShipping,
@@ -875,23 +876,55 @@ function flag(name, fallback = null) {
  */
 export const SHIP_DIR = join("audio-masters", "finished");
 
-/** How long each shipped clip runs, for the half of the set the catalog does not fix. */
+/**
+ * How long one clip runs, for the half of the set the catalog does not fix.
+ *
+ * ☠️ Returns null instead of throwing when ffprobe is not there. `budget`'s PREDICTED
+ * half is sold as needing no rendered byte, and `run()` REJECTS on ENOENT — so an
+ * absent ffprobe used to kill the command before it printed a single line, including
+ * the half that never needed ffprobe at all. A missing length is already a case this
+ * reports (as a FLOOR); a missing prober is just one more way to be missing it.
+ *
+ * @param {string} file
+ * @returns {Promise<number|null>}
+ */
 async function secondsOf(file) {
-  const res = await run("ffprobe", [
-    "-v",
-    "error",
-    "-show_entries",
-    "format=duration",
-    "-of",
-    "csv=p=0",
-    file,
-  ]);
-  if (res.code !== 0) return null;
-  const seconds = Number.parseFloat(res.stdout.trim());
-  return Number.isFinite(seconds) ? seconds : null;
+  try {
+    const res = await run("ffprobe", [
+      "-v",
+      "error",
+      "-show_entries",
+      "format=duration",
+      "-of",
+      "csv=p=0",
+      file,
+    ]);
+    if (res.code !== 0) return null;
+    const seconds = Number.parseFloat(res.stdout.trim());
+    return Number.isFinite(seconds) ? seconds : null;
+  } catch {
+    return null;
+  }
 }
 
+/** @param {number} bytes */
 const mib = (bytes) => `${(bytes / 1024 / 1024).toFixed(3)} MiB`;
+
+/**
+ * The one rendering of a budget verdict.
+ *
+ * ⚠️ The commit that gave the ceiling one implementation left its *printing* with
+ * two, which is the same duplication one layer out — a report that disagrees with
+ * itself is as misleading as a check that does.
+ *
+ * @param {{totalBytes: number, headroomBytes: number, over: boolean}} verdict
+ */
+function budgetLine(verdict) {
+  return (
+    `${mib(verdict.totalBytes)} of ${mib(SHIP_BUDGET_BYTES)} · ` +
+    `${mib(verdict.headroomBytes)} spare · ${verdict.over ? "OVER" : "fits"}`
+  );
+}
 
 /**
  * #1210's budget acceptance check: twenty-one files, under #1138's 4.0 MiB.
@@ -912,54 +945,69 @@ const mib = (bytes) => `${(bytes / 1024 / 1024).toFixed(3)} MiB`;
  * The voice cues' lengths come from the clips shipping today, which say the same
  * words. That is an estimate and it is labelled as one — TTS decides the real
  * number, and it does not exist until the pass has run.
+ *
+ * @param {string} dir the finished set's directory
+ * @param {{measureSeconds?: (file: string) => Promise<number|null>}} [options]
+ * @returns {Promise<boolean>} whether the set is complete, plausible and within budget
  */
 export async function budget(dir, { measureSeconds = secondsOf } = {}) {
   const units = shippingUnits();
 
   const shippedToday = new Map();
-  for (const unit of units.filter((u) => u.voice)) {
-    if (shippedToday.has(unit.clip)) continue;
-    shippedToday.set(
-      unit.clip,
-      await measureSeconds(join("assets", "sounds", "breathing", `${unit.clip}.wav`)),
-    );
+  for (const unit of units) {
+    const reference = referenceClipFor(unit);
+    if (!reference || shippedToday.has(unit.clip)) continue;
+    // ☠️ A prober that throws must not take the PREDICTED half with it. That half is
+    // sold as needing no rendered byte and no ffmpeg, and `run()` rejects on ENOENT,
+    // so an absent ffprobe used to kill the command before it printed a single line.
+    // An unmeasurable length is a case this already reports — as a FLOOR.
+    let seconds = null;
+    try {
+      seconds = await measureSeconds(join(...reference));
+    } catch {
+      seconds = null;
+    }
+    shippedToday.set(unit.clip, seconds);
   }
   const predicted = predictShipping(units, (unit) => shippedToday.get(unit.clip) ?? null);
 
   console.log(`PREDICTED (${SHIP_FILE_COUNT} files, from catalog.mjs)`);
-  console.log(
-    `  ${mib(predicted.totalBytes)} of ${mib(SHIP_BUDGET_BYTES)} · ` +
-      `${mib(predicted.headroomBytes)} spare · ${predicted.over ? "OVER" : "fits"}`,
-  );
+  console.log(`  ${budgetLine(predicted)}`);
   console.log(
     predicted.complete
       ? `  voice lengths estimated from the clips shipping today (#1136 measures the real ones)`
       : `  ⚠️ ${predicted.unknown.length} unit(s) have no length — the total above is a FLOOR`,
   );
   // ⚠️ Payload only. The .m4a container adds a few KB of moov per file, and #1138's
-  // published 3.21 MB was computed the same way — so this agrees with the number
-  // that set the ceiling, and must not be read as precision it does not have.
+  // published 3.21 MB was computed the same way, so the two agree to within the
+  // container. It must not be read as precision it does not have.
   console.log(`  payload only; the container adds a few KB per file`);
 
   let names = [];
   try {
-    names = (await readdir(dir)).filter((name) => name.endsWith(".m4a"));
+    names = await readdir(dir);
   } catch {
     console.log(`\nMEASURED\n  nothing at ${dir}/ — the pass has not written a finished set yet`);
     return false;
   }
 
+  // ☠️ EVERY entry, not just `*.m4a`. Filtering here made a 5 MB stray `.wav` weigh
+  // nothing and go unreported, on a ceiling #1138 justifies by that exact case — and
+  // made an uppercase `.M4A` disappear from the total while its unit read as missing.
+  // ⚠️ `isFile` matters for the same reason: a DIRECTORY named `rain.m4a` surveyed as
+  // a present unit, because presence was "a name matched".
   const files = [];
   for (const name of names) {
-    files.push({ name, bytes: (await stat(join(dir, name))).size });
+    const info = await stat(join(dir, name));
+    if (!info.isFile()) continue;
+    files.push({ name, bytes: info.size });
   }
   const survey = surveyShipping(units, files);
 
   console.log(`\nMEASURED (${dir}/)`);
   console.log(
     `  ${survey.rows.filter((row) => row.present).length}/${SHIP_FILE_COUNT} files · ` +
-      `${mib(survey.totalBytes)} of ${mib(SHIP_BUDGET_BYTES)} · ` +
-      `${mib(survey.headroomBytes)} spare · ${survey.over ? "OVER" : "fits"}`,
+      budgetLine(survey),
   );
   for (const gap of survey.gaps) {
     console.log(`  ${gap.kind.padEnd(12)} ${gap.file ?? gap.unit ?? ""} — ${gap.detail}`);

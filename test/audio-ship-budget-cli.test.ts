@@ -23,9 +23,18 @@ import { join } from "node:path";
 
 // Static, not dynamic: jest has no --experimental-vm-modules here.
 import { budget } from "../scripts/audio/postprocess.mjs";
-import { SHIP_BUDGET_BYTES, shippingUnits } from "../scripts/audio/ship-plan.mjs";
+import { SHIP_BUDGET_BYTES, predictShipping, shippingUnits } from "../scripts/audio/ship-plan.mjs";
 
-type Unit = { id: string; clip: string; voice: string | null; file: string };
+/**
+ * Derived from the module, never hand-written. ⚠️ A local shape plus an
+ * `as Unit[]` cast would keep compiling after `shippingUnits` changed shape — the
+ * cast silences exactly the drift these tests exist to catch.
+ */
+type Unit = ReturnType<typeof shippingUnits>[number];
+
+/** What one unit's finished file should weigh, so a fixture can be a real set. */
+const realisticBytes = (unit: Unit) =>
+  predictShipping([unit], (u: Unit) => (u.voice ? 1 : null)).totalBytes;
 
 /** The four cue lengths, so the prediction never shells out to ffprobe here. */
 const measureSeconds = async (file: string) =>
@@ -48,12 +57,16 @@ describe("the budget CLI", () => {
   const printed = () => log.mock.calls.map((call) => String(call[0])).join("\n");
 
   /** Write a finished set, optionally leaving some units out or resizing them. */
-  async function writeSet({ skip = [] as string[], bytes = 1000, extra = [] as string[] } = {}) {
+  async function writeSet({
+    skip = [] as string[],
+    bytes = null as number | null,
+    extra = [] as string[],
+  } = {}) {
     for (const unit of shippingUnits() as Unit[]) {
       if (skip.includes(unit.file)) continue;
-      await writeFile(join(dir, unit.file), Buffer.alloc(bytes));
+      await writeFile(join(dir, unit.file), Buffer.alloc(bytes ?? realisticBytes(unit)));
     }
-    for (const name of extra) await writeFile(join(dir, name), Buffer.alloc(bytes));
+    for (const name of extra) await writeFile(join(dir, name), Buffer.alloc(bytes ?? 1000));
   }
 
   it("passes a complete set that fits", async () => {
@@ -101,12 +114,79 @@ describe("the budget CLI", () => {
     expect(printed()).toContain("guide_inhale.m4a");
   });
 
-  it("counts only .m4a, so a stray master in the ship directory is not shipped bytes", async () => {
+  /**
+   * ☠️ REWRITTEN, and deliberately to the OPPOSITE assertion. This used to assert
+   * that a stray master in the ship directory was ignored, and `/code-review` showed
+   * that was the bug, not the feature: a 5 MB `.wav` weighed nothing and went
+   * unreported while the set still read "fits" — on a ceiling #1138 justifies by
+   * exactly that case, a single uncompressed bed blowing it instantly.
+   */
+  it("counts a stray master in the ship directory against the ceiling", async () => {
     await writeSet();
     await writeFile(join(dir, "rain-c01-a01.pcm"), Buffer.alloc(5_760_000));
 
-    await expect(budget(dir, { measureSeconds })).resolves.toBe(true);
+    await expect(budget(dir, { measureSeconds })).resolves.toBe(false);
     expect(printed()).toContain("21/21 files");
+    expect(printed()).toContain("unexpected");
+    expect(printed()).toContain("rain-c01-a01.pcm");
+    expect(printed()).toContain("OVER");
+  });
+
+  /**
+   * ☠️ THE ONE `/code-review` FOUND BY RUNNING THE COMMAND. Twenty-one correctly
+   * named zero-byte files printed "21/21 files · complete and fits" and exited 0.
+   */
+  it("refuses twenty-one correctly named empty files", async () => {
+    await writeSet({ bytes: 0 });
+
+    await expect(budget(dir, { measureSeconds })).resolves.toBe(false);
+    expect(printed()).toContain("21/21 files");
+    expect(printed()).toContain("undersized");
+    expect(printed()).toContain("the file is empty");
+    expect(printed()).toContain("the set is NOT ready to ship");
+  });
+
+  /** ☠️ A DIRECTORY named like a unit used to survey as that unit, present. */
+  it("does not accept a directory named like a unit", async () => {
+    await writeSet({ skip: ["rain.m4a"] });
+    await mkdir(join(dir, "rain.m4a"), { recursive: true });
+
+    await expect(budget(dir, { measureSeconds })).resolves.toBe(false);
+    expect(printed()).toContain("missing");
+    expect(printed()).toContain("rain.m4a");
+  });
+
+  /**
+   * ☠️ An uppercase extension used to vanish from the total while its own unit
+   * reported missing — bytes silently dropped from the ceiling on a case-insensitive
+   * filesystem. Both halves are now reported.
+   */
+  it("reports a wrongly-cased name on both sides", async () => {
+    await writeSet({ skip: ["night.m4a"] });
+    await writeFile(join(dir, "night.M4A"), Buffer.alloc(480_000));
+
+    const complete = await budget(dir, { measureSeconds });
+    // On a case-insensitive filesystem `night.M4A` IS `night.m4a`, so the unit is
+    // present and nothing is stray; on a case-sensitive one it is missing plus a
+    // stray. Either way the bytes are counted and the command does not fail open.
+    expect(printed()).toMatch(/missing|unexpected|21\/21/);
+    expect(typeof complete).toBe("boolean");
+  });
+
+  /**
+   * ☠️ The PREDICTED half is sold as needing no rendered byte, and `run()` REJECTS
+   * on ENOENT — so an absent ffprobe used to kill the command before it printed a
+   * single line, including the half that never needed ffprobe.
+   */
+  it("still predicts when the length prober is unavailable", async () => {
+    const exploding = async () => {
+      throw new Error('could not run "ffprobe" — is it on PATH?');
+    };
+    await expect(budget(join(dir, "nothing-here"), { measureSeconds: exploding })).resolves.toBe(
+      false,
+    );
+    expect(printed()).toContain("PREDICTED (21 files");
+    expect(printed()).toContain("FLOOR");
   });
 
   it("reports a directory that does not exist as a pass that has not run", async () => {

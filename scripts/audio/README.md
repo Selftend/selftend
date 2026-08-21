@@ -299,16 +299,38 @@ finished file, the seam by `seamcheck`, and the budget was a number in a ticket 
 `postprocess.mjs budget` is that instrument. It prints two facts and keeps them apart:
 
 - **PREDICTED** — what the set weighs on paper, from `catalog.mjs`'s own durations
-  and bitrates. It needs no rendered byte, which is the only time the answer can
-  still change anything: the pass is unrepeatable. It reproduces the **3.21 MB**
-  #1138 published, which is what says the model behind the ceiling and the model
-  behind the check are the same one.
+  and bitrates. It needs no rendered byte and no ffmpeg, which is the only time the
+  answer can still change anything: the pass is unrepeatable. It lands at **3.196
+  MiB** against the **3.21 MB** #1138 published — agreeing to about 14 KB, which is
+  the container overhead neither number counts. That agreement is what says the model
+  behind the ceiling and the model behind the check are the same one; it is not a
+  reproduction to the byte, and the command does not claim one.
 - **MEASURED** — what is actually in `audio-masters/finished/`. Only this can fail
-  the command, and it fails on a **missing unit** as readily as on bytes.
+  the command, and it fails on a **missing unit**, on a file **too small to be** its
+  unit, and on a **stray file**, as readily as on the total.
 
 ☠️ **A set that fits because four of its files were never written is not a set that
 fits.** By byte count, twenty of twenty-one is the healthiest set the pass could
 possibly hand over.
+
+☠️ **Nor is a set of twenty-one empty files.** `/code-review` found this by running
+the command: twenty-one correctly named ZERO-BYTE files printed `21/21 files · the set
+is complete and fits` and exited **0**, because presence was only "a name matched".
+A present file must now also be big enough to be its unit — at least half its
+predicted size for the thirteen sound effects, whose lengths the catalog fixes, and
+simply non-empty for the eight cues, whose length TTS decides and where no honest
+floor exists yet. The floor is loose on purpose: it catches a truncated or failed
+encode, it does not grade one. ⚠️ `bytes === 0` is its own clause rather than a case
+of `bytes < floor` — a cue's floor is 0, `0 < 0` is false, and an empty cue slipped
+through the check written to stop empty files, in the half of the set that has been
+invisible to a subsystem twice before.
+
+☠️ **Every file in the directory is weighed, not just `*.m4a`.** Filtering by
+extension first made a 5 MB stray `.wav` weigh nothing and go unreported while the set
+still read "fits" — on a ceiling #1138 justifies by exactly that case, a single
+uncompressed bed blowing it instantly. It also made an uppercase `.M4A` vanish from
+the total while its own unit reported missing. ⚠️ A directory entry that is not a
+file is skipped: a _directory_ named `rain.m4a` used to survey as a present unit.
 
 ☠️ **The ceiling is MEBIbytes.** #1138 reports today's set as "2.854 MB" and the
 sixteen shipped `.wav` files total 2,992,420 bytes — 2.854 MiB, 2.992 MB. Read as
