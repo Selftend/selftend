@@ -34,9 +34,27 @@
  * times) or with the per-clip texts, which already list their own exclusions.
  *
  * Recorded on #1134.
+ *
+ * ☠️ REWRITTEN AGAIN on #1316, because the compressed version silenced the
+ * render. Negation suppresses output level in Sound Effects and it compounds:
+ * the `night` prompt measured -47.4 dBTP peak with the old tail and -4.7 with no
+ * tail, and "No sudden events." alone cost ~17 dB. Twenty of Round B's 27
+ * masters were unusable.
+ *
+ * What survives is the half that measured HARMLESS — the tone sentence, at -5.4
+ * with the body. What goes is the pile-up: "Very low noise floor. No music, no
+ * speech. No sudden events. No silence at start or end. No wide stereo."
+ *
+ * The zero-silence rule (#1134) is not dropped, only re-phrased positively as
+ * "Begins immediately and holds to the very end." Two negations survive inside
+ * the tone sentence on purpose — a couple are fine, and that exact sentence was
+ * measured clean. It is the pile-up of six or eight that kills the output.
+ *
+ * ⚠️ Round A's bells were rendered under the OLD tail and are not re-rendered;
+ * their manifest rows record what was actually sent.
  */
 export const SHARED_TAIL =
-  "Close, dry, small soft room. No reverb. Dark and warm, no glassy highs. Very low noise floor. No music, no speech. No sudden events. No silence at start or end. No wide stereo.";
+  "Close, dry, small soft room. No reverb. Dark and warm, no glassy highs. Begins immediately and holds to the very end.";
 
 /** The hard cap the API enforces. */
 export const MAX_PROMPT_CHARS = 450;
@@ -199,18 +217,30 @@ export const BELLS = [
 export const BEDS = [
   {
     id: "rain",
-    text: "Steady, even rainfall on soft ground, heard from indoors through a closed window. Continuous and unchanging in intensity for the full thirty seconds. No thunder, no wind, no gusts, no dripping from a gutter, no individual loud drops, no traffic, no voices.",
+    // #1316: positive rewrite. "blended into one smooth texture" is what the old
+    // "no individual loud drops, no dripping from a gutter" was reaching for.
+    text: "Steady, even rainfall on soft ground, heard from indoors through a closed window. A dense continuous wash of countless fine drops blended into one smooth texture, held at exactly the same level from beginning to end.",
   },
   {
     id: "forest",
     // #1134: forest loses its birds. A recurring call is the loudest possible
     // advertisement that the user is hearing a loop. Keeps its id and label
     // (#1137) so no preference is stranded and no new Weblate string is needed.
-    text: "A quiet forest interior: a continuous soft rustle of leaves in a gentle, even breeze, unchanging for the full thirty seconds. No birdsong and no bird calls of any kind. No animals, no insects, no footsteps, no cracking branches, no wind gusts, no rain.",
+    // ☠️ #1316 RE-CONCEPTED this one, not just re-worded it. Measured over three
+    // takes each, positive phrasing moved `night` +22.6 dB and `wind` +15.6 dB
+    // but `forest` not at all (-22.0 -> -23.0), and its eventfulness stayed near
+    // 10 in every take — sparse discrete rustles with gaps, never a continuous
+    // bed. "Leaves rustling in a breeze" is an EVENT the model renders sparsely.
+    // So the same feeling is asked for as a texture it can sustain: many leaves
+    // at once, close and dense, none individually distinguishable. That phrasing
+    // also retires the birds without naming them.
+    text: "A dense continuous wash of many leaves moving at once in a steady breeze, heard close. Countless leaves blended into one smooth unbroken texture in which no single leaf is distinguishable, held at exactly the same level from beginning to end.",
   },
   {
     id: "night",
-    text: "A warm summer night heard from indoors: a low continuous blended chorus of distant crickets over soft dark air, unchanging for the full thirty seconds. No single insect audible above the others, no owls, no dogs, no traffic, no wind, no voices.",
+    // #1316: +22.6 dB median over three takes against the old wording. "Evenly
+    // blended" carries what "no single insect audible above the others" meant.
+    text: "A warm summer night heard from indoors. A low, continuous, evenly blended chorus of distant crickets over soft dark air, one steady unbroken texture held at exactly the same level from beginning to end.",
   },
   {
     id: "brown-noise",
@@ -218,7 +248,10 @@ export const BEDS = [
     // worse tool for — brown noise is deterministic, free and inherently
     // seamless in eight lines of the existing script. #1133 stands, but if any
     // bed fails the gate this is the obvious single-class reopen.
-    text: "Smooth, deep brown noise. A continuous low rumble with no texture, no events, no modulation and no variation of any kind for the full thirty seconds. Not white noise and not pink noise — deep and dark, with the high frequencies rolled away.",
+    // #1316: this one always rendered (0.0 dBFS, full scale) — its concept is
+    // strong enough that the negations never mattered. Rewritten anyway so the
+    // set is prompted one consistent way.
+    text: "Smooth, deep brown noise: a continuous low rumble, dark and heavy, with the high frequencies rolled away. One steady unbroken texture held at exactly the same level from beginning to end.",
   },
   {
     id: "ocean",
@@ -245,7 +278,11 @@ export const BEDS = [
     // distance, breaking, swell and sand, this may be indistinguishable from
     // `brown-noise` — the very redundancy that got a warm drone rejected in
     // #1137. Three candidates cost ~297 credits, so the call is made by ear.
-    text: "A deep, continuous body of open water, a smooth even wash held at one constant level for the full thirty seconds. No shoreline, no sand, no surf, no waves breaking, no swell rising or falling, no gulls, no wind, no voices, no boats.",
+    // ⚠️ #1316 keeps ONE exclusion here on purpose. #1262's separation from the
+    // `ocean-swell` texture IS the shoreline, so it cannot be dropped — but the
+    // rest of the old list goes, since the pile-up is what silences. Positive
+    // description plus at most one essential exclusion is the rule.
+    text: "The deep body of open water heard as one smooth even wash of moving water, a steady unbroken texture held at exactly the same level from beginning to end. Open sea only, with no shoreline in it.",
   },
 ].map((bed) => ({
   ...bed,
@@ -262,6 +299,13 @@ export const BEDS = [
 }));
 
 /**
+ * ☠️ #1316: the exhale modifier says "pitched ... in tone, at exactly the same
+ * level" rather than the old bare "Lower and darker." #1134 meant that as PITCH
+ * and TIMBRE - the only audible signal of a phase change in the texture lane -
+ * but a generative model can read "lower" as lower VOLUME, and `wind_exhale` was
+ * the last clip in the set still measuring BROKEN after everything else had been
+ * fixed. Saying which axis is meant costs nothing.
+ *
  * Inhale and exhale stay separate files. They differ in pitch today
  * (soft-breath is 196 Hz vs 147 Hz) and that step at the phase boundary is the
  * *only* audible signal of a phase change in the texture lane — #1134 keeps it
@@ -271,8 +315,8 @@ const TEXTURE_FAMILIES = [
   {
     id: "soft-breath",
     inhale:
-      "A steady continuous stream of soft warm air, as through slightly parted lips, held at one constant intensity throughout. A sustained texture, not a breath being taken: no rise, no fall. No voice, no sighing.",
-    exhaleModifier: "Lower, darker and warmer.",
+      "A steady continuous stream of soft warm air, as through slightly parted lips, one even unbroken texture held at exactly the same intensity from beginning to end. A sustained sound rather than a breath being taken.",
+    exhaleModifier: "Pitched a little lower, darker and warmer in tone, at exactly the same level.",
   },
   {
     id: "ocean-swell",
@@ -283,17 +327,24 @@ const TEXTURE_FAMILIES = [
     // is now explicitly forbidden. Still not by name (#1137) — renaming costs a
     // Weblate string in en and bg and disguises the pairing rather than fixing it.
     inhale:
-      "A continuous even wash of surf on sand, held at one constant level. No individual waves breaking, no swell rising or falling, no gulls, no wind, no voices. A sustained band of water noise, unchanging for the whole duration.",
-    exhaleModifier: "Lower and darker.",
+      "A continuous even wash of surf on sand, close at the ear, one steady unbroken band of water noise held at exactly the same level from beginning to end.",
+    exhaleModifier: "Pitched a little lower and darker in tone, at exactly the same level.",
   },
   {
     id: "wind",
     // ⚠️ The shipped `wind` is gusty by design
     // (generate-breathing-sounds.py:122-124). Removing gusts is deliberate: any
     // recurring event is heard several times per phase.
+    // ☠️ #1316 RE-CONCEPTED, like `forest`. Positive rewriting alone was not
+    // enough: six takes of the reworded version still measured -22 to -28 dBTP,
+    // BROKEN on every one. "Wind" is rendered as sparse gusts however it is
+    // phrased. What the preflight shows working across the whole set is DENSE,
+    // CONTINUOUS, CLOSE material - brown noise, the water washes, forest once it
+    // became a wash of many leaves - and `soft-breath_inhale`, which is already
+    // wind at close range and renders fine. So this asks for that instead.
     inhale:
-      "Steady wind moving through open space at one constant intensity. No gusts, no whistling, no rattling, no leaves, no rain, no debris. A smooth continuous band of air, unchanging for the whole duration.",
-    exhaleModifier: "Lower and darker.",
+      "A broad, dense rush of moving air heard close, like a steady draught through a doorway, blended into one smooth unbroken texture held at exactly the same level from beginning to end.",
+    exhaleModifier: "Pitched a little lower and darker in tone, at exactly the same level.",
   },
 ];
 
