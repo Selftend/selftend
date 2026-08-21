@@ -10,28 +10,40 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { cn } from "@/lib/utils";
-import { useToastStore, type ToastTone } from "@/src/stores/toast-store";
+import { SUCCESS_TOAST_MS, useToastStore, type ToastTone } from "@/src/stores/toast-store";
 
 const toneClasses: Record<ToastTone, string> = {
   error: "border-destructive",
-  info: "border-border",
   success: "border-primary",
 };
 
 export function AppToast() {
   const { t } = useTranslation("common");
   const insets = useSafeAreaInsets();
-  const toast = useToastStore((state) => state.toast);
+  // Through the hook, never `getState()`: an imperative store read in render is
+  // the React Compiler purity trap. `getState()` stays correct for the imperative
+  // WRITES outside React, like `query-client.ts`'s global save-failed toast.
+  const toast = useToastStore((state) => state.visible);
   const dismissToast = useToastStore((state) => state.dismissToast);
 
+  // The store is a pure state machine, so the dismiss timer lives here (#1336),
+  // keyed on the visible toast's identity so a promoted queue entry gets its own
+  // full 2500ms rather than inheriting what was left of its predecessor's.
+  //
+  // No timeout is EVER scheduled for an error: an error stays until the user
+  // dismisses it. That is why the guard is `tone !== "success"` rather than a
+  // null check - a new tone could not silently acquire a timer.
   useEffect(() => {
-    if (!toast) {
+    if (toast?.tone !== "success") {
       return;
     }
 
-    const timeout = setTimeout(dismissToast, toast.durationMs);
+    const timeout = setTimeout(dismissToast, SUCCESS_TOAST_MS);
     return () => clearTimeout(timeout);
-  }, [dismissToast, toast]);
+    // Keyed on the id rather than on `toast` itself: identity is the store's to
+    // change, but the id is the toast's own, so nothing short of a genuinely
+    // different toast can restart the countdown.
+  }, [dismissToast, toast?.id, toast?.tone]);
 
   if (!toast) {
     return null;
