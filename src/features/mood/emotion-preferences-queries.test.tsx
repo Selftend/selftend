@@ -112,3 +112,52 @@ describe.each([
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
   });
 });
+
+/**
+ * ☠️ The constraint the manage-emotions surface is BUILT around, pinned here because
+ * nothing else can catch it (#1335).
+ *
+ * `MutationObserver.#notify` gates every mutate-level callback on
+ * `if (this.#mutateOptions && this.hasListeners())`. Unmount the component that called
+ * `mutate` and the observer loses its listener, so a failure arriving afterwards reaches
+ * NOBODY - and since these mutations also suppress the global toast, the write would
+ * fail in total silence.
+ *
+ * That is why `ManageEmotionsModal` owns all four mutations and the editor owns none:
+ * the editor closes itself on submit, so a write it owned would be exactly this case.
+ *
+ * ⚠️ The timing is the whole test. An error that rejects SYNCHRONOUSLY still gets
+ * through, because React has not committed the unmount yet - measuring it that way is
+ * what makes this look safe when it is not.
+ */
+describe("a mutate-level callback after its caller unmounts", () => {
+  function renderUnmountingCaller(rejectAfterMs: number) {
+    const onError = jest.fn();
+    const { result, unmount } = renderHook(() => useUpsertEmotionPreference("user-1"), {
+      wrapper: makeWrapper(client),
+    });
+    mockUpsert.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          setTimeout(() => reject(new TypeError("Network request failed")), rejectAfterMs);
+        }),
+    );
+    result.current.mutate({ emotionId: "joy" }, { onError });
+    return { onError, unmount };
+  }
+
+  it("is DROPPED when the failure lands after the unmount (the real network case)", async () => {
+    const { onError, unmount } = renderUnmountingCaller(30);
+
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("still runs while the caller is mounted, so the list view's own writes report", async () => {
+    const { onError } = renderUnmountingCaller(30);
+
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+  });
+});

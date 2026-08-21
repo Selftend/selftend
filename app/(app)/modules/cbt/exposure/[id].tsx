@@ -30,6 +30,7 @@ import {
   useSaveExposureSession,
 } from "@/src/features/exposure/queries";
 import type { ExposureItem } from "@/src/features/exposure/types";
+import { useInlineWriteError } from "@/src/lib/use-inline-write-error";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -70,13 +71,15 @@ function SessionSheet({
   const showToast = useToastStore((state) => state.showToast);
   const saveMutation = useSaveExposureSession(user?.id ?? null, hierarchyId);
   const [form, setForm] = useState<SessionFormState>(emptySession);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Inline rather than a toast: this sheet stays OPEN on failure and is an opaque
+  // native modal. `useInlineWriteError` carries the rule.
+  const saveError = useInlineWriteError(t("exposure.session.saveError"));
 
   // Every route out of the sheet clears the error with it. The component is never
   // unmounted - only `visible` flips - so a failure left behind would still be on
   // screen the next time the sheet is opened.
   const closeSheet = () => {
-    setErrorMessage(null);
+    saveError.onStart();
     onClose();
   };
 
@@ -84,7 +87,7 @@ function SessionSheet({
     if (!item || form.preSuds === null || form.postSuds === null) return;
     const duration = parseInt(form.durationMinutes || "0", 10);
     if (Number.isNaN(duration)) return;
-    setErrorMessage(null);
+    saveError.onStart();
     try {
       await saveMutation.mutateAsync({
         itemId: item.id,
@@ -103,11 +106,7 @@ function SessionSheet({
       setForm(emptySession);
       closeSheet();
     } catch {
-      // ☠️ Inline, never a toast. This sheet stays OPEN on failure, and it is an opaque
-      // native modal: on Android nothing can lift a toast above one - `FullWindowOverlay`
-      // is iOS-only, and giving the toast its own Android `Modal` would block every touch
-      // below it, which the inert-body rule disqualifies (#1335, spec §10).
-      setErrorMessage(t("exposure.session.saveError"));
+      saveError.onError();
     }
   });
 
@@ -203,7 +202,11 @@ function SessionSheet({
 
             {/* Sits with the buttons that raised it, the only place in an opaque
                 modal a save failure can be seen at all. */}
-            {errorMessage ? <Text className="text-sm text-destructive">{errorMessage}</Text> : null}
+            {saveError.message ? (
+              <Text className="text-sm text-destructive" role="alert">
+                {saveError.message}
+              </Text>
+            ) : null}
 
             <View className="flex-row gap-3">
               <View className="flex-1">
@@ -280,7 +283,7 @@ export default function ExposureHierarchyDetailScreen() {
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const [activeItem, setActiveItem] = useState<ExposureItem | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deleteError = useInlineWriteError(t("exposure.deleteError"));
 
   const { data: hierarchy, isLoading: hierarchyLoading } = useHierarchy(
     user?.id ?? null,
@@ -296,11 +299,11 @@ export default function ExposureHierarchyDetailScreen() {
   // success toast is safe - it fires as the screen is being replaced.
   const handleDelete = async () => {
     if (!hierarchy) return;
-    setDeleteError(null);
+    deleteError.onStart();
     try {
       await deleteMutation.mutateAsync(hierarchy.id);
     } catch (error) {
-      setDeleteError(t("exposure.deleteError"));
+      deleteError.onError();
       // Rethrown on purpose: `DeleteEntryButton` closes its confirmation only when
       // `onConfirm` RESOLVES, and a closed dialog has nowhere to show this.
       throw error;
@@ -361,10 +364,11 @@ export default function ExposureHierarchyDetailScreen() {
             )}
 
             <DeleteEntryButton
-              error={deleteError ?? undefined}
+              error={deleteError.message ?? undefined}
               label={t("exposure.deleteHierarchy")}
               title={t("exposure.deleteTitle")}
               message={t("exposure.deleteMessage")}
+              onOpen={deleteError.onStart}
               onConfirm={handleDelete}
             />
           </View>

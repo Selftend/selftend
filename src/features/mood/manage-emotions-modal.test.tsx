@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react-native";
+import { act, fireEvent, screen, within } from "@testing-library/react-native";
 import { Platform } from "react-native";
 
 import { ManageEmotionsModal } from "@/src/features/mood/manage-emotions-modal";
@@ -22,10 +22,22 @@ let mockReorderPending = false;
  * handed to `mutate`. The mutations themselves opt out of the global toast
  * (`emotion-preferences-queries.test.tsx` proves it), so this callback is the ONLY
  * channel a failure has to reach the user.
+ *
+ * ☠️ ASYNCHRONOUSLY, and that is not decoration. A network failure lands long after the
+ * editor has closed itself, and a synchronous `onError` fires while the editor is still
+ * mounted - which would let an implementation that owns its writes in the editor pass
+ * here and then report nothing at all in production. Every case using this must `flush()`.
  */
 const failWrite = (_variables: unknown, options?: { onError?: () => void }) => {
-  options?.onError?.();
+  setTimeout(() => options?.onError?.(), 0);
 };
+
+/** Lets the deferred `failWrite` land, and React re-render with it. */
+async function flush() {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
 
 function mockEmotionRow(emotionId: string, position: number) {
   return {
@@ -502,40 +514,53 @@ describe("ManageEmotionsModal", () => {
       expect(screen.queryByText(SAVE_ERROR)).toBeNull();
     });
 
-    it("reports a failed reorder inline on the list", () => {
+    it("reports a failed reorder inline on the list", async () => {
       mockReorderEmotions.mockImplementation(failWrite);
       open();
 
       moveVia("anxious", "moveLater");
+      await flush();
 
       expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
     });
 
-    it("reports a failed drag-reorder inline too, not just the keyboard path", () => {
+    it("reports a failed drag-reorder inline too, not just the keyboard path", async () => {
       mockReorderEmotions.mockImplementation(failWrite);
       open();
 
       fireEvent(screen.getByTestId("emotion-sortable-grid"), "dragEnd", {
         data: mockFullEmotionList.map((e) => ({ id: e.emotionId })),
       });
+      await flush();
 
       expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
     });
 
-    it("reports a failed rename on the list the editor closed into", () => {
+    /**
+     * The case the hoist exists for: the editor closes itself on submit, so by the time
+     * this failure lands the editor is gone, and the error must reach the list anyway.
+     *
+     * ☠️ Stated honestly - this test cannot catch the regression it describes. Moving the
+     * mutations back into the editor would still pass here, because `mutate` is a jest.fn
+     * and no mock models `MutationObserver`'s `hasListeners()` gate, which is what
+     * actually drops the callback in production. The proof lives in
+     * `emotion-preferences-queries.test.tsx` ("a mutate-level callback after its caller
+     * unmounts"), against the real hook.
+     */
+    it("reports a failed rename on the list the editor closed into", async () => {
       mockUpsertEmotion.mockImplementation(failWrite);
       open();
 
       fireEvent.press(screen.getByLabelText("Edit Anxious"));
       fireEvent.press(screen.getByText("Save"));
+      await flush();
 
-      // The editor is gone - it closes itself on submit - and the error landed on the
-      // list that outlived it.
+      // The editor is gone, and the error landed on the list that outlived it.
       expect(screen.getByText("Manage emotions")).toBeTruthy();
       expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
     });
 
-    it("reports a failed add on the list", () => {
+    it("reports a failed add on the list", async () => {
       mockAddEmotion.mockImplementation(failWrite);
       open();
 
@@ -545,31 +570,65 @@ describe("ManageEmotionsModal", () => {
       // labelled with its emoji).
       fireEvent.press(screen.getByLabelText("😊"));
       fireEvent.press(screen.getByText("Add"));
+      await flush();
 
       expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
     });
 
-    it("reports a failed delete on the list", () => {
+    it("reports a failed delete on the list", async () => {
       mockRemoveEmotion.mockImplementation(failWrite);
       open();
 
       fireEvent.press(screen.getByLabelText("Edit Anxious"));
       fireEvent.press(screen.getByText("Delete"));
       fireEvent.press(screen.getAllByText("Delete")[1]);
+      await flush();
 
       expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
     });
 
-    it("clears the error when the next write starts, rather than stacking stale ones", () => {
+    /** It replaces a toast, which announced itself; silence would be a downgrade. */
+    it("announces the failure rather than only painting it", async () => {
+      mockReorderEmotions.mockImplementation(failWrite);
+      open();
+
+      moveVia("anxious", "moveLater");
+      await flush();
+
+      expect(screen.getByText(SAVE_ERROR).props.role).toBe("alert");
+    });
+
+    it("clears the error when the next write starts, rather than stacking stale ones", async () => {
       mockReorderEmotions.mockImplementationOnce(failWrite);
       open();
 
       moveVia("anxious", "moveLater");
+      await flush();
       expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
 
       // The second move succeeds (the one-shot implementation is spent).
       moveVia("anxious", "moveLater");
+      await flush();
 
+      expect(screen.queryByText(SAVE_ERROR)).toBeNull();
+    });
+
+    /**
+     * ⚠️ This surface is never unmounted - the check-in editor mounts it and merely flips
+     * `visible` - so an error left behind would still be on screen the next time it opens.
+     */
+    it("does not keep a failure on screen after the surface is closed", async () => {
+      mockReorderEmotions.mockImplementation(failWrite);
+      const onClose = jest.fn();
+      renderWithProviders(<ManageEmotionsModal visible onClose={onClose} />);
+
+      moveVia("anxious", "moveLater");
+      await flush();
+      expect(screen.getByText(SAVE_ERROR)).toBeTruthy();
+
+      fireEvent.press(screen.getByLabelText("Close"));
+
+      expect(onClose).toHaveBeenCalledTimes(1);
       expect(screen.queryByText(SAVE_ERROR)).toBeNull();
     });
   });

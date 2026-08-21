@@ -11,6 +11,12 @@ interface DeleteEntryButtonProps {
   message: string;
   onConfirm: () => Promise<void>;
   error?: string;
+  /**
+   * Called as the confirmation opens, so a caller rendering `error` can clear the
+   * previous one. Without it a failed delete, cancelled, would still be on screen the
+   * next time the dialog opens - this component owns `visible`, so only it knows.
+   */
+  onOpen?: () => void;
 }
 
 export function DeleteEntryButton({
@@ -19,6 +25,7 @@ export function DeleteEntryButton({
   message,
   onConfirm,
   error,
+  onOpen,
 }: DeleteEntryButtonProps) {
   const { t } = useTranslation("common");
   const [visible, setVisible] = useState(false);
@@ -45,7 +52,13 @@ export function DeleteEntryButton({
 
   return (
     <>
-      <Button onPress={() => setVisible(true)} variant="destructive">
+      <Button
+        onPress={() => {
+          onOpen?.();
+          setVisible(true);
+        }}
+        variant="destructive"
+      >
         <Text>{label}</Text>
       </Button>
       <ConfirmDialog

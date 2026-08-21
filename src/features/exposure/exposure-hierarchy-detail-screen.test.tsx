@@ -139,6 +139,17 @@ describe("ExposureHierarchyDetailScreen error surfaces", () => {
       expect(screen.queryByText("Unable to save the session. Try again.")).toBeNull();
     });
 
+    /** It replaces a toast, which announced itself; silence would be a downgrade. */
+    it("announces the failure rather than only painting it", async () => {
+      saveSession.mockRejectedValue(new Error("network"));
+      renderWithProviders(<ExposureHierarchyDetailScreen />);
+
+      openSheetAndRate();
+      await pressSave();
+
+      expect(screen.getByText("Unable to save the session. Try again.").props.role).toBe("alert");
+    });
+
     it("clears a previous failure when the save is retried", async () => {
       saveSession.mockRejectedValueOnce(new Error("network")).mockResolvedValueOnce(undefined);
       renderWithProviders(<ExposureHierarchyDetailScreen />);
@@ -172,6 +183,29 @@ describe("ExposureHierarchyDetailScreen error surfaces", () => {
         expect(screen.getByText("Unable to delete the hierarchy. Try again.")).toBeTruthy(),
       );
       expect(useToastStore.getState().visible).toBeNull();
+    });
+
+    /**
+     * ⚠️ `DeleteEntryButton` owns `visible`, so only it knows the dialog is reopening.
+     * Without its `onOpen`, a failure the user cancelled out of would still be sitting
+     * in the dialog the next time they opened it.
+     */
+    it("does not show the previous failure when the dialog is reopened", async () => {
+      deleteHierarchy.mockRejectedValue(new Error("network"));
+      renderWithProviders(<ExposureHierarchyDetailScreen />);
+
+      fireEvent.press(screen.getByText("Delete hierarchy"));
+      await act(async () => {
+        fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
+      });
+      await waitFor(() =>
+        expect(screen.getByText("Unable to delete the hierarchy. Try again.")).toBeTruthy(),
+      );
+
+      fireEvent.press(screen.getByText("Cancel"));
+      fireEvent.press(screen.getByText("Delete hierarchy"));
+
+      expect(screen.queryByText("Unable to delete the hierarchy. Try again.")).toBeNull();
     });
 
     it("still toasts and leaves the screen on a successful delete", async () => {

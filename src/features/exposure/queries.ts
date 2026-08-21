@@ -141,7 +141,7 @@ export function useSaveExposureSession(userId: string | null, hierarchyId: strin
   return useMutation({
     mutationFn: ({ itemId, input }: { itemId: string; input: ExposureSessionInput }) =>
       saveSession(userId!, itemId, input),
-    meta: { suppressGlobalErrorToast: true }, // detail screen shows its own save-error toast
+    meta: { suppressGlobalErrorToast: true }, // sheet shows its own save error inline (#1335)
     onSuccess: async () => {
       requestReminderPrompt("cbt");
       if (!userId) return;
