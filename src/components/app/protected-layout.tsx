@@ -218,9 +218,12 @@ export default function ProtectedLayout() {
                 ⚠️ That completeness added a THIRD exception the other two cannot derive:
                 a screen holding the user's unsaved WORK must remount, or singular hands
                 them back a half-finished exercise. `useState` is not the test - plenty of
-                overview screens below hold benign view state and reuse it happily. Only
-                two screens qualify (urge surfing, the bulls-eye), they are marked plain
-                inline, and the guard's `HOLDS_UNSAVED_WORK` keeps them honest.
+                overview screens below hold benign view state and reuse it happily. One
+                screen qualifies (urge surfing); it is marked plain inline and the guard's
+                `MUST_REMOUNT` keeps it honest. The values check-in used to be the second:
+                folding it onto the single-instance values screen (#1379) took the choice
+                away, so its ratings moved to a draft store instead - reuse hands the user
+                back their OWN numbers, and sign-out clears them.
 
                 Meditation stays deliberately plain among them: it is keyed by `?practice=`
                 and holds per-visit state, so it is the query-keyed exception above, not an
@@ -283,7 +286,11 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/act/observing-self/[id]" />
             <Stack.Screen name="modules/act/values/index" dangerouslySingular />
             {/* Plain: holds unsaved domain ratings. See HOLDS_UNSAVED_WORK. */}
-            <Stack.Screen name="modules/act/values/bulls-eye" />
+            {/* A `<Redirect>` stub since #1379 - marked like `tools/act`, the other
+                pure redirect here. It never stays mounted, so singular is inert on it;
+                it is stated rather than left blank so the guard's marking rules cover
+                the route rather than excusing it. */}
+            <Stack.Screen name="modules/act/values/bulls-eye" dangerouslySingular />
             <Stack.Screen name="modules/act/values/[domain]" />
             <Stack.Screen name="modules/dbt" dangerouslySingular />
             <Stack.Screen name="tools/index" dangerouslySingular />
