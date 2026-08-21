@@ -653,8 +653,7 @@ let customExerciseId;
   let logRows = 0;
   for (const h of habits) {
     const { adherence, ...habit } = h;
-    const { data, error } = await admin.from("habits").insert(habit).select("id").single();
-    if (error) throw new Error(`habits: ${error.message}`);
+    const habitId = await insertReturningId("habits", habit);
     habitRows++;
     const startDay = Math.round((new Date(habit.created_at) - new Date(at(0, 0))) / 86_400_000);
     const logs = [];
@@ -669,7 +668,7 @@ let customExerciseId;
       if (rng() < adherence) {
         logs.push({
           user_id: DEMO_USER_ID,
-          habit_id: data.id,
+          habit_id: habitId,
           logged_on: date.toISOString().slice(0, 10),
           note: chance(0.06) ? "Nearly skipped, glad I didn't." : "",
         });
@@ -830,6 +829,44 @@ function improvement(dayIndex) {
 }
 
 const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating, isHotThought });
+
+// The enum-valued columns whose variants all have to render at least once. Each
+// list mirrors the CHECK constraint on the matching `_data` table, and the
+// matching TypeScript union the app reads it through:
+//
+//   goals.status                 20260514_cbt_phase1.sql      src/features/goals/types.ts
+//   procrastination_tasks.status 20260516000000_cbt_phase4.sql
+//                                                    src/features/procrastination/types.ts
+//   worry_entries.worry_category 20260515_cbt_phase3.sql      src/features/worry/types.ts
+//
+// ⚠️ Mirrored, not read from the live constraints. The parent spec (#1273)
+// asked for the variants to be read off the database so the list cannot rot
+// when an enum gains a variant; doing that needs an RPC exposing the CHECK
+// bodies, which no migration in this repo provides and which is nobody's ticket
+// yet. Until one exists, this catches the failure that actually happens — a
+// variant losing its only row — and a NEW variant still has to be added here by
+// hand. Adding it is what makes the check fail until something renders it.
+const GOAL_STATUSES = ["active", "completed", "paused", "abandoned"];
+const TASK_STATUSES = ["active", "completed", "abandoned"];
+const WORRY_CATEGORIES = ["hypothetical", "real_problem"];
+
+/**
+ * Fail unless every declared variant appears at least once among `rows`.
+ *
+ * The failure this prevents is a status badge or a category label that never
+ * renders on the demo account, which is invisible until someone opens the one
+ * screen that would have shown it. Reads the rows rather than the loop that
+ * built them, so deleting the last row carrying a variant trips it.
+ */
+function requireEveryVariant(column, variants, rows, field = "status") {
+  const seen = new Set(rows.map((row) => row[field]));
+  const missing = variants.filter((variant) => !seen.has(variant));
+  if (missing.length > 0) {
+    throw new Error(
+      `No seeded row uses ${column} = ${missing.join(" or ")}, so that variant never renders.`,
+    );
+  }
+}
 
 // -------------------------------------------------------- thought records
 {
@@ -1683,6 +1720,7 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
       }),
     );
   }
+  requireEveryVariant("goals.status", GOAL_STATUSES, goals);
   counts.goals = goalRows;
   counts.milestones = milestoneRows;
 }
@@ -1716,7 +1754,7 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
     "curious",
   ];
   const createdAt = at(10, 20, 45);
-  await insert("values_profile", [
+  const valuesRows = await insert("values_profile", [
     {
       user_id: DEMO_USER_ID,
       personal_values: [
@@ -1730,7 +1768,10 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
       created_at: createdAt,
     },
   ]);
-  counts.values_profile = 1;
+  // Taken from the insert rather than written as a literal 1: the end-of-run
+  // "wiped but not re-seeded" gate reads these counts, and a hardcoded number
+  // beside a deleted insert makes that gate assert itself.
+  counts.values_profile = valuesRows;
 }
 
 // ----------------------------------------------------------------- worry
@@ -1743,240 +1784,258 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
   //
   // Probability estimates ride the shared improvement arc: high early, falling
   // across the window, and back up through the setback.
+  // Named fields rather than positional tuples: the two evidence lists and the
+  // action steps are three same-typed arrays in a row, and swapping the
+  // evidence for a worry with the evidence against it would invert the entry
+  // while every check here still passed.
+  //
+  // `actionSteps` belongs to a real problem — something that can be
+  // problem-solved — and stays empty on a hypothetical, which is the actual CBT
+  // distinction between the two categories rather than a gap. Both categories
+  // always carry a coping statement, because a distressing row without its
+  // answering field is not one this seed will write.
   const entries = [
-    [
-      4,
-      "hypothetical",
-      "If the reorg goes through, I'm the one they cut.",
-      "I can't audit a rumour. I can keep the work visible and let the announcement be the announcement.",
-      ["Two teams were merged last year.", "Nobody has said anything either way."],
-      [
+    {
+      day: 4,
+      category: "hypothetical",
+      statement: "If the reorg goes through, I'm the one they cut.",
+      coping:
+        "I can't audit a rumour. I can keep the work visible and let the announcement be the " +
+        "announcement.",
+      evidenceFor: ["Two teams were merged last year.", "Nobody has said anything either way."],
+      evidenceAgainst: [
         "My last three pieces of work shipped.",
         "The rumour has come round twice and nothing followed.",
       ],
-      [],
-      true,
-    ],
-    [
-      11,
-      "real_problem",
-      "The handover doc is half-written and it is due Friday.",
-      "Half-written is not unwritten.",
-      ["Two sections are still bullet points."],
-      ["The hard section is already done.", "Friday is four working days away."],
-      [
+      actionSteps: [],
+      resolved: true,
+    },
+    {
+      day: 11,
+      category: "real_problem",
+      statement: "The handover doc is half-written and it is due Friday.",
+      coping: "Half-written is not unwritten.",
+      evidenceFor: ["Two sections are still bullet points."],
+      evidenceAgainst: ["The hard section is already done.", "Friday is four working days away."],
+      actionSteps: [
         "Block ninety minutes first thing tomorrow.",
         "Send the draft even if the last section stays in bullets.",
         "Ask for a read-through by Thursday.",
       ],
-      true,
-    ],
-    [
-      19,
-      "hypothetical",
-      "If I ask for help they'll work out I have been struggling all quarter.",
-      "Asking is what people who are on top of their work do. It is the not-asking that reads as struggling.",
-      ["I have not asked for anything in months."],
-      ["Everyone else asks, constantly, and nobody thinks less of them."],
-      [],
-      true,
-    ],
-    [
-      26,
-      "real_problem",
-      "I owe two people replies from last week.",
-      "Late is recoverable. Silent is what turns it into a thing.",
-      ["Both have been waiting six days."],
-      ["Neither has chased.", "Both replies are five minutes of work."],
-      ["Reply to both before lunch, badly if necessary.", "Say sorry once, not three times."],
-      true,
-    ],
-    [
-      33,
-      "hypothetical",
-      "The quiet in the review meant they were being polite.",
-      "Quiet is quiet. I am reading a whole verdict into an absence of words.",
-      ["Nobody said much at the end."],
-      [
+      resolved: true,
+    },
+    {
+      day: 19,
+      category: "hypothetical",
+      statement: "If I ask for help they'll work out I have been struggling all quarter.",
+      coping:
+        "Asking is what people who are on top of their work do. It is the not-asking that reads " +
+        "as struggling.",
+      evidenceFor: ["I have not asked for anything in months."],
+      evidenceAgainst: ["Everyone else asks, constantly, and nobody thinks less of them."],
+      actionSteps: [],
+      resolved: true,
+    },
+    {
+      day: 26,
+      category: "real_problem",
+      statement: "I owe two people replies from last week.",
+      coping: "Late is recoverable. Silent is what turns it into a thing.",
+      evidenceFor: ["Both have been waiting six days."],
+      evidenceAgainst: ["Neither has chased.", "Both replies are five minutes of work."],
+      actionSteps: [
+        "Reply to both before lunch, badly if necessary.",
+        "Say sorry once, not three times.",
+      ],
+      resolved: true,
+    },
+    {
+      day: 33,
+      category: "hypothetical",
+      statement: "The quiet in the review meant they were being polite.",
+      coping: "Quiet is quiet. I am reading a whole verdict into an absence of words.",
+      evidenceFor: ["Nobody said much at the end."],
+      evidenceAgainst: [
         "The written notes afterwards were specific and positive.",
         "That meeting always runs short.",
       ],
-      [],
-      false,
-    ],
-    [
-      41,
-      "real_problem",
-      "The bill for the flat repairs lands before payday.",
-      "This one is arithmetic, not catastrophe.",
-      ["The bill is due on the 28th and payday is the 1st."],
-      ["There is enough in savings to bridge three days."],
-      ["Move the standing order back by a week.", "Ask whether they take payment on delivery."],
-      true,
-    ],
-    [
-      48,
-      "hypothetical",
-      "If I take the leave I have booked, the work piles up and it shows.",
-      "The work piles up whether I am there or not. Leave is not the thing that makes it visible.",
-      ["Nobody is covering my queue."],
-      [
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 41,
+      category: "real_problem",
+      statement: "The bill for the flat repairs lands before payday.",
+      coping: "This one is arithmetic, not catastrophe.",
+      evidenceFor: ["The bill is due on the 28th and payday is the 1st."],
+      evidenceAgainst: ["There is enough in savings to bridge three days."],
+      actionSteps: [
+        "Move the standing order back by a week.",
+        "Ask whether they take payment on delivery.",
+      ],
+      resolved: true,
+    },
+    {
+      day: 48,
+      category: "hypothetical",
+      statement: "If I take the leave I have booked, the work piles up and it shows.",
+      coping:
+        "The work piles up whether I am there or not. Leave is not the thing that makes it " +
+        "visible.",
+      evidenceFor: ["Nobody is covering my queue."],
+      evidenceAgainst: [
         "The queue survived the last two weeks I was off.",
         "The leave was approved by the person who owns the queue.",
       ],
-      [],
-      false,
-    ],
-    [
-      55,
-      "hypothetical",
-      "They have stopped asking me to the planning calls because I have slipped.",
-      "I was not on the last two invites. That is a fact about two invites, not about my standing.",
-      ["Two invites in a row went out without me."],
-      [
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 55,
+      category: "hypothetical",
+      statement: "They have stopped asking me to the planning calls because I have slipped.",
+      coping:
+        "I was not on the last two invites. That is a fact about two invites, not about my " +
+        "standing.",
+      evidenceFor: ["Two invites in a row went out without me."],
+      evidenceAgainst: [
         "Both were scoping calls for a project I am not on.",
         "I was asked to the one that mattered.",
       ],
-      [],
-      false,
-    ],
-    [
-      58,
-      "real_problem",
-      "I said yes to a piece of work I do not have room for.",
-      "Saying so now is a small awkward conversation. Saying so in three weeks is a big one.",
-      ["My next two weeks are already full."],
-      ["It was scoped before the other thing landed, so the reason is real and checkable."],
-      [
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 58,
+      category: "real_problem",
+      statement: "I said yes to a piece of work I do not have room for.",
+      coping:
+        "Saying so now is a small awkward conversation. Saying so in three weeks is a big one.",
+      evidenceFor: ["My next two weeks are already full."],
+      evidenceAgainst: [
+        "It was scoped before the other thing landed, so the reason is real and checkable.",
+      ],
+      actionSteps: [
         "Say today that the dates no longer work.",
         "Offer the two weeks after, or offer to hand it on.",
       ],
-      true,
-    ],
-    [
-      61,
-      "hypothetical",
-      "One bad fortnight and the whole year gets read as a bad year.",
-      "Nobody is holding a running average of me. I am the only one keeping that score.",
-      ["The last two weeks have been thin."],
-      [
+      resolved: true,
+    },
+    {
+      day: 61,
+      category: "hypothetical",
+      statement: "One bad fortnight and the whole year gets read as a bad year.",
+      coping: "Nobody is holding a running average of me. I am the only one keeping that score.",
+      evidenceFor: ["The last two weeks have been thin."],
+      evidenceAgainst: [
         "Nine months of the year were not thin.",
         "Nobody has said a word about the last two weeks.",
       ],
-      [],
-      false,
-    ],
-    [
-      68,
-      "real_problem",
-      "The talk I agreed to give is in three weeks and I have written nothing.",
-      "Three weeks is enough if it starts being three weeks and not three days.",
-      ["There is no outline yet."],
-      ["I have given this talk in pieces a dozen times.", "Three weeks is six writing sessions."],
-      ["Outline it on Sunday, badly.", "Book two hours a week in the calendar now."],
-      false,
-    ],
-    [
-      74,
-      "hypothetical",
-      "If I get the presentation wrong, that is what they will remember.",
-      "People remember whether the thing was useful. I am the only one who will remember the wobble.",
-      ["It is the biggest room I have presented to."],
-      [
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 68,
+      category: "real_problem",
+      statement: "The talk I agreed to give is in three weeks and I have written nothing.",
+      coping: "Three weeks is enough if it starts being three weeks and not three days.",
+      evidenceFor: ["There is no outline yet."],
+      evidenceAgainst: [
+        "I have given this talk in pieces a dozen times.",
+        "Three weeks is six writing sessions.",
+      ],
+      actionSteps: ["Outline it on Sunday, badly.", "Book two hours a week in the calendar now."],
+      resolved: false,
+    },
+    {
+      day: 74,
+      category: "hypothetical",
+      statement: "If I get the presentation wrong, that is what they will remember.",
+      coping:
+        "People remember whether the thing was useful. I am the only one who will remember the " +
+        "wobble.",
+      evidenceFor: ["It is the biggest room I have presented to."],
+      evidenceAgainst: [
         "I have never once remembered anyone else's wobble.",
         "The material is the part they came for.",
       ],
-      [],
-      false,
-    ],
-    [
-      80,
-      "real_problem",
-      "The course deadline and the release land in the same week.",
-      "Two hard things in one week is a scheduling problem, and scheduling problems have answers.",
-      ["Both are fixed dates."],
-      [
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: 80,
+      category: "real_problem",
+      statement: "The course deadline and the release land in the same week.",
+      coping:
+        "Two hard things in one week is a scheduling problem, and scheduling problems have " +
+        "answers.",
+      evidenceFor: ["Both are fixed dates."],
+      evidenceAgainst: [
         "The course piece can be finished a week early.",
         "The release week is quiet after Tuesday.",
       ],
-      [
+      actionSteps: [
         "Finish the course piece by the weekend before.",
         "Block Wednesday afternoon for the release.",
       ],
-      false,
-    ],
-    [
-      86,
-      "hypothetical",
-      "The new starter is faster than me and everyone can see it.",
-      "Fast at week three is fast at the easy part. Nobody is running a comparison but me.",
-      ["They cleared the intro queue in two days."],
-      ["That queue is the part I do in my sleep.", "Speed on the easy work is not the job."],
-      [],
-      false,
-    ],
-    [
-      DAYS - 1,
-      "real_problem",
-      "I have agreed to two things this week that overlap.",
-      "One of them can move. I just have to be the one who says so.",
-      ["Both are booked for Thursday afternoon."],
-      ["One of the two has no fixed date at all."],
-      ["Move the flexible one to next week before the end of today."],
-      false,
-    ],
-    [
-      DAYS - 1,
-      "hypothetical",
-      "If I am the one who raises the problem, it becomes my problem.",
-      "It is already everyone's problem. Naming it is not the same as owning it.",
-      ["Nobody else has mentioned it."],
-      ["The last two things I raised were picked up by the people who owned them."],
-      [],
-      false,
-    ],
+      resolved: false,
+    },
+    {
+      day: 86,
+      category: "hypothetical",
+      statement: "The new starter is faster than me and everyone can see it.",
+      coping: "Fast at week three is fast at the easy part. Nobody is running a comparison but me.",
+      evidenceFor: ["They cleared the intro queue in two days."],
+      evidenceAgainst: [
+        "That queue is the part I do in my sleep.",
+        "Speed on the easy work is not the job.",
+      ],
+      actionSteps: [],
+      resolved: false,
+    },
+    {
+      day: DAYS - 1,
+      category: "real_problem",
+      statement: "I have agreed to two things this week that overlap.",
+      coping: "One of them can move. I just have to be the one who says so.",
+      evidenceFor: ["Both are booked for Thursday afternoon."],
+      evidenceAgainst: ["One of the two has no fixed date at all."],
+      actionSteps: ["Move the flexible one to next week before the end of today."],
+      resolved: false,
+    },
+    {
+      day: DAYS - 1,
+      category: "hypothetical",
+      statement: "If I am the one who raises the problem, it becomes my problem.",
+      coping: "It is already everyone's problem. Naming it is not the same as owning it.",
+      evidenceFor: ["Nobody else has mentioned it."],
+      evidenceAgainst: [
+        "The last two things I raised were picked up by the people who owned them.",
+      ],
+      actionSteps: [],
+      resolved: false,
+    },
   ];
 
-  const categoriesSeeded = new Set();
-  const rows = entries.map(
-    ([
-      day,
-      worryCategory,
-      worryStatement,
-      copingStatement,
-      evidenceFor,
-      evidenceAgainst,
-      actionSteps,
-      resolved,
-    ]) => {
-      categoriesSeeded.add(worryCategory);
-      const createdAt = at(day, between(8, 21), between(0, 59));
-      const estimate = Math.round(85 - 55 * improvement(day)) + between(-6, 6);
-      return {
-        user_id: DEMO_USER_ID,
-        worry_statement: worryStatement,
-        worry_category: worryCategory,
-        probability_estimate: Math.max(0, Math.min(100, estimate)),
-        evidence_for: evidenceFor,
-        evidence_against: evidenceAgainst,
-        coping_statement: copingStatement,
-        action_steps: actionSteps,
-        resolved,
-        created_at: createdAt,
-        updated_at: createdAt,
-      };
-    },
-  );
+  const rows = entries.map((entry) => {
+    const createdAt = at(entry.day, between(8, 21), between(0, 59));
+    const estimate = Math.round(85 - 55 * improvement(entry.day)) + between(-6, 6);
+    return {
+      user_id: DEMO_USER_ID,
+      worry_statement: entry.statement,
+      worry_category: entry.category,
+      probability_estimate: Math.max(0, Math.min(100, estimate)),
+      evidence_for: entry.evidenceFor,
+      evidence_against: entry.evidenceAgainst,
+      coping_statement: entry.coping,
+      action_steps: entry.actionSteps,
+      resolved: entry.resolved,
+      created_at: createdAt,
+      updated_at: createdAt,
+    };
+  });
 
-  // Asserted rather than left to reading the table: both category labels render
-  // on the same screen, and losing one is invisible until someone happens to
-  // open a day that only holds the other.
-  const missingCategories = ["hypothetical", "real_problem"].filter(
-    (category) => !categoriesSeeded.has(category),
-  );
-  if (missingCategories.length > 0) {
-    throw new Error(`No worry entry uses the category ${missingCategories.join(" or ")}.`);
-  }
+  requireEveryVariant("worry_entries.worry_category", WORRY_CATEGORIES, rows, "worry_category");
   counts.worry_entries = await insert("worry_entries", rows);
 }
 
@@ -1991,192 +2050,198 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
   // outcome ratings move the other way. One outcome is deliberately null —
   // rating the aftermath is optional, and the detail screen has a branch for a
   // log that was never rated.
+  // Named fields rather than positional tuples: five of these are same-typed
+  // strings sitting next to each other, and swapping the urge with the
+  // behaviour, or the consequence with the reappraisal, would invert what the
+  // row says about the person while every check here still passed.
   const logs = [
-    [
-      7,
-      "Talked over twice in the same meeting.",
-      "They think what I have to say is filler.",
-      "Say nothing for the rest of the hour and let them notice.",
-      "Went quiet and stayed quiet.",
-      "Left angrier than I went in, and nobody noticed.",
-      false,
-      "The agenda was overrunning and everyone was cutting everyone off.",
-    ],
-    [
-      15,
-      "A decision I had spent a week on was reversed in a two-line message.",
-      "A week of my work is worth two lines to them.",
-      "Reply immediately, at length, with receipts.",
-      "Drafted the reply and did not send it.",
-      "Slept on it and asked one question the next morning instead.",
-      true,
-      "The message was two lines because they were between meetings, not because the work was worth two lines.",
-    ],
-    [
-      23,
-      "Someone repeated my point back to the room and it landed this time.",
-      "It only counts when they say it.",
-      "Say 'I literally just said that.'",
-      "Said nothing and stewed.",
-      "Spent the rest of the meeting rehearsing what I should have said.",
-      false,
-      "The room was still catching up on the point; the second telling had the room's attention, not better content.",
-    ],
-    [
-      31,
-      "Chased for something I had already sent.",
-      "They do not read anything I send.",
-      "Forward the original with the timestamp visible.",
-      "Forwarded it, then added a line saying no problem.",
-      "Fine, and over in a minute.",
-      false,
-      "Their inbox is a mess and it has nothing to do with me.",
-    ],
-    [
-      39,
-      "The plan changed on the day, again.",
-      "Nothing I schedule is safe.",
-      "Point out this is the third time.",
-      "Took ten minutes outside before responding.",
-      "Came back and asked what had moved, which turned out to be a genuinely good reason.",
-      true,
-      "The change came from outside the team and nobody chose it.",
-    ],
-    [
-      47,
-      "Cut off mid-sentence on a call.",
-      "I am not worth waiting for.",
-      "Talk over the top of them.",
-      "Waited, then finished the sentence.",
-      "The point landed and the call moved on.",
-      false,
-      "The lag on the call was two seconds and we both kept starting at once.",
-    ],
-    [
-      56,
-      "My name was not on the invite for the thing I built.",
-      "They have written me out of it.",
-      "Ask, pointedly, who put the list together.",
-      "Sent a flat one-liner asking to be added.",
-      "Added within the minute, with an apology.",
-      false,
-      "The list was copied from an old thread that predates my part of it.",
-    ],
-    [
-      60,
-      "A piece of feedback landed as a list with no first line.",
-      "There was nothing worth putting in a first line.",
-      "Reply asking whether any of it was any good.",
-      "Read it twice, then closed the laptop for an hour.",
-      "Came back and found four of the seven points were things I already planned to change.",
-      true,
-      "They write every review as a list. There is never a first line, for anyone.",
-    ],
-    [
-      64,
-      "Interrupted at home while trying to finish something late.",
-      "Nobody takes what I am doing seriously.",
-      "Snap, and go back to the screen.",
-      "Snapped, then came back ten minutes later and said so.",
-      "Sorted, but the ten minutes cost more than the interruption did.",
-      true,
-      "It was a question that took four seconds, and I had been at the screen for five hours.",
-    ],
-    [
-      71,
-      "The scope grew on the day of the handover.",
-      "They will keep adding until I break.",
-      "Accept it and work the weekend.",
-      "Said what would fit and what would not, in writing.",
-      "Half of it moved to the next cycle without any argument at all.",
-      false,
-      "Nobody had a list of what was already in scope. Writing it down was the whole fix.",
-    ],
-    [
-      79,
-      "A question in the review that sounded like an accusation.",
-      "They have decided the answer already.",
-      "Get defensive and over-explain.",
-      "Asked what was behind the question before answering it.",
-      "It was a genuine question, and the answer took one line.",
-      false,
-      "Short questions sound sharp in a quiet room.",
-    ],
-    [
-      DAYS - 1,
-      "Third message before nine asking where something is.",
-      "They think I am the problem here.",
-      "Reply with exactly how long the thing actually takes.",
-      "Answered the question and put the deadline in the reply.",
-      "No further messages.",
-      false,
-      "They are being chased by someone else and passing it straight down.",
-    ],
-    [
-      DAYS - 1,
-      "A change to the afternoon's plan with no notice.",
-      "My time is the flexible kind.",
-      "Say yes and be quietly furious.",
-      "Said the afternoon was booked and offered tomorrow.",
-      "Tomorrow was fine.",
-      false,
-      "They did not know the afternoon was booked, because I had not said so.",
-    ],
-    [
-      DAYS - 1,
-      "Read a message as sarcastic and lost twenty minutes to it.",
-      "That was a dig.",
-      "Screenshot it and show someone so they agree it was a dig.",
-      "Left it alone and did something else for twenty minutes.",
-      "Reread it in the evening and could not find the dig anywhere in it.",
-      true,
-      "There is no tone in a one-line message. I supplied the tone.",
-    ],
+    {
+      day: 7,
+      trigger: "Talked over twice in the same meeting.",
+      interpretation: "They think what I have to say is filler.",
+      urge: "Say nothing for the rest of the hour and let them notice.",
+      chose: "Went quiet and stayed quiet.",
+      consequence: "Left angrier than I went in, and nobody noticed.",
+      timeOut: false,
+      alternative: "The agenda was overrunning and everyone was cutting everyone off.",
+    },
+    {
+      day: 15,
+      trigger: "A decision I had spent a week on was reversed in a two-line message.",
+      interpretation: "A week of my work is worth two lines to them.",
+      urge: "Reply immediately, at length, with receipts.",
+      chose: "Drafted the reply and did not send it.",
+      consequence: "Slept on it and asked one question the next morning instead.",
+      timeOut: true,
+      alternative:
+        "The message was two lines because they were between meetings, not because the work " +
+        "was worth two lines.",
+    },
+    {
+      day: 23,
+      trigger: "Someone repeated my point back to the room and it landed this time.",
+      interpretation: "It only counts when they say it.",
+      urge: "Say 'I literally just said that.'",
+      chose: "Said nothing and stewed.",
+      consequence: "Spent the rest of the meeting rehearsing what I should have said.",
+      timeOut: false,
+      alternative:
+        "The room was still catching up on the point; the second telling had the room's " +
+        "attention, not better content.",
+      // The one log with no outcome rating. Rating the aftermath is optional in
+      // the form, so the branch that renders a log without one has to be
+      // reachable — and marking the row is honest in a way that testing the
+      // loop index was not.
+      unrated: true,
+    },
+    {
+      day: 31,
+      trigger: "Chased for something I had already sent.",
+      interpretation: "They do not read anything I send.",
+      urge: "Forward the original with the timestamp visible.",
+      chose: "Forwarded it, then added a line saying no problem.",
+      consequence: "Fine, and over in a minute.",
+      timeOut: false,
+      alternative: "Their inbox is a mess and it has nothing to do with me.",
+    },
+    {
+      day: 39,
+      trigger: "The plan changed on the day, again.",
+      interpretation: "Nothing I schedule is safe.",
+      urge: "Point out this is the third time.",
+      chose: "Took ten minutes outside before responding.",
+      consequence:
+        "Came back and asked what had moved, which turned out to be a genuinely good reason.",
+      timeOut: true,
+      alternative: "The change came from outside the team and nobody chose it.",
+    },
+    {
+      day: 47,
+      trigger: "Cut off mid-sentence on a call.",
+      interpretation: "I am not worth waiting for.",
+      urge: "Talk over the top of them.",
+      chose: "Waited, then finished the sentence.",
+      consequence: "The point landed and the call moved on.",
+      timeOut: false,
+      alternative: "The lag on the call was two seconds and we both kept starting at once.",
+    },
+    {
+      day: 56,
+      trigger: "My name was not on the invite for the thing I built.",
+      interpretation: "They have written me out of it.",
+      urge: "Ask, pointedly, who put the list together.",
+      chose: "Sent a flat one-liner asking to be added.",
+      consequence: "Added within the minute, with an apology.",
+      timeOut: false,
+      alternative: "The list was copied from an old thread that predates my part of it.",
+    },
+    {
+      day: 60,
+      trigger: "A piece of feedback landed as a list with no first line.",
+      interpretation: "There was nothing worth putting in a first line.",
+      urge: "Reply asking whether any of it was any good.",
+      chose: "Read it twice, then closed the laptop for an hour.",
+      consequence:
+        "Came back and found four of the seven points were things I already planned to change.",
+      timeOut: true,
+      alternative: "They write every review as a list. There is never a first line, for anyone.",
+    },
+    {
+      day: 64,
+      trigger: "Interrupted at home while trying to finish something late.",
+      interpretation: "Nobody takes what I am doing seriously.",
+      urge: "Snap, and go back to the screen.",
+      chose: "Snapped, then came back ten minutes later and said so.",
+      consequence: "Sorted, but the ten minutes cost more than the interruption did.",
+      timeOut: true,
+      alternative:
+        "It was a question that took four seconds, and I had been at the screen for five hours.",
+    },
+    {
+      day: 71,
+      trigger: "The scope grew on the day of the handover.",
+      interpretation: "They will keep adding until I break.",
+      urge: "Accept it and work the weekend.",
+      chose: "Said what would fit and what would not, in writing.",
+      consequence: "Half of it moved to the next cycle without any argument at all.",
+      timeOut: false,
+      alternative:
+        "Nobody had a list of what was already in scope. Writing it down was the whole fix.",
+    },
+    {
+      day: 79,
+      trigger: "A question in the review that sounded like an accusation.",
+      interpretation: "They have decided the answer already.",
+      urge: "Get defensive and over-explain.",
+      chose: "Asked what was behind the question before answering it.",
+      consequence: "It was a genuine question, and the answer took one line.",
+      timeOut: false,
+      alternative: "Short questions sound sharp in a quiet room.",
+    },
+    {
+      day: DAYS - 1,
+      trigger: "Third message before nine asking where something is.",
+      interpretation: "They think I am the problem here.",
+      urge: "Reply with exactly how long the thing actually takes.",
+      chose: "Answered the question and put the deadline in the reply.",
+      consequence: "No further messages.",
+      timeOut: false,
+      alternative: "They are being chased by someone else and passing it straight down.",
+    },
+    {
+      day: DAYS - 1,
+      trigger: "A change to the afternoon's plan with no notice.",
+      interpretation: "My time is the flexible kind.",
+      urge: "Say yes and be quietly furious.",
+      chose: "Said the afternoon was booked and offered tomorrow.",
+      consequence: "Tomorrow was fine.",
+      timeOut: false,
+      alternative: "They did not know the afternoon was booked, because I had not said so.",
+    },
+    {
+      day: DAYS - 1,
+      trigger: "Read a message as sarcastic and lost twenty minutes to it.",
+      interpretation: "That was a dig.",
+      urge: "Screenshot it and show someone so they agree it was a dig.",
+      chose: "Left it alone and did something else for twenty minutes.",
+      consequence: "Reread it in the evening and could not find the dig anywhere in it.",
+      timeOut: true,
+      alternative: "There is no tone in a one-line message. I supplied the tone.",
+    },
   ];
 
-  let unratedSeeded = false;
-  const rows = logs.map(
-    (
-      [
-        day,
-        triggerText,
-        interpretation,
-        urge,
-        behaviorChosen,
-        consequence,
-        timeOutTaken,
-        alternativeInterpretation,
-      ],
-      index,
-    ) => {
-      const createdAt = at(day, between(9, 21), between(0, 59));
-      const arousal = Math.round(9 - 5 * improvement(day)) + between(-1, 1);
-      const outcome = Math.round(3 + 5 * improvement(day)) + between(-1, 1);
-      // One log with no outcome rating, placed rather than diced: rating the
-      // aftermath is optional in the form, and the branch that renders a log
-      // without one has to be reachable.
-      const rated = index !== 2;
-      if (!rated) unratedSeeded = true;
-      return {
-        user_id: DEMO_USER_ID,
-        trigger_text: triggerText,
-        interpretation,
-        arousal_level: Math.max(1, Math.min(10, arousal)),
-        urge,
-        behavior_chosen: behaviorChosen,
-        consequence,
-        time_out_taken: timeOutTaken,
-        alternative_interpretation: alternativeInterpretation,
-        outcome_rating: rated ? Math.max(1, Math.min(10, outcome)) : null,
-        notes: "",
-        created_at: createdAt,
-        updated_at: createdAt,
-      };
-    },
-  );
+  const rows = logs.map((log) => {
+    const createdAt = at(log.day, between(9, 21), between(0, 59));
+    const arousal = Math.round(9 - 5 * improvement(log.day)) + between(-1, 1);
+    const outcome = Math.round(3 + 5 * improvement(log.day)) + between(-1, 1);
+    return {
+      user_id: DEMO_USER_ID,
+      trigger_text: log.trigger,
+      interpretation: log.interpretation,
+      arousal_level: Math.max(1, Math.min(10, arousal)),
+      urge: log.urge,
+      behavior_chosen: log.chose,
+      consequence: log.consequence,
+      time_out_taken: log.timeOut,
+      alternative_interpretation: log.alternative,
+      outcome_rating: log.unrated ? null : Math.max(1, Math.min(10, outcome)),
+      notes: "",
+      created_at: createdAt,
+      updated_at: createdAt,
+    };
+  });
 
-  if (!unratedSeeded) {
-    throw new Error("Every anger log carries an outcome rating; the unrated branch never renders.");
+  // Read off the BUILT ROWS, not off a flag the loop set: the flag version
+  // asked whether a hardcoded index had been visited, which a fixed-length
+  // literal array answers yes to no matter what the rows say. Both branches of
+  // the detail screen have to be reachable, so neither all-rated nor
+  // none-rated is a usable dataset.
+  const unrated = rows.filter((row) => row.outcome_rating === null).length;
+  if (unrated === 0 || unrated === rows.length) {
+    throw new Error(
+      `${unrated === 0 ? "Every" : "No"} anger log carries an outcome rating, so the detail ` +
+        "screen renders only one of its two branches.",
+    );
   }
   counts.anger_logs = await insert("anger_logs", rows);
 }
@@ -2296,6 +2361,7 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
       }),
     );
   }
+  requireEveryVariant("procrastination_tasks.status", TASK_STATUSES, tasks);
   counts.procrastination_tasks = taskRows;
   counts.task_steps = stepRows;
 }
@@ -2512,7 +2578,9 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
     created_at: createdAt,
     updated_at: updatedAt,
   });
-  counts.recovery_plans = 1;
+  // `insertReturningId` throws unless exactly one row came back, so the id
+  // existing IS the count; see the note beside `counts.values_profile`.
+  counts.recovery_plans = recoveryPlanId ? 1 : 0;
 
   counts.challenge_plans = await insert(
     "challenge_plans",
@@ -2587,6 +2655,9 @@ const CBT_PROGRAM_PHASE_INDEX = CBT_PHASE_KEYS.indexOf(CBT_PROGRAM_PHASE_KEY);
       // Null keeps the programme in progress. A completion date would graduate
       // it and the phase card would stop rendering altogether.
       cbt_program_completed_at: null,
+      // Cleared rather than left alone so a re-run reproduces the same picture:
+      // this column is set by a tap in the app, and a reviewer who dismissed the
+      // prompt would otherwise keep a dismissed prompt across every later seed.
       cbt_program_prompt_dismissed_at: null,
     })
     .eq("user_id", DEMO_USER_ID);
@@ -2651,13 +2722,22 @@ const CBT_PROGRAM_PHASE_INDEX = CBT_PHASE_KEYS.indexOf(CBT_PROGRAM_PHASE_KEY);
   // to another phase means choosing afresh which signals the rows now satisfy.
   // An undeclared phase fails here rather than quietly checking `behavioural`'s
   // legs against a `resilience` anchor and passing.
+  //
+  // Milestones and daily practice are declared SEPARATELY because "partially
+  // complete" is a claim about the milestones alone — the daily practice is not
+  // part of a phase's completion, and a check that had to name the daily leg to
+  // exclude it would stop excluding it the moment a phase called that leg
+  // something else.
   const phaseExpectations = {
-    behavioural: { activityOnce: true, exposureLadder: false, activityDaily: false },
+    behavioural: {
+      milestones: { activityOnce: true, exposureLadder: false },
+      dailyPractice: { activityDaily: false },
+    },
   };
 
   const anchoredPhaseKey = CBT_PHASE_KEYS[prefs.cbt_program_phase_index];
-  const expectedLegs = phaseExpectations[anchoredPhaseKey];
-  if (!expectedLegs) {
+  const phaseExpectation = phaseExpectations[anchoredPhaseKey];
+  if (!phaseExpectation) {
     throw new Error(
       `The anchored CBT phase index ${prefs.cbt_program_phase_index} is ` +
         `'${anchoredPhaseKey ?? "out of range"}', which this script declares no expectations ` +
@@ -2679,7 +2759,12 @@ const CBT_PROGRAM_PHASE_INDEX = CBT_PHASE_KEYS.indexOf(CBT_PROGRAM_PHASE_KEY);
       (a) => capturedDayKey(a.completed_at, a.completed_offset_minutes) === today,
     ),
   };
-  const expected = { started: true, graduated: false, ...expectedLegs };
+  const expected = {
+    started: true,
+    graduated: false,
+    ...phaseExpectation.milestones,
+    ...phaseExpectation.dailyPractice,
+  };
 
   const disagreements = Object.keys(expected)
     .filter((key) => derived[key] !== expected[key])
@@ -2692,14 +2777,21 @@ const CBT_PROGRAM_PHASE_INDEX = CBT_PHASE_KEYS.indexOf(CBT_PROGRAM_PHASE_KEY);
     );
   }
 
-  // PARTIALLY complete, which is a claim about the phase as a whole rather than
-  // about any one leg: every milestone done is a phase that reads finished, and
-  // the expectations above would still all hold if a future edit ticked the
-  // open one.
-  if (Object.entries(expectedLegs).every(([leg, value]) => leg === "activityDaily" || value)) {
+  // PARTIALLY complete: a claim about the phase rather than about any one leg,
+  // and read off the milestones only, which is what phase completion is made
+  // of. Every milestone done is a phase that reads finished, and the
+  // expectations above would all still hold if a future edit ticked the open
+  // one — this is the check that notices.
+  if (Object.values(phaseExpectation.milestones).every(Boolean)) {
     throw new Error(
       `Every milestone of '${anchoredPhaseKey}' is expected done, so the phase would read ` +
         "complete rather than partially complete.",
+    );
+  }
+  if (Object.values(phaseExpectation.dailyPractice).some(Boolean)) {
+    throw new Error(
+      `Today's practice for '${anchoredPhaseKey}' is expected done. It is deliberately left ` +
+        "open — it is the one row a reviewer can exercise on the demo account themselves.",
     );
   }
 }
