@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native";
 import { router } from "expo-router";
 
 import { Text } from "@/src/components/react-native-reusables/text";
+import { cn } from "@/lib/utils";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 
 /**
@@ -18,6 +19,19 @@ import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
  * `shrink`, so the trail wraps inside itself rather than pushing the Escape
  * beside it off the row at 360dp.
  */
+/**
+ * The chrome eyebrow: the type every crumb is set in, and the type the Escape
+ * sets an Origin's name in when it carries one (#1261).
+ *
+ * Shared rather than spelled out at each site because the match is a design
+ * requirement, not a coincidence - the Escape and the trail sit in the same row,
+ * and a name beside the arrow in a different weight reads as a mistake.
+ *
+ * ⚠️ The weight is `font-semibold`, which is NOT what `Text variant="eyebrow"`
+ * ships (`font-bold`), so that variant cannot stand in for this.
+ */
+export const CHROME_EYEBROW_TYPE = "text-[11px] font-semibold uppercase tracking-[0.14em]";
+
 export function ScreenBreadcrumb() {
   const crumbs = useBreadcrumbs();
 
@@ -38,14 +52,12 @@ export function ScreenBreadcrumb() {
               // breadcrumbs reach routes the layouts never declare.
               onPress={() => router.push(crumb.href as never, { dangerouslySingular: true })}
             >
-              <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground active:opacity-70">
+              <Text className={cn(CHROME_EYEBROW_TYPE, "text-muted-foreground active:opacity-70")}>
                 {crumb.label}
               </Text>
             </Pressable>
           ) : (
-            <Text className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">
-              {crumb.label}
-            </Text>
+            <Text className={cn(CHROME_EYEBROW_TYPE, "text-foreground")}>{crumb.label}</Text>
           )}
         </Fragment>
       ))}
