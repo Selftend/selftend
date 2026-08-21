@@ -17,10 +17,16 @@ import { useToastStore } from "@/src/stores/toast-store";
  * firing beside it, so the banner was a second rendering of the same sentence on a
  * page the user is about to leave. The toast is also the only surface left once
  * the header menu has dismissed itself.
+ *
+ * It also tears the toast slot down (#1336). `AppToast` is mounted in the ROOT
+ * layout, not the protected one, so it survives sign-out - and now that an error
+ * never auto-dismisses, an unread failure raised in one account would otherwise sit
+ * there waiting for whoever signs in next.
  */
 export function useSignOut(userId: string | null) {
   const { t } = useTranslation("auth");
   const showToast = useToastStore((state) => state.showToast);
+  const clearToasts = useToastStore((state) => state.clearToasts);
 
   const handleSignOut = async () => {
     try {
@@ -30,6 +36,10 @@ export function useSignOut(userId: string | null) {
       // `local`: signs the user out of THIS device, not out of their phone as
       // well (#968).
       await signOut("local");
+      // Only once sign-out has actually succeeded. Clearing before it - or in a
+      // `finally` - would swallow the failure toast raised just below, which is
+      // the only surface a failed sign-out has left.
+      clearToasts();
     } catch (error) {
       // The thrown message no longer reaches the screen, so without this a failed
       // sign-out would be diagnosable from nothing at all: `signOut` is not a
