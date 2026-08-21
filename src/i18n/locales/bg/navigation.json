@@ -485,10 +485,6 @@
       "overview": "Преглед"
     }
   },
-  "dateBar": {
-    "selectDate": "Избери дата",
-    "clear": "Изчисти датата"
-  },
   "plan": {
     "wizard": {
       "toolBreathing": "Дихателно упражнение",
