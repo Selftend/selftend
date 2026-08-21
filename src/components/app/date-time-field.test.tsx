@@ -155,6 +155,10 @@ describe("DateTimeField", () => {
 
       fireEvent.press(screen.getByLabelText("Close"));
 
+      // Both halves, because either alone is satisfied by a dismissal that
+      // does nothing at all: the sheet really closed, and closing committed
+      // nothing.
+      expect(screen.queryByText("mock picker")).toBeNull();
       expect(props.onChange).not.toHaveBeenCalled();
     });
 
@@ -171,6 +175,7 @@ describe("DateTimeField", () => {
         screen.UNSAFE_getByType(Modal).props.onRequestClose();
       });
 
+      expect(screen.queryByText("mock picker")).toBeNull();
       expect(props.onChange).not.toHaveBeenCalled();
     });
 
