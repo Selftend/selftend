@@ -41,14 +41,28 @@ const BROWSER_WIDGET_TYPES = ["date", "time", "datetime-local", "month", "week"]
  * the JSX spelling would have missed the real offender while looking like
  * coverage.
  *
+ * The optional `["']` after `type` admits a quoted object key (`"type": "date"`).
  * `\s` spans newlines, so an attribute broken across lines still matches.
  */
 const BROWSER_WIDGET_TYPE = new RegExp(
-  String.raw`\btype\s*[:=]\s*\{?\s*["'](?:${BROWSER_WIDGET_TYPES.join("|")})["']`,
+  String.raw`\btype["']?\s*[:=]\s*\{?\s*["'](?:${BROWSER_WIDGET_TYPES.join("|")})["']`,
 );
 
-/** `showPicker(` - the DOM call that opens the browser popup by hand. */
-const SHOW_PICKER = /\bshowPicker\s*\(/;
+/**
+ * `showPicker` - the DOM call that opens the browser popup by hand.
+ *
+ * Three spellings, because the plain `showPicker(` the ticket named is not the
+ * only one: mutation-testing this guard caught `type: "time"` in a probe file
+ * while walking straight past `el.showPicker?.()` on the line above it. So the
+ * member-access and computed-access forms are matched too, which also covers
+ * aliasing (`const open = el.showPicker`) and the `typeof el.showPicker ===
+ * "function"` feature test the goal date field actually shipped.
+ *
+ * Deliberately NOT a bare `\bshowPicker\b`: `const [showPicker, setShowPicker]
+ * = useState(false)` is an entirely reasonable thing to write in an app full of
+ * picker sheets, and a guard that fails on it teaches people to delete guards.
+ */
+const SHOW_PICKER = /\.\s*showPicker\b|\bshowPicker\s*(?:\?\.)?\s*\(|\[\s*["']showPicker["']\s*\]/;
 
 const PATTERNS = [BROWSER_WIDGET_TYPE, SHOW_PICKER];
 
@@ -129,6 +143,31 @@ describe("no browser date or time widget in app source (#1175)", () => {
     expect(offendingLines('<input type="month" />')).toEqual([1]);
     expect(offendingLines('<input type="week" />')).toEqual([1]);
     expect(offendingLines('<input type={"date"} />')).toEqual([1]);
+  });
+
+  it("catches the showPicker spellings that are not a plain call", () => {
+    // Found by mutating this guard: it reported `type: "time"` two lines below
+    // `el.showPicker?.()` and said nothing about the call. An optional call, an
+    // alias, a feature test and a computed access are all the same DOM API.
+    expect(offendingLines("el.showPicker?.();")).toEqual([1]);
+    expect(offendingLines("const open = el.showPicker;")).toEqual([1]);
+    expect(offendingLines('if (typeof el.showPicker === "function") el.showPicker();')).toEqual([
+      1,
+    ]);
+    expect(offendingLines('el["showPicker"]();')).toEqual([1]);
+  });
+
+  it("leaves a boolean named showPicker alone", () => {
+    // A guard that fails on this teaches people to delete guards. `showPicker`
+    // as local state is reasonable in an app full of picker sheets; only the
+    // DOM API's call and access shapes are forbidden.
+    expect(offendingLines("const [showPicker, setShowPicker] = useState(false);")).toEqual([]);
+    expect(offendingLines("setShowPicker(true);")).toEqual([]);
+    expect(offendingLines("{showPicker ? <PickerSheet /> : null}")).toEqual([]);
+  });
+
+  it("catches a quoted object key", () => {
+    expect(offendingLines('{ "type": "date" }')).toEqual([1]);
   });
 
   it("catches an attribute broken across lines", () => {
