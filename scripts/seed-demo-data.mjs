@@ -2564,7 +2564,19 @@ const nat = (text, beliefRating, isHotThought = false) => ({ text, beliefRating,
 // simply sit before the current phase's start, which is what feeds the four
 // stat chips (they count from `started_at`, not from the phase start).
 const CBT_PROGRAM_STARTED_DAY = 8;
-const CBT_PROGRAM_PHASE_INDEX = 3;
+
+// The five phase keys in order, mirroring CBT_PROGRAM in
+// src/features/cbt/program-definition.ts. Mirrored rather than imported: this
+// script is plain Node and that module is TypeScript behind a path alias.
+//
+// The index is derived from the KEY rather than written as a bare 3, because
+// the index on its own means nothing — each phase has its own milestones and
+// its own daily practice, and the checks further down are `behavioural`'s
+// specifically. Anchoring by name is what lets the assertion notice that the
+// two have come apart.
+const CBT_PHASE_KEYS = ["assessment", "formulation", "thinking", "behavioural", "resilience"];
+const CBT_PROGRAM_PHASE_KEY = "behavioural";
+const CBT_PROGRAM_PHASE_INDEX = CBT_PHASE_KEYS.indexOf(CBT_PROGRAM_PHASE_KEY);
 {
   const { error } = await admin
     .from("user_preferences")
@@ -2633,9 +2645,30 @@ const CBT_PROGRAM_PHASE_INDEX = 3;
       ? localDayKey(new Date(instant))
       : new Date(new Date(instant).getTime() + offsetMinutes * 60_000).toISOString().slice(0, 10);
 
+  // What the seeded rows have to make each of the anchored phase's legs read.
+  // Keyed by PHASE, and only the seeded phase is declared: every phase has
+  // different milestones and a different daily practice, so moving the anchor
+  // to another phase means choosing afresh which signals the rows now satisfy.
+  // An undeclared phase fails here rather than quietly checking `behavioural`'s
+  // legs against a `resilience` anchor and passing.
+  const phaseExpectations = {
+    behavioural: { activityOnce: true, exposureLadder: false, activityDaily: false },
+  };
+
+  const anchoredPhaseKey = CBT_PHASE_KEYS[prefs.cbt_program_phase_index];
+  const expectedLegs = phaseExpectations[anchoredPhaseKey];
+  if (!expectedLegs) {
+    throw new Error(
+      `The anchored CBT phase index ${prefs.cbt_program_phase_index} is ` +
+        `'${anchoredPhaseKey ?? "out of range"}', which this script declares no expectations ` +
+        `for — it seeds '${CBT_PROGRAM_PHASE_KEY}'. Re-phasing the account means re-choosing ` +
+        "which milestones and which daily practice the rows have to satisfy, because no two " +
+        "phases share them.",
+    );
+  }
+
   const today = dayKeyAt(DAYS - 1);
   const derived = {
-    phaseIndex: prefs.cbt_program_phase_index,
     started: prefs.cbt_program_started_at !== null,
     graduated: prefs.cbt_program_completed_at !== null,
     // `behavioural`'s two milestones and its daily practice, in the same shape
@@ -2646,28 +2679,27 @@ const CBT_PROGRAM_PHASE_INDEX = 3;
       (a) => capturedDayKey(a.completed_at, a.completed_offset_minutes) === today,
     ),
   };
-  const expected = {
-    phaseIndex: CBT_PROGRAM_PHASE_INDEX,
-    started: true,
-    graduated: false,
-    activityOnce: true,
-    exposureLadder: false,
-    activityDaily: false,
-  };
+  const expected = { started: true, graduated: false, ...expectedLegs };
 
   const disagreements = Object.keys(expected)
     .filter((key) => derived[key] !== expected[key])
     .map((key) => `${key}: anchored ${expected[key]}, derived ${derived[key]}`);
   if (disagreements.length > 0) {
     throw new Error(
-      "The seeded CBT programme anchor and the rows behind it disagree — " +
-        `${disagreements.join("; ")}. The anchor is the input and the rows are generated to ` +
-        "satisfy it, so whichever moved, they have to move together.",
+      `The seeded CBT programme anchor ('${anchoredPhaseKey}') and the rows behind it ` +
+        `disagree — ${disagreements.join("; ")}. The anchor is the input and the rows are ` +
+        "generated to satisfy it, so whichever moved, they have to move together.",
     );
   }
-  if (derived.activityOnce && derived.exposureLadder) {
+
+  // PARTIALLY complete, which is a claim about the phase as a whole rather than
+  // about any one leg: every milestone done is a phase that reads finished, and
+  // the expectations above would still all hold if a future edit ticked the
+  // open one.
+  if (Object.entries(expectedLegs).every(([leg, value]) => leg === "activityDaily" || value)) {
     throw new Error(
-      "Every behavioural milestone is done, so the phase reads complete, not partial.",
+      `Every milestone of '${anchoredPhaseKey}' is expected done, so the phase would read ` +
+        "complete rather than partially complete.",
     );
   }
 }
