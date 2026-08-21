@@ -1,10 +1,11 @@
-import { useEffect, type ReactNode } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { Platform, Pressable, View, useWindowDimensions } from "react-native";
 import { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FullWindowOverlay as RNFullWindowOverlay } from "react-native-screens";
 import { useTranslation } from "react-i18next";
 
+import { INVISIBLE_HEADER_HEIGHT } from "@/src/components/app/invisible-header";
 import { Card, CardDescription, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { NativeOnlyAnimatedView } from "@/src/components/react-native-reusables/native-only-animated-view";
@@ -14,6 +15,7 @@ import {
   useReduceMotionEnabled,
 } from "@/src/lib/accessibility";
 import { cn } from "@/lib/utils";
+import { INSET_LAYER, useInsetBelow } from "@/src/stores/layered-inset-store";
 import {
   SUCCESS_TOAST_MS,
   useToastStore,
@@ -35,6 +37,70 @@ const TONE: Record<ToastTone, { bar: string; ink: string; icon: MaterialIconName
   success: { bar: "bg-primary", ink: "text-primary-ink", icon: "check-circle" },
   error: { bar: "bg-destructive", ink: "text-destructive", icon: "error" },
 };
+
+/**
+ * One number for the base case and for every offset above it, so the toast never
+ * changes its distance from whatever it is standing on.
+ *
+ * It is 16 because `RoutineFab` and `ReminderPromptCard` are 16 above their own
+ * rung too - but they each still spell their own literal, and unifying the three
+ * is not this ticket's to do. Deliberately named for the toast rather than for
+ * the ladder, so nobody imports it from here believing it is already shared.
+ */
+export const TOAST_GUTTER = 16;
+
+/**
+ * Where the toast's bottom edge sits, in px above the bottom of the window
+ * (#1340, spec §5).
+ *
+ * The toast moves off the TOP of the screen, which #660 already ruled off-limits
+ * - `protected-layout.tsx` says the top belongs to the invisible header, and a
+ * toast parked there covers the hamburger and the account menu. The bottom is the
+ * crowded end instead, so the toast rides one rung above whatever is down there:
+ * `insetBelow` is the max top edge published by layers 0-2 of the ladder (#1339),
+ * i.e. the keyboard, the in-flow strips and the floaters.
+ *
+ * ☠️ The clamp is not decoration. `insetBelow` is measured, so a tall keyboard
+ * over a lifted form footer can hand this a number most of the screen high; left
+ * alone the toast would climb under the invisible header and cover the very
+ * controls #660 protected - or leave the window entirely. Past the ceiling it
+ * stops climbing and accepts overlapping the topmost obstruction, which is the
+ * lesser harm: an overlapping toast is still readable and still dismissible.
+ *
+ * The floor is the base case, so a toast taller than the gap between the header
+ * and the bottom rung settles at the bottom rather than being pushed off-screen.
+ *
+ * A pure function on purpose: the arithmetic and the clamp are where the bug
+ * would be (#1154's climbs-forever class), and this is testable without a render
+ * - which matters doubly here, since jest's `View` mock cannot measure anything.
+ */
+export function toastBottom({
+  windowHeight,
+  safeAreaTop,
+  safeAreaBottom,
+  insetBelow,
+  toastHeight,
+}: {
+  windowHeight: number;
+  safeAreaTop: number;
+  safeAreaBottom: number;
+  /** Max top edge published by layers 0-2, or 0 when nothing is down there. */
+  insetBelow: number;
+  /** The measured card height; 0 until the first layout pass reports one. */
+  toastHeight: number;
+}): number {
+  // One rung above the home indicator, and one rung above the furniture. The
+  // base is a FLOOR rather than a second input to the max: an `insetBelow`
+  // smaller than the safe area (a strip with no bottom padding of its own)
+  // would otherwise move the toast DOWN, under the indicator, which is the one
+  // direction the base case exists to prevent.
+  const base = safeAreaBottom + TOAST_GUTTER;
+  const wanted = insetBelow + TOAST_GUTTER;
+  // The highest bottom edge that still leaves the card's top below the header.
+  const ceiling = windowHeight - safeAreaTop - INVISIBLE_HEADER_HEIGHT - toastHeight;
+
+  return Math.max(base, Math.min(wanted, ceiling));
+}
 
 /**
  * What a screen reader speaks. A title-only toast (the #1064 convention, and 66
@@ -100,6 +166,17 @@ export function AppToast() {
   const dismissToast = useToastStore((state) => state.dismissToast);
   const reduceMotionEnabled = useReduceMotionEnabled();
   const label = toast ? composeLabel(toast) : null;
+  const { height: windowHeight } = useWindowDimensions();
+  // Layer 3 of the inset ladder (#1339): the keyboard, the in-flow strips and
+  // the floaters, all of which are strictly below the toast. Reading STRICTLY
+  // below is what makes the FAB's climbs-forever loop unreachable here too - and
+  // the toast publishes nothing of its own, because layer 3 is the top of the
+  // ladder and there is no consumer above it to tell.
+  const insetBelow = useInsetBelow(INSET_LAYER.toast);
+  // Only the HEIGHT, so the RNW `onLayout`-is-a-ResizeObserver trap does not
+  // apply: the card's height is a size, and a size change is the one thing that
+  // observer does report. Nothing here needs the card's position.
+  const [cardHeight, setCardHeight] = useState(0);
 
   // The store is a pure state machine, so the dismiss timer lives here (#1336),
   // keyed on the visible toast's identity so a promoted queue entry gets its own
@@ -145,6 +222,13 @@ export function AppToast() {
   }
 
   const tone = TONE[toast.tone];
+  const bottom = toastBottom({
+    windowHeight,
+    safeAreaTop: insets.top,
+    safeAreaBottom: insets.bottom,
+    insetBelow,
+    toastHeight: cardHeight,
+  });
 
   return (
     // ☠️☠️ THE PLACEMENT IS LOAD-BEARING AND FAILS SILENTLY. `RNSFullWindowOverlay`
@@ -173,8 +257,40 @@ export function AppToast() {
         // and gets ignored when passed via NativeWind's style, leaving this overlay
         // interactive and able to swallow taps. The prop uses RNW's box-none polyfill.
         pointerEvents="box-none"
+        // ☠️ `z-[80]` covers the residual cases ONLY - the first frame, and a
+        // publisher that has not measured yet. Coexistence with the furniture is
+        // by OFFSET, not by z. And the ladder it appears to sit on is not one
+        // ladder: on native RN compares `zIndex` only among SIBLINGS, and
+        // `RoutineFab` lives inside `AppShell`'s subtree rather than beside this
+        // one, so what actually puts the toast above the handle there is TREE
+        // ORDER in `app/_layout.tsx`. On web the numbers do compare globally,
+        // but only because no ancestor happens to create a stacking context -
+        // add one and the web half silently starts behaving like native.
+        //
+        // ⚠️ Nothing pins that ordering: `AppToast` is simply the last child in
+        // `app/_layout.tsx`, and moving it above `AppShell` would put the toast
+        // under the FAB on native with every test still green. Left unguarded
+        // deliberately - a gate on another file's child order does not belong in
+        // this component's source-invariant suite - but it is load-bearing.
         className="absolute inset-x-0 z-[80] items-center px-4"
-        style={{ top: insets.top + 12 }}
+        // ☠️ Applied straight, never animated. The toast tracks the furniture
+        // live and JUMPS: an animated reposition puts the X mid-flight, so the
+        // one control that frees a sticky error is unhittable while it travels -
+        // the #1051/#1108/#1118 class of defect. This does not contradict the
+        // entrance fade below; that governs the entrance, this is the anchor
+        // moving underneath it.
+        style={{ bottom }}
+        // The OUTER anchor, distinct from the Card's `app-toast`: the specs that
+        // assert geometry need the positioned box, and the card is the box that
+        // carries the copy.
+        testID="app-toast-host"
+        // This box IS the card: it is absolutely positioned with an auto height,
+        // so its height is the card's height and no separate measuring wrapper is
+        // needed. Only the HEIGHT is read, which is why RNW's
+        // onLayout-is-a-ResizeObserver trap does not bite - a size change is the
+        // one thing that observer does report. Moving the box does not resize it,
+        // so the `bottom` this feeds cannot loop back through it either.
+        onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}
       >
         <View className="w-full max-w-xl">
           {/*

@@ -86,7 +86,14 @@ export function ConfirmDialog({
           </CardHeader>
           <CardContent>
             <View className="gap-3">
-              {error ? <Text className="text-sm text-destructive">{error}</Text> : null}
+              {/* `role="alert"` because this replaces a toast for callers whose failure
+                  cannot be toasted from behind this modal (#1335) - without it the
+                  failure reaches a screen-reader user not at all. */}
+              {error ? (
+                <Text className="text-sm text-destructive" role="alert">
+                  {error}
+                </Text>
+              ) : null}
               <Button disabled={isPending} onPress={onCancel} variant="secondary">
                 <Text>{cancelLabel}</Text>
               </Button>

@@ -277,6 +277,8 @@ NativeWind and React Navigation both receive the active scheme from the root lay
 
 Repository errors bubble to TanStack Query. Screens use `src/components/app/screen-state.tsx` for loading/empty/error states. Failed saves use `src/stores/toast-store.ts` and keep unsaved input in place.
 
+**Exception - a write fired from inside a modal that stays open.** A toast cannot be raised over a native modal on Android (`FullWindowOverlay` is iOS-only, and a toast in its own Android `Modal` would block every touch below it). Such a write sets `meta: { suppressGlobalErrorToast: true }` and reports the failure **inline** on the surface instead, via `src/lib/use-inline-write-error.ts`. Two rules come with it: the inline message carries `role="alert"`, because it replaces an announcement the toast used to make; and the state must live on a surface that **outlives the write**, since a mutate-level `onError` is dropped once its component unmounts. A write whose surface closes before the toast lands is not this case and keeps toasting.
+
 ## Adding A Module
 
 When a placeholder route becomes real, add:
