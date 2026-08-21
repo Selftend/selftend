@@ -30,6 +30,13 @@
 //      is a component rather than popover's `React.Fragment` alias. `false` is
 //      the difference between a toast and a toast that hides the whole app from
 //      VoiceOver; the alias is what would make the prop impossible to pass.
+//   6. The anchor is ASSIGNED, never animated. The toast tracks the furniture
+//      live, and an animated reposition would put the X mid-flight and
+//      unhittable - which no render, and no e2e run reading a settled style, can
+//      distinguish from an instant jump.
+//   7. The host anchors to the BOTTOM and carries no `top`. #660 gave the top of
+//      the screen to the invisible header; a `top` back on the host is the exact
+//      regression this rework exists to undo.
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -134,6 +141,48 @@ describe("app-toast.tsx keeps the properties no render test can see", () => {
   // Matched on the TERNARY rather than by banning the word `Fragment`: a blanket
   // ban would also stop a future unrelated fragment, which this has nothing to
   // say about.
+  // ☠️ The toast tracks the furniture LIVE, so its anchor moves while the card
+  // is on screen. Animating that move would put the X mid-flight and unhittable
+  // for the duration - the #1051/#1108/#1118 class of defect, and the one control
+  // that frees a sticky error. A render test reads the final style either way, and
+  // an e2e run reads it after the animation has settled, so neither layer can see
+  // the difference. Hence a source gate.
+  //
+  // Named tokens rather than a bare /Animated/: the entrance fade legitimately
+  // renders through `NativeOnlyAnimatedView`, and banning the word would ban the
+  // fade this rework deliberately kept.
+  it("moves the anchor by assignment, never by animation", () => {
+    expect(code).toContain("style={{ bottom }}");
+
+    for (const animator of [
+      "useAnimatedStyle",
+      "withTiming",
+      "withSpring",
+      "withDelay",
+      "LayoutAnimation",
+      "Animated.Value",
+      "Animated.timing",
+      "Animated.spring",
+      "layout={",
+    ]) {
+      expect(code).not.toContain(animator);
+    }
+  });
+
+  // #660 gave the top of the screen to the invisible header, which is the
+  // complaint this whole rework started from. A `top` back on the host would put
+  // the toast over the hamburger and the account menu again - and it would look
+  // deliberate, because it once was.
+  it("anchors to the bottom edge and holds no opinion about the top", () => {
+    const host = /<View\b[\s\S]*?testID="app-toast-host"[\s\S]*?\n\s*>/.exec(code)?.[0] ?? "";
+
+    expect(host).toContain("pointerEvents");
+    // Anchored on the two forms a `top` can actually take, not on the bare word:
+    // /\btop\b/ would also fire on a future prop or value that merely reads
+    // "top", failing the build for something that is not this defect.
+    expect(host).not.toMatch(/\btop\s*[:=]/);
+  });
+
   it("forks the overlay in a component, never through a ternary alias", () => {
     expect(code).toContain("function ToastOverlay");
     expect(code).not.toMatch(/\?\s*RNFullWindowOverlay/);
