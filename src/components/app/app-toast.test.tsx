@@ -1,5 +1,6 @@
-import { act, fireEvent, screen } from "@testing-library/react-native";
-import { Platform, View } from "react-native";
+import { act, fireEvent, screen, within } from "@testing-library/react-native";
+import { Platform, Text, View } from "react-native";
+import { FullWindowOverlay as RNFullWindowOverlay } from "react-native-screens";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 
@@ -7,6 +8,7 @@ import { AppToast } from "@/src/components/app/app-toast";
 import { SUCCESS_TOAST_MS, useToastStore } from "@/src/stores/toast-store";
 import { announceMessage } from "@/src/lib/accessibility";
 import i18n from "@/src/i18n";
+import { lifecycleLog } from "@/test/lifecycle-recorder";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
@@ -39,6 +41,22 @@ jest.mock("@/src/components/react-native-reusables/native-only-animated-view", (
   },
 }));
 
+// ☠️ WRAPS the real overlay rather than replacing it, so what the assertions read
+// is react-native-screens' own host output. Verified (#1338): the real overlay
+// renders SILENTLY under react-test-renderer when `Platform.OS` is "ios", which
+// jest-expo's `defaultPlatform` makes the default here. Its "only valid on iOS
+// devices" warning fires only when a test moves the platform OFF ios while a
+// MODULE-LOAD alias has already frozen the real component in - that is
+// `popover.tsx`'s shape, and the reason `user-menu.test.tsx` keeps a stand-in of
+// its own. This file needs no stand-in: `ToastOverlay` re-reads the platform every
+// render, so the android and web cases below never reach the overlay at all.
+jest.mock("react-native-screens", () => {
+  const actual = jest.requireActual("react-native-screens");
+  const { recordLifecycleOf } = require("@/test/lifecycle-recorder");
+
+  return { ...actual, FullWindowOverlay: recordLifecycleOf(actual.FullWindowOverlay) };
+});
+
 const mockAnnounce = announceMessage as jest.MockedFunction<typeof announceMessage>;
 const ORIGINAL_OS = Platform.OS;
 
@@ -61,6 +79,10 @@ beforeEach(() => {
   // to surface in the next test - and an error toast, which no longer expires on
   // its own, to sit there for the rest of the file.
   useToastStore.getState().clearToasts();
+  // Cleared HERE and not in `afterEach`: RNTL's auto-cleanup unmounts the tree in
+  // an afterEach of its own, and an ordering assumption between the two would
+  // decide whether a trailing "unmount" leaked into the next test's expectations.
+  lifecycleLog.length = 0;
 });
 
 describe("AppToast - the accessibility label", () => {
@@ -415,5 +437,119 @@ describe("AppToast - the fade", () => {
     expect(mockEntering).toBeDefined();
     // The web fade must not follow it off web, where the class means nothing.
     expect(cardClasses()).not.toContain("animate-in");
+  });
+});
+
+describe("AppToast - riding above an iOS modal", () => {
+  /**
+   * The overlay's HOST node, by its native name. Read off the host rather than off
+   * the composite so the assertion is on what react-native-screens actually hands
+   * the platform - `unstable_accessibilityContainerViewIsModal` reaches native as
+   * `accessibilityContainerViewIsModal`, and a wrapper that dropped the prop on
+   * the way through would still satisfy a composite-level check.
+   */
+  const overlays = () =>
+    // The cast is the honest part: a host component's `type` IS its native name
+    // at runtime, but `ReactTestInstance["type"]` is typed `ElementType`, which
+    // does not model that - a bare `===` is a compile error, not a loose match.
+    screen.UNSAFE_root.findAll((node) => (node.type as unknown) === "RNSFullWindowOverlay");
+
+  it("wraps the card in a full-window overlay on iOS", () => {
+    setPlatformOS("ios");
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    expect(overlays()).toHaveLength(1);
+    // The card is INSIDE it, not a sibling of it - the whole point is that the
+    // toast rides in the overlay's own UIWindow layer.
+    expect(within(overlays()[0]).getByTestId("app-toast")).toBeTruthy();
+  });
+
+  // ☠️☠️ The native default is YES. Left unset, a visible toast marks itself a
+  // modal accessibility container and hides the ENTIRE APP from VoiceOver - and an
+  // error toast no longer expires on its own, so "indefinitely" is literal.
+  // `popover.tsx` deliberately omits this because a popover IS modal; the two are
+  // not to be aligned.
+  it("declares itself NOT a modal accessibility container", () => {
+    setPlatformOS("ios");
+    useToastStore.getState().showToast({ title: "Something did not save", tone: "error" });
+    renderWithProviders(<AppToast />);
+
+    // `toBe(false)`, never `toBeFalsy()`: `undefined` is the failure mode here,
+    // and it is falsy.
+    expect(overlays()[0].props.accessibilityContainerViewIsModal).toBe(false);
+  });
+
+  // `FullWindowOverlay` has no Android or web implementation. `ToastOverlay` is a
+  // component precisely so this branch is re-read every render - popover's
+  // module-load alias would have frozen whichever platform loaded the file first.
+  it.each(["android", "web"] as const)("adds no overlay on %s, and still shows the toast", (os) => {
+    setPlatformOS(os);
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    expect(overlays()).toHaveLength(0);
+    expect(screen.getByTestId("app-toast")).toBeTruthy();
+  });
+
+  it("remounts the overlay when the next toast is promoted into the slot", () => {
+    setPlatformOS("ios");
+    useToastStore.getState().showToast({ title: "First", tone: "success" });
+    useToastStore.getState().showToast({ title: "Second", tone: "success" });
+    const { rerender } = renderWithProviders(<AppToast />);
+
+    expect(lifecycleLog).toEqual(["mount"]);
+
+    act(() => {
+      useToastStore.getState().dismissToast();
+    });
+    rerender(<AppToast />);
+
+    expect(screen.getByText("Second")).toBeTruthy();
+    // ☠️☠️ Promotion swaps `visible` STRAIGHT from the dismissed toast to
+    // `queue[0]`, so the host's `!toast` guard never fires and nothing would
+    // otherwise unmount. Only `key={toast.id}` makes the overlay re-add its
+    // container to the UIWindow - on top of whatever modal is presented by now.
+    expect(lifecycleLog).toEqual(["mount", "unmount", "mount"]);
+  });
+
+  /**
+   * The control, and the reason the test above is not vacuous: the same overlay,
+   * driven by the same store, with the key removed. Promotion changes only its
+   * children, so React reconciles one element in place and the native container
+   * keeps the UIWindow position it took when the FIRST toast appeared - back
+   * underneath any modal presented since. Without this, "the key remounts it"
+   * would be indistinguishable from "React remounts things".
+   */
+  function KeylessHost() {
+    const toast = useToastStore((state) => state.visible);
+
+    if (!toast) {
+      return null;
+    }
+
+    return (
+      <RNFullWindowOverlay unstable_accessibilityContainerViewIsModal={false}>
+        <Text>{toast.title}</Text>
+      </RNFullWindowOverlay>
+    );
+  }
+
+  it("remounts nothing at all once the key is taken away", () => {
+    setPlatformOS("ios");
+    useToastStore.getState().showToast({ title: "First", tone: "success" });
+    useToastStore.getState().showToast({ title: "Second", tone: "success" });
+    const { rerender } = renderWithProviders(<KeylessHost />);
+
+    expect(lifecycleLog).toEqual(["mount"]);
+
+    act(() => {
+      useToastStore.getState().dismissToast();
+    });
+    rerender(<KeylessHost />);
+
+    // The promotion definitely happened - it just did not move the container.
+    expect(screen.getByText("Second")).toBeTruthy();
+    expect(lifecycleLog).toEqual(["mount"]);
   });
 });

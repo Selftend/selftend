@@ -26,6 +26,10 @@
 //      argument and answers `getDuration()` with a hardcoded 300 - so the real
 //      value is unobservable from jest, and this is the only place it can be
 //      pinned at all.
+//   5. The iOS overlay is NOT a modal accessibility container, and its wrapper
+//      is a component rather than popover's `React.Fragment` alias. `false` is
+//      the difference between a toast and a toast that hides the whole app from
+//      VoiceOver; the alias is what would make the prop impossible to pass.
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -100,5 +104,30 @@ describe("app-toast.tsx keeps the properties no render test can see", () => {
   it("branches the web fade on Platform.OS, not Platform.select", () => {
     expect(code).toContain('Platform.OS === "web"');
     expect(code).not.toContain("Platform.select");
+  });
+
+  // ☠️☠️ The native default is YES. Unset, a visible toast marks itself a modal
+  // accessibility container and hides the ENTIRE APP from VoiceOver - for as long
+  // as it is up, which for an error toast is until the user closes it.
+  //
+  // A render test DOES see this one (`app-toast.test.tsx` reads it off the real
+  // `RNSFullWindowOverlay` host node), so this is the one deliberate overlap in
+  // the file: the prop is a one-word edit away from being dropped, on the one
+  // platform with no test layer, and the failure is silent and total.
+  it("marks the iOS overlay as NOT a modal accessibility container", () => {
+    expect(code).toContain("unstable_accessibilityContainerViewIsModal={false}");
+  });
+
+  // ☠️ `React.Fragment` accepts ONLY `key` and `children`, so popover's alias
+  // shape (`Platform.OS === "ios" ? RNFullWindowOverlay : React.Fragment`) cannot
+  // carry the prop above - it would log `Invalid prop ... supplied to
+  // React.Fragment` on every Android and web render instead. The alias is also
+  // resolved at MODULE LOAD, freezing whichever platform imported the file first.
+  // ⚠️ `react-dom/server` never runs Fragment prop validation, so a static render
+  // reports zero warnings; only the reconciler warns. Hence a source gate.
+  it("forks the overlay in a component, never through a React.Fragment alias", () => {
+    expect(code).toContain("function ToastOverlay");
+    expect(code).not.toContain("React.Fragment");
+    expect(code).not.toMatch(/Fragment\s*;/);
   });
 });
