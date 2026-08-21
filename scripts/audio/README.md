@@ -76,6 +76,10 @@ ELEVENLABS_API_KEY=... node scripts/audio/render.mjs probe
 # Prints every composed prompt and the credit cost. Spends nothing.
 node scripts/audio/render.mjs plan --round A
 
+# #1347. One bed prompt rendered twice — `loop: true` and a paired control —
+# and every measurement that separates them. ~198 credits. Dry run without --go.
+ELEVENLABS_API_KEY=... node scripts/audio/render.mjs loopprobe --clip brown-noise --go
+
 # Grades every prompt at 4s before any real spend. Run after ANY prompt change.
 ELEVENLABS_API_KEY=... node scripts/audio/render.mjs preflight --round A
 
@@ -228,6 +232,21 @@ and folded by the pipeline — and fails if the pipeline's own output does not
 clear the gate, if a tonal splice is not caught, or if equal-power folding stops
 beating the shipped linear fold. Run it after touching a threshold, a window
 length or the fold.
+
+☠️ **A raw 30s render does NOT loop, and the failed pass's masters prove it.**
+`brown-noise` was the one bed of Round B whose every take cleared the level gate,
+and hard-cut its three takes score **19.09x / 8.63x / 13.13x** the median wrap
+step — three to six times the 3.0x limit. The pipeline's fold rescues it, but
+only to **2.85x**, inside the limit by 5%. That is the measured cost of the
+non-looping path and the reason [#1347](https://github.com/Selftend/selftend/issues/1347)
+re-opened the question: `loop: true` is accepted with lossless PCM, and a render
+that loops natively needs no fold, no 0.4s trim and no mid-fold dip.
+
+⚠️ That does not overturn the true negative below. The generated `brown-noise` is
+deep and heavily band-limited (LRA 0.4 at 0.01 dBTP), so its median adjacent-sample
+step is tiny and an unrelated wrap sample stands far out of it; the _shipped_
+stdlib beds are broader-band and hide their own cut. The gate catches the wrap it
+can see, and still cannot see every one.
 
 A hard cut of **stochastic** material is not caught (it scores 1.08-1.22x) and
 that is deliberate: splicing two independent stretches of dense noise produces a
