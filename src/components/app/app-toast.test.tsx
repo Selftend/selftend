@@ -1,10 +1,12 @@
 import { act, fireEvent, screen, within } from "@testing-library/react-native";
-import { Platform, Text, View } from "react-native";
+import { Dimensions, Platform, StyleSheet, Text, View } from "react-native";
 import { FullWindowOverlay as RNFullWindowOverlay } from "react-native-screens";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 
-import { AppToast } from "@/src/components/app/app-toast";
+import { AppToast, TOAST_GUTTER, toastBottom } from "@/src/components/app/app-toast";
+import { INVISIBLE_HEADER_HEIGHT } from "@/src/components/app/invisible-header";
+import { INSET_LAYER, useLayeredInsetStore } from "@/src/stores/layered-inset-store";
 import { SUCCESS_TOAST_MS, useToastStore } from "@/src/stores/toast-store";
 import { announceMessage } from "@/src/lib/accessibility";
 import i18n from "@/src/i18n";
@@ -79,6 +81,9 @@ beforeEach(() => {
   // to surface in the next test - and an error toast, which no longer expires on
   // its own, to sit there for the rest of the file.
   useToastStore.getState().clearToasts();
+  // The inset ladder is a module-scope store too, so an edge published by one
+  // position test would decide where the toast sits for every test after it.
+  useLayeredInsetStore.setState({ edges: {} });
   // Cleared HERE and not in `afterEach`: RNTL's auto-cleanup unmounts the tree in
   // an afterEach of its own, and an ordering assumption between the two would
   // decide whether a trailing "unmount" leaked into the next test's expectations.
@@ -555,5 +560,173 @@ describe("AppToast - riding above an iOS modal", () => {
     // The promotion definitely happened - it just did not move the container.
     expect(screen.getByText("Second")).toBeTruthy();
     expect(lifecycleLog).toEqual(["mount"]);
+  });
+});
+
+// A notched phone, so "the inset was applied" is distinguishable from "no inset
+// at all" - the one shape a zeroed default cannot tell apart.
+const PHONE = {
+  windowHeight: 800,
+  safeAreaTop: 59,
+  safeAreaBottom: 34,
+  insetBelow: 0,
+  toastHeight: 80,
+};
+
+/** Where the card's TOP edge lands, which is what the clamp is actually about. */
+function topEdge(args: Parameters<typeof toastBottom>[0]): number {
+  return args.windowHeight - toastBottom(args) - args.toastHeight;
+}
+
+describe("toastBottom - the ladder arithmetic", () => {
+  it("rests on the home-indicator inset plus one rung when nothing is down there", () => {
+    // The same rung RoutineFab and ReminderPromptCard stand on, spelled the same
+    // way - a toast that invented its own gutter would read as misaligned next
+    // to furniture that is, in fact, correctly aligned.
+    expect(toastBottom(PHONE)).toBe(34 + TOAST_GUTTER);
+    expect(TOAST_GUTTER).toBe(16);
+  });
+
+  it("steps over the furniture: the max of layers 0-2, plus the same rung", () => {
+    // 140 stands in for whatever won the max below - a visible banner strip, the
+    // cookie banner, a form footer, the FAB. The toast never learns which.
+    expect(toastBottom({ ...PHONE, insetBelow: 140 })).toBe(140 + TOAST_GUTTER);
+  });
+
+  it("ignores an inset that sits below the safe area rather than dropping onto it", () => {
+    // A publisher can report an edge INSIDE the home-indicator inset (a strip
+    // with no bottom padding of its own). Taking it literally would move the
+    // toast DOWN, under the indicator, which is the one direction the base case
+    // exists to prevent.
+    expect(toastBottom({ ...PHONE, insetBelow: 10 })).toBe(34 + TOAST_GUTTER);
+  });
+
+  it("stops climbing at the invisible header instead of sliding under it", () => {
+    // 600 is the shape of a soft keyboard over a lifted form footer: measured,
+    // legitimate, and most of the screen high. Unclamped the toast would want
+    // 616 and its top would land 104px above the header's bottom edge.
+    const clamped = { ...PHONE, insetBelow: 600 };
+
+    expect(toastBottom(clamped)).toBeLessThan(600 + TOAST_GUTTER);
+    // The top edge comes to rest exactly on the header's bottom edge - #660's
+    // line, inherited rather than re-invented as a fraction of the screen.
+    expect(topEdge(clamped)).toBe(PHONE.safeAreaTop + INVISIBLE_HEADER_HEIGHT);
+  });
+
+  it("keeps clamping as the furniture keeps rising, rather than escaping upward", () => {
+    // Past the clamp the answer stops MOVING. Anything still monotonic in
+    // `insetBelow` here would be the climbs-forever bug wearing a ceiling.
+    const high = toastBottom({ ...PHONE, insetBelow: 600 });
+
+    expect(toastBottom({ ...PHONE, insetBelow: 5_000 })).toBe(high);
+    expect(toastBottom({ ...PHONE, insetBelow: 50_000 })).toBe(high);
+  });
+
+  it("accepts overlapping the obstruction when the card is too tall to clear it", () => {
+    // A three-line error toast under a full keyboard: no position clears both
+    // the furniture and the header. The toast takes the base case and overlaps
+    // what is beneath it - readable and dismissible, which a toast pushed off
+    // the bottom of the window would not be.
+    const tall = { ...PHONE, insetBelow: 600, toastHeight: 700 };
+
+    expect(toastBottom(tall)).toBe(PHONE.safeAreaBottom + TOAST_GUTTER);
+    expect(toastBottom(tall)).toBeGreaterThan(0);
+  });
+
+  it("does not clamp before the card has been measured", () => {
+    // Height 0 is the first frame. The ceiling is at its most generous there, so
+    // the toast takes the offset it asked for and settles once the measurement
+    // lands - never the other way round, which would be a visible drop.
+    expect(toastBottom({ ...PHONE, insetBelow: 300, toastHeight: 0 })).toBe(300 + TOAST_GUTTER);
+  });
+});
+
+describe("AppToast - where it sits", () => {
+  function hostBottom(): number {
+    return StyleSheet.flatten(screen.getByTestId("app-toast-host").props.style).bottom as number;
+  }
+
+  it("anchors to the bottom, and to nothing at the top", () => {
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    const style = StyleSheet.flatten(screen.getByTestId("app-toast-host").props.style);
+    // #660 ruled the top off-limits; the toast has to hold no opinion about it
+    // at all, not merely a smaller one.
+    expect(style.top).toBeUndefined();
+    // jest's insets are all zero, so this is the base case in full.
+    expect(style.bottom).toBe(TOAST_GUTTER);
+  });
+
+  it("rides above furniture the moment a lower layer publishes, and settles back after", () => {
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    // A banner strip appears under a visible toast. Live tracking is the point:
+    // the anchor moves under the card that is already on screen.
+    act(() => useLayeredInsetStore.getState().publishInset("strip", INSET_LAYER.strip, 140));
+    expect(hostBottom()).toBe(140 + TOAST_GUTTER);
+
+    act(() => useLayeredInsetStore.getState().publishInset("fab", INSET_LAYER.floater, 220));
+    expect(hostBottom()).toBe(220 + TOAST_GUTTER);
+
+    act(() => useLayeredInsetStore.getState().clearInset("fab"));
+    act(() => useLayeredInsetStore.getState().clearInset("strip"));
+    expect(hostBottom()).toBe(TOAST_GUTTER);
+  });
+
+  it("cannot see its own layer, so it can never climb away from itself", () => {
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    // The whole reason the ladder is layered (#1154): a flat max would let the
+    // toast consume its own published edge and rise forever.
+    act(() => useLayeredInsetStore.getState().publishInset("toast", INSET_LAYER.toast, 400));
+
+    expect(hostBottom()).toBe(TOAST_GUTTER);
+  });
+
+  it("clamps a live inset at the header instead of following it up the screen", () => {
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    const windowHeight = Dimensions.get("window").height;
+    act(() =>
+      useLayeredInsetStore.getState().publishInset("keyboard", INSET_LAYER.keyboard, 9_999),
+    );
+
+    // Height 0 here (nothing measures under jest), so the ceiling is the full
+    // drop from the header's bottom edge to the bottom of the window.
+    expect(hostBottom()).toBe(windowHeight - INVISIBLE_HEADER_HEIGHT);
+  });
+
+  it("carries the height measurement on its first frame, not on a later one", () => {
+    // ☠️ jest's `View` is a class mock with no measure methods, so no rendered
+    // publisher can ever be made to measure here - the #1339 lesson. What IS
+    // provable is the property that decides the whole thing on web: RNW's
+    // `onLayout` is a MOUNT-TIME decision, so a handler attached on a later
+    // render is never heard at all and the card's height stays 0 forever.
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    expect(typeof screen.getByTestId("app-toast-host").props.onLayout).toBe("function");
+  });
+
+  it("lets the measured height tighten the clamp, so a tall card stops lower", () => {
+    useToastStore.getState().showToast({ title: "Saved", tone: "success" });
+    renderWithProviders(<AppToast />);
+
+    const windowHeight = Dimensions.get("window").height;
+    act(() =>
+      useLayeredInsetStore.getState().publishInset("keyboard", INSET_LAYER.keyboard, 9_999),
+    );
+    // Driven through the handler rather than through a rendered layout pass:
+    // jest never fires one, and its `View` cannot measure. The contract is what
+    // is under test - a height arrives, and the ceiling drops by exactly it.
+    fireEvent(screen.getByTestId("app-toast-host"), "layout", {
+      nativeEvent: { layout: { height: 700 } },
+    });
+
+    expect(hostBottom()).toBe(windowHeight - INVISIBLE_HEADER_HEIGHT - 700);
   });
 });
