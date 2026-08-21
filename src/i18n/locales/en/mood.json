@@ -34,6 +34,7 @@
       "addButton": "Add emotion",
       "add": "Add",
       "tagline": "Drag to reorder. These are yours — rename or remove any of them.",
+      "saveError": "Couldn't save that change. Try again.",
       "back": "Back to the list",
       "editEmotion": "Edit {{name}}",
       "reorderEmotion": "Reorder {{name}}",
