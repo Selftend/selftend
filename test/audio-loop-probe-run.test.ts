@@ -230,6 +230,47 @@ describe("the loop probe asks exactly one question", () => {
     expect(recorded.creditVerdict).toContain("REQUESTED");
   });
 
+  /**
+   * ☠️ A PARTIAL SUM LOOKS EXACTLY LIKE A TOTAL, and understating an unrepeatable
+   * spend is the one direction that misleads. If only some calls come back priced,
+   * adding up the ones that did produces a confident number that is too small — so
+   * the header reading is withheld entirely and the run says which instrument it
+   * fell back to, rather than quoting a fraction as if it were the whole.
+   */
+  it("withholds the header total when only some of the calls were priced", async () => {
+    let call = 0;
+    fetchMock.mockImplementation(async (url: string, init?: { body?: string }) => {
+      sentUrls.push(url);
+      if (url.includes("/user/subscription")) {
+        return {
+          ok: true,
+          json: async () => ({ tier: "creator", character_count: used, character_limit: 100000 }),
+        };
+      }
+      const body = JSON.parse(init?.body ?? "{}");
+      sentBodies.push(body);
+      const seconds = body.duration_seconds * (body.loop ? 1.5 : 1);
+      used += Math.round(seconds * CREDITS_PER_SECOND);
+      // Only the first generation carries a cost header; the second does not.
+      const headers = new Map<string, string>([["content-type", "audio/pcm"]]);
+      if (call === 0) headers.set("character-cost", String(PROBE_SECONDS * CREDITS_PER_SECOND));
+      call += 1;
+      return {
+        ok: true,
+        arrayBuffer: async () => new ArrayBuffer(seconds * STEREO_BYTES_PER_SECOND),
+        headers,
+      };
+    });
+
+    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+
+    const recorded = results("brown-noise", PROBE_SECONDS);
+    // NOT `PROBE_SECONDS * CREDITS_PER_SECOND` — the one priced call's figure must
+    // not be recorded as the pass's cost.
+    expect(recorded.creditsCharged).toBeNull();
+    expect(recorded.creditSource).toMatch(/balance/);
+  });
+
   it("records both readings of what came back", async () => {
     await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
 

@@ -64,11 +64,12 @@ describe("a looping request is a duration loop mode will honour exactly", () => 
     expect(loopReturnedSeconds(3)).toBeCloseTo(3, 6);
   });
 
-  it("survives the floating-point arithmetic 30 / 0.75 invites", () => {
-    // 0.1 + 0.2 territory: a naive `seconds % 0.75 === 0` reports 30s as a
-    // non-multiple on some inputs and would quietly stretch every bed.
+  it("returns every exact multiple unchanged, not just the one bed length", () => {
+    // ⚠️ These are exact in binary floating point — 0.75 is 3/4 — so this is a
+    // breadth check on the rounding rule, not a float-safety one. No epsilon is
+    // needed anywhere in `loopReturnedSeconds` and none is there.
     for (const seconds of [0.75, 1.5, 6, 15, 22.5, 30]) {
-      expect(loopReturnedSeconds(seconds)).toBeCloseTo(seconds, 6);
+      expect(loopReturnedSeconds(seconds)).toBe(seconds);
     }
   });
 

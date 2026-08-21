@@ -51,16 +51,18 @@ export const SFX_MAX_DURATION_SECONDS = 30;
  */
 export const LOOP_DURATION_QUANTUM_SECONDS = 0.75;
 
-/** What loop mode would actually return for a request of `requestedSeconds`. */
+/**
+ * What loop mode would actually return for a request of `requestedSeconds`.
+ *
+ * ⚠️ No floating-point epsilon here, and none is needed: 0.75 is 3/4, which IEEE
+ * 754 represents exactly, so dividing an exact multiple of it by it is exact and
+ * `Math.ceil` cannot overshoot. (An epsilon was written in on the assumption that
+ * 30 / 0.75 lands at 40.00000000000001. It does not — it is exactly 40 — and the
+ * guard was unreachable by construction, which is how the mutation test found it.)
+ */
 export function loopReturnedSeconds(requestedSeconds) {
-  const quanta = requestedSeconds / LOOP_DURATION_QUANTUM_SECONDS;
-  // ☠️ Rounded before the ceiling, deliberately. 30 / 0.75 is 40.00000000000001 in
-  // binary floating point, and a bare `Math.ceil` turns that into 41 quanta —
-  // reporting the one duration that is known to be honoured exactly as a
-  // half-second stretch. The epsilon is the arithmetic, not a fudge.
-  const whole =
-    Math.abs(quanta - Math.round(quanta)) < 1e-9 ? Math.round(quanta) : Math.ceil(quanta);
-  return whole * LOOP_DURATION_QUANTUM_SECONDS;
+  const quanta = Math.ceil(requestedSeconds / LOOP_DURATION_QUANTUM_SECONDS);
+  return quanta * LOOP_DURATION_QUANTUM_SECONDS;
 }
 
 /** The response header that says what a generation actually cost. */
