@@ -25,19 +25,34 @@ import { readFile, appendFile, writeFile, mkdir } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { clipsForRound, composePrompt, OUTPUT_CLIPS } from "./catalog.mjs";
+import {
+  clipsForRound,
+  composePrompt,
+  OUTPUT_CLIPS,
+  TTS_CANDIDATE_SEEDS,
+  VOICES,
+  VOICE_CUES,
+} from "./catalog.mjs";
 import { rowsBySlot } from "./take-gate.mjs";
 import { assertFfmpeg, postprocess, repeatLoop } from "./postprocess.mjs";
 import {
   DEFAULT_REPEATS,
   STATUS,
   planAudition,
+  planVoiceAudition,
   previewName,
   renderIndexHtml,
+  choiceKey,
   choiceRow,
   currentChoices,
   outstanding,
+  voiceIdentity,
+  voiceRowsBySlot,
+  voiceSlots,
 } from "./audition-plan.mjs";
+
+/** The cue ids the voice half owns, for telling a `guide_*` argument from a bed. */
+const VOICE_CUE_IDS = new Set(VOICE_CUES.map((cue) => cue.id));
 
 /** Same override and same repo-relative fallback rule as `render.mjs` (#1320). */
 const OUT_DIR =
@@ -64,12 +79,47 @@ function assertRound(round) {
   return round;
 }
 
+/**
+ * Both halves of the round, in one list.
+ *
+ * ☠️ THE VOICE HALF WAS MISSING ENTIRELY. This function used to return
+ * `clipsForRound(round)` alone, which filters `SFX_CLIPS` — so Round B's eight
+ * voice cues were never surveyed, never previewed, never choosable, and never
+ * counted by `status`. Eleven clips of twenty-one, reported as the whole round.
+ *
+ * The two halves are planned separately rather than forced through one function
+ * because they supersede on different things: a sound effect on its composed
+ * prompt, a voice cue on the pair (voiceId, text). One prompt-shaped comparison
+ * over both would either miss a swapped voice or invent a level gate for TTS.
+ */
 async function survey(round, { all = false } = {}) {
   const clips = clipsForRound(round);
   const promptFor = (clip) => composePrompt(clip.text);
-  const history = rowsBySlot(await readJsonl(join(roundDir(round), "manifest.jsonl")));
+  const rows = await readJsonl(join(roundDir(round), "manifest.jsonl"));
   const choices = currentChoices(await readJsonl(choicesPath(round)));
-  return { clips, promptFor, choices, ...planAudition({ clips, promptFor, history, all }) };
+
+  const sfx = planAudition({ clips, promptFor, history: rowsBySlot(rows), all });
+
+  // Round A is the two bells and its own API probes (#1159); the voice cues are
+  // Round B's, alongside the beds and textures.
+  const slots =
+    round === "B"
+      ? voiceSlots({
+          voices: VOICES,
+          cues: VOICE_CUES,
+          candidates: TTS_CANDIDATE_SEEDS.length,
+        })
+      : [];
+  const voice = planVoiceAudition({ slots, history: voiceRowsBySlot(rows), all });
+
+  return {
+    clips,
+    slots,
+    promptFor,
+    choices,
+    entries: [...sfx.entries, ...voice.entries],
+    missing: [...sfx.missing, ...voice.missing],
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -121,6 +171,13 @@ async function build(round, { repeats, all }) {
         gain: result.gain,
         ceilingBound: result.ceilingBound,
         seam: result.seam,
+        // #1134's hard rule, measured on the finished file. It is in practice a
+        // voice-clip rule (#1138), which is the half that had no audition at all.
+        edges: result.edges,
+        // ⚠️ #1136 sets `introMs` from the MEASURED duration of the chosen
+        // `guide_intro`, never from an estimate — this page is where that number
+        // becomes readable next to the take it belongs to.
+        durationSeconds: result.durationSeconds,
         sizeKb: result.size / 1024,
         error: null,
       });
@@ -162,20 +219,41 @@ async function build(round, { repeats, all }) {
 // choose
 // ---------------------------------------------------------------------------
 
-async function choose(round, clipId, candidate, note) {
+async function choose(round, clipId, candidate, note, voice) {
   if (!OUTPUT_CLIPS.has(clipId)) {
     throw new Error(
       `unknown clip id "${clipId}" — expected one of: ${[...OUTPUT_CLIPS.keys()].join(", ")}`,
     );
   }
+  // ☠️ A voice cue needs BOTH voices picked. Both ship (#1136 makes the male voice
+  // purely additive), so `choose guide_inhale 1` on its own is ambiguous — and
+  // filing it under the clip alone would mark the other voice settled and ship
+  // half the voice set unheard.
+  if (VOICE_CUE_IDS.has(clipId)) {
+    if (!voice) {
+      throw new Error(
+        `${clipId} is said by both voices, so a pick needs --voice: ` +
+          `${VOICES.map((v) => `${v.id} (${v.axis})`).join(", ")}`,
+      );
+    }
+    if (!VOICES.some((v) => v.id === voice)) {
+      throw new Error(`unknown voice "${voice}" — expected ${VOICES.map((v) => v.id).join(" or ")}`);
+    }
+  } else if (voice) {
+    throw new Error(`--voice does not apply to ${clipId}, which is a sound effect`);
+  }
+
   const { entries } = await survey(round, { all: true });
-  const forClip = entries.filter((entry) => entry.clipId === clipId);
-  if (!forClip.length) throw new Error(`${clipId} has no rendered take in round ${round}`);
+  const forClip = entries.filter(
+    (entry) => entry.clipId === clipId && (entry.voice ?? null) === (voice ?? null),
+  );
+  const label = voice ? `${clipId} (${voice})` : clipId;
+  if (!forClip.length) throw new Error(`${label} has no rendered take in round ${round}`);
 
   const match = forClip.find((entry) => entry.candidate === candidate);
   if (!match) {
     throw new Error(
-      `${clipId} has no candidate ${candidate} on file — available: ` +
+      `${label} has no candidate ${candidate} on file — available: ` +
         forClip.map((e) => `${e.candidate} (${e.status})`).join(", "),
     );
   }
@@ -183,11 +261,12 @@ async function choose(round, clipId, candidate, note) {
   // the right character, and it cost the same unreproducible credits — but the
   // record has to say plainly that the pick was made against the gate.
   if (match.status !== STATUS.accepted) {
-    console.log(`⚠️ candidate ${candidate} of ${clipId} is ${match.status}, not an accepted take.`);
+    console.log(`⚠️ candidate ${candidate} of ${label} is ${match.status}, not an accepted take.`);
   }
 
   const row = choiceRow({
     clipId,
+    voice: voice ?? null,
     candidate,
     file: match.file,
     prompt: match.prompt,
@@ -196,9 +275,16 @@ async function choose(round, clipId, candidate, note) {
   });
   await mkdir(roundDir(round), { recursive: true });
   await appendFile(choicesPath(round), `${JSON.stringify(row)}\n`);
-  console.log(
-    `Recorded: ${clipId} candidate ${candidate} (${match.file}) -> ${choicesPath(round)}`,
-  );
+  console.log(`Recorded: ${label} candidate ${candidate} (${match.file}) -> ${choicesPath(round)}`);
+  // ⚠️ #1136 corrected #1134 on exactly this: `introMs` is per-sound data measured
+  // from the rendered clip, not a hardcoded constant. Today's 3.08s file against a
+  // hardcoded 3300 is 220 ms of slop that this pass exists to remove.
+  if (clipId === "guide_intro") {
+    console.log(
+      "⚠️ Set this voice's introMs from the MEASURED duration of this clip — the\n" +
+        "   audition page prints it beside the player. Never from an estimate (#1136).",
+    );
+  }
   return true;
 }
 
@@ -206,17 +292,40 @@ async function choose(round, clipId, candidate, note) {
 // status
 // ---------------------------------------------------------------------------
 
+/**
+ * ☠️ THIS IS #1210's PROGRESS METER, AND IT COUNTED 11 OF 21.
+ *
+ * It surveyed `clipsForRound` alone, so once the sound-effect half was picked it
+ * printed "Every clip in round B has a pick" and exited 0 with all eight voice
+ * cues untouched — a green light on a half-finished pass, which is the same shape
+ * as #1317's `render --round B` producing 11 clips and saying nothing.
+ */
 async function status(round) {
-  const { clips, promptFor, choices, entries, missing } = await survey(round, { all: true });
-  const left = outstanding({ clips, promptFor, choices });
-
-  console.log(`Round ${round}: ${clips.length} clips, ${entries.length} take(s) on file\n`);
-  for (const clip of clips) {
-    const chosen = choices.get(clip.id);
-    const stale = chosen && chosen.prompt !== promptFor(clip);
+  const { clips, slots, promptFor, choices, entries, missing } = await survey(round, { all: true });
+  const line = (unit, id, settledOn, detail = "") => {
+    const chosen = choices.get(id);
+    const stale = chosen && chosen.prompt !== settledOn;
     const mark = !chosen ? "· not chosen" : stale ? "⚠️ chosen against a SUPERSEDED prompt" : "✓";
-    const detail = chosen ? ` candidate ${chosen.candidate} (${chosen.file})` : "";
-    console.log(`  ${mark.padEnd(38)} ${clip.id}${detail}`);
+    const picked = chosen ? ` candidate ${chosen.candidate} (${chosen.file})` : "";
+    console.log(`  ${mark.padEnd(38)} ${unit}${detail}${picked}`);
+  };
+
+  const left = [
+    ...outstanding({ clips, promptFor, choices }),
+    ...outstanding({ clips: slots, promptFor: voiceIdentity, choices }),
+  ];
+  const units = clips.length + slots.length;
+
+  console.log(`Round ${round}: ${units} clips, ${entries.length} take(s) on file\n`);
+  for (const clip of clips) line(clip.id, choiceKey({ clip: clip.id }), promptFor(clip));
+  if (slots.length) {
+    // Named apart so the two halves are legible as halves — they are rendered by
+    // different commands (`render` and `render-voices`) and can be finished on
+    // different days.
+    console.log(`\n  voice (#1136 — both voices ship, so each cue is owed two picks)`);
+    for (const slot of slots) {
+      line(slot.clipId, slot.id, voiceIdentity(slot), `  ${slot.voice}`);
+    }
   }
   if (missing.length) {
     console.log(`\n⚠️ ${missing.length} candidate slot(s) have no take of the current prompt.`);
@@ -241,12 +350,13 @@ function flag(name, fallback = null) {
 const USAGE = `
 Usage:
   node scripts/audio/audition.mjs build  --round A|B [--repeats N] [--all]
-  node scripts/audio/audition.mjs choose <clip> <candidate> --round A|B [--note "..."]
+  node scripts/audio/audition.mjs choose <clip> <candidate> --round A|B [--voice V] [--note "..."]
   node scripts/audio/audition.mjs status --round A|B
 
   --all      also preview takes below the level gate and takes of superseded
              prompts. Both cost the same unreproducible credits.
   --repeats  how many times a bed is tiled for the seam listen (default ${DEFAULT_REPEATS}).
+  --voice    required for a guide_* cue, which both voices say: ${VOICES.map((v) => v.id).join(" | ")}.
 
 Spends nothing. Requires ffmpeg on PATH (#1138).
 `.trim();
@@ -268,7 +378,13 @@ async function main() {
   } else if (command === "choose") {
     const candidate = Number(process.argv[4]);
     if (!process.argv[3] || !Number.isInteger(candidate)) throw new Error(USAGE);
-    await choose(assertRound(flag("round")), process.argv[3], candidate, flag("note"));
+    await choose(
+      assertRound(flag("round")),
+      process.argv[3],
+      candidate,
+      flag("note"),
+      flag("voice"),
+    );
   } else if (command === "status") {
     const ok = await status(assertRound(flag("round")));
     process.exit(ok ? 0 : 1);
