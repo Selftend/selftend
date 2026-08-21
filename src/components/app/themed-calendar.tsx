@@ -30,8 +30,11 @@ interface ThemedCalendarBaseProps {
 }
 
 type ThemedCalendarProps = ThemedCalendarBaseProps &
+  // One arm, not two: the single-value modes differ only in whether the
+  // time view is shown, so splitting them here would duplicate the shape
+  // without documenting a difference.
   (
-    | { mode: "date"; value: Dayjs | null; onChange: (next: Dayjs | null) => void }
+    | { mode: "date" | "datetime"; value: Dayjs | null; onChange: (next: Dayjs | null) => void }
     | { mode: "range"; value: CalendarRange; onChange: (next: CalendarRange) => void }
   );
 
@@ -49,7 +52,8 @@ type ThemedCalendarProps = ThemedCalendarBaseProps &
  * formatted through `Intl` (`src/utils/date.ts`) and never through dayjs —
  * nothing added around this component may start formatting with dayjs.
  *
- * `datetime` is deliberately absent: it arrives with its consumer.
+ * `datetime` is `date` plus the library's own time view — the check-in picker,
+ * which logs an instant rather than a day.
  */
 export function ThemedCalendar(props: ThemedCalendarProps) {
   const { minDate, maxDate, disabledDates } = props;
@@ -113,6 +117,9 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
       {...shared}
       mode="single"
       date={value ?? undefined}
+      // The only thing separating the two single-value modes: `datetime` adds
+      // the library's time view to the same grid, so they share a branch.
+      timePicker={props.mode === "datetime"}
       onChange={({ date }) => onChange(date ? dayjs(date) : null)}
     />
   );
