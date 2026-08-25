@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,6 +35,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function HabitsHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("habits");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -197,7 +198,7 @@ export default function HabitsHomeScreen() {
                   opens (#762) - a door beside its own room rather than in the
                   hallway. */}
               <View className="flex-row flex-wrap gap-2">
-                <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
+                <Button onPress={() => pushWithOrigin("/tools/habits/new")} className="self-start">
                   <Icon name="add" className="size-4 text-primary-foreground" />
                   <Text>{t("cta.newHabit")}</Text>
                 </Button>
@@ -259,7 +260,7 @@ export default function HabitsHomeScreen() {
                       canTick={logsLoaded}
                       onToggle={() => handleToggle(habit)}
                       onOpen={() =>
-                        router.push({
+                        pushWithOrigin({
                           pathname: "/tools/habits/[id]",
                           params: { id: habit.id },
                         })
@@ -289,7 +290,7 @@ export default function HabitsHomeScreen() {
                         accessibilityRole="button"
                         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                         onPress={() =>
-                          router.push({
+                          pushWithOrigin({
                             pathname: "/tools/habits/[id]",
                             params: { id: habit.id },
                           })
@@ -325,7 +326,7 @@ export default function HabitsHomeScreen() {
                 accessibilityHint={t("learn.openHint")}
                 accessibilityRole="button"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => router.push("/tools/habits/learn")}
+                onPress={() => pushWithOrigin("/tools/habits/learn")}
                 className="flex-row items-center gap-4 active:opacity-70"
                 role="button"
                 testID="habits-learn-row"
@@ -353,7 +354,7 @@ export default function HabitsHomeScreen() {
                 <Pressable
                   accessibilityRole="link"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() => router.push("/tools/habits/history")}
+                  onPress={() => pushWithOrigin("/tools/habits/history")}
                   className="flex-row items-center gap-1 active:opacity-70"
                   role="link"
                 >
@@ -380,7 +381,7 @@ export default function HabitsHomeScreen() {
                         accessibilityLabel={t("list.openNamedDetail", { habit: habit.name })}
                         accessibilityRole="button"
                         onPress={() =>
-                          router.push({
+                          pushWithOrigin({
                             pathname: "/tools/habits/[id]",
                             params: { id: habit.id },
                           })

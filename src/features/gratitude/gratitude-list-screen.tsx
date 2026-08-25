@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback } from "react";
 import { ActivityIndicator, FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,6 +15,7 @@ import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function GratitudeListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("gratitude");
   const roomStyle = useRoomStyle("think");
   const { user } = useSession();
@@ -67,7 +68,7 @@ export default function GratitudeListScreen() {
               description={t("list.empty.description")}
               action={{
                 label: t("list.empty.cta"),
-                onPress: () => router.push("/tools/gratitude-log/new"),
+                onPress: () => pushWithOrigin("/tools/gratitude-log/new"),
               }}
             />
           )
