@@ -102,7 +102,7 @@
       "activityMoodLiftDetail": "{{summary}} със записано настроение преди и след.",
       "activityMoodLiftItem": "{{category}} {{lift}} ({{count}})",
       "recurringThought": "Мисъл за разглеждане: {{thought}}",
-      "recurringThoughtDetail": "Тази точна мисъл се появява {{count}} пъти. Помисли дали под нея стои основно убеждение.",
+      "recurringThoughtDetail": "Тази точна мисъл се появява {{count}} пъти.",
       "selfCareTrend": "Тенденция в самогрижата: движение в {{exerciseDays}}/{{totalDays}} скорошни дни",
       "selfCareTrendDetail": "социални дни: {{socialDays}}, дни с благодарност: {{gratitudeDays}}, {{averageSleep}}.",
       "sleepAverage": "{{hours}} ч. среден сън",
@@ -313,7 +313,6 @@
       "safetyBehaviorPlaceholder": "Пример: Останах близо до изхода, гледах телефона си.",
       "notes": "Бележки (по желание)",
       "notesPlaceholder": "Нещо, което си струва да запомниш за следващия път.",
-      "cancel": "Отказ",
       "save": "Запази сесията",
       "saveError": "Неуспешно запазване на сесията. Опитай отново."
     },
@@ -1491,7 +1490,6 @@
     "sounds": {
       "title": "Звуци",
       "open": "Настройки на звука",
-      "close": "Затвори",
       "breathLabel": "Дишане",
       "ambientLabel": "Фоново",
       "breathVolume": "Сила на дишането",

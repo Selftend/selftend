@@ -294,8 +294,9 @@ export function MeditationSitScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, paused, focused]);
 
-  // Shell B has no chrome, so the OS back gesture and the web back button are
-  // the only uninvited exits. Mid-sit they pause the clock and ask (#777) -
+  // Shell B's Escape (#1256) leaves through `router.replace`, so it lands here
+  // with the OS back gesture and the web back button - every uninvited exit
+  // passes this guard. Mid-sit they pause the clock and ask (#777) -
   // confirming finishes and saves, then honours the exit rather than detouring
   // through a reflection the user was leaving. Once the sit is recorded the
   // guard stands down: backing out of the reflection is just skipping it.

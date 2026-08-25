@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { memo, useCallback, useMemo } from "react";
 import { ActivityIndicator, Pressable, SectionList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,10 +29,11 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
  * line instead, which is what that width is worth here.
  */
 const HabitLogRow = memo(function HabitLogRow({ log, habit }: { log: HabitLog; habit: Habit }) {
+  const pushWithOrigin = usePushWithOrigin();
   const chip = useHabitChipPalette()[habit.color];
   const onPress = useCallback(
-    () => router.push({ pathname: "/tools/habits/[id]", params: { id: habit.id } }),
-    [habit.id],
+    () => pushWithOrigin({ pathname: "/tools/habits/[id]", params: { id: habit.id } }),
+    [habit.id, pushWithOrigin],
   );
 
   return (

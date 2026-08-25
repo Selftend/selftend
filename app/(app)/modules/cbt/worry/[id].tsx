@@ -1,4 +1,5 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -21,6 +22,7 @@ import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function WorryDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
@@ -107,11 +109,7 @@ export default function WorryDetailScreen() {
 
           <View className="gap-3">
             <Button
-              onPress={() =>
-                router.push(
-                  `/modules/cbt/worry/new?entryId=${entry.id}` as Parameters<typeof router.push>[0],
-                )
-              }
+              onPress={() => pushWithOrigin(`/modules/cbt/worry/new?entryId=${entry.id}` as Href)}
               variant="secondary"
             >
               <Text>{t("common:edit")}</Text>

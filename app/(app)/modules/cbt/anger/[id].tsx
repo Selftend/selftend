@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -21,6 +22,7 @@ import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function AngerDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
@@ -121,7 +123,7 @@ export default function AngerDetailScreen() {
 
           <View className="gap-3">
             <Button
-              onPress={() => router.push(`/modules/cbt/anger/new?logId=${log.id}`)}
+              onPress={() => pushWithOrigin(`/modules/cbt/anger/new?logId=${log.id}`)}
               variant="secondary"
             >
               <Text>{t("common:edit")}</Text>

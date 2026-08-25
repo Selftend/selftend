@@ -105,8 +105,11 @@
     "saveLog": "Save",
     "saving": "Saving...",
     "saveProblem": "Could not save",
-    "back": "Back",
-    "continue": "Continue",
+    "thoughtRequired": "Write the thought before saving.",
+    "finishLater": "Finish later",
+    "changeTechnique": "Change technique",
+    "railNote_one": "{{count}} of {{total}} parts filled in",
+    "railNote_other": "{{count}} of {{total}} parts filled in",
     "steps": {
       "thought": "The thought",
       "category": "Category",
@@ -140,8 +143,6 @@
       "ruleStatement": "Should / must rule",
       "other": "Other"
     },
-    "fusionDrop": "Fusion dropped from {{before}} to {{after}}.",
-    "noFusionDrop": "Fusion stayed at {{after}}. That's ok - noticing is enough.",
     "deletedToast": "Log deleted",
     "deleteConfirm": "Delete this log?",
     "deleteConfirmBody": "This cannot be undone.",
@@ -214,8 +215,6 @@
       "step4Title": "4. Expand awareness",
       "step4Body": "Keep the feeling in your awareness and, at the same time, broaden your focus to the world around you - what you can see, hear, and do."
     },
-    "intensityDrop": "Intensity dropped from {{before}} to {{after}}.",
-    "noIntensityDrop": "Intensity stayed at {{after}}. Making room is the goal - not eliminating the feeling.",
     "deletedToast": "Log deleted",
     "deleteConfirm": "Delete this log?",
     "deleteConfirmBody": "This cannot be undone.",
