@@ -20,6 +20,17 @@ So, when you bump one of the packages below:
 version drift apart, so this cannot pass unnoticed — but that guard only catches
 the version, not whether the patched behaviour still makes sense.
 
+## ⚠️ CI caches `node_modules`, so this directory is part of the cache key
+
+Every workflow that installs restores `node_modules` from a cache and runs
+`npm ci` only on a miss — and `npm ci` is the only thing that runs
+`postinstall`, i.e. the only thing that runs `patch-package`. So the cache key
+hashes `patches/**` alongside the lockfile. Adding or editing a patch without
+that would restore a pre-patch `node_modules`, skip the install, and test an
+**unpatched** dependency against a tree that contains the patch. That is not a
+subtle failure: it turned every open PR red at once on 2026-08-25, each with
+nothing in its own diff to explain it.
+
 ## `react-native-ui-datepicker`
 
 Adds the accessibility hooks the calendar grid needs (#1301). The library
