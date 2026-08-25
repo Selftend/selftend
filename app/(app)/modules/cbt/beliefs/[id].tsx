@@ -22,6 +22,7 @@ import {
   useUpdateBeliefStrength,
 } from "@/src/features/beliefs/queries";
 import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
+import { useInlineWriteError } from "@/src/lib/use-inline-write-error";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -34,9 +35,23 @@ export default function BeliefDetailScreen() {
   const { data: belief, isLoading } = useCoreBelief(user?.id ?? null, id ?? null);
   const strengthMutation = useUpdateBeliefStrength(user?.id ?? null);
   const deleteMutation = useDeleteCoreBelief(user?.id ?? null);
+  const deleteError = useInlineWriteError(t("beliefs.deleteError"));
+
+  // ☠️ `DeleteEntryButton` keeps its confirmation OPEN when the delete rejects, so the
+  // global save-failed toast would land behind a native modal (#1364, spec §10).
+  // `ConfirmDialog` already carries an `error` slot; the failure goes there. The
+  // success toast is safe - it fires as the screen is being replaced.
   const handleDelete = async () => {
     if (!belief) return;
-    await deleteMutation.mutateAsync(belief.id);
+    deleteError.onStart();
+    try {
+      await deleteMutation.mutateAsync(belief.id);
+    } catch (error) {
+      deleteError.onError();
+      // Rethrown on purpose: `DeleteEntryButton` closes its confirmation only when
+      // `onConfirm` RESOLVES, and a closed dialog has nowhere to show this.
+      throw error;
+    }
     showToast({ title: t("common:feedback.deleted"), tone: "success" });
     router.replace("/modules/cbt/beliefs" as Parameters<typeof router.replace>[0]);
   };
@@ -215,9 +230,11 @@ export default function BeliefDetailScreen() {
               <Text>{t("common:edit")}</Text>
             </Button>
             <DeleteEntryButton
+              error={deleteError.message ?? undefined}
               label={t("common:delete")}
               title={t("beliefs.deleteTitle")}
               message={t("beliefs.deleteMessage")}
+              onOpen={deleteError.onStart}
               onConfirm={handleDelete}
             />
           </View>

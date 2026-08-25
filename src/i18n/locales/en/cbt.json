@@ -253,6 +253,7 @@
     "strengthSummary": "Original {{original}} · Alternative {{alternative}}",
     "deleteTitle": "Delete this belief?",
     "deleteMessage": "This permanently removes the belief and its strength history. This can't be undone.",
+    "deleteError": "Unable to delete the belief. Try again.",
     "validation": {
       "beliefStatement": "Describe the belief.",
       "alternativeBelief": "Write an alternative belief."
@@ -370,6 +371,7 @@
     "loadingDetail": "Loading worry...",
     "deleteTitle": "Delete this worry?",
     "deleteMessage": "This permanently removes the entry. This can't be undone.",
+    "deleteError": "Unable to delete the entry. Try again.",
     "validation": {
       "worryStatement": "Describe the worry.",
       "copingStatement": "Write a coping statement.",
@@ -491,6 +493,7 @@
     "editDescription": "Update the details of this episode.",
     "deleteTitle": "Delete this anger log?",
     "deleteMessage": "This permanently removes the log. This can't be undone.",
+    "deleteError": "Unable to delete the log. Try again.",
     "validation": {
       "triggerText": "Describe what triggered the anger."
     }
