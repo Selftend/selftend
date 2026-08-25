@@ -2,7 +2,7 @@ import { ActivityIndicator, RefreshControl, useWindowDimensions, View } from "re
 import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -126,6 +126,7 @@ function EmptyStateMark({ wide }: { wide: boolean }) {
 }
 
 export default function HomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("navigation");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -208,7 +209,7 @@ export default function HomeScreen() {
    * host them (#980), so there is no mutation on this screen to guard, no undo stack to
    * keep, and no state that can be left stranded by a row leaving.
    */
-  const openArrange = () => router.push("/arrange");
+  const openArrange = () => pushWithOrigin("/arrange");
 
   /**
    * Eyebrow and `h1`, and it stops there (#960).

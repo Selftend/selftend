@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { View } from "react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,10 +19,12 @@ import { requireSupabase } from "@/src/lib/supabase";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 type FeedbackCategory = "bug" | "suggestion" | "question";
 
 export default function SupportScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("settings");
   const supportEmail = appEnv.supportEmail;
   const supportSubject = encodeURIComponent("Selftend support");
@@ -97,7 +98,7 @@ export default function SupportScreen() {
                       {t("feedback.crisisWarning")}
                     </Text>
                     <Button
-                      onPress={() => router.push("/crisis")}
+                      onPress={() => pushWithOrigin("/crisis")}
                       size="sm"
                       variant="ghost"
                       className="mt-2 self-start px-0"
@@ -182,7 +183,7 @@ export default function SupportScreen() {
             <CardDescription>{t("supportPage.handlesNot")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onPress={() => router.push("/faq")} variant="secondary">
+            <Button onPress={() => pushWithOrigin("/faq")} variant="secondary">
               <Text>{t("supportPage.openFaq")}</Text>
             </Button>
           </CardContent>
@@ -206,7 +207,7 @@ export default function SupportScreen() {
               ) : (
                 <Text variant="muted">{t("supportPage.emailNotConfigured")}</Text>
               )}
-              <Button onPress={() => router.push("/account-deletion")} variant="ghost">
+              <Button onPress={() => pushWithOrigin("/account-deletion")} variant="ghost">
                 <Text>{t("supportPage.deleteAccount")}</Text>
               </Button>
             </View>
@@ -241,13 +242,13 @@ export default function SupportScreen() {
           </CardHeader>
           <CardContent>
             <View className="gap-3">
-              <Button onPress={() => router.push("/crisis")} variant="secondary">
+              <Button onPress={() => pushWithOrigin("/crisis")} variant="secondary">
                 <Text>{t("supportPage.openCrisis")}</Text>
               </Button>
-              <Button onPress={() => router.push("/privacy")} variant="ghost">
+              <Button onPress={() => pushWithOrigin("/privacy")} variant="ghost">
                 <Text>{t("supportPage.openPrivacy")}</Text>
               </Button>
-              <Button onPress={() => router.push("/terms")} variant="ghost">
+              <Button onPress={() => pushWithOrigin("/terms")} variant="ghost">
                 <Text>{t("supportPage.openTerms")}</Text>
               </Button>
             </View>

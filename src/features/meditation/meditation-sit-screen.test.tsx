@@ -158,6 +158,10 @@ describe("Meditation sitting (7b)", () => {
     expect(screen.getByText("of 12 min · bell at 5")).toBeTruthy();
     expect(screen.getByText("Pause")).toBeTruthy();
     expect(screen.getByText("Finish early")).toBeTruthy();
+    // R1 (#1256): the shell hosts the Escape, so the sit carries exactly one.
+    // Its announcement on this route is pinned end to end (real trail, real
+    // bundles) in focus-session-shell.test.tsx.
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
   });
 
   it("omits the bell read-out when the bell is off", () => {

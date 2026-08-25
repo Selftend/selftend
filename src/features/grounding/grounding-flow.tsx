@@ -81,8 +81,9 @@ export function GroundingFlow({ slug }: { slug: string }) {
   });
 
   /**
-   * The shell has no chrome, so the OS back gesture and the web back button
-   * are the only uninvited exits. Mid-session they ask — never a silent
+   * The shell's Escape (#1256) leaves through `router.replace`, so it lands
+   * here with the OS back gesture and the web back button — every uninvited
+   * exit passes this guard. Mid-session they ask — never a silent
    * discard — and confirming saves, then actually leaves (#928; it used to
    * strand on the done screen, still on the route). The inline Finish early
    * button is the invited exit. The done phase and a finished save let the

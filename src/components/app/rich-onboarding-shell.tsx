@@ -22,10 +22,17 @@ interface RichOnboardingShellProps {
   ctaLabel: string;
   /** Accessible name for the dialog, usually the onboarding title. */
   accessibilityLabel?: string;
-  /** When true, the CTA always fires onComplete and the back gesture is a no-op (used by ActInfo). */
+  /**
+   * When true the CTA fires `onComplete` instead of `onDismiss`. Passed by
+   * `ActInfo` and `AppOnboardingWizard` — on the wizard the CTA advances a
+   * panel while `onDismiss` steps back, so a CTA wired to the dismiss would
+   * move the wizard the wrong way. It never touches `onRequestClose`; the
+   * system close request (Android back, the web Escape key) always goes to
+   * `onDismiss`.
+   */
   ctaAlwaysCompletes?: boolean;
   onComplete: () => void;
-  onDismiss?: () => void;
+  onDismiss: () => void;
   children: ReactNode;
   footerSlot?: ReactNode;
 }
@@ -42,19 +49,19 @@ export function RichOnboardingShell({
   children,
   footerSlot,
 }: RichOnboardingShellProps) {
-  const ctaOnPress = ctaAlwaysCompletes ? onComplete : (onDismiss ?? onComplete);
+  const ctaOnPress = ctaAlwaysCompletes ? onComplete : onDismiss;
 
   return (
     <PressShieldModal
       accessibilityLabel={accessibilityLabel}
-      // The Escape is the dismiss, not the CTA. On all nine consumers that is
-      // the same callback the CTA fires (M3), except on `AppOnboardingWizard`,
+      // The Escape is the dismiss, not the CTA. On the Guides that is the
+      // same callback the CTA fires (M3), except on `AppOnboardingWizard`,
       // where `ctaAlwaysCompletes` makes the CTA advance a panel — an X wired
       // to it would move the wizard forward. The wizard's row is the one
       // surface that ends up wearing a word instead of a glyph; W18 (#1258)
       // promotes its footer "Skip" up here.
-      onEscape={onDismiss ?? onComplete}
-      onRequestClose={onDismiss ?? (() => undefined)}
+      onEscape={onDismiss}
+      onRequestClose={onDismiss}
       visible={visible}
     >
       {/* No "top": the wrapper's escape row already sits in the top inset. */}
