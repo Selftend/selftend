@@ -1,6 +1,7 @@
 import { createContext, type PropsWithChildren, useContext, useEffect, useState } from "react";
+import { Platform } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
-import type { Session, User } from "@supabase/supabase-js";
+import { isAuthRetryableFetchError, type Session, type User } from "@supabase/supabase-js";
 
 import { hasSupabaseConfig } from "@/src/lib/env";
 import { initializeSupabaseAutoRefresh, supabase } from "@/src/lib/supabase";
@@ -27,15 +28,51 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!supabase) return;
+    const client = supabase;
 
     initializeSupabaseAutoRefresh();
 
     let mounted = true;
 
-    supabase.auth
+    client.auth
       .getSession()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!mounted) {
+          return;
+        }
+
+        // Guest entry (#1440): a native cold start with no stored session
+        // silently becomes a guest account - registration is optional, never a
+        // gate. Both signed-out gates (the app/index.tsx landing fork and
+        // protected-layout's `!session` branch) branch on this provider's
+        // state, so they inherit the guest-or-fallback rule from this one
+        // seam: `status` stays "loading" for the round trip, success arrives
+        // as a session, and failure leaves `session` null - exactly today's
+        // auth landing. Deliberately ONLY at initial-session resolution: a
+        // registered user signing out later must land on the auth screens to
+        // switch accounts, not be handed a fresh guest. Web keeps its
+        // marketing landing untouched (#1441 adds the Start-now CTA there).
+        if (!data.session && Platform.OS !== "web") {
+          const guest = await client.auth.signInAnonymously();
+          if (!mounted) {
+            return;
+          }
+
+          // `anonymous_provider_disabled` is the hosted kill switch - the
+          // client ships dark behind it, so the expected fallback is not an
+          // incident. Neither is a fetch failure: that is just an offline
+          // first launch, and the landing's own sign-in is equally offline.
+          if (
+            guest.error &&
+            guest.error.code !== "anonymous_provider_disabled" &&
+            !isAuthRetryableFetchError(guest.error)
+          ) {
+            captureError(guest.error);
+          }
+
+          setSession(guest.data.session);
+          setSentryUser(guest.data.session?.user?.id ?? null);
+          setStatus("ready");
           return;
         }
 
