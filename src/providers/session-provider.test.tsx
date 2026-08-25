@@ -151,7 +151,11 @@ describe("SessionProvider guest entry (#1440)", () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockSignInAnonymously.mockResolvedValue({
       data: { session: null, user: null },
-      error: new AuthApiError("Anonymous sign-ins are disabled", 422, "anonymous_provider_disabled"),
+      error: new AuthApiError(
+        "Anonymous sign-ins are disabled",
+        422,
+        "anonymous_provider_disabled",
+      ),
     });
 
     renderProvider();
