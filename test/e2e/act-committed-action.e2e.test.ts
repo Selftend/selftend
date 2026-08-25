@@ -78,7 +78,9 @@ test.describe("ACT committed action: create, add step, toggle step, change statu
     // both go through `formatDayKey`. Comparing the two rendered strings makes
     // the assertion independent of locale and of the day the suite runs on.
     const triggerName = await targetDateTrigger.getAttribute("aria-label");
-    const formattedTargetDate = (triggerName ?? "").split(": ")[1];
+    // Whitespace-normalized to match how `getByText` compares, so an exotic
+    // space out of Chrome's ICU cannot make the lookup below silently miss.
+    const formattedTargetDate = (triggerName ?? "").split(": ")[1]?.replace(/\s+/g, " ").trim();
     expect(formattedTargetDate).toBeTruthy();
     // The stored `YYYY-MM-DD` is a wire format and must not be what is shown.
     expect(formattedTargetDate).not.toMatch(/^\d{4}-\d{2}-\d{2}$/);
