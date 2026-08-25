@@ -13,6 +13,7 @@ import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -204,6 +205,29 @@ describe("SettingsScreen structure", () => {
 
     fireEvent.press(screen.getByLabelText("Legal and boundaries"));
     expect(router.push).toHaveBeenCalledWith("/legal");
+  });
+
+  /**
+   * The stray both sibling batches left unclaimed (#1261, #1266): this screen
+   * sits outside every directory the batch tickets named, and Settings IS
+   * off-trail from Reminders, whose own Up is Home - the exact reported symptom
+   * (#1160) the Origin rule was written for, one door over from the bell.
+   *
+   * ⚠️ On the STORE, not on `router.push`: `usePushWithOrigin` pushes through
+   * `router.push`, so the assertion above passes identically whether or not
+   * this row was ever migrated (#1267).
+   */
+  it("records Settings as the Origin when opening Reminders", async () => {
+    useNavigationOriginStore.setState({ pending: null });
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByLabelText("Reminders")).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText("Reminders"));
+
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/settings",
+      forPathname: "/notifications",
+    });
   });
 });
 

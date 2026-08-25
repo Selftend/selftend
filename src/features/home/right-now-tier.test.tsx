@@ -6,7 +6,7 @@ import { useMoodSeedStore } from "@/src/stores/mood-seed-store";
 import { currentDateKey, addDaysToKey } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+jest.mock("expo-router", () => ({ router: { push: jest.fn() }, usePathname: () => "/" }));
 
 jest.mock("@/src/stores/selected-date-store", () => ({
   useSelectedDate: () => ({

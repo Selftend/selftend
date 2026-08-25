@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -34,6 +35,7 @@ const STATUS_KEYS: Record<RoutineStatus, "notStarted" | "inProgress" | "complete
 };
 
 export default function RoutinesHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("routines");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -72,10 +74,7 @@ export default function RoutinesHomeScreen() {
           </View>
 
           <View className="flex-row flex-wrap gap-2">
-            <Button
-              onPress={() => router.push("/routines/new" as Parameters<typeof router.push>[0])}
-              className="self-start"
-            >
+            <Button onPress={() => pushWithOrigin("/routines/new" as Href)} className="self-start">
               <Icon name="add" className="size-4 text-primary-foreground" />
               <Text>{t("cta.newRoutine")}</Text>
             </Button>
@@ -96,10 +95,10 @@ export default function RoutinesHomeScreen() {
                     records={records}
                     dayKey={dayKey}
                     onOpen={() =>
-                      router.push({
+                      pushWithOrigin({
                         pathname: "/routines/[id]",
                         params: { id: routine.id },
-                      } as Parameters<typeof router.push>[0])
+                      } as Href)
                     }
                   />
                 ))}

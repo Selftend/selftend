@@ -1,4 +1,5 @@
-import { router, type Href } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -178,6 +179,7 @@ interface ToolCardProps {
 }
 
 function ToolCard({ tool, stat }: ToolCardProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("navigation");
   const name = t(tool.nameKey);
   const subtitle = t(tool.subKey);
@@ -187,7 +189,7 @@ function ToolCard({ tool, stat }: ToolCardProps) {
       accessibilityLabel={name}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(tool.href)}
+      onPress={() => pushWithOrigin(tool.href)}
       className="min-w-[260px] flex-1 basis-[260px] flex-row items-center gap-4 rounded-2xl border border-border bg-card p-4 active:bg-accent/40"
       role="button"
     >
