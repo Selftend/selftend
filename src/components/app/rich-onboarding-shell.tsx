@@ -33,6 +33,20 @@ interface RichOnboardingShellProps {
   ctaAlwaysCompletes?: boolean;
   onComplete: () => void;
   onDismiss: () => void;
+  /**
+   * Overrides what the pinned Escape fires. Without it the Escape is the
+   * dismiss — right on the guides, where dismiss and complete are the same
+   * callback. `AppOnboardingWizard` passes its skip path here, because its
+   * `onDismiss` is a step-Back and an X wired to it would mean "previous
+   * panel" (#1258).
+   */
+  onEscape?: () => void;
+  /**
+   * The word the pinned Escape wears in place of the bare X (M2, #1258).
+   * Only for a close that decides something that sticks — the first-run
+   * gate's skip. Leave off wherever closing is free.
+   */
+  escapeLabel?: string;
   children: ReactNode;
   footerSlot?: ReactNode;
 }
@@ -46,6 +60,8 @@ export function RichOnboardingShell({
   ctaAlwaysCompletes = false,
   onComplete,
   onDismiss,
+  onEscape,
+  escapeLabel,
   children,
   footerSlot,
 }: RichOnboardingShellProps) {
@@ -54,13 +70,15 @@ export function RichOnboardingShell({
   return (
     <PressShieldModal
       accessibilityLabel={accessibilityLabel}
-      // The Escape is the dismiss, not the CTA. On the Guides that is the
-      // same callback the CTA fires (M3), except on `AppOnboardingWizard`,
-      // where `ctaAlwaysCompletes` makes the CTA advance a panel — an X wired
-      // to it would move the wizard forward. The wizard's row is the one
-      // surface that ends up wearing a word instead of a glyph; W18 (#1258)
-      // promotes its footer "Skip" up here.
-      onEscape={onDismiss}
+      // The Escape defaults to the dismiss, not the CTA. On the eight guides
+      // that is the same callback the CTA fires (M3). `AppOnboardingWizard`
+      // overrides it with its skip path — its dismiss is a step-Back, and its
+      // `ctaAlwaysCompletes` CTA advances a panel, so wiring the X to either
+      // would make it navigate instead of leave (#1258). `onRequestClose`
+      // stays on the dismiss regardless: the system gesture keeps stepping a
+      // wizard backwards (M4).
+      onEscape={onEscape ?? onDismiss}
+      escapeLabel={escapeLabel}
       onRequestClose={onDismiss}
       visible={visible}
     >
