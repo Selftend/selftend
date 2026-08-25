@@ -1514,9 +1514,9 @@
     },
     "overview": {
       "patternsTitle": "Модели",
-      "newPattern": "Нов модел →",
+      "newPattern": "Нов модел",
       "recentTitle": "Скорошни сесии",
-      "showAll": "Виж всички сесии →",
+      "showAll": "Виж всички сесии",
       "noPatterns": "Още няма модели.",
       "startPattern": "Започни {{name}}",
       "minutes_one": "минута",

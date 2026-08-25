@@ -45,7 +45,7 @@ import {
 } from "@/src/features/mood/week-window";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
-import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { formatOneDecimal } from "@/src/lib/locale-format";
@@ -502,7 +502,9 @@ export default function MoodTrackerScreen() {
                         narrow screen it drops to its own line inside WeekHero
                         (#697's 360dp bg measurement). Conditional, not CSS-
                         hidden, so it never exists twice in the a11y tree. */}
-                    {wideRows ? <ShowAllHistoryLink /> : null}
+                    {wideRows ? (
+                      <ShowAllLink label={t("allHistory.link")} route="/tools/check-in/history" />
+                    ) : null}
                   </View>
                 }
               >

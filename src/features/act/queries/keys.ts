@@ -13,6 +13,8 @@ export const actKeys = {
   defusionList: (userId: string | null) => ["act", "defusion", "list", u(userId)] as const,
   defusionLatest: (userId: string | null) =>
     ["act", "defusion", "list", u(userId), "latest"] as const,
+  defusionCount: (userId: string | null) =>
+    ["act", "defusion", "list", u(userId), "count"] as const,
   defusionDetail: (userId: string | null, logId: string | null) =>
     ["act", "defusion", "detail", u(userId), u(logId)] as const,
   expansionList: (userId: string | null) => ["act", "expansion", "list", u(userId)] as const,
@@ -40,7 +42,9 @@ export const actKeys = {
   // Prefix matcher used by mutations to invalidate every status filter at once.
   committedActionListPrefix: (userId: string | null) =>
     ["act", "committedAction", "list", u(userId)] as const,
-  committedActionCount: (userId: string | null, status: ActionStatus) =>
+  // `status` may be undefined - that is ACT home's lifetime count, and it is a distinct
+  // cache entry from any single status's, not a wider read of the same one (#1378).
+  committedActionCount: (userId: string | null, status?: ActionStatus) =>
     ["act", "committedAction", "list", u(userId), status, "count"] as const,
   committedActionDetail: (userId: string | null, actionId: string | null) =>
     ["act", "committedAction", "detail", u(userId), u(actionId)] as const,
@@ -48,6 +52,10 @@ export const actKeys = {
     ["act", "actionStep", "list", u(userId), u(actionId)] as const,
   actionStepAll: (userId: string | null) => ["act", "actionStep", "all", u(userId)] as const,
   choicePointList: (userId: string | null) => ["act", "choicePoint", "list", u(userId)] as const,
+  // Under the list prefix, like `choicePointLatest`, so every choice-point mutation's
+  // existing list invalidation refreshes the count too.
+  choicePointCount: (userId: string | null) =>
+    ["act", "choicePoint", "list", u(userId), "count"] as const,
   choicePointLatest: (userId: string | null) =>
     ["act", "choicePoint", "list", u(userId), "latest"] as const,
   choicePointDetail: (userId: string | null, id: string | null) =>
