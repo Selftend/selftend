@@ -142,7 +142,7 @@
     "act": {
       "letter": "A",
       "title": "Act",
-      "sub": "Behavioral",
+      "sub": "Behavioural",
       "description": "Action precedes motivation. Schedule meaningful behavior, expose yourself gradually to what you avoid, and watch mood follow."
     },
     "be": {
@@ -1142,7 +1142,7 @@
       "reflectionPrompt": "What would a more balanced version of this situation sound like?"
     },
     "catastrophizing": {
-      "title": "Catastrophizing",
+      "title": "Catastrophising",
       "shortDescription": "Jumping quickly to the worst-case outcome and treating it as likely.",
       "reflectionPrompt": "What is difficult here, and what is only a fear about the future?"
     },
@@ -1157,7 +1157,7 @@
       "reflectionPrompt": "What other outcome is also plausible right now?"
     },
     "overgeneralization": {
-      "title": "Overgeneralization",
+      "title": "Overgeneralisation",
       "shortDescription": "Using one event as proof that the same pattern will always repeat.",
       "reflectionPrompt": "Is this one moment, or is it truly evidence for every situation?"
     },
@@ -1177,12 +1177,12 @@
       "reflectionPrompt": "What positive detail am I brushing aside too quickly?"
     },
     "labeling": {
-      "title": "Labeling",
+      "title": "Labelling",
       "shortDescription": "Reducing yourself or someone else to a harsh global label.",
       "reflectionPrompt": "How can I describe the moment without turning it into an identity?"
     },
     "personalization": {
-      "title": "Personalization",
+      "title": "Personalisation",
       "shortDescription": "Taking on more blame or responsibility than the facts justify.",
       "reflectionPrompt": "What part is mine, and what part is not actually under my control?"
     },

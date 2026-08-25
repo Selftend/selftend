@@ -60,7 +60,7 @@ test.describe("create thought record", () => {
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // Step 6: Distortions
-    await page.getByRole("checkbox", { name: "Catastrophizing", exact: true }).click();
+    await page.getByRole("checkbox", { name: "Catastrophising", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // Step 7: Balanced thought
