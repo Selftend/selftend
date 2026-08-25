@@ -540,7 +540,6 @@
     "descriptionLabel": "More detail (optional)",
     "descriptionPlaceholder": "Anything that helps you remember why and how",
     "targetDateLabel": "Target date (optional)",
-    "targetDatePlaceholder": "YYYY-MM-DD",
     "obstaclesLabel": "What might get in the way? (HARD barriers)",
     "obstaclesPlaceholder": "e.g. Hooked: \"I'll fail\" → unhook. Avoiding: dread → make room.",
     "obstaclesHint": "Name the HARD barriers and your answer to each: Hooked by thoughts (unhook), Avoiding discomfort (make room), Remoteness from values (reconnect to your why), Doubtful goals (break it into a smaller, realistic step).",
