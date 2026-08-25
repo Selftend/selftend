@@ -1,4 +1,4 @@
-import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
+import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-strings";
 
 /**
  * `show the record, don't read it` (#711), and its companion: **the framework may
@@ -88,7 +88,7 @@ function matching(locale: Locale, pattern: RegExp) {
 }
 
 /** Renders offenders for a failure message: which key said it, and what it said. */
-function describeEntries(entries: ReturnType<typeof loadLocale>) {
+function describeEntries(entries: LocaleString[]) {
   return entries.map(({ namespace, key, text }) => `${namespace}:${key} - ${text}`);
 }
 
