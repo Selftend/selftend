@@ -650,8 +650,8 @@ Follows the contract in `tools.md`:
 | `/modules/act/self-compassion`        | Kind hands / kind self-talk **(new)**                                    |
 | `/modules/act/connection`             | Noticing + Drop Anchor (ACE) flow                                        |
 | `/modules/act/observing-self`         | Ten Deep Breaths / chessboard                                            |
-| `/modules/act/values`                 | Values questionnaire + Bull's-Eye + Values Square flow                   |
-| `/modules/act/values/bulls-eye`       | Full Bull's-Eye with snapshot history                                    |
+| `/modules/act/values`                 | Values questionnaire + the alignment check-in and its snapshot history   |
+| `/modules/act/values/bulls-eye`       | Compatibility redirect to `/modules/act/values` (folded in, #1379)       |
 | `/modules/act/committed-action`       | Action plans (willingness + HARD barriers)                               |
 | `/modules/act/committed-action/[id]`  | Plan detail                                                              |
 | `/modules/act/break-habit`            | Breaking-habits 5-question plans **(new)**                               |
