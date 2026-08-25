@@ -194,3 +194,16 @@ _Avoid_: full account, real account, permanent account, member
 Attaching the first sign-in identity to a guest account, in place, keeping all its data. Guest →
 registered, one way. User-facing copy never says the word — people just "create an account".
 _Avoid_: upgrade, migration, merge (a conversion never combines two accounts)
+
+**Abandonment**:
+Knowingly leaving a guest account behind by signing in to a registered account from a device that
+holds guest data. Always preceded by a warning when the guest account holds any user-created
+content — never silent — and the warning offers export in place (#1430). A guest account with
+nothing in it is abandoned without ceremony.
+_Avoid_: logout, switch (both hide that data is being left behind)
+
+**Orphaned guest account**:
+A guest account no device holds a session for — created by abandonment, reinstall, or cleared
+storage. Unreachable by its owner, because a guest account's only key is that session; it is never
+deleted at the moment of abandonment, and its fate is lifecycle policy (#1431).
+_Avoid_: dead account, stale user
