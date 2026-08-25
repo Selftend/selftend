@@ -105,6 +105,18 @@ function firstAvailable(
 }
 
 /**
+ * The first available day from `from` to the end of ITS month, or null when the
+ * rest of that month is blocked.
+ *
+ * The bound is what keeps every caller honest: a search that ran off the end
+ * would report a day in the next month as belonging to this one, which is how a
+ * page ends up looking like it moved two.
+ */
+function firstAvailableInMonth(from: Dayjs, isUnavailable: (date: Dayjs) => boolean): Dayjs | null {
+  return firstAvailable(from, 1, from.daysInMonth() - from.date() + 1, isUnavailable);
+}
+
+/**
  * Where a key press should move focus, or null when focus should not move at
  * all — an unhandled key, or a move whose whole search window is unavailable.
  *
@@ -135,12 +147,7 @@ export function nextFocusedDate(
     // lands on the last day of a shorter month instead of skipping the month.
     const target = from.add(move.months, "month");
     const backwards = firstAvailable(target, -1, target.date(), isUnavailable);
-    const forwards = firstAvailable(
-      target,
-      1,
-      target.daysInMonth() - target.date() + 1,
-      isUnavailable,
-    );
+    const forwards = firstAvailableInMonth(target, isUnavailable);
     // Both ways, direction of travel first, and both bounded by the month the
     // page aimed at — a search that fell through into the month beyond would
     // look like one press had moved two. Only searching the way it was heading
@@ -181,16 +188,17 @@ export function useCalendarRovingFocus({
   // been overtaken by a stricter clamp — so it is resolved the same way a month
   // change is, rather than trusted.
   const [focusedDate, setFocusedDate] = useState<Dayjs>(
-    () =>
-      firstAvailable(
-        initialDate,
-        1,
-        initialDate.daysInMonth() - initialDate.date() + 1,
-        isUnavailable,
-      ) ?? initialDate,
+    () => firstAvailableInMonth(initialDate, isUnavailable) ?? initialDate,
   );
 
   const dayNodes = useRef(new Map<string, FocusableNode>());
+  /**
+   * One ref callback per day key ever rendered. It grows with the months the
+   * user visits and is never pruned — deliberately: the entries are single
+   * closures, the sheet unmounts on close, and evicting them would risk handing
+   * React a NEW callback for a day still mounted, which detaches and re-attaches
+   * its node for nothing.
+   */
   const dayRefs = useRef(new Map<string, (node: FocusableNode | null) => void>());
   /**
    * The day waiting to receive real DOM focus, set only by a key press — never
@@ -325,18 +333,21 @@ export function useCalendarRovingFocus({
       const firstOfMonth = previous.date(1).year(year).month(month);
       const preferred = Math.min(previous.date(), firstOfMonth.daysInMonth());
 
-      const found =
-        firstAvailable(
-          firstOfMonth.date(preferred),
-          1,
-          firstOfMonth.daysInMonth() - preferred + 1,
-          isUnavailableRef.current,
-        ) ?? firstAvailable(firstOfMonth, 1, firstOfMonth.daysInMonth(), isUnavailableRef.current);
-
-      // A month with nothing selectable in it keeps focus where it was: parking
-      // the tab stop on a disabled day would hand the user a stop that does
-      // nothing when they press Enter.
-      return found ?? previous;
+      // ☠️ It follows the grid even into a month with NOTHING selectable in it.
+      // Refusing to follow leaves `visibleDate` pointing at the month focus
+      // stayed in, and a controlled prop that disagrees with the library wins —
+      // so the grid was yanked straight back and a past month became unreachable
+      // by the prev button at all. Caught by the goal e2e, which pages back to
+      // last month to check its days are disabled.
+      //
+      // Landing on a blocked day costs nothing: `tabbable` above already
+      // withholds the tab stop, so the grid simply offers no way in until the
+      // user pages somewhere with a day they could pick.
+      return (
+        firstAvailableInMonth(firstOfMonth.date(preferred), isUnavailableRef.current) ??
+        firstAvailableInMonth(firstOfMonth, isUnavailableRef.current) ??
+        firstOfMonth.date(preferred)
+      );
     });
   }, []);
 

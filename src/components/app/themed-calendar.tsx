@@ -120,24 +120,33 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
   );
 
   /**
-   * The caller's `onChange`, reached through a ref so the handlers below keep
+   * The caller's own props, reached through a ref so the two handlers below keep
    * one identity for the life of the component — see the note on the clamps
-   * above for what an unstable one costs.
+   * above for what an unstable `onChange` costs.
+   *
+   * The whole props object rather than just `onChange`, so `mode` travels with
+   * it and each handler NARROWS the union instead of casting through it: a cast
+   * would happily hand a range callback a single date if the two ever came
+   * apart.
    */
-  const changeRef = useRef(props.onChange);
+  const latestProps = useRef(props);
   // Written in an effect, not in render, so the compiler's ref rules hold; the
   // handlers below are created once and read it when the user acts.
   useEffect(() => {
-    changeRef.current = props.onChange;
+    latestProps.current = props;
   });
 
   const handleSingleChange = useCallback(({ date }: { date: DateType }) => {
-    (changeRef.current as (next: Dayjs | null) => void)(date ? dayjs(date) : null);
+    const latest = latestProps.current;
+    if (latest.mode === "range") return;
+    latest.onChange(date ? dayjs(date) : null);
   }, []);
 
   const handleRangeChange = useCallback(
     ({ startDate, endDate }: { startDate: DateType; endDate: DateType }) => {
-      (changeRef.current as (next: CalendarRange) => void)({
+      const latest = latestProps.current;
+      if (latest.mode !== "range") return;
+      latest.onChange({
         start: startDate ? dayjs(startDate) : null,
         end: endDate ? dayjs(endDate) : null,
       });

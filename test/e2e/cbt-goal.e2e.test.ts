@@ -66,8 +66,7 @@ async function focused(page: Page): Promise<{ name: string; inGrid: boolean }> {
     const name =
       el.getAttribute("aria-label") ??
       el.getAttribute("data-testid") ??
-      (el.textContent ?? "").trim() ??
-      el.tagName;
+      (el.textContent ?? "").trim();
     return { name: name || el.tagName, inGrid: Boolean(el.closest('[data-testid="days"]')) };
   });
 }
@@ -540,10 +539,29 @@ test.describe("CBT goal: the target-date calendar under a keyboard (#1305)", () 
     // is the trigger that a committed value shows up on.
     await expect(trigger).toBeVisible();
 
-    // ── Enter selects, Done commits ──────────────────────────────────────────
+    // ── Space and Enter both select, Done commits ────────────────────────────
+    // Both keys, because both are in the contract and react-native-web is what
+    // implements them — the jest layer renders React Native's Pressable, not
+    // react-native-web's, so no unit test can tell the two keys apart.
     await page.keyboard.press("ArrowRight");
-    const chosen = addDays(today, 1);
+    const viaSpace = addDays(today, 1);
+    await page.keyboard.press(" ");
+    await expect(
+      page.getByTestId("days").getByRole("button", { name: dayName(viaSpace), exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    await page.keyboard.press("ArrowRight");
+    const chosen = addDays(today, 2);
     await page.keyboard.press("Enter");
+    const chosenCell = page
+      .getByTestId("days")
+      .getByRole("button", { name: dayName(chosen), exact: true });
+    await expect(chosenCell).toHaveAttribute("aria-pressed", "true");
+    // And the selection MOVED rather than accumulating — it is one day, not a set.
+    await expect(
+      page.getByTestId("days").getByRole("button", { name: dayName(viaSpace), exact: true }),
+    ).toHaveAttribute("aria-pressed", "false");
+
     await page.getByRole("button", { name: "Done", exact: true }).click();
 
     await expect(
@@ -593,6 +611,16 @@ test.describe("CBT goal: the target-date calendar under a keyboard (#1305)", () 
 
     // ── Escape still closes, and focus still comes back to the opener ────────
     await page.keyboard.press("Escape");
+    await expect(page.getByTestId("days")).toBeHidden({ timeout: 10_000 });
+    await expect(trigger).toBeFocused({ timeout: 10_000 });
+
+    // ── And so does the backdrop, which is the path that actually changed ────
+    // It is out of the accessibility tree now, so it is clicked by testID; what
+    // matters is that react-native-web's own return-to-opener still fires, with
+    // no hand-rolled focus trap added anywhere.
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("days")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("picker-sheet-backdrop").click({ position: { x: 5, y: 5 } });
     await expect(page.getByTestId("days")).toBeHidden({ timeout: 10_000 });
     await expect(trigger).toBeFocused({ timeout: 10_000 });
   });

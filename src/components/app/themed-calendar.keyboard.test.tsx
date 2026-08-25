@@ -227,6 +227,33 @@ describe("the calendar grid under a keyboard", () => {
     expect(tabStop()).toBe("Thursday, March 12, 2026");
   });
 
+  it("still pages back into a month with nothing selectable in it", () => {
+    // ☠️ The regression this pins was caught by the goal e2e, not by a unit
+    // test: paging back to a fully-past month left the roving tab stop behind,
+    // `visibleDate` then disagreed with the library, and the controlled prop
+    // yanked the grid forward again — so the prev button could not reach a past
+    // month at all, and the test that checks last month's days are disabled was
+    // reading THIS month's.
+    renderCalendar({ value: dayjs("2026-03-15"), minDate: dayjs("2026-03-01") });
+
+    act(() => {
+      fireEvent.press(screen.getByTestId("btn-prev"));
+    });
+
+    const days = within(screen.getByTestId("days"));
+    expect(days.getAllByLabelText(/February \d+, 2026$/).length).toBe(28);
+    // Nothing in February is selectable, so the grid offers no way in — which
+    // is different from refusing to show it.
+    expect(tabStops()).toEqual([]);
+
+    act(() => {
+      fireEvent.press(screen.getByTestId("btn-next"));
+    });
+
+    // And back out again, with the tab stop restored.
+    expect(tabStop()).toBe("Sunday, March 15, 2026");
+  });
+
   it("follows the month the prev/next arrows moved to", () => {
     renderCalendar();
 

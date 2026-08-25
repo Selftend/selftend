@@ -306,14 +306,38 @@ describe("useCalendarRovingFocus on web", () => {
     expect(result.current.visibleDate).toBe("2026-03-10");
   });
 
-  it("leaves the tab stop behind rather than parking it on a disabled day", () => {
+  it("follows the grid into a month with nothing selectable, and offers no tab stop there", () => {
     const { result } = render(MARCH_10, beforeToday("2026-03-10"));
 
     act(() => result.current.followVisibleMonth(2026, 1));
 
-    // February is entirely in the past. A tab stop there would be a stop that
-    // does nothing when the user presses Enter, so the grid offers none.
+    // ☠️ It has to FOLLOW. Staying behind leaves `visibleDate` pointing at March
+    // while the library shows February, and a controlled prop that disagrees
+    // wins — so the grid was yanked forward again and the prev button could not
+    // reach a past month at all. Caught by the goal e2e, which pages back to
+    // last month to check its days are disabled.
+    expect(result.current.visibleDate).toBe("2026-02-10");
+    // Nothing there is selectable, so nothing there is a tab stop either.
+    expect(result.current.getDayProps(dayjs("2026-02-10")).tabIndex).toBe(-1);
+    expect(
+      Array.from(
+        { length: 28 },
+        (_, i) =>
+          result.current.getDayProps(dayjs(`2026-02-${String(i + 1).padStart(2, "0")}`)).tabIndex,
+      ),
+    ).not.toContain(0);
+  });
+
+  it("finds the way back out of a month it had no tab stop in", () => {
+    const { result } = render(MARCH_10, beforeToday("2026-03-10"));
+
+    act(() => result.current.followVisibleMonth(2026, 1));
+    act(() => result.current.followVisibleMonth(2026, 2));
+
+    // Paging forward again lands on the first day March actually offers, so the
+    // grid is tabbable once more.
     expect(result.current.visibleDate).toBe("2026-03-10");
+    expect(result.current.getDayProps(MARCH_10).tabIndex).toBe(0);
   });
 
   it("does not move focus when the library reports the month it is already on", () => {
