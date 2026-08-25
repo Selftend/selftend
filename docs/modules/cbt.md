@@ -47,7 +47,7 @@ The guided record uses eight steps:
 5. evidence for and against
 6. likely distortions
 7. balanced thought (shown with a running summary of the record)
-8. outcome - intensity after (0-100) and outcome notes
+8. outcome - belief in the hot thought now (0-100), intensity after (0-100), and outcome notes
 
 Validation:
 
@@ -81,7 +81,7 @@ All thought record prompts are optional at save time so a user can create a part
 - `id`
 - `userId`
 - `situation`
-- `automaticThought`
+- `nats[]` - each with `text`, an optional `beliefRating` (0-100) and an `isHotThought` flag
 - `emotions[]`
 - `emotionIntensityBefore`
 - `distortions[]`
@@ -90,9 +90,17 @@ All thought record prompts are optional at save time so a user can create a part
 - `balancedThought`
 - `emotionIntensityAfter`
 - `outcomeNotes`
+- `beliefAfter` - belief in the hot thought after working the record (0-100), null when unrated
 - `createdAt`
+- `createdOffsetMinutes` - minutes east of UTC where the record was written; null when never captured
 - `updatedAt`
 - `archivedAt`
+
+`beliefAfter` is stored plaintext, unlike the narrative fields: it exists to be
+aggregated across records, and the per-thought `beliefRating` it is compared
+against lives inside the encrypted thoughts blob where SQL cannot reach it. Null
+means "not rated" and is never the same as 0, which means "I no longer believe
+this at all".
 
 Additional CBT strategy records are stored in private user-owned tables:
 

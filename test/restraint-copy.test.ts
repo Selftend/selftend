@@ -82,6 +82,16 @@ function isAllowed(locale: Locale, namespace: string, key: string) {
 
 const STRINGS = LOCALE_STRINGS;
 
+/** Every string in `locale` whose text `pattern` matches. */
+function matching(locale: Locale, pattern: RegExp) {
+  return STRINGS[locale].filter(({ text }) => pattern.test(text));
+}
+
+/** Renders offenders for a failure message: which key said it, and what it said. */
+function describeEntries(entries: ReturnType<typeof loadLocale>) {
+  return entries.map(({ namespace, key, text }) => `${namespace}:${key} - ${text}`);
+}
+
 describe("product copy states the record instead of advertising restraint", () => {
   it("reads every namespace, so a new one is covered the day it is added", () => {
     const namespaces = new Set(STRINGS.en.map((entry) => entry.namespace));
@@ -94,12 +104,14 @@ describe("product copy states the record instead of advertising restraint", () =
   });
 
   it.each(RESTRAINT_CLAIMS)("$locale copy never matches $pattern", ({ locale, pattern }) => {
-    const offenders = STRINGS[locale]
-      .filter(({ text }) => pattern.test(text))
-      .filter(({ namespace, key }) => !isAllowed(locale, namespace, key))
-      .map(({ namespace, key, text }) => `${namespace}:${key} - ${text}`);
+    // The allowlist applies HERE and not to the false-claim scan below: a
+    // restraint phrasing can be a copy call still awaiting an owner, but a
+    // sentence that misreports the user's own number is never exemptable.
+    const offenders = matching(locale, pattern).filter(
+      ({ namespace, key }) => !isAllowed(locale, namespace, key),
+    );
 
-    expect(offenders).toEqual([]);
+    expect(describeEntries(offenders)).toEqual([]);
   });
 
   it("every allowlisted entry still breaks a rule, so a stale exemption cannot hide a new offence", () => {
@@ -123,6 +135,90 @@ describe("product copy states the record instead of advertising restraint", () =
         patterns.some(({ pattern }) => pattern.test(text)),
       );
       expect(stillOffending.length).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * A neighbouring rule, guarded from the same place because the scanner is the
+   * same: **the product may not read a number back to the user as a claim about
+   * it.** #711's "show the record, don't read it" covers restraint copy; this is
+   * the arithmetic form of the same mistake.
+   *
+   * `act:defusion.noFusionDrop` and `act:expansion.noIntensityDrop` said "Fusion
+   * stayed at {{after}}" / "Intensity stayed at {{after}}" under a guard of
+   * `after < before` - so **equal or higher** fell into the no-drop branch, and a
+   * user whose fusion went 60 -> 70 was told it stayed at 70. Two strings, four
+   * screens, both locales, and zero tests (#1367).
+   *
+   * The fix retired all four strings (the true `dropped from` halves included -
+   * they restated two numbers already on the screen). This guard is what keeps a
+   * corrected-but-still-interpreting sentence from being written back: there is
+   * no wording of "stayed at" that a before/after pair needs.
+   *
+   * ⚠️ The bg patterns are the **phrasings**, not translations of the English
+   * regex - `остана на` and `падна от` are what the retired strings actually
+   * said. A locale-blind reading would have called bg clean.
+   *
+   * ⚠️ These four phrasings are restated as one regex in
+   * `src/features/act/act-before-after-note-absent.test.tsx`, which scans the
+   * four *rendered* screens rather than the JSON. A fifth phrasing belongs in
+   * both places: this guard cannot see a sentence hardcoded in a component, and
+   * that one cannot see a string no screen renders yet.
+   */
+  const BEFORE_AFTER_READINGS: { locale: Locale; pattern: RegExp }[] = [
+    { locale: "en", pattern: /stayed at/i },
+    { locale: "en", pattern: /dropped from/i },
+    { locale: "bg", pattern: /остана на/i },
+    { locale: "bg", pattern: /падна от/i },
+  ];
+
+  it.each(BEFORE_AFTER_READINGS)(
+    "$locale copy never reads a before/after pair back as $pattern (#1367)",
+    ({ locale, pattern }) => {
+      expect(describeEntries(matching(locale, pattern))).toEqual([]);
+    },
+  );
+
+  it("the retired 'stayed at' family is gone from both locales, not just from en (#1367)", () => {
+    // Listed as four keys rather than two, because the family shipped as TWO
+    // strings across FOUR screens: a sweep that fixed defusion and forgot
+    // expansion left half the false claim in place, and nothing in the suite
+    // could see it.
+    const RETIRED_KEYS = [
+      "defusion.fusionDrop",
+      "defusion.noFusionDrop",
+      "expansion.intensityDrop",
+      "expansion.noIntensityDrop",
+    ];
+
+    for (const locale of ["en", "bg"] as const) {
+      const actKeys = new Set(
+        STRINGS[locale].filter((entry) => entry.namespace === "act").map((entry) => entry.key),
+      );
+      // Positive control: the namespace really did load.
+      expect(actKeys.size).toBeGreaterThan(0);
+
+      for (const key of RETIRED_KEYS) {
+        expect(actKeys.has(key)).toBe(false);
+      }
+    }
+  });
+
+  it("the recurring-thought insight states its count and recommends nothing (#1367)", () => {
+    for (const locale of ["en", "bg"] as const) {
+      const insight = STRINGS[locale].find(
+        ({ namespace, key }) =>
+          namespace === "cbt" && key === "dashboard.insights.recurringThoughtDetail",
+      );
+
+      expect(insight).toBeDefined();
+      // The claim survives - it has a real floor behind it (>= 5 records and a
+      // count of >= 2, in use-cbt-insights.ts).
+      expect(insight?.text).toContain("{{count}}");
+      // The advice clause does not. A computed pattern claim plus a
+      // recommendation is the construction AGENTS.md requires explicit review
+      // for; the product sits on the fact side.
+      expect(insight?.text).not.toMatch(/consider whether|помисли дали/i);
     }
   });
 

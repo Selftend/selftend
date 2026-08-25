@@ -239,6 +239,11 @@ export function useCbtInsights(userId: string | null): CbtInsights {
       });
     }
 
+    // ⚠️ The `count >= 2` floor below is load-bearing for Bulgarian, three files
+    // away. `cbt:dashboard.insights.recurringThoughtDetail` renders `{{count}} пъти`
+    // with no plural forms, which is correct for 2 and up but wrong for 1
+    // (Bulgarian's бройна форма would need "1 път"). Drop the floor to `>= 1` and
+    // the string breaks silently, in bg only, with no test to catch it.
     return [...counts.values()]
       .filter((item) => item.count >= 2)
       .sort((a, b) => b.count - a.count || a.thought.localeCompare(b.thought))
