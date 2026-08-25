@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useAccentHsl } from "@/src/lib/theme-palette";
-import { currentStateProps } from "@/src/lib/accessibility";
+import { currentStateProps, politeLiveRegionProps } from "@/src/lib/accessibility";
 
 /**
  * One stop on a rail: what that part of the form is called, and whether it
@@ -97,17 +97,29 @@ export function ProgressSegments(props: ProgressSegmentsProps) {
               />
             ))}
           </View>
-          <View className="flex-row gap-1">
+          {/*
+           * Same gap as the bars above, so each caption sits under its own
+           * segment.
+           *
+           * ⚠️ Sentence case, NOT the drawn uppercase. Measured against the real
+           * Noto Sans SemiBold at 10px: a stop gets (360 − 48 padding − 16 gap)
+           * / 5 = 59.2dp at 360dp, and uppercase puts `TECHNIQUE` at 60.0 and
+           * Bulgarian `КАТЕГОРИЯ` at 59.7 - both over, so both would break
+           * MID-WORD, which no amount of wrapping fixes. Sentence case is the
+           * same words at 52.2 and 54.4, inside the column in both locales. The
+           * two-word stops still wrap at their space, which is fine.
+           * ⚠️ At 320dp the column is 51.2 and those two do break mid-word; 360
+           * is the width the rulings bind, and shrinking the type further to buy
+           * 320 costs legibility everywhere else.
+           */}
+          <View className="flex-row gap-1.5">
             {stops.map((stop) => (
-              // The captions wrap rather than shrink: at 360dp five of them
-              // share about 310px, which is under the widest label's single
-              // line, and a clipped stop name is worse than a two-line one.
               <Text
                 key={stop.label}
                 className={
                   stop.filled
-                    ? "min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-wide text-foreground"
-                    : "min-w-0 flex-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    ? "min-w-0 flex-1 text-[10px] font-semibold text-foreground"
+                    : "min-w-0 flex-1 text-[10px] font-semibold text-muted-foreground"
                 }
               >
                 {stop.label}
@@ -115,7 +127,20 @@ export function ProgressSegments(props: ProgressSegmentsProps) {
             ))}
           </View>
         </View>
-        <Text variant="muted" className="text-xs">
+        {/*
+         * A polite live region, because this sentence is the only part of the
+         * rail assistive technology can reach and its count CHANGES as parts
+         * fill - without it a screen-reader user gets no progress at all, which
+         * is worse than the stepped screen this replaces.
+         *
+         * ⚠️ Web-only on purpose: no `announceMessage` pair. The dual-surface
+         * rule is for a message that APPEARS (an inline error); this is a
+         * standing status that changes a handful of times while the user types,
+         * and native `announceForAccessibility` interrupts rather than queues.
+         * The sentence stays in the native accessibility tree to be read on
+         * traversal.
+         */}
+        <Text variant="muted" className="text-xs" {...politeLiveRegionProps()}>
           {note}
         </Text>
       </View>

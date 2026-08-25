@@ -124,9 +124,17 @@ export default function ActDefusionNewScreen() {
   const [submitError, setSubmitError] = useState("");
   const [thoughtError, setThoughtError] = useState("");
   const [discardOpen, setDiscardOpen] = useState(false);
-  // The picker opens on the seven techniques and collapses onto the chosen one.
-  // A draft restored with a technique already in it comes back collapsed.
-  const [techniqueExpanded, setTechniqueExpanded] = useState(false);
+  /**
+   * Whether the seven technique cards are showing. Opens on a fresh form and on
+   * a restored draft that never picked one; a draft that did comes back
+   * collapsed onto its choice.
+   *
+   * ☠️ Explicit state, NOT derived from "a technique is set". Derived, the list
+   * tears itself down the instant anything selects - and roving focus selects ON
+   * MOVE, so the first arrow press would end the traversal and a keyboard user
+   * could never reach the third technique. Only a COMMIT closes it.
+   */
+  const [techniqueOpen, setTechniqueOpen] = useState(draft.techniqueUsed === null);
   const thoughtInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -171,6 +179,11 @@ export default function ActDefusionNewScreen() {
   const techniqueRoving = useRovingFocus({
     count: DEFUSION_TECHNIQUES.length,
     activeIndex: techniqueIndex < 0 ? 0 : techniqueIndex,
+    // ☠️ Selects but deliberately does NOT collapse. Roving focus activates ON
+    // MOVE, so collapsing here would tear the list down under the first arrow
+    // press and end the traversal it exists to provide - the user could never
+    // reach the second technique with a keyboard. The collapse belongs to the
+    // COMMIT (press, or Space through getItemProps), which is `choose` below.
     onActivate: (index) => updateDraft({ techniqueUsed: DEFUSION_TECHNIQUES[index] }),
   });
 
@@ -207,7 +220,12 @@ export default function ActDefusionNewScreen() {
       // The thrown message is a backend/internal string, English for every user -
       // translated copy only (i18n rule, #1060). The mutation cache's global onError
       // already reports the failure to Sentry.
-      setSubmitError(t("act:defusion.saveProblem"));
+      const message = t("act:defusion.saveProblem");
+      setSubmitError(message);
+      // Dual-surface, like the thought's complaint: the card below carries the
+      // live region for web, this carries the native announcement. A save that
+      // failed silently is the worst thing this screen can do.
+      announceMessage(message);
     }
   });
 
@@ -216,8 +234,13 @@ export default function ActDefusionNewScreen() {
       stickyHeader={
         <ProgressSegments
           stops={stops}
+          // ⚠️ Counted, not interpolated flat: Bulgarian agrees the verb with the
+          // number - "1 от 5 части Е ПОПЪЛНЕНА" against "2 ... СА ПОПЪЛНЕНИ" -
+          // so a single string is wrong at exactly one value and right at the
+          // rest, which is the shape that survives review. English needs no
+          // plural here and carries the same text in both forms.
           note={t("act:defusion.railNote", {
-            filled: filledCount,
+            count: filledCount,
             total: DEFUSION_PARTS.length,
           })}
         />
@@ -266,7 +289,7 @@ export default function ActDefusionNewScreen() {
         <CrisisSupportBar />
 
         {submitError ? (
-          <Card>
+          <Card {...politeLiveRegionProps()}>
             <CardHeader>
               <CardTitle>{t("act:defusion.saveProblem")}</CardTitle>
               <CardDescription>{submitError}</CardDescription>
@@ -389,7 +412,7 @@ export default function ActDefusionNewScreen() {
               {t("act:defusion.techniqueHint")}
             </Text>
           </View>
-          {draft.techniqueUsed && !techniqueExpanded ? (
+          {draft.techniqueUsed && !techniqueOpen ? (
             // Collapsed onto the chosen technique: seven cards of instructions
             // are worth reading once, and worth getting out of the way after.
             <View className="gap-2">
@@ -404,7 +427,7 @@ export default function ActDefusionNewScreen() {
                 </View>
               </View>
               <View className="flex-row">
-                <Button onPress={() => setTechniqueExpanded(true)} size="sm" variant="outline">
+                <Button onPress={() => setTechniqueOpen(true)} size="sm" variant="outline">
                   <Text>{t("act:defusion.changeTechnique")}</Text>
                 </Button>
               </View>
@@ -420,7 +443,7 @@ export default function ActDefusionNewScreen() {
                 const selected = draft.techniqueUsed === tech;
                 const choose = () => {
                   updateDraft({ techniqueUsed: tech });
-                  setTechniqueExpanded(false);
+                  setTechniqueOpen(false);
                 };
                 return (
                   <Pressable

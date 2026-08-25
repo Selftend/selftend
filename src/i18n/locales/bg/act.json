@@ -108,7 +108,8 @@
     "thoughtRequired": "Запиши мисълта, преди да запазиш.",
     "finishLater": "Довърши по-късно",
     "changeTechnique": "Смяна на техниката",
-    "railNote": "{{filled}} от {{total}} части са попълнени",
+    "railNote_one": "{{count}} от {{total}} части е попълнена",
+    "railNote_other": "{{count}} от {{total}} части са попълнени",
     "steps": {
       "thought": "Мисълта",
       "category": "Категория",

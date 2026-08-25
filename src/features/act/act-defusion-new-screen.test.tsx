@@ -281,6 +281,30 @@ describe("the technique picker", () => {
 
     expect(screen.getByText("Silly voices")).toBeTruthy();
   });
+
+  it("☠️ arrowing through the techniques selects without tearing the list down", () => {
+    setPlatform("web");
+    renderWithProviders(<ActDefusionNewScreen />);
+
+    // The technique cards follow the six category chips.
+    const firstTechnique = screen.getAllByRole("radio")[6];
+    fireEvent(firstTechnique, "keyDown", {
+      key: "ArrowDown",
+      repeat: false,
+      preventDefault: jest.fn(),
+    });
+
+    // Selected - the rail says so...
+    expect(screen.getByText("1 of 5 parts filled in")).toBeTruthy();
+    expect(screen.getAllByRole("radio")[7]).toBeChecked();
+    // ...and the list is STILL OPEN. Collapsing on move would end the traversal
+    // after one arrow press: the user could never reach the third technique.
+    expect(screen.getByText("Silly voices")).toBeTruthy();
+
+    // Committing is what collapses it.
+    fireEvent.press(screen.getByText("Musical thoughts"));
+    expect(screen.queryByText("Silly voices")).toBeNull();
+  });
 });
 
 describe("the category chips and technique cards", () => {

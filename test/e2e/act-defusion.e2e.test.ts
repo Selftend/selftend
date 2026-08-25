@@ -117,6 +117,33 @@ test.describe("ACT defusion: create, view, delete", () => {
     await expect(page.getByText(fusedThought)).toBeHidden({ timeout: 10_000 });
   });
 
+  test("the rail fits a 360dp phone, and nothing on it is a tap target", async ({ page }) => {
+    // ⚠️ The default project is Desktop Chrome, so the phone width every ruling
+    // on this map binds is invisible to every other spec here. Resized per-test.
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/modules/act/defusion/new");
+
+    await expect(page.getByText("0 of 5 parts filled in")).toBeVisible({ timeout: 15_000 });
+
+    // All five stop names are on the rail at this width.
+    for (const stop of ["The thought", "Category", "Before", "Technique", "After & notes"]) {
+      await expect(page.getByText(stop, { exact: true })).toBeVisible();
+    }
+
+    // Nothing overflows sideways. A caption too wide for its fifth of the rail
+    // is the failure this catches, and it is the one an assertion on text alone
+    // would sail straight past.
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+
+    // The rail is read-only: its stops are not buttons at any width.
+    for (const stop of ["The thought", "Technique"]) {
+      await expect(page.getByRole("button", { name: stop, exact: true })).toHaveCount(0);
+    }
+  });
+
   test("alice leaves the form part-way and comes back to what she typed", async ({ page }) => {
     const fusedThought = "Everyone will notice.";
 
