@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
-import { selectWizardDraftValues, useWizardDraft } from "@/src/lib/use-wizard-draft";
+import { selectWizardDraftValues, useFormDraft, useWizardDraft } from "@/src/lib/use-wizard-draft";
 import {
   createWizardDraftStore,
   WIZARD_DRAFT_PERSIST_VERSION,
@@ -170,11 +170,13 @@ describe("useWizardDraft - stepIndex and goToStep", () => {
     expect(hookResult.result.current.stepIndex).toBe(0);
   });
 
-  it("stepIndex clamps to stepFields.length - 1", async () => {
-    // Force stepIndex beyond the last step index
-    const { hookResult } = await setupHook({ initialStepIndex: 99 });
+  it("returns the store's step index without a clamp (session-only since #1381)", async () => {
+    // The clamp existed for a PERSISTED index that could come back from an
+    // older build with more steps. The envelope no longer carries one, so
+    // every write is already bounded by its writer - the hook passes the
+    // session value through.
+    const { hookResult } = await setupHook({ initialStepIndex: 1 });
 
-    // stepFields.length - 1 = 1
     expect(hookResult.result.current.stepIndex).toBe(1);
   });
 
@@ -484,7 +486,6 @@ describe("useWizardDraft - draft capture and persistence", () => {
         state: {
           mode: "create",
           entityId: null,
-          stepIndex: 1,
           values: { name: "persisted draft", description: "still here" },
           updatedAt,
         },
@@ -511,6 +512,8 @@ describe("useWizardDraft - draft capture and persistence", () => {
       name: "persisted draft",
       description: "still here",
     });
+    // Values restore; the step does not - the envelope carries none (#1381).
+    expect(view.result.current.wizard.stepIndex).toBe(0);
   });
 
   it("does not clobber a form the user already typed into (live isDirty guard)", async () => {
@@ -526,6 +529,69 @@ describe("useWizardDraft - draft capture and persistence", () => {
     await waitFor(() => expect(view.result.current.wizard.hydrated).toBe(true));
     expect(view.result.current.form.getValues("name")).toBe("user typed");
     expect(view.result.current.form.getValues("description")).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: useFormDraft (the stepless wrapper for one-column forms, #1381)
+// ---------------------------------------------------------------------------
+describe("useFormDraft", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  async function setupFormDraft({
+    onSave = jest.fn().mockResolvedValue("saved"),
+    onSaved = jest.fn(),
+    invalidErrors = undefined as Record<string, unknown> | undefined,
+  } = {}) {
+    const flowKey = `form-draft-test-${flowKeyCounter++}`;
+    const useDraftStore = createWizardDraftStore<TestForm>(flowKey);
+    const showToast = jest.fn();
+    mockUseToastStore.mockImplementation((selector: (s: any) => any) => selector({ showToast }));
+    const { form } = makeForm(true, { name: "Test", description: "Desc" }, invalidErrors);
+
+    const hookResult = renderHook(() =>
+      useFormDraft({
+        useDraftStore,
+        draftMode: "create",
+        entityId: null,
+        form,
+        onSave,
+        onSaved,
+        toastLabels: TOAST_LABELS,
+      }),
+    );
+    await act(async () => {
+      await useDraftStore.persist.rehydrate();
+    });
+    return { hookResult, showToast, onSave, onSaved, useDraftStore };
+  }
+
+  it("saves through the same guarded path as the wizard", async () => {
+    const { hookResult, onSave, onSaved, showToast } = await setupFormDraft();
+
+    await act(() => hookResult.result.current.handleSave());
+
+    expect(onSave).toHaveBeenCalledWith({ name: "Test", description: "Desc" });
+    expect(onSaved).toHaveBeenCalledWith("saved");
+    expect(showToast).toHaveBeenCalledWith({ title: "Saved!", tone: "success" });
+  });
+
+  it("raises the invalid toast with no step jump when the resolver rejects", async () => {
+    // The column has no step to jump to - the whole form is on screen and the
+    // field complains inline - so the toast must come WITHOUT the "moved you"
+    // description a wizard would add.
+    const { hookResult, onSave, showToast } = await setupFormDraft({
+      invalidErrors: { name: { type: "too_big" } },
+    });
+
+    await act(() => hookResult.result.current.handleSave());
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith({
+      title: "Some answers need a fix",
+      description: undefined,
+      tone: "error",
+    });
   });
 });
 

@@ -16,17 +16,18 @@ interface OutcomeStepProps {
 
 export function OutcomeStep({ control, errors }: OutcomeStepProps) {
   const { t } = useTranslation("cbt");
-  // The belief question is about ONE thought, so the step has to say which. The
-  // hot thought is whichever the user flagged, not the first one captured, so it
-  // is resolved from live form values rather than assumed to be nats[0].
+  // The belief question is about ONE thought, so this part has to say which.
+  // The hot thought is whichever the user flagged - or, unflagged, the
+  // highest-rated one - resolved from live form values so the quoted text
+  // follows the choice as it changes further up the column.
   const nats = useWatch({ control, name: "nats" });
   const hotThought = resolveHotThought(nats ?? []);
 
   return (
     <View className="gap-6">
       {/* Belief comes first: it re-rates the thought, and the record's own order
-          is thought before emotion everywhere else (the nats and hot-thought
-          steps both precede the emotions step). */}
+          is thought before emotion everywhere else (the thoughts part precedes
+          the feelings part). */}
       <Controller
         control={control}
         name="beliefAfter"

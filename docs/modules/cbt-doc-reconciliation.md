@@ -44,8 +44,9 @@ The thought-record flow is the clearest case. The **code implements the 8-step f
   `evidenceAgainst: string[]` as **arrays**.
 - `src/features/cbt/schemas.ts` — `thoughtRecordFormSchema` confirms `nats` (with
   `beliefRating` 0–100 + `isHotThought`) and array-typed evidence fields.
-- `cbt.md` §"Thought record flow" documents exactly this: eight steps, per-thought belief
-  rating, hot-thought marking, evidence for/against.
+- `cbt.md` §"Thought record flow" documents exactly this: per-thought belief rating,
+  hot-thought marking, evidence for/against (eight wizard steps at the time of this
+  analysis; one six-part column since #1381 - the fields are unchanged).
 - `cbt-gillihan-made-simple.md` §Strategy 3 specifies a **5-step** record, a single
   `automaticThought` string (no NATs, no belief rating, no hot thought), and
   `evidenceFor` / `evidenceAgainst` as **strings**.

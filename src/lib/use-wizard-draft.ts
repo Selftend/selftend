@@ -126,7 +126,11 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
     }
   }, [storeHydrated, draftMode, entityId, form, isDirty, useDraftStore]);
 
-  const stepIndex = Math.min(rawStepIndex, stepFields.length - 1);
+  // No clamp: the step index is session-only state (#1381 dropped it from the
+  // persisted envelope), so every write to it is already bounded - nextStep
+  // clamps to the consumer's max, goToStep only moves backward, and the
+  // invalid-jump below targets an existing step.
+  const stepIndex = rawStepIndex;
   const isLastStep = stepIndex === stepFields.length - 1;
   const isPending = isSubmitting;
 
@@ -219,6 +223,42 @@ export function useWizardDraft<TForm extends FieldValues, TSaved>({
       if (index <= stepIndex) setStepIndex(index);
     },
   };
+}
+
+type UseFormDraftArgs<TForm extends FieldValues, TSaved> = Omit<
+  UseWizardDraftArgs<TForm, TSaved>,
+  "stepFields"
+>;
+
+export interface UseFormDraftReturn {
+  isPending: boolean;
+  /** False until the persisted draft has been read back - gate the form on it. */
+  hydrated: boolean;
+  handleSave: () => Promise<void>;
+  clearDraft: () => void;
+}
+
+/**
+ * The wizard's draft machinery without the wizard: capture-while-typing,
+ * TTL'd restore, and the guarded save, for a ONE-COLUMN form (#1381).
+ *
+ * A column has no steps, so there is nothing to advance, nothing to jump to,
+ * and no per-step validation - the whole form is on screen and the resolver
+ * runs once, at save. Invalid fields complain inline where they already are,
+ * so the invalid toast never needs the "moved you to the problem" description
+ * (the empty step list below makes `handleSubmit`'s error branch find no step
+ * to jump to, which is correct: there is nowhere to go).
+ */
+export function useFormDraft<TForm extends FieldValues, TSaved>(
+  args: UseFormDraftArgs<TForm, TSaved>,
+): UseFormDraftReturn {
+  const { isPending, hydrated, handleSave, clearDraft } = useWizardDraft({
+    ...args,
+    // One empty group: the column is a single "step" with no per-step fields,
+    // so handleNext-style validation can never gate anything.
+    stepFields: [[]],
+  });
+  return { isPending, hydrated, handleSave, clearDraft };
 }
 
 export function selectWizardDraftValues<TForm>(

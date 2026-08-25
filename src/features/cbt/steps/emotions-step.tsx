@@ -69,7 +69,7 @@ export function EmotionsStep({ control, errors }: EmotionsStepProps) {
         control={control}
         name="emotionIntensityBefore"
         render={({ field: { onChange, value } }) => (
-          <View className="gap-2">
+          <View className="gap-2" testID="emotion-intensity-before-rating">
             <Label>{t("record.intensityBefore")}</Label>
             <Text variant="muted">{t("record.intensityBeforeHint")}</Text>
             <NumberRating min={0} max={100} step={10} value={value} onChange={onChange} />
