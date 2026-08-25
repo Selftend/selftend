@@ -45,24 +45,23 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
   return (
     // A bottom sheet, not a full-screen modal: the breathing session stays
     // visible behind it, so the wrapper pins no row and the X below is this
-    // sheet's Escape. W20/#1257 is what moves that X out of the `ScrollView`
-    // it currently scrolls away with.
+    // sheet's one Escape — pinned in its own header row OUTSIDE the
+    // scroller (W20/#1257), so it no longer scrolls away with the lanes.
     <PressShieldModal surface="sheet" visible={visible} onRequestClose={onDismiss} transparent>
       <View className="flex-1 justify-end bg-black/40">
         <SafeAreaView edges={["bottom"]} className="rounded-t-2xl bg-background">
+          <View className="flex-row items-center justify-between px-6 pt-6">
+            <Text variant="h2">{t("breathing.sounds.title")}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("common:close")}
+              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+              onPress={onDismiss}
+            >
+              <Icon name="close" className="size-6 text-muted-foreground" />
+            </Pressable>
+          </View>
           <ScrollView contentContainerClassName="gap-6 p-6">
-            <View className="flex-row items-center justify-between">
-              <Text variant="h2">{t("breathing.sounds.title")}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("breathing.sounds.close")}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={onDismiss}
-              >
-                <Icon name="close" className="size-6 text-muted-foreground" />
-              </Pressable>
-            </View>
-
             <Lane
               label={t("breathing.sounds.breathLabel")}
               soundName={t(breathSound.labelKey)}

@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -23,6 +23,7 @@ const STATUS_BADGE_CLASS: Record<ActionStatus, string> = {
 };
 
 export default function ActCommittedActionListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { user } = useSession();
   const { data: actions, isLoading } = useCommittedActions(user?.id ?? null);
@@ -44,7 +45,7 @@ export default function ActCommittedActionListScreen() {
             <Text variant="muted">{t("committedAction.listSubtitle")}</Text>
           </View>
 
-          <Button onPress={() => router.push("/modules/act/committed-action/new")}>
+          <Button onPress={() => pushWithOrigin("/modules/act/committed-action/new")}>
             <Icon name="directions-run" className="size-4 text-primary-foreground" />
             <Text>{t("committedAction.newTitle")}</Text>
           </Button>
@@ -73,6 +74,7 @@ export default function ActCommittedActionListScreen() {
 }
 
 function ActionGroup({ title, items }: { title: string; items: CommittedAction[] }) {
+  const pushWithOrigin = usePushWithOrigin();
   // Its own hook rather than `t` and the language handed down as two props:
   // both are halves of one concern, and `formatDayKey`'s default would
   // otherwise read the module-global language — a second source that only
@@ -90,7 +92,7 @@ function ActionGroup({ title, items }: { title: string; items: CommittedAction[]
           accessibilityRole="button"
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
           onPress={() =>
-            router.push({
+            pushWithOrigin({
               pathname: "/modules/act/committed-action/[id]",
               params: { id: action.id },
             })

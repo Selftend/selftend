@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,7 @@ const STAGE = 10;
 const MAX_RECENT = 7;
 
 export function MeditationDailyLifeCard() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("meditation");
   const { formatDate } = useLocaleFormats();
   const { user } = useSession();
@@ -73,7 +74,7 @@ export function MeditationDailyLifeCard() {
           {(notes?.length ?? 0) > MAX_RECENT ? (
             <Pressable
               accessibilityRole="link"
-              onPress={() => router.push("/tools/meditation/daily-life")}
+              onPress={() => pushWithOrigin("/tools/meditation/daily-life")}
             >
               <Text className="text-sm text-primary-ink">{t("module.dailyLife.viewAll")}</Text>
             </Pressable>

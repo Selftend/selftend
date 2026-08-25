@@ -38,7 +38,8 @@ interface Props {
   /**
    * Required since #1252: the pinned Escape is this wizard's way out on all
    * five panels, so there is no longer a shape where dismissing is
-   * unavailable. The ghost "Skip" below still exists on panel 1 only.
+   * unavailable. The panel-1 ghost "Skip" it made redundant was removed in
+   * #1257.
    */
   onDismiss: () => void;
 }
@@ -122,9 +123,9 @@ export function MeditationOnboarding({
 
   return (
     // A replay opened from the `tune` button, so closing is free and the row
-    // wears a bare X (M2). The pinned row makes the ghost "Skip" below
-    // redundant on panel 1 and fills the gap on panels 2+ — de-duplicating
-    // the two is W19's sweep (#1257).
+    // wears a bare X (M2) — the one close affordance on all five panels,
+    // since #1257 removed the panel-1 ghost "Skip" the pinned row had made
+    // redundant.
     <PressShieldModal onEscape={onDismiss} onRequestClose={onDismiss} visible={visible}>
       {/* No "top": the wrapper's escape row already sits in the top inset. */}
       <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
@@ -150,11 +151,6 @@ export function MeditationOnboarding({
               </Card>
               <Button onPress={goNext}>
                 <Text>{t("onboarding.welcome.continue")}</Text>
-              </Button>
-              {/* Unconditional now that `onDismiss` is required — the guard
-                  it used to carry could never be false at any call site. */}
-              <Button onPress={onDismiss} variant="ghost">
-                <Text>{t("onboarding.skip")}</Text>
               </Button>
             </View>
           ) : null}
