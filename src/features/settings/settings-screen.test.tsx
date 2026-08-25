@@ -19,6 +19,7 @@ jest.mock("expo-router", () => ({
   router: {
     canGoBack: jest.fn(() => false),
     push: jest.fn(),
+    replace: jest.fn(),
   },
   usePathname: () => "/settings",
 }));
@@ -190,6 +191,26 @@ describe("SettingsScreen structure", () => {
     expect(screen.getByLabelText("Show tips again").props.accessibilityState.disabled).toBe(true);
     // Nothing else waits.
     expect(screen.getByLabelText("Export my data").props.accessibilityState.disabled).toBe(false);
+  });
+
+  /**
+   * W12 (#1255): the bespoke hero is the page's own title, not chrome, so the
+   * Escape slot never reached this screen. `ScreenTopBar` now carries it, and
+   * the hero below is untouched - "Settings" appearing exactly once is what
+   * pins that the trail stays hidden on this one-crumb route rather than
+   * repeating the title as a crumb.
+   */
+  it("carries exactly one Escape through chrome, and it leads Home", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+    expect(screen.getByTestId("screen-top-bar")).toBeTruthy();
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+    expect(screen.getAllByText("Settings")).toHaveLength(1);
+
+    fireEvent.press(screen.getByLabelText("Back to Home"));
+    // `replace`, not `push`: an Escape is a leave, not a drill-down.
+    expect(router.replace).toHaveBeenCalledWith("/");
   });
 
   it("navigates rather than acting in place on the chevron rows", async () => {
