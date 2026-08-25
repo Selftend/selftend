@@ -169,3 +169,28 @@ A "Done"-after-save action that happens to navigate (`backWithFallback`, #475). 
 action reporting that a task is finished, not a way out of a screen, so neither the Escape rule nor
 its enforcement gate governs it. A screen may carry both.
 _Avoid_: calling Done an escape hatch; a screen is not exempt from an Escape because it has a Done.
+
+### Accounts ("optional registration")
+
+The vocabulary for how a person holds an account (#1427/#1429). Registration is optional: an
+account exists from first use, and a sign-in identity is attached later, if ever.
+
+**Guest account**:
+The account created silently on first use, with no sign-in identity attached. A full account — it
+owns its data like any other — whose only key is the session held on that device or browser: lose
+the session, lose the account. "Guest" is the word in copy, docs and code alike; the platform's
+mechanism word is "anonymous", which stays out of the UI because the data is not anonymous — it is
+the person's own, just unlabelled by an email.
+_Avoid_: anonymous account (mechanism word, and wrong as a privacy claim), local account, device
+account, trial account
+
+**Registered account**:
+An account with at least one sign-in identity attached (email and password, or an OAuth provider).
+What a guest becomes after conversion. Registering is invited, never required, and gates no
+feature.
+_Avoid_: full account, real account, permanent account, member
+
+**Conversion**:
+Attaching the first sign-in identity to a guest account, in place, keeping all its data. Guest →
+registered, one way. User-facing copy never says the word — people just "create an account".
+_Avoid_: upgrade, migration, merge (a conversion never combines two accounts)
