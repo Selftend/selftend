@@ -5,6 +5,7 @@ import DateTimePicker, { useDefaultStyles, type DateType } from "react-native-ui
 import dayjs, { type Dayjs } from "dayjs";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { useCalendarRovingFocus } from "@/src/lib/calendar-roving-focus";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { useThemePalette } from "@/src/lib/theme-palette";
 import { formatCalendarDayName } from "@/src/utils/date";
@@ -85,9 +86,25 @@ type ThemedCalendarProps = ThemedCalendarBaseProps &
  * `patches/README.md`, and `test/patch-version-pin.test.ts`, which fails first.
  */
 export function ThemedCalendar(props: ThemedCalendarProps) {
-  const { minDate, maxDate, disabledDates } = props;
+  const { disabledDates } = props;
   const { t, i18n } = useTranslation("common");
   const language = i18n.language;
+
+  /**
+   * ⚠️ Pinned by VALUE, not passed straight through.
+   *
+   * The library re-seeds its visible month from an effect whose dependencies
+   * include `date`, `minDate`, `maxDate` and `onChange` — and it re-seeds by
+   * snapping the grid back to the SELECTED day's month. Callers hand these in
+   * as freshly built dayjs objects and inline closures
+   * (`maxDate={dayjs(maxDateKey)}`), so identity churn alone was enough to drag
+   * the calendar out of the month the user had paged to: measured here, the
+   * next-month button announced April while the grid stayed on March.
+   */
+  const minMs = props.minDate?.valueOf();
+  const maxMs = props.maxDate?.valueOf();
+  const minDate = useMemo(() => (minMs === undefined ? undefined : dayjs(minMs)), [minMs]);
+  const maxDate = useMemo(() => (maxMs === undefined ? undefined : dayjs(maxMs)), [maxMs]);
 
   const scheme = useColorSchemeName();
   const defaultStyles = useDefaultStyles(scheme);
@@ -101,6 +118,63 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
     }),
     [defaultStyles, theme],
   );
+
+  /**
+   * The caller's `onChange`, reached through a ref so the handlers below keep
+   * one identity for the life of the component — see the note on the clamps
+   * above for what an unstable one costs.
+   */
+  const changeRef = useRef(props.onChange);
+  // Written in an effect, not in render, so the compiler's ref rules hold; the
+  // handlers below are created once and read it when the user acts.
+  useEffect(() => {
+    changeRef.current = props.onChange;
+  });
+
+  const handleSingleChange = useCallback(({ date }: { date: DateType }) => {
+    (changeRef.current as (next: Dayjs | null) => void)(date ? dayjs(date) : null);
+  }, []);
+
+  const handleRangeChange = useCallback(
+    ({ startDate, endDate }: { startDate: DateType; endDate: DateType }) => {
+      (changeRef.current as (next: CalendarRange) => void)({
+        start: startDate ? dayjs(startDate) : null,
+        end: endDate ? dayjs(endDate) : null,
+      });
+    },
+    [],
+  );
+
+  // ── Keyboard operation (#1305) ───────────────────────────────────────────
+
+  /** The day the grid opens on: what is selected, or today when nothing is. */
+  const initialVisible = props.mode === "range" ? props.value.start : props.value;
+
+  /**
+   * The same verdict the library reaches for a day cell, restated for days it
+   * has not rendered — an arrow key can aim past the edge of the visible month,
+   * which is exactly where the library has nothing to ask.
+   *
+   * ⚠️ Kept in step with `shared` below by construction: both read the same
+   * three props, and there is no fourth way to block a day. The clamps are
+   * DAY-granular to match the library, which compares against `startOf("day")`
+   * and `endOf("day")` — the check-in picker's `maxDate` is `now`, and a
+   * stricter comparison would call the rest of today unreachable. The predicate
+   * is handed the same dayjs the library hands it.
+   */
+  const isUnavailable = useCallback(
+    (date: Dayjs) =>
+      (minDate ? date.isBefore(minDate, "day") : false) ||
+      (maxDate ? date.isAfter(maxDate, "day") : false) ||
+      Boolean(disabledDates?.(date)),
+    [minDate, maxDate, disabledDates],
+  );
+
+  const { getDayProps, followVisibleMonth, visibleDate } = useCalendarRovingFocus({
+    // Seeded once, on mount — the hook holds the value it was given.
+    initialDate: initialVisible ?? dayjs(),
+    isUnavailable,
+  });
 
   // ── Screen-reader semantics (#1301) ──────────────────────────────────────
   //
@@ -119,6 +193,9 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
     (day: CalendarDayInfo) => {
       const spelled = formatCalendarDayName(dayjs(day.date).toDate(), language);
       return {
+        // Roving focus turns thirty tab stops into one. Spread FIRST so the
+        // accessible name below cannot be clobbered by it.
+        ...getDayProps(dayjs(day.date)),
         // An unparseable date yields "", and an EMPTY accessible name is worse
         // than the bare number this replaces — a button with no name at all. So
         // omit the key entirely and let the library's own label stand.
@@ -149,7 +226,7 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
         ...(day.isToday ? { "aria-current": "date" } : null),
       };
     },
-    [language, t],
+    [getDayProps, language, t],
   );
 
   /**
@@ -207,7 +284,6 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
   // (`onSelectMonth` / `onSelectYear`), so a user who picks a month from the
   // selector before ever touching an arrow would leave the other half unset —
   // and an announcement that needs both would stay silent for them.
-  const initialVisible = props.mode === "range" ? props.value.start : props.value;
   useEffect(() => {
     const seed = initialVisible ?? dayjs();
     visibleRef.current = { month: seed.month(), year: seed.year() };
@@ -219,13 +295,17 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
   const announceVisibleMonth = useCallback(() => {
     const { month, year } = visibleRef.current;
     if (month === undefined || year === undefined) return;
+    // Both callbacks land in one batch, so this runs twice for an arrow press —
+    // once with a stale year. Harmless: the two updates collapse into a single
+    // render, and only the second one is ever painted.
+    followVisibleMonth(year, month);
     setMonthAnnouncement(
       new Intl.DateTimeFormat(language || undefined, {
         month: "long",
         year: "numeric",
       }).format(new Date(year, month, 1)),
     );
-  }, [language]);
+  }, [followVisibleMonth, language]);
 
   const handleMonthChange = useCallback(
     (month: number) => {
@@ -252,6 +332,10 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
   }, [monthAnnouncement]);
 
   const shared = {
+    // The month the roving tab stop is in, so an arrow or a page that leaves
+    // the visible month brings the grid with it. ⚠️ Patch-only: the library's
+    // public `month`/`year` pair cannot express this — see the patch's own note.
+    visibleDate,
     onMonthChange: handleMonthChange,
     onYearChange: handleYearChange,
     // Month and weekday names follow the app language. Free: the library's
@@ -295,24 +379,19 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
   );
 
   if (props.mode === "range") {
-    const { value, onChange } = props;
+    const { value } = props;
     return withLiveRegion(
       <DateTimePicker
         {...shared}
         mode="range"
         startDate={value.start ?? undefined}
         endDate={value.end ?? undefined}
-        onChange={({ startDate, endDate }) =>
-          onChange({
-            start: startDate ? dayjs(startDate) : null,
-            end: endDate ? dayjs(endDate) : null,
-          })
-        }
+        onChange={handleRangeChange}
       />,
     );
   }
 
-  const { value, onChange } = props;
+  const { value } = props;
   return withLiveRegion(
     <DateTimePicker
       {...shared}
@@ -321,7 +400,7 @@ export function ThemedCalendar(props: ThemedCalendarProps) {
       // The only thing separating the two single-value modes: `datetime` adds
       // the library's time view to the same grid, so they share a branch.
       timePicker={props.mode === "datetime"}
-      onChange={({ date }) => onChange(date ? dayjs(date) : null)}
+      onChange={handleSingleChange}
     />,
   );
 }

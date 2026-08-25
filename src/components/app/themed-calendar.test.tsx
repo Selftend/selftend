@@ -1,4 +1,4 @@
-import { act, screen, within } from "@testing-library/react-native";
+import { act, fireEvent, screen, within } from "@testing-library/react-native";
 import dayjs from "dayjs";
 
 import { ThemedCalendar } from "./themed-calendar";
@@ -77,6 +77,30 @@ describe("ThemedCalendar", () => {
     );
 
     expect(weekdayLabels()).toEqual(["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]);
+  });
+
+  it("actually moves the grid when the month arrows are pressed", () => {
+    // ☠️ Found while building #1305, and it had shipped. The library re-seeds
+    // its visible month from an effect whose dependencies include `date`,
+    // `minDate`, `maxDate` and `onChange` — and it re-seeds by snapping back to
+    // the SELECTED day's month. Pressing Next set this component's own
+    // announcement state, that render handed the library a fresh `onChange`
+    // closure, and the effect dragged the grid straight back: the header said
+    // April while every cell below it was still in March.
+    //
+    // Asserted on the DAY CELLS, not on the header or the announcement — both
+    // of those said April throughout, which is exactly why nothing caught it.
+    renderWithProviders(
+      <ThemedCalendar mode="date" value={dayjs("2026-03-15")} onChange={jest.fn()} />,
+    );
+
+    act(() => {
+      fireEvent.press(screen.getByTestId("btn-next"));
+    });
+
+    const days = within(screen.getByTestId("days"));
+    expect(days.getAllByLabelText(/April \d+, 2026$/).length).toBe(30);
+    expect(days.queryByLabelText(/March/)).toBeNull();
   });
 
   it("adds the time view in datetime mode, and only there", () => {

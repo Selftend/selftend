@@ -36,6 +36,62 @@ function calendarDay(page: Page, day: number) {
   return page.getByTestId("days").getByRole("button", { name: new RegExp(`\\b${day}, \\d{4}$`) });
 }
 
+/** The accessible name the calendar gives a day, mirroring `formatCalendarDayName`. */
+function dayName(d: Date): string {
+  return new Intl.DateTimeFormat("en", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(d);
+}
+
+function addDays(d: Date, days: number): Date {
+  const next = new Date(d);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+/**
+ * How the focused element identifies itself, and whether it is a day cell.
+ *
+ * ⚠️ Read off `document.activeElement` rather than asserted with `toBeFocused`,
+ * because what matters here is the ONE element focus is on out of forty-odd
+ * candidates — a per-locator check cannot say "and nothing else".
+ */
+async function focused(page: Page): Promise<{ name: string; inGrid: boolean }> {
+  return page.evaluate(() => {
+    const el = document.activeElement as HTMLElement | null;
+    if (!el) return { name: "<none>", inGrid: false };
+    const name =
+      el.getAttribute("aria-label") ??
+      el.getAttribute("data-testid") ??
+      (el.textContent ?? "").trim() ??
+      el.tagName;
+    return { name: name || el.tagName, inGrid: Boolean(el.closest('[data-testid="days"]')) };
+  });
+}
+
+/**
+ * Walk the sheet's whole Tab cycle and report the stops in order.
+ *
+ * The headline measurement of #1305: this was 36 stops, thirty of them
+ * individual day buttons, plus an invisible backdrop that announced
+ * "Close, button" and served as the wrap point.
+ */
+async function tabCycle(page: Page, limit = 24): Promise<string[]> {
+  const first = await focused(page);
+  const stops: string[] = [first.inGrid ? "<grid>" : first.name];
+  for (let i = 0; i < limit; i += 1) {
+    await page.keyboard.press("Tab");
+    const here = await focused(page);
+    const label = here.inGrid ? "<grid>" : here.name;
+    if (label === stops[0]) return stops;
+    stops.push(label);
+  }
+  return stops;
+}
+
 /**
  * A day that is unambiguously in the past and comfortably mid-month, so its
  * immediate neighbours share its grid: the 10th of last month.
@@ -402,5 +458,142 @@ test.describe("CBT goal: create, toggle milestone, edit, and change status", () 
     });
     // The life domain still reads as it always did, beside it.
     await expect(page.getByText("Work").last()).toBeVisible({ timeout: 10_000 });
+  });
+});
+
+test.describe("CBT goal: the target-date calendar under a keyboard (#1305)", () => {
+  test.beforeEach(async ({ user }) => {
+    await deleteAllGoalsForUser(user.id);
+    await deleteAllValuesProfileForUser(user.id);
+  });
+  test.afterEach(async ({ user }) => {
+    await deleteAllGoalsForUser(user.id);
+    await deleteAllValuesProfileForUser(user.id);
+  });
+
+  test("alice opens the calendar on today, crosses it with the arrow keys, and commits with Enter", async ({
+    page,
+  }) => {
+    const today = new Date();
+
+    await page.goto("/modules/cbt/goals/new");
+    await page.getByRole("button", { name: "Health", exact: true }).click();
+    await page.getByRole("button", { name: "Do more of", exact: true }).click();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    const trigger = page.getByRole("button", {
+      name: "Target date (optional): No date set",
+      exact: true,
+    });
+    await expect(trigger).toBeVisible({ timeout: 10_000 });
+
+    // Opened FROM the keyboard, so the focus this test follows is the keyboard's
+    // own and the return-to-opener assertion at the end has somewhere to return.
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("days")).toBeVisible({ timeout: 10_000 });
+
+    // ── Focus on open ────────────────────────────────────────────────────────
+    // Nothing is selected yet, so it lands on today — not on the chrome above
+    // the grid, and emphatically not on the backdrop, which used to take it and
+    // announce "Close, button".
+    await expect
+      .poll(async () => (await focused(page)).name, { timeout: 10_000 })
+      .toBe(`Today, ${dayName(today)}`);
+
+    // ── The backdrop is gone from every path ─────────────────────────────────
+    const backdrop = page.getByTestId("picker-sheet-backdrop");
+    await expect(backdrop).toHaveAttribute("aria-hidden", "true");
+    // ☠️ Not `tabindex="-1"`: react-native-web's focus trap wraps by calling
+    // `element.focus()` down the tree and keeping whatever accepts it, and a
+    // `-1` element accepts it. The attribute has to be absent altogether.
+    expect(await backdrop.getAttribute("tabindex")).toBeNull();
+
+    // ── One tab stop for the whole grid ──────────────────────────────────────
+    const stops = await tabCycle(page);
+    // 36 → 7: the grid collapses to one stop, and the backdrop is not a stop at
+    // all. The grid appears exactly once, which is the assertion that would fail
+    // if the days were individually tabbable again.
+    expect(stops.filter((stop) => stop === "<grid>")).toHaveLength(1);
+    expect(stops).toHaveLength(7);
+    expect(stops).toContain("Clear");
+    expect(stops).toContain("Done");
+    expect(stops).not.toContain("Close");
+    expect(stops).not.toContain("picker-sheet-backdrop");
+
+    // Tabbing all the way round comes back to the day focus was on, not to the
+    // first day of the month.
+    expect((await focused(page)).name).toBe(`Today, ${dayName(today)}`);
+
+    // ── Arrows move focus, and only focus ────────────────────────────────────
+    await page.keyboard.press("ArrowRight");
+    expect((await focused(page)).name).toBe(dayName(addDays(today, 1)));
+
+    await page.keyboard.press("ArrowDown");
+    expect((await focused(page)).name).toBe(dayName(addDays(today, 8)));
+
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowLeft");
+    expect((await focused(page)).name).toBe(`Today, ${dayName(today)}`);
+
+    // Not one draft change along the way — the trigger still reads empty, and it
+    // is the trigger that a committed value shows up on.
+    await expect(trigger).toBeVisible();
+
+    // ── Enter selects, Done commits ──────────────────────────────────────────
+    await page.keyboard.press("ArrowRight");
+    const chosen = addDays(today, 1);
+    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "Done", exact: true }).click();
+
+    await expect(
+      page.getByRole("button", { name: `Target date (optional): ${triggerText(chosen)}` }),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("alice pages the calendar by month from the keyboard, and Escape gives focus back", async ({
+    page,
+  }) => {
+    const today = new Date();
+    const nextMonthHeader = new Intl.DateTimeFormat("en", { month: "long" }).format(
+      new Date(today.getFullYear(), today.getMonth() + 1, 1),
+    );
+
+    await page.goto("/modules/cbt/goals/new");
+    await page.getByRole("button", { name: "Health", exact: true }).click();
+    await page.getByRole("button", { name: "Do more of", exact: true }).click();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    const trigger = page.getByRole("button", {
+      name: "Target date (optional): No date set",
+      exact: true,
+    });
+    await expect(trigger).toBeVisible({ timeout: 10_000 });
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("days")).toBeVisible({ timeout: 10_000 });
+    await expect
+      .poll(async () => (await focused(page)).name, { timeout: 10_000 })
+      .toBe(`Today, ${dayName(today)}`);
+
+    // ── PageDown moves the GRID, not just the cursor ─────────────────────────
+    await page.keyboard.press("PageDown");
+    await expect(page.getByTestId("btn-month")).toContainText(nextMonthHeader, { timeout: 10_000 });
+    // The month header alone is not proof: it moved on its own for a while
+    // before this ticket, with the day cells left behind in the old month.
+    expect((await focused(page)).inGrid).toBe(true);
+    await expect(page.getByTestId("days").getByRole("button").first()).toHaveAccessibleName(
+      new RegExp(`${nextMonthHeader} \\d+`),
+    );
+
+    await page.keyboard.press("PageUp");
+    await expect
+      .poll(async () => (await focused(page)).name, { timeout: 10_000 })
+      .toBe(`Today, ${dayName(today)}`);
+
+    // ── Escape still closes, and focus still comes back to the opener ────────
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("days")).toBeHidden({ timeout: 10_000 });
+    await expect(trigger).toBeFocused({ timeout: 10_000 });
   });
 });
