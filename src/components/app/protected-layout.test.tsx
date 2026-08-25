@@ -241,6 +241,25 @@ describe("ProtectedLayout app onboarding", () => {
     await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
   });
 
+  it("wears 'Skip for now' on the gate's pinned Escape, and it skips for good (#1258)", async () => {
+    renderWithProviders(<ProtectedLayout />);
+    await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
+
+    // The word, promoted out of the footer — exactly one "Skip for now" on
+    // the surface, and it is the pinned Escape's accessible name. A bare X
+    // here would disguise the only close in the app with a lasting
+    // consequence as a free dismissal (M2).
+    const escape = screen.getByTestId("modal-escape");
+    expect(escape.props.accessibilityLabel).toBe("Skip for now");
+    expect(screen.getAllByText("Skip for now")).toHaveLength(1);
+
+    fireEvent.press(escape);
+    // The skip path persists onboarding as done — not the step-Back dismiss.
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({ selectedConcerns: null, widgetIds: [] }),
+    );
+  });
+
   it("hides the wizard when app onboarding is complete", async () => {
     mockUseUserPreferences.mockReturnValue({
       data: {

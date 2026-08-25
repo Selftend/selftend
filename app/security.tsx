@@ -1,5 +1,4 @@
 import * as Linking from "expo-linking";
-import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -15,6 +14,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { appEnv } from "@/src/lib/env";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 interface TranslatedSection {
   title: string;
@@ -22,6 +22,7 @@ interface TranslatedSection {
 }
 
 export default function SecurityScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("security");
   const sections = t("page.sections", { returnObjects: true }) as TranslatedSection[];
 
@@ -53,7 +54,7 @@ export default function SecurityScreen() {
           <Button
             variant="outline"
             className="justify-start"
-            onPress={() => router.push("/privacy")}
+            onPress={() => pushWithOrigin("/privacy")}
           >
             <Icon name="privacy-tip" size={18} />
             <Text className="flex-1">{t("page.privacyPolicyLink")}</Text>

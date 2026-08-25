@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -50,6 +50,9 @@ const HISTORY_ROWS = 12;
  * life with THIS", and the value statement is the only thing that makes it answerable.
  */
 export default function ActValuesScreen() {
+  // No screen-level push any more: dev's only caller here was the "Bull's eye"
+  // button, and folding that check-in in is what this ticket does. `DomainRow`
+  // keeps its own.
   const { t } = useTranslation("act");
   const { formatDate } = useLocaleFormats();
   const { user } = useSession();
@@ -103,6 +106,10 @@ export default function ActValuesScreen() {
             <Text variant="muted">{t("values.listSubtitle")}</Text>
           </View>
 
+          {/* ⚠️ dev's "Bull's eye" button is deliberately NOT restored here.
+              Folding that check-in onto this screen — it renders below as its
+              own Section — is the whole of #1379; putting the push back would
+              reinstate the trip this ticket removes. */}
           <Text variant="muted" className="text-xs">
             {t("values.domainIntro")}
           </Text>
@@ -173,13 +180,20 @@ function DomainRow({
   rating: number | null;
 }) {
   const { t } = useTranslation("act");
+  // ⚠️ Through the Origin helper, not a bare `router.push` (#1269, which landed
+  // while this branch was open). The inline row this component replaced had
+  // already been migrated on dev; extracting it must not quietly take the way
+  // back off a cross-hierarchy arrival.
+  const pushWithOrigin = usePushWithOrigin();
   const hasEntry = Boolean(valueStatement);
 
   return (
     <Pressable
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push({ pathname: "/modules/act/values/[domain]", params: { domain } })}
+      onPress={() =>
+        pushWithOrigin({ pathname: "/modules/act/values/[domain]", params: { domain } })
+      }
       className="flex-row items-center gap-4 border-t border-border py-4 active:bg-accent/40"
     >
       <Icon name={DOMAIN_ICONS[domain]} className="size-5 text-muted-foreground" />

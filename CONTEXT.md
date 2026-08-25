@@ -169,3 +169,55 @@ A "Done"-after-save action that happens to navigate (`backWithFallback`, #475). 
 action reporting that a task is finished, not a way out of a screen, so neither the Escape rule nor
 its enforcement gate governs it. A screen may carry both.
 _Avoid_: calling Done an escape hatch; a screen is not exempt from an Escape because it has a Done.
+
+### Accounts ("optional registration")
+
+The vocabulary for how a person holds an account (#1427/#1429). Registration is optional: an
+account exists from first use, and a sign-in identity is attached later, if ever.
+
+**Guest account**:
+The account created silently on first use, with no sign-in identity attached. A full account — it
+owns its data like any other — whose only key is the session held on that device or browser: lose
+the session, lose the account. "Guest" is the word in copy, docs and code alike; the platform's
+mechanism word is "anonymous", which stays out of the UI because the data is not anonymous — it is
+the person's own, just unlabelled by an email.
+_Avoid_: anonymous account (mechanism word, and wrong as a privacy claim), local account, device
+account, trial account
+
+**Registered account**:
+An account with at least one sign-in identity attached (email and password, or an OAuth provider).
+What a guest becomes after conversion. Registering is invited, never required, and gates no
+feature.
+_Avoid_: full account, real account, permanent account, member
+
+**Conversion**:
+Attaching the first sign-in identity to a guest account, in place, keeping all its data. Guest →
+registered, one way. User-facing copy never says the word — people just "create an account".
+_Avoid_: upgrade, migration, merge (a conversion never combines two accounts)
+
+**Abandonment**:
+Knowingly leaving a guest account behind by signing in to a registered account from a device that
+holds guest data. Always preceded by a warning when the guest account holds any user-created
+content — never silent — and the warning offers export in place (#1430). A guest account with
+nothing in it is abandoned without ceremony.
+_Avoid_: logout, switch (both hide that data is being left behind)
+
+**Orphaned guest account**:
+A guest account no device holds a session for — created by abandonment, reinstall, or cleared
+storage. Unreachable by its owner, because a guest account's only key is that session; it is never
+deleted at the moment of abandonment — cleanup after dormancy is its only deletion path (#1431).
+_Avoid_: dead account, stale user
+
+**Dormancy**:
+The state of a guest account that has gone twelve months without activity — in practice, twelve
+months without the app being opened on a device holding its session, since any open renews it.
+Dormancy, not account age, is what makes a guest account eligible for cleanup: a recently used
+account is never dormant, however old it is (#1431).
+_Avoid_: inactive (too vague), expired (nothing expires on its own)
+
+**Cleanup**:
+The scheduled deletion of dormant guest accounts — the only path by which an orphaned guest
+account is ever deleted. Cleanup removes exactly what self-service account deletion removes,
+nothing less. A device that returns after its account was cleaned up starts fresh with a calm,
+one-time notice — never silently (#1431).
+_Avoid_: purge, garbage collection, expiry

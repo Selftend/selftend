@@ -63,8 +63,7 @@
     "dark": "Dark"
   },
   "notFound": {
-    "title": "Page not found",
-    "home": "Home"
+    "title": "Page not found"
   },
   "today": {
     "eyebrow": "Today · {{date}}",
@@ -155,8 +154,6 @@
     },
     "categories": {
       "mood": "Check-in",
-      "cbt": "CBT",
-      "act": "ACT",
       "journal": "Journal",
       "breathing": "Breathing",
       "grounding": "Grounding",

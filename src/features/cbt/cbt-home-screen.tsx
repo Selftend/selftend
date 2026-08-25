@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -27,6 +27,7 @@ import { CbtReviewLinks } from "@/src/features/cbt/cbt-home/cbt-review-links";
 import { RecentThoughtRecord } from "@/src/features/cbt/cbt-home/recent-thought-record";
 
 export default function CbtHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const {
@@ -138,7 +139,7 @@ export default function CbtHomeScreen() {
               accessibilityLabel={t("home.recordHistory")}
               accessibilityRole="button"
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() => router.push("/modules/cbt/history")}
+              onPress={() => pushWithOrigin("/modules/cbt/history")}
               className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
               role="button"
             >

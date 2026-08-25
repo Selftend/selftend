@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +8,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { REVIEW_LINKS } from "./cbt-home-config";
 
 export function CbtReviewLinks() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
 
   return (
@@ -21,7 +22,7 @@ export function CbtReviewLinks() {
               accessibilityLabel={t(link.labelKey)}
               accessibilityRole="button"
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() => router.push(link.route)}
+              onPress={() => pushWithOrigin(link.route)}
               className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
               role="button"
             >

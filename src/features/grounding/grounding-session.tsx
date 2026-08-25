@@ -6,7 +6,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { FocusSessionShell } from "@/src/components/app/focus-session-shell";
 import { HueIconBadge } from "@/src/features/grounding/hue-icon-badge";
-import { ProgressSegments } from "@/src/features/grounding/progress-segments";
+import { ProgressSegments } from "@/src/components/app/progress-segments";
 import type { GroundingTechnique } from "@/src/constants/grounding";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 
