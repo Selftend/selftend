@@ -24,6 +24,42 @@ const MODULE_ROOM_RESTRICTION = {
     "Use useRoomStyle(hue) / useRoomCardHsl(hue) from @/src/lib/use-room-style - they carry the scheme read and the cached style identity.",
 };
 
+// The raw-Modal ban (#1166 clause G2, built by #1260). PressShieldModal's
+// required onEscape makes a forgotten modal Escape a type error - but only for
+// modals that actually render through the wrapper. A raw Modal written around
+// it inherits neither the Escape row nor the #1054 web-unmount gate, so the
+// import itself is what this rule closes off. Shared for the same reason as
+// MODULE_ROOM_RESTRICTION above: no-restricted-imports is last-wins per file,
+// and every later import block that covers a component dir must re-state it.
+const RAW_MODAL_RESTRICTION = {
+  name: "react-native",
+  importNames: ["Modal"],
+  message:
+    "A raw Modal bypasses the modal escape guarantees (#1166/#1260) - render through PressShieldModal from @/src/components/app/press-shield-modal, which carries the pinned Escape row and the web-unmount gate. If this surface genuinely cannot (its entire content already is an explicit way out), exempt the file in eslint.config.js with a reason - test/raw-modal-ban.test.ts keeps the exemption list honest.",
+};
+
+// The sanctioned importer plus the frozen bypasser set. Every exemption is a
+// surface already ruled out of the modal rule's scope - the small dialogs whose
+// entire content is an explicit Cancel, plus the coach-mark overlay (#1165).
+// This list is FROZEN: the right response to it growing is to question the new
+// entry, not to extend the list. test/raw-modal-ban.test.ts asserts the set
+// below equals the set of files that actually import Modal, so a stale entry -
+// a file converted to the wrapper or deleted - fails loudly instead of
+// lingering as a silent hole.
+const RAW_MODAL_EXEMPT_FILES = [
+  // The one sanctioned importer: the wrapper itself.
+  "src/components/app/press-shield-modal.tsx",
+  // Small confirm dialog - its entire content is the explicit Cancel/confirm
+  // pair, ruled out of the pinned-row scope by #1165.
+  "src/components/app/confirm-dialog.tsx",
+  // Same shape as ConfirmDialog: a destructive confirm with its own Cancel.
+  "src/components/app/delete-account-modal.tsx",
+  // Web-only crop dialog with a visible Cancel; the native file is a null stub.
+  "src/components/app/avatar-crop-modal.web.tsx",
+  // Coach-mark overlay with its own text dismissals, ruled out of scope by #1165.
+  "src/features/tours/tour-overlay.tsx",
+];
+
 // The features whose entries carry a captured civil day (`dayKey`) and, for
 // timestamps, a captured offset (#250, #330). Every route from one of these to
 // the VIEWER's day is guarded - the import-layer and syntax-layer halves below.
@@ -53,6 +89,10 @@ function capturedFrameImportPaths(allow = []) {
   const activityNames = ["formatRelativeActivity"].filter((n) => !allow.includes(n));
   return [
     MODULE_ROOM_RESTRICTION,
+    // Re-stated because every block built from this function is last-wins for
+    // the feature dirs it matches - omitting it here would quietly un-ban the
+    // raw Modal for every captured-frame feature.
+    RAW_MODAL_RESTRICTION,
     ...(dayNames.length
       ? ["@/src/utils/date", "@/src/stores/selected-date-store"].map((name) => ({
           name,
@@ -274,6 +314,34 @@ module.exports = [
     files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": ["error", { paths: [MODULE_ROOM_RESTRICTION] }],
+    },
+  },
+  {
+    // Import-layer raw-Modal ban (#1166 G2, #1260) for the component dirs.
+    // Sits AFTER the module-room block and re-states MODULE_ROOM_RESTRICTION,
+    // because the rule is last-wins per file. Tests are ignored here so they
+    // fall through to the block above and keep the module-room guard: a test
+    // imports Modal to FIND it in a render tree, not to author one. The
+    // exempt files fall through the same way, keeping module-room too.
+    files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx", ...RAW_MODAL_EXEMPT_FILES],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { paths: [MODULE_ROOM_RESTRICTION, RAW_MODAL_RESTRICTION] },
+      ],
+    },
+  },
+  {
+    // The same ban for the src/ dirs the module-room block never covered
+    // (providers, stores, utils, i18n, lib, constants) plus top-level lib/.
+    // Deliberately NOT re-stating MODULE_ROOM_RESTRICTION: src/lib is where
+    // use-room-style legitimately imports roomVariables, and nothing here was
+    // under that guard before.
+    files: ["src/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+    ignores: ["src/features/**", "src/components/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": ["error", { paths: [RAW_MODAL_RESTRICTION] }],
     },
   },
   {
