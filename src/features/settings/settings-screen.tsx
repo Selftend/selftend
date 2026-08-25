@@ -1,9 +1,10 @@
 import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useTranslation } from "react-i18next";
 
 import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { StylePicker } from "@/src/components/app/style-picker";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useUserPreferences } from "@/src/features/settings/queries";
@@ -40,8 +41,16 @@ import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
  * outcomes toast; a state that persists is shown where it lives, which is why
  * `appLockUnavailable` is a row description and the profile disclosures keep
  * their inline messages.
+ *
+ * **Chrome: `ScreenTopBar` carries the Escape (#1255).** The bespoke hero is
+ * the page's own title, not chrome, so the Escape slot never reached this
+ * screen - one of the escape spec's 11 red screens (W12). The bar sits above
+ * the scroller, pinned rather than scrolling away, and the hero and runs below
+ * are untouched. `/settings` is a one-crumb route, so the bar's trail hides and
+ * the Escape announces "Back to Home".
  */
 export default function SettingsScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("settings");
   const { user } = useSession();
   const { data } = useUserPreferences(user?.id ?? null);
@@ -57,6 +66,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <ScreenTopBar />
       {/* Keyboard avoidance for the display-name field (edge-to-edge Android
           gets no window resize, so the screen must pad itself). */}
       <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
@@ -93,7 +103,7 @@ export default function SettingsScreen() {
                 // one thing that stays true - reminders are off by default.
                 description={t("reminders.description")}
                 trailing={{ kind: "chevron" }}
-                onPress={() => router.push("/notifications")}
+                onPress={() => pushWithOrigin("/notifications")}
                 testID="settings-row-reminders"
               />
               {/* Native only, gated here rather than inside the row: a row that
@@ -132,7 +142,7 @@ export default function SettingsScreen() {
                 // the privacy page it opens says so.
                 description={t("privacy.description")}
                 trailing={{ kind: "chevron" }}
-                onPress={() => router.push("/privacy")}
+                onPress={() => pushWithOrigin("/privacy")}
                 testID="settings-row-privacy"
               />
               {/* Web only: browser storage is the only thing a cookie preference
@@ -142,7 +152,7 @@ export default function SettingsScreen() {
                   icon="cookie"
                   label={t("support.cookies")}
                   trailing={{ kind: "chevron" }}
-                  onPress={() => router.push("/cookies")}
+                  onPress={() => pushWithOrigin("/cookies")}
                   testID="settings-row-cookies"
                 />
               ) : null}
@@ -153,14 +163,14 @@ export default function SettingsScreen() {
                 icon="support-agent"
                 label={t("support.support")}
                 trailing={{ kind: "chevron" }}
-                onPress={() => router.push("/support")}
+                onPress={() => pushWithOrigin("/support")}
                 testID="settings-row-support"
               />
               <SettingsRow
                 icon="gavel"
                 label={t("support.legal")}
                 trailing={{ kind: "chevron" }}
-                onPress={() => router.push("/legal")}
+                onPress={() => pushWithOrigin("/legal")}
                 testID="settings-row-legal"
               />
             </SettingsRun>

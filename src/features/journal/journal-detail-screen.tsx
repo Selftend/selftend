@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -39,6 +40,7 @@ export function joinMeta(segments: (string | null | undefined)[]): string {
 }
 
 export default function JournalDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
   const roomStyle = useRoomStyle("ink");
@@ -156,7 +158,7 @@ export default function JournalDetailScreen() {
                       (h-10 sm:h-9), and only the default shares that height —
                       an sm pill sits 4px shorter and reads as broken (#911). */}
                   <Button
-                    onPress={() => router.push(`/tools/journal/${entry.id}/edit`)}
+                    onPress={() => pushWithOrigin(`/tools/journal/${entry.id}/edit`)}
                     variant="outline"
                   >
                     <Icon name="edit" className="size-4" />
@@ -194,7 +196,7 @@ export default function JournalDetailScreen() {
               <Pressable
                 accessibilityRole="link"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => router.push("/tools/journal/entries")}
+                onPress={() => pushWithOrigin("/tools/journal/entries")}
                 className="flex-row items-center gap-1 active:opacity-70"
                 role="link"
               >

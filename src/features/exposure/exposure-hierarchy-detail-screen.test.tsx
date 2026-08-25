@@ -102,6 +102,20 @@ async function pressSave() {
  */
 describe("ExposureHierarchyDetailScreen error surfaces", () => {
   describe("the session sheet", () => {
+    // M5/#1257: the ghost Cancel that sat beside Save promised the same thing
+    // as the pinned X, so the sheet carries exactly one close affordance now.
+    it("closes from the pinned Escape, its only close affordance", () => {
+      renderWithProviders(<ExposureHierarchyDetailScreen />);
+      fireEvent.press(screen.getByText("Start session"));
+
+      expect(screen.getByText("Exposure session")).toBeTruthy();
+      expect(screen.getAllByLabelText("Close")).toHaveLength(1);
+      expect(screen.queryByText("Cancel")).toBeNull();
+
+      fireEvent.press(screen.getByTestId("modal-escape"));
+      expect(screen.queryByText("Exposure session")).toBeNull();
+    });
+
     it("shows the save failure inline in the sheet, and raises no toast", async () => {
       saveSession.mockRejectedValue(new Error("network"));
       renderWithProviders(<ExposureHierarchyDetailScreen />);
