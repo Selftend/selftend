@@ -38,7 +38,13 @@ describe("FocusSessionShell", () => {
 
   it("renders exactly one Escape (R1), unconditionally", () => {
     mockUsePathname.mockReturnValue("/tools/meditation/session");
-    const { getAllByTestId } = renderShell();
+    // The barest shell the API allows - no trailing read-out - so an Escape
+    // accidentally tied to any optional prop fails here, not in review.
+    const { getAllByTestId } = render(
+      <FocusSessionShell eyebrow="Sitting">
+        <Text>session body</Text>
+      </FocusSessionShell>,
+    );
     expect(getAllByTestId("screen-escape")).toHaveLength(1);
   });
 
