@@ -102,7 +102,7 @@
       "activityMoodLiftDetail": "{{summary}} with before/after mood.",
       "activityMoodLiftItem": "{{category}} {{lift}} ({{count}})",
       "recurringThought": "Thought to explore: {{thought}}",
-      "recurringThoughtDetail": "This exact thought appears {{count}} times. Consider whether a core belief sits underneath it.",
+      "recurringThoughtDetail": "This exact thought appears {{count}} times.",
       "selfCareTrend": "Self-care trend: movement on {{exerciseDays}}/{{totalDays}} recent days",
       "selfCareTrendDetail": "{{socialDays}} social day(s), {{gratitudeDays}} gratitude day(s), {{averageSleep}}.",
       "sleepAverage": "{{hours}}h average sleep",
@@ -253,6 +253,7 @@
     "strengthSummary": "Original {{original}} · Alternative {{alternative}}",
     "deleteTitle": "Delete this belief?",
     "deleteMessage": "This permanently removes the belief and its strength history. This can't be undone.",
+    "deleteError": "Unable to delete the belief. Try again.",
     "validation": {
       "beliefStatement": "Describe the belief.",
       "alternativeBelief": "Write an alternative belief."
@@ -369,6 +370,7 @@
     "loadingDetail": "Loading worry...",
     "deleteTitle": "Delete this worry?",
     "deleteMessage": "This permanently removes the entry. This can't be undone.",
+    "deleteError": "Unable to delete the entry. Try again.",
     "validation": {
       "worryStatement": "Describe the worry.",
       "copingStatement": "Write a coping statement.",
@@ -490,6 +492,7 @@
     "editDescription": "Update the details of this episode.",
     "deleteTitle": "Delete this anger log?",
     "deleteMessage": "This permanently removes the log. This can't be undone.",
+    "deleteError": "Unable to delete the log. Try again.",
     "validation": {
       "triggerText": "Describe what triggered the anger."
     }
@@ -1054,6 +1057,8 @@
     "balancedThoughtLabel": "Balanced thought",
     "balancedThoughtPlaceholder": "Aim for something believable and kinder, not forced positivity.",
     "balancedThoughtExample": "Example: I do not know what the email means yet. One message is not proof that I failed.",
+    "beliefAfter": "Belief in the hot thought now (0-100)",
+    "beliefAfterHint": "Optional. How strongly do you believe it after working through it? 0 means not at all; 100 means completely.",
     "intensityAfter": "Emotion intensity after (0-100)",
     "intensityAfterHint": "Optional. Rate the same emotion after writing the balanced thought.",
     "outcomeNotes": "Outcome notes",
@@ -1509,9 +1514,9 @@
     },
     "overview": {
       "patternsTitle": "Patterns",
-      "newPattern": "New pattern →",
+      "newPattern": "New pattern",
       "recentTitle": "Recent sessions",
-      "showAll": "Show all sessions →",
+      "showAll": "Show all sessions",
       "noPatterns": "No patterns yet.",
       "startPattern": "Start {{name}}",
       "minutes_one": "minute",

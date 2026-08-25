@@ -9,7 +9,18 @@ type DraftMode = "create" | "edit";
 // Bump when the persisted shape changes incompatibly; zustand's persist drops
 // stored state whose version differs (no migrate function on purpose - a lost
 // draft beats a wrongly-migrated one).
-const WIZARD_DRAFT_PERSIST_VERSION = 1;
+//
+// Bumping is a BLUNT instrument: this constant is shared by every wizard, so a
+// bump discards in-flight drafts in every flow, not just the one whose shape
+// changed. #1376 added a field to the thought record form and reached for a bump
+// first; making that field `.nullish()` in the CBT schema kept the fix local and
+// left this at 1. Prefer tolerating the older shape in the flow's own schema.
+//
+// Exported so tests can write fixtures at the CURRENT version. A fixture that
+// hardcodes a number silently stops testing what it claims the moment this is
+// bumped: zustand discards a version-mismatched blob before any of the TTL or
+// shape guards below ever run, so the test would pass for the wrong reason.
+export const WIZARD_DRAFT_PERSIST_VERSION = 1;
 
 // Drafts older than this are dropped on rehydrate. A day-old half-filled wizard
 // is more likely stale intent than a work-in-progress, and the guard doubles as

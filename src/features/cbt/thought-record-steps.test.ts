@@ -1,5 +1,5 @@
 import { buildThoughtRecordSteps } from "./thought-record-steps";
-import type { ThoughtRecordFormSchema } from "./schemas";
+import { thoughtRecordFormSchema, type ThoughtRecordFormSchema } from "./schemas";
 import type { ThoughtRecordStepKey } from "./thought-record-form";
 
 const fakeT = (key: string) => key;
@@ -38,10 +38,24 @@ describe("buildThoughtRecordSteps", () => {
       "evidenceAgainst",
       "distortions",
       "balancedThought",
+      "beliefAfter",
       "emotionIntensityAfter",
       "outcomeNotes",
     ];
     expect(covered).toEqual(expectedFields);
+  });
+
+  it("leaves no schema field without a step, derived from the schema itself", () => {
+    // The list above is hand-written, so on its own it can only prove the steps
+    // match what someone once typed. This derives the other direction: a field
+    // added to the schema and forgotten here would never be validated by any
+    // step, and on the last step handleSubmit would fail the whole form with an
+    // error no step renders. `beliefAfter` (#1376) was the field that made this
+    // worth pinning.
+    const covered = new Set(steps.flatMap((s) => s.fields));
+    for (const field of Object.keys(thoughtRecordFormSchema.shape)) {
+      expect(covered).toContain(field);
+    }
   });
 
   it("maps the nats field to both the nats and hotThought steps", () => {
