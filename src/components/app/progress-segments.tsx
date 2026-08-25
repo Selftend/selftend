@@ -84,7 +84,12 @@ export function ProgressSegments(props: ProgressSegmentsProps) {
           importantForAccessibility="no-hide-descendants"
           className="gap-1.5"
         >
-          <View className="flex-row gap-1.5">
+          {/*
+           * gap-1 (4px), not the original gap-1.5: the six-stop CBT rail is
+           * where a caption column is narrowest, and the tighter gap is what
+           * makes its longest words fit - see the measurement note below.
+           */}
+          <View className="flex-row gap-1">
             {stops.map((stop) => (
               <View
                 key={stop.label}
@@ -108,11 +113,16 @@ export function ProgressSegments(props: ProgressSegmentsProps) {
            * MID-WORD, which no amount of wrapping fixes. Sentence case is the
            * same words at 52.2 and 54.4, inside the column in both locales. The
            * two-word stops still wrap at their space, which is fine.
-           * ⚠️ At 320dp the column is 51.2 and those two do break mid-word; 360
-           * is the width the rulings bind, and shrinking the type further to buy
-           * 320 costs legibility everywhere else.
+           * ⚠️ The SIX-stop CBT rail (#1381) is tighter: (360 − 48 − 20) / 6 =
+           * 48.7dp per stop at gap-1, and its widest captions measure 47.9
+           * (`Ситуация`) and 46.3 (`Thoughts`) - inside the column, with under
+           * a dp to spare for the Bulgarian one, which is why the gap here is
+           * gap-1 and not gap-1.5 (47.0dp - a mid-word break).
+           * ⚠️ At 320dp (42.0dp per six-stop column) the longest captions do
+           * break mid-word; 360 is the width the rulings bind, and shrinking
+           * the type further to buy 320 costs legibility everywhere else.
            */}
-          <View className="flex-row gap-1.5">
+          <View className="flex-row gap-1">
             {stops.map((stop) => (
               <Text
                 key={stop.label}

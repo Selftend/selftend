@@ -142,7 +142,35 @@ describe("createWizardDraftStore - persistence", () => {
 
     expect(reader.getState().hydrated).toBe(true);
     expect(reader.getState().values).toEqual({ name: "half-written draft" });
-    expect(reader.getState().stepIndex).toBe(2);
+    // The step index is session-only (#1381): values survive the restart, the
+    // wizard starts over at its first step.
+    expect(reader.getState().stepIndex).toBe(0);
+  });
+
+  it("☠️ never lets a same-version blob smuggle a stepIndex into memory", async () => {
+    // The envelope has no stepIndex and the consumer-side clamp is gone with
+    // it - so a blob that carries one anyway (hand-edited storage, a bug in a
+    // future writer) must be stripped by the merge, not spread into state where
+    // nothing bounds it any more.
+    await AsyncStorage.setItem(
+      storageKey("smuggle-flow"),
+      JSON.stringify({
+        state: {
+          mode: "create",
+          entityId: null,
+          stepIndex: 99,
+          values: { name: "draft" },
+          updatedAt: Date.now(),
+        },
+        version: WIZARD_DRAFT_PERSIST_VERSION,
+      }),
+    );
+
+    const store = createWizardDraftStore<Values>("smuggle-flow");
+    await store.persist.rehydrate();
+
+    expect(store.getState().values).toEqual({ name: "draft" });
+    expect(store.getState().stepIndex).toBe(0);
   });
 
   it("marks hydrated even when storage holds no draft", async () => {
@@ -160,7 +188,6 @@ describe("createWizardDraftStore - persistence", () => {
         state: {
           mode: "create",
           entityId: null,
-          stepIndex: 3,
           values: { name: "day-old draft" },
           updatedAt: Date.now() - WIZARD_DRAFT_TTL_MS - 1000,
         },
@@ -188,7 +215,6 @@ describe("createWizardDraftStore - persistence", () => {
         state: {
           mode: "create",
           entityId: null,
-          stepIndex: 1,
           // values must be an object (form values) - an older app version or
           // corrupted write must not crash the wizard.
           values: "not-an-object",
@@ -240,7 +266,6 @@ describe("createWizardDraftStore - persistence", () => {
         state: {
           mode: "create",
           entityId: null,
-          stepIndex: 2,
           values: { name: "previous user's private text" },
           updatedAt: Date.now(),
         },
