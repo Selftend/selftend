@@ -10,7 +10,7 @@ import { deleteAllActLogsForUser } from "./helpers";
  *
  * Wizard steps (act.json > committedAction.steps):
  *   1. domain    - "Domain" - select a life domain (pressable chips)
- *   2. action    - "Action" - title (required), description, targetDate
+ *   2. action    - "Action" - title (required), description, targetDate (calendar field)
  *   3. obstacles - "Obstacles" - obstacles textarea
  *
  * Detail affordances:
@@ -55,6 +55,34 @@ test.describe("ACT committed action: create, add step, toggle step, change statu
 
     await page.getByRole("textbox", { name: "More detail (optional)" }).fill(actionDescription);
 
+    // ── Target date: a calendar, never a typed date ────────────────────────────
+    // The field used to be a textarea over a Postgres `date` column, so typing
+    // "next Tuesday" failed the whole save (#1303). Only a real browser can show
+    // that neither a text box nor a native date widget is left here.
+    const targetDateTrigger = page.getByRole("button", {
+      name: /^Target date \(optional\): /,
+    });
+    await expect(page.getByRole("textbox", { name: "Target date (optional)" })).toHaveCount(0);
+    await expect(page.locator('input[type="date"]')).toHaveCount(0);
+
+    await targetDateTrigger.click();
+    // Today by its own name rather than by a number, so the pick needs no
+    // agreement between this process's clock and the browser's.
+    await page
+      .getByTestId("days")
+      .getByRole("button", { name: /^Today, / })
+      .click();
+    await page.getByRole("button", { name: "Done", exact: true }).click();
+
+    // Whatever the trigger now reads is what the detail screen must read too —
+    // both go through `formatDayKey`. Comparing the two rendered strings makes
+    // the assertion independent of locale and of the day the suite runs on.
+    const triggerName = await targetDateTrigger.getAttribute("aria-label");
+    const formattedTargetDate = (triggerName ?? "").split(": ")[1];
+    expect(formattedTargetDate).toBeTruthy();
+    // The stored `YYYY-MM-DD` is a wire format and must not be what is shown.
+    expect(formattedTargetDate).not.toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // ── Step 3: Obstacles ──────────────────────────────────────────────────────
@@ -67,6 +95,9 @@ test.describe("ACT committed action: create, add step, toggle step, change statu
     // After save, router.replace to /modules/act/committed-action/[id]
     await expect(page).toHaveURL(/\/modules\/act\/committed-action\/[^/]+$/, { timeout: 15_000 });
     await expect(page.getByText(actionTitle).last()).toBeVisible({ timeout: 10_000 });
+    // The save succeeded WITH a target date, and the detail screen reads it back
+    // in the same shape the picker showed it.
+    await expect(page.getByText(formattedTargetDate).last()).toBeVisible({ timeout: 10_000 });
 
     // ── Add a step ─────────────────────────────────────────────────────────────
     await page.getByPlaceholder("Describe one small step...").fill(stepText);

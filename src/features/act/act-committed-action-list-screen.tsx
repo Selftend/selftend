@@ -13,6 +13,7 @@ import { RelatedTools } from "@/src/features/act/related-tools";
 import { type ActionStatus, type CommittedAction } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { formatDayKey } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 
 const STATUS_BADGE_CLASS: Record<ActionStatus, string> = {
@@ -22,7 +23,7 @@ const STATUS_BADGE_CLASS: Record<ActionStatus, string> = {
 };
 
 export default function ActCommittedActionListScreen() {
-  const { t } = useTranslation("act");
+  const { t, i18n } = useTranslation("act");
   const { user } = useSession();
   const { data: actions, isLoading } = useCommittedActions(user?.id ?? null);
 
@@ -55,15 +56,30 @@ export default function ActCommittedActionListScreen() {
           ) : null}
 
           {active.length > 0 ? (
-            <ActionGroup title={t("committedAction.activeTitle")} items={active} t={t} />
+            <ActionGroup
+              title={t("committedAction.activeTitle")}
+              items={active}
+              t={t}
+              lang={i18n.language}
+            />
           ) : null}
 
           {completed.length > 0 ? (
-            <ActionGroup title={t("committedAction.completedTitle")} items={completed} t={t} />
+            <ActionGroup
+              title={t("committedAction.completedTitle")}
+              items={completed}
+              t={t}
+              lang={i18n.language}
+            />
           ) : null}
 
           {abandoned.length > 0 ? (
-            <ActionGroup title={t("committedAction.abandonedTitle")} items={abandoned} t={t} />
+            <ActionGroup
+              title={t("committedAction.abandonedTitle")}
+              items={abandoned}
+              t={t}
+              lang={i18n.language}
+            />
           ) : null}
         </View>
       </ScrollView>
@@ -75,10 +91,13 @@ function ActionGroup({
   title,
   items,
   t,
+  lang,
 }: {
   title: string;
   items: CommittedAction[];
   t: ReturnType<typeof useTranslation<"act">>["t"];
+  /** Passed down rather than defaulted, so a language change re-renders these rows. */
+  lang: string;
 }) {
   return (
     <View className="gap-2">
@@ -115,7 +134,9 @@ function ActionGroup({
               </View>
               {action.targetDate ? (
                 <Text variant="muted" className="text-xs">
-                  {t("committedAction.targetDateDisplay", { date: action.targetDate })}
+                  {t("committedAction.targetDateDisplay", {
+                    date: formatDayKey(action.targetDate, lang),
+                  })}
                 </Text>
               ) : null}
             </View>
