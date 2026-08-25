@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { memo, useCallback, useMemo } from "react";
 import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,10 +18,12 @@ import { useRoomStyle } from "@/src/lib/use-room-style";
 // Memoized row so the FlatList only re-renders changed items, and navigation stays
 // keyed to the session id (#97 - was a .map() inside a ScrollView, all 100 rows mounted).
 const SessionRow = memo(function SessionRow({ session }: { session: MeditationSession }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("meditation");
   const onPress = useCallback(
-    () => router.push({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } }),
-    [session.id],
+    () =>
+      pushWithOrigin({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } }),
+    [session.id, pushWithOrigin],
   );
 
   return (

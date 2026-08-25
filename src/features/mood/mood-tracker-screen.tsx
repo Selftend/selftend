@@ -1,4 +1,5 @@
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -674,6 +675,7 @@ interface TodayCheckInProps {
 // any glyph still opens the editor with it preselected, which the caption
 // says out loud ("tap to add another").
 function TodayCheckIn({ latest, dateKey }: TodayCheckInProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("mood");
   const dateLine = new Intl.DateTimeFormat(i18n.language, {
     weekday: "long",
@@ -715,7 +717,7 @@ function TodayCheckIn({ latest, dateKey }: TodayCheckInProps) {
           // #739 rejected this exact shape for the emotions beside it and built the
           // seed-store pattern; this is the score's half.
           seedMoodScore(score);
-          router.push("/tools/check-in/new");
+          pushWithOrigin("/tools/check-in/new");
         }}
         compact
       />

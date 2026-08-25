@@ -4,6 +4,14 @@ import { GroundingSession } from "@/src/features/grounding/grounding-session";
 import { groundingLookup } from "@/src/constants/grounding";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+// The shell now hosts the Escape (#1256), which reads the trail off the live
+// pathname; the route-level announcement is asserted end to end in
+// focus-session-shell.test.tsx, so a stub path is enough here.
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn(), replace: jest.fn() },
+  usePathname: () => "/tools/grounding/54321",
+}));
+
 const baseProps = {
   technique: groundingLookup["54321"],
   techniqueTitle: "5-4-3-2-1",
@@ -33,18 +41,19 @@ describe("GroundingSession", () => {
   });
 
   /**
-   * The shell still has no close glyph, but the session is no longer exitless:
-   * #928 reversed #874's stance and added the siblings' inline "Finish early"
-   * ghost button as the invited way out. The top row reads `1 of 5`, the
-   * design's wording, not `1 / 5`.
+   * The shell's Escape (#1256) wears the arrow, never the close glyph - a
+   * session is not a create/edit form - and the inline "Finish early" ghost
+   * button (#928) stays as the invited way out beside it. The top row reads
+   * `1 of 5`, the design's wording, not `1 / 5`.
    */
-  it("renders the shell top row and the inline Finish early exit, no close glyph", () => {
+  it("renders the shell top row, the Escape, and the inline Finish early exit", () => {
     const onFinishEarly = jest.fn();
-    const { getByText, queryByLabelText } = renderWithProviders(
+    const { getByText, getByTestId, queryByLabelText } = renderWithProviders(
       <GroundingSession {...baseProps} onFinishEarly={onFinishEarly} />,
     );
     expect(getByText("5-4-3-2-1")).toBeTruthy();
     expect(getByText("1 of 5")).toBeTruthy();
+    expect(getByTestId("screen-escape")).toBeTruthy();
     expect(queryByLabelText("Close")).toBeNull();
     fireEvent.press(getByText("Finish early"));
     expect(onFinishEarly).toHaveBeenCalledTimes(1);
