@@ -87,7 +87,12 @@ test.describe("ACT defusion: create, view, delete", () => {
       .getByTestId("defusion-fusion-before")
       .getByRole("button", { name: "60", exact: true })
       .click();
-    await page.getByRole("radio", { name: "Musical thoughts", exact: true }).click();
+    // ⚠️ NOT `exact`. A technique card holds its title AND its description, and
+    // a Pressable with no explicit label takes its accessible name from all of
+    // its contents - so the exact name here is the title plus the whole
+    // instruction sentence. The category chips above are single-text and can
+    // stay exact.
+    await page.getByRole("radio", { name: "Musical thoughts" }).click();
 
     await expect(page.getByText("5 of 5 parts filled in")).toBeVisible();
 
