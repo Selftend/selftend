@@ -35,6 +35,13 @@ jobs:
           node-version: 22.23.1
           cache: npm
 
+      # ☠️ `patches/**` is part of the key on purpose. A cache hit SKIPS `npm ci`
+      # below, and `npm ci` is the only thing that runs `postinstall`, which is
+      # the only thing that runs patch-package. So a key that ignores the patch
+      # directory restores a node_modules built BEFORE a newly added patch and
+      # never applies it - the job then tests an unpatched dependency while the
+      # patch sits in the tree, and every PR goes red at once with nothing in
+      # its own diff to explain it (2026-08-25, the datepicker patch of #1301).
       - name: Cache node_modules
         id: cache-node-modules
         uses: actions/cache@v4
