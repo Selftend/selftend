@@ -151,6 +151,10 @@ export default function ProtectedLayout() {
       {needsAppOnboarding ? (
         <AppOnboardingWizard
           visible
+          // The app's only first-run gate: skipping here persists onboarding
+          // as done and the wizard never returns, so its Escape wears the
+          // word "Skip for now" instead of a bare X (M2, #1258).
+          skipPersists
           introductionOnly={isIntroductionReplay}
           initialConcerns={preferences?.selectedConcerns ?? []}
           isPending={completeOnboarding.isPending || completeIntroduction.isPending}

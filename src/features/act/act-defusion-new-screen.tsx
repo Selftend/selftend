@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { ActivityIndicator, Pressable, View } from "react-native";
-import { useCallback, useMemo, useState } from "react";
+import type { TextInput } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -18,29 +19,96 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
+import { ProgressSegments } from "@/src/components/app/progress-segments";
 import { useSaveDefusionLog } from "@/src/features/act/queries";
-import { StepPills } from "@/src/features/act/step-pills";
 import {
   DEFUSION_TECHNIQUES,
   THOUGHT_CATEGORIES,
   type DefusionTechnique,
   type ThoughtCategory,
 } from "@/src/features/act/types";
+import { announceMessage, politeLiveRegionProps } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
-import { useStateWizardDraft } from "@/src/lib/use-state-wizard-draft";
 import { useSession } from "@/src/providers/session-provider";
 import {
-  type ActDefusionDraft,
-  useActDefusionDraftStore,
-} from "@/src/stores/act-defusion-draft-store";
+  type ActDefusionLogDraft,
+  useActDefusionLogDraftStore,
+} from "@/src/stores/act-defusion-log-draft-store";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 
-type Step = "thought" | "category" | "before" | "technique" | "after";
-const STEP_ORDER: Step[] = ["thought", "category", "before", "technique", "after"];
+/**
+ * The five parts of the column, in the order they appear down the page. They are
+ * PARTS, not steps: nothing here has to be done before anything else, and the
+ * rail names them rather than counting them (#1380).
+ */
+const DEFUSION_PARTS = ["thought", "category", "before", "technique", "after"] as const;
+type DefusionPart = (typeof DEFUSION_PARTS)[number];
 
+/**
+ * ☠️ The category and the technique start NULL, not at their column defaults.
+ * `thought_category` and `technique_used` are both NOT NULL and the insert
+ * trigger coalesces a null back to `other` / `havingTheThoughtThat` - so a form
+ * that carried those defaults in its own state could not tell an answer from a
+ * default, and the rail would light two of five segments before anything was
+ * typed. The coalescing happens once, at save, where it belongs.
+ */
+const EMPTY_DRAFT: ActDefusionLogDraft = {
+  fusedThought: "",
+  thoughtCategory: null,
+  fusionLevelBefore: null,
+  techniqueUsed: null,
+  defusedVersion: "",
+  fusionLevelAfter: null,
+  notes: "",
+};
+
+/** What the insert trigger would coalesce a null to; applied here so the saved row says it once. */
+const CATEGORY_WHEN_UNANSWERED: ThoughtCategory = "other";
+const TECHNIQUE_WHEN_UNANSWERED: DefusionTechnique = "havingTheThoughtThat";
+
+/**
+ * Which parts hold something the user put there.
+ *
+ * ☠️ Per part, never a prefix. A prefix count ("the furthest part reached")
+ * lies the moment the form is filled out of order - which is the whole point of
+ * a column - and it would report a form with only the last part filled as
+ * finished. Each part answers for itself and nothing else.
+ */
+function filledParts(draft: ActDefusionLogDraft): Record<DefusionPart, boolean> {
+  return {
+    thought: draft.fusedThought.trim().length > 0,
+    category: draft.thoughtCategory !== null,
+    before: draft.fusionLevelBefore !== null,
+    technique: draft.techniqueUsed !== null,
+    // The last part carries three fields; any one of them counts.
+    after:
+      draft.defusedVersion.trim().length > 0 ||
+      draft.fusionLevelAfter !== null ||
+      draft.notes.trim().length > 0,
+  };
+}
+
+/**
+ * Defuse a thought, as ONE SCROLLING COLUMN.
+ *
+ * This screen used to be a five-step pill flow that hid how much was left and
+ * refused to move until the current step was answered. It is now a column with
+ * a sticky, read-only rail that NAMES its parts: a user can see the whole of
+ * what is being asked before answering any of it, answer the last part first if
+ * that is what they have words for, and save part-way (#1380).
+ *
+ * Nothing here is gated. The one piece of validation left - the thought itself -
+ * runs at save and says so, rather than disabling a button with no explanation.
+ *
+ * ⚠️ The category chips and technique cards stay hand-rolled radiogroups on
+ * `useRovingFocus`. The shared selectable chip hardcodes a checkbox role, has no
+ * roving focus, no radio pair and a toggle-shaped handler, and all three of its
+ * consumers are multi-select - moving these onto it would be an accessibility
+ * regression, not a de-duplication.
+ */
 export default function ActDefusionNewScreen() {
   const { t } = useTranslation(["act", "common"]);
   const { user } = useSession();
@@ -48,111 +116,135 @@ export default function ActDefusionNewScreen() {
   const saveMutation = useSaveDefusionLog(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
 
-  const [step, setStep] = useState<Step>("thought");
-  const [fusedThought, setFusedThought] = useState("");
-  const [thoughtCategory, setThoughtCategory] = useState<ThoughtCategory>("other");
-  const [fusionLevelBefore, setFusionLevelBefore] = useState<number | null>(null);
-  const [techniqueUsed, setTechniqueUsed] = useState<DefusionTechnique>("havingTheThoughtThat");
-  const [defusedVersion, setDefusedVersion] = useState("");
-  const [fusionLevelAfter, setFusionLevelAfter] = useState<number | null>(null);
-  const [notes, setNotes] = useState("");
+  const draft = useActDefusionLogDraftStore((state) => state.values) ?? EMPTY_DRAFT;
+  const hydrateDraft = useActDefusionLogDraftStore((state) => state.hydrate);
+  const resetDraft = useActDefusionLogDraftStore((state) => state.reset);
+  const setDraftValues = useActDefusionLogDraftStore((state) => state.setValues);
+
   const [submitError, setSubmitError] = useState("");
+  const [thoughtError, setThoughtError] = useState("");
   const [discardOpen, setDiscardOpen] = useState(false);
+  /**
+   * Whether the seven technique cards are showing. Opens on a fresh form and on
+   * a restored draft that never picked one; a draft that did comes back
+   * collapsed onto its choice.
+   *
+   * ☠️ Explicit state, NOT derived from "a technique is set". Derived, the list
+   * tears itself down the instant anything selects - and roving focus selects ON
+   * MOVE, so the first arrow press would end the traversal and a keyboard user
+   * could never reach the third technique. Only a COMMIT closes it.
+   */
+  const [techniqueOpen, setTechniqueOpen] = useState(draft.techniqueUsed === null);
+  const thoughtInputRef = useRef<TextInput>(null);
 
-  const stepIndex = STEP_ORDER.indexOf(step);
-  const isLastStep = stepIndex === STEP_ORDER.length - 1;
-  const draftValues = useMemo<ActDefusionDraft>(
-    () => ({
-      fusedThought,
-      thoughtCategory,
-      fusionLevelBefore,
-      techniqueUsed,
-      defusedVersion,
-      fusionLevelAfter,
-      notes,
-    }),
-    [
-      defusedVersion,
-      fusedThought,
-      fusionLevelAfter,
-      fusionLevelBefore,
-      notes,
-      techniqueUsed,
-      thoughtCategory,
-    ],
+  useEffect(() => {
+    hydrateDraft();
+  }, [hydrateDraft]);
+
+  /**
+   * The draft store IS the form state, so leaving the screen and coming back
+   * restores what was typed without a save step ("Finish later").
+   *
+   * ☠️ Reads the CURRENT values off the store rather than closing over `draft`:
+   * `setValues` takes a whole value, so two fields changed inside one render
+   * pass would otherwise write the second on top of a stale copy of the first.
+   */
+  const updateDraft = useCallback(
+    (patch: Partial<ActDefusionLogDraft>) => {
+      const current = useActDefusionLogDraftStore.getState().values ?? EMPTY_DRAFT;
+      setDraftValues({ ...current, ...patch });
+    },
+    [setDraftValues],
   );
-  const restoreDraft = useCallback((draft: ActDefusionDraft, restoredStepIndex: number) => {
-    setFusedThought(draft.fusedThought);
-    setThoughtCategory(draft.thoughtCategory);
-    setFusionLevelBefore(draft.fusionLevelBefore);
-    setTechniqueUsed(draft.techniqueUsed);
-    setDefusedVersion(draft.defusedVersion);
-    setFusionLevelAfter(draft.fusionLevelAfter);
-    setNotes(draft.notes);
-    setStep(STEP_ORDER[Math.min(Math.max(restoredStepIndex, 0), STEP_ORDER.length - 1)]);
-  }, []);
-  const { hydrated: draftHydrated, clearDraft } = useStateWizardDraft({
-    useDraftStore: useActDefusionDraftStore,
-    values: draftValues,
-    stepIndex,
-    restore: restoreDraft,
-  });
 
-  const categoryIndex = THOUGHT_CATEGORIES.indexOf(thoughtCategory);
+  const filled = useMemo(() => filledParts(draft), [draft]);
+  const filledCount = DEFUSION_PARTS.filter((part) => filled[part]).length;
+  const stops = DEFUSION_PARTS.map((part) => ({
+    label: t(`act:defusion.steps.${part}`),
+    filled: filled[part],
+  }));
+
+  const categoryIndex = draft.thoughtCategory
+    ? THOUGHT_CATEGORIES.indexOf(draft.thoughtCategory)
+    : -1;
   const categoryRoving = useRovingFocus({
     count: THOUGHT_CATEGORIES.length,
+    // Nothing chosen yet: the first chip is the one that takes the tab stop.
     activeIndex: categoryIndex < 0 ? 0 : categoryIndex,
-    onActivate: (index) => setThoughtCategory(THOUGHT_CATEGORIES[index]),
+    onActivate: (index) => updateDraft({ thoughtCategory: THOUGHT_CATEGORIES[index] }),
   });
-  const techniqueIndex = DEFUSION_TECHNIQUES.indexOf(techniqueUsed);
+  const techniqueIndex = draft.techniqueUsed
+    ? DEFUSION_TECHNIQUES.indexOf(draft.techniqueUsed)
+    : -1;
   const techniqueRoving = useRovingFocus({
     count: DEFUSION_TECHNIQUES.length,
     activeIndex: techniqueIndex < 0 ? 0 : techniqueIndex,
-    onActivate: (index) => setTechniqueUsed(DEFUSION_TECHNIQUES[index]),
+    // ☠️ Selects but deliberately does NOT collapse. Roving focus activates ON
+    // MOVE, so collapsing here would tear the list down under the first arrow
+    // press and end the traversal it exists to provide - the user could never
+    // reach the second technique with a keyboard. The collapse belongs to the
+    // COMMIT (press, or Space through getItemProps), which is `choose` below.
+    onActivate: (index) => updateDraft({ techniqueUsed: DEFUSION_TECHNIQUES[index] }),
   });
-
-  function goNext() {
-    if (stepIndex < STEP_ORDER.length - 1) setStep(STEP_ORDER[stepIndex + 1]);
-  }
-  function goBack() {
-    if (stepIndex > 0) setStep(STEP_ORDER[stepIndex - 1]);
-  }
 
   const handleSave = useSingleFlight(async () => {
     if (!user) return;
     setSubmitError("");
+    const fusedThought = draft.fusedThought.trim();
+    if (fusedThought.length === 0) {
+      // The only thing that still blocks a save, and it blocks at the save
+      // rather than by disabling the button: a form that will not move and will
+      // not say why is what the column replaces.
+      const message = t("act:defusion.thoughtRequired");
+      setThoughtError(message);
+      announceMessage(message);
+      // Focusing also scrolls the field into view on web (shared Textarea behavior).
+      thoughtInputRef.current?.focus();
+      return;
+    }
     try {
       await saveMutation.mutateAsync({
-        fusedThought: fusedThought.trim(),
-        thoughtCategory,
-        fusionLevelBefore,
-        techniqueUsed,
-        defusedVersion: defusedVersion.trim(),
-        fusionLevelAfter,
-        notes: notes.trim(),
+        fusedThought,
+        thoughtCategory: draft.thoughtCategory ?? CATEGORY_WHEN_UNANSWERED,
+        fusionLevelBefore: draft.fusionLevelBefore,
+        techniqueUsed: draft.techniqueUsed ?? TECHNIQUE_WHEN_UNANSWERED,
+        defusedVersion: draft.defusedVersion.trim(),
+        fusionLevelAfter: draft.fusionLevelAfter,
+        notes: draft.notes.trim(),
         createdAt: loggedAtForSelectedDate(selectedDate),
       });
-      clearDraft();
+      resetDraft();
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();
     } catch {
       // The thrown message is a backend/internal string, English for every user -
       // translated copy only (i18n rule, #1060). The mutation cache's global onError
       // already reports the failure to Sentry.
-      setSubmitError(t("act:defusion.saveProblem"));
+      const message = t("act:defusion.saveProblem");
+      setSubmitError(message);
+      // Dual-surface, like the thought's complaint: the card below carries the
+      // live region for web, this carries the native announcement. A save that
+      // failed silently is the worst thing this screen can do.
+      announceMessage(message);
     }
   });
 
-  if (!draftHydrated) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
   return (
     <MobileFormScreen
+      stickyHeader={
+        <ProgressSegments
+          stops={stops}
+          // ⚠️ Counted, not interpolated flat: Bulgarian agrees the verb with the
+          // number - "1 от 5 части Е ПОПЪЛНЕНА" against "2 ... СА ПОПЪЛНЕНИ" -
+          // so a single string is wrong at exactly one value and right at the
+          // rest, which is the shape that survives review. English needs no
+          // plural here and carries the same text in both forms.
+          note={t("act:defusion.railNote", {
+            count: filledCount,
+            total: DEFUSION_PARTS.length,
+          })}
+        />
+      }
       footer={
         <View className="gap-2">
           <Button
@@ -163,27 +255,24 @@ export default function ActDefusionNewScreen() {
             <Text className="text-destructive">{t("common:draft.discardAction")}</Text>
           </Button>
           <View className="flex-row gap-3">
-            {stepIndex > 0 ? (
-              <View className="flex-1">
-                <Button onPress={goBack} variant="ghost">
-                  <Text>{t("act:defusion.back")}</Text>
-                </Button>
-              </View>
-            ) : null}
             <View className="flex-1">
+              {/*
+               * A labelled exit over the autosave that is already happening -
+               * every keystroke is in the draft store - not a new mechanism.
+               */}
               <Button
-                disabled={
-                  saveMutation.isPending || (step === "thought" && fusedThought.trim().length === 0)
-                }
-                onPress={() => void (isLastStep ? handleSave() : goNext())}
+                disabled={saveMutation.isPending}
+                onPress={() => router.back()}
+                variant="ghost"
               >
+                <Text>{t("act:defusion.finishLater")}</Text>
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button disabled={saveMutation.isPending} onPress={() => void handleSave()}>
                 {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
                 <Text>
-                  {saveMutation.isPending
-                    ? t("act:defusion.saving")
-                    : isLastStep
-                      ? t("act:defusion.saveLog")
-                      : t("act:defusion.continue")}
+                  {saveMutation.isPending ? t("act:defusion.saving") : t("act:defusion.saveLog")}
                 </Text>
               </Button>
             </View>
@@ -199,16 +288,8 @@ export default function ActDefusionNewScreen() {
 
         <CrisisSupportBar />
 
-        {/* Step pills */}
-        <StepPills
-          steps={STEP_ORDER}
-          current={step}
-          onSelect={setStep}
-          getLabel={(s) => t(`act:defusion.steps.${s}`)}
-        />
-
         {submitError ? (
-          <Card>
+          <Card {...politeLiveRegionProps()}>
             <CardHeader>
               <CardTitle>{t("act:defusion.saveProblem")}</CardTitle>
               <CardDescription>{submitError}</CardDescription>
@@ -225,101 +306,133 @@ export default function ActDefusionNewScreen() {
           cancelLabel={t("common:cancel")}
           onCancel={() => setDiscardOpen(false)}
           onConfirm={() => {
-            clearDraft();
+            resetDraft();
             setDiscardOpen(false);
             router.back();
           }}
         />
 
-        {/* Step 1: Thought */}
-        {step === "thought" ? (
-          <View className="gap-3">
-            <View className="gap-1">
-              <Label>{t("act:defusion.thoughtLabel")}</Label>
-              <Text variant="muted" className="text-xs">
-                {t("act:defusion.thoughtHint")}
-              </Text>
-            </View>
-            <Textarea
-              accessibilityLabel={t("act:defusion.thoughtLabel")}
-              onChangeText={setFusedThought}
-              placeholder={t("act:defusion.thoughtPlaceholder")}
-              value={fusedThought}
-              autoFocus
-            />
+        {/* Part 1: the thought */}
+        <View className="gap-3">
+          <View className="gap-1">
+            <Label>{t("act:defusion.thoughtLabel")}</Label>
+            <Text variant="muted" className="text-xs">
+              {t("act:defusion.thoughtHint")}
+            </Text>
           </View>
-        ) : null}
+          <Textarea
+            ref={thoughtInputRef}
+            accessibilityLabel={t("act:defusion.thoughtLabel")}
+            onChangeText={(value) => {
+              updateDraft({ fusedThought: value });
+              // The complaint is answered as soon as the user starts typing.
+              if (thoughtError) setThoughtError("");
+            }}
+            placeholder={t("act:defusion.thoughtPlaceholder")}
+            value={draft.fusedThought}
+            autoFocus
+          />
+          {thoughtError ? (
+            <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
+              {thoughtError}
+            </Text>
+          ) : null}
+        </View>
 
-        {/* Step 2: Category */}
-        {step === "category" ? (
-          <View className="gap-3">
-            <Label>{t("act:defusion.categoryLabel")}</Label>
-            <View
-              accessibilityLabel={t("act:defusion.categoryLabel")}
-              accessibilityRole="radiogroup"
-              className="flex-row flex-wrap gap-2"
-              role="radiogroup"
-            >
-              {THOUGHT_CATEGORIES.map((cat, index) => {
-                const selected = thoughtCategory === cat;
-                return (
-                  <Pressable
-                    key={cat}
-                    accessibilityRole="radio"
-                    aria-checked={selected}
-                    role="radio"
-                    onPress={() => setThoughtCategory(cat)}
+        {/* Part 2: the category */}
+        <View className="gap-3">
+          <Label>{t("act:defusion.categoryLabel")}</Label>
+          <View
+            accessibilityLabel={t("act:defusion.categoryLabel")}
+            accessibilityRole="radiogroup"
+            className="flex-row flex-wrap gap-2"
+            role="radiogroup"
+          >
+            {THOUGHT_CATEGORIES.map((cat, index) => {
+              const selected = draft.thoughtCategory === cat;
+              return (
+                <Pressable
+                  key={cat}
+                  accessibilityRole="radio"
+                  aria-checked={selected}
+                  role="radio"
+                  onPress={() => updateDraft({ thoughtCategory: cat })}
+                  className={cn(
+                    "rounded-full border px-4 py-2",
+                    selected ? "border-border bg-primary" : "border-border bg-card active:bg-muted",
+                  )}
+                  {...categoryRoving.getItemProps(index, () =>
+                    updateDraft({ thoughtCategory: cat }),
+                  )}
+                >
+                  <Text
                     className={cn(
-                      "rounded-full border px-4 py-2",
-                      selected
-                        ? "border-border bg-primary"
-                        : "border-border bg-card active:bg-muted",
+                      "text-sm font-semibold",
+                      selected ? "text-primary-foreground" : "text-foreground",
                     )}
-                    {...categoryRoving.getItemProps(index, () => setThoughtCategory(cat))}
                   >
-                    <Text
-                      className={cn(
-                        "text-sm font-semibold",
-                        selected ? "text-primary-foreground" : "text-foreground",
-                      )}
-                    >
-                      {t(`act:defusion.categories.${cat}`)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+                    {t(`act:defusion.categories.${cat}`)}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
-        ) : null}
+        </View>
 
-        {/* Step 3: Fusion level before */}
-        {step === "before" ? (
-          <View className="gap-3">
-            <View className="gap-1">
-              <Label>{t("act:defusion.fusionBeforeLabel")}</Label>
-              <Text variant="muted" className="text-xs">
-                {t("act:defusion.fusionBeforeHint")}
-              </Text>
-            </View>
+        {/* Part 3: how strongly it pulls now */}
+        <View className="gap-3">
+          <View className="gap-1">
+            <Label>{t("act:defusion.fusionBeforeLabel")}</Label>
+            <Text variant="muted" className="text-xs">
+              {t("act:defusion.fusionBeforeHint")}
+            </Text>
+          </View>
+          {/*
+           * ⚠️ Both fusion ratings are on screen at once now, so "60" names two
+           * buttons on the page. The end-to-end spec scopes by these testIDs
+           * rather than by position - an index would silently retarget the other
+           * rating the moment anything moves between them.
+           */}
+          <View testID="defusion-fusion-before">
             <NumberRating
               min={0}
               max={100}
               step={10}
-              value={fusionLevelBefore}
-              onChange={setFusionLevelBefore}
+              value={draft.fusionLevelBefore}
+              onChange={(value) => updateDraft({ fusionLevelBefore: value })}
             />
           </View>
-        ) : null}
+        </View>
 
-        {/* Step 4: Technique */}
-        {step === "technique" ? (
-          <View className="gap-3">
-            <View className="gap-1">
-              <Label>{t("act:defusion.techniqueLabel")}</Label>
-              <Text variant="muted" className="text-xs">
-                {t("act:defusion.techniqueHint")}
-              </Text>
+        {/* Part 4: the technique */}
+        <View className="gap-3">
+          <View className="gap-1">
+            <Label>{t("act:defusion.techniqueLabel")}</Label>
+            <Text variant="muted" className="text-xs">
+              {t("act:defusion.techniqueHint")}
+            </Text>
+          </View>
+          {draft.techniqueUsed && !techniqueOpen ? (
+            // Collapsed onto the chosen technique: seven cards of instructions
+            // are worth reading once, and worth getting out of the way after.
+            <View className="gap-2">
+              <View className="rounded-xl border border-border bg-muted p-4">
+                <View className="gap-1">
+                  <Text className="font-semibold text-foreground">
+                    {t(`act:defusion.techniques.${draft.techniqueUsed}`)}
+                  </Text>
+                  <Text variant="muted" className="text-xs leading-snug">
+                    {t(`act:defusion.techniqueDescriptions.${draft.techniqueUsed}`)}
+                  </Text>
+                </View>
+              </View>
+              <View className="flex-row">
+                <Button onPress={() => setTechniqueOpen(true)} size="sm" variant="outline">
+                  <Text>{t("act:defusion.changeTechnique")}</Text>
+                </Button>
+              </View>
             </View>
+          ) : (
             <View
               accessibilityLabel={t("act:defusion.techniqueLabel")}
               accessibilityRole="radiogroup"
@@ -327,19 +440,23 @@ export default function ActDefusionNewScreen() {
               role="radiogroup"
             >
               {DEFUSION_TECHNIQUES.map((tech, index) => {
-                const selected = techniqueUsed === tech;
+                const selected = draft.techniqueUsed === tech;
+                const choose = () => {
+                  updateDraft({ techniqueUsed: tech });
+                  setTechniqueOpen(false);
+                };
                 return (
                   <Pressable
                     key={tech}
                     accessibilityRole="radio"
                     aria-checked={selected}
                     role="radio"
-                    onPress={() => setTechniqueUsed(tech)}
+                    onPress={choose}
                     className={cn(
                       "rounded-xl border p-4 active:bg-accent/40",
                       selected ? "border-border bg-muted" : "border-border bg-card",
                     )}
-                    {...techniqueRoving.getItemProps(index, () => setTechniqueUsed(tech))}
+                    {...techniqueRoving.getItemProps(index, choose)}
                   >
                     <View className="gap-1">
                       <Text className={cn("font-semibold", selected && "text-foreground")}>
@@ -353,53 +470,53 @@ export default function ActDefusionNewScreen() {
                 );
               })}
             </View>
-          </View>
-        ) : null}
+          )}
+        </View>
 
-        {/* Step 5: After + notes */}
-        {step === "after" ? (
-          <View className="gap-6">
-            <View className="gap-3">
-              <View className="gap-1">
-                <Label>{t("act:defusion.defusedVersionLabel")}</Label>
-              </View>
-              <Textarea
-                accessibilityLabel={t("act:defusion.defusedVersionLabel")}
-                onChangeText={setDefusedVersion}
-                placeholder={t("act:defusion.defusedVersionPlaceholder")}
-                value={defusedVersion}
-              />
+        {/* Part 5: after, and anything to note */}
+        <View className="gap-6">
+          <View className="gap-3">
+            <View className="gap-1">
+              <Label>{t("act:defusion.defusedVersionLabel")}</Label>
             </View>
+            <Textarea
+              accessibilityLabel={t("act:defusion.defusedVersionLabel")}
+              onChangeText={(value) => updateDraft({ defusedVersion: value })}
+              placeholder={t("act:defusion.defusedVersionPlaceholder")}
+              value={draft.defusedVersion}
+            />
+          </View>
 
-            <View className="gap-3">
-              <View className="gap-1">
-                <Label>{t("act:defusion.fusionAfterLabel")}</Label>
-                <Text variant="muted" className="text-xs">
-                  {t("act:defusion.fusionAfterHint")}
-                </Text>
-              </View>
+          <View className="gap-3">
+            <View className="gap-1">
+              <Label>{t("act:defusion.fusionAfterLabel")}</Label>
+              <Text variant="muted" className="text-xs">
+                {t("act:defusion.fusionAfterHint")}
+              </Text>
+            </View>
+            <View testID="defusion-fusion-after">
               <NumberRating
                 min={0}
                 max={100}
                 step={10}
-                value={fusionLevelAfter}
-                onChange={setFusionLevelAfter}
-              />
-            </View>
-
-            <View className="gap-3">
-              <View className="gap-1">
-                <Label>{t("act:defusion.notesLabel")}</Label>
-              </View>
-              <Textarea
-                accessibilityLabel={t("act:defusion.notesLabel")}
-                onChangeText={setNotes}
-                placeholder={t("act:defusion.notesPlaceholder")}
-                value={notes}
+                value={draft.fusionLevelAfter}
+                onChange={(value) => updateDraft({ fusionLevelAfter: value })}
               />
             </View>
           </View>
-        ) : null}
+
+          <View className="gap-3">
+            <View className="gap-1">
+              <Label>{t("act:defusion.notesLabel")}</Label>
+            </View>
+            <Textarea
+              accessibilityLabel={t("act:defusion.notesLabel")}
+              onChangeText={(value) => updateDraft({ notes: value })}
+              placeholder={t("act:defusion.notesPlaceholder")}
+              value={draft.notes}
+            />
+          </View>
+        </View>
       </View>
     </MobileFormScreen>
   );

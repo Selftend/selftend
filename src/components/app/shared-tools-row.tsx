@@ -48,8 +48,11 @@ export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
   const { t } = useTranslation("navigation");
   // A chip leaves the module for a tool rooted under `/tools`, so the tool's own
   // Up climbs to `/tools` and never back to the module the user was working in.
-  // These are the nine off-trail pushes #1192 landed hours after the escape rule
-  // was charted - the growth that made recording opt-out rather than opt-in.
+  // These are the off-trail pushes #1192 landed hours after the escape rule was
+  // charted - the growth that made recording opt-out rather than opt-in. #1192
+  // landed nine of them; the set is EIGHT today, and the count is pinned in
+  // `shared-tools-row.test.tsx` rather than restated here, because this comment
+  // has already gone stale once by carrying a number the config later changed.
   const pushWithOrigin = usePushWithOrigin();
 
   return (

@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ interface HabitsLearnDetailProps {
 }
 
 export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("habits");
   const roomStyle = useRoomStyle("act");
   const palette = useHabitChipPalette();
@@ -62,7 +63,7 @@ export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
 
         <RelatedCards activeSlug={card.slug} />
 
-        <Button onPress={() => router.push("/tools/habits")} variant="ghost">
+        <Button onPress={() => pushWithOrigin("/tools/habits")} variant="ghost">
           <Icon name="arrow-back" className="size-4" />
           <Text>{t("learn.backToHabits")}</Text>
         </Button>
@@ -72,6 +73,7 @@ export function HabitsLearnDetailScreen({ slug }: HabitsLearnDetailProps) {
 }
 
 function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("habits");
   const palette = useHabitChipPalette();
   const others = HABITS_LEARN_CARDS.filter((card) => card.slug !== activeSlug);
@@ -92,7 +94,7 @@ function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
               accessibilityRole="button"
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
               onPress={() =>
-                router.push({
+                pushWithOrigin({
                   pathname: "/tools/habits/learn/[slug]",
                   params: { slug: card.slug },
                 })
@@ -124,6 +126,7 @@ function RelatedCards({ activeSlug }: { activeSlug: HabitsLearnCard["slug"] }) {
 }
 
 export function HabitsLearnIndexScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("habits");
   const roomStyle = useRoomStyle("act");
   const palette = useHabitChipPalette();
@@ -151,7 +154,7 @@ export function HabitsLearnIndexScreen() {
                 accessibilityRole="button"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 onPress={() =>
-                  router.push({
+                  pushWithOrigin({
                     pathname: "/tools/habits/learn/[slug]",
                     params: { slug: card.slug },
                   })

@@ -17,6 +17,7 @@
     "todayNamed": "Today, {{date}}"
   },
   "time": {
+    "label": "Time",
     "hourField": "{{label}}, hour",
     "minuteField": "{{label}}, minute",
     "meridiemField": "{{label}}, AM or PM",

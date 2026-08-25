@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -14,8 +13,10 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LEGAL_REVIEW_PENDING } from "@/src/features/policies/policy-content";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 export default function LegalScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("settings");
 
   return (
@@ -47,19 +48,19 @@ export default function LegalScreen() {
             </CardHeader>
             <CardContent>
               <View className="gap-3">
-                <Button onPress={() => router.push("/privacy")} variant="secondary">
+                <Button onPress={() => pushWithOrigin("/privacy")} variant="secondary">
                   <Text>{t("legal.openPrivacy")}</Text>
                 </Button>
-                <Button onPress={() => router.push("/terms")} variant="ghost">
+                <Button onPress={() => pushWithOrigin("/terms")} variant="ghost">
                   <Text>{t("legal.openTerms")}</Text>
                 </Button>
-                <Button onPress={() => router.push("/cookies")} variant="ghost">
+                <Button onPress={() => pushWithOrigin("/cookies")} variant="ghost">
                   <Text>{t("legal.openCookies")}</Text>
                 </Button>
-                <Button onPress={() => router.push("/crisis")} variant="ghost">
+                <Button onPress={() => pushWithOrigin("/crisis")} variant="ghost">
                   <Text>{t("legal.openCrisis")}</Text>
                 </Button>
-                <Button onPress={() => router.push("/account-deletion")} variant="ghost">
+                <Button onPress={() => pushWithOrigin("/account-deletion")} variant="ghost">
                   <Text>{t("legal.openDeletion")}</Text>
                 </Button>
               </View>

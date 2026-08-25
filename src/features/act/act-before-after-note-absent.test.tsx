@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 
 import ActDefusionDetailScreen from "@/src/features/act/act-defusion-detail-screen";
 import ActDefusionNewScreen from "@/src/features/act/act-defusion-new-screen";
@@ -10,7 +10,7 @@ import {
   useExpansionLog,
   useExpansionLogs,
 } from "@/src/features/act/queries";
-import { useActDefusionDraftStore } from "@/src/stores/act-defusion-draft-store";
+import { useActDefusionLogDraftStore } from "@/src/stores/act-defusion-log-draft-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 /**
@@ -147,7 +147,7 @@ const PAIRS: [label: string, before: number, after: number][] = [
 
 beforeEach(() => {
   jest.clearAllMocks();
-  useActDefusionDraftStore.getState().reset();
+  useActDefusionLogDraftStore.getState().reset();
 });
 
 describe.each(PAIRS)("a defusion record whose fusion %s", (_shape, before, after) => {
@@ -200,18 +200,12 @@ describe.each(PAIRS)("a defusion entry whose fusion %s", (_shape, before, after)
   it("renders no note under the pair on the new screen", async () => {
     renderWithProviders(<ActDefusionNewScreen />);
 
-    // Step 1: the thought - the only step whose Continue is gated on input.
+    // One column (#1380), no steps: both ratings are on the page at once, so
+    // each press is scoped by the testID the form pins for this exact
+    // ambiguity - `before` and `after` render the same 0-100 buttons.
     fireEvent.changeText(await screen.findByLabelText("What is the thought?"), "I always fail");
-    fireEvent.press(screen.getByText("Continue"));
-    // Step 2: category arrives pre-answered.
-    fireEvent.press(screen.getByText("Continue"));
-    // Step 3: fusion before.
-    fireEvent.press(screen.getByText(String(before)));
-    fireEvent.press(screen.getByText("Continue"));
-    // Step 4: technique arrives pre-answered.
-    fireEvent.press(screen.getByText("Continue"));
-    // Step 5: fusion after - the step the note used to render on.
-    fireEvent.press(screen.getByText(String(after)));
+    fireEvent.press(within(screen.getByTestId("defusion-fusion-before")).getByText(String(before)));
+    fireEvent.press(within(screen.getByTestId("defusion-fusion-after")).getByText(String(after)));
 
     expect(screen.getByText(FUSION_AFTER_LABEL)).toBeTruthy();
     expect(noteSentences()).toEqual([]);
