@@ -3949,10 +3949,13 @@ function alignmentFor(domain, dayIndex) {
   // field says what stops it — the same avoidance the rest of the seed
   // describes, seen from the side of what it costs.
   //
-  // ☠️ `leisure` carries a NULL current_alignment_rating on purpose. The values
-  // screen falls back to the newest bulls-eye snapshot for a domain whose entry
-  // has no rating (`entry?.currentAlignmentRating ?? latestRating(domain)`), and
-  // that fallback is a real branch with no other row to exercise it.
+  // ☠️ `leisure` carries a NULL current_alignment_rating on purpose - and since
+  // #1379 that is all it is: a historical row shape, not a branch this data reaches.
+  // The check-in now OWNS alignment, so the values row reads the newest snapshot for
+  // the domain and falls back to the entry's column only where a domain has NO
+  // snapshot at all. Every domain here has snapshots, so the fallback is unexercised
+  // by this seed; nothing in it can produce a domain rated in the old form and never
+  // checked in, which is the only state that branch is for.
   //
   // Every `updated_at` here sits BEFORE the current ACT phase start. `openUp` is
   // the anchored phase and `doWhatMatters` is the one after it, whose
@@ -4579,11 +4582,16 @@ function alignmentFor(domain, dayIndex) {
     }
   }
 
-  // A value entry's stored alignment is the shared arc read on the day that
-  // entry was last edited, so it is allowed to sit behind the newest check-in
-  // and never ahead of it. The values screen shows this number in place of the
-  // history's, so an entry claiming better alignment than the latest review is
-  // the one way these two surfaces can openly contradict each other.
+  // A value entry's stored alignment is the shared arc read on the day that entry
+  // was last edited, so it is allowed to sit behind the newest check-in and never
+  // ahead of it.
+  //
+  // ⚠️ This used to guard a live contradiction: the values row PREFERRED the entry's
+  // number over the history's, so an entry ahead of the newest review put two
+  // disagreeing answers on two surfaces. #1379 settled that - the check-in owns
+  // alignment and the row reads its snapshot. The check is kept because the property
+  // is still what the seeded arc means, but it now guards the data's coherence rather
+  // than a rendering bug.
   for (const entry of valueEntries) {
     if (entry.current_alignment_rating === null) continue;
     const newestForDomain = snapshots
@@ -4593,9 +4601,9 @@ function alignmentFor(domain, dayIndex) {
       throw new Error(
         `The ${entry.life_domain} value entry claims alignment ` +
           `${entry.current_alignment_rating}/10 while the newest bulls-eye review for that ` +
-          `domain says ${newestForDomain.alignment_rating}/10. The values screen shows the ` +
-          "entry's number and the history shows the review's, so the two openly contradict " +
-          "each other.",
+          `domain says ${newestForDomain.alignment_rating}/10. The entry's number is the arc ` +
+          "read on the day it was last edited, so it may sit behind the newest review but " +
+          "never ahead of it.",
       );
     }
   }

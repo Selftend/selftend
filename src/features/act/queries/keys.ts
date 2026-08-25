@@ -37,6 +37,12 @@ export const actKeys = {
   valueDomain: (userId: string | null, domain: string | null) =>
     ["act", "values", "domain", u(userId), u(domain)] as const,
   bullsEyeList: (userId: string | null) => ["act", "bullsEye", "list", u(userId)] as const,
+  // Nested UNDER the list prefix on purpose (see the note above): the save mutation's
+  // one non-exact invalidate then refreshes the values row's number as well as the
+  // history, and a rating saved on the values screen moves the row above it without a
+  // reload. On a sibling prefix it would go stale on the next write with nothing failing.
+  bullsEyeLatest: (userId: string | null) =>
+    ["act", "bullsEye", "list", u(userId), "latest"] as const,
   committedActionList: (userId: string | null, status?: ActionStatus) =>
     ["act", "committedAction", "list", u(userId), status] as const,
   // Prefix matcher used by mutations to invalidate every status filter at once.

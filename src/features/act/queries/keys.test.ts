@@ -16,6 +16,19 @@ describe("actKeys", () => {
     ]);
   });
 
+  // ☠️ The values row's number comes from `bullsEyeLatest`, and the save mutation
+  // invalidates `bullsEyeList` only. That is enough ONLY while the latest key is a
+  // descendant of the list key - `invalidateQueries` matches by prefix. Move it to a
+  // sibling and the row keeps showing the pre-save number after a save, with nothing
+  // failing anywhere.
+  it("nests the latest-per-domain bulls-eye key under the list key it is invalidated by", () => {
+    const list = actKeys.bullsEyeList("u1");
+    const latest = actKeys.bullsEyeLatest("u1");
+
+    expect(latest.slice(0, list.length)).toEqual([...list]);
+    expect(latest.length).toBeGreaterThan(list.length);
+  });
+
   /**
    * Every count key sits UNDER its list prefix, so the list invalidation each mutation
    * already runs refreshes the count with it. A count on a sibling prefix would go stale
