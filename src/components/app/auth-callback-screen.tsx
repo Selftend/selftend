@@ -2,10 +2,11 @@ import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import {
   Card,
   CardContent,
@@ -49,6 +50,25 @@ function scrubAuthUrlFromHistory() {
   }
 
   window.history.replaceState(window.history.state, "", window.location.pathname);
+}
+
+/**
+ * The safe area plus the chrome bar carrying the Escape (#1254): every branch
+ * of this screen - not configured, failure, no link, verified, human gate,
+ * spinner - renders inside the same shell, so the way out cannot depend on
+ * which state the callback landed in. This is a transient OAuth-resolution
+ * screen, so the Escape is largely inert (the user is normally here for a
+ * moment) - but the rule admits no exceptions, the slot costs nothing once the
+ * chrome is present, and an exception here is exactly what the enforcement
+ * gate would then need a carve-out for.
+ */
+function CallbackShell({ children }: PropsWithChildren) {
+  return (
+    <SafeAreaView className="flex-1 bg-background">
+      <ScreenTopBar />
+      {children}
+    </SafeAreaView>
+  );
 }
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -170,7 +190,7 @@ export default function AuthCallbackScreen() {
 
   if (!hasSupabaseConfig) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <CallbackShell>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <Text variant="h1">{t("callback.supabaseRequired")}</Text>
@@ -182,7 +202,7 @@ export default function AuthCallbackScreen() {
             </Card>
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </CallbackShell>
     );
   }
 
@@ -201,7 +221,7 @@ export default function AuthCallbackScreen() {
           : "/(auth)/sign-in";
 
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <CallbackShell>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <Text variant="h1">{t("callback.linkProblem")}</Text>
@@ -223,13 +243,13 @@ export default function AuthCallbackScreen() {
             </Card>
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </CallbackShell>
     );
   }
 
   if (!url) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <CallbackShell>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <Text variant="h1">{t("callback.linkRequired")}</Text>
@@ -246,13 +266,13 @@ export default function AuthCallbackScreen() {
             </Card>
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </CallbackShell>
     );
   }
 
   if (verified) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <CallbackShell>
         <View className="flex-1 items-center justify-center gap-6 p-6">
           <Card className="w-full max-w-sm">
             <CardHeader>
@@ -266,7 +286,7 @@ export default function AuthCallbackScreen() {
             </CardContent>
           </Card>
         </View>
-      </SafeAreaView>
+      </CallbackShell>
     );
   }
 
@@ -281,7 +301,7 @@ export default function AuthCallbackScreen() {
         : "generic";
 
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <CallbackShell>
         <View className="flex-1 items-center justify-center gap-6 p-6">
           <Card className="w-full max-w-sm">
             <CardHeader>
@@ -295,17 +315,17 @@ export default function AuthCallbackScreen() {
             </CardContent>
           </Card>
         </View>
-      </SafeAreaView>
+      </CallbackShell>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <CallbackShell>
       <View className="flex-1 items-center justify-center gap-3 p-6">
         <Text variant="h1">{t("callback.checking")}</Text>
         <ActivityIndicator />
         <Text variant="muted">{t("callback.completing")}</Text>
       </View>
-    </SafeAreaView>
+    </CallbackShell>
   );
 }

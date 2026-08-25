@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -34,6 +35,7 @@ import { formatDuration } from "@/src/features/sleep/format";
  * with no note shows no rows at all.
  */
 export default function SleepDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("sleep");
   const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
@@ -146,7 +148,7 @@ export default function SleepDetailScreen() {
                     (h-10 sm:h-9), and only the default shares that height —
                     an sm pill sits 4px shorter and reads as broken (#911). */}
                 <Button
-                  onPress={() => router.push(`/tools/sleep/${entry.id}/edit`)}
+                  onPress={() => pushWithOrigin(`/tools/sleep/${entry.id}/edit`)}
                   variant="outline"
                 >
                   <Icon name="edit" className="size-4" />

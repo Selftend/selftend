@@ -28,6 +28,18 @@ import { archive, write } from "../scripts/audio/manifest.mjs";
 import { clipsForRound, composePrompt, voiceSlotSpec } from "../scripts/audio/catalog.mjs";
 import { voiceIdentity, voiceSlots } from "../scripts/audio/audition-plan.mjs";
 
+/**
+ * ☠️ Wall-clock, not logic. These tests write a scratch tree of real files per
+ * case and finish in well under a second on an idle machine - but under a full
+ * suite run the workers compete for disk and one of them crossed jest's 5000ms
+ * default, reporting a broken honesty check where there was none.
+ *
+ * `test/audio-render-reroll.test.ts` carries the same bound for the same reason.
+ * Generous on purpose: nothing here should approach it, so a timeout after this
+ * means the CLI genuinely got slower rather than that the runner was busy.
+ */
+jest.setTimeout(60_000);
+
 const RAIN_TEXT = "Steady, even rainfall";
 
 /** A graded sound-effect row, with whatever prompt the caller needs it to be of. */

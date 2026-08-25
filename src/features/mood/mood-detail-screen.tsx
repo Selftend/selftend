@@ -1,4 +1,5 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -46,6 +47,7 @@ const LINKED_STRATEGIES: Record<string, { labelKey: string; href: string }> = {
 };
 
 export default function MoodDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("mood");
   const { t: tCbt } = useTranslation("cbt");
   const roomStyle = useRoomStyle("be");
@@ -165,7 +167,7 @@ export default function MoodDetailScreen() {
         <Pressable
           accessibilityRole="link"
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => router.push(linked.href as Parameters<typeof router.push>[0])}
+          onPress={() => pushWithOrigin(linked.href as Href)}
           className="flex-row items-center gap-1 self-start active:opacity-70"
           role="link"
         >
@@ -213,7 +215,7 @@ export default function MoodDetailScreen() {
                   // (h-10 sm:h-9), and only the default shares that height —
                   // an sm pill sits 4px shorter and reads as broken (#901).
                   <Button
-                    onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
+                    onPress={() => pushWithOrigin(`/tools/check-in/${entry.id}/edit`)}
                     variant="outline"
                   >
                     <Icon name="edit" className="size-4" />
@@ -224,7 +226,7 @@ export default function MoodDetailScreen() {
                   // labelled button is a third of the row a 360dp screen
                   // cannot spare.
                   <Button
-                    onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
+                    onPress={() => pushWithOrigin(`/tools/check-in/${entry.id}/edit`)}
                     variant="outline"
                     size="icon"
                     accessibilityLabel={t("detail.edit")}

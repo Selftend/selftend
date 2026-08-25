@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,7 @@ import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 
 function GoalCard({ goal, userId }: { goal: Goal; userId: string }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { data: milestones } = useMilestones(userId, goal.id);
   const total = milestones?.length ?? 0;
@@ -41,7 +42,7 @@ function GoalCard({ goal, userId }: { goal: Goal; userId: string }) {
       accessibilityRole="button"
       className="rounded-xl"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(`/modules/cbt/goals/${goal.id}`)}
+      onPress={() => pushWithOrigin(`/modules/cbt/goals/${goal.id}`)}
       role="button"
     >
       <Card>
@@ -65,6 +66,7 @@ function GoalCard({ goal, userId }: { goal: Goal; userId: string }) {
 }
 
 export default function GoalsScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: goals, isLoading } = useGoals(user?.id ?? null);
@@ -89,7 +91,7 @@ export default function GoalsScreen() {
               />
               <Text variant="muted">{t("goals.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/modules/cbt/goals/new")} size="sm">
+            <Button onPress={() => pushWithOrigin("/modules/cbt/goals/new")} size="sm">
               <Text>{t("goals.new")}</Text>
             </Button>
           </View>
@@ -119,7 +121,7 @@ export default function GoalsScreen() {
                   key={goal.id}
                   title={goal.title}
                   description={t(`goals.status.${goal.status}`)}
-                  onPress={() => router.push(`/modules/cbt/goals/${goal.id}`)}
+                  onPress={() => pushWithOrigin(`/modules/cbt/goals/${goal.id}`)}
                 />
               ))}
             </View>

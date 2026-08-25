@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -44,6 +45,7 @@ function displayText(value: string, fallback: string) {
 }
 
 export default function ThoughtRecordDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const recordId = typeof id === "string" ? id : null;
@@ -285,7 +287,7 @@ export default function ThoughtRecordDetailScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() =>
-              router.push({
+              pushWithOrigin({
                 pathname: "/tools/breathing/session",
                 params: { pattern: "box-breathing" },
               })
@@ -310,7 +312,7 @@ export default function ThoughtRecordDetailScreen() {
           <View className="flex-1">
             <Button
               onPress={() =>
-                router.push({ pathname: "/modules/cbt/new", params: { recordId: data.id } })
+                pushWithOrigin({ pathname: "/modules/cbt/new", params: { recordId: data.id } })
               }
               variant="secondary"
             >

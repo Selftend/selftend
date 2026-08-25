@@ -4,7 +4,7 @@ import { ToolTierRow } from "@/src/features/home/tool-row-stats";
 import { addDaysToKey, currentDateKey } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+jest.mock("expo-router", () => ({ router: { push: jest.fn() }, usePathname: () => "/" }));
 
 jest.mock("@/src/stores/selected-date-store", () => ({
   useSelectedDate: () => ({ selectedDate: "2026-05-28" }),

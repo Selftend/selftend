@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
 
 /**
@@ -40,13 +41,21 @@ interface PressShieldModalBaseProps extends Omit<ModalProps, "animationType"> {
  * call site pins its own Escape inside its own panel — which is what
  * `ManageEmotionsModal` already does, and what M1 names as "the shape to
  * copy". Declaring it is deliberate and greppable: it is the one way to opt a
- * modal out of the pinned row, and #1257 visits each of the four that do.
+ * modal out of the pinned row, and #1257 visited each of the four that do.
  */
 type PressShieldModalEscapeProps =
   // The default, so a new modal starts out owing an Escape.
-  | { surface?: "full-screen"; onEscape: () => void }
+  //
+  // `escapeLabel` is M2's word (#1258): a bare X when closing is free, a
+  // word when closing decides something that sticks. Pass an
+  // already-translated label and the row wears it in place of the X glyph —
+  // the label IS the accessible name then, replacing the bare `common:close`.
+  // Exactly one surface in the app qualifies: the first-run onboarding gate,
+  // whose skip persists onboarding as done and never returns. Everything
+  // that closes free leaves this off.
+  | { surface?: "full-screen"; onEscape: () => void; escapeLabel?: string }
   // The opt-out, and the only one.
-  | { surface: "sheet"; onEscape?: never };
+  | { surface: "sheet"; onEscape?: never; escapeLabel?: never };
 
 export type PressShieldModalProps = PressShieldModalBaseProps & PressShieldModalEscapeProps;
 
@@ -88,13 +97,21 @@ export function PressShieldModal(props: PressShieldModalProps) {
   const escapeRow =
     props.surface === "sheet" ? null : (
       <SafeAreaView edges={["top", "left", "right"]}>
-        <ModalEscape onPress={props.onEscape} />
+        <ModalEscape label={props.escapeLabel} onPress={props.onEscape} />
       </SafeAreaView>
     );
 
-  // `surface` and `onEscape` are destructured only to keep them off the
-  // `Modal` (rest siblings, deliberately unused here).
-  const { animation = "slide", surface, onEscape, children, onShow, ...modalProps } = props;
+  // `surface`, `onEscape` and `escapeLabel` are destructured only to keep
+  // them off the `Modal` (rest siblings, deliberately unused here).
+  const {
+    animation = "slide",
+    surface,
+    onEscape,
+    escapeLabel,
+    children,
+    onShow,
+    ...modalProps
+  } = props;
   const { visible = true } = modalProps;
   const reduceMotionEnabled = useReduceMotionEnabled();
   const animationType = reduceMotionEnabled ? "none" : animation;
@@ -143,11 +160,11 @@ export function PressShieldModal(props: PressShieldModalProps) {
               only on native). */}
           {escapeRow}
           {/* Outside the scroller, and this is the whole fix: `HelpSheet`'s X
-              — the precedent named when this work was charted — sits INSIDE
-              its `ScrollView` and scrolls away on the first swipe, so on a
-              long guide it was visible only at scroll position zero. Anything
-              that moves this row into `children` reintroduces the original
-              complaint one gesture later. */}
+              — the precedent named when this work was charted — sat INSIDE
+              its `ScrollView` and scrolled away on the first swipe, so on a
+              long guide it was visible only at scroll position zero (#1257
+              removed it). Anything that moves this row into `children`
+              reintroduces the original complaint one gesture later. */}
           <View className="flex-1">{children}</View>
         </View>
       )}
@@ -181,21 +198,31 @@ export function PressShieldModal(props: PressShieldModalProps) {
  * `{cond ? <ModalEscape/> : null}` — for the same reason `ScreenEscape` is:
  * a conditional is precisely what the enforcement gate cannot see through
  * (G1, #1263).
+ *
+ * With a `label` it wears the word instead of the X (M2, #1258): closing the
+ * one surface that passes it decides something that sticks, and a bare X
+ * there would disguise a decision as a dismissal. The word then IS the
+ * accessible name — announcing "Close" on a press that persists a decision
+ * would be the same disguise, one sense over.
  */
-function ModalEscape({ onPress }: { onPress: () => void }) {
+function ModalEscape({ label, onPress }: { label?: string; onPress: () => void }) {
   const { t } = useTranslation("common");
 
   return (
     <View className="h-12 flex-row items-center justify-end px-5">
       <Pressable
-        accessibilityLabel={t("close")}
+        accessibilityLabel={label ?? t("close")}
         accessibilityRole="button"
         className="active:opacity-70"
         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
         onPress={onPress}
         testID="modal-escape"
       >
-        <Icon name="close" className="size-6 text-muted-foreground" />
+        {label ? (
+          <Text className="text-sm font-medium text-muted-foreground">{label}</Text>
+        ) : (
+          <Icon name="close" className="size-6 text-muted-foreground" />
+        )}
       </Pressable>
     </View>
   );

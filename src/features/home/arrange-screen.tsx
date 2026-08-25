@@ -7,6 +7,7 @@ import Animated, { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
 
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -297,6 +298,10 @@ export default function ArrangeScreen() {
    * a back with no stack behind it silently no-ops, and the screen just sits there looking
    * like the button is broken. Arrange reaches that state the same way every other screen
    * does - a deep link, a bookmark, or a web refresh on `/arrange`.
+   *
+   * `Done` is a **Completion** - a done-after-save action that happens to navigate - and a
+   * Completion is explicitly not an Escape (#1163), so it does not exempt this screen from
+   * carrying one. The Escape is the top bar's (#1255); this button stays exactly as it is.
    */
   const finish = () => backWithFallback("/");
 
@@ -304,14 +309,23 @@ export default function ArrangeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      {/*
+        The Escape's chrome (#1255). Arrange was one of the escape spec's 11 red
+        screens (W11): it had a way out - `Done` below - but a Completion is not
+        an Escape, and R1 is discharged only by the chrome slot. `/arrange` has
+        no breadcrumb entry, so the bar's trail hides and the Escape announces
+        "Back to Home".
+      */}
+      <ScreenTopBar />
       <View testID="arrange-layout" className="flex-1">
         <AnimatedScrollView ref={scrollableRef} contentContainerStyle={{ padding: PADDING }}>
           {/*
             672px, matching `settings-screen` and `notifications-screen` - the two screens
             arrange sits beside in the user's head, and the two it is built like. It is
-            NOT one of `layout.ts`'s shell columns because arrange rides neither shell:
-            those widths come with `ModuleHomeHeader` (720) and `ScreenTopBar` (620), and
-            this screen carries its own header so it can put `Done` in it.
+            NOT one of `layout.ts`'s shell columns: `HOME_COLUMN` (720) belongs to
+            `ModuleHomeHeader` and `FORM_COLUMN` (620) to the form screens, and arrange is
+            neither - the `ScreenTopBar` above is the Escape's chrome (#1255), while this
+            screen still carries its own title row so it can put `Done` in it.
           */}
           <View className="mx-auto w-full max-w-2xl gap-6">
             <View className="flex-row items-center justify-between gap-3">

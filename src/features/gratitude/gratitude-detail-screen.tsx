@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -28,6 +29,7 @@ import { formatInstantAtOffset } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 
 export default function GratitudeDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("gratitude");
   const roomStyle = useRoomStyle("think");
   // The header actions never shrink, so every pixel of narrowness comes out
@@ -165,7 +167,7 @@ export default function GratitudeDetailScreen() {
               <Button
                 accessibilityLabel={t("detail.edit")}
                 onPress={() =>
-                  router.push({
+                  pushWithOrigin({
                     pathname: "/tools/gratitude-log/[id]/edit",
                     params: { id: entry.id },
                   })

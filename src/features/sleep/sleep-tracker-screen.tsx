@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -32,6 +32,7 @@ import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
 import { ShowAllLink } from "@/src/components/app/show-all-link";
 
 export default function SleepTrackerScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("sleep");
   const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
@@ -121,7 +122,7 @@ export default function SleepTrackerScreen() {
               ]}
             />
             <View className="flex-row gap-3">
-              <Button onPress={() => router.push("/tools/sleep/new")} className="self-start">
+              <Button onPress={() => pushWithOrigin("/tools/sleep/new")} className="self-start">
                 <Icon name="bedtime" className="size-4 text-primary-foreground" />
                 <Text>{t("cta.log")}</Text>
               </Button>

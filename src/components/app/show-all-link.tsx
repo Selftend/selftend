@@ -1,9 +1,10 @@
-import { router, type Href } from "expo-router";
+import { type Href } from "expo-router";
 import { Pressable } from "react-native";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 /**
  * The shared "show all" door (#1375). Eight call sites so far: check-in's three,
@@ -45,15 +46,25 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
  * six strings already say it, and redesigning two screens is not a reason to reword
  * six others.
  *
- * Navigation is `router.push`, not a `<Link>`, because every door is a forward push
- * into a list from a surface that stays in the stack behind it.
+ * Navigation is a push, not a `<Link>`, because every door is a forward push into a
+ * list from a surface that stays in the stack behind it.
+ *
+ * ⚠️ Through `usePushWithOrigin`, never a bare `router.push` (#1269, and the two
+ * per-module copies this replaces had already been migrated on `dev` before this
+ * branch merged). Every one of these doors is a cross-hierarchy arrival — a list
+ * screen reached from an overview — which is exactly the case where an Origin-less
+ * push leaves the arrival showing "Up" instead of the way back. `eslint.config.js`
+ * bans the bare call, and `test/bare-router-push-ban.test.ts` keeps the exemption
+ * list honest, so this is enforced rather than remembered.
  */
 export function ShowAllLink({ label, route }: { label: string; route: Href }) {
+  const pushWithOrigin = usePushWithOrigin();
+
   return (
     <Pressable
       accessibilityRole="link"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(route)}
+      onPress={() => pushWithOrigin(route)}
       className="flex-row items-center gap-1 active:opacity-70"
       role="link"
     >

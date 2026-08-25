@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -33,6 +33,7 @@ type EntryFilter = "all" | "favorites";
 const BAR_AREA_HEIGHT = 68;
 
 export default function GratitudeHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("gratitude");
   const roomStyle = useRoomStyle("think");
   const { user } = useSession();
@@ -105,7 +106,10 @@ export default function GratitudeHomeScreen() {
                 },
               ]}
             />
-            <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
+            <Button
+              onPress={() => pushWithOrigin("/tools/gratitude-log/new")}
+              className="self-start"
+            >
               <Icon name="add" className="size-4 text-primary-foreground" />
               <Text>{t("newEntry")}</Text>
             </Button>

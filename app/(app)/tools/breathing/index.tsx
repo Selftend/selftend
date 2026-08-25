@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { useState, type ReactNode } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,6 +26,7 @@ import { useBreathingExercises } from "@/src/features/breathing/exercises-querie
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
@@ -46,6 +46,7 @@ interface PatternRow {
 }
 
 export default function BreathingScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: customExercises } = useBreathingExercises(user?.id ?? null);
@@ -186,7 +187,10 @@ export default function BreathingScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={t("breathing.overview.newPattern")}
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() => router.push("/tools/breathing/new")}
+                  // ⚠️ `pushWithOrigin`, not a bare `router.push` (#1269, which
+                  // landed while this branch was open): a door that records no
+                  // Origin shows "Up" instead of the way back on arrival.
+                  onPress={() => pushWithOrigin("/tools/breathing/new")}
                   className="flex-row items-center gap-1 active:opacity-70"
                   role="button"
                 >
@@ -212,7 +216,7 @@ export default function BreathingScreen() {
                   accessibilityLabel={t("breathing.overview.startPattern", { name: p.name })}
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/tools/breathing/session",
                       params: { pattern: p.routeParam },
                     })

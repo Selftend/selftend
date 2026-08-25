@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +8,7 @@ import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
 import { PILLAR_STRATEGIES, SHARED_TOOLS_BY_PILLAR } from "./cbt-home-config";
 
 export function CbtPillarsSection() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
 
   return (
@@ -30,7 +31,7 @@ export function CbtPillarsSection() {
             description={t(`pillars.${pillar}.description`)}
             onToolPress={(toolKey) => {
               const strategy = PILLAR_STRATEGIES[pillar].find((s) => s.key === toolKey);
-              if (strategy?.route) router.push(strategy.route);
+              if (strategy?.route) pushWithOrigin(strategy.route);
             }}
           >
             {PILLAR_STRATEGIES[pillar].map((strategy) => (

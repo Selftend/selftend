@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,7 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { cn } from "@/lib/utils";
 
 export default function ActValuesScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { user } = useSession();
   const { data: entries, isLoading } = useValueEntries(user?.id ?? null);
@@ -46,7 +47,10 @@ export default function ActValuesScreen() {
             <Text variant="muted">{t("values.listSubtitle")}</Text>
           </View>
 
-          <Button variant="secondary" onPress={() => router.push("/modules/act/values/bulls-eye")}>
+          <Button
+            variant="secondary"
+            onPress={() => pushWithOrigin("/modules/act/values/bulls-eye")}
+          >
             <Icon name="my-location" className="size-4 text-foreground" />
             <Text>{t("values.bullsEyeButton")}</Text>
           </Button>
@@ -71,7 +75,7 @@ export default function ActValuesScreen() {
                   accessibilityRole="button"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/modules/act/values/[domain]",
                       params: { domain },
                     })
