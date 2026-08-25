@@ -43,6 +43,17 @@ test.describe("web check-in picker: one view for date and time", () => {
   test("the time is settable by keyboard alone, and Done commits it", async ({ page }) => {
     await page.getByRole("button", { name: TRIGGER }).click();
 
+    // A fresh entry defaults to "now", and the field clamps any time past now
+    // back to it (#1298) - so a typed minute has roughly even odds of landing
+    // in the future within the same hour and being silently reverted. Moving
+    // a month back first puts the whole day unambiguously in the past, so the
+    // typed time below is never at risk of that clamp.
+    await page.getByTestId("btn-prev").click();
+    await page
+      .getByTestId("days")
+      .getByRole("button", { name: /\b15, \d{4}$/ })
+      .click();
+
     const minute = page.getByLabel(`${TRIGGER}, minute`);
     await minute.click();
     await minute.fill("37");
@@ -65,13 +76,14 @@ test.describe("web check-in picker: one view for date and time", () => {
     await page.setViewportSize({ width: 375, height: 505 });
     await page.getByRole("button", { name: TRIGGER }).click();
     await expect(page.getByRole("button", { name: "Done" })).toBeInViewport();
-    await page.getByRole("button", { name: "Close" }).click();
 
     // Phone landscape - the worst case measured in #1231, where every variant
     // (including the picker shipped before that map) overflows without a
-    // scroll container.
+    // scroll container. Resized with the sheet still open, rather than closed
+    // and reopened - the page also has an unrelated top-bar "Close" (the
+    // screen's own escape action), so reusing the same open sheet sidesteps
+    // needing to disambiguate that from the sheet's own backdrop.
     await page.setViewportSize({ width: 667, height: 320 });
-    await page.getByRole("button", { name: TRIGGER }).click();
     await expect(page.getByRole("button", { name: "Done" })).toBeInViewport();
   });
 });
