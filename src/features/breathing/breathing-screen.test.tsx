@@ -208,7 +208,7 @@ describe("Breathing overview (4a)", () => {
 
   it("links to the new-pattern screen from the section header", () => {
     renderWithProviders(<BreathingScreen />);
-    fireEvent.press(screen.getByLabelText("New pattern →"));
+    fireEvent.press(screen.getByLabelText("New pattern"));
     expect(router.push).toHaveBeenCalledWith("/tools/breathing/new");
   });
 
@@ -224,7 +224,7 @@ describe("Breathing overview (4a)", () => {
     expect(screen.getAllByText("6 cycles")).toHaveLength(5);
     expect(screen.queryByText(/Load \d+ more/)).toBeNull();
 
-    fireEvent.press(screen.getByLabelText("Show all sessions →"));
+    fireEvent.press(screen.getByRole("link", { name: "Show all sessions" }));
     expect(router.push).toHaveBeenCalledWith("/tools/breathing/history");
   });
 
