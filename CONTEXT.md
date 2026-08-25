@@ -205,5 +205,19 @@ _Avoid_: logout, switch (both hide that data is being left behind)
 **Orphaned guest account**:
 A guest account no device holds a session for — created by abandonment, reinstall, or cleared
 storage. Unreachable by its owner, because a guest account's only key is that session; it is never
-deleted at the moment of abandonment, and its fate is lifecycle policy (#1431).
+deleted at the moment of abandonment — cleanup after dormancy is its only deletion path (#1431).
 _Avoid_: dead account, stale user
+
+**Dormancy**:
+The state of a guest account that has gone twelve months without activity — in practice, twelve
+months without the app being opened on a device holding its session, since any open renews it.
+Dormancy, not account age, is what makes a guest account eligible for cleanup: a recently used
+account is never dormant, however old it is (#1431).
+_Avoid_: inactive (too vague), expired (nothing expires on its own)
+
+**Cleanup**:
+The scheduled deletion of dormant guest accounts — the only path by which an orphaned guest
+account is ever deleted. Cleanup removes exactly what self-service account deletion removes,
+nothing less. A device that returns after its account was cleaned up starts fresh with a calm,
+one-time notice — never silently (#1431).
+_Avoid_: purge, garbage collection, expiry

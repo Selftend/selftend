@@ -102,7 +102,7 @@
       "activityMoodLiftDetail": "{{summary}} със записано настроение преди и след.",
       "activityMoodLiftItem": "{{category}} {{lift}} ({{count}})",
       "recurringThought": "Мисъл за разглеждане: {{thought}}",
-      "recurringThoughtDetail": "Тази точна мисъл се появява {{count}} пъти. Помисли дали под нея стои основно убеждение.",
+      "recurringThoughtDetail": "Тази точна мисъл се появява {{count}} пъти.",
       "selfCareTrend": "Тенденция в самогрижата: движение в {{exerciseDays}}/{{totalDays}} скорошни дни",
       "selfCareTrendDetail": "социални дни: {{socialDays}}, дни с благодарност: {{gratitudeDays}}, {{averageSleep}}.",
       "sleepAverage": "{{hours}} ч. среден сън",
@@ -253,6 +253,7 @@
     "strengthSummary": "Първоначално {{original}} · Алтернативно {{alternative}}",
     "deleteTitle": "Изтриване на това убеждение?",
     "deleteMessage": "Това премахва убеждението и историята на силата му завинаги. Действието е необратимо.",
+    "deleteError": "Неуспешно изтриване на убеждението. Опитай отново.",
     "validation": {
       "beliefStatement": "Опиши убеждението.",
       "alternativeBelief": "Напиши алтернативно убеждение."
@@ -369,6 +370,7 @@
     "loadingDetail": "Зареждане на тревога...",
     "deleteTitle": "Изтриване на тази тревога?",
     "deleteMessage": "Това премахва записа завинаги. Действието е необратимо.",
+    "deleteError": "Неуспешно изтриване на записа. Опитай отново.",
     "validation": {
       "worryStatement": "Опиши тревогата.",
       "copingStatement": "Напиши изречение за справяне.",
@@ -490,6 +492,7 @@
     "editDescription": "Обнови детайлите за този епизод.",
     "deleteTitle": "Изтриване на този запис за гняв?",
     "deleteMessage": "Това премахва записа завинаги. Действието е необратимо.",
+    "deleteError": "Неуспешно изтриване на записа. Опитай отново.",
     "validation": {
       "triggerText": "Опиши какво предизвика гнева."
     }
