@@ -152,6 +152,10 @@ Each account has its own password (defined in `supabase/seed.sql`, mirrored in `
 
 Sign in via the app's email/password form (`signInWithPassword` in `src/features/auth/api.ts`).
 
+#### Guest accounts
+
+Anonymous sign-ins are enabled locally (`enable_anonymous_sign_ins` in `config.toml`, #1440): a native app pointed at this stack silently creates a guest account (`is_anonymous = true` in `auth.users`) on any cold start without a stored session, so guest rows with no matching seed block are expected. Guests are deliberately never seeded - tests that need one create it at runtime through the real `signInAnonymously()`, so a seeded guest can't leak into unrelated runs. `db:reset` clears them like any other unseeded row.
+
 #### Adding more seeded users
 
 Pick the path that matches how long you need the user:
