@@ -1057,6 +1057,8 @@
     "balancedThoughtLabel": "Balanced thought",
     "balancedThoughtPlaceholder": "Aim for something believable and kinder, not forced positivity.",
     "balancedThoughtExample": "Example: I do not know what the email means yet. One message is not proof that I failed.",
+    "beliefAfter": "Belief in the hot thought now (0-100)",
+    "beliefAfterHint": "Optional. How strongly do you believe it after working through it? 0 means not at all; 100 means completely.",
     "intensityAfter": "Emotion intensity after (0-100)",
     "intensityAfterHint": "Optional. Rate the same emotion after writing the balanced thought.",
     "outcomeNotes": "Outcome notes",

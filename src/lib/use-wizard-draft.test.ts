@@ -3,7 +3,10 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { useForm, type UseFormReturn } from "react-hook-form";
 
 import { selectWizardDraftValues, useWizardDraft } from "@/src/lib/use-wizard-draft";
-import { createWizardDraftStore } from "@/src/stores/create-wizard-draft-store";
+import {
+  createWizardDraftStore,
+  WIZARD_DRAFT_PERSIST_VERSION,
+} from "@/src/stores/create-wizard-draft-store";
 import { useToastStore } from "@/src/stores/toast-store";
 
 // Mock the toast store module so we can intercept showToast calls
@@ -485,7 +488,11 @@ describe("useWizardDraft - draft capture and persistence", () => {
           values: { name: "persisted draft", description: "still here" },
           updatedAt,
         },
-        version: 1,
+        // The CURRENT version, never a literal: zustand discards a
+        // version-mismatched blob before rehydrate runs, so a hardcoded number
+        // would turn every test below into a version-mismatch test the moment
+        // WIZARD_DRAFT_PERSIST_VERSION is bumped.
+        version: WIZARD_DRAFT_PERSIST_VERSION,
       }),
     );
   }
