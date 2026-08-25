@@ -13,6 +13,7 @@ import {
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { DateField } from "@/src/components/app/date-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
@@ -38,7 +39,9 @@ export default function ActCommittedActionNewScreen() {
   const [lifeDomain, setLifeDomain] = useState<ACTLifeDomain>("work");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [targetDate, setTargetDate] = useState("");
+  // A day key or nothing — never the empty string. The calendar's Clear commits
+  // "no date", which is a different thing from a box left blank.
+  const [targetDate, setTargetDate] = useState<string | null>(null);
   const [obstacles, setObstacles] = useState("");
   const [submitError, setSubmitError] = useState("");
 
@@ -67,7 +70,7 @@ export default function ActCommittedActionNewScreen() {
         lifeDomain,
         title: title.trim(),
         description: description.trim(),
-        targetDate: targetDate.trim() || null,
+        targetDate,
         obstacles: obstacles.trim(),
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
@@ -207,12 +210,14 @@ export default function ActCommittedActionNewScreen() {
             </View>
             <View className="gap-3">
               <Label>{t("act:committedAction.targetDateLabel")}</Label>
-              <Textarea
+              {/* The same field the CBT goal uses, so a target date is picked
+                  rather than typed. No hint beneath it: the trigger carries the
+                  same visual weight as the textareas around it, and a calendar
+                  needs no instructions (#1303). */}
+              <DateField
                 accessibilityLabel={t("act:committedAction.targetDateLabel")}
-                onChangeText={setTargetDate}
-                placeholder={t("act:committedAction.targetDatePlaceholder")}
+                onChange={setTargetDate}
                 value={targetDate}
-                numberOfLines={1}
               />
             </View>
           </View>
