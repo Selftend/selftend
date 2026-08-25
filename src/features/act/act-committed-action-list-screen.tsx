@@ -23,7 +23,7 @@ const STATUS_BADGE_CLASS: Record<ActionStatus, string> = {
 };
 
 export default function ActCommittedActionListScreen() {
-  const { t, i18n } = useTranslation("act");
+  const { t } = useTranslation("act");
   const { user } = useSession();
   const { data: actions, isLoading } = useCommittedActions(user?.id ?? null);
 
@@ -56,30 +56,15 @@ export default function ActCommittedActionListScreen() {
           ) : null}
 
           {active.length > 0 ? (
-            <ActionGroup
-              title={t("committedAction.activeTitle")}
-              items={active}
-              t={t}
-              lang={i18n.language}
-            />
+            <ActionGroup title={t("committedAction.activeTitle")} items={active} />
           ) : null}
 
           {completed.length > 0 ? (
-            <ActionGroup
-              title={t("committedAction.completedTitle")}
-              items={completed}
-              t={t}
-              lang={i18n.language}
-            />
+            <ActionGroup title={t("committedAction.completedTitle")} items={completed} />
           ) : null}
 
           {abandoned.length > 0 ? (
-            <ActionGroup
-              title={t("committedAction.abandonedTitle")}
-              items={abandoned}
-              t={t}
-              lang={i18n.language}
-            />
+            <ActionGroup title={t("committedAction.abandonedTitle")} items={abandoned} />
           ) : null}
         </View>
       </ScrollView>
@@ -87,18 +72,13 @@ export default function ActCommittedActionListScreen() {
   );
 }
 
-function ActionGroup({
-  title,
-  items,
-  t,
-  lang,
-}: {
-  title: string;
-  items: CommittedAction[];
-  t: ReturnType<typeof useTranslation<"act">>["t"];
-  /** Passed down rather than defaulted, so a language change re-renders these rows. */
-  lang: string;
-}) {
+function ActionGroup({ title, items }: { title: string; items: CommittedAction[] }) {
+  // Its own hook rather than `t` and the language handed down as two props:
+  // both are halves of one concern, and `formatDayKey`'s default would
+  // otherwise read the module-global language — a second source that only
+  // happens to agree with the one the rest of the row's copy comes from.
+  const { t, i18n } = useTranslation("act");
+
   return (
     <View className="gap-2">
       <Text className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -135,7 +115,7 @@ function ActionGroup({
               {action.targetDate ? (
                 <Text variant="muted" className="text-xs">
                   {t("committedAction.targetDateDisplay", {
-                    date: formatDayKey(action.targetDate, lang),
+                    date: formatDayKey(action.targetDate, i18n.language),
                   })}
                 </Text>
               ) : null}
