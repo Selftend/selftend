@@ -19,9 +19,13 @@ import { useStyleName } from "@/src/lib/style";
 // stops pouring. That is deliberate, and it is why this batch is three files
 // rather than thirty-four - the pour had exactly one definition, so neutralising
 // it here changes every one of the 69 call sites atomically, with no chance of
-// missing one and shipping a half-green screen. Removing the now-inert calls is
-// mechanical and belongs to the contract ticket (#589), which deletes the hook
-// and module-room.ts with them.
+// missing one and shipping a half-green screen.
+//
+// ⚠️ #589 closed without doing the deletion half, so the calls are still here and
+// **#1292** owns removing them and this file with them. Until then, every remaining
+// `useRoomStyle(hue)` is inert for EVERY hue: a screen that passes it and a screen
+// that does not render identically. A `style={roomStyle}` prop is not evidence of a
+// visual difference - an entire ticket's premise was this dead prop (#1378).
 
 // One empty override set, shared: identity-stable, so a screen wearing it never
 // invalidates a memoized subtree on re-render.
@@ -33,7 +37,7 @@ const NO_ROOM = vars({});
  *
  * The `hue` parameter is retained on purpose rather than removed here: dropping
  * it would touch all 69 call sites in a batch whose point is to change colour
- * and nothing else. #589 deletes the calls.
+ * and nothing else. #1292 deletes the calls.
  */
 export function useRoomStyle(_hue: HueName): ReturnType<typeof roomVariables>[ColorSchemeName] {
   return NO_ROOM;

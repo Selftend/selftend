@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -210,9 +211,7 @@ export default function GratitudeDetailScreen() {
 
           {/* Right-aligned quiet link (design 6c), not a centred button. */}
           <View className="items-end">
-            <Button onPress={() => pushWithOrigin("/tools/gratitude-log/entries")} variant="link">
-              <Text>{t("home.viewAll")}</Text>
-            </Button>
+            <ShowAllLink label={t("home.viewAll")} route="/tools/gratitude-log/entries" />
           </View>
         </View>
       </ScrollView>
