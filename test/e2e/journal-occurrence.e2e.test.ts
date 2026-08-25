@@ -9,14 +9,30 @@ function monthDistance(from: Date, to: Date) {
 
 async function moveCalendarMonth(page: Page, from: Date, to: Date) {
   const distance = monthDistance(from, to);
-  const direction = distance < 0 ? "Prev" : "Next";
+  // By testID, not by name: since #1301 these buttons are translated
+  // ("Next month" / "Следващ месец"), so an English name is language-bound
+  // where the testID is not.
+  const direction = distance < 0 ? "btn-prev" : "btn-next";
   for (let step = 0; step < Math.abs(distance); step += 1) {
-    await page.getByRole("button", { name: direction, exact: true }).click();
+    await page.getByTestId(direction).click();
   }
 }
 
+/**
+ * A day cell in the open calendar.
+ *
+ * ⚠️ Matched on the TAIL of the accessible name, and scoped to the grid. Since
+ * #1301 a day is named in full — "Sunday, March 15, 2026", with a "Today, "
+ * prefix on today — so the bare number no longer identifies anything. The
+ * scoping matters because the field's own trigger renders "Tue, Mar 15, 2026",
+ * which ends the same way.
+ */
+function calendarDay(page: Page, day: number) {
+  return page.getByTestId("days").getByRole("button", { name: new RegExp(`\\b${day}, \\d{4}$`) });
+}
+
 async function selectCalendarDay(page: Page, day: number) {
-  const dayButton = page.getByRole("button", { name: String(day), exact: true });
+  const dayButton = calendarDay(page, day);
   await expect(dayButton).toHaveCount(1);
   await dayButton.click();
 }
@@ -91,10 +107,7 @@ test.describe("journal occurrence date and time", () => {
     await page.getByRole("button", { name: "Date", exact: true }).click();
 
     await moveCalendarMonth(page, firstOccurrence, futureDate);
-    const futureDayButton = page.getByRole("button", {
-      name: String(futureDate.getDate()),
-      exact: true,
-    });
+    const futureDayButton = calendarDay(page, futureDate.getDate());
     await expect(futureDayButton).toHaveCount(1);
     await expect(futureDayButton).toBeDisabled();
 

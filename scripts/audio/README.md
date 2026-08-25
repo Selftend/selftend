@@ -86,7 +86,23 @@ ELEVENLABS_API_KEY=... node scripts/audio/render.mjs preflight --round A
 
 # The real thing. Measures each take and re-rolls the ones below the gate.
 ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render --round A --go
+
+# The eight voice cues, which `render` does NOT cover. `--voice-id` renders a
+# SHORTLISTED voice without writing it into catalog.mjs.
+ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices \
+  --voice-id guided=<voiceId> --voice-id guided-male=<voiceId> --go
 ```
+
+☠️ **`--voice-id` exists because #1136's own criterion had a chicken-and-egg in
+it.** The pick must be made _auditioned on the shipping words, not on demo reels_ —
+but `render-voices` refuses to spend until a voiceId is in `catalog.mjs`, so
+hearing a shortlisted voice say the shipping words meant editing the decisions file
+for every trial, and every trial abandoned left a decision recorded that nobody had
+taken. An override is safe precisely because the manifest records the voiceId a
+take was rendered with: those takes supersede themselves the moment a different
+voice is written in for real, so a shortlist can never leak into the winner's
+candidates. It refuses an unknown id, a malformed pair, and the same id for both —
+which is one voice twice, not the matched pair #1136 asks for.
 
 Both `render` commands are resumable: re-running fills only the slots still
 without an accepted take, and re-quotes the cost of exactly that.
@@ -186,6 +202,57 @@ Masters go to Drive `Selftend/app-audio-masters/` (#1141); the repo keeps the
 prompts and `manifest.jsonl`. Only the finished `.m4a` clips under
 `assets/sounds/` are ever committed.
 
+### The repo-side manifest
+
+`manifest.jsonl`, `choices.jsonl` and `archive.jsonl` all live _inside_
+`audio-masters/`, which is gitignored — so on their own they are not the repo half
+of anything. `manifest.mjs` is what makes the split real:
+
+```bash
+node scripts/audio/manifest.mjs write   --round B [--out <path>] [--check]
+node scripts/audio/manifest.mjs archive --round B --all [--note "..."]
+node scripts/audio/manifest.mjs archive --round B --file <name> [--note "..."]
+```
+
+`write` rebuilds `scripts/audio/round-<R>.manifest.json` — committed, and holding
+#1210's definition of done for every unit: the prompt asked for today, each take's
+parameters and its TTS seed where one exists, the chosen candidate, and the Drive
+path. It **exits 1 while any unit is unpicked or any take unarchived**, so a
+half-finished pass cannot read as a finished one. Each take also carries a
+`measured` block joined from the audition's `audition.json` — the finished file's
+duration and lead silence, which `postprocess run` alone produces and which #1136
+requires for `introMs`; without this they lived only on a page `build` overwrites.
+
+`archive` records that masters reached Drive. ⚠️ It **attests, it does not
+upload** — nothing in this repo talks to Drive, so the row is a person's claim
+that they did it, and the record says so in its own `archivedMeans` field. A take
+whose master is not on this disk is refused rather than attested, because an
+attestation given for free is worth nothing.
+
+The logic lives in `manifest-plan.mjs` and the disk and exit codes in
+`manifest.mjs`, the same split `audition-plan.mjs`/`audition.mjs` and
+`take-gate.mjs`/`render.mjs` already use, and for the same reason: the record has
+to be drivable from jest without ffmpeg, a key, or a rendered byte.
+
+> ☠️ **`--check` gates on BOTH currency and completeness**, and dropping the second
+> was a real bug: it exited 0 against 65 gaps on a pass nobody had started. It is
+> the obvious way to assert the gate without dirtying the tree, so a mode of
+> `write` that keeps half `write`'s contract is the same green light on a half-done
+> pass this record exists to refuse. "Current" and "finished" are reported as the
+> separate facts they are.
+
+> ☠️ **`--check` is local-only and no CI gate can replace it.** Everything the
+> record derives from is gitignored and lives on whichever machine ran the pass, so
+> nothing on a clean checkout can notice a stale manifest. That is the price of the
+> split #1141 chose, and it is worth stating rather than implying a guard exists.
+
+> ⚠️ **Round A's masters are not on this machine.** `write --round A` reports two
+> units and **zero takes**: #1159's bell gate passed and spent 120 credits, but
+> `audio-masters/` is gitignored and per-worktree, and the worktree that rendered
+> them is gone. Whether those two bells still exist depends entirely on whether
+> someone uploaded them to Drive — and nothing recorded it, which is exactly the
+> hole `archive` closes for Round B.
+
 Post-processing — the fold, loudness normalisation, true-peak limiting and AAC
 encode fixed by [#1138](https://github.com/Selftend/selftend/issues/1138) — runs
 in the **same session** as the render, deliberately. #1137's seam gate is an
@@ -214,11 +281,127 @@ node scripts/audio/postprocess.mjs run audio-masters/rain-2.wav --clip rain --fo
 # Just the numbers.
 node scripts/audio/postprocess.mjs measure assets/sounds/meditation-bell.wav
 node scripts/audio/postprocess.mjs seamcheck assets/sounds/breathing/rain.wav
+
+# The set, not one clip: #1210's size acceptance check. Runs before the render too.
+node scripts/audio/postprocess.mjs budget
 ```
 
 Requires **ffmpeg** on PATH. That is a deliberate `scripts/`-only dependency:
 #1138 retired the post-processor's "pure stdlib" property because Python's
 `wave` decodes no MP3 and encodes no AAC.
+
+### The size budget, and why a voice cue's filename carries its voice
+
+#1210's fifth acceptance check is "**Budget**: 21 files, ~3.21 MB, under the 4.0 MB
+ceiling", and it was the last item on that list with no instrument behind it —
+loudness and true peak are gated by `run`, leading silence by `edgeSilence` on the
+finished file, the seam by `seamcheck`, and the budget was a number in a ticket body.
+`postprocess.mjs budget` is that instrument. It prints two facts and keeps them apart:
+
+- **PREDICTED** — what the set weighs on paper, from `catalog.mjs`'s own durations
+  and bitrates. It needs no rendered byte and no ffmpeg, which is the only time the
+  answer can still change anything: the pass is unrepeatable. It lands at **3.196
+  MiB** against the **3.21 MB** #1138 published — agreeing to about 14 KB, which is
+  the container overhead neither number counts. That agreement is what says the model
+  behind the ceiling and the model behind the check are the same one; it is not a
+  reproduction to the byte, and the command does not claim one.
+- **MEASURED** — what is actually in `audio-masters/finished/`. Only this can fail
+  the command, and it fails on a **missing unit**, on a file **too small to be** its
+  unit, and on a **stray file**, as readily as on the total.
+
+☠️ **A set that fits because four of its files were never written is not a set that
+fits.** By byte count, twenty of twenty-one is the healthiest set the pass could
+possibly hand over.
+
+☠️ **Nor is a set of twenty-one empty files.** `/code-review` found this by running
+the command: twenty-one correctly named ZERO-BYTE files printed `21/21 files · the set
+is complete and fits` and exited **0**, because presence was only "a name matched".
+A present file must now also be big enough to be its unit — at least half its
+predicted size for the thirteen sound effects, whose lengths the catalog fixes, and
+simply non-empty for the eight cues, whose length TTS decides and where no honest
+floor exists yet. The floor is loose on purpose: it catches a truncated or failed
+encode, it does not grade one. ⚠️ `bytes === 0` is its own clause rather than a case
+of `bytes < floor` — a cue's floor is 0, `0 < 0` is false, and an empty cue slipped
+through the check written to stop empty files, in the half of the set that has been
+invisible to a subsystem twice before.
+
+☠️ **Every file in the directory is weighed, not just `*.m4a`.** Filtering by
+extension first made a 5 MB stray `.wav` weigh nothing and go unreported while the set
+still read "fits" — on a ceiling #1138 justifies by exactly that case, a single
+uncompressed bed blowing it instantly. It also made an uppercase `.M4A` vanish from
+the total while its own unit reported missing. ⚠️ A directory entry that is not a
+file is skipped: a _directory_ named `rain.m4a` used to survey as a present unit.
+
+☠️ **The ceiling is MEBIbytes.** #1138 reports today's set as "2.854 MB" and the
+sixteen shipped `.wav` files total 2,992,420 bytes — 2.854 MiB, 2.992 MB. Read as
+decimal the set would have 194 KB less headroom than it has, on a set already at
+~80% of its limit.
+
+☠️ **A voice cue's finished filename carries its voice** (`guide_inhale.guided.m4a`,
+`guide_inhale.guided-male.m4a`), and `run --voice` is required on a `guide_*` id and
+refused on a sound effect. Before this, `run --clip guide_inhale` defaulted its
+output to `guide_inhale.m4a` whichever voice the master came from — so
+post-processing the male take **wrote over the female's finished file**, and the pass
+ended with twenty files where it needs twenty-one, silently, because nothing counted
+them. Same shape as `render` producing eleven clips of nineteen (#1317) and the
+audition's own `status` reporting a settled set with the voice half untouched
+(#1393), one subsystem further along. Both voices carry the suffix: an asymmetric
+scheme is how "the default voice" quietly becomes "the only voice".
+
+⚠️ **`budget` is not a CI gate, and #1210 is why.** #1138 asked for the ceiling to be
+enforced "in `npm run verify`", but #1210 routes `scripts/check-audio-budget.js` — the
+guard over the assets the app actually ships — to `/to-tickets` along with the
+extension swap and `.gitattributes`. Those are different artifacts at different
+times: this measures the finished set in `audio-masters/finished/` during the pass,
+while the render can still be acted on. Wiring it into `verify` today would also fail
+every build until the pass has run. Said out loud here rather than leaving a later
+session to assume a guard exists, the same way `manifest --check` says it is
+local-only.
+
+⚠️ The predicted total is **payload only** — the `.m4a` container adds a few KB of
+`moov` per file, and #1138's figure was computed the same way. A prediction landing
+within a hair of the ceiling should be read as "too close", never as "it fits". And
+the eight voice lengths are **estimated** from the clips shipping today, which say
+the same words; TTS decides the real ones, and they do not exist until the pass runs.
+
+### ☠️ Leading silence is gated on the FINISHED file
+
+#1134 calls zero leading silence a **hard rule** and it is #1210's first acceptance
+check — and until #1210 nothing in this pipeline measured it. `edgeSilence` existed
+(#1347) but only behind `postprocess edges <file>`, a separate command aimed at a
+file by hand, so `run` could report PASS on a clip that starts late.
+
+⚠️ It is in practice a **voice-clip rule**. #1138 measured the shipped set and only
+the four `guide_*` files carry any lead at all — 36.2 / 34.1 / 15.0 / 3.2 ms — while
+every bed, texture and bell measures 0.0. It matters because every trigger in the
+app is _already_ up to 250 ms late (`TICK_MS` polling, #1134), so silence in the
+file adds to a lateness the user can already hear.
+
+The limit is **1.0 ms**, bracketed by two measurements rather than chosen by feel.
+Above: #1138 round-tripped AAC at **+8 samples, 0.18 ms**, so anything tighter fails
+every file this pipeline produces. Below: the smallest real lead in the shipped set
+is `guide_hold`'s **3.2 ms**. It also has to catch the **25.06 ms** `start_time`
+#1138 measured on MP3, which is #1210's "confirm ffmpeg strips the encoder delay"
+case. Verified both ways against real ffmpeg: a natively looping bed measures
+0.00 ms lead and 0.00 ms tail at 30.000s, and 20 ms injected into a voice clip comes
+back **20.02 ms** through the full chain.
+
+⚠️ The **tail** is measured and printed but never gated. A bell is a long smooth
+decay "fading continuously to silence" by #1139's own brief, so gating it would fail
+the two clips whose entire character is a tail, for having one.
+
+⚠️ A result carrying **no** edges fails too. A rule that was not measured is not a
+rule that passed, and reporting PASS there restores exactly the silence this check
+removes.
+
+The remedy is a **hint**, never a failure line (#1359), and it is class-specific:
+Text to Speech takes a seed, so a late voice cue is genuinely re-drawable for
+nothing, while Sound Effects has none — naming a seed there would point at a path
+that does not exist.
+
+The run also carries the finished file's **measured duration**, because #1136 sets
+`introMs` from the chosen `guide_intro`'s own header and never from an estimate, and
+this is the only place that number is produced.
 
 ### What measurement changed
 
@@ -342,8 +525,34 @@ node scripts/audio/audition.mjs build --round B --all
 
 # Record the winner, and see what is still unpicked.
 node scripts/audio/audition.mjs choose rain 2 --round B --note "least eventful"
+node scripts/audio/audition.mjs choose guide_intro 1 --round B --voice guided-male
 node scripts/audio/audition.mjs status --round B
 ```
+
+☠️ **It covers BOTH halves of the round, and it did not.** `survey` built its clip
+list from `clipsForRound`, which filters `SFX_CLIPS` — so Round B's eight voice
+cues were never in it. `build` could not make one playable, `choose` threw on a
+`guide_*` id, and `status` — this pass's own progress meter — would have printed
+"Every clip in round B has a pick" and exited 0 with the whole voice half
+untouched. Eleven units of nineteen, reported as the round. That is #1317's
+`render --round B` producing 11 clips and saying nothing, one subsystem later, and
+it landed on the class #1210 calls its FIRST task.
+
+☠️ **A voice pick is per cue AND per voice.** Both voices ship — #1136 makes the
+male one purely additive, so nothing migrates and each cue is owed two picks — and
+`--voice` is therefore required on a `guide_*` id and refused on a sound effect.
+Keyed on the clip alone, choosing the female take would mark the male one settled
+and half the voice set would ship unheard. The two voices sit in one section of
+the page on purpose: #1136 asks for a **matched pair auditioned on the shipping
+words**, and the two halves of that comparison have to be adjacent to be one.
+
+⚠️ **A voice take is not graded by level.** #1320's usable/silent thresholds exist
+for the seedless Sound Effects tail, where a fixed prompt varies 16-26 dB run to
+run and a dud can never be re-drawn. Text to Speech takes a seed and is
+re-renderable, so a level gate here would import a rule no ticket decided onto the
+one class that does not need it. What supersedes a voice take is the pair
+**(voiceId, text)** — the analogue of the composed prompt, and what lets a
+shortlist be auditioned and then swapped without a stale pick surviving the swap.
 
 Output lands in `audio-masters/audition/round-<R>/` — `index.html` to open from
 disk, `audition.json` for the same data machine-readable.
