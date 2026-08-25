@@ -105,8 +105,8 @@ describe("every therapy-module navigation goes through the helper", () => {
  * drill-down inside a module still shows a plain Up.
  *
  * This is what makes migrating the same-subtree pushes safe - which is most of
- * the 53. They now all
- * record an Origin, and every one of those Origins must be *ignored* on arrival.
+ * the 53. They now all record an Origin, and every one of those Origins must be
+ * *ignored* on arrival.
  * `isOffTrail` is what ignores them, so it is what gets exercised here - if a
  * future change to it made an on-trail Origin win, this fails and the whole
  * batch's "recording is harmless" argument is revoked in one place.
@@ -131,13 +131,21 @@ describe("a drill-down inside a module still escapes to Up", () => {
    * the pushes that leave the module ARE off-trail, so the recording they now do
    * is the thing that gets the user back.
    *
-   * ⚠️ The first two are the pair the ticket did not name. It flagged the CBT
-   * home's shared-tool chips as "the one genuinely off-trail set in this batch",
-   * but those chips render through `SharedToolsRow`, which lives in
-   * `src/components/app` and was migrated by batch 1 (#1265). `self-care.tsx`
-   * is where CBT actually still crossed into `/tools` unmigrated - two pushes,
-   * unmentioned - which is the ticket's own argument for opt-out recording
-   * landing on a set the ticket itself had missed.
+   * ⚠️ The ticket named NONE of these. It flagged the CBT home's shared-tool
+   * chips as "the one genuinely off-trail set in this batch", but those chips
+   * render through `SharedToolsRow`, which lives in `src/components/app` and was
+   * migrated by batch 1 (#1265). The sets that were actually still crossing out
+   * of CBT bare are the ones below - `self-care.tsx`, the behavioural-activation
+   * hand-off in `activities/[id].tsx`, and the breathing nudge and edit button on
+   * `thought-record-detail-screen.tsx`. That is the ticket's own argument for
+   * opt-out recording landing on sets the ticket itself had missed.
+   *
+   * ⚠️ The last three carry `params` on a pathname with NO dynamic segment, so
+   * the router serialises them into the query string. `targetPathname` has to
+   * leave them off `forPathname` or the recorded target could never match
+   * `usePathname()` on arrival - and that failure is silent, the screen just
+   * quietly showing Up. Pinned directly in `src/lib/escape-origin.test.tsx`
+   * ("keeps the pathname of an object href, leaving its params off the route").
    */
   it.each([
     ["/modules/cbt/self-care", "/tools/sleep"],
@@ -145,6 +153,9 @@ describe("a drill-down inside a module still escapes to Up", () => {
     ["/modules/cbt/exposure", "/modules/cbt/worry"],
     ["/modules/cbt/goals/new", "/modules/cbt/values"],
     ["/modules/act/values", "/tools/habits"],
+    ["/modules/cbt/activities/3f9a-uuid", "/tools/check-in/new"],
+    ["/modules/cbt/history/3f9a-uuid", "/tools/breathing/session"],
+    ["/modules/cbt/history/3f9a-uuid", "/modules/cbt/new"],
   ])("follows an Origin of %s on %s", (origin, pathname) => {
     const crumbs = computeBreadcrumbs(pathname, t);
     const upHref = findUpCrumb(crumbs)?.href ?? "/";
