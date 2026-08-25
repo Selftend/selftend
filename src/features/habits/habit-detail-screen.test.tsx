@@ -15,6 +15,7 @@ import {
 import { currentDateKey, localDateKey } from "@/src/features/habits/scheduling";
 import { tickGridStartKey } from "@/src/features/habits/tick-grid";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { expectNeutralRoom } from "@/test/room-pour";
 
@@ -285,6 +286,34 @@ describe("HabitDetailScreen notes with ticks", () => {
     expect(router.push).toHaveBeenCalledWith({
       pathname: "/tools/habits/[id]/log",
       params: { id: "h-1", date: currentDateKey() },
+    });
+  });
+
+  /**
+   * The object-form href is the shape worth pinning at a real call site
+   * (#1267): `forPathname` must arrive with the dynamic segment substituted and
+   * the non-segment `date` param left OFF. The router serialises leftover
+   * params into the query string, which `usePathname()` never reports - so a
+   * recorded target that kept them could never match on arrival, and the
+   * failure would be silent: the log screen just quietly showing Up.
+   *
+   * ⚠️ On the STORE, not on `router.push`: `usePushWithOrigin` pushes through
+   * `router.push`, so the assertion above passes identically whether or not
+   * this call site was ever migrated.
+   */
+  it("records the detail screen as the Origin for the note editor, params off", () => {
+    useNavigationOriginStore.setState({ pending: null });
+    const day = daysAgo(20);
+    mockUseHabitLogs.mockReturnValue({
+      data: [habitLog({ note: "Felt easy today", loggedOn: day })],
+    } as unknown as ReturnType<typeof useHabitLogs>);
+
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+    fireEvent.press(screen.getByText("Felt easy today"));
+
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/tools/habits/h-1",
+      forPathname: "/tools/habits/h-1/log",
     });
   });
 

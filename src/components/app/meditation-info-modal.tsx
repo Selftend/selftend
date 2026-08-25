@@ -1,8 +1,6 @@
-import { Image, ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Image, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { PressShieldModal } from "@/src/components/app/press-shield-modal";
-import { Button } from "@/src/components/react-native-reusables/button";
+import { RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 
@@ -12,99 +10,93 @@ const meditationCircles = require("../../../assets/images/onboarding/mind_illumi
 interface MeditationInfoProps {
   visible: boolean;
   onComplete: () => void;
-  onDismiss?: () => void;
+  onDismiss: () => void;
 }
 
+/**
+ * The meditation Guide. Renders through `RichOnboardingShell` like every
+ * other Guide (W21/#1259): this used to be a hand-rolled clone of the shell,
+ * which is exactly how it ended up missing the dialog's accessible name and
+ * the keyboard avoidance the shell provides. The shell's default CTA fires
+ * `onDismiss` — same as this Guide's bottom button always did.
+ */
 export function MeditationInfo({ visible, onComplete, onDismiss }: MeditationInfoProps) {
   const { t } = useTranslation("meditation");
 
   return (
-    <PressShieldModal
-      // Same callback the bottom CTA fires (M3) — this is a Guide, so closing
-      // persists nothing either way. W21/#1259 folds this hand-rolled clone
-      // into `RichOnboardingShell`, which is where the dialog name it still
-      // lacks comes from.
-      onEscape={onDismiss ?? onComplete}
-      onRequestClose={onDismiss ?? (() => undefined)}
+    <RichOnboardingShell
       visible={visible}
+      accessibilityLabel={t("info.title")}
+      ctaLabel={t("info.dismiss")}
+      onComplete={onComplete}
+      onDismiss={onDismiss}
     >
-      {/* No "top": the wrapper's escape row already sits in the top inset. */}
-      <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
-        <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
-          <View className="items-center gap-3">
-            <Text variant="h2" className="text-center">
-              {t("info.title")}
-            </Text>
-            <Text variant="muted" className="text-center">
-              {t("info.subtitle")}
-            </Text>
-          </View>
+      <View className="items-center gap-3">
+        <Text variant="h2" className="text-center">
+          {t("info.title")}
+        </Text>
+        <Text variant="muted" className="text-center">
+          {t("info.subtitle")}
+        </Text>
+      </View>
 
-          <Card>
-            <CardContent className="items-center gap-4 pt-6">
-              <Image
-                source={meditationPath}
-                style={{ width: 240, height: 210 }}
-                resizeMode="contain"
-                accessibilityLabel={t("info.heroAlt")}
-              />
-              <Text variant="muted" className="text-center">
-                {t("info.heroBody")}
-              </Text>
-            </CardContent>
-          </Card>
+      <Card>
+        <CardContent className="items-center gap-4 pt-6">
+          <Image
+            source={meditationPath}
+            style={{ width: 240, height: 210 }}
+            resizeMode="contain"
+            accessibilityLabel={t("info.heroAlt")}
+          />
+          <Text variant="muted" className="text-center">
+            {t("info.heroBody")}
+          </Text>
+        </CardContent>
+      </Card>
 
-          <View className="gap-4">
-            <Text variant="h3" className="text-center">
-              {t("info.conceptsTitle")}
-            </Text>
-            <Card className="border-primary/30 bg-primary/5">
-              <CardContent className="items-center gap-4 pt-6">
-                <Image
-                  source={meditationCircles}
-                  style={{ width: 220, height: 190 }}
-                  resizeMode="contain"
-                  accessibilityLabel={t("info.circlesAlt")}
-                />
-                <View className="w-full gap-3">
-                  <View className="gap-1">
-                    <Text className="font-semibold">{t("info.attentionTitle")}</Text>
-                    <Text variant="muted">{t("info.attentionBody")}</Text>
-                  </View>
-                  <View className="gap-1">
-                    <Text className="font-semibold">{t("info.awarenessTitle")}</Text>
-                    <Text variant="muted">{t("info.awarenessBody")}</Text>
-                  </View>
-                </View>
-              </CardContent>
-            </Card>
-          </View>
+      <View className="gap-4">
+        <Text variant="h3" className="text-center">
+          {t("info.conceptsTitle")}
+        </Text>
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="items-center gap-4 pt-6">
+            <Image
+              source={meditationCircles}
+              style={{ width: 220, height: 190 }}
+              resizeMode="contain"
+              accessibilityLabel={t("info.circlesAlt")}
+            />
+            <View className="w-full gap-3">
+              <View className="gap-1">
+                <Text className="font-semibold">{t("info.attentionTitle")}</Text>
+                <Text variant="muted">{t("info.attentionBody")}</Text>
+              </View>
+              <View className="gap-1">
+                <Text className="font-semibold">{t("info.awarenessTitle")}</Text>
+                <Text variant="muted">{t("info.awarenessBody")}</Text>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
+      </View>
 
-          <Card>
-            <CardContent className="gap-3 pt-6">
-              <CardTitle>{t("info.principlesTitle")}</CardTitle>
-              <Text variant="muted">
-                {"• "}
-                {t("info.patience")}
-              </Text>
-              <Text variant="muted">
-                {"• "}
-                {t("info.intention")}
-              </Text>
-              <Text variant="muted">
-                {"• "}
-                {t("info.everySit")}
-              </Text>
-            </CardContent>
-          </Card>
-
-          <View className="gap-4">
-            <Button onPress={onDismiss ?? onComplete}>
-              <Text>{t("info.dismiss")}</Text>
-            </Button>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </PressShieldModal>
+      <Card>
+        <CardContent className="gap-3 pt-6">
+          <CardTitle>{t("info.principlesTitle")}</CardTitle>
+          <Text variant="muted">
+            {"• "}
+            {t("info.patience")}
+          </Text>
+          <Text variant="muted">
+            {"• "}
+            {t("info.intention")}
+          </Text>
+          <Text variant="muted">
+            {"• "}
+            {t("info.everySit")}
+          </Text>
+        </CardContent>
+      </Card>
+    </RichOnboardingShell>
   );
 }

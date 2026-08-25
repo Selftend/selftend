@@ -6,6 +6,21 @@ import { clearOrigin, peekOrigin, recordOrigin } from "@/src/stores/navigation-o
 
 type ParamsRecord = Record<string, unknown>;
 
+/**
+ * The options `router.push` takes beside the href, forwarded verbatim.
+ *
+ * Taken off `router.push` rather than imported: expo-router keeps
+ * `NavigationOptions` internal to `global-state/types`, and the repo already
+ * reads router argument types positionally (`Parameters<typeof router.replace>[0]`).
+ *
+ * The helper has to express everything the call sites it replaces could express,
+ * or migrating one quietly changes how the app navigates. `dangerouslySingular`
+ * is the live case (#1266): ACT's "Also try" row is a lateral jump - "the tool
+ * you jump to may be the one you came from two hops ago" (#1027) - and passes
+ * the flag so the stack does not grow a second copy of a screen already in it.
+ */
+type PushOptions = Parameters<typeof router.push>[1];
+
 /** An expo-router route group - `/(app)`, `/(tabs)` - which `usePathname` omits. */
 const GROUP_SEGMENT = /\/\([^)]*\)/g;
 
@@ -76,9 +91,14 @@ export function targetPathname(href: Href): string {
 export function usePushWithOrigin() {
   const pathname = usePathname();
 
-  return (href: Href) => {
+  return (href: Href, options?: PushOptions) => {
     recordOrigin({ origin: pathname, forPathname: targetPathname(href) });
-    router.push(href);
+    // Forwarded only when given, never as an explicit `undefined`. Jest's
+    // `toHaveBeenCalledWith(href)` does not match a call of `(href, undefined)`,
+    // so passing it unconditionally would break the existing navigation
+    // assertion at every migrated call site in the app for no behaviour gained.
+    if (options) router.push(href, options);
+    else router.push(href);
   };
 }
 

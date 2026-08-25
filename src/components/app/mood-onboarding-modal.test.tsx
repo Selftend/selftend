@@ -10,7 +10,7 @@ jest.mock("expo-linear-gradient", () => {
 
 function open(props: Partial<Parameters<typeof MoodOnboarding>[0]> = {}) {
   return renderWithProviders(
-    <MoodOnboarding visible onComplete={props.onComplete ?? (() => {})} {...props} />,
+    <MoodOnboarding visible onComplete={() => {}} onDismiss={() => {}} {...props} />,
   );
 }
 
@@ -58,17 +58,22 @@ describe("MoodOnboarding", () => {
     expect(screen.queryByText(/nothing is broken/i)).toBeNull();
   });
 
-  it("completes from the CTA", () => {
-    const onComplete = jest.fn();
-    open({ onComplete });
+  it("dismisses from the CTA", () => {
+    // A Guide's CTA is a dismiss: closing persists nothing, and since #1259
+    // the shell fires `onDismiss` rather than falling back to `onComplete`.
+    // (At the real call site the two are the same callback.)
+    const onDismiss = jest.fn();
+    open({ onDismiss });
 
     fireEvent.press(screen.getByText("Got it"));
 
-    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
   it("renders nothing when it is not visible", () => {
-    renderWithProviders(<MoodOnboarding visible={false} onComplete={() => {}} />);
+    renderWithProviders(
+      <MoodOnboarding visible={false} onComplete={() => {}} onDismiss={() => {}} />,
+    );
 
     expect(screen.queryByText("What you will see")).toBeNull();
   });

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, View } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -31,6 +31,7 @@ interface SleepEntryRowProps {
  * words. The note rides as the hint: it is a content cue, not the identity.
  */
 function SleepEntryRowComponent({ entry, when, className }: SleepEntryRowProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("sleep");
   const queryClient = useQueryClient();
 
@@ -49,7 +50,7 @@ function SleepEntryRowComponent({ entry, when, className }: SleepEntryRowProps) 
         // entry past the overview's 50-row window opens even if its own fetch
         // fails (an offline "not found" for an entry the user is looking at).
         seedSleepLogDetail(queryClient, entry);
-        router.push({ pathname: "/tools/sleep/[id]", params: { id: entry.id } });
+        pushWithOrigin({ pathname: "/tools/sleep/[id]", params: { id: entry.id } });
       }}
       className={cn("flex-row items-center gap-3 px-0.5 py-3 active:bg-accent/40", className)}
       role="button"
