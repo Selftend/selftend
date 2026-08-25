@@ -12,6 +12,32 @@ import { useThoughtRecord } from "@/src/features/cbt/queries";
 import { resolveHotThought } from "@/src/features/cbt/thought-record-form";
 import { useSession } from "@/src/providers/session-provider";
 
+function BeforeAfterPair({
+  beforeLabel,
+  beforeValue,
+  afterLabel,
+  afterValue,
+}: {
+  beforeLabel: string;
+  beforeValue: number | null | undefined;
+  afterLabel: string;
+  afterValue: number | null | undefined;
+}) {
+  return (
+    <View className="flex-row items-center justify-center gap-6">
+      <View className="items-center gap-1">
+        <Text variant="muted">{beforeLabel}</Text>
+        <Text variant="h3">{beforeValue}</Text>
+      </View>
+      <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
+      <View className="items-center gap-1">
+        <Text variant="muted">{afterLabel}</Text>
+        <Text variant="h3">{afterValue}</Text>
+      </View>
+    </View>
+  );
+}
+
 // The calm completion screen shown after a NEW thought record is saved (never for
 // edits - see app/(app)/modules/cbt/new.tsx onSaved). Intentionally quiet: no
 // streaks, no confetti - just an acknowledgement and the numbers, if any.
@@ -76,31 +102,21 @@ export default function ThoughtRecordSavedScreen() {
         </View>
 
         {showBelief ? (
-          <View className="flex-row items-center justify-center gap-6">
-            <View className="items-center gap-1">
-              <Text variant="muted">{t("saved.beliefBefore")}</Text>
-              <Text variant="h3">{beliefBefore}</Text>
-            </View>
-            <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
-            <View className="items-center gap-1">
-              <Text variant="muted">{t("saved.beliefAfter")}</Text>
-              <Text variant="h3">{data.beliefAfter}</Text>
-            </View>
-          </View>
+          <BeforeAfterPair
+            beforeLabel={t("saved.beliefBefore")}
+            beforeValue={beliefBefore}
+            afterLabel={t("saved.beliefAfter")}
+            afterValue={data.beliefAfter}
+          />
         ) : null}
 
         {showIntensity ? (
-          <View className="flex-row items-center justify-center gap-6">
-            <View className="items-center gap-1">
-              <Text variant="muted">{t("saved.intensityBefore")}</Text>
-              <Text variant="h3">{data.emotionIntensityBefore}</Text>
-            </View>
-            <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
-            <View className="items-center gap-1">
-              <Text variant="muted">{t("saved.intensityAfter")}</Text>
-              <Text variant="h3">{data.emotionIntensityAfter}</Text>
-            </View>
-          </View>
+          <BeforeAfterPair
+            beforeLabel={t("saved.intensityBefore")}
+            beforeValue={data.emotionIntensityBefore}
+            afterLabel={t("saved.intensityAfter")}
+            afterValue={data.emotionIntensityAfter}
+          />
         ) : null}
 
         <View className="gap-3">

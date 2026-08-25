@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useWatch } from "react-hook-form";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -20,6 +20,7 @@ import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ProgressSegments } from "@/src/components/app/progress-segments";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LoadingState } from "@/src/components/app/screen-state";
+import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { politeLiveRegionProps } from "@/src/lib/accessibility";
 import { useThoughtRecordEditor } from "@/src/features/cbt/use-thought-record-editor";
@@ -173,8 +174,11 @@ export default function ThoughtRecordEditorScreen() {
             </View>
             <View className="flex-1">
               <Button disabled={isPending} onPress={() => void handleSave()}>
-                {isPending ? <ActivityIndicator color="#ffffff" /> : null}
-                <Text>{isPending ? t("record.saving") : t("record.saveRecord")}</Text>
+                <SubmitButtonContent
+                  pending={isPending}
+                  idleLabel={t("record.saveRecord")}
+                  pendingLabel={t("record.saving")}
+                />
               </Button>
             </View>
           </View>
