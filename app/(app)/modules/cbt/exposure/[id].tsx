@@ -208,24 +208,16 @@ function SessionSheet({
               </Text>
             ) : null}
 
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Button onPress={closeSheet} variant="ghost">
-                  <Text>{t("exposure.session.cancel")}</Text>
-                </Button>
-              </View>
-              <View className="flex-1">
-                <Button
-                  disabled={
-                    form.preSuds === null || form.postSuds === null || saveMutation.isPending
-                  }
-                  onPress={() => void handleSave()}
-                >
-                  {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-                  <Text>{t("exposure.session.save")}</Text>
-                </Button>
-              </View>
-            </View>
+            {/* Save only: the ghost Cancel that used to sit beside it
+                promised the same thing as the pinned X above, and a modal
+                carries exactly one close affordance (M5, #1257). */}
+            <Button
+              disabled={form.preSuds === null || form.postSuds === null || saveMutation.isPending}
+              onPress={() => void handleSave()}
+            >
+              {saveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
+              <Text>{t("exposure.session.save")}</Text>
+            </Button>
           </KeyboardAwareScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

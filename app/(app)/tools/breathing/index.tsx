@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +24,7 @@ import { useBreathingExercises } from "@/src/features/breathing/exercises-querie
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
@@ -44,6 +44,7 @@ interface PatternRow {
 }
 
 export default function BreathingScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: customExercises } = useBreathingExercises(user?.id ?? null);
@@ -180,7 +181,7 @@ export default function BreathingScreen() {
             <SectionHeader
               title={t("breathing.overview.patternsTitle")}
               actionLabel={t("breathing.overview.newPattern")}
-              onAction={() => router.push("/tools/breathing/new")}
+              onAction={() => pushWithOrigin("/tools/breathing/new")}
             />
             {patterns.length === 0 ? (
               <Text variant="muted" className="border-t border-border py-4 text-sm">
@@ -194,7 +195,7 @@ export default function BreathingScreen() {
                   accessibilityLabel={t("breathing.overview.startPattern", { name: p.name })}
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/tools/breathing/session",
                       params: { pattern: p.routeParam },
                     })
@@ -225,7 +226,7 @@ export default function BreathingScreen() {
             <SectionHeader
               title={t("breathing.overview.recentTitle")}
               actionLabel={t("breathing.overview.showAll")}
-              onAction={() => router.push("/tools/breathing/history")}
+              onAction={() => pushWithOrigin("/tools/breathing/history")}
             />
             {recent.length === 0 ? (
               <Text variant="muted" className="border-t border-border py-4 text-sm">

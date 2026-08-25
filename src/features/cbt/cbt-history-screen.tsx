@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ function getRecordTitle(
 }
 
 export default function CbtHistoryScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
@@ -56,7 +57,7 @@ export default function CbtHistoryScreen() {
                 timestamp: formatTimestamp(record.updatedAt),
                 balancedThought: record.balancedThought.trim() || t("history.recordSummaryEmpty"),
               })}
-              onPress={() => router.push(`/modules/cbt/history/${record.id}`)}
+              onPress={() => pushWithOrigin(`/modules/cbt/history/${record.id}`)}
               title={getRecordTitle(record, t("history.untitledRecord"))}
             />
           ))}

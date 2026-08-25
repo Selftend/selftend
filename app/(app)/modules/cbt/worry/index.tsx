@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -25,6 +26,7 @@ import { HelpButton } from "@/src/components/app/help-button";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function WorryScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
@@ -60,7 +62,7 @@ export default function WorryScreen() {
               />
               <Text variant="muted">{t("worry.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/modules/cbt/worry/new")} size="sm">
+            <Button onPress={() => pushWithOrigin("/modules/cbt/worry/new")} size="sm">
               <Text>{t("worry.new")}</Text>
             </Button>
           </View>
@@ -82,11 +84,7 @@ export default function WorryScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={entry.worryStatement}
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() =>
-                      router.push(
-                        `/modules/cbt/worry/${entry.id}` as Parameters<typeof router.push>[0],
-                      )
-                    }
+                    onPress={() => pushWithOrigin(`/modules/cbt/worry/${entry.id}` as Href)}
                   >
                     <CardHeader>
                       <CardTitle>{entry.worryStatement}</CardTitle>

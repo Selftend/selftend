@@ -12,6 +12,20 @@ interface MobileFormScreenProps extends PropsWithChildren {
   contentClassName?: string;
   footer?: ReactNode;
   /**
+   * Chrome pinned above the scroll view, so it stays on screen while the form
+   * scrolls under it. Used by the one-column forms for their progress rail: a
+   * rail that scrolls away cannot answer "how much of this is left?", which is
+   * the question the column exists to answer (#1380).
+   *
+   * ☠️ Pinned OUTSIDE the scroll view, not `stickyHeaderIndices`. Those index
+   * the scroll view's direct children, and `KeyboardAwareScrollView` puts its
+   * context provider between the scroll view and this component's children -
+   * so index 0 is the provider and nothing ever sticks. Rendering above the
+   * scroll view also behaves identically on web and native, where a CSS
+   * `position: sticky` would be web-only.
+   */
+  stickyHeader?: ReactNode;
+  /**
    * Full-bleed chrome rendered inside the scroll view but OUTSIDE the padded
    * content column, so it spans the whole screen width even though
    * `contentClassName` caps the form at `FORM_COLUMN`. That full bleed is the
@@ -25,6 +39,7 @@ export function MobileFormScreen({
   children,
   contentClassName,
   footer,
+  stickyHeader,
   topBar,
 }: MobileFormScreenProps) {
   // KeyboardAvoidingView renders as a plain View on web; the visual-viewport
@@ -50,6 +65,9 @@ export function MobileFormScreen({
         className="flex-1"
         style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
       >
+        {stickyHeader ? (
+          <View className="border-b border-border bg-background px-6 py-3">{stickyHeader}</View>
+        ) : null}
         <KeyboardAwareScrollView
           contentContainerClassName={topBar ? "grow" : cn("grow p-6", contentClassName)}
           keyboardDismissMode="interactive"

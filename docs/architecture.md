@@ -149,9 +149,9 @@ Multi-step wizard flows persist in-progress drafts via
 [src/lib/use-wizard-draft.ts](../src/lib/use-wizard-draft.ts)):
 
 - **Key scheme:** `selftend:wizard-draft:<flowKey>` - one draft per flow key
-  (`cbt-thought-record`, `act-defusion`, `goal`, `core-belief`,
-  `procrastination-task`, `exposure-hierarchy`). One mode+entityId draft at a
-  time; switching wipes the previous draft.
+  (`cbt-thought-record`, `goal`, `core-belief`, `procrastination-task`,
+  `exposure-hierarchy`). One mode+entityId draft at a time; switching wipes the
+  previous draft.
 - **TTL:** drafts older than 24h are dropped at rehydrate (and their disk copy
   removed - drafts are PHI).
 - **Versioning:** the persisted envelope carries a `version`; bump
@@ -166,6 +166,15 @@ Multi-step wizard flows persist in-progress drafts via
   write's promise. Store action bodies use braces (return `void`) so callers -
   including `act()` in tests - never receive a stray thenable. Keep new actions
   braced.
+
+**One-column forms do not use this store.** The persisted envelope exists to
+carry a **step index** across a page load, and a column has no step. ACT's
+defusion form (#1380) and the values check-in (#1379) hold their unsaved entry
+in the non-wizard
+[src/stores/create-draft-store.ts](../src/stores/create-draft-store.ts) instead:
+in memory, so it survives leaving the screen ("Finish later") but not a reload,
+and registered with the same draft-store registry, so `resetAllDraftStores()`
+clears it on sign-out like every other draft. It is still PHI.
 
 ## Field-level encryption layer
 

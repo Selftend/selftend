@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -20,6 +20,7 @@ import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 
 export default function BeliefsScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: beliefs, isLoading } = useCoreBeliefs(user?.id ?? null);
@@ -41,7 +42,7 @@ export default function BeliefsScreen() {
               />
               <Text variant="muted">{t("beliefs.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/modules/cbt/beliefs/new")} size="sm">
+            <Button onPress={() => pushWithOrigin("/modules/cbt/beliefs/new")} size="sm">
               <Text>{t("beliefs.new")}</Text>
             </Button>
           </View>
@@ -65,7 +66,7 @@ export default function BeliefsScreen() {
                     original: belief.originalBeliefStrength,
                     alternative: belief.alternativeBeliefStrength,
                   })}
-                  onPress={() => router.push(`/modules/cbt/beliefs/${belief.id}`)}
+                  onPress={() => pushWithOrigin(`/modules/cbt/beliefs/${belief.id}`)}
                 />
               ))}
             </View>

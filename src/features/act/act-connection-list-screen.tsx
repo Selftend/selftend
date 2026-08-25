@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,7 @@ import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-stor
 import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function ActConnectionListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
@@ -37,7 +38,7 @@ export default function ActConnectionListScreen() {
             <Text variant="muted">{t("connection.listSubtitle")}</Text>
           </View>
 
-          <Button onPress={() => router.push("/modules/act/connection/new")}>
+          <Button onPress={() => pushWithOrigin("/modules/act/connection/new")}>
             <Icon name="radio-button-checked" className="size-4 text-primary-foreground" />
             <Text>{t("connection.newTitle")}</Text>
           </Button>
@@ -59,7 +60,7 @@ export default function ActConnectionListScreen() {
                   accessibilityRole="button"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/modules/act/connection/[id]",
                       params: { id: log.id },
                     })
