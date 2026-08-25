@@ -84,6 +84,15 @@ test.describe("web check-in picker: one view for date and time", () => {
     // screen's own escape action), so reusing the same open sheet sidesteps
     // needing to disambiguate that from the sheet's own backdrop.
     await page.setViewportSize({ width: 667, height: 320 });
+
+    // "Reachable" means reachable by scrolling, not already on screen the
+    // instant the viewport shrinks: at this size the card genuinely overflows,
+    // and the scroll POSITION from the taller viewport carries over as-is (a
+    // resize does not itself scroll anything). A real wheel gesture over the
+    // sheet - not `scrollIntoViewIfNeeded()` - is what actually proves a user
+    // can get there, the same way #1297 first measured this scroll container.
+    await page.getByRole("dialog").hover();
+    await page.mouse.wheel(0, 800);
     await expect(page.getByRole("button", { name: "Done" })).toBeInViewport();
   });
 });
