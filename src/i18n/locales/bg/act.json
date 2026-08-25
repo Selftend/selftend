@@ -105,8 +105,10 @@
     "saveLog": "Запази",
     "saving": "Запазване...",
     "saveProblem": "Неуспешно запазване",
-    "back": "Назад",
-    "continue": "Продължи",
+    "thoughtRequired": "Запиши мисълта, преди да запазиш.",
+    "finishLater": "Довърши по-късно",
+    "changeTechnique": "Смяна на техниката",
+    "railNote": "{{filled}} от {{total}} части са попълнени",
     "steps": {
       "thought": "Мисълта",
       "category": "Категория",

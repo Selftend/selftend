@@ -105,8 +105,10 @@
     "saveLog": "Save",
     "saving": "Saving...",
     "saveProblem": "Could not save",
-    "back": "Back",
-    "continue": "Continue",
+    "thoughtRequired": "Write the thought before saving.",
+    "finishLater": "Finish later",
+    "changeTechnique": "Change technique",
+    "railNote": "{{filled}} of {{total}} parts filled in",
     "steps": {
       "thought": "The thought",
       "category": "Category",
