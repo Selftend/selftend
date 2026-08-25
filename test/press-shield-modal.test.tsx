@@ -268,6 +268,28 @@ describe("PressShieldModal's pinned escape row", () => {
     expect(screen.queryByLabelText("Close Getting started with CBT")).toBeNull();
   });
 
+  it("wears the word instead of the X when the call site passes escapeLabel (M2)", () => {
+    // #1258: a bare X when closing is free, a word when closing decides
+    // something that sticks. The word replaces the glyph and IS the
+    // accessible name — announcing "Close" on a press that persists a
+    // decision would be the same disguise, one sense over.
+    setPlatformOS("web");
+    const onEscape = jest.fn();
+    render(
+      <PressShieldModal escapeLabel="Skip for now" onEscape={onEscape} visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+
+    const escape = screen.getByTestId("modal-escape");
+    expect(within(escape).getByText("Skip for now")).toBeTruthy();
+    expect(escape.props.accessibilityLabel).toBe("Skip for now");
+    expect(screen.queryByLabelText("Close")).toBeNull();
+
+    fireEvent.press(escape);
+    expect(onEscape).toHaveBeenCalledTimes(1);
+  });
+
   it("holds only the Escape — no title of its own", () => {
     // M5: every guide renders its own title inside the scroll, so a pinned
     // title would show it twice.
