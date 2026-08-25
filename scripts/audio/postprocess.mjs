@@ -22,7 +22,7 @@
 
 import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, writeFile, rm, mkdir, stat } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, rm, mkdir, stat, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname, basename } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -35,6 +35,15 @@ import {
   AAC_ENCODER,
   BED_FOLD_SECONDS,
 } from "./catalog.mjs";
+import {
+  SHIP_BUDGET_BYTES,
+  SHIP_FILE_COUNT,
+  predictShipping,
+  referenceClipFor,
+  shipFileName,
+  shippingUnits,
+  surveyShipping,
+} from "./ship-plan.mjs";
 
 /**
  * How far the finished file may sit from its target before the run fails.
@@ -47,6 +56,34 @@ import {
  */
 const LUFS_TOLERANCE = 1.0;
 const DBTP_EPSILON = 0.1;
+
+/**
+ * How much silence may sit in front of the FINISHED file, in milliseconds.
+ *
+ * ☠️ #1134 calls zero leading silence a HARD rule and #1210 makes it acceptance
+ * check number one — and until now nothing in this pipeline measured it.
+ * `edgeSilence` existed behind `postprocess edges <file>`, a separate command
+ * aimed at a file by hand, so the command that produces what the app ships could
+ * report PASS on a clip that starts late.
+ *
+ * ⚠️ It is in practice a VOICE-clip rule. #1138 measured the shipped set and only
+ * the four `guide_*` files carry any lead at all — 36.2 / 34.1 / 15.0 / 3.2 ms —
+ * while every bed, texture and bell measures 0.0. It matters because every trigger
+ * in the app is *already* up to 250 ms late (`TICK_MS` polling, #1134), so silence
+ * in the file adds to a lateness the user can already hear.
+ *
+ * The number is bracketed by two measurements, not chosen by feel. Above: #1138
+ * round-tripped AAC at **+8 samples, 0.18 ms**, so a tighter limit would fail every
+ * file this pipeline produces. Below: the smallest real lead in the shipped set is
+ * `guide_hold`'s **3.2 ms**, so a looser one waves the actual defect through. It
+ * also has to catch the 25.06 ms start_time #1138 measured on MP3, which is #1210's
+ * "confirm ffmpeg strips the encoder delay" case.
+ *
+ * ⚠️ The TAIL is measured and printed but never gated. A bell is a long smooth
+ * decay "fading continuously to silence" by #1139's own brief — gating its tail
+ * would fail the two clips whose entire character is a tail, for having one.
+ */
+export const LEAD_SILENCE_LIMIT_MS = 1.0;
 
 /**
  * Seam-gate thresholds, on the five beds only (#1137). Both are set from
@@ -624,6 +661,27 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
     step("verify finished file");
     const post = await measure(outPath);
     const size = (await stat(outPath)).size;
+
+    // ☠️ #1134's ONE HARD RULE, measured here for the first time. `edgeSilence`
+    // has existed since #1347 but only behind `postprocess edges <file>` — a
+    // separate command aimed at a file by hand — so `run` could report PASS on a
+    // clip that starts late, on the one class that has ever started late (#1138:
+    // the four `guide_*` files carry 3.2-36.2 ms and nothing else carries any).
+    //
+    // ⚠️ On the FINISHED file, not the master. Encoding is where a delay would be
+    // introduced — #1210's own wording is "confirm ffmpeg strips the encoder delay"
+    // — so measuring the input would answer a question nobody asked.
+    step("lead-in check");
+    const finishedPath = join(dir, "finished.wav");
+    const finished = await decodeToFloatWav(outPath, finishedPath, {
+      channels: spec.channels,
+      sampleRate: OUTPUT_SAMPLE_RATE,
+    });
+    const edges = edgeSilence(finished.samples, finished.channels, finished.sampleRate);
+    // ⚠️ #1136 sets `introMs` from the MEASURED duration of the chosen guide_intro,
+    // never from an estimate — and this is the only place that number exists.
+    const durationSeconds = finished.samples.length / finished.channels / finished.sampleRate;
+
     if (spec.klass === "beds") step("seam gate");
     const seam = spec.klass === "beds" ? await seamCheckFile(outPath) : null;
 
@@ -633,6 +691,8 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
       post,
       size,
       seam,
+      edges,
+      durationSeconds,
       foldNote,
       gain,
       ceilingBound,
@@ -689,7 +749,8 @@ export async function repeatLoop(input, outPath, times, clipId) {
 }
 
 export function report(clipId, result) {
-  const { spec, pre, post, size, seam, foldNote, gain, ceilingBound } = result;
+  const { spec, pre, post, size, seam, edges, durationSeconds, foldNote, gain, ceilingBound } =
+    result;
   const failures = [];
   /** Things to try next. Printed, but never counted against the file. */
   const hints = [];
@@ -708,6 +769,31 @@ export function report(clipId, result) {
   }
   if (post.dbtp > TRUE_PEAK_CEILING_DBTP + DBTP_EPSILON) {
     failures.push(`true peak ${post.dbtp} dBTP is above the ${TRUE_PEAK_CEILING_DBTP} ceiling`);
+  }
+
+  // ☠️ A rule that was not measured is not a rule that passed. Reporting PASS on a
+  // result carrying no edges would restore exactly the silence this check removes.
+  if (!edges) {
+    failures.push(
+      "leading silence was not measured, so #1134's zero-lead rule is unverified for this file",
+    );
+  } else if (edges.leadMs > LEAD_SILENCE_LIMIT_MS) {
+    failures.push(
+      `starts ${edges.leadMs.toFixed(2)} ms late (limit ${LEAD_SILENCE_LIMIT_MS} ms). ` +
+        "#1134 makes zero leading silence a hard rule: every trigger in the app is " +
+        "already up to 250 ms late, and this adds to it.",
+    );
+    // ⚠️ The remedy is class-specific and it is not the same remedy. Text to
+    // Speech takes a seed, so a late voice cue is genuinely re-drawable for
+    // nothing. Sound Effects has none — naming a seed there would point at a path
+    // that does not exist, which is the whole reason the masters are the source.
+    hints.push(
+      spec.klass === "voice"
+        ? "voice is the one class that can be re-drawn: audition the other candidate, " +
+            "or re-render this cue with a different seed (TTS_CANDIDATE_SEEDS)."
+        : "this take cannot be re-drawn in matching style — trim the head of the master " +
+            "before re-running, or choose another candidate.",
+    );
   }
   if (seam) {
     if (seam.wrapStepRatio > SEAM_LIMITS.wrapStepRatio) {
@@ -751,6 +837,15 @@ export function report(clipId, result) {
     `   true peak ${pre.dbtp} -> ${post.dbtp} dBTP     (ceiling ${TRUE_PEAK_CEILING_DBTP})`,
   );
   console.log(`   size      ${(size / 1024).toFixed(1)} KB`);
+  if (edges) {
+    // ⚠️ The tail is printed and never gated — a bell decaying "continuously to
+    // silence" (#1139) has one by design. It is here because a texture that quietly
+    // ends early is invisible any other way.
+    console.log(
+      `   edges     lead ${edges.leadMs.toFixed(2)} ms · tail ${edges.tailMs.toFixed(2)} ms` +
+        (Number.isFinite(durationSeconds) ? `   (${durationSeconds.toFixed(3)}s)` : ""),
+    );
+  }
   if (seam) {
     console.log(
       `   seam      wrap step ${seam.wrapStepRatio.toFixed(2)}x median · ` +
@@ -772,14 +867,174 @@ function flag(name, fallback = null) {
   return i === -1 ? fallback : process.argv[i + 1];
 }
 
+/**
+ * Where the finished set lives while the pass is running.
+ *
+ * The same default `run --out` has always used. Named here because `budget` has
+ * to look in the same place `run` writes to, and two literals that must agree is
+ * one literal that will not.
+ */
+export const SHIP_DIR = join("audio-masters", "finished");
+
+/**
+ * How long one clip runs, for the half of the set the catalog does not fix.
+ *
+ * ☠️ Returns null instead of throwing when ffprobe is not there. `budget`'s PREDICTED
+ * half is sold as needing no rendered byte, and `run()` REJECTS on ENOENT — so an
+ * absent ffprobe used to kill the command before it printed a single line, including
+ * the half that never needed ffprobe at all. A missing length is already a case this
+ * reports (as a FLOOR); a missing prober is just one more way to be missing it.
+ *
+ * @param {string} file
+ * @returns {Promise<number|null>}
+ */
+async function secondsOf(file) {
+  try {
+    const res = await run("ffprobe", [
+      "-v",
+      "error",
+      "-show_entries",
+      "format=duration",
+      "-of",
+      "csv=p=0",
+      file,
+    ]);
+    if (res.code !== 0) return null;
+    const seconds = Number.parseFloat(res.stdout.trim());
+    return Number.isFinite(seconds) ? seconds : null;
+  } catch {
+    return null;
+  }
+}
+
+/** @param {number} bytes */
+const mib = (bytes) => `${(bytes / 1024 / 1024).toFixed(3)} MiB`;
+
+/**
+ * The one rendering of a budget verdict.
+ *
+ * ⚠️ The commit that gave the ceiling one implementation left its *printing* with
+ * two, which is the same duplication one layer out — a report that disagrees with
+ * itself is as misleading as a check that does.
+ *
+ * @param {{totalBytes: number, headroomBytes: number, over: boolean}} verdict
+ */
+function budgetLine(verdict) {
+  return (
+    `${mib(verdict.totalBytes)} of ${mib(SHIP_BUDGET_BYTES)} · ` +
+    `${mib(verdict.headroomBytes)} spare · ${verdict.over ? "OVER" : "fits"}`
+  );
+}
+
+/**
+ * #1210's budget acceptance check: twenty-one files, under #1138's 4.0 MiB.
+ *
+ * Prints two facts and keeps them apart, the way `manifest --check` has to keep
+ * currency and completeness apart:
+ *
+ *   PREDICTED — what the set weighs on paper, from the catalog's own durations and
+ *   bitrates. Runnable before a single byte is rendered, which is the only time
+ *   the answer can still change anything: the render is unrepeatable.
+ *
+ *   MEASURED — what is actually in the ship directory. Only this one can fail the
+ *   command, and it fails on a missing unit just as readily as on the byte count.
+ *   ☠️ A set that fits because four of its files were never written is not a set
+ *   that fits, and 20 of 21 is exactly what the voice-name collision used to
+ *   produce.
+ *
+ * The voice cues' lengths come from the clips shipping today, which say the same
+ * words. That is an estimate and it is labelled as one — TTS decides the real
+ * number, and it does not exist until the pass has run.
+ *
+ * @param {string} dir the finished set's directory
+ * @param {{measureSeconds?: (file: string) => Promise<number|null>}} [options]
+ * @returns {Promise<boolean>} whether the set is complete, plausible and within budget
+ */
+export async function budget(dir, { measureSeconds = secondsOf } = {}) {
+  const units = shippingUnits();
+
+  const shippedToday = new Map();
+  for (const unit of units) {
+    const reference = referenceClipFor(unit);
+    if (!reference || shippedToday.has(unit.clip)) continue;
+    // ☠️ A prober that throws must not take the PREDICTED half with it. That half is
+    // sold as needing no rendered byte and no ffmpeg, and `run()` rejects on ENOENT,
+    // so an absent ffprobe used to kill the command before it printed a single line.
+    // An unmeasurable length is a case this already reports — as a FLOOR.
+    let seconds = null;
+    try {
+      seconds = await measureSeconds(join(...reference));
+    } catch {
+      seconds = null;
+    }
+    shippedToday.set(unit.clip, seconds);
+  }
+  const predicted = predictShipping(units, (unit) => shippedToday.get(unit.clip) ?? null);
+
+  console.log(`PREDICTED (${SHIP_FILE_COUNT} files, from catalog.mjs)`);
+  console.log(`  ${budgetLine(predicted)}`);
+  console.log(
+    predicted.complete
+      ? `  voice lengths estimated from the clips shipping today (#1136 measures the real ones)`
+      : `  ⚠️ ${predicted.unknown.length} unit(s) have no length — the total above is a FLOOR`,
+  );
+  // ⚠️ Payload only. The .m4a container adds a few KB of moov per file, and #1138's
+  // published 3.21 MB was computed the same way, so the two agree to within the
+  // container. It must not be read as precision it does not have.
+  console.log(`  payload only; the container adds a few KB per file`);
+
+  let names = [];
+  try {
+    names = await readdir(dir);
+  } catch {
+    console.log(`\nMEASURED\n  nothing at ${dir}/ — the pass has not written a finished set yet`);
+    return false;
+  }
+
+  // ☠️ EVERY entry, not just `*.m4a`. Filtering here made a 5 MB stray `.wav` weigh
+  // nothing and go unreported, on a ceiling #1138 justifies by that exact case — and
+  // made an uppercase `.M4A` disappear from the total while its unit read as missing.
+  // ⚠️ `isFile` matters for the same reason: a DIRECTORY named `rain.m4a` surveyed as
+  // a present unit, because presence was "a name matched".
+  const files = [];
+  for (const name of names) {
+    const info = await stat(join(dir, name));
+    if (!info.isFile()) continue;
+    files.push({ name, bytes: info.size });
+  }
+  const survey = surveyShipping(units, files);
+
+  console.log(`\nMEASURED (${dir}/)`);
+  console.log(
+    `  ${survey.rows.filter((row) => row.present).length}/${SHIP_FILE_COUNT} files · ` +
+      budgetLine(survey),
+  );
+  for (const gap of survey.gaps) {
+    console.log(`  ${gap.kind.padEnd(12)} ${gap.file ?? gap.unit ?? ""} — ${gap.detail}`);
+  }
+  console.log(
+    survey.complete ? `  the set is complete and fits` : `  the set is NOT ready to ship`,
+  );
+  return survey.complete;
+}
+
 const USAGE = `
 Usage:
-  node scripts/audio/postprocess.mjs run <input> --clip <id> [--out <file.m4a>] [--fold]
+  node scripts/audio/postprocess.mjs run <input> --clip <id> [--voice <v>] [--out <file.m4a>] [--fold]
   node scripts/audio/postprocess.mjs measure <file>
   node scripts/audio/postprocess.mjs seamcheck <file>
   node scripts/audio/postprocess.mjs edges <file>
+  node scripts/audio/postprocess.mjs budget [--dir <d>]
 
 <id> is a clip id from catalog.mjs - a bell, bed, texture or guide_* cue.
+
+--voice is REQUIRED on a guide_* cue and refused on a sound effect: each cue ships
+once per voice (#1136), and without it both takes default to the same output path
+and the second silently overwrites the first.
+
+budget is #1210's size acceptance check - 21 files under #1138's 4.0 MiB ceiling.
+It prints what the catalog predicts (runnable before the render) and what is
+actually in the ship directory, and fails on a missing unit as well as on bytes.
 
 --fold is the seam-gate FALLBACK, not the path. Beds render loop: true and ship
 unfolded at the full 30.0s (#1347); reach for --fold only when a bed fails its seam
@@ -806,7 +1061,17 @@ async function main() {
     if (command === "run") {
       const clipId = flag("clip");
       if (!target || !clipId) throw new Error(USAGE);
-      const out = flag("out", join("audio-masters", "finished", `${clipId}.m4a`));
+      // ☠️ The default output name carries the voice, and `shipFileName` throws
+      // when a cue arrives without one. It used to be `${clipId}.m4a` for every
+      // clip, so post-processing the male take of a cue wrote over the female's
+      // finished file — 20 files where the set needs 21, and nothing counted them.
+      //
+      // ⚠️ Computed only when it is needed. `flag(name, fallback)` evaluates its
+      // fallback eagerly, so building the default inline would make an explicit
+      // --out on a cue throw for want of a --voice it does not need.
+      const explicitOut = flag("out");
+      const out =
+        explicitOut ?? join(SHIP_DIR, shipFileName({ clip: clipId, voice: flag("voice") }));
       // Named for what it is, not `fold` — that is the module-scope function this
       // very call reaches through `postprocess`.
       const foldRequested = process.argv.includes("--fold");
@@ -845,6 +1110,8 @@ async function main() {
       } finally {
         await rm(dir, { recursive: true, force: true });
       }
+    } else if (command === "budget") {
+      process.exit((await budget(flag("dir", SHIP_DIR))) ? 0 : 1);
     } else {
       console.log(USAGE);
       process.exit(1);

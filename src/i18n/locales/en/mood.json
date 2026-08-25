@@ -22,7 +22,6 @@
     "manage": {
       "title": "Manage emotions",
       "link": "Manage",
-      "close": "Close",
       "edit": "Edit emotion",
       "emoji": "Emoji",
       "name": "Name",

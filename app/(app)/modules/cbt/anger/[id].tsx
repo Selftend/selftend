@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -15,20 +16,36 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
 import { useAngerLog, useDeleteAngerLog } from "@/src/features/anger/queries";
+import { useInlineWriteError } from "@/src/lib/use-inline-write-error";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function AngerDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const { data: log, isLoading } = useAngerLog(user?.id ?? null, id ?? null);
   const deleteMutation = useDeleteAngerLog(user?.id ?? null);
+  const deleteError = useInlineWriteError(t("anger.deleteError"));
+
+  // ☠️ `DeleteEntryButton` keeps its confirmation OPEN when the delete rejects, so the
+  // global save-failed toast would land behind a native modal (#1364, spec §10).
+  // `ConfirmDialog` already carries an `error` slot; the failure goes there. The
+  // success toast is safe - it fires as the screen is being replaced.
   const handleDelete = async () => {
     if (!log) return;
-    await deleteMutation.mutateAsync(log.id);
+    deleteError.onStart();
+    try {
+      await deleteMutation.mutateAsync(log.id);
+    } catch (error) {
+      deleteError.onError();
+      // Rethrown on purpose: `DeleteEntryButton` closes its confirmation only when
+      // `onConfirm` RESOLVES, and a closed dialog has nowhere to show this.
+      throw error;
+    }
     showToast({ title: t("common:feedback.deleted"), tone: "success" });
     router.replace("/modules/cbt/anger");
   };
@@ -106,15 +123,17 @@ export default function AngerDetailScreen() {
 
           <View className="gap-3">
             <Button
-              onPress={() => router.push(`/modules/cbt/anger/new?logId=${log.id}`)}
+              onPress={() => pushWithOrigin(`/modules/cbt/anger/new?logId=${log.id}`)}
               variant="secondary"
             >
               <Text>{t("common:edit")}</Text>
             </Button>
             <DeleteEntryButton
+              error={deleteError.message ?? undefined}
               label={t("common:delete")}
               title={t("anger.deleteTitle")}
               message={t("anger.deleteMessage")}
+              onOpen={deleteError.onStart}
               onConfirm={handleDelete}
             />
           </View>

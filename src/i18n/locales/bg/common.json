@@ -11,6 +11,20 @@
   "edit": "Редактирай",
   "close": "Затвори",
   "noDateSet": "Няма избрана дата",
+  "calendar": {
+    "previousMonth": "Предишен месец",
+    "nextMonth": "Следващ месец",
+    "todayNamed": "Днес, {{date}}"
+  },
+  "time": {
+    "label": "Час",
+    "hourField": "{{label}}, час",
+    "minuteField": "{{label}}, минути",
+    "meridiemField": "{{label}}, AM или PM",
+    "am": "AM",
+    "pm": "PM",
+    "reverted": "Върнато на {{time}}"
+  },
   "or": "или",
   "orContinueWithEmail": "или продължи с имейл",
   "never": "никога",

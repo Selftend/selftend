@@ -60,6 +60,8 @@ Components use `useTranslation("namespace")`; non-component code may import `i18
 
 Language preference is stored in AsyncStorage (`selftend:language`) and synced to `user_preferences.language`.
 
+Every namespace is tracked as its own Weblate component, all linked to the `auth` component so they share one repository connection. `node scripts/weblate-create-components.js` reports which namespaces are untracked and prints the payload that would create them; `--verify` checks the live components against the expected configuration (i18next v4 format, propagation off, two-space JSON indent). Both are read-only. Adding a namespace therefore means adding a component: re-run the script with `--apply` and a `WEBLATE_API_TOKEN`, then revoke the token.
+
 To add a language:
 
 1. Create all 20 namespace files under `src/i18n/locales/{code}/` (mirror `src/i18n/locales/en/`).

@@ -3,9 +3,13 @@ import { Platform } from "react-native";
 
 import { CookieConsentBanner, CookiePreferencesCard } from "./cookie-consent-banner";
 import { useCookieConsentStore } from "@/src/stores/cookie-consent-store";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
-jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
+jest.mock("expo-router", () => ({
+  router: { push: jest.fn() },
+  usePathname: () => "/modules/cbt",
+}));
 
 const STORAGE_KEY = "selftend_cookie_consent";
 
@@ -61,6 +65,28 @@ describe("CookieConsentBanner", () => {
 
     expect(screen.queryByText("Accept all")).toBeNull();
     expect(screen.queryByText("Manage preferences")).toBeNull();
+  });
+
+  /**
+   * The banner is app-wide, so its policy link is a jump out of wherever the
+   * user happens to be (#1265, O3). `/cookies` is rooted at the top, so without
+   * the Origin the way out of it strands them on Home instead of returning them
+   * to whatever they were reading when the banner interrupted.
+   *
+   * On the store rather than on `router.push`: the helper pushes through
+   * `router.push`, so a push assertion cannot tell a migrated call site from an
+   * unmigrated one.
+   */
+  it("records the screen it interrupted as the Origin for the cookie policy", () => {
+    useNavigationOriginStore.setState({ pending: null });
+    renderWithProviders(<CookieConsentBanner />);
+
+    fireEvent.press(screen.getByText("Cookie policy"));
+
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/modules/cbt",
+      forPathname: "/cookies",
+    });
   });
 });
 

@@ -6,6 +6,21 @@ import { clearOrigin, peekOrigin, recordOrigin } from "@/src/stores/navigation-o
 
 type ParamsRecord = Record<string, unknown>;
 
+/**
+ * The options `router.push` takes beside the href, forwarded verbatim.
+ *
+ * Taken off `router.push` rather than imported: expo-router keeps
+ * `NavigationOptions` internal to `global-state/types`, and the repo already
+ * reads router argument types positionally (`Parameters<typeof router.replace>[0]`).
+ *
+ * The helper has to express everything the call sites it replaces could express,
+ * or migrating one quietly changes how the app navigates. `dangerouslySingular`
+ * is the live case (#1266): ACT's "Also try" row is a lateral jump - "the tool
+ * you jump to may be the one you came from two hops ago" (#1027) - and passes
+ * the flag so the stack does not grow a second copy of a screen already in it.
+ */
+type PushOptions = Parameters<typeof router.push>[1];
+
 /** An expo-router route group - `/(app)`, `/(tabs)` - which `usePathname` omits. */
 const GROUP_SEGMENT = /\/\([^)]*\)/g;
 
@@ -51,8 +66,14 @@ export function targetPathname(href: Href): string {
  *
  * Recording is **opt-out, not opt-in**: every push through this helper records
  * `{ origin: <where you are>, forPathname: <where you are going> }`, and the
- * global nav chrome - `SidebarNav`, the hamburger, `InvisibleHeader`'s brand
- * link - keeps calling `router.push` directly. That inversion is deliberate. The
+ * global nav chrome does not go through it. That set is **five surfaces, and
+ * only two of them are a call anyone could forget to migrate**: `SidebarNav`'s
+ * rows and `InvisibleHeader`'s brand link navigate with `<Link href>` and the
+ * hamburger does not navigate at all, so there is nothing there to leave out;
+ * `UserMenu` and `ScreenBreadcrumb` do call `router.push` and stay bare on
+ * purpose (#1265). The whole set is enumerated, with the reasoning that
+ * distinguishes those two, in `src/components/app/nav-chrome-origin.test.ts`,
+ * which fails if any of them starts recording. That inversion is deliberate. The
  * cross-link set is actively growing (#1192 added nine off-trail pushes hours
  * after the rule was charted) and opt-in fails *invisibly*: a link that forgets
  * just quietly shows Up, with nothing on screen to notice. Opt-out is a small
@@ -70,9 +91,14 @@ export function targetPathname(href: Href): string {
 export function usePushWithOrigin() {
   const pathname = usePathname();
 
-  return (href: Href) => {
+  return (href: Href, options?: PushOptions) => {
     recordOrigin({ origin: pathname, forPathname: targetPathname(href) });
-    router.push(href);
+    // Forwarded only when given, never as an explicit `undefined`. Jest's
+    // `toHaveBeenCalledWith(href)` does not match a call of `(href, undefined)`,
+    // so passing it unconditionally would break the existing navigation
+    // assertion at every migrated call site in the app for no behaviour gained.
+    if (options) router.push(href, options);
+    else router.push(href);
   };
 }
 

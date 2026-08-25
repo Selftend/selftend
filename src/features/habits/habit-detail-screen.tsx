@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -58,6 +59,7 @@ interface HabitDetailScreenProps {
  * they are two words about the habit, not a report.
  */
 export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("habits");
   const roomStyle = useRoomStyle("act");
   const { user } = useSession();
@@ -152,7 +154,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   }
 
   function openNote(dayKey: string) {
-    router.push({
+    pushWithOrigin({
       pathname: "/tools/habits/[id]/log",
       params: { id: habitId, date: dayKey },
     });
@@ -298,7 +300,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
                 <Button
                   accessibilityLabel={t("cta.edit")}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/tools/habits/[id]/edit",
                       params: { id: habit.id },
                     })

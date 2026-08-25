@@ -346,8 +346,9 @@ export default function BreathingSessionScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenPhase, paused, resolved]);
 
-  // Shell B has no chrome, so the OS back gesture and the web back button are
-  // the only uninvited exits. Mid-session they pause the clock and ask - a calm
+  // Shell B's Escape (#1256) leaves through `router.replace`, so it lands here
+  // with the OS back gesture and the web back button - every uninvited exit
+  // passes this guard. Mid-session they pause the clock and ask - a calm
   // finish-or-continue, never a silent discard (#777). Setup has nothing to
   // lose and preroll hasn't breathed yet; both let the exit through.
   useEffect(() => {

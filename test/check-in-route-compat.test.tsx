@@ -108,6 +108,10 @@ const MAY_NAME_THE_OLD_PATH = [
   "supabase/functions/_shared/web-reminders.test.ts",
   // This gate.
   "test/check-in-route-compat.test.tsx",
+  // The escape coverage gate (#1263) pins its derived <Redirect>-stub
+  // exemption by content, and four of the seven stubs are exactly these
+  // compat routes - it names their files, not the path as a destination.
+  "test/escape-coverage.test.ts",
 ];
 
 describe("nothing else still points at the old path (#732)", () => {

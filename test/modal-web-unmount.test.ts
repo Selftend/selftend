@@ -51,11 +51,6 @@ const EXEMPT: Record<string, string> = {
   // Hardcodes `visible` on the Modal; home-tour.tsx gates mounting with
   // `if (!current || !targetRect) return null;`.
   "src/features/tours/tour-overlay.tsx": "mounted only while a tour step is active",
-  // The web bundle resolves time-field.web.tsx (an <input type="time">, no
-  // Modal), so this Modal only ever renders on native — where the lingering
-  // fade-out is the wanted exit animation. The #1054 table listed this file,
-  // but the premise did not survive the platform fork.
-  "src/components/app/time-field.tsx": "web ships time-field.web.tsx instead",
 };
 
 /** `if (!visible && Platform.OS === "web") return null;` (any prop name). */
@@ -122,7 +117,14 @@ describe("raw react-native Modals unmount on web when closed (#1034 → #1054)",
     for (const file of Object.keys(EXEMPT)) {
       expect(modalFiles).toContain(file);
     }
-    // time-field.tsx's exemption holds only while the web fork exists.
-    expect(existsSync(join(ROOT, "src/components/app/time-field.web.tsx"))).toBe(true);
+  });
+
+  it("time-field.tsx needs no exemption: it renders no raw Modal on any platform", () => {
+    // It used to be exempt because the web bundle resolved a `.web.tsx` fork
+    // instead. That fork is gone (#1299) — and so is the reason: the iOS spinner
+    // now renders inside PickerSheet, so this file stops rendering a raw <Modal>
+    // at all and simply falls out of the derived list.
+    expect(existsSync(join(ROOT, "src/components/app/time-field.web.tsx"))).toBe(false);
+    expect(modalFiles).not.toContain("src/components/app/time-field.tsx");
   });
 });

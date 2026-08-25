@@ -435,6 +435,56 @@ export const VOICES = [
 ];
 
 /**
+ * Swap in shortlisted voice ids for one run, without writing them here.
+ *
+ * ☠️ #1136's criterion contains a chicken-and-egg. The pick must be made
+ * "auditioned on the shipping words, not on demo reels" — but `render-voices`
+ * refuses to spend until a voiceId is in this file, so hearing a shortlisted voice
+ * say the shipping words meant editing the decisions file for every trial. Each
+ * abandoned trial then left a decision recorded that nobody had taken, in the one
+ * file whose whole job is to hold decisions somebody did.
+ *
+ * An override is safe precisely because the manifest records the voiceId a take
+ * was actually rendered with: `statusOfVoice` supersedes every trial take the
+ * moment a different voice is written in for real, so a shortlist can never leak
+ * into the winner's candidates.
+ *
+ * @param {{id: string, axis: string, voiceId: string|null}[]} voices the catalog pair
+ * @param {string[]} pairs `id=voiceId` strings, as passed on the command line
+ * @returns {{id: string, axis: string, voiceId: string|null}[]}
+ */
+export function resolveVoices(voices, pairs = []) {
+  const overrides = new Map();
+  for (const pair of pairs) {
+    const at = pair.indexOf("=");
+    if (at < 1 || at === pair.length - 1) {
+      throw new Error(`--voice-id expects id=voiceId, got "${pair}"`);
+    }
+    const id = pair.slice(0, at);
+    if (!voices.some((voice) => voice.id === id)) {
+      throw new Error(
+        `unknown voice "${id}" — expected one of: ${voices.map((v) => v.id).join(", ")}`,
+      );
+    }
+    overrides.set(id, pair.slice(at + 1));
+  }
+
+  const resolved = voices.map((voice) =>
+    overrides.has(voice.id) ? { ...voice, voiceId: overrides.get(voice.id) } : voice,
+  );
+
+  // ☠️ #1136 frames the pair as a PURE GENDER AXIS. Two identical ids would render
+  // sixteen takes of one voice and turn the matched-pair comparison into a clip
+  // compared against itself — a silent way to waste a whole audition.
+  const ids = resolved.map((voice) => voice.voiceId).filter(Boolean);
+  const duplicate = ids.find((id, index) => ids.indexOf(id) !== index);
+  if (duplicate) {
+    throw new Error(`both voices resolve to "${duplicate}" — #1136 asks for a matched PAIR`);
+  }
+  return resolved;
+}
+
+/**
  * #1136 fixed the three phase cues; #1264 fixed the intro, the last undecided
  * piece of copy on the map.
  *
@@ -520,6 +570,30 @@ export function outputSpecFor(clipId) {
 
 export function clipsForRound(round) {
   return SFX_CLIPS.filter((clip) => clip.round === round);
+}
+
+/**
+ * The VOICE half of a round, in the shape `voiceSlots` takes.
+ *
+ * ☠️ THIS CONDITIONAL IS WHY THE FUNCTION EXISTS. "A round is `clipsForRound`
+ * plus, if it is B, the voice cues" has been re-derived by every subsystem that
+ * needed it and got it wrong twice — `render` produced eleven clips of nineteen
+ * and said nothing (#1317), and the audition's own `status` meter would have
+ * printed "every clip has a pick" with the whole voice half untouched (#1393).
+ * There is now one place that answers it, and a third consumer cannot disagree
+ * with the first two.
+ *
+ * Round A is the two bells and their gate (#1159); the cues are Round B's, which
+ * is where #1136 routed the voice pick itself. An empty spec yields no slots, so
+ * callers need no conditional of their own.
+ *
+ * @param {string} round
+ * @returns {{voices: typeof VOICES, cues: typeof VOICE_CUES, candidates: number}}
+ */
+export function voiceSlotSpec(round) {
+  return round === "B"
+    ? { voices: VOICES, cues: VOICE_CUES, candidates: TTS_CANDIDATE_SEEDS.length }
+    : { voices: [], cues: [], candidates: 0 };
 }
 
 /** Total Sound Effects seconds, which is what the credit cost is priced on. */

@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+
 import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
 import { View } from "react-native";
@@ -19,11 +19,16 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
 import { EMAIL_RATE_LIMITED_ERROR, sendPasswordResetEmail } from "@/src/features/auth/api";
 import { forgotPasswordSchema, type ForgotPasswordSchema } from "@/src/features/auth/schemas";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useSession } from "@/src/providers/session-provider";
 
 export function ForgotPasswordForm() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
+  // ⚠️ These hrefs carry their route group - `/(auth)/sign-in` - which the
+  // helper's `targetPathname` strips; see its docblock for why a raw one would
+  // record a target that can never match, silently (#1265, O3).
+  const pushWithOrigin = usePushWithOrigin();
   const [submitError, setSubmitError] = useState("");
   const [sentTo, setSentTo] = useState("");
   const {
@@ -103,7 +108,7 @@ export function ForgotPasswordForm() {
         </Button>
 
         <View className="items-center pt-2">
-          <Button onPress={() => router.push("/(auth)/sign-in")} variant="link">
+          <Button onPress={() => pushWithOrigin("/(auth)/sign-in")} variant="link">
             <Text>{t("forgotPassword.backToSignIn")}</Text>
           </Button>
         </View>

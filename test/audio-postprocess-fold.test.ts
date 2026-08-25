@@ -93,6 +93,11 @@ describe("the fold hint is printed but never counted as a failure", () => {
     gain: 1.55,
     ceilingBound: false,
     folded,
+    // A natively looping bed returns zero lead and zero tail — measured on the live
+    // API over six generations (#1347). Present because `report` now refuses to
+    // call a file PASS on a rule it was given no measurement for.
+    edges: { silent: false, leadMs: 0, tailMs: 0, peakDbfs: -7.1, floorDbfs: -60 },
+    durationSeconds: folded ? 29.6 : 30.0,
   });
 
   let lines: string[];

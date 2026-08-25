@@ -132,18 +132,6 @@ export default function ActExpansionDetailScreen() {
                 <CardTitle>{t("expansion.intensityAfterLabel")}</CardTitle>
                 <CardDescription>{log.intensityAfter} / 100</CardDescription>
               </CardHeader>
-              {log.intensityBefore !== null ? (
-                <CardContent>
-                  <Text className="font-semibold text-foreground">
-                    {log.intensityAfter < log.intensityBefore
-                      ? t("expansion.intensityDrop", {
-                          before: log.intensityBefore,
-                          after: log.intensityAfter,
-                        })
-                      : t("expansion.noIntensityDrop", { after: log.intensityAfter })}
-                  </Text>
-                </CardContent>
-              ) : null}
             </Card>
           ) : null}
 
