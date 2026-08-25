@@ -420,6 +420,9 @@ export default function HomeScreen() {
       {suggestionsVisible && dashboardIsEmpty ? (
         <AppOnboardingWizard
           visible
+          // The empty-dashboard re-offer: skipping only hides a suggestion
+          // and saves nothing, so its Escape stays a bare X (M2, #1258).
+          skipPersists={false}
           includeWelcome={false}
           initialConcerns={userPreferences?.selectedConcerns ?? []}
           isPending={applySuggestions.isPending}
