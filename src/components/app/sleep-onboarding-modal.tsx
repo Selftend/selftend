@@ -17,7 +17,7 @@ interface Props {
   isPending?: boolean;
   errorMessage?: string;
   onComplete: () => void;
-  onDismiss?: () => void;
+  onDismiss: () => void;
 }
 
 export function SleepOnboarding({

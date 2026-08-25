@@ -22,16 +22,23 @@ interface RichOnboardingShellProps {
   ctaLabel: string;
   /** Accessible name for the dialog, usually the onboarding title. */
   accessibilityLabel?: string;
-  /** When true, the CTA always fires onComplete and the back gesture is a no-op (used by ActInfo). */
+  /**
+   * When true the CTA fires `onComplete` instead of `onDismiss`. Passed by
+   * `ActInfo` and `AppOnboardingWizard` — on the wizard the CTA advances a
+   * panel while `onDismiss` steps back, so a CTA wired to the dismiss would
+   * move the wizard the wrong way. It never touches `onRequestClose`; the
+   * system close request (Android back, the web Escape key) always goes to
+   * `onDismiss`.
+   */
   ctaAlwaysCompletes?: boolean;
   onComplete: () => void;
-  onDismiss?: () => void;
+  onDismiss: () => void;
   /**
    * Overrides what the pinned Escape fires. Without it the Escape is the
-   * dismiss (`onDismiss ?? onComplete`) — right on the guides, where dismiss
-   * and complete are the same callback. `AppOnboardingWizard` passes its skip
-   * path here, because its `onDismiss` is a step-Back and an X wired to it
-   * would mean "previous panel" (#1258).
+   * dismiss — right on the guides, where dismiss and complete are the same
+   * callback. `AppOnboardingWizard` passes its skip path here, because its
+   * `onDismiss` is a step-Back and an X wired to it would mean "previous
+   * panel" (#1258).
    */
   onEscape?: () => void;
   /**
@@ -58,7 +65,7 @@ export function RichOnboardingShell({
   children,
   footerSlot,
 }: RichOnboardingShellProps) {
-  const ctaOnPress = ctaAlwaysCompletes ? onComplete : (onDismiss ?? onComplete);
+  const ctaOnPress = ctaAlwaysCompletes ? onComplete : onDismiss;
 
   return (
     <PressShieldModal
@@ -70,9 +77,9 @@ export function RichOnboardingShell({
       // would make it navigate instead of leave (#1258). `onRequestClose`
       // stays on the dismiss regardless: the system gesture keeps stepping a
       // wizard backwards (M4).
-      onEscape={onEscape ?? onDismiss ?? onComplete}
+      onEscape={onEscape ?? onDismiss}
       escapeLabel={escapeLabel}
-      onRequestClose={onDismiss ?? (() => undefined)}
+      onRequestClose={onDismiss}
       visible={visible}
     >
       {/* No "top": the wrapper's escape row already sits in the top inset. */}

@@ -41,7 +41,7 @@ interface PressShieldModalBaseProps extends Omit<ModalProps, "animationType"> {
  * call site pins its own Escape inside its own panel — which is what
  * `ManageEmotionsModal` already does, and what M1 names as "the shape to
  * copy". Declaring it is deliberate and greppable: it is the one way to opt a
- * modal out of the pinned row, and #1257 visits each of the four that do.
+ * modal out of the pinned row, and #1257 visited each of the four that do.
  */
 type PressShieldModalEscapeProps =
   // The default, so a new modal starts out owing an Escape.
@@ -160,11 +160,11 @@ export function PressShieldModal(props: PressShieldModalProps) {
               only on native). */}
           {escapeRow}
           {/* Outside the scroller, and this is the whole fix: `HelpSheet`'s X
-              — the precedent named when this work was charted — sits INSIDE
-              its `ScrollView` and scrolls away on the first swipe, so on a
-              long guide it was visible only at scroll position zero. Anything
-              that moves this row into `children` reintroduces the original
-              complaint one gesture later. */}
+              — the precedent named when this work was charted — sat INSIDE
+              its `ScrollView` and scrolled away on the first swipe, so on a
+              long guide it was visible only at scroll position zero (#1257
+              removed it). Anything that moves this row into `children`
+              reintroduces the original complaint one gesture later. */}
           <View className="flex-1">{children}</View>
         </View>
       )}

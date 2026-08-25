@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -55,6 +55,7 @@ export default function GratitudeFavoritesScreen() {
 }
 
 function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("gratitude");
   const when = formatRelativeDayKey(entry.dayKey, t);
   const firstItem = firstAnswer(entry.items) ?? t("list.fallbackItem");
@@ -65,7 +66,7 @@ function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() =>
-        router.push({
+        pushWithOrigin({
           pathname: "/tools/gratitude-log/[id]",
           params: { id: entry.id },
         })

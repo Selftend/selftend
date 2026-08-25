@@ -325,10 +325,10 @@ describe("PressShieldModal's pinned escape row", () => {
 
   it("keeps the Escape OUTSIDE the scroller", () => {
     // ☠️ The whole fix. `HelpSheet`'s X — the precedent named when this work
-    // was charted — lives inside its own ScrollView and scrolls away on the
+    // was charted — lived inside its own ScrollView and scrolled away on the
     // first swipe, so on a long guide it was visible only at scroll position
-    // zero. If this assertion ever fails, the modal can once again be
-    // impossible to close one gesture in.
+    // zero (#1257 removed it). If this assertion ever fails, the modal can
+    // once again be impossible to close one gesture in.
     setPlatformOS("web");
     render(
       <PressShieldModal onEscape={noop} visible>
@@ -348,7 +348,7 @@ describe("PressShieldModal's pinned escape row", () => {
     // A bottom sheet, a centred card, a native pageSheet: the screen stays
     // visible behind it, so a 48px bg-background row would be an opaque bar
     // hanging over the backdrop. Those four call sites say `surface="sheet"`
-    // and keep their own X (#1257 sweeps them).
+    // and keep their own X (#1257 swept them).
     setPlatformOS("web");
     render(
       <PressShieldModal surface="sheet" transparent visible>
