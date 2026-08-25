@@ -90,9 +90,11 @@ const normalize = (line: string): string => line.trim().replace(/\s+/g, " ");
 function findingsFor(pattern: RegExp, files: readonly string[]): Finding[] {
   return files.flatMap((file) => {
     const stripped = stripComments(readFileSync(join(ROOT, file), "utf8"));
-    return stripped.split("\n").flatMap((line, index) =>
-      pattern.test(line) ? [{ file, line: index + 1, snippet: normalize(line) }] : [],
-    );
+    return stripped
+      .split("\n")
+      .flatMap((line, index) =>
+        pattern.test(line) ? [{ file, line: index + 1, snippet: normalize(line) }] : [],
+      );
   });
 }
 
