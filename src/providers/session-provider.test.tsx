@@ -124,6 +124,11 @@ describe("SessionProvider sign-out purge", () => {
 describe("SessionProvider guest entry (#1440)", () => {
   // jest-expo's defaultPlatform is ios, so these run as the native path unless
   // a test moves Platform.OS itself.
+  //
+  // Recorded e2e gap (ticket AC): the Playwright suite is web-only and web
+  // deliberately never attempts guest entry here (#1441 adds the CTA), so the
+  // native gate fork and the anonymous_provider_disabled dark fallback are
+  // covered at this unit seam only.
 
   it("a native cold start with no stored session silently becomes a guest", async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
@@ -199,6 +204,33 @@ describe("SessionProvider guest entry (#1440)", () => {
 
     await waitForProbe("ready:uuid-1");
     expect(mockSignInAnonymously).not.toHaveBeenCalled();
+  });
+
+  it("a null INITIAL_SESSION during the guest attempt does not flash the auth landing", async () => {
+    // supabase-js emits INITIAL_SESSION to subscribers once initialization
+    // completes - on a no-session cold start it arrives as null while
+    // signInAnonymously() is still in flight. Letting it flip status to
+    // "ready" would render the auth landing for the length of the round trip
+    // and then swap to the app: entry must stay "loading" until the guest
+    // attempt itself resolves.
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    let resolveGuest!: (value: unknown) => void;
+    mockSignInAnonymously.mockReturnValue(new Promise((resolve) => (resolveGuest = resolve)));
+
+    renderProvider();
+    await waitFor(() => expect(mockSignInAnonymously).toHaveBeenCalled());
+
+    act(() => authCallback("INITIAL_SESSION", null));
+    await waitForProbe("loading:signed-out");
+
+    act(() =>
+      resolveGuest({
+        data: { session: { user: { id: "guest-1" } }, user: { id: "guest-1" } },
+        error: null,
+      }),
+    );
+
+    await waitForProbe("ready:guest-1");
   });
 
   it("a later sign-out does not silently mint a fresh guest", async () => {

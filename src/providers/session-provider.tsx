@@ -85,7 +85,16 @@ export function SessionProvider({ children }: PropsWithChildren) {
         if (mounted) setStatus("ready");
       });
 
-    const authSubscription = supabase.auth.onAuthStateChange((event, nextSession) => {
+    const authSubscription = client.auth.onAuthStateChange((event, nextSession) => {
+      // INITIAL_SESSION only duplicates what the getSession() chain above
+      // resolves, and initial state must have that one owner: on a no-session
+      // native cold start the event arrives as null while the guest attempt
+      // (#1440) is still in flight, and letting it set "ready" would flash
+      // the auth landing for the length of the round trip.
+      if (event === "INITIAL_SESSION") {
+        return;
+      }
+
       // Purge all cached PHI (and any still-valid signed avatar URLs) on sign-out so the
       // previous user's data never lingers in memory - matters most on native, which has
       // no full page reload to drop the in-memory QueryClient. The draft stores are
