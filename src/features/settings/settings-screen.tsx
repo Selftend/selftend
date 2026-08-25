@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 
 import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { StylePicker } from "@/src/components/app/style-picker";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useUserPreferences } from "@/src/features/settings/queries";
@@ -40,6 +41,13 @@ import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
  * outcomes toast; a state that persists is shown where it lives, which is why
  * `appLockUnavailable` is a row description and the profile disclosures keep
  * their inline messages.
+ *
+ * **Chrome: `ScreenTopBar` carries the Escape (#1255).** The bespoke hero is
+ * the page's own title, not chrome, so the Escape slot never reached this
+ * screen - one of the escape spec's 11 red screens (W12). The bar sits above
+ * the scroller, pinned rather than scrolling away, and the hero and runs below
+ * are untouched. `/settings` is a one-crumb route, so the bar's trail hides and
+ * the Escape announces "Back to Home".
  */
 export default function SettingsScreen() {
   const { t } = useTranslation("settings");
@@ -57,6 +65,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <ScreenTopBar />
       {/* Keyboard avoidance for the display-name field (edge-to-edge Android
           gets no window resize, so the screen must pad itself). */}
       <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
