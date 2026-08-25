@@ -16,6 +16,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
 import { useDeleteWorryEntry, useWorryEntry } from "@/src/features/worry/queries";
+import { useInlineWriteError } from "@/src/lib/use-inline-write-error";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
@@ -28,6 +29,7 @@ export default function WorryDetailScreen() {
   const showToast = useToastStore((state) => state.showToast);
   const { data: entry, isLoading } = useWorryEntry(user?.id ?? null, id ?? null);
   const deleteMutation = useDeleteWorryEntry(user?.id ?? null);
+  const deleteError = useInlineWriteError(t("worry.deleteError"));
 
   if (isLoading) {
     return (
@@ -49,8 +51,20 @@ export default function WorryDetailScreen() {
     );
   }
 
+  // ☠️ `DeleteEntryButton` keeps its confirmation OPEN when the delete rejects, so the
+  // global save-failed toast would land behind a native modal (#1364, spec §10).
+  // `ConfirmDialog` already carries an `error` slot; the failure goes there. The
+  // success toast is safe - it fires as the screen is being replaced.
   const handleDelete = async () => {
-    await deleteMutation.mutateAsync(entry.id);
+    deleteError.onStart();
+    try {
+      await deleteMutation.mutateAsync(entry.id);
+    } catch (error) {
+      deleteError.onError();
+      // Rethrown on purpose: `DeleteEntryButton` closes its confirmation only when
+      // `onConfirm` RESOLVES, and a closed dialog has nowhere to show this.
+      throw error;
+    }
     showToast({ title: t("common:feedback.deleted"), tone: "success" });
     router.replace("/modules/cbt/worry");
   };
@@ -101,9 +115,11 @@ export default function WorryDetailScreen() {
               <Text>{t("common:edit")}</Text>
             </Button>
             <DeleteEntryButton
+              error={deleteError.message ?? undefined}
               label={t("common:delete")}
               title={t("worry.deleteTitle")}
               message={t("worry.deleteMessage")}
+              onOpen={deleteError.onStart}
               onConfirm={handleDelete}
             />
           </View>
