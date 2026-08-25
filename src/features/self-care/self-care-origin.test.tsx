@@ -1,5 +1,4 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { router } from "expo-router";
 
 import SelfCareScreen from "../../../app/(app)/modules/cbt/self-care";
 import { useSelfCareLog, useUpsertSelfCareLog } from "@/src/features/self-care/queries";
