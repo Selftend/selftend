@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -15,13 +15,14 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
  * into two different words for the same door.
  */
 export function ShowAllSleepLink() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("sleep");
 
   return (
     <Pressable
       accessibilityRole="link"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push("/tools/sleep/history")}
+      onPress={() => pushWithOrigin("/tools/sleep/history")}
       className="flex-row items-center gap-1 active:opacity-70"
       role="link"
     >

@@ -17,6 +17,7 @@
     "todayNamed": "Днес, {{date}}"
   },
   "time": {
+    "label": "Час",
     "hourField": "{{label}}, час",
     "minuteField": "{{label}}, минути",
     "meridiemField": "{{label}}, AM или PM",
