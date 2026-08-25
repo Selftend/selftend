@@ -84,8 +84,13 @@ const DIGITS = /^\d{1,2}$/;
  * The inline `HH : MM` pair. No sheet at all: a modal wrapping two text boxes is
  * heavier than the input it replaces, so draft-until-Done never reaches web time
  * entry and the commit boundary is blur with a complete, valid value.
+ *
+ * Exported (not just used by `TimeField` above) because the web check-in picker
+ * hosts this same control under its calendar, inside `PickerSheet`'s own draft
+ * (#1302) — there draft-until-Done DOES apply, but that lives one level up in
+ * `DateTimeField`; this component's own commit boundary (blur) is unchanged.
  */
-function TypedTimeField({
+export function TypedTimeField({
   value,
   onChange,
   accessibilityLabel,
