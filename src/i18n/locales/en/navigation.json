@@ -63,8 +63,7 @@
     "dark": "Dark"
   },
   "notFound": {
-    "title": "Page not found",
-    "home": "Home"
+    "title": "Page not found"
   },
   "today": {
     "eyebrow": "Today · {{date}}",

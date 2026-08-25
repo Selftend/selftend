@@ -34,6 +34,7 @@ import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
+import { formatDayKey } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 
 const STATUS_ACTIONS: ActionStatus[] = ["active", "completed", "abandoned"];
@@ -44,7 +45,7 @@ const STATUS_TRANSITION_LABEL_KEY: Record<ActionStatus, string> = {
 };
 
 export default function ActCommittedActionDetailScreen() {
-  const { t } = useTranslation("act");
+  const { t, i18n } = useTranslation("act");
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const actionId = typeof id === "string" ? id : null;
@@ -224,7 +225,9 @@ export default function ActCommittedActionDetailScreen() {
             <Card>
               <CardHeader>
                 <CardTitle>{t("committedAction.targetDateLabel")}</CardTitle>
-                <CardDescription>{action.targetDate}</CardDescription>
+                {/* The stored `YYYY-MM-DD` is a wire format; read it back in
+                    the same shape the picker's own trigger shows (#1303). */}
+                <CardDescription>{formatDayKey(action.targetDate, i18n.language)}</CardDescription>
               </CardHeader>
             </Card>
           ) : null}

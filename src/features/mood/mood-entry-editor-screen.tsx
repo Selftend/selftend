@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams, type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
@@ -142,6 +143,7 @@ export function MoodEntryEditorScreen({
   mode,
   moodId = null,
 }: MoodEntryEditorScreenProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { t: tMood } = useTranslation("mood");
   const roomStyle = useRoomStyle("be");
@@ -330,7 +332,7 @@ export function MoodEntryEditorScreen({
    */
   const openThoughtRecord = () => {
     seedThoughtRecord(seedEmotionsForThoughtRecord(emotions));
-    router.push("/modules/cbt/new");
+    pushWithOrigin("/modules/cbt/new");
   };
 
   if (editMode && !fromCache && isLoading) {
@@ -460,7 +462,7 @@ export function MoodEntryEditorScreen({
           <Pressable
             accessibilityRole="button"
             onPress={() =>
-              router.push({
+              pushWithOrigin({
                 pathname: "/tools/breathing/session",
                 params: { pattern: "box-breathing" },
               })

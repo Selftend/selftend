@@ -546,7 +546,7 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                 <Pressable
                   onPress={closeSurface}
                   accessibilityRole="button"
-                  accessibilityLabel={t("emotions.manage.close")}
+                  accessibilityLabel={t("common:close")}
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 >
                   <Icon name="close" className="size-6 text-foreground" />

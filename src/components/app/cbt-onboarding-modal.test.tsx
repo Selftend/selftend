@@ -9,7 +9,7 @@ jest.mock("expo-linear-gradient", () => {
 });
 
 function open() {
-  return renderWithProviders(<CbtOnboarding visible onComplete={() => {}} />);
+  return renderWithProviders(<CbtOnboarding visible onComplete={() => {}} onDismiss={() => {}} />);
 }
 
 /** Every rendered string, in document order. */
