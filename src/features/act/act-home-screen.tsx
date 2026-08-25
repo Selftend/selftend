@@ -1,4 +1,5 @@
-import { router, type Href } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -123,6 +124,10 @@ const PILLARS: PillarDef[] = [
 ];
 
 export default function ActHomeScreen() {
+  // `roomStyle` came with this hook on dev and is deliberately not kept: #1378's
+  // rewrite of this screen has no surface left to tint, and `useRoomStyle` is
+  // inert for every hue anyway.
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
@@ -282,7 +287,7 @@ export default function ActHomeScreen() {
                   description={t(`pillars.${pillar.key}.description`)}
                   onToolPress={(toolKey) => {
                     const tool = pillar.tools.find((x) => x.key === toolKey);
-                    if (tool?.route) router.push(tool.route);
+                    if (tool?.route) pushWithOrigin(tool.route);
                   }}
                 >
                   {pillar.tools.map((tool) => (
@@ -310,7 +315,7 @@ export default function ActHomeScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => router.push("/modules/act/defusion")}
+                    onPress={() => pushWithOrigin("/modules/act/defusion")}
                   >
                     <Text className="text-sm text-foreground">{t("home.viewAllDefusion")}</Text>
                   </Pressable>

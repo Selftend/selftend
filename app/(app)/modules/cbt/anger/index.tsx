@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -20,6 +20,7 @@ import { HelpButton } from "@/src/components/app/help-button";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function AngerScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
@@ -41,7 +42,7 @@ export default function AngerScreen() {
               <ScreenHeader title={t("anger.title")} right={<HelpButton helpKey="anger" />} />
               <Text variant="muted">{t("anger.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/modules/cbt/anger/new")} size="sm">
+            <Button onPress={() => pushWithOrigin("/modules/cbt/anger/new")} size="sm">
               <Text>{t("anger.new")}</Text>
             </Button>
           </View>
@@ -78,7 +79,7 @@ export default function AngerScreen() {
                     key={log.id}
                     title={log.triggerText}
                     description={t("anger.arousalLabel", { value: log.arousalLevel })}
-                    onPress={() => router.push(`/modules/cbt/anger/${log.id}`)}
+                    onPress={() => pushWithOrigin(`/modules/cbt/anger/${log.id}`)}
                   />
                 ))}
               </View>

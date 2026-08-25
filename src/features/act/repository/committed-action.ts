@@ -5,6 +5,10 @@ import type {
   CommittedActionInput,
   CommittedActionPatch,
 } from "@/src/features/act/types";
+// `requireSupabase` came with dev's target-date validation, but its only caller
+// was the hand-rolled `countCommittedActions` body that #1378 replaced with the
+// shared `countRows` helper. `isValidDayKey` is still the validator's.
+import { isValidDayKey } from "@/src/utils/date";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
 import { countRows, selectList, selectMaybe, writeSingle, mutateVoid } from "./helpers";
@@ -35,6 +39,30 @@ function mapCommittedAction(row: CommittedActionRow): CommittedAction {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * A target date is a `YYYY-MM-DD` day key, or nothing at all.
+ *
+ * `target_date` is a real Postgres `date`, so anything else is refused by the
+ * column — which fails the ENTIRE write with a generic backend error naming
+ * neither the field nor the reason, losing the committed action the user just
+ * wrote (#1303).
+ *
+ * The CBT goal makes the same guarantee in its Zod schema. ACT has no Zod
+ * schema and no react-hook-form — the wizard is plain `useState` — so the check
+ * lives here instead: same `isValidDayKey`, same guarantee, one layer down.
+ * Converge on behaviour, not mechanism.
+ *
+ * The rejected value is deliberately NOT in the message. The mutation cache's
+ * global `onError` reports throws to Sentry, and whatever a caller passed is
+ * the user's own text.
+ */
+function assertTargetDateIsDayKey(targetDate: string | null | undefined) {
+  if (targetDate == null) return;
+  if (!isValidDayKey(targetDate)) {
+    throw new Error("Committed action target date must be a YYYY-MM-DD day key");
+  }
 }
 
 /**
@@ -95,6 +123,7 @@ export async function getCommittedAction(userId: string, actionId: string) {
 }
 
 export async function saveCommittedAction(userId: string, input: CommittedActionInput) {
+  assertTargetDateIsDayKey(input.targetDate);
   return writeSingle<CommittedActionRow, CommittedAction>(
     (c) =>
       c
@@ -119,6 +148,7 @@ export async function updateCommittedAction(
   actionId: string,
   patch: CommittedActionPatch,
 ) {
+  assertTargetDateIsDayKey(patch.targetDate);
   const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (patch.title !== undefined) payload.title = sanitizeUserText(patch.title).trim();
   if (patch.description !== undefined)

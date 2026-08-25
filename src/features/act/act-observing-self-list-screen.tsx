@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,7 @@ import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-stor
 import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function ActObservingSelfListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
@@ -39,7 +40,7 @@ export default function ActObservingSelfListScreen() {
             <Text variant="muted">{t("observingSelf.listSubtitle")}</Text>
           </View>
 
-          <Button onPress={() => router.push("/modules/act/observing-self/new")}>
+          <Button onPress={() => pushWithOrigin("/modules/act/observing-self/new")}>
             <Icon name="visibility" className="size-4 text-primary-foreground" />
             <Text>{t("observingSelf.newTitle")}</Text>
           </Button>
@@ -61,7 +62,7 @@ export default function ActObservingSelfListScreen() {
                   accessibilityRole="button"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/modules/act/observing-self/[id]",
                       params: { id: session.id },
                     })

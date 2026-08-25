@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,7 @@ import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-stor
 import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function ActChoicePointListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
@@ -38,7 +39,7 @@ export default function ActChoicePointListScreen() {
             <Text variant="muted">{t("choicePoint.primer")}</Text>
           </View>
 
-          <Button onPress={() => router.push("/modules/act/choice-point/new")}>
+          <Button onPress={() => pushWithOrigin("/modules/act/choice-point/new")}>
             <Icon name="add" className="size-4 text-primary-foreground" />
             <Text>{t("choicePoint.newCta")}</Text>
           </Button>
@@ -53,7 +54,7 @@ export default function ActChoicePointListScreen() {
                   accessibilityRole="button"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/modules/act/choice-point/[id]",
                       params: { id: cp.id },
                     })

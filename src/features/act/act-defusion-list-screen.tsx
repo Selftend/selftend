@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,7 @@ import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-stor
 import { formatTimestamp } from "@/src/utils/date";
 
 export default function ActDefusionListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
@@ -36,7 +37,7 @@ export default function ActDefusionListScreen() {
             <Text variant="muted">{t("defusion.listSubtitle")}</Text>
           </View>
 
-          <Button onPress={() => router.push("/modules/act/defusion/new")}>
+          <Button onPress={() => pushWithOrigin("/modules/act/defusion/new")}>
             <Icon name="add" className="size-4 text-primary-foreground" />
             <Text>{t("defusion.newTitle")}</Text>
           </Button>
@@ -55,7 +56,7 @@ export default function ActDefusionListScreen() {
                   accessibilityRole="button"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/modules/act/defusion/[id]",
                       params: { id: log.id },
                     })

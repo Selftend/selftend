@@ -1,4 +1,5 @@
-import { Redirect, router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Redirect, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -55,6 +56,7 @@ const DEFAULT_DURATION = 12;
 const RECENT_SITS = 5;
 
 export default function MeditationHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("meditation");
   const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
@@ -406,7 +408,7 @@ export default function MeditationHomeScreen() {
               <Button
                 size="lg"
                 onPress={() =>
-                  router.push({
+                  pushWithOrigin({
                     pathname: "/tools/meditation/session",
                     params: { duration: String(durationMinutes), bell: String(bellMinutes) },
                   })
@@ -426,20 +428,20 @@ export default function MeditationHomeScreen() {
                     name: t(stage.shortTitleKey as Parameters<typeof t>[0]),
                   })}
                   subtitle={t("module.home.stageRowSubtitle")}
-                  onPress={() => router.push("/tools/meditation/stages")}
+                  onPress={() => pushWithOrigin("/tools/meditation/stages")}
                 />
                 <PracticeRow
                   icon="menu-book"
                   title={t("module.learn.title")}
                   subtitle={t("module.learn.subtitle")}
-                  onPress={() => router.push("/tools/meditation/learn")}
+                  onPress={() => pushWithOrigin("/tools/meditation/learn")}
                   ruled
                 />
                 <PracticeRow
                   icon="self-improvement"
                   title={t("practices.sectionLabel")}
                   subtitle={t("module.home.practicesRowSubtitle")}
-                  onPress={() => router.push("/tools/meditation/practices")}
+                  onPress={() => pushWithOrigin("/tools/meditation/practices")}
                   ruled
                 />
               </View>
@@ -509,7 +511,7 @@ export default function MeditationHomeScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => router.push("/tools/meditation/sessions")}
+                    onPress={() => pushWithOrigin("/tools/meditation/sessions")}
                     className="flex-row items-center gap-1 active:opacity-70"
                     role="link"
                   >
@@ -681,6 +683,7 @@ function PracticeRow({ icon, title, subtitle, onPress, ruled = false }: Practice
  * which is the same resolution habits' history row reached (#762).
  */
 function SitRow({ session, ruled }: { session: MeditationSession; ruled: boolean }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("meditation");
 
   return (
@@ -693,7 +696,7 @@ function SitRow({ session, ruled }: { session: MeditationSession; ruled: boolean
       // and note, in that order.
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() =>
-        router.push({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } })
+        pushWithOrigin({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } })
       }
       className={cn("gap-1 py-3 active:opacity-70", ruled && "border-t border-border")}
       role="button"

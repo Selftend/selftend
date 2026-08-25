@@ -129,7 +129,7 @@ test.describe("sign-up + onboarding + first record", () => {
     // Evidence is optional in the first thought-record flow.
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    await page.getByRole("checkbox", { name: "Catastrophizing", exact: true }).click();
+    await page.getByRole("checkbox", { name: "Catastrophising", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     await page

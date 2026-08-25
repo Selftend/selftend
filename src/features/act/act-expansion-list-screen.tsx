@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -16,6 +16,7 @@ import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-stor
 import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function ActExpansionListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
@@ -39,7 +40,7 @@ export default function ActExpansionListScreen() {
 
           <View className="flex-row flex-wrap gap-2">
             <View className="min-w-[160px] flex-1 basis-[160px]">
-              <Button onPress={() => router.push("/modules/act/expansion/new")}>
+              <Button onPress={() => pushWithOrigin("/modules/act/expansion/new")}>
                 <Icon name="open-in-full" className="size-4 text-primary-foreground" />
                 <Text>{t("expansion.newTitle")}</Text>
               </Button>
@@ -47,7 +48,7 @@ export default function ActExpansionListScreen() {
             <View className="min-w-[160px] flex-1 basis-[160px]">
               <Button
                 variant="secondary"
-                onPress={() => router.push("/modules/act/expansion/urge-surfing")}
+                onPress={() => pushWithOrigin("/modules/act/expansion/urge-surfing")}
               >
                 <Icon name="waves" className="size-4" />
                 <Text>{t("expansion.urgeSurfTitle")}</Text>
@@ -72,7 +73,7 @@ export default function ActExpansionListScreen() {
                   accessibilityRole="button"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/modules/act/expansion/[id]",
                       params: { id: log.id },
                     })

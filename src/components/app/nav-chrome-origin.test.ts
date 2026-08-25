@@ -47,19 +47,29 @@ const LINK_NAV_CHROME = [
  * helper; these two are the declared exceptions, and neither was named by the
  * ticket, which named only the brand link.
  *
- * ⚠️ The two rest on DIFFERENT arguments, and conflating them overstates the
- * second. Both pass `dangerouslySingular`, which `usePushWithOrigin` cannot
- * express - it forwards only an `Href` - but that flag is only load-bearing at
- * one of these call sites. `protected-layout.tsx` and `app-shell.tsx` declare it
- * **per screen** for every non-dynamic route, `/settings` and `/support`
- * included, precisely so it "covers every one of them, including calls written
- * later". So dropping it in `user-menu.tsx` would change nothing; the breadcrumb
- * is the real case, because its crumbs "reach routes the layouts never declare".
+ * ⚠️ Neither rests on `dangerouslySingular`, though this comment used to say the
+ * second did. Both call sites pass it, and when #1265 was written the helper
+ * forwarded only an `Href`, so the flag read like half the reason to stay bare.
+ * #1266 gave `usePushWithOrigin` an options argument - ACT's `Also try` chips
+ * needed it - so it no longer distinguishes anything, and the two opt-outs have
+ * to stand on what they always actually stood on. They are not the same
+ * argument:
  *
- * `user-menu.tsx` therefore stands on the Origin argument alone - the same one
- * the helper makes for the sidebar, which its own docblock states in terms of
- * this exact screen: an Escape reading "Back to CBT" on Settings would compete
- * with the sidebar as the way back.
+ * - `screen-breadcrumb.tsx` opts out because its crumbs target ANCESTORS, and
+ *   recording one would point the ancestor's Escape back down at the screen the
+ *   user just climbed out of. That is the test at the bottom of this file, run
+ *   against the real rule rather than argued here.
+ * - `user-menu.tsx` opts out on the Origin argument alone - the same one the
+ *   helper makes for the sidebar, which its own docblock states in terms of this
+ *   exact screen: an Escape reading "Back to CBT" on Settings would compete with
+ *   the sidebar as the way back.
+ *
+ * The flag is still worth knowing about, for a different reason: it is only
+ * load-bearing at one of the two. `protected-layout.tsx` and `app-shell.tsx`
+ * declare it **per screen** for every non-dynamic route, `/settings` and
+ * `/support` included, precisely so it "covers every one of them, including
+ * calls written later" - so dropping it in `user-menu.tsx` would change nothing,
+ * while the breadcrumb's crumbs "reach routes the layouts never declare".
  */
 const PUSH_NAV_CHROME = [
   // The breadcrumb trail. Its crumbs target ANCESTORS - see the test below for

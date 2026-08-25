@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,6 +30,7 @@ interface RoutineDetailScreenProps {
 }
 
 export function RoutineDetailScreen({ routineId }: RoutineDetailScreenProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("routines");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -106,10 +108,10 @@ export function RoutineDetailScreen({ routineId }: RoutineDetailScreenProps) {
           <View className="flex-row flex-wrap gap-2">
             <Button
               onPress={() =>
-                router.push({
+                pushWithOrigin({
                   pathname: "/routines/[id]/edit",
                   params: { id: routine.id },
-                } as Parameters<typeof router.push>[0])
+                } as Href)
               }
               variant="outline"
             >
