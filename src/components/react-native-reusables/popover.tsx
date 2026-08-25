@@ -35,7 +35,7 @@ function PopoverContent({
                 align={align}
                 sideOffset={sideOffset}
                 className={cn(
-                  "bg-popover border-border outline-hidden z-50 w-72 rounded-md border p-4 shadow-md dark:shadow-none shadow-black/5",
+                  "bg-popover border-border outline-none z-50 w-72 rounded-md border p-4 shadow-md dark:shadow-none shadow-black/5",
                   // ☠️ `Platform.OS === "web"`, NOT `Platform.select({ web })` -
                   // RN bakes `select` per platform at build time, so it never
                   // consults `Platform.OS` and is unobservable in jest
@@ -48,7 +48,7 @@ function PopoverContent({
                       "cursor-auto",
                       !reduceMotionEnabled &&
                         cn(
-                          "animate-in fade-in-0 zoom-in-95 origin-(--radix-popover-content-transform-origin)",
+                          "animate-in fade-in-0 zoom-in-95 origin-[var(--radix-popover-content-transform-origin)]",
                           props.side === "bottom" && "slide-in-from-top-2",
                           props.side === "top" && "slide-in-from-bottom-2",
                         ),

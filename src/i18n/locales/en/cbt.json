@@ -312,7 +312,6 @@
       "safetyBehaviorPlaceholder": "Example: Stayed near the exit, looked at my phone.",
       "notes": "Notes (optional)",
       "notesPlaceholder": "Anything worth remembering for next time.",
-      "cancel": "Cancel",
       "save": "Save session",
       "saveError": "Unable to save the session. Try again."
     },
@@ -1488,7 +1487,6 @@
     "sounds": {
       "title": "Sounds",
       "open": "Sound settings",
-      "close": "Close",
       "breathLabel": "Breath",
       "ambientLabel": "Ambient",
       "breathVolume": "Breath volume",

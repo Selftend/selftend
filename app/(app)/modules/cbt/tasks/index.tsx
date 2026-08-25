@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { HelpButton } from "@/src/components/app/help-button";
 
 export default function TasksScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: tasks, isLoading } = useTasks(user?.id ?? null);
@@ -35,7 +36,7 @@ export default function TasksScreen() {
               <ScreenHeader title={t("tasks.title")} right={<HelpButton helpKey="tasks" />} />
               <Text variant="muted">{t("tasks.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/modules/cbt/tasks/new")} size="sm">
+            <Button onPress={() => pushWithOrigin("/modules/cbt/tasks/new")} size="sm">
               <Text>{t("tasks.new")}</Text>
             </Button>
           </View>
@@ -63,7 +64,7 @@ export default function TasksScreen() {
                           ? t("tasks.deadlineLabel", { value: task.deadline })
                           : undefined
                       }
-                      onPress={() => router.push(`/modules/cbt/tasks/${task.id}`)}
+                      onPress={() => pushWithOrigin(`/modules/cbt/tasks/${task.id}`)}
                     />
                   ))}
                 </View>
@@ -76,7 +77,7 @@ export default function TasksScreen() {
                       key={task.id}
                       title={task.taskDescription}
                       description={t(`tasks.status.${task.status}`)}
-                      onPress={() => router.push(`/modules/cbt/tasks/${task.id}`)}
+                      onPress={() => pushWithOrigin(`/modules/cbt/tasks/${task.id}`)}
                     />
                   ))}
                 </View>

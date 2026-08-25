@@ -7,6 +7,7 @@ import { createTestQueryClient, renderWithProviders } from "@/test/render-with-p
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
+  usePathname: () => "/tools/sleep",
 }));
 
 const mockRouter = jest.mocked(router);

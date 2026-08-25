@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -59,12 +60,13 @@ function Nudge({
   subtitle: string;
   route: string;
 }) {
+  const pushWithOrigin = usePushWithOrigin();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${subtitle}`}
       testID={testID}
-      onPress={() => router.push(route as Parameters<typeof router.push>[0])}
+      onPress={() => pushWithOrigin(route as Href)}
       className={cn(
         "flex-row items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 active:bg-accent/50",
         Platform.select({ web: "hover:bg-accent/30" }),
@@ -95,6 +97,7 @@ export function RightNowTier({
   /** The user's owned ids. Membership here is what makes a nudge eligible. */
   widgetIds: string[];
 }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("navigation");
   const { selectedDate } = useSelectedDate();
   const owns = (id: string) => widgetIds.includes(id);
@@ -162,7 +165,7 @@ export function RightNowTier({
             value={null}
             onChange={(score) => {
               seedMoodScore(score);
-              router.push("/tools/check-in/new");
+              pushWithOrigin("/tools/check-in/new");
             }}
           />
         </View>

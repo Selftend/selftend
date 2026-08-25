@@ -11,6 +11,8 @@ const mockReplace = jest.fn();
 
 jest.mock("expo-router", () => ({
   router: { replace: (...args: unknown[]) => mockReplace(...args) },
+  // The Escape in the chrome bar reads the current pathname for its trail.
+  usePathname: () => "/auth-callback",
 }));
 
 jest.mock("expo-linking", () => ({
@@ -193,5 +195,35 @@ describe("AuthCallbackScreen - error mapping", () => {
         "This link couldn't be completed here. Request a new link below and open it on this device.",
       ),
     ).toBeTruthy();
+  });
+});
+
+describe("AuthCallbackScreen - the Escape (#1254)", () => {
+  // A transient OAuth-resolution screen, so the Escape is largely inert - but
+  // the rule admits no exceptions (R3), and every branch renders through the
+  // same shell, so the way out cannot depend on which state the link landed in.
+  it("carries exactly one Escape on the human-confirmation gate, leading Home", async () => {
+    mockUseLinkingURL.mockReturnValue(
+      "http://localhost:8081/auth-callback?token_hash=th&type=signup",
+    );
+
+    renderWithProviders(<AuthCallbackScreen />);
+
+    expect(await screen.findByText("Confirm your email")).toBeTruthy();
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+    // A leaf off the root: the Escape names the root and replaces to it. The
+    // trail itself stays hidden at one crumb, so no "Sign in" crumb appears.
+    fireEvent.press(screen.getByLabelText("Back to Home"));
+    expect(mockReplace).toHaveBeenCalledWith("/");
+    expect(screen.queryByText("Sign in")).toBeNull();
+  });
+
+  it("carries the Escape on the no-link branch too", () => {
+    mockUseLinkingURL.mockReturnValue(null);
+
+    renderWithProviders(<AuthCallbackScreen />);
+
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+    expect(screen.getByLabelText("Back to Home")).toBeTruthy();
   });
 });

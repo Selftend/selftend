@@ -40,7 +40,7 @@ interface CbtOnboardingProps {
   errorMessage?: string;
   isPending?: boolean;
   onComplete: () => void;
-  onDismiss?: () => void;
+  onDismiss: () => void;
   visible: boolean;
 }
 
