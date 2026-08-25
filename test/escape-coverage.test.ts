@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { computeBreadcrumbs, findUpCrumb } from "@/src/lib/breadcrumbs";
 
-import { stripComments, stripCommentsAndStrings } from "./source-scan";
+import { sourceFiles, stripComments, stripCommentsAndStrings } from "./source-scan";
 
 /**
  * Every route reaches the Escape chrome, and every trail ends on the screen
@@ -46,24 +46,24 @@ const REPO = path.join(__dirname, "..");
 // The population: every route file under app/. Layouts are configuration, not
 // screens. `+not-found` IS a route here — it renders UI and must carry chrome
 // like any other screen (G4: it was converted, the assertion did not widen).
+//
+// `sourceFiles` admits `.ts` as well as `.tsx` — deliberately: a bare
+// re-export needs no JSX, so a future `.ts` route file would otherwise never
+// enter the population, the exact silent shrinkage G5 exists to catch. Tests
+// are NOT excluded, because expo-router registers a stray test under `app/`
+// as a route (#1255 moved one out for that reason) — here it would fail the
+// pinned count and the chrome walk loudly, which is the point.
 // ---------------------------------------------------------------------------
 
-const walkRoutes = (dir: string): string[] =>
-  fs.readdirSync(path.join(REPO, dir), { withFileTypes: true }).flatMap((entry) => {
-    const rel = `${dir}/${entry.name}`;
-    if (entry.isDirectory()) return walkRoutes(rel);
-    if (!entry.name.endsWith(".tsx")) return [];
-    if (entry.name === "_layout.tsx") return [];
-    return [rel];
-  });
-
-const ROUTES = walkRoutes("app").sort();
+const ROUTES = sourceFiles(REPO, { dirs: ["app"], excludeTests: false })
+  .filter((file) => !/\/_layout\.tsx?$/.test(file))
+  .sort();
 
 /** `app/(app)/tools/journal/index.tsx` → `/tools/journal`, the runtime pathname. */
 const pathnameOf = (route: string): string => {
   const segments = route
     .replace(/^app\//, "")
-    .replace(/\.tsx$/, "")
+    .replace(/\.tsx?$/, "")
     .split("/")
     .filter((segment) => !segment.startsWith("("));
   if (segments[segments.length - 1] === "index") segments.pop();
@@ -90,8 +90,12 @@ const sourceOf = (file: string): string => {
  * Root names of every capitalized JSX tag in the file (`<Sortable.Grid` →
  * `Sortable`). The regex also matches uppercase TYPE arguments (`useRef<View>`)
  * — harmless for the terminal check (nobody writes chrome as a generic), and
- * for following it only widens the walk, never the verdict: a followed file
- * still has to RENDER chrome to count.
+ * for following it only widens the walk: a followed file still has to RENDER
+ * chrome to count. ⚠️ That verdict is per FILE, not per render path — a route
+ * rendering some non-chrome export of a file that also renders chrome would
+ * pass. Today the chrome files export nothing but their chrome, so the vector
+ * is theoretical; it is the precision this scanner trades for not being a
+ * bundler.
  */
 const renderedTags = (file: string): Set<string> =>
   new Set(
