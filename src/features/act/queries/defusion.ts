@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countDefusionLogs,
   deleteDefusionLog,
   getDefusionLog,
   getLatestDefusionLogAt,
@@ -18,6 +19,18 @@ export function useDefusionLogs(userId: string | null, limit = 30) {
     // prefix in actKeys.defusionList still matches every variant on invalidation.
     queryKey: [...actKeys.defusionList(userId), limit],
     queryFn: () => listDefusionLogs(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * ACT home's "N thoughts unhooked" stat - an exact head count, never
+ * `useDefusionLogs(...).data?.length`; `countRows` explains why (#1378).
+ */
+export function useDefusionLogCount(userId: string | null) {
+  return useQuery({
+    queryKey: actKeys.defusionCount(userId),
+    queryFn: () => countDefusionLogs(userId!),
     enabled: Boolean(userId),
   });
 }

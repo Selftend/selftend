@@ -22,7 +22,7 @@ export function buildThoughtRecordSteps(t: (key: string) => string): ThoughtReco
     { fields: ["distortions"], key: "distortions", title: t("record.patterns") },
     { fields: ["balancedThought"], key: "balancedThought", title: t("record.balancedThought") },
     {
-      fields: ["emotionIntensityAfter", "outcomeNotes"],
+      fields: ["beliefAfter", "emotionIntensityAfter", "outcomeNotes"],
       key: "outcome",
       title: t("record.outcome"),
     },

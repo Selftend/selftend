@@ -13,6 +13,7 @@ export const defaultValues: ThoughtRecordFormSchema = {
   balancedThought: "",
   emotionIntensityAfter: null,
   outcomeNotes: "",
+  beliefAfter: null,
 };
 
 export function listToText(values: string[]) {
