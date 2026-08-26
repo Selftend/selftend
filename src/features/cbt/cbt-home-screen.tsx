@@ -12,7 +12,12 @@ import { HOME_COLUMN } from "@/src/lib/layout";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { useGoals } from "@/src/features/goals/queries";
-import { useThoughtRecords } from "@/src/features/cbt/queries";
+import {
+  useThoughtRecordCount,
+  useThoughtRecordCountSince,
+  useThoughtRecords,
+} from "@/src/features/cbt/queries";
+import { currentDateKey, monthStartIsoOf } from "@/src/utils/date";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -50,10 +55,21 @@ export default function CbtHomeScreen() {
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
   const { data: recoveryPlan } = useRecoveryPlan(user?.id ?? null);
   const insights = useCbtInsights(user?.id ?? null);
+  // A stable string within any one month, so the query key does not churn; a
+  // mounted screen crossing the boundary re-windows on its next render, which
+  // is the same promise `currentDateKey` makes everywhere else.
+  const monthStartIso = monthStartIsoOf(currentDateKey());
+  // Head counts, never `thoughtRecords.length` - the list is capped at 500
+  // rows, so a client-side count reads back a wrong, too-small number for
+  // exactly the people with the most history (ADR-0001).
+  const { data: lifetimeRecordCount } = useThoughtRecordCount(user?.id ?? null);
+  const { data: monthRecordCount } = useThoughtRecordCountSince(user?.id ?? null, monthStartIso);
   const {
     activeGoals,
     recentRecords,
     personalSlogan,
+    headerStats,
+    distortionBars,
     insightCards,
     showProgramCard,
     sectionRules,
@@ -64,6 +80,9 @@ export default function CbtHomeScreen() {
     insights,
     program,
     promptDismissedAt,
+    lifetimeRecordCount,
+    monthRecordCount,
+    monthStartIso,
     t,
   });
 
@@ -105,6 +124,7 @@ export default function CbtHomeScreen() {
               title={t("fullTitle")}
               tourScope="cbt"
               description={t("home.description")}
+              stats={headerStats}
               actions={[
                 { type: "notifications", targetKey: "cbt" },
                 ...(program.status === "not_started"
@@ -161,7 +181,11 @@ export default function CbtHomeScreen() {
 
             <RecentThoughtRecords records={recentRecords} ruled={sectionRules.records} />
 
-            <CbtInsightsSection cards={insightCards} ruled={sectionRules.insights} />
+            <CbtInsightsSection
+              bars={distortionBars}
+              cards={insightCards}
+              ruled={sectionRules.insights}
+            />
 
             <CbtPillarsSection ruled={sectionRules.framework} />
 

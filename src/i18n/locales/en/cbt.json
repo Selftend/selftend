@@ -7,7 +7,13 @@
     "title": "CBT",
     "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",
     "distortionGuide": "Thinking patterns",
-    "showAllRecords": "Show all records"
+    "showAllRecords": "Show all records",
+    "statLoadingValue": "—",
+    "statRecords_one": "thought record",
+    "statRecords_other": "thought records",
+    "statThisMonth": "this month",
+    "statBeliefShift_one": "point mean belief shift",
+    "statBeliefShift_other": "points mean belief shift"
   },
   "program": {
     "startTitle": "Your CBT program",
@@ -90,9 +96,6 @@
     "sloganTitle": "Your slogan",
     "insights": {
       "title": "Insights",
-      "topDistortion": "Top distortion: {{name}} ({{count}}×)",
-      "topDistortionDetail": "Other recurring patterns: {{names}}.",
-      "distortionSummaryItem": "{{name}} ({{count}}×)",
       "exerciseMood": "Average mood on exercise days: {{withExercise}} vs {{withoutExercise}} without.",
       "exerciseMoodDetail": "This compares mood logs on days with and without exercise.",
       "reviewBelief_one": "{{count}} belief due for review.",

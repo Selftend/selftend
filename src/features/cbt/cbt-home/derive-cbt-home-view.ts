@@ -1,12 +1,14 @@
 import type { TFunction } from "i18next";
 
 import { buildInsightCards, type InsightCardModel } from "./build-insight-cards";
+import type { HeaderStat } from "@/src/components/app/module-home-header";
 import type { CbtProgramView } from "@/src/features/cbt/derive-cbt-program";
+import { resolveHotThought } from "@/src/features/cbt/thought-record-form";
 import type { ThoughtRecord } from "@/src/features/cbt/types";
 import type {
   CbtInsights,
+  DistortionCount,
   RecurringThoughtSuggestion,
-  TopDistortion,
 } from "@/src/features/cbt/use-cbt-insights";
 import type { Goal } from "@/src/features/goals/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
@@ -21,6 +23,12 @@ export interface DeriveCbtHomeViewInputs {
   insights: CbtInsights;
   program: Pick<CbtProgramView, "status">;
   promptDismissedAt: string | null;
+  /** Lifetime head count of records; undefined while the query is in flight. */
+  lifetimeRecordCount: number | undefined;
+  /** Head count of records created since `monthStartIso`; undefined in flight. */
+  monthRecordCount: number | undefined;
+  /** Local start of the current civil month, as an ISO instant. */
+  monthStartIso: string;
   t: TFunction<"cbt">;
 }
 
@@ -40,13 +48,83 @@ export interface CbtHomeView {
   activeGoals: Goal[];
   recentRecords: ThoughtRecord[];
   personalSlogan: string;
-  topDistortion: TopDistortion | null;
-  otherDistortions: TopDistortion[];
   topRecurringThought: RecurringThoughtSuggestion | null;
+  headerStats: HeaderStat[];
+  distortionBars: DistortionCount[];
   insightCards: InsightCardModel[];
   hasInsights: boolean;
   showProgramCard: boolean;
   sectionRules: CbtHomeSectionRules;
+}
+
+/**
+ * The header's stat run (#1387): lifetime records, this month's records, and -
+ * only when at least one of this month's records carries BOTH belief numbers -
+ * the signed mean belief shift.
+ *
+ * The number stays in `value` and the noun in a count-pluralised `label`
+ * (#749's pattern B, which is also what the stat-shape guard enforces). An
+ * unresolved count renders an em dash, never a zero: `?? 0` would tell a user
+ * with 200 records they had none while the query was in flight (#1378's
+ * lesson, verbatim from ACT home).
+ *
+ * Stat 3 is a SHIFT, not a "drop" (SR-4): `after − before`, so a fall is
+ * negative. A label asserting a drop is false whenever the mean is zero or
+ * positive - the same defect as the "stayed at" family this redesign removed -
+ * and omitting the stat when it is unflattering would be worse, so it renders
+ * at every value including 0 and positive means. It is OMITTED from the array,
+ * never dashed, when no record in the window carries both numbers:
+ * `belief_after` is new (#1376), so every legacy record is null there.
+ *
+ * The mean is a client-side reduction over the 500-row list, which is safe for
+ * a month and would not be for a lifetime - a record created this month can
+ * only leave the top 500 when 500 others were touched later, which puts them
+ * in the month too (ADR-0001; the same argument carries the insights bars).
+ * The "before" number is the hot thought's own rating via `resolveHotThought`,
+ * the chain the detail screen's belief pair already reads (#1384).
+ */
+function deriveHeaderStats(
+  thoughtRecords: ThoughtRecord[] | undefined,
+  lifetimeRecordCount: number | undefined,
+  monthRecordCount: number | undefined,
+  monthStartIso: string,
+  t: TFunction<"cbt">,
+): HeaderStat[] {
+  const statValue = (count: number | undefined) =>
+    count === undefined ? t("home.statLoadingValue") : String(count);
+
+  const stats: HeaderStat[] = [
+    {
+      value: statValue(lifetimeRecordCount),
+      label: t("home.statRecords", { count: lifetimeRecordCount ?? 0 }),
+    },
+    {
+      value: statValue(monthRecordCount),
+      label: t("home.statThisMonth"),
+    },
+  ];
+
+  const monthStartTime = new Date(monthStartIso).getTime();
+  const shifts = (thoughtRecords ?? []).flatMap((record) => {
+    if (new Date(record.createdAt).getTime() < monthStartTime) {
+      return [];
+    }
+    const before = resolveHotThought(record.nats)?.beliefRating ?? null;
+    // The denominator is records that filled in BOTH numbers, never "records".
+    return before !== null && record.beliefAfter !== null ? [record.beliefAfter - before] : [];
+  });
+
+  if (shifts.length > 0) {
+    const mean = Math.round(shifts.reduce((sum, shift) => sum + shift, 0) / shifts.length);
+    stats.push({
+      // The sign is the value's job - the label stays direction-neutral. An
+      // explicit "+" keeps a positive mean from reading as a drop by habit.
+      value: mean > 0 ? `+${mean}` : String(mean),
+      label: t("home.statBeliefShift", { count: Math.abs(mean) }),
+    });
+  }
+
+  return stats;
 }
 
 /**
@@ -93,16 +171,28 @@ export function deriveCbtHomeView({
   insights,
   program,
   promptDismissedAt,
+  lifetimeRecordCount,
+  monthRecordCount,
+  monthStartIso,
   t,
 }: DeriveCbtHomeViewInputs): CbtHomeView {
   const activeGoals = goals?.filter((g) => g.status === "active").slice(0, 2) ?? [];
   const recentRecords = thoughtRecords?.slice(0, RECENT_RECORD_COUNT) ?? [];
   const personalSlogan = recoveryPlan?.personalSlogan.trim() ?? "";
-  const topDistortion = insights.topDistortions[0] ?? null;
-  const otherDistortions = insights.topDistortions.slice(1);
   const topRecurringThought = insights.recurringThoughtSuggestions[0] ?? null;
+  const headerStats = deriveHeaderStats(
+    thoughtRecords,
+    lifetimeRecordCount,
+    monthRecordCount,
+    monthStartIso,
+    t,
+  );
+  const distortionBars = insights.distortionCounts;
   const insightCards = buildInsightCards(insights, t);
-  const hasInsights = insightCards.length > 0;
+  // Bars OR cards: with the bars replacing the top-distortion card, a gate on
+  // the card list alone would hide the bars whenever the other seven kinds are
+  // silent - the common case at five to ten records (#1387).
+  const hasInsights = distortionBars.length > 0 || insightCards.length > 0;
   const showProgramCard = program.status !== "not_started" || !promptDismissedAt;
 
   // Render order of every ruled block: active goals, recent records, insights,
@@ -127,9 +217,9 @@ export function deriveCbtHomeView({
     activeGoals,
     recentRecords,
     personalSlogan,
-    topDistortion,
-    otherDistortions,
     topRecurringThought,
+    headerStats,
+    distortionBars,
     insightCards,
     hasInsights,
     showProgramCard,

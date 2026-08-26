@@ -7,7 +7,13 @@
     "title": "КПТ",
     "description": "Фокусирана КПТ секция, изградена около записи на мисли, осъзнаване на изкривявания и спокоен преглед.",
     "distortionGuide": "Мисловни модели",
-    "showAllRecords": "Покажи всички записи"
+    "showAllRecords": "Покажи всички записи",
+    "statLoadingValue": "—",
+    "statRecords_one": "запис на мисъл",
+    "statRecords_other": "записа на мисли",
+    "statThisMonth": "този месец",
+    "statBeliefShift_one": "пункт средна промяна в убедеността",
+    "statBeliefShift_other": "пункта средна промяна в убедеността"
   },
   "program": {
     "startTitle": "Твоята КПТ програма",
@@ -90,9 +96,6 @@
     "sloganTitle": "Твоят девиз",
     "insights": {
       "title": "Наблюдения",
-      "topDistortion": "Най-чест модел: {{name}} ({{count}}×)",
-      "topDistortionDetail": "Други повтарящи се модели: {{names}}.",
-      "distortionSummaryItem": "{{name}} ({{count}}×)",
       "exerciseMood": "Средно настроение в дни с движение: {{withExercise}} срещу {{withoutExercise}} без движение.",
       "exerciseMoodDetail": "Сравнява записите за настроение в дни с и без движение.",
       "reviewBelief_one": "{{count}} убеждение за преглед.",

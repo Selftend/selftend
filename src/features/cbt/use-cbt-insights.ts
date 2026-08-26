@@ -13,7 +13,7 @@ import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { roundTo1 as roundedTenth } from "@/src/utils/number";
 
-export interface TopDistortion {
+export interface DistortionCount {
   key: string;
   count: number;
 }
@@ -55,7 +55,7 @@ export interface ExposureProgress {
 }
 
 export interface CbtInsights {
-  topDistortions: TopDistortion[];
+  distortionCounts: DistortionCount[];
   exerciseMoodLift: ExerciseMoodLift | null;
   activityMoodLiftByCategory: ActivityMoodLift[];
   beliefReviewSuggestions: CoreBelief[];
@@ -95,13 +95,34 @@ export function useCbtInsights(userId: string | null): CbtInsights {
   const { data: gratitudeEntries } = useGratitudeEntries(userId, 50);
   const { data: coreBeliefs } = useCoreBeliefs(userId);
 
-  const topDistortions = useMemo<TopDistortion[]>(() => {
-    if (!thoughtRecords || thoughtRecords.length < 5) {
+  /**
+   * Thinking-pattern counts for the overview's bars (#1387, SR-1): this month,
+   * every pattern with a count of one or more, no record floor. The previous
+   * shape - lifetime, top three, hidden below five records - computed a
+   * lifetime figure over `listThoughtRecords`' capped 500-row fetch, which is
+   * ADR-0001's anti-pattern by name; a month provably fits inside the cap (a
+   * record created this month can only leave the top 500 when 500 others were
+   * touched later, which puts them in the month too).
+   *
+   * ⚠️ Written assumption, recorded rather than engineered around: the window
+   * is on the created INSTANT (device-local month), while records carry a
+   * captured occurrence offset and the rest of the app buckets them by civil
+   * day. At a month boundary the blast radius is one row, only for travellers.
+   */
+  const distortionCounts = useMemo<DistortionCount[]>(() => {
+    if (!thoughtRecords) {
       return [];
     }
 
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
     const counts = new Map<string, number>();
     for (const record of thoughtRecords) {
+      if (new Date(record.createdAt) < monthStart) {
+        continue;
+      }
       for (const distortion of record.distortions) {
         counts.set(distortion, (counts.get(distortion) ?? 0) + 1);
       }
@@ -109,8 +130,7 @@ export function useCbtInsights(userId: string | null): CbtInsights {
 
     return [...counts.entries()]
       .map(([key, count]) => ({ key, count }))
-      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
-      .slice(0, 3);
+      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
   }, [thoughtRecords]);
 
   const exerciseMoodLift = useMemo<ExerciseMoodLift | null>(() => {
@@ -323,7 +343,7 @@ export function useCbtInsights(userId: string | null): CbtInsights {
 
   return useMemo(
     () => ({
-      topDistortions,
+      distortionCounts,
       exerciseMoodLift,
       activityMoodLiftByCategory,
       beliefReviewSuggestions,
@@ -333,7 +353,7 @@ export function useCbtInsights(userId: string | null): CbtInsights {
       exposureProgress,
     }),
     [
-      topDistortions,
+      distortionCounts,
       exerciseMoodLift,
       activityMoodLiftByCategory,
       beliefReviewSuggestions,

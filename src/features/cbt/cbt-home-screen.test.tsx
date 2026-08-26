@@ -1,8 +1,12 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import CbtHomeScreen from "./cbt-home-screen";
-import { useThoughtRecords } from "@/src/features/cbt/queries";
+import {
+  useThoughtRecordCount,
+  useThoughtRecordCountSince,
+  useThoughtRecords,
+} from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
 import { useGoals } from "@/src/features/goals/queries";
@@ -45,6 +49,8 @@ jest.mock("@/src/features/goals/queries", () => ({
 
 jest.mock("@/src/features/cbt/queries", () => ({
   useThoughtRecords: jest.fn(),
+  useThoughtRecordCount: jest.fn(),
+  useThoughtRecordCountSince: jest.fn(),
 }));
 
 jest.mock("@/src/features/recovery/queries", () => ({
@@ -68,6 +74,12 @@ const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunc
 >;
 const mockUseGoals = useGoals as jest.MockedFunction<typeof useGoals>;
 const mockUseThoughtRecords = useThoughtRecords as jest.MockedFunction<typeof useThoughtRecords>;
+const mockUseThoughtRecordCount = useThoughtRecordCount as jest.MockedFunction<
+  typeof useThoughtRecordCount
+>;
+const mockUseThoughtRecordCountSince = useThoughtRecordCountSince as jest.MockedFunction<
+  typeof useThoughtRecordCountSince
+>;
 const mockUseRecoveryPlan = useRecoveryPlan as jest.MockedFunction<typeof useRecoveryPlan>;
 const mockUseCbtInsights = useCbtInsights as jest.MockedFunction<typeof useCbtInsights>;
 const mockUseCbtProgram = useCbtProgram as jest.MockedFunction<typeof useCbtProgram>;
@@ -91,6 +103,12 @@ function setupDefaultMocks() {
   mockUseThoughtRecords.mockReturnValue({
     data: [],
   } as unknown as ReturnType<typeof useThoughtRecords>);
+  mockUseThoughtRecordCount.mockReturnValue({ data: 0 } as unknown as ReturnType<
+    typeof useThoughtRecordCount
+  >);
+  mockUseThoughtRecordCountSince.mockReturnValue({ data: 0 } as unknown as ReturnType<
+    typeof useThoughtRecordCountSince
+  >);
   mockUseRecoveryPlan.mockReturnValue({
     data: null,
   } as unknown as ReturnType<typeof useRecoveryPlan>);
@@ -102,7 +120,7 @@ function setupDefaultMocks() {
     exposureProgress: null,
     recurringThoughtSuggestions: [],
     selfCareTrend: null,
-    topDistortions: [],
+    distortionCounts: [],
   });
   mockUseCbtProgram.mockReturnValue({
     program: {
@@ -403,7 +421,7 @@ describe("CbtHomeScreen layout (#1386)", () => {
       exposureProgress: null,
       recurringThoughtSuggestions: [],
       selfCareTrend: null,
-      topDistortions: [{ key: "catastrophizing", count: 3 }],
+      distortionCounts: [{ key: "catastrophizing", count: 3 }],
     } as unknown as ReturnType<typeof useCbtInsights>);
   }
 
@@ -558,5 +576,159 @@ describe("CbtHomeScreen layout (#1386)", () => {
     renderWithProviders(<CbtHomeScreen />);
 
     expect(screen.getAllByTestId("section")).toHaveLength(5);
+  });
+});
+
+/**
+ * The header stat run and the thinking-pattern bars (#1387). Like the layout
+ * block above, nothing else in either suite would notice these: no e2e reaches
+ * CBT home at all.
+ */
+describe("CbtHomeScreen header stats and pattern bars (#1387)", () => {
+  const push = router.push as jest.Mock;
+
+  /** A record created NOW, carrying the full belief pair. */
+  function pairedRecord(id: string, beliefBefore: number, beliefAfter: number) {
+    const nowIso = new Date().toISOString();
+    return {
+      id,
+      userId: "user-1",
+      situation: "",
+      nats: [{ text: `thought ${id}`, beliefRating: beliefBefore, isHotThought: true }],
+      emotions: [],
+      emotionIntensityBefore: null,
+      distortions: [],
+      evidenceFor: [],
+      evidenceAgainst: [],
+      balancedThought: "",
+      emotionIntensityAfter: null,
+      outcomeNotes: "",
+      beliefAfter,
+      createdAt: nowIso,
+      createdOffsetMinutes: 0,
+      dayKey: nowIso.slice(0, 10),
+      updatedAt: nowIso,
+      archivedAt: null,
+    };
+  }
+
+  beforeEach(() => {
+    setupDefaultMocks();
+    mockUseUserPreferences.mockReturnValue({
+      data: defaultUserPreferences,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+  });
+
+  it("renders the lifetime count, the month count and the signed mean belief shift", () => {
+    mockUseThoughtRecordCount.mockReturnValue({ data: 24 } as unknown as ReturnType<
+      typeof useThoughtRecordCount
+    >);
+    mockUseThoughtRecordCountSince.mockReturnValue({ data: 4 } as unknown as ReturnType<
+      typeof useThoughtRecordCountSince
+    >);
+    mockUseThoughtRecords.mockReturnValue({
+      // Shifts -45 and -25 -> mean -35.
+      data: [pairedRecord("r1", 85, 40), pairedRecord("r2", 60, 35)],
+    } as unknown as ReturnType<typeof useThoughtRecords>);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    // The composed stat string, value + label, as HeaderStats joins them.
+    expect(screen.getByText("24 thought records")).toBeTruthy();
+    expect(screen.getByText("4 this month")).toBeTruthy();
+    expect(screen.getByText("-35 points mean belief shift")).toBeTruthy();
+  });
+
+  it("omits the belief-shift stat entirely when no record carries both numbers", () => {
+    mockUseThoughtRecordCount.mockReturnValue({ data: 2 } as unknown as ReturnType<
+      typeof useThoughtRecordCount
+    >);
+    mockUseThoughtRecordCountSince.mockReturnValue({ data: 2 } as unknown as ReturnType<
+      typeof useThoughtRecordCountSince
+    >);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    // Present stats still render...
+    expect(screen.getByText("2 thought records")).toBeTruthy();
+    expect(screen.getByText("2 this month")).toBeTruthy();
+    // ...but nothing stands in for the shift: no label, no dash-shaped value.
+    expect(screen.queryByText(/mean belief shift/)).toBeNull();
+  });
+
+  it("shows a user with two records their pattern counts, with every card kind silent", () => {
+    mockUseThoughtRecords.mockReturnValue({
+      data: [pairedRecord("r1", 85, 40), pairedRecord("r2", 60, 35)],
+    } as unknown as ReturnType<typeof useThoughtRecords>);
+    mockUseCbtInsights.mockReturnValue({
+      activityMoodLiftByCategory: [],
+      angerPattern: null,
+      beliefReviewSuggestions: [],
+      exerciseMoodLift: null,
+      exposureProgress: null,
+      recurringThoughtSuggestions: [],
+      selfCareTrend: null,
+      distortionCounts: [
+        { key: "catastrophizing", count: 2 },
+        { key: "mind-reading", count: 1 },
+      ],
+    } as unknown as ReturnType<typeof useCbtInsights>);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    expect(screen.getByText("Insights")).toBeTruthy();
+    expect(screen.getByText("Catastrophising")).toBeTruthy();
+    expect(screen.getByText("2")).toBeTruthy();
+    expect(screen.getByText("Mind reading")).toBeTruthy();
+    // The retired prose card must not resurface around the bars.
+    expect(screen.queryByText(/Top distortion/)).toBeNull();
+    expect(screen.queryByText(/Other recurring patterns/)).toBeNull();
+  });
+
+  it("keeps the other insight kinds rendering beside the bars, each on its own datum", () => {
+    mockUseCbtInsights.mockReturnValue({
+      activityMoodLiftByCategory: [],
+      angerPattern: null,
+      beliefReviewSuggestions: [],
+      exerciseMoodLift: { withExercise: 7.2, withoutExercise: 5.1 },
+      exposureProgress: null,
+      recurringThoughtSuggestions: [],
+      selfCareTrend: null,
+      distortionCounts: [{ key: "catastrophizing", count: 2 }],
+    } as unknown as ReturnType<typeof useCbtInsights>);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    expect(screen.getByText("Catastrophising")).toBeTruthy();
+    expect(screen.getByText(/Average mood on exercise days/)).toBeTruthy();
+  });
+
+  it("doors the insights section to the patterns reference without asserting a count", () => {
+    mockUseCbtInsights.mockReturnValue({
+      activityMoodLiftByCategory: [],
+      angerPattern: null,
+      beliefReviewSuggestions: [],
+      exerciseMoodLift: null,
+      exposureProgress: null,
+      recurringThoughtSuggestions: [],
+      selfCareTrend: null,
+      distortionCounts: [{ key: "catastrophizing", count: 2 }],
+    } as unknown as ReturnType<typeof useCbtInsights>);
+
+    renderWithProviders(<CbtHomeScreen />);
+
+    // Two doors to the same reference, deliberately: the Think pillar's
+    // catalogue entry and the section's reading suggestion (#1229's
+    // catalogue-versus-action rule). Neither says a number.
+    expect(screen.getAllByText("Thinking patterns")).toHaveLength(2);
+    expect(screen.queryByText(/twelve/i)).toBeNull();
+
+    const insightsSection = screen
+      .getAllByTestId("section")
+      .find((section) => within(section).queryByText("Insights"));
+    expect(insightsSection).toBeTruthy();
+    fireEvent.press(within(insightsSection!).getByText("Thinking patterns"));
+    expect(push).toHaveBeenCalledWith("/modules/cbt/learn");
   });
 });

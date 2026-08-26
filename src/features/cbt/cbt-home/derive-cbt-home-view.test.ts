@@ -10,11 +10,21 @@ import type { Goal } from "@/src/features/goals/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
 import type { ThoughtRecord } from "@/src/features/cbt/types";
 
-const t = ((key: string) => key) as unknown as TFunction<"cbt">;
+// Echoes the key with a serialized interpolation payload, so stat assertions
+// can see both which label was chosen and which count it pluralises against.
+const t = ((key: string, opts?: Record<string, unknown>) => {
+  if (!opts) {
+    return key;
+  }
+  const parts = Object.entries(opts)
+    .map(([k, v]) => `${k}=${String(v)}`)
+    .join(",");
+  return `${key}(${parts})`;
+}) as unknown as TFunction<"cbt">;
 
 function baseInsights(): CbtInsights {
   return {
-    topDistortions: [],
+    distortionCounts: [],
     exerciseMoodLift: null,
     activityMoodLiftByCategory: [],
     beliefReviewSuggestions: [],
@@ -41,7 +51,7 @@ function goal(id: string, status: Goal["status"]): Goal {
   };
 }
 
-function record(id: string): ThoughtRecord {
+function record(id: string, overrides: Partial<ThoughtRecord> = {}): ThoughtRecord {
   return {
     id,
     userId: "u1",
@@ -56,12 +66,21 @@ function record(id: string): ThoughtRecord {
     emotionIntensityAfter: null,
     outcomeNotes: "",
     beliefAfter: null,
-    createdAt: "2026-01-01T00:00:00.000Z",
+    createdAt: "2026-01-15T12:00:00.000Z",
     createdOffsetMinutes: 0,
-    dayKey: "2026-01-01",
-    updatedAt: "2026-01-01T00:00:00.000Z",
+    dayKey: "2026-01-15",
+    updatedAt: "2026-01-15T12:00:00.000Z",
     archivedAt: null,
+    ...overrides,
   };
+}
+
+/** A record carrying the full belief pair, created inside the test month. */
+function pairedRecord(id: string, beliefBefore: number, beliefAfter: number): ThoughtRecord {
+  return record(id, {
+    nats: [{ text: `thought ${id}`, beliefRating: beliefBefore, isHotThought: true }],
+    beliefAfter,
+  });
 }
 
 function recoveryPlan(personalSlogan: string): RecoveryPlan {
@@ -85,6 +104,9 @@ function inputs(overrides: Partial<DeriveCbtHomeViewInputs> = {}): DeriveCbtHome
     insights: baseInsights(),
     program: { status: "not_started" },
     promptDismissedAt: null,
+    lifetimeRecordCount: 0,
+    monthRecordCount: 0,
+    monthStartIso: "2026-01-01T00:00:00.000Z",
     t,
     ...overrides,
   };
@@ -226,38 +248,139 @@ describe("deriveCbtHomeView", () => {
   });
 
   describe("hasInsights", () => {
-    it("is false when no insight cards are built", () => {
+    it("is false when there are neither bars nor cards", () => {
       const view = deriveCbtHomeView(inputs());
       expect(view.hasInsights).toBe(false);
       expect(view.insightCards).toEqual([]);
+      expect(view.distortionBars).toEqual([]);
     });
 
-    it("is true and mirrors the built cards when an insight is present", () => {
+    /**
+     * The widened gate (#1387): with the bars replacing the top-distortion
+     * card, a gate on the card list alone would hide a user's pattern counts
+     * whenever the other seven card kinds are silent - the common case at
+     * five to ten records.
+     */
+    it("is true on bars alone, with every card kind silent", () => {
       const view = deriveCbtHomeView(
         inputs({
-          insights: { ...baseInsights(), topDistortions: [{ key: "catastrophizing", count: 3 }] },
+          insights: { ...baseInsights(), distortionCounts: [{ key: "catastrophizing", count: 2 }] },
+        }),
+      );
+      expect(view.hasInsights).toBe(true);
+      expect(view.insightCards).toEqual([]);
+      expect(view.distortionBars).toEqual([{ key: "catastrophizing", count: 2 }]);
+      expect(view.sectionRules.framework).toBe(true);
+    });
+
+    it("is true on cards alone", () => {
+      const view = deriveCbtHomeView(
+        inputs({
+          insights: {
+            ...baseInsights(),
+            exerciseMoodLift: { withExercise: 7, withoutExercise: 5 },
+          },
         }),
       );
       expect(view.hasInsights).toBe(true);
       expect(view.insightCards).toHaveLength(1);
-      expect(view.topDistortion).toEqual({ key: "catastrophizing", count: 3 });
     });
   });
 
-  it("splits topDistortion from otherDistortions", () => {
-    const view = deriveCbtHomeView(
-      inputs({
-        insights: {
-          ...baseInsights(),
-          topDistortions: [
-            { key: "a", count: 5 },
-            { key: "b", count: 3 },
-            { key: "c", count: 1 },
+  /**
+   * The header's stat run (#1387). Stat 3 is the load-bearing one: a signed
+   * mean SHIFT over this month's records that carry both belief numbers,
+   * OMITTED from the array - never dashed, never zeroed - when none does.
+   */
+  describe("headerStats", () => {
+    it("renders lifetime and this-month counts in order, pattern B", () => {
+      const view = deriveCbtHomeView(inputs({ lifetimeRecordCount: 24, monthRecordCount: 4 }));
+      expect(view.headerStats).toEqual([
+        { value: "24", label: "home.statRecords(count=24)" },
+        { value: "4", label: "home.statThisMonth" },
+      ]);
+    });
+
+    it("renders an em dash, not a zero, while a count is in flight", () => {
+      const view = deriveCbtHomeView(
+        inputs({ lifetimeRecordCount: undefined, monthRecordCount: undefined }),
+      );
+      expect(view.headerStats[0].value).toBe("home.statLoadingValue");
+      expect(view.headerStats[1].value).toBe("home.statLoadingValue");
+      // Only the label falls back to 0 - it needs some count to pluralise against.
+      expect(view.headerStats[0].label).toBe("home.statRecords(count=0)");
+    });
+
+    it("appends the mean belief shift, signed after - before, label carrying the magnitude", () => {
+      const view = deriveCbtHomeView(
+        inputs({
+          lifetimeRecordCount: 3,
+          monthRecordCount: 3,
+          // Shifts: -45 and -25 -> mean -35.
+          thoughtRecords: [pairedRecord("r1", 85, 40), pairedRecord("r2", 60, 35)],
+        }),
+      );
+      expect(view.headerStats).toHaveLength(3);
+      expect(view.headerStats[2]).toEqual({
+        value: "-35",
+        label: "home.statBeliefShift(count=35)",
+      });
+    });
+
+    it("omits stat 3 from the array when no record carries both numbers", () => {
+      const view = deriveCbtHomeView(
+        inputs({
+          lifetimeRecordCount: 2,
+          monthRecordCount: 2,
+          thoughtRecords: [
+            // A before with no after, and an after with no before: neither counts.
+            record("r1", {
+              nats: [{ text: "t", beliefRating: 80, isHotThought: true }],
+              beliefAfter: null,
+            }),
+            record("r2", {
+              nats: [{ text: "t", beliefRating: null, isHotThought: true }],
+              beliefAfter: 40,
+            }),
           ],
-        },
-      }),
-    );
-    expect(view.topDistortion).toEqual({ key: "a", count: 5 });
-    expect(view.otherDistortions.map((d) => d.key)).toEqual(["b", "c"]);
+        }),
+      );
+      expect(view.headerStats).toHaveLength(2);
+    });
+
+    it("still renders stat 3 at a mean of exactly 0, and signs a positive mean", () => {
+      const zero = deriveCbtHomeView(inputs({ thoughtRecords: [pairedRecord("r1", 50, 50)] }));
+      expect(zero.headerStats[2]).toEqual({
+        value: "0",
+        label: "home.statBeliefShift(count=0)",
+      });
+
+      const positive = deriveCbtHomeView(inputs({ thoughtRecords: [pairedRecord("r1", 40, 52)] }));
+      expect(positive.headerStats[2]).toEqual({
+        value: "+12",
+        label: "home.statBeliefShift(count=12)",
+      });
+    });
+
+    it("excludes records created before the month start from the mean", () => {
+      const view = deriveCbtHomeView(
+        inputs({
+          thoughtRecords: [
+            pairedRecord("r1", 85, 40), // -45, in month
+            record("r2", {
+              nats: [{ text: "t", beliefRating: 90, isHotThought: true }],
+              beliefAfter: 0, // -90, but last month - must not drag the mean
+              createdAt: "2025-12-15T12:00:00.000Z",
+            }),
+          ],
+        }),
+      );
+      expect(view.headerStats[2].value).toBe("-45");
+    });
+
+    it("omits stat 3 while the record list itself is still loading", () => {
+      const view = deriveCbtHomeView(inputs({ thoughtRecords: undefined }));
+      expect(view.headerStats).toHaveLength(2);
+    });
   });
 });

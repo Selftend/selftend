@@ -148,9 +148,14 @@ function makeSelfCareLog(logDate: string, exerciseDone: boolean, socialConnectio
 }
 
 // ---------------------------------------------------------------------------
-// Tests: topDistortions
+// Tests: distortionCounts (#1387, SR-1)
 // ---------------------------------------------------------------------------
-describe("useCbtInsights - topDistortions", () => {
+describe("useCbtInsights - distortionCounts", () => {
+  // The month window reads the clock, so these tests pin it - late in a month,
+  // deliberately, so in-month fixtures don't straddle the boundary.
+  beforeAll(() => jest.useFakeTimers({ now: new Date("2026-05-30T12:00:00.000Z") }));
+  afterAll(() => jest.useRealTimers());
+
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();
@@ -158,56 +163,76 @@ describe("useCbtInsights - topDistortions", () => {
 
   it("returns [] when thoughtRecords is undefined", () => {
     const { result } = renderHook(() => useCbtInsights("user-1"));
-    expect(result.current.topDistortions).toEqual([]);
+    expect(result.current.distortionCounts).toEqual([]);
   });
 
-  it("returns [] when fewer than 5 thought records", () => {
+  it("has no record floor: a single record's patterns already count", () => {
+    mockUseThoughtRecords.mockReturnValue({
+      data: [makeThoughtRecord("t1", ["d1"], "thought 1", "2026-05-10T00:00:00Z")],
+    } as unknown as ReturnType<typeof useThoughtRecords>);
+
+    const { result } = renderHook(() => useCbtInsights("user-1"));
+    expect(result.current.distortionCounts).toEqual([{ key: "d1", count: 1 }]);
+  });
+
+  it("counts only records created this month", () => {
     mockUseThoughtRecords.mockReturnValue({
       data: [
-        makeThoughtRecord("t1", ["d1"], "thought 1"),
-        makeThoughtRecord("t2", ["d1"], "thought 2"),
-        makeThoughtRecord("t3", ["d2"], "thought 3"),
-        makeThoughtRecord("t4", [], "thought 4"),
+        // Mid-month instants on purpose: a midnight-UTC fixture lands in the
+        // neighbouring civil month in half the world's timezones, and this
+        // suite must not go red when the machine running it moves.
+        makeThoughtRecord("t1", ["d1"], "thought 1", "2026-05-02T12:00:00Z"),
+        makeThoughtRecord("t2", ["d1", "d2"], "thought 2", "2026-05-29T12:00:00Z"),
+        // Last month - outside the window even though it is in the list.
+        makeThoughtRecord("t3", ["d1", "d3"], "thought 3", "2026-04-15T12:00:00Z"),
       ],
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
     const { result } = renderHook(() => useCbtInsights("user-1"));
-    expect(result.current.topDistortions).toEqual([]);
+    expect(result.current.distortionCounts).toEqual([
+      { key: "d1", count: 2 },
+      { key: "d2", count: 1 },
+    ]);
   });
 
-  it("returns top 3 distortions ranked by count desc, tie-breaking by key asc", () => {
-    // d1: 4, d2: 3, d3: 2, d4: 1 - top 3 should be d1, d2, d3
+  it("keeps every pattern with a count of one or more, not a top three", () => {
+    // d1: 4, d2: 3, d3: 2, d4: 1 - all four stay.
     const records = [
-      makeThoughtRecord("t1", ["d1", "d2", "d3"], "thought 1"),
-      makeThoughtRecord("t2", ["d1", "d2", "d3"], "thought 2"),
-      makeThoughtRecord("t3", ["d1", "d2", "d4"], "thought 3"),
-      makeThoughtRecord("t4", ["d1"], "thought 4"),
-      makeThoughtRecord("t5", [], "thought 5"),
+      makeThoughtRecord("t1", ["d1", "d2", "d3"], "thought 1", "2026-05-02T00:00:00Z"),
+      makeThoughtRecord("t2", ["d1", "d2", "d3"], "thought 2", "2026-05-03T00:00:00Z"),
+      makeThoughtRecord("t3", ["d1", "d2", "d4"], "thought 3", "2026-05-04T00:00:00Z"),
+      makeThoughtRecord("t4", ["d1"], "thought 4", "2026-05-05T00:00:00Z"),
+      makeThoughtRecord("t5", [], "thought 5", "2026-05-06T00:00:00Z"),
     ];
     mockUseThoughtRecords.mockReturnValue({
       data: records,
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
     const { result } = renderHook(() => useCbtInsights("user-1"));
-    expect(result.current.topDistortions).toEqual([
+    expect(result.current.distortionCounts).toEqual([
       { key: "d1", count: 4 },
       { key: "d2", count: 3 },
       { key: "d3", count: 2 },
+      { key: "d4", count: 1 },
     ]);
   });
 
   it("breaks ties alphabetically by key", () => {
-    // aaa and bbb both appear twice; aaa should come first
     const records = Array.from({ length: 5 }, (_, i) =>
-      makeThoughtRecord(`t${i}`, i < 2 ? ["aaa"] : i < 4 ? ["bbb"] : [], `thought ${i}`),
+      makeThoughtRecord(
+        `t${i}`,
+        i < 2 ? ["bbb"] : i < 4 ? ["aaa"] : [],
+        `thought ${i}`,
+        "2026-05-10T00:00:00Z",
+      ),
     );
     mockUseThoughtRecords.mockReturnValue({
       data: records,
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
     const { result } = renderHook(() => useCbtInsights("user-1"));
-    expect(result.current.topDistortions[0].key).toBe("aaa");
-    expect(result.current.topDistortions[1].key).toBe("bbb");
+    expect(result.current.distortionCounts[0].key).toBe("aaa");
+    expect(result.current.distortionCounts[1].key).toBe("bbb");
   });
 });
 

@@ -12,6 +12,7 @@ import {
   lastNDayKeysEndingAt,
   localDateKey,
   maxDayKey,
+  monthStartIsoOf,
   parseLocalNoon,
   shiftFromOffsetFrame,
   shiftToOffsetFrame,
@@ -332,5 +333,18 @@ describe("shiftToOffsetFrame across a device-zone DST boundary", () => {
   it("stays the inverse of shiftFromOffsetFrame across the boundary", () => {
     const shifted = shiftToOffsetFrame(springForward, 0);
     expect(shiftFromOffsetFrame(shifted, 0).toISOString()).toBe(springForward.toISOString());
+  });
+});
+
+describe("monthStartIsoOf", () => {
+  // jest.config.js pins TZ to Asia/Kolkata (+05:30): the LOCAL first-of-month
+  // midnight is 18:30Z on the previous civil day, which is exactly the point -
+  // the boundary is the viewer's, not UTC's.
+  it("returns the instant of the local first-of-month midnight", () => {
+    expect(monthStartIsoOf("2026-08-26")).toBe("2026-07-31T18:30:00.000Z");
+  });
+
+  it("is a fixed point for a day key already on the boundary day", () => {
+    expect(monthStartIsoOf("2026-01-01")).toBe("2025-12-31T18:30:00.000Z");
   });
 });
