@@ -17,11 +17,11 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
  * components. CBT and ACT adopting the same pattern would have made it four, so the
  * copies were folded into this one.
  *
- * ⚠️ It is not yet every door. Grounding, journal (twice), meditation (twice) and
- * ACT's defusion link still roll their own, in three different type sizes, and ACT's
- * says "All logs" where the rest say "Show all …". #1375 scoped this change to the
+ * ⚠️ It is not yet every door. Grounding, journal (twice) and meditation (twice)
+ * still roll their own, in different type sizes. #1375 scoped this change to the
  * component plus the arrow fixes, so those adopt it as their screens are redesigned -
- * `test/show-all-door-copy.test.ts` already watches their strings.
+ * `test/show-all-door-copy.test.ts` already watches their strings. ACT's defusion
+ * door, the one that said a bare "All logs", came through with #1388.
  *
  * **The arrow is this component's job and never part of the string.** Two shipped
  * strings baked it into the translated value - breathing's "Show all sessions →" and
