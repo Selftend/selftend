@@ -1,11 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { onlineManager } from "@tanstack/react-query";
 import { appEnv } from "@/src/lib/env";
-import { Linking, Platform } from "react-native";
+import { AppState, Linking, Platform } from "react-native";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import { useUpdateAvailability } from "@/src/lib/use-update-availability";
 import { checkAndroidStoreUpdate } from "@/src/lib/android-store-update";
 import { fetchVersionDocument, getRunningVersion } from "@/src/lib/update-availability";
+import { useOverlayCountStore } from "@/src/stores/overlay-count-store";
 
 jest.mock("@/src/lib/update-availability", () => ({
   ...jest.requireActual("@/src/lib/update-availability"),
@@ -243,5 +245,252 @@ describe("useUpdateAvailability (Android offers via Play, iOS suppressed)", () =
     expect(openSpy).toHaveBeenCalledWith(expected());
     expect(openSpy).not.toHaveBeenCalledWith(forbidden());
     openSpy.mockRestore();
+  });
+
+  // The AppState "active" listener is DELETED, not gated (#1474): Android is
+  // launch-only, and a listener that merely gates presentation is how a later
+  // cleanup would quietly reintroduce the mid-session modal.
+  it("android mounts no foreground listener at all", async () => {
+    nativeSpy = jest.replaceProperty(Platform, "OS", "android");
+    mockStoreUpdate.mockResolvedValue("18");
+    const appStateSpy = jest.spyOn(AppState, "addEventListener");
+
+    const { result } = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(result.current.available).toBe(true));
+
+    expect(appStateSpy).not.toHaveBeenCalled();
+    appStateSpy.mockRestore();
+  });
+});
+
+// Arming-time suppression and the per-platform triggers (#1474, spec §1-§2 on
+// #1142). RN's jest setup aliases `window` to `global` WITHOUT DOM event
+// methods and defines no `document` at all - the hook feature-detects both -
+// so these tests install capturing stubs and drive the web triggers by hand.
+describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
+  type DomListener = (type: string, handler: () => void) => void;
+  // Cast through unknown: the project's TS lib already declares DOM-shaped
+  // globals, and this stub deliberately replaces them with a narrower shape.
+  const domGlobal = globalThis as unknown as {
+    addEventListener?: DomListener;
+    removeEventListener?: DomListener;
+    document?: {
+      visibilityState: string;
+      addEventListener: DomListener;
+      removeEventListener: DomListener;
+    };
+  };
+
+  let focusHandlers: (() => void)[];
+  let visibilityHandlers: (() => void)[];
+  let visibilityState: "visible" | "hidden";
+  let suppressionPlatformSpy: jest.ReplaceProperty<typeof Platform.OS> | undefined;
+
+  const fireFocus = () => act(() => focusHandlers.forEach((handler) => handler()));
+  const fireVisibilityChange = () => act(() => visibilityHandlers.forEach((handler) => handler()));
+
+  // Give the tick-deferred check (and any state it would have written) a
+  // chance to fire; backs the negative "nothing happened" assertions below.
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
+
+  // Installed for the whole describe (not per test): RNTL's auto-cleanup
+  // unmounts the last render AFTER this block's own afterEach, and the
+  // unmounting hook still calls window.removeEventListener - deleting the
+  // stubs per test would pull the rug out from under that cleanup.
+  beforeAll(() => {
+    domGlobal.addEventListener = (type, handler) => {
+      if (type === "focus") focusHandlers.push(handler);
+    };
+    domGlobal.removeEventListener = (type, handler) => {
+      focusHandlers = focusHandlers.filter((registered) => registered !== handler);
+    };
+    domGlobal.document = {
+      get visibilityState() {
+        return visibilityState;
+      },
+      addEventListener: (type, handler) => {
+        if (type === "visibilitychange") visibilityHandlers.push(handler);
+      },
+      removeEventListener: (type, handler) => {
+        visibilityHandlers = visibilityHandlers.filter((registered) => registered !== handler);
+      },
+    };
+  });
+
+  afterAll(() => {
+    delete domGlobal.addEventListener;
+    delete domGlobal.removeEventListener;
+    delete domGlobal.document;
+  });
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    await AsyncStorage.clear();
+    useOverlayCountStore.setState({ count: 0 });
+    onlineManager.setOnline(true);
+    suppressionPlatformSpy = jest.replaceProperty(Platform, "OS", "web");
+    mockRunningVersion.mockReturnValue("0.8.0");
+    mockFetchDocument.mockResolvedValue({
+      version: "0.9.0",
+      publishedAt: new Date().toISOString(),
+    });
+
+    focusHandlers = [];
+    visibilityHandlers = [];
+    visibilityState = "visible";
+  });
+
+  afterEach(() => {
+    onlineManager.setOnline(true);
+    useOverlayCountStore.setState({ count: 0 });
+    suppressionPlatformSpy?.restore();
+  });
+
+  it("an overlay at launch suppresses without stamping: the next focus still offers", async () => {
+    let release: () => void = () => {};
+    act(() => {
+      release = useOverlayCountStore.getState().acquire();
+    });
+
+    const { result } = renderHook(() => useUpdateAvailability());
+    await settle();
+
+    // Bailed BEFORE the version fetch, and suppression wrote no dismissal.
+    expect(result.current.available).toBe(false);
+    expect(mockFetchDocument).not.toHaveBeenCalled();
+    expect(await AsyncStorage.getItem("updateBannerDismissed:0.9.0")).toBeNull();
+
+    // The overlay closing does NOT resurface the offer by itself...
+    act(() => release());
+    await settle();
+    expect(result.current.available).toBe(false);
+
+    // ...but the next trigger checks again. Had the suppressed launch stamped
+    // the throttle, this focus would be silenced for 6 hours.
+    fireFocus();
+    await waitFor(() => expect(result.current.available).toBe(true));
+    expect(result.current.version).toBe("0.9.0");
+  });
+
+  it("offline suppresses the web check without stamping the throttle", async () => {
+    onlineManager.setOnline(false);
+
+    const { result } = renderHook(() => useUpdateAvailability());
+    await settle();
+    expect(result.current.available).toBe(false);
+    expect(mockFetchDocument).not.toHaveBeenCalled();
+
+    onlineManager.setOnline(true);
+    fireFocus();
+    await waitFor(() => expect(result.current.available).toBe(true));
+  });
+
+  it("offline suppresses the android launch check too", async () => {
+    suppressionPlatformSpy?.restore();
+    suppressionPlatformSpy = jest.replaceProperty(Platform, "OS", "android");
+    const playStoreUrl = appEnv.playStoreUrl;
+    appEnv.playStoreUrl = "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend";
+    onlineManager.setOnline(false);
+    mockStoreUpdate.mockResolvedValue("18");
+
+    try {
+      const { result } = renderHook(() => useUpdateAvailability());
+      await settle();
+
+      expect(result.current.available).toBe(false);
+      expect(mockStoreUpdate).not.toHaveBeenCalled();
+    } finally {
+      appEnv.playStoreUrl = playStoreUrl;
+    }
+  });
+
+  it("visibilitychange funnels into the same check, acting only when visible", async () => {
+    let release: () => void = () => {};
+    act(() => {
+      release = useOverlayCountStore.getState().acquire();
+    });
+
+    const { result } = renderHook(() => useUpdateAvailability());
+    await settle();
+    act(() => release());
+
+    // A hidden-going visibility flip is not a return to the app.
+    visibilityState = "hidden";
+    fireVisibilityChange();
+    await settle();
+    expect(result.current.available).toBe(false);
+
+    visibilityState = "visible";
+    fireVisibilityChange();
+    await waitFor(() => expect(result.current.available).toBe(true));
+  });
+
+  it("focus and visibility re-checks stay behind the 6h throttle", async () => {
+    const { result } = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(result.current.available).toBe(true));
+    expect(mockFetchDocument).toHaveBeenCalledTimes(1);
+
+    // Neither trigger fetches again inside the window: the launch check
+    // stamped the throttle and nothing suppressed it since.
+    fireFocus();
+    fireVisibilityChange();
+    await settle();
+    expect(mockFetchDocument).toHaveBeenCalledTimes(1);
+  });
+
+  it("an overlay appearing mid-fetch drops the offer before it ever arms", async () => {
+    let resolveFetch: (doc: { version: string; publishedAt: string }) => void = () => {};
+    mockFetchDocument.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+
+    let release: () => void = () => {};
+    const { result } = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(mockFetchDocument).toHaveBeenCalledTimes(1));
+
+    // The overlay opens while the version document is still in flight - the
+    // exact shape of the Android launch check and the home tour, which mount
+    // their modals after arming begins.
+    act(() => {
+      release = useOverlayCountStore.getState().acquire();
+    });
+    act(() => resolveFetch({ version: "0.9.0", publishedAt: new Date().toISOString() }));
+    await settle();
+
+    expect(result.current.available).toBe(false);
+    expect(await AsyncStorage.getItem("updateBannerDismissed:0.9.0")).toBeNull();
+
+    // Dropped, not latched: once the overlay is gone the next trigger offers.
+    mockFetchDocument.mockResolvedValue({
+      version: "0.9.0",
+      publishedAt: new Date().toISOString(),
+    });
+    act(() => release());
+    fireFocus();
+    await waitFor(() => expect(result.current.available).toBe(true));
+  });
+
+  it("disarm backstop: an armed offer drops under a later overlay, persisting nothing", async () => {
+    const { result } = renderHook(() => useUpdateAvailability());
+    await waitFor(() => expect(result.current.available).toBe(true));
+
+    let release: () => void = () => {};
+    act(() => {
+      release = useOverlayCountStore.getState().acquire();
+    });
+    await waitFor(() => expect(result.current.available).toBe(false));
+    expect(await AsyncStorage.getItem("updateBannerDismissed:0.9.0")).toBeNull();
+
+    // The count returning to zero does NOT re-show the dropped offer...
+    act(() => release());
+    await settle();
+    expect(result.current.available).toBe(false);
+
+    // ...it waits for the next trigger, which is not throttled away either.
+    fireFocus();
+    await waitFor(() => expect(result.current.available).toBe(true));
   });
 });

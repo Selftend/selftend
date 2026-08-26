@@ -117,6 +117,18 @@ jest.mock("@/src/components/app/update-banner", () => {
   };
 });
 
+// The layout itself mounts the update trigger since #1474 (the banner is
+// presentational). The hook owns timers and listeners and has its own suite;
+// stub it so this one stays about the shell's gates and placement.
+jest.mock("@/src/lib/use-update-availability", () => ({
+  useUpdateAvailability: () => ({
+    available: false,
+    version: null,
+    act: jest.fn(),
+    dismiss: jest.fn(),
+  }),
+}));
+
 // The date strip and native widget bridge each own timers/listeners and have dedicated
 // tests. This suite only verifies the protected-layout gates, so render inert boundaries.
 jest.mock("@/src/features/widgets/widget-snapshot-sync", () => ({

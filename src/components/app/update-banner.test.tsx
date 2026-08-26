@@ -2,17 +2,10 @@ import { Platform } from "react-native";
 import { fireEvent, screen } from "@testing-library/react-native";
 
 import { UpdateBanner } from "./update-banner";
-import { useUpdateAvailability } from "@/src/lib/use-update-availability";
 import { renderWithProviders } from "@/test/render-with-providers";
 
-jest.mock("@/src/lib/use-update-availability", () => ({
-  useUpdateAvailability: jest.fn(),
-}));
-
-const mockUseUpdateAvailability = useUpdateAvailability as jest.MockedFunction<
-  typeof useUpdateAvailability
->;
-
+// Presentational since #1474: the hook mounts once in the protected shell and
+// the banner is driven entirely by props, so no hook mock is needed here.
 describe("UpdateBanner", () => {
   const act = jest.fn();
   const dismiss = jest.fn();
@@ -22,14 +15,12 @@ describe("UpdateBanner", () => {
   });
 
   it("renders nothing when no update is available", () => {
-    mockUseUpdateAvailability.mockReturnValue({ available: false, version: null, act, dismiss });
-    renderWithProviders(<UpdateBanner />);
+    renderWithProviders(<UpdateBanner available={false} act={act} dismiss={dismiss} />);
     expect(screen.queryByText("A newer version of Selftend is available.")).toBeNull();
   });
 
   it("offers quietly when an update is available, with working actions", () => {
-    mockUseUpdateAvailability.mockReturnValue({ available: true, version: "9.9.9", act, dismiss });
-    renderWithProviders(<UpdateBanner />);
+    renderWithProviders(<UpdateBanner available act={act} dismiss={dismiss} />);
 
     expect(screen.getByText("A newer version of Selftend is available.")).toBeTruthy();
 
@@ -50,15 +41,6 @@ describe("UpdateBanner", () => {
   // assertion above passed while matching "Open Google Play" - the bug was
   // pinned as expected behaviour.
   describe("names the right store per platform", () => {
-    beforeEach(() => {
-      mockUseUpdateAvailability.mockReturnValue({
-        available: true,
-        version: "9.9.9",
-        act,
-        dismiss,
-      });
-    });
-
     it.each([
       ["ios", "Open the App Store", "Open Google Play"],
       ["android", "Open Google Play", "Open the App Store"],
@@ -66,7 +48,7 @@ describe("UpdateBanner", () => {
     ] as const)("on %s shows %s and never %s", (os, expected, forbidden) => {
       const spy = jest.replaceProperty(Platform, "OS", os);
       try {
-        renderWithProviders(<UpdateBanner />);
+        renderWithProviders(<UpdateBanner available act={act} dismiss={dismiss} />);
         expect(screen.getByText(expected)).toBeTruthy();
         expect(screen.queryByText(forbidden)).toBeNull();
       } finally {
