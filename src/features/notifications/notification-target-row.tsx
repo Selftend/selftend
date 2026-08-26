@@ -79,20 +79,18 @@ export function NotificationTargetRow({
 
   const [requestPending, setRequestPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  /**
-   * The picker's uncommitted value, and the reason there is no `useState` mirror of the
-   * server row: it exists only between opening the picker and the commit, and is cleared at
-   * the commit, so an external change to the stored time lands with no re-sync step.
-   */
-  const [draftTime, setDraftTime] = useState<TimeOfDay | null>(null);
 
   const label = t(target.labelKey);
   const checked = readEnabled(preferences, target);
+  /**
+   * Read straight off the server row, with no local mirror: `TimeField` owns its own
+   * draft and hands this row only settled values, so an external change to the stored
+   * time lands with no re-sync step.
+   */
   const storedTime = {
     hour: readHour(preferences, target),
     minute: readMinute(preferences, target),
   };
-  const time = draftTime ?? storedTime;
   const disabled = !masterEnabled || locked || requestPending || !userId;
 
   /**
@@ -151,12 +149,12 @@ export function NotificationTargetRow({
   }
 
   /**
-   * The commit boundary is the picker CLOSING, never a debounce: the web input fires per
-   * keystroke, the iOS spinner fires continuously while scrolling, Android once on OK.
-   * A time change is a pure column write on every platform and cannot fail for permission.
+   * `TimeField` fires this once per settled value - blur on web, Done on the iOS sheet,
+   * OK on the Android dialog - so there is nothing to debounce and no half-typed time to
+   * filter. A time change is a pure column write on every platform and cannot fail for
+   * permission.
    */
   async function handleTimeCommit(next: TimeOfDay) {
-    setDraftTime(null);
     if (!userId) return;
     const { hour, minute } = clampTime(next);
     if (hour === storedTime.hour && minute === storedTime.minute) return;
@@ -195,9 +193,8 @@ export function NotificationTargetRow({
           </Text>
           <TimeField
             compact
-            value={time}
-            onChange={setDraftTime}
-            onCommit={(next) => void handleTimeCommit(next)}
+            value={storedTime}
+            onChange={(next) => void handleTimeCommit(next)}
             // Not gated on the row's own switch: a time is worth setting before turning the
             // reminder on, and the write cannot fail.
             disabled={disabled}

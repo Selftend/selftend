@@ -49,6 +49,32 @@ describe("DurationSlider", () => {
     expect(onChange).toHaveBeenLastCalledWith(11);
   });
 
+  it("treats a stepper press as both the change and its settling", () => {
+    // A drag emits once per whole minute it crosses, so the persisting caller
+    // listens on commit rather than change (#1190). A tap has no travel - it
+    // must commit on the spot, or a user who only ever steps never saves.
+    const onChange = jest.fn();
+    const onCommit = jest.fn();
+    renderWithProviders(<DurationSlider value={12} onChange={onChange} onCommit={onCommit} />);
+
+    fireEvent.press(screen.getByLabelText("One minute more"));
+
+    expect(onChange).toHaveBeenLastCalledWith(13);
+    expect(onCommit).toHaveBeenLastCalledWith(13);
+    expect(onCommit).toHaveBeenCalledTimes(1);
+  });
+
+  it("commits nothing from a stepper the range has disabled", () => {
+    const onCommit = jest.fn();
+    renderWithProviders(
+      <DurationSlider value={MAX_SIT_MINUTES} onChange={() => {}} onCommit={onCommit} />,
+    );
+
+    fireEvent.press(screen.getByLabelText("One minute more"));
+
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
   it("disables the stepper that would leave the range", () => {
     const onChange = jest.fn();
     renderWithProviders(<DurationSlider value={MIN_SIT_MINUTES} onChange={onChange} />);

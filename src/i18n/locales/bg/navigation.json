@@ -63,8 +63,7 @@
     "dark": "Тъмна"
   },
   "notFound": {
-    "title": "Страницата не е намерена",
-    "home": "Начало"
+    "title": "Страницата не е намерена"
   },
   "today": {
     "eyebrow": "Днес · {{date}}",
@@ -140,6 +139,13 @@
       "handleHint": "Премества този инструмент нагоре или надолу в списъка.",
       "addHeading": "Добави към началния екран",
       "addChip": "Добави {{title}}",
+      "addChipTagged": "Добави {{title}}, {{module}}",
+      "moduleTag": {
+        "cbt": "CBT",
+        "act": "ACT",
+        "cbtA11y": "CBT - Когнитивно-поведенческа терапия",
+        "actA11y": "ACT - Терапия на приемане и ангажираност"
+      },
       "allAdded": "Всичко вече е на началния екран."
     },
     "addToHome": {
@@ -148,8 +154,6 @@
     },
     "categories": {
       "mood": "Запис на настроението",
-      "cbt": "КПТ",
-      "act": "ACT",
       "journal": "Дневник",
       "breathing": "Дишане",
       "grounding": "Заземяване",
@@ -456,13 +460,19 @@
     "expansion": "Приемане",
     "urgeSurfing": "Сърфиране на импулса",
     "observingSelf": "Наблюдаващото Аз",
-    "bullsEye": "Проверка на ценностите",
     "dailyLife": "Ежедневие",
     "learn": "Обучение",
     "edit": "Редактиране",
     "log": "Запис",
     "favorites": "Любими",
-    "back": "Върни се"
+    "back": "Върни се",
+    "backTo": "Назад към {{name}}",
+    "saved": "Запазено",
+    "signIn": "Вход",
+    "signUp": "Регистрация",
+    "resetPassword": "Смяна на паролата",
+    "updatePassword": "Обновяване на паролата",
+    "verifyEmail": "Потвърждаване на имейла"
   },
   "modulesPage": {
     "title": "Модули",
@@ -471,10 +481,6 @@
     "stats": {
       "overview": "Преглед"
     }
-  },
-  "dateBar": {
-    "selectDate": "Избери дата",
-    "clear": "Изчисти датата"
   },
   "plan": {
     "wizard": {

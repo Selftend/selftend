@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -22,6 +22,7 @@ import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 
 export default function ActivitiesScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: activities, isLoading } = useActivities(user?.id ?? null);
@@ -41,7 +42,7 @@ export default function ActivitiesScreen() {
       ]
         .filter(Boolean)
         .join(" · ")}
-      onPress={() => router.push(`/modules/cbt/activities/${activity.id}`)}
+      onPress={() => pushWithOrigin(`/modules/cbt/activities/${activity.id}`)}
     />
   );
 
@@ -62,7 +63,7 @@ export default function ActivitiesScreen() {
               />
               <Text variant="muted">{t("activities.description")}</Text>
             </View>
-            <Button onPress={() => router.push("/modules/cbt/activities/new")} size="sm">
+            <Button onPress={() => pushWithOrigin("/modules/cbt/activities/new")} size="sm">
               <Text>{t("activities.new")}</Text>
             </Button>
           </View>

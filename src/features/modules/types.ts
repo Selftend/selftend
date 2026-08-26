@@ -96,6 +96,22 @@ export interface UserPreferences {
   ambientVolume: number;
   lastBreathingPatternId: string | null;
   breathingCycles: number | null;
+  /**
+   * Interval-bell spacing for a meditation sit, in minutes; 0 is off (#1190).
+   * A playback preference rather than programme progress, which is why it sits
+   * beside the breathing audio columns and not on meditation_program_state.
+   * Never chosen and explicitly off are the same thing to every reader, so the
+   * null column collapses to 0 here rather than widening the type.
+   */
+  meditationIntervalBellMinutes: number;
+  /**
+   * Volume for all three meditation bells, 0..1; 0 is off (#1188). Until this
+   * shipped they fired at a hardcoded 1, which measured as the loudest sound in
+   * the app - louder than either breathing lane, both of which had a slider.
+   * Defaults to 1 because #1130 owns absolute loudness: a quieter default here
+   * would stack with its re-render.
+   */
+  bellVolume: number;
   // The app's own mailbox-ownership flag (#489). Under mailer_autoconfirm,
   // auth's email_confirmed_at is stamped at signup and proves nothing; this
   // is set after an OTP code entry or an emailed-link round trip. Advisory -
@@ -182,6 +198,8 @@ export const defaultUserPreferences: UserPreferences = {
   ambientVolume: 0.5,
   lastBreathingPatternId: null,
   breathingCycles: null,
+  meditationIntervalBellMinutes: 0,
+  bellVolume: 1,
   emailVerified: false,
 };
 

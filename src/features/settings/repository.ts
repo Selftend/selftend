@@ -88,6 +88,8 @@ interface UserPreferenceRow {
   ambient_volume: number | null;
   last_breathing_pattern_id: string | null;
   breathing_cycles: number | null;
+  meditation_interval_bell_minutes: number | null;
+  bell_volume: number | null;
   email_verified: boolean | null;
 }
 
@@ -188,6 +190,9 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     ambientVolume: row.ambient_volume ?? defaultUserPreferences.ambientVolume,
     lastBreathingPatternId: row.last_breathing_pattern_id ?? null,
     breathingCycles: row.breathing_cycles ?? null,
+    meditationIntervalBellMinutes:
+      row.meditation_interval_bell_minutes ?? defaultUserPreferences.meditationIntervalBellMinutes,
+    bellVolume: row.bell_volume ?? defaultUserPreferences.bellVolume,
     emailVerified: row.email_verified ?? defaultUserPreferences.emailVerified,
   };
 }
@@ -302,6 +307,8 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   ambientVolume: "ambient_volume",
   lastBreathingPatternId: "last_breathing_pattern_id",
   breathingCycles: "breathing_cycles",
+  meditationIntervalBellMinutes: "meditation_interval_bell_minutes",
+  bellVolume: "bell_volume",
   emailVerified: "email_verified",
 };
 

@@ -24,6 +24,103 @@ const MODULE_ROOM_RESTRICTION = {
     "Use useRoomStyle(hue) / useRoomCardHsl(hue) from @/src/lib/use-room-style - they carry the scheme read and the cached style identity.",
 };
 
+// The raw-Modal ban (#1166 clause G2, built by #1260). PressShieldModal's
+// required onEscape makes a forgotten modal Escape a type error - but only for
+// modals that actually render through the wrapper. A raw Modal written around
+// it inherits neither the Escape row nor the #1054 web-unmount gate, so the
+// import itself is what this rule closes off. Shared for the same reason as
+// MODULE_ROOM_RESTRICTION above: no-restricted-imports is last-wins per file,
+// and every later import block that covers a component dir must re-state it.
+const RAW_MODAL_RESTRICTION = {
+  name: "react-native",
+  importNames: ["Modal"],
+  message:
+    "A raw Modal bypasses the modal escape guarantees (#1166/#1260) - render through PressShieldModal from @/src/components/app/press-shield-modal, which carries the pinned Escape row and the web-unmount gate. If this surface genuinely cannot (its entire content already is an explicit way out), exempt the file in eslint.config.js with a reason - test/raw-modal-ban.test.ts keeps the exemption list honest.",
+};
+
+// The sanctioned importer plus the frozen bypasser set. Every exemption is a
+// surface already ruled out of the modal rule's scope - the small dialogs whose
+// entire content is an explicit Cancel, plus the coach-mark overlay (#1165).
+// This list is FROZEN: the right response to it growing is to question the new
+// entry, not to extend the list. test/raw-modal-ban.test.ts asserts the set
+// below equals the set of files that actually import Modal, so a stale entry -
+// a file converted to the wrapper or deleted - fails loudly instead of
+// lingering as a silent hole.
+const RAW_MODAL_EXEMPT_FILES = [
+  // The one sanctioned importer: the wrapper itself.
+  "src/components/app/press-shield-modal.tsx",
+  // Small confirm dialog - its entire content is the explicit Cancel/confirm
+  // pair, ruled out of the pinned-row scope by #1165.
+  "src/components/app/confirm-dialog.tsx",
+  // Same shape as ConfirmDialog: a destructive confirm with its own Cancel.
+  "src/components/app/delete-account-modal.tsx",
+  // Web-only crop dialog with a visible Cancel; the native file is a null stub.
+  "src/components/app/avatar-crop-modal.web.tsx",
+  // Coach-mark overlay with its own text dismissals, ruled out of scope by #1165.
+  "src/features/tours/tour-overlay.tsx",
+];
+
+// The Origin contract (#1167 clause O3, built by #1269). #1164 decided the
+// origin is recorded on EVERY push through one helper - opt-out, not opt-in -
+// because the cross-link set keeps growing and a push that forgets fails
+// invisibly: nothing is recorded, and the arriving screen just quietly shows
+// Up. Without this rule the migration (#1265/#1266/#1267) rots straight back
+// to opt-in, one new call site at a time. no-restricted-properties rather than
+// another no-restricted-syntax selector: every no-restricted-syntax block in
+// this file is last-wins per file and each would have to re-state the
+// selector, while no-restricted-properties is configured nowhere else - here
+// or upstream in expoConfig - so one tree-wide block composes without
+// disturbing anything.
+const BARE_ROUTER_PUSH_RESTRICTIONS = [
+  {
+    object: "router",
+    property: "push",
+    message:
+      "A bare router.push records no Origin, so a cross-hierarchy arrival quietly shows Up instead of the way back (#1167 O3). Navigate through usePushWithOrigin from @/src/lib/escape-origin. If this move genuinely must not record one (nav chrome, a cold arrival, a backwards move), exempt the file in eslint.config.js with the reason - test/bare-router-push-ban.test.ts keeps the exemption list honest.",
+  },
+  {
+    object: "router",
+    property: "navigate",
+    message:
+      "A bare router.navigate records no Origin, so a cross-hierarchy arrival quietly shows Up instead of the way back (#1167 O3). Navigate through usePushWithOrigin from @/src/lib/escape-origin. If this move genuinely must not record one (nav chrome, a cold arrival, a backwards move), exempt the file in eslint.config.js with the reason - test/bare-router-push-ban.test.ts keeps the exemption list honest.",
+  },
+];
+
+// The declared opt-outs: every file here stays bare ON PURPOSE, for the stated
+// reason - each records no origin because recording one would be wrong, not
+// because it predates the helper. FROZEN the same way RAW_MODAL_EXEMPT_FILES
+// is: the right response to it growing is to question the new entry.
+// test/bare-router-push-ban.test.ts asserts the set below equals the set of
+// files that actually call router.push/router.navigate, so a migrated or
+// deleted call site fails loudly instead of lingering as a silent hole.
+const BARE_ROUTER_PUSH_EXEMPT_FILES = [
+  // The one sanctioned caller: the helper itself - its push IS the recorded one.
+  "src/lib/escape-origin.ts",
+  // Nav chrome's deliberate opt-out (#1264/#1265): go-somewhere-else-entirely
+  // affordances whose targets are top-level routes already rooted correctly -
+  // an Escape reading back-to-CBT on Settings would compete with the sidebar
+  // as the way back. The full five-surface set, with the reasoning that
+  // separates these two callers from the three that never call push, is
+  // enumerated in src/components/app/nav-chrome-origin.test.ts. (No quoted
+  // phrases in these comments: the honesty test reads the list's entries as
+  // every string literal between the brackets.)
+  "src/components/app/user-menu.tsx",
+  // The breadcrumb is the escape chrome itself: its jumps are the Up trail.
+  "src/components/app/screen-breadcrumb.tsx",
+  // Cold arrival (#1267): a notification tap opens the app from outside, so
+  // there is no in-app where-you-came-from to record.
+  "src/features/notifications/use-notification-deep-link.ts",
+  // The editor forms' `canGoBack() ? back() : push(fallback)` is a BACKWARDS
+  // move (#1267): recording it would aim the destination's Escape back into
+  // the just-abandoned form.
+  "src/features/gratitude/gratitude-entry-editor-screen.tsx",
+  "src/features/habits/habit-editor-screen.tsx",
+  "src/features/journal/journal-entry-editor-screen.tsx",
+  "src/features/mood/mood-entry-editor-screen.tsx",
+  "src/features/routines/routine-editor-screen.tsx",
+  "src/features/sleep/sleep-log-screen.tsx",
+];
+
 // The features whose entries carry a captured civil day (`dayKey`) and, for
 // timestamps, a captured offset (#250, #330). Every route from one of these to
 // the VIEWER's day is guarded - the import-layer and syntax-layer halves below.
@@ -53,6 +150,10 @@ function capturedFrameImportPaths(allow = []) {
   const activityNames = ["formatRelativeActivity"].filter((n) => !allow.includes(n));
   return [
     MODULE_ROOM_RESTRICTION,
+    // Re-stated because every block built from this function is last-wins for
+    // the feature dirs it matches - omitting it here would quietly un-ban the
+    // raw Modal for every captured-frame feature.
+    RAW_MODAL_RESTRICTION,
     ...(dayNames.length
       ? ["@/src/utils/date", "@/src/stores/selected-date-store"].map((name) => ({
           name,
@@ -274,6 +375,47 @@ module.exports = [
     files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": ["error", { paths: [MODULE_ROOM_RESTRICTION] }],
+    },
+  },
+  {
+    // Import-layer raw-Modal ban (#1166 G2, #1260) for the component dirs.
+    // Sits AFTER the module-room block and re-states MODULE_ROOM_RESTRICTION,
+    // because the rule is last-wins per file. Tests are ignored here so they
+    // fall through to the block above and keep the module-room guard: a test
+    // imports Modal to FIND it in a render tree, not to author one. The
+    // exempt files fall through the same way, keeping module-room too.
+    files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx", ...RAW_MODAL_EXEMPT_FILES],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { paths: [MODULE_ROOM_RESTRICTION, RAW_MODAL_RESTRICTION] },
+      ],
+    },
+  },
+  {
+    // The same ban for the src/ dirs the module-room block never covered
+    // (providers, stores, utils, i18n, lib, constants) plus top-level lib/.
+    // Deliberately NOT re-stating MODULE_ROOM_RESTRICTION: src/lib is where
+    // use-room-style legitimately imports roomVariables, and nothing here was
+    // under that guard before.
+    files: ["src/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+    ignores: ["src/features/**", "src/components/**", "**/*.test.ts", "**/*.test.tsx"],
+    rules: {
+      "no-restricted-imports": ["error", { paths: [RAW_MODAL_RESTRICTION] }],
+    },
+  },
+  {
+    // The Origin contract (#1167 O3, #1269): a bare router.push / navigate is
+    // an error outside the helper and the declared opt-outs above. One
+    // tree-wide block is enough - no other block here or upstream configures
+    // no-restricted-properties, so there is nothing for last-wins to disarm
+    // (unlike the no-restricted-syntax stack below). Tests are ignored: a test
+    // reaches for router.push to assert on the mock, not to navigate.
+    files: ["src/**/*.{ts,tsx}", "app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+    ignores: ["**/*.test.ts", "**/*.test.tsx", ...BARE_ROUTER_PUSH_EXEMPT_FILES],
+    rules: {
+      "no-restricted-properties": ["error", ...BARE_ROUTER_PUSH_RESTRICTIONS],
     },
   },
   {

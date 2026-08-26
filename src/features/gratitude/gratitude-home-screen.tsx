@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ErrorState } from "@/src/components/app/screen-state";
 import { Section } from "@/src/components/app/section";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { GratitudeOnboarding } from "@/src/components/app/gratitude-onboarding-modal";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -32,6 +33,7 @@ type EntryFilter = "all" | "favorites";
 const BAR_AREA_HEIGHT = 68;
 
 export default function GratitudeHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("gratitude");
   const roomStyle = useRoomStyle("think");
   const { user } = useSession();
@@ -104,7 +106,10 @@ export default function GratitudeHomeScreen() {
                 },
               ]}
             />
-            <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
+            <Button
+              onPress={() => pushWithOrigin("/tools/gratitude-log/new")}
+              className="self-start"
+            >
               <Icon name="add" className="size-4 text-primary-foreground" />
               <Text>{t("newEntry")}</Text>
             </Button>
@@ -149,20 +154,14 @@ export default function GratitudeHomeScreen() {
               <Section
                 title={t("list.recent")}
                 action={
-                  <Pressable
-                    accessibilityRole="link"
-                    onPress={() =>
-                      router.push(
-                        filter === "favorites"
-                          ? "/tools/gratitude-log/favorites"
-                          : "/tools/gratitude-log/entries",
-                      )
+                  <ShowAllLink
+                    label={t("home.viewAll")}
+                    route={
+                      filter === "favorites"
+                        ? "/tools/gratitude-log/favorites"
+                        : "/tools/gratitude-log/entries"
                     }
-                  >
-                    <Text className="text-xs font-semibold text-primary-ink">
-                      {t("home.viewAll")}
-                    </Text>
-                  </Pressable>
+                  />
                 }
               >
                 {/* The All/Favourites filter rides the section body, as the

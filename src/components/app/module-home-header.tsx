@@ -1,10 +1,11 @@
 import { Pressable, View, type ViewStyle } from "react-native";
-import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
+import { ScreenEscape } from "@/src/components/app/screen-escape";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import type { NotificationTargetKey } from "@/src/features/notifications/registry";
@@ -83,12 +84,19 @@ export function ModuleHomeHeader({
   stats,
   addWidgetCategory,
 }: ModuleHomeHeaderProps) {
+  const pushWithOrigin = usePushWithOrigin();
+
   function handleActionPress(action: HeaderAction) {
     if (action.type === "notifications") {
       // The bell is a door to the central Reminders screen, not a surface of its
       // own (#967): one ruling for all ten bells, and the glyph stays stateless.
       // `target` lets the screen bring this module's row into view on arrival.
-      router.push({ pathname: "/notifications", params: { target: action.targetKey } });
+      //
+      // Through the Origin-recording helper rather than a bare `router.push`,
+      // which is what makes Reminders' Escape read "CBT" and return here instead
+      // of stranding the user on Home (#1261). This is the originally reported
+      // symptom, and the tracer bullet for the batches that follow.
+      pushWithOrigin({ pathname: "/notifications", params: { target: action.targetKey } });
     } else {
       action.onPress();
     }
@@ -100,7 +108,11 @@ export function ModuleHomeHeader({
           burying the info action would bury the only path back to the
           onboarding replay. */}
       <View className="flex-row items-center gap-2">
-        <View className="flex-1">
+        {/* The Escape renders unconditionally - never wrap it in a condition
+            (#1250). The trail beside it still hides at one crumb, so on a
+            one-crumb screen the glyph sits on this row alone. */}
+        <View className="flex-1 flex-row flex-wrap items-center gap-2">
+          <ScreenEscape />
           <ScreenBreadcrumb />
         </View>
         {actions.length > 0 || addWidgetCategory ? (

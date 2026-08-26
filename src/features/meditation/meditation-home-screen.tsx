@@ -1,4 +1,5 @@
-import { Redirect, router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Redirect, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +18,7 @@ import {
 } from "@/src/components/app/meditation-onboarding-modal";
 import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/timer/interval";
 import { DurationSlider } from "@/src/features/meditation/duration-slider";
+import { VolumeSlider } from "@/src/components/app/volume-slider";
 import { computeWindowInsights } from "@/src/features/meditation/insights";
 import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-daily-life-card";
 import { MeditationInsightsCard } from "@/src/features/meditation/meditation-insights-card";
@@ -54,6 +56,7 @@ const DEFAULT_DURATION = 12;
 const RECENT_SITS = 5;
 
 export default function MeditationHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("meditation");
   const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
@@ -85,8 +88,13 @@ export default function MeditationHomeScreen() {
   // Null until the user picks, so a preference arriving after first paint still
   // lands - but a pick made before it arrives is never overwritten.
   const [pickedDuration, setPickedDuration] = useState<number | null>(null);
-  const [bellMinutes, setBellMinutes] = useState<number>(0);
+  const [pickedBell, setPickedBell] = useState<number | null>(null);
   const durationMinutes = pickedDuration ?? preferredDuration ?? DEFAULT_DURATION;
+  // Same null-until-picked shape as the length above, and for the same reason:
+  // the stored bell arrives with the preferences query, after first paint.
+  const bellMinutes = pickedBell ?? preferences?.meditationIntervalBellMinutes ?? 0;
+  const [pickedBellVolume, setPickedBellVolume] = useState<number | null>(null);
+  const bellVolume = pickedBellVolume ?? preferences?.bellVolume ?? 1;
 
   // The loaded sessions only stand in until the server median arrives (undefined while
   // loading); once it does it wins, including a genuine null for "no sessions yet".
@@ -189,6 +197,39 @@ export default function MeditationHomeScreen() {
     setNowMs(Date.now());
   }
 
+  // Both of the card's controls used to forget on every visit (#1190): the
+  // length was written only by the onboarding wizard, and the bell was stored
+  // nowhere at all.
+  //
+  // Writes are best-effort, exactly like the breathing session's volume writes:
+  // the local pick is authoritative for this visit, so a failed write must not
+  // surface as an error or become an unhandled rejection.
+  //
+  // The length persists on COMMIT, not on change - a drag emits once per whole
+  // minute it crosses, which would be a write per minute of travel. The bell is
+  // a discrete choice, so its change already is its commit.
+  function commitDuration(minutes: number) {
+    if (!userId) return;
+    void upsertProgramState
+      .mutateAsync({ preferredDurationMinutes: minutes })
+      .catch(() => undefined);
+  }
+
+  function pickBell(minutes: number) {
+    setPickedBell(minutes);
+    if (!userId) return;
+    void updatePreferences
+      .mutateAsync({ meditationIntervalBellMinutes: minutes })
+      .catch(() => undefined);
+  }
+
+  // Volume drags like the length does, so it persists on commit for the same
+  // reason: a drag emits per pan move (#1188).
+  function commitBellVolume(volume: number) {
+    if (!userId) return;
+    void updatePreferences.mutateAsync({ bellVolume: volume }).catch(() => undefined);
+  }
+
   // The same clock reading, so the last column advances with the query bound
   // rather than trailing it by a day after a midnight rollover.
   const minutesWindow = useMemo(
@@ -276,7 +317,10 @@ export default function MeditationHomeScreen() {
         isPending={upsertProgramState.isPending || updatePreferences.isPending}
         errorMessage={onboardingError}
         onComplete={(result) => void handleOnboardingComplete(result)}
-        onDismiss={forceWizard ? () => setForceWizard(false) : undefined}
+        // The ternary this replaces only ever produced `undefined` while the
+        // wizard was invisible (`visible={forceWizard}`), so it withheld a
+        // dismiss from nobody.
+        onDismiss={() => setForceWizard(false)}
       />
       <SafeAreaView
         className="flex-1 bg-background"
@@ -320,6 +364,7 @@ export default function MeditationHomeScreen() {
                 testID="sit-length-slider"
                 value={durationMinutes}
                 onChange={pickDuration}
+                onCommit={commitDuration}
               />
               <ChoiceRow
                 testID="sit-bell-choices"
@@ -333,8 +378,29 @@ export default function MeditationHomeScreen() {
                       : t("duration.minutes", { count: minutes }),
                 }))}
                 value={bellMinutes}
-                onChange={setBellMinutes}
+                onChange={pickBell}
               />
+              {/* The one lane with no control was the loudest sound in the app
+                  (#1188): every bell fired at a hardcoded 1 while both breathing
+                  lanes had a slider. It governs all three bells - start, end and
+                  interval - not just the interval row above it, which is why the
+                  label says "bell" and not "interval bell". 0 is off. */}
+              <View className="gap-2" testID="sit-bell-volume">
+                <View className="flex-row items-baseline justify-between gap-3">
+                  <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                    {t("timer:bell.volumeLabel")}
+                  </Text>
+                  <Text className="text-[13px] font-semibold tabular-nums text-foreground">
+                    {bellVolume > 0 ? `${Math.round(bellVolume * 100)}%` : t("timer:bell.muted")}
+                  </Text>
+                </View>
+                <VolumeSlider
+                  value={bellVolume}
+                  onChange={setPickedBellVolume}
+                  onCommit={commitBellVolume}
+                  accessibilityLabel={t("timer:bell.volumeLabel")}
+                />
+              </View>
               {/* `lg`, so the screen's primary action clears the 44dp touch
                   floor on a phone - the default button is 40dp tall. The rows
                   above ARE the setup; Begin hands both choices to the sitting
@@ -342,7 +408,7 @@ export default function MeditationHomeScreen() {
               <Button
                 size="lg"
                 onPress={() =>
-                  router.push({
+                  pushWithOrigin({
                     pathname: "/tools/meditation/session",
                     params: { duration: String(durationMinutes), bell: String(bellMinutes) },
                   })
@@ -362,20 +428,20 @@ export default function MeditationHomeScreen() {
                     name: t(stage.shortTitleKey as Parameters<typeof t>[0]),
                   })}
                   subtitle={t("module.home.stageRowSubtitle")}
-                  onPress={() => router.push("/tools/meditation/stages")}
+                  onPress={() => pushWithOrigin("/tools/meditation/stages")}
                 />
                 <PracticeRow
                   icon="menu-book"
                   title={t("module.learn.title")}
                   subtitle={t("module.learn.subtitle")}
-                  onPress={() => router.push("/tools/meditation/learn")}
+                  onPress={() => pushWithOrigin("/tools/meditation/learn")}
                   ruled
                 />
                 <PracticeRow
                   icon="self-improvement"
                   title={t("practices.sectionLabel")}
                   subtitle={t("module.home.practicesRowSubtitle")}
-                  onPress={() => router.push("/tools/meditation/practices")}
+                  onPress={() => pushWithOrigin("/tools/meditation/practices")}
                   ruled
                 />
               </View>
@@ -445,7 +511,7 @@ export default function MeditationHomeScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => router.push("/tools/meditation/sessions")}
+                    onPress={() => pushWithOrigin("/tools/meditation/sessions")}
                     className="flex-row items-center gap-1 active:opacity-70"
                     role="link"
                   >
@@ -617,6 +683,7 @@ function PracticeRow({ icon, title, subtitle, onPress, ruled = false }: Practice
  * which is the same resolution habits' history row reached (#762).
  */
 function SitRow({ session, ruled }: { session: MeditationSession; ruled: boolean }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("meditation");
 
   return (
@@ -629,7 +696,7 @@ function SitRow({ session, ruled }: { session: MeditationSession; ruled: boolean
       // and note, in that order.
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() =>
-        router.push({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } })
+        pushWithOrigin({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } })
       }
       className={cn("gap-1 py-3 active:opacity-70", ruled && "border-t border-border")}
       role="button"

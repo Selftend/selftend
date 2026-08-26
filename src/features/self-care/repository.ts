@@ -15,6 +15,8 @@ interface SelfCareLogRow {
   social_connection_made: boolean;
   social_notes: string;
   meaningful_activity: string;
+  self_criticism_noticed: boolean;
+  self_compassion_note: string;
   created_at: string;
   updated_at: string;
 }
@@ -32,6 +34,8 @@ function mapSelfCareLog(row: SelfCareLogRow): SelfCareLog {
     socialConnectionMade: row.social_connection_made,
     socialNotes: row.social_notes,
     meaningfulActivity: row.meaningful_activity,
+    selfCriticismNoticed: row.self_criticism_noticed,
+    selfCompassionNote: row.self_compassion_note,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -93,6 +97,8 @@ export async function upsertSelfCareLog(userId: string, input: SelfCareLogInput)
       social_connection_made: input.socialConnectionMade,
       social_notes: sanitizeUserText(input.socialNotes).trim(),
       meaningful_activity: sanitizeUserText(input.meaningfulActivity).trim(),
+      self_criticism_noticed: input.selfCriticismNoticed,
+      self_compassion_note: sanitizeUserText(input.selfCompassionNote).trim(),
     })
     .select("*")
     .single();

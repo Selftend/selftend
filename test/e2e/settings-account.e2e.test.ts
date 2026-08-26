@@ -14,7 +14,7 @@
  */
 import { expect, NORMALIZED_GATE_PREFS, test } from "./fixtures";
 
-import { createServiceClient, dismissPostSignInModals } from "./helpers";
+import { createServiceClient, dismissPostSignInModals, expectSuccessToast } from "./helpers";
 
 type PreferenceRow = Record<string, unknown>;
 type ProfileRow = Record<string, unknown>;
@@ -315,9 +315,7 @@ test.describe("settings - onboarding actions", () => {
     // Toast-only feedback (#982): the shared banner pair is gone, and `.first()`
     // existed to disambiguate the banner from the toast that already fired beside
     // it. Scoped to the toast so this cannot pass against a stale permanent node.
-    await expect(
-      page.getByTestId("app-toast").getByText(/app introduction will be shown again/i),
-    ).toBeVisible({ timeout: 8_000 });
+    await expectSuccessToast(page, /app introduction will be shown again/i, { timeout: 8_000 });
 
     // Replaying the app introduction does not silently alter contextual tips.
     const { data: replayed } = await admin
@@ -329,9 +327,7 @@ test.describe("settings - onboarding actions", () => {
     expect(replayed?.shown_button_tours).toEqual(["home:edit"]);
 
     await page.getByRole("button", { name: "Show tips again", exact: true }).click();
-    await expect(
-      page.getByTestId("app-toast").getByText(/button tips.*can appear again/i),
-    ).toBeVisible({ timeout: 8_000 });
+    await expectSuccessToast(page, /button tips.*can appear again/i, { timeout: 8_000 });
     const { data: tips } = await admin
       .from("user_preferences")
       .select("shown_button_tours, start_here_dismissed_at")

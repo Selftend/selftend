@@ -122,18 +122,6 @@ export default function ActDefusionDetailScreen() {
                 <CardTitle>{t("defusion.fusionAfterLabel")}</CardTitle>
                 <CardDescription>{log.fusionLevelAfter} / 100</CardDescription>
               </CardHeader>
-              {log.fusionLevelBefore !== null ? (
-                <CardContent>
-                  <Text className="font-semibold text-foreground">
-                    {log.fusionLevelAfter < log.fusionLevelBefore
-                      ? t("defusion.fusionDrop", {
-                          before: log.fusionLevelBefore,
-                          after: log.fusionLevelAfter,
-                        })
-                      : t("defusion.noFusionDrop", { after: log.fusionLevelAfter })}
-                  </Text>
-                </CardContent>
-              ) : null}
             </Card>
           ) : null}
 

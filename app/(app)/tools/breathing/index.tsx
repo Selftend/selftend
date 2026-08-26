@@ -1,12 +1,13 @@
-import { router } from "expo-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HelpSheet } from "@/src/components/app/help-sheet";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { formatClock } from "@/src/features/breathing/cycle-math";
 import {
   useBreathingSessions,
@@ -25,6 +26,7 @@ import { useBreathingExercises } from "@/src/features/breathing/exercises-querie
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRoomStyle } from "@/src/lib/use-room-style";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
@@ -44,6 +46,7 @@ interface PatternRow {
 }
 
 export default function BreathingScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { data: customExercises } = useBreathingExercises(user?.id ?? null);
@@ -179,8 +182,27 @@ export default function BreathingScreen() {
           <View className="gap-1">
             <SectionHeader
               title={t("breathing.overview.patternsTitle")}
-              actionLabel={t("breathing.overview.newPattern")}
-              onAction={() => router.push("/tools/breathing/new")}
+              action={
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("breathing.overview.newPattern")}
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  // ⚠️ `pushWithOrigin`, not a bare `router.push` (#1269, which
+                  // landed while this branch was open): a door that records no
+                  // Origin shows "Up" instead of the way back on arrival.
+                  onPress={() => pushWithOrigin("/tools/breathing/new")}
+                  className="flex-row items-center gap-1 active:opacity-70"
+                  role="button"
+                >
+                  <Text variant="muted" className="shrink-0 text-[12.5px] font-semibold">
+                    {t("breathing.overview.newPattern")}
+                  </Text>
+                  {/* This one baked its arrow into the string too, which put a glyph in
+                    the accessible name right beside a door that had just stopped doing
+                    that. Decorative icon here as well; `Icon` is aria-hidden. */}
+                  <Icon name="arrow-forward" className="size-3.5 text-muted-foreground" />
+                </Pressable>
+              }
             />
             {patterns.length === 0 ? (
               <Text variant="muted" className="border-t border-border py-4 text-sm">
@@ -194,7 +216,7 @@ export default function BreathingScreen() {
                   accessibilityLabel={t("breathing.overview.startPattern", { name: p.name })}
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/tools/breathing/session",
                       params: { pattern: p.routeParam },
                     })
@@ -224,8 +246,12 @@ export default function BreathingScreen() {
           <View className="gap-1">
             <SectionHeader
               title={t("breathing.overview.recentTitle")}
-              actionLabel={t("breathing.overview.showAll")}
-              onAction={() => router.push("/tools/breathing/history")}
+              action={
+                <ShowAllLink
+                  label={t("breathing.overview.showAll")}
+                  route="/tools/breathing/history"
+                />
+              }
             />
             {recent.length === 0 ? (
               <Text variant="muted" className="border-t border-border py-4 text-sm">
@@ -268,32 +294,18 @@ export default function BreathingScreen() {
  * A section's label and its one link. `Load 5 more` is deliberately absent - a
  * fixed five rows and a link to the full screen, as the rest of the redesign
  * landed, rather than a button that grows the page indefinitely.
+ *
+ * The action is a node rather than a label and a handler, because the two sections
+ * take different kinds: the sessions section takes the shared `ShowAllLink` door
+ * (#1375), and the patterns section a plain creation button.
  */
-function SectionHeader({
-  title,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  actionLabel: string;
-  onAction: () => void;
-}) {
+function SectionHeader({ title, action }: { title: string; action: ReactNode }) {
   return (
     <View className="flex-row items-center justify-between gap-3 pb-1.5">
       <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
         {title}
       </Text>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={actionLabel}
-        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-        onPress={onAction}
-        role="button"
-      >
-        <Text variant="muted" className="shrink-0 text-[12.5px] font-semibold">
-          {actionLabel}
-        </Text>
-      </Pressable>
+      {action}
     </View>
   );
 }

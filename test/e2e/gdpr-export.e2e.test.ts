@@ -10,6 +10,7 @@
  */
 
 import { expect, test } from "./fixtures";
+import { expectSuccessToast } from "./helpers";
 
 test.describe("GDPR data export", () => {
   test("alice can export her data and sees the success message", async ({ page }) => {
@@ -30,13 +31,12 @@ test.describe("GDPR data export", () => {
     await exportButton.click();
 
     // The success copy is TOAST content now (#982) - the permanent `Text` node that
-    // used to sit under the button went with the R7 banner pair. Scoped to the toast
-    // for two reasons: an unscoped match would pass just as happily against a stale
-    // permanent node, and the toast auto-dismisses at 4500ms, so what is asserted has
-    // to be the thing that is actually transient.
-    await expect(
-      page.getByTestId("app-toast").getByText("Data exported successfully."),
-    ).toBeVisible({ timeout: 15_000 });
+    // used to sit under the button went with the R7 banner pair. `expectSuccessToast`
+    // keeps the assertion scoped to the toast, so it cannot pass against a stale
+    // permanent node, and fails fast and by name if the global save-failed toast took
+    // the slot instead. A success toast is transient - do not assert on it after any
+    // step that could outlast it.
+    await expectSuccessToast(page, "Data exported successfully.");
 
     // Optionally confirm the download was triggered.
     const download = await downloadPromise;

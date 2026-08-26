@@ -1,8 +1,9 @@
-import { act, render, screen } from "@testing-library/react-native";
-import { Modal, Platform, Text } from "react-native";
+import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
+import { Modal, Platform, ScrollView, Text } from "react-native";
 
 import { ENTRANCE_FALLBACK_MS, PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import i18n from "@/src/i18n";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
 /**
@@ -20,18 +21,28 @@ import { setPlatformOS } from "@/test/modal-marker-mock";
  * source; the gate tests here enforce its runtime behavior, so weakening it
  * cannot pass as a silent no-op.
  *
+ * Since #1252 it also owns the pinned escape row that gives every full-screen
+ * modal a visible way out (spec M1/M5 on #1167). The second describe block
+ * below covers it.
+ *
  * jest cannot exercise the real RNW animation (react-native renders here),
  * so these tests drive the seams the wrapper owns: the onShow contract, the
  * computed animationType, and the visibility gate.
  */
 
 jest.mock("@/src/lib/accessibility", () => ({
+  // Spread the real module: the wrapper also reads
+  // DEFAULT_INTERACTIVE_HIT_SLOP from here for the escape row, and a mock that
+  // withholds it would silently hand the Pressable `undefined`.
+  ...jest.requireActual("@/src/lib/accessibility"),
   useReduceMotionEnabled: jest.fn(() => false),
 }));
 
 const mockedReduceMotion = jest.mocked(useReduceMotionEnabled);
 
 const ORIGINAL_OS = Platform.OS;
+
+const noop = () => undefined;
 
 const fireModalShow = () => {
   const modal = screen.UNSAFE_getByType(Modal);
@@ -50,7 +61,7 @@ describe("PressShieldModal", () => {
   it("shields presses during the web slide-in and releases on onShow", () => {
     setPlatformOS("web");
     render(
-      <PressShieldModal visible>
+      <PressShieldModal onEscape={noop} visible>
         <Text>content</Text>
       </PressShieldModal>,
     );
@@ -75,7 +86,7 @@ describe("PressShieldModal", () => {
     setPlatformOS("web");
     const onShow = jest.fn();
     render(
-      <PressShieldModal onShow={onShow} visible>
+      <PressShieldModal onEscape={noop} onShow={onShow} visible>
         <Text>content</Text>
       </PressShieldModal>,
     );
@@ -91,7 +102,7 @@ describe("PressShieldModal", () => {
     mockedReduceMotion.mockReturnValue(true);
     setPlatformOS("web");
     render(
-      <PressShieldModal visible>
+      <PressShieldModal onEscape={noop} visible>
         <Text>content</Text>
       </PressShieldModal>,
     );
@@ -109,7 +120,7 @@ describe("PressShieldModal", () => {
     // under reduce motion (previous test) rather than bypassing the wrapper.
     setPlatformOS("web");
     render(
-      <PressShieldModal animation="fade" visible>
+      <PressShieldModal onEscape={noop} animation="fade" visible>
         <Text>content</Text>
       </PressShieldModal>,
     );
@@ -125,7 +136,7 @@ describe("PressShieldModal", () => {
     // web-only (#1108), so native keeps full interactivity during the slide.
     setPlatformOS("ios");
     render(
-      <PressShieldModal visible>
+      <PressShieldModal onEscape={noop} visible>
         <Text>content</Text>
       </PressShieldModal>,
     );
@@ -144,7 +155,7 @@ describe("PressShieldModal", () => {
     // once.
     setPlatformOS("web");
     render(
-      <PressShieldModal visible={false}>
+      <PressShieldModal onEscape={noop} visible={false}>
         <Text>content</Text>
       </PressShieldModal>,
     );
@@ -156,7 +167,7 @@ describe("PressShieldModal", () => {
   it("keeps the closed Modal mounted on native, where the exit animation is wanted", () => {
     setPlatformOS("ios");
     render(
-      <PressShieldModal visible={false}>
+      <PressShieldModal onEscape={noop} visible={false}>
         <Text>content</Text>
       </PressShieldModal>,
     );
@@ -167,7 +178,7 @@ describe("PressShieldModal", () => {
   it("re-arms when the modal is closed and reopened", () => {
     setPlatformOS("web");
     const ui = (visible: boolean) => (
-      <PressShieldModal visible={visible}>
+      <PressShieldModal onEscape={noop} visible={visible}>
         <Text>content</Text>
       </PressShieldModal>
     );
@@ -191,7 +202,7 @@ describe("PressShieldModal", () => {
     jest.useFakeTimers();
     setPlatformOS("web");
     render(
-      <PressShieldModal visible>
+      <PressShieldModal onEscape={noop} visible>
         <Text>content</Text>
       </PressShieldModal>,
     );
@@ -205,5 +216,147 @@ describe("PressShieldModal", () => {
     expect(
       screen.queryByTestId("modal-entrance-shield", { includeHiddenElements: true }),
     ).toBeNull();
+  });
+});
+
+/**
+ * #1252 (spec clauses M1, M5, G1 on #1167): a full-screen modal covers
+ * `InvisibleHeader` entirely, so it is the app's genuine no-way-out set. The
+ * wrapper pins the Escape itself rather than each modal remembering one —
+ * which is what turns a forgotten Escape into a type error (G1) instead of
+ * something a test has to catch.
+ */
+describe("PressShieldModal's pinned escape row", () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  // The row is unconditional, not "rendered when useful". A conditional is
+  // precisely what the enforcement gate (#1263) cannot see through, so the
+  // table below pins every axis the wrapper branches on — platform, entrance,
+  // reduce motion — against the one thing that must not vary.
+  it.each([
+    ["web, sliding in", "web" as const, false],
+    ["web, entrance finished", "web" as const, false],
+    ["native", "ios" as const, false],
+    ["under reduce motion", "web" as const, true],
+  ])("renders exactly one Escape (%s)", (_label, os, reduceMotion) => {
+    setPlatformOS(os);
+    mockedReduceMotion.mockReturnValue(reduceMotion);
+    render(
+      <PressShieldModal onEscape={noop} visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+
+    expect(screen.getAllByTestId("modal-escape")).toHaveLength(1);
+  });
+
+  it("names the Escape with a bare 'Close'", () => {
+    // #1239: not "Close {title}". The dialog already announces its title on
+    // entry through its own accessibilityLabel, so repeating it on the way out
+    // is redundancy — and threading a title in here would be the first crack
+    // in M5's "the row holds only the Escape".
+    setPlatformOS("web");
+    render(
+      <PressShieldModal accessibilityLabel="Getting started with CBT" onEscape={noop} visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+
+    expect(screen.getByLabelText("Close")).toBeTruthy();
+    expect(screen.queryByLabelText("Close Getting started with CBT")).toBeNull();
+  });
+
+  it("wears the word instead of the X when the call site passes escapeLabel (M2)", () => {
+    // #1258: a bare X when closing is free, a word when closing decides
+    // something that sticks. The word replaces the glyph and IS the
+    // accessible name — announcing "Close" on a press that persists a
+    // decision would be the same disguise, one sense over.
+    setPlatformOS("web");
+    const onEscape = jest.fn();
+    render(
+      <PressShieldModal escapeLabel="Skip for now" onEscape={onEscape} visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+
+    const escape = screen.getByTestId("modal-escape");
+    expect(within(escape).getByText("Skip for now")).toBeTruthy();
+    expect(escape.props.accessibilityLabel).toBe("Skip for now");
+    expect(screen.queryByLabelText("Close")).toBeNull();
+
+    fireEvent.press(escape);
+    expect(onEscape).toHaveBeenCalledTimes(1);
+  });
+
+  it("holds only the Escape — no title of its own", () => {
+    // M5: every guide renders its own title inside the scroll, so a pinned
+    // title would show it twice.
+    setPlatformOS("web");
+    render(
+      <PressShieldModal accessibilityLabel="Getting started with CBT" onEscape={noop} visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+
+    expect(screen.queryByText("Getting started with CBT")).toBeNull();
+  });
+
+  it("fires onEscape, and leaves onRequestClose alone", () => {
+    // M4 is a hard constraint of this change: the visible affordance is what
+    // the rule governs, and the system gesture (Android back, the web Escape
+    // key — on the wizard, a step to the PREVIOUS panel) is untouched. So the
+    // two must not be wired to each other.
+    setPlatformOS("web");
+    const onEscape = jest.fn();
+    const onRequestClose = jest.fn();
+    render(
+      <PressShieldModal onEscape={onEscape} onRequestClose={onRequestClose} visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+
+    fireEvent.press(screen.getByTestId("modal-escape"));
+    expect(onEscape).toHaveBeenCalledTimes(1);
+    expect(onRequestClose).not.toHaveBeenCalled();
+    expect(screen.UNSAFE_getByType(Modal).props.onRequestClose).toBe(onRequestClose);
+  });
+
+  it("keeps the Escape OUTSIDE the scroller", () => {
+    // ☠️ The whole fix. `HelpSheet`'s X — the precedent named when this work
+    // was charted — lived inside its own ScrollView and scrolled away on the
+    // first swipe, so on a long guide it was visible only at scroll position
+    // zero (#1257 removed it). If this assertion ever fails, the modal can
+    // once again be impossible to close one gesture in.
+    setPlatformOS("web");
+    render(
+      <PressShieldModal onEscape={noop} visible>
+        <ScrollView>
+          <Text>a long guide</Text>
+        </ScrollView>
+      </PressShieldModal>,
+    );
+
+    const scroller = screen.UNSAFE_getByType(ScrollView);
+    expect(within(scroller).queryByTestId("modal-escape")).toBeNull();
+    expect(within(scroller).getByText("a long guide")).toBeTruthy();
+    expect(screen.getByTestId("modal-escape")).toBeTruthy();
+  });
+
+  it("renders no row for a sheet, which pins its own Escape inside its panel", () => {
+    // A bottom sheet, a centred card, a native pageSheet: the screen stays
+    // visible behind it, so a 48px bg-background row would be an opaque bar
+    // hanging over the backdrop. Those four call sites say `surface="sheet"`
+    // and keep their own X (#1257 swept them).
+    setPlatformOS("web");
+    render(
+      <PressShieldModal surface="sheet" transparent visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+
+    expect(screen.queryByTestId("modal-escape")).toBeNull();
+    expect(screen.getByText("content")).toBeTruthy();
   });
 });

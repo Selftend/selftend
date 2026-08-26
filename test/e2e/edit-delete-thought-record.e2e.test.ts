@@ -21,7 +21,11 @@ test.describe("edit and archive a thought record", () => {
     const editedBalancedThought =
       "I can ask for clarification if needed; one meeting is not proof of failure.";
 
-    // --- CREATE via wizard ---
+    const balancedThoughtInput = page.getByPlaceholder(
+      "Example: I do not know what the email means yet. One message is not proof that I failed.",
+    );
+
+    // --- CREATE via the one-column form (#1381) ---
     await page.goto("/modules/cbt/new");
     // Dismiss cookie banner if it reappears.
     await page
@@ -29,42 +33,17 @@ test.describe("edit and archive a thought record", () => {
       .click({ timeout: 2_000 })
       .catch(() => undefined);
 
-    // Step 1: Situation
+    // Every part is on screen at once - fill straight down the column.
     await page
       .getByPlaceholder(
         "Example: I saw an email from my manager and my chest tightened immediately.",
       )
       .fill(situation);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Step 2: NATs - type thought, add it, then continue
     await page.getByPlaceholder("What did your mind say?").fill(automaticThought);
     await page.getByRole("button", { name: "Add thought", exact: true }).click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Step 3: Hot thought - one is auto-selected; just continue
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Step 4: Emotions - toggle a checkbox by clicking its label
     await page.getByText("Anxious", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Step 5: Evidence is optional; skip.
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Step 6: Distortions
-    await page.getByRole("checkbox", { name: "Catastrophizing", exact: true }).click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Step 7: Balanced thought
-    await page
-      .getByPlaceholder(
-        "Example: I do not know what the email means yet. One message is not proof that I failed.",
-      )
-      .fill(originalBalancedThought);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Step 8: Outcome is optional; save.
+    await page.getByRole("checkbox", { name: "Catastrophising", exact: true }).click();
+    await balancedThoughtInput.fill(originalBalancedThought);
     await page.getByRole("button", { name: "Save record", exact: true }).click();
 
     // A NEW record lands on the calm closing moment first; "View record" reaches detail.
@@ -76,33 +55,14 @@ test.describe("edit and archive a thought record", () => {
     await expect(page.getByText(originalBalancedThought)).toBeVisible({ timeout: 15_000 });
 
     // --- EDIT ---
-    // The detail screen has an "Edit record" button that re-opens the wizard prefilled.
+    // The detail screen has an "Edit record" button that re-opens the column prefilled.
     await page.getByRole("button", { name: "Edit record", exact: true }).click();
     await expect(page).toHaveURL(/\/modules\/cbt\/new/, { timeout: 15_000 });
 
-    // Navigate through the wizard steps until balanced thought (step 7).
-    // Step 1: Situation is prefilled - continue.
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    // Step 2: NATs - continue.
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    // Step 3: Hot thought - continue.
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    // Step 4: Emotions - continue.
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    // Step 5: Evidence - continue.
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    // Step 6: Distortions - continue.
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Step 7: Balanced thought - clear and enter the edited value.
-    const balancedThoughtInput = page.getByPlaceholder(
-      "Example: I do not know what the email means yet. One message is not proof that I failed.",
-    );
+    // The balanced thought is right there - no steps to walk through.
+    await expect(balancedThoughtInput).toHaveValue(originalBalancedThought, { timeout: 15_000 });
     await balancedThoughtInput.clear();
     await balancedThoughtInput.fill(editedBalancedThought);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Step 8: Outcome - save.
     await page.getByRole("button", { name: "Save record", exact: true }).click();
 
     // After save, detail screen reflects the edited balanced thought.

@@ -1,6 +1,7 @@
 import { type Href } from "expo-router";
 
 import { type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import type { SharedTool } from "@/src/components/app/shared-tools-row";
 import type { HelpKey } from "@/src/features/help/help-content";
 
 export type Pillar = "think" | "act" | "be";
@@ -13,28 +14,6 @@ export interface PillarStrategy {
   descKey: string;
   helpKey: HelpKey;
 }
-
-export interface SharedToolBase {
-  key: string;
-  route: Href;
-  icon: MaterialIconName;
-  labelKey: string;
-}
-
-export type SharedTool = SharedToolBase &
-  (
-    | {
-        helpKey: HelpKey;
-        infoKey?: never;
-      }
-    | {
-        helpKey?: never;
-        infoKey: AdvancedToolInfoKey;
-      }
-  );
-
-export type AdvancedToolInfoKey =
-  "gratitude" | "grounding" | "habits" | "journal" | "meditation" | "mood" | "sleep";
 
 export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
   think: [
@@ -139,14 +118,12 @@ const THINK_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/journal",
     icon: "edit-note",
     labelKey: "navigation:sidebar.journal",
-    infoKey: "journal",
   },
   {
     key: "gratitudeLog",
     route: "/tools/gratitude-log",
     icon: "favorite",
     labelKey: "navigation:sidebar.gratitudeLog",
-    infoKey: "gratitude",
   },
 ];
 
@@ -156,7 +133,6 @@ const ACT_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/habits",
     icon: "task-alt",
     labelKey: "navigation:sidebar.habits",
-    infoKey: "habits",
   },
 ];
 
@@ -166,35 +142,30 @@ const BE_SHARED_TOOLS: SharedTool[] = [
     route: "/tools/breathing",
     icon: "air",
     labelKey: "navigation:sidebar.breathing",
-    helpKey: "breathing",
   },
   {
     key: "meditation",
     route: "/tools/meditation",
     icon: "self-improvement",
     labelKey: "navigation:sidebar.meditation",
-    infoKey: "meditation",
   },
   {
     key: "grounding",
     route: "/tools/grounding",
     icon: "anchor",
     labelKey: "navigation:sidebar.grounding",
-    infoKey: "grounding",
   },
   {
     key: "moodTracker",
     route: "/tools/check-in",
     icon: "mood",
     labelKey: "navigation:sidebar.moodTracker",
-    infoKey: "mood",
   },
   {
     key: "sleep",
     route: "/tools/sleep",
     icon: "bedtime",
     labelKey: "navigation:sidebar.sleep",
-    infoKey: "sleep",
   },
 ];
 

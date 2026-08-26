@@ -8,6 +8,10 @@
     "label": "Interval bell",
     "off": "Off"
   },
+  "bell": {
+    "volumeLabel": "Bell volume",
+    "muted": "Off"
+  },
   "timer": {
     "start": "Start",
     "pause": "Pause",
