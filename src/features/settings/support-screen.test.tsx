@@ -1,6 +1,10 @@
 import { act, fireEvent, screen } from "@testing-library/react-native";
 
-import SupportScreen from "./support";
+// ☠️ This test must NOT live beside the screen: everything under app/ is an
+// expo-router ROUTE, so `app/(app)/support.test.tsx` registered a literal
+// /support.test route and failed the route-population guards (escape-coverage,
+// nav-singular). Screens in app/ get their component tests out here.
+import SupportScreen from "@/app/(app)/support";
 import { appEnv } from "@/src/lib/env";
 import { requireSupabase } from "@/src/lib/supabase";
 import { renderWithProviders } from "@/test/render-with-providers";
