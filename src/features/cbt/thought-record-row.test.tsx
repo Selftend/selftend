@@ -59,25 +59,30 @@ describe("ThoughtRecordRow", () => {
   });
 
   /**
-   * ⚠️ A deliberate change to the history screen's shipped chain, pinned so it
-   * is a decision rather than a drift: with nothing flagged it used to take the
-   * FIRST thought and now takes the highest-rated one, which is what the form,
-   * the completion screen and the detail screen already show for that record.
+   * ☠️ The row reads `getTitleThought`, the chain the history and detail
+   * screens share (#1384) - NOT `resolveHotThought`, which falls back to the
+   * highest-rated thought instead of the first. Two things ride on that: the
+   * detail screen excludes the title thought from its thoughts row, so a second
+   * opinion would make it repeat one thought and drop another; and the title
+   * and the "before" rating below must describe the SAME thought.
    */
-  it("falls back to the highest-rated thought when none is flagged hot", () => {
+  it("falls back to the first thought - not the loudest - when none is flagged hot", () => {
     renderWithProviders(
       <ThoughtRecordRow
         record={record({
           nats: [
-            nat({ text: "mild one", beliefRating: 20 }),
+            nat({ text: "the first one", beliefRating: 20 }),
             nat({ text: "the loud one", beliefRating: 90 }),
           ],
+          beliefAfter: 10,
         })}
         onPress={jest.fn()}
       />,
     );
 
-    expect(screen.getByText("the loud one")).toBeTruthy();
+    expect(screen.getByText("the first one")).toBeTruthy();
+    // The pair reads off the titled thought's own rating, never the loudest.
+    expect(screen.getByText("Belief 20 -> 10")).toBeTruthy();
   });
 
   it("renders the belief pair when both numbers are present", () => {

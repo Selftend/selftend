@@ -52,10 +52,10 @@ export function EvidenceStep({ control, errors }: EvidenceStepProps) {
         name="evidenceFor"
         render={({ field: { onChange, value } }) => (
           <View className="gap-2">
-            <Label>{t("record.evidenceFor")}</Label>
+            <Label>{t("record.evidenceForLabel")}</Label>
             <Text variant="muted">{t("record.evidenceForHint")}</Text>
             <Textarea
-              accessibilityLabel={t("record.evidenceFor")}
+              accessibilityLabel={t("record.evidenceForLabel")}
               onChangeText={(text) => onChange(textToList(text))}
               placeholder={t("record.evidenceForPlaceholder")}
               value={listToText(value)}
@@ -72,10 +72,10 @@ export function EvidenceStep({ control, errors }: EvidenceStepProps) {
         name="evidenceAgainst"
         render={({ field: { onChange, value } }) => (
           <View className="gap-2">
-            <Label>{t("record.evidenceAgainst")}</Label>
+            <Label>{t("record.evidenceAgainstLabel")}</Label>
             <Text variant="muted">{t("record.evidenceAgainstHint")}</Text>
             <Textarea
-              accessibilityLabel={t("record.evidenceAgainst")}
+              accessibilityLabel={t("record.evidenceAgainstLabel")}
               onChangeText={(text) => onChange(textToList(text))}
               placeholder={t("record.evidenceAgainstPlaceholder")}
               value={listToText(value)}
