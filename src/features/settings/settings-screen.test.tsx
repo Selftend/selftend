@@ -139,6 +139,9 @@ describe("SettingsScreen structure", () => {
     expect(screen.getByTestId("settings-run-help")).toBeTruthy();
     expect(screen.getByTestId("settings-run-account")).toBeTruthy();
     expect(screen.getByTestId("settings-colophon")).toBeTruthy();
+    // #1446: the guest invitation card renders nothing for this registered
+    // user (its guest-side visibility is pinned in create-account-card.test).
+    expect(screen.queryByTestId("create-account-card")).toBeNull();
   });
 
   /**
