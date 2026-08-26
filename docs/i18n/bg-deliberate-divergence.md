@@ -33,7 +33,7 @@ Same English word, different meaning — one Bulgarian word would be a bug:
 
 ## Surface register
 
-Nouns for titles and breadcrumbs, imperative for buttons:
+Nouns for titles and breadcrumbs, imperative for buttons — with one decided exception: **Cancel = `Отказ` everywhere**, buttons included (#1096 convention 1; `Отказ` is the standard Bulgarian UI label for Cancel):
 
 - `Edit` — `Редактирай` (buttons) / `Редактиране` (breadcrumb)
 - `Edit activity`, `Edit goal` — `Редактиране на …` (screen title) / `Редактирай …` (button)
@@ -42,6 +42,7 @@ Nouns for titles and breadcrumbs, imperative for buttons:
 Surface-appropriate variants confirmed as deliberate:
 
 - `Dismiss` — `Затвори` (close a banner) / `Скрий` (hide a card)
+- `Done today` — `Направено днес` (dashboard stat: a count of things done) / `Готово за днес` (routine step state: this step is done for today)
 - `FAQ` — `ЧЗВ` (tight footer link) / `Често задавани въпроси` (page title)
 - `Finish` — `Завърши` (end a session) / `Готово` (wizard finish)
 - `Mood check-in` — full `Проверка на настроението` (notification title) / `Настроение` (width-limited tool chip)

@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -17,9 +17,7 @@ import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
-import type { AdvancedToolInfoKey } from "@/src/features/cbt/cbt-home/cbt-home-config";
 import { deriveCbtHomeView } from "@/src/features/cbt/cbt-home/derive-cbt-home-view";
-import { AdvancedToolInfoModals } from "@/src/features/cbt/cbt-home/advanced-tool-info-modals";
 import { CbtProgramSection } from "@/src/features/cbt/cbt-home/cbt-program-section";
 import { PersonalSloganCard } from "@/src/features/cbt/cbt-home/personal-slogan-card";
 import { ActiveGoalsSection } from "@/src/features/cbt/cbt-home/active-goals-section";
@@ -29,6 +27,7 @@ import { CbtReviewLinks } from "@/src/features/cbt/cbt-home/cbt-review-links";
 import { RecentThoughtRecord } from "@/src/features/cbt/cbt-home/recent-thought-record";
 
 export default function CbtHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const {
@@ -45,7 +44,6 @@ export default function CbtHomeScreen() {
     isUpdating: isProgramUpdating,
   } = useCbtProgram(user?.id ?? null);
   const [forceOnboarding, setForceOnboarding] = useState(false);
-  const [activeToolInfo, setActiveToolInfo] = useState<AdvancedToolInfoKey | null>(null);
   const [abandonConfirmVisible, setAbandonConfirmVisible] = useState(false);
 
   const { data: goals } = useGoals(user?.id ?? null);
@@ -85,7 +83,6 @@ export default function CbtHomeScreen() {
         onDismiss={() => setForceOnboarding(false)}
         visible={forceOnboarding}
       />
-      <AdvancedToolInfoModals active={activeToolInfo} onClose={() => setActiveToolInfo(null)} />
       {/* No room pour (#500, owner decision): the CBT home wears the app's
           default violet surfaces - the default theme IS the violet room. The
           primary pour that used to carry its colour identity was the field
@@ -132,7 +129,7 @@ export default function CbtHomeScreen() {
 
             <CbtInsightsSection cards={insightCards} />
 
-            <CbtPillarsSection onOpenInfo={setActiveToolInfo} />
+            <CbtPillarsSection />
 
             <CbtReviewLinks />
 
@@ -142,7 +139,7 @@ export default function CbtHomeScreen() {
               accessibilityLabel={t("home.recordHistory")}
               accessibilityRole="button"
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() => router.push("/modules/cbt/history")}
+              onPress={() => pushWithOrigin("/modules/cbt/history")}
               className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
               role="button"
             >

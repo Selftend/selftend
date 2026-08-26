@@ -127,6 +127,68 @@ describe("committed-action repository", () => {
     ).rejects.toMatchObject({ code: "23505" });
   });
 
+  it("saveCommittedAction refuses a target date that is not a day key", async () => {
+    const insert = jest.fn();
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { insert } }));
+
+    await expect(
+      saveCommittedAction("u1", { lifeDomain: "work", title: "x", targetDate: "next Tuesday" }),
+    ).rejects.toThrow(/day key/i);
+    // The point of the guard: nothing was sent. A `date` column rejecting it
+    // would have failed the whole save, losing the action the user just wrote.
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("saveCommittedAction refuses a well-shaped impossible day", async () => {
+    const insert = jest.fn();
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { insert } }));
+
+    await expect(
+      saveCommittedAction("u1", { lifeDomain: "work", title: "x", targetDate: "2026-02-31" }),
+    ).rejects.toThrow(/day key/i);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("saveCommittedAction passes a valid target date through", async () => {
+    const single = jest.fn().mockResolvedValue({ data: ROW, error: null });
+    const select = jest.fn(() => ({ single }));
+    const insert = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { insert } }));
+
+    await saveCommittedAction("u1", {
+      lifeDomain: "work",
+      title: "x",
+      targetDate: "2026-09-01",
+    });
+
+    const payload = (insert.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(payload).toMatchObject({ target_date: "2026-09-01" });
+  });
+
+  it("updateCommittedAction refuses a target date that is not a day key", async () => {
+    const update = jest.fn();
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { update } }));
+
+    await expect(updateCommittedAction("u1", ROW.id, { targetDate: "01/09/2026" })).rejects.toThrow(
+      /day key/i,
+    );
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("updateCommittedAction accepts clearing the target date", async () => {
+    const single = jest.fn().mockResolvedValue({ data: ROW, error: null });
+    const select = jest.fn(() => ({ single }));
+    const eqId = jest.fn(() => ({ select }));
+    const eqUser = jest.fn(() => ({ eq: eqId }));
+    const update = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { update } }));
+
+    await updateCommittedAction("u1", ROW.id, { targetDate: null });
+
+    const payload = (update.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(payload).toMatchObject({ target_date: null });
+  });
+
   it("updateCommittedAction writes only provided fields, sanitized/trimmed", async () => {
     const single = jest.fn().mockResolvedValue({ data: ROW, error: null });
     const select = jest.fn(() => ({ single }));
@@ -228,5 +290,28 @@ describe("countCommittedActions", () => {
     mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
 
     await expect(countCommittedActions("u1", "active")).rejects.toEqual({ code: "23505" });
+  });
+
+  /**
+   * ACT home's third stat counts every action ever made, not the active ones (#1378).
+   *
+   * The sibling stats are past-tense activity - points *mapped*, thoughts *unhooked* -
+   * so an active-only third mixes tenses in one run. Decisively: completing your only
+   * action would make it fall 1 → 0. A counter that goes down when you succeed reads
+   * as punishment for finishing.
+   */
+  it("omits the status filter entirely when no status is given", async () => {
+    const eqStatus = jest.fn();
+    const eqUser = jest.fn(() =>
+      Object.assign(Promise.resolve({ count: 7, error: null }), { eq: eqStatus }),
+    );
+    const select = jest.fn(() => ({ eq: eqUser }));
+    mockRequireSupabase.mockReturnValue(buildClient({ act_committed_actions: { select } }));
+
+    await expect(countCommittedActions("u1")).resolves.toBe(7);
+
+    expect(eqUser).toHaveBeenCalledWith("user_id", "u1");
+    // Not `.eq("status", undefined)`, which PostgREST would send as a real filter.
+    expect(eqStatus).not.toHaveBeenCalled();
   });
 });

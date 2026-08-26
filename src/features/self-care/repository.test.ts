@@ -29,6 +29,8 @@ const sampleRow = {
   social_connection_made: true,
   social_notes: "talked to friend",
   meaningful_activity: "read",
+  self_criticism_noticed: true,
+  self_compassion_note: "you did what you could",
   created_at: "2026-05-15T08:00:00.000Z",
   updated_at: "2026-05-15T08:00:00.000Z",
 };
@@ -82,6 +84,8 @@ describe("self-care repository", () => {
       socialConnectionMade: true,
       socialNotes: "  hi  ",
       meaningfulActivity: "  read  ",
+      selfCriticismNoticed: true,
+      selfCompassionNote: "  you did what you could  ",
     });
 
     expect(insert).toHaveBeenCalledWith(
@@ -91,8 +95,24 @@ describe("self-care repository", () => {
         exercise_type: "walk",
         social_notes: "hi",
         meaningful_activity: "read",
+        self_criticism_noticed: true,
+        self_compassion_note: "you did what you could",
       }),
     );
+  });
+
+  it("maps the self-compassion columns onto the log", async () => {
+    const limit = jest.fn().mockResolvedValue({ data: [sampleRow], error: null });
+    const order = jest.fn(() => ({ limit }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    const [log] = await listSelfCareLogs("user-1");
+
+    expect(log.selfCriticismNoticed).toBe(true);
+    expect(log.selfCompassionNote).toBe("you did what you could");
   });
 });
 

@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -13,12 +12,24 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCookieConsentStore } from "@/src/stores/cookie-consent-store";
+import { INSET_LAYER, useInsetPublisher } from "@/src/stores/layered-inset-store";
 
 export function CookieConsentBanner() {
   const { t } = useTranslation("settings");
   const { accepted, hydrate, acceptAll, acceptEssentialOnly } = useCookieConsentStore();
   const [showManage, setShowManage] = useState(false);
+  // Layer 1 of the bottom-inset ladder (#1339). This strip is `fixed bottom-0`,
+  // so it OVERLAPS the banner strip rather than stacking on it - which is why
+  // the ladder maxes top edges instead of summing heights. Both branches below
+  // share the one publisher: only one of them is ever mounted, and the hook
+  // clears the entry the moment its host view detaches.
+  const { attachHost, onLayout } = useInsetPublisher(INSET_LAYER.strip);
+  // The banner is app-wide, so its policy link is a jump out of wherever the
+  // user happens to be (#1265, O3). `/cookies` is rooted at the top, so without
+  // the Origin the way out of it strands them on Home.
+  const pushWithOrigin = usePushWithOrigin();
 
   useEffect(() => {
     hydrate();
@@ -29,11 +40,21 @@ export function CookieConsentBanner() {
   }
 
   if (showManage) {
-    return <CookiePreferencesPanel onDone={() => setShowManage(false)} />;
+    return (
+      <CookiePreferencesPanel
+        attachHost={attachHost}
+        onLayout={onLayout}
+        onDone={() => setShowManage(false)}
+      />
+    );
   }
 
   return (
-    <View className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background p-4 shadow-lg dark:shadow-none">
+    <View
+      onLayout={onLayout}
+      ref={attachHost}
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background p-4 shadow-lg dark:shadow-none"
+    >
       <View className="mx-auto w-full max-w-2xl gap-3">
         <Text className="text-sm">{t("cookieConsent.banner")}</Text>
         <View className="flex-row flex-wrap gap-2">
@@ -46,7 +67,7 @@ export function CookieConsentBanner() {
           <Button onPress={() => setShowManage(true)} size="sm" variant="ghost">
             <Text>{t("cookieConsent.managePreferences")}</Text>
           </Button>
-          <Button onPress={() => router.push("/cookies")} size="sm" variant="ghost">
+          <Button onPress={() => pushWithOrigin("/cookies")} size="sm" variant="ghost">
             <Text>{t("cookieConsent.cookiePolicy")}</Text>
           </Button>
         </View>
@@ -57,6 +78,17 @@ export function CookieConsentBanner() {
 
 interface CookiePreferencesPanelProps {
   onDone?: () => void;
+}
+
+interface CookiePreferencesStripProps extends CookiePreferencesPanelProps {
+  /**
+   * The banner's layer-1 publisher, handed down as two plain values so both
+   * branches share one id. Destructured rather than passed as one object: the
+   * React Compiler reads a member access on a hook result carrying a ref as a
+   * ref access during render.
+   */
+  attachHost: (node: View | null) => void;
+  onLayout: () => void;
 }
 
 /**
@@ -152,9 +184,13 @@ export function CookiePreferencesCard({ onDone }: CookiePreferencesPanelProps) {
 }
 
 /** The banner's own presentation of the card: a fixed strip over the page. */
-function CookiePreferencesPanel({ onDone }: CookiePreferencesPanelProps) {
+function CookiePreferencesPanel({ attachHost, onDone, onLayout }: CookiePreferencesStripProps) {
   return (
-    <View className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background p-4 shadow-lg dark:shadow-none">
+    <View
+      onLayout={onLayout}
+      ref={attachHost}
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background p-4 shadow-lg dark:shadow-none"
+    >
       <View className="mx-auto w-full max-w-2xl">
         <CookiePreferencesCard onDone={onDone} />
       </View>

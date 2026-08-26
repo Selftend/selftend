@@ -54,13 +54,53 @@ const buildEnv = {
 };
 
 const distIndex = path.join(process.cwd(), OUTPUT_DIR, "index.html");
-const skipBuild = process.env.E2E_SKIP_BUILD === "1" && fs.existsSync(distIndex);
 
+// The EXPO_PUBLIC_* values are baked into the bundle at build time, so a served
+// export can silently disagree with the current env (the E2E_SKIP_BUILD stale-bundle
+// trap). Each build records what it baked into a manifest inside the export dir;
+// E2E_SKIP_BUILD is honored only when the recorded env carries the web-push VAPID
+// key the reminder re-arm suite depends on - otherwise the suite would run at
+// channel status "unsupported" and silently test nothing (#966). The manifest is
+// also served statically, so the suite's canary test can assert the bundle under
+// test was baked with the expected key.
+const BAKED_ENV_MANIFEST = "e2e-baked-env.json";
+const manifestPath = path.join(process.cwd(), OUTPUT_DIR, BAKED_ENV_MANIFEST);
+// The manifest records every baked EXPO_PUBLIC_* for debuggability, but only
+// the VAPID key is guarded (skip-build refusal + bundle verification): it is
+// the one value whose absence makes a whole suite silently test nothing.
+const BAKED_ENV_KEYS = [
+  "EXPO_PUBLIC_SUPABASE_URL",
+  "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  "EXPO_PUBLIC_PUBLIC_APP_URL",
+  "EXPO_PUBLIC_PLAY_STORE_URL",
+  "EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY",
+];
+
+function readBakedEnvManifest() {
+  try {
+    return JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+let skipBuild = process.env.E2E_SKIP_BUILD === "1" && fs.existsSync(distIndex);
 if (skipBuild) {
-  console.log(`[e2e-web] E2E_SKIP_BUILD=1 - serving existing ${OUTPUT_DIR}/`);
-} else {
-  console.log(`[e2e-web] building static web export → ${OUTPUT_DIR}/ (port ${PORT})...`);
-  const build = spawnSync(expoBin, ["export", "--platform", "web", "--output-dir", OUTPUT_DIR], {
+  const recorded = readBakedEnvManifest();
+  if (!recorded?.EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY) {
+    console.log(
+      `[e2e-web] refusing E2E_SKIP_BUILD=1: ${OUTPUT_DIR}/${BAKED_ENV_MANIFEST} ` +
+        `${recorded ? "records no EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY" : "is missing"} ` +
+        `- the existing export predates the web-push key. Rebuilding.`,
+    );
+    skipBuild = false;
+  }
+}
+
+function runExport(clearCache) {
+  const args = ["export", "--platform", "web", "--output-dir", OUTPUT_DIR];
+  if (clearCache) args.push("--clear");
+  const build = spawnSync(expoBin, args, {
     stdio: "inherit",
     env: buildEnv,
     shell: isWindows,
@@ -69,6 +109,56 @@ if (skipBuild) {
     console.error(`[e2e-web] export failed (exit ${build.status})`);
     process.exit(build.status ?? 1);
   }
+}
+
+// Passing the key in the build env is not enough: babel inlines EXPO_PUBLIC_*
+// values during transform, and Metro's transformer cache can serve a transform
+// cached under a DIFFERENT env - the export then silently bakes the old value
+// while every process-level check says the key was set. Only the exported JS
+// itself is the truth, so search it for the literal value.
+function bundleHasBakedVapidKey() {
+  const key = buildEnv.EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY;
+  if (!key) return false;
+  const jsDir = path.join(process.cwd(), OUTPUT_DIR, "_expo", "static", "js", "web");
+  let files;
+  try {
+    files = fs.readdirSync(jsDir).filter((file) => file.endsWith(".js"));
+  } catch {
+    return false;
+  }
+  return files.some((file) => fs.readFileSync(path.join(jsDir, file), "utf8").includes(key));
+}
+
+if (skipBuild) {
+  console.log(`[e2e-web] E2E_SKIP_BUILD=1 - serving existing ${OUTPUT_DIR}/`);
+} else {
+  if (!buildEnv.EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY) {
+    console.error(
+      "[e2e-web] EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY is not set. Run through Playwright " +
+        "(its webServer.env pins the e2e key) or set the variable - without it the reminder " +
+        "channel bakes as 'unsupported' and the re-arm suite tests nothing.",
+    );
+    process.exit(1);
+  }
+  console.log(`[e2e-web] building static web export → ${OUTPUT_DIR}/ (port ${PORT})...`);
+  runExport(false);
+  if (!bundleHasBakedVapidKey()) {
+    console.log(
+      "[e2e-web] the exported bundle does not contain the baked VAPID key - Metro's " +
+        "transformer cache served a stale env transform. Rebuilding with --clear...",
+    );
+    runExport(true);
+    if (!bundleHasBakedVapidKey()) {
+      console.error(
+        "[e2e-web] the export still lacks the baked VAPID key after a cache-cleared rebuild.",
+      );
+      process.exit(1);
+    }
+  }
+  // Written only after the bundle check above, so the manifest (and the canary
+  // test that reads it over HTTP) describes what the bundle actually holds.
+  const baked = Object.fromEntries(BAKED_ENV_KEYS.map((key) => [key, buildEnv[key] ?? ""]));
+  fs.writeFileSync(manifestPath, `${JSON.stringify(baked, null, 2)}\n`);
 }
 
 // Static file server with SPA fallback. `expo serve` does NOT fall back to

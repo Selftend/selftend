@@ -100,7 +100,14 @@ describe("resolveHotThought", () => {
     expect(resolveHotThought([nat({ text: "cold" }), flagged])).toBe(flagged);
   });
 
-  it("falls back to the first NAT when none is flagged", () => {
+  it("falls back to the HIGHEST-RATED NAT when none is flagged (#1381)", () => {
+    // The column derives the hot thought until the user overrides it, so an
+    // unflagged list must read as "the highest-rated one" everywhere.
+    const strongest = nat({ text: "strongest", beliefRating: 80 });
+    expect(resolveHotThought([nat({ beliefRating: 20 }), strongest])).toBe(strongest);
+  });
+
+  it("falls back to the first NAT when nothing is flagged or rated", () => {
     const first = nat({ text: "first" });
     expect(resolveHotThought([first, nat({ text: "second" })])).toBe(first);
   });
@@ -161,5 +168,32 @@ describe("buildThoughtRecordInput", () => {
   it("passes other fields through unchanged", () => {
     const result = buildThoughtRecordInput(values, { recordId: "abc", occurrence });
     expect(result.situation).toBe("at work");
+  });
+
+  it("flags the highest-rated NAT as hot when the user never picked one", () => {
+    // The column shows an unflagged list as "the highest-rated one is hot";
+    // the save writes that same reading down, so the record carries the hot
+    // thought every screen displayed.
+    const result = buildThoughtRecordInput(
+      { ...values, nats: [nat({ beliefRating: 20 }), nat({ beliefRating: 80 })] },
+      { recordId: null, occurrence },
+    );
+    expect(result.nats.map((n) => n.isHotThought)).toEqual([false, true]);
+  });
+
+  it("never moves an explicit hot-thought flag", () => {
+    const result = buildThoughtRecordInput(
+      {
+        ...values,
+        nats: [nat({ beliefRating: 20, isHotThought: true }), nat({ beliefRating: 80 })],
+      },
+      { recordId: null, occurrence },
+    );
+    expect(result.nats.map((n) => n.isHotThought)).toEqual([true, false]);
+  });
+
+  it("leaves an empty NAT list alone", () => {
+    const result = buildThoughtRecordInput({ ...values, nats: [] }, { recordId: null, occurrence });
+    expect(result.nats).toEqual([]);
   });
 });

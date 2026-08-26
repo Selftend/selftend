@@ -69,3 +69,9 @@ docs/superpowers/
 # send at an app under review. The committed, reviewed subset of the age-rating
 # declaration lives at store/apple-advisory.json - see store/README.md.
 store.config.json
+
+# Raw ElevenLabs render output. Masters live off-repo in Drive
+# (Selftend/app-audio-masters/) by decision on #1133 and #1141 - the repo keeps
+# the prompts and the manifest, never the audio. Only the finished .m4a clips
+# under assets/sounds/ are ever committed. See scripts/audio/README.md.
+audio-masters/

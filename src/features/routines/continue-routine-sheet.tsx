@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -49,6 +49,7 @@ export function ContinueRoutineSheet({
   initialRoutineId = null,
   onClose,
 }: ContinueRoutineSheetProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("routines");
   const updateRoutine = useUpdateRoutine(userId);
 
@@ -98,7 +99,7 @@ export function ContinueRoutineSheet({
   function doNextStep() {
     if (!day.nextStep) return;
     onClose();
-    router.push(routeForTool(day.nextStep.toolId));
+    pushWithOrigin(routeForTool(day.nextStep.toolId));
   }
 
   async function acceptReminder() {
@@ -121,7 +122,10 @@ export function ContinueRoutineSheet({
   }
 
   return (
-    <PressShieldModal onRequestClose={onClose} transparent visible={visible}>
+    // A bottom sheet over a dimmed backdrop, so the wrapper pins no row: the
+    // X in the sheet's own header already sits outside its scrollers, which
+    // is the shape M1 asks for.
+    <PressShieldModal surface="sheet" onRequestClose={onClose} transparent visible={visible}>
       <View className="flex-1">
         <Pressable
           accessibilityLabel={t("sheet.close")}

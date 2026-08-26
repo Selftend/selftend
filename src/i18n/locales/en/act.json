@@ -12,7 +12,14 @@
     "frameworkDescription": "Four pillars that build psychological flexibility.",
     "recentDefusionTitle": "Recent defusion logs",
     "noDefusionLogs": "No defusion logs yet. Tap \"Defuse a thought\" whenever a sticky thought shows up.",
-    "viewAllDefusion": "All logs"
+    "viewAllDefusion": "All logs",
+    "statLoadingValue": "—",
+    "statChoicePoints_one": "choice point mapped",
+    "statChoicePoints_other": "choice points mapped",
+    "statDefusion_one": "thought unhooked",
+    "statDefusion_other": "thoughts unhooked",
+    "statActions_one": "committed action",
+    "statActions_other": "committed actions"
   },
   "principles": {
     "defusion": {
@@ -105,8 +112,11 @@
     "saveLog": "Save",
     "saving": "Saving...",
     "saveProblem": "Could not save",
-    "back": "Back",
-    "continue": "Continue",
+    "thoughtRequired": "Write the thought before saving.",
+    "finishLater": "Finish later",
+    "changeTechnique": "Change technique",
+    "railNote_one": "{{count}} of {{total}} parts filled in",
+    "railNote_other": "{{count}} of {{total}} parts filled in",
     "steps": {
       "thought": "The thought",
       "category": "Category",
@@ -140,8 +150,6 @@
       "ruleStatement": "Should / must rule",
       "other": "Other"
     },
-    "fusionDrop": "Fusion dropped from {{before}} to {{after}}.",
-    "noFusionDrop": "Fusion stayed at {{after}}. That's ok - noticing is enough.",
     "deletedToast": "Log deleted",
     "deleteConfirm": "Delete this log?",
     "deleteConfirmBody": "This cannot be undone.",
@@ -214,8 +222,6 @@
       "step4Title": "4. Expand awareness",
       "step4Body": "Keep the feeling in your awareness and, at the same time, broaden your focus to the world around you - what you can see, hear, and do."
     },
-    "intensityDrop": "Intensity dropped from {{before}} to {{after}}.",
-    "noIntensityDrop": "Intensity stayed at {{after}}. Making room is the goal - not eliminating the feeling.",
     "deletedToast": "Log deleted",
     "deleteConfirm": "Delete this log?",
     "deleteConfirmBody": "This cannot be undone.",
@@ -371,7 +377,6 @@
   "values": {
     "listTitle": "Values",
     "listSubtitle": "Your chosen directions in the four key areas of life.",
-    "bullsEyeButton": "Update values check-in",
     "domainIntro": "Tap a domain to clarify what matters most to you there.",
     "work": "Work & education",
     "leisure": "Leisure & play",
@@ -395,8 +400,6 @@
     "barriersHint": "Often: difficult thoughts or feelings, lack of time, old habits. Naming them is the first step.",
     "importanceRatingLabel": "How important is this domain to you? (1-10)",
     "importanceRatingHint": "1 = not very important right now, 10 = central to my life",
-    "alignmentRatingLabel": "How aligned is your daily life with this value? (1-10)",
-    "alignmentRatingHint": "1 = far from it, 10 = living it fully",
     "saveLog": "Save",
     "saving": "Saving...",
     "saveProblem": "Could not save",
@@ -407,15 +410,11 @@
       "current": "Now",
       "desired": "Goal",
       "barriers": "Barriers",
-      "ratings": "Ratings"
+      "importance": "Importance"
     },
     "bullsEye": {
       "title": "Values check-in",
       "subtitle": "Rate how closely your current life matches each value direction. 1 = far off, 10 = living it fully.",
-      "work": "Work & education",
-      "leisure": "Leisure & play",
-      "relationships": "Relationships",
-      "personalGrowth": "Health & personal growth",
       "saveAll": "Save ratings",
       "saving": "Saving...",
       "saveProblem": "Could not save",
@@ -544,7 +543,6 @@
     "descriptionLabel": "More detail (optional)",
     "descriptionPlaceholder": "Anything that helps you remember why and how",
     "targetDateLabel": "Target date (optional)",
-    "targetDatePlaceholder": "YYYY-MM-DD",
     "obstaclesLabel": "What might get in the way? (HARD barriers)",
     "obstaclesPlaceholder": "e.g. Hooked: \"I'll fail\" → unhook. Avoiding: dread → make room.",
     "obstaclesHint": "Name the HARD barriers and your answer to each: Hooked by thoughts (unhook), Avoiding discomfort (make room), Remoteness from values (reconnect to your why), Doubtful goals (break it into a smaller, realistic step).",

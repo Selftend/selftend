@@ -34,7 +34,15 @@ export function minutesFromFraction(fraction: number): number {
 interface DurationSliderProps {
   /** The chosen length, in whole minutes. */
   value: number;
+  /** Fires continuously while dragging - use for the live read-out. */
   onChange: (minutes: number) => void;
+  /**
+   * Fires once when a change settles: a drag release, or a stepper press (which
+   * is already a settled value). Use to persist (#1190) - a drag emits a change
+   * per whole minute crossed, so persisting from `onChange` would be one write
+   * per minute of travel.
+   */
+  onCommit?: (minutes: number) => void;
   /** On the container, so a test can scope to this control. */
   testID?: string;
 }
@@ -47,7 +55,7 @@ interface DurationSliderProps {
  * read-out sits on the label line, mirroring how "ends about" rides the section
  * header above.
  */
-export function DurationSlider({ value, onChange, testID }: DurationSliderProps) {
+export function DurationSlider({ value, onChange, onCommit, testID }: DurationSliderProps) {
   const { t } = useTranslation("meditation");
 
   // Dedup against the last minute actually emitted, not the prop: a drag fires
@@ -63,6 +71,12 @@ export function DurationSlider({ value, onChange, testID }: DurationSliderProps)
     if (minutes === lastEmittedRef.current) return;
     lastEmittedRef.current = minutes;
     onChange(minutes);
+  }
+
+  /** A stepper press is both the change and its settling, so it does both. */
+  function step(minutes: number) {
+    emit(minutes);
+    onCommit?.(minutes);
   }
 
   const atMin = value <= MIN_SIT_MINUTES;
@@ -83,12 +97,13 @@ export function DurationSlider({ value, onChange, testID }: DurationSliderProps)
           icon="remove"
           label={t("module.home.minuteLess")}
           disabled={atMin}
-          onPress={() => emit(Math.max(MIN_SIT_MINUTES, value - 1))}
+          onPress={() => step(Math.max(MIN_SIT_MINUTES, value - 1))}
         />
         <View className="flex-1">
           <VolumeSlider
             value={fractionFromMinutes(value)}
             onChange={(fraction) => emit(minutesFromFraction(fraction))}
+            onCommit={(fraction) => onCommit?.(minutesFromFraction(fraction))}
             accessibilityLabel={t("module.home.durationLabel")}
             accessibilityValue={{
               min: MIN_SIT_MINUTES,
@@ -102,7 +117,7 @@ export function DurationSlider({ value, onChange, testID }: DurationSliderProps)
           icon="add"
           label={t("module.home.minuteMore")}
           disabled={atMax}
-          onPress={() => emit(Math.min(MAX_SIT_MINUTES, value + 1))}
+          onPress={() => step(Math.min(MAX_SIT_MINUTES, value + 1))}
         />
       </View>
     </View>

@@ -9,7 +9,24 @@ type DraftMode = "create" | "edit";
 // Bump when the persisted shape changes incompatibly; zustand's persist drops
 // stored state whose version differs (no migrate function on purpose - a lost
 // draft beats a wrongly-migrated one).
-const WIZARD_DRAFT_PERSIST_VERSION = 1;
+//
+// Bumping is a BLUNT instrument: this constant is shared by every wizard, so a
+// bump discards in-flight drafts in every flow, not just the one whose shape
+// changed. #1376 added a field to the thought record form and reached for a bump
+// first; making that field `.nullish()` in the CBT schema kept the fix local and
+// left this at 1. Prefer tolerating the older shape in the flow's own schema.
+//
+// Version 2 (#1381): `stepIndex` left the persisted envelope when the thought
+// record became a one-column form - a column has no step to restore, and the
+// remaining wizards restart at their first step with their values intact. The
+// bump was taken deliberately: drafts drop, and the 24h TTL keeps what is lost
+// small.
+//
+// Exported so tests can write fixtures at the CURRENT version. A fixture that
+// hardcodes a number silently stops testing what it claims the moment this is
+// bumped: zustand discards a version-mismatched blob before any of the TTL or
+// shape guards below ever run, so the test would pass for the wrong reason.
+export const WIZARD_DRAFT_PERSIST_VERSION = 2;
 
 // Drafts older than this are dropped on rehydrate. A day-old half-filled wizard
 // is more likely stale intent than a work-in-progress, and the guard doubles as
@@ -19,6 +36,11 @@ export const WIZARD_DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 export interface WizardDraftStore<TValues> {
   mode: DraftMode;
   entityId: string | null;
+  /**
+   * The wizard's current step, SESSION-ONLY: it is not part of the persisted
+   * envelope (#1381), so a rehydrated draft restores its values and starts
+   * over at the first step. One-column consumers never touch it.
+   */
   stepIndex: number;
   values: TValues | null;
   /** Last time values/stepIndex changed - drives the rehydrate TTL. */
@@ -38,7 +60,6 @@ export interface WizardDraftStore<TValues> {
 interface PersistedWizardDraft<TValues> {
   mode: DraftMode;
   entityId: string | null;
-  stepIndex: number;
   values: TValues | null;
   updatedAt: number | null;
 }
@@ -55,7 +76,6 @@ function isUsablePersistedDraft<TValues>(
   const draft = persisted as Partial<PersistedWizardDraft<TValues>>;
   if (draft.mode !== "create" && draft.mode !== "edit") return false;
   if (draft.entityId !== null && typeof draft.entityId !== "string") return false;
-  if (typeof draft.stepIndex !== "number" || !Number.isFinite(draft.stepIndex)) return false;
   // An EMPTY envelope (no values captured yet - every wizard mount persists one
   // via hydrate()) is valid and has no PHI and nothing to expire. Rejecting it
   // would schedule the merge's disk-clear below, which could race and wipe the
@@ -139,13 +159,22 @@ export function createWizardDraftStore<TValues>(flowKey: string) {
         partialize: (state): PersistedWizardDraft<TValues> => ({
           mode: state.mode,
           entityId: state.entityId,
-          stepIndex: state.stepIndex,
           values: state.values,
           updatedAt: state.updatedAt,
         }),
         merge: (persisted, current) => {
           if (isUsablePersistedDraft<TValues>(persisted)) {
-            return { ...current, ...persisted };
+            // Explicit keys, not `...persisted`: the envelope no longer carries
+            // a stepIndex (#1381) and the consumer-side clamp went with it, so
+            // a blob smuggling extra keys past the shape guard must not be able
+            // to plant one (or anything else) into memory.
+            return {
+              ...current,
+              mode: persisted.mode,
+              entityId: persisted.entityId,
+              values: persisted.values,
+              updatedAt: persisted.updatedAt,
+            };
           }
           if (persisted) {
             // The rejected draft (expired / shape-mismatched) holds PHI - remove

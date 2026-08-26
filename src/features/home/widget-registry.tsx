@@ -346,6 +346,47 @@ export function metaForWidget(widgetId: string): WidgetMeta | undefined {
   return WIDGET_META[widgetId];
 }
 
+/** The guided modules a widget can be tagged with. Keys, not display strings. */
+export type ModuleTagKey = "cbt" | "act";
+
+/**
+ * Which guided module a widget belongs to, or `undefined` for a standalone one (#1246).
+ *
+ * The arrange screen's chip run prints this as a trailing acronym so a user can tell that
+ * `Defusion`, `Make room` and `Choice point` are one family rather than three novelties.
+ * It returns the module KEY: the caller owns the display string, because what is printed
+ * (`ACT`) and what a screen reader hears (`ACT - Acceptance and Commitment Therapy`) are
+ * two different strings for the same answer.
+ *
+ * It lives here, beside the other accessors, for one reason: the screen and the
+ * registry-level guards must ask *the same* function. A guard that re-implements this
+ * predicate can agree with itself while both drift from what the chip actually renders.
+ *
+ * No new meta field and no migration - `tier`, `route` and `toolKey` all already exist on
+ * every entry. The route test and the tool-key test select exactly the same 14 ids, so
+ * either alone would do; both are kept because together they read as the intent.
+ *
+ * ⚠️ The `tier` clause IS the programme-card exemption, and it is a rule rather than an
+ * exception list: the two `programme` ids already carry their acronym in their own titles,
+ * so a tag would only repeat them. Exempting by title *content* was rejected - a
+ * translation edit could then silently flip a widget's tagging, and it is already broken
+ * in Bulgarian, where one programme title is Latin and the other Cyrillic.
+ *
+ * ☠️ The `cbt-`/`act-` id prefix is NOT the rule. `self-care` carries no prefix but routes
+ * into the CBT module and declares the CBT tool key, so it is tagged like the rest. Do not
+ * "correct" it out on sight.
+ *
+ * An unknown tool key returns `undefined`, so a widget for a third module would be
+ * silently untagged rather than crash. Silence is the wrong failure here, which is why
+ * #1247 makes it loud in the test suite rather than at runtime.
+ */
+export function moduleTagFor(widgetId: string): ModuleTagKey | undefined {
+  const meta = WIDGET_META[widgetId];
+  if (!meta || meta.tier !== "tool") return undefined;
+  if (!meta.route.startsWith("/modules/")) return undefined;
+  return meta.toolKey === "cbt" || meta.toolKey === "act" ? meta.toolKey : undefined;
+}
+
 /**
  * Whether the dashboard can render this id at all.
  *

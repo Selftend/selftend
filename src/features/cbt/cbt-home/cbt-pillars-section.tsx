@@ -1,21 +1,14 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { PillarCard } from "@/src/components/app/pillar-card";
-import {
-  PILLAR_STRATEGIES,
-  SHARED_TOOLS_BY_PILLAR,
-  type AdvancedToolInfoKey,
-} from "./cbt-home-config";
-import { SharedToolsRow } from "./shared-tools-row";
+import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
+import { PILLAR_STRATEGIES, SHARED_TOOLS_BY_PILLAR } from "./cbt-home-config";
 
-interface CbtPillarsSectionProps {
-  onOpenInfo: (key: AdvancedToolInfoKey) => void;
-}
-
-export function CbtPillarsSection({ onOpenInfo }: CbtPillarsSectionProps) {
+export function CbtPillarsSection() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
 
   return (
@@ -38,7 +31,7 @@ export function CbtPillarsSection({ onOpenInfo }: CbtPillarsSectionProps) {
             description={t(`pillars.${pillar}.description`)}
             onToolPress={(toolKey) => {
               const strategy = PILLAR_STRATEGIES[pillar].find((s) => s.key === toolKey);
-              if (strategy?.route) router.push(strategy.route);
+              if (strategy?.route) pushWithOrigin(strategy.route);
             }}
           >
             {PILLAR_STRATEGIES[pillar].map((strategy) => (
@@ -53,7 +46,10 @@ export function CbtPillarsSection({ onOpenInfo }: CbtPillarsSectionProps) {
           </PillarCard>
           {SHARED_TOOLS_BY_PILLAR[pillar].length > 0 ? (
             <View className="ml-5 mr-2">
-              <SharedToolsRow tools={SHARED_TOOLS_BY_PILLAR[pillar]} onOpenInfo={onOpenInfo} />
+              <SharedToolsRow
+                heading={t("pillars.usesSharedTools")}
+                tools={SHARED_TOOLS_BY_PILLAR[pillar]}
+              />
             </View>
           ) : null}
         </View>

@@ -24,6 +24,7 @@ jest.mock("@/src/features/mood/emotion-preferences-queries", () => ({
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
   router: { push: (...args: unknown[]) => mockPush(...args) },
+  usePathname: () => "/tools/check-in",
 }));
 
 // A Wednesday: the displayed week has past days, today, and days still to come.

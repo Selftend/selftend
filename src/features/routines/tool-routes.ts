@@ -35,8 +35,11 @@ export const TOOL_STEP_ROUTES: Record<SteppableToolId, Href> = {
   // Guided screen; saves a ConnectionLog with technique "dropAnchor".
   dropAnchor: "/modules/act/connection/drop-anchor",
   observingSelf: "/modules/act/observing-self/new",
-  // The bulls-eye check-in screen saves the dated snapshot on "Save all".
-  bullsEye: "/modules/act/values/bulls-eye",
+  // The alignment check-in, which saves the dated snapshot on "Save ratings". It sits
+  // on the values screen since #1379; the old `/values/bulls-eye` route still resolves,
+  // but a routine step should land on the screen the user actually rates from rather
+  // than take a redirect hop to get there.
+  bullsEye: "/modules/act/values",
   choicePoint: "/modules/act/choice-point/new",
   committedAction: "/modules/act/committed-action",
 };

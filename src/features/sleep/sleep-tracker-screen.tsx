@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,9 +29,10 @@ import { SleepDurationChart } from "@/src/features/sleep/sleep-duration-chart";
 import { SleepQualityMix } from "@/src/features/sleep/sleep-quality-mix";
 import { SleepWeekdayChart } from "@/src/features/sleep/sleep-weekday-chart";
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
-import { ShowAllSleepLink } from "@/src/features/sleep/show-all-sleep-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 
 export default function SleepTrackerScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("sleep");
   const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
@@ -121,7 +122,7 @@ export default function SleepTrackerScreen() {
               ]}
             />
             <View className="flex-row gap-3">
-              <Button onPress={() => router.push("/tools/sleep/new")} className="self-start">
+              <Button onPress={() => pushWithOrigin("/tools/sleep/new")} className="self-start">
                 <Icon name="bedtime" className="size-4 text-primary-foreground" />
                 <Text>{t("cta.log")}</Text>
               </Button>
@@ -175,7 +176,7 @@ export default function SleepTrackerScreen() {
                 action={
                   /* The door beside its own room: all-history replaces the old
                    expand-in-place toggle (#775, pattern from #696). */
-                  <ShowAllSleepLink />
+                  <ShowAllLink label={t("allHistory.link")} route="/tools/sleep/history" />
                 }
               >
                 <SleepRecentList logs={allLogs} />

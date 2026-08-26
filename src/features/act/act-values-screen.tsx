@@ -1,35 +1,95 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Button } from "@/src/components/react-native-reusables/button";
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { Section } from "@/src/components/app/section";
 import { LoadingState } from "@/src/components/app/screen-state";
-import { useBullsEyeSnapshots, useValueEntries } from "@/src/features/act/queries";
+import { ActValuesCheckIn } from "@/src/features/act/act-values-check-in";
+import {
+  useBullsEyeSnapshots,
+  useLatestBullsEyeByDomain,
+  useValueEntries,
+} from "@/src/features/act/queries";
 import { RelatedTools } from "@/src/features/act/related-tools";
 import { ACT_LIFE_DOMAINS, type ACTLifeDomain } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { useLocaleFormats } from "@/src/lib/locale-format";
 import { cn } from "@/lib/utils";
 
-export default function ActValuesScreen() {
-  const { t } = useTranslation("act");
-  const { user } = useSession();
-  const { data: entries, isLoading } = useValueEntries(user?.id ?? null);
-  const { data: snapshots } = useBullsEyeSnapshots(user?.id ?? null);
+/**
+ * Drawn on `12b` and adopted NEUTRAL rather than in the module accent: four accented
+ * glyphs down the left edge of four hairline rows would read as four states, and the
+ * only state these rows carry is whether the value has been written yet - which the
+ * trailing add/chevron already says.
+ */
+const DOMAIN_ICONS: Record<ACTLifeDomain, MaterialIconName> = {
+  work: "work-outline",
+  leisure: "sports-esports",
+  relationships: "people-outline",
+  personalGrowth: "self-improvement",
+};
 
-  const latestRating = (domain: ACTLifeDomain): number | null => {
-    const snap = snapshots?.find((s) => s.domain === domain);
-    return snap?.alignmentRating ?? null;
-  };
+/**
+ * The history window, newest first. A check-in writes four rows, so twelve is three
+ * review dates - enough to read as a run without turning the screen into a log.
+ */
+const HISTORY_ROWS = 12;
+
+/**
+ * Values, with the alignment check-in folded in below them (#1379).
+ *
+ * The check-in used to live one push away at `/modules/act/values/bulls-eye`, and the
+ * separation hid a contradiction: two controls wrote two answers to the same question
+ * into two columns, and this screen read the one the check-in did not write. Rating a
+ * value while reading it is also simply the flow - the question is "how aligned is my
+ * life with THIS", and the value statement is the only thing that makes it answerable.
+ */
+export default function ActValuesScreen() {
+  // No screen-level push any more: dev's only caller here was the "Bull's eye"
+  // button, and folding that check-in in is what this ticket does. `DomainRow`
+  // keeps its own.
+  const { t } = useTranslation("act");
+  const { formatDate } = useLocaleFormats();
+  const { user } = useSession();
+  const { data: entries, isLoading: entriesLoading } = useValueEntries(user?.id ?? null);
+  const { data: latestRatings, isLoading: latestLoading } = useLatestBullsEyeByDomain(
+    user?.id ?? null,
+  );
+  const { data: snapshots } = useBullsEyeSnapshots(user?.id ?? null);
 
   const entryForDomain = (domain: ACTLifeDomain) =>
     entries?.find((e) => e.lifeDomain === domain) ?? null;
 
-  if (isLoading) {
+  /**
+   * The check-in owns alignment, so its newest rating is the answer wherever one
+   * exists. The entry's own column is no longer written - it stays on the table, and
+   * this is the one place it is still read: a user who rated a domain in the old form
+   * and has never done a check-in for it would otherwise watch their number disappear.
+   * Genuinely two sources, in that order - not a fallback that can never be reached.
+   *
+   * ☠️ `undefined` is NOT "no check-in". The read is still in flight, or it failed -
+   * and treating either as an absence hands the row the retired column, which is the
+   * exact contradiction this fold exists to kill, flashed on first paint and left
+   * standing forever after an error. The alignment line is optional (an unrated domain
+   * simply has none), so the honest degradation is to say nothing until the answer
+   * arrives.
+   */
+  const alignmentFor = (domain: ACTLifeDomain): number | null => {
+    if (latestRatings === undefined) return null;
+    return latestRatings[domain] ?? entryForDomain(domain)?.currentAlignmentRating ?? null;
+  };
+
+  const recentSnapshots = snapshots?.slice(0, HISTORY_ROWS) ?? [];
+
+  // Both reads gate the screen, not just the entries: they fire in parallel, so waiting
+  // for the slower costs nothing, and it keeps the rows from painting once without an
+  // alignment line and again with one.
+  if (entriesLoading || latestLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <LoadingState title={t("values.listTitle")} />
@@ -46,11 +106,10 @@ export default function ActValuesScreen() {
             <Text variant="muted">{t("values.listSubtitle")}</Text>
           </View>
 
-          <Button variant="secondary" onPress={() => router.push("/modules/act/values/bulls-eye")}>
-            <Icon name="my-location" className="size-4 text-foreground" />
-            <Text>{t("values.bullsEyeButton")}</Text>
-          </Button>
-
+          {/* ⚠️ dev's "Bull's eye" button is deliberately NOT restored here.
+              Folding that check-in onto this screen — it renders below as its
+              own Section — is the whole of #1379; putting the push back would
+              reinstate the trip this ticket removes. */}
           <Text variant="muted" className="text-xs">
             {t("values.domainIntro")}
           </Text>
@@ -59,58 +118,115 @@ export default function ActValuesScreen() {
             tools={[{ icon: "edit-note", nameKey: "journal", href: "/tools/journal" }]}
           />
 
-          <View className="gap-3">
-            {ACT_LIFE_DOMAINS.map((domain) => {
-              const entry = entryForDomain(domain);
-              const rating = entry?.currentAlignmentRating ?? latestRating(domain);
-              const hasEntry = Boolean(entry?.valueStatement);
-
-              return (
-                <Pressable
-                  key={domain}
-                  accessibilityRole="button"
-                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/modules/act/values/[domain]",
-                      params: { domain },
-                    })
-                  }
-                  className="rounded-xl border border-border bg-card p-4 active:bg-accent/40"
-                >
-                  <View className="flex-row items-center justify-between gap-3">
-                    <View className="flex-1 gap-1">
-                      <Text className="font-semibold">{t(`values.${domain}`)}</Text>
-                      {hasEntry ? (
-                        <Text variant="muted" className="text-xs leading-snug" numberOfLines={2}>
-                          {entry!.valueStatement}
-                        </Text>
-                      ) : (
-                        <Text variant="muted" className="text-xs italic">
-                          {t("values.notSet")}
-                        </Text>
-                      )}
-                      {rating !== null ? (
-                        <View className="mt-1 flex-row items-center gap-1">
-                          <AlignmentBar rating={rating} />
-                          <Text className="text-xs text-foreground">
-                            {t("values.alignmentLabel", { rating })}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                    <Icon
-                      name={hasEntry ? "chevron-right" : "add"}
-                      className={cn("size-4", hasEntry ? "text-muted-foreground" : "text-primary")}
-                    />
-                  </View>
-                </Pressable>
-              );
-            })}
+          <View>
+            {ACT_LIFE_DOMAINS.map((domain) => (
+              <DomainRow
+                key={domain}
+                domain={domain}
+                valueStatement={entryForDomain(domain)?.valueStatement ?? ""}
+                rating={alignmentFor(domain)}
+              />
+            ))}
           </View>
+
+          <Section title={t("values.bullsEye.title")}>
+            <ActValuesCheckIn />
+          </Section>
+
+          <Section title={t("values.bullsEye.historyTitle")}>
+            <View testID="bulls-eye-history" className="gap-2">
+              {recentSnapshots.length === 0 ? (
+                <Text variant="muted">{t("values.bullsEye.noHistory")}</Text>
+              ) : (
+                recentSnapshots.map((snap) => (
+                  <View
+                    key={snap.id}
+                    className="flex-row items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3"
+                  >
+                    <View className="flex-1">
+                      <Text className="text-sm font-medium">{t(`values.${snap.domain}`)}</Text>
+                      <Text variant="muted" className="text-xs">
+                        {formatDate(snap.reviewedAt)}
+                      </Text>
+                    </View>
+                    <AlignmentPill rating={snap.alignmentRating} />
+                  </View>
+                ))
+              )}
+            </View>
+          </Section>
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/**
+ * A hairline row rather than a card: four bordered cards on a background read as four
+ * competing panels, and the check-in below is already a section of its own.
+ *
+ * The alignment line sits INSIDE the text column at every width. Pulling it out to a
+ * trailing column is what the 1080px mock does, and it is the shape that fails first
+ * at 360dp - and a row that drops its chevron on a phone would be the third instance
+ * of a treatment that differs by viewport.
+ */
+function DomainRow({
+  domain,
+  valueStatement,
+  rating,
+}: {
+  domain: ACTLifeDomain;
+  valueStatement: string;
+  rating: number | null;
+}) {
+  const { t } = useTranslation("act");
+  // ⚠️ Through the Origin helper, not a bare `router.push` (#1269, which landed
+  // while this branch was open). The inline row this component replaced had
+  // already been migrated on dev; extracting it must not quietly take the way
+  // back off a cross-hierarchy arrival.
+  const pushWithOrigin = usePushWithOrigin();
+  const hasEntry = Boolean(valueStatement);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+      onPress={() =>
+        pushWithOrigin({ pathname: "/modules/act/values/[domain]", params: { domain } })
+      }
+      className="flex-row items-center gap-4 border-t border-border py-4 active:bg-accent/40"
+    >
+      <Icon name={DOMAIN_ICONS[domain]} className="size-5 text-muted-foreground" />
+      <View className="flex-1 gap-1">
+        <Text className="font-semibold">{t(`values.${domain}`)}</Text>
+        {hasEntry ? (
+          <Text variant="muted" className="text-xs leading-snug" numberOfLines={2}>
+            {valueStatement}
+          </Text>
+        ) : (
+          <Text variant="muted" className="text-xs italic">
+            {t("values.notSet")}
+          </Text>
+        )}
+        {rating !== null ? (
+          <View className="mt-1 flex-row items-center gap-2">
+            <AlignmentBar rating={rating} />
+            {/*
+              One interpolated string, never a "Alignment" + "7/10" pair: split into two
+              nodes it becomes an unorderable fragment for a translator, and the number
+              does not follow the noun in every language.
+            */}
+            <Text className="text-xs text-foreground">
+              {t("values.alignmentLabel", { rating })}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+      <Icon
+        name={hasEntry ? "chevron-right" : "add"}
+        className={cn("size-4", hasEntry ? "text-muted-foreground" : "text-primary")}
+      />
+    </Pressable>
   );
 }
 
@@ -121,6 +237,23 @@ function AlignmentBar({ rating }: { rating: number }) {
         className="h-full rounded-full bg-primary"
         style={{ width: `${(rating / 10) * 100}%` }}
       />
+    </View>
+  );
+}
+
+/**
+ * ⚠️ `{rating}/10` is built in the component rather than from a translation key, which
+ * the i18n rule would normally forbid. It is carried over verbatim from the check-in
+ * screen this fold deleted, and it is one of FIVE identical `${n}/10` templates in ACT
+ * alone - the connection and observing-self list and detail screens are the other four.
+ * Translating this one would leave the family inconsistent and the rule still unstated,
+ * so the gap is named here instead of half-closed. The row above does NOT share it: its
+ * label is the interpolated `values.alignmentLabel`, because that one carries a word.
+ */
+function AlignmentPill({ rating }: { rating: number }) {
+  return (
+    <View className="items-center justify-center rounded-full bg-muted px-3 py-1">
+      <Text className="text-sm font-bold text-foreground">{rating}/10</Text>
     </View>
   );
 }
