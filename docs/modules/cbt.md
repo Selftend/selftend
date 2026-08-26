@@ -22,7 +22,7 @@ The module should be:
 - private history list
 - detail view
 - edit flow
-- archive flow
+- delete flow (labelled Delete in the UI; stored as a soft archive via `archivedAt`, with no restore surface)
 - goal setting
 - values clarification and activity scheduling
 - mood logging
@@ -165,7 +165,7 @@ This module is only ready to widen after:
 
 - auth works across platforms
 - records persist safely
-- edit and archive flows are stable
+- edit and delete flows are stable
 - reminder defaults stay quiet
 - accessibility baseline is acceptable
 - tests cover the core logic and validation

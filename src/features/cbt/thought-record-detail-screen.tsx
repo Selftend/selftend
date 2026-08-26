@@ -1,8 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -15,73 +14,75 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { distortionLookup } from "@/src/constants/distortions";
-import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
+import { DetailRow } from "@/src/components/app/detail-row";
 import { ErrorState, LoadingState } from "@/src/components/app/screen-state";
-import { formatEmotionLabels } from "@/src/features/cbt/format-labels";
+import { ChipRun, StaticChip } from "@/src/components/app/selectable-chip";
+import { BeforeAfterPair } from "@/src/features/cbt/before-after-pair";
 import { useArchiveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
+import { getRecordTitle, getTitleThought } from "@/src/features/cbt/record-title";
+import { resolveHotThought } from "@/src/features/cbt/thought-record-form";
+import { useInlineWriteError } from "@/src/lib/use-inline-write-error";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatTimestamp } from "@/src/utils/date";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
-function hasExpandedDetail(data: {
-  emotionIntensityBefore: number | null;
-  emotionIntensityAfter: number | null;
-  evidenceFor: string[];
-  evidenceAgainst: string[];
-  outcomeNotes: string;
-}) {
-  return Boolean(
-    data.emotionIntensityBefore !== null ||
-    data.emotionIntensityAfter !== null ||
-    data.evidenceFor.length > 0 ||
-    data.evidenceAgainst.length > 0 ||
-    data.outcomeNotes.trim(),
-  );
-}
-
-function displayText(value: string, fallback: string) {
-  return value.trim() || fallback;
-}
-
+/**
+ * A saved thought record, shown as a record of what the user wrote (#1384).
+ *
+ * Only FILLED rows render - a partial record reads short instead of listing
+ * what it does not hold, so there is no "not filled" placeholder anywhere. A
+ * record with nothing filled is a heading and a timestamp, which this screen
+ * treats as a legitimate state, not an error.
+ *
+ * The belief pair leads because it is the point of the exercise; the pair
+ * renders only when BOTH numbers exist (the completion screen's gate), and a
+ * lone number falls back to a plain row so nothing the user rated goes
+ * invisible. No sentence interprets any number (#1227): the pair already is
+ * the observation, which is also why the old intensity-shift line is gone.
+ *
+ * The destructive action says "Delete", not "Archive": habits ships a real
+ * archive with a Restore action, so the same word cannot mean *retrievable*
+ * there and *gone forever* here (#1228). The mutation underneath still stamps
+ * `archived_at` - vocabulary and component only.
+ */
 export default function ThoughtRecordDetailScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const recordId = typeof id === "string" ? id : null;
   const { user } = useSession();
-  const [archiveError, setArchiveError] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const { data, isLoading } = useThoughtRecord(user?.id ?? null, recordId);
   const archiveMutation = useArchiveThoughtRecord(user?.id ?? null);
   const showToast = useToastStore((state) => state.showToast);
+  const deleteError = useInlineWriteError(t("detail.deleteError"));
 
-  const handleArchive = async () => {
+  // `DeleteEntryButton` keeps its confirmation OPEN when the delete rejects, so
+  // the failure lands in the dialog's own error slot AND in the card below the
+  // header, which is what survives once the dialog closes. The toast fires too:
+  // on web it is visible immediately, and it costs nothing where a native modal
+  // covers it (#1364).
+  const handleDelete = async () => {
     if (!recordId) {
       return;
     }
-
+    deleteError.onStart();
     try {
-      setArchiveError("");
       await archiveMutation.mutateAsync(recordId);
-      setConfirmOpen(false);
+    } catch (error) {
+      deleteError.onError();
       showToast({
-        title: t("common:feedback.archived"),
-        tone: "success",
-      });
-      router.replace("/modules/cbt/history" as Parameters<typeof router.replace>[0]);
-    } catch {
-      // The thrown message is a backend/internal string, English for every user -
-      // translated copy only (i18n rule, #1060). The mutation cache's global onError
-      // already reports the failure to Sentry.
-      const message = t("detail.archiveError");
-      setArchiveError(message);
-      showToast({
-        title: t("detail.archiveProblem"),
-        description: message,
+        title: t("detail.deleteProblem"),
+        description: t("detail.deleteError"),
         tone: "error",
       });
+      // Rethrown on purpose: `DeleteEntryButton` closes its confirmation only
+      // when `onConfirm` RESOLVES, and a closed dialog has nowhere to show this.
+      throw error;
     }
+    showToast({ title: t("common:feedback.deleted"), tone: "success" });
+    router.replace("/modules/cbt/history" as Parameters<typeof router.replace>[0]);
   };
 
   if (isLoading) {
@@ -110,27 +111,31 @@ export default function ThoughtRecordDetailScreen() {
     );
   }
 
-  const showExpandedDetail = hasExpandedDetail(data);
-  const notFilled = t("record.summaryNotFilled");
-  const intensityShift =
-    data.emotionIntensityBefore !== null && data.emotionIntensityAfter !== null
-      ? data.emotionIntensityAfter - data.emotionIntensityBefore
-      : null;
+  // The heading is the record's own words, through the same fallback chain the
+  // history list uses. The headline thought is excluded from the thoughts row -
+  // it already reads as the H1.
+  const titleNat = getTitleThought(data.nats);
+  const otherNats = data.nats.filter((nat) => nat !== titleNat && nat.text.trim());
 
-  const renderList = (title: string, items: string[]) =>
+  // The belief-before is the hot thought's own rating, exactly as the
+  // completion screen and the module home's stat resolve it.
+  const beliefBefore = resolveHotThought(data.nats)?.beliefRating ?? null;
+  const showBeliefPair = beliefBefore !== null && data.beliefAfter !== null;
+  const trimmedSituation = data.situation.trim();
+  const trimmedBalanced = data.balancedThought.trim();
+  const trimmedOutcome = data.outcomeNotes.trim();
+
+  const renderEvidence = (label: string, items: string[]) =>
     items.length > 0 ? (
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <View className="gap-2">
-            {items.map((item, index) => (
-              <Text key={`${item}-${index}`}>- {item}</Text>
-            ))}
-          </View>
-        </CardContent>
-      </Card>
+      <DetailRow label={label}>
+        <View className="gap-1">
+          {items.map((item, index) => (
+            <Text key={`${item}-${index}`} className="text-sm leading-relaxed">
+              - {item}
+            </Text>
+          ))}
+        </View>
+      </DetailRow>
     ) : null;
 
   return (
@@ -138,151 +143,130 @@ export default function ThoughtRecordDetailScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <ScreenHeader title={t("detail.title")} />
+            <ScreenHeader title={getRecordTitle(data, t("history.untitledRecord"))} />
             <Text variant="muted">
               {t("detail.updated", { timestamp: formatTimestamp(data.updatedAt) })}
             </Text>
           </View>
 
-          {archiveError ? (
+          {deleteError.message ? (
             <Card>
               <CardHeader>
-                <CardTitle>{t("detail.archiveProblem")}</CardTitle>
-                <CardDescription>{archiveError}</CardDescription>
+                <CardTitle>{t("detail.deleteProblem")}</CardTitle>
+                <CardDescription>{deleteError.message}</CardDescription>
               </CardHeader>
             </Card>
           ) : null}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("record.situation")}</CardTitle>
-              <CardDescription>{displayText(data.situation, notFilled)}</CardDescription>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("record.nats")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-3">
-                {data.nats.length > 0 ? (
-                  [...data.nats]
-                    .sort((a, b) => (b.isHotThought ? 1 : 0) - (a.isHotThought ? 1 : 0))
-                    .map((nat, index) => (
-                      <Card
-                        key={index}
-                        className={nat.isHotThought ? "border-primary border-2" : ""}
-                      >
-                        <CardHeader>
-                          <View className="flex-row items-center justify-between gap-3">
-                            <CardTitle className="flex-1">{nat.text}</CardTitle>
-                            {nat.isHotThought ? (
-                              <Text variant="muted">{t("record.hotThoughtBadge")} 🔥</Text>
-                            ) : null}
-                          </View>
-                          {nat.beliefRating !== null ? (
-                            <CardDescription>
-                              {t("record.beliefRating")}: {nat.beliefRating}%
-                            </CardDescription>
-                          ) : null}
-                        </CardHeader>
-                      </Card>
-                    ))
-                ) : (
-                  <Text variant="muted">{notFilled}</Text>
-                )}
-              </View>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("record.emotions")}</CardTitle>
-              <CardDescription>
-                {formatEmotionLabels(data.emotions, t) || notFilled}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          {showExpandedDetail ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("detail.expandedTitle")}</CardTitle>
-                <CardDescription>
-                  {intensityShift !== null
-                    ? t("detail.intensityShift", {
-                        after: data.emotionIntensityAfter,
-                        before: data.emotionIntensityBefore,
-                        shift: intensityShift,
-                      })
-                    : t("detail.expandedDescription")}
-                </CardDescription>
-              </CardHeader>
-              {data.emotionIntensityBefore !== null || data.emotionIntensityAfter !== null ? (
-                <CardContent>
-                  <View className="gap-2">
-                    {data.emotionIntensityBefore !== null ? (
-                      <Text>
-                        {t("record.intensityBefore")}: {data.emotionIntensityBefore}
-                      </Text>
-                    ) : null}
-                    {data.emotionIntensityAfter !== null ? (
-                      <Text>
-                        {t("record.intensityAfter")}: {data.emotionIntensityAfter}
-                      </Text>
-                    ) : null}
-                  </View>
-                </CardContent>
-              ) : null}
-            </Card>
+          {showBeliefPair ? (
+            <View className="py-2">
+              <BeforeAfterPair
+                beforeLabel={t("saved.beliefBefore")}
+                beforeValue={beliefBefore}
+                afterLabel={t("saved.beliefAfter")}
+                afterValue={data.beliefAfter}
+              />
+            </View>
           ) : null}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("record.patterns")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-3">
-                {data.distortions.length > 0 ? (
-                  data.distortions.map((distortionKey) => (
-                    <Card key={distortionKey}>
-                      <CardHeader>
-                        <CardTitle>
-                          {t(`distortions.${distortionKey}.title`, {
-                            defaultValue: distortionLookup[distortionKey]?.title ?? distortionKey,
-                          })}
-                        </CardTitle>
-                        <CardDescription>
-                          {t(`distortions.${distortionKey}.shortDescription`, {
-                            defaultValue: distortionLookup[distortionKey]?.shortDescription ?? "",
-                          })}
-                        </CardDescription>
-                      </CardHeader>
-                    </Card>
-                  ))
-                ) : (
-                  <Text variant="muted">{notFilled}</Text>
-                )}
-              </View>
-            </CardContent>
-          </Card>
-          {showExpandedDetail ? (
-            <>
-              {renderList(t("record.evidenceFor"), data.evidenceFor)}
-              {renderList(t("record.evidenceAgainst"), data.evidenceAgainst)}
-            </>
-          ) : null}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("record.balancedThought")}</CardTitle>
-              <CardDescription>{displayText(data.balancedThought, notFilled)}</CardDescription>
-            </CardHeader>
-          </Card>
-          {data.outcomeNotes.trim() ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("record.outcomeNotes")}</CardTitle>
-                <CardDescription>{data.outcomeNotes}</CardDescription>
-              </CardHeader>
-            </Card>
-          ) : null}
+
+          <View>
+            {!showBeliefPair && (beliefBefore !== null || data.beliefAfter !== null) ? (
+              <DetailRow label={t("record.beliefRating")}>
+                <View className="gap-1">
+                  {beliefBefore !== null ? (
+                    <Text className="text-sm leading-relaxed">
+                      {t("saved.beliefBefore")}: {beliefBefore}
+                    </Text>
+                  ) : null}
+                  {data.beliefAfter !== null ? (
+                    <Text className="text-sm leading-relaxed">
+                      {t("saved.beliefAfter")}: {data.beliefAfter}
+                    </Text>
+                  ) : null}
+                </View>
+              </DetailRow>
+            ) : null}
+
+            {trimmedSituation ? (
+              <DetailRow label={t("record.situation")}>
+                <Text className="text-sm leading-relaxed">{trimmedSituation}</Text>
+              </DetailRow>
+            ) : null}
+
+            {otherNats.length > 0 ? (
+              <DetailRow label={t("record.nats")}>
+                <View className="gap-3">
+                  {otherNats.map((nat, index) => (
+                    <View key={`${nat.text}-${index}`} className="gap-0.5">
+                      <Text className="text-sm leading-relaxed">{nat.text}</Text>
+                      {nat.beliefRating !== null ? (
+                        <Text variant="muted" className="text-xs">
+                          {t("record.beliefRating")}: {nat.beliefRating}%
+                        </Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              </DetailRow>
+            ) : null}
+
+            {data.emotions.length > 0 ? (
+              <DetailRow label={t("record.emotions")}>
+                <ChipRun>
+                  {data.emotions.map((slug) => (
+                    <StaticChip key={slug} label={t(`emotions.${slug}`, { defaultValue: slug })} />
+                  ))}
+                </ChipRun>
+              </DetailRow>
+            ) : null}
+
+            {data.emotionIntensityBefore !== null || data.emotionIntensityAfter !== null ? (
+              <DetailRow label={t("detail.intensity")}>
+                <View className="gap-1">
+                  {data.emotionIntensityBefore !== null ? (
+                    <Text className="text-sm leading-relaxed">
+                      {t("saved.intensityBefore")}: {data.emotionIntensityBefore}
+                    </Text>
+                  ) : null}
+                  {data.emotionIntensityAfter !== null ? (
+                    <Text className="text-sm leading-relaxed">
+                      {t("saved.intensityAfter")}: {data.emotionIntensityAfter}
+                    </Text>
+                  ) : null}
+                </View>
+              </DetailRow>
+            ) : null}
+
+            {data.distortions.length > 0 ? (
+              <DetailRow label={t("record.patterns")}>
+                <ChipRun>
+                  {data.distortions.map((distortionKey) => (
+                    <StaticChip
+                      key={distortionKey}
+                      label={t(`distortions.${distortionKey}.title`, {
+                        defaultValue: distortionLookup[distortionKey]?.title ?? distortionKey,
+                      })}
+                    />
+                  ))}
+                </ChipRun>
+              </DetailRow>
+            ) : null}
+
+            {renderEvidence(t("record.evidenceFor"), data.evidenceFor)}
+            {renderEvidence(t("record.evidenceAgainst"), data.evidenceAgainst)}
+
+            {trimmedBalanced ? (
+              <DetailRow label={t("record.balancedThought")}>
+                <Text className="text-sm leading-relaxed">{trimmedBalanced}</Text>
+              </DetailRow>
+            ) : null}
+
+            {trimmedOutcome ? (
+              <DetailRow label={t("record.outcomeNotes")}>
+                <Text className="text-sm leading-relaxed">{trimmedOutcome}</Text>
+              </DetailRow>
+            ) : null}
+          </View>
 
           <Pressable
             accessibilityRole="button"
@@ -320,35 +304,17 @@ export default function ThoughtRecordDetailScreen() {
             </Button>
           </View>
           <View className="flex-1">
-            <Button
-              disabled={archiveMutation.isPending}
-              onPress={() => setConfirmOpen(true)}
-              variant="destructive"
-            >
-              {archiveMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}
-              <Text>{t("detail.archiveButton")}</Text>
-            </Button>
+            <DeleteEntryButton
+              error={deleteError.message ?? undefined}
+              label={t("common:delete")}
+              title={t("detail.deleteConfirmTitle")}
+              message={t("detail.deleteConfirmMessage")}
+              onOpen={deleteError.onStart}
+              onConfirm={handleDelete}
+            />
           </View>
         </View>
       </View>
-
-      {/* There is no unarchive flow or archived view yet, so one stray tap on a
-          full-width destructive button removed a record for good - gate it
-          behind the same confirm pattern the wizard's Discard draft uses (#474). */}
-      <ConfirmDialog
-        visible={confirmOpen}
-        isPending={archiveMutation.isPending}
-        error={archiveError}
-        title={t("detail.archiveConfirmTitle")}
-        message={t("detail.archiveConfirmMessage")}
-        confirmLabel={t("detail.archiveButton")}
-        cancelLabel={t("common:cancel")}
-        onCancel={() => {
-          setConfirmOpen(false);
-          setArchiveError("");
-        }}
-        onConfirm={() => void handleArchive()}
-      />
     </SafeAreaView>
   );
 }

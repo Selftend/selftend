@@ -7,19 +7,11 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { EmptyState, LoadingState } from "@/src/components/app/screen-state";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
-import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
+import { getRecordTitle } from "@/src/features/cbt/record-title";
 import { useSession } from "@/src/providers/session-provider";
 import { formatTimestamp } from "@/src/utils/date";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
-
-function getRecordTitle(
-  record: { nats: NegativeAutomaticThought[]; situation: string },
-  fallback: string,
-) {
-  const hotNat = record.nats.find((n) => n.isHotThought) ?? record.nats[0];
-  return hotNat?.text.trim() || record.situation.trim() || fallback;
-}
 
 export default function CbtHistoryScreen() {
   const pushWithOrigin = usePushWithOrigin();
