@@ -54,11 +54,13 @@ export default function CbtHomeScreen() {
   const { data: goals } = useGoals(user?.id ?? null);
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
   const { data: recoveryPlan } = useRecoveryPlan(user?.id ?? null);
-  const insights = useCbtInsights(user?.id ?? null);
   // A stable string within any one month, so the query key does not churn; a
   // mounted screen crossing the boundary re-windows on its next render, which
-  // is the same promise `currentDateKey` makes everywhere else.
+  // is the same promise `currentDateKey` makes everywhere else. ONE boundary,
+  // handed to both the insights hook (the bars) and the derivation (stats 2
+  // and 3), so "this month" cannot drift into two definitions.
   const monthStartIso = monthStartIsoOf(currentDateKey());
+  const insights = useCbtInsights(user?.id ?? null, monthStartIso);
   // Head counts, never `thoughtRecords.length` - the list is capped at 500
   // rows, so a client-side count reads back a wrong, too-small number for
   // exactly the people with the most history (ADR-0001).

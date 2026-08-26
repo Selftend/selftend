@@ -10,6 +10,7 @@ import type {
   DistortionCount,
   RecurringThoughtSuggestion,
 } from "@/src/features/cbt/use-cbt-insights";
+import { instantOnOrAfter } from "@/src/utils/date";
 import type { Goal } from "@/src/features/goals/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
 
@@ -104,9 +105,8 @@ function deriveHeaderStats(
     },
   ];
 
-  const monthStartTime = new Date(monthStartIso).getTime();
   const shifts = (thoughtRecords ?? []).flatMap((record) => {
-    if (new Date(record.createdAt).getTime() < monthStartTime) {
+    if (!instantOnOrAfter(record.createdAt, monthStartIso)) {
       return [];
     }
     const before = resolveHotThought(record.nats)?.beliefRating ?? null;

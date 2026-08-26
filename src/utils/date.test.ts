@@ -7,6 +7,7 @@ import {
   formatCompactAtOffset,
   formatDayKey,
   formatTimestamp,
+  instantOnOrAfter,
   isValidDayKey,
   lastNDayKeys,
   lastNDayKeysEndingAt,
@@ -346,5 +347,14 @@ describe("monthStartIsoOf", () => {
 
   it("is a fixed point for a day key already on the boundary day", () => {
     expect(monthStartIsoOf("2026-01-01")).toBe("2025-12-31T18:30:00.000Z");
+  });
+});
+
+describe("instantOnOrAfter", () => {
+  it("includes the boundary instant itself and everything after, excludes before", () => {
+    const boundary = "2026-05-01T00:00:00.000Z";
+    expect(instantOnOrAfter("2026-05-01T00:00:00.000Z", boundary)).toBe(true);
+    expect(instantOnOrAfter("2026-05-15T09:30:00.000Z", boundary)).toBe(true);
+    expect(instantOnOrAfter("2026-04-30T23:59:59.999Z", boundary)).toBe(false);
   });
 });

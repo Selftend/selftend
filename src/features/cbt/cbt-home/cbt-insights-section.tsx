@@ -36,7 +36,9 @@ export function CbtInsightsSection({ bars, cards, ruled }: CbtInsightsSectionPro
     return null;
   }
 
-  const maxCount = bars[0]?.count ?? 0;
+  // Explicitly order-independent: normalising against `bars[0]` would quietly
+  // couple the widths to the hook's descending sort.
+  const maxCount = bars.reduce((max, bar) => Math.max(max, bar.count), 1);
 
   return (
     <Section
@@ -64,7 +66,7 @@ export function CbtInsightsSection({ bars, cards, ruled }: CbtInsightsSectionPro
               <View aria-hidden className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <View
                   className="h-full rounded-full bg-primary"
-                  style={{ width: `${(bar.count / Math.max(maxCount, 1)) * 100}%` }}
+                  style={{ width: `${(bar.count / maxCount) * 100}%` }}
                 />
               </View>
             </View>

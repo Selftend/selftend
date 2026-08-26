@@ -52,6 +52,15 @@ export function monthStartIsoOf(dateKey: string): string {
 }
 
 /**
+ * Whether ISO instant `iso` falls on or after ISO boundary `sinceIso`. The one
+ * window predicate for client-side "since X" reductions, so two surfaces
+ * windowing on the same boundary cannot drift into two comparisons (#1387).
+ */
+export function instantOnOrAfter(iso: string, sinceIso: string): boolean {
+  return new Date(iso).getTime() >= new Date(sinceIso).getTime();
+}
+
+/**
  * The last `count` LOCAL day keys ending on `reference`'s day, oldest first
  * (today last). The shared "last N day keys" helper behind multi-day views
  * like the routines 7-day strip; anchored at local noon so stepping across a

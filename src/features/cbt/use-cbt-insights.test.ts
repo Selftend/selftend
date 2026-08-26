@@ -70,6 +70,10 @@ const mockUseSleepLogs = useSleepLogs as jest.MockedFunction<typeof useSleepLogs
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+// The month boundary the hook is handed by its caller (#1387). Explicit input,
+// not a clock read, so no fake timers are needed for the window itself.
+const MONTH_START = "2026-05-01T00:00:00.000Z";
+
 // Minimal empty mocks - return undefined data for everything
 function setupEmptyMocks() {
   mockUseActivities.mockReturnValue({ data: undefined } as unknown as ReturnType<
@@ -151,18 +155,13 @@ function makeSelfCareLog(logDate: string, exerciseDone: boolean, socialConnectio
 // Tests: distortionCounts (#1387, SR-1)
 // ---------------------------------------------------------------------------
 describe("useCbtInsights - distortionCounts", () => {
-  // The month window reads the clock, so these tests pin it - late in a month,
-  // deliberately, so in-month fixtures don't straddle the boundary.
-  beforeAll(() => jest.useFakeTimers({ now: new Date("2026-05-30T12:00:00.000Z") }));
-  afterAll(() => jest.useRealTimers());
-
   beforeEach(() => {
     jest.clearAllMocks();
     setupEmptyMocks();
   });
 
   it("returns [] when thoughtRecords is undefined", () => {
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.distortionCounts).toEqual([]);
   });
 
@@ -171,7 +170,7 @@ describe("useCbtInsights - distortionCounts", () => {
       data: [makeThoughtRecord("t1", ["d1"], "thought 1", "2026-05-10T00:00:00Z")],
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.distortionCounts).toEqual([{ key: "d1", count: 1 }]);
   });
 
@@ -188,7 +187,7 @@ describe("useCbtInsights - distortionCounts", () => {
       ],
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.distortionCounts).toEqual([
       { key: "d1", count: 2 },
       { key: "d2", count: 1 },
@@ -208,7 +207,7 @@ describe("useCbtInsights - distortionCounts", () => {
       data: records,
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.distortionCounts).toEqual([
       { key: "d1", count: 4 },
       { key: "d2", count: 3 },
@@ -230,7 +229,7 @@ describe("useCbtInsights - distortionCounts", () => {
       data: records,
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.distortionCounts[0].key).toBe("aaa");
     expect(result.current.distortionCounts[1].key).toBe("bbb");
   });
@@ -246,7 +245,7 @@ describe("useCbtInsights - exerciseMoodLift", () => {
   });
 
   it("returns null when selfCareLogs is undefined", () => {
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.exerciseMoodLift).toBeNull();
   });
 
@@ -255,7 +254,7 @@ describe("useCbtInsights - exerciseMoodLift", () => {
       data: Array.from({ length: 6 }, (_, i) => makeSelfCareLog(`2026-05-0${i + 1}`, true)),
     } as unknown as ReturnType<typeof useSelfCareLogs>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.exerciseMoodLift).toBeNull();
   });
 
@@ -269,7 +268,7 @@ describe("useCbtInsights - exerciseMoodLift", () => {
     // No mood logs
     mockUseMoodLogs.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useMoodHistory>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.exerciseMoodLift).toBeNull();
   });
 
@@ -344,7 +343,7 @@ describe("useCbtInsights - exerciseMoodLift", () => {
       typeof useMoodHistory
     >);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.exerciseMoodLift).toEqual({ withExercise: 7.5, withoutExercise: 4 });
   });
 });
@@ -392,7 +391,7 @@ describe("useCbtInsights - activityMoodLiftByCategory", () => {
       ],
     } as unknown as ReturnType<typeof useActivities>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.activityMoodLiftByCategory).toEqual([]);
   });
 
@@ -446,7 +445,7 @@ describe("useCbtInsights - activityMoodLiftByCategory", () => {
       ],
     } as unknown as ReturnType<typeof useActivities>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     const lifts = result.current.activityMoodLiftByCategory;
     expect(lifts[0]).toMatchObject({ category: "mastery", averageLift: 4, count: 2 });
     expect(lifts[1]).toMatchObject({ category: "pleasure", averageLift: 1, count: 1 });
@@ -467,7 +466,7 @@ describe("useCbtInsights - recurringThoughtSuggestions", () => {
       data: Array.from({ length: 4 }, (_, i) => makeThoughtRecord(`t${i}`, [], "thought")),
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.recurringThoughtSuggestions).toEqual([]);
   });
 
@@ -483,7 +482,7 @@ describe("useCbtInsights - recurringThoughtSuggestions", () => {
       data: records,
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     const suggestions = result.current.recurringThoughtSuggestions;
     expect(suggestions).toHaveLength(2);
     expect(suggestions.every((s) => s.count >= 2)).toBe(true);
@@ -501,7 +500,7 @@ describe("useCbtInsights - recurringThoughtSuggestions", () => {
       data: records,
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     const suggestions = result.current.recurringThoughtSuggestions;
     // "Hi" (2 chars) should be filtered
     expect(suggestions.every((s) => s.thought.length >= 8)).toBe(true);
@@ -523,7 +522,7 @@ describe("useCbtInsights - recurringThoughtSuggestions", () => {
       data: records,
     } as unknown as ReturnType<typeof useThoughtRecords>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.recurringThoughtSuggestions.length).toBeLessThanOrEqual(2);
   });
 });
@@ -565,7 +564,7 @@ describe("useCbtInsights - beliefReviewSuggestions", () => {
       data: [makeBelief("b1", null, 20), makeBelief("b2", null, 10)],
     } as unknown as ReturnType<typeof useCoreBeliefs>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.beliefReviewSuggestions).toEqual([]);
   });
 
@@ -578,7 +577,7 @@ describe("useCbtInsights - beliefReviewSuggestions", () => {
       ],
     } as unknown as ReturnType<typeof useCoreBeliefs>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     const ids = result.current.beliefReviewSuggestions.map((b) => b.id);
     expect(ids).toContain("b1");
     expect(ids).not.toContain("b3");
@@ -602,7 +601,7 @@ describe("useCbtInsights - beliefReviewSuggestions", () => {
       ],
     } as unknown as ReturnType<typeof useCoreBeliefs>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     const ids = result.current.beliefReviewSuggestions.map((b) => b.id);
     expect(ids).toContain("b1");
     expect(ids).toContain("b2");
@@ -625,7 +624,7 @@ describe("useCbtInsights - selfCareTrend", () => {
       data: Array.from({ length: 4 }, (_, i) => makeSelfCareLog(`2026-05-0${i + 1}`, false)),
     } as unknown as ReturnType<typeof useSelfCareLogs>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.selfCareTrend).toBeNull();
   });
 
@@ -645,7 +644,7 @@ describe("useCbtInsights - selfCareTrend", () => {
       typeof useSelfCareLogs
     >);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     const trend = result.current.selfCareTrend!;
     expect(trend.totalDays).toBe(7);
     expect(trend.exerciseDays).toBe(3);
@@ -696,7 +695,7 @@ describe("useCbtInsights - selfCareTrend", () => {
       ],
     } as unknown as ReturnType<typeof useGratitudeEntries>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.selfCareTrend?.gratitudeDays).toBe(2);
   });
 
@@ -734,7 +733,7 @@ describe("useCbtInsights - selfCareTrend", () => {
       ],
     } as unknown as ReturnType<typeof useSleepLogs>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.selfCareTrend?.averageSleepHours).toBe(7.5);
   });
 });
@@ -770,7 +769,7 @@ describe("useCbtInsights - angerPattern", () => {
       data: [makeAngerLog("a1", 7, "shout"), makeAngerLog("a2", 8, "shout")],
     } as unknown as ReturnType<typeof useAngerLogs>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.angerPattern).toBeNull();
   });
 
@@ -783,7 +782,7 @@ describe("useCbtInsights - angerPattern", () => {
       ],
     } as unknown as ReturnType<typeof useAngerLogs>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     const pattern = result.current.angerPattern!;
     expect(pattern.totalLogs).toBe(3);
     expect(pattern.averageArousal).toBe(7);
@@ -800,7 +799,7 @@ describe("useCbtInsights - angerPattern", () => {
       ],
     } as unknown as ReturnType<typeof useAngerLogs>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     // All urges appear once; aaa comes first alphabetically
     expect(result.current.angerPattern?.commonUrge).toBe("aaa");
   });
@@ -820,7 +819,7 @@ describe("useCbtInsights - exposureProgress", () => {
       typeof useAllExposureItems
     >);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.exposureProgress).toBeNull();
   });
 
@@ -866,7 +865,7 @@ describe("useCbtInsights - exposureProgress", () => {
       ],
     } as unknown as ReturnType<typeof useAllExposureItems>);
 
-    const { result } = renderHook(() => useCbtInsights("user-1"));
+    const { result } = renderHook(() => useCbtInsights("user-1", MONTH_START));
     expect(result.current.exposureProgress).toEqual({ completed: 1, total: 3 });
   });
 });

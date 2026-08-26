@@ -6,6 +6,7 @@ import { useAngerLogs } from "@/src/features/anger/queries";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import type { CoreBelief } from "@/src/features/beliefs/types";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
+import { instantOnOrAfter } from "@/src/utils/date";
 import { useAllExposureItems } from "@/src/features/exposure/queries";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useMoodHistory } from "@/src/features/mood/queries";
@@ -81,7 +82,7 @@ function normalizeLabel(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-export function useCbtInsights(userId: string | null): CbtInsights {
+export function useCbtInsights(userId: string | null, monthStartIso: string): CbtInsights {
   const { data: activities } = useActivities(userId);
   const { data: angerLogs } = useAngerLogs(userId);
   const { data: thoughtRecords } = useThoughtRecords(userId);
@@ -104,6 +105,10 @@ export function useCbtInsights(userId: string | null): CbtInsights {
    * record created this month can only leave the top 500 when 500 others were
    * touched later, which puts them in the month too).
    *
+   * The boundary is the CALLER's `monthStartIso` - the same value the screen
+   * hands `deriveCbtHomeView` for header stats 2 and 3, so the bars and the
+   * stats read one window by construction, not by two clocks agreeing.
+   *
    * ⚠️ Written assumption, recorded rather than engineered around: the window
    * is on the created INSTANT (device-local month), while records carry a
    * captured occurrence offset and the rest of the app buckets them by civil
@@ -114,13 +119,9 @@ export function useCbtInsights(userId: string | null): CbtInsights {
       return [];
     }
 
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-
     const counts = new Map<string, number>();
     for (const record of thoughtRecords) {
-      if (new Date(record.createdAt) < monthStart) {
+      if (!instantOnOrAfter(record.createdAt, monthStartIso)) {
         continue;
       }
       for (const distortion of record.distortions) {
@@ -131,7 +132,7 @@ export function useCbtInsights(userId: string | null): CbtInsights {
     return [...counts.entries()]
       .map(([key, count]) => ({ key, count }))
       .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
-  }, [thoughtRecords]);
+  }, [thoughtRecords, monthStartIso]);
 
   const exerciseMoodLift = useMemo<ExerciseMoodLift | null>(() => {
     if (!selfCareLogs || selfCareLogs.length < 7 || !moodLogs) {
