@@ -40,7 +40,12 @@ const FORM_ROUTE_PATHS = [
   "/tools/meditation/daily-life",
 ];
 const FORM_ROUTE_PREFIXES = [
-  "/modules/act/values/", // [domain] rating editor + the bulls-eye check-in
+  // The [domain] value editor. NOT the values index: its own trailing slash keeps it
+  // out (see the note above), which is deliberate even now that the index carries the
+  // check-in's Save. That Save is inline in the scroll, not a pinned footer, so there
+  // is no sticky bar for the FAB to sit on top of - and the index is a routine step's
+  // destination, which is precisely where a routine handle should still be reachable.
+  "/modules/act/values/",
   "/modules/act/committed-action/", // [id] progress editor
 ];
 

@@ -53,6 +53,16 @@ _Avoid_: session, cycle
 
 > Note: there is intentionally no "run" term. A routine has a definition and a status derived per day; there is no separate object representing one day's execution.
 
+### Reminder channel
+
+**Reminder channel**:
+The device-scoped capability that lets reminders reach a device: the platform's notification permission together with that device's push registration, taken as one thing. There is one channel per device, shared by every reminder — it is not a property of any single reminder, and enabling a tenth reminder never asks the user again. A reminder can be "on" while the channel is absent; nothing is delivered until the channel exists again.
+_Avoid_: subscription (only half the channel), per-reminder permission
+
+**Re-arm**:
+Restoring a lost reminder channel for a user who has already said yes, without asking again. A re-arm never prompts; when consent cannot be presumed, what happens instead is a fresh request, not a re-arm.
+_Avoid_: re-subscribe (names the mechanism, not the promise), re-prompt (the thing a re-arm must never do)
+
 ### Design language ("Color field")
 
 The app-wide visual direction (decided on the design redesign map, first shipped by the mood workstream).
@@ -194,3 +204,30 @@ _Avoid_: full account, real account, permanent account, member
 Attaching the first sign-in identity to a guest account, in place, keeping all its data. Guest →
 registered, one way. User-facing copy never says the word — people just "create an account".
 _Avoid_: upgrade, migration, merge (a conversion never combines two accounts)
+
+**Abandonment**:
+Knowingly leaving a guest account behind by signing in to a registered account from a device that
+holds guest data. Always preceded by a warning when the guest account holds any user-created
+content — never silent — and the warning offers export in place (#1430). A guest account with
+nothing in it is abandoned without ceremony.
+_Avoid_: logout, switch (both hide that data is being left behind)
+
+**Orphaned guest account**:
+A guest account no device holds a session for — created by abandonment, reinstall, or cleared
+storage. Unreachable by its owner, because a guest account's only key is that session; it is never
+deleted at the moment of abandonment — cleanup after dormancy is its only deletion path (#1431).
+_Avoid_: dead account, stale user
+
+**Dormancy**:
+The state of a guest account that has gone twelve months without activity — in practice, twelve
+months without the app being opened on a device holding its session, since any open renews it.
+Dormancy, not account age, is what makes a guest account eligible for cleanup: a recently used
+account is never dormant, however old it is (#1431).
+_Avoid_: inactive (too vague), expired (nothing expires on its own)
+
+**Cleanup**:
+The scheduled deletion of dormant guest accounts — the only path by which an orphaned guest
+account is ever deleted. Cleanup removes exactly what self-service account deletion removes,
+nothing less. A device that returns after its account was cleaned up starts fresh with a calm,
+one-time notice — never silently (#1431).
+_Avoid_: purge, garbage collection, expiry

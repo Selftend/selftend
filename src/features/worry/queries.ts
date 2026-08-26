@@ -67,6 +67,9 @@ export function useDeleteWorryEntry(userId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (entryId: string) => deleteWorryEntry(userId!, entryId),
+    // The confirmation stays OPEN when this fails, and it is a native modal - so the
+    // detail screen renders the failure inline in the dialog rather than behind it (#1364).
+    meta: { suppressGlobalErrorToast: true },
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: worryKeys.list(userId) });

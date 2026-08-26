@@ -33,7 +33,7 @@ describe("tool-routes", () => {
     expect(routeForTool("dropAnchor")).toBe("/modules/act/connection/drop-anchor");
     expect(routeForTool("connection")).toBe("/modules/act/connection/new");
     expect(routeForTool("observingSelf")).toBe("/modules/act/observing-self/new");
-    expect(routeForTool("bullsEye")).toBe("/modules/act/values/bulls-eye");
+    expect(routeForTool("bullsEye")).toBe("/modules/act/values");
     expect(routeForTool("choicePoint")).toBe("/modules/act/choice-point/new");
     // Progress is an update to an EXISTING action - the list is the doorway.
     expect(routeForTool("committedAction")).toBe("/modules/act/committed-action");

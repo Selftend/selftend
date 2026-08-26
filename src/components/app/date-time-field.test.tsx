@@ -349,7 +349,14 @@ describe("DateTimeField", () => {
       fireEvent.changeText(screen.getByLabelText("Entry time, minute"), "45");
       fireEvent(screen.getByLabelText("Entry time, minute"), "blur");
 
-      fireEvent.press(screen.getByLabelText("Close"));
+      // ⚠️ Web, so the backdrop has no close label and no place in the
+      // accessibility tree at all (#1305) — it is reached by testID and
+      // dismissed with a plain DOM click. The native cases above still press a
+      // labelled Close, which is deliberate.
+      fireEvent(
+        screen.getByTestId("picker-sheet-backdrop", { includeHiddenElements: true }),
+        "click",
+      );
 
       expect(props.onChange).not.toHaveBeenCalled();
     });

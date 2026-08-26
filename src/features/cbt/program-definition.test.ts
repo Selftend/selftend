@@ -167,6 +167,7 @@ describe("thoughtRecordDaily buckets by the captured civil day", () => {
     balancedThought: "",
     emotionIntensityAfter: null,
     outcomeNotes: "",
+    beliefAfter: null,
     createdAt: OCCURRED_AT,
     createdOffsetMinutes: TOKYO_OFFSET_MINUTES,
     dayKey: CAPTURED,

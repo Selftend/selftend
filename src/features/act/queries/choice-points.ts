@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  countChoicePoints,
   deleteChoicePoint,
   getChoicePoint,
   getLatestChoicePointAt,
@@ -16,6 +17,18 @@ export function useChoicePoints(userId: string | null, limit = 30) {
   return useQuery({
     queryKey: actKeys.choicePointList(userId),
     queryFn: () => listChoicePoints(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * ACT home's "N choice points mapped" stat - an exact head count, never
+ * `useChoicePoints(...).data?.length`; `countRows` explains why (#1378).
+ */
+export function useChoicePointCount(userId: string | null) {
+  return useQuery({
+    queryKey: actKeys.choicePointCount(userId),
+    queryFn: () => countChoicePoints(userId!),
     enabled: Boolean(userId),
   });
 }

@@ -102,7 +102,7 @@
       "activityMoodLiftDetail": "{{summary}} with before/after mood.",
       "activityMoodLiftItem": "{{category}} {{lift}} ({{count}})",
       "recurringThought": "Thought to explore: {{thought}}",
-      "recurringThoughtDetail": "This exact thought appears {{count}} times. Consider whether a core belief sits underneath it.",
+      "recurringThoughtDetail": "This exact thought appears {{count}} times.",
       "selfCareTrend": "Self-care trend: movement on {{exerciseDays}}/{{totalDays}} recent days",
       "selfCareTrendDetail": "{{socialDays}} social day(s), {{gratitudeDays}} gratitude day(s), {{averageSleep}}.",
       "sleepAverage": "{{hours}}h average sleep",
@@ -142,7 +142,7 @@
     "act": {
       "letter": "A",
       "title": "Act",
-      "sub": "Behavioral",
+      "sub": "Behavioural",
       "description": "Action precedes motivation. Schedule meaningful behavior, expose yourself gradually to what you avoid, and watch mood follow."
     },
     "be": {
@@ -253,6 +253,7 @@
     "strengthSummary": "Original {{original}} · Alternative {{alternative}}",
     "deleteTitle": "Delete this belief?",
     "deleteMessage": "This permanently removes the belief and its strength history. This can't be undone.",
+    "deleteError": "Unable to delete the belief. Try again.",
     "validation": {
       "beliefStatement": "Describe the belief.",
       "alternativeBelief": "Write an alternative belief."
@@ -369,6 +370,7 @@
     "loadingDetail": "Loading worry...",
     "deleteTitle": "Delete this worry?",
     "deleteMessage": "This permanently removes the entry. This can't be undone.",
+    "deleteError": "Unable to delete the entry. Try again.",
     "validation": {
       "worryStatement": "Describe the worry.",
       "copingStatement": "Write a coping statement.",
@@ -490,6 +492,7 @@
     "editDescription": "Update the details of this episode.",
     "deleteTitle": "Delete this anger log?",
     "deleteMessage": "This permanently removes the log. This can't be undone.",
+    "deleteError": "Unable to delete the log. Try again.",
     "validation": {
       "triggerText": "Describe what triggered the anger."
     }
@@ -1018,6 +1021,17 @@
     "editTitle": "Edit thought record",
     "editDescription": "Edit a saved record without losing its history.",
     "saveProblem": "Save problem",
+    "parts": {
+      "situation": "Situation",
+      "thoughts": "Thoughts",
+      "feelings": "Feelings",
+      "patterns": "Patterns",
+      "evidence": "Evidence",
+      "balanced": "Balanced"
+    },
+    "railNote_one": "{{count}} of {{total}} parts filled in",
+    "railNote_other": "{{count}} of {{total}} parts filled in",
+    "finishLater": "Finish later",
     "situation": "Situation",
     "situationHint": "What happened, where were you, and what set the moment off?",
     "situationPlaceholder": "Keep it concrete. A few sentences is enough.",
@@ -1032,13 +1046,11 @@
     "hotThought": "Hot thought",
     "hotThoughtInstruction": "Which of these thoughts caused you the most distress?",
     "hotThoughtBadge": "Hot thought",
-    "natsRequired": "Add at least one thought to continue.",
+    "natsRequired": "Add at least one thought before saving.",
     "emotions": "Emotions",
     "patterns": "Patterns",
     "balancedThought": "Balanced thought",
     "balancedThoughtHint": "Write the calmer, more balanced response you want to keep.",
-    "evidence": "Evidence",
-    "outcome": "Afterward",
     "emotionsLabel": "Emotions",
     "emotionsLabelHint": "Pick the feelings that fit best.",
     "intensityBefore": "Emotion intensity before (0-100)",
@@ -1054,19 +1066,14 @@
     "balancedThoughtLabel": "Balanced thought",
     "balancedThoughtPlaceholder": "Aim for something believable and kinder, not forced positivity.",
     "balancedThoughtExample": "Example: I do not know what the email means yet. One message is not proof that I failed.",
+    "beliefAfter": "Belief in the hot thought now (0-100)",
+    "beliefAfterHint": "Optional. How strongly do you believe it after working through it? 0 means not at all; 100 means completely.",
     "intensityAfter": "Emotion intensity after (0-100)",
     "intensityAfterHint": "Optional. Rate the same emotion after writing the balanced thought.",
     "outcomeNotes": "Outcome notes",
     "outcomeNotesHint": "Optional. Capture what changed, what helped, or what you want to remember.",
     "outcomeNotesPlaceholder": "Example: The thought still feels uncomfortable, but less certain.",
-    "summaryTitle": "Summary before saving",
-    "summarySituation": "Situation: {{value}}",
-    "summaryThought": "Hot thought: {{value}}",
-    "summaryEmotions": "Emotions: {{value}}",
-    "summaryPatterns": "Patterns: {{value}}",
     "summaryNotFilled": "Not filled yet.",
-    "back": "Back",
-    "continue": "Continue",
     "saveRecord": "Save record",
     "saving": "Saving record",
     "disputeTitle": "Put the thought on trial",
@@ -1085,6 +1092,8 @@
   },
   "saved": {
     "title": "You examined a thought.",
+    "beliefBefore": "Belief before",
+    "beliefAfter": "Belief after",
     "intensityBefore": "Before",
     "intensityAfter": "After",
     "viewRecord": "View record",
@@ -1141,7 +1150,7 @@
       "reflectionPrompt": "What would a more balanced version of this situation sound like?"
     },
     "catastrophizing": {
-      "title": "Catastrophizing",
+      "title": "Catastrophising",
       "shortDescription": "Jumping quickly to the worst-case outcome and treating it as likely.",
       "reflectionPrompt": "What is difficult here, and what is only a fear about the future?"
     },
@@ -1156,7 +1165,7 @@
       "reflectionPrompt": "What other outcome is also plausible right now?"
     },
     "overgeneralization": {
-      "title": "Overgeneralization",
+      "title": "Overgeneralisation",
       "shortDescription": "Using one event as proof that the same pattern will always repeat.",
       "reflectionPrompt": "Is this one moment, or is it truly evidence for every situation?"
     },
@@ -1176,12 +1185,12 @@
       "reflectionPrompt": "What positive detail am I brushing aside too quickly?"
     },
     "labeling": {
-      "title": "Labeling",
+      "title": "Labelling",
       "shortDescription": "Reducing yourself or someone else to a harsh global label.",
       "reflectionPrompt": "How can I describe the moment without turning it into an identity?"
     },
     "personalization": {
-      "title": "Personalization",
+      "title": "Personalisation",
       "shortDescription": "Taking on more blame or responsibility than the facts justify.",
       "reflectionPrompt": "What part is mine, and what part is not actually under my control?"
     },
@@ -1509,9 +1518,9 @@
     },
     "overview": {
       "patternsTitle": "Patterns",
-      "newPattern": "New pattern →",
+      "newPattern": "New pattern",
       "recentTitle": "Recent sessions",
-      "showAll": "Show all sessions →",
+      "showAll": "Show all sessions",
       "noPatterns": "No patterns yet.",
       "startPattern": "Start {{name}}",
       "minutes_one": "minute",

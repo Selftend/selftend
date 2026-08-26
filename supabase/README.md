@@ -50,7 +50,7 @@ The mindfulness _tool_ has been absorbed into meditation, but the `mindfulness_s
 
 `profiles` stores account-level metadata only: email plus optional avatar fields. Google OAuth avatars are stored as URLs with `avatar_source = 'oauth'`; manually chosen images store a private Storage object path with `avatar_source = 'upload'`; removed photos keep `avatar_source = null` and set `avatar_updated_at` so the app does not immediately re-import the Google photo.
 
-`export_user_data()` is the GDPR data export: it includes account metadata, preferences, web push subscriptions, and every private per-module record (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, breathing, routines, widget preferences, and the rest). Because user-entered fields are encrypted at rest, `export_user_data()` reads through the decrypting views so the exported JSON is plaintext for the owner. `delete_user_account()` deletes owned private rows directly or through `auth.users` cascade, including private avatar objects in Storage.
+`export_user_data()` is the GDPR data export: it includes account metadata, preferences, web push subscriptions, and every private per-module record (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, breathing, routines, widget preferences, and the rest). Because user-entered fields are encrypted at rest, `export_user_data()` reads through the decrypting views so the exported JSON is plaintext for the owner. `delete_user_account()` deletes owned private rows directly or through `auth.users` cascade, including private avatar objects in Storage. Its purge body lives in `purge_user_account(uuid)`, a shared security-definer helper that is not client-callable (execute revoked from `anon`/`authenticated`; only `postgres` — the role pg_cron jobs run as — and `service_role` may call it) so the guest dormancy cleanup job can delete exactly what the RPC deletes. A migration that adds a table needing an explicit delete must redeclare `purge_user_account()` (copied from the newest declaration on `dev` — redeclarations are last-writer-wins), never inline deletes back into `delete_user_account()`.
 
 ## Field-level encryption
 
@@ -138,9 +138,9 @@ Each account has its own password (defined in `supabase/seed.sql`, mirrored in `
 
 > The sign-in form rejects passwords shorter than 12 characters, so these seed passwords are intentionally ≥12 chars. If you change them in `seed.sql`, keep them long enough and update `SEED_USERS` to match.
 
-> **Known gap on the ACT screens.** The five ACT list screens filter to the selected day and `useSelectedDate()` always returns today, so each one shows only rows dated today. The demo account's **defusion** and **expansion** screens therefore open on their empty state: both feed the ACT programme's daily practice, which is deliberately left open, so neither can carry a row dated today. Their seeded history is real but currently unreachable through the UI — see [#1284](https://github.com/Selftend/selftend/issues/1284). Connection, observing self and choice points each carry a row dated today, and urge surfing's recent strip is not day-filtered. The values, bulls-eye and committed-action screens are not day-filtered at all and render their seeded content whatever the date.
+> **Known gap on the ACT screens.** The five ACT list screens filter to the selected day and `useSelectedDate()` always returns today, so each one shows only rows dated today. The demo account's **defusion** and **expansion** screens therefore open on their empty state: both feed the ACT programme's daily practice, which is deliberately left open, so neither can carry a row dated today. Their seeded history is real but currently unreachable through the UI — see [#1284](https://github.com/Selftend/selftend/issues/1284). Connection, observing self and choice points each carry a row dated today, and urge surfing's recent strip is not day-filtered. The values screen (which carries the alignment check-in and its history since #1379) and the committed-action screens are not day-filtered at all and render their seeded content whatever the date.
 
-> **The bulls-eye history shows only its newest twelve rows.** A review rates all four domains, so exactly three review dates are ever on screen. The seed's last three reviews are therefore placed to carry the arc on their own — the last reading before the setback, the setback itself, and today's recovery — rather than spread on an even stride that would push every dipped reading off the bottom.
+> **The alignment check-in's history shows only its newest twelve rows.** A review rates all four domains, so exactly three review dates are ever on screen. The seed's last three reviews are therefore placed to carry the arc on their own — the last reading before the setback, the setback itself, and today's recovery — rather than spread on an even stride that would push every dipped reading off the bottom.
 
 > **What the seed cannot reach.** Recorded so nobody spends an afternoon rediscovering them:
 >
@@ -151,6 +151,10 @@ Each account has its own password (defined in `supabase/seed.sql`, mirrored in `
 > - **UTC+13 and UTC+14 are out of range for exact day placement.** The ACT tables carry no captured-offset column, so their rows are pinned to a 10:00–12:00 UTC band and resolve to the intended civil day for every offset from −11 through +12. Further east, a row can file under the following day and a strip day or a daily-practice flag can read differently.
 
 Sign in via the app's email/password form (`signInWithPassword` in `src/features/auth/api.ts`).
+
+#### Guest accounts
+
+Anonymous sign-ins are enabled locally (`enable_anonymous_sign_ins` in `config.toml`, #1440): a native app pointed at this stack silently creates a guest account (`is_anonymous = true` in `auth.users`) on any cold start without a stored session, so guest rows with no matching seed block are expected. Guests are deliberately never seeded - tests that need one create it at runtime through the real `signInAnonymously()`, so a seeded guest can't leak into unrelated runs. `db:reset` clears them like any other unseeded row.
 
 #### Adding more seeded users
 
@@ -196,7 +200,7 @@ Coverage lives in `test/integration/*.integration.test.ts`. Highlights:
 
 - one `*-repository.integration.test.ts` per module (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, goals, beliefs, exposure, worry, anger, procrastination, self-care, mindfulness, plan, values, home widgets, activities, profile, settings) - CRUD, ordering, and constraint behavior against the real schema
 - `rls.integration.test.ts` - cross-user isolation across all owner-scoped tables and the storage bucket
-- `db-functions.integration.test.ts` - `export_user_data()` and `delete_user_account()` coverage, access control on the `send-web-reminders` cron RPCs, and the demo-seed delete-cascade guard (every foreign key among the CBT, ACT and routine tables must cascade, because `scripts/seed-demo-data.mjs` wipes parents only and lets the cascades reclaim the children)
+- `db-functions.integration.test.ts` - `export_user_data()` and `delete_user_account()` coverage, the `purge_user_account(uuid)` helper (access control + full purge including storage objects), access control on the `send-web-reminders` cron RPCs, and the demo-seed delete-cascade guard (every foreign key among the CBT, ACT and routine tables must cascade, because `scripts/seed-demo-data.mjs` wipes parents only and lets the cascades reclaim the children)
 - `auth.integration.test.ts` - sign-in success/failure, sign-up, password-reset email landing in Mailpit (`http://localhost:54324`)
 - `edge-web-reminders.integration.test.ts` - the `send-web-reminders` edge function against the local stack
 

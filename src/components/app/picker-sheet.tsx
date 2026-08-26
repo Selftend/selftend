@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Platform, Pressable, ScrollView, View } from "react-native";
+import { Platform, Pressable, ScrollView, View, type ViewProps } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { PressShieldModal } from "@/src/components/app/press-shield-modal";
@@ -44,7 +44,8 @@ export interface PickerSheetProps<TDraft> {
  * `surface="sheet"`: a centred card over a dimmed backdrop, not a full-screen
  * modal, so it declines the wrapper's pinned escape row (#1252) — a 48px
  * `bg-background` bar above the backdrop would be chrome for a screen this
- * sheet never covers. Its way out is the labelled backdrop plus Escape.
+ * sheet never covers. Its way out is the backdrop, Escape, and the footer —
+ * see `Backdrop` for why those are not the same set on every platform.
  */
 export function PickerSheet<TDraft>({
   visible,
@@ -75,6 +76,56 @@ export function PickerSheet<TDraft>({
         </SheetBody>
       ) : null}
     </PressShieldModal>
+  );
+}
+
+/**
+ * The dimmed area outside the card, and the one place in this sheet that is
+ * deliberately different on web.
+ *
+ * ⚠️ On web it leaves the focus path ENTIRELY (#1305). `tabIndex: -1` was not
+ * enough and never could be: react-native-web's modal focus trap wraps by
+ * calling `element.focus()` down the tree and keeping whatever takes it, and a
+ * `-1` element still takes it — measured, the backdrop was stop 37, the wrap
+ * point, and Tab from the last control landed on an invisible element that
+ * announced "Close, button". A react-native-web `Pressable` cannot express this
+ * either: it always writes a `tabIndex`, defaulting to 0. So the web backdrop is
+ * a plain `View` with a DOM click handler, hidden from assistive technology, and
+ * Clear and Done are the visible way out.
+ *
+ * ⚠️ NATIVE keeps the labelled close button. The ruling this implements
+ * ("the backdrop leaves the focus path, its close label removed") is about a
+ * focus path, and the escape it points at instead is the Escape KEY — neither
+ * exists on a phone. Taking the label away there would leave a VoiceOver user
+ * with no way to dismiss without committing, since Clear commits "no value" and
+ * Done commits the draft. Reversible: it is this one component.
+ */
+function Backdrop({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation("common");
+
+  if (Platform.OS === "web") {
+    // `onClick` is react-native-web's own; React Native's `View` types do not
+    // carry it. The cast is the price of not using a `Pressable` here, and not
+    // using one is the point.
+    const dismiss = { onClick: onClose } as unknown as ViewProps;
+    return (
+      <View
+        aria-hidden
+        className="absolute inset-0 bg-black/50"
+        testID="picker-sheet-backdrop"
+        {...dismiss}
+      />
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityLabel={t("close")}
+      accessibilityRole="button"
+      className="absolute inset-0 bg-black/50"
+      onPress={onClose}
+      testID="picker-sheet-backdrop"
+    />
   );
 }
 
@@ -111,16 +162,7 @@ function SheetBody<TDraft>({
           applying. A sibling behind the card rather than a wrapper: a wrapping
           button would nest the picker's buttons inside a <button> on web, which
           the DOM forbids. */}
-      <Pressable
-        accessibilityLabel={t("close")}
-        accessibilityRole="button"
-        className="absolute inset-0 bg-black/50"
-        onPress={onClose}
-        role="button"
-        // Out of the web Tab order (invisible to sighted keyboard users, who
-        // have Escape); touch-exploration screen readers keep a labeled close.
-        {...(Platform.OS === "web" ? { tabIndex: -1 as const } : {})}
-      />
+      <Backdrop onClose={onClose} />
       <View className="w-full max-w-[340px] rounded-2xl bg-card p-3">
         {children(draft, setDraft)}
         {/* One Done, two shapes: alone it spans the card; beside Clear the two

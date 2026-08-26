@@ -391,21 +391,6 @@ export default function ActExpansionNewScreen() {
               />
             </View>
 
-            {intensityBefore !== null && intensityAfter !== null ? (
-              <Card className="border-border bg-muted">
-                <CardContent className="pt-4">
-                  <Text className="text-center font-semibold text-foreground">
-                    {intensityAfter < intensityBefore
-                      ? t("act:expansion.intensityDrop", {
-                          before: intensityBefore,
-                          after: intensityAfter,
-                        })
-                      : t("act:expansion.noIntensityDrop", { after: intensityAfter })}
-                  </Text>
-                </CardContent>
-              </Card>
-            ) : null}
-
             <View className="gap-3">
               <Label>{t("act:expansion.notesLabel")}</Label>
               <Textarea

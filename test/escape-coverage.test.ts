@@ -234,8 +234,14 @@ describe("the route population (pinned, G5)", () => {
     expect(ROUTES).toHaveLength(135);
   });
 
-  it("derives exactly the seven <Redirect>-only stubs", () => {
+  it("derives exactly the eight <Redirect>-only stubs", () => {
     expect(redirectStubs).toEqual([
+      // #1379 folded the alignment check-in onto the values screen, so this
+      // route became a stub. The file is MANDATORY rather than deletable: the
+      // `[domain]` sibling would otherwise swallow the segment and render the
+      // save-error string as a not-found, with no way back out — see its own
+      // docblock. Pinned here deliberately, which is what this block is for.
+      "app/(app)/modules/act/values/bulls-eye.tsx",
       "app/(app)/modules/cbt/[id].tsx",
       "app/(app)/tools/act.tsx",
       "app/(app)/tools/meditation/stages/[n].tsx",
@@ -251,7 +257,10 @@ describe("the route population (pinned, G5)", () => {
   });
 
   it("covers everything else", () => {
-    expect(covered).toHaveLength(126);
+    // 126 → 125: the bulls-eye route moved from covered to stub above. The walk
+    // still finds all 135 routes, which is the number this class exists to
+    // protect — a drop there would mean the walk itself had gone blind.
+    expect(covered).toHaveLength(125);
   });
 });
 

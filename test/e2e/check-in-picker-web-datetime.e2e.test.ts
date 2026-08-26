@@ -80,9 +80,10 @@ test.describe("web check-in picker: one view for date and time", () => {
     // Phone landscape - the worst case measured in #1231, where every variant
     // (including the picker shipped before that map) overflows without a
     // scroll container. Resized with the sheet still open, rather than closed
-    // and reopened - the page also has an unrelated top-bar "Close" (the
-    // screen's own escape action), so reusing the same open sheet sidesteps
-    // needing to disambiguate that from the sheet's own backdrop.
+    // and reopened, which keeps this test to the one thing it measures.
+    // (The sheet's backdrop is no longer a labelled "Close" on web at all since
+    // #1305 - it is out of the accessibility tree - so the page's own top-bar
+    // Close is the only one left.)
     await page.setViewportSize({ width: 667, height: 320 });
 
     // "Reachable" means reachable by scrolling, not already on screen the

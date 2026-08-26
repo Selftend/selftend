@@ -52,6 +52,7 @@ function record(id: string): ThoughtRecord {
     balancedThought: "",
     emotionIntensityAfter: null,
     outcomeNotes: "",
+    beliefAfter: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     createdOffsetMinutes: 0,
     dayKey: "2026-01-01",

@@ -33,7 +33,7 @@ nothing in its own diff to explain it.
 
 ## `react-native-ui-datepicker`
 
-Adds the accessibility hooks the calendar grid needs (#1301). The library
+Adds the accessibility hooks the calendar grid needs (#1301, #1305). The library
 renders every day and both month-navigation buttons inside its **own**
 `Pressable`, with `accessibilityLabel` hardcoded — to the bare day number, and
 to the English strings `"Prev"` / `"Next"`. Nothing passed through the public
@@ -42,7 +42,7 @@ user hears "8, button", cannot tell which day is selected (it is painted as a
 background colour and conveyed by colour alone), and hears English in a
 Bulgarian app.
 
-Four changes, all optional and inert unless a caller opts in:
+Five changes, all optional and inert unless a caller opts in:
 
 - `components.dayProps(day)` spread onto **both** of `day.tsx`'s pressable
   branches, after the hardcoded `accessibilityLabel` so a caller can replace it.
@@ -53,6 +53,26 @@ Four changes, all optional and inert unless a caller opts in:
   visible month with no way for a caller to observe it — and therefore no way
   to announce it.
 - The three optional members declared on `CalendarComponents`.
+- A `visibleDate` prop (#1305): the `YYYY-MM-DD` day whose month the grid
+  should be showing, so keyboard navigation can page the calendar without
+  selecting anything.
+
+  The public `month` / `year` pair cannot do this, for two separate reasons.
+  Each dispatches from its own effect against a `stateRef` that still holds the
+  pre-dispatch value when the second one runs, so crossing a year applies the
+  two halves to different bases — December 2026 → January 2027 lands on
+  **December 2027**. And `dayjs(currentDate).month(value)` overflows: asking a
+  calendar sitting on 31 January for February shows **March**.
+
+  It is re-asserted whenever the library's own `currentDate` moves, not only
+  when the prop changes, because a controlled prop has to win over internal
+  state. ⚠️ That is not belt-and-braces: the picker re-seeds `currentDate` from
+  the SELECTED day inside an effect keyed on the identity of
+  `date`/`minDate`/`maxDate`/`onChange`, so an unrelated re-render used to drag
+  the grid back out of the month the caller had asked for. That was a shipped
+  bug — pressing Next announced April while every cell below stayed in March —
+  and `ThemedCalendar` now also pins those four props by value so the effect
+  stops firing spuriously in the first place.
 
 Every change is replicated across `src/`, `lib/commonjs/` and `lib/module/`,
 because they are not interchangeable here: Metro resolves this package's
@@ -61,7 +81,10 @@ resolves the compiled build. Patching only one gives you green tests over an
 unpatched app, or the reverse.
 
 Consumed by `src/components/app/themed-calendar.tsx`; the behaviour is pinned by
-`src/components/app/themed-calendar.a11y.test.tsx`.
+`src/components/app/themed-calendar.a11y.test.tsx` (screen-reader semantics),
+`src/components/app/themed-calendar.keyboard.test.tsx` (roving focus and
+paging), and the month-arrow regression test in
+`src/components/app/themed-calendar.test.tsx`.
 
 ## `react-native-sortables`
 
