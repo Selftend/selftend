@@ -24,6 +24,15 @@ interface PressShieldModalBaseProps extends Omit<ModalProps, "animationType"> {
    * (#1118).
    */
   animation?: "slide" | "fade";
+  /**
+   * ☠️ Opt-out of the #1473 overlay-count registration, for exactly one
+   * caller: the update popup GATES on the count its own render would raise,
+   * so registering it would oscillate the offer (spec §2 on #1142 — armed →
+   * counted → disarmed → uncounted → ...). Every other overlay must count;
+   * `test/modal-overlay-registration.test.ts` allowlists the files that may
+   * pass this.
+   */
+  registerOverlay?: boolean;
 }
 
 /**
@@ -109,6 +118,7 @@ export function PressShieldModal(props: PressShieldModalProps) {
     surface,
     onEscape,
     escapeLabel,
+    registerOverlay = true,
     children,
     onShow,
     ...modalProps
@@ -116,7 +126,7 @@ export function PressShieldModal(props: PressShieldModalProps) {
   const { visible = true } = modalProps;
   // Registering here covers every call site at once, the same way the wrapper
   // already carries the #1054 gate for all of them (#1473, spec §2 on #1142).
-  useOverlayRegistration(visible);
+  useOverlayRegistration(visible && registerOverlay);
   const reduceMotionEnabled = useReduceMotionEnabled();
   const animationType = reduceMotionEnabled ? "none" : animation;
   const [entranceDone, setEntranceDone] = useState(false);

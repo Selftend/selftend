@@ -53,6 +53,10 @@ import { useOverlayCountStore } from "@/src/stores/overlay-count-store";
 // platforms - on web it is localStorage underneath.
 
 const CHECK_THROTTLE_MS = 6 * 60 * 60 * 1000;
+// ☠️ "Banner" although the surface is a popup since #1475: this is an
+// AsyncStorage key prefix, NOT an i18n key, and every stored dismissal lives
+// under it — renaming it orphans them all and re-offers the current version
+// to everyone who pressed "Later". It stays (Out of scope on #1142).
 const DISMISSED_KEY_PREFIX = "updateBannerDismissed:";
 
 /**
@@ -215,22 +219,43 @@ export function useUpdateAvailability(): UpdateAvailability {
     };
   }, [offeredVersion, dropSuppressed]);
 
+  // C2's one write path: close the offer and persist the per-version
+  // dismissal. Takes the version EXPLICITLY — ☠️ `act` below used to have an
+  // empty dep array while `dismiss` depended on `offeredVersion`, and wiring
+  // `act` to a stale `dismiss` would latch nothing, silently (#1151).
+  const latch = useCallback((version: string) => {
+    setOfferedVersion(null);
+    void AsyncStorage.setItem(DISMISSED_KEY_PREFIX + version, "1").catch(() => {});
+  }, []);
+
   const act = useCallback(() => {
     if (Platform.OS === "web") {
+      // A straight reload, and deliberately NO dismissal write (#1151): the
+      // reload IS the suppression — the shell is `must-revalidate` and the
+      // bundle content-hashed, so the reloaded page runs the new version and
+      // the offer has nothing left to say. Latching here would hide a
+      // genuinely failed update behind a dismissed version.
       if (typeof window !== "undefined") window.location.reload();
       return;
     }
+    // Android: latch BEFORE leaving for Play (#1151 — C2 applied to a soft
+    // close its list missed). Installing replaces the process, but backing
+    // out of Play does not: post-#1474 nothing else clears the offer, so an
+    // unlatched `act` would resume straight into the identical modal. The
+    // unifying line: the latch exists to stop the popup returning — on web
+    // the reload already does that job, on Android nothing else does.
+    if (offeredVersion) latch(offeredVersion);
     const url = getNativeStoreUrl();
     if (url) void Linking.openURL(url).catch(() => {});
-  }, []);
+  }, [offeredVersion, latch]);
 
   const dismiss = useCallback(() => {
-    const version = offeredVersion;
-    setOfferedVersion(null);
-    if (version) {
-      void AsyncStorage.setItem(DISMISSED_KEY_PREFIX + version, "1").catch(() => {});
+    if (offeredVersion) {
+      latch(offeredVersion);
+      return;
     }
-  }, [offeredVersion]);
+    setOfferedVersion(null);
+  }, [offeredVersion, latch]);
 
   return { available: offeredVersion !== null, version: offeredVersion, act, dismiss };
 }

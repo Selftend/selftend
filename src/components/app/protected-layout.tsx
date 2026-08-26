@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { OfflineBanner } from "@/src/components/app/offline-banner";
 import { VerifyEmailBanner } from "@/src/components/app/verify-email-banner";
-import { UpdateBanner } from "@/src/components/app/update-banner";
+import { UpdatePopup } from "@/src/components/app/update-popup";
 import { RoutineFab } from "@/src/components/app/routine-fab";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
@@ -392,17 +392,22 @@ export default function ProtectedLayout() {
             >
               <OfflineBanner />
               <VerifyEmailBanner />
-              <UpdateBanner
-                available={updateAvailability.available}
-                act={updateAvailability.act}
-                dismiss={updateAvailability.dismiss}
-              />
             </View>
           </View>
           {/* Corner-floating routine-progress handle: authenticated shell only,
               bottom-right so it coexists with the bottom-center reminder prompt
               card by construction. Renders nothing while no routine step is open. */}
           <RoutineFab />
+          {/* The update offer (#1142 spec §3, superseding #388 §3's banner).
+              A Modal, so its position here is about the GATE, not layout: it
+              must stay inside AppLockGate's children — the trigger is hoisted
+              above the gate (#1474), but hoisting the RENDER would put the
+              update dialog over the lock screen. */}
+          <UpdatePopup
+            available={updateAvailability.available}
+            act={updateAvailability.act}
+            dismiss={updateAvailability.dismiss}
+          />
         </View>
       </View>
     </AppLockGate>
