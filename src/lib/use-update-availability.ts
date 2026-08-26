@@ -124,6 +124,15 @@ export function useUpdateAvailability(): UpdateAvailability {
   const [offeredVersion, setOfferedVersion] = useState<string | null>(null);
   const lastCheckedAt = useRef(0);
 
+  // The one way a SUPPRESSED offer goes away, shared by every drop site: the
+  // throttle stamp is rolled back with it, because "returns on the next
+  // trigger" means the next focus/visibility event - not six hours of
+  // silence behind a stamp the suppressed check left standing.
+  const dropSuppressed = useCallback(() => {
+    lastCheckedAt.current = 0;
+    setOfferedVersion(null);
+  }, []);
+
   const check = useCallback(async () => {
     // Arming-time suppression, BEFORE the throttle stamp (see the docblock):
     // a suppressed check must leave no trace, so the next trigger simply
@@ -143,17 +152,14 @@ export function useUpdateAvailability(): UpdateAvailability {
 
     // The awaits above are exactly where the Android launch check and the
     // home tour mount their own modals - re-read the registry before arming
-    // rather than offering over whatever appeared meanwhile. The stamp is
-    // rolled back so the drop leaves no trace either: otherwise one
-    // suppressed launch would silence web for 6h instead of "until the next
-    // trigger".
+    // rather than offering over whatever appeared meanwhile.
     if (useOverlayCountStore.getState().count > 0) {
-      lastCheckedAt.current = 0;
+      dropSuppressed();
       return;
     }
 
     setOfferedVersion(offered);
-  }, []);
+  }, [dropSuppressed]);
 
   useEffect(() => {
     // Deferred a tick so no state write can land synchronously inside the
@@ -197,13 +203,7 @@ export function useUpdateAvailability(): UpdateAvailability {
   useEffect(() => {
     if (offeredVersion === null) return;
     const disarmIfCovered = (count: number) => {
-      if (count > 0) {
-        // Roll the throttle stamp back too, or the dropped offer could not
-        // return until the 6h window lapsed - "next trigger" means the next
-        // focus/visibility event, not six hours of silence.
-        lastCheckedAt.current = 0;
-        setOfferedVersion(null);
-      }
+      if (count > 0) dropSuppressed();
     };
     // The initial read is tick-deferred like the startup check, so no state
     // write lands synchronously inside the effect.
@@ -213,7 +213,7 @@ export function useUpdateAvailability(): UpdateAvailability {
       clearTimeout(initial);
       unsubscribe();
     };
-  }, [offeredVersion]);
+  }, [offeredVersion, dropSuppressed]);
 
   const act = useCallback(() => {
     if (Platform.OS === "web") {

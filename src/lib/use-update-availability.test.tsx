@@ -289,6 +289,10 @@ describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
   const fireFocus = () => act(() => focusHandlers.forEach((handler) => handler()));
   const fireVisibilityChange = () => act(() => visibilityHandlers.forEach((handler) => handler()));
 
+  // Give the tick-deferred check (and any state it would have written) a
+  // chance to fire; backs the negative "nothing happened" assertions below.
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
+
   // Installed for the whole describe (not per test): RNTL's auto-cleanup
   // unmounts the last render AFTER this block's own afterEach, and the
   // unmounting hook still calls window.removeEventListener - deleting the
@@ -349,7 +353,7 @@ describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
     });
 
     const { result } = renderHook(() => useUpdateAvailability());
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
 
     // Bailed BEFORE the version fetch, and suppression wrote no dismissal.
     expect(result.current.available).toBe(false);
@@ -358,7 +362,7 @@ describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
 
     // The overlay closing does NOT resurface the offer by itself...
     act(() => release());
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
     expect(result.current.available).toBe(false);
 
     // ...but the next trigger checks again. Had the suppressed launch stamped
@@ -372,7 +376,7 @@ describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
     onlineManager.setOnline(false);
 
     const { result } = renderHook(() => useUpdateAvailability());
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
     expect(result.current.available).toBe(false);
     expect(mockFetchDocument).not.toHaveBeenCalled();
 
@@ -391,7 +395,7 @@ describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
 
     try {
       const { result } = renderHook(() => useUpdateAvailability());
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await settle();
 
       expect(result.current.available).toBe(false);
       expect(mockStoreUpdate).not.toHaveBeenCalled();
@@ -407,13 +411,13 @@ describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
     });
 
     const { result } = renderHook(() => useUpdateAvailability());
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
     act(() => release());
 
     // A hidden-going visibility flip is not a return to the app.
     visibilityState = "hidden";
     fireVisibilityChange();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
     expect(result.current.available).toBe(false);
 
     visibilityState = "visible";
@@ -430,7 +434,7 @@ describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
     // stamped the throttle and nothing suppressed it since.
     fireFocus();
     fireVisibilityChange();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
     expect(mockFetchDocument).toHaveBeenCalledTimes(1);
   });
 
@@ -454,7 +458,7 @@ describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
       release = useOverlayCountStore.getState().acquire();
     });
     act(() => resolveFetch({ version: "0.9.0", publishedAt: new Date().toISOString() }));
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
 
     expect(result.current.available).toBe(false);
     expect(await AsyncStorage.getItem("updateBannerDismissed:0.9.0")).toBeNull();
@@ -482,7 +486,7 @@ describe("useUpdateAvailability (arming-time suppression and triggers)", () => {
 
     // The count returning to zero does NOT re-show the dropped offer...
     act(() => release());
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle();
     expect(result.current.available).toBe(false);
 
     // ...it waits for the next trigger, which is not throttled away either.
