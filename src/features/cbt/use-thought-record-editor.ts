@@ -110,7 +110,7 @@ export function useThoughtRecordEditor() {
       problem: t("common:feedback.problem"),
       invalid: t("common:feedback.invalid"),
       invalidMoved: t("common:feedback.invalidMoved"),
-      fallbackError: t("detail.archiveError"),
+      fallbackError: t("common:feedback.wentWrong"),
     },
   });
 
