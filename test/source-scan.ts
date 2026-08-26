@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 // Shared plumbing for the repo-wide static gates - the suites that read `app/`
@@ -39,6 +39,35 @@ export function sourceFiles(root: string, options: SourceFileOptions): string[] 
     });
 
   return dirs.flatMap(walk);
+}
+
+/**
+ * JSX use of `<Modal` (word-bounded, so neither `<ModalFocusTrap` nor
+ * `<PressShieldModal` matches). Call sites of the #1108 press-shield wrapper
+ * are deliberately out of scope for both consumers: the wrapper carries the
+ * #1054 gate and the #1473 registration itself, so its call sites inherit
+ * both instead of each repeating a line.
+ */
+const RENDERS_A_MODAL = /<Modal[\s/>]/;
+
+/** `Modal` named in an import from "react-native" (single or multi-line). */
+const IMPORTS_RN_MODAL = /import\s*\{[^}]*\bModal\b[^}]*\}\s*from\s*"react-native"/;
+
+/**
+ * Every file under `src`/`app` that renders a raw react-native `<Modal>`.
+ *
+ * One definition of "renders a raw Modal", shared by the two suites that
+ * police those files — `modal-web-unmount.test.ts` (#1054) and
+ * `modal-overlay-registration.test.ts` (#1473) — so their detection cannot
+ * drift apart. Only the detection is shared: each suite keeps its own EXEMPT
+ * map, because the exemption sets genuinely differ (tour-overlay is exempt
+ * from the unmount gate but must register).
+ */
+export function rawModalRenderers(root: string): string[] {
+  return sourceFiles(root, { dirs: ["src", "app"] }).filter((file) => {
+    const source = readFileSync(join(root, file), "utf8");
+    return IMPORTS_RN_MODAL.test(source) && RENDERS_A_MODAL.test(stripComments(source));
+  });
 }
 
 /**
