@@ -10,6 +10,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { useThemePalette } from "@/src/lib/theme-palette";
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -22,6 +23,17 @@ interface ConfirmDialogProps {
   onCancel: () => void;
   onConfirm: () => void;
   destructive?: boolean;
+  /**
+   * An optional third action that acts IN PLACE and leaves the dialog open -
+   * the warn-and-abandon confirm's "Export your data first" (#1444). While it
+   * runs, every button is held disabled: the decision the dialog exists for
+   * should not race the side action it offered.
+   */
+  secondaryAction?: {
+    label: string;
+    onPress: () => void;
+    isPending?: boolean;
+  };
 }
 
 export function ConfirmDialog({
@@ -35,8 +47,11 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
   destructive = true,
+  secondaryAction,
 }: ConfirmDialogProps) {
   const reduceMotionEnabled = useReduceMotionEnabled();
+  const theme = useThemePalette();
+  const anyPending = isPending || secondaryAction?.isPending === true;
 
   /**
    * ⚠️ On WEB, a closed dialog is unmounted rather than handed `visible={false}`
@@ -94,11 +109,24 @@ export function ConfirmDialog({
                   {error}
                 </Text>
               ) : null}
-              <Button disabled={isPending} onPress={onCancel} variant="secondary">
+              {secondaryAction ? (
+                <Button
+                  disabled={anyPending}
+                  onPress={secondaryAction.onPress}
+                  testID="confirm-dialog-secondary"
+                  variant="secondary"
+                >
+                  {secondaryAction.isPending ? (
+                    <ActivityIndicator color={theme.mutedForeground} />
+                  ) : null}
+                  <Text>{secondaryAction.label}</Text>
+                </Button>
+              ) : null}
+              <Button disabled={anyPending} onPress={onCancel} variant="secondary">
                 <Text>{cancelLabel}</Text>
               </Button>
               <Button
-                disabled={isPending}
+                disabled={anyPending}
                 onPress={onConfirm}
                 testID="confirm-dialog-confirm"
                 variant={destructive ? "destructive" : "default"}

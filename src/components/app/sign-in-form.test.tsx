@@ -5,6 +5,7 @@ import bgAuth from "@/src/i18n/locales/bg/auth.json";
 import i18n from "@/src/i18n";
 import { SignInForm } from "./sign-in-form";
 import { signInWithPassword } from "@/src/features/auth/api";
+import { guestHasContent } from "@/src/features/auth/guest-content";
 import { consumeSignInPrefill, recordSignInPrefill } from "@/src/features/auth/sign-in-prefill";
 import { captureError } from "@/src/lib/sentry";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
@@ -24,9 +25,27 @@ jest.mock("expo-router", () => {
   };
 });
 
+// Mutable so the warn-and-abandon tests (#1444) can flip the session into a
+// guest; the factory closes over it and reads it at render time.
+const mockSessionState: {
+  hasSupabaseConfig: boolean;
+  user: { is_anonymous?: boolean } | null;
+} = { hasSupabaseConfig: true, user: null };
+
 jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({ hasSupabaseConfig: true }),
+  useSession: () => mockSessionState,
 }));
+
+jest.mock("@/src/features/auth/guest-content", () => ({
+  guestHasContent: jest.fn(),
+}));
+
+// The dialog's in-place export, stubbed at the hook seam: the real one drags
+// in the settings mutation + toast store, none of which is under test here.
+jest.mock("@/src/features/settings/use-export-data", () => {
+  const exportData = jest.fn().mockResolvedValue(true);
+  return { useExportData: () => ({ exportData, isPending: false }) };
+});
 
 jest.mock("@/src/lib/sentry", () => ({
   captureError: jest.fn(),
@@ -47,6 +66,7 @@ jest.mock("@/src/features/auth/api", () => ({
 }));
 
 const mockSignIn = signInWithPassword as jest.MockedFunction<typeof signInWithPassword>;
+const mockGuestHasContent = guestHasContent as jest.MockedFunction<typeof guestHasContent>;
 
 const NOT_CONFIRMED_MESSAGE =
   "Please verify your email before signing in. Use the link we emailed you, or resend it below.";
@@ -59,6 +79,7 @@ function fillCredentials() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSessionState.user = null;
   // Drain any handoff a previous test recorded - the module is consume-once,
   // so one stray record would leak into the next render.
   consumeSignInPrefill();
@@ -205,5 +226,124 @@ describe("SignInForm", () => {
 
     renderWithProviders(<SignInForm />);
     expect(screen.getByLabelText("Email").props.value).toBe("");
+  });
+
+  // Warn-and-abandon (#1444, spec §6): a guest signing in over content gets
+  // one calm confirm with an in-place export; an empty guest signs straight
+  // in; registered users never pay the content check.
+  describe("guest warn-and-abandon", () => {
+    const WARNING_TITLE = "Your guest data stays behind";
+
+    function asGuest() {
+      mockSessionState.user = { is_anonymous: true };
+    }
+
+    it("shows the warning instead of signing in when the guest holds content", async () => {
+      asGuest();
+      mockGuestHasContent.mockResolvedValue(true);
+      renderWithProviders(<SignInForm />);
+
+      fillCredentials();
+      fireEvent.press(screen.getByText("Continue"));
+
+      expect(await screen.findByText(WARNING_TITLE)).toBeTruthy();
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("proceeding from the warning runs the held sign-in", async () => {
+      asGuest();
+      mockGuestHasContent.mockResolvedValue(true);
+      mockSignIn.mockResolvedValue(undefined as never);
+      renderWithProviders(<SignInForm />);
+
+      fillCredentials();
+      fireEvent.press(screen.getByText("Continue"));
+      await screen.findByText(WARNING_TITLE);
+
+      await act(async () => {
+        fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
+      });
+
+      expect(mockSignIn).toHaveBeenCalledWith("person@example.com", "Testpassword1");
+    });
+
+    it("cancel closes the warning without signing in", async () => {
+      asGuest();
+      mockGuestHasContent.mockResolvedValue(true);
+      renderWithProviders(<SignInForm />);
+
+      fillCredentials();
+      fireEvent.press(screen.getByText("Continue"));
+      await screen.findByText(WARNING_TITLE);
+
+      await act(async () => {
+        fireEvent.press(screen.getByText("Cancel"));
+      });
+
+      expect(screen.queryByText(WARNING_TITLE)).toBeNull();
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("runs the export in place from the warning, without closing it", async () => {
+      asGuest();
+      mockGuestHasContent.mockResolvedValue(true);
+      renderWithProviders(<SignInForm />);
+
+      fillCredentials();
+      fireEvent.press(screen.getByText("Continue"));
+      await screen.findByText(WARNING_TITLE);
+
+      const { useExportData } = jest.requireMock("@/src/features/settings/use-export-data") as {
+        useExportData: () => { exportData: jest.Mock };
+      };
+      await act(async () => {
+        fireEvent.press(screen.getByText("Export your data first"));
+      });
+
+      expect(useExportData().exportData).toHaveBeenCalled();
+      expect(screen.getByText(WARNING_TITLE)).toBeTruthy();
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("an empty guest signs straight in - no warning", async () => {
+      asGuest();
+      mockGuestHasContent.mockResolvedValue(false);
+      mockSignIn.mockResolvedValue(undefined as never);
+      renderWithProviders(<SignInForm />);
+
+      fillCredentials();
+      await act(async () => {
+        fireEvent.press(screen.getByText("Continue"));
+      });
+
+      expect(mockSignIn).toHaveBeenCalledWith("person@example.com", "Testpassword1");
+      expect(screen.queryByText(WARNING_TITLE)).toBeNull();
+    });
+
+    it("fails toward the warning when the content check itself fails", async () => {
+      asGuest();
+      mockGuestHasContent.mockRejectedValue(new Error("network down"));
+      renderWithProviders(<SignInForm />);
+
+      fillCredentials();
+      fireEvent.press(screen.getByText("Continue"));
+
+      expect(await screen.findByText(WARNING_TITLE)).toBeTruthy();
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("never runs the content check for a registered user", async () => {
+      mockSessionState.user = { is_anonymous: false };
+      mockSignIn.mockResolvedValue(undefined as never);
+      renderWithProviders(<SignInForm />);
+
+      fillCredentials();
+      await act(async () => {
+        fireEvent.press(screen.getByText("Continue"));
+      });
+
+      expect(mockGuestHasContent).not.toHaveBeenCalled();
+      expect(mockSignIn).toHaveBeenCalled();
+    });
   });
 });
