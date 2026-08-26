@@ -4,39 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ErrorState, LoadingState } from "@/src/components/app/screen-state";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { BeforeAfterPair } from "@/src/features/cbt/before-after-pair";
 import { useThoughtRecord } from "@/src/features/cbt/queries";
 import { resolveHotThought } from "@/src/features/cbt/thought-record-form";
 import { useSession } from "@/src/providers/session-provider";
-
-function BeforeAfterPair({
-  beforeLabel,
-  beforeValue,
-  afterLabel,
-  afterValue,
-}: {
-  beforeLabel: string;
-  beforeValue: number | null | undefined;
-  afterLabel: string;
-  afterValue: number | null | undefined;
-}) {
-  return (
-    <View className="flex-row items-center justify-center gap-6">
-      <View className="items-center gap-1">
-        <Text variant="muted">{beforeLabel}</Text>
-        <Text variant="h3">{beforeValue}</Text>
-      </View>
-      <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
-      <View className="items-center gap-1">
-        <Text variant="muted">{afterLabel}</Text>
-        <Text variant="h3">{afterValue}</Text>
-      </View>
-    </View>
-  );
-}
 
 // The calm completion screen shown after a NEW thought record is saved (never for
 // edits - see app/(app)/modules/cbt/new.tsx onSaved). Intentionally quiet: no

@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 
 import { deleteAllThoughtRecordsForUser } from "./helpers";
 
-test.describe("edit and archive a thought record", () => {
+test.describe("edit and delete a thought record", () => {
   test.beforeEach(async ({ user }) => {
     await deleteAllThoughtRecordsForUser(user.id);
   });
@@ -10,7 +10,7 @@ test.describe("edit and archive a thought record", () => {
     await deleteAllThoughtRecordsForUser(user.id);
   });
 
-  test("alice creates a thought record, edits the balanced thought, then archives it", async ({
+  test("alice creates a thought record, edits the balanced thought, then deletes it", async ({
     page,
   }) => {
     const situation =
@@ -71,15 +71,14 @@ test.describe("edit and archive a thought record", () => {
     await expect(page.getByText(editedBalancedThought).last()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(originalBalancedThought)).toBeHidden({ timeout: 5_000 });
 
-    // --- ARCHIVE (no delete affordance in UI) ---
-    // The thought-record detail screen exposes "Edit record" and "Archive" buttons.
-    // There is NO delete button; archive is the only removal action available.
-    // Archive asks for confirmation first (#474) - the first tap only opens the dialog.
-    await page.getByRole("button", { name: "Archive", exact: true }).click();
-    await expect(page.getByText("Archive this record")).toBeVisible({ timeout: 10_000 });
+    // --- DELETE (#1384: the button says Delete; the mutation still soft-archives) ---
+    // The thought-record detail screen exposes "Edit record" and "Delete" buttons.
+    // Delete asks for confirmation first (#474) - the first tap only opens the dialog.
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+    await expect(page.getByText("Delete this record")).toBeVisible({ timeout: 10_000 });
     await page.getByTestId("confirm-dialog-confirm").click();
 
-    // After archive, redirected to /modules/cbt/history.
+    // After the delete, redirected to /modules/cbt/history.
     await expect(page).toHaveURL(/\/modules\/cbt\/history/, { timeout: 15_000 });
 
     // The archived record is excluded from the useThoughtRecords query (archived_at IS NULL).
