@@ -94,7 +94,10 @@ const storageKeyForUrl = (url: string) => `sb-${new URL(url).hostname.split(".")
 
 // The key under which we CAPTURE the session (any valid key works - the stored
 // value is the same session JSON regardless of key name).
-const CAPTURE_STORAGE_KEY = storageKeyForUrl(resolveAppSupabaseUrl());
+// Exported (with the candidate list and consent record below) for specs that
+// plant a session OUTSIDE the worker pool - the guest-conversion spec needs an
+// anonymous session no pool user can provide.
+export const CAPTURE_STORAGE_KEY = storageKeyForUrl(resolveAppSupabaseUrl());
 
 // Plant the session under EVERY storage key the e2e web bundle might read from.
 // Which one the app actually uses depends on the EXPO_PUBLIC_SUPABASE_URL Metro
@@ -102,7 +105,7 @@ const CAPTURE_STORAGE_KEY = storageKeyForUrl(resolveAppSupabaseUrl());
 // state (a cached dev bundle uses .env.local's URL; a clean build uses the
 // webServer.env localhost). The app reads only its own key; the others are inert.
 // This removes the last source of injection flakiness.
-const CANDIDATE_STORAGE_KEYS = [
+export const CANDIDATE_STORAGE_KEYS = [
   ...new Set([
     CAPTURE_STORAGE_KEY,
     storageKeyForUrl("http://localhost:54321"),
@@ -112,8 +115,8 @@ const CANDIDATE_STORAGE_KEYS = [
 
 // Cookie-consent store key/shape (src/stores/cookie-consent-store.ts). Planting
 // an "accepted" record suppresses the consent banner deterministically.
-const COOKIE_CONSENT_KEY = "selftend_cookie_consent";
-const COOKIE_CONSENT_VALUE = JSON.stringify({
+export const COOKIE_CONSENT_KEY = "selftend_cookie_consent";
+export const COOKIE_CONSENT_VALUE = JSON.stringify({
   analytics: false,
   accepted: true,
   acceptedAt: "2026-01-01T00:00:00.000Z",

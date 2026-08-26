@@ -6,6 +6,7 @@ import * as WebBrowser from "expo-web-browser";
 import { completeAuthRedirect } from "@/src/features/auth/callback";
 import { updateUserPreferences } from "@/src/features/settings/repository";
 import { appEnv } from "@/src/lib/env";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
 const AUTH_CALLBACK_PATH = "auth-callback";
@@ -243,6 +244,49 @@ export async function signUpWithPassword(email: string, password: string, name?:
   }
 
   return data;
+}
+
+/**
+ * Conversion (#1443): upgrade the signed-in guest to a registered account in
+ * place. Under this repo's autoconfirm (`enable_confirmations = false`, #489)
+ * the update applies instantly, sends no email, and flips `is_anonymous` in
+ * the same transaction; the attached email stays unverified, which the
+ * existing verify-email banner layer already covers. The user id never
+ * changes, so every row the guest created is the registered account's data
+ * with no copying.
+ *
+ * ⚠️ The refresh is part of the conversion, not a nicety: the live JWT keeps
+ * claiming `is_anonymous: true` until the token is minted again, so client
+ * checks and RLS predicates lie without it. A refresh failure is deliberately
+ * non-fatal - the account IS converted by then, and throwing would tell the
+ * user the opposite; auto-refresh corrects the claim within the token's
+ * lifetime, so the cost is a stale guest badge, not lost data.
+ */
+export async function convertGuestWithPassword(email: string, password: string, name?: string) {
+  const client = requireSupabase();
+  const trimmedName = name?.trim();
+  const { error } = await client.auth.updateUser({
+    email,
+    password,
+    ...(trimmedName ? { data: { full_name: trimmedName } } : {}),
+  });
+  if (error) {
+    if (isLeakedPasswordError(error)) {
+      throw new Error(LEAKED_PASSWORD_ERROR);
+    }
+    // 422 `email_exists` is the conversion collision: an account with this
+    // email already exists and no server-side merge exists, so it is terminal
+    // here - the form's "Sign in instead" branch owns what happens next.
+    if ((error as SupabaseAuthError).code === "email_exists") {
+      throw new Error(EMAIL_ALREADY_EXISTS_ERROR);
+    }
+    throw error;
+  }
+
+  const { error: refreshError } = await client.auth.refreshSession();
+  if (refreshError && isReportableError(refreshError)) {
+    captureError(refreshError);
+  }
 }
 
 export async function sendPasswordResetEmail(email: string) {
