@@ -23,6 +23,7 @@ CBT:
 - `activity_logs`
 - `procrastination_tasks`, `task_steps`
 - `recovery_plans`, `challenge_plans`
+- `values_profile` (a per-user singleton; ACT's values are `act_value_entries`, a different table)
 
 ACT:
 
@@ -31,7 +32,6 @@ ACT:
 - `act_defusion_logs`, `act_expansion_logs`, `act_urge_surf_logs`
 - `act_connection_logs`, `act_observing_self_sessions`
 - `act_committed_actions`, `act_action_steps`
-- `values_profile`
 
 Other tools (shared across modules):
 
@@ -126,15 +126,19 @@ Expo loads `.env.local` with priority over `.env`, so `npm start` will now talk 
 
 ### Seeded test users
 
-Each account has its own password (defined in `supabase/seed.sql`, mirrored in `SEED_USERS` in `test/integration/helpers.ts`). They are recreated on every `npm run db:reset`, which also runs `scripts/seed-demo-data.mjs` to fill `demo@test.local` with a deterministic ~3-month dataset across all eight tools. To refresh just that dataset without a full reset, run `npm run db:seed:demo` (it wipes and re-inserts only the demo user's rows).
+Each account has its own password (defined in `supabase/seed.sql`, mirrored in `SEED_USERS` in `test/integration/helpers.ts`). They are recreated on every `npm run db:reset`, which also runs `scripts/seed-demo-data.mjs` to fill `demo@test.local` with a deterministic ~3-month dataset across the eight tools, the CBT module and the ACT practice logs. To refresh just that dataset without a full reset, run `npm run db:seed:demo` (it wipes and re-inserts only the demo user's rows).
 
-| Email              | Password              | UUID      | State                                                                                        |
-| ------------------ | --------------------- | --------- | -------------------------------------------------------------------------------------------- |
-| `alice@test.local` | `test-pass-alice-123` | `...0001` | Empty account, post-signup, CBT onboarding not done                                          |
-| `bob@test.local`   | `test-pass-bob-123`   | `...0002` | Mid-use, 5 thought records, reminders enabled                                                |
-| `demo@test.local`  | `test-pass-demo-123`  | `...0003` | Polished demo/screenshot account: 10 thought records plus ~3 months of data across all tools |
+`seed.sql` gives `demo@test.local` nothing but a profile and preferences — every record it holds comes from that script, so a bare `supabase db reset` leaves it empty. CI seeds it as a step of its own for the same reason.
+
+| Email              | Password              | UUID      | State                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------ | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `alice@test.local` | `test-pass-alice-123` | `...0001` | Empty account, post-signup, CBT onboarding not done                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `bob@test.local`   | `test-pass-bob-123`   | `...0002` | Mid-use, 5 thought records, reminders enabled                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `demo@test.local`  | `test-pass-demo-123`  | `...0003` | Polished demo/screenshot account: ~3 months across the eight tools, plus the whole CBT module — thought records, core beliefs, activities, self-care, goals and milestones, values, worry, anger, procrastination tasks and steps, the exposure ladder, and the recovery plan — sitting mid-programme in the `behavioural` phase with today's practice still open, plus the ACT practice logs (defusion, expansion, urge surfing, connection, observing self and choice points) |
 
 > The sign-in form rejects passwords shorter than 12 characters, so these seed passwords are intentionally ≥12 chars. If you change them in `seed.sql`, keep them long enough and update `SEED_USERS` to match.
+
+> **Known gap on the ACT screens.** The five ACT list screens filter to the selected day and `useSelectedDate()` always returns today, so each one shows only rows dated today. The demo account's **defusion** and **expansion** screens therefore open on their empty state: both feed the ACT programme's daily practice, which is deliberately left open, so neither can carry a row dated today. Their seeded history is real but currently unreachable through the UI — see [#1284](https://github.com/Selftend/selftend/issues/1284). Connection, observing self and choice points each carry a row dated today, and urge surfing's recent strip is not day-filtered.
 
 Sign in via the app's email/password form (`signInWithPassword` in `src/features/auth/api.ts`).
 
@@ -182,7 +186,7 @@ Coverage lives in `test/integration/*.integration.test.ts`. Highlights:
 
 - one `*-repository.integration.test.ts` per module (CBT, ACT, mood, journal, sleep, meditation, gratitude, habits, goals, beliefs, exposure, worry, anger, procrastination, self-care, mindfulness, plan, values, home widgets, activities, profile, settings) - CRUD, ordering, and constraint behavior against the real schema
 - `rls.integration.test.ts` - cross-user isolation across all owner-scoped tables and the storage bucket
-- `db-functions.integration.test.ts` - `export_user_data()` and `delete_user_account()` coverage plus access control on the `send-web-reminders` cron RPCs
+- `db-functions.integration.test.ts` - `export_user_data()` and `delete_user_account()` coverage, access control on the `send-web-reminders` cron RPCs, and the CBT/ACT delete-cascade guard (every foreign key among those tables must cascade, because `scripts/seed-demo-data.mjs` wipes parents only and lets the cascades reclaim the children)
 - `auth.integration.test.ts` - sign-in success/failure, sign-up, password-reset email landing in Mailpit (`http://localhost:54324`)
 - `edge-web-reminders.integration.test.ts` - the `send-web-reminders` edge function against the local stack
 

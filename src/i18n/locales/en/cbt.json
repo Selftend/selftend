@@ -148,8 +148,8 @@
     "be": {
       "letter": "B",
       "title": "Be",
-      "sub": "Mindfulness",
-      "description": "Present-moment awareness without judgment. Use the shared meditation and mood tools - and the self-care log to protect baseline mood."
+      "sub": "Wellbeing",
+      "description": "Tend the baseline everything else runs on. Steady your attention, settle your body, and keep the daily basics from slipping."
     },
     "review": {
       "title": "Review"
@@ -166,7 +166,7 @@
       "exposure": "Graduated practice with anxiety.",
       "tasks": "Smallest-possible-step breakdown.",
       "anger": "Trigger → interpretation → choice.",
-      "selfCare": "Daily check on sleep, body, connection.",
+      "selfCare": "Daily check on movement, meals, connection, meaning, kindness.",
       "weeklyReview": "Sunday. Five minutes.",
       "recovery": "The keys you keep coming back to."
     }
@@ -517,7 +517,11 @@
     "socialNotes": "Notes",
     "socialNotesPlaceholder": "Who, and how was it?",
     "meaningfulActivity": "A meaningful activity today",
-    "meaningfulActivityPlaceholder": "Example: Played guitar for 20 minutes."
+    "meaningfulActivityPlaceholder": "Example: Played guitar for 20 minutes.",
+    "selfCompassion": "Speaking to yourself",
+    "selfCriticismNoticed": "Noticed being hard on myself",
+    "selfCompassionNote": "What you'd say to a friend",
+    "selfCompassionNotePlaceholder": "What would you say to a friend in the same situation?"
   },
   "recovery": {
     "title": "Recovery plan",
@@ -649,7 +653,8 @@
       "lifeDomain": "Choose a life domain.",
       "goalType": "Choose a goal type.",
       "title": "Give the goal a short title.",
-      "milestones": "Add at least one milestone."
+      "milestones": "Add at least one milestone.",
+      "targetDate": "Pick the target date from the calendar."
     },
     "title": "Goals",
     "description": "Set meaningful goals and track them with milestones.",

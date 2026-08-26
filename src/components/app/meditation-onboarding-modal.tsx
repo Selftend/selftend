@@ -35,7 +35,12 @@ interface Props {
   isPending?: boolean;
   errorMessage?: string;
   onComplete: (result: MeditationOnboardingResult) => void;
-  onDismiss?: () => void;
+  /**
+   * Required since #1252: the pinned Escape is this wizard's way out on all
+   * five panels, so there is no longer a shape where dismissing is
+   * unavailable. The ghost "Skip" below still exists on panel 1 only.
+   */
+  onDismiss: () => void;
 }
 
 interface AssessmentAnswers {
@@ -116,8 +121,13 @@ export function MeditationOnboarding({
   }
 
   return (
-    <PressShieldModal onRequestClose={onDismiss ?? (() => undefined)} visible={visible}>
-      <SafeAreaView className="flex-1 bg-background">
+    // A replay opened from the `tune` button, so closing is free and the row
+    // wears a bare X (M2). The pinned row makes the ghost "Skip" below
+    // redundant on panel 1 and fills the gap on panels 2+ — de-duplicating
+    // the two is W19's sweep (#1257).
+    <PressShieldModal onEscape={onDismiss} onRequestClose={onDismiss} visible={visible}>
+      {/* No "top": the wrapper's escape row already sits in the top inset. */}
+      <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
         <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
           {step === "welcome" ? (
             <View className="gap-6">
@@ -141,11 +151,11 @@ export function MeditationOnboarding({
               <Button onPress={goNext}>
                 <Text>{t("onboarding.welcome.continue")}</Text>
               </Button>
-              {onDismiss ? (
-                <Button onPress={onDismiss} variant="ghost">
-                  <Text>{t("onboarding.skip")}</Text>
-                </Button>
-              ) : null}
+              {/* Unconditional now that `onDismiss` is required — the guard
+                  it used to carry could never be false at any call site. */}
+              <Button onPress={onDismiss} variant="ghost">
+                <Text>{t("onboarding.skip")}</Text>
+              </Button>
             </View>
           ) : null}
 

@@ -34,9 +34,27 @@
  * times) or with the per-clip texts, which already list their own exclusions.
  *
  * Recorded on #1134.
+ *
+ * ☠️ REWRITTEN AGAIN on #1316, because the compressed version silenced the
+ * render. Negation suppresses output level in Sound Effects and it compounds:
+ * the `night` prompt measured -47.4 dBTP peak with the old tail and -4.7 with no
+ * tail, and "No sudden events." alone cost ~17 dB. Twenty of Round B's 27
+ * masters were unusable.
+ *
+ * What survives is the half that measured HARMLESS — the tone sentence, at -5.4
+ * with the body. What goes is the pile-up: "Very low noise floor. No music, no
+ * speech. No sudden events. No silence at start or end. No wide stereo."
+ *
+ * The zero-silence rule (#1134) is not dropped, only re-phrased positively as
+ * "Begins immediately and holds to the very end." Two negations survive inside
+ * the tone sentence on purpose — a couple are fine, and that exact sentence was
+ * measured clean. It is the pile-up of six or eight that kills the output.
+ *
+ * ⚠️ Round A's bells were rendered under the OLD tail and are not re-rendered;
+ * their manifest rows record what was actually sent.
  */
 export const SHARED_TAIL =
-  "Close, dry, small soft room. No reverb. Dark and warm, no glassy highs. Very low noise floor. No music, no speech. No sudden events. No silence at start or end. No wide stereo.";
+  "Close, dry, small soft room. No reverb. Dark and warm, no glassy highs. Begins immediately and holds to the very end.";
 
 /** The hard cap the API enforces. */
 export const MAX_PROMPT_CHARS = 450;
@@ -71,11 +89,51 @@ export function composePrompt(clipText) {
  */
 const LOOP = false;
 
-/** #1141 — Creator's best lossless SFX master. `pcm_44100` would need Pro. */
+/**
+ * Creator's lossless SFX master.
+ *
+ * ☠️ #1141 said `pcm_44100` "would need Pro". It does not — probed live on
+ * 2026-08-21, it returns 176,400 bytes for 1s (44100 x 2ch x 16-bit) on this
+ * Creator key. 48k is kept regardless: a higher-rate master is the better
+ * archive, the ship rate is 44.1k either way (#1138), and `postprocess.mjs`
+ * already resamples. Recording it so the Pro question stays closed.
+ */
 export const SFX_OUTPUT_FORMAT = "pcm_48000";
+
+/**
+ * ☠️ `pcm_*` output is RAW — no RIFF header, no container, nothing telling a
+ * decoder how to read it. `render` writes it straight to `.pcm`, so `ffmpeg -i`
+ * fails with "Invalid data found when processing input" and every downstream
+ * tool needs these parameters supplied by hand.
+ *
+ * 16-bit little-endian at the format's rate, and STEREO — #1159 found Sound
+ * Effects returns two channels whatever the prompt asks for, re-confirmed by
+ * live probe on 2026-08-21 (192,000 bytes for 1s at 48k = 48000 x 2 x 2).
+ */
+export const SFX_MASTER_PCM = { codec: "s16le", sampleRate: 48000, channels: 2 };
 
 /** #1134 §6 — the docs still recommend this for narration quality. */
 export const TTS_MODEL = "eleven_multilingual_v2";
+
+/**
+ * #1141: WAV output needs Pro, so the eight voice cues were costed as
+ * `mp3_44100_192` on Creator. #1210 left it conditional on #1159's probe. Rather
+ * than hard-code the pessimistic answer, `render-voices` ASKS: it tries the
+ * lossless format first and falls back on rejection, recording which one each
+ * clip actually used in the manifest.
+ *
+ * A lossy voice master is the one place that is tolerable, and only because TTS
+ * is RE-RENDERABLE — it takes a seed and the Voice Library voice persists — where
+ * a lossy Sound Effects master would be a permanent defect.
+ */
+export const TTS_OUTPUT_FORMATS = ["wav_44100", "mp3_44100_192"];
+
+/**
+ * Two candidates per cue per voice (#1210). TTS honours a seed, so each candidate
+ * gets a fixed one: the pass becomes reproducible, which is exactly what the
+ * thirteen Sound Effects clips can never be.
+ */
+export const TTS_CANDIDATE_SEEDS = [1130, 1210];
 export const SFX_MODEL = "eleven_text_to_sound_v2";
 
 /**
@@ -84,6 +142,48 @@ export const SFX_MODEL = "eleven_text_to_sound_v2";
  * pass ~2,000 credits rather than ~24,600. Recorded on #1159.
  */
 export const CREDITS_PER_SECOND = 3.3;
+
+/**
+ * The finished-file spec, fixed by #1138 and amended for the bells by #1139.
+ *
+ * The post-processor (`postprocess.mjs`) is the only consumer. `loudnessTarget`
+ * on each clip is *derived* from this via `loudnessLabel()`, so the human-readable
+ * string in `plan` output and the number the pipeline actually normalises to can
+ * never drift apart.
+ *
+ * ☠️ A downmix is a REQUIRED step, not an option: #1159 found Sound Effects
+ * returns STEREO, while #1138 planned mono for bells, textures and voice and
+ * sized the whole bundle on mono sources.
+ */
+export const TRUE_PEAK_CEILING_DBTP = -3;
+export const OUTPUT_SAMPLE_RATE = 44100; // #1138: 44.1k throughout — TTS cannot exceed it
+export const AAC_ENCODER = "aac"; // pinned: ffmpeg's native encoder, what #1138 measured with
+
+/**
+ * ☠️ The fold TRIMS. `seamless(sig, n, cf)` in generate-breathing-sounds.py folds
+ * `sig[n..n+cf]` into the head, and the generator makes `n + cf` samples on purpose
+ * (8.4s kept as 8.0s). A rendered bed has no spare tail — Sound Effects caps at 30s
+ * — so the fold takes the last `cf` from inside the clip and the loop comes out
+ * `cf` shorter: a 30s render becomes a 29.6s bed. Nothing requires exactly 30s.
+ */
+export const BED_FOLD_SECONDS = 0.4; // CF in generate-breathing-sounds.py:154
+
+const CLASS_OUTPUT = {
+  beds: { channels: 2, bitrate: "128k", lufs: -20 },
+  textures: { channels: 1, bitrate: "96k", lufs: -20 },
+  voice: { channels: 1, bitrate: "64k", lufs: -16 },
+};
+
+/** The `-20 LUFS-I, <= -3 dBTP` string `plan` prints, built from the numbers. */
+export function loudnessLabel(lufs) {
+  return `${lufs} LUFS-I, <= ${TRUE_PEAK_CEILING_DBTP} dBTP`;
+}
+
+/** Bells are per-clip, not per-class: #1139 split the shared bell from the interval one. */
+const BELL_OUTPUT = {
+  "meditation-bell": { channels: 1, bitrate: "128k", lufs: -20 },
+  "interval-temple-block": { channels: 1, bitrate: "128k", lufs: -23 },
+};
 
 export const BELLS = [
   {
@@ -96,7 +196,6 @@ export const BELLS = [
     candidates: 5,
     // #1139: the shared start/end bell. Renders at 7s and is trimmed by ear at
     // the gate — final length is a listening judgement, not a fixed number.
-    loudnessTarget: "-20 LUFS-I, <= -3 dBTP",
     text: "A single struck bronze meditation bowl, one gentle strike with a soft padded mallet. Warm low fundamental, no bright metallic clang. A long smooth decay fading continuously to silence over about six seconds, never swelling again. No second strike, no handling noise.",
   },
   {
@@ -107,26 +206,41 @@ export const BELLS = [
     promptInfluence: 0.6,
     loop: LOOP,
     candidates: 5,
-    loudnessTarget: "-23 LUFS-I, <= -3 dBTP",
     text: "A single soft wooden temple block, struck once with a padded beater. A hollow, muted, woody knock with a short natural decay under one second. No pitch, no ring, no metallic character, no sharp click on the attack. Gentle — a quiet marker, not an alert. One strike only.",
   },
-];
+].map((bell) => ({
+  ...bell,
+  output: BELL_OUTPUT[bell.id],
+  loudnessTarget: loudnessLabel(BELL_OUTPUT[bell.id].lufs),
+}));
 
 export const BEDS = [
   {
     id: "rain",
-    text: "Steady, even rainfall on soft ground, heard from indoors through a closed window. Continuous and unchanging in intensity for the full thirty seconds. No thunder, no wind, no gusts, no dripping from a gutter, no individual loud drops, no traffic, no voices.",
+    // #1316: positive rewrite. "blended into one smooth texture" is what the old
+    // "no individual loud drops, no dripping from a gutter" was reaching for.
+    text: "Steady, even rainfall on soft ground, heard from indoors through a closed window. A dense continuous wash of countless fine drops blended into one smooth texture, held at exactly the same level from beginning to end.",
   },
   {
     id: "forest",
     // #1134: forest loses its birds. A recurring call is the loudest possible
     // advertisement that the user is hearing a loop. Keeps its id and label
     // (#1137) so no preference is stranded and no new Weblate string is needed.
-    text: "A quiet forest interior: a continuous soft rustle of leaves in a gentle, even breeze, unchanging for the full thirty seconds. No birdsong and no bird calls of any kind. No animals, no insects, no footsteps, no cracking branches, no wind gusts, no rain.",
+    // ☠️ #1316 RE-CONCEPTED this one, not just re-worded it. Measured over three
+    // takes each, positive phrasing moved `night` +22.6 dB and `wind` +15.6 dB
+    // but `forest` not at all (-22.0 -> -23.0), and its eventfulness stayed near
+    // 10 in every take — sparse discrete rustles with gaps, never a continuous
+    // bed. "Leaves rustling in a breeze" is an EVENT the model renders sparsely.
+    // So the same feeling is asked for as a texture it can sustain: many leaves
+    // at once, close and dense, none individually distinguishable. That phrasing
+    // also retires the birds without naming them.
+    text: "A dense continuous wash of many leaves moving at once in a steady breeze, heard close. Countless leaves blended into one smooth unbroken texture in which no single leaf is distinguishable, held at exactly the same level from beginning to end.",
   },
   {
     id: "night",
-    text: "A warm summer night heard from indoors: a low continuous blended chorus of distant crickets over soft dark air, unchanging for the full thirty seconds. No single insect audible above the others, no owls, no dogs, no traffic, no wind, no voices.",
+    // #1316: +22.6 dB median over three takes against the old wording. "Evenly
+    // blended" carries what "no single insect audible above the others" meant.
+    text: "A warm summer night heard from indoors. A low, continuous, evenly blended chorus of distant crickets over soft dark air, one steady unbroken texture held at exactly the same level from beginning to end.",
   },
   {
     id: "brown-noise",
@@ -134,7 +248,10 @@ export const BEDS = [
     // worse tool for — brown noise is deterministic, free and inherently
     // seamless in eight lines of the existing script. #1133 stands, but if any
     // bed fails the gate this is the obvious single-class reopen.
-    text: "Smooth, deep brown noise. A continuous low rumble with no texture, no events, no modulation and no variation of any kind for the full thirty seconds. Not white noise and not pink noise — deep and dark, with the high frequencies rolled away.",
+    // #1316: this one always rendered (0.0 dBFS, full scale) — its concept is
+    // strong enough that the negations never mattered. Rewritten anyway so the
+    // set is prompted one consistent way.
+    text: "Smooth, deep brown noise: a continuous low rumble, dark and heavy, with the high frequencies rolled away. One steady unbroken texture held at exactly the same level from beginning to end.",
   },
   {
     id: "ocean",
@@ -161,7 +278,11 @@ export const BEDS = [
     // distance, breaking, swell and sand, this may be indistinguishable from
     // `brown-noise` — the very redundancy that got a warm drone rejected in
     // #1137. Three candidates cost ~297 credits, so the call is made by ear.
-    text: "A deep, continuous body of open water, a smooth even wash held at one constant level for the full thirty seconds. No shoreline, no sand, no surf, no waves breaking, no swell rising or falling, no gulls, no wind, no voices, no boats.",
+    // ⚠️ #1316 keeps ONE exclusion here on purpose. #1262's separation from the
+    // `ocean-swell` texture IS the shoreline, so it cannot be dropped — but the
+    // rest of the old list goes, since the pile-up is what silences. Positive
+    // description plus at most one essential exclusion is the rule.
+    text: "The deep body of open water heard as one smooth even wash of moving water, a steady unbroken texture held at exactly the same level from beginning to end. Open sea only, with no shoreline in it.",
   },
 ].map((bed) => ({
   ...bed,
@@ -171,10 +292,20 @@ export const BEDS = [
   promptInfluence: 0.6,
   loop: LOOP,
   candidates: 3,
-  loudnessTarget: "-20 LUFS-I, <= -3 dBTP",
+  output: CLASS_OUTPUT.beds,
+  loudnessTarget: loudnessLabel(CLASS_OUTPUT.beds.lufs),
+  // The only class the fold applies to — and the only one whose seam is gated.
+  foldSeconds: BED_FOLD_SECONDS,
 }));
 
 /**
+ * ☠️ #1316: the exhale modifier says "pitched ... in tone, at exactly the same
+ * level" rather than the old bare "Lower and darker." #1134 meant that as PITCH
+ * and TIMBRE - the only audible signal of a phase change in the texture lane -
+ * but a generative model can read "lower" as lower VOLUME, and `wind_exhale` was
+ * the last clip in the set still measuring BROKEN after everything else had been
+ * fixed. Saying which axis is meant costs nothing.
+ *
  * Inhale and exhale stay separate files. They differ in pitch today
  * (soft-breath is 196 Hz vs 147 Hz) and that step at the phase boundary is the
  * *only* audible signal of a phase change in the texture lane — #1134 keeps it
@@ -184,8 +315,8 @@ const TEXTURE_FAMILIES = [
   {
     id: "soft-breath",
     inhale:
-      "A steady continuous stream of soft warm air, as through slightly parted lips, held at one constant intensity throughout. A sustained texture, not a breath being taken: no rise, no fall. No voice, no sighing.",
-    exhaleModifier: "Lower, darker and warmer.",
+      "A steady continuous stream of soft warm air, as through slightly parted lips, one even unbroken texture held at exactly the same intensity from beginning to end. A sustained sound rather than a breath being taken.",
+    exhaleModifier: "Pitched a little lower, darker and warmer in tone, at exactly the same level.",
   },
   {
     id: "ocean-swell",
@@ -196,17 +327,24 @@ const TEXTURE_FAMILIES = [
     // is now explicitly forbidden. Still not by name (#1137) — renaming costs a
     // Weblate string in en and bg and disguises the pairing rather than fixing it.
     inhale:
-      "A continuous even wash of surf on sand, held at one constant level. No individual waves breaking, no swell rising or falling, no gulls, no wind, no voices. A sustained band of water noise, unchanging for the whole duration.",
-    exhaleModifier: "Lower and darker.",
+      "A continuous even wash of surf on sand, close at the ear, one steady unbroken band of water noise held at exactly the same level from beginning to end.",
+    exhaleModifier: "Pitched a little lower and darker in tone, at exactly the same level.",
   },
   {
     id: "wind",
     // ⚠️ The shipped `wind` is gusty by design
     // (generate-breathing-sounds.py:122-124). Removing gusts is deliberate: any
     // recurring event is heard several times per phase.
+    // ☠️ #1316 RE-CONCEPTED, like `forest`. Positive rewriting alone was not
+    // enough: six takes of the reworded version still measured -22 to -28 dBTP,
+    // BROKEN on every one. "Wind" is rendered as sparse gusts however it is
+    // phrased. What the preflight shows working across the whole set is DENSE,
+    // CONTINUOUS, CLOSE material - brown noise, the water washes, forest once it
+    // became a wash of many leaves - and `soft-breath_inhale`, which is already
+    // wind at close range and renders fine. So this asks for that instead.
     inhale:
-      "Steady wind moving through open space at one constant intensity. No gusts, no whistling, no rattling, no leaves, no rain, no debris. A smooth continuous band of air, unchanging for the whole duration.",
-    exhaleModifier: "Lower and darker.",
+      "A broad, dense rush of moving air heard close, like a steady draught through a doorway, blended into one smooth unbroken texture held at exactly the same level from beginning to end.",
+    exhaleModifier: "Pitched a little lower and darker in tone, at exactly the same level.",
   },
 ];
 
@@ -226,7 +364,8 @@ export const TEXTURES = TEXTURE_FAMILIES.flatMap((family) => [
   promptInfluence: 0.3, // the default; creative variety is fine for a texture
   loop: LOOP,
   candidates: 2,
-  loudnessTarget: "-20 LUFS-I, <= -3 dBTP",
+  output: CLASS_OUTPUT.textures,
+  loudnessTarget: loudnessLabel(CLASS_OUTPUT.textures.lufs),
 }));
 
 /**
@@ -286,6 +425,40 @@ export const TTS_VOICE_SETTINGS = {
 };
 
 export const SFX_CLIPS = [...BELLS, ...BEDS, ...TEXTURES];
+
+/**
+ * Every clip the post-processor can be asked about, keyed by id — the thirteen
+ * sound effects plus the four voice cues. Voice cues carry no prompt-side fields
+ * (no duration, no candidates); they exist here only so `postprocess` can look up
+ * the channels, bitrate and loudness target a `guide_*` file has to hit.
+ */
+export const OUTPUT_CLIPS = new Map([
+  ...SFX_CLIPS.map((clip) => [clip.id, clip]),
+  ...VOICE_CUES.map((cue) => [
+    cue.id,
+    {
+      ...cue,
+      klass: "voice",
+      output: CLASS_OUTPUT.voice,
+      loudnessTarget: loudnessLabel(CLASS_OUTPUT.voice.lufs),
+    },
+  ]),
+]);
+
+/**
+ * The finished-file spec for one clip id. Throws on an unknown id rather than
+ * quietly defaulting — encoding a bed at the voice bitrate would be silent damage
+ * to an unrepeatable master.
+ */
+export function outputSpecFor(clipId) {
+  const clip = OUTPUT_CLIPS.get(clipId);
+  if (!clip) {
+    throw new Error(
+      `unknown clip id "${clipId}" — expected one of: ${[...OUTPUT_CLIPS.keys()].join(", ")}`,
+    );
+  }
+  return { ...clip.output, klass: clip.klass, foldSeconds: clip.foldSeconds ?? null };
+}
 
 export function clipsForRound(round) {
   return SFX_CLIPS.filter((clip) => clip.round === round);

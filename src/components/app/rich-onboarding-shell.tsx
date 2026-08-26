@@ -47,10 +47,18 @@ export function RichOnboardingShell({
   return (
     <PressShieldModal
       accessibilityLabel={accessibilityLabel}
+      // The Escape is the dismiss, not the CTA. On all nine consumers that is
+      // the same callback the CTA fires (M3), except on `AppOnboardingWizard`,
+      // where `ctaAlwaysCompletes` makes the CTA advance a panel — an X wired
+      // to it would move the wizard forward. The wizard's row is the one
+      // surface that ends up wearing a word instead of a glyph; W18 (#1258)
+      // promotes its footer "Skip" up here.
+      onEscape={onDismiss ?? onComplete}
       onRequestClose={onDismiss ?? (() => undefined)}
       visible={visible}
     >
-      <SafeAreaView className="flex-1 bg-background">
+      {/* No "top": the wrapper's escape row already sits in the top inset. */}
+      <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
         {/* The starter-routine panel has a name input near the bottom; without
             avoidance the keyboard covers it (edge-to-edge Android especially). */}
         <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">

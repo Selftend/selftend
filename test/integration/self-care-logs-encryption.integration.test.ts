@@ -3,11 +3,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { SEED_USERS, createServiceClient, deleteAllSelfCareLogsForUser, signInAs } from "./helpers";
 
 // Verifies the transparent encrypted view over self_care_logs:
-// - exercise_type, social_notes, meaningful_activity round-trip plaintext through the same
-//   `self_care_logs` name, while `self_care_logs_data` holds only ciphertext (*_enc).
-// - pass-through columns (log_date, exercise_done, meals_structured, social_connection_made)
-//   survive a round-trip.
-// - the social_notes 2000-char cap is enforced in the trigger.
+// - exercise_type, social_notes, meaningful_activity, self_compassion_note round-trip plaintext
+//   through the same `self_care_logs` name, while `self_care_logs_data` holds only ciphertext
+//   (*_enc).
+// - pass-through columns (log_date, exercise_done, meals_structured, social_connection_made,
+//   self_criticism_noticed) survive a round-trip.
+// - the social_notes and self_compassion_note 2000-char caps are enforced in BOTH the insert
+//   and the update trigger.
 // - RLS isolates a second user.
 // NOTE: self_care_logs has NO DELETE RLS policy (only INSERT/SELECT/UPDATE) - the client never
 // deletes these rows. So a user DELETE through the view is an RLS no-op (pre-existing behavior).
@@ -22,6 +24,7 @@ function cipherToText(value: unknown): string {
 const EXERCISE = "Yoga flow (secret-marker-EX)";
 const SOCIAL = "Coffee with sister (secret-marker-SOC)";
 const MEANINGFUL = "Wrote in my journal (secret-marker-MEAN)";
+const COMPASSION = "You were tired, not careless (secret-marker-COMP)";
 
 describe("self_care_logs encrypted view (integration)", () => {
   let alice: SupabaseClient;
@@ -51,6 +54,8 @@ describe("self_care_logs encrypted view (integration)", () => {
       social_connection_made: true,
       social_notes: SOCIAL,
       meaningful_activity: MEANINGFUL,
+      self_criticism_noticed: true,
+      self_compassion_note: COMPASSION,
     };
   }
 
@@ -68,13 +73,17 @@ describe("self_care_logs encrypted view (integration)", () => {
       social_connection_made: true,
       social_notes: SOCIAL,
       meaningful_activity: MEANINGFUL,
+      self_criticism_noticed: true,
+      self_compassion_note: COMPASSION,
     });
 
     const id = insert.data!.id as string;
 
     const atRest = await admin
       .from("self_care_logs_data")
-      .select("exercise_type_enc, social_notes_enc, meaningful_activity_enc")
+      .select(
+        "exercise_type_enc, social_notes_enc, meaningful_activity_enc, self_compassion_note_enc",
+      )
       .eq("id", id)
       .single();
     expect(atRest.error).toBeNull();
@@ -82,6 +91,21 @@ describe("self_care_logs encrypted view (integration)", () => {
     expect(cipherToText(atRest.data?.exercise_type_enc)).not.toContain("secret-marker-EX");
     expect(cipherToText(atRest.data?.social_notes_enc)).not.toContain("secret-marker-SOC");
     expect(cipherToText(atRest.data?.meaningful_activity_enc)).not.toContain("secret-marker-MEAN");
+    expect(cipherToText(atRest.data?.self_compassion_note_enc).length).toBeGreaterThan(0);
+    expect(cipherToText(atRest.data?.self_compassion_note_enc)).not.toContain("secret-marker-COMP");
+  });
+
+  it("stores the noticing flag without a note - ticking the box alone is a complete entry", async () => {
+    // The card's textarea is optional (#1283): a user who ticks the checkbox and writes
+    // nothing must still save. The note reads back as the empty string, never null.
+    const insert = await alice
+      .from("self_care_logs")
+      .insert({ ...baseRow(), self_criticism_noticed: true, self_compassion_note: "" })
+      .select("self_criticism_noticed, self_compassion_note")
+      .single();
+    expect(insert.error).toBeNull();
+    expect(insert.data?.self_criticism_noticed).toBe(true);
+    expect(insert.data?.self_compassion_note).toBe("");
   });
 
   it("UPDATE re-encrypts and pass-through columns survive", async () => {
@@ -91,10 +115,11 @@ describe("self_care_logs encrypted view (integration)", () => {
 
     const before = await admin
       .from("self_care_logs_data")
-      .select("exercise_type_enc")
+      .select("exercise_type_enc, self_compassion_note_enc")
       .eq("id", id)
       .single();
     const beforeCipher = cipherToText(before.data?.exercise_type_enc);
+    const beforeNoteCipher = cipherToText(before.data?.self_compassion_note_enc);
 
     const updated = await alice
       .from("self_care_logs")
@@ -102,6 +127,8 @@ describe("self_care_logs encrypted view (integration)", () => {
         exercise_type: "Running (secret-marker-NEW)",
         meals_structured: 5,
         social_connection_made: false,
+        self_criticism_noticed: false,
+        self_compassion_note: "A friend would call that enough (secret-marker-COMP2)",
       })
       .eq("user_id", SEED_USERS.alice.id)
       .eq("id", id)
@@ -111,16 +138,25 @@ describe("self_care_logs encrypted view (integration)", () => {
     expect(updated.data?.exercise_type).toBe("Running (secret-marker-NEW)");
     expect(updated.data?.meals_structured).toBe(5);
     expect(updated.data?.social_connection_made).toBe(false);
+    expect(updated.data?.self_criticism_noticed).toBe(false);
+    expect(updated.data?.self_compassion_note).toBe(
+      "A friend would call that enough (secret-marker-COMP2)",
+    );
 
     const after = await admin
       .from("self_care_logs_data")
-      .select("exercise_type_enc")
+      .select("exercise_type_enc, self_compassion_note_enc")
       .eq("id", id)
       .single();
     const afterCipher = cipherToText(after.data?.exercise_type_enc);
     expect(afterCipher.length).toBeGreaterThan(0);
     expect(afterCipher).not.toEqual(beforeCipher);
     expect(afterCipher).not.toContain("secret-marker-NEW");
+
+    const afterNoteCipher = cipherToText(after.data?.self_compassion_note_enc);
+    expect(afterNoteCipher.length).toBeGreaterThan(0);
+    expect(afterNoteCipher).not.toEqual(beforeNoteCipher);
+    expect(afterNoteCipher).not.toContain("secret-marker-COMP2");
   });
 
   it("DELETE via the view's trigger (service-role) removes the base row", async () => {
@@ -148,6 +184,37 @@ describe("self_care_logs encrypted view (integration)", () => {
     expect(result.error).not.toBeNull();
   });
 
+  it("INSERT with self_compassion_note longer than 2000 characters is rejected", async () => {
+    const result = await alice
+      .from("self_care_logs")
+      .insert({ ...baseRow(), self_compassion_note: "x".repeat(2001) })
+      .select("id")
+      .single();
+    expect(result.error).not.toBeNull();
+  });
+
+  it("UPDATE with self_compassion_note longer than 2000 characters is rejected", async () => {
+    // The cap lives in BOTH INSTEAD OF trigger functions - an insert-only guard would let an
+    // over-long note in through the second save of the same day.
+    const created = await alice.from("self_care_logs").insert(baseRow()).select("id").single();
+    expect(created.error).toBeNull();
+    const id = created.data!.id as string;
+
+    const updated = await alice
+      .from("self_care_logs")
+      .update({ self_compassion_note: "x".repeat(2001) })
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("id", id);
+    expect(updated.error).not.toBeNull();
+
+    const reread = await alice
+      .from("self_care_logs")
+      .select("self_compassion_note")
+      .eq("id", id)
+      .single();
+    expect(reread.data?.self_compassion_note).toBe(COMPASSION);
+  });
+
   it("RLS: a second user cannot read or update another user's self-care log", async () => {
     const created = await alice.from("self_care_logs").insert(baseRow()).select("id").single();
     expect(created.error).toBeNull();
@@ -165,12 +232,13 @@ describe("self_care_logs encrypted view (integration)", () => {
 
     const aliceRead = await alice
       .from("self_care_logs")
-      .select("exercise_type, social_notes, meals_structured")
+      .select("exercise_type, social_notes, meals_structured, self_compassion_note")
       .eq("id", id)
       .single();
     expect(aliceRead.error).toBeNull();
     expect(aliceRead.data?.exercise_type).toBe(EXERCISE);
     expect(aliceRead.data?.social_notes).toBe(SOCIAL);
     expect(aliceRead.data?.meals_structured).toBe(3);
+    expect(aliceRead.data?.self_compassion_note).toBe(COMPASSION);
   });
 });

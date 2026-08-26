@@ -85,6 +85,7 @@ describe("goals repository - goals", () => {
       lifeDomain: "health",
       goalType: "outcome",
       targetDate: "2026-09-01",
+      valueKey: null,
     });
     expect(insert).toHaveBeenCalledWith({
       user_id: "user-1",
@@ -93,7 +94,43 @@ describe("goals repository - goals", () => {
       life_domain: "health",
       goal_type: "outcome",
       target_date: "2026-09-01",
+      value_key: null,
     });
+  });
+
+  // #1287: the value key is one nullable pointer at every layer. A goal written before
+  // the user has clarified any values - which the programme's first week asks for, goals
+  // before values - has no key at all, and must read back that way rather than as "".
+  it("maps the value key, and null when the goal is anchored to nothing", async () => {
+    const anchored = { ...goalRow, value_key: "honest" };
+    const limit = jest.fn().mockResolvedValue({ data: [anchored, goalRow], error: null });
+    const order = jest.fn(() => ({ limit }));
+    const eq = jest.fn(() => ({ order }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    const goals = await listGoals("user-1");
+    expect(goals[0].valueKey).toBe("honest");
+    expect(goals[1].valueKey).toBeNull();
+  });
+
+  it("sends the chosen value key on insert", async () => {
+    const single = jest.fn().mockResolvedValue({ data: goalRow, error: null });
+    const select = jest.fn(() => ({ single, maybeSingle: single }));
+    const insert = jest.fn(() => ({ select }));
+    const from = jest.fn(() => ({ insert }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    await saveGoal("user-1", {
+      title: "Run 5k",
+      description: "Couch to 5k",
+      lifeDomain: "health",
+      goalType: "outcome",
+      targetDate: null,
+      valueKey: "honest",
+    });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ value_key: "honest" }));
   });
 
   it("updates an existing goal scoped to user and id", async () => {
@@ -113,6 +150,7 @@ describe("goals repository - goals", () => {
         lifeDomain: "health",
         goalType: "outcome",
         targetDate: null,
+        valueKey: null,
       },
       "g-1",
     );
@@ -238,6 +276,7 @@ describe("goals repository - error and guard paths", () => {
         goalType: "outcome",
         targetDate: "2026-09-01",
         status: "active",
+        valueKey: null,
         createdAt: "2026-05-15T08:00:00.000Z",
         updatedAt: "2026-05-15T08:00:00.000Z",
       },
@@ -310,6 +349,7 @@ describe("goals repository - error and guard paths", () => {
           lifeDomain: "health",
           goalType: "outcome",
           targetDate: null,
+          valueKey: null,
         },
         "missing-goal",
       ),
@@ -331,6 +371,7 @@ describe("goals repository - error and guard paths", () => {
         lifeDomain: "health",
         goalType: "outcome",
         targetDate: "2026-09-01",
+        valueKey: null,
       }),
     ).rejects.toMatchObject({ code: "23505" });
   });

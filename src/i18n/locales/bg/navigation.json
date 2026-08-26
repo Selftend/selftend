@@ -469,7 +469,14 @@
     "edit": "Редактиране",
     "log": "Запис",
     "favorites": "Любими",
-    "back": "Върни се"
+    "back": "Върни се",
+    "backTo": "Назад към {{name}}",
+    "saved": "Запазено",
+    "signIn": "Вход",
+    "signUp": "Регистрация",
+    "resetPassword": "Смяна на паролата",
+    "updatePassword": "Обновяване на паролата",
+    "verifyEmail": "Потвърждаване на имейла"
   },
   "modulesPage": {
     "title": "Модули",
@@ -478,10 +485,6 @@
     "stats": {
       "overview": "Преглед"
     }
-  },
-  "dateBar": {
-    "selectDate": "Избери дата",
-    "clear": "Изчисти датата"
   },
   "plan": {
     "wizard": {

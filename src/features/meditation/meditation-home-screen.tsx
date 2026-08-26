@@ -315,7 +315,10 @@ export default function MeditationHomeScreen() {
         isPending={upsertProgramState.isPending || updatePreferences.isPending}
         errorMessage={onboardingError}
         onComplete={(result) => void handleOnboardingComplete(result)}
-        onDismiss={forceWizard ? () => setForceWizard(false) : undefined}
+        // The ternary this replaces only ever produced `undefined` while the
+        // wizard was invisible (`visible={forceWizard}`), so it withheld a
+        // dismiss from nobody.
+        onDismiss={() => setForceWizard(false)}
       />
       <SafeAreaView
         className="flex-1 bg-background"

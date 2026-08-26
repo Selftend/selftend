@@ -121,7 +121,10 @@ export function ContinueRoutineSheet({
   }
 
   return (
-    <PressShieldModal onRequestClose={onClose} transparent visible={visible}>
+    // A bottom sheet over a dimmed backdrop, so the wrapper pins no row: the
+    // X in the sheet's own header already sits outside its scrollers, which
+    // is the shape M1 asks for.
+    <PressShieldModal surface="sheet" onRequestClose={onClose} transparent visible={visible}>
       <View className="flex-1">
         <Pressable
           accessibilityLabel={t("sheet.close")}

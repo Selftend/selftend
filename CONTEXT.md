@@ -45,7 +45,7 @@ The calendar day an entry belongs to. Which calendar depends on whether the tool
 - **Routines are viewer-local by decision, and stay that way.** A routine has no dated record to freeze — there is no run object — and its job is "today, where you are standing"; freezing the axis would hand someone who has travelled a checklist for a day they have not lived, or mark one complete before they wake. Steps still read each tool's own day model, so the two models coexist on purpose rather than by omission. Routine status resets at local midnight.
 - **ACT is deliberately deferred, not pending**, and is the only module left with no captured offset. Nine tables and roughly 60% of the workstream's remaining cost, against a symptom of a single wrong day, visible only around travel and self-correcting the next day: every ACT surface is a same-day list, and `useSelectedDate()` returns today with deliberately no global selected-date state, so there is no history or calendar on which a mis-filed entry stays visible. It returns only if ACT grows one.
 - Both of those are owner decisions of 2026-07-28, recorded on [#330](https://github.com/Selftend/selftend/issues/330#issuecomment-5100789560).
-- The **CBT programme checklist** exists twice — once client-side in `src/features/cbt/program-definition.ts` and once in the `program_widget_task_status` RPC — because the programme screen and the **Android launcher widget** answer "is today's practice done" from different places (home's own card stopped asking in #977 - it shows an ordinal phase badge and no task list). Every CBT leg now reads the captured day on both sides (#425 moved the last three, `thoughtRecordDaily`, `activityDaily` and `calmingDaily`, in one change). A module that graduates on one side only makes the two surfaces contradict each other, so the two copies move together, per module.
+- The **CBT programme checklist** exists twice — once client-side in `src/features/cbt/program-definition.ts` and once in the `program_widget_task_status` RPC — because the programme screen and the **Android launcher widget** answer "is today's practice done" from different places (home's own card stopped asking in #977 - it shows an ordinal phase badge and no task list). Every CBT leg now reads the captured day on both sides (#425 moved the last three, `thoughtRecordDaily`, `activityDaily` and `calmingDaily`, in one change). A module that graduates on one side only makes the two surfaces contradict each other, so the two copies move together, per module. There is a **third, non-rendering copy**: `scripts/seed-demo-data.mjs` re-derives the seeded phase's legs to assert that the demo account's stored phase index does not contradict the rows behind it (#1282). It cannot make two surfaces disagree, because nothing renders from it — but a leg whose rule changes in the two copies above and not there leaves the seed asserting a rule the app no longer uses, and passing. The **ACT programme checklist** is duplicated the same three ways, and the seed's copy of it is partial by construction: #1284 places the ACT practice logs so `openUp`'s `unhookOnce` reads done and its `makeRoomOnce` and daily practice stay open, and asserts exactly those three legs from `src/features/act/program-definition.ts` without persisting an anchor to check them against — #1286 owns that half. Until it lands, the ACT constants in the seed are the only statement of where that programme sits, so #1286 anchors from them rather than declaring its own.
 - Where a captured offset is missing (entries predating the column, or written by an older client) the first group falls back to the **viewer's current local day**. That is a fallback for unknown, never a claim the entry was logged at UTC.
 - This holds server-side too: `public.occurrence_day_key` is the SQL twin of `entryDayKey`, so an RPC that answers "done today" resolves the same day the screens do rather than range-scanning the viewer's window (#414).
 
@@ -115,12 +115,29 @@ The single leading affordance that lets a user leave the screen they are on. Exa
 screen — never two — and present on every screen except the app's root (`/(app)` signed in, `/`
 signed out). Where it _leads_ varies; that it is _there_ does not. Distinct from the
 `InvisibleHeader` brand link, which is always a jump to the root and discards where the user was.
+
+It **says where it goes**: its accessible label names the destination — "Back to CBT" — because an
+explicit `accessibilityLabel` _replaces_ a pressable's children for a screen reader, so a glyph-only
+label would hide from screen-reader users the name the arrow shows on screen (#1253). Where the
+trail has no name for the destination it says "Go back". Never the fallback word "Entry", which is
+the absence of a name dressed as one, and never the nearest _named_ ancestor, which names a screen
+the Escape does not go to.
 _Avoid_: back button, close button (those name a glyph, not the role)
 
 **Up**:
 The Escape's default destination: one deterministic hop along the screen's own breadcrumb trail,
 Material's "Up" (#495). Never history — a fixed hop cannot bounce. On a screen whose trail has a
 single crumb, Up is the root.
+
+Up is read off the trail by one rule: **the deepest crumb that still carries an href**. That rests
+on an invariant of `computeBreadcrumbs` — **a trail always ends in a crumb with no href**, because an
+absent href is how the trail marks "you are here" (#1251). A trailing href would make every Escape
+on that route land one crumb too shallow, mistaking the current screen for its own parent.
+
+A crumb can have a correct href and still have no _name_: an opaque-id segment no table can label
+falls through to the generic "Entry". `computeBreadcrumbs` marks those `unresolved`, so the Escape
+can tell a real name from the fallback without comparing against a translated word (#1253). It is
+what the seven `[id]/edit` and `[id]/log` forms hop up to.
 _Avoid_: parent, back (Up is a structural claim, back is a temporal one)
 
 **Origin**:
@@ -134,8 +151,9 @@ _Avoid_: referrer, previous page, back stack
 
 **Close**:
 The Escape wearing its X glyph, on a create/edit form, where the promise is "abandon this" rather
-than "go up a level" (#733). Same rule and same destination logic — only the promise and the glyph
-differ.
+than "go up a level" (#733). Same rule and same destination logic — the promise, the glyph and the
+label differ. A Close announces "Close", never the destination: on a form what it promises is
+_abandoning this_, and where it lands is secondary.
 _Avoid_: cancel, dismiss (those name what happens to the _data_, not to the navigation)
 
 **Completion** (not an Escape):
