@@ -5,10 +5,12 @@ import * as WebBrowser from "expo-web-browser";
 import {
   EMAIL_ALREADY_EXISTS_ERROR,
   EMAIL_RATE_LIMITED_ERROR,
+  IDENTITY_ALREADY_EXISTS_ERROR,
   INVALID_CREDENTIALS_ERROR,
   LEAKED_PASSWORD_ERROR,
   SESSION_MISSING_ERROR,
   convertGuestWithPassword,
+  linkGoogleIdentity,
   getNativeAuthRedirectUrl,
   getPasswordResetRedirectUrl,
   getWebAuthRedirectUrl,
@@ -21,6 +23,7 @@ import {
   updatePassword,
 } from "@/src/features/auth/api";
 import { completeAuthRedirect } from "@/src/features/auth/callback";
+import { AuthCallbackError } from "@/src/features/auth/callback-errors";
 import { captureError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
@@ -624,5 +627,128 @@ describe("signOut", () => {
     await signOut("global");
 
     expect(signOutFn).toHaveBeenCalledWith({ scope: "global" });
+  });
+});
+
+describe("linkGoogleIdentity", () => {
+  const originalOS = Platform.OS;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(Linking.createURL).mockReturnValue("selftend://auth-callback");
+  });
+
+  afterEach(() => {
+    setPlatform(originalOS);
+  });
+
+  function buildLinkClient(linkIdentity: jest.Mock) {
+    const refreshSession = jest.fn().mockResolvedValue({ error: null });
+    const signInWithOAuth = jest.fn();
+    const signInWithIdToken = jest.fn();
+    return {
+      client: buildAuthClient({ linkIdentity, refreshSession, signInWithOAuth, signInWithIdToken }),
+      refreshSession,
+      signInWithOAuth,
+      signInWithIdToken,
+    };
+  }
+
+  it("links on native via linkIdentity - never a sign-in call - and refreshes after", async () => {
+    setPlatform("ios");
+    const linkIdentity = jest
+      .fn()
+      .mockResolvedValue({ data: { url: "https://oauth.example" }, error: null });
+    const { client, refreshSession, signInWithOAuth, signInWithIdToken } =
+      buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockOpenAuthSession.mockResolvedValue({
+      type: "success",
+      url: "selftend://auth-callback?code=abc",
+    } as never);
+
+    const result = await linkGoogleIdentity();
+
+    expect(result).toBe(true);
+    const call = (linkIdentity.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(call).toMatchObject({
+      provider: "google",
+      options: {
+        redirectTo: "selftend://auth-callback",
+        skipBrowserRedirect: true,
+        queryParams: { prompt: "select_account" },
+      },
+    });
+    expect(mockCompleteAuthRedirect).toHaveBeenCalledWith("selftend://auth-callback?code=abc");
+    expect(refreshSession).toHaveBeenCalled();
+    // The whole point of the function (#1445): the guest's account is KEPT.
+    expect(signInWithOAuth).not.toHaveBeenCalled();
+    expect(signInWithIdToken).not.toHaveBeenCalled();
+  });
+
+  it("returns false on web after starting the full-page redirect", async () => {
+    setPlatform("web");
+    const linkIdentity = jest.fn().mockResolvedValue({ data: { url: null }, error: null });
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+
+    expect(await linkGoogleIdentity()).toBe(false);
+    const call = (linkIdentity.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(call).toMatchObject({ options: { skipBrowserRedirect: false } });
+    expect(mockOpenAuthSession).not.toHaveBeenCalled();
+  });
+
+  it("maps a direct identity_already_exists rejection to the collision constant", async () => {
+    setPlatform("ios");
+    const linkIdentity = jest.fn().mockResolvedValue({
+      data: null,
+      error: Object.assign(new Error("Identity is already linked to another user"), {
+        code: "identity_already_exists",
+      }),
+    });
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+
+    await expect(linkGoogleIdentity()).rejects.toThrow(IDENTITY_ALREADY_EXISTS_ERROR);
+  });
+
+  it("maps the native redirect collision (identity_exists callback error) to the same constant", async () => {
+    setPlatform("ios");
+    const linkIdentity = jest
+      .fn()
+      .mockResolvedValue({ data: { url: "https://oauth.example" }, error: null });
+    const { client, refreshSession } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockOpenAuthSession.mockResolvedValue({
+      type: "success",
+      url: "selftend://auth-callback?error_code=identity_already_exists",
+    } as never);
+    mockCompleteAuthRedirect.mockRejectedValue(new AuthCallbackError("identity_exists"));
+
+    await expect(linkGoogleIdentity()).rejects.toThrow(IDENTITY_ALREADY_EXISTS_ERROR);
+    expect(refreshSession).not.toHaveBeenCalled();
+  });
+
+  it("returns false when the user backs out of the browser dance", async () => {
+    setPlatform("ios");
+    const linkIdentity = jest
+      .fn()
+      .mockResolvedValue({ data: { url: "https://oauth.example" }, error: null });
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockOpenAuthSession.mockResolvedValue({ type: "cancel" } as never);
+
+    expect(await linkGoogleIdentity()).toBe(false);
+    expect(mockCompleteAuthRedirect).not.toHaveBeenCalled();
+  });
+
+  it("rethrows other link errors unchanged", async () => {
+    setPlatform("ios");
+    const linkError = new Error("link boom");
+    const linkIdentity = jest.fn().mockResolvedValue({ data: null, error: linkError });
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+
+    await expect(linkGoogleIdentity()).rejects.toBe(linkError);
   });
 });

@@ -17,6 +17,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { markEmailVerifiedFromCallback } from "@/src/features/auth/api";
 import { completeAuthRedirect, parseAuthCallbackUrl } from "@/src/features/auth/callback";
+import { recordConversionCollision } from "@/src/features/auth/conversion-collision";
 import {
   isAuthCallbackError,
   type AuthCallbackErrorCode,
@@ -174,6 +175,20 @@ export default function AuthCallbackScreen() {
         if (error instanceof CallbackTimeoutError) {
           setFailure({ kind: "timeout" });
         } else if (isAuthCallbackError(error)) {
+          if (error.code === "identity_exists") {
+            // A web linkIdentity collision (#1445): the guest's conversion
+            // dance found the Google identity on another account. The place
+            // to say so is the conversion form that started it - hand the
+            // collision back (consume-once, like sign-in-prefill) and land
+            // there. Only Google links through this redirect path: Apple
+            // converts natively via id-token and its collision throws
+            // in-form. A non-conversion arrival with this code just lands on
+            // sign-up, calm and unannotated - the form only reads the
+            // handoff in conversion mode.
+            recordConversionCollision("google");
+            router.replace("/(auth)/sign-up");
+            return;
+          }
           setFailure({ kind: "error", code: error.code });
         } else {
           // Unknown throw (network layer, etc.) - same calm generic copy, never

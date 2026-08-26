@@ -51,8 +51,10 @@ test.describe("guest conversion", () => {
     await expect(
       page.getByText("Your data comes with you - everything you've added stays."),
     ).toBeVisible();
-    // No OAuth on the conversion form until #1445's linkIdentity path.
-    await expect(page.getByText("Continue with Google")).toBeHidden();
+    // OAuth is present on the conversion form since #1445 - wired to
+    // linkIdentity (the guest's account is kept), never signInWithOAuth;
+    // the jest suites pin that fork, the live dance can't run in CI.
+    await expect(page.getByText("Continue with Google")).toBeVisible();
 
     await page.locator('input[placeholder="m@example.com"]:visible').fill(email);
     const pwInputs = page.locator('input[type="password"]:visible');
