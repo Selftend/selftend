@@ -98,6 +98,114 @@ describe("cbt thought_records (integration)", () => {
     expect(updated.data?.nats).toEqual(nats);
   });
 
+  // The belief re-rating (#1376). This is the only seam that can prove the
+  // migration: the column is written through a view whose INSTEAD OF triggers
+  // enumerate columns by hand, so a column missing from the view, the insert
+  // writer or the update writer fails HERE and nowhere else - a unit test mocks
+  // the client away, and an insert that silently drops the column still returns
+  // a row and still reports success.
+  describe("belief_after", () => {
+    const base = {
+      user_id: SEED_USERS.alice.id,
+      situation: "Belief test",
+      nats: [{ text: "I will be late", beliefRating: 90, isHotThought: true }],
+      emotions: [],
+      distortions: [],
+      balanced_thought: "Probably fine",
+    };
+
+    it("round-trips a value through the encrypted view", async () => {
+      const insert = await alice
+        .from("thought_records")
+        .insert({ ...base, belief_after: 40 })
+        .select("*")
+        .single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.belief_after).toBe(40);
+    });
+
+    it("stores an omitted rating as null rather than zero", async () => {
+      // Null is "not rated"; 0 is "I no longer believe this at all". A coalesce
+      // in the insert writer would turn every skipped rating into the strongest
+      // possible result.
+      const insert = await alice.from("thought_records").insert(base).select("*").single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.belief_after).toBeNull();
+    });
+
+    it("accepts an explicit zero", async () => {
+      const insert = await alice
+        .from("thought_records")
+        .insert({ ...base, belief_after: 0 })
+        .select("*")
+        .single();
+
+      expect(insert.error).toBeNull();
+      expect(insert.data?.belief_after).toBe(0);
+    });
+
+    it("updates the value, and can clear it back to null", async () => {
+      const created = await alice
+        .from("thought_records")
+        .insert({ ...base, belief_after: 70 })
+        .select("id")
+        .single();
+      expect(created.error).toBeNull();
+
+      const raised = await alice
+        .from("thought_records")
+        .update({ belief_after: 20 })
+        .eq("user_id", SEED_USERS.alice.id)
+        .eq("id", created.data!.id)
+        .select("*")
+        .single();
+      expect(raised.error).toBeNull();
+      expect(raised.data?.belief_after).toBe(20);
+
+      const cleared = await alice
+        .from("thought_records")
+        .update({ belief_after: null })
+        .eq("user_id", SEED_USERS.alice.id)
+        .eq("id", created.data!.id)
+        .select("*")
+        .single();
+      expect(cleared.error).toBeNull();
+      expect(cleared.data?.belief_after).toBeNull();
+    });
+
+    it("preserves the rating across an edit that does not mention it", async () => {
+      const created = await alice
+        .from("thought_records")
+        .insert({ ...base, belief_after: 35 })
+        .select("id")
+        .single();
+      expect(created.error).toBeNull();
+
+      const edited = await alice
+        .from("thought_records")
+        .update({ situation: "Edited elsewhere" })
+        .eq("user_id", SEED_USERS.alice.id)
+        .eq("id", created.data!.id)
+        .select("*")
+        .single();
+
+      expect(edited.error).toBeNull();
+      expect(edited.data?.belief_after).toBe(35);
+    });
+
+    it("rejects a rating outside 0..100", async () => {
+      const insert = await alice
+        .from("thought_records")
+        .insert({ ...base, belief_after: 101 })
+        .select("*")
+        .single();
+
+      expect(insert.error).not.toBeNull();
+    });
+  });
+
   // The captured civil day a thought record was written on (#330).
   describe("created_offset_minutes", () => {
     const baseRecord = {

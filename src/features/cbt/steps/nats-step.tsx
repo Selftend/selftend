@@ -1,5 +1,7 @@
 import { Controller, type Control, type FieldErrors } from "react-hook-form";
 import { Pressable, View } from "react-native";
+import type { RefObject } from "react";
+import type { TextInput } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -19,9 +21,20 @@ interface NatsStepProps {
   errors: FieldErrors<ThoughtRecordFormSchema>;
   natsError: string;
   onClearNatsError: () => void;
+  /**
+   * The add-a-thought textarea, so the save-time "at least one thought"
+   * complaint can put focus (and, on web, scroll) where the fix goes (#1381).
+   */
+  inputRef?: RefObject<TextInput | null>;
 }
 
-export function NatsStep({ control, errors, natsError, onClearNatsError }: NatsStepProps) {
+export function NatsStep({
+  control,
+  errors,
+  natsError,
+  onClearNatsError,
+  inputRef,
+}: NatsStepProps) {
   const { t } = useTranslation("cbt");
 
   return (
@@ -43,17 +56,25 @@ export function NatsStep({ control, errors, natsError, onClearNatsError }: NatsS
                 <View className="gap-2">
                   <Label>{t("record.beliefRating")}</Label>
                   <Text variant="muted">{t("record.beliefRatingHint")}</Text>
-                  <NumberRating
-                    min={0}
-                    max={100}
-                    step={10}
-                    value={nat.beliefRating}
-                    onChange={(rating) => {
-                      const next = [...value];
-                      next[index] = { ...nat, beliefRating: rating };
-                      onChange(next);
-                    }}
-                  />
+                  {/*
+                   * Several 0-100 ratings share this column, so a bare number
+                   * names many buttons - tests scope by these testIDs rather
+                   * than by position, which would silently retarget another
+                   * rating the moment anything moves between them.
+                   */}
+                  <View testID={`nat-belief-rating-${index}`}>
+                    <NumberRating
+                      min={0}
+                      max={100}
+                      step={10}
+                      value={nat.beliefRating}
+                      onChange={(rating) => {
+                        const next = [...value];
+                        next[index] = { ...nat, beliefRating: rating };
+                        onChange(next);
+                      }}
+                    />
+                  </View>
                   <Pressable
                     accessibilityRole="button"
                     onPress={() => onChange(value.filter((_, i) => i !== index))}
@@ -65,6 +86,7 @@ export function NatsStep({ control, errors, natsError, onClearNatsError }: NatsS
             </Card>
           ))}
           <NatAddForm
+            inputRef={inputRef}
             onAdd={(nat) => {
               onChange([...value, nat]);
               onClearNatsError();

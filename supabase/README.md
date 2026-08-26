@@ -138,9 +138,9 @@ Each account has its own password (defined in `supabase/seed.sql`, mirrored in `
 
 > The sign-in form rejects passwords shorter than 12 characters, so these seed passwords are intentionally ≥12 chars. If you change them in `seed.sql`, keep them long enough and update `SEED_USERS` to match.
 
-> **Known gap on the ACT screens.** The five ACT list screens filter to the selected day and `useSelectedDate()` always returns today, so each one shows only rows dated today. The demo account's **defusion** and **expansion** screens therefore open on their empty state: both feed the ACT programme's daily practice, which is deliberately left open, so neither can carry a row dated today. Their seeded history is real but currently unreachable through the UI — see [#1284](https://github.com/Selftend/selftend/issues/1284). Connection, observing self and choice points each carry a row dated today, and urge surfing's recent strip is not day-filtered. The values, bulls-eye and committed-action screens are not day-filtered at all and render their seeded content whatever the date.
+> **Known gap on the ACT screens.** The five ACT list screens filter to the selected day and `useSelectedDate()` always returns today, so each one shows only rows dated today. The demo account's **defusion** and **expansion** screens therefore open on their empty state: both feed the ACT programme's daily practice, which is deliberately left open, so neither can carry a row dated today. Their seeded history is real but currently unreachable through the UI — see [#1284](https://github.com/Selftend/selftend/issues/1284). Connection, observing self and choice points each carry a row dated today, and urge surfing's recent strip is not day-filtered. The values screen (which carries the alignment check-in and its history since #1379) and the committed-action screens are not day-filtered at all and render their seeded content whatever the date.
 
-> **The bulls-eye history shows only its newest twelve rows.** A review rates all four domains, so exactly three review dates are ever on screen. The seed's last three reviews are therefore placed to carry the arc on their own — the last reading before the setback, the setback itself, and today's recovery — rather than spread on an even stride that would push every dipped reading off the bottom.
+> **The alignment check-in's history shows only its newest twelve rows.** A review rates all four domains, so exactly three review dates are ever on screen. The seed's last three reviews are therefore placed to carry the arc on their own — the last reading before the setback, the setback itself, and today's recovery — rather than spread on an even stride that would push every dipped reading off the bottom.
 
 > **What the seed cannot reach.** Recorded so nobody spends an afternoon rediscovering them:
 >
@@ -151,6 +151,10 @@ Each account has its own password (defined in `supabase/seed.sql`, mirrored in `
 > - **UTC+13 and UTC+14 are out of range for exact day placement.** The ACT tables carry no captured-offset column, so their rows are pinned to a 10:00–12:00 UTC band and resolve to the intended civil day for every offset from −11 through +12. Further east, a row can file under the following day and a strip day or a daily-practice flag can read differently.
 
 Sign in via the app's email/password form (`signInWithPassword` in `src/features/auth/api.ts`).
+
+#### Guest accounts
+
+Anonymous sign-ins are enabled locally (`enable_anonymous_sign_ins` in `config.toml`, #1440): a native app pointed at this stack silently creates a guest account (`is_anonymous = true` in `auth.users`) on any cold start without a stored session, so guest rows with no matching seed block are expected. Guests are deliberately never seeded - tests that need one create it at runtime through the real `signInAnonymously()`, so a seeded guest can't leak into unrelated runs. `db:reset` clears them like any other unseeded row.
 
 #### Adding more seeded users
 

@@ -43,7 +43,7 @@ in frame before keeping the take (notably the CBT learn-page copy).
 | CBT-BALANCED   | same flow, continued                      | balanced thought, save                                  | CB-3                                 |
 | CBT-HIST       | `/modules/cbt/history` + weekly review    | glance at both                                          | CB-4                                 |
 | ACT-INDEX      | `/modules/act`                            | section overview                                        | AC orientation                       |
-| ACT-BULLSEYE   | `/modules/act/values/bulls-eye`           | pick a domain, place self                               | AC-1                                 |
+| ACT-BULLSEYE   | `/modules/act/values`                     | pick a domain, place self                               | AC-1                                 |
 | ACT-ANCHOR     | `/modules/act/connection/drop-anchor`     | one round                                               | AC-2                                 |
 | ACT-CHOICE     | `/modules/act/choice-point/new`           | log a toward move                                       | AC-3                                 |
 | ACT-COMMIT     | `/modules/act/committed-action/new`       | one small action tied to a value                        | AC-4                                 |

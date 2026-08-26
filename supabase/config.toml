@@ -15,6 +15,19 @@ additional_redirect_urls = ["http://localhost:8081/auth-callback", "http://local
 # it is not yet representable in config.toml at time of writing.
 minimum_password_length = 12
 
+# Optional registration (#1440): a native first launch silently creates a guest
+# account via anonymous sign-in, so the local stack and e2e need the provider
+# on. Hosted projects gate it with the Dashboard toggle instead - the client
+# ships dark, and that toggle is the permanent kill switch. Manual linking is
+# what the OAuth conversion path (linkIdentity) requires.
+enable_anonymous_sign_ins = true
+enable_manual_linking = true
+
+# Kept at the Supabase default on purpose (#1432 ruling) - recorded here so the
+# 30 guest-creations/hour/IP cap is version-controlled, not implicit.
+[auth.rate_limit]
+anonymous_users = 30
+
 # Autoconfirm (#489): signups get a session immediately and the app runs its
 # own verification layer - user_preferences.email_verified plus the in-app
 # banner that sends a signInWithOtp code. Mirrors mailer_autoconfirm=true on

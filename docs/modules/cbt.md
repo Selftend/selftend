@@ -38,21 +38,27 @@ The module should be:
 
 ## Thought record flow
 
-The guided record uses eight steps:
+The guided record is one scrolling form with a sticky progress rail that names six parts (in
+this order - naming the pattern before hunting evidence is deliberate):
 
 1. situation
-2. automatic thoughts (each with an optional belief rating)
-3. hot thought (mark the most distressing automatic thought)
-4. emotions and intensity before (0-100)
+2. thoughts - the automatic-thoughts list (each with an optional belief rating) and the hot
+   thought (the most distressing one; defaults to the highest-rated and can be overridden once
+   there are at least two)
+3. feelings - emotions and intensity before (0-100)
+4. patterns - likely distortions
 5. evidence for and against
-6. likely distortions
-7. balanced thought (shown with a running summary of the record)
-8. outcome - intensity after (0-100) and outcome notes
+6. balanced - the balanced thought, belief in the hot thought now (0-100), intensity after
+   (0-100), and outcome notes
+
+Every part is on screen at once: parts can be answered in any order, and the rail's segments
+light per part as they hold something. "Finish later" leaves the screen over the persisted
+draft autosave; returning restores what was typed (drafts expire after 24 hours).
 
 Validation:
 
 - All prompts are optional at save time, so a partial record can be saved and completed later.
-- The only in-flow requirement is at least one automatic thought (with text) before leaving the automatic-thoughts step.
+- The only requirement, enforced at save, is at least one automatic thought (with text).
 
 ## Data shape
 
@@ -81,7 +87,7 @@ All thought record prompts are optional at save time so a user can create a part
 - `id`
 - `userId`
 - `situation`
-- `automaticThought`
+- `nats[]` - each with `text`, an optional `beliefRating` (0-100) and an `isHotThought` flag
 - `emotions[]`
 - `emotionIntensityBefore`
 - `distortions[]`
@@ -90,9 +96,17 @@ All thought record prompts are optional at save time so a user can create a part
 - `balancedThought`
 - `emotionIntensityAfter`
 - `outcomeNotes`
+- `beliefAfter` - belief in the hot thought after working the record (0-100), null when unrated
 - `createdAt`
+- `createdOffsetMinutes` - minutes east of UTC where the record was written; null when never captured
 - `updatedAt`
 - `archivedAt`
+
+`beliefAfter` is stored plaintext, unlike the narrative fields: it exists to be
+aggregated across records, and the per-thought `beliefRating` it is compared
+against lives inside the encrypted thoughts blob where SQL cannot reach it. Null
+means "not rated" and is never the same as 0, which means "I no longer believe
+this at all".
 
 Additional CBT strategy records are stored in private user-owned tables:
 
