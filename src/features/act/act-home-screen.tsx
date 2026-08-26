@@ -1,6 +1,6 @@
 import { type Href } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,11 +12,13 @@ import { PillarCard } from "@/src/components/app/pillar-card";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { Section } from "@/src/components/app/section";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { ActInfo } from "@/src/components/app/act-onboarding-modal";
 import { ActProgramCard } from "@/src/components/app/act-program-card";
 import { ProgramGraduation } from "@/src/components/app/program-graduation";
+import { DefusionLogRow } from "@/src/features/act/defusion-log-row";
 import {
   useChoicePointCount,
   useCommittedActionCount,
@@ -25,8 +27,6 @@ import {
 } from "@/src/features/act/queries";
 import { useActProgram } from "@/src/features/act/use-act-program";
 import { useSession } from "@/src/providers/session-provider";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useLocaleFormats } from "@/src/lib/locale-format";
 
 interface PillarTool {
   key: string;
@@ -129,7 +129,6 @@ export default function ActHomeScreen() {
   // inert for every hue anyway.
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: defusionLogs } = useDefusionLogs(userId, 50);
@@ -312,32 +311,25 @@ export default function ActHomeScreen() {
               title={t("home.recentDefusionTitle")}
               action={
                 defusionLogs && defusionLogs.length > 0 ? (
-                  <Pressable
-                    accessibilityRole="link"
-                    hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => pushWithOrigin("/modules/act/defusion")}
-                  >
-                    <Text className="text-sm text-foreground">{t("home.viewAllDefusion")}</Text>
-                  </Pressable>
+                  <ShowAllLink label={t("home.viewAllDefusion")} route="/modules/act/defusion" />
                 ) : null
               }
             >
               {recentLogs.length === 0 ? (
                 <Text variant="muted">{t("home.noDefusionLogs")}</Text>
               ) : (
-                <View className="gap-2">
+                <View>
                   {recentLogs.map((log) => (
-                    <View key={log.id} className="rounded-lg border border-border bg-card p-3">
-                      <Text className="font-medium" numberOfLines={2}>
-                        {log.fusedThought}
-                      </Text>
-                      <Text variant="muted" className="mt-1 text-xs">
-                        {formatDateTime(log.createdAt)}
-                        {log.fusionLevelBefore !== null && log.fusionLevelAfter !== null
-                          ? `  ·  ${log.fusionLevelBefore} → ${log.fusionLevelAfter}`
-                          : null}
-                      </Text>
-                    </View>
+                    <DefusionLogRow
+                      key={log.id}
+                      log={log}
+                      onPress={() =>
+                        pushWithOrigin({
+                          pathname: "/modules/act/defusion/[id]",
+                          params: { id: log.id },
+                        })
+                      }
+                    />
                   ))}
                 </View>
               )}
