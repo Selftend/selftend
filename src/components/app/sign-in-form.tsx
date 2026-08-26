@@ -16,12 +16,14 @@ import {
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { GuestAbandonDialog } from "@/src/components/app/guest-abandon-dialog";
 import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
 import {
   INVALID_CREDENTIALS_ERROR,
   resendVerificationEmail,
   signInWithPassword,
 } from "@/src/features/auth/api";
+import { guestHoldsContent } from "@/src/features/auth/guest-content";
 import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { runAppleSignIn } from "@/src/features/auth/run-apple-sign-in";
 import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
@@ -36,7 +38,8 @@ import { useSession } from "@/src/providers/session-provider";
 
 export function SignInForm() {
   const { t } = useTranslation("auth");
-  const { hasSupabaseConfig } = useSession();
+  const { hasSupabaseConfig, user } = useSession();
+  const isGuest = user?.is_anonymous === true;
   // ⚠️ These hrefs carry their route group - `/(auth)/sign-in` - which the
   // helper's `targetPathname` strips; see its docblock for why a raw one would
   // record a target that can never match, silently (#1265, O3).
@@ -48,6 +51,15 @@ export function SignInForm() {
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [isAppleSubmitting, setIsAppleSubmitting] = useState(false);
+  // Warn-and-abandon (#1444, spec §6): a guest signing in to another account
+  // leaves this device's guest data behind, so any sign-in path a guest with
+  // content takes detours through one calm confirm. The chosen path waits
+  // here while the dialog is up - non-null IS the dialog's visibility;
+  // confirm runs it, cancel drops it.
+  const [pendingAbandonAction, setPendingAbandonAction] = useState<(() => Promise<void>) | null>(
+    null,
+  );
+  const [isAbandonPending, setIsAbandonPending] = useState(false);
   const passwordRef = useRef<TextInput>(null);
   const {
     control,
@@ -76,7 +88,40 @@ export function SignInForm() {
     }, [setValue]),
   );
 
-  const onGoogleSubmit = () =>
+  /**
+   * Detour a guest-with-content sign-in through the abandon confirm. Returns
+   * true when the dialog took over (the caller stops; confirm re-runs
+   * `action`). The content check itself fails toward warning - see
+   * `guestHoldsContent` - because the only cost of a needless dialog is a
+   * cancel, while a skipped one signs data away silently.
+   *
+   * The OAuth paths run this BEFORE their dance starts: on web the redirect
+   * leaves the page and on native the session is replaced when the flow
+   * returns, so afterwards there is no guest left to warn (#1445 inherits the
+   * same before-the-dance rule for its collision one-tap).
+   */
+  const interceptGuestAbandon = async (action: () => Promise<void>): Promise<boolean> => {
+    if (!isGuest || !(await guestHoldsContent())) return false;
+    setPendingAbandonAction(() => action);
+    return true;
+  };
+
+  const onAbandonConfirm = async () => {
+    if (!pendingAbandonAction) return;
+    setIsAbandonPending(true);
+    try {
+      await pendingAbandonAction();
+    } finally {
+      setIsAbandonPending(false);
+      setPendingAbandonAction(null);
+    }
+  };
+
+  const onAbandonCancel = () => {
+    setPendingAbandonAction(null);
+  };
+
+  const runGoogle = () =>
     runGoogleSignIn({
       setSubmitError,
       setIsGoogleSubmitting,
@@ -85,7 +130,16 @@ export function SignInForm() {
       errorFallback: t("signIn.googleError"),
     });
 
-  const onAppleSubmit = () =>
+  const onGoogleSubmit = async () => {
+    // The provider button shows pending during the content check so a slow
+    // fetch doesn't read as a dead button.
+    setIsGoogleSubmitting(true);
+    const intercepted = await interceptGuestAbandon(runGoogle);
+    setIsGoogleSubmitting(false);
+    if (!intercepted) await runGoogle();
+  };
+
+  const runApple = () =>
     runAppleSignIn({
       setSubmitError,
       setIsAppleSubmitting,
@@ -94,11 +148,15 @@ export function SignInForm() {
       errorFallback: t("apple.error"),
     });
 
-  const onSubmit = handleSubmit(async ({ email, password }) => {
+  const onAppleSubmit = async () => {
+    setIsAppleSubmitting(true);
+    const intercepted = await interceptGuestAbandon(runApple);
+    setIsAppleSubmitting(false);
+    if (!intercepted) await runApple();
+  };
+
+  const performPasswordSignIn = async ({ email, password }: SignInSchema) => {
     try {
-      setSubmitError("");
-      setIsEmailNotConfirmed(false);
-      setResendStatus("idle");
       await signInWithPassword(email, password);
       recordSuccess();
       router.replace("/(app)");
@@ -124,6 +182,14 @@ export function SignInForm() {
         setSubmitError(t("signIn.error"));
       }
     }
+  };
+
+  const onSubmit = handleSubmit(async (values) => {
+    setSubmitError("");
+    setIsEmailNotConfirmed(false);
+    setResendStatus("idle");
+    if (await interceptGuestAbandon(() => performPasswordSignIn(values))) return;
+    await performPasswordSignIn(values);
   });
 
   const onResend = async () => {
@@ -284,6 +350,14 @@ export function SignInForm() {
             <Text>{t("signIn.signUpLink")}</Text>
           </Button>
         </View>
+
+        <GuestAbandonDialog
+          visible={pendingAbandonAction !== null}
+          isPending={isAbandonPending}
+          confirmLabel={t("guestAbandon.confirmSignIn")}
+          onCancel={onAbandonCancel}
+          onConfirm={() => void onAbandonConfirm()}
+        />
       </CardContent>
     </Card>
   );

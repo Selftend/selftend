@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ActivityIndicator, Modal, Platform, View } from "react-native";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -22,6 +23,17 @@ interface ConfirmDialogProps {
   onCancel: () => void;
   onConfirm: () => void;
   destructive?: boolean;
+  /**
+   * Holds Cancel and confirm without the confirm spinner `isPending` implies -
+   * for a caller whose extra action (below) is the thing in flight.
+   */
+  disabled?: boolean;
+  /**
+   * An optional aside rendered between the error slot and the button pair -
+   * e.g. the abandon dialog's in-place export (#1444). An aside, not an
+   * answer: whatever renders here must neither close the dialog nor decide it.
+   */
+  children?: ReactNode;
 }
 
 export function ConfirmDialog({
@@ -35,6 +47,8 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
   destructive = true,
+  disabled = false,
+  children,
 }: ConfirmDialogProps) {
   const reduceMotionEnabled = useReduceMotionEnabled();
 
@@ -94,11 +108,12 @@ export function ConfirmDialog({
                   {error}
                 </Text>
               ) : null}
-              <Button disabled={isPending} onPress={onCancel} variant="secondary">
+              {children}
+              <Button disabled={isPending || disabled} onPress={onCancel} variant="secondary">
                 <Text>{cancelLabel}</Text>
               </Button>
               <Button
-                disabled={isPending}
+                disabled={isPending || disabled}
                 onPress={onConfirm}
                 testID="confirm-dialog-confirm"
                 variant={destructive ? "destructive" : "default"}

@@ -22,7 +22,13 @@ export function useExportData() {
   const exportMutation = useExportUserData();
   const showToast = useToastStore((state) => state.showToast);
 
-  const exportData = async () => {
+  /**
+   * Returns whether the export was delivered. The settings row ignores this
+   * (the toast is its feedback), but the warn-and-abandon dialog (#1444) sits
+   * above the toast layer in a Modal, so it needs the outcome to show an
+   * inline confirmation the person can actually see.
+   */
+  const exportData = async (): Promise<boolean> => {
     try {
       const data = await exportMutation.mutateAsync();
       const json = serializeExport(data);
@@ -53,6 +59,7 @@ export function useExportData() {
         description: t("account.exported"),
         tone: "success",
       });
+      return true;
     } catch {
       showToast({
         // Not `feedback.problem` ("Something did not save"): an export saves nothing,
@@ -61,6 +68,7 @@ export function useExportData() {
         description: t("account.exportError"),
         tone: "error",
       });
+      return false;
     }
   };
 
