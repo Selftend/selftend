@@ -109,6 +109,16 @@ export function deriveCbtHomeView({
   // the framework, review. The first three hide themselves; the last two always
   // render, which is why a user with nothing logged still sees the rule land on
   // the framework rather than floating above it.
+  //
+  // ⚠️ This array's order MUST match the JSX order in `cbt-home-screen.tsx`, and
+  // nothing in the type system says so. What catches a mismatch is that screen's
+  // own block-order test: reordering two blocks in the JSX without reordering
+  // them here fails it, which was verified by doing exactly that.
+  //
+  // The programme card and the slogan card are deliberately absent. They sit
+  // above the first ruled block but are CARDS - they carry their own border and
+  // their own spacing, so they neither draw a rule nor make the block beneath
+  // them draw one.
   const [goalsRuled, recordsRuled, insightsRuled, frameworkRuled, reviewRuled] = deriveSectionRules(
     [activeGoals.length > 0, recentRecords.length > 0, hasInsights, true, true],
   );

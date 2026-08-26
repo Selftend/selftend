@@ -96,9 +96,11 @@ function PillarCardRoot({
             </Text>
           </View>
         </View>
-        {/* The tools are hairline rows, so the wrapper contributes no gap of its
-            own - the rule between two rows is the separation. */}
-        {children ? <View className="mt-4 flex-row flex-wrap">{children}</View> : null}
+        {/* No VERTICAL gap: the tools are hairline rows and the rule between two
+            of them is the separation. The horizontal one stays - at `md` the
+            rows sit two abreast, and without a gutter the left tool's
+            description runs straight into the right tool's icon tile. */}
+        {children ? <View className="mt-4 flex-row flex-wrap md:gap-x-5">{children}</View> : null}
       </Card>
     </PillarContext.Provider>
   );
@@ -119,7 +121,9 @@ function PillarTool({ toolKey, icon, name, desc }: PillarToolProps) {
     <Pressable
       accessibilityRole="button"
       onPress={() => onToolPress?.(toolKey)}
-      className="w-full md:w-1/2 flex-row items-center gap-3 border-t border-border py-3 active:bg-accent/40"
+      // Half MINUS half the gutter, so two rows plus the gap still fit one line
+      // - a bare `md:w-1/2` beside a gap overflows and wraps back to one column.
+      className="w-full md:w-[calc(50%-10px)] flex-row items-center gap-3 border-t border-border py-3 active:bg-accent/40"
     >
       <View
         accessibilityElementsHidden

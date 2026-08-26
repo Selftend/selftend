@@ -508,6 +508,21 @@ describe("CbtHomeScreen layout (#1386)", () => {
   });
 
   /**
+   * ⚠️ The one exception, asserted rather than argued: the framework heading is
+   * a real heading at level 2, because it INTRODUCES the level-3 sections rather
+   * than being one. Flattening it would leave the page with no outline. Pinned
+   * so the exception cannot be quietly flattened, nor quietly lose its role.
+   */
+  it("keeps the framework heading a real heading, one level above the sections", () => {
+    fillTheScreen();
+    renderWithProviders(<CbtHomeScreen />);
+
+    const framework = screen.getByText(/framework/);
+    expect(framework.props.role ?? framework.props.accessibilityRole).toBe("heading");
+    expect(Number(framework.props["aria-level"])).toBe(2);
+  });
+
+  /**
    * ☠️ The hairline rule is a runtime fact: the blocks above the first section
    * are conditional. A user with nothing logged must not meet a stray rule that
    * reads as an underline for the header.
@@ -529,18 +544,19 @@ describe("CbtHomeScreen layout (#1386)", () => {
     expect(screen.queryByText("Active goals")).toBeNull();
     expect(screen.queryByText("Insights")).toBeNull();
 
-    // Only Review renders a `Section` here, against four when the screen is
-    // full - which is what makes "the first section" a runtime fact. Whether
-    // each one draws its rule is `deriveSectionRules`' contract, asserted
-    // directly in `derive-cbt-home-view.test.ts`; a className never becomes a
-    // style a rendered node exposes, so it cannot be read back here.
-    expect(screen.getAllByTestId("section")).toHaveLength(1);
+    // Only the framework and Review render a `Section` here, against five when
+    // the screen is full - which is what makes "the first section" a runtime
+    // fact rather than a source position. Whether each one draws its rule is
+    // `deriveSectionRules`' contract, asserted directly in
+    // `derive-cbt-home-view.test.ts`; a className never becomes a style a
+    // rendered node exposes, so it cannot be read back here.
+    expect(screen.getAllByTestId("section")).toHaveLength(2);
   });
 
   it("renders one section per visible block once the screen is full", () => {
     fillTheScreen();
     renderWithProviders(<CbtHomeScreen />);
 
-    expect(screen.getAllByTestId("section")).toHaveLength(4);
+    expect(screen.getAllByTestId("section")).toHaveLength(5);
   });
 });

@@ -8,7 +8,6 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
-import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
@@ -100,7 +99,7 @@ export default function CbtHomeScreen() {
           {/* No column gap: the hairline blocks below carry their own `py-6`, so
               a gap here would double every gutter on the page. The blocks that
               are cards rather than sections space themselves instead. */}
-          <View className={cn(HOME_COLUMN)}>
+          <View className={HOME_COLUMN}>
             <ModuleHomeHeader
               addWidgetCategory="cbt"
               title={t("fullTitle")}

@@ -58,6 +58,28 @@ describe("ThoughtRecordRow", () => {
     expect(screen.getByText("Untitled thought record")).toBeTruthy();
   });
 
+  /**
+   * ⚠️ A deliberate change to the history screen's shipped chain, pinned so it
+   * is a decision rather than a drift: with nothing flagged it used to take the
+   * FIRST thought and now takes the highest-rated one, which is what the form,
+   * the completion screen and the detail screen already show for that record.
+   */
+  it("falls back to the highest-rated thought when none is flagged hot", () => {
+    renderWithProviders(
+      <ThoughtRecordRow
+        record={record({
+          nats: [
+            nat({ text: "mild one", beliefRating: 20 }),
+            nat({ text: "the loud one", beliefRating: 90 }),
+          ],
+        })}
+        onPress={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("the loud one")).toBeTruthy();
+  });
+
   it("renders the belief pair when both numbers are present", () => {
     renderWithProviders(
       <ThoughtRecordRow
