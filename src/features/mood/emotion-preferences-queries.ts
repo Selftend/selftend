@@ -109,12 +109,33 @@ function mergeRowIntoList(
 // Mutations
 // ---------------------------------------------------------------------------
 
+/**
+ * ☠️ Every mutation below opts out of the global save-failed toast, and none of them
+ * may be given it back (#1335, spec §10).
+ *
+ * The only surface that calls them is `ManageEmotionsModal`, an opaque `pageSheet` that
+ * stays OPEN across all four writes. On Android there is no mechanism that can lift a
+ * toast over a native modal - `FullWindowOverlay` is iOS-only, and putting the toast in
+ * its own Android `Modal` would block every touch below it, which the inert-body rule
+ * disqualifies. A toast raised from here is therefore raised where nobody can see it.
+ *
+ * The modal renders the failure inline instead, off the `onError` each caller passes to
+ * `mutate`. `emotion-preferences-queries.test.tsx` holds the proof, with a control that
+ * keeps the absence assertions honest.
+ *
+ * ⚠️ That `onError` must be handed over by a component that OUTLIVES the write.
+ * `MutationObserver` gates every mutate-level callback on `hasListeners()`, so one passed
+ * from a view that unmounts on submit is dropped - and with the toast suppressed here,
+ * the write would then fail in total silence. See `ManageEmotionsModal`.
+ */
 export function useUpsertEmotionPreference(userId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (variables: UpsertEmotionPreferenceInput) =>
       upsertEmotionPreference(userId!, variables),
+
+    meta: { suppressGlobalErrorToast: true }, // the modal shows this failure inline
 
     onMutate: async (variables) => {
       if (!userId) return;
@@ -151,6 +172,8 @@ export function useReorderEmotions(userId: string | null) {
 
   return useMutation({
     mutationFn: (orderedIds: string[]) => setEmotionOrder(userId!, orderedIds),
+
+    meta: { suppressGlobalErrorToast: true }, // the modal shows this failure inline
 
     onMutate: async (orderedIds) => {
       if (!userId) return;
@@ -223,6 +246,8 @@ export function useRemoveEmotion(userId: string | null) {
       await upsertEmotionPreference(userId!, { emotionId, removed: true });
     },
 
+    meta: { suppressGlobalErrorToast: true }, // the modal shows this failure inline
+
     onMutate: async ({ emotionId }) => {
       if (!userId) return;
       const key = emotionPrefKeys.list(userId);
@@ -260,6 +285,8 @@ export function useAddCustomEmotion(userId: string | null) {
         position: variables.position,
         isCustom: true,
       }),
+
+    meta: { suppressGlobalErrorToast: true }, // the modal shows this failure inline
 
     onMutate: async (variables) => {
       if (!userId) return;

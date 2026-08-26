@@ -5,7 +5,7 @@
  * Turns a raw ElevenLabs master into the finished clip the app ships, in the
  * order #1138 fixed:
  *
- *   decode -> resample to 44.1 kHz -> downmix -> seamless() fold (beds only)
+ *   decode -> resample to 44.1 kHz -> downmix -> seamless() fold (only when asked)
  *          -> loudness-normalise -> true-peak limit -> encode AAC
  *
  * Like `catalog.mjs`, this script decides nothing. Every number it applies comes
@@ -33,6 +33,7 @@ import {
   OUTPUT_SAMPLE_RATE,
   TRUE_PEAK_CEILING_DBTP,
   AAC_ENCODER,
+  BED_FOLD_SECONDS,
 } from "./catalog.mjs";
 
 /**
@@ -46,6 +47,34 @@ import {
  */
 const LUFS_TOLERANCE = 1.0;
 const DBTP_EPSILON = 0.1;
+
+/**
+ * How much silence may sit in front of the FINISHED file, in milliseconds.
+ *
+ * ☠️ #1134 calls zero leading silence a HARD rule and #1210 makes it acceptance
+ * check number one — and until now nothing in this pipeline measured it.
+ * `edgeSilence` existed behind `postprocess edges <file>`, a separate command
+ * aimed at a file by hand, so the command that produces what the app ships could
+ * report PASS on a clip that starts late.
+ *
+ * ⚠️ It is in practice a VOICE-clip rule. #1138 measured the shipped set and only
+ * the four `guide_*` files carry any lead at all — 36.2 / 34.1 / 15.0 / 3.2 ms —
+ * while every bed, texture and bell measures 0.0. It matters because every trigger
+ * in the app is *already* up to 250 ms late (`TICK_MS` polling, #1134), so silence
+ * in the file adds to a lateness the user can already hear.
+ *
+ * The number is bracketed by two measurements, not chosen by feel. Above: #1138
+ * round-tripped AAC at **+8 samples, 0.18 ms**, so a tighter limit would fail every
+ * file this pipeline produces. Below: the smallest real lead in the shipped set is
+ * `guide_hold`'s **3.2 ms**, so a looser one waves the actual defect through. It
+ * also has to catch the 25.06 ms start_time #1138 measured on MP3, which is #1210's
+ * "confirm ffmpeg strips the encoder delay" case.
+ *
+ * ⚠️ The TAIL is measured and printed but never gated. A bell is a long smooth
+ * decay "fading continuously to silence" by #1139's own brief — gating its tail
+ * would fail the two clips whose entire character is a tail, for having one.
+ */
+export const LEAD_SILENCE_LIMIT_MS = 1.0;
 
 /**
  * Seam-gate thresholds, on the five beds only (#1137). Both are set from
@@ -128,9 +157,9 @@ export async function assertFfmpeg() {
  * processing input". Raw input needs its format declared before `-i`, and the
  * parameters have to come from the catalog because the bytes carry none.
  */
-function inputArgs(file) {
+function inputArgs(file, pcm = SFX_MASTER_PCM) {
   if (!file.toLowerCase().endsWith(".pcm")) return ["-i", file];
-  const { codec, sampleRate, channels } = SFX_MASTER_PCM;
+  const { codec, sampleRate, channels } = pcm;
   return ["-f", codec, "-ar", String(sampleRate), "-ac", String(channels), "-i", file];
 }
 
@@ -188,9 +217,17 @@ function writeWavBuffer(samples, channels, sampleRate) {
   return Buffer.concat([header, Buffer.from(samples.buffer, samples.byteOffset, bytes)]);
 }
 
-export async function decodeToFloatWav(input, out, { channels, sampleRate }) {
+/**
+ * ⚠️ `inputPcm` declares how the RAW BYTES ARE READ; `channels`/`sampleRate`
+ * declare what comes out. They are usually the same and the default keeps them
+ * so — but #1347 has to read one headerless buffer *both* ways (as the stereo
+ * #1159 established, and as the mono the byte count also admits), and a downmix
+ * of the stereo reading is a different signal from the mono reading of the same
+ * bytes. Only an input-side override can express that.
+ */
+export async function decodeToFloatWav(input, out, { channels, sampleRate, inputPcm }) {
   await ffmpeg([
-    ...inputArgs(input),
+    ...inputArgs(input, inputPcm ?? SFX_MASTER_PCM),
     "-ac",
     String(channels),
     "-ar",
@@ -252,6 +289,60 @@ export function fold(samples, channels, foldFrames) {
   return out;
 }
 
+/**
+ * Whether this clip gets folded, and why — the decision, separated from the doing.
+ *
+ * ☠️ THE FOLD STOPPED BEING THE BED PATH ON #1347, AND DID NOT STOP EXISTING.
+ * It used to run for any clip whose spec carried a `foldSeconds`, which was every
+ * bed and only beds: always or never, decided by the catalog. Then `loop: true`
+ * turned out to be accepted with lossless PCM and to genuinely loop — `brown-noise`
+ * at 30s scored a 0.67x wrap step against its own paired non-looping control's
+ * 14.34x, four times better than the folded path's best-ever 2.85x — so a natively
+ * looping bed needs no fold at all, and folding one would cost 0.4s of an
+ * unrepeatable master and a -0.20..-4.87 dB dip at every loop point for nothing.
+ *
+ * ⚠️ BUT THE TONAL CASE IS NOT CLEARED. All three `night` draws landed under
+ * #1320's usable gate, and of the two carrying signal the join was fine while the
+ * head/tail energy ratio FAILED — loop mode gives a clean join without
+ * guaranteeing one level end to end. So the seam gate still runs on every bed
+ * however it was rendered, and the fold survives as what a bed that fails it can
+ * be put through: `postprocess run <in> --clip <bed> --fold`.
+ *
+ * Three states, and they have to stay coherent:
+ *
+ *   bed, rendered looping   -> no fold, unless asked (the seam-gate fallback)
+ *   bed, rendered non-looping -> fold, because a raw 30s render does not loop
+ *   anything else           -> never, and asking is an error rather than a no-op
+ *
+ * The middle row is not dead code: it is what this pipeline does if `CLASS_LOOP.beds`
+ * is ever put back to false, and without it that flip would ship the raw 14.34x cut.
+ */
+export function foldPlan(spec, { fold = false } = {}) {
+  if (spec.foldSeconds == null) {
+    // ☠️ An ignored `--fold` would report a fold that never ran. It is worse than
+    // useless on these classes — the fold trims 0.4s off the end, which on a 2s
+    // temple block is a fifth of its decay — so an operator who typed it gets an
+    // error naming the class, not silence.
+    if (fold) {
+      throw new Error(
+        `${spec.klass} are never folded — only beds have a seam to gate, and the fold ` +
+          `trims ${BED_FOLD_SECONDS}s off the end. Drop --fold.`,
+      );
+    }
+    return { foldSeconds: null, note: "not a bed, no fold" };
+  }
+  if (fold) {
+    return {
+      foldSeconds: spec.foldSeconds,
+      note: `${spec.foldSeconds}s fold (seam-gate fallback)`,
+    };
+  }
+  if (spec.loop) {
+    return { foldSeconds: null, note: "rendered loop: true, no fold (#1347)" };
+  }
+  return { foldSeconds: spec.foldSeconds, note: `${spec.foldSeconds}s fold (non-looping render)` };
+}
+
 // ---------------------------------------------------------------------------
 // measurement
 // ---------------------------------------------------------------------------
@@ -277,6 +368,61 @@ export async function measure(file) {
     dbtp: Number(parsed.input_tp),
     lra: Number(parsed.input_lra),
     thresh: Number(parsed.input_thresh),
+  };
+}
+
+/**
+ * The absolute floor below which a frame counts as silence.
+ *
+ * Absolute rather than relative to the clip's own peak, because a master is
+ * normalised later (#1138) — "quiet" and "silent" have to be separated *before*
+ * the gain that would move them together. -60 dBFS is two orders of magnitude
+ * under the quietest lane the app ships (#1138's beds at -23 LUFS-I).
+ */
+export const SILENCE_FLOOR_DBFS = -60;
+
+/**
+ * How much silence sits at each end of a clip.
+ *
+ * ☠️ NOTHING IN THIS DIRECTORY MEASURED THIS BEFORE. #1134 made zero leading
+ * silence a HARD rule — the app's triggers are already up to 250ms late — and
+ * #1316 re-phrased it positively inside `SHARED_TAIL` rather than dropping it.
+ * But `preflight` and the take gate grade LEVEL, and a clip with a 300ms lead
+ * passes a level bar comfortably: the one rule with the word "hard" on it was the
+ * one rule with no instrument. Added for #1347, where the open question is
+ * whether a natively looping render pads its own head.
+ */
+export function edgeSilence(samples, channels, sampleRate, floorDbfs = SILENCE_FLOOR_DBFS) {
+  const frames = samples.length / channels;
+  const floor = Math.pow(10, floorDbfs / 20);
+  const ms = (count) => (count / sampleRate) * 1000;
+
+  let first = -1;
+  let last = -1;
+  let peak = 0;
+  for (let f = 0; f < frames; f++) {
+    let level = 0;
+    for (let c = 0; c < channels; c++) {
+      const magnitude = Math.abs(samples[f * channels + c]);
+      if (magnitude > level) level = magnitude;
+    }
+    if (level > peak) peak = level;
+    if (level >= floor) {
+      if (first === -1) first = f;
+      last = f;
+    }
+  }
+
+  const peakDbfs = 20 * Math.log10(peak || Number.EPSILON);
+  if (first === -1) {
+    return { silent: true, leadMs: ms(frames), tailMs: ms(frames), peakDbfs, floorDbfs };
+  }
+  return {
+    silent: false,
+    leadMs: ms(first),
+    tailMs: ms(frames - 1 - last),
+    peakDbfs,
+    floorDbfs,
   };
 }
 
@@ -384,8 +530,51 @@ async function seamCheckFile(file) {
 /** Stage progress on stderr, so a long run shows where it is rather than sitting mute. */
 const step = (msg) => process.stderr.write(`   · ${msg}\n`);
 
-async function postprocess(input, clipId, outPath) {
+/**
+ * The one gain that "normalise, then limit" actually means here.
+ *
+ * Scaling by G dB moves integrated loudness and true peak alike, so the ceiling
+ * is arithmetic rather than a limiter and no peak-squashing ever touches the
+ * audio. Whichever of the two bounds is lower wins; when it is the ceiling, the
+ * caller says so rather than reporting a loudness miss that looks like a fault.
+ *
+ * ☠️ NON-FINITE IN, CLEAR ERROR OUT. A take with no signal makes loudnorm print
+ * `-inf`, which `Number()` turns into NaN — and NaN propagates silently through
+ * this arithmetic into `volume=NaNdB`, where ffmpeg dies with "Invalid value NaN
+ * for volume" behind a wall of filter-graph errors naming neither the file nor
+ * the cause. #1320 met the same non-finite return in `classifyTake` and
+ * classified it deliberately; this is the other half of that trap. Found on
+ * `wind_exhale-c01.pcm`, a dud of the failed Round B: -69.76 LUFS-I as stereo,
+ * then under loudnorm's -70 LUFS absolute gate once downmixed to the mono a
+ * texture ships as — so the failure appears only after the downmix, which is why
+ * measuring the raw master by hand shows a finite number and suggests nothing is
+ * wrong.
+ */
+export function normalisationGain(pre, spec, label = "the take") {
+  if (!Number.isFinite(pre.lufs) || !Number.isFinite(pre.dbtp)) {
+    throw new Error(
+      `${label} has no measurable signal (loudness ${pre.lufs}, true peak ${pre.dbtp}). ` +
+        `The take is empty or below loudnorm's -70 LUFS gate; it cannot be normalised. ` +
+        `Re-render or pick another take.`,
+    );
+  }
+  const wantedGain = spec.lufs - pre.lufs;
+  const headroomGain = TRUE_PEAK_CEILING_DBTP - pre.dbtp;
+  const gain = Math.min(wantedGain, headroomGain);
+  return { gain, ceilingBound: gain < wantedGain - 1e-9 };
+}
+
+/**
+ * Exported so the audition (#1346) previews candidates through the real chain
+ * rather than a lookalike. A preview the owner picks a winner from has to be the
+ * same file the app would ship, or the pick is made on a sound that never exists.
+ */
+export async function postprocess(input, clipId, outPath, { fold: foldRequested = false } = {}) {
   const spec = outputSpecFor(clipId);
+  // ☠️ Before the first ffmpeg call, not inside the chain: `--fold` on a bell is a
+  // refusal, and a refusal that arrives after three minutes of decoding is a
+  // refusal nobody reads.
+  const plan = foldPlan(spec, { fold: foldRequested });
   const dir = await mkdtemp(join(tmpdir(), "postproc-"));
 
   try {
@@ -397,17 +586,17 @@ async function postprocess(input, clipId, outPath) {
       sampleRate: OUTPUT_SAMPLE_RATE,
     });
 
-    // 3. fold - beds only.
+    // 3. fold - beds only, and since #1359 only when `foldPlan` says so.
     let working = decodedPath;
-    let foldNote = "not a bed, no fold";
-    if (spec.foldSeconds) {
-      const foldFrames = Math.round(spec.foldSeconds * OUTPUT_SAMPLE_RATE);
+    let foldNote = plan.note;
+    if (plan.foldSeconds) {
+      const foldFrames = Math.round(plan.foldSeconds * OUTPUT_SAMPLE_RATE);
       const folded = fold(decoded.samples, decoded.channels, foldFrames);
       working = join(dir, "folded.wav");
       await writeFile(working, writeWavBuffer(folded, decoded.channels, decoded.sampleRate));
       const before = decoded.samples.length / decoded.channels / decoded.sampleRate;
       const after = folded.length / decoded.channels / decoded.sampleRate;
-      foldNote = `${spec.foldSeconds}s fold, ${before.toFixed(2)}s -> ${after.toFixed(2)}s`;
+      foldNote = `${plan.note}, ${before.toFixed(2)}s -> ${after.toFixed(2)}s`;
     }
 
     // 4. loudness-normalise, then true-peak limit - as one explicit constant gain.
@@ -425,10 +614,7 @@ async function postprocess(input, clipId, outPath) {
     // and no peak-squashing ever touches the audio.
     step("measure source");
     const pre = await measure(working);
-    const wantedGain = spec.lufs - pre.lufs;
-    const headroomGain = TRUE_PEAK_CEILING_DBTP - pre.dbtp;
-    const gain = Math.min(wantedGain, headroomGain);
-    const ceilingBound = gain < wantedGain - 1e-9;
+    const { gain, ceilingBound } = normalisationGain(pre, spec, basename(input));
 
     const normalised = join(dir, "normalised.wav");
     await ffmpeg([
@@ -466,18 +652,99 @@ async function postprocess(input, clipId, outPath) {
     step("verify finished file");
     const post = await measure(outPath);
     const size = (await stat(outPath)).size;
+
+    // ☠️ #1134's ONE HARD RULE, measured here for the first time. `edgeSilence`
+    // has existed since #1347 but only behind `postprocess edges <file>` — a
+    // separate command aimed at a file by hand — so `run` could report PASS on a
+    // clip that starts late, on the one class that has ever started late (#1138:
+    // the four `guide_*` files carry 3.2-36.2 ms and nothing else carries any).
+    //
+    // ⚠️ On the FINISHED file, not the master. Encoding is where a delay would be
+    // introduced — #1210's own wording is "confirm ffmpeg strips the encoder delay"
+    // — so measuring the input would answer a question nobody asked.
+    step("lead-in check");
+    const finishedPath = join(dir, "finished.wav");
+    const finished = await decodeToFloatWav(outPath, finishedPath, {
+      channels: spec.channels,
+      sampleRate: OUTPUT_SAMPLE_RATE,
+    });
+    const edges = edgeSilence(finished.samples, finished.channels, finished.sampleRate);
+    // ⚠️ #1136 sets `introMs` from the MEASURED duration of the chosen guide_intro,
+    // never from an estimate — and this is the only place that number exists.
+    const durationSeconds = finished.samples.length / finished.channels / finished.sampleRate;
+
     if (spec.klass === "beds") step("seam gate");
     const seam = spec.klass === "beds" ? await seamCheckFile(outPath) : null;
 
-    return { spec, pre, post, size, seam, foldNote, gain, ceilingBound };
+    return {
+      spec,
+      pre,
+      post,
+      size,
+      seam,
+      edges,
+      durationSeconds,
+      foldNote,
+      gain,
+      ceilingBound,
+      folded: plan.foldSeconds != null,
+    };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
 }
 
-function report(clipId, result) {
-  const { spec, pre, post, size, seam, foldNote, gain, ceilingBound } = result;
+/**
+ * Tile a finished loop N times, for the listen #1137's seam gate asks for (#1346).
+ *
+ * ☠️ THE TILING HAPPENS ON DECODED PCM, NOT ON THE ENCODED FILE. Looping the
+ * `.m4a` would splice AAC frames, putting the codec's own priming gap at every
+ * join — inventing precisely the artifact the listen exists to detect, and
+ * failing a bed for a defect the app would never play. #1138 established that no
+ * platform loops by buffer wrap anyway (iOS duplicates an `AVPlayerItem`, Android
+ * sets `REPEAT_MODE_ONE`, web sets `HTMLAudioElement.loop`), so the honest thing
+ * to put in front of an ear is the file's own seam, sample-exact and once-encoded.
+ * That is also the join `seamMetrics` measures, so the ear and the ratio are
+ * judging the same boundary.
+ */
+export async function repeatLoop(input, outPath, times, clipId) {
+  if (!Number.isInteger(times) || times < 2) {
+    throw new Error(`repeat count must be an integer of 2 or more, got ${times}`);
+  }
+  const spec = outputSpecFor(clipId);
+  const dir = await mkdtemp(join(tmpdir(), "loop-"));
+  try {
+    const wav = join(dir, "decoded.wav");
+    await ffmpeg([...inputArgs(input), "-c:a", "pcm_f32le", "-f", "wav", wav]);
+    await mkdir(dirname(outPath), { recursive: true });
+    await ffmpeg([
+      "-stream_loop",
+      String(times - 1),
+      "-i",
+      wav,
+      "-c:a",
+      AAC_ENCODER,
+      "-b:a",
+      spec.bitrate,
+      "-ar",
+      String(OUTPUT_SAMPLE_RATE),
+      "-ac",
+      String(spec.channels),
+      "-movflags",
+      "+faststart",
+      outPath,
+    ]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+export function report(clipId, result) {
+  const { spec, pre, post, size, seam, edges, durationSeconds, foldNote, gain, ceilingBound } =
+    result;
   const failures = [];
+  /** Things to try next. Printed, but never counted against the file. */
+  const hints = [];
 
   const lufsOff = Math.abs(post.lufs - spec.lufs);
   if (ceilingBound) {
@@ -494,6 +761,31 @@ function report(clipId, result) {
   if (post.dbtp > TRUE_PEAK_CEILING_DBTP + DBTP_EPSILON) {
     failures.push(`true peak ${post.dbtp} dBTP is above the ${TRUE_PEAK_CEILING_DBTP} ceiling`);
   }
+
+  // ☠️ A rule that was not measured is not a rule that passed. Reporting PASS on a
+  // result carrying no edges would restore exactly the silence this check removes.
+  if (!edges) {
+    failures.push(
+      "leading silence was not measured, so #1134's zero-lead rule is unverified for this file",
+    );
+  } else if (edges.leadMs > LEAD_SILENCE_LIMIT_MS) {
+    failures.push(
+      `starts ${edges.leadMs.toFixed(2)} ms late (limit ${LEAD_SILENCE_LIMIT_MS} ms). ` +
+        "#1134 makes zero leading silence a hard rule: every trigger in the app is " +
+        "already up to 250 ms late, and this adds to it.",
+    );
+    // ⚠️ The remedy is class-specific and it is not the same remedy. Text to
+    // Speech takes a seed, so a late voice cue is genuinely re-drawable for
+    // nothing. Sound Effects has none — naming a seed there would point at a path
+    // that does not exist, which is the whole reason the masters are the source.
+    hints.push(
+      spec.klass === "voice"
+        ? "voice is the one class that can be re-drawn: audition the other candidate, " +
+            "or re-render this cue with a different seed (TTS_CANDIDATE_SEEDS)."
+        : "this take cannot be re-drawn in matching style — trim the head of the master " +
+            "before re-running, or choose another candidate.",
+    );
+  }
   if (seam) {
     if (seam.wrapStepRatio > SEAM_LIMITS.wrapStepRatio) {
       failures.push(
@@ -505,6 +797,21 @@ function report(clipId, result) {
       failures.push(
         `seam: head/tail energy step is ${seam.energyDeltaRatio.toFixed(1)}x this clip's natural ` +
           `window-to-window spread (limit ${SEAM_LIMITS.energyDeltaRatio})`,
+      );
+    }
+    // ⚠️ The fallback #1347 kept the fold for. A bed that fails the gate having
+    // been rendered `loop: true` has one more thing to try before it costs a
+    // re-render nobody can reproduce in matching style.
+    // ☠️ It is a HINT, not a failure — it goes in `hints`, never in `failures`.
+    // Pushing guidance into `failures` prints it as "FAIL:", which labels advice
+    // as a fault and pads the count of things actually wrong with the file.
+    // ☠️ On TONAL material the fold makes the seam WORSE, not better (#1296:
+    // `night` scored 13.85x folded against 5.29x hard-cut), so this is an offer to
+    // measure, never an instruction to ship.
+    if (failures.some((failure) => failure.startsWith("seam:")) && !result.folded) {
+      hints.push(
+        "the fold is the fallback: re-run with --fold and compare. On tonal material " +
+          "it makes the seam worse, so keep whichever measures better and re-render if neither passes.",
       );
     }
   }
@@ -521,6 +828,15 @@ function report(clipId, result) {
     `   true peak ${pre.dbtp} -> ${post.dbtp} dBTP     (ceiling ${TRUE_PEAK_CEILING_DBTP})`,
   );
   console.log(`   size      ${(size / 1024).toFixed(1)} KB`);
+  if (edges) {
+    // ⚠️ The tail is printed and never gated — a bell decaying "continuously to
+    // silence" (#1139) has one by design. It is here because a texture that quietly
+    // ends early is invisible any other way.
+    console.log(
+      `   edges     lead ${edges.leadMs.toFixed(2)} ms · tail ${edges.tailMs.toFixed(2)} ms` +
+        (Number.isFinite(durationSeconds) ? `   (${durationSeconds.toFixed(3)}s)` : ""),
+    );
+  }
   if (seam) {
     console.log(
       `   seam      wrap step ${seam.wrapStepRatio.toFixed(2)}x median · ` +
@@ -528,6 +844,7 @@ function report(clipId, result) {
     );
   }
   for (const failure of failures) console.log(`   FAIL: ${failure}`);
+  for (const hint of hints) console.log(`   next: ${hint}`);
   if (!failures.length) console.log("   PASS");
   return failures.length === 0;
 }
@@ -543,28 +860,43 @@ function flag(name, fallback = null) {
 
 const USAGE = `
 Usage:
-  node scripts/audio/postprocess.mjs run <input> --clip <id> [--out <file.m4a>]
+  node scripts/audio/postprocess.mjs run <input> --clip <id> [--out <file.m4a>] [--fold]
   node scripts/audio/postprocess.mjs measure <file>
   node scripts/audio/postprocess.mjs seamcheck <file>
+  node scripts/audio/postprocess.mjs edges <file>
 
 <id> is a clip id from catalog.mjs - a bell, bed, texture or guide_* cue.
+
+--fold is the seam-gate FALLBACK, not the path. Beds render loop: true and ship
+unfolded at the full 30.0s (#1347); reach for --fold only when a bed fails its seam
+gate, and compare the two - on tonal material the fold makes the seam worse.
+
 Requires ffmpeg on PATH (#1138).
 `.trim();
 
-const command = process.argv[2];
-const target = process.argv[3];
+/**
+ * ☠️ Wrapped in `main()`, not run at the top level.
+ *
+ * A bare `await postprocess(...)` here is a top-level `await`, which babel's CJS
+ * transform cannot compile — it made this module unimportable from jest, which is
+ * why `test/audio-render-reroll.test.ts` has to mock it out wholesale to test
+ * `render`. #1320 applied the same fix to `render.mjs` for the same reason; this
+ * is the other half of it, and it is what lets `normalisationGain` be tested at
+ * all.
+ */
+async function main() {
+  const command = process.argv[2];
+  const target = process.argv[3];
 
-// Only run the CLI when invoked directly, so `fold` and `seamMetrics` can be
-// imported and measured by calibrate-seam.mjs without this file executing.
-const isMain = import.meta.url === pathToFileURL(process.argv[1] ?? "").href;
-
-if (isMain)
   try {
     if (command === "run") {
       const clipId = flag("clip");
       if (!target || !clipId) throw new Error(USAGE);
       const out = flag("out", join("audio-masters", "finished", `${clipId}.m4a`));
-      const ok = report(clipId, await postprocess(target, clipId, out));
+      // Named for what it is, not `fold` — that is the module-scope function this
+      // very call reaches through `postprocess`.
+      const foldRequested = process.argv.includes("--fold");
+      const ok = report(clipId, await postprocess(target, clipId, out, { fold: foldRequested }));
       console.log(`\nwrote ${out}`);
       process.exit(ok ? 0 : 1);
     } else if (command === "measure") {
@@ -583,6 +915,22 @@ if (isMain)
           (ok ? "PASS" : "FAIL"),
       );
       process.exit(ok ? 0 : 1);
+    } else if (command === "edges") {
+      if (!target) throw new Error(USAGE);
+      const dir = await mkdtemp(join(tmpdir(), "edges-"));
+      try {
+        const wav = join(dir, "decoded.wav");
+        const { codec: _codec, ...pcm } = SFX_MASTER_PCM;
+        const decoded = await decodeToFloatWav(target, wav, pcm);
+        const edges = edgeSilence(decoded.samples, decoded.channels, decoded.sampleRate);
+        console.log(
+          `${basename(target)}: lead ${edges.leadMs.toFixed(1)} ms · tail ${edges.tailMs.toFixed(1)} ms · ` +
+            `peak ${edges.peakDbfs.toFixed(1)} dBFS (floor ${edges.floorDbfs} dBFS)` +
+            (edges.silent ? " · SILENT" : ""),
+        );
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
     } else {
       console.log(USAGE);
       process.exit(1);
@@ -591,3 +939,9 @@ if (isMain)
     console.error(err.message);
     process.exit(1);
   }
+}
+
+// Only run the CLI when invoked directly, so `fold`, `seamMetrics`,
+// `normalisationGain` and `postprocess` can be imported by calibrate-seam.mjs,
+// audition.mjs and the test suite without this file executing.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) main();

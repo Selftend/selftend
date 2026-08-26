@@ -23,6 +23,7 @@ import {
   useToggleMilestone,
   useUpdateGoalStatus,
 } from "@/src/features/goals/queries";
+import { GoalValueLine } from "@/src/features/goals/goal-value-line";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import type { GoalStatus } from "@/src/features/goals/types";
@@ -109,6 +110,14 @@ export default function GoalDetailScreen() {
               <Text className="text-xs">{t(`goals.status.${goal.status}`)}</Text>
             </View>
           </View>
+
+          {/*
+            Below the chips rather than beside them (#1291). The three chips are
+            what the goal *is*; the value is why it was set, and a fourth chip
+            reading "Courageous" next to "Health" and "Do more of" would read as a
+            third taxonomy. Nothing renders when a goal is anchored to nothing.
+          */}
+          <GoalValueLine valueKey={goal.valueKey} />
 
           {total > 0 ? (
             <View className="gap-2">

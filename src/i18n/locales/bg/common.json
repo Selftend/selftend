@@ -11,6 +11,14 @@
   "edit": "Редактирай",
   "close": "Затвори",
   "noDateSet": "Няма избрана дата",
+  "time": {
+    "hourField": "{{label}}, час",
+    "minuteField": "{{label}}, минути",
+    "meridiemField": "{{label}}, AM или PM",
+    "am": "AM",
+    "pm": "PM",
+    "reverted": "Върнато на {{time}}"
+  },
   "or": "или",
   "orContinueWithEmail": "или продължи с имейл",
   "never": "никога",
@@ -41,7 +49,7 @@
     "deleted": "Изтрито"
   },
   "toast": {
-    "dismissHint": "Затвори това съобщение"
+    "dismiss": "Отхвърли съобщението"
   },
   "safety": {
     "title": "Използвай спешна подкрепа при спешен риск",

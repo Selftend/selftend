@@ -31,7 +31,25 @@ import { writeFile, readFile, mkdir, appendFile, access } from "node:fs/promises
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { measure, assertFfmpeg } from "./postprocess.mjs";
+import {
+  measure,
+  assertFfmpeg,
+  decodeToFloatWav,
+  edgeSilence,
+  seamMetrics,
+  SEAM_LIMITS,
+} from "./postprocess.mjs";
+import { chargedCredits, costReading, sumCharged } from "./credits.mjs";
+import {
+  SFX_MAX_DURATION_SECONDS,
+  loopReturnedSeconds,
+  requestSecondsFor,
+  channelReading,
+  creditHypotheses,
+  creditVerdict,
+  describeReturn,
+  zeroCrossingsPerSecond,
+} from "./loop-probe.mjs";
 import {
   MAX_ATTEMPTS,
   SILENT_DBTP,
@@ -44,6 +62,8 @@ import {
 } from "./take-gate.mjs";
 import {
   BELLS,
+  SFX_CLIPS,
+  SFX_MASTER_PCM,
   SFX_MODEL,
   SFX_OUTPUT_FORMAT,
   TTS_MODEL,
@@ -56,6 +76,7 @@ import {
   clipsForRound,
   composePrompt,
   creditEstimate,
+  resolveVoices,
 } from "./catalog.mjs";
 
 const API = "https://api.elevenlabs.io/v1";
@@ -137,7 +158,26 @@ async function soundEffect(key, { text, durationSeconds, promptInfluence, loop, 
   return {
     buffer: Buffer.from(await response.arrayBuffer()),
     contentType: response.headers.get("content-type"),
+    headers: allHeaders(response),
   };
+}
+
+/**
+ * Every response header, or null where the caller stubbed a bare `get()`.
+ *
+ * ☠️ #1347's fourth question — is a generation billed on the seconds requested or
+ * the seconds returned? — is normally answered by reading the balance either side
+ * of the call, and the key on hand lacks `user_read` and 401s on that endpoint.
+ * Some of this API's cost accounting rides in response headers, and headers cost
+ * nothing to keep. The probe that opened #1347 recorded a byte count and threw
+ * everything else away; a week later that was the missing evidence. Keep it all.
+ */
+function allHeaders(response) {
+  try {
+    return Object.fromEntries(response.headers);
+  } catch {
+    return null;
+  }
 }
 
 async function textToSpeech(key, { voiceId, text, outputFormat, seed }) {
@@ -422,6 +462,12 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
   let generated = 0;
   let rerolled = 0;
   let recovered = 0;
+  /**
+   * What each generation was charged, in order, `null` where the response said
+   * nothing. Summed by `sumCharged`, which is the same policy the probe applies —
+   * a partial sum is never presented as a total.
+   */
+  const charges = [];
 
   for (const slot of open) {
     const { clip, prompt, candidate } = slot;
@@ -442,18 +488,26 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
       // rather than paying for them a second time.
       let buffer;
       let contentType = null;
+      let creditsCharged = null;
       let fromDisk = false;
       if (await exists(path)) {
         buffer = await readFile(path);
         fromDisk = true;
         recovered += 1;
       } else {
-        ({ buffer, contentType } = await soundEffect(key, {
+        let headers;
+        ({ buffer, contentType, headers } = await soundEffect(key, {
           text: prompt,
           durationSeconds: clip.durationSeconds,
           promptInfluence: clip.promptInfluence,
           loop: clip.loop,
         }));
+        // ☠️ What this take ACTUALLY cost, off the response. Read here and not
+        // from the balance because `/user/subscription` LAGS — it did not move at
+        // all across a 22-credit call and reconciled only later, so a delta taken
+        // around a pass would understate a spend that can never be repeated.
+        creditsCharged = chargedCredits(headers);
+        charges.push(creditsCharged);
         await writeFile(path, buffer);
         generated += 1;
         if (spent > 0) rerolled += 1;
@@ -498,9 +552,17 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
           contentType,
           derivedChannels: channels,
           channelRatio: Number(ratio.toFixed(3)),
-          // ☠️ 3.3/sec MEASURED on #1159, not the 40/sec #1134 assumed. Writing
-          // the stale figure here put a number ~12x too high into the permanent record.
+          // The QUOTE, from the catalog's rate — 11 credits/second, measured on the
+          // API (#1347). ☠️ It read 3.3 until #1359: that figure was the WEB
+          // COMPOSER's price, and it put a number 3.3x too low into a permanent
+          // record of an unrepeatable spend.
           creditsEstimate: Math.round(clip.durationSeconds * CREDITS_PER_SECOND),
+          // ☠️ What the API said this take cost, exactly, from the `character-cost`
+          // response header — so a pass's true spend is a sum of recorded facts and
+          // never arithmetic on a lagging balance. `null` for a take recovered from
+          // disk (no call was made, and `recovered` already says so) and for a
+          // response that carried no such header.
+          creditsCharged,
         })}\n`,
       );
 
@@ -521,6 +583,17 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
   console.log(
     `\n${generated} generation(s), of which ${rerolled} were re-rolls` +
       `${recovered ? `; ${recovered} take(s) recovered from disk unpaid` : ""}.`,
+  );
+  // ⚠️ Printed as a FLOOR, not a total, whenever a call came back unpriced — an
+  // understated spend on an unrepeatable pass is the one direction that misleads.
+  // The probe answers the same incompleteness by withholding its figure instead;
+  // both read it from `sumCharged`, so the difference is a presentation choice
+  // rather than two implementations that drifted.
+  const spend = sumCharged(charges);
+  console.log(
+    `credits charged: ${spend.complete ? "" : "at least "}${spend.total} ` +
+      `(from the character-cost header on ${spend.priced} of ${charges.length} call(s))` +
+      `${spend.unpriced ? `; ${spend.unpriced} carried no header` : ""}.`,
   );
   console.log(`Masters in ${runDir}`);
   console.log(
@@ -567,13 +640,15 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
  * (#1316). Negation suppresses output level in Sound Effects and it compounds:
  * the `night` prompt measured -47.4 dBFS peak with the full shared tail, -4.7
  * without it, and "No sudden events." alone cost ~17 dB. Twenty of 27 masters
- * were unusable and ~1,881 credits went with them.
+ * were unusable and ~6,270 credits went with them. ☠️ That figure read 1,881 until
+ * #1359: the pass cost 3.3x what the tooling said it did.
  *
  * A 4s take of each clip costs about a seventh of a full pass, so there is no
  * reason ever to discover this again after spending. Run it after ANY prompt
  * change.
  */
 const PREFLIGHT_SECONDS = 4;
+
 const PREFLIGHT_TAKES = 2;
 // The thresholds live in take-gate.mjs now, because `render` grades every take
 // against them too (#1320) — a prompt that clears preflight faces the same bar.
@@ -600,7 +675,12 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
 
   console.log(
     `Probing ${clips.length} prompts x ${takes} takes at ${PREFLIGHT_SECONDS}s ` +
-      `(~${Math.round(clips.length * takes * PREFLIGHT_SECONDS * CREDITS_PER_SECOND)} credits).\n`,
+      `(beds at ${loopReturnedSeconds(PREFLIGHT_SECONDS)}s — loop mode rounds up to a 0.75s multiple) ` +
+      `(~${Math.round(
+        takes *
+          CREDITS_PER_SECOND *
+          clips.reduce((total, c) => total + requestSecondsFor(c, PREFLIGHT_SECONDS), 0),
+      )} credits).\n`,
   );
   console.log(
     `Gate: usable at >= ${USABLE_DBTP} dBTP, silent below ${SILENT_DBTP} — the same bar ` +
@@ -617,7 +697,7 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
       if (!(await exists(path))) {
         const { buffer } = await soundEffect(key, {
           text: composePrompt(clip.text),
-          durationSeconds: PREFLIGHT_SECONDS,
+          durationSeconds: requestSecondsFor(clip, PREFLIGHT_SECONDS),
           promptInfluence: clip.promptInfluence,
           loop: clip.loop,
         });
@@ -681,8 +761,17 @@ function formatExtension(format) {
  * Library voice persists, so a bad take here is recoverable in a way a bad bed
  * never is.
  */
-async function renderVoices(go) {
-  const missingVoice = VOICES.filter((voice) => !voice.voiceId);
+async function renderVoices(go, voiceIdOverrides = []) {
+  // ⚠️ `--voice-id id=...` renders a SHORTLISTED voice without writing it into the
+  // catalog. #1136 requires the pick be auditioned on the shipping words rather
+  // than on a demo reel, and the only way to hear that was to edit the decisions
+  // file per trial — leaving a recorded decision behind for every trial abandoned.
+  const voices = resolveVoices(VOICES, voiceIdOverrides);
+  const trials = voices.filter(
+    (voice, index) => voice.voiceId && voice.voiceId !== VOICES[index].voiceId,
+  );
+
+  const missingVoice = voices.filter((voice) => !voice.voiceId);
   const missingText = VOICE_CUES.filter((cue) => !cue.text);
   if (missingVoice.length || missingText.length) {
     console.error(
@@ -690,21 +779,32 @@ async function renderVoices(go) {
         (missingVoice.length
           ? `  no voiceId for: ${missingVoice.map((v) => v.id).join(", ")}\n` +
             "  #1136 fixed the criteria: Voice Library only (defaults expire 2026-12-31),\n" +
-            "  a matched female/male pair, auditioned on the shipping words.\n"
+            "  a matched female/male pair, auditioned on the shipping words.\n" +
+            "  To hear a shortlist without deciding anything yet:\n" +
+            "    render-voices --voice-id guided=<id> --voice-id guided-male=<id> --go\n"
           : "") +
         (missingText.length ? `  no text for: ${missingText.map((c) => c.id).join(", ")}\n` : ""),
     );
     process.exit(1);
   }
 
-  const total = VOICES.length * VOICE_CUES.length * TTS_CANDIDATE_SEEDS.length;
+  const total = voices.length * VOICE_CUES.length * TTS_CANDIDATE_SEEDS.length;
   if (!go) {
     console.error(
-      `Refusing to spend. ${total} generations (${VOICES.length} voices x ` +
+      `Refusing to spend. ${total} generations (${voices.length} voices x ` +
         `${VOICE_CUES.length} cues x ${TTS_CANDIDATE_SEEDS.length} candidates).\n` +
         "Re-run with --go.",
     );
     process.exit(1);
+  }
+
+  if (trials.length) {
+    console.log(
+      `⚠️ Trial run: ${trials.map((v) => `${v.id}=${v.voiceId}`).join(", ")} came from\n` +
+        "   --voice-id, not from catalog.mjs. The manifest records the id actually\n" +
+        "   used, so these takes supersede themselves the moment a different voice is\n" +
+        "   written in for real — but nothing has been DECIDED by this run.\n",
+    );
   }
 
   const key = apiKey();
@@ -713,7 +813,7 @@ async function renderVoices(go) {
   await mkdir(classDir, { recursive: true });
   const manifestPath = join(runDir, "manifest.jsonl");
 
-  for (const voice of VOICES) {
+  for (const voice of voices) {
     for (const cue of VOICE_CUES) {
       for (const [index, seed] of TTS_CANDIDATE_SEEDS.entries()) {
         const candidate = index + 1;
@@ -780,10 +880,262 @@ async function renderVoices(go) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// the loop probe (#1347)
+// ---------------------------------------------------------------------------
+
+/** The live balance, or the reason it could not be read. */
+async function readSubscription(key) {
+  const response = await fetch(`${API}/user/subscription`, { headers: { "xi-api-key": key } });
+  if (!response.ok) {
+    return { ok: false, error: `${response.status} ${await response.text()}` };
+  }
+  const sub = await response.json();
+  return {
+    ok: true,
+    tier: sub.tier,
+    used: sub.character_count,
+    limit: sub.character_limit,
+    remaining: sub.character_limit - sub.character_count,
+  };
+}
+
+/**
+ * Everything measurable about one returned buffer, both ways it can be read.
+ *
+ * ☠️ THE MONO READING IS NOT A DOWNMIX. The bytes are headerless, so "stereo" and
+ * "mono" are two different signals cut from the same buffer, not one signal at two
+ * widths — which is exactly why `decodeToFloatWav` had to grow an input-side
+ * override. Writing both out as playable WAVs is deliberate: the crossing-rate
+ * ratio is the machine's answer and it is allowed to come back `unclear`, and when
+ * it does, one listen settles it.
+ */
+async function analyseTake({ pcmPath, wavStem, bytes, requestedSeconds }) {
+  const shape = describeReturn({ bytes, requestedSeconds, sampleRate: SFX_MASTER_PCM.sampleRate });
+
+  const asStereoWav = `${wavStem}-as-stereo.wav`;
+  const asMonoWav = `${wavStem}-as-mono.wav`;
+  const stereo = await decodeToFloatWav(pcmPath, asStereoWav, {
+    channels: 2,
+    sampleRate: SFX_MASTER_PCM.sampleRate,
+  });
+  const mono = await decodeToFloatWav(pcmPath, asMonoWav, {
+    channels: 1,
+    sampleRate: SFX_MASTER_PCM.sampleRate,
+    inputPcm: { ...SFX_MASTER_PCM, channels: 1 },
+  });
+
+  return {
+    shape,
+    asStereoWav,
+    asMonoWav,
+    // Every judgement below reads the buffer the way the pass ships it (#1159).
+    level: await measure(pcmPath),
+    seam: seamMetrics(stereo.samples, stereo.channels, stereo.sampleRate),
+    edges: edgeSilence(stereo.samples, stereo.channels, stereo.sampleRate),
+    zcrAsStereo: zeroCrossingsPerSecond(stereo.samples, stereo.channels, stereo.sampleRate),
+    zcrAsMono: zeroCrossingsPerSecond(mono.samples, mono.channels, mono.sampleRate),
+  };
+}
+
+/**
+ * Ask one bed prompt for a natively looping render, and measure what comes back.
+ *
+ * ⚠️ A PROBE, NOT A PASS. It renders one clip twice — once `loop: true`, once
+ * `loop: false` as the paired control — because Sound Effects is seedless, so the
+ * only honest comparison for a stochastic draw is another draw of the same prompt
+ * at the same duration. At 11 credits/second that is ~660 credits — what it
+ * protects is 450s of unrepeatable bed render committed to a path chosen on a
+ * premise the repo already contradicts. ☠️ The quote said ~198 until #1359,
+ * because `CREDITS_PER_SECOND` carried the web composer's 3.3.
+ */
+async function loopProbe({ clipId, seconds, go, withControl }) {
+  const clip = SFX_CLIPS.find((candidate) => candidate.id === clipId);
+  if (!clip) {
+    console.error(
+      `unknown clip "${clipId}" — expected one of: ${SFX_CLIPS.map((c) => c.id).join(", ")}`,
+    );
+    process.exit(1);
+  }
+  if (clip.klass !== "beds") {
+    console.error(
+      `"${clipId}" is a ${clip.klass} clip. #1137 established that only beds ever loop at\n` +
+        "runtime, so a texture or a bell answers a question nobody is asking.",
+    );
+    process.exit(1);
+  }
+  if (seconds > SFX_MAX_DURATION_SECONDS) {
+    console.error(`--seconds ${seconds} is over the API's ${SFX_MAX_DURATION_SECONDS}s cap`);
+    process.exit(1);
+  }
+
+  const prompt = composePrompt(clip.text);
+  const calls = withControl ? 2 : 1;
+  const quoted = seconds * CREDITS_PER_SECOND * calls;
+
+  console.log(`\n#1347 loop probe — ${clipId} at ${seconds}s, ${calls} call(s)`);
+  console.log(`prompt (${prompt.length} chars): ${prompt}\n`);
+  // ☠️ This used to quote a flat "1.5x", which #1347 disproved: loop mode does not
+  // multiply, it rounds UP to the next 0.75s multiple (1s -> 1.5s looks like 1.5x,
+  // but 2s -> 2.25s is 1.125x and 30s -> 30s is 1.0x). Quoting a model the same
+  // commit's own docblock calls false is exactly the understated-quote problem
+  // #1359 exists to fix, one question over.
+  const returned = loopReturnedSeconds(seconds);
+  console.log(`cost if charged on the REQUESTED seconds: ~${Math.round(quoted)} credits`);
+  console.log(
+    `loop mode will return ${returned}s for a ${seconds}s request` +
+      `${returned === seconds ? " (an exact 0.75s multiple)" : " — rounded up to a 0.75s multiple"}`,
+  );
+  console.log(
+    `cost if it bills on what it RETURNS: ~${Math.round(
+      (returned + (withControl ? seconds : 0)) * CREDITS_PER_SECOND,
+    )} credits`,
+  );
+  if (!go) {
+    console.log("\nDry run. Re-run with --go to spend.");
+    return;
+  }
+
+  await assertFfmpeg();
+  const key = apiKey();
+  const dir = join(OUT_DIR, "loop-probe");
+  await mkdir(dir, { recursive: true });
+
+  const takes = [
+    { label: "loop", loop: true },
+    ...(withControl ? [{ label: "control", loop: false }] : []),
+  ];
+  for (const take of takes) {
+    take.pcmPath = join(dir, `${clipId}-${take.label}-${seconds}s.pcm`);
+    // The same refusal every other spending path here carries: a seedless render
+    // that overwrites an archived one destroys evidence that cannot be re-made.
+    if (await exists(take.pcmPath)) {
+      console.error(`refusing to overwrite ${take.pcmPath} — move it aside first`);
+      process.exit(1);
+    }
+  }
+
+  const before = await readSubscription(key);
+  if (!before.ok) console.log(`⚠️ balance unavailable: ${before.error}`);
+
+  for (const take of takes) {
+    const { buffer, contentType, headers } = await soundEffect(key, {
+      text: prompt,
+      durationSeconds: seconds,
+      promptInfluence: clip.promptInfluence,
+      loop: take.loop,
+      outputFormat: SFX_OUTPUT_FORMAT,
+    });
+    await writeFile(take.pcmPath, buffer);
+    take.bytes = buffer.length;
+    take.contentType = contentType;
+    take.responseHeaders = headers;
+    console.log(`ok   ${take.label}  loop=${take.loop}  ${buffer.length} bytes  ${contentType}`);
+  }
+
+  const after = await readSubscription(key);
+  const spent = before.ok && after.ok ? after.used - before.used : NaN;
+  // ☠️ THE HEADER IS THE INSTRUMENT, THE BALANCE IS THE CORROBORATION. Summed
+  // across the probe's calls, `character-cost` is exact and immediate; the
+  // balance did not move at all across a 22-credit call and reconciled only
+  // later, so the delta below is recorded and named, never trusted (#1359).
+  const spend = sumCharged(takes.map((take) => chargedCredits(take.responseHeaders)));
+  // ⚠️ null unless EVERY call was priced. A partial sum looks like a total and
+  // would understate the spend — the one direction that misleads on a pass nobody
+  // can repeat. `render` prints an incomplete sum as an explicit floor instead.
+  const cost = costReading({ charged: spend.complete ? spend.total : null, spent });
+
+  for (const take of takes) {
+    Object.assign(
+      take,
+      await analyseTake({
+        pcmPath: take.pcmPath,
+        wavStem: join(dir, `${clipId}-${take.label}`),
+        bytes: take.bytes,
+        requestedSeconds: seconds,
+      }),
+    );
+  }
+
+  const loopTake = takes.find((take) => take.label === "loop");
+  const controlTake = takes.find((take) => take.label === "control");
+  const reading = controlTake
+    ? channelReading({ probeZcr: loopTake.zcrAsStereo, controlZcr: controlTake.zcrAsStereo })
+    : { reading: "unclear", ratio: null };
+  const hypotheses = creditHypotheses({
+    requestedSeconds: seconds * takes.length,
+    returnedSeconds: takes.reduce((total, take) => total + take.shape.secondsIfStereo, 0),
+    creditsPerSecond: CREDITS_PER_SECOND,
+  });
+
+  for (const take of takes) {
+    console.log(`\n=== ${clipId} ${take.label} (loop=${take.loop})`);
+    console.log(
+      `   bytes     ${take.bytes} = ${take.shape.secondsIfStereo.toFixed(3)}s stereo ` +
+        `or ${take.shape.secondsIfMono.toFixed(3)}s mono (asked ${seconds}s)`,
+    );
+    console.log(
+      `   duration  ${take.shape.durationRatioIfStereo.toFixed(3)}x the request read as stereo · ` +
+        `mono reading ${take.shape.monoExceedsApiCap ? "EXCEEDS the 30s cap" : "is within the cap"}`,
+    );
+    console.log(`   level     ${take.level.lufs} LUFS-I · ${take.level.dbtp} dBTP`);
+    console.log(
+      `   seam      wrap step ${take.seam.wrapStepRatio.toFixed(2)}x median · ` +
+        `head/tail ${take.seam.energyDeltaRatio.toFixed(2)}x natural · ` +
+        (take.seam.wrapStepRatio <= SEAM_LIMITS.wrapStepRatio &&
+        take.seam.energyDeltaRatio <= SEAM_LIMITS.energyDeltaRatio
+          ? "PASS"
+          : "FAIL"),
+    );
+    console.log(
+      `   edges     lead ${take.edges.leadMs.toFixed(1)} ms · tail ${take.edges.tailMs.toFixed(1)} ms`,
+    );
+    console.log(`   crossings ${Math.round(take.zcrAsStereo)}/s read as stereo`);
+    console.log(`   listen    ${take.asStereoWav}\n             ${take.asMonoWav}`);
+  }
+
+  console.log(
+    `\nchannel reading: ${reading.reading}${reading.ratio ? ` (${reading.ratio.toFixed(2)}x the control's crossing rate)` : ""}`,
+  );
+  console.log(
+    `credits spent:   ${Number.isFinite(cost.credits) ? `${cost.credits} — ` : ""}` +
+      `${creditVerdict({ credits: cost.credits, hypotheses })} (${cost.source})` +
+      `${cost.note ? `; ${cost.note}` : ""}`,
+  );
+
+  const results = {
+    ticket: 1347,
+    clip: clipId,
+    prompt,
+    requestedSeconds: seconds,
+    outputFormat: SFX_OUTPUT_FORMAT,
+    balanceBefore: before,
+    balanceAfter: after,
+    // Both instruments are recorded side by side on purpose: the disagreement
+    // between them IS the finding about which one to believe.
+    creditsCharged: Number.isFinite(cost.credits) && cost.exact ? cost.credits : null,
+    creditsSpent: Number.isFinite(spent) ? spent : null,
+    creditSource: cost.source,
+    creditHypotheses: hypotheses,
+    creditVerdict: creditVerdict({ credits: cost.credits, hypotheses }),
+    channelReading: reading,
+    takes: takes.map(({ pcmPath, ...rest }) => ({ file: pcmPath, ...rest })),
+  };
+  const resultsPath = join(dir, `${clipId}-${seconds}s-results.json`);
+  await writeFile(resultsPath, `${JSON.stringify(results, null, 2)}\n`);
+  console.log(`\nwrote ${resultsPath}`);
+  console.log(
+    "\n⚠️ The numbers say where to be suspicious; they cannot say a bed loops well.\n" +
+      "Listen to the tiled loop before ruling (#1346's audition, then #1210).",
+  );
+}
+
 // `render` is exported so test/audio-render-reroll.test.ts can drive the actual
 // spending loop — the re-roll and the attempt bound decide what a run costs, and
-// neither is provable from the outside.
-export { render };
+// neither is provable from the outside. `loopProbe` is exported for the same
+// reason: it spends, and #1347's whole point is that an unverified belief about
+// this API already shaped the bed pipeline once.
+export { render, loopProbe };
 
 async function main() {
   const [command, ...rest] = process.argv.slice(2);
@@ -813,9 +1165,33 @@ async function main() {
       await render(round, go, attempts);
       break;
     }
-    case "render-voices":
-      await renderVoices(go);
+    case "render-voices": {
+      // Repeatable: one flag per voice, so a whole shortlisted pair goes in one run.
+      const overrides = rest.flatMap((arg, index) =>
+        arg === "--voice-id" ? [rest[index + 1]] : [],
+      );
+      await renderVoices(go, overrides);
       break;
+    }
+    case "loopprobe": {
+      const clipFlag = rest.indexOf("--clip");
+      const secondsFlag = rest.indexOf("--seconds");
+      const seconds = secondsFlag === -1 ? SFX_MAX_DURATION_SECONDS : Number(rest[secondsFlag + 1]);
+      if (!Number.isFinite(seconds) || seconds < 0.5) {
+        console.error(`--seconds must be at least 0.5, got: ${rest[secondsFlag + 1]}`);
+        process.exit(1);
+      }
+      await loopProbe({
+        // brown-noise by default: it was the only bed of the failed pass whose
+        // every take cleared the level gate, and a dud take answers nothing about
+        // looping. It is also the worst seam case measured (8.6-19.1x hard-cut).
+        clipId: clipFlag === -1 ? "brown-noise" : rest[clipFlag + 1],
+        seconds,
+        go,
+        withControl: !rest.includes("--no-control"),
+      });
+      break;
+    }
     default:
       console.log(
         "usage:\n" +
@@ -823,7 +1199,8 @@ async function main() {
           "  node scripts/audio/render.mjs plan --round A|B\n" +
           "  node scripts/audio/render.mjs preflight --round A|B\n" +
           "  node scripts/audio/render.mjs render --round A|B --go [--attempts N]\n" +
-          "  node scripts/audio/render.mjs render-voices --go",
+          "  node scripts/audio/render.mjs render-voices [--voice-id id=voiceId ...] --go\n" +
+          "  node scripts/audio/render.mjs loopprobe [--clip <bed>] [--seconds 30] --go",
       );
       process.exit(BELLS.length && command ? 1 : 0);
   }
