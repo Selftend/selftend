@@ -10,13 +10,16 @@
 import { expect, test } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
+// ☠️ From session-injection, NOT ./fixtures: importing fixtures.ts registers
+// its `beforeEach({ user })` pool-fixture hook on this plain-test file too,
+// and every test here would die with "beforeEach hook has unknown parameter".
 import {
   CANDIDATE_STORAGE_KEYS,
   CAPTURE_STORAGE_KEY,
   COOKIE_CONSENT_KEY,
   COOKIE_CONSENT_VALUE,
   NORMALIZED_GATE_PREFS,
-} from "./fixtures";
+} from "./session-injection";
 import { createServiceClient, LOCAL_ANON_KEY, LOCAL_SUPABASE_URL } from "../integration/helpers";
 
 /** Mint a real guest session headlessly and return its id + the persisted JSON. */
