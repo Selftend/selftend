@@ -232,6 +232,15 @@ export function AppOnboardingWizard({
       onDismiss={handleDismiss}
       footerSlot={
         <View className="gap-3">
+          {/* The wizard's half of the invitation to register (#1446): one calm
+              informational line, guests only, shown with whichever panel is
+              the final one. The other half is the settings card - and that is
+              the whole invitation surface, by spec. */}
+          {isLast && user?.is_anonymous ? (
+            <Text variant="muted" className="text-center text-xs">
+              {t("onboarding.guestInviteLine")}
+            </Text>
+          ) : null}
           <View className="flex-row items-center justify-between">
             {previousPanel ? (
               <Pressable

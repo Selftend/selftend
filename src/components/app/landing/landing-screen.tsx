@@ -2,9 +2,11 @@ import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LinkButton } from "@/src/components/app/link-button";
+import { useStartAsGuest } from "@/src/features/auth/use-start-as-guest";
 import { CHROME_MARK, CHROME_RULE, CHROME_TEXT } from "@/src/lib/theme/chrome";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +69,7 @@ const HERO_TOOLS: { key: string; icon: MaterialIconName }[] = [
 
 function LandingHero() {
   const { t } = useTranslation("auth");
+  const { pending, startAsGuest } = useStartAsGuest();
 
   return (
     <View className="items-center gap-0 pt-2 sm:pt-6">
@@ -83,13 +86,25 @@ function LandingHero() {
         {t("landingPage.heroSupport")}
       </Text>
       <View className="mt-8 w-full max-w-xs flex-col items-stretch gap-3 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:justify-center">
-        <LinkButton size="lg" href="/(auth)/sign-up">
-          <Text>{t("landingPage.getStarted")}</Text>
+        {/* An action, not a link (#1441): pressing it creates the guest
+            session in place and the index route's session redirect carries
+            the visitor in. When anonymous sign-in is off server-side it
+            degrades to the sign-up form - today's behaviour. */}
+        <Button size="lg" disabled={pending} onPress={() => void startAsGuest()}>
+          <Text>{t("landingPage.startNow")}</Text>
+        </Button>
+        <LinkButton variant="outline" size="lg" href="/(auth)/sign-up">
+          <Text>{t("landingPage.createAccountCta")}</Text>
         </LinkButton>
         <LinkButton variant="outline" size="lg" href="/(auth)/sign-in">
           <Text>{t("landingPage.signInCta")}</Text>
         </LinkButton>
       </View>
+      {/* The durability line lives AT the CTA (spec §3): honest about what a
+          guest session is before anyone leans on it. */}
+      <Text variant="muted" className="mt-3 max-w-md text-center text-xs">
+        {t("landingPage.guestDurability")}
+      </Text>
       <View className="mt-11 max-w-2xl flex-row flex-wrap justify-center gap-2.5">
         {HERO_TOOLS.map(({ key, icon }) => (
           <View

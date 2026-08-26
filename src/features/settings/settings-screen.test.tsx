@@ -52,14 +52,19 @@ jest.mock("@/src/components/react-native-reusables/label", () => {
   };
 });
 
+const registeredSessionUser = {
+  email: "person@example.com",
+  id: "user-1",
+};
+let mockSessionUser: { id: string; email?: string; is_anonymous?: boolean } | null =
+  registeredSessionUser;
 jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({
-    user: {
-      email: "person@example.com",
-      id: "user-1",
-    },
-  }),
+  useSession: () => ({ user: mockSessionUser }),
 }));
+
+afterEach(() => {
+  mockSessionUser = registeredSessionUser;
+});
 
 jest.mock("expo-linear-gradient", () => {
   const View = mockView;
@@ -139,6 +144,9 @@ describe("SettingsScreen structure", () => {
     expect(screen.getByTestId("settings-run-help")).toBeTruthy();
     expect(screen.getByTestId("settings-run-account")).toBeTruthy();
     expect(screen.getByTestId("settings-colophon")).toBeTruthy();
+    // #1446: the guest invitation card renders nothing for this registered
+    // user (its guest-side visibility is pinned in create-account-card.test).
+    expect(screen.queryByTestId("create-account-card")).toBeNull();
   });
 
   /**
@@ -177,6 +185,20 @@ describe("SettingsScreen structure", () => {
       expect(screen.getByText("You'll stay signed in on other devices.")).toBeTruthy(),
     );
     expect(screen.getByLabelText("Sign out")).toBeTruthy();
+  });
+
+  // #1442: a guest's session token is the only key to their account, so the
+  // sign-out row must not exist for them (silent irreversible data loss). The
+  // rest of the account run stays word-for-word: for a guest, "start fresh"
+  // IS delete-account, and export works unchanged.
+  it("hides the sign-out row for a guest, keeping delete-account and export", async () => {
+    mockSessionUser = { id: "guest-1", is_anonymous: true };
+    renderWithProviders(<SettingsScreen />);
+
+    await waitFor(() => expect(screen.getByLabelText("Delete my account")).toBeTruthy());
+    expect(screen.queryByLabelText("Sign out")).toBeNull();
+    expect(screen.getByLabelText("Export my data")).toBeTruthy();
+    expect(screen.getByTestId("settings-run-account")).toBeTruthy();
   });
 
   it("waits only the two onboarding rows on the preferences query", async () => {

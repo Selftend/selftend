@@ -70,6 +70,7 @@
     "guidanceHint": "This choice applies to any modules you selected.",
     "guidedChoice": "A guided programme",
     "selfDirectedChoice": "Explore at my own pace",
+    "guestInviteLine": "You're using Selftend as a guest - you can create an account any time from Settings to protect your data.",
     "concerns": {
       "anxious-thoughts": "Anxious thoughts",
       "low-mood": "Low mood",
@@ -95,6 +96,12 @@
   "onboardingSection": {
     "replayIntroduction": "Replay introduction",
     "showTipsAgain": "Show tips again"
+  },
+  "guestInvite": {
+    "title": "Create an account to protect your data",
+    "body": "You're using Selftend as a guest. An account keeps your data if this device is lost or replaced, and lets you sign in anywhere.",
+    "bodyWeb": "You're using Selftend as a guest. Your data stays in this browser until you create an account - browsers can clear it.",
+    "cta": "Create account"
   },
   "security": {
     "appLock": "App lock",
