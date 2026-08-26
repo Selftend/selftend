@@ -1,5 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2.103.2";
-import { buildFeedbackEmailHtml, validateFeedbackInput } from "../_shared/feedback.ts";
+import {
+  buildFeedbackEmailHtml,
+  resolveReplyTo,
+  validateFeedbackInput,
+} from "../_shared/feedback.ts";
 import { sendEmail } from "../_shared/ses.ts";
 
 const corsHeaders = {
@@ -65,7 +69,7 @@ Deno.serve(async (request) => {
       });
     }
 
-    let payload: { category?: unknown; message?: unknown };
+    let payload: { category?: unknown; message?: unknown; replyTo?: unknown };
     try {
       const rawBody = await request.text();
       if (rawBody.length > MAX_BODY_BYTES) {
@@ -84,6 +88,17 @@ Deno.serve(async (request) => {
 
     const { valid, trimmed, category } = validateFeedbackInput(payload.category, payload.message);
     if (!valid) {
+      return new Response(JSON.stringify({ error: "Invalid input" }), {
+        headers: { ...jsonHeaders, ...corsHeaders },
+        status: 400,
+      });
+    }
+
+    // Guest reply-to (#1447): only an anonymous caller may supply one -
+    // registered callers keep the JWT-resolved address whatever the payload
+    // says. The guard itself lives in _shared/feedback.ts, where jest covers it.
+    const replyTo = resolveReplyTo(user, payload.replyTo);
+    if (!replyTo.valid) {
       return new Response(JSON.stringify({ error: "Invalid input" }), {
         headers: { ...jsonHeaders, ...corsHeaders },
         status: 400,
@@ -114,9 +129,9 @@ Deno.serve(async (request) => {
       {
         from: fromEmail,
         to: supportEmail,
-        replyTo: user.email ?? undefined,
+        replyTo: replyTo.replyTo,
         subject: `Selftend feedback [${category}]`,
-        html: buildFeedbackEmailHtml(category, trimmed, user.email ?? ""),
+        html: buildFeedbackEmailHtml(category, trimmed, replyTo.replyTo ?? ""),
       },
     );
 
