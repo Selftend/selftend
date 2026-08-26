@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useUpdateAvailability } from "@/src/lib/use-update-availability";
 
 /**
  * The quiet in-app update offer (#388 spec section 3): an inline app-shell
@@ -12,7 +11,17 @@ import { useUpdateAvailability } from "@/src/lib/use-update-availability";
  * update offer is not urgent enough to announce over what the user is doing).
  * Dismissal is per version and permanent; the hook re-offers only when the
  * NEXT release ships.
+ *
+ * Purely presentational since #1474: `useUpdateAvailability` mounts ONCE in
+ * the protected shell and feeds this via props, so suppression can never
+ * unmount the hook and reset its state.
  */
+interface UpdateBannerProps {
+  available: boolean;
+  act: () => void;
+  dismiss: () => void;
+}
+
 /**
  * Which store the action names. Previously a web/native pair where "native"
  * said "Open Google Play", so an iPhone user was told to go to Google Play
@@ -26,9 +35,8 @@ function getActionKey() {
   return "updateBanner.actionPlayStore";
 }
 
-export function UpdateBanner() {
+export function UpdateBanner({ available, act, dismiss }: UpdateBannerProps) {
   const { t } = useTranslation("common");
-  const { available, act, dismiss } = useUpdateAvailability();
 
   if (!available) return null;
 

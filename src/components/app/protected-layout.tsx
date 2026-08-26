@@ -26,6 +26,7 @@ import { useNotificationSync } from "@/src/features/notifications/use-notificati
 import { useRoutines } from "@/src/features/routines/queries";
 import { useSettingsSync } from "@/src/features/settings/use-settings-sync";
 import { useSession } from "@/src/providers/session-provider";
+import { useUpdateAvailability } from "@/src/lib/use-update-availability";
 import { INSET_LAYER, useInsetPublisher } from "@/src/stores/layered-inset-store";
 import { WidgetSnapshotSync } from "@/src/features/widgets/widget-snapshot-sync";
 import { AppLockGate } from "@/src/features/security/app-lock-gate";
@@ -45,6 +46,12 @@ export default function ProtectedLayout() {
   const pathname = usePathname();
 
   const hydrateAppLock = useAppLockStore((s) => s.hydrate);
+  // The update TRIGGER mounts once here in the shell (#1474, spec §1 on
+  // #1142), not inside the offer surface: suppression must never unmount the
+  // hook (that would reset its state), and a single mount is immune to the
+  // shell's screen double-mount hazard (#989). The RENDER stays down inside
+  // AppLockGate's children, so the offer can never sit over the lock screen.
+  const updateAvailability = useUpdateAvailability();
   const insets = useSafeAreaInsets();
   // The strip is layer 1 of the bottom-inset ladder (#1339): it publishes its
   // own top edge, and the hook clears the entry when this layout unmounts, so a
@@ -385,7 +392,11 @@ export default function ProtectedLayout() {
             >
               <OfflineBanner />
               <VerifyEmailBanner />
-              <UpdateBanner />
+              <UpdateBanner
+                available={updateAvailability.available}
+                act={updateAvailability.act}
+                dismiss={updateAvailability.dismiss}
+              />
             </View>
           </View>
           {/* Corner-floating routine-progress handle: authenticated shell only,
