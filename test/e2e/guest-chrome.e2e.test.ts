@@ -11,6 +11,7 @@
 import { expect, test } from "@playwright/test";
 
 import { deleteGuest, startGuestSession } from "./guest-session";
+import { dismissHomeTour } from "./helpers";
 
 test.describe("guest chrome", () => {
   let guestId: string;
@@ -29,10 +30,10 @@ test.describe("guest chrome", () => {
       timeout: 15_000,
     });
 
-    // The optional Home tour may pop for this fresh account; dismiss it so the
-    // menu and settings assertions run against a settled page.
-    const skipTour = page.getByRole("button", { name: "Skip all tips", exact: true });
-    if (await skipTour.isVisible()) await skipTour.click();
+    // The Home tour arms a beat after the screen settles for this fresh
+    // account, and its scrim intercepts the header clicks below - the waiting
+    // helper, not a single isVisible sample (which raced and lost in CI).
+    await dismissHomeTour(page);
 
     // The guest's planted prefs carry email_verified: false - exactly the
     // state in which a broken guard would render the banner.
