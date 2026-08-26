@@ -22,7 +22,10 @@ export function useExportData() {
   const exportMutation = useExportUserData();
   const showToast = useToastStore((state) => state.showToast);
 
-  const exportData = async () => {
+  // Returns whether the file was delivered: callers acting from behind a
+  // Modal (GuestAbandonDialog, #1444) cannot rely on the toasts - a toast
+  // renders under an open Modal (#1335) - so they need the outcome in hand.
+  const exportData = async (): Promise<boolean> => {
     try {
       const data = await exportMutation.mutateAsync();
       const json = serializeExport(data);
@@ -53,6 +56,7 @@ export function useExportData() {
         description: t("account.exported"),
         tone: "success",
       });
+      return true;
     } catch {
       showToast({
         // Not `feedback.problem` ("Something did not save"): an export saves nothing,
@@ -61,6 +65,7 @@ export function useExportData() {
         description: t("account.exportError"),
         tone: "error",
       });
+      return false;
     }
   };
 
