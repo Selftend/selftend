@@ -7,7 +7,13 @@ import { hasSupabaseConfig } from "@/src/lib/env";
 import { initializeSupabaseAutoRefresh, supabase } from "@/src/lib/supabase";
 import { captureError, setSentryUser } from "@/src/lib/sentry";
 import { clearPersistedQueryCache } from "@/src/lib/query-client";
+import {
+  clearSessionMarker,
+  readSessionMarker,
+  writeSessionMarker,
+} from "@/src/features/auth/session-marker";
 import { purgePersistedWizardDrafts, resetAllDraftStores } from "@/src/stores/draft-store-registry";
+import { useFreshStartNoticeStore } from "@/src/stores/fresh-start-notice-store";
 
 type SessionStatus = "loading" | "ready";
 
@@ -39,6 +45,26 @@ export function SessionProvider({ children }: PropsWithChildren) {
       .then(async ({ data }) => {
         if (!mounted) {
           return;
+        }
+
+        // Returning cleaned-up device (#1450): supabase-js deletes its stored
+        // session itself when a restore fails, so "no session" alone cannot
+        // distinguish a first launch from a device whose account died under
+        // it (dormancy cleanup, or any other invalidation - the client cannot
+        // tell which). The device's own marker can: it is written beside every
+        // session below and cleared only on a deliberate exit, so finding it
+        // here means a session existed and could not be restored. One calm,
+        // generic notice - never a silent fresh start - and the marker is
+        // cleared so the notice cannot repeat.
+        if (!data.session) {
+          const marker = await readSessionMarker();
+          if (!mounted) {
+            return;
+          }
+          if (marker) {
+            useFreshStartNoticeStore.getState().showFreshStartNotice();
+            void clearSessionMarker();
+          }
         }
 
         // Guest entry (#1440): a native cold start with no stored session
@@ -127,6 +153,18 @@ export function SessionProvider({ children }: PropsWithChildren) {
       authSubscription.data.subscription.unsubscribe();
     };
   }, [queryClient]);
+
+  // The fresh-start marker (#1450) follows the session: written whenever one
+  // exists (guest or registered - both would be losses worth naming), left in
+  // place on session death. Only the deliberate exits clear it, inside the
+  // `signOut` wrapper - the 23503 zombie guard bypasses that wrapper on
+  // purpose, so an involuntary sign-out keeps the marker for the next launch.
+  const sessionUserId = session?.user?.id ?? null;
+  useEffect(() => {
+    if (sessionUserId) {
+      void writeSessionMarker(sessionUserId);
+    }
+  }, [sessionUserId]);
 
   const value: SessionContextValue = {
     hasSupabaseConfig,

@@ -5,11 +5,18 @@ import { AuthApiError, AuthRetryableFetchError } from "@supabase/supabase-js";
 
 import { captureError, setSentryUser } from "@/src/lib/sentry";
 import { SessionProvider, useSession } from "@/src/providers/session-provider";
+import { useFreshStartNoticeStore } from "@/src/stores/fresh-start-notice-store";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
 jest.mock("@/src/lib/sentry", () => ({
   captureError: jest.fn(),
   setSentryUser: jest.fn(),
+}));
+
+jest.mock("@/src/features/auth/session-marker", () => ({
+  readSessionMarker: jest.fn().mockResolvedValue(null),
+  writeSessionMarker: jest.fn().mockResolvedValue(undefined),
+  clearSessionMarker: jest.fn().mockResolvedValue(undefined),
 }));
 
 type AuthCallback = (event: string, session: { user: { id: string } } | null) => void;
@@ -246,6 +253,77 @@ describe("SessionProvider guest entry (#1440)", () => {
     act(() => authCallback("SIGNED_OUT", null));
 
     await waitForProbe("ready:signed-out");
+    expect(mockSignInAnonymously).not.toHaveBeenCalled();
+  });
+});
+
+describe("SessionProvider fresh-start notice (#1450)", () => {
+  // supabase-js deletes its stored session itself when a restore fails, so
+  // the provider's own marker is the only way a cold start can tell "this
+  // device had a session that died" from "this device never had one". The
+  // notice is one-time: the marker is cleared the moment it fires.
+  const marker = jest.requireMock("@/src/features/auth/session-marker") as {
+    readSessionMarker: jest.Mock;
+    writeSessionMarker: jest.Mock;
+    clearSessionMarker: jest.Mock;
+  };
+
+  afterEach(() => {
+    useFreshStartNoticeStore.setState({ visible: false });
+    marker.readSessionMarker.mockResolvedValue(null);
+  });
+
+  it("a dead stored session raises the one-time notice and clears the marker", async () => {
+    marker.readSessionMarker.mockResolvedValue("previous-user");
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    mockSignInAnonymously.mockResolvedValue({
+      data: { session: { user: { id: "guest-2" } }, user: { id: "guest-2" } },
+      error: null,
+    });
+
+    renderProvider();
+
+    // Normal guest entry still follows the notice.
+    await waitForProbe("ready:guest-2");
+    expect(useFreshStartNoticeStore.getState().visible).toBe(true);
+    expect(marker.clearSessionMarker).toHaveBeenCalled();
+  });
+
+  it("a genuinely new device gets no notice", async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    mockSignInAnonymously.mockResolvedValue({
+      data: { session: { user: { id: "guest-2" } }, user: { id: "guest-2" } },
+      error: null,
+    });
+
+    renderProvider();
+
+    await waitForProbe("ready:guest-2");
+    expect(useFreshStartNoticeStore.getState().visible).toBe(false);
+    expect(marker.clearSessionMarker).not.toHaveBeenCalled();
+  });
+
+  it("a restored session gets no notice and refreshes the marker", async () => {
+    marker.readSessionMarker.mockResolvedValue("uuid-1");
+
+    renderProvider();
+
+    await waitForProbe("ready:uuid-1");
+    expect(useFreshStartNoticeStore.getState().visible).toBe(false);
+    await waitFor(() => expect(marker.writeSessionMarker).toHaveBeenCalledWith("uuid-1"));
+  });
+
+  it("web raises the notice too, without minting a guest", async () => {
+    // On web the fresh start continues on the landing (the CTA mints later,
+    // #1441) - the notice must not depend on the native mint.
+    setPlatformOS("web");
+    marker.readSessionMarker.mockResolvedValue("previous-user");
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    renderProvider();
+
+    await waitForProbe("ready:signed-out");
+    expect(useFreshStartNoticeStore.getState().visible).toBe(true);
     expect(mockSignInAnonymously).not.toHaveBeenCalled();
   });
 });
