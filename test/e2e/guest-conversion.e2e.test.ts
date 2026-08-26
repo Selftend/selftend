@@ -130,6 +130,12 @@ test.describe("guest conversion", () => {
       timeout: 15_000,
     });
 
+    // The optional Home tour may pop for this fresh account; dismiss it so the
+    // banner and gratitude assertions below run against a settled page (same
+    // handling as sign-up-onboarding).
+    const skipTour = page.getByRole("button", { name: "Skip all tips", exact: true });
+    if (await skipTour.isVisible()) await skipTour.click();
+
     // The attached email is unverified - the existing banner layer takes over.
     await expect(page.getByText("Verify your email to secure your account.")).toBeVisible({
       timeout: 15_000,
