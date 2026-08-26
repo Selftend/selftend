@@ -172,6 +172,19 @@ describe("useSignOut", () => {
       expect(result.current.canSignOut).toBe(false);
     });
 
+    // The layer enforces, not just advertises: a surface that forgets the
+    // flag still cannot sign a guest out.
+    it("the handler itself refuses to sign a guest out", async () => {
+      const { result } = renderHook(() => useSignOut({ id: "guest-1", is_anonymous: true }));
+
+      await act(async () => {
+        await result.current.signOut();
+      });
+
+      expect(mockCancel).not.toHaveBeenCalled();
+      expect(mockSignOut).not.toHaveBeenCalled();
+    });
+
     it("is true for a registered user", () => {
       const { result } = renderHook(() => useSignOut(registeredUser));
 

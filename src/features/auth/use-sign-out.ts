@@ -40,6 +40,10 @@ export function useSignOut(user: Pick<User, "id" | "is_anonymous"> | null) {
   const canSignOut = user !== null && user.is_anonymous !== true;
 
   const handleSignOut = async () => {
+    // Enforced here, not just advertised: a future surface that renders a
+    // sign-out control without checking `canSignOut` must still be unable to
+    // sign a guest out - the flag and the refusal live in the same place.
+    if (!canSignOut) return;
     try {
       // Deregister this device's push channel BEFORE sign-out (RLS context still valid)
       // so server-driven reminders stop firing for a device the user has left.
