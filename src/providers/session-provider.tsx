@@ -4,7 +4,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { isAuthRetryableFetchError, type Session, type User } from "@supabase/supabase-js";
 
 import { hasSupabaseConfig } from "@/src/lib/env";
-import { initializeSupabaseAutoRefresh, supabase } from "@/src/lib/supabase";
+import {
+  initializeSupabaseAutoRefresh,
+  storedSessionRecordExists,
+  supabase,
+} from "@/src/lib/supabase";
 import { captureError, setSentryUser } from "@/src/lib/sentry";
 import { clearPersistedQueryCache } from "@/src/lib/query-client";
 import {
@@ -48,20 +52,25 @@ export function SessionProvider({ children }: PropsWithChildren) {
         }
 
         // Returning cleaned-up device (#1450): supabase-js deletes its stored
-        // session itself when a restore fails, so "no session" alone cannot
-        // distinguish a first launch from a device whose account died under
-        // it (dormancy cleanup, or any other invalidation - the client cannot
-        // tell which). The device's own marker can: it is written beside every
-        // session below and cleared only on a deliberate exit, so finding it
-        // here means a session existed and could not be restored. One calm,
-        // generic notice - never a silent fresh start - and the marker is
-        // cleared so the notice cannot repeat.
+        // session itself when a restore fails for good, so "no session" alone
+        // cannot distinguish a first launch from a device whose account died
+        // under it (dormancy cleanup, or any other invalidation - the client
+        // cannot tell which). The device's own marker can: it is written
+        // beside every session below and cleared only on a deliberate exit.
+        // The second check keeps an OFFLINE launch honest: a retryable
+        // refresh failure leaves the client's stored record in place for a
+        // later retry, and that session may yet restore - marker plus a
+        // still-present record means "waiting", not "lost", so no notice and
+        // the marker survives. Marker with the record gone is the real thing:
+        // one calm, generic notice - never a silent fresh start - and the
+        // marker is cleared so the notice cannot repeat.
         if (!data.session) {
-          const marker = await readSessionMarker();
+          const hadSession = await readSessionMarker();
+          const recordStillHeld = hadSession && (await storedSessionRecordExists());
           if (!mounted) {
             return;
           }
-          if (marker) {
+          if (hadSession && !recordStillHeld) {
             useFreshStartNoticeStore.getState().showFreshStartNotice();
             void clearSessionMarker();
           }
@@ -162,7 +171,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const sessionUserId = session?.user?.id ?? null;
   useEffect(() => {
     if (sessionUserId) {
-      void writeSessionMarker(sessionUserId);
+      void writeSessionMarker();
     }
   }, [sessionUserId]);
 

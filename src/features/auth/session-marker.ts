@@ -15,20 +15,26 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  *
  * All three operations are best-effort: storage can be unavailable, and a
  * failed marker read must never block entry.
+ *
+ * The stored value is a bare presence flag, deliberately NOT the user id:
+ * every consumer only asks "did a session exist here?", and the marker
+ * outlives the account it describes - persisting the dead account's id would
+ * be a data field with no feature-level need (AGENTS.md, data minimization).
  */
-const SESSION_MARKER_KEY = "selftend_last_session_user";
+const SESSION_MARKER_KEY = "selftend_session_marker";
+const SESSION_MARKER_VALUE = "1";
 
-export async function readSessionMarker(): Promise<string | null> {
+export async function readSessionMarker(): Promise<boolean> {
   try {
-    return await AsyncStorage.getItem(SESSION_MARKER_KEY);
+    return (await AsyncStorage.getItem(SESSION_MARKER_KEY)) !== null;
   } catch {
-    return null;
+    return false;
   }
 }
 
-export async function writeSessionMarker(userId: string): Promise<void> {
+export async function writeSessionMarker(): Promise<void> {
   try {
-    await AsyncStorage.setItem(SESSION_MARKER_KEY, userId);
+    await AsyncStorage.setItem(SESSION_MARKER_KEY, SESSION_MARKER_VALUE);
   } catch {
     // Best-effort: a device that can't persist the marker just never gets the
     // fresh-start notice.
