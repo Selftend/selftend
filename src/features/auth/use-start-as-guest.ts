@@ -29,21 +29,22 @@ export function useStartAsGuest() {
       return;
     }
     setPending(true);
-    try {
-      const { data, error } = await supabase.auth.signInAnonymously();
-      if (error || !data.session) {
-        if (
-          error &&
-          error.code !== "anonymous_provider_disabled" &&
-          !isAuthRetryableFetchError(error)
-        ) {
-          captureError(error);
-        }
-        pushWithOrigin("/(auth)/sign-up");
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error || !data.session) {
+      if (
+        error &&
+        error.code !== "anonymous_provider_disabled" &&
+        !isAuthRetryableFetchError(error)
+      ) {
+        captureError(error);
       }
-    } finally {
+      pushWithOrigin("/(auth)/sign-up");
       setPending(false);
+      return;
     }
+    // Success: stay pending. The session redirect is about to unmount the
+    // landing; re-enabling the CTA first would open a window where a second
+    // press mints a second, instantly orphaned guest account.
   };
 
   return { pending, startAsGuest };

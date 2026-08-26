@@ -41,11 +41,31 @@ describe("useStartAsGuest", () => {
   });
 
   it("creates the guest and navigates nowhere - the session redirect owns entry", async () => {
-    await start();
+    const { result } = renderHook(() => useStartAsGuest());
+    await act(async () => {
+      await result.current.startAsGuest();
+    });
 
     expect(mockSignInAnonymously).toHaveBeenCalledTimes(1);
     expect(mockPush).not.toHaveBeenCalled();
     expect(mockCaptureError).not.toHaveBeenCalled();
+    // Still pending: the landing is about to unmount via the session
+    // redirect, and re-enabling first would let a second press mint a
+    // second, instantly orphaned guest.
+    expect(result.current.pending).toBe(true);
+  });
+
+  it("re-enables the CTA after a failure, so the visitor can retry", async () => {
+    mockSignInAnonymously.mockResolvedValue({
+      data: { session: null, user: null },
+      error: new AuthRetryableFetchError("Network request failed", 0),
+    });
+    const { result } = renderHook(() => useStartAsGuest());
+    await act(async () => {
+      await result.current.startAsGuest();
+    });
+
+    expect(result.current.pending).toBe(false);
   });
 
   // The hosted dashboard toggle is the dark-ship / kill-switch state: the CTA
