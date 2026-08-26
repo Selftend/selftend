@@ -20,7 +20,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Missing a day must never create shame or product punishment.
 - The app should stay modular so users can choose the parts they want.
 - Notifications must be explicit, quiet by default, and easy to disable.
-- Account access is required in MVP, but privacy and data minimization still matter.
+- Registration is optional: first use creates a guest account silently, and creating a registered account is an invited conversion that keeps the person's data — never a gate and never nagged. Privacy and data minimization still matter.
 - AI is not part of the MVP user-facing product.
 - The product should remain free to users.
 - Do not propose ad-based monetization or subscription paywalls.
