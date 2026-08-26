@@ -50,7 +50,7 @@ begin
               from auth.sessions s
               where s.user_id = u.id
             )
-          ) < timezone('utc', now()) - interval '12 months'
+          ) < now() - interval '12 months'
     order by u.created_at
     limit batch_size
   loop

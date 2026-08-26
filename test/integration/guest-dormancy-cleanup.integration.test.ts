@@ -25,8 +25,14 @@ import { createAnonClient, createServiceClient, runSql, signInAs } from "./helpe
 const TEST_UUID_PREFIX = "d0a91449";
 const guestId = (n: number) => `${TEST_UUID_PREFIX}-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
-/** SQL timestamp expression n months before now (UTC). */
-const monthsAgo = (n: number) => `timezone('utc', now()) - interval '${n} months'`;
+/** SQL timestamp expression n months before now. */
+const monthsAgo = (n: number) => `now() - interval '${n} months'`;
+
+// 1x1 transparent PNG (same fixture as profile-repository.integration.test.ts).
+const pngBytes = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+  "base64",
+);
 
 function insertAuthUser(options: {
   id: string;
@@ -69,8 +75,17 @@ function authUserExists(id: string): boolean {
 }
 
 function deleteSuiteUsers() {
-  // Raw delete is fine here: these rows never own storage objects, and owned
-  // public rows either cascade or are removed by the function under test.
+  // Raw teardown for rows a failed test may leave behind. The storage delete
+  // needs the transaction-local GUC that disarms storage.protect_delete, so it
+  // runs inside one explicit transaction (see purge_user_account).
+  runSql(`
+    begin;
+    select set_config('storage.allow_delete_query', 'true', true);
+    delete from storage.objects
+    where bucket_id = 'profile-pics'
+      and (storage.foldername(name))[1] like '${TEST_UUID_PREFIX}-%';
+    commit;
+  `);
   runSql(`delete from public.user_preferences where user_id::text like '${TEST_UUID_PREFIX}-%';`);
   runSql(`delete from auth.users where id::text like '${TEST_UUID_PREFIX}-%';`);
 }
@@ -129,11 +144,17 @@ describe("cleanup_dormant_guest_accounts() (integration)", () => {
       lastSignInAtSql: monthsAgo(14),
     });
     insertSession(dormant, monthsAgo(13));
-    // An owned row proves deletion runs through purge_user_account, not a raw
-    // auth.users delete.
     runSql(`insert into public.user_preferences (user_id) values ('${dormant}');`);
-
+    // The storage object is what proves deletion runs through
+    // purge_user_account: user_preferences cascades from auth.users, but only
+    // the helper deletes profile-pics objects - a raw auth.users delete would
+    // strand this file.
     const service = createServiceClient();
+    const upload = await service.storage
+      .from("profile-pics")
+      .upload(`${dormant}/avatar.png`, pngBytes, { contentType: "image/png" });
+    expect(upload.error).toBeNull();
+
     const { data, error } = await service.rpc("cleanup_dormant_guest_accounts");
     expect(error).toBeNull();
     expect(data).toBeGreaterThanOrEqual(1);
@@ -142,6 +163,9 @@ describe("cleanup_dormant_guest_accounts() (integration)", () => {
     expect(
       runSql(`select count(*) from public.user_preferences where user_id = '${dormant}';`),
     ).toBe("0");
+    const objects = await service.storage.from("profile-pics").list(dormant);
+    expect(objects.error).toBeNull();
+    expect(objects.data).toEqual([]);
   });
 
   it("spares an old guest whose newest session refresh is recent", async () => {
