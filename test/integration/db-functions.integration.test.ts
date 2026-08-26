@@ -410,6 +410,142 @@ describe("delete_user_account() (integration)", () => {
 });
 
 // ---------------------------------------------------------------------------
+// purge_user_account(uuid) (integration)
+//
+// Migration: supabase/migrations/20260826000000_account_purge_helper.sql
+//
+// The shared purge body behind delete_user_account() and the guest dormancy
+// cleanup job (#1449). Security model mirrors the send-web-reminders cron RPCs
+// below: execute revoked from public/anon/authenticated (42501 for client
+// roles); service_role bypasses the REVOKE, which is how the purge itself is
+// exercised here.
+// ---------------------------------------------------------------------------
+
+describe("purge_user_account() (integration)", () => {
+  const testEmail = "purge-helper@test.local";
+  const testPassword = "password123";
+
+  // 1x1 transparent PNG (same fixture as profile-repository.integration.test.ts).
+  const pngBytes = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+    "base64",
+  );
+
+  // The local GoTrue assigns its own user ids (see the delete_user_account
+  // fixture note above), so leftovers from a crashed run are found by email.
+  async function deleteTestUserIfPresent() {
+    const admin = createServiceClient();
+    const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const leftover = data?.users?.find((candidate) => candidate.email === testEmail);
+    if (leftover) {
+      await admin.auth.admin.deleteUser(leftover.id).catch(() => undefined);
+    }
+  }
+
+  beforeEach(deleteTestUserIfPresent);
+  afterEach(deleteTestUserIfPresent);
+
+  it("is denied for anon callers (42501 permission denied)", async () => {
+    const anon = createAnonClient();
+    const { error } = await anon.rpc("purge_user_account", {
+      target_user: SEED_USERS.alice.id,
+    });
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("42501");
+    expect(error?.message).toMatch(/permission denied/i);
+  });
+
+  it("is denied for authenticated callers, even against their own account (42501)", async () => {
+    const alice = await signInAs("alice");
+    try {
+      const { error } = await alice.rpc("purge_user_account", {
+        target_user: SEED_USERS.alice.id,
+      });
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe("42501");
+      expect(error?.message).toMatch(/permission denied/i);
+    } finally {
+      await alice.auth.signOut();
+    }
+  });
+
+  it("refuses a null target instead of purging nothing silently", async () => {
+    const service = createServiceClient();
+    const { error } = await service.rpc("purge_user_account", { target_user: null });
+    expect(error).not.toBeNull();
+    expect(error?.message).toMatch(/target_user is null/);
+  });
+
+  it("purges the target's auth row, owned rows, and storage objects in one call", async () => {
+    const admin = createServiceClient();
+    const created = await admin.auth.admin.createUser({
+      email: testEmail,
+      password: testPassword,
+      email_confirm: true,
+    });
+    expect(created.error).toBeNull();
+    const uid = created.data.user!.id;
+
+    // Owned rows across the purge set: the explicit-delete tables (profiles,
+    // user_preferences, thought_records) and a cascade-only table
+    // (device_push_tokens). Inserts are asserted so a failed fixture cannot
+    // turn the deletion assertions below vacuous.
+    for (const insert of [
+      admin.from("profiles").insert({ user_id: uid, email: testEmail }),
+      admin.from("user_preferences").insert({ user_id: uid }),
+      admin.from("thought_records").insert({
+        user_id: uid,
+        situation: "About to be purged",
+        nats: [{ text: "doomed", beliefRating: null, isHotThought: true }],
+        emotions: ["Anxious"],
+        distortions: ["catastrophizing"],
+        balanced_thought: "balanced",
+      }),
+      admin.from("device_push_tokens").insert({
+        user_id: uid,
+        expo_push_token: "ExponentPushToken[purge-helper]",
+        platform: "android",
+      }),
+    ]) {
+      const { error } = await insert;
+      expect(error).toBeNull();
+    }
+
+    // A storage object in the user's own profile-pics folder - the half a raw
+    // `delete from auth.users` would strand. Pin its presence before purging so
+    // the empty-folder assertion afterwards proves a deletion happened.
+    const objectPath = `${uid}/avatar.png`;
+    const upload = await admin.storage.from("profile-pics").upload(objectPath, pngBytes, {
+      contentType: "image/png",
+    });
+    expect(upload.error).toBeNull();
+    const before = await admin.storage.from("profile-pics").list(uid);
+    expect(before.error).toBeNull();
+    expect(before.data?.map((object) => object.name)).toEqual(["avatar.png"]);
+
+    const { error } = await admin.rpc("purge_user_account", { target_user: uid });
+    expect(error).toBeNull();
+
+    const [auth, profile, prefs, records, pushTokens, objects] = await Promise.all([
+      admin.auth.admin.getUserById(uid),
+      admin.from("profiles").select("user_id").eq("user_id", uid),
+      admin.from("user_preferences").select("user_id").eq("user_id", uid),
+      admin.from("thought_records").select("id").eq("user_id", uid),
+      admin.from("device_push_tokens").select("id").eq("user_id", uid),
+      admin.storage.from("profile-pics").list(uid),
+    ]);
+
+    expect(auth.data?.user).toBeNull();
+    expect(profile.data).toEqual([]);
+    expect(prefs.data).toEqual([]);
+    expect(records.data).toEqual([]);
+    expect(pushTokens.data).toEqual([]);
+    expect(objects.error).toBeNull();
+    expect(objects.data).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // invoke_send_web_reminders() + schedule_send_web_reminders_cron() (integration)
 //
 // Migration: supabase/migrations/20260508000000_web_push_notifications.sql
