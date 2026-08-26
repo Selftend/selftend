@@ -3,7 +3,14 @@ import { TextInput } from "react-native";
 import { router } from "expo-router";
 
 import { SignUpForm } from "./sign-up-form";
-import { signUpWithPassword, LEAKED_PASSWORD_ERROR } from "@/src/features/auth/api";
+import {
+  convertGuestWithPassword,
+  signUpWithPassword,
+  EMAIL_ALREADY_EXISTS_ERROR,
+  LEAKED_PASSWORD_ERROR,
+} from "@/src/features/auth/api";
+import { consumeSignInPrefill } from "@/src/features/auth/sign-in-prefill";
+import { useSession } from "@/src/providers/session-provider";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -13,7 +20,7 @@ jest.mock("expo-router", () => ({
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({ hasSupabaseConfig: true }),
+  useSession: jest.fn(),
 }));
 
 jest.mock("@/src/features/auth/api", () => {
@@ -21,6 +28,7 @@ jest.mock("@/src/features/auth/api", () => {
   return {
     ...actual,
     signUpWithPassword: jest.fn(),
+    convertGuestWithPassword: jest.fn(),
     signInWithGoogle: jest.fn(),
     signInWithApple: jest.fn(),
     // Pinned rather than inherited from requireActual: jest-expo runs this
@@ -31,6 +39,18 @@ jest.mock("@/src/features/auth/api", () => {
 });
 
 const mockSignUp = signUpWithPassword as jest.MockedFunction<typeof signUpWithPassword>;
+const mockConvert = convertGuestWithPassword as jest.MockedFunction<
+  typeof convertGuestWithPassword
+>;
+const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
+
+type SessionValue = ReturnType<typeof useSession>;
+
+const signedOutSession = { hasSupabaseConfig: true } as SessionValue;
+const guestSession = {
+  hasSupabaseConfig: true,
+  user: { id: "guest-1", is_anonymous: true },
+} as unknown as SessionValue;
 
 function fillForm() {
   const inputs = screen.UNSAFE_getAllByType(TextInput);
@@ -42,6 +62,9 @@ function fillForm() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // The signed-out default: existing sign-up behaviour. Conversion tests
+  // override with a guest session per-test.
+  mockUseSession.mockReturnValue(signedOutSession);
 });
 
 describe("SignUpForm", () => {
@@ -114,6 +137,58 @@ describe("SignUpForm", () => {
     expect(useNavigationOriginStore.getState().pending).toEqual({
       origin: "/sign-up",
       forPathname: "/sign-in",
+    });
+  });
+
+  describe("conversion mode (#1443, guest session)", () => {
+    beforeEach(() => {
+      mockUseSession.mockReturnValue(guestSession);
+    });
+
+    it("shows the conversion copy and hides the OAuth buttons until #1445", () => {
+      renderWithProviders(<SignUpForm />);
+
+      expect(screen.getByText("Create your account")).toBeTruthy();
+      expect(
+        screen.getByText("Your data comes with you - everything you've added stays."),
+      ).toBeTruthy();
+      // ☠️ signInWithOAuth would strand the guest's data - OAuth conversion is
+      // linkIdentity only and arrives with #1445.
+      expect(screen.queryByText("Continue with Google")).toBeNull();
+      expect(screen.getByText("Create account")).toBeTruthy();
+    });
+
+    it("converts the guest in place and routes into the app", async () => {
+      mockConvert.mockResolvedValue(undefined);
+      renderWithProviders(<SignUpForm />);
+      fillForm();
+      fireEvent.press(screen.getByText("Create account"));
+
+      await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/(app)"));
+      expect(mockConvert).toHaveBeenCalledWith("person@example.com", "twelvechars1!", "");
+      expect(signUpWithPassword).not.toHaveBeenCalled();
+    });
+
+    it("shows the collision error with a Sign in instead link carrying the typed email", async () => {
+      mockConvert.mockRejectedValue(new Error(EMAIL_ALREADY_EXISTS_ERROR));
+      renderWithProviders(<SignUpForm />);
+      fillForm();
+      fireEvent.press(screen.getByText("Create account"));
+
+      expect(await screen.findByText("An account with this email already exists.")).toBeTruthy();
+
+      useNavigationOriginStore.setState({ pending: null });
+      fireEvent.press(screen.getByText("Sign in instead"));
+
+      // The email travels as an in-memory handoff, NOT a query param - sign-in
+      // is `dangerouslySingular` and nav-singular.test.ts forbids a singular
+      // screen keying off search params (see sign-in-prefill.ts).
+      expect(router.push).toHaveBeenCalledWith("/(auth)/sign-in");
+      expect(consumeSignInPrefill()).toBe("person@example.com");
+      expect(useNavigationOriginStore.getState().pending).toEqual({
+        origin: "/sign-up",
+        forPathname: "/sign-in",
+      });
     });
   });
 });

@@ -5,14 +5,24 @@ import bgAuth from "@/src/i18n/locales/bg/auth.json";
 import i18n from "@/src/i18n";
 import { SignInForm } from "./sign-in-form";
 import { signInWithPassword } from "@/src/features/auth/api";
+import { consumeSignInPrefill, recordSignInPrefill } from "@/src/features/auth/sign-in-prefill";
 import { captureError } from "@/src/lib/sentry";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
-jest.mock("expo-router", () => ({
-  router: { replace: jest.fn(), push: jest.fn() },
-  usePathname: () => "/sign-in",
-}));
+jest.mock("expo-router", () => {
+  const React = require("react") as typeof import("react");
+
+  return {
+    router: { replace: jest.fn(), push: jest.fn() },
+    usePathname: () => "/sign-in",
+    // The prefill consume runs on focus; outside a navigator, mount is the
+    // closest stand-in (same shape as module-home-header.test.tsx).
+    useFocusEffect: (callback: () => void | (() => void)) => {
+      React.useEffect(callback, [callback]);
+    },
+  };
+});
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ hasSupabaseConfig: true }),
@@ -49,6 +59,9 @@ function fillCredentials() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // Drain any handoff a previous test recorded - the module is consume-once,
+  // so one stray record would leak into the next render.
+  consumeSignInPrefill();
 });
 
 describe("SignInForm", () => {
@@ -176,5 +189,21 @@ describe("SignInForm", () => {
       origin: "/sign-in",
       forPathname,
     });
+  });
+
+  it("prefills the email from the conversion collision's Sign in instead handoff (#1443)", () => {
+    recordSignInPrefill("taken@example.com");
+    renderWithProviders(<SignInForm />);
+
+    expect(screen.getByLabelText("Email").props.value).toBe("taken@example.com");
+  });
+
+  it("consumes the handoff once: a later plain visit starts empty", () => {
+    recordSignInPrefill("taken@example.com");
+    renderWithProviders(<SignInForm />);
+    screen.unmount();
+
+    renderWithProviders(<SignInForm />);
+    expect(screen.getByLabelText("Email").props.value).toBe("");
   });
 });

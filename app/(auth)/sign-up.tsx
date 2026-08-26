@@ -7,9 +7,13 @@ import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function SignUpScreen() {
-  const { session } = useSession();
+  const { session, user } = useSession();
 
-  if (session) {
+  // Conversion (#1443): only a REGISTERED session redirects. A guest reaching
+  // sign-up is exactly who this screen now serves - the unconditional redirect
+  // would make registration unreachable for them - so an `is_anonymous`
+  // session falls through to the form, which renders its conversion mode.
+  if (session && !user?.is_anonymous) {
     return <Redirect href="/(app)" />;
   }
 

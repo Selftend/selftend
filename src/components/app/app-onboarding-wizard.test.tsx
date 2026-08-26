@@ -23,8 +23,9 @@ jest.mock("react-native", () => {
   });
 });
 
+let mockWizardUser: { id: string; is_anonymous?: boolean } = { id: "user-1" };
 jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({ user: { id: "user-1" } }),
+  useSession: () => ({ user: mockWizardUser }),
 }));
 
 // The starter-routine gate reads the routine list; "Keep" writes through the
@@ -45,6 +46,7 @@ const addStep = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockWizardUser = { id: "user-1" };
 
   // Default: a fresh user with zero routines - the starter gate is open.
   mockUseRoutines.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useRoutines>);
@@ -395,4 +397,43 @@ it("supports Back from the starter panel to the previous panel", () => {
   // No module was selected, so Back returns to the modules panel.
   fireEvent.press(screen.getByText("Back"));
   expect(screen.getByText("Would a self-help module be useful?")).toBeTruthy();
+});
+
+// #1446: the wizard's half of the invitation to register - one calm
+// informational line on whichever panel is final, guests only. The other half
+// is the settings card, and those two surfaces are the WHOLE invitation.
+describe("guest invitation line", () => {
+  const LINE =
+    "You're using Selftend as a guest - you can create an account any time from Settings to protect your data.";
+
+  it("shows the line to a guest on the final panel only", () => {
+    mockWizardUser = { id: "guest-1", is_anonymous: true };
+    // An existing routine closes the starter gate, so the modules panel with
+    // nothing selected is the final one.
+    mockUseRoutines.mockReturnValue({ data: [{ id: "r-1" }] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+    renderWizard();
+
+    // Welcome and concerns are not final - no line.
+    expect(screen.queryByText(LINE)).toBeNull();
+    fireEvent.press(screen.getByText("Continue"));
+    expect(screen.queryByText(LINE)).toBeNull();
+
+    fireEvent.press(screen.getByText("Continue"));
+    expect(screen.getByText("Would a self-help module be useful?")).toBeTruthy();
+    expect(screen.getByText(LINE)).toBeTruthy();
+  });
+
+  it("never shows the line to a registered user", () => {
+    mockUseRoutines.mockReturnValue({ data: [{ id: "r-1" }] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+    renderWizard();
+
+    fireEvent.press(screen.getByText("Continue"));
+    fireEvent.press(screen.getByText("Continue"));
+    expect(screen.getByText("Would a self-help module be useful?")).toBeTruthy();
+    expect(screen.queryByText(LINE)).toBeNull();
+  });
 });

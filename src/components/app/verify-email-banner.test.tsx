@@ -15,6 +15,8 @@ let mockUser: {
   id: string;
   email: string | null;
   app_metadata?: { provider?: string };
+  identities?: { provider: string }[];
+  is_anonymous?: boolean;
 } | null = null;
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -86,10 +88,42 @@ describe("VerifyEmailBanner", () => {
       id: "user-1",
       email: "person@example.com",
       app_metadata: { provider: "google" },
+      identities: [{ provider: "google" }],
     };
 
     renderWithProviders(<VerifyEmailBanner />);
     expect(screen.queryByText("Verify your email to secure your account.")).toBeNull();
+  });
+
+  it("renders nothing while the session is a guest, whatever else the user carries (#1442)", () => {
+    // A real guest has no email and no identities, which the other guards
+    // already catch - this user is deliberately over-endowed so the assertion
+    // pins the is_anonymous claim itself, not its usual side effects.
+    mockUser = {
+      id: "guest-1",
+      email: "person@example.com",
+      app_metadata: {},
+      identities: [{ provider: "email" }],
+      is_anonymous: true,
+    };
+
+    renderWithProviders(<VerifyEmailBanner />);
+    expect(screen.queryByText("Verify your email to secure your account.")).toBeNull();
+  });
+
+  it("shows the prompt for a converted guest, whose provider claim never arrives (#1443)", () => {
+    // Observed against GoTrue: converting a guest via updateUser attaches an
+    // "email" identity but leaves app_metadata {} - the provider check alone
+    // would silently exempt every converted account from verification.
+    mockUser = {
+      id: "user-1",
+      email: "person@example.com",
+      app_metadata: {},
+      identities: [{ provider: "email" }],
+    };
+
+    renderWithProviders(<VerifyEmailBanner />);
+    expect(screen.getByText("Verify your email to secure your account.")).toBeTruthy();
   });
 
   it("renders nothing while preferences have not loaded, so it cannot flash", () => {
