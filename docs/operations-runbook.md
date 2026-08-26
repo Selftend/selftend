@@ -190,8 +190,8 @@ retains the `code` branch, which is also still used by web Google OAuth).
   SQL editor or the Management API) and the dashboard MAU, and check both
   against the guest triggers (anonymous accounts >5× store installs or an
   unexplained spike; MAU crossing 25,000). Any of these firing means the
-  CAPTCHA deferral trigger has
-  fired — see [Deferred Security Decisions](#deferred-security-decisions).
+  CAPTCHA deferral trigger has fired — see
+  [Deferred Security Decisions](#deferred-security-decisions).
 
 ## Privacy And GDPR Requests
 
@@ -315,8 +315,10 @@ re-evaluation trigger.
   weekly as part of the [Support Workflow](#support-workflow)),
   **anonymous-account growth wildly out of proportion to store installs**
   (more than 5× the installed base, or an unexplained week-over-week
-  spike), **MAU crossing 25,000** (half the free-plan ceiling — chosen
-  because deleting bot accounts does not refund the billing cycle's MAU),
+  spike), **MAU crossing 25,000** (half the free plan's 50,000-MAU ceiling
+  per [Supabase pricing](https://supabase.com/pricing), date checked
+  2026-08-25 — chosen because deleting bot accounts does not refund the
+  billing cycle's MAU),
   or **before any deliberate marketing/announcement push** beyond the Play
   listing.
   Implementation when triggered (pre-decided, do not re-litigate):
