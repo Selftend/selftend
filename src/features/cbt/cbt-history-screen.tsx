@@ -4,12 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
-import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { EmptyState, LoadingState } from "@/src/components/app/screen-state";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
-import { getRecordTitle } from "@/src/features/cbt/record-title";
+import { ThoughtRecordRow } from "@/src/features/cbt/thought-record-row";
 import { useSession } from "@/src/providers/session-provider";
-import { formatTimestamp } from "@/src/utils/date";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -42,17 +40,18 @@ export default function CbtHistoryScreen() {
             />
           ) : null}
 
-          {records.map((record) => (
-            <AccessibleCardLink
-              key={record.id}
-              description={t("history.recordSummary", {
-                timestamp: formatTimestamp(record.updatedAt),
-                balancedThought: record.balancedThought.trim() || t("history.recordSummaryEmpty"),
-              })}
-              onPress={() => pushWithOrigin(`/modules/cbt/history/${record.id}`)}
-              title={getRecordTitle(record, t("history.untitledRecord"))}
-            />
-          ))}
+          {/* The same hairline row as the overview's recent records (#1386).
+              This screen is what sits behind that section's door, so converting
+              only the overview would change the row shape mid-journey. */}
+          <View>
+            {records.map((record) => (
+              <ThoughtRecordRow
+                key={record.id}
+                record={record}
+                onPress={() => pushWithOrigin(`/modules/cbt/history/${record.id}`)}
+              />
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

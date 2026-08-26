@@ -26,7 +26,7 @@
     "act": "ACT",
     "dbt": "DBT",
     "cbt": "CBT",
-    "cbtA11y": "CBT module - Cognitive Behavioral Therapy",
+    "cbtA11y": "CBT module - Cognitive Behavioural Therapy",
     "actA11y": "ACT module - Acceptance and Commitment Therapy",
     "dbtA11y": "DBT overview - Dialectical Behavior Therapy",
     "modules": "Modules",
@@ -143,7 +143,7 @@
       "moduleTag": {
         "cbt": "CBT",
         "act": "ACT",
-        "cbtA11y": "CBT - Cognitive Behavioral Therapy",
+        "cbtA11y": "CBT - Cognitive Behavioural Therapy",
         "actA11y": "ACT - Acceptance and Commitment Therapy"
       },
       "allAdded": "Everything is already on your home screen."

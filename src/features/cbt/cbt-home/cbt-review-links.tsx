@@ -4,16 +4,20 @@ import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { Section } from "@/src/components/app/section";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { REVIEW_LINKS } from "./cbt-home-config";
 
-export function CbtReviewLinks() {
+interface CbtReviewLinksProps {
+  ruled: boolean;
+}
+
+export function CbtReviewLinks({ ruled }: CbtReviewLinksProps) {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
 
   return (
-    <View className="gap-3">
-      <Text variant="h3">{t("pillars.review.title")}</Text>
+    <Section ruled={ruled} title={t("pillars.review.title")} className="gap-3">
       <View className="flex-row flex-wrap gap-3">
         {REVIEW_LINKS.map((link) => (
           <View key={link.key} className="min-w-[260px] flex-1 basis-[260px]">
@@ -40,6 +44,6 @@ export function CbtReviewLinks() {
           </View>
         ))}
       </View>
-    </View>
+    </Section>
   );
 }

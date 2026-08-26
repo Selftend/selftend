@@ -9,7 +9,6 @@ import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useAllExposureItems } from "@/src/features/exposure/queries";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useMoodHistory } from "@/src/features/mood/queries";
-import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { roundTo1 as roundedTenth } from "@/src/utils/number";
@@ -64,7 +63,6 @@ export interface CbtInsights {
   selfCareTrend: SelfCareTrend | null;
   angerPattern: AngerPattern | null;
   exposureProgress: ExposureProgress | null;
-  slogan: string;
 }
 
 function average(values: number[]) {
@@ -96,7 +94,6 @@ export function useCbtInsights(userId: string | null): CbtInsights {
   const { data: sleepLogs } = useSleepLogs(userId, 50);
   const { data: gratitudeEntries } = useGratitudeEntries(userId, 50);
   const { data: coreBeliefs } = useCoreBeliefs(userId);
-  const { data: recoveryPlan } = useRecoveryPlan(userId);
 
   const topDistortions = useMemo<TopDistortion[]>(() => {
     if (!thoughtRecords || thoughtRecords.length < 5) {
@@ -324,8 +321,6 @@ export function useCbtInsights(userId: string | null): CbtInsights {
     };
   }, [exposureItems]);
 
-  const slogan = recoveryPlan?.personalSlogan.trim() ?? "";
-
   return useMemo(
     () => ({
       topDistortions,
@@ -336,7 +331,6 @@ export function useCbtInsights(userId: string | null): CbtInsights {
       selfCareTrend,
       angerPattern,
       exposureProgress,
-      slogan,
     }),
     [
       topDistortions,
@@ -347,7 +341,6 @@ export function useCbtInsights(userId: string | null): CbtInsights {
       selfCareTrend,
       angerPattern,
       exposureProgress,
-      slogan,
     ],
   );
 }

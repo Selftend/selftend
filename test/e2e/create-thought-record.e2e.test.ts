@@ -105,9 +105,15 @@ test.describe("create thought record", () => {
     await expect(page.getByText(automaticThought)).toBeVisible();
     await expect(page.getByText(balancedThought)).toBeVisible();
 
-    // And the record shows up in history.
+    // And the record shows up in history, as a hairline row headed by the
+    // THOUGHT with the belief pair on its meta line (#1386). The row used to
+    // carry the balanced thought; the pair replaced it, so this asserts the two
+    // things the row now says rather than the one it dropped - the title a user
+    // scans for, and the numbers that are the point of the record.
     await page.goto("/modules/cbt/history");
-    await expect(page.getByText(balancedThought)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(automaticThought)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Belief 70 -> 30")).toBeVisible();
+    await expect(page.getByText(balancedThought)).toHaveCount(0);
   });
 
   test("a record with no thought is refused at the save, and a partial record saves", async ({

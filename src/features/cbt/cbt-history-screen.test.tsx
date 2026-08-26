@@ -87,7 +87,11 @@ describe("CbtHistoryScreen", () => {
     expect(router.push).toHaveBeenCalledWith("/modules/cbt/history/record-1");
   });
 
-  it("uses fallback text for a saved partial record", () => {
+  // The row shows the thought, the belief pair and the update time (#1386). The
+  // balanced thought is no longer part of it, so neither is the "No balanced
+  // thought yet." stand-in it needed - a record with nothing rated simply shows
+  // no pair, rather than apologising for one.
+  it("uses fallback text for a saved partial record, and shows no belief pair", () => {
     mockUseThoughtRecords.mockReturnValue({
       data: [
         {
@@ -116,7 +120,8 @@ describe("CbtHistoryScreen", () => {
     renderWithProviders(<CbtHistoryScreen />);
 
     expect(screen.getByText("Untitled thought record")).toBeTruthy();
-    expect(screen.getByText(/No balanced thought yet/)).toBeTruthy();
+    expect(screen.getByText(/^Updated /)).toBeTruthy();
+    expect(screen.queryByText(/Belief/)).toBeNull();
   });
 
   // The screen is showing 2026-05-03. This record was written at 19:00Z that

@@ -28,7 +28,6 @@ function baseInsights(): CbtInsights {
     selfCareTrend: null,
     angerPattern: null,
     exposureProgress: null,
-    slogan: "",
   };
 }
 
@@ -150,7 +149,6 @@ describe("buildInsightCards", () => {
         },
         angerPattern: { averageArousal: 6, timeOutsTaken: 1, totalLogs: 4, commonUrge: "yell" },
         exposureProgress: { completed: 2, total: 5 },
-        slogan: "",
       },
       t,
     );

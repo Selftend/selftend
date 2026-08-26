@@ -21,8 +21,8 @@ export interface SharedTool {
 
 interface SharedToolsRowProps {
   // Resolved copy, not a key. The row is module-agnostic and the heading is the
-  // one thing that is not - CBT says "Uses these shared tools" out of `cbt.json`
-  // - so the caller translates it, the way `PillarCard` takes its title.
+  // one thing that is not - CBT says "Shared tools" out of `cbt.json` - so the
+  // caller translates it, the way `PillarCard` takes its title.
   heading: string;
   tools: SharedTool[];
 }
@@ -59,7 +59,12 @@ export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
     <View className="ml-1 flex-row flex-wrap items-center gap-2">
       <View className="flex-row items-center gap-1">
         <Icon name="auto-awesome" size={11} className="text-muted-foreground" />
-        <Text variant="muted" className="text-[11px] font-semibold uppercase tracking-wider">
+        {/* The eyebrow token is `Section`'s exactly - 11px, 600, 0.1em, muted -
+            so the row's label reads as the same rank as the section headings
+            around it (#1386). The row itself does NOT become a `Section`: its
+            label sits inline with its chips, which is a layout `Section` does
+            not have. Only the token unifies. */}
+        <Text variant="muted" className="text-[11px] font-semibold uppercase tracking-[0.1em]">
           {heading}
         </Text>
       </View>
