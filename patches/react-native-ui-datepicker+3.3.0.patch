@@ -46,10 +46,18 @@ index 68abb02..f606338 100644
      style: [defaultStyles.iconContainer, defaultStyles.prev, style],
      className: className
 diff --git a/node_modules/react-native-ui-datepicker/lib/commonjs/datetime-picker.js b/node_modules/react-native-ui-datepicker/lib/commonjs/datetime-picker.js
-index 2d053cd..72d388b 100644
+index 2d053cd..2f50cc5 100644
 --- a/node_modules/react-native-ui-datepicker/lib/commonjs/datetime-picker.js
 +++ b/node_modules/react-native-ui-datepicker/lib/commonjs/datetime-picker.js
-@@ -406,7 +406,9 @@ const DateTimePicker = props => {
+@@ -72,6 +72,7 @@ const DateTimePicker = props => {
+     components = {},
+     month,
+     year,
++    visibleDate,
+     onMonthChange = () => {},
+     onYearChange = () => {},
+     use12Hours,
+@@ -406,7 +407,9 @@ const DateTimePicker = props => {
        type: _enums.CalendarActionKind.CHANGE_CURRENT_DATE,
        payload: (0, _dayjs.default)(newDate)
      });
@@ -60,6 +68,47 @@ index 2d053cd..72d388b 100644
    const onChangeYear = (0, _react.useCallback)(value => {
      dispatch({
        type: _enums.CalendarActionKind.CHANGE_CURRENT_YEAR,
+@@ -423,6 +426,40 @@ const DateTimePicker = props => {
+       onSelectYear(year);
+     }
+   }, [year]);
++
++  /**
++   * Selftend (#1305): drive the visible month from OUTSIDE, so keyboard
++   * navigation can page the grid without selecting anything.
++   *
++   * The public `month`/`year` props cannot do this. Each dispatches from its own
++   * effect against `stateRef`, which still holds the pre-dispatch value when the
++   * second one runs, so crossing a year applies the two halves to different
++   * bases (December 2026 -> January 2027 lands on December 2027). And
++   * `dayjs(currentDate).month(value)` OVERFLOWS: asking a calendar sitting on 31
++   * January for February shows March.
++   *
++   * A `YYYY-MM-DD` string rather than a date object, so the dependency is stable
++   * across renders. The clock is carried over from the day being replaced,
++   * because `datetime` mode composes a selected time out of `currentDate`.
++   */
++  (0, _react.useEffect)(() => {
++    // Re-asserted whenever the library's own `currentDate` moves, not only when
++    // `visibleDate` changes: a controlled prop has to win over internal state.
++    // The picker re-seeds `currentDate` from the SELECTED day whenever the
++    // identity of `date`/`minDate`/`maxDate`/`onChange` changes, so without this
++    // any unrelated re-render would drag the grid back out of the month the
++    // caller asked for. Idempotent — it returns early once the months agree.
++    if (!visibleDate) return;
++    const current = (0, _dayjs.default)(state.currentDate);
++    const target = (0, _dayjs.default)(visibleDate);
++    if (!target.isValid() || target.isSame(current, 'month')) return;
++    dispatch({
++      type: _enums.CalendarActionKind.CHANGE_CURRENT_DATE,
++      payload: target.hour(current.hour()).minute(current.minute()).second(current.second()).millisecond(current.millisecond())
++    });
++    onMonthChange(target.month());
++    onYearChange(target.year());
++  }, [visibleDate, state.currentDate]);
+   const memoizedStyles = (0, _utils.useDeepCompareMemo)({
+     ...styles
+   }, [styles]);
 diff --git a/node_modules/react-native-ui-datepicker/lib/module/components/day.js b/node_modules/react-native-ui-datepicker/lib/module/components/day.js
 index 74a4cd7..702eec9 100644
 --- a/node_modules/react-native-ui-datepicker/lib/module/components/day.js
@@ -108,10 +157,18 @@ index 6877602..1e63da3 100644
      style: [defaultStyles.iconContainer, defaultStyles.prev, style],
      className: className
 diff --git a/node_modules/react-native-ui-datepicker/lib/module/datetime-picker.js b/node_modules/react-native-ui-datepicker/lib/module/datetime-picker.js
-index 1124c40..9d17ee7 100644
+index 1124c40..ca2091d 100644
 --- a/node_modules/react-native-ui-datepicker/lib/module/datetime-picker.js
 +++ b/node_modules/react-native-ui-datepicker/lib/module/datetime-picker.js
-@@ -398,7 +398,9 @@ const DateTimePicker = props => {
+@@ -64,6 +64,7 @@ const DateTimePicker = props => {
+     components = {},
+     month,
+     year,
++    visibleDate,
+     onMonthChange = () => {},
+     onYearChange = () => {},
+     use12Hours,
+@@ -398,7 +399,9 @@ const DateTimePicker = props => {
        type: CalendarActionKind.CHANGE_CURRENT_DATE,
        payload: dayjs(newDate)
      });
@@ -122,8 +179,49 @@ index 1124c40..9d17ee7 100644
    const onChangeYear = useCallback(value => {
      dispatch({
        type: CalendarActionKind.CHANGE_CURRENT_YEAR,
+@@ -415,6 +418,40 @@ const DateTimePicker = props => {
+       onSelectYear(year);
+     }
+   }, [year]);
++
++  /**
++   * Selftend (#1305): drive the visible month from OUTSIDE, so keyboard
++   * navigation can page the grid without selecting anything.
++   *
++   * The public `month`/`year` props cannot do this. Each dispatches from its own
++   * effect against `stateRef`, which still holds the pre-dispatch value when the
++   * second one runs, so crossing a year applies the two halves to different
++   * bases (December 2026 -> January 2027 lands on December 2027). And
++   * `dayjs(currentDate).month(value)` OVERFLOWS: asking a calendar sitting on 31
++   * January for February shows March.
++   *
++   * A `YYYY-MM-DD` string rather than a date object, so the dependency is stable
++   * across renders. The clock is carried over from the day being replaced,
++   * because `datetime` mode composes a selected time out of `currentDate`.
++   */
++  useEffect(() => {
++    // Re-asserted whenever the library's own `currentDate` moves, not only when
++    // `visibleDate` changes: a controlled prop has to win over internal state.
++    // The picker re-seeds `currentDate` from the SELECTED day whenever the
++    // identity of `date`/`minDate`/`maxDate`/`onChange` changes, so without this
++    // any unrelated re-render would drag the grid back out of the month the
++    // caller asked for. Idempotent — it returns early once the months agree.
++    if (!visibleDate) return;
++    const current = dayjs(state.currentDate);
++    const target = dayjs(visibleDate);
++    if (!target.isValid() || target.isSame(current, 'month')) return;
++    dispatch({
++      type: CalendarActionKind.CHANGE_CURRENT_DATE,
++      payload: target.hour(current.hour()).minute(current.minute()).second(current.second()).millisecond(current.millisecond())
++    });
++    onMonthChange(target.month());
++    onYearChange(target.year());
++  }, [visibleDate, state.currentDate]);
+   const memoizedStyles = useDeepCompareMemo({
+     ...styles
+   }, [styles]);
 diff --git a/node_modules/react-native-ui-datepicker/lib/typescript/types.d.ts b/node_modules/react-native-ui-datepicker/lib/typescript/types.d.ts
-index b6cb974..dc549f6 100644
+index b6cb974..62f1cd8 100644
 --- a/node_modules/react-native-ui-datepicker/lib/typescript/types.d.ts
 +++ b/node_modules/react-native-ui-datepicker/lib/typescript/types.d.ts
 @@ -112,6 +112,16 @@ export type CalendarComponents = Partial<{
@@ -143,6 +241,20 @@ index b6cb974..dc549f6 100644
      /** Fully replaces the month selector button in the header */
      MonthSelector: (props: CalendarMonthSelectorProps) => React.ReactNode;
      /** Fully replaces the year selector button in the header */
+@@ -168,6 +178,13 @@ export interface DatePickerBaseProps {
+     year?: number;
+     onMonthChange?: (month: number) => void;
+     onYearChange?: (year: number) => void;
++    /**
++     * Selftend (#1305): the `YYYY-MM-DD` day whose month the grid should be
++     * showing, driven from outside so keyboard navigation can page the calendar
++     * without selecting anything. Unlike `month`/`year` it says both halves at
++     * once and never overflows a short month.
++     */
++    visibleDate?: string;
+ }
+ export type Numerals = 'latn' | 'arab' | 'arabext' | 'deva' | 'beng' | 'guru' | 'gujr' | 'orya' | 'tamldec' | 'telu' | 'knda' | 'mlym';
+ export type PickerOption = {
 diff --git a/node_modules/react-native-ui-datepicker/src/components/day.tsx b/node_modules/react-native-ui-datepicker/src/components/day.tsx
 index 829524a..ce633ad 100644
 --- a/node_modules/react-native-ui-datepicker/src/components/day.tsx
@@ -188,10 +300,18 @@ index 34475ac..75284a4 100644
        <View
          style={[defaultStyles.iconContainer, defaultStyles.prev, style]}
 diff --git a/node_modules/react-native-ui-datepicker/src/datetime-picker.tsx b/node_modules/react-native-ui-datepicker/src/datetime-picker.tsx
-index 6dc6d66..6eacd00 100644
+index 6dc6d66..e9ae959 100644
 --- a/node_modules/react-native-ui-datepicker/src/datetime-picker.tsx
 +++ b/node_modules/react-native-ui-datepicker/src/datetime-picker.tsx
-@@ -589,8 +589,10 @@ const DateTimePicker = (
+@@ -120,6 +120,7 @@ const DateTimePicker = (
+     components = {},
+     month,
+     year,
++    visibleDate,
+     onMonthChange = () => {},
+     onYearChange = () => {},
+     use12Hours,
+@@ -589,8 +590,10 @@ const DateTimePicker = (
          type: CalendarActionKind.CHANGE_CURRENT_DATE,
          payload: dayjs(newDate),
        });
@@ -203,8 +323,54 @@ index 6dc6d66..6eacd00 100644
    );
  
    const onChangeYear = useCallback(
+@@ -615,6 +618,45 @@ const DateTimePicker = (
+     }
+   }, [year]);
+ 
++  /**
++   * Selftend (#1305): drive the visible month from OUTSIDE, so keyboard
++   * navigation can page the grid without selecting anything.
++   *
++   * The public `month`/`year` props cannot do this. Each dispatches from its own
++   * effect against `stateRef`, which still holds the pre-dispatch value when the
++   * second one runs, so crossing a year applies the two halves to different
++   * bases (December 2026 -> January 2027 lands on December 2027). And
++   * `dayjs(currentDate).month(value)` OVERFLOWS: asking a calendar sitting on 31
++   * January for February shows March.
++   *
++   * A `YYYY-MM-DD` string rather than a date object, so the dependency is stable
++   * across renders. The clock is carried over from the day being replaced,
++   * because `datetime` mode composes a selected time out of `currentDate`.
++   */
++  useEffect(() => {
++    // Re-asserted whenever the library's own `currentDate` moves, not only when
++    // `visibleDate` changes: a controlled prop has to win over internal state.
++    // The picker re-seeds `currentDate` from the SELECTED day whenever the
++    // identity of `date`/`minDate`/`maxDate`/`onChange` changes, so without this
++    // any unrelated re-render would drag the grid back out of the month the
++    // caller asked for. Idempotent — it returns early once the months agree.
++    if (!visibleDate) return;
++    const current = dayjs(state.currentDate);
++    const target = dayjs(visibleDate);
++    if (!target.isValid() || target.isSame(current, 'month')) return;
++
++    dispatch({
++      type: CalendarActionKind.CHANGE_CURRENT_DATE,
++      payload: target
++        .hour(current.hour())
++        .minute(current.minute())
++        .second(current.second())
++        .millisecond(current.millisecond()),
++    });
++    onMonthChange(target.month());
++    onYearChange(target.year());
++  }, [visibleDate, state.currentDate]);
++
+   const memoizedStyles = useDeepCompareMemo({ ...styles }, [styles]);
+ 
+   const memoizedClassNames = useDeepCompareMemo({ ...classNames }, [
 diff --git a/node_modules/react-native-ui-datepicker/src/types.ts b/node_modules/react-native-ui-datepicker/src/types.ts
-index 1fc1a31..e4d218e 100644
+index 1fc1a31..5461c87 100644
 --- a/node_modules/react-native-ui-datepicker/src/types.ts
 +++ b/node_modules/react-native-ui-datepicker/src/types.ts
 @@ -149,6 +149,16 @@ export type CalendarComponents = Partial<{
@@ -224,3 +390,17 @@ index 1fc1a31..e4d218e 100644
    /** Fully replaces the month selector button in the header */
    MonthSelector: (props: CalendarMonthSelectorProps) => React.ReactNode;
    /** Fully replaces the year selector button in the header */
+@@ -206,6 +216,13 @@ export interface DatePickerBaseProps {
+   year?: number;
+   onMonthChange?: (month: number) => void;
+   onYearChange?: (year: number) => void;
++  /**
++   * Selftend (#1305): the `YYYY-MM-DD` day whose month the grid should be
++   * showing, driven from outside so keyboard navigation can page the calendar
++   * without selecting anything. Unlike `month`/`year` it says both halves at
++   * once and never overflows a short month.
++   */
++  visibleDate?: string;
+ }
+ 
+ export type Numerals =

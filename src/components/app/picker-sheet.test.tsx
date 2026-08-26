@@ -95,6 +95,24 @@ describe("PickerSheet", () => {
       expect(props.onClose).toHaveBeenCalled();
     });
 
+    it("discards the draft when the web backdrop is clicked", () => {
+      setPlatformOS("web");
+      const { props } = renderSheet();
+
+      fireEvent.press(screen.getByTestId("probe-edit"));
+      // `includeHiddenElements` because it is `aria-hidden` — which is the
+      // point, and which the query would otherwise hide from this test too.
+      fireEvent(
+        screen.getByTestId("picker-sheet-backdrop", { includeHiddenElements: true }),
+        "click",
+      );
+
+      // Still dismisses — it just does it as a plain DOM click rather than as a
+      // focusable button, which is the whole point of the shape below.
+      expect(props.onConfirm).not.toHaveBeenCalled();
+      expect(props.onClose).toHaveBeenCalled();
+    });
+
     it("discards the draft when the modal is dismissed (Escape on web)", () => {
       const { props } = renderSheet();
 
@@ -131,6 +149,53 @@ describe("PickerSheet", () => {
       );
 
       expect(screen.getByText("draft:seed")).toBeTruthy();
+    });
+  });
+
+  describe("the backdrop's place in the focus path (#1305)", () => {
+    it("leaves the web focus path entirely", () => {
+      setPlatformOS("web");
+      renderSheet();
+
+      // Found only with `includeHiddenElements`: the query engine already
+      // agrees it is out of the accessibility tree.
+      const backdrop = screen.getByTestId("picker-sheet-backdrop", { includeHiddenElements: true });
+      expect(screen.queryByTestId("picker-sheet-backdrop")).toBeNull();
+
+      // ☠️ `tabIndex: -1` was the previous answer and it did not work.
+      // react-native-web's modal focus trap wraps by calling `element.focus()`
+      // down the tree and keeping whatever accepts it, and a `-1` element
+      // accepts it — the backdrop was measured as stop 37, the wrap point. So
+      // the assertion is that there is NO tabIndex at all, not that it is -1.
+      expect(backdrop.props.tabIndex).toBeUndefined();
+      expect(backdrop.props.focusable).toBeUndefined();
+      // And no role either: react-native-web gives `role="button"` a default
+      // tabIndex of 0, which would put it straight back.
+      expect(backdrop.props.role).toBeUndefined();
+      expect(backdrop.props.accessibilityRole).toBeUndefined();
+      expect(backdrop.props["aria-hidden"]).toBe(true);
+    });
+
+    it("takes its close label out of the web accessibility tree with it", () => {
+      setPlatformOS("web");
+      renderSheet();
+
+      // An invisible element that announced "Close, button" was what a screen
+      // reader landed on when the sheet opened. Clear and Done are the way out
+      // now, alongside Escape.
+      expect(screen.queryByLabelText("Close")).toBeNull();
+      expect(screen.getByText("Done")).toBeTruthy();
+    });
+
+    it("keeps a labelled close on native, which has no Escape key", () => {
+      renderSheet();
+
+      // ⚠️ Deliberately NOT the web shape. Without this a VoiceOver user has no
+      // way to dismiss without committing: Clear commits "no value" and Done
+      // commits the draft.
+      const backdrop = screen.getByTestId("picker-sheet-backdrop");
+      expect(backdrop.props.accessibilityLabel).toBe("Close");
+      expect(backdrop.props.accessibilityRole).toBe("button");
     });
   });
 
