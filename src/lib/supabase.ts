@@ -44,6 +44,25 @@ export const supabase = hasSupabaseConfig
     })
   : null;
 
+/**
+ * Whether the client's own persisted session record is still in storage
+ * (#1450). supabase-js REMOVES the record when a restore fails for good, but
+ * KEEPS it when the failure is retryable (an offline launch) - so after
+ * `getSession()` resolves null, this is what separates "the session died"
+ * from "the session is waiting for the network". Reads through the same
+ * storage adapter the client was built with, under supabase-js's default key
+ * (`sb-<host label>-auth-token`, derived from the client's URL).
+ */
+export async function storedSessionRecordExists(): Promise<boolean> {
+  if (!hasSupabaseConfig) return false;
+  try {
+    const key = `sb-${new URL(appEnv.supabaseUrl).hostname.split(".")[0]}-auth-token`;
+    return (await storage.getItem(key)) !== null;
+  } catch {
+    return false;
+  }
+}
+
 let autoRefreshListenerRegistered = false;
 
 export function initializeSupabaseAutoRefresh() {
