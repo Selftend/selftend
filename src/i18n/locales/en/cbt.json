@@ -2,12 +2,12 @@
   "module": {
     "label": "CBT"
   },
-  "fullTitle": "Cognitive Behavioral Therapy",
+  "fullTitle": "Cognitive Behavioural Therapy",
   "home": {
     "title": "CBT",
     "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",
     "distortionGuide": "Thinking patterns",
-    "recordHistory": "Record history"
+    "showAllRecords": "Show all records"
   },
   "program": {
     "startTitle": "Your CBT program",
@@ -85,8 +85,8 @@
   },
   "dashboard": {
     "activeGoals": "Active goals",
-    "seeAll": "See all",
-    "recentThought": "Recent thought record",
+    "seeAll": "Show all goals",
+    "recentThought": "Recent thought records",
     "sloganTitle": "Your slogan",
     "insights": {
       "title": "Insights",
@@ -154,7 +154,7 @@
     "review": {
       "title": "Review"
     },
-    "usesSharedTools": "Uses these shared tools",
+    "usesSharedTools": "Shared tools",
     "strategyDescriptions": {
       "thoughts": "A guided look at one difficult moment.",
       "beliefs": "Recurring themes underneath thoughts.",
@@ -609,8 +609,8 @@
     "empty": "No records on this day",
     "emptyDescription": "Try another date, or add a record from the CBT section - it appears here once saved.",
     "untitledRecord": "Untitled thought record",
-    "recordSummaryEmpty": "No balanced thought yet.",
-    "recordSummary": "Updated {{timestamp}}. {{balancedThought}}"
+    "updated": "Updated {{timestamp}}",
+    "beliefShift": "Belief {{before}} -> {{after}}"
   },
   "learn": {
     "title": "Thinking patterns",

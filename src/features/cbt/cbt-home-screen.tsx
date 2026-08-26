@@ -1,11 +1,13 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
@@ -15,7 +17,6 @@ import { useThoughtRecords } from "@/src/features/cbt/queries";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
 import { deriveCbtHomeView } from "@/src/features/cbt/cbt-home/derive-cbt-home-view";
 import { CbtProgramSection } from "@/src/features/cbt/cbt-home/cbt-program-section";
@@ -24,7 +25,7 @@ import { ActiveGoalsSection } from "@/src/features/cbt/cbt-home/active-goals-sec
 import { CbtInsightsSection } from "@/src/features/cbt/cbt-home/cbt-insights-section";
 import { CbtPillarsSection } from "@/src/features/cbt/cbt-home/cbt-pillars-section";
 import { CbtReviewLinks } from "@/src/features/cbt/cbt-home/cbt-review-links";
-import { RecentThoughtRecord } from "@/src/features/cbt/cbt-home/recent-thought-record";
+import { RecentThoughtRecords } from "@/src/features/cbt/cbt-home/recent-thought-records";
 
 export default function CbtHomeScreen() {
   const pushWithOrigin = usePushWithOrigin();
@@ -50,16 +51,22 @@ export default function CbtHomeScreen() {
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
   const { data: recoveryPlan } = useRecoveryPlan(user?.id ?? null);
   const insights = useCbtInsights(user?.id ?? null);
-  const { activeGoals, latestRecord, personalSlogan, insightCards, showProgramCard } =
-    deriveCbtHomeView({
-      goals,
-      thoughtRecords,
-      recoveryPlan,
-      insights,
-      program,
-      promptDismissedAt,
-      t,
-    });
+  const {
+    activeGoals,
+    recentRecords,
+    personalSlogan,
+    insightCards,
+    showProgramCard,
+    sectionRules,
+  } = deriveCbtHomeView({
+    goals,
+    thoughtRecords,
+    recoveryPlan,
+    insights,
+    program,
+    promptDismissedAt,
+    t,
+  });
 
   return (
     <>
@@ -90,7 +97,10 @@ export default function CbtHomeScreen() {
           for CBT specifically is raised on #691. */}
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
-          <View className={cn(HOME_COLUMN, "gap-6")}>
+          {/* No column gap: the hairline blocks below carry their own `py-6`, so
+              a gap here would double every gutter on the page. The blocks that
+              are cards rather than sections space themselves instead. */}
+          <View className={cn(HOME_COLUMN)}>
             <ModuleHomeHeader
               addWidgetCategory="cbt"
               title={t("fullTitle")}
@@ -110,42 +120,62 @@ export default function CbtHomeScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
             />
-            <CbtProgramSection
-              program={program}
-              isPending={isProgramUpdating}
-              showProgramCard={showProgramCard}
-              graduationDismissedAt={graduationDismissedAt}
-              onStart={startProgram}
-              onAdvance={advancePhase}
-              onRequestAbandon={() => setAbandonConfirmVisible(true)}
-              onDismissStart={dismissProgramPrompt}
-              onDismissGraduation={dismissGraduation}
-              onReplay={replayProgram}
-            />
 
-            <PersonalSloganCard slogan={personalSlogan} />
+            {/* ☠️ An inline button, not a floating one. The only `Fab` consumer
+                is the routine handle, which `protected-layout.tsx` mounts
+                app-wide at the bottom right and which does NOT hide itself on
+                this route - so a second floating control would land on top of
+                it. This is the grammar four other tool homes already use
+                (journal, gratitude, sleep, habits), in ONE place at every
+                width. */}
+            <Button onPress={() => pushWithOrigin("/modules/cbt/new")} className="mt-6 self-start">
+              <Icon name="add" className="size-4 text-primary-foreground" />
+              {/* The destination's own title, deliberately: a door and the room
+                  behind it saying different words is how a screen ends up with
+                  two names. */}
+              <Text>{t("record.newTitle")}</Text>
+            </Button>
 
-            <ActiveGoalsSection goals={activeGoals} />
+            {/* ✅ The Think pillar's "Thought Records" tool still routes here
+                too. It is a catalogue entry and this is the action - a
+                duplicated route is only a duplicated door when both renderings
+                are in the same register. */}
 
-            <CbtInsightsSection cards={insightCards} />
+            <View className="mt-6 gap-6">
+              <CbtProgramSection
+                program={program}
+                isPending={isProgramUpdating}
+                showProgramCard={showProgramCard}
+                graduationDismissedAt={graduationDismissedAt}
+                onStart={startProgram}
+                onAdvance={advancePhase}
+                onRequestAbandon={() => setAbandonConfirmVisible(true)}
+                onDismissStart={dismissProgramPrompt}
+                onDismissGraduation={dismissGraduation}
+                onReplay={replayProgram}
+              />
 
-            <CbtPillarsSection />
+              <PersonalSloganCard slogan={personalSlogan} />
+            </View>
 
-            <CbtReviewLinks />
+            <ActiveGoalsSection goals={activeGoals} ruled={sectionRules.goals} />
 
-            <RecentThoughtRecord record={latestRecord} />
+            <RecentThoughtRecords records={recentRecords} ruled={sectionRules.records} />
 
-            <Pressable
-              accessibilityLabel={t("home.recordHistory")}
-              accessibilityRole="button"
-              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() => pushWithOrigin("/modules/cbt/history")}
-              className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
-              role="button"
-            >
-              <Text className="flex-1 text-sm font-medium">{t("home.recordHistory")}</Text>
-              <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
-            </Pressable>
+            <CbtInsightsSection cards={insightCards} ruled={sectionRules.insights} />
+
+            <CbtPillarsSection ruled={sectionRules.framework} />
+
+            <CbtReviewLinks ruled={sectionRules.review} />
+
+            {/* Last, because that is where the two screens already shipping this
+                callout put theirs (ACT home and the DBT module), and a safety
+                block in a different place on one module home is worse than a
+                safety block one scroll further down. CBT was the only module
+                home in the product without one. */}
+            <View className="pt-6">
+              <CrisisSupportCallout />
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>

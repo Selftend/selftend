@@ -1,6 +1,10 @@
 import type { TFunction } from "i18next";
 
-import { deriveCbtHomeView, type DeriveCbtHomeViewInputs } from "./derive-cbt-home-view";
+import {
+  deriveCbtHomeView,
+  deriveSectionRules,
+  type DeriveCbtHomeViewInputs,
+} from "./derive-cbt-home-view";
 import type { CbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import type { Goal } from "@/src/features/goals/types";
 import type { RecoveryPlan } from "@/src/features/recovery/types";
@@ -18,7 +22,6 @@ function baseInsights(): CbtInsights {
     selfCareTrend: null,
     angerPattern: null,
     exposureProgress: null,
-    slogan: "",
   };
 }
 
@@ -102,47 +105,98 @@ describe("deriveCbtHomeView", () => {
     expect(view.activeGoals.map((g) => g.id)).toEqual(["a", "c"]);
   });
 
-  it("returns the first thought record as latestRecord, or null when there are none", () => {
+  it("returns the three most recent thought records, or none when there are none", () => {
     expect(
-      deriveCbtHomeView(inputs({ thoughtRecords: [record("x"), record("y")] })).latestRecord?.id,
-    ).toBe("x");
-    expect(deriveCbtHomeView(inputs({ thoughtRecords: [] })).latestRecord).toBeNull();
-    expect(deriveCbtHomeView(inputs({ thoughtRecords: undefined })).latestRecord).toBeNull();
+      deriveCbtHomeView(
+        inputs({ thoughtRecords: [record("x"), record("y"), record("z"), record("w")] }),
+      ).recentRecords.map((r) => r.id),
+    ).toEqual(["x", "y", "z"]);
+    expect(deriveCbtHomeView(inputs({ thoughtRecords: [] })).recentRecords).toEqual([]);
+    expect(deriveCbtHomeView(inputs({ thoughtRecords: undefined })).recentRecords).toEqual([]);
   });
 
-  describe("personalSlogan fallback", () => {
-    it("prefers a trimmed non-empty recovery-plan slogan", () => {
-      const view = deriveCbtHomeView(
-        inputs({
-          recoveryPlan: recoveryPlan("  keep going  "),
-          insights: { ...baseInsights(), slogan: "fallback" },
-        }),
-      );
-      expect(view.personalSlogan).toBe("keep going");
+  /**
+   * ☠️ This block used to hand-construct a recovery-plan slogan and an
+   * `insights.slogan` that DISAGREED, to prove an `||` fallback picked the
+   * right one. Production could never produce that disagreement:
+   * `use-cbt-insights` derived `slogan` from the very same `useRecoveryPlan`
+   * query, so the two were one value read twice. Three of the four tests here
+   * asserted on an unreachable branch and would have stayed green through any
+   * change to it.
+   *
+   * What is left is the behaviour that does exist: one source, trimmed, empty
+   * when there is nothing to read back.
+   */
+  describe("personalSlogan", () => {
+    it("trims the recovery-plan slogan", () => {
+      expect(
+        deriveCbtHomeView(inputs({ recoveryPlan: recoveryPlan("  keep going  ") })).personalSlogan,
+      ).toBe("keep going");
     });
 
-    it("falls through to the insights slogan when the recovery slogan is whitespace only", () => {
-      const view = deriveCbtHomeView(
-        inputs({
-          recoveryPlan: recoveryPlan("   "),
-          insights: { ...baseInsights(), slogan: "fallback" },
-        }),
+    it("is empty when the recovery slogan is whitespace only", () => {
+      expect(deriveCbtHomeView(inputs({ recoveryPlan: recoveryPlan("   ") })).personalSlogan).toBe(
+        "",
       );
-      expect(view.personalSlogan).toBe("fallback");
     });
 
-    it("is empty when both the recovery and insights slogans are empty", () => {
-      const view = deriveCbtHomeView(
-        inputs({ recoveryPlan: recoveryPlan(""), insights: { ...baseInsights(), slogan: "" } }),
-      );
-      expect(view.personalSlogan).toBe("");
+    it("is empty when there is no recovery plan, and while the plan is still loading", () => {
+      expect(deriveCbtHomeView(inputs({ recoveryPlan: null })).personalSlogan).toBe("");
+      expect(deriveCbtHomeView(inputs({ recoveryPlan: undefined })).personalSlogan).toBe("");
+    });
+  });
+
+  /**
+   * The hairline rule. Every case here has a DIFFERENT section arriving first,
+   * which is the whole point: a hardcoded `ruled={false}` passes the first case
+   * and fails the rest.
+   */
+  describe("sectionRules", () => {
+    it("lands the first rule on the framework when a user has logged nothing", () => {
+      expect(deriveCbtHomeView(inputs()).sectionRules).toEqual({
+        goals: false,
+        records: false,
+        insights: false,
+        framework: false,
+        review: true,
+      });
     });
 
-    it("uses the insights slogan when there is no recovery plan", () => {
-      const view = deriveCbtHomeView(
-        inputs({ recoveryPlan: null, insights: { ...baseInsights(), slogan: "from insights" } }),
-      );
-      expect(view.personalSlogan).toBe("from insights");
+    it("leaves active goals unruled and rules everything after them", () => {
+      expect(
+        deriveCbtHomeView(inputs({ goals: [goal("a", "active")], thoughtRecords: [record("x")] }))
+          .sectionRules,
+      ).toEqual({ goals: false, records: true, insights: true, framework: true, review: true });
+    });
+
+    it("moves the unruled block down to recent records when there are no goals", () => {
+      expect(deriveCbtHomeView(inputs({ thoughtRecords: [record("x")] })).sectionRules).toEqual({
+        goals: false,
+        records: false,
+        insights: true,
+        framework: true,
+        review: true,
+      });
+    });
+
+    it("does not rule the framework off a goal that is no longer active", () => {
+      expect(
+        deriveCbtHomeView(inputs({ goals: [goal("a", "completed")] })).sectionRules.framework,
+      ).toBe(false);
+    });
+  });
+
+  describe("deriveSectionRules", () => {
+    it("rules a section iff some earlier section is visible", () => {
+      expect(deriveSectionRules([false, true, false, true])).toEqual([false, false, true, true]);
+    });
+
+    it("rules nothing when nothing is visible", () => {
+      expect(deriveSectionRules([false, false, false])).toEqual([false, false, false]);
+    });
+
+    it("returns an empty list for no sections", () => {
+      expect(deriveSectionRules([])).toEqual([]);
     });
   });
 

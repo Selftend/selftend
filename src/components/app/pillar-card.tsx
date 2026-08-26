@@ -96,7 +96,9 @@ function PillarCardRoot({
             </Text>
           </View>
         </View>
-        {children ? <View className="mt-4 flex-row flex-wrap gap-2.5">{children}</View> : null}
+        {/* The tools are hairline rows, so the wrapper contributes no gap of its
+            own - the rule between two rows is the separation. */}
+        {children ? <View className="mt-4 flex-row flex-wrap">{children}</View> : null}
       </Card>
     </PillarContext.Provider>
   );
@@ -110,18 +112,26 @@ function PillarTool({ toolKey, icon, name, desc }: PillarToolProps) {
   const { onToolPress } = ctx;
 
   return (
+    // ⚠️ No `accessibilityLabel`: it would make `name` the whole accessible name
+    // and hide `desc`, whose only other home was `accessibilityHint` - which
+    // react-native-web never implements, so the description was silent on the
+    // web and truncated to a tile's width everywhere else.
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={name}
-      accessibilityHint={desc}
       onPress={() => onToolPress?.(toolKey)}
-      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      className="w-full md:w-1/2 flex-row items-center gap-3 border-t border-border py-3 active:bg-accent/40"
     >
-      <View className={cn("mb-1 h-8 w-8 items-center justify-center rounded-lg", CHROME_WASH)}>
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+        className={cn("h-8 w-8 shrink-0 items-center justify-center rounded-lg", CHROME_WASH)}
+      >
         <Icon name={icon} size={18} className={CHROME_MARK} />
       </View>
-      <Text className="text-[13.5px] font-semibold leading-tight">{name}</Text>
-      <Text className="mt-1 text-[11.5px] leading-snug text-muted-foreground">{desc}</Text>
+      <View className="flex-1 min-w-0">
+        <Text className="text-[13.5px] font-semibold leading-tight">{name}</Text>
+        <Text className="mt-0.5 text-[11.5px] leading-snug text-muted-foreground">{desc}</Text>
+      </View>
     </Pressable>
   );
 }

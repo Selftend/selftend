@@ -845,27 +845,3 @@ describe("useCbtInsights - exposureProgress", () => {
     expect(result.current.exposureProgress).toEqual({ completed: 1, total: 3 });
   });
 });
-
-// ---------------------------------------------------------------------------
-// Tests: slogan
-// ---------------------------------------------------------------------------
-describe("useCbtInsights - slogan", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    setupEmptyMocks();
-  });
-
-  it("returns empty string when no recovery plan", () => {
-    const { result } = renderHook(() => useCbtInsights("user-1"));
-    expect(result.current.slogan).toBe("");
-  });
-
-  it("returns trimmed personalSlogan from recovery plan", () => {
-    mockUseRecoveryPlan.mockReturnValue({
-      data: { personalSlogan: "  Onwards and upwards!  ", updatedAt: "2026-05-01T00:00:00Z" },
-    } as unknown as ReturnType<typeof useRecoveryPlan>);
-
-    const { result } = renderHook(() => useCbtInsights("user-1"));
-    expect(result.current.slogan).toBe("Onwards and upwards!");
-  });
-});

@@ -2,17 +2,29 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { PillarCard } from "@/src/components/app/pillar-card";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
 import { PILLAR_STRATEGIES, SHARED_TOOLS_BY_PILLAR } from "./cbt-home-config";
 
-export function CbtPillarsSection() {
+interface CbtPillarsSectionProps {
+  /** Draw the top hairline. See `deriveSectionRules`. */
+  ruled: boolean;
+}
+
+/**
+ * ⚠️ The framework heading stays at level 2. Every other heading on this screen
+ * is a `Section` eyebrow at level 3, and this one introduces those - flattening
+ * it to 3 would put it on a level with the blocks it contains and leave the page
+ * with no outline. The outline reads h1 -> h2 -> h3, as it does on ACT's home.
+ */
+export function CbtPillarsSection({ ruled }: CbtPillarsSectionProps) {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
 
   return (
-    <View className="gap-6">
+    <View className={cn("gap-6 py-6", ruled && "border-t border-border")}>
       <View>
         <Text variant="h2" className="text-xl font-bold tracking-tight">
           {t("pillars.intro")}
