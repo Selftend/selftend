@@ -10,12 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { requireSupabase } from "@/src/lib/supabase";
+import { useSession } from "@/src/providers/session-provider";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
@@ -23,14 +25,29 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 type FeedbackCategory = "bug" | "suggestion" | "question";
 
+// Mirrors the function-side gate (resolveReplyTo in _shared/feedback.ts):
+// simple on purpose - it gates a Reply-To header, not deliverability.
+const REPLY_TO_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function SupportScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("settings");
+  const { user } = useSession();
   const supportEmail = appEnv.supportEmail;
   const supportSubject = encodeURIComponent("Selftend support");
 
+  // A registered user's reply address comes from their account on the server;
+  // only a guest, who has no email anywhere, is offered one - optional,
+  // guest-only, and used for nothing but replying (#1447). The email check
+  // matters: a just-converted guest can still carry a stale is_anonymous
+  // claim until token refresh (#1443), and offering them the field would take
+  // an address the server then silently ignores in favour of their account
+  // email.
+  const isGuest = user?.is_anonymous === true && !user.email;
+
   const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>("suggestion");
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [replyToEmail, setReplyToEmail] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -45,15 +62,25 @@ export default function SupportScreen() {
       setFeedbackError(t("feedback.messageTooLong"));
       return;
     }
+    const replyTo = isGuest ? replyToEmail.trim() : "";
+    if (replyTo && !REPLY_TO_PATTERN.test(replyTo)) {
+      setFeedbackError(t("feedback.replyToInvalid"));
+      return;
+    }
     setFeedbackError("");
     setIsSubmitting(true);
     try {
       const { error } = await requireSupabase().functions.invoke("send-feedback", {
-        body: { category: feedbackCategory, message: trimmed },
+        body: {
+          category: feedbackCategory,
+          message: trimmed,
+          ...(replyTo ? { replyTo } : {}),
+        },
       });
       if (error) throw error;
       setSubmitSuccess(true);
       setFeedbackMessage("");
+      setReplyToEmail("");
       setFeedbackCategory("suggestion");
     } catch {
       setFeedbackError(t("feedback.submitError"));
@@ -142,6 +169,28 @@ export default function SupportScreen() {
                     <Text className="text-sm text-destructive">{feedbackError}</Text>
                   ) : null}
                 </View>
+
+                {isGuest ? (
+                  <View className="gap-2">
+                    <Label>{t("feedback.replyToLabel")}</Label>
+                    <Input
+                      accessibilityLabel={t("feedback.replyToLabel")}
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      autoCorrect={false}
+                      keyboardType="email-address"
+                      onChangeText={(text) => {
+                        setReplyToEmail(text);
+                        if (feedbackError) setFeedbackError("");
+                      }}
+                      placeholder={t("feedback.replyToPlaceholder")}
+                      value={replyToEmail}
+                    />
+                    <Text variant="muted" className="text-xs">
+                      {t("feedback.replyToHint")}
+                    </Text>
+                  </View>
+                ) : null}
 
                 {submitSuccess ? (
                   <Text className="text-sm">{t("feedback.submitSuccess")}</Text>

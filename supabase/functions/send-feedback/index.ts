@@ -1,5 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2.103.2";
-import { buildFeedbackEmailHtml, validateFeedbackInput } from "../_shared/feedback.ts";
+import {
+  buildFeedbackEmailHtml,
+  resolveReplyTo,
+  validateFeedbackInput,
+} from "../_shared/feedback.ts";
 import { sendEmail } from "../_shared/ses.ts";
 
 const corsHeaders = {
@@ -65,7 +69,7 @@ Deno.serve(async (request) => {
       });
     }
 
-    let payload: { category?: unknown; message?: unknown };
+    let payload: { category?: unknown; message?: unknown; replyTo?: unknown };
     try {
       const rawBody = await request.text();
       if (rawBody.length > MAX_BODY_BYTES) {
@@ -90,6 +94,17 @@ Deno.serve(async (request) => {
       });
     }
 
+    // Guest reply-to (#1447): only an anonymous caller may supply one -
+    // registered callers keep the JWT-resolved address whatever the payload
+    // says. The guard itself lives in _shared/feedback.ts, where jest covers it.
+    const replyTo = resolveReplyTo(user, payload.replyTo);
+    if (!replyTo.valid) {
+      return new Response(JSON.stringify({ error: "Invalid input" }), {
+        headers: { ...jsonHeaders, ...corsHeaders },
+        status: 400,
+      });
+    }
+
     // Per-user rate limit (prevents authenticated email-bomb / SES quota + cost abuse).
     const { data: allowed, error: rateError } = await supabase.rpc("record_feedback_submission");
     if (rateError) throw rateError;
@@ -103,6 +118,10 @@ Deno.serve(async (request) => {
     const supportEmail = requiredEnv("SUPPORT_EMAIL");
     const fromEmail = requiredEnv("SES_FROM_EMAIL");
 
+    // A guest-typed reply-to is anyone's address - label it as such in the
+    // email body so support never reads it as a proven sender identity.
+    const fromLabel = user.is_anonymous === true ? "Guest reply-to (unverified)" : "From";
+
     // `category` is the sanitized value returned by validateFeedbackInput; sendEmail
     // throws on any non-2xx SES response, caught by the outer try/catch below.
     await sendEmail(
@@ -114,9 +133,9 @@ Deno.serve(async (request) => {
       {
         from: fromEmail,
         to: supportEmail,
-        replyTo: user.email ?? undefined,
+        replyTo: replyTo.replyTo,
         subject: `Selftend feedback [${category}]`,
-        html: buildFeedbackEmailHtml(category, trimmed, user.email ?? ""),
+        html: buildFeedbackEmailHtml(category, trimmed, replyTo.replyTo ?? "", fromLabel),
       },
     );
 
