@@ -55,9 +55,14 @@ export function DefusionLogRow({ log, onPress }: DefusionLogRowProps) {
           </Text>
           {hasFusionPair ? (
             // Bare numerals, no words - the shipped form on both screens, so
-            // there is nothing here for a translator to reorder. Nested so the
-            // pair reads as one text run while only the after numeral takes
-            // the accent.
+            // there is nothing here for a translator to reorder. This is the
+            // deliberate divergence from `ThoughtRecordRow`'s translated
+            // `beliefShift`: that pair carries a word ("Belief"), this one
+            // does not, and the ruling that ONLY the after numeral takes the
+            // accent (#1221) needs two nodes, which an interpolated t()
+            // string cannot produce. The arrow's direction is safe while the
+            // app ships LTR locales only; a first RTL locale makes this a
+            // real i18n string and the accent question comes back.
             <Text className="text-xs text-foreground">
               {`${log.fusionLevelBefore} → `}
               <Text className="text-xs font-semibold text-primary-ink">{log.fusionLevelAfter}</Text>
