@@ -7,7 +7,7 @@
     "title": "КПТ",
     "description": "Фокусирана КПТ секция, изградена около записи на мисли, осъзнаване на изкривявания и спокоен преглед.",
     "distortionGuide": "Мисловни модели",
-    "recordHistory": "История на записите"
+    "showAllRecords": "Покажи всички записи"
   },
   "program": {
     "startTitle": "Твоята КПТ програма",
@@ -85,8 +85,8 @@
   },
   "dashboard": {
     "activeGoals": "Активни цели",
-    "seeAll": "Виж всички",
-    "recentThought": "Последен запис на мисъл",
+    "seeAll": "Покажи всички цели",
+    "recentThought": "Последни записи на мисли",
     "sloganTitle": "Твоят девиз",
     "insights": {
       "title": "Наблюдения",
@@ -154,7 +154,7 @@
     "review": {
       "title": "Преглед"
     },
-    "usesSharedTools": "Използва тези споделени инструменти",
+    "usesSharedTools": "Споделени инструменти",
     "strategyDescriptions": {
       "thoughts": "Насочен поглед към труден момент.",
       "beliefs": "Повтарящи се теми под мислите.",
@@ -609,8 +609,8 @@
     "empty": "Няма записи за този ден",
     "emptyDescription": "Избери друга дата или добави запис от КПТ секцията - ще се появи тук след запазване.",
     "untitledRecord": "Запис на мисъл без заглавие",
-    "recordSummaryEmpty": "Още няма балансирана мисъл.",
-    "recordSummary": "Обновен {{timestamp}}. {{balancedThought}}"
+    "updated": "Обновен {{timestamp}}",
+    "beliefShift": "Убеденост {{before}} -> {{after}}"
   },
   "learn": {
     "title": "Мисловни модели",

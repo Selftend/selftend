@@ -463,8 +463,13 @@ module.exports = [
     // Both sites render a record's server-set updatedAt ("last edited"), which
     // has no captured offset. A thought record's OCCURRENCE day is its
     // created_offset_minutes, and that is not what these labels show.
+    //
+    // The history screen's own label moved into the shared row it now renders
+    // (#1386); the overview's recent records read the same field through the
+    // same component, so the exemption follows the import rather than the
+    // screen.
     files: [
-      "src/features/cbt/cbt-history-screen.tsx",
+      "src/features/cbt/thought-record-row.tsx",
       "src/features/cbt/thought-record-detail-screen.tsx",
     ],
     rules: {
