@@ -11,6 +11,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useThemePalette } from "@/src/lib/theme-palette";
+import { useOverlayRegistration } from "@/src/stores/overlay-count-store";
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -50,6 +51,9 @@ export function ConfirmDialog({
   secondaryAction,
 }: ConfirmDialogProps) {
   const reduceMotionEnabled = useReduceMotionEnabled();
+  // Overlay-count registry (#1473, spec §2 on #1142); the guard test derives
+  // every raw-Modal renderer, so this line is not optional.
+  useOverlayRegistration(visible);
   const theme = useThemePalette();
   const anyPending = isPending || secondaryAction?.isPending === true;
 
