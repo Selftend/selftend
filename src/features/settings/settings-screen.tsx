@@ -10,6 +10,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { AppLockRow } from "@/src/features/settings/components/app-lock-row";
+import { CreateAccountCard } from "@/src/features/settings/components/create-account-card";
 import { DeleteAccountRow } from "@/src/features/settings/components/delete-account-row";
 import { ExportDataRow } from "@/src/features/settings/components/export-data-row";
 import { SettingsColophon } from "@/src/features/settings/components/settings-colophon";
@@ -75,6 +76,11 @@ export default function SettingsScreen() {
             <SettingsHero />
 
             <SettingsProfileBlock user={user} />
+
+            {/* Guest-only, self-hiding (#1446): the quiet invitation to
+                register. Outside any run - it is a card, not a row, and for
+                registered users it renders nothing. */}
+            <CreateAccountCard />
 
             {/*
               The palette, above the runs and outside them: it is the one control
