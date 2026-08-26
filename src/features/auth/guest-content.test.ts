@@ -54,6 +54,22 @@ describe("holdsUserContent", () => {
     ).toBe(false);
   });
 
+  it("ignores push rows - reminder-consent plumbing, not tool content", () => {
+    expect(
+      holdsUserContent({
+        ...EMPTY_GUEST_PAYLOAD,
+        webPushSubscriptions: [{ endpoint: "https://push.example/abc" }],
+        devicePushTokens: [{ token: "tok-1" }],
+      }),
+    ).toBe(false);
+  });
+
+  it("counts emotion preferences - user-authored customization stays on the warned side", () => {
+    expect(
+      holdsUserContent({ ...EMPTY_GUEST_PAYLOAD, emotionPreferences: [{ emotion_key: "calm" }] }),
+    ).toBe(true);
+  });
+
   it("fails toward warning on an unknown scalar key", () => {
     // A future metadata scalar must be added to the exclusion list consciously;
     // until then it warns rather than silently skipping the dialog.

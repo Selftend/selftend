@@ -4,14 +4,26 @@ import { exportUserData } from "@/src/features/settings/repository";
  * Payload keys that do NOT count as user-created content for the
  * warn-and-abandon check (#1444, spec §6): auto-created rows (`profiles`,
  * `user_preferences`, `widget_preferences` - consent and onboarding state live
- * on `user_preferences`) plus the export's own timestamp.
+ * on `user_preferences`), the export's own timestamp, and the push rows -
+ * device plumbing that exists because reminder consent was granted, not
+ * content in any tool, so a guest who only toggled reminders is not warned
+ * about "data" that is two subscription endpoints. `emotionPreferences`
+ * deliberately DOES count: it is user-authored customization, and over-warning
+ * is the safe side of that line.
  *
  * Everything else counts, including keys this set has never heard of: a new
  * tool's table joins `export_user_data` under the export-completeness gate and
  * lands here already counting. That direction is the safe default - over-warning
  * costs one calm dialog, under-warning silently strands someone's data.
  */
-const NON_CONTENT_KEYS = new Set(["exportDate", "profile", "preferences", "widgetPreferences"]);
+const NON_CONTENT_KEYS = new Set([
+  "exportDate",
+  "profile",
+  "preferences",
+  "widgetPreferences",
+  "webPushSubscriptions",
+  "devicePushTokens",
+]);
 
 /**
  * Whether an `export_user_data` payload holds user-created content in any tool.
