@@ -9,6 +9,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
+import { ACT_SHARED_TOOLS } from "@/src/features/act/act-shared-tools";
 import { useCommittedActions } from "@/src/features/act/queries";
 import { type ActionStatus, type CommittedAction } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
@@ -50,17 +51,7 @@ export default function ActCommittedActionListScreen() {
             <Text>{t("committedAction.newTitle")}</Text>
           </Button>
 
-          <SharedToolsRow
-            heading={t("alsoTry")}
-            tools={[
-              {
-                key: "habits",
-                route: "/tools/habits",
-                icon: "task-alt",
-                labelKey: "navigation:sidebar.habits",
-              },
-            ]}
-          />
+          <SharedToolsRow heading={t("alsoTry")} tools={[ACT_SHARED_TOOLS.habits]} />
 
           {!actions || actions.length === 0 ? (
             <Text variant="muted">{t("committedAction.noActions")}</Text>

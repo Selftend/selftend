@@ -9,6 +9,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
+import { ACT_SHARED_TOOLS } from "@/src/features/act/act-shared-tools";
 import { useObservingSelfSessions } from "@/src/features/act/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -47,20 +48,7 @@ export default function ActObservingSelfListScreen() {
 
           <SharedToolsRow
             heading={t("alsoTry")}
-            tools={[
-              {
-                key: "meditation",
-                route: "/tools/meditation",
-                icon: "self-improvement",
-                labelKey: "navigation:sidebar.meditation",
-              },
-              {
-                key: "journal",
-                route: "/tools/journal",
-                icon: "edit-note",
-                labelKey: "navigation:sidebar.journal",
-              },
-            ]}
+            tools={[ACT_SHARED_TOOLS.meditation, ACT_SHARED_TOOLS.journal]}
           />
 
           {daySessions.length === 0 ? (

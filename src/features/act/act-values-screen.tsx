@@ -9,6 +9,7 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Section } from "@/src/components/app/section";
 import { LoadingState } from "@/src/components/app/screen-state";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
+import { ACT_SHARED_TOOLS } from "@/src/features/act/act-shared-tools";
 import { ActValuesCheckIn } from "@/src/features/act/act-values-check-in";
 import {
   useBullsEyeSnapshots,
@@ -114,17 +115,7 @@ export default function ActValuesScreen() {
             {t("values.domainIntro")}
           </Text>
 
-          <SharedToolsRow
-            heading={t("alsoTry")}
-            tools={[
-              {
-                key: "journal",
-                route: "/tools/journal",
-                icon: "edit-note",
-                labelKey: "navigation:sidebar.journal",
-              },
-            ]}
-          />
+          <SharedToolsRow heading={t("alsoTry")} tools={[ACT_SHARED_TOOLS.journal]} />
 
           <View>
             {ACT_LIFE_DOMAINS.map((domain) => (
