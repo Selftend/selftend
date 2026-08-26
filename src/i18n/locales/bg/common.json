@@ -63,12 +63,12 @@
     "openCrisis": "Отвори кризисно ръководство",
     "barLabel": "Не е за спешни случаи · Кризисни ресурси"
   },
-  "updateBanner": {
-    "message": "Налична е по-нова версия на Selftend.",
+  "updatePrompt": {
+    "title": "Налична е актуализация",
+    "body": "По-нова версия на Selftend е готова.",
     "actionWeb": "Обнови",
     "actionPlayStore": "Отвори Google Play",
-    "actionAppStore": "Отвори App Store",
-    "dismiss": "Затвори"
+    "later": "По-късно"
   },
   "downloadBar": {
     "message": "Selftend е в Google Play.",

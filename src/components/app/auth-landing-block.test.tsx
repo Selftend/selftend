@@ -6,10 +6,19 @@ import { AuthLandingBlock } from "./auth-landing-block";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
-jest.mock("expo-router", () => ({
-  router: { replace: jest.fn(), push: jest.fn() },
-  usePathname: () => "/",
-}));
+jest.mock("expo-router", () => {
+  const React = require("react") as typeof import("react");
+
+  return {
+    router: { replace: jest.fn(), push: jest.fn() },
+    usePathname: () => "/",
+    // SignInForm consumes the conversion collision's email handoff on focus
+    // (#1443); outside a navigator, mount stands in for focus.
+    useFocusEffect: (callback: () => void | (() => void)) => {
+      React.useEffect(callback, [callback]);
+    },
+  };
+});
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ hasSupabaseConfig: true }),

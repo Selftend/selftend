@@ -16,6 +16,26 @@ interface AccessibleCardLinkProps {
   title: string;
 }
 
+/**
+ * A card that is also a link. Every consumer is a CBT **index** screen:
+ * `activities`, `anger`, `beliefs`, `exposure`, `goals`, `tasks`.
+ *
+ * ⚠️ **The divergence is deliberate and recorded here (#1386).** Three former
+ * consumers left for `HairlineRow` - the overview's recent records, the
+ * overview's active goals, and the thought-record history behind their door -
+ * because the redesign made those three one continuous list grammar, and a card
+ * per item directly beneath a hairline `Section` reads as a panel inside a list.
+ * The six index screens are their own screens rather than sections of one, so
+ * they keep the card and are NOT a to-do.
+ *
+ * ☠️ Know what this component costs before adding a consumer: `description`
+ * becomes an `accessibilityHint`, which **react-native-web never implements**,
+ * and the explicit `accessibilityLabel` hides the rendered children from
+ * assistive tech - so anything in `description` is silent on the web. That pair
+ * of facts is why a row carrying a read value (a belief pair, a timestamp)
+ * cannot use this; `HairlineRow` lets its children be its accessible name
+ * instead.
+ */
 export function AccessibleCardLink({
   className,
   description,

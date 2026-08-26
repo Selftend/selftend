@@ -10,6 +10,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { AppLockRow } from "@/src/features/settings/components/app-lock-row";
+import { CreateAccountCard } from "@/src/features/settings/components/create-account-card";
 import { DeleteAccountRow } from "@/src/features/settings/components/delete-account-row";
 import { ExportDataRow } from "@/src/features/settings/components/export-data-row";
 import { SettingsColophon } from "@/src/features/settings/components/settings-colophon";
@@ -55,7 +56,7 @@ export default function SettingsScreen() {
   const { user } = useSession();
   const { data } = useUserPreferences(user?.id ?? null);
 
-  const handleSignOut = useSignOut(user?.id ?? null);
+  const { canSignOut, signOut: handleSignOut } = useSignOut(user);
   const {
     replayIntroduction,
     showTipsAgain,
@@ -75,6 +76,11 @@ export default function SettingsScreen() {
             <SettingsHero />
 
             <SettingsProfileBlock user={user} />
+
+            {/* Guest-only, self-hiding (#1446): the quiet invitation to
+                register. Outside any run - it is a card, not a row, and for
+                registered users it renders nothing. */}
+            <CreateAccountCard />
 
             {/*
               The palette, above the runs and outside them: it is the one control
@@ -183,14 +189,19 @@ export default function SettingsScreen() {
                 #968 settled the scope as per-device, so the description says what
                 the row does again.
               */}
-              <SettingsRow
-                icon="logout"
-                label={t("account.signOut")}
-                description={t("account.signOutHint")}
-                trailing={{ kind: "act" }}
-                onPress={() => void handleSignOut()}
-                testID="settings-row-sign-out"
-              />
+              {/* Hidden for guests (#1442): the hook's shared guard - a guest
+                  signing out is silent irreversible data loss. Delete-account
+                  stays: for a guest, "start fresh" IS delete account. */}
+              {canSignOut ? (
+                <SettingsRow
+                  icon="logout"
+                  label={t("account.signOut")}
+                  description={t("account.signOutHint")}
+                  trailing={{ kind: "act" }}
+                  onPress={() => void handleSignOut()}
+                  testID="settings-row-sign-out"
+                />
+              ) : null}
               <DeleteAccountRow />
             </SettingsRun>
 

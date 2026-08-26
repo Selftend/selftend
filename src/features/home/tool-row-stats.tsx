@@ -396,9 +396,9 @@ function CbtOpenRecordRow({ userId }: StatRowProps) {
    * An exact head count, never a list's length. A lifetime figure derived from a capped
    * query is precisely what ADR-0001 forbids, and it would stay plausible while truncating.
    *
-   * ⚠️ Unlike the other thirteen rows this does not quote a figure the destination already
-   * renders, because there is none: `/modules/cbt/new` is the record form and the CBT
-   * home shows no record count. Raised on the ticket rather than assumed.
+   * The destination itself (`/modules/cbt/new`) is the record form and renders no
+   * figure, but the CBT home's header now quotes this same lifetime head count as its
+   * first stat (#1387), so the row and the module home read off one query.
    */
   const { data: count } = useThoughtRecordCount(userId);
   // Newest by `created_at`, not the `updated_at` the record list is ordered by: this

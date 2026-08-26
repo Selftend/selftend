@@ -4,8 +4,11 @@ import { Platform } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 
 import { completeAuthRedirect } from "@/src/features/auth/callback";
+import { isAuthCallbackError } from "@/src/features/auth/callback-errors";
+import { clearSessionMarker } from "@/src/features/auth/session-marker";
 import { updateUserPreferences } from "@/src/features/settings/repository";
 import { appEnv } from "@/src/lib/env";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
 const AUTH_CALLBACK_PATH = "auth-callback";
@@ -131,26 +134,9 @@ export async function isAppleSignInAvailable() {
 export async function signInWithApple() {
   const client = requireSupabase();
 
-  let credential: AppleAuthentication.AppleAuthenticationCredential;
-  try {
-    credential = await AppleAuthentication.signInAsync({
-      requestedScopes: [
-        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-      ],
-    });
-  } catch (error) {
-    // Apple reports a cancelled sheet as a thrown error rather than a result,
-    // and a user backing out is not a failure worth surfacing.
-    if (isAppleCancellation(error)) {
-      return false;
-    }
-    throw error;
-  }
-
-  const identityToken = credential.identityToken;
+  const identityToken = await getAppleIdentityToken();
   if (!identityToken) {
-    throw new Error("Apple did not return an identity token.");
+    return false;
   }
 
   const { error } = await client.auth.signInWithIdToken({
@@ -163,6 +149,36 @@ export async function signInWithApple() {
   }
 
   return true;
+}
+
+/**
+ * The system Apple sheet, shared by sign-in and conversion: returns the
+ * identity token, or null when the user backs out (Apple reports a cancelled
+ * sheet as a thrown error rather than a result, and backing out is not a
+ * failure worth surfacing).
+ */
+async function getAppleIdentityToken(): Promise<string | null> {
+  let credential: AppleAuthentication.AppleAuthenticationCredential;
+  try {
+    credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+    });
+  } catch (error) {
+    if (isAppleCancellation(error)) {
+      return null;
+    }
+    throw error;
+  }
+
+  const identityToken = credential.identityToken;
+  if (!identityToken) {
+    throw new Error("Apple did not return an identity token.");
+  }
+
+  return identityToken;
 }
 
 function isAppleCancellation(error: unknown) {
@@ -186,6 +202,7 @@ export async function signInWithPassword(email: string, password: string) {
 }
 
 export const EMAIL_ALREADY_EXISTS_ERROR = "EMAIL_ALREADY_EXISTS";
+export const IDENTITY_ALREADY_EXISTS_ERROR = "IDENTITY_ALREADY_EXISTS";
 export const LEAKED_PASSWORD_ERROR = "LEAKED_PASSWORD";
 export const INVALID_CREDENTIALS_ERROR = "INVALID_CREDENTIALS";
 export const EMAIL_RATE_LIMITED_ERROR = "EMAIL_RATE_LIMITED";
@@ -243,6 +260,163 @@ export async function signUpWithPassword(email: string, password: string, name?:
   }
 
   return data;
+}
+
+/**
+ * Conversion (#1443): the signed-in guest becomes a registered account in
+ * place. Under this repo's autoconfirm (`enable_confirmations = false`, #489)
+ * the update applies instantly, sends no email, and flips `is_anonymous` in
+ * the same transaction; the attached email stays unverified, which the
+ * existing verify-email banner layer already covers. The user id never
+ * changes, so every row the guest created is the registered account's data
+ * with no copying.
+ *
+ * ⚠️ The refresh is part of the conversion, not a nicety: the live JWT keeps
+ * claiming `is_anonymous: true` until the token is minted again, so client
+ * checks and RLS predicates lie without it. A refresh failure is deliberately
+ * non-fatal - the account IS converted by then, and throwing would tell the
+ * user the opposite; auto-refresh corrects the claim within the token's
+ * lifetime, so the cost is a stale guest badge, not lost data.
+ */
+export async function convertGuestWithPassword(email: string, password: string, name?: string) {
+  const client = requireSupabase();
+  const trimmedName = name?.trim();
+  const { error } = await client.auth.updateUser({
+    email,
+    password,
+    ...(trimmedName ? { data: { full_name: trimmedName } } : {}),
+  });
+  if (error) {
+    if (isLeakedPasswordError(error)) {
+      throw new Error(LEAKED_PASSWORD_ERROR);
+    }
+    // 422 `email_exists` is the conversion collision: an account with this
+    // email already exists and no server-side merge exists, so it is terminal
+    // here - the form's "Sign in instead" branch owns what happens next.
+    if ((error as SupabaseAuthError).code === "email_exists") {
+      throw new Error(EMAIL_ALREADY_EXISTS_ERROR);
+    }
+    throw error;
+  }
+
+  await refreshSessionAfterConversion(client);
+}
+
+/**
+ * The post-conversion refresh, shared by every conversion path (#1443/#1445):
+ * the live JWT keeps claiming `is_anonymous: true` until the token is minted
+ * again. Deliberately non-fatal - by the time this runs the account IS
+ * converted, and auto-refresh corrects the claim within the token's lifetime.
+ */
+async function refreshSessionAfterConversion(client: ReturnType<typeof requireSupabase>) {
+  const { error: refreshError } = await client.auth.refreshSession();
+  if (refreshError && isReportableError(refreshError)) {
+    captureError(refreshError);
+  }
+}
+
+function isIdentityExistsError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return (error as SupabaseAuthError).code === "identity_already_exists";
+}
+
+/**
+ * OAuth conversion, Google half (#1445, spec §2/§5): links the Google
+ * identity to the CURRENT (anonymous) account via `linkIdentity`.
+ *
+ * ☠️ Never `signInWithOAuth` / `signInWithIdToken` here - both sign into the
+ * identity's OWN account and silently strand the guest's data. `linkIdentity`
+ * is the only linking path (requires `enable_manual_linking`, #1440).
+ *
+ * Web is a full-page PKCE redirect: the link completes at `/auth-callback`,
+ * and a 422 `identity_already_exists` collision surfaces THERE as error
+ * params (see callback-errors' `identity_exists` and the callback screen's
+ * hand-back to the conversion form). Native rides the same in-app browser
+ * trip as `signInWithGoogle`, so both success and collision resolve in-form.
+ * Returns false when the dance did not complete in-app (web redirect, or the
+ * user backing out), matching the sign-in runners' contract.
+ */
+export async function linkGoogleIdentity() {
+  const client = requireSupabase();
+  const redirectTo = getDefaultAuthRedirectUrl();
+  const { data, error } = await client.auth.linkIdentity({
+    provider: "google",
+    options: {
+      redirectTo,
+      skipBrowserRedirect: Platform.OS !== "web",
+      queryParams: {
+        prompt: "select_account",
+      },
+    },
+  });
+
+  if (error) {
+    if (isIdentityExistsError(error)) {
+      throw new Error(IDENTITY_ALREADY_EXISTS_ERROR);
+    }
+    throw error;
+  }
+
+  if (Platform.OS === "web") {
+    return false;
+  }
+
+  const authUrl = data?.url;
+  if (!authUrl) {
+    throw new Error("Unable to start Google linking.");
+  }
+
+  const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectTo);
+  if (result.type !== "success") {
+    return false;
+  }
+
+  try {
+    await completeAuthRedirect(result.url);
+  } catch (error) {
+    // The native collision arrives in the redirect URL's error params, which
+    // completeAuthRedirect classifies - surface it as the same constant the
+    // direct 422 path throws, so the form has ONE collision branch.
+    if (isAuthCallbackError(error) && error.code === "identity_exists") {
+      throw new Error(IDENTITY_ALREADY_EXISTS_ERROR);
+    }
+    throw error;
+  }
+
+  await refreshSessionAfterConversion(client);
+  return true;
+}
+
+/**
+ * OAuth conversion, Apple half (#1445): the same system sheet as sign-in, but
+ * the token goes to `linkIdentity`'s id-token overload
+ * (`/token?grant_type=id_token` with `link_identity: true`), which links to
+ * the current anonymous user. ☠️ `signInWithIdToken` never links - it signs
+ * into the identity's own account and strands the guest. Returns false when
+ * the user dismisses the sheet.
+ */
+export async function linkAppleIdentity() {
+  const client = requireSupabase();
+
+  const identityToken = await getAppleIdentityToken();
+  if (!identityToken) {
+    return false;
+  }
+
+  const { error } = await client.auth.linkIdentity({
+    provider: "apple",
+    token: identityToken,
+  });
+
+  if (error) {
+    if (isIdentityExistsError(error)) {
+      throw new Error(IDENTITY_ALREADY_EXISTS_ERROR);
+    }
+    throw error;
+  }
+
+  await refreshSessionAfterConversion(client);
+  return true;
 }
 
 export async function sendPasswordResetEmail(email: string) {
@@ -373,4 +547,11 @@ export async function signOut(scope: SignOutScope) {
   if (error) {
     throw error;
   }
+  // A DELIBERATE exit (settings sign-out, delete-account - both call this
+  // wrapper) must not read as a lost session on the next launch, so the
+  // fresh-start marker (#1450) goes with it. The involuntary paths - refresh
+  // failure, the 23503 zombie guard (which calls the client directly, by
+  // design) - never reach this line, which is what keeps the marker behind
+  // for the returning-device notice.
+  await clearSessionMarker();
 }

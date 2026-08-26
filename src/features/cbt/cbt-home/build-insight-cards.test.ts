@@ -20,7 +20,7 @@ const t = ((key: string, opts?: Record<string, unknown>) => {
 
 function baseInsights(): CbtInsights {
   return {
-    topDistortions: [],
+    distortionCounts: [],
     exerciseMoodLift: null,
     activityMoodLiftByCategory: [],
     beliefReviewSuggestions: [],
@@ -28,7 +28,6 @@ function baseInsights(): CbtInsights {
     selfCareTrend: null,
     angerPattern: null,
     exposureProgress: null,
-    slogan: "",
   };
 }
 
@@ -37,30 +36,22 @@ describe("buildInsightCards", () => {
     expect(buildInsightCards(baseInsights(), t)).toEqual([]);
   });
 
-  it("emits the top-distortion card without a description when there is only one distortion", () => {
-    const cards = buildInsightCards(
-      { ...baseInsights(), topDistortions: [{ key: "catastrophizing", count: 4 }] },
-      t,
-    );
-    expect(cards).toHaveLength(1);
-    expect(cards[0].key).toBe("topDistortion");
-    expect(cards[0].title).toBe("dashboard.insights.topDistortion(name=catastrophizing,count=4)");
-    expect(cards[0].description).toBeUndefined();
-  });
-
-  it("includes the other-distortions detail when more than one distortion exists", () => {
+  /**
+   * The replacement rule (#1387): the pattern counts render as the section's
+   * bars, never as a card, so counts alone must build nothing here.
+   */
+  it("builds no card from the distortion counts", () => {
     const cards = buildInsightCards(
       {
         ...baseInsights(),
-        topDistortions: [
+        distortionCounts: [
           { key: "catastrophizing", count: 4 },
           { key: "mindReading", count: 2 },
         ],
       },
       t,
     );
-    expect(cards[0].description).toContain("dashboard.insights.topDistortionDetail");
-    expect(cards[0].description).toContain("mindReading");
+    expect(cards).toEqual([]);
   });
 
   it("uses the no-sleep-average label when averageSleepHours is null", () => {
@@ -136,7 +127,7 @@ describe("buildInsightCards", () => {
   it("emits all cards in the fixed DOM order when every insight is present", () => {
     const cards = buildInsightCards(
       {
-        topDistortions: [{ key: "catastrophizing", count: 4 }],
+        distortionCounts: [{ key: "catastrophizing", count: 4 }],
         exerciseMoodLift: { withExercise: 7, withoutExercise: 5 },
         activityMoodLiftByCategory: [{ category: "pleasure", averageLift: 2, count: 3 }],
         beliefReviewSuggestions: [{}, {}] as unknown as CbtInsights["beliefReviewSuggestions"],
@@ -150,12 +141,10 @@ describe("buildInsightCards", () => {
         },
         angerPattern: { averageArousal: 6, timeOutsTaken: 1, totalLogs: 4, commonUrge: "yell" },
         exposureProgress: { completed: 2, total: 5 },
-        slogan: "",
       },
       t,
     );
     expect(cards.map((c) => c.key)).toEqual([
-      "topDistortion",
       "exerciseMood",
       "reviewBelief",
       "activityMoodLift",

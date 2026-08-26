@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { useOverlayRegistration } from "@/src/stores/overlay-count-store";
 
 /**
  * react-native-web's slide-in runs 250ms; the shield lifts on RNW's onShow
@@ -23,6 +24,15 @@ interface PressShieldModalBaseProps extends Omit<ModalProps, "animationType"> {
    * (#1118).
    */
   animation?: "slide" | "fade";
+  /**
+   * ☠️ Opt-out of the #1473 overlay-count registration, for exactly one
+   * caller: the update popup GATES on the count its own render would raise,
+   * so registering it would oscillate the offer (spec §2 on #1142 — armed →
+   * counted → disarmed → uncounted → ...). Every other overlay must count;
+   * `test/modal-overlay-registration.test.ts` allowlists the files that may
+   * pass this.
+   */
+  registerOverlay?: boolean;
 }
 
 /**
@@ -108,11 +118,15 @@ export function PressShieldModal(props: PressShieldModalProps) {
     surface,
     onEscape,
     escapeLabel,
+    registerOverlay = true,
     children,
     onShow,
     ...modalProps
   } = props;
   const { visible = true } = modalProps;
+  // Registering here covers every call site at once, the same way the wrapper
+  // already carries the #1054 gate for all of them (#1473, spec §2 on #1142).
+  useOverlayRegistration(visible && registerOverlay);
   const reduceMotionEnabled = useReduceMotionEnabled();
   const animationType = reduceMotionEnabled ? "none" : animation;
   const [entranceDone, setEntranceDone] = useState(false);

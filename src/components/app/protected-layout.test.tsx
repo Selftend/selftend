@@ -109,13 +109,25 @@ jest.mock("@/src/components/app/verify-email-banner", () => {
   };
 });
 
-jest.mock("@/src/components/app/update-banner", () => {
+jest.mock("@/src/components/app/update-popup", () => {
   const Text = mockText;
 
   return {
-    UpdateBanner: () => <Text>Update banner</Text>,
+    UpdatePopup: () => <Text>Update popup</Text>,
   };
 });
+
+// The layout itself mounts the update trigger since #1474 (the banner is
+// presentational). The hook owns timers and listeners and has its own suite;
+// stub it so this one stays about the shell's gates and placement.
+jest.mock("@/src/lib/use-update-availability", () => ({
+  useUpdateAvailability: () => ({
+    available: false,
+    version: null,
+    act: jest.fn(),
+    dismiss: jest.fn(),
+  }),
+}));
 
 // The date strip and native widget bridge each own timers/listeners and have dedicated
 // tests. This suite only verifies the protected-layout gates, so render inert boundaries.
@@ -379,7 +391,10 @@ describe("ProtectedLayout headerless shell (#667)", () => {
     expect(stackAt).toBeGreaterThanOrEqual(0);
     expect(stackAt).toBeLessThan(output.indexOf("Offline banner"));
     expect(stackAt).toBeLessThan(output.indexOf("Verify-email banner"));
-    expect(stackAt).toBeLessThan(output.indexOf("Update banner"));
+    // The update offer left the strip for a modal (#1475) but must still be
+    // mounted in the authenticated shell — inside AppLockGate's children,
+    // where suppression and the lock screen can gate it (#1142 spec §3).
+    expect(output.indexOf("Update popup")).toBeGreaterThanOrEqual(0);
   });
 
   it("reserves the safe area only while a banner is visible", async () => {

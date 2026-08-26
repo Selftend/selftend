@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Image, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -26,6 +26,9 @@ import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { runAppleSignIn } from "@/src/features/auth/run-apple-sign-in";
 import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
+import { consumeSignInPrefill } from "@/src/features/auth/sign-in-prefill";
+import { useGuestAbandonGuard } from "@/src/features/auth/use-guest-abandon-guard";
+import { GuestAbandonDialog } from "@/src/components/app/guest-abandon-dialog";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { COMPACT_CONTROL_HIT_SLOP } from "@/src/lib/accessibility";
 import { captureError, isReportableError } from "@/src/lib/sentry";
@@ -42,6 +45,12 @@ export function SignInForm() {
   const pushWithOrigin = usePushWithOrigin();
   const theme = useThemePalette();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
+  // Warn-and-abandon (#1444): every sign-in path below runs through the
+  // guard, because each of them lands this device in a DIFFERENT account and
+  // leaves a guest's data behind. Registered users and empty guests pass
+  // straight through.
+  const { guardSignIn, isChecking, isProceeding, warningVisible, proceed, cancel } =
+    useGuestAbandonGuard();
   const [submitError, setSubmitError] = useState("");
   const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle");
@@ -53,30 +62,54 @@ export function SignInForm() {
     formState: { errors, isSubmitting },
     getValues,
     handleSubmit,
+    setValue,
   } = useForm<SignInSchema>({
     defaultValues: { email: "", password: "" },
     resolver: zodResolver(signInSchema),
   });
 
+  // Prefill from the conversion collision's "Sign in instead" link (#1443).
+  // A focus effect, not a mount effect: sign-in is `dangerouslySingular`
+  // (#1027), so the link may land on a REUSED instance whose mount effects
+  // never rerun - focus fires either way. Consume-once (see the module's
+  // docblock for why this is not a query param), and the handed-off address
+  // overwrites whatever was typed: clicking "Sign in instead" for an email is
+  // as explicit as intent gets.
+  useFocusEffect(
+    useCallback(() => {
+      const prefillEmail = consumeSignInPrefill();
+      if (prefillEmail) {
+        setValue("email", prefillEmail);
+      }
+    }, [setValue]),
+  );
+
   const onGoogleSubmit = () =>
-    runGoogleSignIn({
-      setSubmitError,
-      setIsGoogleSubmitting,
-      recordSuccess,
-      recordFailure,
-      errorFallback: t("signIn.googleError"),
-    });
+    guardSignIn(() =>
+      runGoogleSignIn({
+        setSubmitError,
+        setIsGoogleSubmitting,
+        recordSuccess,
+        recordFailure,
+        errorFallback: t("signIn.googleError"),
+      }),
+    );
 
   const onAppleSubmit = () =>
-    runAppleSignIn({
-      setSubmitError,
-      setIsAppleSubmitting,
-      recordSuccess,
-      recordFailure,
-      errorFallback: t("apple.error"),
-    });
+    guardSignIn(() =>
+      runAppleSignIn({
+        setSubmitError,
+        setIsAppleSubmitting,
+        recordSuccess,
+        recordFailure,
+        errorFallback: t("apple.error"),
+      }),
+    );
 
-  const onSubmit = handleSubmit(async ({ email, password }) => {
+  // Extracted from `handleSubmit`'s callback so the guard can hold it as the
+  // pending action and re-run it from the dialog's confirm - RHF's
+  // `isSubmitting` only spans the guarded first pass.
+  const performPasswordSignIn = async ({ email, password }: SignInSchema) => {
     try {
       setSubmitError("");
       setIsEmailNotConfirmed(false);
@@ -106,7 +139,9 @@ export function SignInForm() {
         setSubmitError(t("signIn.error"));
       }
     }
-  });
+  };
+
+  const onSubmit = handleSubmit((values) => guardSignIn(() => performPasswordSignIn(values)));
 
   const onResend = async () => {
     const email = getValues("email");
@@ -130,7 +165,7 @@ export function SignInForm() {
       </CardHeader>
       <CardContent className="gap-4">
         <Button
-          disabled={!hasSupabaseConfig || isGoogleSubmitting}
+          disabled={!hasSupabaseConfig || isGoogleSubmitting || isChecking || isProceeding}
           onPress={() => void onGoogleSubmit()}
           variant="outline"
         >
@@ -148,7 +183,9 @@ export function SignInForm() {
 
         <AppleSignInButton
           onPress={onAppleSubmit}
-          disabled={isSubmitting || isGoogleSubmitting || isAppleSubmitting}
+          disabled={
+            isSubmitting || isGoogleSubmitting || isAppleSubmitting || isChecking || isProceeding
+          }
         />
 
         <View className="flex-row items-center gap-3">
@@ -250,11 +287,13 @@ export function SignInForm() {
 
         <Button
           testID="sign-in-submit"
-          disabled={!hasSupabaseConfig || isSubmitting || isThrottled}
+          disabled={!hasSupabaseConfig || isSubmitting || isThrottled || isProceeding}
           onPress={() => void onSubmit()}
         >
           <SubmitButtonContent
-            pending={isSubmitting}
+            // `isSubmitting` spans the guard's content check too - handleSubmit
+            // awaits it - so a guest sees the button pending while the check runs.
+            pending={isSubmitting || isProceeding}
             idleLabel={t("signIn.submit")}
             pendingLabel={t("signIn.submitting")}
           />
@@ -266,6 +305,13 @@ export function SignInForm() {
             <Text>{t("signIn.signUpLink")}</Text>
           </Button>
         </View>
+
+        <GuestAbandonDialog
+          visible={warningVisible}
+          isPending={isProceeding}
+          onCancel={cancel}
+          onConfirm={() => void proceed()}
+        />
       </CardContent>
     </Card>
   );

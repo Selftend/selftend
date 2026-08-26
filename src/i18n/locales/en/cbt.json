@@ -2,12 +2,18 @@
   "module": {
     "label": "CBT"
   },
-  "fullTitle": "Cognitive Behavioral Therapy",
+  "fullTitle": "Cognitive Behavioural Therapy",
   "home": {
     "title": "CBT",
     "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",
     "distortionGuide": "Thinking patterns",
-    "recordHistory": "Record history"
+    "showAllRecords": "Show all records",
+    "statLoadingValue": "—",
+    "statRecords_one": "thought record",
+    "statRecords_other": "thought records",
+    "statThisMonth": "this month",
+    "statBeliefShift_one": "point mean belief shift",
+    "statBeliefShift_other": "points mean belief shift"
   },
   "program": {
     "startTitle": "Your CBT program",
@@ -85,14 +91,11 @@
   },
   "dashboard": {
     "activeGoals": "Active goals",
-    "seeAll": "See all",
-    "recentThought": "Recent thought record",
+    "seeAll": "Show all goals",
+    "recentThought": "Recent thought records",
     "sloganTitle": "Your slogan",
     "insights": {
       "title": "Insights",
-      "topDistortion": "Top distortion: {{name}} ({{count}}×)",
-      "topDistortionDetail": "Other recurring patterns: {{names}}.",
-      "distortionSummaryItem": "{{name}} ({{count}}×)",
       "exerciseMood": "Average mood on exercise days: {{withExercise}} vs {{withoutExercise}} without.",
       "exerciseMoodDetail": "This compares mood logs on days with and without exercise.",
       "reviewBelief_one": "{{count}} belief due for review.",
@@ -154,7 +157,7 @@
     "review": {
       "title": "Review"
     },
-    "usesSharedTools": "Uses these shared tools",
+    "usesSharedTools": "Shared tools",
     "strategyDescriptions": {
       "thoughts": "A guided look at one difficult moment.",
       "beliefs": "Recurring themes underneath thoughts.",
@@ -609,8 +612,8 @@
     "empty": "No records on this day",
     "emptyDescription": "Try another date, or add a record from the CBT section - it appears here once saved.",
     "untitledRecord": "Untitled thought record",
-    "recordSummaryEmpty": "No balanced thought yet.",
-    "recordSummary": "Updated {{timestamp}}. {{balancedThought}}"
+    "updated": "Updated {{timestamp}}",
+    "beliefShift": "Belief {{before}} -> {{after}}"
   },
   "learn": {
     "title": "Thinking patterns",
@@ -1057,10 +1060,12 @@
     "intensityBeforeHint": "Optional. 0 means no intensity; 100 means as strong as it gets.",
     "patternsLabel": "Thinking patterns",
     "patternsChooseHint": "Optional: choose the thinking patterns that seem closest. You can pick more than one, or skip this step.",
-    "evidenceFor": "Evidence supporting the thought",
+    "evidenceFor": "Evidence for",
+    "evidenceForLabel": "Evidence supporting the thought",
     "evidenceForHint": "Optional. Add one fact per line.",
     "evidenceForPlaceholder": "Example: The message says we need to talk.",
-    "evidenceAgainst": "Evidence against the thought",
+    "evidenceAgainst": "Evidence against",
+    "evidenceAgainstLabel": "Evidence against the thought",
     "evidenceAgainstHint": "Optional. Add one fact per line.",
     "evidenceAgainstPlaceholder": "Example: My manager has sent routine check-in messages before.",
     "balancedThoughtLabel": "Balanced thought",
@@ -1073,7 +1078,6 @@
     "outcomeNotes": "Outcome notes",
     "outcomeNotesHint": "Optional. Capture what changed, what helped, or what you want to remember.",
     "outcomeNotesPlaceholder": "Example: The thought still feels uncomfortable, but less certain.",
-    "summaryNotFilled": "Not filled yet.",
     "saveRecord": "Save record",
     "saving": "Saving record",
     "disputeTitle": "Put the thought on trial",
@@ -1104,18 +1108,14 @@
     "loadingDescription": "Fetching your saved record...",
     "notFound": "Record not found",
     "notFoundLabel": "Nothing to show",
-    "notFoundDescription": "The record may have been archived or removed.",
-    "title": "Thought record",
+    "notFoundDescription": "The record may have been deleted or removed.",
     "updated": "Updated {{timestamp}}",
-    "archiveProblem": "Archive problem",
-    "archiveConfirmTitle": "Archive this record",
-    "archiveButton": "Archive",
+    "deleteProblem": "Delete problem",
+    "deleteConfirmTitle": "Delete this record",
     "editButton": "Edit record",
-    "archiveError": "Unable to archive the record.",
-    "expandedTitle": "Additional reflection",
-    "expandedDescription": "This record includes optional evidence or intensity notes.",
-    "intensityShift": "Intensity {{before}} -> {{after}} (shift {{shift}}).",
-    "archiveConfirmMessage": "The record will be removed from your history. This can't be undone in the app."
+    "deleteError": "Unable to delete the record.",
+    "intensity": "Intensity",
+    "deleteConfirmMessage": "The record will be removed from your history. This can't be undone in the app."
   },
   "emotions": {
     "groupDifficult": "Difficult feelings",

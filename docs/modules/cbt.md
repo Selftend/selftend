@@ -14,7 +14,8 @@ The module should be:
 
 ## Current CBT implementation
 
-- CBT dashboard with quick actions, strategy links, recovery slogan, and read-only insights
+- CBT overview: a header stat run (lifetime records, this month's records, and - when this month has records rating the hot thought both before and after - the signed mean belief shift), a "New thought record" button under the header, the programme card, the recovery slogan, active goals, the three most recent thought records, read-only insights (this month's thinking-pattern counts as bars, then the other insight cards), the Think · Act · Be pillars and their strategy links, review links, and a crisis-support callout at the foot
+- one door to the record history, from the recent-records section
 - one-page CBT onboarding, tracked in account preferences (the concern→strategy personalization scaffolding - `cbtWizardCompleted`, `selected_concerns`, `active_strategies` - is intentionally retained for a deferred personalization step, not yet surfaced in a wizard; mirrors the deferred ACT wizard)
 - short distortion learn surface
 - guided thought record flow
@@ -22,7 +23,7 @@ The module should be:
 - private history list
 - detail view
 - edit flow
-- archive flow
+- delete flow (labelled Delete in the UI; stored as a soft archive via `archivedAt`, with no restore surface)
 - goal setting
 - values clarification and activity scheduling
 - mood logging
@@ -165,7 +166,7 @@ This module is only ready to widen after:
 
 - auth works across platforms
 - records persist safely
-- edit and archive flows are stable
+- edit and delete flows are stable
 - reminder defaults stay quiet
 - accessibility baseline is acceptable
 - tests cover the core logic and validation

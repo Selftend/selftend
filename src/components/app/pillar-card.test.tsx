@@ -44,6 +44,34 @@ describe("PillarCard", () => {
     expect(onToolPress).toHaveBeenCalledWith("thoughts");
   });
 
+  /**
+   * The tools are full-width hairline rows (#1386). As a two-up tile grid each
+   * one had ~170dp at 360dp to carry a name AND an 11.5px description, and the
+   * Act pillar has six of them.
+   *
+   * ☠️ The description used to reach assistive tech only as an
+   * `accessibilityHint`, which react-native-web never implements, while an
+   * explicit `accessibilityLabel` hid the rendered text from it. Both are gone:
+   * the row's children are its accessible name.
+   */
+  it("renders the tool description as text, with no explicit accessible name", () => {
+    const { getByRole, getByText } = render(
+      <PillarCard letter="T" title="Think" kicker="Cognitive" description="...">
+        <PillarCard.Tool
+          toolKey="thoughts"
+          icon="article"
+          name="Thought Records"
+          desc="Catch a thought and test it."
+        />
+      </PillarCard>,
+    );
+
+    expect(getByText("Catch a thought and test it.")).toBeTruthy();
+    const row = getByRole("button");
+    expect(row.props.accessibilityLabel).toBeUndefined();
+    expect(row.props.accessibilityHint).toBeUndefined();
+  });
+
   // Still a stripe, no longer "for the pillar colour" (#587). The shape is
   // what this asserts and the shape is unchanged; the colours inside it are the
   // app accent's now rather than the pillar's hue.

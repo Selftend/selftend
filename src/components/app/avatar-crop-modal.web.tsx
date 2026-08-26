@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { useOverlayRegistration } from "@/src/stores/overlay-count-store";
 
 interface AvatarCropModalProps {
   imageUri: string;
@@ -21,6 +22,9 @@ export function AvatarCropModal({ imageUri, onCancel, onCrop, visible }: AvatarC
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const reduceMotionEnabled = useReduceMotionEnabled();
+  // Overlay-count registry (#1473, spec §2 on #1142); the guard test derives
+  // every raw-Modal renderer, so this line is not optional.
+  useOverlayRegistration(visible);
 
   const onCropComplete = (_: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);

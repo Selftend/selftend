@@ -1,5 +1,5 @@
-export const policyLastUpdated = "2026-07-31";
-export const policyVersion = "2026-07-31-apple-sign-in";
+export const policyLastUpdated = "2026-08-26";
+export const policyVersion = "2026-08-26-guest-accounts";
 
 /**
  * Set to true while policies await final human/legal review.

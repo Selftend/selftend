@@ -59,7 +59,9 @@ describe("a show-all door's arrow is an icon, not a character in the string", ()
       expect.arrayContaining([
         "act:home.viewAllDefusion",
         "cbt:breathing.overview.showAll",
+        "cbt:dashboard.seeAll",
         "cbt:grounding.recent.showAll",
+        "cbt:home.showAllRecords",
         "gratitude:home.viewAll",
         "journal:detail.showAll",
         "journal:list.showAll",

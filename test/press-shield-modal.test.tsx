@@ -3,6 +3,7 @@ import { Modal, Platform, ScrollView, Text } from "react-native";
 
 import { ENTRANCE_FALLBACK_MS, PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { useOverlayCountStore } from "@/src/stores/overlay-count-store";
 import i18n from "@/src/i18n";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
@@ -194,6 +195,49 @@ describe("PressShieldModal", () => {
     expect(
       screen.getByTestId("modal-entrance-shield", { includeHiddenElements: true }),
     ).toBeTruthy();
+  });
+
+  it("reports into the overlay-count registry exactly while visible (#1473)", () => {
+    // The wrapper registering once covers every call site, the same way it
+    // carries the #1054 gate for all of them — so this seam is where the
+    // registry's "a PressShieldModal is on screen" signal is proven. Native
+    // platform on purpose: there a closed wrapper stays MOUNTED with
+    // `visible={false}`, so this also pins that deactivation alone releases.
+    setPlatformOS("ios");
+    const ui = (visible: boolean) => (
+      <PressShieldModal onEscape={noop} visible={visible}>
+        <Text>content</Text>
+      </PressShieldModal>
+    );
+    const { rerender, unmount } = render(ui(true));
+    expect(useOverlayCountStore.getState().count).toBe(1);
+
+    rerender(ui(false));
+    expect(useOverlayCountStore.getState().count).toBe(0);
+
+    rerender(ui(true));
+    expect(useOverlayCountStore.getState().count).toBe(1);
+
+    unmount();
+    expect(useOverlayCountStore.getState().count).toBe(0);
+  });
+
+  it("registerOverlay={false} keeps a visible modal out of the registry (#1475)", () => {
+    // The one sanctioned opt-out, for the update popup: its trigger gates on
+    // the count, so the wrapper registering it would oscillate the offer
+    // (spec §2 on #1142). Who may pass this is policed statically in
+    // modal-overlay-registration.test.ts; this pins that passing it actually
+    // works — a wrapper that registered anyway would flash-and-vanish the
+    // popup with every test still green.
+    setPlatformOS("ios");
+    const { unmount } = render(
+      <PressShieldModal onEscape={noop} registerOverlay={false} visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+    expect(useOverlayCountStore.getState().count).toBe(0);
+    unmount();
+    expect(useOverlayCountStore.getState().count).toBe(0);
   });
 
   it("drops the shield after the fallback window even if onShow never fires", () => {

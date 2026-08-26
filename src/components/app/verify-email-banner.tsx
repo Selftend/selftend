@@ -62,8 +62,29 @@ export function VerifyEmailBanner() {
   }, [canResend]);
 
   const email = user?.email ?? null;
-  const isEmailProvider = user?.app_metadata?.provider === "email";
-  if (!email || !isEmailProvider || !preferences || preferences.emailVerified) {
+  // Two spellings of "this account's email came from the user, not a
+  // provider": password signups carry `app_metadata.provider === "email"`,
+  // but a CONVERTED guest (#1443) does not - GoTrue's anonymous update branch
+  // attaches an "email" identity while leaving app_metadata `{}` (observed
+  // against GoTrue 2026-08-26; the provider claim never appears). The
+  // identity list is the truthful signal for both: OAuth users carry
+  // google/apple identities instead, and guests carry none.
+  const hasSelfAttachedEmail =
+    user?.app_metadata?.provider === "email" ||
+    (user?.identities?.some((identity) => identity.provider === "email") ?? false);
+  // A guest has no email to verify, whatever the rest of the user object says
+  // (#1442). The email/identity checks already exclude today's guests - no
+  // email, no identities - but the banner's contract is "never while the
+  // session is a guest", so the guard is the claim itself, not its side
+  // effects. A CONVERTED guest is not anonymous any more and still gets the
+  // banner through the identity check above.
+  if (
+    user?.is_anonymous ||
+    !email ||
+    !hasSelfAttachedEmail ||
+    !preferences ||
+    preferences.emailVerified
+  ) {
     return null;
   }
 
