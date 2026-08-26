@@ -15,9 +15,10 @@ type ParamsRecord = Record<string, unknown>;
  *
  * The helper has to express everything the call sites it replaces could express,
  * or migrating one quietly changes how the app navigates. `dangerouslySingular`
- * is the live case (#1266): ACT's "Also try" row is a lateral jump - "the tool
- * you jump to may be the one you came from two hops ago" (#1027) - and passes
- * the flag so the stack does not grow a second copy of a screen already in it.
+ * was the live case (#1266): ACT's "Also try" row passed the flag when it
+ * migrated, so a helper that forwarded only an `Href` would have silently
+ * dropped it. #1216 later ruled that flag off - singularity is the layout's
+ * call - but the argument stands for the next call site that carries an option.
  */
 type PushOptions = Parameters<typeof router.push>[1];
 

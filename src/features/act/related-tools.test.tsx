@@ -53,23 +53,26 @@ describe("RelatedTools records the screen it was reached from", () => {
   });
 
   /**
-   * AC4 - "no navigation behaviour changes other than origin recording" - and
-   * the one place in this batch where it took a code change to hold.
+   * The row used to force `dangerouslySingular: true` on every push, and #1266's
+   * migration onto the Origin helper deliberately preserved that (its AC was "no
+   * navigation behaviour changes other than origin recording"). #1216 then ruled
+   * the flag off: singularity is the layout's call, made once for every caller.
+   * Three of this row's four routes have been declared singular there since
+   * #1278, so the flag was redundant for them - and actively wrong for the
+   * fourth: `/tools/meditation` is keyed by `?practice=` and holds per-visit
+   * state, so `protected-layout.tsx` deliberately leaves it plain, and forcing
+   * singular here returned the user to a live meditation instance instead of a
+   * fresh home.
    *
-   * `dangerouslySingular` is load-bearing here: "Related" is lateral by
-   * definition, so the tool being jumped to may be the very one the user came
-   * from two hops ago (#1027), and without the flag the stack grows a second
-   * copy of a screen already in it. `usePushWithOrigin` originally forwarded
-   * only an `Href`, so migrating this call site would have silently dropped the
-   * flag - a real change to shipped ACT navigation, disguised as a mechanical
-   * substitution. The helper takes push options now; this pins that they arrive.
+   * One argument, not `(href, undefined)`: the helper forwards options only when
+   * given, so this asserts that no options ride along at all.
    */
-  it("still passes dangerouslySingular through to the router", () => {
+  it("pushes plainly, leaving singularity to the layout", () => {
     renderWithProviders(<RelatedTools tools={TOOLS} />);
 
     fireEvent.press(screen.getByRole("link"));
 
-    expect(router.push).toHaveBeenCalledWith("/tools/habits", { dangerouslySingular: true });
+    expect(router.push).toHaveBeenCalledWith("/tools/habits");
   });
 
   /**

@@ -83,10 +83,11 @@ describe("usePushWithOrigin", () => {
    *
    * `dangerouslySingular` is the case that forced this (#1266). ACT's "Also try"
    * row is a lateral jump - "the tool you jump to may be the one you came from
-   * two hops ago" (#1027) - and it passes the flag so the stack does not grow a
-   * second copy of a screen already in it. A helper that forwarded only an
-   * `Href` would have dropped it, and the AC that this batch changes no
-   * navigation behaviour other than recording would have shipped false.
+   * two hops ago" (#1027) - and it passed the flag when it migrated, so a helper
+   * that forwarded only an `Href` would have dropped it, and the AC that that
+   * batch changes no navigation behaviour other than recording would have
+   * shipped false. (#1216 later ruled the flag off that row - singularity is the
+   * layout's call - which changes nothing about what the helper must express.)
    */
   it("forwards the push options a call site passes", () => {
     mockUsePathname.mockReturnValue("/modules/act/values");
