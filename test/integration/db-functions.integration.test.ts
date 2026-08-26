@@ -520,6 +520,7 @@ describe("purge_user_account() (integration)", () => {
     });
     expect(upload.error).toBeNull();
     const before = await admin.storage.from("profile-pics").list(uid);
+    expect(before.error).toBeNull();
     expect(before.data?.map((object) => object.name)).toEqual(["avatar.png"]);
 
     const { error } = await admin.rpc("purge_user_account", { target_user: uid });
@@ -539,7 +540,8 @@ describe("purge_user_account() (integration)", () => {
     expect(prefs.data).toEqual([]);
     expect(records.data).toEqual([]);
     expect(pushTokens.data).toEqual([]);
-    expect(objects.data ?? []).toEqual([]);
+    expect(objects.error).toBeNull();
+    expect(objects.data).toEqual([]);
   });
 });
 
