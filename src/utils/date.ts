@@ -42,6 +42,25 @@ export function currentDateKey(): string {
 }
 
 /**
+ * The ISO instant of the LOCAL midnight starting the civil month `dateKey`
+ * falls in. This is a server-comparable boundary for "this month" windows -
+ * `created_at >= monthStartIsoOf(currentDateKey())` counts the rows the viewer
+ * would call this month's (#1387).
+ */
+export function monthStartIsoOf(dateKey: string): string {
+  return new Date(`${dateKey.slice(0, 7)}-01T00:00:00`).toISOString();
+}
+
+/**
+ * Whether ISO instant `iso` falls on or after ISO boundary `sinceIso`. The one
+ * window predicate for client-side "since X" reductions, so two surfaces
+ * windowing on the same boundary cannot drift into two comparisons (#1387).
+ */
+export function instantOnOrAfter(iso: string, sinceIso: string): boolean {
+  return new Date(iso).getTime() >= new Date(sinceIso).getTime();
+}
+
+/**
  * The last `count` LOCAL day keys ending on `reference`'s day, oldest first
  * (today last). The shared "last N day keys" helper behind multi-day views
  * like the routines 7-day strip; anchored at local noon so stepping across a

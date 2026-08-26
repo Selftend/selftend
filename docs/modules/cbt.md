@@ -14,7 +14,7 @@ The module should be:
 
 ## Current CBT implementation
 
-- CBT overview: a "New thought record" button under the header, the programme card, the recovery slogan, active goals, the three most recent thought records, read-only insights, the Think · Act · Be pillars and their strategy links, review links, and a crisis-support callout at the foot
+- CBT overview: a header stat run (lifetime records, this month's records, and - when this month has records rating the hot thought both before and after - the signed mean belief shift), a "New thought record" button under the header, the programme card, the recovery slogan, active goals, the three most recent thought records, read-only insights (this month's thinking-pattern counts as bars, then the other insight cards), the Think · Act · Be pillars and their strategy links, review links, and a crisis-support callout at the foot
 - one door to the record history, from the recent-records section
 - one-page CBT onboarding, tracked in account preferences (the concern→strategy personalization scaffolding - `cbtWizardCompleted`, `selected_concerns`, `active_strategies` - is intentionally retained for a deferred personalization step, not yet surfaced in a wizard; mirrors the deferred ACT wizard)
 - short distortion learn surface
