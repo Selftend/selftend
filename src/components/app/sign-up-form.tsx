@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Image, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -25,6 +25,14 @@ import {
 } from "@/src/features/auth/api";
 import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { runAppleSignIn } from "@/src/features/auth/run-apple-sign-in";
+import { runGoogleLink } from "@/src/features/auth/run-google-link";
+import { runAppleLink } from "@/src/features/auth/run-apple-link";
+import {
+  consumeConversionCollision,
+  type CollisionProvider,
+} from "@/src/features/auth/conversion-collision";
+import { useGuestAbandonGuard } from "@/src/features/auth/use-guest-abandon-guard";
+import { GuestAbandonDialog } from "@/src/components/app/guest-abandon-dialog";
 import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
 import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
 import { recordSignInPrefill } from "@/src/features/auth/sign-in-prefill";
@@ -53,8 +61,18 @@ export function SignUpForm() {
   // mode, it renders the "Sign in instead" link and carries the typed address
   // into sign-in as the prefill (spec §5: no pre-submit existence check).
   const [collisionEmail, setCollisionEmail] = useState("");
+  // The provider whose linkIdentity dance hit 422 `identity_already_exists` -
+  // conversion mode only. Renders the inline error + the provider one-tap
+  // "Sign in with Google/Apple instead" (spec §5: never a silent
+  // signInWithIdToken fallback).
+  const [oauthCollision, setOauthCollision] = useState<CollisionProvider | null>(null);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [isAppleSubmitting, setIsAppleSubmitting] = useState(false);
+  // The abandonment warning before the collision one-tap's SECOND OAuth dance
+  // (#1444's dialog, reused): after that dance the session is already
+  // replaced, so the warning must come first.
+  const { guardSignIn, isChecking, isProceeding, warningVisible, proceed, cancel } =
+    useGuestAbandonGuard();
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
@@ -67,28 +85,107 @@ export function SignUpForm() {
     resolver: zodResolver(signUpSchema),
   });
 
-  const onGoogleSubmit = () =>
-    runGoogleSignIn({
+  // Proper nouns, identical in every locale - interpolated into the
+  // collision copy rather than duplicated per provider.
+  const providerLabel = (provider: CollisionProvider) =>
+    provider === "google" ? "Google" : "Apple";
+
+  const showOauthCollision = useCallback(
+    (provider: CollisionProvider) => {
+      setOauthCollision(provider);
+      setSubmitError(t("conversion.identityAlreadyExists", { provider: providerLabel(provider) }));
+    },
+    [t],
+  );
+
+  // A web linkIdentity collision comes back through /auth-callback (full-page
+  // PKCE redirect) and travels here as a consume-once handoff - same shape as
+  // sign-in-prefill, same focus-not-mount reasoning. Consumed regardless of
+  // mode so a stale record never lingers, applied only in conversion mode.
+  useFocusEffect(
+    useCallback(() => {
+      const provider = consumeConversionCollision();
+      if (provider && isConversion) {
+        showOauthCollision(provider);
+      }
+    }, [isConversion, showOauthCollision]),
+  );
+
+  const onGoogleSubmit = () => {
+    setOauthCollision(null);
+    // Conversion links the identity to the guest's account (linkIdentity);
+    // plain sign-up signs into the identity's own account. ☠️ The two must
+    // never swap - the sign-in runner from a guest session silently strands
+    // the guest's data.
+    if (isConversion) {
+      return runGoogleLink({
+        setSubmitError,
+        setIsGoogleSubmitting,
+        recordSuccess,
+        recordFailure,
+        errorFallback: t("signUp.googleError"),
+        onCollision: () => showOauthCollision("google"),
+      });
+    }
+    return runGoogleSignIn({
       setSubmitError,
       setIsGoogleSubmitting,
       recordSuccess,
       recordFailure,
       errorFallback: t("signUp.googleError"),
     });
+  };
 
-  const onAppleSubmit = () =>
-    runAppleSignIn({
+  const onAppleSubmit = () => {
+    setOauthCollision(null);
+    if (isConversion) {
+      return runAppleLink({
+        setSubmitError,
+        setIsAppleSubmitting,
+        recordSuccess,
+        recordFailure,
+        errorFallback: t("apple.error"),
+        onCollision: () => showOauthCollision("apple"),
+      });
+    }
+    return runAppleSignIn({
       setSubmitError,
       setIsAppleSubmitting,
       recordSuccess,
       recordFailure,
       errorFallback: t("apple.error"),
     });
+  };
+
+  // The collision's one-tap: the SECOND dance, into the identity's own
+  // account - exactly the sign-in the warn-and-abandon guard exists for.
+  const onSignInWithProviderInstead = () => {
+    const provider = oauthCollision;
+    if (!provider) return;
+    void guardSignIn(() =>
+      provider === "google"
+        ? runGoogleSignIn({
+            setSubmitError,
+            setIsGoogleSubmitting,
+            recordSuccess,
+            recordFailure,
+            errorFallback: t("signUp.googleError"),
+          })
+        : runAppleSignIn({
+            setSubmitError,
+            setIsAppleSubmitting,
+            recordSuccess,
+            recordFailure,
+            errorFallback: t("apple.error"),
+          }),
+    );
+  };
 
   const onSubmit = handleSubmit(async ({ name, email, password }) => {
     try {
       setSubmitError("");
       setCollisionEmail("");
+      setOauthCollision(null);
       if (isConversion) {
         // Applies instantly under autoconfirm and refreshes the session inside
         // (the JWT keeps claiming guest until then). Straight into the app: the
@@ -144,46 +241,41 @@ export function SignUpForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
-        {/* ☠️ No OAuth in conversion mode until #1445: these buttons run
-            signInWithOAuth / signInWithIdToken, which sign into the identity's
-            OWN account and silently strand the guest's data. OAuth conversion
-            is `linkIdentity` only, and it arrives with #1445 (which warns
-            before the provider dance, reusing #1444's dialog). */}
-        {!isConversion ? (
-          <>
-            <Button
-              disabled={!hasSupabaseConfig || isGoogleSubmitting}
-              onPress={() => void onGoogleSubmit()}
-              variant="outline"
-            >
-              {isGoogleSubmitting ? (
-                <ActivityIndicator color={theme.mutedForeground} />
-              ) : (
-                <Image
-                  source={require("../../../assets/branding/google-logo.png")}
-                  style={{ width: 18, height: 18 }}
-                  resizeMode="contain"
-                />
-              )}
-              <Text>
-                {isGoogleSubmitting ? t("signUp.googleOpening") : t("signUp.googleButton")}
-              </Text>
-            </Button>
-
-            <AppleSignInButton
-              onPress={onAppleSubmit}
-              disabled={isSubmitting || isGoogleSubmitting || isAppleSubmitting}
+        {/* OAuth in conversion mode is `linkIdentity` only (#1445): the
+            handlers above fork on `isConversion`, and the link path keeps the
+            guest's account. ☠️ signInWithOAuth / signInWithIdToken sign into
+            the identity's OWN account and silently strand the guest's data -
+            they appear in conversion only as the collision one-tap, behind
+            the abandonment warning. */}
+        <Button
+          disabled={!hasSupabaseConfig || isGoogleSubmitting || isChecking || isProceeding}
+          onPress={() => void onGoogleSubmit()}
+          variant="outline"
+        >
+          {isGoogleSubmitting ? (
+            <ActivityIndicator color={theme.mutedForeground} />
+          ) : (
+            <Image
+              source={require("../../../assets/branding/google-logo.png")}
+              style={{ width: 18, height: 18 }}
+              resizeMode="contain"
             />
+          )}
+          <Text>{isGoogleSubmitting ? t("signUp.googleOpening") : t("signUp.googleButton")}</Text>
+        </Button>
 
-            <View className="flex-row items-center gap-3">
-              <View className="h-px flex-1 bg-border" />
-              <Text className="text-xs text-muted-foreground">
-                {t("common:orContinueWithEmail")}
-              </Text>
-              <View className="h-px flex-1 bg-border" />
-            </View>
-          </>
-        ) : null}
+        <AppleSignInButton
+          onPress={onAppleSubmit}
+          disabled={
+            isSubmitting || isGoogleSubmitting || isAppleSubmitting || isChecking || isProceeding
+          }
+        />
+
+        <View className="flex-row items-center gap-3">
+          <View className="h-px flex-1 bg-border" />
+          <Text className="text-xs text-muted-foreground">{t("common:orContinueWithEmail")}</Text>
+          <View className="h-px flex-1 bg-border" />
+        </View>
 
         <Controller
           control={control}
@@ -313,6 +405,19 @@ export function SignUpForm() {
               >
                 <Text className="text-xs">{t("conversion.signInInstead")}</Text>
               </Button>
+            ) : oauthCollision ? (
+              <Button
+                disabled={isChecking || isProceeding}
+                onPress={onSignInWithProviderInstead}
+                variant="link"
+                size="sm"
+              >
+                <Text className="text-xs">
+                  {t("conversion.signInWithProviderInstead", {
+                    provider: providerLabel(oauthCollision),
+                  })}
+                </Text>
+              </Button>
             ) : null}
           </View>
         ) : null}
@@ -322,7 +427,7 @@ export function SignUpForm() {
         ) : null}
 
         <Button
-          disabled={!hasSupabaseConfig || isSubmitting || isThrottled}
+          disabled={!hasSupabaseConfig || isSubmitting || isThrottled || isChecking || isProceeding}
           onPress={() => void onSubmit()}
         >
           <SubmitButtonContent
@@ -347,6 +452,13 @@ export function SignUpForm() {
             <Text className="text-xs">{t("signUp.privacyLink")}</Text>
           </Button>
         </View>
+
+        <GuestAbandonDialog
+          visible={warningVisible}
+          isPending={isProceeding}
+          onCancel={cancel}
+          onConfirm={() => void proceed()}
+        />
       </CardContent>
     </Card>
   );

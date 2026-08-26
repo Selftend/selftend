@@ -1,7 +1,12 @@
 import * as AppleAuthentication from "expo-apple-authentication";
 import { Platform } from "react-native";
 
-import { isAppleSignInAvailable, signInWithApple } from "@/src/features/auth/api";
+import {
+  IDENTITY_ALREADY_EXISTS_ERROR,
+  isAppleSignInAvailable,
+  linkAppleIdentity,
+  signInWithApple,
+} from "@/src/features/auth/api";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("expo-apple-authentication", () => ({
@@ -110,5 +115,77 @@ describe("signInWithApple", () => {
     } as AppleAuthentication.AppleAuthenticationCredential);
 
     await expect(signInWithApple()).rejects.toBe(error);
+  });
+});
+
+// Conversion (#1445): the same sheet, but the token goes to linkIdentity's
+// id-token overload so the guest's account is KEPT - signInWithIdToken from a
+// guest session signs into the identity's own account and strands the guest.
+describe("linkAppleIdentity", () => {
+  function buildLinkClient(linkIdentity: jest.Mock) {
+    const refreshSession = jest.fn().mockResolvedValue({ error: null });
+    const signInWithIdToken = jest.fn();
+    return {
+      client: {
+        auth: { linkIdentity, refreshSession, signInWithIdToken },
+      } as unknown as ReturnType<typeof requireSupabase>,
+      refreshSession,
+      signInWithIdToken,
+    };
+  }
+
+  it("links Apple's identity token to the current account and refreshes - never signInWithIdToken", async () => {
+    const linkIdentity = jest.fn().mockResolvedValue({ error: null });
+    const { client, refreshSession, signInWithIdToken } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockSignInAsync.mockResolvedValue({
+      identityToken: "apple-identity-token",
+    } as AppleAuthentication.AppleAuthenticationCredential);
+
+    expect(await linkAppleIdentity()).toBe(true);
+    expect(linkIdentity).toHaveBeenCalledWith({
+      provider: "apple",
+      token: "apple-identity-token",
+    });
+    expect(signInWithIdToken).not.toHaveBeenCalled();
+    expect(refreshSession).toHaveBeenCalled();
+  });
+
+  it("returns false when the user cancels the sheet, linking nothing", async () => {
+    const linkIdentity = jest.fn();
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockSignInAsync.mockRejectedValue({ code: "ERR_REQUEST_CANCELED" });
+
+    expect(await linkAppleIdentity()).toBe(false);
+    expect(linkIdentity).not.toHaveBeenCalled();
+  });
+
+  it("maps identity_already_exists to the collision constant", async () => {
+    const linkIdentity = jest.fn().mockResolvedValue({
+      error: Object.assign(new Error("Identity is already linked to another user"), {
+        code: "identity_already_exists",
+      }),
+    });
+    const { client, refreshSession } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockSignInAsync.mockResolvedValue({
+      identityToken: "apple-identity-token",
+    } as AppleAuthentication.AppleAuthenticationCredential);
+
+    await expect(linkAppleIdentity()).rejects.toThrow(IDENTITY_ALREADY_EXISTS_ERROR);
+    expect(refreshSession).not.toHaveBeenCalled();
+  });
+
+  it("rethrows other link errors unchanged", async () => {
+    const error = new Error("link rejected");
+    const linkIdentity = jest.fn().mockResolvedValue({ error });
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockSignInAsync.mockResolvedValue({
+      identityToken: "apple-identity-token",
+    } as AppleAuthentication.AppleAuthenticationCredential);
+
+    await expect(linkAppleIdentity()).rejects.toBe(error);
   });
 });

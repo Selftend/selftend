@@ -5,6 +5,7 @@ import AuthCallbackScreen from "./auth-callback-screen";
 import { markEmailVerifiedFromCallback } from "@/src/features/auth/api";
 import { completeAuthRedirect } from "@/src/features/auth/callback";
 import { AuthCallbackError } from "@/src/features/auth/callback-errors";
+import { consumeConversionCollision } from "@/src/features/auth/conversion-collision";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockReplace = jest.fn();
@@ -195,6 +196,22 @@ describe("AuthCallbackScreen - error mapping", () => {
         "This link couldn't be completed here. Request a new link below and open it on this device.",
       ),
     ).toBeTruthy();
+  });
+});
+
+describe("AuthCallbackScreen - identity collision hand-back (#1445)", () => {
+  it("hands a web linkIdentity collision back to the conversion form instead of a failure card", async () => {
+    mockUseLinkingURL.mockReturnValue(
+      "http://localhost:8081/auth-callback?error_code=identity_already_exists&error_description=Identity+is+already+linked+to+another+user",
+    );
+    mockCompleteAuthRedirect.mockRejectedValue(new AuthCallbackError("identity_exists"));
+
+    renderWithProviders(<AuthCallbackScreen />);
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/(auth)/sign-up"));
+    // The collision travels as the consume-once handoff the form reads on focus.
+    expect(consumeConversionCollision()).toBe("google");
+    expect(screen.queryByText("We couldn't finish signing you in with this link.")).toBeNull();
   });
 });
 
