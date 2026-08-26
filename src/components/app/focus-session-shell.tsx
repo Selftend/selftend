@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ScreenEscape } from "@/src/components/app/screen-escape";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
 import { useAccentHsl } from "@/src/lib/theme-palette";
@@ -21,11 +22,16 @@ import { useAccentHsl } from "@/src/lib/theme-palette";
 // composites the wash over every style's base and holds foreground and muted
 // text to AA on the result.
 //
-// No breadcrumb, no h1, no page chrome: a minimal eyebrow-and-progress row is
-// the only frame, and the session's own inline controls are the way out. What
-// an OS/web back action does mid-session (pause + finish-or-continue) is the
-// screen's job, not the shell's - the shell only removes the affordances that
-// would invite a casual exit.
+// No breadcrumb, no h1: the Escape and a minimal eyebrow-and-progress row are
+// the only frame (#1256, R1/R3 on the #1167 spec). The shell used to claim it
+// "removes the affordances that would invite a casual exit" - that was never
+// true: the shell is a ROUTE, not a modal, so `InvisibleHeader` (hamburger,
+// brand home link, user menu) already renders above every session, and the
+// only exit the shell ever withheld was the one that keeps the user's place.
+// What an OS/web back action does mid-session (pause + finish-or-continue) is
+// still the screen's job, not the shell's: the Escape leaves through
+// `router.replace`, so the screens' `beforeRemove` guards catch it exactly
+// like every other uninvited exit.
 export const FOCUS_WASH_ALPHA = { light: 0.04, dark: 0.07 } as const;
 export const FOCUS_WASH_BASE = { light: "--card", dark: "--background" } as const;
 
@@ -55,9 +61,16 @@ export function FocusSessionShell({ eyebrow, trailing, children }: FocusSessionS
       <ScrollView contentContainerClassName="grow px-6 pb-8 pt-3">
         <View className="w-full max-w-[620px] grow self-center">
           <View className="flex-row items-center justify-between gap-3">
-            <Text variant="eyebrow" numberOfLines={1} className="shrink">
-              {eyebrow}
-            </Text>
+            {/* The Escape renders unconditionally - never wrap it in a
+                condition (#1250). The arrow, not the close glyph: a session is
+                not a create/edit form, and its Up ("Back to Grounding",
+                "Back to Meditation") is exactly where leaving should land. */}
+            <View className="shrink flex-row items-center gap-2">
+              <ScreenEscape />
+              <Text variant="eyebrow" numberOfLines={1} className="shrink">
+                {eyebrow}
+              </Text>
+            </View>
             {trailing ? (
               <Text variant="muted" className="shrink-0 text-xs tabular-nums">
                 {trailing}

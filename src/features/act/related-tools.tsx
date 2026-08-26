@@ -1,4 +1,5 @@
-import { router, type Href } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
@@ -15,6 +16,7 @@ interface RelatedToolsProps {
 }
 
 export function RelatedTools({ tools }: RelatedToolsProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t: tAct } = useTranslation("act");
   const { t: tNav } = useTranslation("navigation");
 
@@ -31,13 +33,14 @@ export function RelatedTools({ tools }: RelatedToolsProps) {
             accessibilityLabel={tNav(`sidebar.${tool.nameKey}`)}
             // "Related" is lateral by definition - the tool you jump to may be the one you
             // came from two hops ago (#1027) - but singularity is the LAYOUT's call, made
-            // once for every caller. This row used to force it per push, which was the only
-            // thing holding three of these routes up while they went undeclared, and was
-            // wrong for the fourth: `/tools/meditation` is keyed by `?practice=` and holds
-            // per-visit state, so the layout leaves it plain on purpose and forcing singular
-            // here REUSED an existing instance instead of mounting a fresh one. The routes
-            // are declared now (#1278), so this pushes plainly.
-            onPress={() => router.push(tool.href)}
+            // once for every caller (ruled on #1216). This row used to force it per push,
+            // which was the only thing holding three of these routes up while they went
+            // undeclared, and was wrong for the fourth: `/tools/meditation` is keyed by
+            // `?practice=` and holds per-visit state, so the layout leaves it plain on
+            // purpose and forcing singular here REUSED a live instance instead of mounting
+            // a fresh one. The routes are declared now (#1278), so this pushes plainly -
+            // through the Origin helper, which is a separate concern (#1266).
+            onPress={() => pushWithOrigin(tool.href)}
             className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 active:bg-accent/40"
           >
             <Icon name={tool.icon} className="size-3.5 text-muted-foreground" />

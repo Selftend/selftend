@@ -42,9 +42,21 @@ function openPicker(value: string | null) {
   fireEvent.press(screen.getByRole("button", { name: /^Target date: / }));
 }
 
-/** One day cell in the grid, by the number it shows. */
+/**
+ * One day cell in the grid, by the number it shows.
+ *
+ * ⚠️ Matched on the TAIL of the accessible name, not on the number alone. Since
+ * #1301 a day is named in full — "Sunday, March 15, 2026", and today carries a
+ * "Today, " prefix — precisely so a screen reader stops announcing bare digits.
+ * The name change is the point of that ticket; these tests still assert the same
+ * cells and the same clamp behaviour.
+ *
+ * The `\b` keeps `1` from matching `11`, and the search is scoped to the grid
+ * because the TRIGGER's own label ends the same way — `formatDayKey` renders
+ * "Tue, Mar 10, 2026", so an unscoped match finds the field as well as the day.
+ */
 function day(number: string) {
-  return screen.getByLabelText(number);
+  return within(screen.getByTestId("days")).getByLabelText(new RegExp(`\\b${number}, 2026$`));
 }
 
 describe("the target-date field's calendar", () => {
@@ -78,8 +90,9 @@ describe("the target-date field's calendar", () => {
     // outside days would carry Feb 23–28 in front and Apr 1–5 behind — eleven
     // cells indistinguishable from a disabled past day. With them hidden, each
     // number appears exactly once.
-    expect(screen.getAllByLabelText("1")).toHaveLength(1);
-    expect(screen.getAllByLabelText("5")).toHaveLength(1);
+    const grid = within(screen.getByTestId("days"));
+    expect(grid.getAllByLabelText(/\b1, 2026$/)).toHaveLength(1);
+    expect(grid.getAllByLabelText(/\b5, 2026$/)).toHaveLength(1);
   });
 
   it("disables past days in the grid and leaves today and the future tappable", () => {

@@ -6,10 +6,12 @@ import i18n from "@/src/i18n";
 import { SignInForm } from "./sign-in-form";
 import { signInWithPassword } from "@/src/features/auth/api";
 import { captureError } from "@/src/lib/sentry";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { replace: jest.fn(), push: jest.fn() },
+  usePathname: () => "/sign-in",
 }));
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -151,5 +153,28 @@ describe("SignInForm", () => {
         await i18n.changeLanguage("en");
       });
     }
+  });
+
+  /**
+   * ⚠️ Both hrefs here are written with their route group - `/(auth)/sign-up` -
+   * and `usePathname` never reports one, so recording either verbatim would set
+   * a `forPathname` no screen can match. Nothing would break: the destination
+   * would just quietly show a plain Up, which is the invisible failure opt-out
+   * recording exists to prevent. The helper's `targetPathname` strips the group
+   * (#1265, O3).
+   */
+  it.each([
+    ["Forgot your password?", "/reset-password"],
+    ["Sign up", "/sign-up"],
+  ])("records a group-free target for the %s cross-link", (label, forPathname) => {
+    useNavigationOriginStore.setState({ pending: null });
+    renderWithProviders(<SignInForm />);
+
+    fireEvent.press(screen.getByText(label));
+
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/sign-in",
+      forPathname,
+    });
   });
 });

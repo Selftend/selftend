@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -12,6 +13,7 @@ interface RecentThoughtRecordProps {
 }
 
 export function RecentThoughtRecord({ record }: RecentThoughtRecordProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
 
   if (!record) {
@@ -26,9 +28,7 @@ export function RecentThoughtRecord({ record }: RecentThoughtRecordProps) {
       <AccessibleCardLink
         title={natText}
         description={balancedThought}
-        onPress={() =>
-          router.push(`/modules/cbt/history/${record.id}` as Parameters<typeof router.push>[0])
-        }
+        onPress={() => pushWithOrigin(`/modules/cbt/history/${record.id}` as Href)}
       />
     </View>
   );

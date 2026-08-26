@@ -268,6 +268,28 @@ describe("PressShieldModal's pinned escape row", () => {
     expect(screen.queryByLabelText("Close Getting started with CBT")).toBeNull();
   });
 
+  it("wears the word instead of the X when the call site passes escapeLabel (M2)", () => {
+    // #1258: a bare X when closing is free, a word when closing decides
+    // something that sticks. The word replaces the glyph and IS the
+    // accessible name — announcing "Close" on a press that persists a
+    // decision would be the same disguise, one sense over.
+    setPlatformOS("web");
+    const onEscape = jest.fn();
+    render(
+      <PressShieldModal escapeLabel="Skip for now" onEscape={onEscape} visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+
+    const escape = screen.getByTestId("modal-escape");
+    expect(within(escape).getByText("Skip for now")).toBeTruthy();
+    expect(escape.props.accessibilityLabel).toBe("Skip for now");
+    expect(screen.queryByLabelText("Close")).toBeNull();
+
+    fireEvent.press(escape);
+    expect(onEscape).toHaveBeenCalledTimes(1);
+  });
+
   it("holds only the Escape — no title of its own", () => {
     // M5: every guide renders its own title inside the scroll, so a pinned
     // title would show it twice.
@@ -303,10 +325,10 @@ describe("PressShieldModal's pinned escape row", () => {
 
   it("keeps the Escape OUTSIDE the scroller", () => {
     // ☠️ The whole fix. `HelpSheet`'s X — the precedent named when this work
-    // was charted — lives inside its own ScrollView and scrolls away on the
+    // was charted — lived inside its own ScrollView and scrolled away on the
     // first swipe, so on a long guide it was visible only at scroll position
-    // zero. If this assertion ever fails, the modal can once again be
-    // impossible to close one gesture in.
+    // zero (#1257 removed it). If this assertion ever fails, the modal can
+    // once again be impossible to close one gesture in.
     setPlatformOS("web");
     render(
       <PressShieldModal onEscape={noop} visible>
@@ -326,7 +348,7 @@ describe("PressShieldModal's pinned escape row", () => {
     // A bottom sheet, a centred card, a native pageSheet: the screen stays
     // visible behind it, so a 48px bg-background row would be an opaque bar
     // hanging over the backdrop. Those four call sites say `surface="sheet"`
-    // and keep their own X (#1257 sweeps them).
+    // and keep their own X (#1257 swept them).
     setPlatformOS("web");
     render(
       <PressShieldModal surface="sheet" transparent visible>

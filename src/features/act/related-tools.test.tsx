@@ -1,58 +1,99 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
-import { RelatedTools } from "@/src/features/act/related-tools";
+import { RelatedTools } from "./related-tools";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { expectEscapeReturnsTo } from "@/test/escape-round-trip";
+import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+let mockPathname = "/modules/act/values";
+
 jest.mock("expo-router", () => ({
-  router: { push: jest.fn() },
+  router: { push: jest.fn(), replace: jest.fn() },
+  usePathname: () => mockPathname,
 }));
 
-const mockPush = router.push as jest.MockedFunction<typeof router.push>;
+const TOOLS = [{ icon: "task-alt" as const, nameKey: "habits", href: "/tools/habits" }];
 
-describe("RelatedTools", () => {
-  beforeEach(() => jest.clearAllMocks());
+beforeAll(async () => {
+  await setLanguage("en");
+});
 
-  /**
-   * The row used to pass `dangerouslySingular: true` on every push, because its targets are
-   * lateral: the tool you jump to may be the one you came from two hops ago (#1027).
-   *
-   * ☠️ That reasoning was right and the mechanism was wrong. Singularity is decided by the
-   * layout, once, for every caller — and three of these four routes were not declared there
-   * at all, so this flag was the only thing holding them (#1278). Now that they are
-   * declared, the flag is redundant for them and actively WRONG for the fourth:
-   * `/tools/meditation` is keyed by `?practice=` and holds per-visit state, so
-   * `protected-layout.tsx` deliberately leaves it plain, and forcing singular here made a
-   * push REUSE an existing meditation instance rather than mount a fresh one.
-   *
-   * So the row pushes plainly and the layout stays the single place singularity is decided.
-   */
-  it("pushes the route plainly, leaving singularity to the layout", () => {
-    renderWithProviders(
-      <RelatedTools
-        tools={[{ icon: "self-improvement", nameKey: "meditation", href: "/tools/meditation" }]}
-      />,
-    );
+beforeEach(() => {
+  jest.clearAllMocks();
+  useNavigationOriginStore.setState({ pending: null });
+  mockPathname = "/modules/act/values";
+});
+
+/**
+ * ACT's "Also try" row, migrated onto the Origin helper (#1266, clause O3).
+ *
+ * ⚠️ Every assertion about the migration is on the STORE, never on
+ * `router.push`. The helper pushes *through* `router.push`, so a
+ * `toHaveBeenCalledWith("/tools/habits")` passes identically whether or not this
+ * component was ever migrated - the trap that makes this whole batch invisible
+ * to the tests that already exist.
+ *
+ * This row is one of the genuinely off-trail sets in the batch. It jumps from an
+ * ACT exercise sideways into a standalone tool under `/tools`, so the tool's own
+ * Up climbs to `/tools` and never back to the ACT screen the user was working
+ * in.
+ */
+describe("RelatedTools records the screen it was reached from", () => {
+  it("records the ACT screen the user left as the Origin for the tool", () => {
+    renderWithProviders(<RelatedTools tools={TOOLS} />);
 
     fireEvent.press(screen.getByRole("link"));
 
-    expect(mockPush).toHaveBeenCalledWith("/tools/meditation");
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/modules/act/values",
+      forPathname: "/tools/habits",
+    });
   });
 
-  it("pushes each tool it is given", () => {
-    renderWithProviders(
-      <RelatedTools
-        tools={[
-          { icon: "edit-note", nameKey: "journal", href: "/tools/journal" },
-          { icon: "anchor", nameKey: "grounding", href: "/tools/grounding" },
-        ]}
-      />,
-    );
+  /**
+   * The row used to force `dangerouslySingular: true` on every push, and #1266's
+   * migration onto the Origin helper deliberately preserved that (its AC was "no
+   * navigation behaviour changes other than origin recording"). #1216 then ruled
+   * the flag off: singularity is the layout's call, made once for every caller.
+   * Three of this row's four routes have been declared singular there since
+   * #1278, so the flag was redundant for them - and actively wrong for the
+   * fourth: `/tools/meditation` is keyed by `?practice=` and holds per-visit
+   * state, so `protected-layout.tsx` deliberately leaves it plain, and forcing
+   * singular here returned the user to a live meditation instance instead of a
+   * fresh home.
+   *
+   * One argument, not `(href, undefined)`: the helper forwards options only when
+   * given, so this asserts that no options ride along at all.
+   */
+  it("pushes plainly, leaving singularity to the layout", () => {
+    renderWithProviders(<RelatedTools tools={TOOLS} />);
 
-    const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(2);
+    fireEvent.press(screen.getByRole("link"));
 
-    fireEvent.press(links[1]);
-    expect(mockPush).toHaveBeenCalledWith("/tools/grounding");
+    expect(router.push).toHaveBeenCalledWith("/tools/habits");
+  });
+
+  /**
+   * The acceptance criterion end to end, through the real route map: leave an
+   * ACT screen for a shared tool, and the Escape over there both names the
+   * screen you left and goes back to it.
+   */
+  it("lets the Escape on the tool return to the ACT screen, named", () => {
+    const session = renderWithProviders(<RelatedTools tools={TOOLS} />);
+    fireEvent.press(screen.getByRole("link"));
+    // The screen the user left is really gone before the next one mounts, so
+    // nothing below can match a leftover node from the departed tree.
+    session.unmount();
+
+    expectEscapeReturnsTo({
+      arriveAt: (pathname) => {
+        mockPathname = pathname;
+      },
+      destination: "/tools/habits",
+      name: "Values",
+      origin: "/modules/act/values",
+    });
   });
 });

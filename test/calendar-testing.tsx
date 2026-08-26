@@ -41,9 +41,17 @@ export function isolateCalendarLocale() {
   });
 }
 
-/** The weekday header's labels, left to right, as rendered. */
+/**
+ * The weekday header's labels, left to right, as rendered.
+ *
+ * ⚠️ `includeHiddenElements` because since #1301 these labels are deliberately
+ * hidden from assistive technology — the library gives them no roles and no
+ * association with the columns beneath, so a screen reader read them as a row
+ * of stray letters, and the weekday now travels inside each day's own name
+ * instead. They are still very much on screen, which is what this reads.
+ */
 export function weekdayLabels(): string[] {
   return within(screen.getByTestId("weekdays"))
-    .getAllByText(/\S/)
+    .getAllByText(/\S/, { includeHiddenElements: true })
     .map((node) => node.props.children as string);
 }

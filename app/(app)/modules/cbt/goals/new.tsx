@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { Pressable, View } from "react-native";
 import { useEffect } from "react";
@@ -40,6 +41,7 @@ const defaultValues: GoalFormSeed = {
 };
 
 export default function NewGoalScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { goalId: rawGoalId } = useLocalSearchParams<{ goalId?: string }>();
   const goalId = typeof rawGoalId === "string" && rawGoalId.length > 0 ? rawGoalId : null;
@@ -269,7 +271,7 @@ export default function NewGoalScreen() {
                   accessibilityLabel={t("goals.valueEmptyLink")}
                   accessibilityRole="link"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() => router.push("/modules/cbt/values")}
+                  onPress={() => pushWithOrigin("/modules/cbt/values")}
                   className="self-start"
                 >
                   <Text className="text-sm text-primary underline">

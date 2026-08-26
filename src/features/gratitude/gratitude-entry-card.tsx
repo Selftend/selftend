@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -19,6 +19,7 @@ export function gratitudeEntryLines(entry: GratitudeEntry): string[] {
 }
 
 export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("gratitude");
   const { user } = useSession();
   const accent = useAccentHsl();
@@ -45,7 +46,7 @@ export function GratitudeEntryCard({ entry }: { entry: GratitudeEntry }) {
       accessibilityRole="button"
       className="flex-row items-center gap-3 py-3 active:opacity-75"
       onPress={() =>
-        router.push({ pathname: "/tools/gratitude-log/[id]", params: { id: entry.id } })
+        pushWithOrigin({ pathname: "/tools/gratitude-log/[id]", params: { id: entry.id } })
       }
       role="button"
     >

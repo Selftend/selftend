@@ -1,13 +1,25 @@
 import { useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import dayjs, { type Dayjs } from "dayjs";
 
 import { PickerSheet } from "@/src/components/app/picker-sheet";
 import { ThemedCalendar } from "@/src/components/app/themed-calendar";
+import { TypedTimeField } from "@/src/components/app/time-field";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { formatAtOffset, shiftFromOffsetFrame, shiftToOffsetFrame } from "@/src/utils/date";
+
+/**
+ * A plain day tap zeroes the time — `react-native-ui-datepicker`'s
+ * `onSelectDate` resets to start-of-day whenever `timePicker` is off (its
+ * `mode: "date"`). On web this field pairs `date` mode with its own typed time
+ * row instead of the library's `datetime` mode (#1302), so picking a day must
+ * carry forward whatever time is already drafted rather than wiping it.
+ */
+function keepTime(next: Dayjs | null, from: Dayjs): Dayjs | null {
+  return next ? next.hour(from.hour()).minute(from.minute()).second(from.second()) : next;
+}
 
 /**
  * Read a real instant as the captured frame shows it, and write it back. The
@@ -66,6 +78,11 @@ export function DateTimeField({
   const { i18n } = useTranslation("navigation");
   const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
+
+  // The typed time row's three sub-controls compose their own accessible names
+  // from this ("Started, hour"), so it needs a string even when a caller skips
+  // the (optional) trigger label.
+  const timeFieldLabel = accessibilityLabel ?? t("time.label");
 
   // The picker only speaks the device's frame, so a captured offset is applied by
   // shifting the instant into that frame on the way in, and back out on commit.
@@ -146,9 +163,38 @@ export function DateTimeField({
         initialDraft={parsedDate}
         onConfirm={commit}
       >
-        {(draft, setDraft) => (
-          <ThemedCalendar mode="datetime" value={draft} onChange={setDraft} maxDate={maxDate} />
-        )}
+        {(draft, setDraft) => {
+          // Native keeps the library's own toggle between a day grid and its
+          // real snapping time wheel (#1191) — unchanged, one view either way.
+          if (Platform.OS !== "web") {
+            return (
+              <ThemedCalendar mode="datetime" value={draft} onChange={setDraft} maxDate={maxDate} />
+            );
+          }
+
+          // Web: the calendar and the typed HH:MM row together, always, with no
+          // switcher between them (#1302). The library's own web time view is a
+          // bare drag surface with no keyboard path and no accessibility
+          // attributes at all (#1191); its switcher is also where the card used
+          // to halve in height on every toggle, a shipped bug this removes by
+          // removing the thing that caused it.
+          const framed = draft ?? maxDate;
+          return (
+            <View className="gap-3">
+              <ThemedCalendar
+                mode="date"
+                value={draft}
+                onChange={(next) => setDraft(keepTime(next, framed))}
+                maxDate={maxDate}
+              />
+              <TypedTimeField
+                value={{ hour: framed.hour(), minute: framed.minute() }}
+                onChange={(next) => setDraft(framed.hour(next.hour).minute(next.minute))}
+                accessibilityLabel={timeFieldLabel}
+              />
+            </View>
+          );
+        }}
       </PickerSheet>
     </>
   );

@@ -277,4 +277,81 @@ describe("DateTimeField", () => {
       expect(committedIso()).toBe("2026-08-01T11:00:00.000Z");
     });
   });
+
+  it("keeps the library's own date/time toggle and wheel on native, with no typed row beside it", () => {
+    openPicker();
+
+    // `datetime` mode, unchanged (#1302 only touches web).
+    expect(mockPickerProps.timePicker).toBe(true);
+    expect(screen.queryByLabelText("Entry time, hour")).toBeNull();
+  });
+
+  /**
+   * #1302: on web the check-in picker pairs the calendar with its own typed
+   * `HH:MM` row instead of the library's `datetime` mode — that mode's web time
+   * view is a bare drag surface with no keyboard path (#1191), and toggling to
+   * it is also where the card used to halve in height (300px -> 150px).
+   * Removing the toggle removes both: there is exactly one view.
+   */
+  describe("web: calendar and time in one view (#1302)", () => {
+    function openWeb(overrides: Partial<React.ComponentProps<typeof DateTimeField>> = {}) {
+      setPlatformOS("web");
+      openPicker(overrides);
+    }
+
+    it("shows the calendar and the typed time row together, with no switcher between them", () => {
+      openWeb();
+
+      // Both present from the moment the sheet opens - nothing has to be
+      // toggled to reach the other half.
+      expect(screen.getByText("mock picker")).toBeTruthy();
+      expect(screen.getByLabelText("Entry time, hour")).toBeTruthy();
+      expect(screen.getByLabelText("Entry time, minute")).toBeTruthy();
+      // The library's own time view never mounts on web: `timePicker` stays off.
+      expect(mockPickerProps.timePicker).toBe(false);
+    });
+
+    it("commits a typed time together with the date, once, on Done", () => {
+      openWeb();
+
+      fireEvent.changeText(screen.getByLabelText("Entry time, minute"), "45");
+      fireEvent(screen.getByLabelText("Entry time, minute"), "blur");
+      expect(props.onChange).not.toHaveBeenCalled();
+
+      fireEvent.press(screen.getByText("Done"));
+
+      // 4:45 PM local (the suite's Asia/Kolkata frame) is 11:15Z; the day is
+      // the original 1 August, untouched.
+      expect(committedIso()).toBe("2026-08-01T11:15:00.000Z");
+    });
+
+    it("keeps the drafted time when a day is picked, instead of the library zeroing it", () => {
+      // `react-native-ui-datepicker` resets to start-of-day on a plain day tap
+      // (`mode: "date"`, `timePicker` off) — this wrapper must carry the
+      // already-drafted time forward rather than let the day tap erase it.
+      openWeb();
+
+      fireEvent.changeText(screen.getByLabelText("Entry time, minute"), "45");
+      fireEvent(screen.getByLabelText("Entry time, minute"), "blur");
+
+      fireEvent.press(screen.getByTestId("mock-picker-select"));
+      fireEvent.press(screen.getByText("Done"));
+
+      // The new day (3 March) at the same 4:45 PM local -> 11:15Z. NOT
+      // "2026-03-03T08:15:00.000Z", which is what the mock's own embedded time
+      // would give if the day tap had been left to overwrite the draft.
+      expect(committedIso()).toBe("2026-03-03T11:15:00.000Z");
+    });
+
+    it("discards a typed time along with the date when the sheet is dismissed", () => {
+      openWeb();
+
+      fireEvent.changeText(screen.getByLabelText("Entry time, minute"), "45");
+      fireEvent(screen.getByLabelText("Entry time, minute"), "blur");
+
+      fireEvent.press(screen.getByLabelText("Close"));
+
+      expect(props.onChange).not.toHaveBeenCalled();
+    });
+  });
 });

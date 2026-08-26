@@ -2,7 +2,7 @@ import { ActivityIndicator, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -54,6 +54,7 @@ const emptyForm: FormState = {
 };
 
 export default function SelfCareScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
@@ -138,7 +139,7 @@ export default function SelfCareScreen() {
           accessibilityRole="link"
           accessibilityLabel={t("selfCare.sleepLinkTitle")}
           accessibilityHint={t("selfCare.sleepLinkDesc")}
-          onPress={() => router.push("/tools/sleep")}
+          onPress={() => pushWithOrigin("/tools/sleep")}
           className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
         >
           <Icon name="bedtime" className="size-6 text-foreground" />
@@ -155,7 +156,7 @@ export default function SelfCareScreen() {
           accessibilityRole="link"
           accessibilityLabel={t("selfCare.gratitudeLinkTitle")}
           accessibilityHint={t("selfCare.gratitudeLinkDesc")}
-          onPress={() => router.push("/tools/gratitude-log")}
+          onPress={() => pushWithOrigin("/tools/gratitude-log")}
           className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
         >
           <Icon name="favorite" className="size-6 text-foreground" />

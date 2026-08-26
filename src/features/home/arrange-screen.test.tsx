@@ -24,7 +24,10 @@ const mockRestoreWidget = jest.fn();
 const mockReorderWidgets = jest.fn();
 
 jest.mock("expo-router", () => ({
-  router: { back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn(() => true) },
+  router: { back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn(() => true), push: jest.fn() },
+  // The chrome's Escape reads the current path (#1255). `/arrange` has no
+  // breadcrumb entry, so the trail hides and the Escape's hop is the root.
+  usePathname: () => "/arrange",
 }));
 
 const mockBack = router.back as jest.Mock;
@@ -676,6 +679,34 @@ describe("ArrangeScreen Done", () => {
 
     expect(mockBack).not.toHaveBeenCalled();
     expect(mockReplace).toHaveBeenCalledWith("/");
+  });
+});
+
+describe("ArrangeScreen Escape", () => {
+  /**
+   * W11 (#1255): `Done` is a Completion - a done-after-save action that happens
+   * to navigate - and a Completion is explicitly not an Escape, so it never
+   * discharged R1. The screen now reaches chrome, and the chrome carries the
+   * one Escape.
+   */
+  it("carries exactly one Escape through chrome, beside the Done it never was", () => {
+    renderArrange();
+
+    expect(screen.getByTestId("screen-top-bar")).toBeTruthy();
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+    // Done is still there - the Escape joined it rather than replacing it.
+    expect(screen.getByRole("button", { name: "Done" })).toBeTruthy();
+  });
+
+  it("announces Home and replaces to it, leaving Done's history-back alone", () => {
+    renderArrange();
+
+    fireEvent.press(screen.getByLabelText("Back to Home"));
+
+    // `replace`, not `back`: the Escape is structural, never history - only
+    // Done goes through `backWithFallback`.
+    expect(mockReplace).toHaveBeenCalledWith("/");
+    expect(mockBack).not.toHaveBeenCalled();
   });
 });
 

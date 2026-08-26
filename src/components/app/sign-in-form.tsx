@@ -30,11 +30,16 @@ import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { COMPACT_CONTROL_HIT_SLOP } from "@/src/lib/accessibility";
 import { captureError, isReportableError } from "@/src/lib/sentry";
 import { useThemePalette } from "@/src/lib/theme-palette";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useSession } from "@/src/providers/session-provider";
 
 export function SignInForm() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig } = useSession();
+  // ⚠️ These hrefs carry their route group - `/(auth)/sign-in` - which the
+  // helper's `targetPathname` strips; see its docblock for why a raw one would
+  // record a target that can never match, silently (#1265, O3).
+  const pushWithOrigin = usePushWithOrigin();
   const theme = useThemePalette();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
@@ -187,7 +192,7 @@ export function SignInForm() {
                 <Label>{t("signIn.password")}</Label>
                 <Button
                   hitSlop={COMPACT_CONTROL_HIT_SLOP}
-                  onPress={() => router.push("/(auth)/reset-password")}
+                  onPress={() => pushWithOrigin("/(auth)/reset-password")}
                   variant="link"
                   size="sm"
                 >
@@ -257,7 +262,7 @@ export function SignInForm() {
 
         <View className="flex-row flex-wrap items-center justify-center gap-x-1 pt-1">
           <Text className="text-sm text-muted-foreground">{t("signIn.noAccount")}</Text>
-          <Button onPress={() => router.push("/(auth)/sign-up")} variant="link">
+          <Button onPress={() => pushWithOrigin("/(auth)/sign-up")} variant="link">
             <Text>{t("signIn.signUpLink")}</Text>
           </Button>
         </View>

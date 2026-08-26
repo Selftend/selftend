@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -38,6 +38,7 @@ interface MoodHistoryRowProps {
  * only *content* cue a person has.
  */
 function MoodHistoryRowComponent({ entry, kind, language, resolveEmotion }: MoodHistoryRowProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("mood");
 
   const when = formatHistoryWhen(entry, kind, language);
@@ -53,7 +54,7 @@ function MoodHistoryRowComponent({ entry, kind, language, resolveEmotion }: Mood
       accessibilityLabel={t("allHistory.viewEntry", { when, score: scoreWord })}
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => router.push(`/tools/check-in/${entry.id}`)}
+      onPress={() => pushWithOrigin(`/tools/check-in/${entry.id}`)}
       className="flex-row items-center gap-3 px-0.5 py-2.5 active:bg-accent/40"
       role="button"
     >

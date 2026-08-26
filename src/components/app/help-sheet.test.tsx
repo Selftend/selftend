@@ -1,4 +1,5 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
+import { ScrollView } from "react-native";
 
 import { HelpSheet } from "./help-sheet";
 import { setPlatformOS } from "@/test/modal-marker-mock";
@@ -29,29 +30,25 @@ describe("HelpSheet", () => {
     expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
 
-  // Two "Close" controls, deliberately and temporarily (#1252): the wrapper's
-  // pinned Escape, plus the in-scroll X this sheet has always carried. That X
-  // is the affordance the whole escape effort was named after — it lives
-  // inside the ScrollView and scrolls away on the first swipe — and removing
-  // it (along with moving the title down into the body) is W19/#1257. Until
-  // then both must work, so both are pressed here rather than the assertion
-  // being loosened to whichever one comes first.
-  it("calls onDismiss from the pinned Escape", () => {
+  // Exactly one close affordance (M5, #1257): the wrapper's pinned Escape.
+  // The in-scroll X this sheet used to carry — the affordance the whole
+  // escape effort was named after, since it scrolled away on the first
+  // swipe — is gone, and only the pinned row closes the sheet.
+  it("renders the pinned Escape as the only close control, and it dismisses", () => {
     const onDismiss = jest.fn();
     renderWithProviders(<HelpSheet helpKey="beliefs" visible onDismiss={onDismiss} />);
-    fireEvent.press(screen.getByTestId("modal-escape"));
+    const closes = screen.getAllByLabelText("Close");
+    expect(closes).toHaveLength(1);
+    expect(closes[0].props.testID).toBe("modal-escape");
+    fireEvent.press(closes[0]);
     expect(onDismiss).toHaveBeenCalled();
   });
 
-  it("calls onDismiss from the in-scroll close control", () => {
-    const onDismiss = jest.fn();
-    renderWithProviders(<HelpSheet helpKey="beliefs" visible onDismiss={onDismiss} />);
-    const inScroll = screen
-      .getAllByLabelText("Close")
-      .filter((node) => node.props.testID !== "modal-escape");
-    expect(inScroll).toHaveLength(1);
-    fireEvent.press(inScroll[0]);
-    expect(onDismiss).toHaveBeenCalled();
+  it("keeps the title inside the scroll body, off the escape row (M5)", () => {
+    renderWithProviders(<HelpSheet helpKey="beliefs" visible onDismiss={jest.fn()} />);
+    const scroller = screen.UNSAFE_getByType(ScrollView);
+    expect(within(scroller).getByText("Core beliefs")).toBeTruthy();
+    expect(within(scroller).queryByTestId("modal-escape")).toBeNull();
   });
 
   // The #1054 web unmount gate, behaviorally: a dismissed react-native-web
