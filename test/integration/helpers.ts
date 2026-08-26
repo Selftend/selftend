@@ -1,3 +1,5 @@
+import { spawnSync } from "node:child_process";
+
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // Local Supabase CLI uses deterministic keys derived from the default JWT secret,
@@ -41,6 +43,38 @@ const baseAuthOptions = {
   autoRefreshToken: false,
   detectSessionInUrl: false,
 };
+
+// Runs SQL inside the local Supabase Postgres container and returns psql's
+// unaligned tuple output (precedent: scripts/analytics-report.js --local).
+// The harness is otherwise PostgREST-only, but some tests must write columns
+// no API exposes - e.g. dating rows in the auth schema (auth.users.created_at,
+// auth.sessions.refreshed_at) for the dormancy-cleanup gate. The container
+// name matches the CLI's project id (derived from the checkout folder name,
+// "selftend" locally and in CI).
+export function runSql(sql: string): string {
+  const result = spawnSync(
+    "docker",
+    [
+      "exec",
+      "-i",
+      "supabase_db_selftend",
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-tA",
+    ],
+    { input: sql, encoding: "utf8" },
+  );
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    throw new Error(`runSql failed (exit ${result.status}): ${result.stderr}`);
+  }
+  return result.stdout.trim();
+}
 
 export function createAnonClient() {
   return createClient(LOCAL_SUPABASE_URL, LOCAL_ANON_KEY, {
