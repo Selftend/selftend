@@ -16,6 +16,7 @@ let mockUser: {
   email: string | null;
   app_metadata?: { provider?: string };
   identities?: { provider: string }[];
+  is_anonymous?: boolean;
 } | null = null;
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -88,6 +89,22 @@ describe("VerifyEmailBanner", () => {
       email: "person@example.com",
       app_metadata: { provider: "google" },
       identities: [{ provider: "google" }],
+    };
+
+    renderWithProviders(<VerifyEmailBanner />);
+    expect(screen.queryByText("Verify your email to secure your account.")).toBeNull();
+  });
+
+  it("renders nothing while the session is a guest, whatever else the user carries (#1442)", () => {
+    // A real guest has no email and no identities, which the other guards
+    // already catch - this user is deliberately over-endowed so the assertion
+    // pins the is_anonymous claim itself, not its usual side effects.
+    mockUser = {
+      id: "guest-1",
+      email: "person@example.com",
+      app_metadata: {},
+      identities: [{ provider: "email" }],
+      is_anonymous: true,
     };
 
     renderWithProviders(<VerifyEmailBanner />);

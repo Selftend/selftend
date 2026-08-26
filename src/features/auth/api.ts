@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 
 import { completeAuthRedirect } from "@/src/features/auth/callback";
+import { clearSessionMarker } from "@/src/features/auth/session-marker";
 import { updateUserPreferences } from "@/src/features/settings/repository";
 import { appEnv } from "@/src/lib/env";
 import { captureError, isReportableError } from "@/src/lib/sentry";
@@ -417,4 +418,11 @@ export async function signOut(scope: SignOutScope) {
   if (error) {
     throw error;
   }
+  // A DELIBERATE exit (settings sign-out, delete-account - both call this
+  // wrapper) must not read as a lost session on the next launch, so the
+  // fresh-start marker (#1450) goes with it. The involuntary paths - refresh
+  // failure, the 23503 zombie guard (which calls the client directly, by
+  // design) - never reach this line, which is what keeps the marker behind
+  // for the returning-device notice.
+  await clearSessionMarker();
 }

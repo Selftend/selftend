@@ -94,8 +94,9 @@ export function UserMenu() {
   // The same handler the settings row uses (#1053): the menu used to re-implement
   // its body and, having no try/catch, swallowed every failure - it closed, said
   // nothing, and left the user signed in. The hook reports through the toast,
-  // which is the only surface that outlives a dismissed menu.
-  const handleSignOut = useSignOut(user?.id ?? null);
+  // which is the only surface that outlives a dismissed menu. `canSignOut` is
+  // the hook's shared guest guard (#1442).
+  const { canSignOut, signOut: handleSignOut } = useSignOut(user);
 
   function onSignOut() {
     // Closing is the menu's own business, so it stays here rather than in the hook.
@@ -293,10 +294,12 @@ export function UserMenu() {
                 overlapping the feedback button. An auto basis wraps it to its own
                 full-width line instead when the row runs out.
               */}
-              <Button variant="outline" size="sm" className="grow basis-auto" onPress={onSignOut}>
-                <Icon name="logout" className="size-4" />
-                <Text>{t("userMenu.signOut")}</Text>
-              </Button>
+              {canSignOut ? (
+                <Button variant="outline" size="sm" className="grow basis-auto" onPress={onSignOut}>
+                  <Icon name="logout" className="size-4" />
+                  <Text>{t("userMenu.signOut")}</Text>
+                </Button>
+              ) : null}
             </View>
           ) : null}
         </ScrollView>

@@ -28,6 +28,10 @@ jest.mock("expo-linking", () => ({
   createURL: jest.fn(),
 }));
 
+jest.mock("@/src/features/auth/session-marker", () => ({
+  clearSessionMarker: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock("expo-web-browser", () => ({
   openAuthSessionAsync: jest.fn(),
 }));
@@ -557,6 +561,10 @@ describe("signOut", () => {
     jest.clearAllMocks();
   });
 
+  const { clearSessionMarker } = jest.requireMock("@/src/features/auth/session-marker") as {
+    clearSessionMarker: jest.Mock;
+  };
+
   it("resolves when sign-out succeeds", async () => {
     const signOutFn = jest.fn().mockResolvedValue({ error: null });
     mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
@@ -571,6 +579,27 @@ describe("signOut", () => {
     mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
 
     await expect(signOut("local")).rejects.toBe(error);
+  });
+
+  // #1450: this wrapper is the ONLY marker-clearing seam - both deliberate
+  // exits (settings sign-out, delete-account) call it, and the involuntary
+  // paths bypass it by design. A deliberate exit must not read as a lost
+  // session on the next cold start; a FAILED sign-out is not an exit at all.
+  it("clears the fresh-start marker on a deliberate exit", async () => {
+    const signOutFn = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
+
+    await signOut("local");
+
+    expect(clearSessionMarker).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the marker when sign-out fails - the session is still this device's", async () => {
+    const signOutFn = jest.fn().mockResolvedValue({ error: new Error("offline") });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
+
+    await expect(signOut("local")).rejects.toBeTruthy();
+    expect(clearSessionMarker).not.toHaveBeenCalled();
   });
 
   // The point of the wrapper (#968). supabase-js defaults to `scope: 'global'`,
