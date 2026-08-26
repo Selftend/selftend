@@ -56,7 +56,7 @@ export default function SettingsScreen() {
   const { user } = useSession();
   const { data } = useUserPreferences(user?.id ?? null);
 
-  const handleSignOut = useSignOut(user?.id ?? null);
+  const { canSignOut, signOut: handleSignOut } = useSignOut(user);
   const {
     replayIntroduction,
     showTipsAgain,
@@ -189,14 +189,19 @@ export default function SettingsScreen() {
                 #968 settled the scope as per-device, so the description says what
                 the row does again.
               */}
-              <SettingsRow
-                icon="logout"
-                label={t("account.signOut")}
-                description={t("account.signOutHint")}
-                trailing={{ kind: "act" }}
-                onPress={() => void handleSignOut()}
-                testID="settings-row-sign-out"
-              />
+              {/* Hidden for guests (#1442): the hook's shared guard - a guest
+                  signing out is silent irreversible data loss. Delete-account
+                  stays: for a guest, "start fresh" IS delete account. */}
+              {canSignOut ? (
+                <SettingsRow
+                  icon="logout"
+                  label={t("account.signOut")}
+                  description={t("account.signOutHint")}
+                  trailing={{ kind: "act" }}
+                  onPress={() => void handleSignOut()}
+                  testID="settings-row-sign-out"
+                />
+              ) : null}
               <DeleteAccountRow />
             </SettingsRun>
 

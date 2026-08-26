@@ -1,3 +1,4 @@
+import type { User } from "@supabase/supabase-js";
 import { useTranslation } from "react-i18next";
 
 import { signOut } from "@/src/features/auth/api";
@@ -22,13 +23,27 @@ import { useToastStore } from "@/src/stores/toast-store";
  * layout, not the protected one, so it survives sign-out - and now that an error
  * never auto-dismisses, an unread failure raised in one account would otherwise sit
  * there waiting for whoever signs in next.
+ *
+ * `canSignOut` is the one guest guard both surfaces share (#1442): a guest
+ * signing out is silent irreversible data loss - the session token is the only
+ * key to their account - so the control must not exist for them. Deciding it
+ * here rather than at each surface means the settings row and the header menu
+ * cannot drift apart. "Start fresh" for a guest is delete-account; "switch
+ * accounts" is sign-in - both stay visible.
  */
-export function useSignOut(userId: string | null) {
+export function useSignOut(user: Pick<User, "id" | "is_anonymous"> | null) {
   const { t } = useTranslation("auth");
   const showToast = useToastStore((state) => state.showToast);
   const clearToasts = useToastStore((state) => state.clearToasts);
 
+  const userId = user?.id ?? null;
+  const canSignOut = user !== null && user.is_anonymous !== true;
+
   const handleSignOut = async () => {
+    // Enforced here, not just advertised: a future surface that renders a
+    // sign-out control without checking `canSignOut` must still be unable to
+    // sign a guest out - the flag and the refusal live in the same place.
+    if (!canSignOut) return;
     try {
       // Deregister this device's push channel BEFORE sign-out (RLS context still valid)
       // so server-driven reminders stop firing for a device the user has left.
@@ -63,5 +78,5 @@ export function useSignOut(userId: string | null) {
     }
   };
 
-  return handleSignOut;
+  return { canSignOut, signOut: handleSignOut };
 }
