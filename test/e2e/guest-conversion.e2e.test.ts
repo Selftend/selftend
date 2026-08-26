@@ -8,89 +8,24 @@
 // stack booted before that key existed fails the mint, not the app.
 
 import { expect, test } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
 
-// ☠️ From session-injection, NOT ./fixtures: importing fixtures.ts registers
-// its `beforeEach({ user })` pool-fixture hook on this plain-test file too,
-// and every test here would die with "beforeEach hook has unknown parameter".
-import {
-  CANDIDATE_STORAGE_KEYS,
-  CAPTURE_STORAGE_KEY,
-  COOKIE_CONSENT_KEY,
-  COOKIE_CONSENT_VALUE,
-  NORMALIZED_GATE_PREFS,
-} from "./session-injection";
-import { createServiceClient, LOCAL_ANON_KEY, LOCAL_SUPABASE_URL } from "../integration/helpers";
-
-/** Mint a real guest session headlessly and return its id + the persisted JSON. */
-async function mintGuestSession() {
-  const mem = new Map<string, string>();
-  const client = createClient(LOCAL_SUPABASE_URL, LOCAL_ANON_KEY, {
-    auth: {
-      storage: {
-        getItem: (k) => mem.get(k) ?? null,
-        setItem: (k, v) => {
-          mem.set(k, v);
-        },
-        removeItem: (k) => {
-          mem.delete(k);
-        },
-      },
-      storageKey: CAPTURE_STORAGE_KEY,
-      persistSession: true,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
-  const { data, error } = await client.auth.signInAnonymously();
-  if (error || !data.session) {
-    throw new Error(`signInAnonymously failed: ${error?.message ?? "no session"}`);
-  }
-  const sessionValue = mem.get(CAPTURE_STORAGE_KEY);
-  if (!sessionValue) throw new Error(`No session persisted under ${CAPTURE_STORAGE_KEY}`);
-  return { guestId: data.session.user.id, sessionValue };
-}
+// ☠️ From session-injection/guest-session, NOT ./fixtures: importing
+// fixtures.ts registers its `beforeEach({ user })` pool-fixture hook on this
+// plain-test file too, and every test here would die with "beforeEach hook has
+// unknown parameter".
+import { CAPTURE_STORAGE_KEY } from "./session-injection";
+import { deleteGuest, startGuestSession } from "./guest-session";
+import { createServiceClient } from "../integration/helpers";
 
 test.describe("guest conversion", () => {
   let guestId: string;
 
   test.beforeEach(async ({ page }) => {
-    const minted = await mintGuestSession();
-    guestId = minted.guestId;
-
-    // The consent/onboarding gates would otherwise fire first thing inside the
-    // shell. email_verified deliberately stays at its false default: the
-    // post-conversion verify banner is part of this journey's assertions.
-    const admin = createServiceClient();
-    const { error } = await admin
-      .from("user_preferences")
-      .upsert(
-        { user_id: guestId, ...NORMALIZED_GATE_PREFS, email_verified: false },
-        { onConflict: "user_id" },
-      );
-    if (error) throw new Error(`Prefs normalization failed for guest ${guestId}: ${error.message}`);
-
-    // Plant the guest session (every candidate key - see fixtures.ts) plus the
-    // cookie-consent record before any app code runs.
-    await page.addInitScript(
-      ({ keys, value, consentKey, consentValue }) => {
-        for (const key of keys) window.localStorage.setItem(key, value);
-        window.localStorage.setItem(consentKey, consentValue);
-      },
-      {
-        keys: CANDIDATE_STORAGE_KEYS,
-        value: minted.sessionValue,
-        consentKey: COOKIE_CONSENT_KEY,
-        consentValue: COOKIE_CONSENT_VALUE,
-      },
-    );
+    guestId = await startGuestSession(page);
   });
 
   test.afterEach(async () => {
-    // The guest row itself (converted or not). deleteUserByEmail can't reach a
-    // still-anonymous guest - it has no email - so delete by id.
-    const admin = createServiceClient();
-    await admin.auth.admin.deleteUser(guestId).catch(() => undefined);
+    await deleteGuest(guestId);
   });
 
   test("email + password convert the guest in place, keeping the user id", async ({ page }) => {

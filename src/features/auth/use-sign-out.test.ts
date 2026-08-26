@@ -26,13 +26,15 @@ const mockUseToastStore = useToastStore as unknown as jest.Mock;
 const showToast = jest.fn();
 const clearToasts = jest.fn();
 
+const registeredUser = { id: "user-1", is_anonymous: false };
+
 /** Runs a sign-out that fails at `signOut` with `error`. */
 async function signOutFailingWith(error: unknown) {
   mockSignOut.mockRejectedValue(error);
-  const { result } = renderHook(() => useSignOut("user-1"));
+  const { result } = renderHook(() => useSignOut(registeredUser));
 
   await act(async () => {
-    await result.current();
+    await result.current.signOut();
   });
 }
 
@@ -48,10 +50,10 @@ describe("useSignOut", () => {
   });
 
   it("cancels this device's reminders BEFORE signing out (RLS context still valid)", async () => {
-    const { result } = renderHook(() => useSignOut("user-1"));
+    const { result } = renderHook(() => useSignOut(registeredUser));
 
     await act(async () => {
-      await result.current();
+      await result.current.signOut();
     });
 
     expect(mockCancel).toHaveBeenCalledWith("user-1");
@@ -117,10 +119,10 @@ describe("useSignOut", () => {
   // that an error toast never auto-dismisses, an unread failure from this account
   // would sit in the slot waiting for whoever signs in next.
   it("tears down the toast slot so a sticky error cannot leak into the next session", async () => {
-    const { result } = renderHook(() => useSignOut("user-1"));
+    const { result } = renderHook(() => useSignOut(registeredUser));
 
     await act(async () => {
-      await result.current();
+      await result.current.signOut();
     });
 
     expect(clearToasts).toHaveBeenCalledTimes(1);
@@ -138,10 +140,10 @@ describe("useSignOut", () => {
 
   it("does not clear when the failure stopped sign-out from being attempted", async () => {
     mockCancel.mockRejectedValue(new Error("reminders offline"));
-    const { result } = renderHook(() => useSignOut("user-1"));
+    const { result } = renderHook(() => useSignOut(registeredUser));
 
     await act(async () => {
-      await result.current();
+      await result.current.signOut();
     });
 
     expect(mockSignOut).not.toHaveBeenCalled();
@@ -157,5 +159,36 @@ describe("useSignOut", () => {
     expect(mockCaptureError).not.toHaveBeenCalled();
     // Still told the user, though.
     expect(showToast).toHaveBeenCalledTimes(1);
+  });
+
+  // #1442: a guest signing out is silent irreversible data loss - their session
+  // token is the only key to the account. Both surfaces (settings row, header
+  // menu) render their sign-out control off this one flag, so this is the
+  // single place the guard can regress.
+  describe("canSignOut", () => {
+    it("is false for a guest", () => {
+      const { result } = renderHook(() => useSignOut({ id: "guest-1", is_anonymous: true }));
+
+      expect(result.current.canSignOut).toBe(false);
+    });
+
+    it("is true for a registered user", () => {
+      const { result } = renderHook(() => useSignOut(registeredUser));
+
+      expect(result.current.canSignOut).toBe(true);
+    });
+
+    // Older tokens predate the claim entirely - absence means registered, not guest.
+    it("is true when the claim is absent", () => {
+      const { result } = renderHook(() => useSignOut({ id: "user-1" }));
+
+      expect(result.current.canSignOut).toBe(true);
+    });
+
+    it("is false with no user at all", () => {
+      const { result } = renderHook(() => useSignOut(null));
+
+      expect(result.current.canSignOut).toBe(false);
+    });
   });
 });

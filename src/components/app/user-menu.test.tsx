@@ -255,6 +255,24 @@ describe("UserMenu", () => {
     expect(screen.getByText("Settings")).toBeTruthy();
   });
 
+  // #1442: a guest's session token is the only key to their account, so
+  // signing out is silent irreversible data loss - the control must not exist.
+  // The other actions stay: Settings is where delete-account ("start fresh")
+  // lives, and feedback works for guests.
+  it("hides Sign Out for a guest, keeping Settings and Send feedback", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", is_anonymous: true },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.queryByText("Sign Out")).toBeNull();
+    expect(screen.getByText("Settings")).toBeTruthy();
+    expect(screen.getByText("Send feedback")).toBeTruthy();
+  });
+
   // #968: supabase-js's `signOut()` defaults to `scope: 'global'`, which revokes
   // every refresh token the user holds - pressing Sign Out on the laptop ended
   // the session on the phone. Nothing in the product ever asked for that. The
