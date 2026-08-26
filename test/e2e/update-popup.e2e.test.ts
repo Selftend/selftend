@@ -46,8 +46,28 @@ async function serveNewerVersion(page: Page) {
   await page.route("**/version.json", (route) => route.fulfill({ json: NEWER_VERSION_DOC }));
 }
 
+// "1" is the literal value the hook's `latch()` writes (AsyncStorage.setItem
+// in use-update-availability.ts) - assert it exactly so drift there fails here.
 const readDismissal = (page: Page) =>
   page.evaluate((key) => window.localStorage.getItem(key), DISMISSAL_KEY);
+
+/**
+ * Reload and prove the latched offer does not return: the reloaded shell
+ * re-checks at mount and still sees 99.0.0 on offer, so wait for that
+ * response - "stays hidden" must assert against a check that actually ran,
+ * not a page that never asked. The trailing wait covers the post-fetch
+ * AsyncStorage dismissal lookup between response and (non-)arming.
+ */
+async function expectNoPopupAfterReload(page: Page) {
+  const recheck = page.waitForResponse((r) => isVersionResponse(r.url()));
+  await page.reload();
+  await recheck;
+  await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible({
+    timeout: 10_000,
+  });
+  await page.waitForTimeout(500);
+  await expect(page.getByTestId("update-popup")).toBeHidden();
+}
 
 test.describe("update popup", () => {
   test("offers on shell mount with initial focus on Later, never the action", async ({ page }) => {
@@ -74,17 +94,7 @@ test.describe("update popup", () => {
     // dismissal reached storage (C2), so the reload starts latched.
     await expect.poll(() => readDismissal(page)).toBe("1");
 
-    // The reloaded shell re-checks at mount and still sees 99.0.0 on offer;
-    // wait for that response so "stays hidden" asserts against a check that
-    // actually ran, not a page that never asked.
-    const recheck = page.waitForResponse((r) => isVersionResponse(r.url()));
-    await page.reload();
-    await recheck;
-    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
-    await page.waitForTimeout(500);
-    await expect(page.getByTestId("update-popup")).toBeHidden();
+    await expectNoPopupAfterReload(page);
   });
 
   test("Escape closes through onRequestClose and persists the same latch", async ({ page }) => {
@@ -98,14 +108,7 @@ test.describe("update popup", () => {
     // C2: Escape is not a softer close - it writes the identical dismissal.
     await expect.poll(() => readDismissal(page)).toBe("1");
 
-    const recheck = page.waitForResponse((r) => isVersionResponse(r.url()));
-    await page.reload();
-    await recheck;
-    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
-    await page.waitForTimeout(500);
-    await expect(page.getByTestId("update-popup")).toBeHidden();
+    await expectNoPopupAfterReload(page);
   });
 
   test("an offer suppressed under an overlay returns on the next trigger, not on close", async ({
