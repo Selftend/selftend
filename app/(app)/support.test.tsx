@@ -69,6 +69,17 @@ describe("SupportScreen guest reply-to (#1447)", () => {
     expect(screen.queryByLabelText(REPLY_TO_LABEL)).toBeNull();
   });
 
+  // A just-converted guest can carry a stale is_anonymous claim until token
+  // refresh (#1443) - but they have an account email now, and the server
+  // would silently ignore anything typed here in favour of it.
+  it("does not offer the field to a converted guest with a stale anonymous claim", () => {
+    mockUser = { id: "user-1", email: "person@example.com", is_anonymous: true };
+
+    renderWithProviders(<SupportScreen />);
+
+    expect(screen.queryByLabelText(REPLY_TO_LABEL)).toBeNull();
+  });
+
   it("sends the trimmed reply-to when a guest fills it", async () => {
     renderWithProviders(<SupportScreen />);
     fireEvent.changeText(screen.getByLabelText("Message"), MESSAGE);

@@ -81,14 +81,21 @@ function escapeHtml(value: string): string {
 
 // User input is HTML-escaped before interpolation to prevent HTML/content injection
 // into the support email.
+//
+// `fromLabel` names what the address IS: "From" for a JWT-resolved account
+// email, and an explicit unverified label for a guest-typed reply-to (#1447) -
+// anyone can type anyone's address into that field, so presenting it as the
+// sender would invite support to trust an unproven identity.
 export function buildFeedbackEmailHtml(
   rawCategory: string,
   rawTrimmed: string,
   rawFromEmail: string,
+  rawFromLabel = "From",
 ): string {
   const category = escapeHtml(rawCategory);
   const trimmed = escapeHtml(rawTrimmed);
   const fromEmail = escapeHtml(rawFromEmail);
+  const fromLabel = escapeHtml(rawFromLabel);
   return `<html>
   <body style="margin:0;padding:0;background-color:#f9f8fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9f8fb;padding:40px 0;">
@@ -100,7 +107,7 @@ export function buildFeedbackEmailHtml(
                 <p style="margin:0 0 4px;font-size:22px;font-weight:600;color:#221d2a;">Selftend feedback</p>
                 <p style="margin:0 0 24px;font-size:13px;color:#9d99a8;">Category: ${category}</p>
                 <p style="margin:0 0 24px;font-size:15px;color:#221d2a;white-space:pre-wrap;">${trimmed}</p>
-                <p style="margin:0;font-size:13px;color:#9d99a8;">From: ${fromEmail}</p>
+                <p style="margin:0;font-size:13px;color:#9d99a8;">${fromLabel}: ${fromEmail}</p>
               </td>
             </tr>
           </table>

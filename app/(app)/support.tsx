@@ -38,8 +38,12 @@ export default function SupportScreen() {
 
   // A registered user's reply address comes from their account on the server;
   // only a guest, who has no email anywhere, is offered one - optional,
-  // guest-only, and used for nothing but replying (#1447).
-  const isGuest = user?.is_anonymous === true;
+  // guest-only, and used for nothing but replying (#1447). The email check
+  // matters: a just-converted guest can still carry a stale is_anonymous
+  // claim until token refresh (#1443), and offering them the field would take
+  // an address the server then silently ignores in favour of their account
+  // email.
+  const isGuest = user?.is_anonymous === true && !user.email;
 
   const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>("suggestion");
   const [feedbackMessage, setFeedbackMessage] = useState("");

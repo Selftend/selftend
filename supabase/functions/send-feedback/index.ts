@@ -118,6 +118,10 @@ Deno.serve(async (request) => {
     const supportEmail = requiredEnv("SUPPORT_EMAIL");
     const fromEmail = requiredEnv("SES_FROM_EMAIL");
 
+    // A guest-typed reply-to is anyone's address - label it as such in the
+    // email body so support never reads it as a proven sender identity.
+    const fromLabel = user.is_anonymous === true ? "Guest reply-to (unverified)" : "From";
+
     // `category` is the sanitized value returned by validateFeedbackInput; sendEmail
     // throws on any non-2xx SES response, caught by the outer try/catch below.
     await sendEmail(
@@ -131,7 +135,7 @@ Deno.serve(async (request) => {
         to: supportEmail,
         replyTo: replyTo.replyTo,
         subject: `Selftend feedback [${category}]`,
-        html: buildFeedbackEmailHtml(category, trimmed, replyTo.replyTo ?? ""),
+        html: buildFeedbackEmailHtml(category, trimmed, replyTo.replyTo ?? "", fromLabel),
       },
     );
 

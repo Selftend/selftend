@@ -115,6 +115,19 @@ describe("buildFeedbackEmailHtml", () => {
     expect(html).toContain("From: user@example.com");
   });
 
+  // #1447: a guest-typed reply-to is anyone's address - the template must
+  // present it under the caller-supplied unverified label, never as "From".
+  it("labels a guest-supplied address as unverified rather than as the sender", () => {
+    const html = buildFeedbackEmailHtml(
+      "bug",
+      "it broke",
+      "reply@example.com",
+      "Guest reply-to (unverified)",
+    );
+    expect(html).toContain("Guest reply-to (unverified): reply@example.com");
+    expect(html).not.toContain("From: reply@example.com");
+  });
+
   it("HTML-escapes user input to prevent injection into the email", () => {
     const html = buildFeedbackEmailHtml("bug", "<script>x</script>", "user@example.com");
     expect(html).not.toContain("<script>x</script>");
