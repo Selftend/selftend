@@ -53,8 +53,17 @@ const EXEMPT: Record<string, string> = {
 /** One registration call anywhere in the file satisfies the gate. */
 const REGISTERS = /\buseOverlayRegistration\s*\(/;
 
-/** The wrapper's registration opt-out, at a call site. */
+/** The wrapper's registration opt-out, at a call site, in its literal form. */
 const OPTS_OUT = /\bregisterOverlay=\{false\}/;
+
+/**
+ * ANY value passed to the wrapper's `registerOverlay` prop. The offender scan
+ * uses this wider net so a computed `registerOverlay={flag}` cannot slip past
+ * a gate that only knew the literal form — outside EXEMPT the prop may not be
+ * passed at all, and inside EXEMPT the liveness check still demands the
+ * literal `{false}` (a conditional opt-out is not a sanctioned shape).
+ */
+const PASSES_OPT_OUT_PROP = /\bregisterOverlay=\{/;
 
 // Detection is shared with modal-web-unmount.test.ts (rawModalRenderers in
 // source-scan.ts): both suites mean "this file renders a raw react-native
@@ -99,7 +108,9 @@ describe("every raw react-native Modal reports into the overlay-count registry (
     // or it counts.
     const offenders = sourceFiles(ROOT, { dirs: ["src", "app"] })
       .filter((file) => !(file in EXEMPT))
-      .filter((file) => OPTS_OUT.test(stripComments(readFileSync(join(ROOT, file), "utf8"))));
+      .filter((file) =>
+        PASSES_OPT_OUT_PROP.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
+      );
 
     expect(offenders).toEqual([]);
   });
