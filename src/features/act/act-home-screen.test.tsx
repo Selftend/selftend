@@ -173,6 +173,59 @@ describe("ActHomeScreen", () => {
     expect(screen.getByText(/No defusion logs yet/)).toBeTruthy();
   });
 
+  /**
+   * The recent rows and the full log list render through one shared row
+   * (#1388): an inert card here beside a tappable row there would change the
+   * shape of what a user is reading the moment they tap through.
+   */
+  describe("recent defusion logs as shared rows (#1388)", () => {
+    beforeEach(() => {
+      mockUseDefusionLogs.mockReturnValue({
+        data: [
+          {
+            id: "log-1",
+            userId: "user-1",
+            fusedThought: "I'm going to fail",
+            thoughtCategory: "selfJudgment",
+            fusionLevelBefore: 60,
+            techniqueUsed: "musicalThoughts",
+            defusedVersion: "",
+            fusionLevelAfter: 20,
+            notes: "",
+            createdAt: "2026-05-24T09:00:00.000Z",
+            updatedAt: "2026-05-24T09:00:00.000Z",
+          },
+        ],
+      } as unknown as ReturnType<typeof useDefusionLogs>);
+    });
+
+    it("links each recent row to its own log's detail route", () => {
+      renderWithProviders(<ActHomeScreen />);
+
+      fireEvent.press(screen.getByText("I'm going to fail"));
+
+      expect(router.push as jest.Mock).toHaveBeenCalledWith({
+        pathname: "/modules/act/defusion/[id]",
+        params: { id: "log-1" },
+      });
+    });
+
+    it("names the technique on the row, not the category", () => {
+      renderWithProviders(<ActHomeScreen />);
+
+      expect(screen.getByText("Musical thoughts")).toBeTruthy();
+      expect(screen.queryByText("Self-judgment")).toBeNull();
+    });
+
+    it("shows the door as a 'Show all logs' link to the full list", () => {
+      renderWithProviders(<ActHomeScreen />);
+
+      fireEvent.press(screen.getByRole("link", { name: "Show all logs" }));
+
+      expect(router.push as jest.Mock).toHaveBeenCalledWith("/modules/act/defusion");
+    });
+  });
+
   describe("the header's three lifetime stats (#1378)", () => {
     /**
      * Zero is an honest value for a head count, so the run is always three items. A

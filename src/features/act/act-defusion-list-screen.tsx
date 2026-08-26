@@ -1,5 +1,5 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -8,12 +8,11 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenLoading } from "@/src/components/app/screen-state";
+import { DefusionLogRow } from "@/src/features/act/defusion-log-row";
 import { useDefusionLogs } from "@/src/features/act/queries";
 import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
-import { formatTimestamp } from "@/src/utils/date";
 
 export default function ActDefusionListScreen() {
   const pushWithOrigin = usePushWithOrigin();
@@ -49,44 +48,18 @@ export default function ActDefusionListScreen() {
           {dayLogs.length === 0 ? (
             <Text variant="muted">{t("defusion.noLogs")}</Text>
           ) : (
-            <View className="gap-2">
+            <View>
               {dayLogs.map((log) => (
-                <Pressable
+                <DefusionLogRow
                   key={log.id}
-                  accessibilityRole="button"
-                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  log={log}
                   onPress={() =>
                     pushWithOrigin({
                       pathname: "/modules/act/defusion/[id]",
                       params: { id: log.id },
                     })
                   }
-                  className="rounded-lg border border-border bg-card p-4 active:bg-accent/40"
-                >
-                  <View className="flex-row items-start justify-between gap-2">
-                    <View className="flex-1 gap-1">
-                      <Text className="font-semibold leading-snug" numberOfLines={2}>
-                        {log.fusedThought}
-                      </Text>
-                      <Text variant="muted" className="text-xs">
-                        {t(`defusion.categories.${log.thoughtCategory}`)}
-                        {" · "}
-                        {t(`defusion.techniques.${log.techniqueUsed}`)}
-                      </Text>
-                      <Text variant="muted" className="text-xs">
-                        {formatTimestamp(log.createdAt)}
-                      </Text>
-                    </View>
-                    {log.fusionLevelBefore !== null && log.fusionLevelAfter !== null ? (
-                      <View className="items-end gap-1">
-                        <Text className="text-sm font-bold text-foreground">
-                          {log.fusionLevelBefore} → {log.fusionLevelAfter}
-                        </Text>
-                      </View>
-                    ) : null}
-                    <Icon name="chevron-right" className="size-4 text-muted-foreground" />
-                  </View>
-                </Pressable>
+                />
               ))}
             </View>
           )}
