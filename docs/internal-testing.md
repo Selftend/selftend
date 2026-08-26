@@ -70,6 +70,16 @@ New accounts receive the Home recommendation wizard once after consent. Finishin
 - disabling web reminders unsubscribes the browser push subscription
 - web reminders are tested only after VAPID keys, Edge Function secrets, and the Supabase cron job are configured
 
+### Update offer
+
+Android's update popup runs on Google Play Core, which no automated layer can drive end to end (Play Core is mocked in jest, and the e2e suite is web-only), so this is the device checklist for it. Setup needs **two builds on the internal testing track**: install the older versionCode on the device, then release the newer one to the track, so Play reports an update as available to this device.
+
+- the popup appears once, at cold start of the older build (signed in — the offer lives in the authenticated shell only)
+- "Later" closes it, and it does not return after force-stopping and relaunching the app (the dismissal is per-version)
+- the update action opens the Play listing; backing out of Play does not resume into the popup
+- **backgrounding the app and returning does not re-pop it** — the check is launch-only on Android, and this is exactly the behaviour nothing automated can see
+- no popup ever appears on a device that is up to date, and none appears over the app-lock screen
+
 ### Profile pictures
 
 - Google profile photo renders on the production web origin
