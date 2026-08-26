@@ -8,6 +8,7 @@ import {
   INVALID_CREDENTIALS_ERROR,
   LEAKED_PASSWORD_ERROR,
   SESSION_MISSING_ERROR,
+  convertGuestWithPassword,
   getNativeAuthRedirectUrl,
   getPasswordResetRedirectUrl,
   getWebAuthRedirectUrl,
@@ -20,6 +21,7 @@ import {
   updatePassword,
 } from "@/src/features/auth/api";
 import { completeAuthRedirect } from "@/src/features/auth/callback";
+import { captureError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("expo-linking", () => ({
@@ -39,6 +41,11 @@ jest.mock("@/src/features/auth/callback", () => ({
 }));
 
 jest.mock("@/src/lib/supabase", () => ({ requireSupabase: jest.fn() }));
+
+jest.mock("@/src/lib/sentry", () => ({
+  captureError: jest.fn(),
+  isReportableError: jest.fn().mockReturnValue(true),
+}));
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
 const mockCompleteAuthRedirect = jest.mocked(completeAuthRedirect);
@@ -348,6 +355,76 @@ describe("signUpWithPassword", () => {
     mockRequireSupabase.mockReturnValue(buildAuthClient({ signUp }));
 
     expect(await signUpWithPassword("a@b.co", "pw")).toBe(data);
+  });
+});
+
+describe("convertGuestWithPassword", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("updates the guest with email + password, then refreshes the session", async () => {
+    const updateUser = jest.fn().mockResolvedValue({ error: null });
+    const refreshSession = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser, refreshSession }));
+
+    await expect(convertGuestWithPassword("a@b.co", "twelvechars1!")).resolves.toBeUndefined();
+    expect(updateUser).toHaveBeenCalledWith({ email: "a@b.co", password: "twelvechars1!" });
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("carries a trimmed display name as full_name metadata", async () => {
+    const updateUser = jest.fn().mockResolvedValue({ error: null });
+    const refreshSession = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser, refreshSession }));
+
+    await convertGuestWithPassword("a@b.co", "twelvechars1!", "  Ada  ");
+    expect(updateUser).toHaveBeenCalledWith({
+      email: "a@b.co",
+      password: "twelvechars1!",
+      data: { full_name: "Ada" },
+    });
+  });
+
+  it("maps the email_exists collision to EMAIL_ALREADY_EXISTS_ERROR without refreshing", async () => {
+    const error = Object.assign(new Error("exists"), { code: "email_exists", status: 422 });
+    const updateUser = jest.fn().mockResolvedValue({ error });
+    const refreshSession = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser, refreshSession }));
+
+    await expect(convertGuestWithPassword("a@b.co", "pw")).rejects.toThrow(
+      EMAIL_ALREADY_EXISTS_ERROR,
+    );
+    expect(refreshSession).not.toHaveBeenCalled();
+  });
+
+  it("maps a pwned weak_password error to LEAKED_PASSWORD_ERROR", async () => {
+    const error = Object.assign(new Error("weak"), {
+      code: "weak_password",
+      weakPassword: { reasons: ["pwned"] },
+    });
+    const updateUser = jest.fn().mockResolvedValue({ error });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser }));
+
+    await expect(convertGuestWithPassword("a@b.co", "pw")).rejects.toThrow(LEAKED_PASSWORD_ERROR);
+  });
+
+  it("rethrows an unmapped update error unchanged", async () => {
+    const error = new Error("boom");
+    const updateUser = jest.fn().mockResolvedValue({ error });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser }));
+
+    await expect(convertGuestWithPassword("a@b.co", "pw")).rejects.toBe(error);
+  });
+
+  it("treats a refresh failure as non-fatal: the account is already converted", async () => {
+    const refreshError = new Error("refresh down");
+    const updateUser = jest.fn().mockResolvedValue({ error: null });
+    const refreshSession = jest.fn().mockResolvedValue({ error: refreshError });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser, refreshSession }));
+
+    await expect(convertGuestWithPassword("a@b.co", "pw")).resolves.toBeUndefined();
+    expect(captureError).toHaveBeenCalledWith(refreshError);
   });
 });
 

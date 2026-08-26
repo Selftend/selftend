@@ -7,9 +7,15 @@ import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function SignInScreen() {
-  const { session } = useSession();
+  const { session, user } = useSession();
 
-  if (session) {
+  // Guests pass through (#1443): the conversion form's "Sign in instead"
+  // collision link lands here with the email prefilled, and an unconditional
+  // redirect would bounce the guest straight back into the app. The
+  // warn-and-abandon dialog that guards a guest actually signing in over
+  // their data is #1444's; until it lands, guests exist only dark behind the
+  // server toggle.
+  if (session && !user?.is_anonymous) {
     return <Redirect href="/(app)" />;
   }
 

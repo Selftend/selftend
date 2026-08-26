@@ -20,12 +20,14 @@ import { SubmitButtonContent } from "@/src/components/app/submit-button-content"
 import {
   EMAIL_ALREADY_EXISTS_ERROR,
   LEAKED_PASSWORD_ERROR,
+  convertGuestWithPassword,
   signUpWithPassword,
 } from "@/src/features/auth/api";
 import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { runAppleSignIn } from "@/src/features/auth/run-apple-sign-in";
 import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
 import { signUpSchema, type SignUpSchema } from "@/src/features/auth/schemas";
+import { recordSignInPrefill } from "@/src/features/auth/sign-in-prefill";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { captureError, isReportableError } from "@/src/lib/sentry";
 import { useThemePalette } from "@/src/lib/theme-palette";
@@ -34,7 +36,12 @@ import { useSession } from "@/src/providers/session-provider";
 
 export function SignUpForm() {
   const { t } = useTranslation("auth");
-  const { hasSupabaseConfig } = useSession();
+  const { hasSupabaseConfig, user } = useSession();
+  // Conversion mode (#1443): a guest reaching this screen is converting their
+  // account in place, not creating a second one. Same fields, different verbs:
+  // `updateUser` instead of `signUp`, so the user id - and every row under it -
+  // stays put.
+  const isConversion = user?.is_anonymous === true;
   // ⚠️ These hrefs carry their route group - `/(auth)/sign-in` - which the
   // helper's `targetPathname` strips; see its docblock for why a raw one would
   // record a target that can never match, silently (#1265, O3).
@@ -42,6 +49,10 @@ export function SignUpForm() {
   const theme = useThemePalette();
   const { isThrottled, recordFailure, recordSuccess } = useAuthThrottle();
   const [submitError, setSubmitError] = useState("");
+  // The email whose conversion hit 422 `email_exists` - set only in conversion
+  // mode, it renders the "Sign in instead" link and carries the typed address
+  // into sign-in as the prefill (spec §5: no pre-submit existence check).
+  const [collisionEmail, setCollisionEmail] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [isAppleSubmitting, setIsAppleSubmitting] = useState(false);
   const emailRef = useRef<TextInput>(null);
@@ -77,6 +88,16 @@ export function SignUpForm() {
   const onSubmit = handleSubmit(async ({ name, email, password }) => {
     try {
       setSubmitError("");
+      setCollisionEmail("");
+      if (isConversion) {
+        // Applies instantly under autoconfirm and refreshes the session inside
+        // (the JWT keeps claiming guest until then). Straight into the app: the
+        // attached email is unverified, and the verify banner takes over there.
+        await convertGuestWithPassword(email, password, name);
+        recordSuccess();
+        router.replace("/(app)");
+        return;
+      }
       const { session } = await signUpWithPassword(email, password, name);
       recordSuccess();
       // Autoconfirm environments (#489) return a session right away: straight
@@ -91,7 +112,12 @@ export function SignUpForm() {
     } catch (error) {
       recordFailure(error);
       if (error instanceof Error && error.message === EMAIL_ALREADY_EXISTS_ERROR) {
-        setSubmitError(t("signUp.emailAlreadyExists"));
+        if (isConversion) {
+          setCollisionEmail(email);
+          setSubmitError(t("conversion.emailAlreadyExists"));
+        } else {
+          setSubmitError(t("signUp.emailAlreadyExists"));
+        }
       } else if (error instanceof Error && error.message === LEAKED_PASSWORD_ERROR) {
         setSubmitError(t("validation.passwordBreached"));
       } else {
@@ -102,7 +128,7 @@ export function SignUpForm() {
         if (isReportableError(error)) {
           captureError(error);
         }
-        setSubmitError(t("signUp.error"));
+        setSubmitError(isConversion ? t("conversion.error") : t("signUp.error"));
       }
     }
   });
@@ -110,37 +136,54 @@ export function SignUpForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle aria-level={1}>{t("signUp.title")}</CardTitle>
-        <CardDescription>{t("signUp.subtitle")}</CardDescription>
+        <CardTitle aria-level={1}>
+          {isConversion ? t("conversion.title") : t("signUp.title")}
+        </CardTitle>
+        <CardDescription>
+          {isConversion ? t("conversion.subtitle") : t("signUp.subtitle")}
+        </CardDescription>
       </CardHeader>
       <CardContent className="gap-4">
-        <Button
-          disabled={!hasSupabaseConfig || isGoogleSubmitting}
-          onPress={() => void onGoogleSubmit()}
-          variant="outline"
-        >
-          {isGoogleSubmitting ? (
-            <ActivityIndicator color={theme.mutedForeground} />
-          ) : (
-            <Image
-              source={require("../../../assets/branding/google-logo.png")}
-              style={{ width: 18, height: 18 }}
-              resizeMode="contain"
+        {/* ☠️ No OAuth in conversion mode until #1445: these buttons run
+            signInWithOAuth / signInWithIdToken, which sign into the identity's
+            OWN account and silently strand the guest's data. OAuth conversion
+            is `linkIdentity` only, and it arrives with #1445 (which warns
+            before the provider dance, reusing #1444's dialog). */}
+        {!isConversion ? (
+          <>
+            <Button
+              disabled={!hasSupabaseConfig || isGoogleSubmitting}
+              onPress={() => void onGoogleSubmit()}
+              variant="outline"
+            >
+              {isGoogleSubmitting ? (
+                <ActivityIndicator color={theme.mutedForeground} />
+              ) : (
+                <Image
+                  source={require("../../../assets/branding/google-logo.png")}
+                  style={{ width: 18, height: 18 }}
+                  resizeMode="contain"
+                />
+              )}
+              <Text>
+                {isGoogleSubmitting ? t("signUp.googleOpening") : t("signUp.googleButton")}
+              </Text>
+            </Button>
+
+            <AppleSignInButton
+              onPress={onAppleSubmit}
+              disabled={isSubmitting || isGoogleSubmitting || isAppleSubmitting}
             />
-          )}
-          <Text>{isGoogleSubmitting ? t("signUp.googleOpening") : t("signUp.googleButton")}</Text>
-        </Button>
 
-        <AppleSignInButton
-          onPress={onAppleSubmit}
-          disabled={isSubmitting || isGoogleSubmitting || isAppleSubmitting}
-        />
-
-        <View className="flex-row items-center gap-3">
-          <View className="h-px flex-1 bg-border" />
-          <Text className="text-xs text-muted-foreground">{t("common:orContinueWithEmail")}</Text>
-          <View className="h-px flex-1 bg-border" />
-        </View>
+            <View className="flex-row items-center gap-3">
+              <View className="h-px flex-1 bg-border" />
+              <Text className="text-xs text-muted-foreground">
+                {t("common:orContinueWithEmail")}
+              </Text>
+              <View className="h-px flex-1 bg-border" />
+            </View>
+          </>
+        ) : null}
 
         <Controller
           control={control}
@@ -253,7 +296,26 @@ export function SignUpForm() {
           <Text variant="muted">{t("signUp.supabaseNotConfigured")}</Text>
         ) : null}
 
-        {submitError ? <Text className="text-sm text-destructive">{submitError}</Text> : null}
+        {submitError ? (
+          <View className="flex-row flex-wrap items-center gap-x-1">
+            <Text className="text-sm text-destructive">{submitError}</Text>
+            {collisionEmail ? (
+              <Button
+                onPress={() => {
+                  // In-memory handoff, not a `?email=` param: sign-in is
+                  // singular and query-keyed screens cannot be (see
+                  // sign-in-prefill.ts).
+                  recordSignInPrefill(collisionEmail);
+                  pushWithOrigin("/(auth)/sign-in");
+                }}
+                variant="link"
+                size="sm"
+              >
+                <Text className="text-xs">{t("conversion.signInInstead")}</Text>
+              </Button>
+            ) : null}
+          </View>
+        ) : null}
 
         {isThrottled ? (
           <Text className="text-sm text-destructive">{t("signUp.rateLimited")}</Text>
@@ -265,8 +327,8 @@ export function SignUpForm() {
         >
           <SubmitButtonContent
             pending={isSubmitting}
-            idleLabel={t("signUp.submit")}
-            pendingLabel={t("signUp.submitting")}
+            idleLabel={isConversion ? t("conversion.submit") : t("signUp.submit")}
+            pendingLabel={isConversion ? t("conversion.submitting") : t("signUp.submitting")}
           />
         </Button>
 

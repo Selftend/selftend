@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Image, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -26,6 +26,7 @@ import { runGoogleSignIn } from "@/src/features/auth/run-google-sign-in";
 import { runAppleSignIn } from "@/src/features/auth/run-apple-sign-in";
 import { AppleSignInButton } from "@/src/components/app/apple-sign-in-button";
 import { signInSchema, type SignInSchema } from "@/src/features/auth/schemas";
+import { consumeSignInPrefill } from "@/src/features/auth/sign-in-prefill";
 import { useAuthThrottle } from "@/src/features/auth/use-auth-throttle";
 import { COMPACT_CONTROL_HIT_SLOP } from "@/src/lib/accessibility";
 import { captureError, isReportableError } from "@/src/lib/sentry";
@@ -53,10 +54,27 @@ export function SignInForm() {
     formState: { errors, isSubmitting },
     getValues,
     handleSubmit,
+    setValue,
   } = useForm<SignInSchema>({
     defaultValues: { email: "", password: "" },
     resolver: zodResolver(signInSchema),
   });
+
+  // Prefill from the conversion collision's "Sign in instead" link (#1443).
+  // A focus effect, not a mount effect: sign-in is `dangerouslySingular`
+  // (#1027), so the link may land on a REUSED instance whose mount effects
+  // never rerun - focus fires either way. Consume-once (see the module's
+  // docblock for why this is not a query param), and the handed-off address
+  // overwrites whatever was typed: clicking "Sign in instead" for an email is
+  // as explicit as intent gets.
+  useFocusEffect(
+    useCallback(() => {
+      const prefillEmail = consumeSignInPrefill();
+      if (prefillEmail) {
+        setValue("email", prefillEmail);
+      }
+    }, [setValue]),
+  );
 
   const onGoogleSubmit = () =>
     runGoogleSignIn({

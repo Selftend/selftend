@@ -62,8 +62,17 @@ export function VerifyEmailBanner() {
   }, [canResend]);
 
   const email = user?.email ?? null;
-  const isEmailProvider = user?.app_metadata?.provider === "email";
-  if (!email || !isEmailProvider || !preferences || preferences.emailVerified) {
+  // Two spellings of "this account's email came from the user, not a
+  // provider": password signups carry `app_metadata.provider === "email"`,
+  // but a CONVERTED guest (#1443) does not - GoTrue's anonymous update branch
+  // attaches an "email" identity while leaving app_metadata `{}` (observed
+  // against GoTrue 2026-08-26; the provider claim never appears). The
+  // identity list is the truthful signal for both: OAuth users carry
+  // google/apple identities instead, and guests carry none.
+  const hasSelfAttachedEmail =
+    user?.app_metadata?.provider === "email" ||
+    (user?.identities?.some((identity) => identity.provider === "email") ?? false);
+  if (!email || !hasSelfAttachedEmail || !preferences || preferences.emailVerified) {
     return null;
   }
 
