@@ -19,7 +19,7 @@
       {
         "title": "2. Data we collect",
         "body": [
-          "Account data: your email address and authentication identifiers, provided when you sign in with an email and password, with Google OAuth, or with Sign in with Apple. If you use Sign in with Apple and choose to hide your email, Apple gives us a private relay address instead of your real one.",
+          "Account data: when you first use the app, a guest account is created for you with no email address or other personal identifier attached - only a random account ID. Your email address and authentication identifiers exist only after you choose to create an account, by registering with an email and password, with Google OAuth, or with Sign in with Apple. If you use Sign in with Apple and choose to hide your email, Apple gives us a private relay address instead of your real one.",
           "App data: user preferences (enabled modules, onboarding status, reminder settings) and private CBT thought records or other self-help entries you create. These entries may include wellness or mental-health reflection content if you choose to enter it.",
           "Device data: only when you explicitly enable reminders, we store the technical address needed to deliver them - a push token on native apps, or a browser push subscription (endpoint and keys) on web - along with your time zone and, on web, your browser's user-agent string. We do not perform device fingerprinting and do not collect hardware identifiers, advertising IDs, or your location.",
           "Session and local preference data: an authentication token stored in browser localStorage (web) or Expo SecureStore (mobile) to maintain your signed-in session, plus small local app preferences such as language, theme, and last timer session duration stored on your device."
@@ -76,6 +76,7 @@
         "title": "8. Data retention",
         "body": [
           "Account and app data: retained for as long as your account is active.",
+          "Guest accounts: deleted after 12 months of inactivity - twelve months without the app being opened on a device holding the session. The data is removed exactly like self-service deletion: from our live systems immediately, and from backups created beforehand within 90 days.",
           "After account deletion: your personal data (profile, preferences, records) is removed from our live systems immediately. Backups created before deletion are retained for up to 90 days under our backup schedule and then automatically deleted.",
           "Authentication logs: managed and retained by Supabase according to their retention policy.",
           "Local device data (reminder IDs, browser push subscriptions, session tokens): removed when you disable reminders, sign out, delete your account, or delete the app/browser data where applicable."
@@ -184,8 +185,8 @@
       {
         "title": "4. User accounts",
         "body": [
-          "An account is required to use the app so your records and preferences can sync across devices.",
-          "You sign in with your email address and a password, with Google, or with Sign in with Apple. Choose a strong, unique password and keep it confidential.",
+          "First use of the app creates a guest account for you, with no email or personal identifier attached. Creating a registered account is optional - it keeps the data you already have and lets your records and preferences sync across devices.",
+          "If you register, you sign in with your email address and a password, with Google, or with Sign in with Apple. Choose a strong, unique password and keep it confidential.",
           "You are responsible for maintaining access to the email address associated with your account.",
           "One account per person. Do not share account access or create multiple accounts."
         ]
@@ -328,7 +329,7 @@
         "body": [
           "Before deleting, you may want to export your data using the Export feature in Settings.",
           "After deletion, you can create a new account with the same email address, but none of your previous data will be available.",
-          "If you only want to stop using the app temporarily, you can simply sign out instead of deleting your account."
+          "If you only want to stop using the app temporarily, you can simply close it - or, on a registered account, sign out - instead of deleting your account."
         ]
       }
     ]
@@ -402,13 +403,13 @@
       {
         "title": "Do I need an account?",
         "body": [
-          "Yes - the MVP requires an account so records sync across devices and so you can export or delete them on demand. Local-only and bring-your-own-Supabase modes are on the post-MVP roadmap."
+          "No. First use creates a guest account automatically, with no email or personal identifier attached, and the whole app works without registering. Creating an account is optional: it keeps the data you already have, lets records sync across devices, and protects them if this device is lost or cleared. Guest accounts inactive for 12 months are deleted. Local-only and bring-your-own-Supabase modes are on the post-MVP roadmap."
         ]
       },
       {
         "title": "What data does Selftend collect?",
         "body": [
-          "Email, preferences, and the records you choose to create - plus a push token only if you turn on reminders. No date of birth, no device fingerprints or hardware identifiers, no advertising or analytics SDKs. Full details in the privacy policy."
+          "An email only if you register, preferences, and the records you choose to create - plus a push token only if you turn on reminders. No date of birth, no device fingerprints or hardware identifiers, no advertising or analytics SDKs. Full details in the privacy policy."
         ]
       },
       {
