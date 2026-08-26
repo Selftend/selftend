@@ -39,7 +39,7 @@ describe("SharedToolsRow", () => {
       const tools = SHARED_TOOLS_BY_PILLAR[pillar];
       renderWithProviders(<SharedToolsRow heading="Uses these shared tools" tools={tools} />);
 
-      const chips = screen.getAllByRole("button");
+      const chips = screen.getAllByRole("link");
       expect(chips).toHaveLength(tools.length);
 
       tools.forEach((tool, index) => {
@@ -67,7 +67,7 @@ describe("SharedToolsRow", () => {
       const tools = SHARED_TOOLS_BY_PILLAR[pillar];
       renderWithProviders(<SharedToolsRow heading="Uses these shared tools" tools={tools} />);
 
-      const chips = screen.getAllByRole("button");
+      const chips = screen.getAllByRole("link");
 
       tools.forEach((tool, index) => {
         useNavigationOriginStore.setState({ pending: null });
@@ -103,7 +103,7 @@ describe("SharedToolsRow", () => {
     expect(configured).toHaveLength(8);
 
     renderWithProviders(<SharedToolsRow heading="Uses these shared tools" tools={configured} />);
-    expect(screen.getAllByRole("button")).toHaveLength(8);
+    expect(screen.getAllByRole("link")).toHaveLength(8);
   });
 
   // The heading is the caller's copy, not a key this component owns - that is
@@ -144,7 +144,7 @@ describe("escaping a shared tool returns to CBT, named", () => {
       const session = renderWithProviders(
         <SharedToolsRow heading="Uses these shared tools" tools={[tool]} />,
       );
-      fireEvent.press(screen.getByRole("button"));
+      fireEvent.press(screen.getByRole("link"));
       // The module screen is really gone before the tool mounts, so nothing below
       // can match a leftover node from the departed tree.
       session.unmount();

@@ -111,4 +111,27 @@ describe("ActDefusionListScreen", () => {
       params: { id: "log-1" },
     });
   });
+
+  /**
+   * The `Also try` row renders through the shared `SharedToolsRow` since #1216
+   * (`RelatedTools` died in the merge). The heading survives as this screen's
+   * copy, the chip is a link that opens its tool - pinned here at one of the six
+   * ACT call sites so the row cannot silently drop out of a screen; the row's
+   * own behaviour (role, origin recording, order) is pinned in
+   * `shared-tools-row.test.tsx`.
+   */
+  it("offers the journal under Also try, as a link that opens it", () => {
+    mockUseDefusionLogs.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDefusionLogs>);
+
+    renderWithProviders(<ActDefusionListScreen />);
+
+    expect(screen.getByText("Also try")).toBeTruthy();
+
+    fireEvent.press(screen.getByRole("link", { name: "Journal" }));
+
+    expect(router.push as jest.Mock).toHaveBeenCalledWith("/tools/journal");
+  });
 });

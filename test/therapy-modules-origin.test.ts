@@ -23,10 +23,10 @@ const ROOT = join(__dirname, "..");
  *
  * 1. **Statically**, here - no bare `router.push`/`navigate` may remain in the
  *    three directories this batch cleared.
- * 2. **Behaviourally**, on the STORE - `src/features/act/related-tools.test.tsx`,
- *    `src/features/self-care/self-care-origin.test.tsx` and
- *    `src/components/app/shared-tools-row.test.tsx` press a real control and
- *    assert on `useNavigationOriginStore`.
+ * 2. **Behaviourally**, on the STORE - `src/features/self-care/self-care-origin.test.tsx`
+ *    and `src/components/app/shared-tools-row.test.tsx` press a real control and
+ *    assert on `useNavigationOriginStore`. (ACT's `Also try` rows render through
+ *    `SharedToolsRow` too since #1216, so its test covers both modules' chips.)
  *
  * The point of migrating the drill-downs is not that each one needs an Origin -
  * most do not, and recording an on-trail push is harmless because the off-trail

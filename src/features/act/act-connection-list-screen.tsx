@@ -8,8 +8,8 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenLoading } from "@/src/components/app/screen-state";
+import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
 import { useConnectionLogs } from "@/src/features/act/queries";
-import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -43,10 +43,21 @@ export default function ActConnectionListScreen() {
             <Text>{t("connection.newTitle")}</Text>
           </Button>
 
-          <RelatedTools
+          <SharedToolsRow
+            heading={t("alsoTry")}
             tools={[
-              { icon: "self-improvement", nameKey: "meditation", href: "/tools/meditation" },
-              { icon: "anchor", nameKey: "grounding", href: "/tools/grounding" },
+              {
+                key: "meditation",
+                route: "/tools/meditation",
+                icon: "self-improvement",
+                labelKey: "navigation:sidebar.meditation",
+              },
+              {
+                key: "grounding",
+                route: "/tools/grounding",
+                icon: "anchor",
+                labelKey: "navigation:sidebar.grounding",
+              },
             ]}
           />
 

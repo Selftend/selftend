@@ -8,8 +8,8 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenLoading } from "@/src/components/app/screen-state";
+import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
 import { useCommittedActions } from "@/src/features/act/queries";
-import { RelatedTools } from "@/src/features/act/related-tools";
 import { type ActionStatus, type CommittedAction } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -50,7 +50,17 @@ export default function ActCommittedActionListScreen() {
             <Text>{t("committedAction.newTitle")}</Text>
           </Button>
 
-          <RelatedTools tools={[{ icon: "task-alt", nameKey: "habits", href: "/tools/habits" }]} />
+          <SharedToolsRow
+            heading={t("alsoTry")}
+            tools={[
+              {
+                key: "habits",
+                route: "/tools/habits",
+                icon: "task-alt",
+                labelKey: "navigation:sidebar.habits",
+              },
+            ]}
+          />
 
           {!actions || actions.length === 0 ? (
             <Text variant="muted">{t("committedAction.noActions")}</Text>
