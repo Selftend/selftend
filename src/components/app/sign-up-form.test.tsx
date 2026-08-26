@@ -46,7 +46,7 @@ const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 
 type SessionValue = ReturnType<typeof useSession>;
 
-const registeredOutSession = { hasSupabaseConfig: true } as SessionValue;
+const signedOutSession = { hasSupabaseConfig: true } as SessionValue;
 const guestSession = {
   hasSupabaseConfig: true,
   user: { id: "guest-1", is_anonymous: true },
@@ -64,7 +64,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   // The signed-out default: existing sign-up behaviour. Conversion tests
   // override with a guest session per-test.
-  mockUseSession.mockReturnValue(registeredOutSession);
+  mockUseSession.mockReturnValue(signedOutSession);
 });
 
 describe("SignUpForm", () => {

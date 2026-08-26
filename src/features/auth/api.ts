@@ -247,7 +247,7 @@ export async function signUpWithPassword(email: string, password: string, name?:
 }
 
 /**
- * Conversion (#1443): upgrade the signed-in guest to a registered account in
+ * Conversion (#1443): the signed-in guest becomes a registered account in
  * place. Under this repo's autoconfirm (`enable_confirmations = false`, #489)
  * the update applies instantly, sends no email, and flips `is_anonymous` in
  * the same transaction; the attached email stays unverified, which the

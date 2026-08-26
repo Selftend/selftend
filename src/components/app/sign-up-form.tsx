@@ -37,7 +37,7 @@ import { useSession } from "@/src/providers/session-provider";
 export function SignUpForm() {
   const { t } = useTranslation("auth");
   const { hasSupabaseConfig, user } = useSession();
-  // Conversion mode (#1443): a guest reaching this screen is upgrading their
+  // Conversion mode (#1443): a guest reaching this screen is converting their
   // account in place, not creating a second one. Same fields, different verbs:
   // `updateUser` instead of `signUp`, so the user id - and every row under it -
   // stays put.

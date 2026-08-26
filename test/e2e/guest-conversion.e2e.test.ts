@@ -1,4 +1,4 @@
-// Guest conversion (#1443): email + password upgrade the guest IN PLACE.
+// Guest conversion (#1443): email + password convert the guest IN PLACE.
 //
 // Plain @playwright/test, not ./fixtures: the worker fixture plants a POOL
 // user's registered session, and this journey needs the opposite - a real
@@ -92,6 +92,17 @@ test.describe("guest conversion", () => {
 
   test("email + password convert the guest in place, keeping the user id", async ({ page }) => {
     const email = `guest-conv-${Date.now()}@test.local`;
+    const guestItem = `Guest gratitude before conversion ${Date.now()}`;
+
+    // A row the GUEST created (planted server-side; the UI journey for
+    // creating one is create-gratitude-entry's job). Re-asserted through the
+    // UI after conversion: same user id is the mechanism, but this proves the
+    // refreshed registered JWT still reads the row through RLS.
+    const admin = createServiceClient();
+    const { error: plantError } = await admin
+      .from("gratitude_entries")
+      .insert({ user_id: guestId, item_1: guestItem });
+    if (plantError) throw new Error(`Planting the guest row failed: ${plantError.message}`);
 
     await page.goto("/sign-up");
 
@@ -121,7 +132,7 @@ test.describe("guest conversion", () => {
       timeout: 15_000,
     });
 
-    // The conversion upgraded the account IN PLACE: same user id, is_anonymous
+    // The conversion happened IN PLACE: same user id, is_anonymous
     // flipped, and the session in storage is the refreshed one (the JWT keeps
     // claiming guest until refreshSession - the refresh is part of the flow).
     const stored = await page.evaluate(
@@ -134,6 +145,11 @@ test.describe("guest conversion", () => {
     expect(session.user?.id).toBe(guestId);
     expect(session.user?.email).toBe(email);
     expect(session.user?.is_anonymous).toBeFalsy();
+
+    // All guest data is present under the registered account: the entry the
+    // guest logged is right there in the tool, read with the refreshed token.
+    await page.goto("/tools/gratitude-log");
+    await expect(page.getByText(guestItem)).toBeVisible({ timeout: 15_000 });
   });
 
   test("an email collision shows the inline error and Sign in instead prefills sign-in", async ({
