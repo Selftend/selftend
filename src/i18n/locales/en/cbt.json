@@ -1105,7 +1105,7 @@
     "loadingDescription": "Fetching your saved record...",
     "notFound": "Record not found",
     "notFoundLabel": "Nothing to show",
-    "notFoundDescription": "The record may have been deleted or the link may be out of date.",
+    "notFoundDescription": "The record may have been deleted or removed.",
     "updated": "Updated {{timestamp}}",
     "deleteProblem": "Delete problem",
     "deleteConfirmTitle": "Delete this record",

@@ -1105,7 +1105,7 @@
     "loadingDescription": "Извличане на запазения ти запис...",
     "notFound": "Записът не е намерен",
     "notFoundLabel": "Няма какво да се покаже",
-    "notFoundDescription": "Записът може да е бил изтрит или връзката да е остаряла.",
+    "notFoundDescription": "Записът може да е бил изтрит или премахнат.",
     "updated": "Обновен {{timestamp}}",
     "deleteProblem": "Проблем при изтриване",
     "deleteConfirmTitle": "Изтриване на този запис",

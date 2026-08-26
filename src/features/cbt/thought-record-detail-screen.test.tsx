@@ -142,10 +142,12 @@ describe("ThoughtRecordDetailScreen row set", () => {
     });
     renderWithProviders(<ThoughtRecordDetailScreen />);
 
+    // No leading pair (its labels render as standalone nodes)...
     expect(screen.queryByText("Belief before")).toBeNull();
-    // The lone number still renders - a record of what the user wrote.
+    // ...but the lone number still renders as a row - a record of what the
+    // user wrote.
     expect(screen.getByText("Belief rating")).toBeTruthy();
-    expect(screen.getByText(/After: 40/)).toBeTruthy();
+    expect(screen.getByText(/Belief after: 40/)).toBeTruthy();
   });
 
   it("renders emotion intensity as a plain row without the shift sentence", () => {

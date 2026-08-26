@@ -175,12 +175,12 @@ export default function ThoughtRecordDetailScreen() {
                 <View className="gap-1">
                   {beliefBefore !== null ? (
                     <Text className="text-sm leading-relaxed">
-                      {t("saved.intensityBefore")}: {beliefBefore}
+                      {t("saved.beliefBefore")}: {beliefBefore}
                     </Text>
                   ) : null}
                   {data.beliefAfter !== null ? (
                     <Text className="text-sm leading-relaxed">
-                      {t("saved.intensityAfter")}: {data.beliefAfter}
+                      {t("saved.beliefAfter")}: {data.beliefAfter}
                     </Text>
                   ) : null}
                 </View>
