@@ -109,11 +109,11 @@ jest.mock("@/src/components/app/verify-email-banner", () => {
   };
 });
 
-jest.mock("@/src/components/app/update-banner", () => {
+jest.mock("@/src/components/app/update-popup", () => {
   const Text = mockText;
 
   return {
-    UpdateBanner: () => <Text>Update banner</Text>,
+    UpdatePopup: () => <Text>Update popup</Text>,
   };
 });
 
@@ -391,7 +391,10 @@ describe("ProtectedLayout headerless shell (#667)", () => {
     expect(stackAt).toBeGreaterThanOrEqual(0);
     expect(stackAt).toBeLessThan(output.indexOf("Offline banner"));
     expect(stackAt).toBeLessThan(output.indexOf("Verify-email banner"));
-    expect(stackAt).toBeLessThan(output.indexOf("Update banner"));
+    // The update offer left the strip for a modal (#1475) but must still be
+    // mounted in the authenticated shell — inside AppLockGate's children,
+    // where suppression and the lock screen can gate it (#1142 spec §3).
+    expect(output.indexOf("Update popup")).toBeGreaterThanOrEqual(0);
   });
 
   it("reserves the safe area only while a banner is visible", async () => {

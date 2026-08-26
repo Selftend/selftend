@@ -263,6 +263,81 @@ describe("useUpdateAvailability (Android offers via Play, iOS suppressed)", () =
   });
 });
 
+// What act() does per platform (#1151, spec §4 on #1142). The unifying line:
+// the latch exists to stop the popup returning - on web the reload already
+// does that job, so web writes NOTHING (latching would hide a genuinely
+// failed update behind a dismissed version); on Android nothing else does,
+// so act() latches before leaving for Play.
+describe("useUpdateAvailability (act: per-platform close semantics)", () => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    await AsyncStorage.clear();
+    mockRunningVersion.mockReturnValue("0.8.0");
+  });
+
+  it("android act() latches the versionCode, clears the offer, then opens Play", async () => {
+    platformSpy?.restore();
+    const nativeSpy = jest.replaceProperty(Platform, "OS", "android");
+    const playStoreUrl = appEnv.playStoreUrl;
+    appEnv.playStoreUrl = "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend";
+    const openSpy = jest.spyOn(Linking, "openURL").mockResolvedValue(true);
+    mockStoreUpdate.mockResolvedValue("18");
+
+    try {
+      const { result } = renderHook(() => useUpdateAvailability());
+      await waitFor(() => expect(result.current.available).toBe(true));
+
+      act(() => result.current.act());
+
+      // Same path as "Later" (C2 applied to a soft close): post-#1474 nothing
+      // else clears the offer, so an unlatched act() would resume from Play
+      // straight into the identical modal.
+      expect(result.current.available).toBe(false);
+      await waitFor(async () =>
+        expect(await AsyncStorage.getItem("updateBannerDismissed:18")).toBe("1"),
+      );
+      expect(openSpy).toHaveBeenCalledWith(appEnv.playStoreUrl);
+
+      // ...and the latch is the persistent half: a remount stays quiet.
+      const second = renderHook(() => useUpdateAvailability());
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      expect(second.result.current.available).toBe(false);
+    } finally {
+      appEnv.playStoreUrl = playStoreUrl;
+      openSpy.mockRestore();
+      nativeSpy.restore();
+      platformSpy = jest.replaceProperty(Platform, "OS", "web");
+    }
+  });
+
+  it("web act() reloads the page and writes no dismissal", async () => {
+    // RN's jest setup aliases `window` to `global`, which has no `location` -
+    // stub just the reload seam the hook reaches for.
+    const domGlobal = globalThis as unknown as { location?: { reload: () => void } };
+    const reload = jest.fn();
+    domGlobal.location = { reload };
+    mockFetchDocument.mockResolvedValue({
+      version: "0.9.0",
+      publishedAt: new Date().toISOString(),
+    });
+
+    try {
+      const { result } = renderHook(() => useUpdateAvailability());
+      await waitFor(() => expect(result.current.available).toBe(true));
+
+      act(() => result.current.act());
+
+      expect(reload).toHaveBeenCalledTimes(1);
+      // The reload IS the suppression: the shell is `must-revalidate` and the
+      // bundle content-hashed, so the reloaded page runs the new version. A
+      // dismissal here would hide a genuinely failed update (#1151).
+      expect(await AsyncStorage.getItem("updateBannerDismissed:0.9.0")).toBeNull();
+    } finally {
+      delete domGlobal.location;
+    }
+  });
+});
+
 // Arming-time suppression and the per-platform triggers (#1474, spec §1-§2 on
 // #1142). RN's jest setup aliases `window` to `global` WITHOUT DOM event
 // methods and defines no `document` at all - the hook feature-detects both -

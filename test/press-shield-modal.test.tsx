@@ -222,6 +222,24 @@ describe("PressShieldModal", () => {
     expect(useOverlayCountStore.getState().count).toBe(0);
   });
 
+  it("registerOverlay={false} keeps a visible modal out of the registry (#1475)", () => {
+    // The one sanctioned opt-out, for the update popup: its trigger gates on
+    // the count, so the wrapper registering it would oscillate the offer
+    // (spec §2 on #1142). Who may pass this is policed statically in
+    // modal-overlay-registration.test.ts; this pins that passing it actually
+    // works — a wrapper that registered anyway would flash-and-vanish the
+    // popup with every test still green.
+    setPlatformOS("ios");
+    const { unmount } = render(
+      <PressShieldModal onEscape={noop} registerOverlay={false} visible>
+        <Text>content</Text>
+      </PressShieldModal>,
+    );
+    expect(useOverlayCountStore.getState().count).toBe(0);
+    unmount();
+    expect(useOverlayCountStore.getState().count).toBe(0);
+  });
+
   it("drops the shield after the fallback window even if onShow never fires", () => {
     // A missed animationend must never leave the modal permanently inert —
     // that failure mode would be far worse than the swallowed tap it prevents.

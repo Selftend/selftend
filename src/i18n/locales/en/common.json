@@ -63,12 +63,12 @@
     "openCrisis": "Open crisis guidance",
     "barLabel": "Not for emergencies · Crisis resources"
   },
-  "updateBanner": {
-    "message": "A newer version of Selftend is available.",
+  "updatePrompt": {
+    "title": "Update available",
+    "body": "A newer version of Selftend is ready.",
     "actionWeb": "Refresh",
     "actionPlayStore": "Open Google Play",
-    "actionAppStore": "Open the App Store",
-    "dismiss": "Dismiss"
+    "later": "Later"
   },
   "downloadBar": {
     "message": "Selftend is on Google Play.",

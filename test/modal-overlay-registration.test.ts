@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { rawModalRenderers, stripComments } from "./source-scan";
+import { rawModalRenderers, sourceFiles, stripComments } from "./source-scan";
 
 /**
  * #1473 (spec §2 on #1142): every modal overlay reports "I am visible" into
@@ -15,9 +15,11 @@ import { rawModalRenderers, stripComments } from "./source-scan";
  *
  * Call sites of `PressShieldModal` need no per-site line — the wrapper
  * registers its own `visible`, the same way it carries the #1054 web-unmount
- * gate for all of them. This suite therefore polices only the files that
- * render a raw `<Modal>` (the wrapper's own source among them: its internal
- * registration is what every wrapper call site inherits).
+ * gate for all of them. This suite therefore polices the files that render a
+ * raw `<Modal>` (the wrapper's own source among them: its internal
+ * registration is what every wrapper call site inherits) — plus, since
+ * #1475, the one escape hatch from that inheritance: the wrapper's
+ * `registerOverlay={false}` opt-out, which only EXEMPT files may pass.
  *
  * Deliberately a SEPARATE suite from `modal-web-unmount.test.ts`, with its
  * own `EXEMPT` map, because the exemption sets differ and will keep
@@ -35,14 +37,24 @@ import { rawModalRenderers, stripComments } from "./source-scan";
 const ROOT = join(__dirname, "..");
 
 /**
- * Raw-`<Modal>` renderers that must NOT register. Empty today; the update
- * popup joins with its own ticket (spec §2: it gates on the count, so its own
- * registration would oscillate it), each entry with the reason.
+ * Overlay renderers that must NOT register — either a raw-`<Modal>` file with
+ * no `useOverlayRegistration` call, or a `PressShieldModal` call site passing
+ * the wrapper's `registerOverlay={false}` opt-out. Each entry carries the
+ * reason; the update popup is the single exemption and is expected to stay
+ * that way.
  */
-const EXEMPT: Record<string, string> = {};
+const EXEMPT: Record<string, string> = {
+  // Spec §2 on #1142: the popup's trigger GATES on the overlay count, so its
+  // own registration would oscillate the offer (armed → counted → disarmed →
+  // uncounted → armed again).
+  "src/components/app/update-popup.tsx": "gates on the count its own render would raise",
+};
 
 /** One registration call anywhere in the file satisfies the gate. */
 const REGISTERS = /\buseOverlayRegistration\s*\(/;
+
+/** The wrapper's registration opt-out, at a call site. */
+const OPTS_OUT = /\bregisterOverlay=\{false\}/;
 
 // Detection is shared with modal-web-unmount.test.ts (rawModalRenderers in
 // source-scan.ts): both suites mean "this file renders a raw react-native
@@ -79,11 +91,30 @@ describe("every raw react-native Modal reports into the overlay-count registry (
     expect(offenders).toEqual([]);
   });
 
-  it("the exemptions still exist and still render a raw Modal", () => {
+  it("only exempt files use the wrapper's registerOverlay={false} opt-out", () => {
+    // The wrapper registers for its call sites, so a call site passing the
+    // opt-out silently leaves the registry blind to that overlay — the exact
+    // hole the raw-Modal check above closes for raw Modals. Same rule, same
+    // allowlist: an overlay that must not count joins EXEMPT with the reason,
+    // or it counts.
+    const offenders = sourceFiles(ROOT, { dirs: ["src", "app"] })
+      .filter((file) => !(file in EXEMPT))
+      .filter((file) => OPTS_OUT.test(stripComments(readFileSync(join(ROOT, file), "utf8"))));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("the exemptions still exist and still opt out of the registry", () => {
     // An allowlist must not outlive what it exempts: if one of these stops
-    // rendering a raw Modal (or is deleted), drop it from EXEMPT.
+    // rendering an unregistered overlay (or is deleted), drop it from EXEMPT.
     for (const file of Object.keys(EXEMPT)) {
-      expect(modalFiles).toContain(file);
+      const code = stripComments(readFileSync(join(ROOT, file), "utf8"));
+      const rawModalWithoutRegistration = modalFiles.includes(file) && !REGISTERS.test(code);
+      const wrapperCallSiteOptingOut = OPTS_OUT.test(code);
+      expect({
+        file,
+        exemptionLive: rawModalWithoutRegistration || wrapperCallSiteOptingOut,
+      }).toEqual({ file, exemptionLive: true });
     }
   });
 });
