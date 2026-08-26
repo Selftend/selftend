@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { sourceFiles, stripComments } from "./source-scan";
+import { rawModalRenderers, stripComments } from "./source-scan";
 
 /**
  * #1473 (spec §2 on #1142): every modal overlay reports "I am visible" into
@@ -44,23 +44,10 @@ const EXEMPT: Record<string, string> = {};
 /** One registration call anywhere in the file satisfies the gate. */
 const REGISTERS = /\buseOverlayRegistration\s*\(/;
 
-/**
- * JSX use of `<Modal` (word-bounded, so neither `<ModalFocusTrap` nor
- * `<PressShieldModal` matches) — the same detection pair as
- * `modal-web-unmount.test.ts`, kept in lockstep on purpose: both suites mean
- * "this file renders a raw react-native Modal".
- */
-const RENDERS_A_MODAL = /<Modal[\s/>]/;
-
-/** `Modal` named in an import from "react-native" (single or multi-line). */
-const IMPORTS_RN_MODAL = /import\s*\{[^}]*\bModal\b[^}]*\}\s*from\s*"react-native"/;
-
-const files = sourceFiles(ROOT, { dirs: ["src", "app"] });
-
-const modalFiles = files.filter((file) => {
-  const source = readFileSync(join(ROOT, file), "utf8");
-  return IMPORTS_RN_MODAL.test(source) && RENDERS_A_MODAL.test(stripComments(source));
-});
+// Detection is shared with modal-web-unmount.test.ts (rawModalRenderers in
+// source-scan.ts): both suites mean "this file renders a raw react-native
+// Modal", and a shared definition keeps that lockstep structural.
+const modalFiles = rawModalRenderers(ROOT);
 
 describe("every raw react-native Modal reports into the overlay-count registry (#1473)", () => {
   it("derives the Modal list from source (canary: ConfirmDialog is found)", () => {
