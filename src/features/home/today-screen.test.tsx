@@ -71,14 +71,21 @@ jest.mock("@/src/components/app/app-onboarding-wizard", () => {
     AppOnboardingWizard: ({
       visible,
       includeWelcome,
+      skipPersists,
     }: {
       visible: boolean;
       includeWelcome?: boolean;
+      skipPersists: boolean;
     }) =>
       visible ? (
         <View
           testID="suggestion-wizard-visible"
-          accessibilityLabel={includeWelcome ? "with welcome" : "without welcome"}
+          accessibilityLabel={[
+            includeWelcome ? "with welcome" : "without welcome",
+            // #1258: the re-offer's skip is free (it only hides the
+            // suggestion), so its Escape stays a bare X.
+            skipPersists ? "persistent skip" : "free skip",
+          ].join(", ")}
         />
       ) : null,
   };
@@ -289,7 +296,9 @@ describe("HomeScreen greeting", () => {
     renderWithProviders(<HomeScreen />);
     fireEvent.press(screen.getByRole("button", { name: /get suggestions/i }));
     expect(screen.getByTestId("suggestion-wizard-visible")).toBeTruthy();
-    expect(screen.getByLabelText("without welcome")).toBeTruthy();
+    // "free skip" is #1258's call-site distinction: this mount declares its
+    // skip free of consequence, so the wizard keeps the bare X here.
+    expect(screen.getByLabelText("without welcome, free skip")).toBeTruthy();
   });
 
   /**
@@ -314,6 +323,15 @@ describe("HomeScreen greeting", () => {
  * closes.
  */
 describe("HomeScreen header actions (#979)", () => {
+  // R3 (#1250): the Escape is present on every screen BELOW the root, and this is
+  // the root. Home renders no chrome component, so it gets no Escape by
+  // construction - there is nowhere above it to escape to.
+  it("renders no Escape - this is the root", () => {
+    renderPopulatedHome();
+
+    expect(screen.queryByTestId("screen-escape")).toBeNull();
+  });
+
   it("renders neither action while the tool tier is empty", () => {
     renderWithProviders(<HomeScreen />);
 

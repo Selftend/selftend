@@ -35,11 +35,11 @@ npm exec @react-native-reusables/cli@latest -- add --all --overwrite --styling-l
 
 Do not add a second broad UI kit without a specific reason. `daisyUI` is web-DOM-focused and is not the default for this Expo/React Native app.
 
-## Internationalization
+## Internationalization (i18n)
 
 Supported languages: English (`en`) and Bulgarian (`bg`). English is the fallback.
 
-Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON file each, all translated on [Weblate](https://hosted.weblate.org/projects/selftend/). The authoritative list is the `ns` array in `src/i18n/index.ts`. Ten cover app-level surfaces:
+Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON file per namespace per language. The authoritative list is the `ns` array in `src/i18n/index.ts`, and `src/i18n/locale-parity.test.ts` keeps the `en` and `bg` key sets identical. Ten cover app-level surfaces:
 
 | Namespace       | Scope                                          |
 | --------------- | ---------------------------------------------- |
@@ -56,9 +56,19 @@ Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON
 
 The other ten are one per tool or module: `act`, `cbt`, `gratitude`, `habits`, `journal`, `meditation`, `mood`, `routines`, `sleep`, `timer`.
 
-Components use `useTranslation("namespace")`; non-component code may import `i18n.t()` directly. Policy screens use `t(sectionKey, { returnObjects: true })` for structured arrays.
+Components use `useTranslation("namespace")`; non-component code may import `i18n.t()` directly. Structured content — policy sections, grounding steps, meditation instructions, gratitude prompts — is stored as JSON arrays and read with `t(key, { returnObjects: true })`.
 
 Language preference is stored in AsyncStorage (`selftend:language`) and synced to `user_preferences.language`.
+
+There is one Weblate component per namespace, each linked to the `auth` component so they share one repository connection. **All 20 namespaces are tracked** — the remaining 13 were created in one scripted pass on 2026-08-27 ([#1105](https://github.com/Selftend/selftend/issues/1105)), so every namespace is editable on Weblate.
+
+Do not take that count on trust — it is a snapshot. `node scripts/weblate-create-components.js` reports which namespaces are untracked and prints the payload that would create them; `--verify` checks the live components against the expected configuration (i18next v4 format, propagation off, two-space JSON indent). Both are read-only and need no token. Now that the set is complete, adding a namespace also means adding a component: re-run the script with `--apply` and a `WEBLATE_API_TOKEN`, then revoke the token.
+
+`--apply` also repairs components it did not create: Weblate auto-detects JSON indentation and has guessed wrong before, and a component left at the wrong width rewrites its whole locale file on the first translation write-back. Any component not at two spaces is PATCHed back, so one command covers the whole sitting; `--fix-indent` runs that repair on its own. Because the Weblate API documents `file_format_params` as writable under `PUT` but not `PATCH`, the repair re-reads each component afterwards and fails loudly if the value did not take, rather than trusting the status code — set it by hand (Component → Manage → Settings → Files → JSON indentation → 2) if that happens.
+
+Weblate tracks `main`, while this repo develops on `dev`, so a namespace can be ready in the tree and not yet ready to track. Before creating anything the script reads each namespace's file as `main` has it and withholds the ones that would come up with error-level alerts — a key with both a bare and an i18next-v4 plural form (`key` beside `key_other`, where v4 wants `key_one`), or a file that has not reached `main` at all and would leave the filemask matching nothing. Withheld namespaces are named with their reason and wait for the next dev→main release; the rest are created anyway, so a release is never a reason to postpone the whole pass. The screen reads GitHub rather than the local checkout, because a stale `origin/main` would clear a namespace that is not actually clean.
+
+`--apply` closes with the same steps a human would do afterwards, while the token is still live: it pulls the project repository, then reports the project's failing-check count, any namespace still untracked, and each component's alerts. `--finish` runs just that closing step. Alerts are listed rather than judged — the API exposes no severity field — so confirming they are warnings and not errors is still a human call. As of 2026-08-27 hosted Weblate answers `GET /api/components/selftend/<slug>/alerts/` with `404` for every component, even for a token that reads and writes those same components — the endpoint is gone, not guarded. The script distinguishes that from a token that cannot see alerts: a `404` on every component is reported once as a property of the deployment and does not fail the pass, while a `403`, or a `404` on only some components, stays loud and holds the exit code at 1. A run that could not read alerts says so in its closing line rather than implying a clean bill. Read the severities from the UI instead: each component page carries an **Alerts** tab whose cards are badged `Information`, `Warning`, or `Error`.
 
 To add a language:
 

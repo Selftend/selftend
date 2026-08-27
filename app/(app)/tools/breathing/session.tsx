@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { FocusSessionShell } from "@/src/components/app/focus-session-shell";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import { breathingPatterns } from "@/src/constants/breathing";
 import type { BreathingPhase } from "@/src/constants/breathing";
 import { BreathingPacer } from "@/src/features/breathing/breathing-pacer";
@@ -43,7 +43,6 @@ import {
 } from "@/src/lib/accessibility";
 import { useSaveBreathingSession } from "@/src/features/breathing/queries";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -173,7 +172,6 @@ export default function BreathingSessionScreen() {
   });
 
   const colorScheme = useColorSchemeName();
-  const roomStyle = useRoomStyle("aqua");
   const accent = resolved?.color ?? "aqua";
   // Identity-stable per (colour, scheme): the countdown rerenders this screen
   // several times a second during a session, and the pacer must not see a fresh
@@ -346,8 +344,9 @@ export default function BreathingSessionScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenPhase, paused, resolved]);
 
-  // Shell B has no chrome, so the OS back gesture and the web back button are
-  // the only uninvited exits. Mid-session they pause the clock and ask - a calm
+  // Shell B's Escape (#1256) leaves through `router.replace`, so it lands here
+  // with the OS back gesture and the web back button - every uninvited exit
+  // passes this guard. Mid-session they pause the clock and ask - a calm
   // finish-or-continue, never a silent discard (#777). Setup has nothing to
   // lose and preroll hasn't breathed yet; both let the exit through.
   useEffect(() => {
@@ -397,23 +396,11 @@ export default function BreathingSessionScreen() {
   );
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("breathing.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("breathing.title")} />;
   }
 
   if (!resolved || notFound) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("breathing.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("breathing.notFound")} />;
   }
 
   const title = resolved.i18nSlug
@@ -578,7 +565,7 @@ export default function BreathingSessionScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+    <SafeAreaView className="flex-1 bg-background">
       {/* Setup gets the 48px trail bar (design `4b`); the live session runs on
           the focus shell decided on #777 and built above. */}
       <ScreenTopBar leading="back" />

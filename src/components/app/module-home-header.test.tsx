@@ -2,7 +2,10 @@ import { fireEvent, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import { ModuleHomeHeader } from "./module-home-header";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
+
+let mockPathname = "/modules/cbt";
 
 jest.mock("expo-router", () => {
   const React = require("react") as typeof import("react");
@@ -14,7 +17,7 @@ jest.mock("expo-router", () => {
       push: jest.fn(),
       replace: jest.fn(),
     },
-    usePathname: () => "/modules/cbt",
+    usePathname: () => mockPathname,
     useFocusEffect: (callback: () => void | (() => void)) => {
       React.useEffect(callback, [callback]);
     },
@@ -45,6 +48,7 @@ function renderHeader({ includeProgram = false }: { includeProgram?: boolean } =
 describe("ModuleHomeHeader action buttons", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useNavigationOriginStore.setState({ pending: null });
   });
 
   it("renders every provided action button", () => {
@@ -66,6 +70,26 @@ describe("ModuleHomeHeader action buttons", () => {
     expect(router.push).toHaveBeenCalledWith({
       pathname: "/notifications",
       params: { target: "cbt" },
+    });
+  });
+
+  /**
+   * The originally reported symptom, closed at its source (#1261): Reminders
+   * sits at the root, so its Up is Home, and a user who came from CBT lost their
+   * place. The bell records where it left from, and the Escape over there reads
+   * it back as "Back to CBT".
+   *
+   * This is the tracer bullet for the helper - the one migrated call site of the
+   * ~89 that the later batches move off a bare `router.push`.
+   */
+  it("records the module it left as the Origin for Reminders", () => {
+    renderHeader();
+
+    fireEvent.press(screen.getByLabelText("Reminders"));
+
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/modules/cbt",
+      forPathname: "/notifications",
     });
   });
 
@@ -112,6 +136,26 @@ describe("ModuleHomeHeader action buttons", () => {
 describe("ModuleHomeHeader shell", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockPathname = "/modules/cbt";
+  });
+
+  // G1 (#1250): exactly one Escape, rendered unconditionally.
+  it("renders exactly one Escape", () => {
+    renderWithProviders(<ModuleHomeHeader title="CBT" />);
+
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+  });
+
+  it("still renders the Escape on a one-crumb screen, where the trail hides", () => {
+    // A module home reached directly - and the eight one-crumb routes generally.
+    mockPathname = "/notifications";
+    renderWithProviders(<ModuleHomeHeader title="Reminders" />);
+
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+    // The trail is still hidden at one crumb - only the Escape was decoupled.
+    // A rendered lone crumb would put "Reminders" on screen twice, above a title
+    // that already says it.
+    expect(screen.getAllByText("Reminders")).toHaveLength(1);
   });
 
   it("renders breadcrumb, h1 and tagline", () => {
@@ -120,7 +164,7 @@ describe("ModuleHomeHeader shell", () => {
     );
 
     // The breadcrumb eyebrow, which the field header used to render in white ink.
-    expect(screen.getByLabelText("Go back")).toBeTruthy();
+    expect(screen.getByLabelText("Back to Modules")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Check-in" })).toBeTruthy();
     expect(screen.getByText("Log how you're feeling.")).toBeTruthy();
   });

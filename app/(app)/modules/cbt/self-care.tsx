@@ -1,8 +1,7 @@
 import { ActivityIndicator, Pressable, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -19,7 +18,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useSelfCareLog, useUpsertSelfCareLog } from "@/src/features/self-care/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -36,6 +35,8 @@ interface FormState {
   socialConnectionMade: boolean;
   socialNotes: string;
   meaningfulActivity: string;
+  selfCriticismNoticed: boolean;
+  selfCompassionNote: string;
 }
 
 const emptyForm: FormState = {
@@ -47,9 +48,12 @@ const emptyForm: FormState = {
   socialConnectionMade: false,
   socialNotes: "",
   meaningfulActivity: "",
+  selfCriticismNoticed: false,
+  selfCompassionNote: "",
 };
 
 export default function SelfCareScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
@@ -73,6 +77,8 @@ export default function SelfCareScreen() {
         socialConnectionMade: existing.socialConnectionMade,
         socialNotes: existing.socialNotes,
         meaningfulActivity: existing.meaningfulActivity,
+        selfCriticismNoticed: existing.selfCriticismNoticed,
+        selfCompassionNote: existing.selfCompassionNote,
       });
     } else {
       // No log for the selected day - clear the form so a previous day's
@@ -94,6 +100,8 @@ export default function SelfCareScreen() {
         socialConnectionMade: form.socialConnectionMade,
         socialNotes: form.socialNotes,
         meaningfulActivity: form.meaningfulActivity,
+        selfCriticismNoticed: form.selfCriticismNoticed,
+        selfCompassionNote: form.selfCompassionNote,
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
     } catch {
@@ -102,13 +110,7 @@ export default function SelfCareScreen() {
   };
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("selfCare.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("selfCare.loading")} />;
   }
 
   return (
@@ -130,7 +132,7 @@ export default function SelfCareScreen() {
           accessibilityRole="link"
           accessibilityLabel={t("selfCare.sleepLinkTitle")}
           accessibilityHint={t("selfCare.sleepLinkDesc")}
-          onPress={() => router.push("/tools/sleep")}
+          onPress={() => pushWithOrigin("/tools/sleep")}
           className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
         >
           <Icon name="bedtime" className="size-6 text-foreground" />
@@ -147,7 +149,7 @@ export default function SelfCareScreen() {
           accessibilityRole="link"
           accessibilityLabel={t("selfCare.gratitudeLinkTitle")}
           accessibilityHint={t("selfCare.gratitudeLinkDesc")}
-          onPress={() => router.push("/tools/gratitude-log")}
+          onPress={() => pushWithOrigin("/tools/gratitude-log")}
           className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-4 active:bg-accent/40"
         >
           <Icon name="favorite" className="size-6 text-foreground" />
@@ -275,6 +277,48 @@ export default function SelfCareScreen() {
                 value={form.meaningfulActivity}
               />
             </View>
+          </CardContent>
+        </Card>
+
+        {/*
+          Self-compassion, last: the target framework puts it after social connection.
+          The checkbox is a neutral observation, not a prompt to find fault - leaving it
+          untouched is a complete answer. The note is optional and holds only the kind
+          reply; there is deliberately no "what did you say to yourself" field beside it,
+          which would let a bare self-criticism be saved with no reply (#1283).
+        */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("selfCare.selfCompassion")}</CardTitle>
+          </CardHeader>
+          <CardContent className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <Checkbox
+                accessibilityLabel={t("selfCare.selfCriticismNoticed")}
+                checked={form.selfCriticismNoticed}
+                onCheckedChange={(c) =>
+                  setForm((p) => ({ ...p, selfCriticismNoticed: Boolean(c) }))
+                }
+              />
+              <Label
+                onPress={() =>
+                  setForm((p) => ({ ...p, selfCriticismNoticed: !p.selfCriticismNoticed }))
+                }
+              >
+                {t("selfCare.selfCriticismNoticed")}
+              </Label>
+            </View>
+            {form.selfCriticismNoticed ? (
+              <View className="gap-2">
+                <Label>{t("selfCare.selfCompassionNote")}</Label>
+                <Textarea
+                  accessibilityLabel={t("selfCare.selfCompassionNote")}
+                  onChangeText={(text) => setForm((p) => ({ ...p, selfCompassionNote: text }))}
+                  placeholder={t("selfCare.selfCompassionNotePlaceholder")}
+                  value={form.selfCompassionNote}
+                />
+              </View>
+            ) : null}
           </CardContent>
         </Card>
       </View>

@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback } from "react";
 import { ActivityIndicator, FlatList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,12 +11,11 @@ import { GratitudeEntryCard } from "@/src/features/gratitude/gratitude-entry-car
 import { useGratitudeEntryPages } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function GratitudeListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("gratitude");
-  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
     useGratitudeEntryPages(user?.id ?? null);
@@ -26,11 +25,7 @@ export default function GratitudeListScreen() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <FlatList<GratitudeEntry>
         data={list}
         keyExtractor={(entry) => entry.id}
@@ -67,7 +62,7 @@ export default function GratitudeListScreen() {
               description={t("list.empty.description")}
               action={{
                 label: t("list.empty.cta"),
-                onPress: () => router.push("/tools/gratitude-log/new"),
+                onPress: () => pushWithOrigin("/tools/gratitude-log/new"),
               }}
             />
           )

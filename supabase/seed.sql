@@ -4,7 +4,11 @@
 -- Accounts (test-pass-{name}-123, see test/integration/helpers.ts):
 --   alice@test.local - fresh post-onboarding, no records
 --   bob@test.local   - mid-use, 5 thought records, reminders on
---   demo@test.local  - polished demo/screenshot account, 10 records
+--   demo@test.local  - the fully populated review account. Only its profile and
+--     preferences are set here; every record it holds comes from
+--     scripts/seed-demo-data.mjs, which `npm run db:reset` runs last. Demo's ten
+--     thought records used to be inserted below and moved there in #1281, so one
+--     file owns them. Bob's five stay: the export tests depend on them.
 
 -- auth.users
 -- The empty-string token columns (confirmation_token, recovery_token, etc.) are
@@ -388,112 +392,6 @@ values
     array['Guilty']::text[],
     array['should-statements']::text[],
     'I would prefer to keep my routine, and one missed session does not erase the rest of the week.',
-    timezone('utc', now()) - interval '1 days',
-    timezone('utc', now()) - interval '1 days'
-  );
-
--- public.thought_records - demo (10, spread across 60 days, polished for screenshots)
-insert into public.thought_records (
-  user_id, situation, nats, emotions, distortions, balanced_thought, created_at, updated_at
-)
-values
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'I gave a short presentation at work and stumbled on one slide.',
-    '[{"text": "Everyone noticed and now they think I am unprepared.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Anxious','Ashamed']::text[],
-    array['mind-reading','catastrophizing']::text[],
-    'A small stumble is normal. The questions afterward suggested people followed the content.',
-    timezone('utc', now()) - interval '55 days',
-    timezone('utc', now()) - interval '55 days'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'I noticed an old friend has not reached out in months.',
-    '[{"text": "I must have done something to push them away.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Sad','Lonely']::text[],
-    array['personalization','mind-reading']::text[],
-    'People drift in and out of contact for many reasons. I can reach out without assigning blame.',
-    timezone('utc', now()) - interval '48 days',
-    timezone('utc', now()) - interval '48 days'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'I got positive feedback in a review but also one piece of growth feedback.',
-    '[{"text": "The growth feedback is the only thing that really matters here.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Frustrated']::text[],
-    array['discounting-the-positive']::text[],
-    'Both pieces of feedback are real. The strengths I heard are not erased by one growth area.',
-    timezone('utc', now()) - interval '42 days',
-    timezone('utc', now()) - interval '42 days'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'I had trouble falling asleep before an important morning.',
-    '[{"text": "If I do not sleep perfectly, tomorrow will be ruined.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Anxious','Overwhelmed']::text[],
-    array['catastrophizing','all-or-nothing']::text[],
-    'I have done well on imperfect sleep before. I can rest, even if I do not fall asleep right away.',
-    timezone('utc', now()) - interval '36 days',
-    timezone('utc', now()) - interval '36 days'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'A small project of mine did not get the response I hoped for.',
-    '[{"text": "Nothing I make ever lands. I should stop trying.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Hopeless','Sad']::text[],
-    array['overgeneralization','labeling']::text[],
-    'One quiet launch is one data point. Earlier projects did connect with people.',
-    timezone('utc', now()) - interval '29 days',
-    timezone('utc', now()) - interval '29 days'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'My partner seemed quiet at dinner.',
-    '[{"text": "They are upset with me and not telling me.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Anxious']::text[],
-    array['mind-reading']::text[],
-    'They had a long workday. I can ask gently rather than assume the silence is about me.',
-    timezone('utc', now()) - interval '22 days',
-    timezone('utc', now()) - interval '22 days'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'I sent an email and noticed a small typo afterwards.',
-    '[{"text": "The recipient will think I am careless and unprofessional.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Ashamed']::text[],
-    array['catastrophizing','mind-reading']::text[],
-    'Most readers skim past small typos. The substance of the email is what they will respond to.',
-    timezone('utc', now()) - interval '16 days',
-    timezone('utc', now()) - interval '16 days'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'I felt low energy on a planned rest day.',
-    '[{"text": "I should be using this time better. I am wasting the day.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Guilty','Frustrated']::text[],
-    array['should-statements']::text[],
-    'Rest is part of the plan, not a failure of it. Low energy is information, not a moral problem.',
-    timezone('utc', now()) - interval '10 days',
-    timezone('utc', now()) - interval '10 days'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'A teammate disagreed with my proposal in a meeting.',
-    '[{"text": "They think I do not know what I am doing.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Anxious','Frustrated']::text[],
-    array['mind-reading','personalization']::text[],
-    'Disagreement is about the proposal, not my competence. Their pushback might even improve it.',
-    timezone('utc', now()) - interval '4 days',
-    timezone('utc', now()) - interval '4 days'
-  ),
-  (
-    '00000000-0000-0000-0000-000000000003',
-    'I felt anxious for no clear reason on a calm afternoon.',
-    '[{"text": "If I feel anxious, something bad must be coming.", "beliefRating": null, "isHotThought": true}]'::jsonb,
-    array['Anxious']::text[],
-    array['emotional-reasoning','fortune-telling']::text[],
-    'Anxiety can show up without a cause. The feeling is real; the prediction it suggests is not evidence.',
     timezone('utc', now()) - interval '1 days',
     timezone('utc', now()) - interval '1 days'
   );

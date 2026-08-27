@@ -9,7 +9,6 @@ import {
   useSaveJournalEntry,
 } from "@/src/features/journal/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -106,19 +105,7 @@ describe("JournalEntryEditorScreen", () => {
     expect(screen.getByLabelText("Date")).toBeTruthy();
   });
 
-  it("renders the top bar and heading in create mode on the room pour", () => {
-    mockUseSaveJournalEntry.mockReturnValue({
-      mutateAsync: jest.fn(),
-      isPending: false,
-    } as unknown as ReturnType<typeof useSaveJournalEntry>);
-
-    renderWithProviders(<JournalEntryEditorScreen fallbackHref="/tools/journal" mode="create" />);
-
-    // The room wrapper carries the ink re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.getByTestId("journal-editor-room"));
-  });
-
-  it("renders the top bar and heading on the room pour in edit mode too", () => {
+  it("loads the cached entry title in edit mode", () => {
     mockUseSaveJournalEntry.mockReturnValue({
       mutateAsync: jest.fn(),
       isPending: false,
@@ -141,7 +128,6 @@ describe("JournalEntryEditorScreen", () => {
     );
 
     expect(screen.getByDisplayValue("Quiet morning")).toBeTruthy();
-    expectNeutralRoom(screen.getByTestId("journal-editor-room"));
   });
 
   it("saves a new entry when body is provided", async () => {

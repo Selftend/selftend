@@ -10,13 +10,11 @@ import { GroundingSessionRow } from "@/src/features/grounding/grounding-session-
 import { useGroundingSessionPages } from "@/src/features/grounding/queries";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { formatCompactAtOffset } from "@/src/utils/date";
 
 export default function GroundingHistoryScreen() {
   const { t } = useTranslation("cbt");
-  const roomStyle = useRoomStyle("clay");
   const { user } = useSession();
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
     useGroundingSessionPages(user?.id ?? null);
@@ -27,11 +25,7 @@ export default function GroundingHistoryScreen() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <FlatList<MindfulnessSession>
         data={sessions}
         keyExtractor={(item) => item.id}

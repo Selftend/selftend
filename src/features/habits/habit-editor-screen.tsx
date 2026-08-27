@@ -1,6 +1,5 @@
 import { router, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, View, type TextInput } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -13,7 +12,7 @@ import { Disclosure } from "@/src/components/app/disclosure";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
 import {
@@ -35,7 +34,6 @@ import type {
   HabitInput,
   HabitKind,
 } from "@/src/features/habits/types";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import {
@@ -93,7 +91,6 @@ function habitToInput(habit: Habit): HabitInput {
 
 export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitEditorScreenProps) {
   const { t } = useTranslation("habits");
-  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -279,19 +276,13 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   });
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("form.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("form.editTitle")} />;
   }
 
   return (
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the act pour through it.
-    <View testID="habit-editor-room" className="flex-1" style={roomStyle}>
+    <View testID="habit-editor-room" className="flex-1">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
         // Both modes now, where only create mode had chrome: an edit form used to

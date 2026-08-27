@@ -51,7 +51,7 @@ function textsInRow(accessibilityLabel: string): string[] {
  */
 describe("SidebarNav module rows", () => {
   it.each([
-    ["CBT", "CBT module - Cognitive Behavioral Therapy"],
+    ["CBT", "CBT module - Cognitive Behavioural Therapy"],
     ["ACT", "ACT module - Acceptance and Commitment Therapy"],
     ["DBT", "DBT overview - Dialectical Behavior Therapy"],
   ])("renders %s as a bare label with no status chip beside it", (label, accessibilityLabel) => {

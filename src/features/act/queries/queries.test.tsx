@@ -25,6 +25,7 @@ import {
   useDeleteObservingSelfSession,
   useExpansionLog,
   useExpansionLogs,
+  useLatestBullsEyeByDomain,
   useLatestChoicePointAt,
   useLatestConnectionLogAt,
   useLatestDefusionLogAt,
@@ -48,6 +49,7 @@ import {
   useValueEntries,
   useValueEntryByDomain,
 } from "@/src/features/act/queries";
+import { actKeys } from "@/src/features/act/queries/keys";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 // Automock of the repository re-export barrel does not reliably yield callable
@@ -68,6 +70,7 @@ jest.mock("@/src/features/act/repository", () => ({
   getConnectionLog: jest.fn(),
   getDefusionLog: jest.fn(),
   getExpansionLog: jest.fn(),
+  getLatestBullsEyeByDomain: jest.fn(),
   getLatestChoicePointAt: jest.fn(),
   getLatestConnectionLogAt: jest.fn(),
   getLatestDefusionLogAt: jest.fn(),
@@ -126,6 +129,7 @@ const listHooks = [
   ["useObservingSelfSessions", useObservingSelfSessions, repo.listObservingSelfSessions],
   ["useValueEntries", useValueEntries, repo.listValueEntries],
   ["useBullsEyeSnapshots", useBullsEyeSnapshots, repo.listBullsEyeSnapshots],
+  ["useLatestBullsEyeByDomain", useLatestBullsEyeByDomain, repo.getLatestBullsEyeByDomain],
   ["useCommittedActions", useCommittedActions, repo.listCommittedActions],
   ["useAllActionSteps", useAllActionSteps, repo.listAllActionSteps],
   ["useChoicePoints", useChoicePoints, repo.listChoicePoints],
@@ -242,6 +246,34 @@ describe.each(saveHooks)("%s onSuccess guard", (_name, useHook, repoFn) => {
     await result.current.mutateAsync({} as never);
     expect(repoFn).toHaveBeenCalled();
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useSaveBullsEyeSnapshot: the values rows read `bullsEyeLatest`, which is a
+// DESCENDANT of the list key this invalidates. Asserting only "invalidate was
+// called" (the shared block above) cannot tell a key that reaches the rows from one
+// that does not, and the failure is silent: the row simply keeps its old number.
+// ---------------------------------------------------------------------------
+describe("useSaveBullsEyeSnapshot invalidation reach", () => {
+  it("invalidates a key that matches both the history and the latest-per-domain read", async () => {
+    (repo.saveBullsEyeSnapshot as jest.Mock).mockResolvedValue({ id: "1", domain: "work" });
+    const client = createTestQueryClient();
+    // Both reads are resident, and only one of them is invalidated by name.
+    client.setQueryData(actKeys.bullsEyeList("u1"), []);
+    client.setQueryData(actKeys.bullsEyeLatest("u1"), { work: 3 });
+
+    const { result } = renderHook(() => useSaveBullsEyeSnapshot("u1"), { wrapper: wrap(client) });
+    await result.current.mutateAsync({} as never);
+
+    const stale = client
+      .getQueryCache()
+      .getAll()
+      .filter((query) => query.state.isInvalidated)
+      .map((query) => query.queryKey);
+
+    expect(stale).toContainEqual([...actKeys.bullsEyeList("u1")]);
+    expect(stale).toContainEqual([...actKeys.bullsEyeLatest("u1")]);
   });
 });
 

@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -7,7 +8,8 @@ import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -20,15 +22,14 @@ import {
 } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatInstantAtOffset } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 
 export default function GratitudeDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("gratitude");
-  const roomStyle = useRoomStyle("think");
   // The header actions never shrink, so every pixel of narrowness comes out
   // of the title block (#885's failure class). At phone width the labelled
   // Favourite button collapses to an icon, like mood's detail Edit.
@@ -54,16 +55,12 @@ export default function GratitudeDetailScreen() {
   const [favoriteError, setFavoriteError] = useState("");
 
   if (!fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <LoadingState title={t("detail.title")} />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("detail.title")} />;
   }
 
   if (!entry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -120,11 +117,7 @@ export default function GratitudeDetailScreen() {
   };
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScreenTopBar leading="back" />
       <ScrollView contentContainerClassName="grow p-6">
         <View className={cn(FORM_COLUMN, "gap-6")}>
@@ -164,7 +157,7 @@ export default function GratitudeDetailScreen() {
               <Button
                 accessibilityLabel={t("detail.edit")}
                 onPress={() =>
-                  router.push({
+                  pushWithOrigin({
                     pathname: "/tools/gratitude-log/[id]/edit",
                     params: { id: entry.id },
                   })
@@ -208,9 +201,7 @@ export default function GratitudeDetailScreen() {
 
           {/* Right-aligned quiet link (design 6c), not a centred button. */}
           <View className="items-end">
-            <Button onPress={() => router.push("/tools/gratitude-log/entries")} variant="link">
-              <Text>{t("home.viewAll")}</Text>
-            </Button>
+            <ShowAllLink label={t("home.viewAll")} route="/tools/gratitude-log/entries" />
           </View>
         </View>
       </ScrollView>

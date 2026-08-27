@@ -17,7 +17,7 @@ import type { BreathingExerciseColor } from "@/src/features/breathing/exercise-t
 import { BREATHING_COLOR_TINTS } from "@/src/features/breathing/exercise-colors";
 import { hueHsl, type ExerciseHue } from "@/src/features/mindfulness/exercise-hue";
 import { chipHsl } from "@/src/lib/hue-chip";
-import type { ColorSchemeName } from "@/src/lib/module-room";
+import type { ColorSchemeName } from "@/src/lib/color-scheme";
 
 export interface PacerColors {
   /** Full-strength hue for the halo's radial-gradient stops (alpha lives in the stops). */

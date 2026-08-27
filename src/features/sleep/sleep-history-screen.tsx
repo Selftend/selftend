@@ -17,7 +17,6 @@ import {
   type HistorySectionKind,
 } from "@/src/lib/history-groups";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { parseLocalNoon } from "@/src/utils/date";
 
@@ -52,7 +51,6 @@ function sleepHistoryWhen(log: SleepLog, kind: HistorySectionKind, lang: string)
  */
 export default function SleepHistoryScreen() {
   const { t, i18n } = useTranslation("sleep");
-  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -68,11 +66,7 @@ export default function SleepHistoryScreen() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <SectionList<SleepLog, HistorySection<SleepLog>>
         sections={sections}
         keyExtractor={(item) => item.id}

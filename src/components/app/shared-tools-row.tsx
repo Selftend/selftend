@@ -1,10 +1,11 @@
-import { router, type Href } from "expo-router";
+import { type Href } from "expo-router";
 import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
 
 // A shared tool is a plain link. It used to be a union - `helpKey` meant "open
@@ -20,8 +21,8 @@ export interface SharedTool {
 
 interface SharedToolsRowProps {
   // Resolved copy, not a key. The row is module-agnostic and the heading is the
-  // one thing that is not - CBT says "Uses these shared tools" out of `cbt.json`
-  // - so the caller translates it, the way `PillarCard` takes its title.
+  // one thing that is not - CBT says "Shared tools" out of `cbt.json` - so the
+  // caller translates it, the way `PillarCard` takes its title.
   heading: string;
   tools: SharedTool[];
 }
@@ -40,26 +41,51 @@ interface SharedToolsRowProps {
 // is gone, and the icon that announced it has nothing left to distinguish.
 //
 // It lives here rather than under `features/cbt` because nothing in it is CBT's:
-// it takes its heading and its tools as props. CBT is its only caller today.
-// Whether ACT's `Also try` row (`features/act/related-tools.tsx`) converges onto
-// it is #1216, and is not decided.
+// it takes its heading and its tools as props. CBT's home renders it once under
+// the pillar cards; ACT's six list screens render it as their `Also try` row
+// (#1216 ruled the full merge - the two conventions, CBT's complete partition
+// and ACT's per-context relevance with repeats, live in the callers' data, so
+// one component renders both). Chips render in array order; the callers' tests
+// index by position and rely on that.
 export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
   const { t } = useTranslation("navigation");
+  // A chip leaves the module for a tool rooted under `/tools`, so the tool's own
+  // Up climbs to `/tools` and never back to the module the user was working in.
+  // These are the off-trail pushes #1192 landed hours after the escape rule was
+  // charted - the growth that made recording opt-out rather than opt-in. #1192
+  // landed nine of them; the set is EIGHT today, and the count is pinned in
+  // `shared-tools-row.test.tsx` rather than restated here, because this comment
+  // has already gone stale once by carrying a number the config later changed.
+  //
+  // The push is plain - singularity is the layout's call, made once for every
+  // caller (#1216, declared in `protected-layout.tsx`). Forcing it per push was
+  // wrong for `/tools/meditation`, which is keyed by `?practice=` and holds
+  // per-visit state, so the layout deliberately leaves it plain.
+  const pushWithOrigin = usePushWithOrigin();
 
   return (
     <View className="ml-1 flex-row flex-wrap items-center gap-2">
       <View className="flex-row items-center gap-1">
         <Icon name="auto-awesome" size={11} className="text-muted-foreground" />
-        <Text variant="muted" className="text-[11px] font-semibold uppercase tracking-wider">
+        {/* The eyebrow token is `Section`'s exactly - 11px, 600, 0.1em, muted -
+            so the row's label reads as the same rank as the section headings
+            around it (#1386). The row itself does NOT become a `Section`: its
+            label sits inline with its chips, which is a layout `Section` does
+            not have. Only the token unifies. */}
+        <Text variant="muted" className="text-[11px] font-semibold uppercase tracking-[0.1em]">
           {heading}
         </Text>
       </View>
       {tools.map((tool) => (
         <Pressable
           key={tool.key}
-          accessibilityRole="button"
+          // "link", because every press navigates - "button" promises an
+          // on-screen action that never happens (#1216). No explicit
+          // accessibilityLabel: the child text IS the accessible name, and an
+          // explicit label would hide the children from AT (the RNW trap).
+          accessibilityRole="link"
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => router.push(tool.route)}
+          onPress={() => pushWithOrigin(tool.route)}
           className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 active:bg-accent/40"
         >
           <Icon name={tool.icon} size={13} className={CHROME_MARK} />

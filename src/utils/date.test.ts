@@ -5,12 +5,15 @@ import {
   dayRangeEndKey,
   formatAtOffset,
   formatCompactAtOffset,
+  formatDayKey,
   formatTimestamp,
+  instantOnOrAfter,
   isValidDayKey,
   lastNDayKeys,
   lastNDayKeysEndingAt,
   localDateKey,
   maxDayKey,
+  monthStartIsoOf,
   parseLocalNoon,
   shiftFromOffsetFrame,
   shiftToOffsetFrame,
@@ -211,6 +214,33 @@ describe("formatAtOffset", () => {
   });
 });
 
+describe("formatDayKey", () => {
+  // TZ is pinned to Asia/Kolkata, but a day key names a civil day and carries no
+  // instant, so the viewer's zone must not move it. Noon anchoring is what keeps
+  // the rendered day equal to the key.
+  it("renders the day the key names, with its weekday", () => {
+    expect(formatDayKey("2026-09-01", "en")).toBe("Tue, Sep 1, 2026");
+  });
+
+  it("follows the app language rather than the device locale", () => {
+    // Only the app language reaches Intl, so this is what a bg user sees whatever
+    // locale the OS reports. Bulgarian resolves this shape to a numeric date with
+    // a "г." year marker, so the weekday is what proves the language took.
+    expect(formatDayKey("2026-09-01", "bg")).toBe("вт, 1.09.2026 г.");
+  });
+
+  it("does not roll a date across the year boundary", () => {
+    expect(formatDayKey("2026-01-01", "en")).toContain("Jan 1, 2026");
+    expect(formatDayKey("2026-12-31", "en")).toContain("Dec 31, 2026");
+  });
+
+  it("returns an unparseable key unchanged rather than throwing", () => {
+    // An invalid Date reaching Intl.format throws a RangeError, which on a screen
+    // is a crash rather than an error state.
+    expect(formatDayKey("nope", "en")).toBe("nope");
+  });
+});
+
 describe("formatCompactAtOffset", () => {
   // TZ is pinned to Asia/Kolkata (+05:30); "today" for these tests is Monday
   // 13 July 2026 in that frame.
@@ -304,5 +334,27 @@ describe("shiftToOffsetFrame across a device-zone DST boundary", () => {
   it("stays the inverse of shiftFromOffsetFrame across the boundary", () => {
     const shifted = shiftToOffsetFrame(springForward, 0);
     expect(shiftFromOffsetFrame(shifted, 0).toISOString()).toBe(springForward.toISOString());
+  });
+});
+
+describe("monthStartIsoOf", () => {
+  // jest.config.js pins TZ to Asia/Kolkata (+05:30): the LOCAL first-of-month
+  // midnight is 18:30Z on the previous civil day, which is exactly the point -
+  // the boundary is the viewer's, not UTC's.
+  it("returns the instant of the local first-of-month midnight", () => {
+    expect(monthStartIsoOf("2026-08-26")).toBe("2026-07-31T18:30:00.000Z");
+  });
+
+  it("is a fixed point for a day key already on the boundary day", () => {
+    expect(monthStartIsoOf("2026-01-01")).toBe("2025-12-31T18:30:00.000Z");
+  });
+});
+
+describe("instantOnOrAfter", () => {
+  it("includes the boundary instant itself and everything after, excludes before", () => {
+    const boundary = "2026-05-01T00:00:00.000Z";
+    expect(instantOnOrAfter("2026-05-01T00:00:00.000Z", boundary)).toBe(true);
+    expect(instantOnOrAfter("2026-05-15T09:30:00.000Z", boundary)).toBe(true);
+    expect(instantOnOrAfter("2026-04-30T23:59:59.999Z", boundary)).toBe(false);
   });
 });

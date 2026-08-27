@@ -13,7 +13,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { LineChart } from "@/src/components/charts/line-chart";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodScorePoints } from "@/src/features/mood/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -61,13 +61,7 @@ export default function ProgressScreen() {
   };
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("progress.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("progress.title")} />;
   }
 
   return (

@@ -1,12 +1,10 @@
 import { fireEvent, screen, within } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationStagesScreen from "@/src/features/meditation/meditation-stages-screen";
 import {
   useMeditationProgramState,
   useUpsertMeditationProgramState,
 } from "@/src/features/meditation/queries";
-import { expectNeutralRoom } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -89,20 +87,6 @@ describe("MeditationStagesScreen", () => {
     expect(screen.getByText("Milestone Two - Sustained exclusive focus")).toBeTruthy();
     expect(screen.getByText("Milestone Three - Effortless stability of attention")).toBeTruthy();
     expect(screen.getByText("Milestone Four - Persistence of an adept's qualities")).toBeTruthy();
-  });
-
-  it("renders the iris room pour on its root", () => {
-    renderWithProviders(<MeditationStagesScreen />);
-
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-  });
-
-  it("renders the dark iris pour when the scheme is dark", () => {
-    setScheme("dark");
-
-    renderWithProviders(<MeditationStagesScreen />);
-
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("carries no module hue on the milestone chips", () => {

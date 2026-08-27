@@ -28,8 +28,12 @@ export function useCommittedActions(userId: string | null, status?: ActionStatus
  * Home's `N active` row - an exact count instead of an uncapped list read (#990).
  * The status rides the key, so each filter is its own entry under the list prefix
  * every committed-action mutation already invalidates.
+ *
+ * Omit `status` for ACT home's lifetime stat, which counts actions at every status
+ * (#1378): an active-only count falls 1 → 0 when a user completes their only action,
+ * and a counter that goes down on success reads as punishment for finishing.
  */
-export function useCommittedActionCount(userId: string | null, status: ActionStatus) {
+export function useCommittedActionCount(userId: string | null, status?: ActionStatus) {
   return useQuery({
     queryKey: actKeys.committedActionCount(userId, status),
     queryFn: () => countCommittedActions(userId!, status),

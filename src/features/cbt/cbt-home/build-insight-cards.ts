@@ -10,9 +10,13 @@ export interface InsightCardModel {
 
 /**
  * Builds the ordered list of insight cards rendered on the CBT home screen.
- * Each card is emitted only when its underlying datum is present, so
- * `cards.length > 0` is an exact stand-in for the former hand-maintained
- * `hasInsights` OR-gate. Card order matches the previous inline DOM order.
+ * Each card is emitted only when its underlying datum is present. Card order
+ * matches the previous inline DOM order.
+ *
+ * The thinking-pattern counts deliberately build NO card here (#1387): they
+ * render as the section's bars instead, so a card for them would say the same
+ * thing twice. The section's own gate is therefore `bars || cards`, not
+ * `cards.length` alone.
  */
 export function buildInsightCards(insights: CbtInsights, t: TFunction<"cbt">): InsightCardModel[] {
   const {
@@ -23,41 +27,11 @@ export function buildInsightCards(insights: CbtInsights, t: TFunction<"cbt">): I
     exposureProgress,
     recurringThoughtSuggestions,
     selfCareTrend,
-    topDistortions,
   } = insights;
 
-  const topDistortion = topDistortions[0] ?? null;
-  const otherDistortions = topDistortions.slice(1);
   const topRecurringThought = recurringThoughtSuggestions[0] ?? null;
 
   const cards: InsightCardModel[] = [];
-
-  if (topDistortion) {
-    cards.push({
-      key: "topDistortion",
-      title: t("dashboard.insights.topDistortion", {
-        name: t(`distortions.${topDistortion.key}.title`, {
-          defaultValue: topDistortion.key,
-        }),
-        count: topDistortion.count,
-      }),
-      description:
-        otherDistortions.length > 0
-          ? t("dashboard.insights.topDistortionDetail", {
-              names: otherDistortions
-                .map((distortion) =>
-                  t("dashboard.insights.distortionSummaryItem", {
-                    name: t(`distortions.${distortion.key}.title`, {
-                      defaultValue: distortion.key,
-                    }),
-                    count: distortion.count,
-                  }),
-                )
-                .join(", "),
-            })
-          : undefined,
-    });
-  }
 
   if (exerciseMoodLift) {
     cards.push({

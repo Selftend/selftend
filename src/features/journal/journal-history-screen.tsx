@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo } from "react";
 import { ActivityIndicator, SectionList, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,13 +17,12 @@ import {
 import { useJournalEntryPages } from "@/src/features/journal/queries";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 /** Every journal entry, paged to exhaustion and grouped without partial totals. */
 export default function JournalHistoryScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("journal");
-  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
@@ -34,14 +33,13 @@ export default function JournalHistoryScreen() {
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-  const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
+  const openEntry = useCallback(
+    (id: string) => pushWithOrigin(`/tools/journal/${id}`),
+    [pushWithOrigin],
+  );
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <SectionList<JournalEntry, JournalRecentSection>
         sections={sections}
         keyExtractor={(item) => item.id}

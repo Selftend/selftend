@@ -9,6 +9,11 @@ export const AUTH_CALLBACK_ERROR_CODES = [
   "expired_or_used",
   "cross_device",
   "missing_params",
+  // A linkIdentity dance (#1445) that found the identity already on another
+  // account - GoTrue's 422 `identity_already_exists`, arriving as error
+  // params on the redirect back. The callback screen hands this one back to
+  // the conversion form instead of rendering a failure card.
+  "identity_exists",
   "generic",
 ] as const;
 
@@ -64,6 +69,12 @@ export function classifyAuthCallbackFailure(
   // (different browser/device than the one that requested the email).
   if (code === "bad_code_verifier" || text.includes("code verifier")) {
     return "cross_device";
+  }
+
+  // GoTrue's messages are "Identity is already linked to another user" /
+  // "Identity is already linked" - matched loosely like the branches above.
+  if (code === "identity_already_exists" || text.includes("identity is already linked")) {
+    return "identity_exists";
   }
 
   return "generic";

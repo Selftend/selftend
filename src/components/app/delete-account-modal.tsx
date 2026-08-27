@@ -15,6 +15,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
+import { useOverlayRegistration } from "@/src/stores/overlay-count-store";
 
 interface DeleteAccountModalProps {
   visible: boolean;
@@ -35,6 +36,9 @@ export function DeleteAccountModal({
 }: DeleteAccountModalProps) {
   const { t } = useTranslation("settings");
   const reduceMotionEnabled = useReduceMotionEnabled();
+  // Overlay-count registry (#1473, spec §2 on #1142); the guard test derives
+  // every raw-Modal renderer, so this line is not optional.
+  useOverlayRegistration(visible);
   const [confirmInput, setConfirmInput] = useState("");
 
   // Clear the typed confirmation whenever the modal closes, so a reopened

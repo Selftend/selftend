@@ -1,6 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -18,15 +17,24 @@ import {
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import { useUpsertValueEntry, useValueEntryByDomain } from "@/src/features/act/queries";
 import { StepPills } from "@/src/features/act/step-pills";
 import { ACT_LIFE_DOMAINS, type ACTLifeDomain } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
-type Step = "value" | "current" | "desired" | "barriers" | "ratings";
-const STEP_ORDER: Step[] = ["value", "current", "desired", "barriers", "ratings"];
+/**
+ * ☠️ The last step used to be "ratings", plural, and asked TWO questions: how
+ * important this domain is, and how aligned the user's life is with it. The second one
+ * is the check-in's question, asked and answered on the values screen with a history
+ * behind it - this form wrote a rival answer into a second column that the values row
+ * then preferred, so saving a check-in left the number above it unmoved (#1379). The
+ * alignment control is gone; `current_alignment_rating` stays on the table, read only
+ * where a domain has no check-in, and is no longer written from here.
+ */
+type Step = "value" | "current" | "desired" | "barriers" | "importance";
+const STEP_ORDER: Step[] = ["value", "current", "desired", "barriers", "importance"];
 
 export default function ActValueDomainScreen() {
   const { t } = useTranslation(["act", "common"]);
@@ -46,7 +54,6 @@ export default function ActValueDomainScreen() {
   const [desiredActionsNote, setDesiredActionsNote] = useState("");
   const [barriers, setBarriers] = useState("");
   const [importanceRating, setImportanceRating] = useState<number | null>(null);
-  const [alignmentRating, setAlignmentRating] = useState<number | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [prefilled, setPrefilled] = useState(false);
 
@@ -58,7 +65,6 @@ export default function ActValueDomainScreen() {
     setDesiredActionsNote(existing.desiredActionsNote ?? "");
     setBarriers(existing.barriers ?? "");
     setImportanceRating(existing.importanceRating ?? null);
-    setAlignmentRating(existing.currentAlignmentRating ?? null);
     setPrefilled(true);
   }
 
@@ -85,7 +91,9 @@ export default function ActValueDomainScreen() {
         desiredActionsNote: desiredActionsNote.trim(),
         barriers: barriers.trim(),
         importanceRating,
-        currentAlignmentRating: alignmentRating,
+        // `currentAlignmentRating` is deliberately absent, not null: the repository
+        // only writes the keys it is given, so omitting it leaves whatever this domain
+        // already had intact rather than blanking a number the row may still read.
       });
       showToast({ title: t("common:feedback.saved"), tone: "success" });
       router.back();
@@ -97,20 +105,22 @@ export default function ActValueDomainScreen() {
     }
   }
 
+  // A segment that names no life domain: reachable by hand-typing a URL, and by
+  // any link to a folded route - `/values/bulls-eye` would land here if its
+  // <Redirect> stub were ever deleted (#1223). It used to render
+  // `values.saveProblem`, a SAVE-error string, in a bare SafeAreaView: wrong
+  // copy for the branch, and nothing at all to press (#1328).
   if (!domain) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text variant="muted">{t("act:values.saveProblem")}</Text>
-      </SafeAreaView>
+      <ScreenNotFound
+        title={t("act:values.domainNotFound")}
+        description={t("act:values.domainNotFoundDescription")}
+      />
     );
   }
 
   if (isLoading && !prefilled) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <LoadingState title={t(`act:values.${domain}`)} />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t(`act:values.${domain}`)} />;
   }
 
   return (
@@ -245,39 +255,22 @@ export default function ActValueDomainScreen() {
           </View>
         ) : null}
 
-        {/* Step 5: Ratings */}
-        {step === "ratings" ? (
-          <View className="gap-6">
-            <View className="gap-3">
-              <View className="gap-1">
-                <Label>{t("act:values.importanceRatingLabel")}</Label>
-                <Text variant="muted" className="text-xs">
-                  {t("act:values.importanceRatingHint")}
-                </Text>
-              </View>
-              <NumberRating
-                min={1}
-                max={10}
-                step={1}
-                value={importanceRating}
-                onChange={setImportanceRating}
-              />
+        {/* Step 5: Importance */}
+        {step === "importance" ? (
+          <View className="gap-3">
+            <View className="gap-1">
+              <Label>{t("act:values.importanceRatingLabel")}</Label>
+              <Text variant="muted" className="text-xs">
+                {t("act:values.importanceRatingHint")}
+              </Text>
             </View>
-            <View className="gap-3">
-              <View className="gap-1">
-                <Label>{t("act:values.alignmentRatingLabel")}</Label>
-                <Text variant="muted" className="text-xs">
-                  {t("act:values.alignmentRatingHint")}
-                </Text>
-              </View>
-              <NumberRating
-                min={1}
-                max={10}
-                step={1}
-                value={alignmentRating}
-                onChange={setAlignmentRating}
-              />
-            </View>
+            <NumberRating
+              min={1}
+              max={10}
+              step={1}
+              value={importanceRating}
+              onChange={setImportanceRating}
+            />
           </View>
         ) : null}
       </View>

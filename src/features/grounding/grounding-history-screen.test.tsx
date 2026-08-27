@@ -1,10 +1,8 @@
 import { screen } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import GroundingHistoryScreen from "@/src/features/grounding/grounding-history-screen";
 import { useGroundingSessionPages } from "@/src/features/grounding/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), canGoBack: jest.fn(() => true), back: jest.fn() },
@@ -92,11 +90,5 @@ describe("Grounding all-sessions screen", () => {
     pages({ data: { pages: [[]], pageParams: [null] } });
     renderWithProviders(<GroundingHistoryScreen />);
     expect(screen.getByText("No sessions yet")).toBeTruthy();
-  });
-
-  it("renders the clay room", () => {
-    pages({ data: { pages: [[session()]], pageParams: [null] } });
-    renderWithProviders(<GroundingHistoryScreen />);
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 });

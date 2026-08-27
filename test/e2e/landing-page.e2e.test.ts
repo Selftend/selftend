@@ -18,14 +18,21 @@ test.describe("landing page (signed out)", () => {
     ).toBeVisible();
   });
 
-  test("'Get started' navigates to the sign-up screen", async ({ page }) => {
+  // #1441 renamed the sign-up link: "Start now - no account needed" is the
+  // primary CTA (an action, covered by landing-guest-entry.e2e.test.ts), and
+  // the sign-up LINK beside it now reads "Create an account".
+  test("'Create an account' navigates to the sign-up screen", async ({ page }) => {
     await page.goto("/");
     await dismissCookieBanner(page);
 
-    await page.getByRole("link", { name: "Get started", exact: true }).click();
+    await page.getByRole("link", { name: "Create an account", exact: true }).click();
 
     await expect(page).toHaveURL(/\/sign-up$/, { timeout: 10_000 });
-    await expect(page.getByText("Create an account")).toBeVisible({ timeout: 10_000 });
+    // The subtitle, not the "Create an account" title: the landing link that
+    // navigated here carries the same three words.
+    await expect(page.getByText("Enter your details to get started.")).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test("'Sign in' navigates to the sign-in screen", async ({ page }) => {

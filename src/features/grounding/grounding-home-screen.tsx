@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,13 +16,13 @@ import { useGroundingSessionCount, useGroundingSessions } from "@/src/features/g
 import { GroundingSessionRow } from "@/src/features/grounding/grounding-session-row";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 import { formatCompactAtOffset } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 
 export default function GroundingHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -53,8 +53,6 @@ export default function GroundingHomeScreen() {
       ? t("grounding.hero.never")
       : undefined;
 
-  const roomStyle = useRoomStyle("clay");
-
   return (
     <>
       <GroundingOnboarding
@@ -62,11 +60,7 @@ export default function GroundingHomeScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
@@ -119,7 +113,7 @@ export default function GroundingHomeScreen() {
                           ? t("grounding.meta.senses", { count: technique.steps.length })
                           : t("grounding.meta.guided", { count: technique.steps.length })
                       }
-                      onPress={() => router.push(`/tools/grounding/${technique.slug}`)}
+                      onPress={() => pushWithOrigin(`/tools/grounding/${technique.slug}`)}
                     />
                   ))}
                   {/* Closing hairline: the rows are top-ruled, so the last one
@@ -134,7 +128,7 @@ export default function GroundingHomeScreen() {
                 action={
                   <Pressable
                     accessibilityRole="button"
-                    onPress={() => router.push("/tools/grounding/history")}
+                    onPress={() => pushWithOrigin("/tools/grounding/history")}
                     role="button"
                     className="active:opacity-70"
                   >

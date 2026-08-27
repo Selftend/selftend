@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,7 +14,6 @@ import { useSleepLogs, useSleepLogCount, useSleepStats } from "@/src/features/sl
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatCompactAtOffset } from "@/src/utils/date";
 import { formatDuration, formatHours } from "@/src/features/sleep/format";
 import {
@@ -29,11 +28,11 @@ import { SleepDurationChart } from "@/src/features/sleep/sleep-duration-chart";
 import { SleepQualityMix } from "@/src/features/sleep/sleep-quality-mix";
 import { SleepWeekdayChart } from "@/src/features/sleep/sleep-weekday-chart";
 import { SleepRecentList } from "@/src/features/sleep/sleep-recent-list";
-import { ShowAllSleepLink } from "@/src/features/sleep/show-all-sleep-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 
 export default function SleepTrackerScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("sleep");
-  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -89,11 +88,7 @@ export default function SleepTrackerScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
@@ -121,7 +116,7 @@ export default function SleepTrackerScreen() {
               ]}
             />
             <View className="flex-row gap-3">
-              <Button onPress={() => router.push("/tools/sleep/new")} className="self-start">
+              <Button onPress={() => pushWithOrigin("/tools/sleep/new")} className="self-start">
                 <Icon name="bedtime" className="size-4 text-primary-foreground" />
                 <Text>{t("cta.log")}</Text>
               </Button>
@@ -175,7 +170,7 @@ export default function SleepTrackerScreen() {
                 action={
                   /* The door beside its own room: all-history replaces the old
                    expand-in-place toggle (#775, pattern from #696). */
-                  <ShowAllSleepLink />
+                  <ShowAllLink label={t("allHistory.link")} route="/tools/sleep/history" />
                 }
               >
                 <SleepRecentList logs={allLogs} />

@@ -1,27 +1,18 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
-import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { EmptyState, LoadingState } from "@/src/components/app/screen-state";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
-import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
+import { ThoughtRecordRow } from "@/src/features/cbt/thought-record-row";
 import { useSession } from "@/src/providers/session-provider";
-import { formatTimestamp } from "@/src/utils/date";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
-function getRecordTitle(
-  record: { nats: NegativeAutomaticThought[]; situation: string },
-  fallback: string,
-) {
-  const hotNat = record.nats.find((n) => n.isHotThought) ?? record.nats[0];
-  return hotNat?.text.trim() || record.situation.trim() || fallback;
-}
-
 export default function CbtHistoryScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const { selectedDate } = useSelectedDate();
@@ -49,17 +40,18 @@ export default function CbtHistoryScreen() {
             />
           ) : null}
 
-          {records.map((record) => (
-            <AccessibleCardLink
-              key={record.id}
-              description={t("history.recordSummary", {
-                timestamp: formatTimestamp(record.updatedAt),
-                balancedThought: record.balancedThought.trim() || t("history.recordSummaryEmpty"),
-              })}
-              onPress={() => router.push(`/modules/cbt/history/${record.id}`)}
-              title={getRecordTitle(record, t("history.untitledRecord"))}
-            />
-          ))}
+          {/* The same hairline row as the overview's recent records (#1386).
+              This screen is what sits behind that section's door, so converting
+              only the overview would change the row shape mid-journey. */}
+          <View>
+            {records.map((record) => (
+              <ThoughtRecordRow
+                key={record.id}
+                record={record}
+                onPress={() => pushWithOrigin(`/modules/cbt/history/${record.id}`)}
+              />
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -170,4 +170,30 @@ describe("a palette that would fail does fail", () => {
 
     expect(auditTokens(tokens).length).toBeGreaterThan(0);
   });
+
+  // The regression the `component boundary` ratchet exists for (#1337): a
+  // derived palette whose --border drifts into the surface behind it. Every
+  // other gate stays green while the card edge quietly goes to nothing - and
+  // the toast, which floats over arbitrary content, is the surface that needs
+  // that edge most.
+  it("a border that collapses into the background fails the gate", () => {
+    const style = THEME_TOKENS["quiet-lilac"].light;
+    const tokens = { ...style, "--border": style["--background"] };
+
+    expect(auditTokens(tokens).map((finding) => finding.check)).toContain("component boundary");
+    // 1.00: the edge is not faint, it is absent.
+    expect(auditTokens(tokens).find((f) => f.check === "component boundary")?.ratio).toBeCloseTo(
+      1,
+      2,
+    );
+  });
+
+  it("the shipped borders clear it, so the ratchet is set where it can still move", () => {
+    for (const style of Object.keys(THEME_TOKENS) as (keyof typeof THEME_TOKENS)[]) {
+      for (const scheme of ["light", "dark"] as const) {
+        const checks = auditTokens(THEME_TOKENS[style][scheme]).map((f) => f.check);
+        expect(checks).not.toContain("component boundary");
+      }
+    }
+  });
 });

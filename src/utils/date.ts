@@ -42,6 +42,25 @@ export function currentDateKey(): string {
 }
 
 /**
+ * The ISO instant of the LOCAL midnight starting the civil month `dateKey`
+ * falls in. This is a server-comparable boundary for "this month" windows -
+ * `created_at >= monthStartIsoOf(currentDateKey())` counts the rows the viewer
+ * would call this month's (#1387).
+ */
+export function monthStartIsoOf(dateKey: string): string {
+  return new Date(`${dateKey.slice(0, 7)}-01T00:00:00`).toISOString();
+}
+
+/**
+ * Whether ISO instant `iso` falls on or after ISO boundary `sinceIso`. The one
+ * window predicate for client-side "since X" reductions, so two surfaces
+ * windowing on the same boundary cannot drift into two comparisons (#1387).
+ */
+export function instantOnOrAfter(iso: string, sinceIso: string): boolean {
+  return new Date(iso).getTime() >= new Date(sinceIso).getTime();
+}
+
+/**
  * The last `count` LOCAL day keys ending on `reference`'s day, oldest first
  * (today last). The shared "last N day keys" helper behind multi-day views
  * like the routines 7-day strip; anchored at local noon so stepping across a
@@ -150,6 +169,55 @@ export function formatTimestamp(value: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+/**
+ * A `YYYY-MM-DD` day key as a sentence-ready date — `Tue, Sep 1, 2026`.
+ *
+ * For the day a user PICKED rather than a moment something happened: the CBT
+ * goal target date and ACT's committed-action date. A day key names a civil day
+ * and carries no instant, so there is no captured offset to honour here; the
+ * noon anchoring is what keeps the rendered day equal to the key across DST.
+ *
+ * The weekday is part of the shape on purpose — a target date is something the
+ * user plans around, and "Tue" is the half of it they act on.
+ *
+ * ⚠️ Fenced to those two surfaces. The other `parseLocalNoon` callers
+ * (`insights.ts`, `history-groups.ts`) render denser formats deliberately, and
+ * this must not be retrofitted onto them.
+ */
+export function formatDayKey(dateKey: string, lang: string = i18n.language): string {
+  const date = parseLocalNoon(dateKey);
+  if (Number.isNaN(date.getTime())) return dateKey;
+  return new Intl.DateTimeFormat(lang || undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+/**
+ * A calendar day spelled out in full, for a screen reader rather than the eye:
+ * "Monday, 8 September 2026".
+ *
+ * A sibling of `formatDayKey` rather than an option on it, because the two
+ * serve opposite constraints. The visible trigger wants the SHORT form — it
+ * sits in a field and the width is measured (#1231). An accessible name has no
+ * width, and abbreviations are exactly what makes a date picker unusable by
+ * ear: "Mon, 8 Sep 2026" is read out as a string of fragments.
+ *
+ * ⚠️ Fenced to the calendar grid's day labels (#1301). Nothing visible should
+ * render this — a long date in a 42-cell grid is not a layout anyone wants.
+ */
+export function formatCalendarDayName(date: Date, lang: string = i18n.language): string {
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(lang || undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
 }
 
 /**

@@ -63,8 +63,7 @@
     "dark": "Тъмна"
   },
   "notFound": {
-    "title": "Страницата не е намерена",
-    "home": "Начало"
+    "title": "Страницата не е намерена"
   },
   "today": {
     "eyebrow": "Днес · {{date}}",
@@ -155,8 +154,6 @@
     },
     "categories": {
       "mood": "Запис на настроението",
-      "cbt": "КПТ",
-      "act": "ACT",
       "journal": "Дневник",
       "breathing": "Дишане",
       "grounding": "Заземяване",
@@ -463,13 +460,18 @@
     "expansion": "Приемане",
     "urgeSurfing": "Сърфиране на импулса",
     "observingSelf": "Наблюдаващото Аз",
-    "bullsEye": "Проверка на ценностите",
     "dailyLife": "Ежедневие",
     "learn": "Обучение",
     "edit": "Редактиране",
     "log": "Запис",
     "favorites": "Любими",
-    "back": "Върни се"
+    "back": "Върни се",
+    "backTo": "Назад към {{name}}",
+    "signIn": "Вход",
+    "signUp": "Регистрация",
+    "resetPassword": "Смяна на паролата",
+    "updatePassword": "Обновяване на паролата",
+    "verifyEmail": "Потвърждаване на имейла"
   },
   "modulesPage": {
     "title": "Модули",
@@ -478,10 +480,6 @@
     "stats": {
       "overview": "Преглед"
     }
-  },
-  "dateBar": {
-    "selectDate": "Избери дата",
-    "clear": "Изчисти датата"
   },
   "plan": {
     "wizard": {

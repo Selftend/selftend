@@ -2,7 +2,14 @@ import type { ChoicePoint, ChoicePointInput } from "@/src/features/act/types";
 import { fetchLatestActivity } from "@/src/lib/latest-activity";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
-import { degradeMissingSchema, mutateVoid, selectList, selectMaybe, writeSingle } from "./helpers";
+import {
+  countRows,
+  degradeMissingSchema,
+  mutateVoid,
+  selectList,
+  selectMaybe,
+  writeSingle,
+} from "./helpers";
 
 interface ChoicePointRow {
   id: string;
@@ -33,6 +40,13 @@ export function getLatestChoicePointAt(userId: string) {
   return degradeMissingSchema(
     () => fetchLatestActivity({ table: "act_choice_points", userId, column: "created_at" }),
     null,
+  );
+}
+
+/** Every choice point this user has ever mapped, for ACT home's first stat (#1378). */
+export async function countChoicePoints(userId: string) {
+  return countRows((c) =>
+    c.from("act_choice_points").select("id", { count: "exact", head: true }).eq("user_id", userId),
   );
 }
 

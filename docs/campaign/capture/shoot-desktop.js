@@ -429,7 +429,9 @@ const SHOTS = {
   // ACT-BULLSEYE — rate four domains, save (AC-1)
   async actbullseye(h) {
     const { page } = h;
-    await goto(page, "/modules/act/values/bulls-eye", 1000);
+    // The check-in folded onto the values screen (#1379); it sits BELOW the four
+    // domain rows, so this shot may need to scroll before the tracks are in frame.
+    await goto(page, "/modules/act/values", 1000);
     const picks = [
       ["7", 0],
       ["5", 1],

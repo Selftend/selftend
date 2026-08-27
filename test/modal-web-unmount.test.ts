@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { sourceFiles, stripComments } from "./source-scan";
+import { rawModalRenderers, stripComments } from "./source-scan";
 
 /**
  * #1054: every raw react-native `<Modal>` driven by a visibility value must
@@ -51,11 +51,6 @@ const EXEMPT: Record<string, string> = {
   // Hardcodes `visible` on the Modal; home-tour.tsx gates mounting with
   // `if (!current || !targetRect) return null;`.
   "src/features/tours/tour-overlay.tsx": "mounted only while a tour step is active",
-  // The web bundle resolves time-field.web.tsx (an <input type="time">, no
-  // Modal), so this Modal only ever renders on native — where the lingering
-  // fade-out is the wanted exit animation. The #1054 table listed this file,
-  // but the premise did not survive the platform fork.
-  "src/components/app/time-field.tsx": "web ships time-field.web.tsx instead",
 };
 
 /** `if (!visible && Platform.OS === "web") return null;` (any prop name). */
@@ -64,23 +59,13 @@ const RETURN_NULL_GATE = /if\s*\(!\w+\s*&&\s*Platform\.OS === "web"\)\s*return n
 /** `{!open && Platform.OS === "web" ? null : (` — the sibling-Modal form. */
 const INLINE_GATE = /!\w+\s*&&\s*Platform\.OS === "web"\s*\?\s*null\s*:/;
 
-/**
- * JSX use of `<Modal` (word-bounded, so neither `<ModalFocusTrap` nor
- * `<PressShieldModal` matches). Call sites of the #1108 press-shield wrapper
- * are deliberately out of scope: since #1118 the wrapper gates its own raw
- * Modal, so they inherit the unmount instead of each repeating the line.
- */
-const RENDERS_A_MODAL = /<Modal[\s/>]/;
-
-/** `Modal` named in an import from "react-native" (single or multi-line). */
-const IMPORTS_RN_MODAL = /import\s*\{[^}]*\bModal\b[^}]*\}\s*from\s*"react-native"/;
-
-const files = sourceFiles(ROOT, { dirs: ["src", "app"] });
-
-const modalFiles = files.filter((file) => {
-  const source = readFileSync(join(ROOT, file), "utf8");
-  return IMPORTS_RN_MODAL.test(source) && RENDERS_A_MODAL.test(stripComments(source));
-});
+// Detection is shared with modal-overlay-registration.test.ts
+// (rawModalRenderers in source-scan.ts): both suites mean "this file renders
+// a raw react-native Modal", and a shared definition keeps that lockstep
+// structural. Call sites of the #1108 press-shield wrapper are deliberately
+// out of scope: since #1118 the wrapper gates its own raw Modal, so they
+// inherit the unmount instead of each repeating the line.
+const modalFiles = rawModalRenderers(ROOT);
 
 describe("raw react-native Modals unmount on web when closed (#1034 → #1054)", () => {
   it("derives the Modal list from source (canary: ConfirmDialog is found)", () => {
@@ -122,7 +107,14 @@ describe("raw react-native Modals unmount on web when closed (#1034 → #1054)",
     for (const file of Object.keys(EXEMPT)) {
       expect(modalFiles).toContain(file);
     }
-    // time-field.tsx's exemption holds only while the web fork exists.
-    expect(existsSync(join(ROOT, "src/components/app/time-field.web.tsx"))).toBe(true);
+  });
+
+  it("time-field.tsx needs no exemption: it renders no raw Modal on any platform", () => {
+    // It used to be exempt because the web bundle resolved a `.web.tsx` fork
+    // instead. That fork is gone (#1299) — and so is the reason: the iOS spinner
+    // now renders inside PickerSheet, so this file stops rendering a raw <Modal>
+    // at all and simply falls out of the derived list.
+    expect(existsSync(join(ROOT, "src/components/app/time-field.web.tsx"))).toBe(false);
+    expect(modalFiles).not.toContain("src/components/app/time-field.tsx");
   });
 });

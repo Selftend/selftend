@@ -1,9 +1,7 @@
 import { screen } from "@testing-library/react-native";
 import { View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationLearnScreen from "@/src/features/meditation/meditation-learn-screen";
-import { expectNeutralRoom } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -36,20 +34,6 @@ describe("MeditationLearnScreen", () => {
     ).toBeTruthy();
     expect(screen.getByRole("heading", { name: "The gardener's mindset" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "The path is not linear" })).toBeTruthy();
-  });
-
-  it("renders the iris room pour on its root", () => {
-    renderWithProviders(<MeditationLearnScreen />);
-
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-  });
-
-  it("renders the dark iris pour when the scheme is dark", () => {
-    setScheme("dark");
-
-    renderWithProviders(<MeditationLearnScreen />);
-
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   // INVERTED by #588, and these two used to be a matched pair: one asserted the

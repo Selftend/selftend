@@ -1,6 +1,7 @@
-import { Redirect, router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Redirect, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -10,12 +11,13 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { Section } from "@/src/components/app/section";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
 import {
   MeditationOnboarding,
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
-import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/timer/interval";
+import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/meditation/interval";
 import { DurationSlider } from "@/src/features/meditation/duration-slider";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
 import { computeWindowInsights } from "@/src/features/meditation/insights";
@@ -44,7 +46,6 @@ import { parseHHmm } from "@/src/utils/time";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatCompactAtOffset, parseLocalNoon } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 
@@ -55,8 +56,8 @@ const DEFAULT_DURATION = 12;
 const RECENT_SITS = 5;
 
 export default function MeditationHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("meditation");
-  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { practice } = useLocalSearchParams<{ practice?: string }>();
@@ -296,11 +297,7 @@ export default function MeditationHomeScreen() {
   }
 
   if (prefsLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background" style={roomStyle}>
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("module.home.title")} />;
   }
 
   return (
@@ -315,13 +312,12 @@ export default function MeditationHomeScreen() {
         isPending={upsertProgramState.isPending || updatePreferences.isPending}
         errorMessage={onboardingError}
         onComplete={(result) => void handleOnboardingComplete(result)}
-        onDismiss={forceWizard ? () => setForceWizard(false) : undefined}
+        // The ternary this replaces only ever produced `undefined` while the
+        // wizard was invisible (`visible={forceWizard}`), so it withheld a
+        // dismiss from nobody.
+        onDismiss={() => setForceWizard(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           {/* No gap: `Section` carries its own py-6, and the hairline belongs
               between two sections' padding rather than across a flex gap. */}
@@ -403,7 +399,7 @@ export default function MeditationHomeScreen() {
               <Button
                 size="lg"
                 onPress={() =>
-                  router.push({
+                  pushWithOrigin({
                     pathname: "/tools/meditation/session",
                     params: { duration: String(durationMinutes), bell: String(bellMinutes) },
                   })
@@ -423,20 +419,20 @@ export default function MeditationHomeScreen() {
                     name: t(stage.shortTitleKey as Parameters<typeof t>[0]),
                   })}
                   subtitle={t("module.home.stageRowSubtitle")}
-                  onPress={() => router.push("/tools/meditation/stages")}
+                  onPress={() => pushWithOrigin("/tools/meditation/stages")}
                 />
                 <PracticeRow
                   icon="menu-book"
                   title={t("module.learn.title")}
                   subtitle={t("module.learn.subtitle")}
-                  onPress={() => router.push("/tools/meditation/learn")}
+                  onPress={() => pushWithOrigin("/tools/meditation/learn")}
                   ruled
                 />
                 <PracticeRow
                   icon="self-improvement"
                   title={t("practices.sectionLabel")}
                   subtitle={t("module.home.practicesRowSubtitle")}
-                  onPress={() => router.push("/tools/meditation/practices")}
+                  onPress={() => pushWithOrigin("/tools/meditation/practices")}
                   ruled
                 />
               </View>
@@ -506,7 +502,7 @@ export default function MeditationHomeScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => router.push("/tools/meditation/sessions")}
+                    onPress={() => pushWithOrigin("/tools/meditation/sessions")}
                     className="flex-row items-center gap-1 active:opacity-70"
                     role="link"
                   >
@@ -678,6 +674,7 @@ function PracticeRow({ icon, title, subtitle, onPress, ruled = false }: Practice
  * which is the same resolution habits' history row reached (#762).
  */
 function SitRow({ session, ruled }: { session: MeditationSession; ruled: boolean }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("meditation");
 
   return (
@@ -690,7 +687,7 @@ function SitRow({ session, ruled }: { session: MeditationSession; ruled: boolean
       // and note, in that order.
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() =>
-        router.push({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } })
+        pushWithOrigin({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } })
       }
       className={cn("gap-1 py-3 active:opacity-70", ruled && "border-t border-border")}
       role="button"

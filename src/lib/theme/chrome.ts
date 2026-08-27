@@ -15,7 +15,6 @@
 // a neutral room, it is no room - the app's own surfaces, which every screen
 // already has. #586 removes `useRoomStyle` calls rather than swapping them.
 
-import { fieldStopsForDegree } from "@/src/lib/module-room";
 import { AA_TEXT, compositeOver, contrastRatio, tripleToRgb } from "@/src/lib/theme/contrast";
 import type { Rgb } from "@/src/lib/theme/color";
 import { THEME_TOKENS, type StyleName } from "@/src/lib/theme/styles";
@@ -87,16 +86,32 @@ function solveFieldLightness(h: number, s: number, l: number): number {
 }
 
 /**
+ * The standard two-stop field formula for a given hue DEGREE. Saturation and
+ * lightness are fixed; only the degree varies.
+ *
+ * It lived in src/lib/module-room.ts while the per-module hue fields existed;
+ * #1292 deleted those with the rest of the room surface and moved the formula
+ * here, to its one surviving consumer. The comma-form hsl() strings exist
+ * because LinearGradient cannot read CSS variables (same escape hatch as
+ * hueHsl in src/features/mindfulness/exercise-hue.ts).
+ */
+export function fieldStopsForDegree(h: number, isDark: boolean): [string, string] {
+  return isDark
+    ? [`hsl(${h}, 34%, 20%)`, `hsl(${h}, 40%, 12%)`]
+    : [`hsl(${h}, 50%, 42%)`, `hsl(${h}, 58%, 32%)`];
+}
+
+/**
  * The neutral field gradient: the full-bleed pour behind a module or tool
- * header, in the ACTIVE palette's accent rather than the module's hue.
+ * header, in the ACTIVE palette's accent rather than a module hue.
  *
- * It reuses `fieldStopsForDegree` - the very formula the hue fields use - rather
- * than introducing a second one, so the neutral field and the hue fields stay on
- * one set of contrast floors instead of two that can drift.
+ * It reuses `fieldStopsForDegree` - the same formula the retired hue fields
+ * used - rather than introducing a second one, so every field that ever pours
+ * again stays on one set of contrast floors instead of two that can drift.
  *
- * It takes the style explicitly. The obvious shorter spelling,
- * `fieldGradient("primary", …)`, reads `PRIMARY_TRIPLES` - a module-scope
- * constant holding the DEFAULT palette's violet - so every header migrated onto
+ * It takes the style explicitly. The obvious shorter spelling - the retired
+ * `fieldGradient("primary", …)` - read `PRIMARY_TRIPLES`, a module-scope
+ * constant holding the DEFAULT palette's violet, so every header migrated onto
  * it would have stayed lilac under all eight palettes, and a test comparing the
  * two would have agreed with itself while the app was visibly wrong. A hue
  * degree cannot be read from a constant here; it has to come from the palette
@@ -111,8 +126,8 @@ function solveFieldLightness(h: number, s: number, l: number): number {
  * survives at all is a follow-up decision, not a side effect of a chrome sweep.
  */
 export function neutralFieldGradient(style: StyleName, isDark: boolean): [string, string] {
-  // The LIGHT triple's degree in both schemes, matching what `fieldGradient`
-  // has always done for the primary field. A palette may nudge its accent hue a
+  // The LIGHT triple's degree in both schemes, matching what the retired
+  // `fieldGradient` always did for the primary field. A palette may nudge its accent hue a
   // degree or two between schemes (quiet-lilac is 262 light, 264 dark) and
   // following that would both re-tint today's shipping field in dark mode and
   // give one palette two field hues. The scheme is already expressed by the

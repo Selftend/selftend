@@ -1,4 +1,5 @@
-import { computeBreadcrumbs } from "@/src/lib/breadcrumbs";
+import { computeBreadcrumbs, findUpCrumb } from "@/src/lib/breadcrumbs";
+import { UNNAMED_DESTINATION_FORMS } from "@/test/escape-forms";
 
 // Minimal label table covering the keys these paths resolve to. Unknown keys fall
 // through to the key itself, which would surface as a bug in an assertion.
@@ -17,6 +18,19 @@ const LABELS: Record<string, string> = {
   "breadcrumb.edit": "Edit",
   "sidebar.moodTracker": "Check-in",
   "breadcrumb.practices": "Practices",
+  "breadcrumb.new": "New",
+  "breadcrumb.learn": "Learn",
+  "breadcrumb.connection": "Connection",
+  "breadcrumb.signIn": "Sign in",
+  "breadcrumb.signUp": "Sign up",
+  "breadcrumb.resetPassword": "Reset password",
+  "breadcrumb.updatePassword": "Update password",
+  "breadcrumb.verifyEmail": "Verify email",
+  "sidebar.act": "ACT",
+  "sidebar.habits": "Habits",
+  "act:choicePoint.title": "Choice point",
+  "act:dropAnchor.title": "Drop anchor",
+  "habits:learn.cards.compounding.title": "The 1% compounding effect",
 };
 const t = (key: string) => LABELS[key] ?? key;
 
@@ -105,4 +119,168 @@ describe("computeBreadcrumbs", () => {
     expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "Favorites"]);
     expect(crumbs[2].href).toBeUndefined();
   });
+});
+
+// #1251 (T1): the static segments that fell through to "Entry", with their
+// labels reused from the screens themselves. (`saved` was mapped here too, with
+// a key of its own - until #1315 found there IS no `/modules/cbt/saved` route,
+// and made the segment transparent instead; see below.)
+describe("computeBreadcrumbs - the unmapped static segments (#1251)", () => {
+  it("names the ACT choice point instead of falling back to Entry", () => {
+    const crumbs = computeBreadcrumbs("/modules/act/choice-point", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "ACT", "Choice point"]);
+    expect(crumbs.at(-1)?.href).toBeUndefined();
+  });
+
+  it("names drop anchor instead of falling back to Entry", () => {
+    const crumbs = computeBreadcrumbs("/modules/act/connection/drop-anchor", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "ACT", "Connection", "Drop anchor"]);
+  });
+
+  /**
+   * #1315: `saved/` holds only the post-save confirmation at `[id].tsx` - a
+   * crumb for the segment itself carried an href straight to `+not-found`, and
+   * the Escape's Up hop read that same href. The segment is transparent, so the
+   * trail skips it and Up lands on the CBT home, a route that exists.
+   */
+  it("skips the saved segment, so Up from a saved thought record is CBT, not a 404", () => {
+    const crumbs = computeBreadcrumbs("/modules/cbt/saved/3f9a-uuid", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "CBT", "Entry"]);
+    expect(findUpCrumb(crumbs)?.href).toBe("/modules/cbt");
+  });
+
+  it("resolves a habits learn card to its real title", () => {
+    const crumbs = computeBreadcrumbs("/tools/habits/learn/compounding", t);
+    expect(crumbs.map((c) => c.label)).toEqual([
+      "Tools",
+      "Habits",
+      "Learn",
+      "The 1% compounding effect",
+    ]);
+  });
+
+  // T3: the six (auth) routes are one-crumb screens whose trail hides, so this
+  // changes nothing on screen. It exists so the generic fallback is not live.
+  it.each([
+    ["/sign-in", "Sign in"],
+    ["/sign-up", "Sign up"],
+    ["/reset-password", "Reset password"],
+    ["/update-password", "Update password"],
+    ["/verify-email", "Verify email"],
+    ["/auth-callback", "Sign in"],
+  ])("gives %s a real crumb rather than the Entry fallback", (path, label) => {
+    const crumbs = computeBreadcrumbs(path, t);
+    expect(crumbs.map((c) => c.label)).toEqual([label]);
+    expect(crumbs.at(-1)?.href).toBeUndefined();
+  });
+});
+
+/**
+ * #1251 (T1a) - the mechanism, which is the actual bug.
+ *
+ * An unmapped segment used to set "previous was known" false, and the branch
+ * below then silently SKIPPED the segment after it. `/modules/act/choice-point/new`
+ * produced *Modules · ACT · Entry* with no crumb for `new` - and, fatally, a
+ * terminal crumb that carried an href.
+ *
+ * That breaks the invariant the Escape is defined on: "one hop along the screen's
+ * own trail" assumes the trail ends AT the current screen, and this code's own
+ * marker for "this is the current screen" is an absent href. With a trailing
+ * href the Escape reads one crumb too shallow.
+ *
+ * These tests use paths that are deliberately NOT in the route table, because
+ * fixing only the data would leave the next unmapped segment to recur silently -
+ * which is the rot this whole effort exists to stop.
+ */
+describe("computeBreadcrumbs - an unmapped segment never swallows the next (#1251)", () => {
+  it("keeps the segment after an unmapped one instead of dropping it", () => {
+    const crumbs = computeBreadcrumbs("/modules/cbt/not-a-mapped-route/new", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "CBT", "Entry", "New"]);
+  });
+
+  it("terminates href-less even when the current screen's own segment is unmapped", () => {
+    const crumbs = computeBreadcrumbs("/modules/cbt/not-a-mapped-route/also-unmapped", t);
+    expect(crumbs.at(-1)?.href).toBeUndefined();
+  });
+
+  it("never lets a transparent segment be the last word, which would strand an href", () => {
+    // `session` is transparent, so it is skipped where it groups sub-routes. If
+    // it lands last on a path with no static entry, skipping it would leave the
+    // PARENT as the terminal crumb - carrying its href.
+    const crumbs = computeBreadcrumbs("/tools/not-a-mapped-tool/session", t);
+    expect(crumbs.at(-1)?.href).toBeUndefined();
+  });
+
+  /**
+   * The invariant itself, over one path per branch of the resolver. The
+   * repo-wide version - every route in `app/` - ships with the gate suite in a
+   * later ticket; this ticket is what makes it true.
+   */
+  it.each([
+    ["/notifications"], // static, one crumb
+    ["/tools/meditation"], // static, nested
+    ["/tools/breathing/session"], // static entry that shadows a transparent segment
+    ["/tools/breathing/box-breathing"], // slug template
+    ["/tools/habits/learn/compounding"], // slug template, newly added
+    ["/modules/cbt/goals/3f9a-uuid"], // opaque id
+    ["/routines/3f9a-uuid/edit"], // known sub-segment after an opaque id
+    ["/tools/habits/3f9a-uuid/log"], // the other known sub-segment
+    ["/modules/act/choice-point"], // newly mapped static
+    ["/modules/act/choice-point/new"], // the swallow case
+    ["/modules/cbt/saved/3f9a-uuid"], // transparent segment, then an id (#1315)
+    ["/sign-in"], // (auth)
+    ["/modules/cbt/not-a-mapped-route/new"], // wholly unmapped
+  ])("%s terminates in an href-less crumb", (path) => {
+    const crumbs = computeBreadcrumbs(path, t);
+    expect(crumbs.length).toBeGreaterThan(0);
+    expect(crumbs.at(-1)?.href).toBeUndefined();
+    // And every crumb ABOVE the last one must be navigable, or the Escape's
+    // "deepest crumb with an href" lookup would skip past a real ancestor.
+    for (const crumb of crumbs.slice(0, -1)) expect(crumb.href).toBeDefined();
+  });
+});
+
+/**
+ * The Escape announces "Back to {name}" (#1253), so it has to tell a crumb that
+ * carries a real name from one that fell through to the generic label. "Entry"
+ * is not a name; it is the absence of one, and announcing "Back to Entry" would
+ * put a word in front of screen-reader users that no sighted user is ever shown.
+ *
+ * The distinction is carried STRUCTURALLY, on the crumb, precisely because the
+ * alternative - comparing the label against the translated word "Entry" - is
+ * only ever right in English.
+ */
+describe("computeBreadcrumbs - the generic fallback is marked unresolved (#1253)", () => {
+  it("marks the opaque-id crumb that fell through to the generic label", () => {
+    const crumbs = computeBreadcrumbs("/tools/gratitude-log/3f9a-uuid/edit", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "Entry", "Edit"]);
+    expect(crumbs[2].unresolved).toBe(true);
+  });
+
+  it("leaves a slug-resolved dynamic crumb resolved", () => {
+    // The same branch of the resolver, but the slug table names it - so it IS a name.
+    const crumbs = computeBreadcrumbs("/tools/habits/learn/compounding", t);
+    expect(crumbs.at(-1)?.label).toBe("The 1% compounding effect");
+    expect(crumbs.at(-1)?.unresolved).toBeUndefined();
+  });
+
+  it("leaves static and known-sub-segment crumbs resolved", () => {
+    const crumbs = computeBreadcrumbs("/tools/gratitude-log/new", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Tools", "Gratitude log", "New"]);
+    for (const crumb of crumbs) expect(crumb.unresolved).toBeUndefined();
+  });
+
+  /**
+   * The seven routes the spec charted: every `[id]/edit` and `[id]/log` form in
+   * the app hops up to a record whose crumb has no name.
+   *
+   * Through `findUpCrumb`, not a hand-rolled reverse-find: re-deriving the Up
+   * rule here would make this test follow the implementation wherever it went.
+   */
+  it.each(UNNAMED_DESTINATION_FORMS.map((form) => [form.pathname]))(
+    "%s hops up to an unresolved crumb",
+    (pathname) => {
+      expect(findUpCrumb(computeBreadcrumbs(pathname, t))?.unresolved).toBe(true);
+    },
+  );
 });

@@ -13,12 +13,14 @@ import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
+import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: {
     canGoBack: jest.fn(() => false),
     push: jest.fn(),
+    replace: jest.fn(),
   },
   usePathname: () => "/settings",
 }));
@@ -50,14 +52,19 @@ jest.mock("@/src/components/react-native-reusables/label", () => {
   };
 });
 
+const registeredSessionUser = {
+  email: "person@example.com",
+  id: "user-1",
+};
+let mockSessionUser: { id: string; email?: string; is_anonymous?: boolean } | null =
+  registeredSessionUser;
 jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({
-    user: {
-      email: "person@example.com",
-      id: "user-1",
-    },
-  }),
+  useSession: () => ({ user: mockSessionUser }),
 }));
+
+afterEach(() => {
+  mockSessionUser = registeredSessionUser;
+});
 
 jest.mock("expo-linear-gradient", () => {
   const View = mockView;
@@ -137,6 +144,9 @@ describe("SettingsScreen structure", () => {
     expect(screen.getByTestId("settings-run-help")).toBeTruthy();
     expect(screen.getByTestId("settings-run-account")).toBeTruthy();
     expect(screen.getByTestId("settings-colophon")).toBeTruthy();
+    // #1446: the guest invitation card renders nothing for this registered
+    // user (its guest-side visibility is pinned in create-account-card.test).
+    expect(screen.queryByTestId("create-account-card")).toBeNull();
   });
 
   /**
@@ -177,6 +187,20 @@ describe("SettingsScreen structure", () => {
     expect(screen.getByLabelText("Sign out")).toBeTruthy();
   });
 
+  // #1442: a guest's session token is the only key to their account, so the
+  // sign-out row must not exist for them (silent irreversible data loss). The
+  // rest of the account run stays word-for-word: for a guest, "start fresh"
+  // IS delete-account, and export works unchanged.
+  it("hides the sign-out row for a guest, keeping delete-account and export", async () => {
+    mockSessionUser = { id: "guest-1", is_anonymous: true };
+    renderWithProviders(<SettingsScreen />);
+
+    await waitFor(() => expect(screen.getByLabelText("Delete my account")).toBeTruthy());
+    expect(screen.queryByLabelText("Sign out")).toBeNull();
+    expect(screen.getByLabelText("Export my data")).toBeTruthy();
+    expect(screen.getByTestId("settings-run-account")).toBeTruthy();
+  });
+
   it("waits only the two onboarding rows on the preferences query", async () => {
     mockPreferences(undefined, true);
     renderWithProviders(<SettingsScreen />);
@@ -192,6 +216,26 @@ describe("SettingsScreen structure", () => {
     expect(screen.getByLabelText("Export my data").props.accessibilityState.disabled).toBe(false);
   });
 
+  /**
+   * W12 (#1255): the bespoke hero is the page's own title, not chrome, so the
+   * Escape slot never reached this screen. `ScreenTopBar` now carries it, and
+   * the hero below is untouched - "Settings" appearing exactly once is what
+   * pins that the trail stays hidden on this one-crumb route rather than
+   * repeating the title as a crumb.
+   */
+  it("carries exactly one Escape through chrome, and it leads Home", async () => {
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+    expect(screen.getByTestId("screen-top-bar")).toBeTruthy();
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+    expect(screen.getAllByText("Settings")).toHaveLength(1);
+
+    fireEvent.press(screen.getByLabelText("Back to Home"));
+    // `replace`, not `push`: an Escape is a leave, not a drill-down.
+    expect(router.replace).toHaveBeenCalledWith("/");
+  });
+
   it("navigates rather than acting in place on the chevron rows", async () => {
     renderWithProviders(<SettingsScreen />);
     await waitFor(() => expect(screen.getByLabelText("Reminders")).toBeTruthy());
@@ -204,6 +248,29 @@ describe("SettingsScreen structure", () => {
 
     fireEvent.press(screen.getByLabelText("Legal and boundaries"));
     expect(router.push).toHaveBeenCalledWith("/legal");
+  });
+
+  /**
+   * The stray both sibling batches left unclaimed (#1261, #1266): this screen
+   * sits outside every directory the batch tickets named, and Settings IS
+   * off-trail from Reminders, whose own Up is Home - the exact reported symptom
+   * (#1160) the Origin rule was written for, one door over from the bell.
+   *
+   * ⚠️ On the STORE, not on `router.push`: `usePushWithOrigin` pushes through
+   * `router.push`, so the assertion above passes identically whether or not
+   * this row was ever migrated (#1267).
+   */
+  it("records Settings as the Origin when opening Reminders", async () => {
+    useNavigationOriginStore.setState({ pending: null });
+    renderWithProviders(<SettingsScreen />);
+    await waitFor(() => expect(screen.getByLabelText("Reminders")).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText("Reminders"));
+
+    expect(useNavigationOriginStore.getState().pending).toEqual({
+      origin: "/settings",
+      forPathname: "/notifications",
+    });
   });
 });
 

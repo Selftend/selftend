@@ -44,8 +44,9 @@ describe("deriveTokens fills the whole contract", () => {
     expect(deriveTokens(CORE[scheme], scheme)).not.toHaveProperty("--radius");
   });
 
-  // --accent-ink has no home in the contract; it is the room pour, and once
-  // rooms go neutral it always equals --primary-ink (#558/#559).
+  // --accent-ink has no home in the contract; it was the room pour, and with
+  // rooms neutral (then deleted, #1292) it would only ever have equalled
+  // --primary-ink (#558/#559).
   it.each(["light", "dark"] as const)("%s does not emit --accent-ink", (scheme) => {
     expect(deriveTokens(CORE[scheme], scheme)).not.toHaveProperty("--accent-ink");
   });

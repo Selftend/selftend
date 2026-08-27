@@ -1,21 +1,26 @@
-import { router } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
-import { cn } from "@/lib/utils";
+import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { CbtOnboarding } from "@/src/components/app/cbt-onboarding-modal";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { useGoals } from "@/src/features/goals/queries";
-import { useThoughtRecords } from "@/src/features/cbt/queries";
+import {
+  useThoughtRecordCount,
+  useThoughtRecordCountSince,
+  useThoughtRecords,
+} from "@/src/features/cbt/queries";
+import { currentDateKey, monthStartIsoOf } from "@/src/utils/date";
 import { useCbtInsights } from "@/src/features/cbt/use-cbt-insights";
 import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useCbtProgram } from "@/src/features/cbt/use-cbt-program";
 import { deriveCbtHomeView } from "@/src/features/cbt/cbt-home/derive-cbt-home-view";
 import { CbtProgramSection } from "@/src/features/cbt/cbt-home/cbt-program-section";
@@ -24,9 +29,10 @@ import { ActiveGoalsSection } from "@/src/features/cbt/cbt-home/active-goals-sec
 import { CbtInsightsSection } from "@/src/features/cbt/cbt-home/cbt-insights-section";
 import { CbtPillarsSection } from "@/src/features/cbt/cbt-home/cbt-pillars-section";
 import { CbtReviewLinks } from "@/src/features/cbt/cbt-home/cbt-review-links";
-import { RecentThoughtRecord } from "@/src/features/cbt/cbt-home/recent-thought-record";
+import { RecentThoughtRecords } from "@/src/features/cbt/cbt-home/recent-thought-records";
 
 export default function CbtHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { user } = useSession();
   const {
@@ -48,17 +54,39 @@ export default function CbtHomeScreen() {
   const { data: goals } = useGoals(user?.id ?? null);
   const { data: thoughtRecords } = useThoughtRecords(user?.id ?? null);
   const { data: recoveryPlan } = useRecoveryPlan(user?.id ?? null);
-  const insights = useCbtInsights(user?.id ?? null);
-  const { activeGoals, latestRecord, personalSlogan, insightCards, showProgramCard } =
-    deriveCbtHomeView({
-      goals,
-      thoughtRecords,
-      recoveryPlan,
-      insights,
-      program,
-      promptDismissedAt,
-      t,
-    });
+  // A stable string within any one month, so the query key does not churn; a
+  // mounted screen crossing the boundary re-windows on its next render, which
+  // is the same promise `currentDateKey` makes everywhere else. ONE boundary,
+  // handed to both the insights hook (the bars) and the derivation (stats 2
+  // and 3), so "this month" cannot drift into two definitions.
+  const monthStartIso = monthStartIsoOf(currentDateKey());
+  const insights = useCbtInsights(user?.id ?? null, monthStartIso);
+  // Head counts, never `thoughtRecords.length` - the list is capped at 500
+  // rows, so a client-side count reads back a wrong, too-small number for
+  // exactly the people with the most history (ADR-0001).
+  const { data: lifetimeRecordCount } = useThoughtRecordCount(user?.id ?? null);
+  const { data: monthRecordCount } = useThoughtRecordCountSince(user?.id ?? null, monthStartIso);
+  const {
+    activeGoals,
+    recentRecords,
+    personalSlogan,
+    headerStats,
+    distortionBars,
+    insightCards,
+    showProgramCard,
+    sectionRules,
+  } = deriveCbtHomeView({
+    goals,
+    thoughtRecords,
+    recoveryPlan,
+    insights,
+    program,
+    promptDismissedAt,
+    lifetimeRecordCount,
+    monthRecordCount,
+    monthStartIso,
+    t,
+  });
 
   return (
     <>
@@ -89,12 +117,16 @@ export default function CbtHomeScreen() {
           for CBT specifically is raised on #691. */}
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
-          <View className={cn(HOME_COLUMN, "gap-6")}>
+          {/* No column gap: the hairline blocks below carry their own `py-6`, so
+              a gap here would double every gutter on the page. The blocks that
+              are cards rather than sections space themselves instead. */}
+          <View className={HOME_COLUMN}>
             <ModuleHomeHeader
               addWidgetCategory="cbt"
               title={t("fullTitle")}
               tourScope="cbt"
               description={t("home.description")}
+              stats={headerStats}
               actions={[
                 { type: "notifications", targetKey: "cbt" },
                 ...(program.status === "not_started"
@@ -109,42 +141,66 @@ export default function CbtHomeScreen() {
                 { type: "info", onPress: () => setForceOnboarding(true) },
               ]}
             />
-            <CbtProgramSection
-              program={program}
-              isPending={isProgramUpdating}
-              showProgramCard={showProgramCard}
-              graduationDismissedAt={graduationDismissedAt}
-              onStart={startProgram}
-              onAdvance={advancePhase}
-              onRequestAbandon={() => setAbandonConfirmVisible(true)}
-              onDismissStart={dismissProgramPrompt}
-              onDismissGraduation={dismissGraduation}
-              onReplay={replayProgram}
+
+            {/* ☠️ An inline button, not a floating one. The only `Fab` consumer
+                is the routine handle, which `protected-layout.tsx` mounts
+                app-wide at the bottom right and which does NOT hide itself on
+                this route - so a second floating control would land on top of
+                it. This is the grammar four other tool homes already use
+                (journal, gratitude, sleep, habits), in ONE place at every
+                width. */}
+            <Button onPress={() => pushWithOrigin("/modules/cbt/new")} className="mt-6 self-start">
+              <Icon name="add" className="size-4 text-primary-foreground" />
+              {/* The destination's own title, deliberately: a door and the room
+                  behind it saying different words is how a screen ends up with
+                  two names. */}
+              <Text>{t("record.newTitle")}</Text>
+            </Button>
+
+            {/* ✅ The Think pillar's "Thought Records" tool still routes here
+                too. It is a catalogue entry and this is the action - a
+                duplicated route is only a duplicated door when both renderings
+                are in the same register. */}
+
+            <View className="mt-6 gap-6">
+              <CbtProgramSection
+                program={program}
+                isPending={isProgramUpdating}
+                showProgramCard={showProgramCard}
+                graduationDismissedAt={graduationDismissedAt}
+                onStart={startProgram}
+                onAdvance={advancePhase}
+                onRequestAbandon={() => setAbandonConfirmVisible(true)}
+                onDismissStart={dismissProgramPrompt}
+                onDismissGraduation={dismissGraduation}
+                onReplay={replayProgram}
+              />
+
+              <PersonalSloganCard slogan={personalSlogan} />
+            </View>
+
+            <ActiveGoalsSection goals={activeGoals} ruled={sectionRules.goals} />
+
+            <RecentThoughtRecords records={recentRecords} ruled={sectionRules.records} />
+
+            <CbtInsightsSection
+              bars={distortionBars}
+              cards={insightCards}
+              ruled={sectionRules.insights}
             />
 
-            <PersonalSloganCard slogan={personalSlogan} />
+            <CbtPillarsSection ruled={sectionRules.framework} />
 
-            <ActiveGoalsSection goals={activeGoals} />
+            <CbtReviewLinks ruled={sectionRules.review} />
 
-            <CbtInsightsSection cards={insightCards} />
-
-            <CbtPillarsSection />
-
-            <CbtReviewLinks />
-
-            <RecentThoughtRecord record={latestRecord} />
-
-            <Pressable
-              accessibilityLabel={t("home.recordHistory")}
-              accessibilityRole="button"
-              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-              onPress={() => router.push("/modules/cbt/history")}
-              className="flex-row items-center gap-3 rounded-xl border border-border bg-card p-3 active:bg-accent/40"
-              role="button"
-            >
-              <Text className="flex-1 text-sm font-medium">{t("home.recordHistory")}</Text>
-              <Icon name="arrow-forward" className="size-4 text-muted-foreground" />
-            </Pressable>
+            {/* Last, because that is where the two screens already shipping this
+                callout put theirs (ACT home and the DBT module), and a safety
+                block in a different place on one module home is worse than a
+                safety block one scroll further down. CBT was the only module
+                home in the product without one. */}
+            <View className="pt-6">
+              <CrisisSupportCallout />
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>

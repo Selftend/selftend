@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { ErrorState } from "@/src/components/app/screen-state";
 import { Section } from "@/src/components/app/section";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { GratitudeOnboarding } from "@/src/components/app/gratitude-onboarding-modal";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -22,7 +23,6 @@ import {
   useGratitudeEntryCountSinceDayKey,
 } from "@/src/features/gratitude/queries";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey } from "@/src/stores/selected-date-store";
@@ -32,8 +32,8 @@ type EntryFilter = "all" | "favorites";
 const BAR_AREA_HEIGHT = 68;
 
 export default function GratitudeHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("gratitude");
-  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const [forceOnboarding, setForceOnboarding] = useState(false);
@@ -71,11 +71,7 @@ export default function GratitudeHomeScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
@@ -104,7 +100,10 @@ export default function GratitudeHomeScreen() {
                 },
               ]}
             />
-            <Button onPress={() => router.push("/tools/gratitude-log/new")} className="self-start">
+            <Button
+              onPress={() => pushWithOrigin("/tools/gratitude-log/new")}
+              className="self-start"
+            >
               <Icon name="add" className="size-4 text-primary-foreground" />
               <Text>{t("newEntry")}</Text>
             </Button>
@@ -149,20 +148,14 @@ export default function GratitudeHomeScreen() {
               <Section
                 title={t("list.recent")}
                 action={
-                  <Pressable
-                    accessibilityRole="link"
-                    onPress={() =>
-                      router.push(
-                        filter === "favorites"
-                          ? "/tools/gratitude-log/favorites"
-                          : "/tools/gratitude-log/entries",
-                      )
+                  <ShowAllLink
+                    label={t("home.viewAll")}
+                    route={
+                      filter === "favorites"
+                        ? "/tools/gratitude-log/favorites"
+                        : "/tools/gratitude-log/entries"
                     }
-                  >
-                    <Text className="text-xs font-semibold text-primary-ink">
-                      {t("home.viewAll")}
-                    </Text>
-                  </Pressable>
+                  />
                 }
               >
                 {/* The All/Favourites filter rides the section body, as the

@@ -43,22 +43,25 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
     AMBIENT_SOUNDS.find((s) => s.id === effective.ambientSoundId) ?? AMBIENT_SOUNDS[0];
 
   return (
-    <PressShieldModal visible={visible} onRequestClose={onDismiss} transparent>
+    // A bottom sheet, not a full-screen modal: the breathing session stays
+    // visible behind it, so the wrapper pins no row and the X below is this
+    // sheet's one Escape — pinned in its own header row OUTSIDE the
+    // scroller (W20/#1257), so it no longer scrolls away with the lanes.
+    <PressShieldModal surface="sheet" visible={visible} onRequestClose={onDismiss} transparent>
       <View className="flex-1 justify-end bg-black/40">
         <SafeAreaView edges={["bottom"]} className="rounded-t-2xl bg-background">
+          <View className="flex-row items-center justify-between px-6 pt-6">
+            <Text variant="h2">{t("breathing.sounds.title")}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("common:close")}
+              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+              onPress={onDismiss}
+            >
+              <Icon name="close" className="size-6 text-muted-foreground" />
+            </Pressable>
+          </View>
           <ScrollView contentContainerClassName="gap-6 p-6">
-            <View className="flex-row items-center justify-between">
-              <Text variant="h2">{t("breathing.sounds.title")}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("breathing.sounds.close")}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={onDismiss}
-              >
-                <Icon name="close" className="size-6 text-muted-foreground" />
-              </Pressable>
-            </View>
-
             <Lane
               label={t("breathing.sounds.breathLabel")}
               soundName={t(breathSound.labelKey)}
@@ -164,11 +167,8 @@ function Picker({ label, items, selectedId, onSelect }: PickerProps) {
             {/*
               Hue-keyed ink, not the accent (#412): the selected row is 14px
               text on `bg-aqua/10`, where the published accent reads 4.27:1.
-              `text-aqua-ink` rather than `text-primary-ink` because this sheet
-              renders in a <Modal> - the aqua pour from the session route below
-              it is not something to rely on reaching a portal, and inside the
-              aqua room the two resolve to the same colour anyway (the room
-              re-pours --accent-ink from these very triples).
+              `text-aqua-ink` because the hue is aqua's, and the ink token is
+              the only spelling of it that clears AA at this size.
             */}
             <Text className={cn("text-sm", active && "font-semibold text-foreground")}>
               {item.label}

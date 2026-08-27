@@ -20,6 +20,11 @@ const cbtKeys = {
   latestRecord: (userId: string) => ["cbt", "records", userId, "latest"] as const,
   countSince: (userId: string, sinceIso: string) =>
     ["cbt", "count-since", userId, sinceIso] as const,
+  // The prefix over every countSince window, for invalidation: like `count`,
+  // the windowed counts sit on their own root, so the `records` prefix never
+  // reaches them and a save would leave the home header's "this month" stat
+  // stale until a remount (#1387, the same trap #990 fixed for `count`).
+  countsSince: (userId: string) => ["cbt", "count-since", userId] as const,
   count: (userId: string) => ["cbt", "count", userId] as const,
 };
 
@@ -91,6 +96,7 @@ export function useSaveThoughtRecord(userId: string | null) {
         // The count sits on its own root, so the `records` prefix above never reached it
         // and Home's `N records` clause stayed stale until a remount (found in #990).
         queryClient.invalidateQueries({ queryKey: cbtKeys.count(userId) }),
+        queryClient.invalidateQueries({ queryKey: cbtKeys.countsSince(userId) }),
       ]);
     },
   });
@@ -110,6 +116,7 @@ export function useArchiveThoughtRecord(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: cbtKeys.records(userId) }),
         queryClient.invalidateQueries({ queryKey: cbtKeys.count(userId) }),
+        queryClient.invalidateQueries({ queryKey: cbtKeys.countsSince(userId) }),
       ]);
     },
   });

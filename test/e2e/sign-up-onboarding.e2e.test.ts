@@ -108,36 +108,21 @@ test.describe("sign-up + onboarding + first record", () => {
     const automaticThought = "Brand-new accounts always break.";
     const balancedThought = "It is just a first record. The form should hold.";
 
+    // The form is one scrolling column (#1381) - fill straight down it.
     await page
       .getByPlaceholder(
         "Example: I saw an email from my manager and my chest tightened immediately.",
       )
       .fill(situation);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // NATs - type thought, add it, then continue
     await page.getByPlaceholder("What did your mind say?").fill(automaticThought);
     await page.getByRole("button", { name: "Add thought", exact: true }).click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Hot thought - one is auto-selected; just continue
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
     await page.getByText("Anxious", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Evidence is optional in the first thought-record flow.
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    await page.getByRole("checkbox", { name: "Catastrophizing", exact: true }).click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
+    await page.getByRole("checkbox", { name: "Catastrophising", exact: true }).click();
     await page
       .getByPlaceholder(
         "Example: I do not know what the email means yet. One message is not proof that I failed.",
       )
       .fill(balancedThought);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     await page.getByRole("button", { name: "Save record", exact: true }).click();
 

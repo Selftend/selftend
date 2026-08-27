@@ -1,4 +1,5 @@
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -44,11 +45,10 @@ import {
 } from "@/src/features/mood/week-window";
 import { MoodHeatmap } from "@/src/features/mood/mood-heatmap";
 import { formatWeekLabel, WeekHero, WeekNavigator } from "@/src/features/mood/mood-week-hero";
-import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { formatOneDecimal } from "@/src/lib/locale-format";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import {
   addDaysToKey,
   dayKeyDiff,
@@ -93,7 +93,6 @@ const PRESET_DAYS: Record<"7d" | "30d" | "90d", number> = {
 
 export default function MoodTrackerScreen() {
   const { t, i18n } = useTranslation("mood");
-  const roomStyle = useRoomStyle("be");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -441,11 +440,7 @@ export default function MoodTrackerScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/*
           A plain scroller, not a list (#735, decided on #695). The overview used
           to BE its history list, with everything above passed as
@@ -501,7 +496,9 @@ export default function MoodTrackerScreen() {
                         narrow screen it drops to its own line inside WeekHero
                         (#697's 360dp bg measurement). Conditional, not CSS-
                         hidden, so it never exists twice in the a11y tree. */}
-                    {wideRows ? <ShowAllHistoryLink /> : null}
+                    {wideRows ? (
+                      <ShowAllLink label={t("allHistory.link")} route="/tools/check-in/history" />
+                    ) : null}
                   </View>
                 }
               >
@@ -674,6 +671,7 @@ interface TodayCheckInProps {
 // any glyph still opens the editor with it preselected, which the caption
 // says out loud ("tap to add another").
 function TodayCheckIn({ latest, dateKey }: TodayCheckInProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("mood");
   const dateLine = new Intl.DateTimeFormat(i18n.language, {
     weekday: "long",
@@ -715,7 +713,7 @@ function TodayCheckIn({ latest, dateKey }: TodayCheckInProps) {
           // #739 rejected this exact shape for the emotions beside it and built the
           // seed-store pattern; this is the score's half.
           seedMoodScore(score);
-          router.push("/tools/check-in/new");
+          pushWithOrigin("/tools/check-in/new");
         }}
         compact
       />

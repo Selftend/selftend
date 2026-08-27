@@ -6,6 +6,8 @@ import { SEED_USERS, createServiceClient, deleteAllGoalsForUser, signInAs } from
 // - title + description round-trip plaintext through the same `goals` name, while
 //   `goals_data` holds only ciphertext (*_enc).
 // - pass-through columns (life_domain, goal_type, target_date, status) survive a round-trip.
+// - value_key round-trips encrypted, and a goal anchored to nothing keeps a NULL key
+//   through both triggers (#1287) - it can never gate goal creation.
 // - the title 300-char and description 4000-char caps are enforced in the trigger.
 // - RLS isolates a second user.
 
@@ -103,6 +105,119 @@ describe("goals encrypted view (integration)", () => {
     expect(afterCipher).not.toContain("secret-marker-NEW");
   });
 
+  // #1287. The key is a pointer into the user's ranked priority values, encrypted at rest
+  // even though this table leaves its other enum-ish columns in plaintext: values_profile
+  // encrypts its own value list, and a plaintext pointer would put "anchored to honesty"
+  // in the clear anyway.
+  it("INSERT round-trips the value key while storing it as ciphertext", async () => {
+    const insert = await alice
+      .from("goals")
+      .insert({ ...baseRow(), value_key: "honest-secret-marker-VALUE" })
+      .select("*")
+      .single();
+    expect(insert.error).toBeNull();
+    expect(insert.data?.value_key).toBe("honest-secret-marker-VALUE");
+
+    const id = insert.data!.id as string;
+    const atRest = await admin.from("goals_data").select("value_key_enc").eq("id", id).single();
+    expect(atRest.error).toBeNull();
+    const cipher = cipherToText(atRest.data?.value_key_enc);
+    expect(cipher.length).toBeGreaterThan(0);
+    expect(cipher).not.toContain("secret-marker-VALUE");
+  });
+
+  // The programme's first week lists goal-setting BEFORE values clarification, so the
+  // first goal on the intended path is written with no priority values in existence.
+  // NULL must survive both triggers rather than becoming "": a coalesce anywhere on this
+  // path would turn "anchored to nothing" into "anchored to the empty string".
+  it("a goal anchored to nothing keeps a NULL key through INSERT and UPDATE", async () => {
+    const insert = await alice.from("goals").insert(baseRow()).select("*").single();
+    expect(insert.error).toBeNull();
+    expect(insert.data?.value_key).toBeNull();
+
+    const id = insert.data!.id as string;
+    const atRest = await admin.from("goals_data").select("value_key_enc").eq("id", id).single();
+    expect(atRest.error).toBeNull();
+    expect(atRest.data?.value_key_enc).toBeNull();
+
+    // Editing an unrelated field must not invent a key.
+    const updated = await alice
+      .from("goals")
+      .update({ status: "completed" })
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    expect(updated.error).toBeNull();
+    expect(updated.data?.value_key).toBeNull();
+  });
+
+  // The repository's saveGoal overwrites the whole payload, but updateGoalStatus sends a
+  // PARTIAL update: PostgREST patches only `status`, Postgres builds NEW from OLD, and the
+  // trigger re-encrypts the key it already had. Marking a goal complete must never quietly
+  // un-anchor it.
+  it("a partial UPDATE of another column preserves the existing value key", async () => {
+    const created = await alice
+      .from("goals")
+      .insert({ ...baseRow(), value_key: "honest-secret-marker-VALUE" })
+      .select("id")
+      .single();
+    expect(created.error).toBeNull();
+    const id = created.data!.id as string;
+
+    const updated = await alice
+      .from("goals")
+      .update({ status: "completed" })
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    expect(updated.error).toBeNull();
+    expect(updated.data?.status).toBe("completed");
+    expect(updated.data?.value_key).toBe("honest-secret-marker-VALUE");
+  });
+
+  it("UPDATE encrypts the value key, and can clear it back to NULL", async () => {
+    const created = await alice
+      .from("goals")
+      .insert({ ...baseRow(), value_key: "caring" })
+      .select("id")
+      .single();
+    expect(created.error).toBeNull();
+    const id = created.data!.id as string;
+
+    const anchored = await alice
+      .from("goals")
+      .update({ value_key: "brave-secret-marker-VALUE" })
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    expect(anchored.error).toBeNull();
+    expect(anchored.data?.value_key).toBe("brave-secret-marker-VALUE");
+
+    const atRest = await admin.from("goals_data").select("value_key_enc").eq("id", id).single();
+    expect(cipherToText(atRest.data?.value_key_enc)).not.toContain("secret-marker-VALUE");
+
+    // Un-anchoring is a real state, not an empty string.
+    const cleared = await alice
+      .from("goals")
+      .update({ value_key: null })
+      .eq("user_id", SEED_USERS.alice.id)
+      .eq("id", id)
+      .select("*")
+      .maybeSingle();
+    expect(cleared.error).toBeNull();
+    expect(cleared.data?.value_key).toBeNull();
+
+    const clearedAtRest = await admin
+      .from("goals_data")
+      .select("value_key_enc")
+      .eq("id", id)
+      .single();
+    expect(clearedAtRest.data?.value_key_enc).toBeNull();
+  });
+
   it("DELETE through the view removes the underlying base row", async () => {
     const created = await alice.from("goals").insert(baseRow()).select("id").single();
     expect(created.error).toBeNull();
@@ -135,15 +250,24 @@ describe("goals encrypted view (integration)", () => {
   });
 
   it("RLS: a second user cannot read, update, or delete another user's goal", async () => {
-    const created = await alice.from("goals").insert(baseRow()).select("id").single();
+    const created = await alice
+      .from("goals")
+      .insert({ ...baseRow(), value_key: "honest-secret-marker-VALUE" })
+      .select("id")
+      .single();
     expect(created.error).toBeNull();
     const id = created.data!.id as string;
 
-    const bobRead = await bob.from("goals").select("id, title").eq("id", id);
+    // Named explicitly rather than relying on `select *`: the value key is the one column
+    // here that points at the values profile, and it must be as unreachable as the rest.
+    const bobRead = await bob.from("goals").select("id, title, value_key").eq("id", id);
     expect(bobRead.error).toBeNull();
     expect(bobRead.data).toEqual([]);
 
-    const bobUpd = await bob.from("goals").update({ title: "hacked" }).eq("id", id);
+    const bobUpd = await bob
+      .from("goals")
+      .update({ title: "hacked", value_key: "hijacked" })
+      .eq("id", id);
     expect(bobUpd.error).toBeNull();
 
     const bobDel = await bob.from("goals").delete().eq("id", id);
@@ -151,12 +275,13 @@ describe("goals encrypted view (integration)", () => {
 
     const aliceRead = await alice
       .from("goals")
-      .select("title, description, life_domain")
+      .select("title, description, life_domain, value_key")
       .eq("id", id)
       .single();
     expect(aliceRead.error).toBeNull();
     expect(aliceRead.data?.title).toBe(TITLE);
     expect(aliceRead.data?.description).toBe(DESCRIPTION);
     expect(aliceRead.data?.life_domain).toBe("health");
+    expect(aliceRead.data?.value_key).toBe("honest-secret-marker-VALUE");
   });
 });

@@ -1,5 +1,4 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { router } from "expo-router";
 
@@ -9,7 +8,6 @@ import {
 } from "@/src/features/habits/habits-learn-screen";
 import { HABITS_LEARN_CARDS } from "@/src/features/habits/learn";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -25,15 +23,13 @@ describe("HabitsLearnIndexScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("renders every learn card inside the act room", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<HabitsLearnIndexScreen />);
+  it("renders every learn card", () => {
+    renderWithProviders(<HabitsLearnIndexScreen />);
 
     expect(screen.getByRole("heading", { name: "Habit building - core ideas" })).toBeTruthy();
     // One card row per entry in the source-of-truth list, plus the breadcrumb
     // back button (#495).
     expect(screen.getAllByRole("button")).toHaveLength(HABITS_LEARN_CARDS.length + 1);
-    // The root carries the act room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
   it("navigates to the article when a card is pressed", () => {
@@ -53,21 +49,16 @@ describe("HabitsLearnDetailScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("renders the article inside the act room - no field gradient", () => {
-    const { UNSAFE_getByType } = renderWithProviders(
-      <HabitsLearnDetailScreen slug="two-minute-rule" />,
-    );
+  it("renders the article", () => {
+    renderWithProviders(<HabitsLearnDetailScreen slug="two-minute-rule" />);
 
     expect(screen.getByRole("heading", { name: "The two-minute rule" })).toBeTruthy();
-    // The root carries the act room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
-  it("falls back to the index for an unknown slug, still on the room pour", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<HabitsLearnDetailScreen slug="nope" />);
+  it("falls back to the index for an unknown slug", () => {
+    renderWithProviders(<HabitsLearnDetailScreen slug="nope" />);
 
     expect(screen.getByRole("heading", { name: "Habit building - core ideas" })).toBeTruthy();
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
   it("navigates to a related card and back to habits", () => {

@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,7 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -29,6 +30,7 @@ interface RoutineDetailScreenProps {
 }
 
 export function RoutineDetailScreen({ routineId }: RoutineDetailScreenProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("routines");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -45,13 +47,7 @@ export function RoutineDetailScreen({ routineId }: RoutineDetailScreenProps) {
   const [actionError, setActionError] = useState<string | undefined>();
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("home.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("home.title")} />;
   }
 
   if (!routine) {
@@ -106,10 +102,10 @@ export function RoutineDetailScreen({ routineId }: RoutineDetailScreenProps) {
           <View className="flex-row flex-wrap gap-2">
             <Button
               onPress={() =>
-                router.push({
+                pushWithOrigin({
                   pathname: "/routines/[id]/edit",
                   params: { id: routine.id },
-                } as Parameters<typeof router.push>[0])
+                } as Href)
               }
               variant="outline"
             >

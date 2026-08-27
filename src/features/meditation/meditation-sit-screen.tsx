@@ -11,6 +11,7 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { FocusSessionShell } from "@/src/components/app/focus-session-shell";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
 import { formatClock } from "@/src/features/breathing/cycle-math";
 import {
@@ -30,7 +31,6 @@ import { playOneShot } from "@/src/lib/native-audio";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useAccentHsl, useThemeHex } from "@/src/lib/theme-palette";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -294,8 +294,9 @@ export function MeditationSitScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, paused, focused]);
 
-  // Shell B has no chrome, so the OS back gesture and the web back button are
-  // the only uninvited exits. Mid-sit they pause the clock and ask (#777) -
+  // Shell B's Escape (#1256) leaves through `router.replace`, so it lands here
+  // with the OS back gesture and the web back button - every uninvited exit
+  // passes this guard. Mid-sit they pause the clock and ask (#777) -
   // confirming finishes and saves, then honours the exit rather than detouring
   // through a reflection the user was leaving. Once the sit is recorded the
   // guard stands down: backing out of the reflection is just skipping it.
@@ -345,8 +346,6 @@ export function MeditationSitScreen() {
     }, []),
   );
 
-  const roomStyle = useRoomStyle("iris");
-
   if (phase === "after" && savedSession) {
     return (
       <AfterSit
@@ -360,7 +359,6 @@ export function MeditationSitScreen() {
         note={note}
         onChangeNote={setNote}
         isPending={updateMutation.isPending}
-        roomStyle={roomStyle}
         onSkip={() => router.replace("/tools/meditation")}
         onSave={async () => {
           try {
@@ -526,7 +524,6 @@ function AfterSit({
   note,
   onChangeNote,
   isPending,
-  roomStyle,
   onSkip,
   onSave,
 }: {
@@ -536,18 +533,20 @@ function AfterSit({
   note: string;
   onChangeNote: (value: string) => void;
   isPending: boolean;
-  roomStyle: ReturnType<typeof useRoomStyle>;
   onSkip: () => void;
   onSave: () => void;
 }) {
   const { t } = useTranslation("meditation");
 
   return (
-    // The room wrapper carries the iris token re-pour; MobileFormScreen's
-    // bg-background surfaces re-resolve through it.
-    <View className="flex-1" style={roomStyle} testID="meditation-sit-after-room">
+    <View className="flex-1" testID="meditation-sit-after-room">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
+        // The sit itself escapes through `FocusSessionShell`; this after-sit
+        // form is a separate return that carried no chrome, so the only ways
+        // off it were its own Skip and Save buttons - "some pressable" rather
+        // than the Escape, which is the widening G4 forbids (#1328).
+        topBar={<ScreenTopBar />}
         footer={
           <View className={cn(FORM_COLUMN, "flex-row items-center justify-between gap-3")}>
             <Button disabled={isPending} onPress={onSkip} variant="ghost">

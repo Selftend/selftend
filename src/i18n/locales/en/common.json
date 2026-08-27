@@ -6,9 +6,25 @@
   "cancel": "Cancel",
   "change": "Change",
   "done": "Done",
+  "clear": "Clear",
   "delete": "Delete",
   "edit": "Edit",
   "close": "Close",
+  "noDateSet": "No date set",
+  "calendar": {
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "todayNamed": "Today, {{date}}"
+  },
+  "time": {
+    "label": "Time",
+    "hourField": "{{label}}, hour",
+    "minuteField": "{{label}}, minute",
+    "meridiemField": "{{label}}, AM or PM",
+    "am": "AM",
+    "pm": "PM",
+    "reverted": "Reverted to {{time}}"
+  },
   "or": "or",
   "orContinueWithEmail": "or continue with email",
   "never": "never",
@@ -39,7 +55,7 @@
     "deleted": "Deleted"
   },
   "toast": {
-    "dismissHint": "Dismiss this message"
+    "dismiss": "Dismiss message"
   },
   "safety": {
     "title": "Use urgent support for urgent risk",
@@ -47,12 +63,12 @@
     "openCrisis": "Open crisis guidance",
     "barLabel": "Not for emergencies · Crisis resources"
   },
-  "updateBanner": {
-    "message": "A newer version of Selftend is available.",
+  "updatePrompt": {
+    "title": "Update available",
+    "body": "A newer version of Selftend is ready.",
     "actionWeb": "Refresh",
     "actionPlayStore": "Open Google Play",
-    "actionAppStore": "Open the App Store",
-    "dismiss": "Dismiss"
+    "later": "Later"
   },
   "downloadBar": {
     "message": "Selftend is on Google Play.",

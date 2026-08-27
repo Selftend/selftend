@@ -13,6 +13,7 @@ import { Portal } from "@rn-primitives/portal";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useThemeHex } from "@/src/lib/theme-palette";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { useOverlayRegistration } from "@/src/stores/overlay-count-store";
 
 const OVERLAY_COLOR = "rgba(0, 0, 0, 0.65)";
 const HIGHLIGHT_BORDER_COLOR = "rgba(255,255,255,0.75)";
@@ -53,6 +54,11 @@ export function TourOverlay({
   onDismissAll,
 }: TourOverlayProps): React.JSX.Element {
   const reduceMotionEnabled = useReduceMotionEnabled();
+  // Overlay-count registry (#1473, spec §2 on #1142). Always-on because
+  // home-tour gates the MOUNT (`if (!current || !targetRect) return null`),
+  // and on native the overlay is a Portal rather than a Modal — either way it
+  // covers the screen, which is the thing the registry counts.
+  useOverlayRegistration(true);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const cardColor = useThemeHex("--popover");
 

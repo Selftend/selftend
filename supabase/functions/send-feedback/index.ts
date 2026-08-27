@@ -1,5 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2.103.2";
-import { buildFeedbackEmailHtml, validateFeedbackInput } from "../_shared/feedback.ts";
+import {
+  buildFeedbackDiscordPayload,
+  buildFeedbackEmailHtml,
+  resolveReplyTo,
+  validateFeedbackInput,
+} from "../_shared/feedback.ts";
 import { sendEmail } from "../_shared/ses.ts";
 
 const corsHeaders = {
@@ -9,6 +14,14 @@ const corsHeaders = {
 };
 
 const jsonHeaders = { "Content-Type": "application/json" };
+
+// Provided by the Supabase Edge Runtime; absent in other runtimes, so the
+// mirror below guards with typeof before touching it.
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
+
+// Bounds how long a hung Discord POST can keep the retired worker alive; the
+// user's response never waits on it either way.
+const DISCORD_TIMEOUT_MS = 10_000;
 
 function requiredEnv(name: string) {
   const value = Deno.env.get(name);
@@ -65,7 +78,7 @@ Deno.serve(async (request) => {
       });
     }
 
-    let payload: { category?: unknown; message?: unknown };
+    let payload: { category?: unknown; message?: unknown; replyTo?: unknown };
     try {
       const rawBody = await request.text();
       if (rawBody.length > MAX_BODY_BYTES) {
@@ -90,6 +103,17 @@ Deno.serve(async (request) => {
       });
     }
 
+    // Guest reply-to (#1447): only an anonymous caller may supply one -
+    // registered callers keep the JWT-resolved address whatever the payload
+    // says. The guard itself lives in _shared/feedback.ts, where jest covers it.
+    const replyTo = resolveReplyTo(user, payload.replyTo);
+    if (!replyTo.valid) {
+      return new Response(JSON.stringify({ error: "Invalid input" }), {
+        headers: { ...jsonHeaders, ...corsHeaders },
+        status: 400,
+      });
+    }
+
     // Per-user rate limit (prevents authenticated email-bomb / SES quota + cost abuse).
     const { data: allowed, error: rateError } = await supabase.rpc("record_feedback_submission");
     if (rateError) throw rateError;
@@ -103,6 +127,10 @@ Deno.serve(async (request) => {
     const supportEmail = requiredEnv("SUPPORT_EMAIL");
     const fromEmail = requiredEnv("SES_FROM_EMAIL");
 
+    // A guest-typed reply-to is anyone's address - label it as such in the
+    // email body so support never reads it as a proven sender identity.
+    const fromLabel = user.is_anonymous === true ? "Guest reply-to (unverified)" : "From";
+
     // `category` is the sanitized value returned by validateFeedbackInput; sendEmail
     // throws on any non-2xx SES response, caught by the outer try/catch below.
     await sendEmail(
@@ -114,11 +142,50 @@ Deno.serve(async (request) => {
       {
         from: fromEmail,
         to: supportEmail,
-        replyTo: user.email ?? undefined,
+        replyTo: replyTo.replyTo,
         subject: `Selftend feedback [${category}]`,
-        html: buildFeedbackEmailHtml(category, trimmed, user.email ?? ""),
+        html: buildFeedbackEmailHtml(category, trimmed, replyTo.replyTo ?? "", fromLabel),
       },
     );
+
+    // Mirror to the private #feedback-inbox Discord channel (#1489), only
+    // after the email succeeded - a client retry after a 500 must not
+    // double-post. Read the secret directly, not via requiredEnv: an absent
+    // secret means the mirror is off in this environment, never a 500.
+    const discordWebhookUrl = Deno.env.get("DISCORD_WEBHOOK_URL");
+    if (discordWebhookUrl && typeof EdgeRuntime !== "undefined") {
+      // waitUntil keeps the worker alive without adding Discord's round-trip
+      // to the user's response (a bare floating fetch is dropped when the
+      // worker retires). The catch must live INSIDE the task: the outer catch
+      // below never sees a rejection inside waitUntil, and a throw here would
+      // turn an already-sent email into a client-facing 500.
+      EdgeRuntime.waitUntil(
+        (async () => {
+          try {
+            const response = await fetch(discordWebhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(buildFeedbackDiscordPayload(category, trimmed)),
+              signal: AbortSignal.timeout(DISCORD_TIMEOUT_MS),
+            });
+            // Best-effort single attempt, never a retry - especially not on
+            // 404 (deleted webhook; repeated 404s trigger a temporary Discord
+            // IP ban). The loss case is "a maintainer reads the email instead".
+            if (!response.ok) {
+              console.error("send-feedback: discord mirror failed with status", response.status);
+            }
+          } catch (error) {
+            // A fetch error's message can embed the webhook URL, which is a
+            // full credential - log only the error name, never the message,
+            // and never the user's feedback text.
+            console.error(
+              "send-feedback: discord mirror failed:",
+              error instanceof Error ? error.name : "unknown error",
+            );
+          }
+        })(),
+      );
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...jsonHeaders, ...corsHeaders },

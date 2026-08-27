@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { HelpButton } from "@/src/components/app/help-button";
 import { personalValuesList } from "@/src/constants/personal-values-list";
@@ -106,13 +106,7 @@ export default function ValuesScreen() {
   };
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("values.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("values.loading")} />;
   }
 
   return (

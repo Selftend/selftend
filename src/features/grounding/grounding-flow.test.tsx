@@ -4,7 +4,6 @@ import { router } from "expo-router";
 import { GroundingFlow } from "@/src/features/grounding/grounding-flow";
 import { saveMindfulnessSession } from "@/src/features/mindfulness/repository";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 // The flow's beforeRemove listener is how an OS/web back exit asks to finish
 // early (#874); tests trigger it by capturing the registered listener.
@@ -181,9 +180,26 @@ describe("GroundingFlow", () => {
     expect(preventDefault).not.toHaveBeenCalled();
   });
 
+  // R1 (#1256): the shell hosts the Escape, so both phases carry exactly one —
+  // never zero (the pre-#1256 state) and never two. In the running app it
+  // leaves through `router.replace`, which the flow's beforeRemove guard
+  // intercepts mid-session exactly like an OS back exit; that interplay lives
+  // in the navigator and is out of a unit test's reach, so what is pinned here
+  // is the affordance itself.
+  it("carries exactly one Escape on the session and done phases", async () => {
+    const { getAllByTestId, getByText } = renderWithProviders(<GroundingFlow slug="cold-water" />);
+    expect(getAllByTestId("screen-escape")).toHaveLength(1);
+
+    fireEvent.press(getByText("Next"));
+    fireEvent.press(getByText("Next"));
+    fireEvent.press(getByText("Next"));
+    fireEvent.press(getByText("Finish"));
+    await waitFor(() => expect(getByText("Grounding complete")).toBeTruthy());
+    expect(getAllByTestId("screen-escape")).toHaveLength(1);
+  });
+
   // The session phases render on FocusSessionShell — the focus surface
-  // breathing and meditation share (#777) — so the clay pour only remains on
-  // the not-found branch.
+  // breathing and meditation share (#777).
   it("renders the focus wash over the session and done phases", async () => {
     const { getByTestId, getByText } = renderWithProviders(<GroundingFlow slug="cold-water" />);
     expect(getByTestId("focus-surface-wash", { includeHiddenElements: true })).toBeTruthy();
@@ -194,10 +210,5 @@ describe("GroundingFlow", () => {
     fireEvent.press(getByText("Finish"));
     await waitFor(() => expect(getByText("Grounding complete")).toBeTruthy());
     expect(getByTestId("focus-surface-wash", { includeHiddenElements: true })).toBeTruthy();
-  });
-
-  it("pours the clay room on the not-found branch", () => {
-    const { getByTestId } = renderWithProviders(<GroundingFlow slug="nope" />);
-    expectNeutralRoom(getByTestId("grounding-flow-room"));
   });
 });

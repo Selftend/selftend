@@ -29,13 +29,17 @@ test.describe("long-form draft lifecycle", () => {
 
     await page.goto("/modules/cbt/new");
     await page.getByPlaceholder(SITUATION_PLACEHOLDER).fill(situation);
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await expect.poll(() => readThoughtDraft(page)).not.toBeNull();
+    // ☠️ Poll for the CONTENT, not the key: mounting the form persists an
+    // EMPTY envelope immediately, so a bare not-null check passes before the
+    // debounced capture (#1381 removed the step transitions that used to
+    // flush it synchronously) has written the text - and a reload taken then
+    // restores nothing.
+    await expect.poll(() => readThoughtDraft(page)).toContain("survive one reload");
 
     await page.reload();
-    await expect(page.getByPlaceholder("What did your mind say?")).toBeVisible();
-    await page.getByRole("button", { name: "Back", exact: true }).click();
+    // The whole column is on one screen, so the restored value is right there.
     await expect(page.getByPlaceholder(SITUATION_PLACEHOLDER)).toHaveValue(situation);
+    await expect(page.getByText("1 of 6 parts filled in")).toBeVisible();
 
     await page.getByRole("button", { name: "Discard draft", exact: true }).click();
     await page.getByTestId("confirm-dialog-confirm").click();
@@ -50,8 +54,9 @@ test.describe("long-form draft lifecycle", () => {
     await page
       .getByPlaceholder(SITUATION_PLACEHOLDER)
       .fill("This content must not remain for the next signed-in person.");
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await expect.poll(() => readThoughtDraft(page)).not.toBeNull();
+    // Content, not key (see above): the purge assertion below is only proven
+    // against a draft that actually holds the text.
+    await expect.poll(() => readThoughtDraft(page)).toContain("must not remain");
 
     await page.goto("/settings");
     await page.getByRole("button", { name: "Sign out", exact: true }).first().click();

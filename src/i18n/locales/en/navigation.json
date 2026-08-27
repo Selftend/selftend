@@ -26,7 +26,7 @@
     "act": "ACT",
     "dbt": "DBT",
     "cbt": "CBT",
-    "cbtA11y": "CBT module - Cognitive Behavioral Therapy",
+    "cbtA11y": "CBT module - Cognitive Behavioural Therapy",
     "actA11y": "ACT module - Acceptance and Commitment Therapy",
     "dbtA11y": "DBT overview - Dialectical Behavior Therapy",
     "modules": "Modules",
@@ -63,8 +63,7 @@
     "dark": "Dark"
   },
   "notFound": {
-    "title": "Page not found",
-    "home": "Home"
+    "title": "Page not found"
   },
   "today": {
     "eyebrow": "Today · {{date}}",
@@ -144,7 +143,7 @@
       "moduleTag": {
         "cbt": "CBT",
         "act": "ACT",
-        "cbtA11y": "CBT - Cognitive Behavioral Therapy",
+        "cbtA11y": "CBT - Cognitive Behavioural Therapy",
         "actA11y": "ACT - Acceptance and Commitment Therapy"
       },
       "allAdded": "Everything is already on your home screen."
@@ -155,8 +154,6 @@
     },
     "categories": {
       "mood": "Check-in",
-      "cbt": "CBT",
-      "act": "ACT",
       "journal": "Journal",
       "breathing": "Breathing",
       "grounding": "Grounding",
@@ -463,13 +460,18 @@
     "expansion": "Acceptance",
     "urgeSurfing": "Urge surfing",
     "observingSelf": "Observing self",
-    "bullsEye": "Values check-in",
     "dailyLife": "Daily life",
     "learn": "Learn",
     "edit": "Edit",
     "log": "Log",
     "favorites": "Favorites",
-    "back": "Go back"
+    "back": "Go back",
+    "backTo": "Back to {{name}}",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "resetPassword": "Reset password",
+    "updatePassword": "Update password",
+    "verifyEmail": "Verify email"
   },
   "modulesPage": {
     "title": "Modules",
@@ -478,10 +480,6 @@
     "stats": {
       "overview": "Overview"
     }
-  },
-  "dateBar": {
-    "selectDate": "Select date",
-    "clear": "Clear date"
   },
   "plan": {
     "wizard": {

@@ -10,17 +10,24 @@ import { openExternalUrl } from "@/src/lib/linking";
 import { useToastStore } from "@/src/stores/toast-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
+// ☠️ Load-bearing for exactly ONE test: "shows the compact get-the-app section on
+// web", which flips `Platform.OS` to "web". `popover.tsx` picks its wrapper at
+// MODULE LOAD (`Platform.OS === "ios" ? RNFullWindowOverlay : React.Fragment`),
+// and jest-expo loads with `defaultPlatform: "ios"` - so the alias is already
+// frozen to the real overlay by the time the test moves the platform, and the
+// overlay's own off-iOS branch then warns. Nothing else here needs it: verified
+// (#1338) that the real overlay renders silently under react-test-renderer on
+// iOS, which is why `app-toast.tsx`'s wrapper is tested against the REAL thing
+// and this mock deliberately stayed local rather than moving to `test/setup.js`.
+jest.mock("react-native-screens", () => ({
+  ...jest.requireActual("react-native-screens"),
+  FullWindowOverlay: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 let mockPathname = "/";
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
   usePathname: () => mockPathname,
-}));
-
-// The native overlay warns when react-test-renderer is not attached to a real iOS
-// window. The popover behavior itself remains exercised through rn-primitives.
-jest.mock("react-native-screens", () => ({
-  ...jest.requireActual("react-native-screens"),
-  FullWindowOverlay: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 const signedInSession = {
@@ -64,7 +71,9 @@ afterEach(() => {
   appEnv.youtubeUrl = originalYoutubeUrl;
   mockPathname = "/";
   mockSession = signedInSession;
-  useToastStore.setState({ toast: null });
+  // The real teardown rather than a hand-written `setState`: the slot is two
+  // fields now, and an error toast no longer expires on its own.
+  useToastStore.getState().clearToasts();
   jest.clearAllMocks();
   // `clearAllMocks` wipes recorded calls but NOT implementations, so a
   // `mockRejectedValue` set by one test would still be rejecting in the next.
@@ -246,6 +255,24 @@ describe("UserMenu", () => {
     expect(screen.getByText("Settings")).toBeTruthy();
   });
 
+  // #1442: a guest's session token is the only key to their account, so
+  // signing out is silent irreversible data loss - the control must not exist.
+  // The other actions stay: Settings is where delete-account ("start fresh")
+  // lives, and feedback works for guests.
+  it("hides Sign Out for a guest, keeping Settings and Send feedback", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", is_anonymous: true },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.queryByText("Sign Out")).toBeNull();
+    expect(screen.getByText("Settings")).toBeTruthy();
+    expect(screen.getByText("Send feedback")).toBeTruthy();
+  });
+
   // #968: supabase-js's `signOut()` defaults to `scope: 'global'`, which revokes
   // every refresh token the user holds - pressing Sign Out on the laptop ended
   // the session on the phone. Nothing in the product ever asked for that. The
@@ -281,7 +308,7 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByLabelText("Open account menu"));
     fireEvent.press(screen.getByText("Sign Out"));
 
-    await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: "error" }));
+    await waitFor(() => expect(useToastStore.getState().visible).toMatchObject({ tone: "error" }));
   });
 
   // `cancelAllReminders` is awaited first, so a failure there means `signOut`
@@ -294,7 +321,7 @@ describe("UserMenu", () => {
     fireEvent.press(screen.getByLabelText("Open account menu"));
     fireEvent.press(screen.getByText("Sign Out"));
 
-    await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: "error" }));
+    await waitFor(() => expect(useToastStore.getState().visible).toMatchObject({ tone: "error" }));
     expect(mockSignOut).not.toHaveBeenCalled();
   });
 });

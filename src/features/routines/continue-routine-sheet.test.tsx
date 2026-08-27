@@ -15,6 +15,7 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
+  usePathname: () => "/routines",
 }));
 
 jest.mock("@/src/features/routines/queries", () => ({

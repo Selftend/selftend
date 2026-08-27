@@ -1,4 +1,5 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -16,19 +17,21 @@ import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ProgressBar } from "@/src/components/app/progress-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import {
   useGoal,
   useMilestones,
   useToggleMilestone,
   useUpdateGoalStatus,
 } from "@/src/features/goals/queries";
+import { GoalValueLine } from "@/src/features/goals/goal-value-line";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import type { GoalStatus } from "@/src/features/goals/types";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function GoalDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
@@ -70,23 +73,11 @@ export default function GoalDetailScreen() {
   };
 
   if (goalLoading || milestonesLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("goals.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("goals.loading")} />;
   }
 
   if (!goal) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("goals.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("goals.notFound")} />;
   }
 
   return (
@@ -109,6 +100,14 @@ export default function GoalDetailScreen() {
               <Text className="text-xs">{t(`goals.status.${goal.status}`)}</Text>
             </View>
           </View>
+
+          {/*
+            Below the chips rather than beside them (#1291). The three chips are
+            what the goal *is*; the value is why it was set, and a fourth chip
+            reading "Courageous" next to "Health" and "Do more of" would read as a
+            third taxonomy. Nothing renders when a goal is anchored to nothing.
+          */}
+          <GoalValueLine valueKey={goal.valueKey} />
 
           {total > 0 ? (
             <View className="gap-2">
@@ -150,7 +149,7 @@ export default function GoalDetailScreen() {
             <View className="gap-3">
               <Text variant="h3">{t("goals.actions")}</Text>
               <Button
-                onPress={() => router.push(`/modules/cbt/goals/new?goalId=${goal.id}`)}
+                onPress={() => pushWithOrigin(`/modules/cbt/goals/new?goalId=${goal.id}`)}
                 variant="secondary"
               >
                 <Text>{t("goals.edit")}</Text>

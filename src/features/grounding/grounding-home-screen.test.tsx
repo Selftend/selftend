@@ -1,11 +1,9 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import GroundingHomeScreen from "@/src/features/grounding/grounding-home-screen";
 import { useGroundingSessionCount, useGroundingSessions } from "@/src/features/grounding/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -104,13 +102,6 @@ describe("GroundingHomeScreen", () => {
 
     fireEvent.press(screen.getByText("Not for emergencies · Crisis resources"));
     expect(router.push).toHaveBeenCalledWith("/crisis");
-  });
-
-  it("renders the clay room: quiet shell header and room pour", () => {
-    renderWithProviders(<GroundingHomeScreen />);
-
-    // The root carries the clay room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("omits the subline until history has actually loaded", () => {

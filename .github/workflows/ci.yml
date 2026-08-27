@@ -35,12 +35,19 @@ jobs:
           node-version: 22.23.1
           cache: npm
 
+      # ☠️ `patches/**` is part of the key on purpose. A cache hit SKIPS `npm ci`
+      # below, and `npm ci` is the only thing that runs `postinstall`, which is
+      # the only thing that runs patch-package. So a key that ignores the patch
+      # directory restores a node_modules built BEFORE a newly added patch and
+      # never applies it - the job then tests an unpatched dependency while the
+      # patch sits in the tree, and every PR goes red at once with nothing in
+      # its own diff to explain it (2026-08-25, the datepicker patch of #1301).
       - name: Cache node_modules
         id: cache-node-modules
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'package.json') }}
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'package.json', 'patches/**') }}
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -72,7 +79,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'package.json') }}
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'package.json', 'patches/**') }}
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -103,6 +110,15 @@ jobs:
       - name: Apply seed
         run: supabase db reset
 
+      - name: Seed the demo account
+        # `supabase db reset` applies seed.sql only, and seed.sql gives
+        # demo@test.local nothing but a profile and preferences - every record it
+        # holds comes from this script (#1281). Locally `npm run db:reset` chains
+        # it; here it is a step of its own, because that wrapper also restarts
+        # docker containers this job does not need. The export leak test reads
+        # demo's seeded content as its sentinel and fails loudly without it.
+        run: node scripts/seed-demo-data.mjs
+
       - name: Run integration tests
         run: npm run test:integration
 
@@ -132,7 +148,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'package.json') }}
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'package.json', 'patches/**') }}
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'

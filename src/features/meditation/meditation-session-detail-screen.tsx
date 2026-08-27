@@ -1,37 +1,34 @@
 import { useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useMeditationSession } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { formatAtOffset } from "@/src/utils/date";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 
 export default function MeditationSessionDetailScreen() {
   const { t } = useTranslation("meditation");
-  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const params = useLocalSearchParams<{ id: string }>();
   const { data: session, isLoading } = useMeditationSession(user?.id ?? null, params.id ?? null);
 
-  // All three returns take the pour: without it the room drops out while the
-  // session loads and again when it is missing - the defect the grounding flow
-  // shipped and had to fix (#317).
+  // All three returns carry the chrome, and the two below this one are the
+  // reason to say so: a screen that mounts its header only on the happy path
+  // strands the user on the branch that actually rendered (#1328). The older
+  // note here made the same point about the module "room", a surface #1292
+  // deleted; the Escape is what the returns must not drop now.
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background" style={roomStyle}>
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("module.sessionDetail.title")} />;
   }
 
   if (!session) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="gap-3 p-6">
           <ScreenHeader title={t("module.sessionDetail.notFound")} titleVariant="h2" />
         </View>
@@ -40,11 +37,7 @@ export default function MeditationSessionDetailScreen() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">

@@ -7,6 +7,7 @@ import Animated, { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
 
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -14,8 +15,8 @@ import { reorderMoveProps } from "@/src/lib/accessibility";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { CHROME_MARK, CHROME_MUTED_TEXT } from "@/src/lib/theme/chrome";
 import { useSession } from "@/src/providers/session-provider";
-import type { ModuleTagKey } from "@/src/features/home/widget-registry";
 import { WIDGET_META, metaForWidget, moduleTagFor } from "@/src/features/home/widget-registry";
+import { MODULE_TAG_KEYS } from "@/src/features/home/module-tag-copy";
 import { useWidgetTiers } from "@/src/features/home/widget-tiers";
 import {
   useAddWidget,
@@ -27,32 +28,6 @@ import {
 import { cn } from "@/lib/utils";
 
 const PADDING = 24;
-
-/**
- * What a module tag prints, and what a screen reader hears instead (#1246).
- *
- * One literal map rather than an interpolated key each. The i18n coverage guard only sees
- * string-literal keys, so `home.arrange.moduleTag.${tag}` would be invisible to it and
- * these four strings would be free to rot unnoticed. `ModuleTagKey` makes the map total by
- * construction, so a third module cannot compile without a decision here - and pairing the
- * two keys per module keeps the seen and heard forms of one tag from drifting apart.
- *
- * ☠️ The printed tag is Latin in BOTH locales, and Bulgarian is deliberately asymmetric:
- * prose elsewhere in the app keeps the Cyrillic `КПТ` (sidebar, breadcrumb, programme
- * title, landing kicker), because that form is established Bulgarian while a Cyrillic ACT
- * form is not, and the bare lowercase word is a common noun. Do not "fix" this into
- * agreement.
- *
- * The spoken form carries the acronym AS WELL AS its expansion. That is WCAG 2.5.3 (Label
- * in Name), not redundancy: a voice-control user speaks what they can see, so dropping
- * `ACT` from the accessible name would leave "tap Defusion ACT" matching nothing. Each
- * `{{module}}` is one whole composed phrase per module rather than a slot-filling
- * template, because word order is not stable across locales.
- */
-const MODULE_TAG_KEYS: Record<ModuleTagKey, { label: string; a11y: string }> = {
-  cbt: { label: "home.arrange.moduleTag.cbt", a11y: "home.arrange.moduleTag.cbtA11y" },
-  act: { label: "home.arrange.moduleTag.act", a11y: "home.arrange.moduleTag.actA11y" },
-};
 
 /**
  * An arrange edit, for the visit-scoped undo stack.
@@ -323,6 +298,10 @@ export default function ArrangeScreen() {
    * a back with no stack behind it silently no-ops, and the screen just sits there looking
    * like the button is broken. Arrange reaches that state the same way every other screen
    * does - a deep link, a bookmark, or a web refresh on `/arrange`.
+   *
+   * `Done` is a **Completion** - a done-after-save action that happens to navigate - and a
+   * Completion is explicitly not an Escape (#1163), so it does not exempt this screen from
+   * carrying one. The Escape is the top bar's (#1255); this button stays exactly as it is.
    */
   const finish = () => backWithFallback("/");
 
@@ -330,14 +309,23 @@ export default function ArrangeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      {/*
+        The Escape's chrome (#1255). Arrange was one of the escape spec's 11 red
+        screens (W11): it had a way out - `Done` below - but a Completion is not
+        an Escape, and R1 is discharged only by the chrome slot. `/arrange` has
+        no breadcrumb entry, so the bar's trail hides and the Escape announces
+        "Back to Home".
+      */}
+      <ScreenTopBar />
       <View testID="arrange-layout" className="flex-1">
         <AnimatedScrollView ref={scrollableRef} contentContainerStyle={{ padding: PADDING }}>
           {/*
             672px, matching `settings-screen` and `notifications-screen` - the two screens
             arrange sits beside in the user's head, and the two it is built like. It is
-            NOT one of `layout.ts`'s shell columns because arrange rides neither shell:
-            those widths come with `ModuleHomeHeader` (720) and `ScreenTopBar` (620), and
-            this screen carries its own header so it can put `Done` in it.
+            NOT one of `layout.ts`'s shell columns: `HOME_COLUMN` (720) belongs to
+            `ModuleHomeHeader` and `FORM_COLUMN` (620) to the form screens, and arrange is
+            neither - the `ScreenTopBar` above is the Escape's chrome (#1255), while this
+            screen still carries its own title row so it can put `Done` in it.
           */}
           <View className="mx-auto w-full max-w-2xl gap-6">
             <View className="flex-row items-center justify-between gap-3">

@@ -2,7 +2,6 @@ import { screen } from "@testing-library/react-native";
 
 import MeditationDailyLifeScreen from "@/src/features/meditation/meditation-daily-life-screen";
 import { useStagePracticeNotes } from "@/src/features/meditation/queries";
-import { expectNeutralRoom } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -66,22 +65,6 @@ describe("MeditationDailyLifeScreen", () => {
     // Twice: once in the capture card's recent list, once in the archive below.
     expect(screen.getAllByText("Noticed the pause before speaking")).toHaveLength(2);
     expect(screen.queryByText("No entries yet.")).toBeNull();
-  });
-
-  it("renders the iris room pour from the wrapper around its form screen", () => {
-    renderWithProviders(<MeditationDailyLifeScreen />);
-
-    // MobileFormScreen owns its own SafeAreaView, so the pour rides a wrapper
-    // view around it - its bg-background surfaces re-resolve through the room.
-    expectNeutralRoom(screen.getByTestId("meditation-daily-life-room"));
-  });
-
-  it("renders the dark iris pour when the scheme is dark", () => {
-    setScheme("dark");
-
-    renderWithProviders(<MeditationDailyLifeScreen />);
-
-    expectNeutralRoom(screen.getByTestId("meditation-daily-life-room"));
   });
 
   it("carries no immersive surface here", () => {

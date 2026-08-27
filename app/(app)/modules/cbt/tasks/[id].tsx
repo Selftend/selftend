@@ -14,7 +14,7 @@ import {
 import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import {
   useTask,
   useTaskSteps,
@@ -58,23 +58,11 @@ export default function TaskDetailScreen() {
   };
 
   if (taskLoading || stepsLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("tasks.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("tasks.loading")} />;
   }
 
   if (!task) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("tasks.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("tasks.notFound")} />;
   }
 
   const total = steps?.length ?? 0;

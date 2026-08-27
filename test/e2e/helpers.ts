@@ -18,6 +18,7 @@ import {
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
   deleteAllRoutinesForUser,
+  deleteAllValuesProfileForUser,
 } from "../integration/helpers";
 
 export {
@@ -36,7 +37,14 @@ export {
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
   deleteAllRoutinesForUser,
+  deleteAllValuesProfileForUser,
 };
+
+// Waiting on a success toast as a DB-commit signal: re-exported here so specs keep
+// importing everything from one place. Lives in its own module because it takes a
+// type-only dependency on Playwright, which lets jest drive it directly
+// (test/toast-signal.test.ts) - `test/e2e/` is in jest's testPathIgnorePatterns.
+export { SAVE_FAILED_TOAST_TITLE, expectSuccessToast } from "./toast-signal";
 
 // Alias: clear widget preferences. Empty Home is intentional and no longer seeds defaults.
 export async function resetWidgetPreferencesForUser(userId: string): Promise<void> {

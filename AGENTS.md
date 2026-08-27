@@ -20,7 +20,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Missing a day must never create shame or product punishment.
 - The app should stay modular so users can choose the parts they want.
 - Notifications must be explicit, quiet by default, and easy to disable.
-- Account access is required in MVP, but privacy and data minimization still matter.
+- Registration is optional: first use creates a guest account silently, and creating a registered account is an invited conversion that keeps the person's data — never a gate and never nagged. Privacy and data minimization still matter.
 - AI is not part of the MVP user-facing product.
 - The product should remain free to users.
 - Do not propose ad-based monetization or subscription paywalls.
@@ -30,10 +30,10 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Platform: Expo + React Native + TypeScript
 - Routing: Expo Router
 - Styling: NativeWind + Tailwind CSS
-- UI primitives: @rn-primitives (full suite of accessible components)
+- UI primitives: @rn-primitives, installed per component — currently avatar, checkbox, label, popover, portal, slot, switch. The rest of the suite is not a dependency; add the specific package you need rather than assuming it is there.
 - Styling utilities: class-variance-authority, clsx, tailwind-merge, tailwindcss-animate
-- Icons: lucide-react-native (primary), @expo/vector-icons (built-in fallback)
-- Fonts: @expo-google-fonts/noto-sans
+- Icons: @expo/vector-icons, always imported by per-family subpath, never the `@expo/vector-icons` barrel — the barrel top-level-requires all 15 families, pulling ~1.6 MB of glyphmaps and ~4 MB of fonts for families the app never renders. MaterialIcons is the app's icon set and goes through the `Icon` wrapper in `src/components/react-native-reusables/icon.tsx`, which handles NativeWind sizing/colour and hides icons from the accessibility tree by default. Ionicons is used directly, only for platform brand marks (social sign-in buttons, app-store badges).
+- Fonts: @expo-google-fonts/noto-sans for body text, @expo-google-fonts/nunito (`Nunito_800ExtraBold`) for the display face used by headings and hero numerals
 - Backend: Supabase
 - State: TanStack Query for server state, Zustand for local state
 - Forms and validation: React Hook Form + Zod
@@ -45,7 +45,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Navigation support: react-native-screens, react-native-safe-area-context
 - Builds and submission: EAS Build and EAS Submit
 - Web deployment: Cloudflare Workers (static assets; `wrangler.toml` prod / `wrangler.staging.toml` staging)
-- i18n: i18next + react-i18next + expo-localization, 20 namespaces in `src/i18n/locales/`, all translated on Weblate
+- i18n: i18next + react-i18next + expo-localization, 20 namespaces in `src/i18n/locales/`, each with an `en` and a `bg` file. Weblate tracks only part of that set as components; `docs/stack.md` records the current coverage — do not assume a namespace is editable on Weblate
 - Testing: Jest + @testing-library/react-native + jest-expo
 - Code quality: ESLint, Prettier, Husky (pre-commit hooks)
 
@@ -53,15 +53,15 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 
 - All user-visible strings must come from translation files, not hardcoded in components.
 - Use `useTranslation("namespace")` in components. Use `i18n.t()` direct import only in non-component code.
-- Policy page section content uses `t(sectionKey, { returnObjects: true })` to load structured arrays from JSON.
-- When adding a new screen or feature, add keys to the appropriate namespace JSON files for all supported languages.
-- Language preference is persisted in AsyncStorage and synced to the Supabase `user_preferences.language` column.
-- Translations managed via Weblate hosted Libre plan at hosted.weblate.org.
+- Structured content — policy sections, grounding steps, meditation instructions, gratitude prompts — is stored as JSON arrays and read with `t(key, { returnObjects: true })`, not assembled from numbered keys.
+- When adding a new screen or feature, add keys to the appropriate namespace JSON files for every supported language (`en` and `bg`). Two tests hold the line: `test/i18n-key-coverage.test.ts` fails on a literal `t("…")` key that does not resolve in `en`, and `src/i18n/locale-parity.test.ts` fails on a key present in one locale but missing in the other.
+- Language preference is persisted in AsyncStorage (`selftend:language`) and synced to the Supabase `user_preferences.language` column.
+- Translations are managed on [Hosted Weblate](https://hosted.weblate.org/projects/selftend/); `docs/stack.md` covers the component setup. Whether the project is on the Libre plan is an open question — it was still on a hosted trial awaiting Libre approval as of 2026-08-19, and the plan is not shown on the public project page (checked 2026-08-27).
 
 ## Dependency policy
 
 - Prefer Expo built-ins and officially supported solutions for platform capabilities.
-- NativeWind is the default styling exception and is an approved third-party dependency.
+- NativeWind is the deliberate styling exception to that preference, but it is not the only approved third-party dependency: the approved set is exactly what Technical defaults above lists. Anything not on that list is a new dependency and has to answer the questions below.
 - Any new dependency should answer:
   - What problem is it solving?
   - Why are Expo defaults or approved dependencies not enough?
@@ -142,7 +142,7 @@ These guide automated PR reviewers (e.g. Codex) and human reviewers alike. Flag 
 
 - **Privacy & safety (highest priority):** personal or health data logged, sent to a third party, or added as a new field without feature-level justification; new tracking/analytics/ads/behavioral nudges without explicit review; product copy implying diagnosis, medical outcomes, or "AI therapist/counselor" framing; crisis/safety guidance made less visible or blended into self-help features.
 - **Security:** secrets, tokens, or keys committed or hardcoded; Supabase changes with missing/incorrect RLS, queries that bypass row ownership, or service-role usage reachable from the client; untrusted input reaching SQL, file paths, or HTML sinks without validation; Zod validation removed or weakened on external input.
-- **Retention & product guardrails:** default-on streaks, reminders, or notifications; punitive "missed day" mechanics; manipulative retention; notifications that aren't explicit, quiet-by-default, and easy to disable.
+- **Retention & product guardrails:** default-on streaks, reminders, or notifications; punitive "missed day" mechanics; manipulative retention; notifications that aren't explicit, quiet-by-default, and easy to disable. Unprompted modals are permitted only when triggered by a fact about the app (never the user's behaviour or absence), at most once per fact, dismissible by every close path, and the irreversible action is never the default (`docs/adr/0003-update-offer-is-a-modal.md`).
 - **i18n:** user-visible strings hardcoded in components instead of translation files; new screens/features missing keys in the relevant namespace for supported languages.
 - **Correctness & tests:** tests weakened or assertions rewritten to match broken behavior (call this out explicitly); a feature or bugfix landing without corresponding test coverage; TanStack Query / Zustand misuse (stale cache keys, mutations that don't invalidate) and violations of the Reanimated / React hooks rules.
 - **Dependencies:** a new third-party dependency where an Expo built-in or approved dependency would do, or with unclear maintenance/privacy cost; code or text copied from the reference repos (`../ifme`, `../quirk`, `../awesome-mental-health`) without license tracking.

@@ -182,9 +182,12 @@ export default function ActUrgeSurfScreen() {
     >
       <View className="gap-6">
         <View className="gap-2">
-          <View className="flex-row items-center gap-2">
-            <Text variant="h1">{t("act:expansion.urgeSurfTitle")}</Text>
-          </View>
+          {/* `ScreenHeader`, not a bare `<Text variant="h1">`: the heading it
+              used to render looked identical and carried no Escape, so the form
+              path - the one this screen exists for - had no way out. The file
+              passed the coverage gate on the chrome in its history branch
+              (#1328). Same shape as `act-value-domain-screen`. */}
+          <ScreenHeader title={t("act:expansion.urgeSurfTitle")} />
           <Text variant="muted">{t("act:expansion.urgeSurfSubtitle")}</Text>
         </View>
 

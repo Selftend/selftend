@@ -1,10 +1,8 @@
 import { act, fireEvent, screen, within } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import BreathingExerciseScreen from "@/app/(app)/tools/breathing/session";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("@/src/lib/accessibility", () => ({
   ...jest.requireActual("@/src/lib/accessibility"),
@@ -184,13 +182,6 @@ describe("Breathing session setup (4b)", () => {
     expect(tokens).toContain("max-w-[620px]");
     expect(tokens).toContain("self-center");
     expect(tokens).toContain("w-full");
-  });
-
-  it("renders the aqua room pour with no field header (session = pour only)", () => {
-    renderWithProviders(<BreathingExerciseScreen />);
-
-    // The root carries the aqua room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 });
 
