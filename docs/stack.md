@@ -66,6 +66,10 @@ Do not take that count on trust — it is a snapshot. `node scripts/weblate-crea
 
 `--apply` also repairs components it did not create: Weblate auto-detects JSON indentation and has guessed wrong before, and a component left at the wrong width rewrites its whole locale file on the first translation write-back. Any component not at two spaces is PATCHed back, so one command covers the whole sitting; `--fix-indent` runs that repair on its own. Because the Weblate API documents `file_format_params` as writable under `PUT` but not `PATCH`, the repair re-reads each component afterwards and fails loudly if the value did not take, rather than trusting the status code — set it by hand (Component → Manage → Settings → Files → JSON indentation → 2) if that happens.
 
+Weblate tracks `main`, while this repo develops on `dev`, so a namespace can be ready in the tree and not yet ready to track. Before creating anything the script reads each namespace's file as `main` has it and withholds the ones that would come up with error-level alerts — a key with both a bare and an i18next-v4 plural form (`key` beside `key_other`, where v4 wants `key_one`), or a file that has not reached `main` at all and would leave the filemask matching nothing. Withheld namespaces are named with their reason and wait for the next dev→main release; the rest are created anyway, so a release is never a reason to postpone the whole pass. The screen reads GitHub rather than the local checkout, because a stale `origin/main` would clear a namespace that is not actually clean.
+
+`--apply` closes with the same steps a human would do afterwards, while the token is still live: it pulls the project repository, then reports the project's failing-check count, any namespace still untracked, and each component's alerts. Alerts are listed rather than judged — the API exposes no severity field — so confirming they are warnings and not errors is still a human call. `--finish` runs just that closing step.
+
 To add a language:
 
 1. Create all 20 namespace files under `src/i18n/locales/{code}/` (mirror `src/i18n/locales/en/`).

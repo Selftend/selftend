@@ -9,6 +9,13 @@ const {
   indentFixPayload,
   fixComponentIndent,
   repairIndents,
+  pluralCollisions,
+  rawFileUrl,
+  screenNamespaces,
+  rootComponent,
+  healthProblems,
+  updateRepository,
+  fetchAlerts,
   API_ROOT,
 } = require("./weblate-create-components");
 
@@ -466,6 +473,275 @@ describe("indent repair", () => {
       await repairIndents([drifted("cbt", 5), drifted("common", 3)], { request, log, logError });
       expect(logError).toHaveBeenCalledWith(expect.stringMatching(/FAILED cbt/));
       expect(log).toHaveBeenCalledWith(expect.stringMatching(/common/));
+    });
+  });
+});
+
+// Weblate tracks `main`, not `dev`. A namespace whose file on `main` still carries
+// a shape Weblate reads as broken would come up with error-level alerts the moment
+// its component exists - and #1103 established that Libre approval is gated on zero
+// of those. The pass screens every namespace against the tracked branch first.
+describe("tracked-branch preconditions", () => {
+  describe("pluralCollisions", () => {
+    it("finds a bare key sitting next to its own _other form", () => {
+      expect(
+        pluralCollisions({
+          program: {
+            statChoicePoints: "{{count}} choice point mapped",
+            statChoicePoints_other: "{{count}} choice points mapped",
+          },
+        }),
+      ).toEqual(["program.statChoicePoints"]);
+    });
+
+    it("reports the four act keys that hold this ticket, and only those", () => {
+      expect(
+        pluralCollisions({
+          program: {
+            statChoicePoints: "a",
+            statChoicePoints_other: "b",
+            statDefusion: "a",
+            statDefusion_other: "b",
+            statExpansion: "a",
+            statExpansion_other: "b",
+            statActions: "a",
+            statActions_other: "b",
+            title: "ACT",
+          },
+        }),
+      ).toEqual([
+        "program.statActions",
+        "program.statChoicePoints",
+        "program.statDefusion",
+        "program.statExpansion",
+      ]);
+    });
+
+    it("passes the repaired _one/_other pair - that is the shape v4 wants", () => {
+      expect(
+        pluralCollisions({
+          program: {
+            statChoicePoints_one: "{{count}} choice point mapped",
+            statChoicePoints_other: "{{count}} choice points mapped",
+          },
+        }),
+      ).toEqual([]);
+    });
+
+    it("catches every CLDR plural suffix, not just _other", () => {
+      expect(pluralCollisions({ a: "x", a_zero: "x", b: "x", b_many: "x" })).toEqual(["a", "b"]);
+    });
+
+    // `_otherwise` is not a plural category; treating any underscore suffix as one
+    // would withhold namespaces over ordinary key names.
+    it("does not mistake a key that merely starts with a plural suffix for a collision", () => {
+      expect(pluralCollisions({ label: "x", label_otherwise: "y", label_ones: "z" })).toEqual([]);
+    });
+
+    it("keeps the two halves of a collision apart when they live at different depths", () => {
+      expect(
+        pluralCollisions({ stat: "bare", nested: { stat_other: "unrelated namesake" } }),
+      ).toEqual([]);
+    });
+
+    // Policy screens load structured arrays through `returnObjects`; an array is a
+    // leaf value here, not a level to walk into.
+    it("treats an array value as a leaf", () => {
+      expect(pluralCollisions({ sections: ["one", "two"], sections_other: "x" })).toEqual([
+        "sections",
+      ]);
+    });
+  });
+
+  describe("rawFileUrl", () => {
+    it("points at the namespace file on the branch Weblate tracks", () => {
+      expect(rawFileUrl("https://github.com/Selftend/selftend", "main", "act")).toBe(
+        "https://raw.githubusercontent.com/Selftend/selftend/main/src/i18n/locales/en/act.json",
+      );
+    });
+
+    it("tolerates the .git suffix and a trailing slash on the repo URL", () => {
+      expect(rawFileUrl("https://github.com/Selftend/selftend.git/", "main", "mood")).toBe(
+        "https://raw.githubusercontent.com/Selftend/selftend/main/src/i18n/locales/en/mood.json",
+      );
+    });
+
+    // Guessing a URL for a repo we cannot read would turn every screening fetch into
+    // a 404 and withhold all 13 namespaces for the wrong reason.
+    it("refuses to guess for a repo host it cannot read", () => {
+      expect(() => rawFileUrl("git@gitlab.com:selftend/selftend.git", "main", "act")).toThrow(
+        /GitHub/,
+      );
+    });
+  });
+
+  describe("screenNamespaces", () => {
+    const root = { repo: "https://github.com/Selftend/selftend", branch: "main" };
+    const stubFetch = (byNs) =>
+      jest.fn(async (url) => {
+        const ns = url.split("/").pop().replace(".json", "");
+        const entry = byNs[ns];
+        if (!entry) throw new Error(`unexpected fetch: ${url}`);
+        return entry;
+      });
+
+    it("lets a namespace through when its file on the tracked branch is clean", async () => {
+      const fetchText = stubFetch({ mood: { status: 200, text: '{"title":"Mood"}' } });
+      const screened = await screenNamespaces(["mood"], root, { fetchText });
+      expect(screened.ready).toEqual(["mood"]);
+      expect(screened.withheld).toEqual([]);
+    });
+
+    it("withholds a namespace whose tracked-branch file has plural collisions, naming the keys", async () => {
+      const fetchText = stubFetch({
+        act: { status: 200, text: '{"program":{"stat":"a","stat_other":"b"}}' },
+      });
+      const screened = await screenNamespaces(["act"], root, { fetchText });
+      expect(screened.ready).toEqual([]);
+      expect(screened.withheld).toHaveLength(1);
+      expect(screened.withheld[0].ns).toBe("act");
+      expect(screened.withheld[0].reason).toMatch(/program\.stat/);
+      expect(screened.withheld[0].reason).toMatch(/main/);
+    });
+
+    // The filemask finds no file and the creation fails with "Could not find any
+    // matching file" - the same dev-is-ahead-of-main cause, caught before the POST.
+    it("withholds a namespace that has not reached the tracked branch at all", async () => {
+      const fetchText = stubFetch({ brandnew: { status: 404, text: "404: Not Found" } });
+      const screened = await screenNamespaces(["brandnew"], root, { fetchText });
+      expect(screened.ready).toEqual([]);
+      expect(screened.withheld[0].reason).toMatch(/not on main/);
+    });
+
+    // A transient upstream failure read as "clean" is the one outcome that defeats
+    // the guard entirely, so it stops the pass instead.
+    it("throws rather than assuming clean when the fetch fails unexpectedly", async () => {
+      const fetchText = stubFetch({ mood: { status: 500, text: "boom" } });
+      await expect(screenNamespaces(["mood"], root, { fetchText })).rejects.toThrow(/500/);
+    });
+
+    it("throws rather than assuming clean when the tracked file is not parseable JSON", async () => {
+      const fetchText = stubFetch({ mood: { status: 200, text: "<!DOCTYPE html>" } });
+      await expect(screenNamespaces(["mood"], root, { fetchText })).rejects.toThrow(/parse/i);
+    });
+
+    it("screens each namespace independently so one blocked file cannot strand the rest", async () => {
+      const fetchText = stubFetch({
+        act: { status: 200, text: '{"stat":"a","stat_other":"b"}' },
+        mood: { status: 200, text: "{}" },
+        sleep: { status: 200, text: "{}" },
+      });
+      const screened = await screenNamespaces(["act", "mood", "sleep"], root, { fetchText });
+      expect(screened.ready).toEqual(["mood", "sleep"]);
+      expect(screened.withheld.map((w) => w.ns)).toEqual(["act"]);
+    });
+  });
+
+  describe("rootComponent", () => {
+    it("finds the component every other one links to", () => {
+      const components = [
+        { slug: "cbt", is_glossary: false },
+        { slug: "auth", is_glossary: false, repo: "https://github.com/Selftend/selftend" },
+      ];
+      expect(rootComponent(components).slug).toBe("auth");
+    });
+
+    it("fails loudly when auth is absent instead of screening against a guess", () => {
+      expect(() => rootComponent([{ slug: "cbt", is_glossary: false }])).toThrow(/auth/);
+    });
+  });
+});
+
+// Run-order step 4: after the creations, pull the repository and confirm the
+// project is clean before the owner revokes the token.
+describe("post-pass health", () => {
+  describe("healthProblems", () => {
+    it("reports nothing when every namespace is tracked and no check is failing", () => {
+      expect(
+        healthProblems({
+          statistics: { failing: 0, translated_percent: 100 },
+          namespaces: ["act", "mood"],
+          components: [
+            { slug: "act", is_glossary: false },
+            { slug: "mood", is_glossary: false },
+          ],
+        }),
+      ).toEqual([]);
+    });
+
+    it("reports failing checks", () => {
+      const problems = healthProblems({
+        statistics: { failing: 4 },
+        namespaces: [],
+        components: [],
+      });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/4 failing check/);
+    });
+
+    it("reports namespaces that still have no component", () => {
+      const problems = healthProblems({
+        statistics: { failing: 0 },
+        namespaces: ["act", "mood"],
+        components: [{ slug: "mood", is_glossary: false }],
+      });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/act/);
+    });
+
+    // The glossary is a real component but tracks no namespace file, so it must not
+    // be counted as coverage for one.
+    it("does not let the glossary stand in for a namespace", () => {
+      const problems = healthProblems({
+        statistics: { failing: 0 },
+        namespaces: ["act"],
+        components: [{ slug: "act", is_glossary: true }],
+      });
+      expect(problems).toHaveLength(1);
+    });
+  });
+
+  describe("updateRepository", () => {
+    it("POSTs the documented update operation to the project repository endpoint", async () => {
+      const calls = [];
+      const request = jest.fn(async (method, url, body) => {
+        calls.push({ method, url, body });
+        return { status: 200, body: { result: true } };
+      });
+      await updateRepository({ request });
+      expect(calls[0].method).toBe("POST");
+      expect(calls[0].url).toBe(`${API_ROOT}/projects/selftend/repository/`);
+      expect(calls[0].body).toEqual({ operation: "update" });
+    });
+
+    // A failed pull is worth reporting but must not bury the creations that just
+    // succeeded, so it comes back as a problem string rather than a throw.
+    it("returns the failure instead of throwing so a finished pass is still reported", async () => {
+      const request = jest.fn(async () => ({ status: 403, body: { detail: "no permission" } }));
+      const problem = await updateRepository({ request });
+      expect(problem).toMatch(/no permission/);
+    });
+
+    it("returns nothing when the pull succeeds", async () => {
+      const request = jest.fn(async () => ({ status: 200, body: { result: true } }));
+      expect(await updateRepository({ request })).toBeNull();
+    });
+  });
+
+  describe("fetchAlerts", () => {
+    it("returns the alert names for a component", async () => {
+      const request = jest.fn(async () => ({
+        status: 200,
+        body: { results: [{ name: "RepositoryOutdated" }, { name: "DuplicateString" }] },
+      }));
+      expect(await fetchAlerts("cbt", request)).toEqual(["RepositoryOutdated", "DuplicateString"]);
+    });
+
+    // Alerts need the token; a read that fails should not fail the pass, because the
+    // owner can still see them in the UI.
+    it("comes back null when the alerts endpoint cannot be read", async () => {
+      const request = jest.fn(async () => ({ status: 404, body: "" }));
+      expect(await fetchAlerts("cbt", request)).toBeNull();
     });
   });
 });
