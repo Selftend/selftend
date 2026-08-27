@@ -32,6 +32,42 @@ function resolveKey(bundle: unknown, keyPath: string): unknown {
     );
 }
 
+// Words that may stay lowercase inside an English title. None of the current labels contain one -
+// the list is here so that a future "Anxiety and Exposure" is not forced to "Anxiety And Exposure".
+const TITLE_CASE_SMALL_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "as",
+  "at",
+  "but",
+  "by",
+  "for",
+  "in",
+  "of",
+  "on",
+  "or",
+  "the",
+  "to",
+  "with",
+]);
+
+/**
+ * The words of an English label that break Title Case, ignoring tokens with no letters ("&") and
+ * splitting hyphens so "Self-Care" is read as two words. The first word is never allowed to be
+ * lowercase, whatever it is.
+ */
+function titleCaseViolations(label: string): string[] {
+  return label
+    .split(/[\s\-–—]+/)
+    .filter((word) => /\p{L}/u.test(word))
+    .filter((word, index) => {
+      const firstLetter = /\p{L}/u.exec(word)?.[0] ?? "";
+      if (firstLetter === firstLetter.toUpperCase()) return false;
+      return index === 0 || !TITLE_CASE_SMALL_WORDS.has(word.toLowerCase());
+    });
+}
+
 function expectResolvesInBothLocales(keyPath: string) {
   for (const [locale, bundle] of [
     ["en", enCbt],
@@ -88,6 +124,26 @@ describe("dashboard.strategies labels", () => {
       overClaims: false,
     });
   });
+});
+
+describe("dashboard.strategies label casing", () => {
+  // These labels are rendered as a set - the recovery notes card lists them together - so one
+  // sentence-case entry reads as a typo next to "Goal Setting" and "Anger Management". Worth a gate
+  // rather than a review catch: `dashboard.strategies` is dynamic-key territory that
+  // test/i18n-key-coverage.test.ts cannot see, and once a dev->main release ships the namespace to
+  // Weblate, correcting the casing invalidates every translation already made of that string.
+  // English only - bg is sentence case throughout, which is correct for its orthography
+  // ("Поставяне на цели"), so applying the same rule there would be wrong.
+  it.each(Object.entries(enStrategyLabels))(
+    "writes the en %s label in Title Case",
+    (key, label) => {
+      expect({ key, label, lowercaseWords: titleCaseViolations(label) }).toEqual({
+        key,
+        label,
+        lowercaseWords: [],
+      });
+    },
+  );
 });
 
 describe("pillar strategy copy", () => {
