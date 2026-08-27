@@ -251,7 +251,7 @@ changes one surface; the channel changes both.
 - Falls back to `expo-localization`.
 - On change, persists to AsyncStorage _and_ writes to `user_preferences.language` in Supabase.
 
-Components use `useTranslation("namespace")` and `t("key")`. Policy screens use `t(sectionKey, { returnObjects: true })` to load arrays of section content from JSON. The 20 namespaces — all translated on Weblate — are defined in [stack.md](stack.md#internationalization-i18n).
+Components use `useTranslation("namespace")` and `t("key")`. Structured content — policy sections, grounding steps, meditation instructions, gratitude prompts — is loaded from JSON arrays with `t(key, { returnObjects: true })`. The 20 namespaces — all translated on Weblate — are defined in [stack.md](stack.md#internationalization-i18n).
 
 Direct imports of `i18n.t(...)` are reserved for non-component code (utility functions, validation). Components should use the hook so re-render-on-language-change works.
 
