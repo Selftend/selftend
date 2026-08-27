@@ -14,7 +14,6 @@ import { useSleepLogs, useSleepLogCount, useSleepStats } from "@/src/features/sl
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatCompactAtOffset } from "@/src/utils/date";
 import { formatDuration, formatHours } from "@/src/features/sleep/format";
 import {
@@ -34,7 +33,6 @@ import { ShowAllLink } from "@/src/components/app/show-all-link";
 export default function SleepTrackerScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("sleep");
-  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -90,11 +88,7 @@ export default function SleepTrackerScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader

@@ -9,7 +9,6 @@ import { groundingLookup } from "@/src/constants/grounding";
 import { GroundingDone } from "@/src/features/grounding/grounding-done";
 import { GroundingSession } from "@/src/features/grounding/grounding-session";
 import { useSaveGroundingSession } from "@/src/features/grounding/queries";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -44,7 +43,6 @@ export function GroundingFlow({ slug }: { slug: string }) {
   const saveMutation = useSaveGroundingSession(user?.id ?? null);
   // Grounding is the "clay" room (spec #315) — but only the not-found branch
   // still needs the pour: the session phases live on the focus surface.
-  const roomStyle = useRoomStyle("clay");
 
   // The clock starts when the flow mounts — there is no Start button any more.
   useEffect(() => {
@@ -99,7 +97,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
 
   if (!technique) {
     return (
-      <View className="flex-1" style={roomStyle} testID="grounding-flow-room">
+      <View className="flex-1" testID="grounding-flow-room">
         <SafeAreaView className="flex-1 bg-background">
           <View className="flex-1 justify-center p-6">
             <Text variant="h2">{t("grounding.notFound")}</Text>

@@ -68,10 +68,9 @@ function inkTriples(hue: HueName): SchemeTriples {
 
 /**
  * Every hue as ink that clears WCAG AA for small text on the neutral app
- * surface — `text-<hue>-ink`, the room-less counterpart of the room-poured
- * `text-primary-ink`. A module room re-pours `--accent-ink` from these same
- * values (src/lib/module-room.ts), so inside a room the two are the same colour
- * by construction rather than by coincidence.
+ * surface — `text-<hue>-ink`. (While module rooms existed they re-poured
+ * `--accent-ink` from these same values, so the two were one colour by
+ * construction; the room surface is gone since #1292.)
  *
  * `text-<hue>` remains correct for icons, large numerals and anything
  * decorative — this is the small-text token, not a replacement for the accent.
@@ -120,9 +119,9 @@ export const PRIMARY_INK_LIGHTNESS: Record<keyof SchemeTriples, number> = {
  * deliberately does not touch `--primary` itself — that would repaint every
  * violet fill, border and button in the product to fix its text.
  *
- * Not to be confused with `--accent-ink`, which is the *room-poured* ink and
- * falls back to the raw `--primary` outside a room (test/theme-token-sync.test.ts
- * pins that). Room-less `text-primary-ink` is a separate call-site question that
+ * Not to be confused with the deleted `--accent-ink`, the room-poured ink that
+ * fell back to the raw `--primary` outside a room (test/theme-token-sync.test.ts
+ * pins its absence). `text-primary-ink` call sites are a separate question that
  * #403's gates already police; this token is for sites that name `primary`.
  */
 export const PRIMARY_INK_TRIPLES: SchemeTriples = {

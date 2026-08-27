@@ -1,8 +1,6 @@
 import { screen } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationPracticesScreen from "@/src/features/meditation/meditation-practices-screen";
-import { expectNeutralRoom } from "@/test/room-pour";
 import { setScheme } from "@/test/color-scheme-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -43,11 +41,5 @@ describe("MeditationPracticesScreen", () => {
         "Move attention slowly from head to toe, noticing without trying to change.",
       ),
     ).toBeTruthy();
-  });
-
-  it("renders the iris room pour on its root", () => {
-    renderWithProviders(<MeditationPracticesScreen />);
-
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 });

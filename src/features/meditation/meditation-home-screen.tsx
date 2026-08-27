@@ -45,7 +45,6 @@ import { parseHHmm } from "@/src/utils/time";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatCompactAtOffset, parseLocalNoon } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 
@@ -58,7 +57,6 @@ const RECENT_SITS = 5;
 export default function MeditationHomeScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("meditation");
-  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { practice } = useLocalSearchParams<{ practice?: string }>();
@@ -299,7 +297,7 @@ export default function MeditationHomeScreen() {
 
   if (prefsLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator />
       </SafeAreaView>
     );
@@ -322,11 +320,7 @@ export default function MeditationHomeScreen() {
         // dismiss from nobody.
         onDismiss={() => setForceWizard(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           {/* No gap: `Section` carries its own py-6, and the hairline belongs
               between two sections' padding rather than across a flex gap. */}

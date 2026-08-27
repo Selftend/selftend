@@ -14,23 +14,13 @@ const assetExtensions = [
   ".woff2",
 ];
 
-// Shared so the day-key block below can re-state it: flat config resolves
-// `no-restricted-imports` last-wins per file, so a later block that omitted this
-// would quietly un-restrict module-room for the files it matches.
-const MODULE_ROOM_RESTRICTION = {
-  name: "@/src/lib/module-room",
-  importNames: ["roomVariables", "roomCardHsl"],
-  message:
-    "Use useRoomStyle(hue) / useRoomCardHsl(hue) from @/src/lib/use-room-style - they carry the scheme read and the cached style identity.",
-};
-
 // The raw-Modal ban (#1166 clause G2, built by #1260). PressShieldModal's
 // required onEscape makes a forgotten modal Escape a type error - but only for
 // modals that actually render through the wrapper. A raw Modal written around
 // it inherits neither the Escape row nor the #1054 web-unmount gate, so the
-// import itself is what this rule closes off. Shared for the same reason as
-// MODULE_ROOM_RESTRICTION above: no-restricted-imports is last-wins per file,
-// and every later import block that covers a component dir must re-state it.
+// import itself is what this rule closes off. Kept as a shared constant
+// because no-restricted-imports is last-wins per file, and every later import
+// block that covers a component dir must re-state it.
 const RAW_MODAL_RESTRICTION = {
   name: "react-native",
   importNames: ["Modal"],
@@ -149,7 +139,6 @@ function capturedFrameImportPaths(allow = []) {
   const clockNames = ["formatTimestamp"].filter((n) => !allow.includes(n));
   const activityNames = ["formatRelativeActivity"].filter((n) => !allow.includes(n));
   return [
-    MODULE_ROOM_RESTRICTION,
     // Re-stated because every block built from this function is last-wins for
     // the feature dirs it matches - omitting it here would quietly un-ban the
     // raw Modal for every captured-frame feature.
@@ -250,7 +239,6 @@ const HUE_CHROME_RESTRICTIONS = [
 // now, and the accent needs no exemption.)
 const HUE_SANCTIONED_FILES = [
   "src/lib/design-tokens.ts",
-  "src/lib/module-room.ts",
   "src/lib/hue-chip.ts",
   "src/features/mindfulness/exercise-hue.ts",
   "src/features/habits/habit-color.ts",
@@ -364,41 +352,18 @@ module.exports = [
     },
   },
   {
-    // Room wiring goes through the useRoomStyle/useRoomCardHsl hooks - they
-    // carry the scheme read and the cached style identity, so screens can't
-    // drift back to per-file module consts. Tests used to be exempt so each
-    // room suite could compare against roomVariables(hue)[scheme] - but that
-    // comparison could not fail (a nativewind vars() style has no enumerable
-    // keys, so every hue deep-equalled every other, #389). Suites now assert
-    // through expectRoomPour from @/test/room-pour, so the exemption is gone
-    // and a suite cannot hand-roll the vacuous form again.
-    files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-imports": ["error", { paths: [MODULE_ROOM_RESTRICTION] }],
-    },
-  },
-  {
     // Import-layer raw-Modal ban (#1166 G2, #1260) for the component dirs.
-    // Sits AFTER the module-room block and re-states MODULE_ROOM_RESTRICTION,
-    // because the rule is last-wins per file. Tests are ignored here so they
-    // fall through to the block above and keep the module-room guard: a test
-    // imports Modal to FIND it in a render tree, not to author one. The
-    // exempt files fall through the same way, keeping module-room too.
+    // Tests are ignored: a test imports Modal to FIND it in a render tree, not
+    // to author one. The exempt files are ignored the same way.
     files: ["src/features/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
     ignores: ["**/*.test.ts", "**/*.test.tsx", ...RAW_MODAL_EXEMPT_FILES],
     rules: {
-      "no-restricted-imports": [
-        "error",
-        { paths: [MODULE_ROOM_RESTRICTION, RAW_MODAL_RESTRICTION] },
-      ],
+      "no-restricted-imports": ["error", { paths: [RAW_MODAL_RESTRICTION] }],
     },
   },
   {
-    // The same ban for the src/ dirs the module-room block never covered
+    // The same ban for the src/ dirs the block above never covered
     // (providers, stores, utils, i18n, lib, constants) plus top-level lib/.
-    // Deliberately NOT re-stating MODULE_ROOM_RESTRICTION: src/lib is where
-    // use-room-style legitimately imports roomVariables, and nothing here was
-    // under that guard before.
     files: ["src/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
     ignores: ["src/features/**", "src/components/**", "**/*.test.ts", "**/*.test.tsx"],
     rules: {
@@ -562,8 +527,8 @@ module.exports = [
       // are ALSO in CAPTURED_FRAME_FILES - pacer-colors,
       // exercise-colors - and last-wins would have exempted them from the
       // day-key guard as a side effect of exempting them from the hue guard.
-      // Exactly the failure the comment on MODULE_ROOM_RESTRICTION warns
-      // about, one rule over.
+      // Exactly the last-wins failure the comment on RAW_MODAL_RESTRICTION
+      // warns about, one rule over.
       "no-restricted-syntax": [
         "error",
         ACCESSIBILITY_STATE_RESTRICTION,

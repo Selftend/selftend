@@ -32,8 +32,7 @@ import {
 } from "@/src/features/breathing/exercise-types";
 import type { TintToken } from "@/src/lib/design-tokens";
 import { chipHsl, type ChipColors } from "@/src/lib/hue-chip";
-import type { ColorSchemeName } from "@/src/lib/module-room";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
+import { useColorSchemeName, type ColorSchemeName } from "@/src/lib/color-scheme";
 
 export const BREATHING_COLOR_TINTS: Record<BreathingExerciseColor, TintToken> = {
   aqua: "aqua",

@@ -4,7 +4,7 @@ import { colorScheme as nwColorScheme } from "nativewind";
 
 import { useThemeStore } from "@/src/stores/theme-store";
 
-type ResolvedColorScheme = "light" | "dark";
+export type ColorSchemeName = "light" | "dark";
 
 // Exactly one driver may be mounted at a time. A second one re-runs the hydrate
 // and the NativeWind push against the same store, which is how the previous
@@ -23,9 +23,9 @@ let mountedDrivers = 0;
  * truth) rather than NativeWind (a downstream sink the driver writes to), and
  * it is always defined.
  */
-export function useColorSchemeName(): ResolvedColorScheme {
+export function useColorSchemeName(): ColorSchemeName {
   const preference = useThemeStore((s) => s.preference);
-  const systemColorScheme: ResolvedColorScheme = useColorScheme() === "dark" ? "dark" : "light";
+  const systemColorScheme: ColorSchemeName = useColorScheme() === "dark" ? "dark" : "light";
 
   return preference === "system" ? systemColorScheme : preference;
 }

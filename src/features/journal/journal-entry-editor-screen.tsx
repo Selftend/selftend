@@ -25,7 +25,6 @@ import { JOURNAL_BODY_MAX, JOURNAL_TITLE_MAX } from "@/src/features/journal/sche
 import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -45,7 +44,6 @@ export function JournalEntryEditorScreen({
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const editMode = mode === "edit";
-  const roomStyle = useRoomStyle("ink");
 
   const { data: cachedList } = useJournalEntries(editMode ? (user?.id ?? null) : null, 50);
   const fromCache = entryId ? (cachedList?.find((entry) => entry.id === entryId) ?? null) : null;
@@ -130,7 +128,7 @@ export function JournalEntryEditorScreen({
 
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
           <LoadingState title={t("editor.editTitle")} />
         </View>
@@ -140,11 +138,7 @@ export function JournalEntryEditorScreen({
 
   if (editMode && !existingEntry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("editor.editTitle")} />
@@ -158,7 +152,7 @@ export function JournalEntryEditorScreen({
   return (
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the ink pour through it.
-    <View className="flex-1" style={roomStyle} testID="journal-editor-room">
+    <View className="flex-1" testID="journal-editor-room">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
         // Both modes now, where only create mode had chrome: an edit form used to

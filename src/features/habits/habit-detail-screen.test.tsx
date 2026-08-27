@@ -1,5 +1,4 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { router } from "expo-router";
 
@@ -17,7 +16,6 @@ import { tickGridStartKey } from "@/src/features/habits/tick-grid";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -374,42 +372,27 @@ describe("HabitDetailScreen detail rows", () => {
   });
 });
 
-describe("HabitDetailScreen act room", () => {
+describe("HabitDetailScreen render states", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDefaults();
   });
 
-  it("renders the loaded habit inside the act room", () => {
+  it("renders the loaded habit", () => {
     renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
     expect(screen.getByRole("heading", { name: "Read" })).toBeTruthy();
-    // The room moved from the SafeAreaView to a wrapper, so the top bar's
-    // `bg-card` re-resolves through it too; a wrong or missing room fails here.
-    expectNeutralRoom(screen.getByTestId("habit-detail-room"));
   });
 
-  it("pours the act room on the loading state", () => {
-    mockUseHabit.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    } as unknown as ReturnType<typeof useHabit>);
-
-    const { UNSAFE_getByType } = renderWithProviders(<HabitDetailScreen habitId="h-1" />);
-
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
-  });
-
-  it("pours the act room on the not-found state", () => {
+  it("renders the not-found state", () => {
     mockUseHabit.mockReturnValue({
       data: undefined,
       isLoading: false,
     } as unknown as ReturnType<typeof useHabit>);
 
-    const { UNSAFE_getByType } = renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
 
     expect(screen.getByText("We couldn't find that habit.")).toBeTruthy();
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 });
 

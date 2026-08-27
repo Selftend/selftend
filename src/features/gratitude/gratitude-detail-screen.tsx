@@ -22,7 +22,6 @@ import {
 } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatInstantAtOffset } from "@/src/utils/date";
@@ -31,7 +30,6 @@ import { cn } from "@/lib/utils";
 export default function GratitudeDetailScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("gratitude");
-  const roomStyle = useRoomStyle("think");
   // The header actions never shrink, so every pixel of narrowness comes out
   // of the title block (#885's failure class). At phone width the labelled
   // Favourite button collapses to an icon, like mood's detail Edit.
@@ -58,7 +56,7 @@ export default function GratitudeDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <LoadingState title={t("detail.title")} />
       </SafeAreaView>
     );
@@ -66,7 +64,7 @@ export default function GratitudeDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -123,11 +121,7 @@ export default function GratitudeDetailScreen() {
   };
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScreenTopBar leading="back" />
       <ScrollView contentContainerClassName="grow p-6">
         <View className={cn(FORM_COLUMN, "gap-6")}>

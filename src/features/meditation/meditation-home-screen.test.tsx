@@ -1,5 +1,4 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationHomeScreen from "@/src/features/meditation/meditation-home-screen";
 import {
@@ -16,7 +15,6 @@ import {
 } from "@/src/features/meditation/minutes-window";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 import { currentDateKey } from "@/src/utils/date";
 
 jest.mock("expo-router", () => {
@@ -210,13 +208,6 @@ describe("MeditationHomeScreen", () => {
     expect(screen.queryByText(/typical/)).toBeNull();
   });
 
-  it("renders the iris room: quiet shell header and room pour", () => {
-    renderWithProviders(<MeditationHomeScreen />);
-
-    // The root carries the iris room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-  });
-
   it("inks the stage badge and the all-sits link so they clear AA", () => {
     setSessions([session()]);
 
@@ -226,19 +217,6 @@ describe("MeditationHomeScreen", () => {
     // is the pattern #691 named a regression and #368 measured at 3.81:1.
     expect(screen.getByText("Stage 2").props.className).toContain("text-primary-ink");
     expect(screen.getByText("Show all sits").props.className).toContain("text-primary-ink");
-  });
-
-  it("keeps the room poured on the loading return", () => {
-    mockUseUserPreferences.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    } as unknown as ReturnType<typeof useUserPreferences>);
-
-    renderWithProviders(<MeditationHomeScreen />);
-
-    // Without this the iris room drops out while preferences resolve and snaps
-    // in afterwards - the defect grounding shipped and had to fix.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("omits the subline until history has actually loaded", () => {

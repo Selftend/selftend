@@ -9,11 +9,9 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { useMeditationSession } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { formatAtOffset } from "@/src/utils/date";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 
 export default function MeditationSessionDetailScreen() {
   const { t } = useTranslation("meditation");
-  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const params = useLocalSearchParams<{ id: string }>();
   const { data: session, isLoading } = useMeditationSession(user?.id ?? null, params.id ?? null);
@@ -23,7 +21,7 @@ export default function MeditationSessionDetailScreen() {
   // shipped and had to fix (#317).
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator />
       </SafeAreaView>
     );
@@ -31,7 +29,7 @@ export default function MeditationSessionDetailScreen() {
 
   if (!session) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="gap-3 p-6">
           <ScreenHeader title={t("module.sessionDetail.notFound")} titleVariant="h2" />
         </View>
@@ -40,11 +38,7 @@ export default function MeditationSessionDetailScreen() {
   }
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">

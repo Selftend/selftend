@@ -49,7 +49,6 @@ import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { formatOneDecimal } from "@/src/lib/locale-format";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import {
   addDaysToKey,
   dayKeyDiff,
@@ -94,7 +93,6 @@ const PRESET_DAYS: Record<"7d" | "30d" | "90d", number> = {
 
 export default function MoodTrackerScreen() {
   const { t, i18n } = useTranslation("mood");
-  const roomStyle = useRoomStyle("be");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -442,11 +440,7 @@ export default function MoodTrackerScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/*
           A plain scroller, not a list (#735, decided on #695). The overview used
           to BE its history list, with everything above passed as

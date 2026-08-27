@@ -24,7 +24,6 @@ import {
   SLEEP_WINDOW_MAX_MINUTES,
 } from "@/src/features/sleep/schemas";
 import type { SleepLog, SleepWindow } from "@/src/features/sleep/types";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
@@ -40,7 +39,6 @@ const DEFAULT_DURATION_MINUTES = 450; // 7h 30m
 
 export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScreenProps) {
   const { t } = useTranslation("sleep");
-  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
 
   const { data: cachedList } = useSleepLogs(mode === "edit" ? (user?.id ?? null) : null, 50);
@@ -184,7 +182,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
 
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
           <LoadingState title={t("log.editTitle")} />
         </View>
@@ -194,11 +192,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
 
   if (editMode && !existingLog) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("log.editTitle")} />
@@ -212,7 +206,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   return (
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the ink pour through it.
-    <View className="flex-1" style={roomStyle}>
+    <View className="flex-1">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
         // Both modes now, where only create mode had chrome: an edit form used to

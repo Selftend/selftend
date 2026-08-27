@@ -39,7 +39,6 @@ import {
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
@@ -61,7 +60,6 @@ interface HabitDetailScreenProps {
 export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("habits");
-  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { selectedDate: todayKey } = useSelectedDate();
@@ -89,7 +87,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
           <LoadingState title={t("home.title")} />
         </View>
@@ -99,11 +97,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
 
   if (!habit) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("home.title")} />
@@ -251,7 +245,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   return (
     // The room wrapper carries the token re-pour so the top bar's `bg-card` and
     // the scroller's `bg-background` both re-resolve through it.
-    <View testID="habit-detail-room" className="flex-1" style={roomStyle}>
+    <View testID="habit-detail-room" className="flex-1">
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/* The trail rides the bar, not the column: chrome for the screen
             rather than part of the document (#733). */}

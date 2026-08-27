@@ -16,7 +16,6 @@ import {
 import { useHabitLogPages, useHabits } from "@/src/features/habits/queries";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
@@ -72,7 +71,6 @@ const HabitLogRow = memo(function HabitLogRow({ log, habit }: { log: HabitLog; h
  */
 export default function HabitsHistoryScreen() {
   const { t, i18n } = useTranslation("habits");
-  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -99,11 +97,7 @@ export default function HabitsHistoryScreen() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <SectionList<HabitLog, HabitHistorySection>
         sections={sections}
         keyExtractor={(item) => item.id}
