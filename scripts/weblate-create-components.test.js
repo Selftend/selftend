@@ -780,17 +780,35 @@ describe("post-pass health", () => {
         status: 200,
         body: { results: [{ name: "RepositoryOutdated" }, { name: "DuplicateString" }] },
       }));
-      expect(await fetchAlerts("cbt", { request })).toEqual([
-        "RepositoryOutdated",
-        "DuplicateString",
-      ]);
+      expect(await fetchAlerts("cbt", { request })).toEqual({
+        status: "ok",
+        names: ["RepositoryOutdated", "DuplicateString"],
+      });
     });
 
-    // Alerts need the token; a read that fails should not fail the pass, because the
-    // owner can still see them in the UI.
-    it("comes back null when the alerts endpoint cannot be read", async () => {
+    // 404 and 403 are not the same fact and must not collapse into one. hosted
+    // Weblate stopped serving this endpoint (verified 2026-08-27), so a 404 says
+    // "there is nothing here to read"; a 403 says "there is, and you cannot".
+    it("reports a 404 as an absent endpoint, not an unreadable one", async () => {
       const request = jest.fn(async () => ({ status: 404, body: "" }));
-      expect(await fetchAlerts("cbt", { request })).toBeNull();
+      expect(await fetchAlerts("cbt", { request })).toEqual({ status: "absent" });
+    });
+
+    it("reports a 403 as unreadable, and keeps the status", async () => {
+      const request = jest.fn(async () => ({ status: 403, body: { detail: "nope" } }));
+      expect(await fetchAlerts("cbt", { request })).toEqual({
+        status: "unreadable",
+        httpStatus: 403,
+      });
+    });
+
+    // A 200 that is not a result list is not a clean read either.
+    it("reports a malformed 200 as unreadable", async () => {
+      const request = jest.fn(async () => ({ status: 200, body: { nope: true } }));
+      expect(await fetchAlerts("cbt", { request })).toEqual({
+        status: "unreadable",
+        httpStatus: 200,
+      });
     });
   });
 
@@ -841,6 +859,57 @@ describe("post-pass health", () => {
       const log = jest.fn();
       await finishPass(["mood"], { request: stubProject(), log });
       expect(log).toHaveBeenCalledWith(expect.stringMatching(/no alerts reported/));
+    });
+
+    // hosted Weblate serves no alerts endpoint as of 2026-08-27. That is a property
+    // of the deployment, not a fault in the run, so it must not hold the exit code
+    // at 1 forever - but it must also never read as "alerts checked, none found".
+    it("does not fail the pass when the deployment serves no alerts endpoint", async () => {
+      const log = jest.fn();
+      const problems = await finishPass(["mood"], {
+        request: stubProject({ alerts: { status: 404, body: "" } }),
+        log,
+      });
+      expect(problems).toEqual([]);
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/serves no alerts endpoint/));
+      expect(log).not.toHaveBeenCalledWith(expect.stringMatching(/no alerts reported/));
+    });
+
+    it("still refuses to claim the zero-errors confirmation on that green run", async () => {
+      const log = jest.fn();
+      await finishPass(["mood"], {
+        request: stubProject({ alerts: { status: 404, body: "" } }),
+        log,
+      });
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/alerts NOT confirmed/));
+    });
+
+    // A 404 on some components while others answer is not "the endpoint is gone".
+    // It is a surprise, and a surprise gets the loud path.
+    it("treats a 404 on only some components as unreadable", async () => {
+      const request = jest.fn(async (method, url) => {
+        if (url.endsWith("/repository/") && method === "GET") {
+          return { status: 200, body: { needs_commit: false, needs_push: false } };
+        }
+        if (url.endsWith("/repository/")) return { status: 200, body: { result: true } };
+        if (url.includes("/mood/alerts/")) return { status: 404, body: "" };
+        if (url.includes("/alerts/")) return { status: 200, body: { results: [] } };
+        if (url.includes("/statistics/")) return { status: 200, body: { failing: 0 } };
+        return {
+          status: 200,
+          body: {
+            results: [
+              { slug: "mood", is_glossary: false },
+              { slug: "cbt", is_glossary: false },
+            ],
+            next: null,
+          },
+        };
+      });
+      const problems = await finishPass(["mood", "cbt"], { request });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/NOT made/);
+      expect(problems[0]).toMatch(/mood/);
     });
 
     it("carries a refused pull through as a problem", async () => {
