@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -57,11 +58,7 @@ export default function RoutinesHomeScreen() {
   const { data: widgetPrefs } = useWidgetPreferences(allRoutines.length === 0 ? userId : null);
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("home.title")} />;
   }
 
   return (

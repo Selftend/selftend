@@ -10,7 +10,7 @@ import { DetailRow } from "@/src/components/app/detail-row";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { Section } from "@/src/components/app/section";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import {
@@ -86,13 +86,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   const [untickTarget, setUntickTarget] = useState<string | null>(null);
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("home.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("home.title")} />;
   }
 
   if (!habit) {

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
@@ -158,13 +158,7 @@ export function GratitudeEntryEditorScreen({
   });
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("editor.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("editor.editTitle")} />;
   }
 
   if (editMode && !existingEntry) {

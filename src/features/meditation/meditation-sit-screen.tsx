@@ -11,6 +11,7 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { FocusSessionShell } from "@/src/components/app/focus-session-shell";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
 import { formatClock } from "@/src/features/breathing/cycle-math";
 import {
@@ -541,6 +542,11 @@ function AfterSit({
     <View className="flex-1" testID="meditation-sit-after-room">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
+        // The sit itself escapes through `FocusSessionShell`; this after-sit
+        // form is a separate return that carried no chrome, so the only ways
+        // off it were its own Skip and Save buttons - "some pressable" rather
+        // than the Escape, which is the widening G4 forbids (#1328).
+        topBar={<ScreenTopBar />}
         footer={
           <View className={cn(FORM_COLUMN, "flex-row items-center justify-between gap-3")}>
             <Button disabled={isPending} onPress={onSkip} variant="ghost">

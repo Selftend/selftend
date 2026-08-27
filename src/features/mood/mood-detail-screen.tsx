@@ -13,7 +13,7 @@ import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { DetailRow } from "@/src/components/app/detail-row";
 import { ChipRun, StaticChip } from "@/src/components/app/selectable-chip";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { useDeleteMoodLog, useMoodLog, useMoodLogs } from "@/src/features/mood/queries";
@@ -90,13 +90,7 @@ export default function MoodDetailScreen() {
   };
 
   if (!fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("detail.title")} />;
   }
 
   if (!entry) {

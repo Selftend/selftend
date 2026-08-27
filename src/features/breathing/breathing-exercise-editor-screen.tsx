@@ -1,6 +1,5 @@
 import { router } from "expo-router";
 import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -9,7 +8,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import type { BreathingPhase, PhaseLabel } from "@/src/constants/breathing";
 import { PhaseTimingBar } from "@/src/features/breathing/phase-timing-bar";
 import { SessionLengthButtons } from "@/src/features/breathing/session-length-buttons";
@@ -199,13 +198,7 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
   };
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("breathing.builder.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("breathing.builder.editTitle")} />;
   }
 
   const saving = saveMutation.isPending;

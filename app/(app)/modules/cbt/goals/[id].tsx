@@ -17,7 +17,7 @@ import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ProgressBar } from "@/src/components/app/progress-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import {
   useGoal,
   useMilestones,
@@ -73,23 +73,11 @@ export default function GoalDetailScreen() {
   };
 
   if (goalLoading || milestonesLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("goals.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("goals.loading")} />;
   }
 
   if (!goal) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("goals.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("goals.notFound")} />;
   }
 
   return (

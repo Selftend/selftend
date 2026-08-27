@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -55,11 +55,7 @@ export default function GratitudeDetailScreen() {
   const [favoriteError, setFavoriteError] = useState("");
 
   if (!fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <LoadingState title={t("detail.title")} />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("detail.title")} />;
   }
 
   if (!entry) {

@@ -5,8 +5,9 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { ErrorState, LoadingState } from "@/src/components/app/screen-state";
+import { ErrorState, ScreenLoading } from "@/src/components/app/screen-state";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { BeforeAfterPair } from "@/src/features/cbt/before-after-pair";
 import { useThoughtRecord } from "@/src/features/cbt/queries";
 import { resolveHotThought } from "@/src/features/cbt/thought-record-form";
@@ -30,11 +31,7 @@ export default function ThoughtRecordSavedScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.loading")} description={t("detail.loadingDescription")} />
-        </View>
-      </SafeAreaView>
+      <ScreenLoading title={t("detail.loading")} description={t("detail.loadingDescription")} />
     );
   }
 
@@ -68,6 +65,13 @@ export default function ThoughtRecordSavedScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
+      {/* The success path carries the bar too. It reads as the one screen that
+          does not need a way out - it offers two buttons of its own - but those
+          are "some pressable", which is exactly the widening G4 forbids, and
+          this whole file passed the coverage gate on the ScreenHeader inside
+          its not-found branch while the branch users actually reach had no
+          chrome at all (#1328). */}
+      <ScreenTopBar />
       <View className="flex-1 justify-center gap-10 p-6">
         <View className="items-center gap-2">
           <Text variant="h2" className="text-center">

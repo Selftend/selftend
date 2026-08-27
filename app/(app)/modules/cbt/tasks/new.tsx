@@ -10,6 +10,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { useSaveTask } from "@/src/features/procrastination/queries";
 import {
@@ -92,8 +93,10 @@ export default function NewTaskScreen() {
   });
 
   // Wait for the persisted draft to rehydrate before mounting the form,
-  // mirroring the edit-mode loading gates in the sibling wizard flows.
-  if (!wizard.hydrated) return null;
+  // mirroring the edit-mode loading gates in the sibling wizard flows - which
+  // is now literal: they render this same screen, so the wait carries chrome
+  // instead of the blank one `return null` used to draw (#1328).
+  if (!wizard.hydrated) return <ScreenLoading title={t("tasks.newTitle")} />;
 
   return (
     <WizardScreen

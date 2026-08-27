@@ -1,6 +1,6 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { Disclosure } from "@/src/components/app/disclosure";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { Section } from "@/src/components/app/section";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -131,11 +132,7 @@ export default function HabitsHomeScreen() {
   const palette = useHabitChipPalette();
 
   if (habitsLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("home.title")} />;
   }
 
   return (

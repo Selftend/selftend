@@ -12,7 +12,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LineChart } from "@/src/components/charts/line-chart";
 import { ProgressBar } from "@/src/components/app/progress-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useActivities } from "@/src/features/activities/queries";
 import { useGoals, useMilestones } from "@/src/features/goals/queries";
 import { dailyIntegerAverages, lastNMoodDayKeys } from "@/src/features/mood/chart-data";
@@ -129,13 +129,7 @@ export default function WeeklyReviewScreen() {
   const chartWidth = Math.min(width - 48, 400);
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("weeklyReview.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("weeklyReview.loading")} />;
   }
 
   return (

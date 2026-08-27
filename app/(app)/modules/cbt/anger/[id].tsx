@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
 import { useAngerLog, useDeleteAngerLog } from "@/src/features/anger/queries";
 import { useInlineWriteError } from "@/src/lib/use-inline-write-error";
@@ -51,23 +51,11 @@ export default function AngerDetailScreen() {
   };
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("anger.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("anger.loading")} />;
   }
 
   if (!log) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("anger.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("anger.notFound")} />;
   }
 
   const renderField = (label: string, value: string | null) => {

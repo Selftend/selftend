@@ -17,6 +17,12 @@ interface ScreenEscapeProps {
    * structural hop (#733).
    */
   glyph?: "arrow-back" | "close";
+  /**
+   * False on a PLACEHOLDER screen - a loading or not-found state standing in for
+   * one that has not arrived. Such an Escape points where the user came from but
+   * leaves the arrival unconsumed for the screen that replaces it (#1328).
+   */
+  consumeOrigin?: boolean;
 }
 
 /**
@@ -50,7 +56,7 @@ interface ScreenEscapeProps {
  * Origin is typically already in the stack, where a push would mount a second
  * copy (the defect #1027/#989 fixed).
  */
-export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
+export function ScreenEscape({ glyph = "arrow-back", consumeOrigin = true }: ScreenEscapeProps) {
   const { t } = useTranslation("navigation");
   const { t: tc } = useTranslation("common");
   const pathname = usePathname();
@@ -58,7 +64,7 @@ export function ScreenEscape({ glyph = "arrow-back" }: ScreenEscapeProps) {
   // Consumed on mount and held for this screen's lifetime, never re-read from
   // the store: the Escape renders on every pass, and a consume-on-read would
   // clear the Origin before the second one (O4).
-  const carriedOrigin = useEscapeOrigin(pathname);
+  const carriedOrigin = useEscapeOrigin(pathname, consumeOrigin);
 
   // The same hop the arrow made from inside the trail; the rule itself lives on
   // `findUpCrumb` so nothing re-derives it. A one-crumb screen has no ancestor

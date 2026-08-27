@@ -386,6 +386,8 @@
     "alignmentLabel": "Alignment: {{rating}}/10",
     "importanceLabel": "Importance: {{rating}}/10",
     "domainSubtitle": "Define what matters most to you in this area of life.",
+    "domainNotFound": "Life area not found",
+    "domainNotFoundDescription": "That link doesn't point to one of the life areas.",
     "valueStatementLabel": "What do you value here?",
     "valueStatementPlaceholder": "e.g. \"Being a present, patient parent\"",
     "valueStatementHint": "Values are directions, not destinations. Describe how you want to be, not what you want to have.",

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { FocusSessionShell } from "@/src/components/app/focus-session-shell";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import { breathingPatterns } from "@/src/constants/breathing";
 import type { BreathingPhase } from "@/src/constants/breathing";
 import { BreathingPacer } from "@/src/features/breathing/breathing-pacer";
@@ -396,23 +396,11 @@ export default function BreathingSessionScreen() {
   );
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("breathing.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("breathing.title")} />;
   }
 
   if (!resolved || notFound) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("breathing.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("breathing.notFound")} />;
   }
 
   const title = resolved.i18nSlug

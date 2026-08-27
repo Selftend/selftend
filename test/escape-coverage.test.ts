@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { computeBreadcrumbs, findUpCrumb } from "@/src/lib/breadcrumbs";
 
+import { scanRenderPaths } from "./escape-paths";
 import { sourceFiles, stripComments, stripCommentsAndStrings } from "./source-scan";
 
 /**
@@ -268,6 +269,46 @@ describe("every covered route reaches the Escape chrome (G3)", () => {
   it(`renders ScreenHeader, ScreenTopBar, ModuleHomeHeader or ScreenEscape within ${MAX_HOPS} hops`, () => {
     const uncovered = covered.filter((route) => !reachesEscape(route, MAX_HOPS));
     expect(uncovered).toEqual([]);
+  });
+});
+
+describe("every RENDER PATH reaches the Escape chrome (R3, #1328)", () => {
+  // One walk, read by both clauses: the AST parse is the expensive part, and
+  // the two questions below are two readings of the same scan.
+  const paths = scanRenderPaths(REPO, covered, MAX_HOPS);
+
+  /**
+   * The clause above answers "does this route reach the chrome at all?". This
+   * one answers "does it reach the chrome on every branch it can render?" —
+   * the question the per-file verdict cannot ask, and the hole #1328 found in
+   * the reasoning the whole gate rests on.
+   *
+   * A screen that mounts `ScreenHeader` on its happy path and early-returns a
+   * bare `SafeAreaView` while loading passes the clause above while stranding
+   * the user on the branch that actually rendered. R3 admits no such carve-out:
+   * "Never absent below the root… no conditional carve-outs, no declared
+   * exceptions." A loading state is not a declared exception — it is an
+   * undeclared one, which is why 52 files could ship this shape unnoticed.
+   *
+   * Kept as a SEPARATE clause rather than replacing G3, although it strictly
+   * subsumes it: when a route mounts no chrome anywhere, G3 says so in one
+   * line, while this one reports every branch of it. The two failures read very
+   * differently at 3am, and the coarse one is the better first sentence.
+   */
+  it("never early-returns past the chrome", () => {
+    const strands = paths.chromeless.map((p) => `${p.file}:${p.line} renders ${p.rendered}`);
+    expect(strands.sort()).toEqual([]);
+  });
+
+  /**
+   * Anti-vacuity, the same threat G5 exists for: this walk finds nothing if it
+   * silently stops understanding the code. A route whose component it cannot
+   * locate is listed here — ALWAYS, not merely when the coarse per-file
+   * fallback also fails — so a new screen shape (`export default memo(Screen)`,
+   * say) reopens the hole LOUDLY instead of quietly widening the exemption.
+   */
+  it("locates a component for every route, so nothing falls back unseen", () => {
+    expect(paths.unanalysable).toEqual([]);
   });
 });
 

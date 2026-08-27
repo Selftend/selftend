@@ -16,7 +16,7 @@ import {
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import {
   useCoreBelief,
   useDeleteCoreBelief,
@@ -88,23 +88,11 @@ export default function BeliefDetailScreen() {
   };
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("beliefs.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("beliefs.loading")} />;
   }
 
   if (!belief) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("beliefs.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("beliefs.notFound")} />;
   }
 
   const renderList = (label: string, items: string[]) => (

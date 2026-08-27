@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { DurationStepper } from "@/src/features/sleep/duration-stepper";
 import { QualityScale } from "@/src/features/sleep/quality-scale";
 import { useSleepLog, useSleepLogs, useSaveSleepLog } from "@/src/features/sleep/queries";
@@ -181,13 +181,7 @@ export function SleepLogScreen({ fallbackHref, mode, logId = null }: SleepLogScr
   });
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("log.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("log.editTitle")} />;
   }
 
   if (editMode && !existingLog) {

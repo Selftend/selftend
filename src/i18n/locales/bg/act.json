@@ -386,6 +386,8 @@
     "alignmentLabel": "Съответствие: {{rating}}/10",
     "importanceLabel": "Важност: {{rating}}/10",
     "domainSubtitle": "Определи кое е най-важно за теб в тази област на живота.",
+    "domainNotFound": "Областта от живота не е намерена",
+    "domainNotFoundDescription": "Тази връзка не сочи към някоя от областите на живота.",
     "valueStatementLabel": "Какво ценяш тук?",
     "valueStatementPlaceholder": "напр. „Да бъда присъстващ и търпелив родител“",
     "valueStatementHint": "Ценностите са посоки, не дестинации. Опиши как искаш да бъдеш, не какво искаш да имаш.",

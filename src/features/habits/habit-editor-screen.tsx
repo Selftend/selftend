@@ -1,6 +1,5 @@
 import { router, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, View, type TextInput } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -13,7 +12,7 @@ import { Disclosure } from "@/src/components/app/disclosure";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useHabitChipPalette } from "@/src/features/habits/habit-color";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
 import {
@@ -277,13 +276,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   });
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("form.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("form.editTitle")} />;
   }
 
   return (
