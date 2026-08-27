@@ -116,7 +116,7 @@ Progress comes from clear intentions, not from force. The practitioner is a gard
 **Tool features:**
 
 - Stage 3 sit options offer Following and Connecting as selectable techniques in the pre-sit screen.
-- Optional silent half-time bell (a single quiet chime) helps with the "check in" practice.
+- Optional silent half-time bell (a single quiet chime) helps with the "check in" practice. The control itself is available at every Stage (see section 7).
 - Post-sit prompt to log whether sleepiness was present.
 
 **Key prompts (post-sit):**
@@ -469,7 +469,7 @@ Onboarding can be skipped after Step 1; doing so lands the user on Stage 1 by de
 ## 7. Daily / Session Flow
 
 - **Pre-sit:** Stage-aware primer card. Stage 1 shows the Six-Point Preparation; later Stages show one or two relevant reminders ("test for effortlessness today" at Stage 7, "body scan at the midpoint?" at Stage 5). The pre-sit collapses to a single tap once the user marks it familiar.
-- **Sit:** The existing timer UI (`src/features/meditation/meditation-screen.tsx`) is reused. Optional silent half-time bell (single soft chime) for the "check-in" practice introduced at Stage 3.
+- **Sit:** The existing timer UI (`src/features/meditation/meditation-sit-screen.tsx`) is reused. Optional silent half-time bell (single soft chime) for the "check-in" practice, taught at Stage 3. **Shipped ungated (#1189):** the bell is offered at every Stage, not unlocked at 3. Checking in is useful from the first sit, and withholding a quiet chime until a user has advanced would be a progress gate on a comfort setting - a retention mechanic wearing a teaching hat. Stage 3 is where the book introduces the practice, not a condition on the control.
 - **Post-sit reflection:** Two to four prompts pulled from the current Stage's prompt list. All optional. Mood-after (1-10) and free-text reflection always available.
 - **Stage check-in:** After seven days at the current Stage, surface a non-pushy "Want to reassess where you are?" link. The tool **never auto-advances**.
 
