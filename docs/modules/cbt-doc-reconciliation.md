@@ -80,14 +80,18 @@ Other `cbt.md` claims that check out against code:
   gates that delta, and also gates the two label maps, which are read with dynamic keys
   and so are invisible to `test/i18n-key-coverage.test.ts`.
 
-  The recovery `mindfulness` label reads **"Calming practice"**, not "Mindfulness": the
+  The recovery `mindfulness` label reads **"Calming Practice"**, not "Mindfulness": the
   key is fed by `listMindfulnessSessions`, and `mindfulness_sessions` is the shared table
   that breathing, grounding **and** meditation all write to, so one round of box breathing
   used to produce a recovery field labelled "Mindfulness". The key id is deliberately
   unchanged — it is persisted as a key of `recovery_plans.strategyIntegrationNotes`, and
   renaming it would orphan every note already stored under it (#1507). Because the key id
   still reads `mindfulness`, `strategies.test.ts` holds the label to that decision: it
-  fails if either locale's label claims mindfulness again.
+  fails if either locale's label claims mindfulness again. The same file also holds the
+  English labels to Title Case, the convention every sibling in the map already follows —
+  the labels render as a set, and editing a source string after translators have worked on
+  it sends them back round to it, so casing is cheapest to settle early. The rule is
+  English-only: Bulgarian is sentence case throughout, as its orthography requires.
 
 - **Dashboard** — `cbt-home-screen.tsx` uses `useCbtInsights`, `personalSlogan`
   (from `recoveryPlan`), and read-only insight cards. Matches `cbt.md`'s "dashboard with
