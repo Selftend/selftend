@@ -16,6 +16,8 @@ const {
   healthProblems,
   updateRepository,
   fetchAlerts,
+  finishPass,
+  passExitCode,
   API_ROOT,
 } = require("./weblate-create-components");
 
@@ -555,13 +557,17 @@ describe("tracked-branch preconditions", () => {
 
   describe("rawFileUrl", () => {
     it("points at the namespace file on the branch Weblate tracks", () => {
-      expect(rawFileUrl("https://github.com/Selftend/selftend", "main", "act")).toBe(
+      expect(
+        rawFileUrl({ repo: "https://github.com/Selftend/selftend", branch: "main" }, "act"),
+      ).toBe(
         "https://raw.githubusercontent.com/Selftend/selftend/main/src/i18n/locales/en/act.json",
       );
     });
 
     it("tolerates the .git suffix and a trailing slash on the repo URL", () => {
-      expect(rawFileUrl("https://github.com/Selftend/selftend.git/", "main", "mood")).toBe(
+      expect(
+        rawFileUrl({ repo: "https://github.com/Selftend/selftend.git/", branch: "main" }, "mood"),
+      ).toBe(
         "https://raw.githubusercontent.com/Selftend/selftend/main/src/i18n/locales/en/mood.json",
       );
     });
@@ -569,9 +575,9 @@ describe("tracked-branch preconditions", () => {
     // Guessing a URL for a repo we cannot read would turn every screening fetch into
     // a 404 and withhold all 13 namespaces for the wrong reason.
     it("refuses to guess for a repo host it cannot read", () => {
-      expect(() => rawFileUrl("git@gitlab.com:selftend/selftend.git", "main", "act")).toThrow(
-        /GitHub/,
-      );
+      expect(() =>
+        rawFileUrl({ repo: "git@gitlab.com:selftend/selftend.git", branch: "main" }, "act"),
+      ).toThrow(/GitHub/);
     });
   });
 
@@ -701,30 +707,70 @@ describe("post-pass health", () => {
     });
   });
 
+  // The standing instruction on this project is to pull only while outgoing
+  // commits are 0: Weblate pushes through a pull request whose path is still
+  // untested live (#1104), and pulling over pending local work is how a component
+  // gets wedged.
   describe("updateRepository", () => {
-    it("POSTs the documented update operation to the project repository endpoint", async () => {
+    const clean = {
+      status: 200,
+      body: { needs_commit: false, needs_merge: false, needs_push: false },
+    };
+
+    const stubRequest = (responses) => {
       const calls = [];
       const request = jest.fn(async (method, url, body) => {
         calls.push({ method, url, body });
-        return { status: 200, body: { result: true } };
+        const next = responses.shift();
+        if (!next) throw new Error(`unexpected request: ${method} ${url}`);
+        return next;
       });
+      return { request, calls };
+    };
+
+    it("reads the repository status before it pulls", async () => {
+      const { request, calls } = stubRequest([clean, { status: 200, body: { result: true } }]);
       await updateRepository({ request });
-      expect(calls[0].method).toBe("POST");
+      expect(calls[0].method).toBe("GET");
       expect(calls[0].url).toBe(`${API_ROOT}/projects/selftend/repository/`);
-      expect(calls[0].body).toEqual({ operation: "update" });
+    });
+
+    it("POSTs the documented update operation once the status is clean", async () => {
+      const { request, calls } = stubRequest([clean, { status: 200, body: { result: true } }]);
+      expect(await updateRepository({ request })).toBeNull();
+      expect(calls[1].method).toBe("POST");
+      expect(calls[1].url).toBe(`${API_ROOT}/projects/selftend/repository/`);
+      expect(calls[1].body).toEqual({ operation: "update" });
+    });
+
+    it("refuses to pull over uncommitted work", async () => {
+      const { request, calls } = stubRequest([{ status: 200, body: { needs_commit: true } }]);
+      const problem = await updateRepository({ request });
+      expect(problem).toMatch(/needs_commit/);
+      expect(calls.filter((c) => c.method === "POST")).toHaveLength(0);
+    });
+
+    it("refuses to pull while a push is still outstanding", async () => {
+      const { request, calls } = stubRequest([{ status: 200, body: { needs_push: true } }]);
+      const problem = await updateRepository({ request });
+      expect(problem).toMatch(/needs_push/);
+      expect(calls.filter((c) => c.method === "POST")).toHaveLength(0);
+    });
+
+    // An unreadable status is treated exactly like a dirty one - the point of the
+    // check is not to pull without knowing.
+    it("does not pull blind when the status cannot be read", async () => {
+      const { request, calls } = stubRequest([{ status: 403, body: { detail: "nope" } }]);
+      const problem = await updateRepository({ request });
+      expect(problem).toMatch(/not pulling blind/);
+      expect(calls.filter((c) => c.method === "POST")).toHaveLength(0);
     });
 
     // A failed pull is worth reporting but must not bury the creations that just
     // succeeded, so it comes back as a problem string rather than a throw.
     it("returns the failure instead of throwing so a finished pass is still reported", async () => {
-      const request = jest.fn(async () => ({ status: 403, body: { detail: "no permission" } }));
-      const problem = await updateRepository({ request });
-      expect(problem).toMatch(/no permission/);
-    });
-
-    it("returns nothing when the pull succeeds", async () => {
-      const request = jest.fn(async () => ({ status: 200, body: { result: true } }));
-      expect(await updateRepository({ request })).toBeNull();
+      const { request } = stubRequest([clean, { status: 403, body: { detail: "no permission" } }]);
+      expect(await updateRepository({ request })).toMatch(/no permission/);
     });
   });
 
@@ -734,14 +780,109 @@ describe("post-pass health", () => {
         status: 200,
         body: { results: [{ name: "RepositoryOutdated" }, { name: "DuplicateString" }] },
       }));
-      expect(await fetchAlerts("cbt", request)).toEqual(["RepositoryOutdated", "DuplicateString"]);
+      expect(await fetchAlerts("cbt", { request })).toEqual([
+        "RepositoryOutdated",
+        "DuplicateString",
+      ]);
     });
 
     // Alerts need the token; a read that fails should not fail the pass, because the
     // owner can still see them in the UI.
     it("comes back null when the alerts endpoint cannot be read", async () => {
       const request = jest.fn(async () => ({ status: 404, body: "" }));
-      expect(await fetchAlerts("cbt", request)).toBeNull();
+      expect(await fetchAlerts("cbt", { request })).toBeNull();
+    });
+  });
+
+  describe("finishPass", () => {
+    // One stub for the whole closing sequence: repository status, the pull,
+    // the component list, project statistics, then one alerts read per component.
+    const stubProject = ({ alerts = { status: 200, body: { results: [] } }, failing = 0 } = {}) => {
+      const request = jest.fn(async (method, url) => {
+        if (url.endsWith("/repository/") && method === "GET") {
+          return { status: 200, body: { needs_commit: false, needs_push: false } };
+        }
+        if (url.endsWith("/repository/")) return { status: 200, body: { result: true } };
+        if (url.includes("/alerts/")) return alerts;
+        if (url.includes("/statistics/")) return { status: 200, body: { failing } };
+        return {
+          status: 200,
+          body: { results: [{ slug: "mood", is_glossary: false }], next: null },
+        };
+      });
+      return request;
+    };
+
+    it("reports nothing to fix when the project is clean", async () => {
+      expect(await finishPass(["mood"], { request: stubProject() })).toEqual([]);
+    });
+
+    it("reports failing checks", async () => {
+      const problems = await finishPass(["mood"], { request: stubProject({ failing: 3 }) });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/3 failing check/);
+    });
+
+    // The regression this exists for: a token without component-manage rights makes
+    // every alerts read fail, and folding that into "nothing to report" would hand
+    // back a clean bill of health on the one check Libre approval is gated on.
+    it("never reports a clean bill of health when the alerts could not be read", async () => {
+      const log = jest.fn();
+      const problems = await finishPass(["mood"], {
+        request: stubProject({ alerts: { status: 403, body: { detail: "nope" } } }),
+        log,
+      });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/NOT made/);
+      expect(log).not.toHaveBeenCalledWith(expect.stringMatching(/no alerts reported/));
+    });
+
+    it("says so plainly when every component really is alert-free", async () => {
+      const log = jest.fn();
+      await finishPass(["mood"], { request: stubProject(), log });
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/no alerts reported/));
+    });
+
+    it("carries a refused pull through as a problem", async () => {
+      const request = jest.fn(async (method, url) => {
+        if (url.endsWith("/repository/") && method === "GET") {
+          return { status: 200, body: { needs_push: true } };
+        }
+        if (url.includes("/alerts/")) return { status: 200, body: { results: [] } };
+        if (url.includes("/statistics/")) return { status: 200, body: { failing: 0 } };
+        return { status: 200, body: { results: [{ slug: "mood", is_glossary: false }] } };
+      });
+      const problems = await finishPass(["mood"], { request });
+      expect(problems.some((p) => /needs_push/.test(p))).toBe(true);
+    });
+
+    it("writes through the injected logger rather than the global console", async () => {
+      const log = jest.fn();
+      const logError = jest.fn();
+      await finishPass(["mood"], { request: stubProject({ failing: 1 }), log, logError });
+      expect(log).toHaveBeenCalled();
+      expect(logError).toHaveBeenCalledWith(expect.stringMatching(/failing check/));
+    });
+  });
+
+  // Nothing may read a run that left namespaces behind as "all 20 tracked".
+  describe("passExitCode", () => {
+    it("is 0 only when nothing failed, nothing is wrong, and nothing was withheld", () => {
+      expect(passExitCode({ failures: [], problems: [], withheld: [] })).toBe(0);
+    });
+
+    it("is 1 when a namespace was withheld, even though withholding was correct", () => {
+      expect(passExitCode({ failures: [], problems: [], withheld: [{ ns: "act" }] })).toBe(1);
+    });
+
+    it("is 1 when a creation failed", () => {
+      expect(passExitCode({ failures: ["act: boom"], problems: [], withheld: [] })).toBe(1);
+    });
+
+    it("is 1 when the closing health check found a problem", () => {
+      expect(passExitCode({ failures: [], problems: ["4 failing check(s)"], withheld: [] })).toBe(
+        1,
+      );
     });
   });
 });

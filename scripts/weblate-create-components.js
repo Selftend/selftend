@@ -208,18 +208,18 @@ function pluralCollisions(json) {
   return paths.filter((p) => PLURAL_SUFFIXES.some((s) => all.has(`${p}_${s}`))).sort();
 }
 
-// Pure: where to read a namespace's file as the tracked branch has it. Reading
-// GitHub rather than the local checkout is deliberate - a local `origin/main` can
-// be stale, and a stale read here would clear a namespace that is not actually
-// clean.
-function rawFileUrl(repo, branch, ns) {
-  const match = /^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/.exec(repo);
+// Pure: where to read a namespace's file as the tracked branch has it, given the
+// root component's own `repo` and `branch`. Reading GitHub rather than the local
+// checkout is deliberate - a local `origin/main` can be stale, and a stale read
+// here would clear a namespace that is not actually clean.
+function rawFileUrl(root, ns) {
+  const match = /^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/.exec(root.repo);
   if (!match) {
     throw new Error(
-      `cannot screen against "${repo}": only a GitHub HTTPS repo URL can be read without a clone`,
+      `cannot screen against "${root.repo}": only a GitHub HTTPS repo URL can be read without a clone`,
     );
   }
-  return `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${branch}/src/i18n/locales/en/${ns}.json`;
+  return `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${root.branch}/src/i18n/locales/en/${ns}.json`;
 }
 
 // Pure: the component the others link to, which carries the real repo and branch.
@@ -242,7 +242,7 @@ async function screenNamespaces(namespaces, root, deps) {
   const ready = [];
   const withheld = [];
   for (const ns of namespaces) {
-    const url = rawFileUrl(root.repo, root.branch, ns);
+    const url = rawFileUrl(root, ns);
     const response = await fetchText(url);
     if (response.status === 404) {
       withheld.push({
@@ -296,12 +296,27 @@ function healthProblems({ statistics, namespaces, components }) {
 // Returns a problem string instead of throwing: a failed pull is worth reporting
 // but must not bury creations that already succeeded, and the owner can always
 // press Update in the UI.
+//
+// The status read first is not a formality. The standing instruction for this
+// project is to pull only while outgoing commits are zero - Weblate pushes
+// through a pull request (#1104) whose path is still untested live, and pulling
+// over uncommitted or unpushed work is how a component gets wedged. A status we
+// cannot read is treated the same as a dirty one: this does not blind-pull.
 async function updateRepository(deps) {
   const { request } = deps;
-  const response = await request("POST", `${API_ROOT}/projects/${PROJECT}/repository/`, {
-    operation: "update",
-  });
-  if (response.status < 200 || response.status >= 300) {
+  const url = `${API_ROOT}/projects/${PROJECT}/repository/`;
+
+  const status = await request("GET", url);
+  if (!isOk(status) || !status.body || typeof status.body !== "object") {
+    return `repository status unreadable (HTTP ${status.status}) - not pulling blind; run Update in the UI once you have checked outgoing commits are 0`;
+  }
+  const pending = ["needs_commit", "needs_push"].filter((flag) => status.body[flag]);
+  if (pending.length) {
+    return `repository has pending local work (${pending.join(", ")}) - not pulling; resolve it in the UI first, then re-run --finish`;
+  }
+
+  const response = await request("POST", url, { operation: "update" });
+  if (!isOk(response)) {
     return `repository update failed (HTTP ${response.status}): ${describeBody(response.body)}`;
   }
   return null;
@@ -310,7 +325,8 @@ async function updateRepository(deps) {
 // The alert names on one component, or null when the endpoint cannot be read -
 // alerts need the token, and the API exposes no severity field, so this reports
 // names for a human to judge rather than deciding what counts as an error.
-async function fetchAlerts(slug, request) {
+async function fetchAlerts(slug, deps) {
+  const { request } = deps;
   const response = await request("GET", `${API_ROOT}/components/${PROJECT}/${slug}/alerts/`);
   if (response.status !== 200 || !response.body || !Array.isArray(response.body.results)) {
     return null;
@@ -328,7 +344,7 @@ async function fixComponentIndent(component, deps) {
   const url = `${API_ROOT}/components/${PROJECT}/${slug}/`;
 
   const patched = await request("PATCH", url, indentFixPayload(component));
-  if (patched.status < 200 || patched.status >= 300) {
+  if (!isOk(patched)) {
     throw new Error(
       `patching "${slug}" failed (HTTP ${patched.status}): ${describeBody(patched.body)}`,
     );
@@ -352,6 +368,11 @@ const sleepMs = (ms) =>
     setTimeout(resolve, ms);
   });
 
+// Pure: did the API accept the call? Every writing path in this file asks this.
+function isOk(response) {
+  return response.status >= 200 && response.status < 300;
+}
+
 function describeBody(body) {
   if (!body) return "(empty response)";
   if (typeof body === "string") return body;
@@ -366,7 +387,7 @@ async function createComponent(ns, deps) {
   const created = await request("POST", `${API_ROOT}/projects/${PROJECT}/components/`, {
     ...buildPayload(ns),
   });
-  if (created.status < 200 || created.status >= 300) {
+  if (!isOk(created)) {
     throw new Error(
       `creating "${ns}" failed (HTTP ${created.status}): ${describeBody(created.body)}`,
     );
@@ -471,12 +492,13 @@ function hasToken() {
 
 // Runs the closing step: pull the repository, then report what the project looks
 // like afterwards. Returns the problems found, so --apply and --finish agree on
-// what "clean" means.
+// what "clean" means. The console is injected rather than reached for, matching
+// the rest of the file.
 async function finishPass(namespaces, deps) {
-  const { request } = deps;
-  console.log("\nUpdating the project repository...");
+  const { request, log = () => {}, logError = () => {} } = deps;
+  log("\nUpdating the project repository...");
   const updateProblem = await updateRepository({ request });
-  if (updateProblem) console.error(updateProblem);
+  if (updateProblem) logError(updateProblem);
 
   const components = (await fetchAllComponents(request)).filter((c) => !c.is_glossary);
   const stats = await request("GET", `${API_ROOT}/projects/${PROJECT}/statistics/`);
@@ -486,30 +508,49 @@ async function finishPass(namespaces, deps) {
   // pretending to sort errors from warnings - #1103's "zero error-level
   // diagnostics" bar is still a human call, just no longer a 20-click one.
   let anyAlerts = false;
+  const unreadable = [];
   for (const component of components) {
-    const alerts = await fetchAlerts(component.slug, request);
+    const alerts = await fetchAlerts(component.slug, { request });
+    // An unreadable component is NOT a quiet one. Alerts need a token with
+    // component-manage rights, and silently folding a 403 into "nothing to
+    // report" would hand back a clean bill of health on the exact check the
+    // Libre approval is gated on (#1103).
     if (alerts === null) {
-      console.log(`  ${component.slug}: alerts unreadable (needs the token)`);
+      unreadable.push(component.slug);
+      log(`  ${component.slug}: alerts unreadable`);
       continue;
     }
     if (alerts.length) {
       anyAlerts = true;
-      console.log(`  ${component.slug}: ${alerts.join(", ")}`);
+      log(`  ${component.slug}: ${alerts.join(", ")}`);
     }
   }
-  if (!anyAlerts) console.log("  no alerts reported on any component");
-  else console.log("  ^ the API exposes no severity - check these read as warnings, not errors.");
+  if (anyAlerts) log("  ^ the API exposes no severity - check these read as warnings, not errors.");
+  else if (!unreadable.length) log("  no alerts reported on any component");
 
   const problems = healthProblems({ statistics, namespaces, components });
-  for (const p of problems) console.error(p);
+  if (unreadable.length) {
+    problems.push(
+      `alerts could not be read on ${unreadable.length} component(s) (${unreadable.join(", ")}) - ` +
+        `the zero-errors confirmation was NOT made; check the project page before revoking the token`,
+    );
+  }
+  for (const p of problems) logError(p);
   if (updateProblem) problems.push(updateProblem);
   if (!problems.length) {
-    console.log(
+    log(
       `\n${components.length} components tracked, 0 failing checks. Spot-check one namespace's ` +
         `bg strings, then revoke the API token.`,
     );
   }
   return problems;
+}
+
+// Pure: the exit code for a completed --apply. Withheld namespaces are a correct
+// outcome but not a finished pass, so they still exit non-zero - nothing should
+// be able to read a green run as "all 20 tracked".
+function passExitCode({ failures, problems, withheld }) {
+  return failures.length || problems.length || withheld.length ? 1 : 0;
 }
 
 async function main(argv) {
@@ -605,7 +646,8 @@ async function main(argv) {
   }
   if (withheld.length) {
     console.log(
-      `${withheld.length} namespace(s) wait for a dev->main release; re-run this pass afterwards.`,
+      `${withheld.length} namespace(s) wait for a dev->main release. The rest are created now; ` +
+        `finishing them costs a second token sitting after that release.`,
     );
   }
 
@@ -658,16 +700,18 @@ async function main(argv) {
   if (failures.length) {
     console.error(`${failures.length} step(s) failed:`);
     for (const f of failures) console.error(`  - ${f}`);
-    process.exitCode = 1;
-    return;
   }
 
   // Same sitting, same token: pull the repository and report the project's health
-  // rather than leaving it as a printed to-do the owner does by hand.
-  const problems = await finishPass(namespaces, { request });
-  // Withheld namespaces are a correct outcome but not a finished pass - exit
-  // non-zero so nothing reads a green run as "all 20 tracked".
-  process.exitCode = problems.length || withheld.length ? 1 : 0;
+  // rather than leaving it as a printed to-do the owner does by hand. This runs
+  // even after a failed creation - a partly-finished pass is exactly when the
+  // owner most needs to see where the project actually stands.
+  const problems = await finishPass(namespaces, {
+    request,
+    log: console.log,
+    logError: console.error,
+  });
+  process.exitCode = passExitCode({ failures, problems, withheld });
 }
 
 if (require.main === module) {
@@ -687,8 +731,10 @@ module.exports = {
   componentsNeedingIndentFix,
   createComponent,
   fetchAlerts,
+  finishPass,
   fixComponentIndent,
   healthProblems,
+  passExitCode,
   indentFixPayload,
   indentOf,
   namespacesFromFilenames,
