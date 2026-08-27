@@ -89,8 +89,8 @@ Other `cbt.md` claims that check out against code:
   still reads `mindfulness`, `strategies.test.ts` holds the label to that decision: it
   fails if either locale's label claims mindfulness again. The same file also holds the
   English labels to Title Case, the convention every sibling in the map already follows —
-  the labels render as a set, and a casing fix made after a release has shipped the
-  namespace to Weblate invalidates each existing translation of that string. The rule is
+  the labels render as a set, and editing a source string after translators have worked on
+  it sends them back round to it, so casing is cheapest to settle early. The rule is
   English-only: Bulgarian is sentence case throughout, as its orthography requires.
 
 - **Dashboard** — `cbt-home-screen.tsx` uses `useCbtInsights`, `personalSlogan`

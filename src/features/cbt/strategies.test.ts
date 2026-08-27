@@ -32,8 +32,9 @@ function resolveKey(bundle: unknown, keyPath: string): unknown {
     );
 }
 
-// Words that may stay lowercase inside an English title. None of the current labels contain one -
-// the list is here so that a future "Anxiety and Exposure" is not forced to "Anxiety And Exposure".
+// Words that may stay lowercase inside an English title. No current label contains one - the list
+// is what stops the gate from mandating bad English ("Anxiety And Exposure") the day one does. The
+// describe block below pins this behaviour directly, so the rule is specified rather than assumed.
 const TITLE_CASE_SMALL_WORDS = new Set([
   "a",
   "an",
@@ -59,7 +60,7 @@ const TITLE_CASE_SMALL_WORDS = new Set([
  */
 function titleCaseViolations(label: string): string[] {
   return label
-    .split(/[\s\-–—]+/)
+    .split(/[\s-]+/)
     .filter((word) => /\p{L}/u.test(word))
     .filter((word, index) => {
       const firstLetter = /\p{L}/u.exec(word)?.[0] ?? "";
@@ -130,11 +131,12 @@ describe("dashboard.strategies label casing", () => {
   // These labels are rendered as a set - the recovery notes card lists them together - so one
   // sentence-case entry reads as a typo next to "Goal Setting" and "Anger Management". Worth a gate
   // rather than a review catch: `dashboard.strategies` is dynamic-key territory that
-  // test/i18n-key-coverage.test.ts cannot see, and once a dev->main release ships the namespace to
-  // Weblate, correcting the casing invalidates every translation already made of that string.
+  // test/i18n-key-coverage.test.ts cannot see, and casing is cheapest to hold before a string is
+  // translated, because editing a source string is what sends translators back round to it.
   // English only - bg is sentence case throughout, which is correct for its orthography
   // ("Поставяне на цели"), so applying the same rule there would be wrong.
-  it.each(Object.entries(enStrategyLabels))(
+  // `title` is the section heading, not a strategy label, so it is not held to the label rule.
+  it.each(Object.entries(enStrategyLabels).filter(([key]) => key !== "title"))(
     "writes the en %s label in Title Case",
     (key, label) => {
       expect({ key, label, lowercaseWords: titleCaseViolations(label) }).toEqual({
@@ -144,6 +146,31 @@ describe("dashboard.strategies label casing", () => {
       });
     },
   );
+});
+
+// Without these, the gate above is only as good as the data it happens to run on: every committed
+// label is already Title Case, so `titleCaseViolations` could `return []` unconditionally and all
+// of them would stay green. These pin the rule itself, including the branches no label reaches yet.
+describe("titleCaseViolations", () => {
+  it.each([
+    ["Calming practice", ["practice"]],
+    ["calming practice", ["calming", "practice"]],
+    ["Calming Practice", []],
+    // The labels that already exist, including the two shapes with punctuation in them.
+    ["Goal Setting", []],
+    ["Self-Care", []],
+    ["Anxiety & Exposure", []],
+    // A hyphen is a word break, so the half after it is held to the rule too.
+    ["Self-care", ["care"]],
+    // Small words stay lowercase mid-title, but never in first position.
+    ["Anxiety and Exposure", []],
+    ["and Exposure", ["and"]],
+  ])("reads %s as breaking Title Case at %s", (label, expected) => {
+    expect({ label, lowercaseWords: titleCaseViolations(label) }).toEqual({
+      label,
+      lowercaseWords: expected,
+    });
+  });
 });
 
 describe("pillar strategy copy", () => {
