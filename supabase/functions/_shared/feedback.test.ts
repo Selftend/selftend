@@ -1,4 +1,9 @@
-import { buildFeedbackEmailHtml, resolveReplyTo, validateFeedbackInput } from "./feedback";
+import {
+  buildFeedbackDiscordPayload,
+  buildFeedbackEmailHtml,
+  resolveReplyTo,
+  validateFeedbackInput,
+} from "./feedback";
 
 describe("validateFeedbackInput", () => {
   it("accepts a category with a 10-1000 char message and returns trimmed text + category", () => {
@@ -104,6 +109,40 @@ describe("resolveReplyTo", () => {
 
   it("an over-long address is invalid", () => {
     expect(resolveReplyTo(guest, `${"a".repeat(250)}@example.com`).valid).toBe(false);
+  });
+});
+
+// #1489: the Discord mirror payload. The privacy review (#1482) scoped the
+// mirror to category + message text ONLY - the exact-keys assertion is the
+// guard that keeps an email, user id, or metadata field from ever riding along.
+describe("buildFeedbackDiscordPayload", () => {
+  it("puts the category on a bold first line with the message below", () => {
+    expect(buildFeedbackDiscordPayload("bug", "the button broke").content).toBe(
+      "**[bug]**\nthe button broke",
+    );
+  });
+
+  it("disables all mentions so user text cannot ping @everyone or roles", () => {
+    expect(buildFeedbackDiscordPayload("bug", "hi @everyone").allowed_mentions).toEqual({
+      parse: [],
+    });
+  });
+
+  it("carries exactly content and allowed_mentions - no other keys", () => {
+    const payload = buildFeedbackDiscordPayload("bug", "the button broke");
+    expect(Object.keys(payload).sort()).toEqual(["allowed_mentions", "content"]);
+  });
+
+  it("truncates content to Discord's 2000-char cap", () => {
+    const payload = buildFeedbackDiscordPayload("bug", "a".repeat(3000));
+    expect(payload.content.length).toBe(2000);
+    expect(payload.content.startsWith("**[bug]**\naaa")).toBe(true);
+  });
+
+  it("leaves a worst-case valid submission untouched (fits far under the cap)", () => {
+    const payload = buildFeedbackDiscordPayload("a".repeat(40), "b".repeat(1000));
+    expect(payload.content.length).toBeLessThan(2000);
+    expect(payload.content.endsWith("b")).toBe(true);
   });
 });
 

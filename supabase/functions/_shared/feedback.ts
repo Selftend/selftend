@@ -70,6 +70,33 @@ export function resolveReplyTo(
   return { valid: true, replyTo: trimmed };
 }
 
+export interface FeedbackDiscordPayload {
+  content: string;
+  /** Empty parse list: user text must never ping @everyone, users, or roles. */
+  allowed_mentions: { parse: [] };
+}
+
+// Discord rejects `content` above 2000 chars with a 400. A valid submission is
+// at most ~1050 chars (category <= 40 + message <= 1000 + markup), so the
+// truncation is defensive only.
+const DISCORD_CONTENT_LIMIT = 2000;
+
+/**
+ * The Discord mirror message (#1489). Scope is fixed by the privacy review
+ * (#1482): the sanitized category and message text ONLY - never an email,
+ * user id, or client metadata. Callers pass the values `validateFeedbackInput`
+ * returned, so the mirror gets the same control-char stripping as the email path.
+ */
+export function buildFeedbackDiscordPayload(
+  category: string,
+  trimmed: string,
+): FeedbackDiscordPayload {
+  return {
+    content: `**[${category}]**\n${trimmed}`.slice(0, DISCORD_CONTENT_LIMIT),
+    allowed_mentions: { parse: [] },
+  };
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
