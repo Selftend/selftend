@@ -64,6 +64,29 @@ Shared accessibility helpers live in [src/lib/accessibility.ts](../src/lib/acces
 - Onboarding and avatar-crop modals switch from fade animation to no animation when reduced motion is enabled.
 - Required policy consent uses a full-screen gate instead of a modal so linked Privacy Policy and Terms pages remain readable and reachable.
 
+### Sound
+
+The app deliberately plays through the iOS ring/silent switch. `ensureNativeAudioMode()`
+in [src/lib/native-audio.ts](../src/lib/native-audio.ts) sets `playsInSilentMode: true`
+once per app run, because guided breathing and meditation audio are _requested_ — the user
+pressed Begin — and many people leave the switch on permanently, for whom silence would
+read as the feature being broken rather than as restraint.
+
+That decision is app-wide and cannot be narrowed to one sound. `setAudioModeAsync`
+configures the app's global audio session, not an individual player, so "the bells respect
+the switch but a running breathing session does not" is not expressible without flipping
+the global category around each clip and racing whatever else is playing.
+
+The in-app volume controls are therefore the real remedy for sound sensitivity, and they
+have to be complete for that reason. Every lane that can make noise has one, all of them
+persisted on `user_preferences`:
+
+- `breath_volume` and `ambient_volume` — the breathing session's two lanes.
+- `bell_volume` — all three meditation bells; **0 is off**, and at 0 nothing is played and
+  the global audio session is never configured at all.
+
+A new audio lane without a volume control is an accessibility regression, not a follow-up.
+
 ## Contributor Checklist
 
 Before opening a PR that adds or changes UI:
