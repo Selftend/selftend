@@ -221,7 +221,7 @@
   },
   "feedback": {
     "title": "Send feedback",
-    "description": "Share a bug report, suggestion, or question. Your message is sent directly.",
+    "description": "Share a bug report, suggestion, or question. Your message is sent to our support team.",
     "crisisWarning": "Do not use this form for urgent crisis situations. If you need immediate help, use local emergency services or crisis resources.",
     "openCrisis": "Open crisis guidance",
     "categoryLabel": "Category",
