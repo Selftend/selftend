@@ -53,15 +53,15 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 
 - All user-visible strings must come from translation files, not hardcoded in components.
 - Use `useTranslation("namespace")` in components. Use `i18n.t()` direct import only in non-component code.
-- Policy page section content uses `t(sectionKey, { returnObjects: true })` to load structured arrays from JSON.
-- When adding a new screen or feature, add keys to the appropriate namespace JSON files for all supported languages.
-- Language preference is persisted in AsyncStorage and synced to the Supabase `user_preferences.language` column.
-- Translations managed via Weblate hosted Libre plan at hosted.weblate.org.
+- Structured content — policy sections, grounding steps, meditation instructions, gratitude prompts — is stored as JSON arrays and read with `t(key, { returnObjects: true })`, not assembled from numbered keys.
+- When adding a new screen or feature, add keys to the appropriate namespace JSON files for every supported language (`en` and `bg`). Two tests hold the line: `test/i18n-key-coverage.test.ts` fails on a literal `t("…")` key that does not resolve in `en`, and `src/i18n/locale-parity.test.ts` fails on a key present in one locale but missing in the other.
+- Language preference is persisted in AsyncStorage (`selftend:language`) and synced to the Supabase `user_preferences.language` column.
+- Translations are managed on [Hosted Weblate](https://hosted.weblate.org/projects/selftend/); `docs/stack.md` covers the component setup. Whether the project is on the Libre plan is an open question — it was still on a hosted trial awaiting Libre approval as of 2026-08-19, and the plan is not shown on the public project page (checked 2026-08-27).
 
 ## Dependency policy
 
 - Prefer Expo built-ins and officially supported solutions for platform capabilities.
-- NativeWind is the default styling exception and is an approved third-party dependency.
+- NativeWind is the deliberate styling exception to that preference, but it is not the only approved third-party dependency: the approved set is exactly what Technical defaults above lists. Anything not on that list is a new dependency and has to answer the questions below.
 - Any new dependency should answer:
   - What problem is it solving?
   - Why are Expo defaults or approved dependencies not enough?
