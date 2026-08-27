@@ -16,6 +16,7 @@
     "eyebrow": "Sitting · stage {{stage}}",
     "progress": "of {{minutes}} min",
     "progressWithBell": "of {{minutes}} min · bell at {{bell}}",
+    "progressWithHalfBell": "of {{minutes}} min · bell at half-time",
     "paused": "Paused",
     "pause": "Pause",
     "resume": "Resume",
