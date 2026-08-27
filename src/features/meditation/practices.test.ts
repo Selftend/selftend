@@ -1,18 +1,20 @@
 import { MEDITATION_PRACTICES, practicesLookup, suggestedDuration } from "./practices";
 
 describe("meditation practices", () => {
-  it("exposes the 4 seated practices (no walking/eating)", () => {
+  it("exposes the 6 practices, seated and off-cushion", () => {
     expect(MEDITATION_PRACTICES.map((p) => p.slug)).toEqual([
       "breath-awareness",
       "body-scan",
       "loving-kindness",
       "observing-thoughts",
+      "mindful-walking",
+      "mindful-eating",
     ]);
   });
 
   it("builds a lookup keyed by slug", () => {
     expect(practicesLookup["body-scan"].icon).toBe("accessibility-new");
-    expect(practicesLookup["mindful-walking"]).toBeUndefined();
+    expect(practicesLookup["mindful-walking"].icon).toBe("directions-walk");
   });
 
   it("suggests the middle duration", () => {

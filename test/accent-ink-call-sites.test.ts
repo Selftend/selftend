@@ -656,10 +656,24 @@ describe("the shared hue map is reached only by the hues it was measured against
   ]);
 
   it("selects exactly the hues these classifications cover", () => {
-    // `act` is the only hue no config selects, which is what its entry claims.
-    // Adding a hue here means re-reading that hue's row against the badge and
-    // the practice chip before changing this list.
-    expect([...reachable].sort()).toEqual(["aqua", "be", "clay", "ink", "iris", "mist", "think"]);
+    // Every hue in HUE_NAMES is now selected by some config: #1530 restored
+    // mindful-walking (`act`) to MEDITATION_PRACTICES, and `act` was the last
+    // hue no config reached. Adding a hue here means re-reading that hue's
+    // row against the badge and the practice chip before changing this list -
+    // for `act` that reading is moot, because the practice chip washes with
+    // CHROME_WASH and numbers with CHROME_TEXT, so the practice `hue` field
+    // paints nothing at all. The assertion below is what holds the line: no
+    // configured hue reaches a chrome class, `act` now included.
+    expect([...reachable].sort()).toEqual([
+      "act",
+      "aqua",
+      "be",
+      "clay",
+      "ink",
+      "iris",
+      "mist",
+      "think",
+    ]);
   });
 
   // INVERTED by #588. This asked whether a reachable hue reached a bare accent
