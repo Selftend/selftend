@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
 
+import NotFoundScreen from "@/src/components/app/not-found-screen";
 import { HabitLogNoteScreen } from "@/src/features/habits/habit-log-note-screen";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { isValidDayKey } from "@/src/utils/date";
@@ -7,7 +8,10 @@ import { isValidDayKey } from "@/src/utils/date";
 export default function HabitLogNoteRoute() {
   const { id, date } = useLocalSearchParams<{ id: string; date?: string }>();
   const { selectedDate } = useSelectedDate();
-  if (typeof id !== "string" || !id) return null;
+  // A segment naming no habit is a URL that matched no record, which is what
+  // this screen says - and it says it with chrome. Returning null rendered a
+  // blank screen with nothing on it to press (#1328).
+  if (typeof id !== "string" || !id) return <NotFoundScreen />;
   // Explicit `date` param takes priority (deep-links); otherwise default to the
   // app-wide selected date rather than hardcoded today.
   //

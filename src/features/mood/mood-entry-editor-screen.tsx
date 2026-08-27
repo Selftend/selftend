@@ -14,7 +14,7 @@ import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
 import { DateTimeField } from "@/src/components/app/date-time-field";
@@ -334,13 +334,7 @@ export function MoodEntryEditorScreen({
   };
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("mood.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("mood.editTitle")} />;
   }
 
   if (editMode && !existingEntry) {

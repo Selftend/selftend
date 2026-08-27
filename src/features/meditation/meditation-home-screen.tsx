@@ -1,7 +1,7 @@
 import { Redirect, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -11,6 +11,7 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { Section } from "@/src/components/app/section";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
 import {
   MeditationOnboarding,
@@ -296,11 +297,7 @@ export default function MeditationHomeScreen() {
   }
 
   if (prefsLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("module.home.title")} />;
   }
 
   return (

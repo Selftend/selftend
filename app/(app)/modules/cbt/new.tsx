@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useWatch } from "react-hook-form";
 import { View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -19,7 +18,7 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ProgressSegments } from "@/src/components/app/progress-segments";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { SubmitButtonContent } from "@/src/components/app/submit-button-content";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { politeLiveRegionProps } from "@/src/lib/accessibility";
@@ -129,11 +128,7 @@ export default function ThoughtRecordEditorScreen() {
 
   if (isBootLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.loading")} description={t("detail.loadingDescription")} />
-        </View>
-      </SafeAreaView>
+      <ScreenLoading title={t("detail.loading")} description={t("detail.loadingDescription")} />
     );
   }
 

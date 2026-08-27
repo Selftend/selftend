@@ -132,7 +132,16 @@ label would hide from screen-reader users the name the arrow shows on screen (#1
 trail has no name for the destination it says "Go back". Never the fallback word "Entry", which is
 the absence of a name dressed as one, and never the nearest _named_ ancestor, which names a screen
 the Escape does not go to.
-_Avoid_: back button, close button (those name a glyph, not the role)
+
+It is present on every **branch**, not merely every screen. A loading, error or not-found state is
+a screen the user is looking at, so a component that mounts its chrome on the happy path and
+early-returns past it strands them on the branch that actually rendered — an undeclared exception,
+which R3 does not admit. Fifty-two screens shipped that shape before the gate could see branches
+(#1328). Anything replacing a whole screen therefore goes through `ScreenLoading` / `ScreenNotFound`,
+which carry the bar; `LoadingState` / `ErrorState` / `EmptyState` are _bodies_, dropped into a screen
+whose chrome is already mounted above them, and carry none.
+_Avoid_: back button, close button (those name a glyph, not the role); a hand-rolled `SafeAreaView`
+for a loading or not-found branch (that is how the defect spread the first time)
 
 **Up**:
 The Escape's default destination: one deterministic hop along the screen's own breadcrumb trail,

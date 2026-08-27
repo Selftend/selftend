@@ -4,7 +4,6 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { View } from "react-native";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
@@ -14,7 +13,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { useCoreBelief, useSaveCoreBelief } from "@/src/features/beliefs/queries";
@@ -132,13 +131,7 @@ export default function NewBeliefScreen() {
   // Wait for the persisted draft to rehydrate before mounting the form, exactly
   // like the edit-mode data gate below - otherwise the wizard would flash empty.
   if (!wizard.hydrated || (beliefId && isLoading)) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("beliefs.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("beliefs.loading")} />;
   }
 
   const renderList = (

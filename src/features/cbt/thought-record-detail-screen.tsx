@@ -16,7 +16,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { distortionLookup } from "@/src/constants/distortions";
 import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
 import { DetailRow } from "@/src/components/app/detail-row";
-import { ErrorState, LoadingState } from "@/src/components/app/screen-state";
+import { ErrorState, ScreenLoading } from "@/src/components/app/screen-state";
 import { ChipRun, StaticChip } from "@/src/components/app/selectable-chip";
 import { BeforeAfterPair } from "@/src/features/cbt/before-after-pair";
 import { useArchiveThoughtRecord, useThoughtRecord } from "@/src/features/cbt/queries";
@@ -87,11 +87,7 @@ export default function ThoughtRecordDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.loading")} description={t("detail.loadingDescription")} />
-        </View>
-      </SafeAreaView>
+      <ScreenLoading title={t("detail.loading")} description={t("detail.loadingDescription")} />
     );
   }
 

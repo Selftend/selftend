@@ -1,3 +1,4 @@
+import type { PropsWithChildren } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -5,6 +6,7 @@ import { Button, type ButtonProps } from "@/src/components/react-native-reusable
 import { Card, CardDescription, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 
 interface StateAction {
   label: string;
@@ -31,11 +33,53 @@ export function LoadingState({ description, title }: StateProps) {
   );
 }
 
-export function ScreenLoading({ title }: { title: string }) {
+/**
+ * A whole screen standing in for one that has not arrived yet - or never will.
+ *
+ * The two shapes below carry `ScreenTopBar`, and that is the entire point of
+ * their existing (#1328). A screen that renders its chrome on the happy path
+ * and early-returns a bare `SafeAreaView` while loading strands the user on the
+ * branch that actually rendered: no arrow, no trail, nothing to press. R3 admits
+ * no such carve-out - "never absent below the root, no conditional carve-outs" -
+ * and a loading state is not a declared exception, it is an undeclared one.
+ * Fifty-two screens shipped that shape before the gate could see branches.
+ *
+ * ☠️ So the bar is NOT decoration and must stay unconditional. Anything that
+ * replaces a whole screen belongs in one of these, rather than in a hand-rolled
+ * `SafeAreaView` at the call site - which is how the defect spread the first
+ * time. `LoadingState` and `ErrorState` below stay chrome-less on purpose: they
+ * are BODIES, dropped into a screen whose chrome is already mounted above them.
+ */
+function ScreenStateShell({ children }: PropsWithChildren) {
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <LoadingState title={title} />
+      {/* Full bleed, outside the padding: the bar's bottom hairline has to
+          reach both edges. */}
+      <ScreenTopBar />
+      <View className="grow justify-center p-6">{children}</View>
     </SafeAreaView>
+  );
+}
+
+export function ScreenLoading({ description, title }: { description?: string; title: string }) {
+  return (
+    <ScreenStateShell>
+      <LoadingState description={description} title={title} />
+    </ScreenStateShell>
+  );
+}
+
+/**
+ * The screen for a record that is missing, deleted, or addressed by a segment
+ * that never named anything - the branch a stale link or a hand-typed id lands
+ * on. It is the one a user is most likely to need the Escape from, because
+ * there is nothing else on it to press.
+ */
+export function ScreenNotFound(props: StateProps) {
+  return (
+    <ScreenStateShell>
+      <ErrorState {...props} />
+    </ScreenStateShell>
   );
 }
 

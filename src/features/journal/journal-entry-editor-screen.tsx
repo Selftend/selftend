@@ -14,7 +14,7 @@ import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { cn } from "@/lib/utils";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { announceMessage, politeLiveRegionProps } from "@/src/lib/accessibility";
 import {
   useJournalEntries,
@@ -127,13 +127,7 @@ export function JournalEntryEditorScreen({
   });
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("editor.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("editor.editTitle")} />;
   }
 
   if (editMode && !existingEntry) {

@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
 import { useDeleteWorryEntry, useWorryEntry } from "@/src/features/worry/queries";
 import { useInlineWriteError } from "@/src/lib/use-inline-write-error";
@@ -32,23 +32,11 @@ export default function WorryDetailScreen() {
   const deleteError = useInlineWriteError(t("worry.deleteError"));
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("worry.loadingDetail")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("worry.loadingDetail")} />;
   }
 
   if (!entry) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("worry.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("worry.notFound")} />;
   }
 
   // ☠️ `DeleteEntryButton` keeps its confirmation OPEN when the delete rejects, so the

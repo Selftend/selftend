@@ -1,10 +1,8 @@
 import { router, useNavigation } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Text } from "@/src/components/react-native-reusables/text";
+import { ScreenNotFound } from "@/src/components/app/screen-state";
 import { groundingLookup } from "@/src/constants/grounding";
 import { GroundingDone } from "@/src/features/grounding/grounding-done";
 import { GroundingSession } from "@/src/features/grounding/grounding-session";
@@ -95,16 +93,10 @@ export function GroundingFlow({ slug }: { slug: string }) {
     });
   }, [navigation, phase, technique]);
 
+  // Any slug that names no technique lands here, so a stale or mistyped link
+  // used to be a dead end: a heading and nothing to press (#1328).
   if (!technique) {
-    return (
-      <View className="flex-1" testID="grounding-flow-room">
-        <SafeAreaView className="flex-1 bg-background">
-          <View className="flex-1 justify-center p-6">
-            <Text variant="h2">{t("grounding.notFound")}</Text>
-          </View>
-        </SafeAreaView>
-      </View>
-    );
+    return <ScreenNotFound title={t("grounding.notFound")} />;
   }
 
   const stepsText = (() => {

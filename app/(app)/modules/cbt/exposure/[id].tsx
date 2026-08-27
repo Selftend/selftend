@@ -20,7 +20,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
 import {
   useDeleteHierarchy,
@@ -305,23 +305,11 @@ export default function ExposureHierarchyDetailScreen() {
   };
 
   if (hierarchyLoading || itemsLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("exposure.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("exposure.loading")} />;
   }
 
   if (!hierarchy) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("exposure.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("exposure.notFound")} />;
   }
 
   return (

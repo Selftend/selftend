@@ -1,5 +1,4 @@
 import { ActivityIndicator, Pressable, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
@@ -19,7 +18,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useSelfCareLog, useUpsertSelfCareLog } from "@/src/features/self-care/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -111,13 +110,7 @@ export default function SelfCareScreen() {
   };
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("selfCare.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("selfCare.loading")} />;
   }
 
   return (

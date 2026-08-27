@@ -5,7 +5,6 @@ import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { Pressable, View } from "react-native";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardHeader, CardTitle } from "@/src/components/react-native-reusables/card";
@@ -14,7 +13,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { DateField } from "@/src/components/app/date-field";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { WizardScreen } from "@/src/components/app/wizard-screen";
 import { goalTypes } from "@/src/constants/goal-types";
 import { lifeDomains } from "@/src/constants/life-domains";
@@ -152,13 +151,7 @@ export default function NewGoalScreen() {
   // Wait for the persisted draft to rehydrate before mounting the form, exactly
   // like the edit-mode data gate below - otherwise the wizard would flash empty.
   if (!wizard.hydrated || (goalId && (goalLoading || milestonesLoading))) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("goals.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("goals.loading")} />;
   }
 
   return (

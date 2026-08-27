@@ -4,7 +4,6 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { ActivityIndicator, View } from "react-native";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Input } from "@/src/components/react-native-reusables/input";
@@ -13,7 +12,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { MoodScale } from "@/src/components/app/mood-scale";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { lifeDomains, type LifeDomain } from "@/src/constants/life-domains";
 import { useActivity, useSaveActivity } from "@/src/features/activities/queries";
 import { activityFormSchema, type ActivityFormSchema } from "@/src/features/activities/schemas";
@@ -146,13 +145,7 @@ export default function NewActivityScreen() {
   const handleSave = useSingleFlight(submitForm);
 
   if (activityId && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("activities.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("activities.loading")} />;
   }
 
   return (

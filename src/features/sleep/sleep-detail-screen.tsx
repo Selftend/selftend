@@ -12,7 +12,7 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { DetailRow } from "@/src/components/app/detail-row";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useDeleteSleepLog, useSleepLog, useSleepLogs } from "@/src/features/sleep/queries";
 import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { useSession } from "@/src/providers/session-provider";
@@ -68,13 +68,7 @@ export default function SleepDetailScreen() {
   };
 
   if (!fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("detail.title")} />;
   }
 
   if (!entry) {

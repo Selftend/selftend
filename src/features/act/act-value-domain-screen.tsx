@@ -1,6 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -18,7 +17,7 @@ import {
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import { useUpsertValueEntry, useValueEntryByDomain } from "@/src/features/act/queries";
 import { StepPills } from "@/src/features/act/step-pills";
 import { ACT_LIFE_DOMAINS, type ACTLifeDomain } from "@/src/features/act/types";
@@ -106,20 +105,22 @@ export default function ActValueDomainScreen() {
     }
   }
 
+  // A segment that names no life domain: reachable by hand-typing a URL, and by
+  // any link to a folded route - `/values/bulls-eye` would land here if its
+  // <Redirect> stub were ever deleted (#1223). It used to render
+  // `values.saveProblem`, a SAVE-error string, in a bare SafeAreaView: wrong
+  // copy for the branch, and nothing at all to press (#1328).
   if (!domain) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text variant="muted">{t("act:values.saveProblem")}</Text>
-      </SafeAreaView>
+      <ScreenNotFound
+        title={t("act:values.domainNotFound")}
+        description={t("act:values.domainNotFoundDescription")}
+      />
     );
   }
 
   if (isLoading && !prefilled) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <LoadingState title={t(`act:values.${domain}`)} />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t(`act:values.${domain}`)} />;
   }
 
   return (

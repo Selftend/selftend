@@ -7,7 +7,7 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Section } from "@/src/components/app/section";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
 import { ACT_SHARED_TOOLS } from "@/src/features/act/act-shared-tools";
 import { ActValuesCheckIn } from "@/src/features/act/act-values-check-in";
@@ -91,11 +91,7 @@ export default function ActValuesScreen() {
   // for the slower costs nothing, and it keeps the rows from painting once without an
   // alignment line and again with one.
   if (entriesLoading || latestLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <LoadingState title={t("values.listTitle")} />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("values.listTitle")} />;
   }
 
   return (

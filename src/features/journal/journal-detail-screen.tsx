@@ -11,7 +11,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { formatRelativeActivity, formatRelativeDayKey } from "@/src/utils/relative-time";
@@ -59,13 +59,7 @@ export default function JournalDetailScreen() {
   const [deleteError, setDeleteError] = useState("");
 
   if (!fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("detail.title")} />;
   }
 
   if (!entry) {
