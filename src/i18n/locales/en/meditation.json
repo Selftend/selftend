@@ -201,7 +201,7 @@
   },
   "practices": {
     "sectionLabel": "Practices",
-    "subtitle": "A reference for the seated practices - the sit itself starts from the module home.",
+    "subtitle": "A reference for the practices - a timed sit starts from the module home.",
     "breath-awareness": {
       "title": "Breath awareness",
       "shortDescription": "Anchor your attention to the breath, returning gently when the mind wanders.",
@@ -240,6 +240,26 @@
         "Imagine thoughts as clouds drifting across the sky, or leaves floating down a stream.",
         "Notice each thought, then let it pass without following it.",
         "Return to noticing whenever you find yourself caught in a thought."
+      ]
+    },
+    "mindful-walking": {
+      "title": "Mindful walking",
+      "shortDescription": "Walk slowly, attending to each step and the sensations of moving.",
+      "instructions": [
+        "Stand still and feel the contact of your feet with the floor.",
+        "Begin walking slowly. Notice the lifting, moving, and placing of each foot.",
+        "If your attention wanders, return it gently to the sensations of walking.",
+        "Keep a relaxed pace throughout."
+      ]
+    },
+    "mindful-eating": {
+      "title": "Mindful eating",
+      "shortDescription": "Slow down with one small bite and engage every sense.",
+      "instructions": [
+        "Pick up a small piece of food. Notice its colour, shape, and weight.",
+        "Smell it before bringing it to your mouth.",
+        "Place it on your tongue. Pause. Notice texture before chewing.",
+        "Chew slowly, noticing taste change with each bite."
       ]
     }
   },

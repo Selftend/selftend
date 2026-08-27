@@ -15,9 +15,11 @@ interface MeditationPracticesSectionProps {
 }
 
 /**
- * Info-only reference for the seated practices. Tapping a card reveals its
- * instructions. It launches nothing - the actual sit happens via the meditation
- * timer on the module home.
+ * Info-only reference for the practices, seated and off-cushion. Tapping a card
+ * reveals its instructions. It launches nothing - the actual sit happens via the
+ * meditation timer on the module home. Because nothing launches from here, the
+ * two off-cushion practices sit in the list alongside the seated ones (#1530);
+ * neither writes a session row.
  *
  * The list itself is always open: the collapsible section header it used to
  * carry belonged to its life as an overview section. On its own screen (#853)
@@ -69,10 +71,10 @@ export function MeditationPracticesSection({ initialPractice }: MeditationPracti
                       {/*
                         Accent ink, not the accent (#403): a 10px numeral
                         on `chipBg`, a `bg-<hue>/15` tint of its own hue.
-                        Practices carry guest hues (mist, be, ink) as well
-                        as the room's iris, so this must be the hue-keyed
-                        ink — `text-primary-ink` would repaint all four as
-                        the room's accent.
+                        Practices carry guest hues (mist, be, ink, act,
+                        clay) as well as the room's iris, so this must be
+                        the hue-keyed ink — `text-primary-ink` would
+                        repaint every one as the room's accent.
                       */}
                       <Text className={cn("text-[10px] font-bold", CHROME_TEXT)}>
                         {String(i + 1).padStart(2, "0")}
