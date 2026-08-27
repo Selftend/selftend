@@ -41,9 +41,12 @@ interface SharedToolsRowProps {
 // is gone, and the icon that announced it has nothing left to distinguish.
 //
 // It lives here rather than under `features/cbt` because nothing in it is CBT's:
-// it takes its heading and its tools as props. CBT is its only caller today.
-// Whether ACT's `Also try` row (`features/act/related-tools.tsx`) converges onto
-// it is #1216, and is not decided.
+// it takes its heading and its tools as props. CBT's home renders it once under
+// the pillar cards; ACT's six list screens render it as their `Also try` row
+// (#1216 ruled the full merge - the two conventions, CBT's complete partition
+// and ACT's per-context relevance with repeats, live in the callers' data, so
+// one component renders both). Chips render in array order; the callers' tests
+// index by position and rely on that.
 export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
   const { t } = useTranslation("navigation");
   // A chip leaves the module for a tool rooted under `/tools`, so the tool's own
@@ -53,6 +56,11 @@ export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
   // landed nine of them; the set is EIGHT today, and the count is pinned in
   // `shared-tools-row.test.tsx` rather than restated here, because this comment
   // has already gone stale once by carrying a number the config later changed.
+  //
+  // The push is plain - singularity is the layout's call, made once for every
+  // caller (#1216, declared in `protected-layout.tsx`). Forcing it per push was
+  // wrong for `/tools/meditation`, which is keyed by `?practice=` and holds
+  // per-visit state, so the layout deliberately leaves it plain.
   const pushWithOrigin = usePushWithOrigin();
 
   return (
@@ -71,7 +79,11 @@ export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
       {tools.map((tool) => (
         <Pressable
           key={tool.key}
-          accessibilityRole="button"
+          // "link", because every press navigates - "button" promises an
+          // on-screen action that never happens (#1216). No explicit
+          // accessibilityLabel: the child text IS the accessible name, and an
+          // explicit label would hide the children from AT (the RNW trap).
+          accessibilityRole="link"
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
           onPress={() => pushWithOrigin(tool.route)}
           className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 active:bg-accent/40"

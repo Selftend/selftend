@@ -8,8 +8,9 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenLoading } from "@/src/components/app/screen-state";
+import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
+import { ACT_SHARED_TOOLS } from "@/src/features/act/act-shared-tools";
 import { useObservingSelfSessions } from "@/src/features/act/queries";
-import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
@@ -45,11 +46,9 @@ export default function ActObservingSelfListScreen() {
             <Text>{t("observingSelf.newTitle")}</Text>
           </Button>
 
-          <RelatedTools
-            tools={[
-              { icon: "self-improvement", nameKey: "meditation", href: "/tools/meditation" },
-              { icon: "edit-note", nameKey: "journal", href: "/tools/journal" },
-            ]}
+          <SharedToolsRow
+            heading={t("alsoTry")}
+            tools={[ACT_SHARED_TOOLS.meditation, ACT_SHARED_TOOLS.journal]}
           />
 
           {daySessions.length === 0 ? (
