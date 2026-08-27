@@ -63,10 +63,6 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/cbt/worry/new": "breadcrumb.new",
   "/modules/cbt/self-care": "breadcrumb.selfCare",
   "/modules/cbt/recovery": "breadcrumb.recovery",
-  // `cbt:saved.title` is the screen's headline - "You examined a thought." - so
-  // it cannot serve as a crumb: the trail would read *Modules · CBT · You
-  // examined a thought.* This is the one new label the escape spec adds (#1251).
-  "/modules/cbt/saved": "breadcrumb.saved",
   "/modules/dbt": "sidebar.dbt",
 
   "/tools": "sidebar.tools",
@@ -129,8 +125,15 @@ const STATIC_ROUTES: Record<string, string> = {
   "/auth-callback": "breadcrumb.signIn",
 };
 
-// Path segments that group sub-routes but have no own breadcrumb
-const TRANSPARENT_SEGMENTS = new Set(["session"]);
+// Path segments that group sub-routes but have no own breadcrumb.
+//
+// `saved` holds nothing but the post-save confirmation at `saved/[id]` - there
+// is no `/modules/cbt/saved` route, so a crumb for the segment 404s and the
+// Escape's Up hop with it (#1315). It stays transparent rather than gaining an
+// index: a list there would duplicate `/modules/cbt/history`, and nothing in
+// the app ever navigates to the bare path. #1251's `breadcrumb.saved` label
+// left with it - the trail now ends in the generic "Entry" and Up is CBT.
+const TRANSPARENT_SEGMENTS = new Set(["session", "saved"]);
 
 // Known named sub-segments that appear after dynamic segments
 const KNOWN_SUB_SEGMENTS: Record<string, string> = {

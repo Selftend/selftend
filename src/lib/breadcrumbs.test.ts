@@ -19,7 +19,6 @@ const LABELS: Record<string, string> = {
   "sidebar.moodTracker": "Check-in",
   "breadcrumb.practices": "Practices",
   "breadcrumb.new": "New",
-  "breadcrumb.saved": "Saved",
   "breadcrumb.learn": "Learn",
   "breadcrumb.connection": "Connection",
   "breadcrumb.signIn": "Sign in",
@@ -122,10 +121,10 @@ describe("computeBreadcrumbs", () => {
   });
 });
 
-// #1251 (T1): the three static segments that fell through to "Entry". Their
-// labels are reused from the screens themselves - only `saved` needed a new key,
-// because `cbt:saved.title` is the headline "You examined a thought." and a trail
-// reading *Modules · CBT · You examined a thought.* is absurd.
+// #1251 (T1): the static segments that fell through to "Entry", with their
+// labels reused from the screens themselves. (`saved` was mapped here too, with
+// a key of its own - until #1315 found there IS no `/modules/cbt/saved` route,
+// and made the segment transparent instead; see below.)
 describe("computeBreadcrumbs - the unmapped static segments (#1251)", () => {
   it("names the ACT choice point instead of falling back to Entry", () => {
     const crumbs = computeBreadcrumbs("/modules/act/choice-point", t);
@@ -138,12 +137,16 @@ describe("computeBreadcrumbs - the unmapped static segments (#1251)", () => {
     expect(crumbs.map((c) => c.label)).toEqual(["Modules", "ACT", "Connection", "Drop anchor"]);
   });
 
-  it("names the saved thought record with its own crumb key, not the screen headline", () => {
-    const crumbs = computeBreadcrumbs("/modules/cbt/saved", t);
-    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "CBT", "Saved"]);
-    // The headline would read "You examined a thought." - guard against anyone
-    // pointing this entry at `cbt:saved.title` later.
-    expect(crumbs.at(-1)?.label).not.toContain("examined");
+  /**
+   * #1315: `saved/` holds only the post-save confirmation at `[id].tsx` - a
+   * crumb for the segment itself carried an href straight to `+not-found`, and
+   * the Escape's Up hop read that same href. The segment is transparent, so the
+   * trail skips it and Up lands on the CBT home, a route that exists.
+   */
+  it("skips the saved segment, so Up from a saved thought record is CBT, not a 404", () => {
+    const crumbs = computeBreadcrumbs("/modules/cbt/saved/3f9a-uuid", t);
+    expect(crumbs.map((c) => c.label)).toEqual(["Modules", "CBT", "Entry"]);
+    expect(findUpCrumb(crumbs)?.href).toBe("/modules/cbt");
   });
 
   it("resolves a habits learn card to its real title", () => {
@@ -224,7 +227,7 @@ describe("computeBreadcrumbs - an unmapped segment never swallows the next (#125
     ["/tools/habits/3f9a-uuid/log"], // the other known sub-segment
     ["/modules/act/choice-point"], // newly mapped static
     ["/modules/act/choice-point/new"], // the swallow case
-    ["/modules/cbt/saved/3f9a-uuid"], // newly mapped static, then an id
+    ["/modules/cbt/saved/3f9a-uuid"], // transparent segment, then an id (#1315)
     ["/sign-in"], // (auth)
     ["/modules/cbt/not-a-mapped-route/new"], // wholly unmapped
   ])("%s terminates in an href-less crumb", (path) => {

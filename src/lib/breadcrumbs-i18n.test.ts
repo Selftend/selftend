@@ -20,7 +20,6 @@ import { setLanguage } from "@/test/i18n-language";
 const PATHS = [
   "/modules/act/choice-point",
   "/modules/act/connection/drop-anchor",
-  "/modules/cbt/saved",
   "/tools/habits/learn/compounding",
   "/tools/habits/learn/two-minute-rule",
   "/tools/breathing/box-breathing",
@@ -36,7 +35,7 @@ const PATHS = [
 ];
 
 // An unresolved i18n key comes back as the key itself: `act:choicePoint.title`,
-// `breadcrumb.saved`. Neither shape can be a real label - a label never carries
+// `breadcrumb.history`. Neither shape can be a real label - a label never carries
 // a namespace colon, and never reads as dotted lowerCamel with no spaces.
 function looksLikeAKey(label: string): boolean {
   return /^[a-z][a-zA-Z]*:/.test(label) || /^[a-z][a-zA-Z]*(\.[a-zA-Z]+)+$/.test(label);
