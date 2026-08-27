@@ -21,7 +21,7 @@ describe("ShowAllLink", () => {
   });
 
   it("renders the label it is given", () => {
-    render(<ShowAllLink label="Show all records" route="/modules/cbt/saved" />);
+    render(<ShowAllLink label="Show all records" route="/modules/cbt/history" />);
 
     expect(screen.getByText("Show all records")).toBeTruthy();
   });
@@ -33,7 +33,7 @@ describe("ShowAllLink", () => {
    * (#1375).
    */
   it("takes its accessible name from the label alone, leaving the arrow out of it", () => {
-    render(<ShowAllLink label="Show all records" route="/modules/cbt/saved" />);
+    render(<ShowAllLink label="Show all records" route="/modules/cbt/history" />);
 
     expect(screen.getByRole("link", { name: "Show all records" })).toBeTruthy();
   });

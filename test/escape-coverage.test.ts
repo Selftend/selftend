@@ -300,3 +300,28 @@ describe("every route's trail ends on the screen itself (T1a)", () => {
     }
   });
 });
+
+describe("every crumb href resolves to a real route (#1315)", () => {
+  const t = (key: string) => key;
+
+  /**
+   * T1a asserts every non-terminal crumb HAS an href; this asserts the href
+   * GOES somewhere. The two are different checks, and the gap between them is
+   * how `/modules/cbt/saved` shipped: `saved/` holds only `[id].tsx`, so the
+   * ancestor crumb the trail renders for it — and the Up hop the Escape reads
+   * off that crumb — landed on `+not-found` (#1315).
+   *
+   * Route-shaped pathnames on both sides: the trail is computed on the
+   * bracketed pathname (`/routines/[id]/edit`), so an ancestor href like
+   * `/routines/[id]` compares against the route set in the same coordinates.
+   */
+  it("never renders a crumb whose href would land on +not-found", () => {
+    const pathnames = new Set(ROUTES.map(pathnameOf));
+    const dead = covered.concat(redirectStubs).flatMap((route) =>
+      computeBreadcrumbs(pathnameOf(route), t)
+        .filter((crumb) => crumb.href !== undefined && !pathnames.has(crumb.href))
+        .map((crumb) => `${route} → ${crumb.href}`),
+    );
+    expect(dead).toEqual([]);
+  });
+});
