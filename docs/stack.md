@@ -62,6 +62,8 @@ Language preference is stored in AsyncStorage (`selftend:language`) and synced t
 
 Every namespace is tracked as its own Weblate component, all linked to the `auth` component so they share one repository connection. `node scripts/weblate-create-components.js` reports which namespaces are untracked and prints the payload that would create them; `--verify` checks the live components against the expected configuration (i18next v4 format, propagation off, two-space JSON indent). Both are read-only. Adding a namespace therefore means adding a component: re-run the script with `--apply` and a `WEBLATE_API_TOKEN`, then revoke the token.
 
+`--apply` also repairs components it did not create: Weblate auto-detects JSON indentation and has guessed wrong before, and a component left at the wrong width rewrites its whole locale file on the first translation write-back. Any component not at two spaces is PATCHed back, so one command covers the whole sitting; `--fix-indent` runs that repair on its own. Because the Weblate API documents `file_format_params` as writable under `PUT` but not `PATCH`, the repair re-reads each component afterwards and fails loudly if the value did not take, rather than trusting the status code — set it by hand (Component → Manage → Settings → Files → JSON indentation → 2) if that happens.
+
 To add a language:
 
 1. Create all 20 namespace files under `src/i18n/locales/{code}/` (mirror `src/i18n/locales/en/`).

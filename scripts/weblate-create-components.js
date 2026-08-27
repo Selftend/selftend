@@ -125,7 +125,7 @@ function verifyComponent(ns, component) {
   if (ns !== ROOT_COMPONENT && !component.linked_component) {
     problems.push(`not linked to ${LINKED_REPO} (it carries its own repo settings)`);
   }
-  const indent = (component.file_format_params || {}).json_indent;
+  const indent = indentOf(component);
   if (indent !== JSON_INDENT) {
     problems.push(
       `json_indent is ${indent}, expected ${JSON_INDENT} - a write-back would reformat`,
@@ -134,14 +134,25 @@ function verifyComponent(ns, component) {
   return problems;
 }
 
+// Pure: the JSON indent a component reports, or undefined if it reports none.
+function indentOf(component) {
+  return ((component || {}).file_format_params || {}).json_indent;
+}
+
 // Pure: the components whose JSON indentation would reformat their file on the
 // first write-back. Weblate auto-detected the indent for the components created
-// before this script existed and guessed wrong (5 for cbt, 3 for common). The
-// glossary is skipped: it tracks no locale file, so its indent reformats nothing.
+// before this script existed and guessed wrong (5 for cbt, 3 for common).
+//
+// Two exclusions, both deliberate:
+//   - the glossary tracks no locale file, so its indent reformats nothing;
+//   - a component reporting no indent at all is unknown, not wrong. Writing to it
+//     would be an unasked-for change to a component this pass did not create -
+//     possibly `auth`, the root every other one inherits from. `--verify` still
+//     reports it, so it reaches a human either way.
 function componentsNeedingIndentFix(components) {
   return components
     .filter((c) => !c.is_glossary)
-    .filter((c) => (c.file_format_params || {}).json_indent !== JSON_INDENT);
+    .filter((c) => typeof indentOf(c) === "number" && indentOf(c) !== JSON_INDENT);
 }
 
 // Pure: the PATCH body that repairs one component's indentation. The server's own
@@ -173,7 +184,7 @@ async function fixComponentIndent(component, deps) {
   }
 
   const after = await request("GET", url);
-  const indent = ((after.body || {}).file_format_params || {}).json_indent;
+  const indent = indentOf(after.body);
   if (indent !== JSON_INDENT) {
     throw new Error(
       `"${slug}" still reports json_indent ${indent} after the PATCH - the API ignored ` +
@@ -266,38 +277,55 @@ async function fetchAllComponents(request) {
   return components;
 }
 
-// Repairs every drifted component, keeping going after a failure so one rejected
-// PATCH does not strand the rest. Returns the failures for the caller to report.
-async function repairIndents(components, request) {
+// Runs `step` over every item, collecting failures instead of stopping at the
+// first one: one rejected component should not strand the rest of the queue.
+// Returns the failures, each already labelled, for the caller to report.
+async function runEach(items, label, step, logError) {
   const failures = [];
-  for (const component of components) {
+  for (const item of items) {
     try {
-      await fixComponentIndent(component, { request, log: console.log });
+      await step(item);
     } catch (error) {
-      failures.push(`${component.slug}: ${error.message}`);
-      console.error(`FAILED ${component.slug}: ${error.message}`);
+      failures.push(`${label(item)}: ${error.message}`);
+      logError(`FAILED ${label(item)}: ${error.message}`);
     }
   }
   return failures;
 }
 
-function requireToken() {
-  if (!process.env.WEBLATE_API_TOKEN) {
-    console.error("WEBLATE_API_TOKEN is not set - refusing to run the pass.");
-    process.exit(2);
-  }
+// Repairs every drifted component. The console is injected rather than reached
+// for, so the whole path stays testable without capturing global output.
+async function repairIndents(components, deps) {
+  const { request, log = () => {}, logError = () => {} } = deps;
+  return runEach(
+    components,
+    (c) => c.slug,
+    (c) => fixComponentIndent(c, { request, log }),
+    logError,
+  );
+}
+
+function hasToken() {
+  if (process.env.WEBLATE_API_TOKEN) return true;
+  console.error("WEBLATE_API_TOKEN is not set - refusing to run the pass.");
+  return false;
 }
 
 async function main(argv) {
   const apply = argv.includes("--apply");
   const verifyOnly = argv.includes("--verify");
-  const fixIndentOnly = argv.includes("--fix-indent");
+  const fixIndent = argv.includes("--fix-indent");
+  // --apply already includes the repair, so --apply --fix-indent is just --apply.
+  const repairOnly = fixIndent && !apply;
   const request = httpRequest;
 
   // Refuse before the first network call: exiting mid-fetch aborts an in-flight
   // request and Node on Windows turns that into a libuv assertion, which replaces
   // this exit code with a crash.
-  if (apply || fixIndentOnly) requireToken();
+  if ((apply || fixIndent) && !hasToken()) {
+    process.exitCode = 2;
+    return;
+  }
 
   const namespaces = namespacesFromFilenames(fs.readdirSync(LOCALES_DIR));
   const components = await fetchAllComponents(request);
@@ -331,13 +359,17 @@ async function main(argv) {
 
   const needIndentFix = componentsNeedingIndentFix(tracked);
 
-  if (fixIndentOnly) {
+  if (repairOnly) {
     if (!needIndentFix.length) {
-      console.log("Every component already indents at 2 - nothing to repair.");
+      console.log(`Every component already indents at ${JSON_INDENT} - nothing to repair.`);
       return;
     }
-    const failed = await repairIndents(needIndentFix, request);
-    if (failed.length) process.exit(1);
+    const failed = await repairIndents(needIndentFix, {
+      request,
+      log: console.log,
+      logError: console.error,
+    });
+    process.exitCode = failed.length ? 1 : 0;
     return;
   }
 
@@ -349,9 +381,7 @@ async function main(argv) {
   if (needIndentFix.length) {
     console.log(
       `Indent to repair (${needIndentFix.length}): ` +
-        needIndentFix
-          .map((c) => `${c.slug} (${(c.file_format_params || {}).json_indent})`)
-          .join(", "),
+        needIndentFix.map((c) => `${c.slug} (${indentOf(c)})`).join(", "),
     );
   }
 
@@ -360,24 +390,35 @@ async function main(argv) {
       console.log("\nDry run. Payload for the first one:");
       console.log(JSON.stringify(buildPayload(missing[0]), null, 2));
     }
-    console.log("\nRe-run with --apply and WEBLATE_API_TOKEN set to create them.");
+    const work = [
+      missing.length ? "create them" : null,
+      needIndentFix.length ? "repair the indents" : null,
+    ]
+      .filter(Boolean)
+      .join(" and ");
+    console.log(`\nRe-run with --apply and WEBLATE_API_TOKEN set to ${work}.`);
     return;
   }
 
-  const failures = [];
-  for (const ns of missing) {
-    try {
+  const failures = await runEach(
+    missing,
+    (ns) => ns,
+    async (ns) => {
       await createComponent(ns, { request, log: console.log });
       console.log(`created ${ns}`);
-    } catch (error) {
-      failures.push(`${ns}: ${error.message}`);
-      console.error(`FAILED ${ns}: ${error.message}`);
-    }
-  }
+    },
+    console.error,
+  );
 
   // Repair the pre-existing components in the same pass, so the whole sitting is
   // one command and the ephemeral token is only needed once.
-  failures.push(...(await repairIndents(needIndentFix, request)));
+  failures.push(
+    ...(await repairIndents(needIndentFix, {
+      request,
+      log: console.log,
+      logError: console.error,
+    })),
+  );
 
   // Re-read the server's view rather than trusting the create responses.
   const after = (await fetchAllComponents(request)).filter((c) => !c.is_glossary);
@@ -389,7 +430,8 @@ async function main(argv) {
   if (failures.length) {
     console.error(`${failures.length} step(s) failed:`);
     for (const f of failures) console.error(`  - ${f}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   console.log("Next: run a repository Update on the project, confirm 0 errors and 0 failing");
   console.log("checks across all components, spot-check one namespace's bg strings, then");
@@ -414,7 +456,9 @@ module.exports = {
   createComponent,
   fixComponentIndent,
   indentFixPayload,
+  indentOf,
   namespacesFromFilenames,
+  repairIndents,
   selectMissing,
   verifyComponent,
 };

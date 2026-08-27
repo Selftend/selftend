@@ -8,6 +8,7 @@ const {
   componentsNeedingIndentFix,
   indentFixPayload,
   fixComponentIndent,
+  repairIndents,
   API_ROOT,
 } = require("./weblate-create-components");
 
@@ -334,10 +335,12 @@ describe("indent repair", () => {
       expect(componentsNeedingIndentFix(components)).toEqual([]);
     });
 
-    it("treats a component with no file_format_params at all as needing the fix", () => {
-      expect(
-        componentsNeedingIndentFix([{ slug: "mood", is_glossary: false }]).map((c) => c.slug),
-      ).toEqual(["mood"]);
+    // An absent field means "unknown", not "wrong". Repairing it would be an
+    // unasked-for write to a component the pass did not create - including
+    // possibly `auth`, the root every other component inherits from. --verify
+    // still reports it, so a human sees it either way.
+    it("leaves a component with no file_format_params alone rather than blind-writing to it", () => {
+      expect(componentsNeedingIndentFix([{ slug: "auth", is_glossary: false }])).toEqual([]);
     });
 
     it("returns nothing once every component is already at two spaces", () => {
@@ -414,6 +417,55 @@ describe("indent repair", () => {
         slug: "cbt",
         json_indent: 2,
       });
+    });
+  });
+
+  describe("repairIndents", () => {
+    it("repairs every drifted component", async () => {
+      const { request, calls } = stubRequest([
+        patchedOk(2),
+        patchedOk(2),
+        patchedOk(2),
+        patchedOk(2),
+      ]);
+      const failures = await repairIndents([drifted("cbt", 5), drifted("common", 3)], { request });
+      expect(failures).toEqual([]);
+      expect(calls.filter((c) => c.method === "PATCH").map((c) => c.url)).toEqual([
+        `${API_ROOT}/components/selftend/cbt/`,
+        `${API_ROOT}/components/selftend/common/`,
+      ]);
+    });
+
+    // One rejected PATCH must not strand the components behind it in the queue.
+    it("keeps going after a failure and reports it against the right slug", async () => {
+      const { request, calls } = stubRequest([
+        { status: 403, body: { detail: "You do not have permission." } },
+        patchedOk(2),
+        patchedOk(2),
+      ]);
+      const failures = await repairIndents([drifted("cbt", 5), drifted("common", 3)], { request });
+      expect(failures).toHaveLength(1);
+      expect(failures[0]).toMatch(/^cbt: /);
+      expect(calls.some((c) => c.url.endsWith("/common/"))).toBe(true);
+    });
+
+    it("writes nothing when there is nothing to repair", async () => {
+      const { request, calls } = stubRequest([]);
+      expect(await repairIndents([], { request })).toEqual([]);
+      expect(calls).toEqual([]);
+    });
+
+    it("reports through the injected logger rather than writing straight to the console", async () => {
+      const log = jest.fn();
+      const logError = jest.fn();
+      const { request } = stubRequest([
+        { status: 403, body: { detail: "nope" } },
+        patchedOk(2),
+        patchedOk(2),
+      ]);
+      await repairIndents([drifted("cbt", 5), drifted("common", 3)], { request, log, logError });
+      expect(logError).toHaveBeenCalledWith(expect.stringMatching(/FAILED cbt/));
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/common/));
     });
   });
 });
