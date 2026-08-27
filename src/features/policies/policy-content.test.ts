@@ -80,8 +80,8 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // the suite green - the text would be unchanged, so the digest would still match.
 // Coupling them means either half moving alone fails the build.
 const pinnedPolicyRelease = {
-  version: "2026-08-26-guest-accounts",
-  englishDigest: "ade29fa4a7e051300279588234c948729c303d03a23aee3859379cfeaf9499e0",
+  version: "2026-08-27-feedback-processors",
+  englishDigest: "f81267ba3bbf3a1131d32f5a9bc7036f7021927f1cc95e5e307a6c16f2ce0864",
 };
 
 describe("policy content - version pinning", () => {
