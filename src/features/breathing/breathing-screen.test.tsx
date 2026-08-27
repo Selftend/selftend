@@ -1,7 +1,6 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import BreathingScreen from "@/app/(app)/tools/breathing/index";
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
@@ -11,7 +10,6 @@ import {
   useBreathingTotalMinutes,
 } from "@/src/features/breathing/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -235,12 +233,10 @@ describe("Breathing overview (4a)", () => {
     expect(screen.getByText("1:36")).toBeTruthy(); // formatClock(96)
   });
 
-  it("renders the aqua room and the never-logged stat once history has loaded", () => {
+  it("renders the never-logged stat once history has loaded", () => {
     setSessions([]);
     renderWithProviders(<BreathingScreen />);
 
-    // The root carries the aqua room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     expect(screen.getByText("no sessions yet")).toBeTruthy();
   });
 

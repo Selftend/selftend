@@ -1,5 +1,4 @@
 import { fireEvent, screen } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { router } from "expo-router";
 
@@ -8,7 +7,6 @@ import { useHabitLogPages, useHabits } from "@/src/features/habits/queries";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { currentDateKey } from "@/src/features/habits/scheduling";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -98,7 +96,7 @@ describe("HabitsHistoryScreen", () => {
     mockDefaults();
   });
 
-  it("renders day groups inside the act room - no field gradient", () => {
+  it("renders day groups", () => {
     mockUseHabitLogPages.mockReturnValue(
       mockPages([
         [
@@ -108,15 +106,13 @@ describe("HabitsHistoryScreen", () => {
       ]),
     );
 
-    const { UNSAFE_getByType } = renderWithProviders(<HabitsHistoryScreen />);
+    renderWithProviders(<HabitsHistoryScreen />);
 
     expect(screen.getByRole("heading", { name: "History" })).toBeTruthy();
     expect(screen.getAllByText("Read")).toHaveLength(2);
     // The note takes its own line - there is no timestamp column to compete
     // with, because `logged_on` is a date.
     expect(screen.getByText("Ten pages")).toBeTruthy();
-    // The root carries the act room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
   it("writes day headings as dates a person reads, never the raw key (#726)", () => {
@@ -143,10 +139,9 @@ describe("HabitsHistoryScreen", () => {
   });
 
   it("shows the calm empty state only once a page has come back empty", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<HabitsHistoryScreen />);
+    renderWithProviders(<HabitsHistoryScreen />);
 
     expect(screen.getByText("Once you tick a habit, that day will appear here.")).toBeTruthy();
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
   it("says nothing about emptiness while the first page is still in flight", () => {

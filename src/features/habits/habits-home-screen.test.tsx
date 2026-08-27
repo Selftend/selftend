@@ -1,6 +1,5 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
 import HabitsHomeScreen from "./habits-home-screen";
@@ -15,7 +14,6 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 jest.mock("expo-router", () => ({
@@ -146,19 +144,17 @@ function mockDefaults() {
   } as unknown as ReturnType<typeof useToggleHabitLog>);
 }
 
-describe("HabitsHomeScreen act room", () => {
+describe("HabitsHomeScreen header stats", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockDefaults();
   });
 
-  it("renders the act field header with stats, stating a zero fortnight as the record", async () => {
+  it("renders the header with stats, stating a zero fortnight as the record", async () => {
     renderWithProviders(<HabitsHomeScreen />);
 
     expect(await screen.findByRole("heading", { name: "Habits" })).toBeTruthy();
-    // The root carries the act room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-    // Both existing stats and the author credit migrate onto the field.
+    // Both existing stats and the author credit live in the header.
     expect(screen.getByText("0/1")).toBeTruthy();
     expect(screen.getByText("1 active habit")).toBeTruthy();
     // Book credits were scrubbed app-wide (#494).
@@ -759,7 +755,7 @@ describe("HabitsHomeScreen ticked-state contrast", () => {
 
     expect(style.backgroundColor).toBe(chip.fill);
     // The week strip encodes ticked by color alone - no label, no glyph - so
-    // its outline has to be the stop certified against the room surface
+    // its outline has to be the certified contrast stop
     // (test/chip-contrast.test.ts), not the decorative `border`.
     expect(style.borderColor).toBe(chip.ink);
     expect(style.borderColor).not.toBe(chip.border);

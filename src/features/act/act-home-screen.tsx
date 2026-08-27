@@ -124,9 +124,6 @@ const PILLARS: PillarDef[] = [
 ];
 
 export default function ActHomeScreen() {
-  // `roomStyle` came with this hook on dev and is deliberately not kept: #1378's
-  // rewrite of this screen has no surface left to tint, and `useRoomStyle` is
-  // inert for every hue anyway.
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { user } = useSession();

@@ -25,7 +25,6 @@ import type { BreathingExerciseColor } from "@/src/features/breathing/exercise-t
 import { useBreathingExercises } from "@/src/features/breathing/exercises-queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
@@ -124,14 +123,9 @@ export default function BreathingScreen() {
   ];
 
   const recent = (sessions ?? []).slice(0, RECENT_ROWS);
-  const roomStyle = useRoomStyle("aqua");
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-4">
         <View className={cn(HOME_COLUMN, "gap-9")}>
           <ModuleHomeHeader

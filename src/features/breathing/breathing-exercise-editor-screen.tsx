@@ -43,7 +43,6 @@ import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 
@@ -199,11 +198,9 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
     }
   };
 
-  const roomStyle = useRoomStyle("aqua");
-
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
           <LoadingState title={t("breathing.builder.editTitle")} />
         </View>
@@ -216,7 +213,7 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
   return (
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the aqua pour through it.
-    <View className="flex-1" style={roomStyle} testID="breathing-editor-room">
+    <View className="flex-1" testID="breathing-editor-room">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-7")}
         topBar={<ScreenTopBar leading="close" />}

@@ -30,7 +30,6 @@ import { parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
@@ -129,12 +128,11 @@ export default function HabitsHomeScreen() {
     setUntickTarget(null);
   }
 
-  const roomStyle = useRoomStyle("act");
   const palette = useHabitChipPalette();
 
   if (habitsLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator />
       </SafeAreaView>
     );
@@ -157,11 +155,7 @@ export default function HabitsHomeScreen() {
         onCancel={() => setUntickTarget(null)}
         onConfirm={confirmUntick}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           {/* No gap: `Section` carries its own py-6, and the hairline belongs
               between two sections' padding rather than across a flex gap. */}

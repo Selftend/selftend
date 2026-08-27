@@ -12,7 +12,6 @@ import { useBreathingExercises } from "@/src/features/breathing/exercises-querie
 import { useBreathingSessionPages } from "@/src/features/breathing/queries";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { formatCompactAtOffset } from "@/src/utils/date";
 
@@ -30,7 +29,6 @@ import { formatCompactAtOffset } from "@/src/utils/date";
  */
 export default function BreathingHistoryScreen() {
   const { t } = useTranslation("cbt");
-  const roomStyle = useRoomStyle("aqua");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -60,11 +58,7 @@ export default function BreathingHistoryScreen() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <FlatList<MindfulnessSession>
         data={sessions}
         keyExtractor={(item) => item.id}

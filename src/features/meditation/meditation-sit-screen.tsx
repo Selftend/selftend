@@ -30,7 +30,6 @@ import { playOneShot } from "@/src/lib/native-audio";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { useAccentHsl, useThemeHex } from "@/src/lib/theme-palette";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -346,8 +345,6 @@ export function MeditationSitScreen() {
     }, []),
   );
 
-  const roomStyle = useRoomStyle("iris");
-
   if (phase === "after" && savedSession) {
     return (
       <AfterSit
@@ -361,7 +358,6 @@ export function MeditationSitScreen() {
         note={note}
         onChangeNote={setNote}
         isPending={updateMutation.isPending}
-        roomStyle={roomStyle}
         onSkip={() => router.replace("/tools/meditation")}
         onSave={async () => {
           try {
@@ -527,7 +523,6 @@ function AfterSit({
   note,
   onChangeNote,
   isPending,
-  roomStyle,
   onSkip,
   onSave,
 }: {
@@ -537,16 +532,13 @@ function AfterSit({
   note: string;
   onChangeNote: (value: string) => void;
   isPending: boolean;
-  roomStyle: ReturnType<typeof useRoomStyle>;
   onSkip: () => void;
   onSave: () => void;
 }) {
   const { t } = useTranslation("meditation");
 
   return (
-    // The room wrapper carries the iris token re-pour; MobileFormScreen's
-    // bg-background surfaces re-resolve through it.
-    <View className="flex-1" style={roomStyle} testID="meditation-sit-after-room">
+    <View className="flex-1" testID="meditation-sit-after-room">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
         footer={

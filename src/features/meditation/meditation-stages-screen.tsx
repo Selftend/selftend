@@ -16,7 +16,6 @@ import {
 } from "@/src/features/meditation/queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 const PHASE_HEADERS: {
@@ -53,7 +52,6 @@ const MILESTONE_AFTER: Record<number, string> = {
  */
 export default function MeditationStagesScreen() {
   const { t } = useTranslation("meditation");
-  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: programState } = useMeditationProgramState(userId);
@@ -65,11 +63,7 @@ export default function MeditationStagesScreen() {
   const [openStage, setOpenStage] = useState<number | null>(null);
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-4">
         <View className={cn(FORM_COLUMN, "gap-6")}>
           <View className="gap-2">

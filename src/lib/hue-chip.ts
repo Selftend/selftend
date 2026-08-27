@@ -1,21 +1,21 @@
-// A chip is a one-swatch room. src/lib/module-room.ts re-pours a whole screen
-// as a low-chroma tint of a module hue; the same idea scaled down to a single
-// element gives a habit color swatch, a learn-card icon tile, or a ticked
-// checkbox: a hue-tinted fill, a border for its edge, the raw accent as a pure
-// color sample, and ink for the label or glyph that sits on the fill.
+// A chip is a low-chroma tint of a hue scaled down to a single element - the
+// idea the retired room pour (#586/#1292) applied to whole screens. It gives a
+// habit color swatch, a learn-card icon tile, or a ticked checkbox: a
+// hue-tinted fill, a border for its edge, the raw accent as a pure color
+// sample, and ink for the label or glyph that sits on the fill.
 //
 // The ink is why this recipe exists at all. A hue's published accent is tuned
 // to sit on a neutral surface, not on a tint of itself: light `think` on a
 // pale think fill is 1.78:1, nowhere near AA. Fixing the ink's lightness
-// instead - exactly as roomTriples fixes `foreground` - keeps the hue identity
-// and clears AA for every token. Floors live in test/chip-contrast.test.ts.
+// instead keeps the hue identity and clears AA for every token. Floors live in
+// test/chip-contrast.test.ts.
 //
 // Only the saturation/lightness recipe lives here; the hue degree comes from
 // the token source of truth in src/lib/design-tokens.ts, so a palette retune
 // re-tints every chip.
 
 import { TINT_TRIPLES, type TintToken } from "@/src/lib/design-tokens";
-import type { ColorSchemeName } from "@/src/lib/module-room";
+import type { ColorSchemeName } from "@/src/lib/color-scheme";
 
 export interface ChipTriples {
   /** The chip's surface: a pale (light) / deep (dark) tint of the hue. */
@@ -23,7 +23,7 @@ export interface ChipTriples {
   /**
    * The fill's resting edge, on a chip whose meaning is already carried in
    * words. It is a soft tint and does not clear the 3:1 non-text floor against
-   * the room, so anything that encodes *state* by outline alone - a ticked day
+   * the surface behind it, so anything that encodes *state* by outline alone - a ticked day
    * cell has no label and no glyph - outlines in `ink` instead.
    */
   border: string;
@@ -54,7 +54,7 @@ export function tintDegree(tint: TintToken): number {
 
 /**
  * Space-separated HSL triples for a tint's chip stops, keyed by scheme - the
- * same form roomTriples emits, so the contrast tests share their math.
+ * `h s% l%` form the theme tokens use, so the contrast tests share their math.
  */
 export function chipTriples(tint: TintToken): Record<ColorSchemeName, ChipTriples> {
   const h = tintDegree(tint);
@@ -76,7 +76,7 @@ export type ChipColors = Record<keyof ChipTriples, string>;
  * A tint's chip stops as comma-form hsl() strings. Chips are drawn with style
  * props rather than utility classes: the ink is a computed lightness, not a
  * token, so there is no class for NativeWind to compile (same escape hatch as
- * roomCardHsl and fieldGradient).
+ * hueHsl in src/features/mindfulness/exercise-hue.ts).
  */
 export function chipHsl(tint: TintToken): Record<ColorSchemeName, ChipColors> {
   const triples = chipTriples(tint);

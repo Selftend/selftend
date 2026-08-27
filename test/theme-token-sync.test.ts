@@ -12,7 +12,6 @@ import {
   PRIMARY_INK_TRIPLES,
   PRIMARY_TRIPLES,
 } from "@/src/lib/design-tokens";
-import { roomTriples } from "@/src/lib/module-room";
 import { PALETTE, TINTS, type TintName } from "@/src/features/widgets/palette";
 
 // Since #579 the surface tokens' single source of truth is the TypeScript
@@ -232,17 +231,6 @@ describe("hue ink meets WCAG AA on the neutral app surface", () => {
 
   it.each(HUE_NAMES)("%s dark ink is the published accent untouched", (hue) => {
     expect(HUE_INK_TRIPLES[hue].dark).toBe(HUE_TRIPLES[hue].dark);
-  });
-
-  // INVERTED by #589. This asserted the room pour and the room-less token were
-  // the same colour by construction, both reading HUE_INK_TRIPLES. No room pours
-  // anything now (#586) and `--accent-ink` is deleted, so a room emitting it
-  // would be reviving a var with no Tailwind utility left to resolve it - dead
-  // output that the lint gate cannot see, because module-room.ts is one of the
-  // files sanctioned to name hues.
-  it.each(HUE_NAMES)("%s room pours no --accent-ink", (hue) => {
-    expect(roomTriples(hue).light).not.toHaveProperty("accent-ink");
-    expect(roomTriples(hue).dark).not.toHaveProperty("accent-ink");
   });
 
   // The floor above measures the ink on *bare* neutral surfaces, which is the
@@ -538,7 +526,7 @@ describe("chart layer never hardcodes HSL", () => {
   // a palette retune skipped the screen's central graphic. Same tripwire as the
   // chart layer above: the screen's colors now come from pacerColors(), and any
   // hsl literal returning to the file is drift by the same definition. A future
-  // gradient stop belongs in a helper (fieldGradient/hueHsl), not inline here.
+  // gradient stop belongs in a helper (fieldStopsForDegree/hueHsl), not inline here.
   //
   // #779 split the focal element into src/features/breathing/breathing-pacer.tsx
   // and put the session on the shared focus shell - both render SVG/reanimated

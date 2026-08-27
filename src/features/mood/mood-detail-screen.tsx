@@ -25,7 +25,6 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { formatAtOffset, formatCompactAtOffset } from "@/src/utils/date";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 
 /**
  * The one linked strategy the app can produce, and where its row leads.
@@ -50,7 +49,6 @@ export default function MoodDetailScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("mood");
   const { t: tCbt } = useTranslation("cbt");
-  const roomStyle = useRoomStyle("be");
   // The header row's flanks (emoji + actions) never shrink, so every pixel of
   // narrowness comes out of the title block. At phone width the design's 2c
   // collapses Edit to an icon button and keeps the date on one compact line —
@@ -93,7 +91,7 @@ export default function MoodDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
           <LoadingState title={t("detail.title")} />
         </View>
@@ -103,11 +101,7 @@ export default function MoodDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -179,7 +173,7 @@ export default function MoodDetailScreen() {
   ].filter(Boolean);
 
   return (
-    <View className="flex-1" style={roomStyle}>
+    <View className="flex-1">
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/* The trail rides the bar, not the column: chrome for the screen rather than
             part of the document (#733). */}
