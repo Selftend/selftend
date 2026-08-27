@@ -45,7 +45,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Navigation support: react-native-screens, react-native-safe-area-context
 - Builds and submission: EAS Build and EAS Submit
 - Web deployment: Cloudflare Workers (static assets; `wrangler.toml` prod / `wrangler.staging.toml` staging)
-- i18n: i18next + react-i18next + expo-localization, 20 namespaces in `src/i18n/locales/`, all translated on Weblate
+- i18n: i18next + react-i18next + expo-localization, 20 namespaces in `src/i18n/locales/`, each with an `en` and a `bg` file. Weblate tracks only part of that set as components; `docs/stack.md` records the current coverage — do not assume a namespace is editable on Weblate
 - Testing: Jest + @testing-library/react-native + jest-expo
 - Code quality: ESLint, Prettier, Husky (pre-commit hooks)
 
