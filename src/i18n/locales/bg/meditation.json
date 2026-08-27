@@ -16,6 +16,7 @@
     "eyebrow": "Седене · етап {{stage}}",
     "progress": "от {{minutes}} мин",
     "progressWithBell": "от {{minutes}} мин · звън на {{bell}}",
+    "progressWithHalfBell": "от {{minutes}} мин · звън на средата",
     "paused": "На пауза",
     "pause": "Пауза",
     "resume": "Продължи",

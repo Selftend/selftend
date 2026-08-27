@@ -17,7 +17,12 @@ import {
   MeditationOnboarding,
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
-import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/meditation/interval";
+import {
+  BELL_CHOICES,
+  bellChoiceFromStored,
+  bellChoiceKey,
+  bellChoicePatch,
+} from "@/src/features/meditation/interval";
 import { DurationSlider } from "@/src/features/meditation/duration-slider";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
 import { computeWindowInsights } from "@/src/features/meditation/insights";
@@ -87,11 +92,17 @@ export default function MeditationHomeScreen() {
   // Null until the user picks, so a preference arriving after first paint still
   // lands - but a pick made before it arrives is never overwritten.
   const [pickedDuration, setPickedDuration] = useState<number | null>(null);
-  const [pickedBell, setPickedBell] = useState<number | null>(null);
+  const [pickedBell, setPickedBell] = useState<string | null>(null);
   const durationMinutes = pickedDuration ?? preferredDuration ?? DEFAULT_DURATION;
   // Same null-until-picked shape as the length above, and for the same reason:
-  // the stored bell arrives with the preferences query, after first paint.
-  const bellMinutes = pickedBell ?? preferences?.meditationIntervalBellMinutes ?? 0;
+  // the stored bell arrives with the preferences query, after first paint. The
+  // two stored columns resolve to one choice here (#1189) - half-time is not a
+  // spacing, so it cannot live in the minutes column.
+  const storedBell = bellChoiceFromStored(
+    preferences?.meditationIntervalBellMinutes ?? 0,
+    preferences?.meditationBellAtHalf ?? false,
+  );
+  const bellKey = pickedBell ?? bellChoiceKey(storedBell);
   const [pickedBellVolume, setPickedBellVolume] = useState<number | null>(null);
   const bellVolume = pickedBellVolume ?? preferences?.bellVolume ?? 1;
 
@@ -214,12 +225,13 @@ export default function MeditationHomeScreen() {
       .catch(() => undefined);
   }
 
-  function pickBell(minutes: number) {
-    setPickedBell(minutes);
+  function pickBell(key: string) {
+    setPickedBell(key);
     if (!userId) return;
-    void updatePreferences
-      .mutateAsync({ meditationIntervalBellMinutes: minutes })
-      .catch(() => undefined);
+    const choice = BELL_CHOICES.find((c) => bellChoiceKey(c) === key);
+    if (!choice) return;
+    // One writer for the pair, so the two columns cannot drift apart.
+    void updatePreferences.mutateAsync(bellChoicePatch(choice)).catch(() => undefined);
   }
 
   // Volume drags like the length does, so it persists on commit for the same
@@ -361,14 +373,16 @@ export default function MeditationHomeScreen() {
                 testID="sit-bell-choices"
                 label={t("timer:interval.label")}
                 itemClassName="min-w-[68px]"
-                options={INTERVAL_OPTIONS_MINUTES.map((minutes) => ({
-                  value: minutes,
+                options={BELL_CHOICES.map((choice) => ({
+                  value: bellChoiceKey(choice),
                   label:
-                    minutes === 0
+                    choice.kind === "off"
                       ? t("timer:interval.off")
-                      : t("duration.minutes", { count: minutes }),
+                      : choice.kind === "half"
+                        ? t("timer:interval.half")
+                        : t("duration.minutes", { count: choice.minutes }),
                 }))}
-                value={bellMinutes}
+                value={bellKey}
                 onChange={pickBell}
               />
               {/* The one lane with no control was the loudest sound in the app
@@ -401,7 +415,7 @@ export default function MeditationHomeScreen() {
                 onPress={() =>
                   pushWithOrigin({
                     pathname: "/tools/meditation/session",
-                    params: { duration: String(durationMinutes), bell: String(bellMinutes) },
+                    params: { duration: String(durationMinutes), bell: bellKey },
                   })
                 }
                 className="self-start px-8"
@@ -548,15 +562,15 @@ function addModule<T extends string>(modules: T[], key: T): T[] {
 }
 
 interface ChoiceOption {
-  value: number;
+  value: string;
   label: string;
 }
 
 interface ChoiceRowProps {
   label: string;
   options: ChoiceOption[];
-  value: number;
-  onChange: (value: number) => void;
+  value: string;
+  onChange: (value: string) => void;
   /** Per-button minimum width, which is what decides where the row wraps. */
   itemClassName?: string;
   /** On the group, so a test can scope to it - the two rows share labels like `5 min`. */
