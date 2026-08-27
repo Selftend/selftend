@@ -322,16 +322,27 @@ async function updateRepository(deps) {
   return null;
 }
 
-// The alert names on one component, or null when the endpoint cannot be read -
-// alerts need the token, and the API exposes no severity field, so this reports
-// names for a human to judge rather than deciding what counts as an error.
+// One component's alerts, as a tagged result rather than a bare list, because
+// the ways this can fail are not interchangeable and must not be treated alike:
+//
+//   ok         - the names, for a human to judge (the API exposes no severity)
+//   absent     - 404: this deployment does not serve the endpoint at all
+//   unreadable - anything else, 403 above all: the token cannot see them
+//
+// The distinction is load-bearing. A 403 means alerts exist and we are blind to
+// them, which must stay loud (#1503). A 404 on every component means there is
+// nothing to be blind to here - hosted Weblate stopped serving this endpoint,
+// verified 2026-08-27 with a token that had just created 13 components on this
+// very project. Collapsing both into "unreadable" made every run exit non-zero
+// forever, which costs the exit code its meaning.
 async function fetchAlerts(slug, deps) {
   const { request } = deps;
   const response = await request("GET", `${API_ROOT}/components/${PROJECT}/${slug}/alerts/`);
+  if (response.status === 404) return { status: "absent" };
   if (response.status !== 200 || !response.body || !Array.isArray(response.body.results)) {
-    return null;
+    return { status: "unreadable", httpStatus: response.status };
   }
-  return response.body.results.map((alert) => alert.name);
+  return { status: "ok", names: response.body.results.map((alert) => alert.name) };
 }
 
 // Repairs one component's indentation, then re-reads it to confirm the value took.
@@ -509,24 +520,42 @@ async function finishPass(namespaces, deps) {
   // diagnostics" bar is still a human call, just no longer a 20-click one.
   let anyAlerts = false;
   const unreadable = [];
+  const absent = [];
   for (const component of components) {
     const alerts = await fetchAlerts(component.slug, { request });
     // An unreadable component is NOT a quiet one. Alerts need a token with
     // component-manage rights, and silently folding a 403 into "nothing to
     // report" would hand back a clean bill of health on the exact check the
     // Libre approval is gated on (#1103).
-    if (alerts === null) {
+    if (alerts.status === "unreadable") {
       unreadable.push(component.slug);
-      log(`  ${component.slug}: alerts unreadable`);
+      log(`  ${component.slug}: alerts unreadable (HTTP ${alerts.httpStatus})`);
       continue;
     }
-    if (alerts.length) {
+    if (alerts.status === "absent") {
+      absent.push(component.slug);
+      continue;
+    }
+    if (alerts.names.length) {
       anyAlerts = true;
-      log(`  ${component.slug}: ${alerts.join(", ")}`);
+      log(`  ${component.slug}: ${alerts.names.join(", ")}`);
     }
   }
+  // A 404 on *every* component is a property of the deployment, not of any one
+  // component, so it is reported once and does not fail the pass. A 404 on only
+  // some of them is not that - it is a surprise, and surprises stay loud.
+  const endpointGone = absent.length > 0 && absent.length === components.length;
+  if (endpointGone) {
+    log(
+      `  alerts not checked: this Weblate serves no alerts endpoint (404 on all ${absent.length} ` +
+        `components). Confirm severities on each component's Alerts tab in the UI.`,
+    );
+  } else if (absent.length) {
+    unreadable.push(...absent);
+    for (const slug of absent) log(`  ${slug}: alerts unreadable (HTTP 404)`);
+  }
   if (anyAlerts) log("  ^ the API exposes no severity - check these read as warnings, not errors.");
-  else if (!unreadable.length) log("  no alerts reported on any component");
+  else if (!unreadable.length && !absent.length) log("  no alerts reported on any component");
 
   const problems = healthProblems({ statistics, namespaces, components });
   if (unreadable.length) {
@@ -538,9 +567,16 @@ async function finishPass(namespaces, deps) {
   for (const p of problems) logError(p);
   if (updateProblem) problems.push(updateProblem);
   if (!problems.length) {
+    // The alerts line is deliberately part of the success message, not a footnote
+    // above it: a run that could not read alerts is still a green run, but it has
+    // not made the zero-errors confirmation, and the last thing printed should not
+    // let anyone believe otherwise.
+    const alertsNote = endpointGone
+      ? `alerts NOT confirmed (no endpoint - check the UI Alerts tab)`
+      : `no alerts to answer for`;
     log(
-      `\n${components.length} components tracked, 0 failing checks. Spot-check one namespace's ` +
-        `bg strings, then revoke the API token.`,
+      `\n${components.length} components tracked, 0 failing checks, ${alertsNote}. ` +
+        `Spot-check one namespace's bg strings, then revoke the API token.`,
     );
   }
   return problems;
