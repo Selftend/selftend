@@ -85,7 +85,9 @@ Other `cbt.md` claims that check out against code:
   that breathing, grounding **and** meditation all write to, so one round of box breathing
   used to produce a recovery field labelled "Mindfulness". The key id is deliberately
   unchanged — it is persisted as a key of `recovery_plans.strategyIntegrationNotes`, and
-  renaming it would orphan every note already stored under it (#1507).
+  renaming it would orphan every note already stored under it (#1507). Because the key id
+  still reads `mindfulness`, `strategies.test.ts` holds the label to that decision: it
+  fails if either locale's label claims mindfulness again.
 
 - **Dashboard** — `cbt-home-screen.tsx` uses `useCbtInsights`, `personalSlogan`
   (from `recoveryPlan`), and read-only insight cards. Matches `cbt.md`'s "dashboard with
