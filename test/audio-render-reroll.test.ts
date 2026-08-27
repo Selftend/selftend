@@ -12,6 +12,17 @@
  * The API and ffmpeg are both stubbed, so this costs nothing and needs no binary
  * on PATH. What is real: the catalog, the manifest, the filenames, the resume
  * logic and the control flow.
+ *
+ * ☠️ EVERY TEST BUILDS ITS OWN WORLD (#1348). These tests used to share one
+ * temp dir and resume from the manifest the previous test left, and that
+ * coupling is exactly what made the suite flaky under full-suite load: jest
+ * fails a timed-out test but never CANCELS it, so the abandoned render loop
+ * kept running — appending to the shared manifest and calling `globalThis.fetch`,
+ * which by then was a LATER test's fresh mock. One slow first test read as five
+ * broken assertions about spending. Now each test renders into its own dir
+ * through its own module instance, and a re-run scenario performs its own
+ * arrangement pass; the render itself is milliseconds, so the isolation is
+ * close to free.
  */
 import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -20,19 +31,14 @@ import { join } from "node:path";
 import { CREDITS_PER_SECOND } from "../scripts/audio/catalog.mjs";
 
 /**
- * ☠️ This file drives the whole render loop - 31 takes across nine slots, each
- * one a stubbed fetch plus a real write into a temp dir - and its first test did
- * all of that inside jest's default 5000ms. Unloaded it finishes in about that,
- * which is why it has been green: the margin was wall-clock, not logic.
- *
- * Under a full-suite run the workers compete for CPU and disk and the first test
- * crosses the line, and because every later test resumes from the manifest that
- * one writes, a single timeout takes the other five down with it. That reads as
- * five broken assertions about spending, which is alarming and entirely false.
- *
- * The bound is generous on purpose. Nothing here should ever approach it - if
- * this file starts timing out again, the loop got slower and that is worth
- * knowing, which a 5000ms default could never tell you apart from a busy runner.
+ * ☠️ Wall-clock margin, not logic, is what this bound buys. A single pass — 31
+ * takes across ten slots, each a stubbed fetch plus a real write into a temp
+ * dir — runs in well under a second unloaded, but under a full-suite run the
+ * workers compete for CPU and disk and jest's default 5000ms has been crossed
+ * in the wild. The bound is generous on purpose: nothing here should ever
+ * approach it, so if this file starts timing out again the loop got slower and
+ * that is worth knowing, which a tight default could never tell you apart from
+ * a busy runner.
  */
 jest.setTimeout(60_000);
 
@@ -62,31 +68,77 @@ type ManifestRow = {
   creditsCharged: number | null;
 };
 
-let outDir: string;
-let render: (round: string, go: boolean, maxAttempts?: number) => Promise<void>;
+type RenderFn = (round: string, go: boolean, maxAttempts?: number) => Promise<void>;
+
 let fetchMock: jest.Mock;
 /** false makes the stubbed API answer without a `character-cost`, as some do. */
 let priceCalls: boolean;
 
-function manifest(): ManifestRow[] {
-  return readFileSync(join(outDir, "round-A", "manifest.jsonl"), "utf8")
-    .split("\n")
-    .filter((line) => line.trim())
-    .map((line) => JSON.parse(line));
+/**
+ * Passes started by earlier tests, drained before the next test begins. A test
+ * that times out abandons its `await`, not its render — the loop runs on, and
+ * anything it does from here belongs to a world no assertion looks at again.
+ */
+const pendingPasses: Promise<unknown>[] = [];
+
+/**
+ * One isolated render world: a private masters dir and a private `render`
+ * instance bound to it.
+ */
+function renderWorld() {
+  const outDir = mkdtempSync(join(tmpdir(), "selftend-render-"));
+  process.env.AUDIO_MASTERS_DIR = outDir;
+  let loaded!: RenderFn;
+  // ☠️ `require` inside `isolateModules`, not a static import. `OUT_DIR` is read
+  // once at module scope, so the env has to be set before the module loads — and
+  // babel hoists every static `import` above this function, while a dynamic
+  // `import()` needs --experimental-vm-modules that this suite does not run with.
+  jest.isolateModules(() => {
+    ({ render: loaded } = require("../scripts/audio/render.mjs"));
+  });
+
+  const render: RenderFn = (round, go, maxAttempts) => {
+    const pass = loaded(round, go, maxAttempts);
+    // The quarantine copy swallows so an abandoned pass cannot double-report;
+    // the test's own copy still rejects normally.
+    pendingPasses.push(pass.catch(() => undefined));
+    return pass;
+  };
+
+  function manifest(): ManifestRow[] {
+    return readFileSync(join(outDir, "round-A", "manifest.jsonl"), "utf8")
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line) => JSON.parse(line));
+  }
+
+  return { outDir, render, manifest };
+}
+
+/**
+ * The state every resume scenario starts from: a finished Round A pass, the
+ * broken slot's bound of 4 spent, and the mocks wiped so what a test observes
+ * is the RE-run's behaviour alone.
+ */
+async function spentWorld() {
+  const world = renderWorld();
+  await world.render("A", true, 4);
+  fetchMock.mockClear();
+  process.exitCode = undefined;
+  return world;
 }
 
 beforeAll(() => {
-  outDir = mkdtempSync(join(tmpdir(), "selftend-render-"));
-  process.env.AUDIO_MASTERS_DIR = outDir;
   process.env.ELEVENLABS_API_KEY = "test-key-not-a-real-one";
-  // ☠️ `require`, not `await import()`. `OUT_DIR` is read once at module scope, so
-  // the env has to be set before the module loads — and babel hoists every static
-  // `import` above this block, while a dynamic `import()` needs
-  // --experimental-vm-modules that this suite does not run with.
-  ({ render } = require("../scripts/audio/render.mjs"));
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  // ☠️ Drain BEFORE building this test's mocks, so a pass some timed-out test
+  // left running finishes against ITS mocks in ITS dir — never against the
+  // fresh `fetchMock` below, where its draws would read as this test's spending.
+  await Promise.all(pendingPasses);
+  pendingPasses.length = 0;
+
   jest.spyOn(console, "log").mockImplementation(() => {});
   jest.spyOn(console, "error").mockImplementation(() => {});
   process.exitCode = undefined;
@@ -135,9 +187,10 @@ afterEach(() => {
 
 describe("render re-rolls takes that come back below the gate", () => {
   it("draws again until a take clears, and fails the run on an exhausted slot", async () => {
-    await render("A", true, 4);
+    const world = renderWorld();
+    await world.render("A", true, 4);
 
-    const rows = manifest();
+    const rows = world.manifest();
     const slots = new Set(rows.map((row) => `${row.clip}|${row.candidate}`));
     expect(slots.size).toBe(10); // 2 bells x 5 candidates
 
@@ -173,8 +226,9 @@ describe("render re-rolls takes that come back below the gate", () => {
    * back on every generation: exact, immediate, free. The balance endpoint is not
    * an alternative — it LAGS, and did not move at all across a real 22-credit call.
    */
-  it("records what the API charged for each take, not only what it quoted", () => {
-    const rows = manifest();
+  it("records what the API charged for each take, not only what it quoted", async () => {
+    const world = await spentWorld();
+    const rows = world.manifest();
     const bells = rows.filter((row) => row.clip === "meditation-bell");
     const blocks = rows.filter((row) => row.clip === BROKEN);
 
@@ -193,7 +247,8 @@ describe("render re-rolls takes that come back below the gate", () => {
   });
 
   it("keeps every rejected take on disk under its own name", async () => {
-    const files = readdirSync(join(outDir, "round-A", "bells"));
+    const world = await spentWorld();
+    const files = readdirSync(join(world.outDir, "round-A", "bells"));
 
     expect(files).toHaveLength(9 * 3 + 4);
     // Never the pre-gate name, which the failed pass's masters still occupy.
@@ -204,37 +259,42 @@ describe("render re-rolls takes that come back below the gate", () => {
   });
 
   it("spends nothing on a re-run: filled slots are done and spent bounds stay spent", async () => {
-    const before = manifest().length;
+    const world = await spentWorld();
+    const before = world.manifest().length;
 
-    await render("A", true, 4);
+    await world.render("A", true, 4);
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(manifest()).toHaveLength(before);
+    expect(world.manifest()).toHaveLength(before);
     // The exhausted slot is still a failure, not a silent pass.
     expect(process.exitCode).toBe(1);
   });
 
   it("refuses to widen an already-spent bound without being asked", async () => {
+    const world = await spentWorld();
+
     // Raising --attempts is how a human deliberately buys the broken slot more
     // draws; the point is that it takes that explicit act.
-    await render("A", true, 5);
+    await world.render("A", true, 5);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const brokenRows = manifest().filter((row) => row.clip === BROKEN && row.candidate === 1);
+    const brokenRows = world.manifest().filter((row) => row.clip === BROKEN && row.candidate === 1);
     expect(brokenRows).toHaveLength(5);
     expect(brokenRows.at(-1)?.file).toBe(`${BROKEN}-c01-a05.pcm`);
   });
 
   it("records null rather than a guess when a response carried no cost header", async () => {
+    const world = await spentWorld();
+
     // ☠️ The alternative is falling back to the quote and calling it a charge,
     // which is how a wrong constant survives: the record would agree with itself
     // whatever the API actually did. An absent measurement is written as absent.
     priceCalls = false;
-    await render("A", true, 6);
+    await world.render("A", true, 5);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const last = manifest().at(-1);
-    expect(last?.file).toBe(`${BROKEN}-c01-a06.pcm`);
+    const last = world.manifest().at(-1);
+    expect(last?.file).toBe(`${BROKEN}-c01-a05.pcm`);
     expect(last?.creditsCharged).toBeNull();
     // The quote is still there — it is what the pass was budgeted against.
     expect(last?.creditsEstimate).toBe(2 * CREDITS_PER_SECOND);
