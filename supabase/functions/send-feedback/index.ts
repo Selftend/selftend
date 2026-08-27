@@ -19,6 +19,10 @@ const jsonHeaders = { "Content-Type": "application/json" };
 // mirror below guards with typeof before touching it.
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
 
+// Bounds how long a hung Discord POST can keep the retired worker alive; the
+// user's response never waits on it either way.
+const DISCORD_TIMEOUT_MS = 10_000;
+
 function requiredEnv(name: string) {
   const value = Deno.env.get(name);
   if (!value) throw new Error(`Missing ${name}`);
@@ -162,7 +166,7 @@ Deno.serve(async (request) => {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(buildFeedbackDiscordPayload(category, trimmed)),
-              signal: AbortSignal.timeout(10_000),
+              signal: AbortSignal.timeout(DISCORD_TIMEOUT_MS),
             });
             // Best-effort single attempt, never a retry - especially not on
             // 404 (deleted webhook; repeated 404s trigger a temporary Discord

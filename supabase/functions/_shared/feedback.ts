@@ -85,7 +85,7 @@ const DISCORD_CONTENT_LIMIT = 2000;
  * The Discord mirror message (#1489). Scope is fixed by the privacy review
  * (#1482): the sanitized category and message text ONLY - never an email,
  * user id, or client metadata. Callers pass the values `validateFeedbackInput`
- * returned, so the same control-char stripping the email path gets applies here.
+ * returned, so the mirror gets the same control-char stripping as the email path.
  */
 export function buildFeedbackDiscordPayload(
   category: string,
