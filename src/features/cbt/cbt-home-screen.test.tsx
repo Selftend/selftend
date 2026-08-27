@@ -721,14 +721,14 @@ describe("CbtHomeScreen header stats and pattern bars (#1387)", () => {
     // Two doors to the same reference, deliberately: the Think pillar's
     // catalogue entry and the section's reading suggestion (#1229's
     // catalogue-versus-action rule). Neither says a number.
-    expect(screen.getAllByText("Thinking patterns")).toHaveLength(2);
+    expect(screen.getAllByText("Thinking Patterns")).toHaveLength(2);
     expect(screen.queryByText(/twelve/i)).toBeNull();
 
     const insightsSection = screen
       .getAllByTestId("section")
       .find((section) => within(section).queryByText("Insights"));
     expect(insightsSection).toBeTruthy();
-    fireEvent.press(within(insightsSection!).getByText("Thinking patterns"));
+    fireEvent.press(within(insightsSection!).getByText("Thinking Patterns"));
     expect(push).toHaveBeenCalledWith("/modules/cbt/learn");
   });
 });

@@ -148,6 +148,24 @@ describe("dashboard.strategies label casing", () => {
   );
 });
 
+describe("pillar label casing", () => {
+  // The gate above reads `dashboard.strategies`, which is not the same set as the labels a pillar
+  // card actually renders: `distortions` points its `labelKey` at `home.distortionGuide`, outside
+  // that map entirely, so it sat uncovered while reading as sentence case next to "Thought Records"
+  // and "Worry Time" in the same Think column. Iterating `labelKey` rather than the map keeps any
+  // future out-of-map label covered the moment it is added. English only, for the same reason as
+  // above - bg is sentence case throughout by its own orthography.
+  it.each(pillarStrategies)("writes $key's en label in Title Case", (strategy) => {
+    const label = resolveKey(enCbt, strategy.labelKey) as string;
+
+    expect({ key: strategy.key, label, lowercaseWords: titleCaseViolations(label) }).toEqual({
+      key: strategy.key,
+      label,
+      lowercaseWords: [],
+    });
+  });
+});
+
 // Without these, the gate above is only as good as the data it happens to run on: every committed
 // label is already Title Case, so `titleCaseViolations` could `return []` unconditionally and all
 // of them would stay green. These pin the rule itself, including the branches no label reaches yet.

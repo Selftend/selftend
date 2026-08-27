@@ -6,7 +6,7 @@
   "home": {
     "title": "CBT",
     "description": "A focused CBT section built around thought records, distortion awareness, and quiet review.",
-    "distortionGuide": "Thinking patterns",
+    "distortionGuide": "Thinking Patterns",
     "showAllRecords": "Show all records",
     "statLoadingValue": "—",
     "statRecords_one": "thought record",

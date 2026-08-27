@@ -24,10 +24,15 @@ interface CbtInsightsSectionProps {
  * the other seven kinds are silent - the common case at five to ten records.
  *
  * The section's action is a second door to the patterns reference (the Think
- * pillar's "Thinking patterns" tool is the first): a catalogue entry and a
+ * pillar's "Thinking Patterns" tool is the first): a catalogue entry and a
  * reading suggestion are different registers, so both stay (#1229's rule). The
  * label deliberately asserts no count (SR-3) - the drawn "Read the twelve
  * patterns" was false on arrival, seventeen ship today.
+ *
+ * That makes it the one `ShowAllLink` label that names its destination rather
+ * than an action ("Show all records", "See all"), so it is Title Case like the
+ * pillar tool it shares `home.distortionGuide` with, not sentence case like its
+ * siblings. One string, one tool name, both doors.
  */
 export function CbtInsightsSection({ bars, cards, ruled }: CbtInsightsSectionProps) {
   const { t } = useTranslation("cbt");

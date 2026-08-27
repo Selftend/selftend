@@ -75,7 +75,9 @@ Other `cbt.md` claims that check out against code:
   the recovery list because `/modules/cbt/learn` is a reference guide, not a practice, and
   a recovery plan asks which practices you will keep using — it has no
   `dashboard.strategies.*` label at all, only `home.distortionGuide` ("Thinking
-  patterns"). `mindfulness` stays out of the pillar list because the relocation ruled by
+  Patterns" — Title Case like every other pillar label, which is why the casing gate reads
+  each entry's `labelKey` rather than the `dashboard.strategies` map). `mindfulness` stays
+  out of the pillar list because the relocation ruled by
   #1198 stands: shared tools are not CBT strategies. `src/features/cbt/strategies.test.ts`
   gates that delta, and also gates the two label maps, which are read with dynamic keys
   and so are invisible to `test/i18n-key-coverage.test.ts`.
