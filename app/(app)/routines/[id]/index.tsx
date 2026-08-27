@@ -5,9 +5,8 @@ import { RoutineDetailScreen } from "@/src/features/routines/routine-detail-scre
 
 export default function RoutineDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  // A segment naming no routine is a URL that matched no record, which is what
-  // this screen says - and it says it with chrome. Returning null rendered a
-  // blank screen with nothing on it to press (#1328).
+  // Not `null`: a segment naming no routine used to render a blank screen with
+  // nothing on it to press (#1328).
   if (typeof id !== "string" || !id) return <NotFoundScreen />;
   return <RoutineDetailScreen routineId={id} />;
 }

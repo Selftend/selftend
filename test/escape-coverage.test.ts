@@ -273,6 +273,10 @@ describe("every covered route reaches the Escape chrome (G3)", () => {
 });
 
 describe("every RENDER PATH reaches the Escape chrome (R3, #1328)", () => {
+  // One walk, read by both clauses: the AST parse is the expensive part, and
+  // the two questions below are two readings of the same scan.
+  const paths = scanRenderPaths(REPO, covered, MAX_HOPS);
+
   /**
    * The clause above answers "does this route reach the chrome at all?". This
    * one answers "does it reach the chrome on every branch it can render?" —
@@ -292,20 +296,19 @@ describe("every RENDER PATH reaches the Escape chrome (R3, #1328)", () => {
    * differently at 3am, and the coarse one is the better first sentence.
    */
   it("never early-returns past the chrome", () => {
-    const { chromeless } = scanRenderPaths(REPO, covered, MAX_HOPS);
-    expect(chromeless.map((p) => `${p.file}:${p.line} renders ${p.rendered}`).sort()).toEqual([]);
+    const strands = paths.chromeless.map((p) => `${p.file}:${p.line} renders ${p.rendered}`);
+    expect(strands.sort()).toEqual([]);
   });
 
   /**
    * Anti-vacuity, the same threat G5 exists for: this walk finds nothing if it
    * silently stops understanding the code. A route whose component it cannot
-   * locate falls back to the per-file scan and is listed here, so a new screen
-   * shape (`export default memo(Screen)`, say) reopens the hole LOUDLY instead
-   * of quietly widening the exemption.
+   * locate is listed here — ALWAYS, not merely when the coarse per-file
+   * fallback also fails — so a new screen shape (`export default memo(Screen)`,
+   * say) reopens the hole LOUDLY instead of quietly widening the exemption.
    */
   it("locates a component for every route, so nothing falls back unseen", () => {
-    const { unanalysable } = scanRenderPaths(REPO, covered, MAX_HOPS);
-    expect(unanalysable).toEqual([]);
+    expect(paths.unanalysable).toEqual([]);
   });
 });
 

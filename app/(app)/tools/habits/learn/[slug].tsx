@@ -5,9 +5,8 @@ import { HabitsLearnDetailScreen } from "@/src/features/habits/habits-learn-scre
 
 export default function HabitsLearnDetailRoute() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  // A segment naming no article is a URL that matched no record, which is what
-  // this screen says - and it says it with chrome. Returning null rendered a
-  // blank screen with nothing on it to press (#1328).
+  // Not `null`: a slug naming no article used to render a blank screen with
+  // nothing on it to press (#1328).
   if (typeof slug !== "string" || !slug) return <NotFoundScreen />;
   return <HabitsLearnDetailScreen slug={slug} />;
 }
