@@ -35,11 +35,11 @@ npm exec @react-native-reusables/cli@latest -- add --all --overwrite --styling-l
 
 Do not add a second broad UI kit without a specific reason. `daisyUI` is web-DOM-focused and is not the default for this Expo/React Native app.
 
-## Internationalization
+## Internationalization (i18n)
 
 Supported languages: English (`en`) and Bulgarian (`bg`). English is the fallback.
 
-Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON file each, all translated on [Weblate](https://hosted.weblate.org/projects/selftend/). The authoritative list is the `ns` array in `src/i18n/index.ts`. Ten cover app-level surfaces:
+Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON file per namespace per language. The authoritative list is the `ns` array in `src/i18n/index.ts`, and `src/i18n/locale-parity.test.ts` keeps the `en` and `bg` key sets identical. Ten cover app-level surfaces:
 
 | Namespace       | Scope                                          |
 | --------------- | ---------------------------------------------- |
@@ -60,7 +60,9 @@ Components use `useTranslation("namespace")`; non-component code may import `i18
 
 Language preference is stored in AsyncStorage (`selftend:language`) and synced to `user_preferences.language`.
 
-Every namespace is tracked as its own Weblate component, all linked to the `auth` component so they share one repository connection. `node scripts/weblate-create-components.js` reports which namespaces are untracked and prints the payload that would create them; `--verify` checks the live components against the expected configuration (i18next v4 format, propagation off, two-space JSON indent). Both are read-only. Adding a namespace therefore means adding a component: re-run the script with `--apply` and a `WEBLATE_API_TOKEN`, then revoke the token.
+The intended end-state is one Weblate component per namespace, each linked to the `auth` component so they share one repository connection. That is not reached yet: **7 of the 20 namespaces are tracked** — `auth`, `cbt`, `common`, `errors`, `navigation`, `policies`, `settings` (checked 2026-08-27). The other 13 are translated in the repo only and cannot be edited on Weblate until [#1105](https://github.com/Selftend/selftend/issues/1105) creates their components in one scripted pass.
+
+Do not take that count on trust — it is a snapshot. `node scripts/weblate-create-components.js` reports which namespaces are untracked and prints the payload that would create them; `--verify` checks the live components against the expected configuration (i18next v4 format, propagation off, two-space JSON indent). Both are read-only and need no token. Once the set is complete, adding a namespace also means adding a component: re-run the script with `--apply` and a `WEBLATE_API_TOKEN`, then revoke the token.
 
 `--apply` also repairs components it did not create: Weblate auto-detects JSON indentation and has guessed wrong before, and a component left at the wrong width rewrites its whole locale file on the first translation write-back. Any component not at two spaces is PATCHed back, so one command covers the whole sitting; `--fix-indent` runs that repair on its own. Because the Weblate API documents `file_format_params` as writable under `PUT` but not `PATCH`, the repair re-reads each component afterwards and fails loudly if the value did not take, rather than trusting the status code — set it by hand (Component → Manage → Settings → Files → JSON indentation → 2) if that happens.
 
