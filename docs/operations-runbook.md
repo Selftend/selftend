@@ -201,6 +201,7 @@ retains the `code` branch, which is also still used by web Google OAuth).
 - Verify identity before disclosing or deleting account data. Prefer requests from the email address attached to the Selftend account.
 - Prefer self-service export and deletion in Settings when the user can access the account.
 - Use manual handling only when self-service cannot work, when the user asks for a right not covered in-app, or when the request requires explanation.
+- Feedback content lives outside the database, in **two** places that self-service deletion never touches: the support mailbox and the private `#feedback-inbox` Discord channel (a mirror of each in-app submission's category + message text). Neither copy is linked to an account, so on an erasure request search **both** manually by content and delete what matches.
 - Keep a private request log outside the repo with received date, request type, verification state, action taken, response date, and closure date.
 - Do not store private request logs, user exports, identity documents, or support inbox exports in this repository.
 
