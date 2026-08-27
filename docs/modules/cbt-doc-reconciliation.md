@@ -60,6 +60,35 @@ Other `cbt.md` claims that check out against code:
   thoughts, values, beliefs, exposure, worry, mindfulness, tasks, anger, selfCare);
   `cbt-home-screen.tsx` renders strategy pillars + recovery/weekly-review. Matches the
   `cbt.md` "Current CBT implementation" bullet list.
+
+  There are **two intentional strategy vocabularies**, not one list that has drifted:
+
+  - **Pillar/home vocabulary** — `PILLAR_STRATEGIES` (`cbt-home/cbt-home-config.ts`),
+    11 keys across think/act/be, described by `pillars.strategyDescriptions` (13 entries
+    = the same 11 plus `weeklyReview` and `recovery`, which are `REVIEW_LINKS`, not
+    pillar strategies). Includes `distortions`.
+  - **Recovery vocabulary** — `strategyKeys` (`strategies.ts`), 11 keys, driving which
+    integration-note fields a recovery plan offers (`recovery/active-strategies.ts`).
+    Includes `mindfulness`.
+
+  They overlap in 10 keys and differ by exactly one each way. `distortions` stays out of
+  the recovery list because `/modules/cbt/learn` is a reference guide, not a practice, and
+  a recovery plan asks which practices you will keep using — it has no
+  `dashboard.strategies.*` label at all, only `home.distortionGuide` ("Thinking
+  patterns"). `mindfulness` stays out of the pillar list because the relocation ruled by
+  #1198 stands: shared tools are not CBT strategies. `src/features/cbt/strategies.test.ts`
+  gates that delta, and also gates the two label maps, which are read with dynamic keys
+  and so are invisible to `test/i18n-key-coverage.test.ts`.
+
+  The recovery `mindfulness` label reads **"Calming practice"**, not "Mindfulness": the
+  key is fed by `listMindfulnessSessions`, and `mindfulness_sessions` is the shared table
+  that breathing, grounding **and** meditation all write to, so one round of box breathing
+  used to produce a recovery field labelled "Mindfulness". The key id is deliberately
+  unchanged — it is persisted as a key of `recovery_plans.strategyIntegrationNotes`, and
+  renaming it would orphan every note already stored under it (#1507). Because the key id
+  still reads `mindfulness`, `strategies.test.ts` holds the label to that decision: it
+  fails if either locale's label claims mindfulness again.
+
 - **Dashboard** — `cbt-home-screen.tsx` uses `useCbtInsights`, `personalSlogan`
   (from `recoveryPlan`), and read-only insight cards. Matches `cbt.md`'s "dashboard with
   quick actions, strategy links, recovery slogan, and read-only insights".
