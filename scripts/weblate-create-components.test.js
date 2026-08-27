@@ -5,6 +5,10 @@ const {
   buildPayload,
   verifyComponent,
   createComponent,
+  componentsNeedingIndentFix,
+  indentFixPayload,
+  fixComponentIndent,
+  repairIndents,
   API_ROOT,
 } = require("./weblate-create-components");
 
@@ -275,5 +279,193 @@ describe("createComponent", () => {
     await expect(createComponent("act", { request, sleep: async () => {} })).rejects.toThrow(
       /repository not found/,
     );
+  });
+});
+
+// The two components created before this script existed had their JSON indentation
+// auto-detected and guessed wrong (5 for cbt, 3 for common). The first Weblate edit
+// to either would rewrite the whole file at that width, so the pass repairs them.
+describe("indent repair", () => {
+  // The full five-key shape the live API returns, so the tests can prove the other
+  // four survive the write.
+  const liveParams = (overrides = {}) => ({
+    dos_eol: false,
+    json_indent: 5,
+    json_sort_keys: false,
+    json_indent_style: "spaces",
+    json_use_compact_separators: false,
+    ...overrides,
+  });
+  const drifted = (slug, indent, overrides = {}) => ({
+    slug,
+    is_glossary: false,
+    file_format_params: liveParams({ json_indent: indent }),
+    ...overrides,
+  });
+
+  const stubRequest = (responses) => {
+    const calls = [];
+    const request = jest.fn(async (method, url, body) => {
+      calls.push({ method, url, body });
+      const next = responses.shift();
+      if (!next) throw new Error(`unexpected request: ${method} ${url}`);
+      return next;
+    });
+    return { request, calls };
+  };
+
+  const patchedOk = (indent) => ({
+    status: 200,
+    body: { file_format_params: liveParams({ json_indent: indent }) },
+  });
+
+  describe("componentsNeedingIndentFix", () => {
+    it("picks out exactly the two drifted components in the live project state", () => {
+      const components = [
+        drifted("cbt", 5),
+        drifted("common", 3),
+        drifted("auth", 2),
+        drifted("errors", 2),
+      ];
+      expect(componentsNeedingIndentFix(components).map((c) => c.slug)).toEqual(["cbt", "common"]);
+    });
+
+    it("leaves the glossary alone - it tracks no locale file, so its indent cannot reformat one", () => {
+      const components = [drifted("glossary", 5, { is_glossary: true })];
+      expect(componentsNeedingIndentFix(components)).toEqual([]);
+    });
+
+    // An absent field means "unknown", not "wrong". Repairing it would be an
+    // unasked-for write to a component the pass did not create - including
+    // possibly `auth`, the root every other component inherits from. --verify
+    // still reports it, so a human sees it either way.
+    it("leaves a component with no file_format_params alone rather than blind-writing to it", () => {
+      expect(componentsNeedingIndentFix([{ slug: "auth", is_glossary: false }])).toEqual([]);
+    });
+
+    it("returns nothing once every component is already at two spaces", () => {
+      expect(componentsNeedingIndentFix([drifted("cbt", 2), drifted("common", 2)])).toEqual([]);
+    });
+  });
+
+  describe("indentFixPayload", () => {
+    it("forces the indent to two spaces", () => {
+      expect(indentFixPayload(drifted("cbt", 5)).file_format_params.json_indent).toBe(2);
+    });
+
+    it("resends the server's other format params so a replacing PATCH cannot drop them", () => {
+      const payload = indentFixPayload(drifted("cbt", 5));
+      expect(payload.file_format_params).toEqual({
+        dos_eol: false,
+        json_indent: 2,
+        json_sort_keys: false,
+        json_indent_style: "spaces",
+        json_use_compact_separators: false,
+      });
+    });
+
+    it("touches nothing but the format params", () => {
+      expect(Object.keys(indentFixPayload(drifted("cbt", 5)))).toEqual(["file_format_params"]);
+    });
+  });
+
+  describe("fixComponentIndent", () => {
+    it("PATCHes the component endpoint rather than re-creating it", async () => {
+      const { request, calls } = stubRequest([patchedOk(2), patchedOk(2)]);
+      await fixComponentIndent(drifted("cbt", 5), { request });
+      expect(calls[0].method).toBe("PATCH");
+      expect(calls[0].url).toBe(`${API_ROOT}/components/selftend/cbt/`);
+      expect(calls[0].body.file_format_params.json_indent).toBe(2);
+    });
+
+    it("re-reads the component afterwards instead of trusting the status code", async () => {
+      const { request, calls } = stubRequest([patchedOk(2), patchedOk(2)]);
+      await fixComponentIndent(drifted("cbt", 5), { request });
+      expect(calls[1].method).toBe("GET");
+      expect(calls[1].url).toBe(`${API_ROOT}/components/selftend/cbt/`);
+    });
+
+    // The API docs list file_format_params as writable under PUT but not under PATCH,
+    // so a 200 is not proof the value took. A silent no-op here would leave the pass
+    // believing it fixed something it did not.
+    it("fails loudly when the PATCH is accepted but the indent did not actually change", async () => {
+      const { request } = stubRequest([patchedOk(5), patchedOk(5)]);
+      await expect(fixComponentIndent(drifted("cbt", 5), { request })).rejects.toThrow(
+        /still reports json_indent 5/,
+      );
+    });
+
+    it("points at the manual UI fallback when the API ignores the field", async () => {
+      const { request } = stubRequest([patchedOk(5), patchedOk(5)]);
+      await expect(fixComponentIndent(drifted("cbt", 5), { request })).rejects.toThrow(
+        /JSON indentation/,
+      );
+    });
+
+    it("throws with the server's message when the PATCH is rejected", async () => {
+      const { request } = stubRequest([
+        { status: 403, body: { detail: "You do not have permission." } },
+      ]);
+      await expect(fixComponentIndent(drifted("cbt", 5), { request })).rejects.toThrow(
+        /permission/,
+      );
+    });
+
+    it("reports the repaired slug so the pass can summarise what it touched", async () => {
+      const { request } = stubRequest([patchedOk(2), patchedOk(2)]);
+      expect(await fixComponentIndent(drifted("cbt", 5), { request })).toEqual({
+        slug: "cbt",
+        json_indent: 2,
+      });
+    });
+  });
+
+  describe("repairIndents", () => {
+    it("repairs every drifted component", async () => {
+      const { request, calls } = stubRequest([
+        patchedOk(2),
+        patchedOk(2),
+        patchedOk(2),
+        patchedOk(2),
+      ]);
+      const failures = await repairIndents([drifted("cbt", 5), drifted("common", 3)], { request });
+      expect(failures).toEqual([]);
+      expect(calls.filter((c) => c.method === "PATCH").map((c) => c.url)).toEqual([
+        `${API_ROOT}/components/selftend/cbt/`,
+        `${API_ROOT}/components/selftend/common/`,
+      ]);
+    });
+
+    // One rejected PATCH must not strand the components behind it in the queue.
+    it("keeps going after a failure and reports it against the right slug", async () => {
+      const { request, calls } = stubRequest([
+        { status: 403, body: { detail: "You do not have permission." } },
+        patchedOk(2),
+        patchedOk(2),
+      ]);
+      const failures = await repairIndents([drifted("cbt", 5), drifted("common", 3)], { request });
+      expect(failures).toHaveLength(1);
+      expect(failures[0]).toMatch(/^cbt: /);
+      expect(calls.some((c) => c.url.endsWith("/common/"))).toBe(true);
+    });
+
+    it("writes nothing when there is nothing to repair", async () => {
+      const { request, calls } = stubRequest([]);
+      expect(await repairIndents([], { request })).toEqual([]);
+      expect(calls).toEqual([]);
+    });
+
+    it("reports through the injected logger rather than writing straight to the console", async () => {
+      const log = jest.fn();
+      const logError = jest.fn();
+      const { request } = stubRequest([
+        { status: 403, body: { detail: "nope" } },
+        patchedOk(2),
+        patchedOk(2),
+      ]);
+      await repairIndents([drifted("cbt", 5), drifted("common", 3)], { request, log, logError });
+      expect(logError).toHaveBeenCalledWith(expect.stringMatching(/FAILED cbt/));
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/common/));
+    });
   });
 });
