@@ -1,6 +1,12 @@
-import { fieldGradient } from "@/src/lib/module-room";
+import { PRIMARY_TRIPLES } from "@/src/lib/design-tokens";
 
-import { CHROME_CLASSES, CHROME_MARK, CHROME_TEXT, neutralFieldGradient } from "./chrome";
+import {
+  CHROME_CLASSES,
+  CHROME_MARK,
+  CHROME_TEXT,
+  fieldStopsForDegree,
+  neutralFieldGradient,
+} from "./chrome";
 import {
   HUE_ENCODINGS,
   hueEncoding,
@@ -135,9 +141,9 @@ describe("the neutral chrome primitives", () => {
 
   // The property that matters, and the one a delegation test could not see:
   // the neutral field follows the palette the user actually picked. Comparing
-  // it against fieldGradient("primary") instead would have compared the
-  // implementation with itself - both read the same fixed violet - and passed
-  // while every migrated header stayed lilac on all eight palettes.
+  // it against the retired fieldGradient("primary") instead would have compared
+  // the implementation with itself - both read the same fixed violet - and
+  // passed while every migrated header stayed lilac on all eight palettes.
   it.each([true, false])("the neutral field pours the active accent (isDark=%s)", (isDark) => {
     for (const style of STYLE_NAMES) {
       const expected = Number.parseInt(THEME_TOKENS[style].light["--primary"], 10);
@@ -170,8 +176,13 @@ describe("the neutral chrome primitives", () => {
   });
 
   // The default palette must not shift: quiet-lilac's neutral field is still
-  // exactly the primary field that ships today (#500).
+  // exactly the primary field that ships today (#500). PRIMARY_TRIPLES is a
+  // separate source from THEME_TOKENS, so this is not the implementation
+  // compared with itself: it pins the default style's accent to the published
+  // primary violet.
   it.each([true, false])("quiet-lilac still pours today's field (isDark=%s)", (isDark) => {
-    expect(neutralFieldGradient(DEFAULT_STYLE, isDark)).toEqual(fieldGradient("primary", isDark));
+    expect(neutralFieldGradient(DEFAULT_STYLE, isDark)).toEqual(
+      fieldStopsForDegree(Number.parseInt(PRIMARY_TRIPLES.light, 10), isDark),
+    );
   });
 });

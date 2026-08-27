@@ -43,7 +43,6 @@ import {
 } from "@/src/lib/accessibility";
 import { useSaveBreathingSession } from "@/src/features/breathing/queries";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -173,7 +172,6 @@ export default function BreathingSessionScreen() {
   });
 
   const colorScheme = useColorSchemeName();
-  const roomStyle = useRoomStyle("aqua");
   const accent = resolved?.color ?? "aqua";
   // Identity-stable per (colour, scheme): the countdown rerenders this screen
   // several times a second during a session, and the pacer must not see a fresh
@@ -399,7 +397,7 @@ export default function BreathingSessionScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
           <LoadingState title={t("breathing.title")} />
         </View>
@@ -409,7 +407,7 @@ export default function BreathingSessionScreen() {
 
   if (!resolved || notFound) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center p-6">
           <Text variant="h2">{t("breathing.notFound")}</Text>
         </View>
@@ -579,7 +577,7 @@ export default function BreathingSessionScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+    <SafeAreaView className="flex-1 bg-background">
       {/* Setup gets the 48px trail bar (design `4b`); the live session runs on
           the focus shell decided on #777 and built above. */}
       <ScreenTopBar leading="back" />

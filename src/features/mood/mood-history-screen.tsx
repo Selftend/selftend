@@ -16,7 +16,6 @@ import { useMoodHistoryPages } from "@/src/features/mood/queries";
 import type { MoodLog } from "@/src/features/mood/types";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 /**
@@ -32,7 +31,6 @@ import { useSession } from "@/src/providers/session-provider";
  */
 export default function MoodHistoryScreen() {
   const { t, i18n } = useTranslation("mood");
-  const roomStyle = useRoomStyle("be");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -49,11 +47,7 @@ export default function MoodHistoryScreen() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <SectionList<MoodLog, HistorySection<MoodLog>>
         sections={sections}
         keyExtractor={(item) => item.id}

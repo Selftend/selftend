@@ -35,7 +35,6 @@ import type {
   HabitInput,
   HabitKind,
 } from "@/src/features/habits/types";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 import {
@@ -93,7 +92,6 @@ function habitToInput(habit: Habit): HabitInput {
 
 export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitEditorScreenProps) {
   const { t } = useTranslation("habits");
-  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -280,7 +278,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
 
   if (editMode && !fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
           <LoadingState title={t("form.editTitle")} />
         </View>
@@ -291,7 +289,7 @@ export function HabitEditorScreen({ fallbackHref, mode, habitId = null }: HabitE
   return (
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the act pour through it.
-    <View testID="habit-editor-room" className="flex-1" style={roomStyle}>
+    <View testID="habit-editor-room" className="flex-1">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
         // Both modes now, where only create mode had chrome: an edit form used to

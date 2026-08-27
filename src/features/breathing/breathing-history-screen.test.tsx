@@ -1,10 +1,8 @@
 import { screen } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import BreathingHistoryScreen from "@/src/features/breathing/breathing-history-screen";
 import { useBreathingSessionPages } from "@/src/features/breathing/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), canGoBack: jest.fn(() => true), back: jest.fn() },
@@ -127,11 +125,5 @@ describe("Breathing all-sessions screen", () => {
 
     expect(screen.getByText("No sessions yet")).toBeTruthy();
     expect(screen.queryByText("Couldn't load your sessions")).toBeNull();
-  });
-
-  it("renders the aqua room", () => {
-    pages({ data: { pages: [[session()]], pageParams: [0] } });
-    renderWithProviders(<BreathingHistoryScreen />);
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 });

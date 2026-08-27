@@ -18,7 +18,6 @@ import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatAtOffset, formatInstantAtOffset } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { formatDuration } from "@/src/features/sleep/format";
@@ -37,7 +36,6 @@ import { formatDuration } from "@/src/features/sleep/format";
 export default function SleepDetailScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("sleep");
-  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const logId = typeof id === "string" ? id : null;
@@ -71,7 +69,7 @@ export default function SleepDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
           <LoadingState title={t("detail.title")} />
         </View>
@@ -81,11 +79,7 @@ export default function SleepDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -126,7 +120,7 @@ export default function SleepDetailScreen() {
   ].join(" · ");
 
   return (
-    <View className="flex-1" style={roomStyle}>
+    <View className="flex-1">
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/* The trail rides the bar, not the column: chrome for the screen rather
             than part of the document (#733). */}

@@ -35,7 +35,6 @@ import {
 import type { JournalWritingRange } from "@/src/features/journal/types";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { formatInstantAtOffset } from "@/src/utils/date";
 
@@ -116,8 +115,6 @@ export default function JournalListScreen() {
     [pushWithOrigin],
   );
 
-  const roomStyle = useRoomStyle("ink");
-
   return (
     <>
       <JournalOnboarding
@@ -125,11 +122,7 @@ export default function JournalListScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN)}>
             <ModuleHomeHeader

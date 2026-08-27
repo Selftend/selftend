@@ -1,16 +1,16 @@
 import { HUE_TRIPLES, PRIMARY_TRIPLES, TINT_TOKENS } from "@/src/lib/design-tokens";
 import { chipHsl, chipTriples, tintDegree } from "@/src/lib/hue-chip";
-import { roomTriples } from "@/src/lib/module-room";
+import { DEFAULT_STYLE, THEME_TOKENS } from "@/src/lib/theme/styles";
 
-// A chip is a one-swatch room (src/lib/hue-chip.ts): a hue-tinted fill, a
-// border, a raw accent swatch, and ink. These floors are the certification the
-// habit color chips used to lack (#278) - a hue's raw accent cannot carry
-// small text on a tint of itself (light `think` on a pale think fill is
-// 1.78:1), so `ink` fixes the lightness instead, and this suite proves it.
+// A chip (src/lib/hue-chip.ts) is a hue-tinted fill, a border, a raw accent
+// swatch, and ink. These floors are the certification the habit color chips
+// used to lack (#278) - a hue's raw accent cannot carry small text on a tint
+// of itself (light `think` on a pale think fill is 1.78:1), so `ink` fixes the
+// lightness instead, and this suite proves it.
 //
-// Every habit screen wears the act room (useRoomStyle("act")), so the "on the
-// room" pairings below are measured against the act room's own surfaces.
-// Helper math mirrors test/room-contrast.test.ts.
+// The room pour is gone (#586/#1292), so chips sit on the app's own surfaces;
+// the "on the app surfaces" pairings below are measured against the default
+// palette's background and card.
 
 function hslTripleToRgb(triple: string): [number, number, number] {
   const match = triple.match(/^(\d+)\s+(\d+)%\s+(\d+)%$/);
@@ -58,18 +58,20 @@ describe("chip ink meets WCAG AA on its own fill", () => {
   });
 });
 
-describe("chip ink meets WCAG AA on the act room", () => {
-  it.each(TINT_TOKENS)("%s ink passes on the room background and card", (tint) => {
+describe("chip ink meets WCAG AA on the app surfaces", () => {
+  it.each(TINT_TOKENS)("%s ink passes on the background and card", (tint) => {
     for (const scheme of SCHEMES) {
       const chip = chipTriples(tint)[scheme];
-      const room = roomTriples("act")[scheme];
+      const surfaces = THEME_TOKENS[DEFAULT_STYLE][scheme];
       const ink = hslTripleToRgb(chip.ink);
 
       // Ink doubles as the selected swatch's outline and the accent-swatch
-      // ring, both drawn straight on the room surface. Clearing 4.5 there
+      // ring, both drawn straight on the screen surface. Clearing 4.5 there
       // clears the 3.0 non-text floor (WCAG 1.4.11) with room to spare.
-      expect(contrastRatio(ink, hslTripleToRgb(room.background))).toBeGreaterThanOrEqual(4.5);
-      expect(contrastRatio(ink, hslTripleToRgb(room.card))).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(ink, hslTripleToRgb(surfaces["--background"]))).toBeGreaterThanOrEqual(
+        4.5,
+      );
+      expect(contrastRatio(ink, hslTripleToRgb(surfaces["--card"]))).toBeGreaterThanOrEqual(4.5);
     }
   });
 });

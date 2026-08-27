@@ -22,7 +22,6 @@ import {
 } from "@/src/features/journal/queries";
 import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatAtOffset } from "@/src/utils/date";
@@ -43,7 +42,6 @@ export default function JournalDetailScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
-  const roomStyle = useRoomStyle("ink");
   const { id } = useLocalSearchParams<{ id: string }>();
   const entryId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
@@ -62,7 +60,7 @@ export default function JournalDetailScreen() {
 
   if (!fromCache && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
+      <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 justify-center">
           <LoadingState title={t("detail.title")} />
         </View>
@@ -72,11 +70,7 @@ export default function JournalDetailScreen() {
 
   if (!entry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -136,7 +130,7 @@ export default function JournalDetailScreen() {
   };
 
   return (
-    <View testID="journal-detail-room" className="flex-1" style={roomStyle}>
+    <View testID="journal-detail-room" className="flex-1">
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/* The trail rides the bar, not the column: chrome for the screen rather
             than part of the document (#733). */}

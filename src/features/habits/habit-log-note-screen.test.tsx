@@ -9,7 +9,6 @@ import { useHabit, useHabitLogs, useUpsertHabitLogNote } from "@/src/features/ha
 import { currentDateKey } from "@/src/features/habits/scheduling";
 import type { HabitLog } from "@/src/features/habits/types";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -82,7 +81,7 @@ describe("HabitLogNoteScreen", () => {
     mockDefaults();
   });
 
-  it("renders inside the act room - no field gradient", () => {
+  it("renders the heading and the translated day", () => {
     renderWithProviders(<HabitLogNoteScreen habitId="h-1" />);
 
     expect(screen.getByRole("heading", { name: "Add a note" })).toBeTruthy();
@@ -91,8 +90,6 @@ describe("HabitLogNoteScreen", () => {
     // section is the first thing in the app to pass `?date=`.
     expect(screen.queryByText(`Read · ${currentDateKey()}`)).toBeNull();
     expect(screen.getByText("Read · Today")).toBeTruthy();
-    // The wrapper carries the act room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.getByTestId("habit-log-note-room"));
   });
 
   it("asks for the one day, closed at both ends, so an older note is never missed", () => {

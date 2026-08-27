@@ -16,7 +16,6 @@ import { useGroundingSessionCount, useGroundingSessions } from "@/src/features/g
 import { GroundingSessionRow } from "@/src/features/grounding/grounding-session-row";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 import { formatCompactAtOffset } from "@/src/utils/date";
@@ -54,8 +53,6 @@ export default function GroundingHomeScreen() {
       ? t("grounding.hero.never")
       : undefined;
 
-  const roomStyle = useRoomStyle("clay");
-
   return (
     <>
       <GroundingOnboarding
@@ -63,11 +60,7 @@ export default function GroundingHomeScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader

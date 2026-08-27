@@ -23,7 +23,6 @@ import {
   useGratitudeEntryCountSinceDayKey,
 } from "@/src/features/gratitude/queries";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey } from "@/src/stores/selected-date-store";
@@ -35,7 +34,6 @@ const BAR_AREA_HEIGHT = 68;
 export default function GratitudeHomeScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("gratitude");
-  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const [forceOnboarding, setForceOnboarding] = useState(false);
@@ -73,11 +71,7 @@ export default function GratitudeHomeScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader

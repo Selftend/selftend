@@ -13,7 +13,6 @@ import { formatHabitHistoryDay } from "@/src/features/habits/history-groups";
 import { useHabit, useHabitLogs, useUpsertHabitLogNote } from "@/src/features/habits/queries";
 import { HABIT_NOTE_MAX } from "@/src/features/habits/schemas";
 import { currentDateKey } from "@/src/features/habits/scheduling";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 interface HabitLogNoteScreenProps {
@@ -23,7 +22,6 @@ interface HabitLogNoteScreenProps {
 
 export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreenProps) {
   const { t, i18n } = useTranslation("habits");
-  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
 
@@ -90,7 +88,7 @@ export function HabitLogNoteScreen({ habitId, dateOverride }: HabitLogNoteScreen
   return (
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the act pour through it.
-    <View testID="habit-log-note-room" className="flex-1" style={roomStyle}>
+    <View testID="habit-log-note-room" className="flex-1">
       <MobileFormScreen
         contentClassName="gap-6"
         footer={

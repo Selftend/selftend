@@ -2,13 +2,10 @@ import { entryDayKey } from "@/src/lib/occurrence-time";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
-import { SafeAreaView } from "react-native-safe-area-context";
-
 import GratitudeFavoritesScreen from "@/src/features/gratitude/gratitude-favorites-screen";
 import { useFavoriteGratitudeEntries } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -63,7 +60,7 @@ describe("GratitudeFavoritesScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("renders the empty state on the room pour - no field gradient", () => {
+  it("renders the empty state heading", () => {
     mockUseFavoriteGratitudeEntries.mockReturnValue({
       data: [],
     } as unknown as ReturnType<typeof useFavoriteGratitudeEntries>);
@@ -71,8 +68,6 @@ describe("GratitudeFavoritesScreen", () => {
     renderWithProviders(<GratitudeFavoritesScreen />);
 
     expect(screen.getByRole("heading", { name: "Favorite moments" })).toBeTruthy();
-    // The root carries the think room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("routes to the entry detail when a favorite row is pressed", () => {

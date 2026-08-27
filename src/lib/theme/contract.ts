@@ -14,14 +14,11 @@
 //                 owner ruled the style axis colours-only: radius, fonts,
 //                 spacing and control shapes never vary by style.
 //
-//   --accent-ink  The room-poured hue ink: src/lib/module-room.ts re-pours it
-//                 per hue, and outside a room it falls back to the app accent —
-//                 the silent-violet trap #403 spent a sweep on. Once rooms go
-//                 neutral (#558) nothing pours it and it collapses onto
-//                 --primary-ink, a second name for one value, so it gets no home
-//                 here. lib/theme.ts keeps emitting today's fallback until the
-//                 call-site sweep (#585-#588) retires the last consumer and #589
-//                 deletes the var for real.
+//   --accent-ink  Deleted. It was the room-poured hue ink, and outside a room
+//                 it fell back to the app accent — the silent-violet trap #403
+//                 spent a sweep on. Rooms went neutral (#558/#586), #589
+//                 deleted the var, and #1292 deleted the room surface itself;
+//                 test/theme-token-sync.test.ts pins the var's absence.
 //
 //   the 8 hues    Not theme tokens. They survive as a pinned encoding palette
 //   and hue inks  (src/lib/design-tokens.ts) for the surfaces where colour
