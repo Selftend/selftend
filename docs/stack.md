@@ -56,7 +56,7 @@ Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON
 
 The other ten are one per tool or module: `act`, `cbt`, `gratitude`, `habits`, `journal`, `meditation`, `mood`, `routines`, `sleep`, `timer`.
 
-Components use `useTranslation("namespace")`; non-component code may import `i18n.t()` directly. Policy screens use `t(sectionKey, { returnObjects: true })` for structured arrays.
+Components use `useTranslation("namespace")`; non-component code may import `i18n.t()` directly. Structured content — policy sections, grounding steps, meditation instructions, gratitude prompts — is stored as JSON arrays and read with `t(key, { returnObjects: true })`.
 
 Language preference is stored in AsyncStorage (`selftend:language`) and synced to `user_preferences.language`.
 
