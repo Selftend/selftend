@@ -109,6 +109,11 @@ describe("export_user_data never loses a column it once exported", () => {
     expect(newest.size).toBeGreaterThan(400);
     expect([...newest]).toContain("thought_records.created_offset_minutes");
     expect([...newest]).toContain("activity_logs.scheduled_offset_minutes");
+    // #1376. The monotonic check below can only prove a column was never LOST,
+    // so it says nothing about one that never arrived: `belief_after` would be
+    // absent from every declaration, including the newest, and every assertion
+    // here would still pass. This pins that it arrived at all.
+    expect([...newest]).toContain("thought_records.belief_after");
   });
 
   it("has the winning declaration carry every column any declaration ever exported", () => {

@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -12,22 +12,16 @@ import { useFavoriteGratitudeEntries } from "@/src/features/gratitude/queries";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function GratitudeFavoritesScreen() {
   const { t } = useTranslation("gratitude");
-  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const { data: favorites } = useFavoriteGratitudeEntries(user?.id ?? null, 200);
   const favoriteList = favorites ?? [];
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
@@ -55,6 +49,7 @@ export default function GratitudeFavoritesScreen() {
 }
 
 function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("gratitude");
   const when = formatRelativeDayKey(entry.dayKey, t);
   const firstItem = firstAnswer(entry.items) ?? t("list.fallbackItem");
@@ -65,7 +60,7 @@ function FavoriteEntryRow({ entry }: { entry: GratitudeEntry }) {
       accessibilityRole="button"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={() =>
-        router.push({
+        pushWithOrigin({
           pathname: "/tools/gratitude-log/[id]",
           params: { id: entry.id },
         })

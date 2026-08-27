@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -33,6 +34,7 @@ import { cn } from "@/lib/utils";
  * list on the Android launcher widget.
  */
 export function ProgramWidget({ module, userId }: { module: "cbt" | "act"; userId: string }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("navigation");
   const { t: tm } = useTranslation(module);
   const { data: preferences } = useUserPreferences(userId);
@@ -77,7 +79,7 @@ export function ProgramWidget({ module, userId }: { module: "cbt" | "act"; userI
       accessibilityRole="button"
       accessibilityLabel={badge ? `${title}, ${badge}, ${secondLine}` : `${title}, ${secondLine}`}
       testID={`programme-card-${module}`}
-      onPress={() => router.push(route as Parameters<typeof router.push>[0])}
+      onPress={() => pushWithOrigin(route as Href)}
       className={cn(
         "gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3.5 active:bg-primary/10",
         Platform.select({ web: "hover:bg-primary/[0.08]" }),

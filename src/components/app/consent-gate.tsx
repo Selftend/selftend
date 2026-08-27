@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,6 +15,7 @@ import { Checkbox } from "@/src/components/react-native-reusables/checkbox";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useRecordPolicyConsent } from "@/src/features/settings/queries";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -28,6 +28,11 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
   const { user } = useSession();
   const [accepted, setAccepted] = useState(false);
   const consentMutation = useRecordPolicyConsent(user?.id ?? null);
+  // The gate covers whatever route the user was heading for, so reading a policy
+  // from here is a jump out of it and back (#1265, O3). Both policy routes sit
+  // at the root, so without the Origin the way out of one lands on Home rather
+  // than returning to the gate the user still has to clear.
+  const pushWithOrigin = usePushWithOrigin();
 
   const handleAccept = async () => {
     if (!user?.id) {
@@ -53,10 +58,10 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
           <CardContent>
             <View className="gap-4">
               <View className="gap-2">
-                <Button onPress={() => router.push("/privacy")} variant="secondary">
+                <Button onPress={() => pushWithOrigin("/privacy")} variant="secondary">
                   <Text>{t("consent.readPrivacy")}</Text>
                 </Button>
-                <Button onPress={() => router.push("/terms")} variant="secondary">
+                <Button onPress={() => pushWithOrigin("/terms")} variant="secondary">
                   <Text>{t("consent.readTerms")}</Text>
                 </Button>
               </View>

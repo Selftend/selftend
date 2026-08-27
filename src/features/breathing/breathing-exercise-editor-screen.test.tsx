@@ -4,7 +4,6 @@ import { BreathingExerciseEditorScreen } from "@/src/features/breathing/breathin
 import { BREATHING_EXERCISE_COLOR_CHOICES } from "@/src/features/breathing/exercise-types";
 import { TIMING_SEGMENT_CLASSES } from "@/src/features/breathing/phase-timing-bar";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 const mockSave = jest.fn().mockResolvedValue({ id: "e-1" });
 const mockBack = jest.fn();
@@ -262,16 +261,5 @@ describe("New breathing pattern (4d)", () => {
         screen.getByText("You can change the length each time you start a session."),
       ).toBeTruthy();
     });
-  });
-
-  it("renders the aqua room with the top bar in create mode", () => {
-    renderWithProviders(<BreathingExerciseEditorScreen exerciseId={null} />);
-    expectNeutralRoom(screen.getByTestId("breathing-editor-room"));
-  });
-
-  it("renders the plain aqua pour in edit mode", () => {
-    mockList = [exercise()];
-    renderWithProviders(<BreathingExerciseEditorScreen exerciseId="e-1" />);
-    expectNeutralRoom(screen.getByTestId("breathing-editor-room"));
   });
 });

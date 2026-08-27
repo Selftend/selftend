@@ -40,14 +40,14 @@ describe("SHARED_TOOLS_BY_PILLAR", () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it("gives every shared tool exactly one of helpKey / infoKey", () => {
+  // Every shared tool is now a plain link, so `route` is the one field the row
+  // reads on press - a blank one would be a chip that goes nowhere.
+  it("gives every shared tool a route, a label and an icon", () => {
     for (const pillar of PILLARS) {
       for (const tool of SHARED_TOOLS_BY_PILLAR[pillar]) {
-        const hasHelp = "helpKey" in tool && Boolean(tool.helpKey);
-        const hasInfo = "infoKey" in tool && Boolean(tool.infoKey);
-        expect(hasHelp !== hasInfo).toBe(true);
         expect(tool.route).toBeTruthy();
         expect(tool.labelKey.length).toBeGreaterThan(0);
+        expect(tool.icon.length).toBeGreaterThan(0);
       }
     }
   });

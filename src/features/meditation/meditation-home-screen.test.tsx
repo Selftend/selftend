@@ -1,5 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 
 import MeditationHomeScreen from "@/src/features/meditation/meditation-home-screen";
 import {
@@ -8,14 +7,14 @@ import {
   useMeditationProgramState,
   useMeditationSessionCount,
   useMeditationSessions,
+  useUpsertMeditationProgramState,
 } from "@/src/features/meditation/queries";
 import {
   MINUTES_WINDOW_DAYS,
   minutesWindowFromIso,
 } from "@/src/features/meditation/minutes-window";
-import { useUserPreferences } from "@/src/features/settings/queries";
+import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 import { currentDateKey } from "@/src/utils/date";
 
 jest.mock("expo-router", () => {
@@ -108,13 +107,31 @@ const setMinutesWindow = (data: unknown) =>
     typeof useMeditationMinutesWindow
   >);
 
+// The module mocks build a FRESH mutateAsync on every call, so a test that wants
+// to assert on the write has to pin one. Re-pinned per test, after clearAllMocks.
+const upsertProgramState = jest.fn();
+const updatePreferences = jest.fn();
+
+const setStoredPreferences = (extra: Record<string, unknown> = {}) =>
+  mockUseUserPreferences.mockReturnValue({
+    data: { enabledModules: ["meditation"], ...extra },
+    isLoading: false,
+  } as unknown as ReturnType<typeof useUserPreferences>);
+
 describe("MeditationHomeScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseUserPreferences.mockReturnValue({
-      data: { enabledModules: ["meditation"] },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useUserPreferences>);
+    upsertProgramState.mockResolvedValue(undefined);
+    updatePreferences.mockResolvedValue(undefined);
+    (useUpsertMeditationProgramState as jest.Mock).mockReturnValue({
+      mutateAsync: upsertProgramState,
+      isPending: false,
+    });
+    (useUpdateUserPreferences as jest.Mock).mockReturnValue({
+      mutateAsync: updatePreferences,
+      isPending: false,
+    });
+    setStoredPreferences();
     mockUseMeditationProgramState.mockReturnValue({
       // The stored preference is where the length slider starts; the
       // no-chip-ever-drew-it case (15) has a test of its own below.
@@ -191,13 +208,6 @@ describe("MeditationHomeScreen", () => {
     expect(screen.queryByText(/typical/)).toBeNull();
   });
 
-  it("renders the iris room: quiet shell header and room pour", () => {
-    renderWithProviders(<MeditationHomeScreen />);
-
-    // The root carries the iris room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-  });
-
   it("inks the stage badge and the all-sits link so they clear AA", () => {
     setSessions([session()]);
 
@@ -207,19 +217,6 @@ describe("MeditationHomeScreen", () => {
     // is the pattern #691 named a regression and #368 measured at 3.81:1.
     expect(screen.getByText("Stage 2").props.className).toContain("text-primary-ink");
     expect(screen.getByText("Show all sits").props.className).toContain("text-primary-ink");
-  });
-
-  it("keeps the room poured on the loading return", () => {
-    mockUseUserPreferences.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    } as unknown as ReturnType<typeof useUserPreferences>);
-
-    renderWithProviders(<MeditationHomeScreen />);
-
-    // Without this the iris room drops out while preferences resolve and snaps
-    // in afterwards - the defect grounding shipped and had to fix.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("omits the subline until history has actually loaded", () => {
@@ -326,6 +323,112 @@ describe("MeditationHomeScreen", () => {
       // A bell that rings without being asked for is a notification nobody opted
       // into; Off is the default and the other three are one tap away.
       expect(bells().getByText("Off").props.className).toContain("text-primary-ink");
+    });
+
+    it("remembers a length the user set, not only the one onboarding stored", async () => {
+      // Until #1190 the slider read a stored seed and never wrote one back, so
+      // someone who sat for 21 minutes every day re-set it every day.
+      renderWithProviders(<MeditationHomeScreen />);
+
+      fireEvent.press(lengths().getByLabelText("One minute more"));
+
+      await waitFor(() =>
+        expect(upsertProgramState).toHaveBeenCalledWith({ preferredDurationMinutes: 21 }),
+      );
+    });
+
+    it("starts the interval bell on the stored choice rather than Off", () => {
+      // The bell lived in useState(0) and reset to Off on every visit (#1190).
+      setStoredPreferences({ meditationIntervalBellMinutes: 10 });
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(bells().getByText("10 min").props.className).toContain("text-primary-ink");
+      expect(bells().getByText("Off").props.className).not.toContain("text-primary-ink");
+    });
+
+    it("remembers the interval bell when it changes", async () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      fireEvent.press(bells().getByText("5 min"));
+
+      // A discrete choice has no travel, so its change already is its commit.
+      await waitFor(() =>
+        expect(updatePreferences).toHaveBeenCalledWith({ meditationIntervalBellMinutes: 5 }),
+      );
+    });
+
+    it("keeps the picked value when the write fails, and says nothing", async () => {
+      // Persistence is best-effort, like the breathing session's volume writes:
+      // the local pick owns this visit, so a failed write must not surface as an
+      // error or escape as an unhandled rejection.
+      updatePreferences.mockRejectedValue(new Error("offline"));
+      renderWithProviders(<MeditationHomeScreen />);
+
+      fireEvent.press(bells().getByText("15 min"));
+
+      await waitFor(() => expect(updatePreferences).toHaveBeenCalled());
+      expect(bells().getByText("15 min").props.className).toContain("text-primary-ink");
+      expect(screen.queryByText(/went wrong|error/i)).toBeNull();
+    });
+
+    it("hands the stored bell to the sitting screen without a fresh tap", () => {
+      const { router } = jest.requireMock<{ router: { push: jest.Mock } }>("expo-router");
+      setStoredPreferences({ meditationIntervalBellMinutes: 10 });
+
+      renderWithProviders(<MeditationHomeScreen />);
+      fireEvent.press(screen.getByText("Begin"));
+
+      expect(router.push).toHaveBeenCalledWith({
+        pathname: "/tools/meditation/session",
+        params: { duration: "20", bell: "10" },
+      });
+    });
+
+    it("offers a bell volume, starting from the stored one", () => {
+      // Until #1188 the bells were the one lane with no control - and measured
+      // as the loudest sound in the app, louder than either breathing lane.
+      setStoredPreferences({ bellVolume: 0.4 });
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const volume = within(screen.getByTestId("sit-bell-volume"));
+      expect(volume.getByText("40%")).toBeTruthy();
+      expect(volume.getByLabelText("Bell volume").props.accessibilityValue).toEqual({
+        min: 0,
+        max: 100,
+        now: 40,
+      });
+    });
+
+    it("starts at full volume when nothing has been stored", () => {
+      // Deliberately not quieter: #1130 owns absolute loudness and is
+      // re-rendering the clips down, so a quiet default here would stack.
+      renderWithProviders(<MeditationHomeScreen />);
+
+      expect(within(screen.getByTestId("sit-bell-volume")).getByText("100%")).toBeTruthy();
+    });
+
+    it("reads Off rather than 0% when the bells are muted", () => {
+      setStoredPreferences({ bellVolume: 0 });
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const volume = within(screen.getByTestId("sit-bell-volume"));
+      expect(volume.getByText("Off")).toBeTruthy();
+      expect(volume.queryByText("0%")).toBeNull();
+    });
+
+    it("persists the bell volume when the drag settles, not while it moves", async () => {
+      setStoredPreferences({ bellVolume: 0.6 });
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const slider = within(screen.getByTestId("sit-bell-volume")).getByLabelText("Bell volume");
+      expect(updatePreferences).not.toHaveBeenCalled();
+
+      fireEvent(slider, "responderRelease");
+
+      await waitFor(() => expect(updatePreferences).toHaveBeenCalledWith({ bellVolume: 0.6 }));
     });
 
     it("hands both choices to the sitting screen when the sit begins", () => {

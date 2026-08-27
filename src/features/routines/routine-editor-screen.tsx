@@ -1,6 +1,5 @@
 import { router, type Href } from "expo-router";
 import { ActivityIndicator, Pressable, View, type TextInput } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Sortable from "react-native-sortables";
@@ -13,7 +12,7 @@ import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { TimeField } from "@/src/components/app/time-field";
 import {
   NOTIFICATION_TARGETS,
@@ -401,13 +400,7 @@ export function RoutineEditorScreen({
   // order changed.
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("form.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("form.editTitle")} />;
   }
 
   const usedTools = new Set(steps.map((step) => step.toolId));

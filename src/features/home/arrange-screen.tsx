@@ -7,14 +7,16 @@ import Animated, { useAnimatedRef } from "react-native-reanimated";
 import Sortable from "react-native-sortables";
 
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { reorderMoveProps } from "@/src/lib/accessibility";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
-import { CHROME_MARK } from "@/src/lib/theme/chrome";
+import { CHROME_MARK, CHROME_MUTED_TEXT } from "@/src/lib/theme/chrome";
 import { useSession } from "@/src/providers/session-provider";
-import { WIDGET_META, metaForWidget } from "@/src/features/home/widget-registry";
+import { WIDGET_META, metaForWidget, moduleTagFor } from "@/src/features/home/widget-registry";
+import { MODULE_TAG_KEYS } from "@/src/features/home/module-tag-copy";
 import { useWidgetTiers } from "@/src/features/home/widget-tiers";
 import {
   useAddWidget,
@@ -197,8 +199,12 @@ export default function ArrangeScreen() {
    * omitted six real ids, which would make them unreachable now that the three-level modal
    * is gone. Registry-ordered and unsearched: a ranking would be product-authored
    * curriculum, and searching a list you can see in full is chrome. The failure mode is
-   * height (16 lines at 390dp with nothing added), not truncation, and it shrinks
-   * monotonically as you add.
+   * height - measured at 390dp the full run is 12 lines in English and 16 in Bulgarian,
+   * and #1246's module tags push both up (English 14 -> 18 at 360dp, Bulgarian 19 -> 21).
+   * ☠️ Not truncation: chip flex-shrink defaults to zero and the title sets no line limit,
+   * so a title long enough to exceed the run's width OVERFLOWS its pill rather than
+   * ellipsing. Measured headroom in the tightest case is 14px, at 320dp in Bulgarian.
+   * It shrinks monotonically as you add.
    */
   const addableIds = useMemo(
     () =>
@@ -292,6 +298,10 @@ export default function ArrangeScreen() {
    * a back with no stack behind it silently no-ops, and the screen just sits there looking
    * like the button is broken. Arrange reaches that state the same way every other screen
    * does - a deep link, a bookmark, or a web refresh on `/arrange`.
+   *
+   * `Done` is a **Completion** - a done-after-save action that happens to navigate - and a
+   * Completion is explicitly not an Escape (#1163), so it does not exempt this screen from
+   * carrying one. The Escape is the top bar's (#1255); this button stays exactly as it is.
    */
   const finish = () => backWithFallback("/");
 
@@ -299,14 +309,23 @@ export default function ArrangeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      {/*
+        The Escape's chrome (#1255). Arrange was one of the escape spec's 11 red
+        screens (W11): it had a way out - `Done` below - but a Completion is not
+        an Escape, and R1 is discharged only by the chrome slot. `/arrange` has
+        no breadcrumb entry, so the bar's trail hides and the Escape announces
+        "Back to Home".
+      */}
+      <ScreenTopBar />
       <View testID="arrange-layout" className="flex-1">
         <AnimatedScrollView ref={scrollableRef} contentContainerStyle={{ padding: PADDING }}>
           {/*
             672px, matching `settings-screen` and `notifications-screen` - the two screens
             arrange sits beside in the user's head, and the two it is built like. It is
-            NOT one of `layout.ts`'s shell columns because arrange rides neither shell:
-            those widths come with `ModuleHomeHeader` (720) and `ScreenTopBar` (620), and
-            this screen carries its own header so it can put `Done` in it.
+            NOT one of `layout.ts`'s shell columns: `HOME_COLUMN` (720) belongs to
+            `ModuleHomeHeader` and `FORM_COLUMN` (620) to the form screens, and arrange is
+            neither - the `ScreenTopBar` above is the Escape's chrome (#1255), while this
+            screen still carries its own title row so it can put `Done` in it.
           */}
           <View className="mx-auto w-full max-w-2xl gap-6">
             <View className="flex-row items-center justify-between gap-3">
@@ -451,9 +470,15 @@ export default function ArrangeScreen() {
               branch that never rendered (nothing is `status: "soon"`) and a preview of the
               200px card this redesign retired.
 
-              Add-only, and no descriptions. Ten of the 25 names are module jargon and
-              losing their explanations is a real cost - paid because a chip tap has exactly
-              one meaning and is reversible in one tap, in view.
+              Add-only, and no descriptions: a chip tap has exactly one meaning and is
+              reversible in one tap, in view.
+
+              That cost is answered by the module tag (#1246), not by restoring the
+              descriptions. 14 of the 25 chips print a muted trailing acronym
+              naming the module they come from, so `Defusion`, `Make room` and `Choice
+              point` read as one family rather than three novelties. It GROUPS, it does not
+              teach - the acronyms are already glossed in the onboarding wizard, in a better
+              form than a legend would manage. Absence of a tag means standalone.
             */}
             {!preferencesSettled ? null : (
               <View className="gap-2.5">
@@ -472,11 +497,19 @@ export default function ArrangeScreen() {
                     {addableIds.map((id) => {
                       const meta = metaForWidget(id);
                       const title = meta ? t(meta.titleKey) : id;
+                      const moduleTag = moduleTagFor(id);
                       return (
                         <Pressable
                           key={id}
                           accessibilityRole="button"
-                          accessibilityLabel={t("home.arrange.addChip", { title })}
+                          accessibilityLabel={
+                            moduleTag
+                              ? t("home.arrange.addChipTagged", {
+                                  title,
+                                  module: t(MODULE_TAG_KEYS[moduleTag].a11y),
+                                })
+                              : t("home.arrange.addChip", { title })
+                          }
                           testID={`arrange-chip-${id}`}
                           disabled={mutationPending}
                           onPress={() => addWidget(id)}
@@ -487,6 +520,19 @@ export default function ArrangeScreen() {
                         >
                           <Icon name="add" className="size-4 shrink-0 text-primary" />
                           <Text className="text-[13px] font-medium">{title}</Text>
+                          {moduleTag ? (
+                            <>
+                              <Text className={cn("text-[11px]", CHROME_MUTED_TEXT)}>·</Text>
+                              <Text
+                                className={cn(
+                                  "text-[11px] font-bold uppercase tracking-[0.1em]",
+                                  CHROME_MUTED_TEXT,
+                                )}
+                              >
+                                {t(MODULE_TAG_KEYS[moduleTag].label)}
+                              </Text>
+                            </>
+                          ) : null}
                         </Pressable>
                       );
                     })}

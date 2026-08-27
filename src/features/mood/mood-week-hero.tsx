@@ -8,7 +8,7 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { MoodHistoryRow } from "@/src/features/mood/mood-history-row";
-import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
 import {
   logsOnDay,
@@ -176,7 +176,7 @@ export function WeekHero({
 
       {showHistoryLink ? (
         <View className="flex-row justify-end">
-          <ShowAllHistoryLink />
+          <ShowAllLink label={t("allHistory.link")} route="/tools/check-in/history" />
         </View>
       ) : null}
 

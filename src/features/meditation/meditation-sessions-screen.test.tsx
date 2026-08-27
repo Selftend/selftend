@@ -5,7 +5,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import MeditationSessionsScreen from "@/src/features/meditation/meditation-sessions-screen";
 import { useMeditationSessionPages } from "@/src/features/meditation/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 import { useThemeStore } from "@/src/stores/theme-store";
 
 jest.mock("expo-router", () => ({
@@ -13,12 +12,9 @@ jest.mock("expo-router", () => ({
   usePathname: () => "/tools/meditation/sessions",
 }));
 
-// The room reads the scheme through the house reader (useColorSchemeName, #344),
+// The screen reads the scheme through the house reader (useColorSchemeName, #344),
 // which resolves the theme store's preference against the OS - so the scheme is
 // driven from both ends here rather than by stubbing nativewind's hook.
-// nativewind itself stays real: the whole screen renders through its className
-// interop, and roomVariables builds the pour through its vars().
-// Matches the idiom in src/lib/use-room-style.test.ts.
 const mockUseColorScheme = jest.spyOn(require("react-native"), "useColorScheme");
 
 /** Drive the scheme the way the app does: preference "system", OS decides. */
@@ -120,36 +116,15 @@ describe("MeditationSessionsScreen", () => {
     expect(screen.getByText("Steadier today.")).toBeTruthy();
   });
 
-  it("renders the iris room pour on the root", () => {
-    setSessions([session()]);
-
-    renderWithProviders(<MeditationSessionsScreen />);
-
-    // The root carries the iris room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-  });
-
-  it("pours the dark iris room when the scheme is dark", () => {
-    setSessions([session()]);
-    setOsScheme("dark");
-
-    renderWithProviders(<MeditationSessionsScreen />);
-
-    // Asserting the dark triples by value is its own guard against a scheme read
-    // that never moved: the light pour carries different values and fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
-  });
-
   it("keeps the FlatList as the scroll root", () => {
     setSessions([session()]);
 
     renderWithProviders(<MeditationSessionsScreen />);
 
-    // The pour rides the SafeAreaView itself, so the only host element between
-    // the list and the root is that safe-area view - no wrapper. Wrapping the
-    // list in a `<View style={roomStyle}>` would still look poured while
-    // costing the rows their recycling (#97), and passes a mere "a FlatList
-    // exists" check; this is what rules it out.
+    // The only host element between the list and the root is the safe-area
+    // view - no wrapper. Wrapping the list in an extra View would cost the rows
+    // their recycling (#97) while still passing a mere "a FlatList exists"
+    // check; this is what rules it out.
     const root = screen.UNSAFE_getByType(SafeAreaView);
     const hostsBetween = [];
     for (let node = screen.UNSAFE_getByType(FlatList).parent; node && node !== root;) {

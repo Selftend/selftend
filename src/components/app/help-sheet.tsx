@@ -1,13 +1,12 @@
-import { Image, Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { Image, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { HelpSections } from "@/src/components/app/help-sections";
-import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HELP_CONTENT, type HelpKey } from "@/src/features/help/help-content";
 import { HELP_IMAGES } from "@/src/features/help/help-images";
-import { useReduceMotionEnabled, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 
 interface HelpSheetProps {
   helpKey: HelpKey;
@@ -17,40 +16,20 @@ interface HelpSheetProps {
 
 export function HelpSheet({ helpKey, visible, onDismiss }: HelpSheetProps) {
   const { t } = useTranslation("help");
-  const reduceMotion = useReduceMotionEnabled();
   const entry = HELP_CONTENT[helpKey];
   const title = t(entry.titleKey);
   const imageSource = HELP_IMAGES[helpKey];
 
-  // ⚠️ WEB: a closed sheet unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
-  // this.
-  if (!visible && Platform.OS === "web") return null;
-
   return (
-    <Modal
-      animationType={reduceMotion ? "none" : "slide"}
-      visible={visible}
-      onRequestClose={onDismiss}
-    >
-      <SafeAreaView className="flex-1 bg-background">
+    <PressShieldModal visible={visible} onEscape={onDismiss} onRequestClose={onDismiss}>
+      {/* No "top": the wrapper's escape row already sits in the top inset. */}
+      <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
         <ScrollView contentContainerClassName="p-6">
           <View testID="help-sheet-content" className="w-full max-w-2xl mx-auto gap-6">
-            <View className="flex-row items-start justify-between gap-3">
-              <Text variant="h2" className="flex-1">
-                {title}
-              </Text>
-              <Pressable
-                accessibilityLabel={t("ui.close")}
-                accessibilityRole="button"
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={onDismiss}
-              >
-                <Icon name="close" className="size-6 text-muted-foreground" />
-              </Pressable>
-            </View>
+            {/* Title in the scroll body, matching every other guide: the
+                pinned row above holds only the Escape, so this sheet no
+                longer carries an in-scroll X of its own (M5, #1257). */}
+            <Text variant="h2">{title}</Text>
             {imageSource ? (
               <Image
                 accessibilityLabel={title}
@@ -63,6 +42,6 @@ export function HelpSheet({ helpKey, visible, onDismiss }: HelpSheetProps) {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </Modal>
+    </PressShieldModal>
   );
 }

@@ -1,6 +1,5 @@
 import { router } from "expo-router";
 import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -9,7 +8,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import type { BreathingPhase, PhaseLabel } from "@/src/constants/breathing";
 import { PhaseTimingBar } from "@/src/features/breathing/phase-timing-bar";
 import { SessionLengthButtons } from "@/src/features/breathing/session-length-buttons";
@@ -43,7 +42,6 @@ import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 
@@ -199,16 +197,8 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
     }
   };
 
-  const roomStyle = useRoomStyle("aqua");
-
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("breathing.builder.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("breathing.builder.editTitle")} />;
   }
 
   const saving = saveMutation.isPending;
@@ -216,7 +206,7 @@ export function BreathingExerciseEditorScreen({ exerciseId }: { exerciseId?: str
   return (
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the aqua pour through it.
-    <View className="flex-1" style={roomStyle} testID="breathing-editor-room">
+    <View className="flex-1" testID="breathing-editor-room">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-7")}
         topBar={<ScreenTopBar leading="close" />}

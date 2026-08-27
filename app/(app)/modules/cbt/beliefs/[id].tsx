@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
@@ -15,18 +16,20 @@ import {
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import {
   useCoreBelief,
   useDeleteCoreBelief,
   useUpdateBeliefStrength,
 } from "@/src/features/beliefs/queries";
 import { DeleteEntryButton } from "@/src/components/app/delete-entry-button";
+import { useInlineWriteError } from "@/src/lib/use-inline-write-error";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 
 export default function BeliefDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
@@ -34,9 +37,23 @@ export default function BeliefDetailScreen() {
   const { data: belief, isLoading } = useCoreBelief(user?.id ?? null, id ?? null);
   const strengthMutation = useUpdateBeliefStrength(user?.id ?? null);
   const deleteMutation = useDeleteCoreBelief(user?.id ?? null);
+  const deleteError = useInlineWriteError(t("beliefs.deleteError"));
+
+  // ☠️ `DeleteEntryButton` keeps its confirmation OPEN when the delete rejects, so the
+  // global save-failed toast would land behind a native modal (#1364, spec §10).
+  // `ConfirmDialog` already carries an `error` slot; the failure goes there. The
+  // success toast is safe - it fires as the screen is being replaced.
   const handleDelete = async () => {
     if (!belief) return;
-    await deleteMutation.mutateAsync(belief.id);
+    deleteError.onStart();
+    try {
+      await deleteMutation.mutateAsync(belief.id);
+    } catch (error) {
+      deleteError.onError();
+      // Rethrown on purpose: `DeleteEntryButton` closes its confirmation only when
+      // `onConfirm` RESOLVES, and a closed dialog has nowhere to show this.
+      throw error;
+    }
     showToast({ title: t("common:feedback.deleted"), tone: "success" });
     router.replace("/modules/cbt/beliefs" as Parameters<typeof router.replace>[0]);
   };
@@ -71,23 +88,11 @@ export default function BeliefDetailScreen() {
   };
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("beliefs.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("beliefs.loading")} />;
   }
 
   if (!belief) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("beliefs.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("beliefs.notFound")} />;
   }
 
   const renderList = (label: string, items: string[]) => (
@@ -209,15 +214,17 @@ export default function BeliefDetailScreen() {
 
           <View className="gap-3">
             <Button
-              onPress={() => router.push(`/modules/cbt/beliefs/new?beliefId=${belief.id}`)}
+              onPress={() => pushWithOrigin(`/modules/cbt/beliefs/new?beliefId=${belief.id}`)}
               variant="secondary"
             >
               <Text>{t("common:edit")}</Text>
             </Button>
             <DeleteEntryButton
+              error={deleteError.message ?? undefined}
               label={t("common:delete")}
               title={t("beliefs.deleteTitle")}
               message={t("beliefs.deleteMessage")}
+              onOpen={deleteError.onStart}
               onConfirm={handleDelete}
             />
           </View>

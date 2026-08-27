@@ -15,6 +15,8 @@ import {
   useSaveHierarchy,
 } from "@/src/features/exposure/queries";
 import * as repo from "@/src/features/exposure/repository";
+import { createAppQueryClient } from "@/src/lib/query-client";
+import { useToastStore } from "@/src/stores/toast-store";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
 // Automock of the repository re-export barrel does not reliably yield callable
@@ -363,5 +365,70 @@ describe("useLatestExposureSessionAt", () => {
     await client.invalidateQueries({ queryKey: ["exposure"] });
 
     await waitFor(() => expect(repo.getLatestExposureSessionAt).toHaveBeenCalledTimes(2));
+  });
+});
+
+/**
+ * ☠️ Both writes on the detail screen fire from inside a native modal that STAYS OPEN -
+ * the session sheet and the delete confirmation - so the global save-failed toast would
+ * be raised behind them, and on Android nothing can lift a toast over a native modal
+ * (#1335, spec §10). Each surface renders its failure inline instead.
+ *
+ * ⚠️ These run against the REAL `createAppQueryClient`, because the global toast lives on
+ * its `MutationCache`. The screen's own test mocks this whole module, so its "no toast"
+ * assertion cannot observe that cache at all - only these can.
+ */
+describe("writes raised from behind a native modal", () => {
+  let toastClient: QueryClient;
+
+  beforeEach(() => {
+    toastClient = createAppQueryClient();
+    // The error toast is sticky, so the real teardown runs between cases.
+    useToastStore.getState().clearToasts();
+  });
+
+  afterEach(() => {
+    // Building a mutation schedules a long gc timer; production owns a process-long
+    // client, but these short-lived ones would keep Jest alive.
+    for (const mutation of toastClient.getMutationCache().getAll()) mutation.destroy();
+    toastClient.clear();
+  });
+
+  // The control: without it, both absence assertions below could pass on an inert store.
+  it("raises the global toast for a failing mutation that does NOT opt out", async () => {
+    const mutation = toastClient.getMutationCache().build(toastClient, {
+      mutationFn: () => Promise.reject(new TypeError("Network request failed")),
+    });
+
+    await mutation.execute(undefined).catch(() => {});
+
+    expect(useToastStore.getState().visible).toMatchObject({ tone: "error" });
+    mutation.destroy();
+  });
+
+  it("stays quiet when the session save fails, leaving the sheet to show it", async () => {
+    mockSaveSession.mockRejectedValue(new TypeError("Network request failed"));
+    const { result } = renderHook(() => useSaveExposureSession("u1", "h1"), {
+      wrapper: makeWrapper(toastClient),
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync({ itemId: "i1", input: {} as never }).catch(() => {});
+    });
+
+    expect(useToastStore.getState().visible).toBeNull();
+  });
+
+  it("stays quiet when the delete fails, leaving the confirmation to show it", async () => {
+    mockDeleteHierarchy.mockRejectedValue(new TypeError("Network request failed"));
+    const { result } = renderHook(() => useDeleteHierarchy("u1"), {
+      wrapper: makeWrapper(toastClient),
+    });
+
+    await act(async () => {
+      await result.current.mutateAsync("h1").catch(() => {});
+    });
+
+    expect(useToastStore.getState().visible).toBeNull();
   });
 });

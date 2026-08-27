@@ -1,4 +1,5 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { Modal } from "react-native";
 
 import { AppOnboardingWizard } from "@/src/components/app/app-onboarding-wizard";
 import { useAddStep, useCreateRoutine, useRoutines } from "@/src/features/routines/queries";
@@ -22,8 +23,9 @@ jest.mock("react-native", () => {
   });
 });
 
+let mockWizardUser: { id: string; is_anonymous?: boolean } = { id: "user-1" };
 jest.mock("@/src/providers/session-provider", () => ({
-  useSession: () => ({ user: { id: "user-1" } }),
+  useSession: () => ({ user: mockWizardUser }),
 }));
 
 // The starter-routine gate reads the routine list; "Keep" writes through the
@@ -44,6 +46,7 @@ const addStep = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockWizardUser = { id: "user-1" };
 
   // Default: a fresh user with zero routines - the starter gate is open.
   mockUseRoutines.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useRoutines>);
@@ -67,6 +70,10 @@ function renderWizard(overrides: Partial<React.ComponentProps<typeof AppOnboardi
       visible
       initialConcerns={[]}
       isPending={false}
+      // The re-offer shape by default (skip is free, footer keeps its own
+      // "Skip for now"); the pinned-Escape tests below state each call
+      // site's value explicitly (#1258).
+      skipPersists={false}
       onFinish={onFinish}
       onSkip={onSkip}
       {...overrides}
@@ -116,6 +123,9 @@ it("can replay only the welcome introduction without entering recommendations", 
       introductionOnly
       initialConcerns={[]}
       isPending={false}
+      // The replay is mounted by the protected-layout gate, whose skip
+      // persists onboarding as done (#1258).
+      skipPersists
       onFinish={jest.fn()}
       onSkip={onSkip}
     />,
@@ -310,6 +320,72 @@ it("prefills initial concerns and can skip from any panel", () => {
   expect(onFinish).not.toHaveBeenCalled();
 });
 
+/**
+ * #1258 (spec clause M2 on #1167): the same wizard serves two call sites, and
+ * its pinned Escape differs by CONSEQUENCE, not by component. At the
+ * protected-layout gate, skipping persists onboarding as done and never
+ * returns — the Escape wears the word. At the empty-dashboard re-offer,
+ * skipping only hides a suggestion — the Escape stays a bare X. At both, the
+ * Escape reaches the skip path directly, never the step-Back dismiss.
+ */
+describe("the pinned Escape distinguishes the two call sites (#1258)", () => {
+  it("wears 'Skip for now' at the first-run gate and skips instead of stepping back", () => {
+    const { onSkip, onFinish } = renderWizard({ skipPersists: true });
+    // Advance past panel one, where a step-Back would be observable.
+    fireEvent.press(screen.getByText("Continue"));
+    expect(screen.getByText("What brings you here?")).toBeTruthy();
+
+    const escape = screen.getByTestId("modal-escape");
+    // The word is the accessible name too — announcing "Close" on a press
+    // that persists a decision would disguise it one sense over.
+    expect(escape.props.accessibilityLabel).toBe("Skip for now");
+    fireEvent.press(escape);
+
+    // The skip path, not the dismiss: the wizard did not return to welcome.
+    expect(onSkip).toHaveBeenCalledTimes(1);
+    expect(onFinish).not.toHaveBeenCalled();
+    expect(screen.getByText("What brings you here?")).toBeTruthy();
+    expect(screen.queryByText("Welcome to Selftend")).toBeNull();
+  });
+
+  it("promotes the footer word into the row rather than duplicating it", () => {
+    renderWizard({ skipPersists: true });
+    // Exactly one "Skip for now" — the pinned one. Two identical controls
+    // would be two exits making the same promise (#1257's rule).
+    expect(screen.getAllByText("Skip for now")).toHaveLength(1);
+    expect(screen.getByTestId("modal-escape").props.accessibilityLabel).toBe("Skip for now");
+  });
+
+  it("stays a bare X at the empty-dashboard re-offer, still skipping directly", () => {
+    const { onSkip } = renderWizard({ skipPersists: false });
+    fireEvent.press(screen.getByText("Continue"));
+
+    const escape = screen.getByTestId("modal-escape");
+    expect(escape.props.accessibilityLabel).toBe("Close");
+    fireEvent.press(escape);
+    expect(onSkip).toHaveBeenCalledTimes(1);
+
+    // Where the row is bare, the footer keeps its own labelled skip.
+    expect(screen.getByText("Skip for now")).toBeTruthy();
+  });
+
+  it("keeps the system gesture stepping to the previous panel (M4)", () => {
+    const { onSkip } = renderWizard({ skipPersists: true });
+    fireEvent.press(screen.getByText("Continue"));
+    expect(screen.getByText("What brings you here?")).toBeTruthy();
+
+    // Hardware back / the web Escape key arrive as onRequestClose; the
+    // pinned Escape must not have been wired over it.
+    const modal = screen.UNSAFE_getByType(Modal);
+    act(() => {
+      (modal.props as { onRequestClose: () => void }).onRequestClose();
+    });
+
+    expect(screen.getByText("Welcome to Selftend")).toBeTruthy();
+    expect(onSkip).not.toHaveBeenCalled();
+  });
+});
+
 it("supports Back from the starter panel to the previous panel", () => {
   renderWizard();
   fireEvent.press(screen.getByText("Continue"));
@@ -321,4 +397,43 @@ it("supports Back from the starter panel to the previous panel", () => {
   // No module was selected, so Back returns to the modules panel.
   fireEvent.press(screen.getByText("Back"));
   expect(screen.getByText("Would a self-help module be useful?")).toBeTruthy();
+});
+
+// #1446: the wizard's half of the invitation to register - one calm
+// informational line on whichever panel is final, guests only. The other half
+// is the settings card, and those two surfaces are the WHOLE invitation.
+describe("guest invitation line", () => {
+  const LINE =
+    "You're using Selftend as a guest - you can create an account any time from Settings to protect your data.";
+
+  it("shows the line to a guest on the final panel only", () => {
+    mockWizardUser = { id: "guest-1", is_anonymous: true };
+    // An existing routine closes the starter gate, so the modules panel with
+    // nothing selected is the final one.
+    mockUseRoutines.mockReturnValue({ data: [{ id: "r-1" }] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+    renderWizard();
+
+    // Welcome and concerns are not final - no line.
+    expect(screen.queryByText(LINE)).toBeNull();
+    fireEvent.press(screen.getByText("Continue"));
+    expect(screen.queryByText(LINE)).toBeNull();
+
+    fireEvent.press(screen.getByText("Continue"));
+    expect(screen.getByText("Would a self-help module be useful?")).toBeTruthy();
+    expect(screen.getByText(LINE)).toBeTruthy();
+  });
+
+  it("never shows the line to a registered user", () => {
+    mockUseRoutines.mockReturnValue({ data: [{ id: "r-1" }] } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+    renderWizard();
+
+    fireEvent.press(screen.getByText("Continue"));
+    fireEvent.press(screen.getByText("Continue"));
+    expect(screen.getByText("Would a self-help module be useful?")).toBeTruthy();
+    expect(screen.queryByText(LINE)).toBeNull();
+  });
 });

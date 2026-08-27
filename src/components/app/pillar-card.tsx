@@ -96,7 +96,11 @@ function PillarCardRoot({
             </Text>
           </View>
         </View>
-        {children ? <View className="mt-4 flex-row flex-wrap gap-2.5">{children}</View> : null}
+        {/* No VERTICAL gap: the tools are hairline rows and the rule between two
+            of them is the separation. The horizontal one stays - at `md` the
+            rows sit two abreast, and without a gutter the left tool's
+            description runs straight into the right tool's icon tile. */}
+        {children ? <View className="mt-4 flex-row flex-wrap md:gap-x-5">{children}</View> : null}
       </Card>
     </PillarContext.Provider>
   );
@@ -110,18 +114,28 @@ function PillarTool({ toolKey, icon, name, desc }: PillarToolProps) {
   const { onToolPress } = ctx;
 
   return (
+    // ⚠️ No `accessibilityLabel`: it would make `name` the whole accessible name
+    // and hide `desc`, whose only other home was `accessibilityHint` - which
+    // react-native-web never implements, so the description was silent on the
+    // web and truncated to a tile's width everywhere else.
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={name}
-      accessibilityHint={desc}
       onPress={() => onToolPress?.(toolKey)}
-      className="basis-[calc(50%-5px)] md:basis-[calc(25%-7.5px)] rounded-xl border border-border bg-card p-3.5"
+      // Half MINUS half the gutter, so two rows plus the gap still fit one line
+      // - a bare `md:w-1/2` beside a gap overflows and wraps back to one column.
+      className="w-full md:w-[calc(50%-10px)] flex-row items-center gap-3 border-t border-border py-3 active:bg-accent/40"
     >
-      <View className={cn("mb-1 h-8 w-8 items-center justify-center rounded-lg", CHROME_WASH)}>
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+        className={cn("h-8 w-8 shrink-0 items-center justify-center rounded-lg", CHROME_WASH)}
+      >
         <Icon name={icon} size={18} className={CHROME_MARK} />
       </View>
-      <Text className="text-[13.5px] font-semibold leading-tight">{name}</Text>
-      <Text className="mt-1 text-[11.5px] leading-snug text-muted-foreground">{desc}</Text>
+      <View className="flex-1 min-w-0">
+        <Text className="text-[13.5px] font-semibold leading-tight">{name}</Text>
+        <Text className="mt-0.5 text-[11.5px] leading-snug text-muted-foreground">{desc}</Text>
+      </View>
     </Pressable>
   );
 }

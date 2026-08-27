@@ -5,9 +5,12 @@ import * as WebBrowser from "expo-web-browser";
 import {
   EMAIL_ALREADY_EXISTS_ERROR,
   EMAIL_RATE_LIMITED_ERROR,
+  IDENTITY_ALREADY_EXISTS_ERROR,
   INVALID_CREDENTIALS_ERROR,
   LEAKED_PASSWORD_ERROR,
   SESSION_MISSING_ERROR,
+  convertGuestWithPassword,
+  linkGoogleIdentity,
   getNativeAuthRedirectUrl,
   getPasswordResetRedirectUrl,
   getWebAuthRedirectUrl,
@@ -20,10 +23,16 @@ import {
   updatePassword,
 } from "@/src/features/auth/api";
 import { completeAuthRedirect } from "@/src/features/auth/callback";
+import { AuthCallbackError } from "@/src/features/auth/callback-errors";
+import { captureError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("expo-linking", () => ({
   createURL: jest.fn(),
+}));
+
+jest.mock("@/src/features/auth/session-marker", () => ({
+  clearSessionMarker: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("expo-web-browser", () => ({
@@ -39,6 +48,11 @@ jest.mock("@/src/features/auth/callback", () => ({
 }));
 
 jest.mock("@/src/lib/supabase", () => ({ requireSupabase: jest.fn() }));
+
+jest.mock("@/src/lib/sentry", () => ({
+  captureError: jest.fn(),
+  isReportableError: jest.fn().mockReturnValue(true),
+}));
 
 const mockRequireSupabase = jest.mocked(requireSupabase);
 const mockCompleteAuthRedirect = jest.mocked(completeAuthRedirect);
@@ -351,6 +365,76 @@ describe("signUpWithPassword", () => {
   });
 });
 
+describe("convertGuestWithPassword", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("updates the guest with email + password, then refreshes the session", async () => {
+    const updateUser = jest.fn().mockResolvedValue({ error: null });
+    const refreshSession = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser, refreshSession }));
+
+    await expect(convertGuestWithPassword("a@b.co", "twelvechars1!")).resolves.toBeUndefined();
+    expect(updateUser).toHaveBeenCalledWith({ email: "a@b.co", password: "twelvechars1!" });
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("carries a trimmed display name as full_name metadata", async () => {
+    const updateUser = jest.fn().mockResolvedValue({ error: null });
+    const refreshSession = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser, refreshSession }));
+
+    await convertGuestWithPassword("a@b.co", "twelvechars1!", "  Ada  ");
+    expect(updateUser).toHaveBeenCalledWith({
+      email: "a@b.co",
+      password: "twelvechars1!",
+      data: { full_name: "Ada" },
+    });
+  });
+
+  it("maps the email_exists collision to EMAIL_ALREADY_EXISTS_ERROR without refreshing", async () => {
+    const error = Object.assign(new Error("exists"), { code: "email_exists", status: 422 });
+    const updateUser = jest.fn().mockResolvedValue({ error });
+    const refreshSession = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser, refreshSession }));
+
+    await expect(convertGuestWithPassword("a@b.co", "pw")).rejects.toThrow(
+      EMAIL_ALREADY_EXISTS_ERROR,
+    );
+    expect(refreshSession).not.toHaveBeenCalled();
+  });
+
+  it("maps a pwned weak_password error to LEAKED_PASSWORD_ERROR", async () => {
+    const error = Object.assign(new Error("weak"), {
+      code: "weak_password",
+      weakPassword: { reasons: ["pwned"] },
+    });
+    const updateUser = jest.fn().mockResolvedValue({ error });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser }));
+
+    await expect(convertGuestWithPassword("a@b.co", "pw")).rejects.toThrow(LEAKED_PASSWORD_ERROR);
+  });
+
+  it("rethrows an unmapped update error unchanged", async () => {
+    const error = new Error("boom");
+    const updateUser = jest.fn().mockResolvedValue({ error });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser }));
+
+    await expect(convertGuestWithPassword("a@b.co", "pw")).rejects.toBe(error);
+  });
+
+  it("treats a refresh failure as non-fatal: the account is already converted", async () => {
+    const refreshError = new Error("refresh down");
+    const updateUser = jest.fn().mockResolvedValue({ error: null });
+    const refreshSession = jest.fn().mockResolvedValue({ error: refreshError });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ updateUser, refreshSession }));
+
+    await expect(convertGuestWithPassword("a@b.co", "pw")).resolves.toBeUndefined();
+    expect(captureError).toHaveBeenCalledWith(refreshError);
+  });
+});
+
 describe("sendPasswordResetEmail", () => {
   const originalOS = Platform.OS;
 
@@ -480,6 +564,10 @@ describe("signOut", () => {
     jest.clearAllMocks();
   });
 
+  const { clearSessionMarker } = jest.requireMock("@/src/features/auth/session-marker") as {
+    clearSessionMarker: jest.Mock;
+  };
+
   it("resolves when sign-out succeeds", async () => {
     const signOutFn = jest.fn().mockResolvedValue({ error: null });
     mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
@@ -494,6 +582,27 @@ describe("signOut", () => {
     mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
 
     await expect(signOut("local")).rejects.toBe(error);
+  });
+
+  // #1450: this wrapper is the ONLY marker-clearing seam - both deliberate
+  // exits (settings sign-out, delete-account) call it, and the involuntary
+  // paths bypass it by design. A deliberate exit must not read as a lost
+  // session on the next cold start; a FAILED sign-out is not an exit at all.
+  it("clears the fresh-start marker on a deliberate exit", async () => {
+    const signOutFn = jest.fn().mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
+
+    await signOut("local");
+
+    expect(clearSessionMarker).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the marker when sign-out fails - the session is still this device's", async () => {
+    const signOutFn = jest.fn().mockResolvedValue({ error: new Error("offline") });
+    mockRequireSupabase.mockReturnValue(buildAuthClient({ signOut: signOutFn }));
+
+    await expect(signOut("local")).rejects.toBeTruthy();
+    expect(clearSessionMarker).not.toHaveBeenCalled();
   });
 
   // The point of the wrapper (#968). supabase-js defaults to `scope: 'global'`,
@@ -518,5 +627,128 @@ describe("signOut", () => {
     await signOut("global");
 
     expect(signOutFn).toHaveBeenCalledWith({ scope: "global" });
+  });
+});
+
+describe("linkGoogleIdentity", () => {
+  const originalOS = Platform.OS;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(Linking.createURL).mockReturnValue("selftend://auth-callback");
+  });
+
+  afterEach(() => {
+    setPlatform(originalOS);
+  });
+
+  function buildLinkClient(linkIdentity: jest.Mock) {
+    const refreshSession = jest.fn().mockResolvedValue({ error: null });
+    const signInWithOAuth = jest.fn();
+    const signInWithIdToken = jest.fn();
+    return {
+      client: buildAuthClient({ linkIdentity, refreshSession, signInWithOAuth, signInWithIdToken }),
+      refreshSession,
+      signInWithOAuth,
+      signInWithIdToken,
+    };
+  }
+
+  it("links on native via linkIdentity - never a sign-in call - and refreshes after", async () => {
+    setPlatform("ios");
+    const linkIdentity = jest
+      .fn()
+      .mockResolvedValue({ data: { url: "https://oauth.example" }, error: null });
+    const { client, refreshSession, signInWithOAuth, signInWithIdToken } =
+      buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockOpenAuthSession.mockResolvedValue({
+      type: "success",
+      url: "selftend://auth-callback?code=abc",
+    } as never);
+
+    const result = await linkGoogleIdentity();
+
+    expect(result).toBe(true);
+    const call = (linkIdentity.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(call).toMatchObject({
+      provider: "google",
+      options: {
+        redirectTo: "selftend://auth-callback",
+        skipBrowserRedirect: true,
+        queryParams: { prompt: "select_account" },
+      },
+    });
+    expect(mockCompleteAuthRedirect).toHaveBeenCalledWith("selftend://auth-callback?code=abc");
+    expect(refreshSession).toHaveBeenCalled();
+    // The whole point of the function (#1445): the guest's account is KEPT.
+    expect(signInWithOAuth).not.toHaveBeenCalled();
+    expect(signInWithIdToken).not.toHaveBeenCalled();
+  });
+
+  it("returns false on web after starting the full-page redirect", async () => {
+    setPlatform("web");
+    const linkIdentity = jest.fn().mockResolvedValue({ data: { url: null }, error: null });
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+
+    expect(await linkGoogleIdentity()).toBe(false);
+    const call = (linkIdentity.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(call).toMatchObject({ options: { skipBrowserRedirect: false } });
+    expect(mockOpenAuthSession).not.toHaveBeenCalled();
+  });
+
+  it("maps a direct identity_already_exists rejection to the collision constant", async () => {
+    setPlatform("ios");
+    const linkIdentity = jest.fn().mockResolvedValue({
+      data: null,
+      error: Object.assign(new Error("Identity is already linked to another user"), {
+        code: "identity_already_exists",
+      }),
+    });
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+
+    await expect(linkGoogleIdentity()).rejects.toThrow(IDENTITY_ALREADY_EXISTS_ERROR);
+  });
+
+  it("maps the native redirect collision (identity_exists callback error) to the same constant", async () => {
+    setPlatform("ios");
+    const linkIdentity = jest
+      .fn()
+      .mockResolvedValue({ data: { url: "https://oauth.example" }, error: null });
+    const { client, refreshSession } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockOpenAuthSession.mockResolvedValue({
+      type: "success",
+      url: "selftend://auth-callback?error_code=identity_already_exists",
+    } as never);
+    mockCompleteAuthRedirect.mockRejectedValue(new AuthCallbackError("identity_exists"));
+
+    await expect(linkGoogleIdentity()).rejects.toThrow(IDENTITY_ALREADY_EXISTS_ERROR);
+    expect(refreshSession).not.toHaveBeenCalled();
+  });
+
+  it("returns false when the user backs out of the browser dance", async () => {
+    setPlatform("ios");
+    const linkIdentity = jest
+      .fn()
+      .mockResolvedValue({ data: { url: "https://oauth.example" }, error: null });
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+    mockOpenAuthSession.mockResolvedValue({ type: "cancel" } as never);
+
+    expect(await linkGoogleIdentity()).toBe(false);
+    expect(mockCompleteAuthRedirect).not.toHaveBeenCalled();
+  });
+
+  it("rethrows other link errors unchanged", async () => {
+    setPlatform("ios");
+    const linkError = new Error("link boom");
+    const linkIdentity = jest.fn().mockResolvedValue({ data: null, error: linkError });
+    const { client } = buildLinkClient(linkIdentity);
+    mockRequireSupabase.mockReturnValue(client);
+
+    await expect(linkGoogleIdentity()).rejects.toBe(linkError);
   });
 });

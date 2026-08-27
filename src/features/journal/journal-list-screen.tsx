@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,11 +35,11 @@ import {
 import type { JournalWritingRange } from "@/src/features/journal/types";
 import { cn } from "@/lib/utils";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { formatInstantAtOffset } from "@/src/utils/date";
 
 export default function JournalListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -110,9 +110,10 @@ export default function JournalListScreen() {
   const writingUnit = journalWritingUnit(writingBuckets ?? []);
 
   // Stable across renders so memoized JournalCards aren't invalidated by a parent re-render.
-  const openEntry = useCallback((id: string) => router.push(`/tools/journal/${id}`), []);
-
-  const roomStyle = useRoomStyle("ink");
+  const openEntry = useCallback(
+    (id: string) => pushWithOrigin(`/tools/journal/${id}`),
+    [pushWithOrigin],
+  );
 
   return (
     <>
@@ -121,11 +122,7 @@ export default function JournalListScreen() {
         onComplete={() => setForceOnboarding(false)}
         onDismiss={() => setForceOnboarding(false)}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN)}>
             <ModuleHomeHeader
@@ -151,7 +148,10 @@ export default function JournalListScreen() {
                 ...(subline ? [{ value: "", label: subline }] : []),
               ]}
             />
-            <Button onPress={() => router.push("/tools/journal/new")} className="mt-6 self-start">
+            <Button
+              onPress={() => pushWithOrigin("/tools/journal/new")}
+              className="mt-6 self-start"
+            >
               <Icon name="add" className="size-4 text-primary-foreground" />
               <Text>{t("cta.new")}</Text>
             </Button>
@@ -232,7 +232,7 @@ export default function JournalListScreen() {
                   description={t("list.empty.description")}
                   action={{
                     label: t("list.empty.cta"),
-                    onPress: () => router.push("/tools/journal/new"),
+                    onPress: () => pushWithOrigin("/tools/journal/new"),
                   }}
                 />
               </Section>
@@ -244,7 +244,7 @@ export default function JournalListScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={8}
-                    onPress={() => router.push("/tools/journal/entries")}
+                    onPress={() => pushWithOrigin("/tools/journal/entries")}
                     className="flex-row items-center gap-1 active:opacity-80"
                   >
                     <Text className="text-[13px] font-medium text-primary">

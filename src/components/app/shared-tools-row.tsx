@@ -1,0 +1,97 @@
+import { type Href } from "expo-router";
+import { Pressable, View } from "react-native";
+import { useTranslation } from "react-i18next";
+
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { CHROME_MARK } from "@/src/lib/theme/chrome";
+
+// A shared tool is a plain link. It used to be a union - `helpKey` meant "open
+// the route", `infoKey` meant "pop a guide modal instead" - and the row branched
+// on which one was present. Every chip opens its tool now, so there is nothing
+// left to discriminate.
+export interface SharedTool {
+  key: string;
+  route: Href;
+  icon: MaterialIconName;
+  labelKey: string;
+}
+
+interface SharedToolsRowProps {
+  // Resolved copy, not a key. The row is module-agnostic and the heading is the
+  // one thing that is not - CBT says "Shared tools" out of `cbt.json` - so the
+  // caller translates it, the way `PillarCard` takes its title.
+  heading: string;
+  tools: SharedTool[];
+}
+
+// The pill glyphs took the owning pillar's hue (#587). It never distinguished
+// anything the row did not already say - every pill in a row shared one tint, so
+// the colour repeated the heading above it - and it cost this file a per-hue
+// exception: `think` read 2.03:1 on `bg-card` and could not be seen as think at
+// all, so it alone had to take the ink.
+//
+// Every pill now opens its tool. It used to be split - breathing navigated,
+// the other eight popped a guide modal that closed straight back to this page -
+// and each pill carried a second, trailing icon (`open-in-new` vs `help-outline`)
+// whose whole job was to warn you which kind you were about to press. Every one
+// of those guides is already rendered by the tool screen itself, so the detour
+// is gone, and the icon that announced it has nothing left to distinguish.
+//
+// It lives here rather than under `features/cbt` because nothing in it is CBT's:
+// it takes its heading and its tools as props. CBT's home renders it once under
+// the pillar cards; ACT's six list screens render it as their `Also try` row
+// (#1216 ruled the full merge - the two conventions, CBT's complete partition
+// and ACT's per-context relevance with repeats, live in the callers' data, so
+// one component renders both). Chips render in array order; the callers' tests
+// index by position and rely on that.
+export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
+  const { t } = useTranslation("navigation");
+  // A chip leaves the module for a tool rooted under `/tools`, so the tool's own
+  // Up climbs to `/tools` and never back to the module the user was working in.
+  // These are the off-trail pushes #1192 landed hours after the escape rule was
+  // charted - the growth that made recording opt-out rather than opt-in. #1192
+  // landed nine of them; the set is EIGHT today, and the count is pinned in
+  // `shared-tools-row.test.tsx` rather than restated here, because this comment
+  // has already gone stale once by carrying a number the config later changed.
+  //
+  // The push is plain - singularity is the layout's call, made once for every
+  // caller (#1216, declared in `protected-layout.tsx`). Forcing it per push was
+  // wrong for `/tools/meditation`, which is keyed by `?practice=` and holds
+  // per-visit state, so the layout deliberately leaves it plain.
+  const pushWithOrigin = usePushWithOrigin();
+
+  return (
+    <View className="ml-1 flex-row flex-wrap items-center gap-2">
+      <View className="flex-row items-center gap-1">
+        <Icon name="auto-awesome" size={11} className="text-muted-foreground" />
+        {/* The eyebrow token is `Section`'s exactly - 11px, 600, 0.1em, muted -
+            so the row's label reads as the same rank as the section headings
+            around it (#1386). The row itself does NOT become a `Section`: its
+            label sits inline with its chips, which is a layout `Section` does
+            not have. Only the token unifies. */}
+        <Text variant="muted" className="text-[11px] font-semibold uppercase tracking-[0.1em]">
+          {heading}
+        </Text>
+      </View>
+      {tools.map((tool) => (
+        <Pressable
+          key={tool.key}
+          // "link", because every press navigates - "button" promises an
+          // on-screen action that never happens (#1216). No explicit
+          // accessibilityLabel: the child text IS the accessible name, and an
+          // explicit label would hide the children from AT (the RNW trap).
+          accessibilityRole="link"
+          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+          onPress={() => pushWithOrigin(tool.route)}
+          className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 active:bg-accent/40"
+        >
+          <Icon name={tool.icon} size={13} className={CHROME_MARK} />
+          <Text className="text-xs font-medium">{t(tool.labelKey)}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}

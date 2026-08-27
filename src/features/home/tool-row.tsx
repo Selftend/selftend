@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Platform, Pressable, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -41,6 +42,7 @@ const WIDE_ROW_WIDTH = 640;
  * decision; the chevron is the affordance.
  */
 export function ToolRow({ id, stat }: ToolRowProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("navigation");
   /**
    * Read here rather than passed in from the tier, and that is load-bearing.
@@ -72,7 +74,7 @@ export function ToolRow({ id, stat }: ToolRowProps) {
       // filesystem test in widget-registry.test.tsx is the real guard - it catches a
       // route that typechecks but isn't served, which `Href` would not. Same cast as
       // the shipped `routines-widget.tsx:57`.
-      onPress={() => router.push(meta.route as Parameters<typeof router.push>[0])}
+      onPress={() => pushWithOrigin(meta.route as Href)}
       className={cn(
         "flex-row items-center gap-[14px] rounded-xl px-1 py-3.5 active:bg-accent/60",
         Platform.select({ web: "hover:bg-accent/40" }),

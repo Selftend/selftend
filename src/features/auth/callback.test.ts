@@ -118,6 +118,16 @@ describe("completeAuthRedirect", () => {
     expect((error as Error).message).not.toContain("555");
   });
 
+  // A web linkIdentity conversion dance (#1445) whose identity already
+  // belongs to another account - GoTrue redirects back with this error code,
+  // and the callback screen hands the collision back to the conversion form.
+  it("classifies identity_already_exists URL errors as identity_exists", async () => {
+    const error = await completionFailure(
+      "http://localhost:8081/auth-callback?error_code=identity_already_exists&error_description=Identity+is+already+linked+to+another+user",
+    );
+    expect((error as AuthCallbackError).code).toBe("identity_exists");
+  });
+
   it("classifies otp_expired URL errors as expired_or_used", async () => {
     const error = await completionFailure(
       "http://localhost:8081/auth-callback?error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired",

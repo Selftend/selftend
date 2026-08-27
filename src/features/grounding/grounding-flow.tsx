@@ -1,15 +1,12 @@
 import { router, useNavigation } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
-import { Text } from "@/src/components/react-native-reusables/text";
+import { ScreenNotFound } from "@/src/components/app/screen-state";
 import { groundingLookup } from "@/src/constants/grounding";
 import { GroundingDone } from "@/src/features/grounding/grounding-done";
 import { GroundingSession } from "@/src/features/grounding/grounding-session";
 import { useSaveGroundingSession } from "@/src/features/grounding/queries";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -44,7 +41,6 @@ export function GroundingFlow({ slug }: { slug: string }) {
   const saveMutation = useSaveGroundingSession(user?.id ?? null);
   // Grounding is the "clay" room (spec #315) — but only the not-found branch
   // still needs the pour: the session phases live on the focus surface.
-  const roomStyle = useRoomStyle("clay");
 
   // The clock starts when the flow mounts — there is no Start button any more.
   useEffect(() => {
@@ -81,8 +77,9 @@ export function GroundingFlow({ slug }: { slug: string }) {
   });
 
   /**
-   * The shell has no chrome, so the OS back gesture and the web back button
-   * are the only uninvited exits. Mid-session they ask — never a silent
+   * The shell's Escape (#1256) leaves through `router.replace`, so it lands
+   * here with the OS back gesture and the web back button — every uninvited
+   * exit passes this guard. Mid-session they ask — never a silent
    * discard — and confirming saves, then actually leaves (#928; it used to
    * strand on the done screen, still on the route). The inline Finish early
    * button is the invited exit. The done phase and a finished save let the
@@ -96,16 +93,10 @@ export function GroundingFlow({ slug }: { slug: string }) {
     });
   }, [navigation, phase, technique]);
 
+  // Any slug that names no technique lands here, so a stale or mistyped link
+  // used to be a dead end: a heading and nothing to press (#1328).
   if (!technique) {
-    return (
-      <View className="flex-1" style={roomStyle} testID="grounding-flow-room">
-        <SafeAreaView className="flex-1 bg-background">
-          <View className="flex-1 justify-center p-6">
-            <Text variant="h2">{t("grounding.notFound")}</Text>
-          </View>
-        </SafeAreaView>
-      </View>
-    );
+    return <ScreenNotFound title={t("grounding.notFound")} />;
   }
 
   const stepsText = (() => {

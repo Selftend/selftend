@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams, type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
@@ -13,12 +14,11 @@ import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { MoodScale } from "@/src/components/app/mood-scale";
 import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { cn } from "@/lib/utils";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import {
   announceMessage,
   DEFAULT_INTERACTIVE_HIT_SLOP,
@@ -142,9 +142,9 @@ export function MoodEntryEditorScreen({
   mode,
   moodId = null,
 }: MoodEntryEditorScreenProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { t: tMood } = useTranslation("mood");
-  const roomStyle = useRoomStyle("be");
   const { user } = useSession();
   const params = useLocalSearchParams<{
     completeActivityId?: string | string[];
@@ -330,26 +330,16 @@ export function MoodEntryEditorScreen({
    */
   const openThoughtRecord = () => {
     seedThoughtRecord(seedEmotionsForThoughtRecord(emotions));
-    router.push("/modules/cbt/new");
+    pushWithOrigin("/modules/cbt/new");
   };
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("mood.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("mood.editTitle")} />;
   }
 
   if (editMode && !existingEntry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("mood.editTitle")} />
@@ -365,7 +355,7 @@ export function MoodEntryEditorScreen({
   return (
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the rose pour through it.
-    <View className="flex-1" style={roomStyle}>
+    <View className="flex-1">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
         // Both modes now, where only create mode had chrome: an edit form used to
@@ -460,7 +450,7 @@ export function MoodEntryEditorScreen({
           <Pressable
             accessibilityRole="button"
             onPress={() =>
-              router.push({
+              pushWithOrigin({
                 pathname: "/tools/breathing/session",
                 params: { pattern: "box-breathing" },
               })

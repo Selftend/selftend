@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -10,7 +11,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { formatRelativeActivity, formatRelativeDayKey } from "@/src/utils/relative-time";
@@ -21,7 +22,6 @@ import {
 } from "@/src/features/journal/queries";
 import { countWords } from "@/src/features/journal/word-count";
 import type { JournalEntry } from "@/src/features/journal/types";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { formatAtOffset } from "@/src/utils/date";
@@ -39,9 +39,9 @@ export function joinMeta(segments: (string | null | undefined)[]): string {
 }
 
 export default function JournalDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
-  const roomStyle = useRoomStyle("ink");
   const { id } = useLocalSearchParams<{ id: string }>();
   const entryId = typeof id === "string" ? id : null;
   const showToast = useToastStore((state) => state.showToast);
@@ -59,22 +59,12 @@ export default function JournalDetailScreen() {
   const [deleteError, setDeleteError] = useState("");
 
   if (!fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("detail.title")} />;
   }
 
   if (!entry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -134,7 +124,7 @@ export default function JournalDetailScreen() {
   };
 
   return (
-    <View testID="journal-detail-room" className="flex-1" style={roomStyle}>
+    <View testID="journal-detail-room" className="flex-1">
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/* The trail rides the bar, not the column: chrome for the screen rather
             than part of the document (#733). */}
@@ -156,7 +146,7 @@ export default function JournalDetailScreen() {
                       (h-10 sm:h-9), and only the default shares that height —
                       an sm pill sits 4px shorter and reads as broken (#911). */}
                   <Button
-                    onPress={() => router.push(`/tools/journal/${entry.id}/edit`)}
+                    onPress={() => pushWithOrigin(`/tools/journal/${entry.id}/edit`)}
                     variant="outline"
                   >
                     <Icon name="edit" className="size-4" />
@@ -194,7 +184,7 @@ export default function JournalDetailScreen() {
               <Pressable
                 accessibilityRole="link"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => router.push("/tools/journal/entries")}
+                onPress={() => pushWithOrigin("/tools/journal/entries")}
                 className="flex-row items-center gap-1 active:opacity-70"
                 role="link"
               >

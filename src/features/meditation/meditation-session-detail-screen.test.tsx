@@ -1,10 +1,8 @@
 import { screen } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import MeditationSessionDetailScreen from "@/src/features/meditation/meditation-session-detail-screen";
 import { useMeditationSession } from "@/src/features/meditation/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), canGoBack: jest.fn(() => false) },
@@ -46,8 +44,6 @@ const setSession = (data: unknown, isLoading = false) =>
     typeof useMeditationSession
   >);
 
-const roomRoot = () => screen.UNSAFE_getByType(SafeAreaView);
-
 describe("MeditationSessionDetailScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -65,30 +61,11 @@ describe("MeditationSessionDetailScreen", () => {
     expect(screen.getByText("restlessness")).toBeTruthy();
   });
 
-  it("renders the iris room pour on the content return", () => {
-    setSession(session());
-
-    renderWithProviders(<MeditationSessionDetailScreen />);
-
-    expectNeutralRoom(roomRoot());
-  });
-
-  it("keeps the room poured while the session loads", () => {
-    setSession(undefined, true);
-
-    renderWithProviders(<MeditationSessionDetailScreen />);
-
-    // Without this the iris room drops out while the session resolves and snaps
-    // in afterwards - the defect the grounding flow shipped and had to fix (#317).
-    expectNeutralRoom(roomRoot());
-  });
-
-  it("keeps the room poured when the session is missing", () => {
+  it("shows the not-found heading when the session is missing", () => {
     setSession(undefined, false);
 
     renderWithProviders(<MeditationSessionDetailScreen />);
 
     expect(screen.getByRole("heading", { name: "Session not found." })).toBeTruthy();
-    expectNeutralRoom(roomRoot());
   });
 });

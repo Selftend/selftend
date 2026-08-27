@@ -1,5 +1,6 @@
 import { Pressable, View } from "react-native";
-import { useState } from "react";
+import type { TextInput } from "react-native";
+import { useState, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -14,7 +15,14 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { NumberRating } from "@/src/components/app/number-rating";
 import type { NegativeAutomaticThought } from "@/src/features/cbt/types";
 
-export function NatAddForm({ onAdd }: { onAdd: (nat: NegativeAutomaticThought) => void }) {
+export function NatAddForm({
+  onAdd,
+  inputRef,
+}: {
+  onAdd: (nat: NegativeAutomaticThought) => void;
+  /** Lets the save-time "at least one thought" complaint focus the field. */
+  inputRef?: RefObject<TextInput | null>;
+}) {
   const { t } = useTranslation("cbt");
   const [text, setText] = useState("");
   const [beliefRating, setBeliefRating] = useState<number | null>(null);
@@ -34,6 +42,7 @@ export function NatAddForm({ onAdd }: { onAdd: (nat: NegativeAutomaticThought) =
       <CardContent>
         <View className="gap-3">
           <Textarea
+            ref={inputRef}
             accessibilityLabel={t("record.nats")}
             onChangeText={setText}
             placeholder={t("record.natsPlaceholder")}
@@ -41,13 +50,16 @@ export function NatAddForm({ onAdd }: { onAdd: (nat: NegativeAutomaticThought) =
           />
           <Label>{t("record.beliefRating")}</Label>
           <Text variant="muted">{t("record.beliefRatingHint")}</Text>
-          <NumberRating
-            min={0}
-            max={100}
-            step={10}
-            value={beliefRating}
-            onChange={setBeliefRating}
-          />
+          {/* Scoped like the per-NAT ratings: many 0-100 tracks share the column. */}
+          <View testID="nat-add-belief-rating">
+            <NumberRating
+              min={0}
+              max={100}
+              step={10}
+              value={beliefRating}
+              onChange={setBeliefRating}
+            />
+          </View>
           <Pressable
             accessibilityRole="button"
             aria-disabled={!text.trim()}

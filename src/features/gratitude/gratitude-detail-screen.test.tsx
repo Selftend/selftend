@@ -2,8 +2,6 @@ import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Text as mockText } from "react-native";
 import type { ReactNode } from "react";
 
-import { SafeAreaView } from "react-native-safe-area-context";
-
 import GratitudeDetailScreen from "@/src/features/gratitude/gratitude-detail-screen";
 import {
   useDeleteGratitudeEntry,
@@ -12,7 +10,6 @@ import {
   useSetGratitudeEntryStarred,
 } from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 const mockUseWindowDimensions = jest.fn(() => ({
   width: 750,
@@ -135,12 +132,6 @@ describe("GratitudeDetailScreen", () => {
     renderWithProviders(<GratitudeDetailScreen />);
 
     expect(screen.getByText("Favorite")).toBeTruthy();
-  });
-
-  it("keeps the compact header on the think room pour", () => {
-    const { UNSAFE_getByType } = renderWithProviders(<GratitudeDetailScreen />);
-    // The root carries the think room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 
   it("renders one numbered list without legacy prompt labels", () => {

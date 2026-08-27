@@ -1,16 +1,39 @@
 import { useMemo, useState } from "react";
-import { Modal, Platform, Pressable, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import DateTimePicker, { useDefaultStyles } from "react-native-ui-datepicker";
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 
-import { Button } from "@/src/components/react-native-reusables/button";
+import { PickerSheet } from "@/src/components/app/picker-sheet";
+import { ThemedCalendar } from "@/src/components/app/themed-calendar";
+import { TypedTimeField } from "@/src/components/app/time-field";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
-import { useColorSchemeName } from "@/src/lib/color-scheme";
-import { useThemePalette } from "@/src/lib/theme-palette";
 import { formatAtOffset, shiftFromOffsetFrame, shiftToOffsetFrame } from "@/src/utils/date";
+
+/**
+ * A plain day tap zeroes the time — `react-native-ui-datepicker`'s
+ * `onSelectDate` resets to start-of-day whenever `timePicker` is off (its
+ * `mode: "date"`). On web this field pairs `date` mode with its own typed time
+ * row instead of the library's `datetime` mode (#1302), so picking a day must
+ * carry forward whatever time is already drafted rather than wiping it.
+ */
+function keepTime(next: Dayjs | null, from: Dayjs): Dayjs | null {
+  return next ? next.hour(from.hour()).minute(from.minute()).second(from.second()) : next;
+}
+
+/**
+ * Read a real instant as the captured frame shows it, and write it back. The
+ * picker speaks the device's frame only, so these are the two edges where a
+ * captured offset is applied and undone; with no captured offset both are the
+ * identity. Module scope so the memos below can use them without listing them.
+ */
+function intoFrame(instant: Date, offsetMinutes: number | null): Date {
+  return offsetMinutes === null ? instant : shiftToOffsetFrame(instant, offsetMinutes);
+}
+
+function outOfFrame(framed: Date, offsetMinutes: number | null): Date {
+  return offsetMinutes === null ? framed : shiftFromOffsetFrame(framed, offsetMinutes);
+}
 
 interface DateTimeFieldProps {
   value: string; // ISO string
@@ -32,6 +55,19 @@ interface DateTimeFieldProps {
   appearance?: "field" | "row";
 }
 
+/**
+ * The check-in picker: when an entry happened, for mood, journal, gratitude
+ * and sleep.
+ *
+ * A selection is a DRAFT until Done. Dismissing the sheet — backdrop or Escape
+ * — discards it, so opening the calendar merely to look at a date leaves the
+ * entry alone (#1298). The sheet owns that cycle; what stays here is this
+ * field's own two concerns: the captured-offset frame and the clamp to now.
+ *
+ * ⚠️ The captured-offset shifting (#250) lives HERE and must not migrate into
+ * `PickerSheet` or `ThemedCalendar` — the shared primitives speak the device
+ * frame only, and every wrapper marshals in and out around them.
+ */
 export function DateTimeField({
   value,
   onChange,
@@ -41,24 +77,15 @@ export function DateTimeField({
 }: DateTimeFieldProps) {
   const { i18n } = useTranslation("navigation");
   const { t } = useTranslation("common");
-  const reduceMotionEnabled = useReduceMotionEnabled();
   const [open, setOpen] = useState(false);
 
-  const scheme = useColorSchemeName();
-  const defaultStyles = useDefaultStyles(scheme);
-  const theme = useThemePalette();
-  const pickerStyles = useMemo(
-    () => ({
-      ...defaultStyles,
-      today: { borderColor: theme.primary, borderWidth: 1 },
-      selected: { backgroundColor: theme.primary },
-      selected_label: { color: theme.primaryForeground },
-    }),
-    [defaultStyles, theme],
-  );
+  // The typed time row's three sub-controls compose their own accessible names
+  // from this ("Started, hour"), so it needs a string even when a caller skips
+  // the (optional) trigger label.
+  const timeFieldLabel = accessibilityLabel ?? t("time.label");
 
   // The picker only speaks the device's frame, so a captured offset is applied by
-  // shifting the instant into that frame on the way in, and back out in onChange.
+  // shifting the instant into that frame on the way in, and back out on commit.
   // With no captured offset every shift below is the identity.
   const framedOffset =
     offsetMinutes !== null && Number.isFinite(offsetMinutes) ? offsetMinutes : null;
@@ -68,14 +95,11 @@ export function DateTimeField({
   const parsedDate = useMemo(() => {
     const parsed = dayjs(value);
     const base = parsed.isValid() ? parsed.toDate() : new Date();
-    return dayjs(framedOffset === null ? base : shiftToOffsetFrame(base, framedOffset));
+    return dayjs(intoFrame(base, framedOffset));
   }, [value, framedOffset]);
 
   // "Now" in the same frame, so the future-date clamp means what the user sees.
-  const maxDate = useMemo(() => {
-    const now = new Date();
-    return dayjs(framedOffset === null ? now : shiftToOffsetFrame(now, framedOffset));
-  }, [framedOffset]);
+  const maxDate = useMemo(() => dayjs(intoFrame(new Date(), framedOffset)), [framedOffset]);
 
   const display = useMemo(() => {
     try {
@@ -84,6 +108,23 @@ export function DateTimeField({
       return value;
     }
   }, [value, framedOffset, i18n.language]);
+
+  // The one commit point. `maxDate` already keeps future DAYS unselectable;
+  // this re-clamps because the time view can still walk today past now.
+  const commit = (draft: Dayjs | null) => {
+    if (!draft?.isValid()) return;
+    // Clamp inside the display frame, then shift the result back to a real
+    // instant.
+    const picked = (draft.isAfter(maxDate) ? maxDate : draft).toDate();
+    const next = outOfFrame(picked, framedOffset).toISOString();
+    // ⚠️ Done on a calendar the user only LOOKED at is not an edit. The draft
+    // is seeded from the current value, so without this the sheet would commit
+    // an identical instant — and four of the six call sites read any commit as
+    // the user restating when, stamping this device's offset onto an entry
+    // that never captured one. #250 forbids exactly that.
+    if (new Date(value).getTime() === new Date(next).getTime()) return;
+    onChange(next);
+  };
 
   return (
     <>
@@ -114,67 +155,47 @@ export function DateTimeField({
         </Pressable>
       )}
 
-      {/* ⚠️ WEB: a closed picker unmounts outright instead of lingering for
-          its 250ms fade-out, during which react-native-web's Modal is a
-          non-inert focus trap (#1034; swept in #1054 — the full story lives
-          on ConfirmDialog's gate). The inline form of that gate, because the
-          Modal here is a sibling of the always-rendered trigger. */}
-      {!open && Platform.OS === "web" ? null : (
-        <Modal
-          visible={open}
-          transparent
-          animationType={reduceMotionEnabled ? "none" : "fade"}
-          onRequestClose={() => setOpen(false)}
-        >
-          <View className="flex-1 items-center justify-center p-6">
-            {/* Dimmed backdrop - tap anywhere outside the card to close. A sibling
-                behind the card rather than a wrapper: a wrapping button would nest
-                the picker's buttons inside a <button> on web, which the DOM forbids. */}
-            <Pressable
-              accessibilityLabel={t("close")}
-              accessibilityRole="button"
-              className="absolute inset-0 bg-black/50"
-              onPress={() => setOpen(false)}
-              role="button"
-              // Out of the web Tab order (invisible to sighted keyboard users, who
-              // have Escape); touch-exploration screen readers keep a labeled close.
-              {...(Platform.OS === "web" ? { tabIndex: -1 as const } : {})}
-            />
-            <View className="w-full max-w-[340px] rounded-2xl bg-card p-3">
-              <DateTimePicker
-                mode="single"
-                date={parsedDate}
+      {/* Chrome, the draft cycle and the #1054 web-unmount gate all arrive with
+          the sheet; none of them is restated here. */}
+      <PickerSheet<Dayjs | null>
+        visible={open}
+        onClose={() => setOpen(false)}
+        initialDraft={parsedDate}
+        onConfirm={commit}
+      >
+        {(draft, setDraft) => {
+          // Native keeps the library's own toggle between a day grid and its
+          // real snapping time wheel (#1191) — unchanged, one view either way.
+          if (Platform.OS !== "web") {
+            return (
+              <ThemedCalendar mode="datetime" value={draft} onChange={setDraft} maxDate={maxDate} />
+            );
+          }
+
+          // Web: the calendar and the typed HH:MM row together, always, with no
+          // switcher between them (#1302). The library's own web time view is a
+          // bare drag surface with no keyboard path and no accessibility
+          // attributes at all (#1191); its switcher is also where the card used
+          // to halve in height on every toggle, a shipped bug this removes by
+          // removing the thing that caused it.
+          const framed = draft ?? maxDate;
+          return (
+            <View className="gap-3">
+              <ThemedCalendar
+                mode="date"
+                value={draft}
+                onChange={(next) => setDraft(keepTime(next, framed))}
                 maxDate={maxDate}
-                timePicker={true}
-                onChange={({ date }) => {
-                  if (!date) return;
-                  const next = dayjs(date);
-                  if (!next.isValid()) return;
-                  // Clamp inside the display frame, then shift the result back to a
-                  // real instant.
-                  const picked = (next.isAfter(maxDate) ? maxDate : next).toDate();
-                  onChange(
-                    (framedOffset === null
-                      ? picked
-                      : shiftFromOffsetFrame(picked, framedOffset)
-                    ).toISOString(),
-                  );
-                }}
-                styles={pickerStyles}
-                components={{
-                  IconPrev: <Icon name="chevron-left" className="size-5 text-foreground" />,
-                  IconNext: <Icon name="chevron-right" className="size-5 text-foreground" />,
-                }}
               />
-              <View className="mt-2">
-                <Button onPress={() => setOpen(false)}>
-                  <Text>{t("done")}</Text>
-                </Button>
-              </View>
+              <TypedTimeField
+                value={{ hour: framed.hour(), minute: framed.minute() }}
+                onChange={(next) => setDraft(framed.hour(next.hour).minute(next.minute))}
+                accessibilityLabel={timeFieldLabel}
+              />
             </View>
-          </View>
-        </Modal>
-      )}
+          );
+        }}
+      </PickerSheet>
     </>
   );
 }

@@ -1,12 +1,9 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
-import { SafeAreaView } from "react-native-safe-area-context";
-
 import GratitudeListScreen from "@/src/features/gratitude/gratitude-list-screen";
 import { useGratitudeEntryPages } from "@/src/features/gratitude/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 import { entryDayKey } from "@/src/lib/occurrence-time";
 
 jest.mock("expo-router", () => ({
@@ -54,8 +51,6 @@ describe("GratitudeListScreen", () => {
     expect(screen.getByText("Gratitude")).toBeTruthy();
     expect(screen.getByText("Nothing here yet")).toBeTruthy();
     expect(screen.getByText("Notice something")).toBeTruthy();
-    // The root carries the think room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
   });
 
   it("renders paged entries as compact rows", () => {

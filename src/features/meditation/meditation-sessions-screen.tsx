@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { memo, useCallback, useMemo } from "react";
 import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,15 +13,16 @@ import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { FORM_COLUMN_WIDTH } from "@/src/lib/layout";
 import { formatCompactAtOffset } from "@/src/utils/date";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 
 // Memoized row so the FlatList only re-renders changed items, and navigation stays
 // keyed to the session id (#97 - was a .map() inside a ScrollView, all 100 rows mounted).
 const SessionRow = memo(function SessionRow({ session }: { session: MeditationSession }) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("meditation");
   const onPress = useCallback(
-    () => router.push({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } }),
-    [session.id],
+    () =>
+      pushWithOrigin({ pathname: "/tools/meditation/sessions/[id]", params: { id: session.id } }),
+    [session.id, pushWithOrigin],
   );
 
   return (
@@ -70,7 +71,6 @@ const SessionRow = memo(function SessionRow({ session }: { session: MeditationSe
  */
 export default function MeditationSessionsScreen() {
   const { t } = useTranslation("meditation");
-  const roomStyle = useRoomStyle("iris");
   const { user } = useSession();
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
     useMeditationSessionPages(user?.id ?? null);
@@ -84,14 +84,7 @@ export default function MeditationSessionsScreen() {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    // The pour rides the SafeAreaView so the FlatList stays the scroll root and
-    // the memoized rows keep recycling (#97) - roomStyle is identity-stable per
-    // (hue, scheme), so it never invalidates them either.
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <FlatList
         data={sessions}
         keyExtractor={(item) => item.id}

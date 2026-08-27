@@ -43,6 +43,13 @@ async function ensureBobHasSeedThoughtRecords() {
 /** A fixed instant for export probes, with a real (non-UTC) captured offset. */
 const OCCURRED = "2026-05-15T19:00:00.000Z";
 
+// Phrases that appear in demo's seeded thought records and in nobody else's.
+// The leak test reads them from both ends - present on demo, absent from bob -
+// so they are a sentinel that cannot rot unnoticed. Carried verbatim from the
+// rows that used to live in supabase/seed.sql (#1281); if a seeded situation is
+// reworded, change it here in the same commit.
+const DEMO_SENTINEL_PHRASES = ["presentation", "rest day"];
+
 describe("export_user_data() (integration)", () => {
   let bob: SupabaseClient;
 
@@ -269,13 +276,34 @@ describe("export_user_data() (integration)", () => {
     }
   });
 
-  it("never leaks another user's data", async () => {
+  it("keeps demo's records on demo and out of bob's export", async () => {
+    // Both halves belong in one test. "bob's export mentions neither phrase" is
+    // a NEGATIVE assertion about bob, so on its own it stays green when demo's
+    // rows are deleted or reworded - the sentinel evaporates and the check keeps
+    // passing while protecting nothing. Pinning the phrases to demo first makes
+    // that failure loud (#1281).
+    const demo = await signInAs("demo");
+    try {
+      const { data, error } = await demo.rpc("export_user_data");
+      expect(error).toBeNull();
+      const situations = (data.thoughtRecords as { situation: string }[]).map((r) => r.situation);
+      const missing = DEMO_SENTINEL_PHRASES.filter(
+        (phrase) => !situations.some((situation) => situation.includes(phrase)),
+      );
+      // Both missing usually means the seed script never ran: demo's records
+      // come from scripts/seed-demo-data.mjs, not seed.sql, so a bare
+      // `supabase db reset` leaves the account empty. One missing means a
+      // seeded situation was reworded and this sentinel needs re-pointing.
+      expect(missing).toEqual([]);
+    } finally {
+      await demo.auth.signOut();
+    }
+
     const { data, error } = await bob.rpc("export_user_data");
     expect(error).toBeNull();
     const records = data.thoughtRecords as { situation: string }[];
-    // demo's seed records mention "presentation" and "rest day"; bob's don't.
-    const matchesDemo = records.some(
-      (r) => r.situation.includes("presentation") || r.situation.includes("rest day"),
+    const matchesDemo = records.some((r) =>
+      DEMO_SENTINEL_PHRASES.some((phrase) => r.situation.includes(phrase)),
     );
     expect(matchesDemo).toBe(false);
   });
@@ -378,6 +406,142 @@ describe("delete_user_account() (integration)", () => {
     expect(recoveryPlans.data).toEqual([]);
     expect(challengePlans.data).toEqual([]);
     expect(pushTokens.data).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// purge_user_account(uuid) (integration)
+//
+// Migration: supabase/migrations/20260826000000_account_purge_helper.sql
+//
+// The shared purge body behind delete_user_account() and the guest dormancy
+// cleanup job (#1449). Security model mirrors the send-web-reminders cron RPCs
+// below: execute revoked from public/anon/authenticated (42501 for client
+// roles); service_role bypasses the REVOKE, which is how the purge itself is
+// exercised here.
+// ---------------------------------------------------------------------------
+
+describe("purge_user_account() (integration)", () => {
+  const testEmail = "purge-helper@test.local";
+  const testPassword = "password123";
+
+  // 1x1 transparent PNG (same fixture as profile-repository.integration.test.ts).
+  const pngBytes = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
+    "base64",
+  );
+
+  // The local GoTrue assigns its own user ids (see the delete_user_account
+  // fixture note above), so leftovers from a crashed run are found by email.
+  async function deleteTestUserIfPresent() {
+    const admin = createServiceClient();
+    const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const leftover = data?.users?.find((candidate) => candidate.email === testEmail);
+    if (leftover) {
+      await admin.auth.admin.deleteUser(leftover.id).catch(() => undefined);
+    }
+  }
+
+  beforeEach(deleteTestUserIfPresent);
+  afterEach(deleteTestUserIfPresent);
+
+  it("is denied for anon callers (42501 permission denied)", async () => {
+    const anon = createAnonClient();
+    const { error } = await anon.rpc("purge_user_account", {
+      target_user: SEED_USERS.alice.id,
+    });
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("42501");
+    expect(error?.message).toMatch(/permission denied/i);
+  });
+
+  it("is denied for authenticated callers, even against their own account (42501)", async () => {
+    const alice = await signInAs("alice");
+    try {
+      const { error } = await alice.rpc("purge_user_account", {
+        target_user: SEED_USERS.alice.id,
+      });
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe("42501");
+      expect(error?.message).toMatch(/permission denied/i);
+    } finally {
+      await alice.auth.signOut();
+    }
+  });
+
+  it("refuses a null target instead of purging nothing silently", async () => {
+    const service = createServiceClient();
+    const { error } = await service.rpc("purge_user_account", { target_user: null });
+    expect(error).not.toBeNull();
+    expect(error?.message).toMatch(/target_user is null/);
+  });
+
+  it("purges the target's auth row, owned rows, and storage objects in one call", async () => {
+    const admin = createServiceClient();
+    const created = await admin.auth.admin.createUser({
+      email: testEmail,
+      password: testPassword,
+      email_confirm: true,
+    });
+    expect(created.error).toBeNull();
+    const uid = created.data.user!.id;
+
+    // Owned rows across the purge set: the explicit-delete tables (profiles,
+    // user_preferences, thought_records) and a cascade-only table
+    // (device_push_tokens). Inserts are asserted so a failed fixture cannot
+    // turn the deletion assertions below vacuous.
+    for (const insert of [
+      admin.from("profiles").insert({ user_id: uid, email: testEmail }),
+      admin.from("user_preferences").insert({ user_id: uid }),
+      admin.from("thought_records").insert({
+        user_id: uid,
+        situation: "About to be purged",
+        nats: [{ text: "doomed", beliefRating: null, isHotThought: true }],
+        emotions: ["Anxious"],
+        distortions: ["catastrophizing"],
+        balanced_thought: "balanced",
+      }),
+      admin.from("device_push_tokens").insert({
+        user_id: uid,
+        expo_push_token: "ExponentPushToken[purge-helper]",
+        platform: "android",
+      }),
+    ]) {
+      const { error } = await insert;
+      expect(error).toBeNull();
+    }
+
+    // A storage object in the user's own profile-pics folder - the half a raw
+    // `delete from auth.users` would strand. Pin its presence before purging so
+    // the empty-folder assertion afterwards proves a deletion happened.
+    const objectPath = `${uid}/avatar.png`;
+    const upload = await admin.storage.from("profile-pics").upload(objectPath, pngBytes, {
+      contentType: "image/png",
+    });
+    expect(upload.error).toBeNull();
+    const before = await admin.storage.from("profile-pics").list(uid);
+    expect(before.error).toBeNull();
+    expect(before.data?.map((object) => object.name)).toEqual(["avatar.png"]);
+
+    const { error } = await admin.rpc("purge_user_account", { target_user: uid });
+    expect(error).toBeNull();
+
+    const [auth, profile, prefs, records, pushTokens, objects] = await Promise.all([
+      admin.auth.admin.getUserById(uid),
+      admin.from("profiles").select("user_id").eq("user_id", uid),
+      admin.from("user_preferences").select("user_id").eq("user_id", uid),
+      admin.from("thought_records").select("id").eq("user_id", uid),
+      admin.from("device_push_tokens").select("id").eq("user_id", uid),
+      admin.storage.from("profile-pics").list(uid),
+    ]);
+
+    expect(auth.data?.user).toBeNull();
+    expect(profile.data).toEqual([]);
+    expect(prefs.data).toEqual([]);
+    expect(records.data).toEqual([]);
+    expect(pushTokens.data).toEqual([]);
+    expect(objects.error).toBeNull();
+    expect(objects.data).toEqual([]);
   });
 });
 
@@ -485,5 +649,106 @@ describe("schedule_send_web_reminders_cron() - access control + idempotency (int
 
     const second = await service.rpc("schedule_send_web_reminders_cron");
     expect(second.error).toBeNull();
+  });
+});
+
+// Every table the demo seed's teardown covers, by its logical (view) name. The
+// encrypted ones store their rows in a same-named `_data` base table, which is
+// where the foreign keys actually live; `act_bulls_eye_snapshots` is unencrypted
+// and is its own base table. Kept as logical names so this list reads like the
+// module inventory rather than like the storage layer.
+//
+// `routines` and `routine_steps` are here because the seed's two routines are
+// composed of CBT and ACT practices and are wiped by the same parents-only
+// contract (#1290) - the sixth chain, and the last one to join this guard.
+const DEMO_SEED_TABLES = [
+  // ACT
+  "act_action_steps",
+  "act_bulls_eye_snapshots",
+  "act_choice_points",
+  "act_committed_actions",
+  "act_connection_logs",
+  "act_defusion_logs",
+  "act_expansion_logs",
+  "act_observing_self_sessions",
+  "act_program_state",
+  "act_urge_surf_logs",
+  "act_value_entries",
+  // CBT
+  "activity_logs",
+  "anger_logs",
+  "challenge_plans",
+  "core_beliefs",
+  "exposure_hierarchies",
+  "exposure_items",
+  "exposure_sessions",
+  "goals",
+  "milestones",
+  "procrastination_tasks",
+  "recovery_plans",
+  "self_care_logs",
+  "task_steps",
+  "thought_records",
+  "values_profile",
+  "worry_entries",
+  // Routines
+  "routine_steps",
+  "routines",
+];
+
+interface ForeignKeyDeleteRule {
+  child_table: string;
+  constraint_name: string;
+  parent_table: string;
+  delete_rule: string;
+}
+
+/** `thought_records_data` -> `thought_records`; unencrypted tables pass through. */
+function logicalTableName(storageTable: string): string {
+  return storageTable.replace(/_data$/, "");
+}
+
+describe("demo seed delete cascades (integration)", () => {
+  // The demo seed's teardown wipes PARENTS and standalone tables only, and lets
+  // the cascades reclaim the chain children (#1280). That is only safe while
+  // every key among these tables actually cascades. A migration that adds a
+  // child with a non-cascading delete rule, or re-creates a key without one,
+  // would orphan demo rows silently and forever - and no other test would
+  // notice, because the orphans are invisible until someone looks at the
+  // account.
+  //
+  // A single catalogue query, deliberately: no fixtures and no seeded rows, so
+  // this cannot be defeated by run order or by another suite's cleanup.
+  let rules: ForeignKeyDeleteRule[];
+
+  beforeAll(async () => {
+    const service = createServiceClient();
+    const { data, error } = await service.rpc("app_foreign_key_delete_rules");
+    expect(error).toBeNull();
+    rules = (data ?? []) as ForeignKeyDeleteRule[];
+  });
+
+  it("finds foreign keys on every table the demo seed wipes", () => {
+    // Guards the assertion below against passing vacuously: if a table were
+    // renamed, or the storage-name mapping drifted, the cascade check would
+    // filter down to nothing and stay green while proving nothing. Every one of
+    // these tables carries at least a `user_id` key, so every one must appear.
+    const covered = new Set(rules.map((rule) => logicalTableName(rule.child_table)));
+    const missing = DEMO_SEED_TABLES.filter((table) => !covered.has(table));
+
+    expect(missing).toEqual([]);
+  });
+
+  it("every foreign key among the demo seed's tables deletes on cascade", () => {
+    const offenders = rules
+      .filter((rule) => DEMO_SEED_TABLES.includes(logicalTableName(rule.child_table)))
+      .filter((rule) => rule.delete_rule !== "CASCADE")
+      .map(
+        (rule) =>
+          `${rule.child_table}.${rule.constraint_name} -> ${rule.parent_table} ` +
+          `is ${rule.delete_rule}, not CASCADE`,
+      );
+
+    expect(offenders).toEqual([]);
   });
 });

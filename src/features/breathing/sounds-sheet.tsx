@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AMBIENT_SOUNDS, BREATH_SOUNDS } from "@/src/constants/breathing-sounds";
@@ -10,7 +11,7 @@ import { mergeUserPreferences, type UserPreferences } from "@/src/features/modul
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
-import { DEFAULT_INTERACTIVE_HIT_SLOP, useReduceMotionEnabled } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 
 interface SoundsSheetProps {
@@ -21,7 +22,6 @@ interface SoundsSheetProps {
 // Sound *selection* only - volume is handled by the always-visible sliders on the session screen.
 export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
   const { t } = useTranslation("cbt");
-  const reduceMotionEnabled = useReduceMotionEnabled();
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { data: prefs } = useUserPreferences(userId);
@@ -42,35 +42,26 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
   const ambientSound =
     AMBIENT_SOUNDS.find((s) => s.id === effective.ambientSoundId) ?? AMBIENT_SOUNDS[0];
 
-  // ⚠️ WEB: a closed sheet unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
-  // this.
-  if (!visible && Platform.OS === "web") return null;
-
   return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      visible={visible}
-      onRequestClose={onDismiss}
-      transparent
-    >
+    // A bottom sheet, not a full-screen modal: the breathing session stays
+    // visible behind it, so the wrapper pins no row and the X below is this
+    // sheet's one Escape — pinned in its own header row OUTSIDE the
+    // scroller (W20/#1257), so it no longer scrolls away with the lanes.
+    <PressShieldModal surface="sheet" visible={visible} onRequestClose={onDismiss} transparent>
       <View className="flex-1 justify-end bg-black/40">
         <SafeAreaView edges={["bottom"]} className="rounded-t-2xl bg-background">
+          <View className="flex-row items-center justify-between px-6 pt-6">
+            <Text variant="h2">{t("breathing.sounds.title")}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("common:close")}
+              hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+              onPress={onDismiss}
+            >
+              <Icon name="close" className="size-6 text-muted-foreground" />
+            </Pressable>
+          </View>
           <ScrollView contentContainerClassName="gap-6 p-6">
-            <View className="flex-row items-center justify-between">
-              <Text variant="h2">{t("breathing.sounds.title")}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("breathing.sounds.close")}
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={onDismiss}
-              >
-                <Icon name="close" className="size-6 text-muted-foreground" />
-              </Pressable>
-            </View>
-
             <Lane
               label={t("breathing.sounds.breathLabel")}
               soundName={t(breathSound.labelKey)}
@@ -103,7 +94,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
           </ScrollView>
         </SafeAreaView>
       </View>
-    </Modal>
+    </PressShieldModal>
   );
 }
 
@@ -176,11 +167,8 @@ function Picker({ label, items, selectedId, onSelect }: PickerProps) {
             {/*
               Hue-keyed ink, not the accent (#412): the selected row is 14px
               text on `bg-aqua/10`, where the published accent reads 4.27:1.
-              `text-aqua-ink` rather than `text-primary-ink` because this sheet
-              renders in a <Modal> - the aqua pour from the session route below
-              it is not something to rely on reaching a portal, and inside the
-              aqua room the two resolve to the same colour anyway (the room
-              re-pours --accent-ink from these very triples).
+              `text-aqua-ink` because the hue is aqua's, and the ink token is
+              the only spelling of it that clears AA at this size.
             */}
             <Text className={cn("text-sm", active && "font-semibold text-foreground")}>
               {item.label}

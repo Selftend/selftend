@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { DateTimeField } from "@/src/components/app/date-time-field";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
@@ -31,7 +31,6 @@ import {
   asQuestionList,
 } from "@/src/features/gratitude/questions";
 import type { GratitudeEntry } from "@/src/features/gratitude/types";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { occurrenceTimeFromDate, type CapturedOffsetMinutes } from "@/src/lib/occurrence-time";
 import { useSession } from "@/src/providers/session-provider";
@@ -53,7 +52,6 @@ export function GratitudeEntryEditorScreen({
   entryId = null,
 }: GratitudeEntryEditorScreenProps) {
   const { t, i18n } = useTranslation("gratitude");
-  const roomStyle = useRoomStyle("think");
   const { user } = useSession();
   const showToast = useToastStore((state) => state.showToast);
   const editMode = mode === "edit";
@@ -160,22 +158,12 @@ export function GratitudeEntryEditorScreen({
   });
 
   if (editMode && !fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("editor.editTitle")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("editor.editTitle")} />;
   }
 
   if (editMode && !existingEntry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("editor.editTitle")} />
@@ -189,7 +177,7 @@ export function GratitudeEntryEditorScreen({
   return (
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the think pour through it.
-    <View className="flex-1" style={roomStyle}>
+    <View className="flex-1">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
         // Both modes now, where only create mode had chrome: an edit form used to

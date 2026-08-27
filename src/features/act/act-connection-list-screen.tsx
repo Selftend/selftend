@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -8,14 +8,16 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenLoading } from "@/src/components/app/screen-state";
+import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
+import { ACT_SHARED_TOOLS } from "@/src/features/act/act-shared-tools";
 import { useConnectionLogs } from "@/src/features/act/queries";
-import { RelatedTools } from "@/src/features/act/related-tools";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { toLocalDateKey, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useLocaleFormats } from "@/src/lib/locale-format";
 
 export default function ActConnectionListScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("act");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
@@ -37,16 +39,14 @@ export default function ActConnectionListScreen() {
             <Text variant="muted">{t("connection.listSubtitle")}</Text>
           </View>
 
-          <Button onPress={() => router.push("/modules/act/connection/new")}>
+          <Button onPress={() => pushWithOrigin("/modules/act/connection/new")}>
             <Icon name="radio-button-checked" className="size-4 text-primary-foreground" />
             <Text>{t("connection.newTitle")}</Text>
           </Button>
 
-          <RelatedTools
-            tools={[
-              { icon: "self-improvement", nameKey: "meditation", href: "/tools/meditation" },
-              { icon: "anchor", nameKey: "grounding", href: "/tools/grounding" },
-            ]}
+          <SharedToolsRow
+            heading={t("alsoTry")}
+            tools={[ACT_SHARED_TOOLS.meditation, ACT_SHARED_TOOLS.grounding]}
           />
 
           {dayLogs.length === 0 ? (
@@ -59,7 +59,7 @@ export default function ActConnectionListScreen() {
                   accessibilityRole="button"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/modules/act/connection/[id]",
                       params: { id: log.id },
                     })

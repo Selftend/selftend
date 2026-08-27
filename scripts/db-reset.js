@@ -47,3 +47,8 @@ function restartMatchingContainers(namePattern, label, reason) {
 
 restartMatchingContainers("supabase_rest_", "PostgREST", "to load the completed migration schema");
 restartMatchingContainers("supabase_kong_", "Kong", "to refresh upstream IPs");
+
+// seed.sql only gives demo@test.local its thought records; the rich all-tools
+// dataset comes from the deterministic seeder, so run it on every reset.
+console.log("[db-reset] Seeding demo@test.local with the full demo dataset...");
+run("node", ["scripts/seed-demo-data.mjs"]);

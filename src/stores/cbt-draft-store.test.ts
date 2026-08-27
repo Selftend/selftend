@@ -27,6 +27,7 @@ describe("cbt draft store", () => {
       evidenceAgainst: [],
       evidenceFor: [],
       outcomeNotes: "",
+      beliefAfter: null,
       situation: "A save failed",
     };
 

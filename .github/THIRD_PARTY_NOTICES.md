@@ -46,18 +46,17 @@ Direct UI support dependencies:
 - `clsx`: MIT
 - `expo-image-manipulator`: MIT
 - `expo-image-picker`: MIT
-- `lucide-react-native`: ISC
 - `react-easy-crop`: MIT
 - `tailwind-merge`: MIT
 - `tailwindcss-animate`: MIT
 
 ## Bundled Fonts
 
-The app bundles Noto Sans via `@expo-google-fonts/noto-sans`. The font itself is licensed under the SIL Open Font License 1.1 (OFL-1.1); the npm package wrapper is MIT.
+The app bundles Noto Sans via `@expo-google-fonts/noto-sans` (body text) and Nunito via `@expo-google-fonts/nunito` (the `Nunito_800ExtraBold` display face). Both fonts are licensed under the SIL Open Font License 1.1 (OFL-1.1); the npm package wrappers are MIT.
 
-Source: https://fonts.google.com/noto/specimen/Noto+Sans
+Sources: https://fonts.google.com/noto/specimen/Noto+Sans and https://fonts.google.com/specimen/Nunito
 
-License: SIL Open Font License 1.1 - see the full text shipped with the package at `node_modules/@expo-google-fonts/noto-sans/LICENSE`.
+License: SIL Open Font License 1.1 - see the full text shipped with each package at `node_modules/@expo-google-fonts/noto-sans/LICENSE` and `node_modules/@expo-google-fonts/nunito/LICENSE`.
 
 ## Google Sign-In Branding
 
@@ -67,4 +66,4 @@ Source: https://developers.google.com/identity/branding-guidelines
 
 ## Dependency License Posture
 
-The production `dependencies` tree at the time of writing breaks down as 66 MIT, 1 ISC (`lucide-react-native`), 1 Apache-2.0 (`class-variance-authority`), and 1 dual MIT/OFL-1.1 (`@expo-google-fonts/noto-sans`). No AGPL/GPL/LGPL/MPL/SSPL/BUSL packages are present. Re-run this audit whenever a new direct dependency is added.
+The 67 direct production `dependencies`, read from installed package metadata on 2026-08-27, break down as 64 MIT, 1 Apache-2.0 (`class-variance-authority`), and 2 dual MIT/OFL-1.1 (`@expo-google-fonts/noto-sans`, `@expo-google-fonts/nunito`). No AGPL/GPL/LGPL/MPL/SSPL/BUSL packages are present. Re-run this audit whenever a new direct dependency is added.

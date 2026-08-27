@@ -8,13 +8,11 @@ import { MeditationDailyLifeCard } from "@/src/features/meditation/meditation-da
 import { useStagePracticeNotes } from "@/src/features/meditation/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { useLocaleFormats } from "@/src/lib/locale-format";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 
 const STAGE = 10;
 
 export default function MeditationDailyLifeScreen() {
   const { t } = useTranslation("meditation");
-  const roomStyle = useRoomStyle("iris");
   const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { data: notes } = useStagePracticeNotes(user?.id ?? null, STAGE);
@@ -23,7 +21,7 @@ export default function MeditationDailyLifeScreen() {
     // The room wrapper carries the token re-pour; MobileFormScreen's own
     // bg-background surfaces re-resolve to the iris pour through it. No field
     // here - meditation's only immersive surface is home.
-    <View testID="meditation-daily-life-room" className="flex-1" style={roomStyle}>
+    <View testID="meditation-daily-life-room" className="flex-1">
       <MobileFormScreen>
         <View className="gap-6">
           <View className="gap-2">

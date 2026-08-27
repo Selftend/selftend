@@ -66,7 +66,7 @@ const HUE_IMPORT = /\b(TINT_TEXT|TINT_ACCENT|hueToTint|toolAccent|exerciseHue|hu
 
 /**
  * A hue handed to a colour helper as a STRING — `tintStripeColors("act", isDark)`,
- * `hueHsl("iris", …)`, `useRoomStyle("clay")`.
+ * `hueHsl("iris", …)`.
  *
  * Neither pattern above can see this: the argument is not a class name and not a
  * CSS variable, it is a bare word inside quotes. The gap was real rather than
@@ -77,8 +77,9 @@ const HUE_IMPORT = /\b(TINT_TEXT|TINT_ACCENT|hueToTint|toolAccent|exerciseHue|hu
  */
 const HUE_ARGUMENT = new RegExp(
   // hueRamp/hueRampClass sat in this alternation until #924 retired them (the
-  // mood ramp, their last reader, rides the accent now).
-  String.raw`\b(tintStripeColors|hueHsl|hueGradient|useRoomStyle)\(\s*"(${HUE_ALTERNATION})"`,
+  // mood ramp, their last reader, rides the accent now); useRoomStyle until
+  // #1292 deleted the hook itself.
+  String.raw`\b(tintStripeColors|hueHsl|hueGradient)\(\s*"(${HUE_ALTERNATION})"`,
   "g",
 );
 
@@ -113,7 +114,7 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
     // tool listing wearing a different frame: both took the owning pillar's hue,
     // and both sit on the same screen, so leaving either would have shown the
     // half-swept look on the module the app leads with.
-    "src/features/cbt/cbt-home/shared-tools-row.tsx",
+    "src/components/app/shared-tools-row.tsx",
     "src/features/cbt/cbt-home/cbt-pillars-section.tsx",
   ],
   "the signed-out module surfaces": [
@@ -422,7 +423,6 @@ describe("the lint gate's exemptions and the ruling agree (#589)", () => {
     // them, so they carry no encoding id of their own.
     const palette = [
       "src/lib/design-tokens.ts",
-      "src/lib/module-room.ts",
       "src/lib/hue-chip.ts",
       "src/features/mindfulness/exercise-hue.ts",
       // score-tone.ts sat here until #924 retired it with the hue ramp - the

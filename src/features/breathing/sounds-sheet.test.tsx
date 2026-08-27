@@ -1,4 +1,5 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
+import { ScrollView } from "react-native";
 
 import { SoundsSheet } from "@/src/features/breathing/sounds-sheet";
 import { renderWithProviders } from "@/test/render-with-providers";
@@ -19,6 +20,20 @@ jest.mock("@/src/lib/accessibility", () => ({
 
 describe("SoundsSheet", () => {
   beforeEach(() => jest.clearAllMocks());
+
+  // W20/#1257: the X is this sheet's ONE Escape (the sheet declines the
+  // wrapper's pinned row via surface="sheet"), and it sits in its own header
+  // row OUTSIDE the scroller, so it can no longer scroll away with the lanes.
+  it("pins a single Close outside the scroller that dismisses the sheet", () => {
+    const onDismiss = jest.fn();
+    renderWithProviders(<SoundsSheet visible onDismiss={onDismiss} />);
+    const closes = screen.getAllByLabelText("Close");
+    expect(closes).toHaveLength(1);
+    const scroller = screen.UNSAFE_getByType(ScrollView);
+    expect(within(scroller).queryByLabelText("Close")).toBeNull();
+    fireEvent.press(closes[0]);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
 
   it("renders both lane pickers", () => {
     renderWithProviders(<SoundsSheet visible onDismiss={() => {}} />);

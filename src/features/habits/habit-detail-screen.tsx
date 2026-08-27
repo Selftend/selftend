@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,7 +10,7 @@ import { DetailRow } from "@/src/components/app/detail-row";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { Section } from "@/src/components/app/section";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import {
@@ -38,7 +39,6 @@ import {
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 import { parseLocalNoon } from "@/src/utils/date";
@@ -58,8 +58,8 @@ interface HabitDetailScreenProps {
  * they are two words about the habit, not a report.
  */
 export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("habits");
-  const roomStyle = useRoomStyle("act");
   const { user } = useSession();
   const userId = user?.id ?? null;
   const { selectedDate: todayKey } = useSelectedDate();
@@ -86,22 +86,12 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   const [untickTarget, setUntickTarget] = useState<string | null>(null);
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("home.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("home.title")} />;
   }
 
   if (!habit) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("home.title")} />
@@ -152,7 +142,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   }
 
   function openNote(dayKey: string) {
-    router.push({
+    pushWithOrigin({
       pathname: "/tools/habits/[id]/log",
       params: { id: habitId, date: dayKey },
     });
@@ -249,7 +239,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
   return (
     // The room wrapper carries the token re-pour so the top bar's `bg-card` and
     // the scroller's `bg-background` both re-resolve through it.
-    <View testID="habit-detail-room" className="flex-1" style={roomStyle}>
+    <View testID="habit-detail-room" className="flex-1">
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/* The trail rides the bar, not the column: chrome for the screen
             rather than part of the document (#733). */}
@@ -298,7 +288,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
                 <Button
                   accessibilityLabel={t("cta.edit")}
                   onPress={() =>
-                    router.push({
+                    pushWithOrigin({
                       pathname: "/tools/habits/[id]/edit",
                       params: { id: habit.id },
                     })

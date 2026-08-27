@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -11,13 +12,12 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { DetailRow } from "@/src/components/app/detail-row";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { useDeleteSleepLog, useSleepLog, useSleepLogs } from "@/src/features/sleep/queries";
-import { ShowAllSleepLink } from "@/src/features/sleep/show-all-sleep-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { formatAtOffset, formatInstantAtOffset } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { formatDuration } from "@/src/features/sleep/format";
@@ -34,8 +34,8 @@ import { formatDuration } from "@/src/features/sleep/format";
  * with no note shows no rows at all.
  */
 export default function SleepDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t, i18n } = useTranslation("sleep");
-  const roomStyle = useRoomStyle("ink");
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const logId = typeof id === "string" ? id : null;
@@ -68,22 +68,12 @@ export default function SleepDetailScreen() {
   };
 
   if (!fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("detail.title")} />;
   }
 
   if (!entry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -124,7 +114,7 @@ export default function SleepDetailScreen() {
   ].join(" · ");
 
   return (
-    <View className="flex-1" style={roomStyle}>
+    <View className="flex-1">
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/* The trail rides the bar, not the column: chrome for the screen rather
             than part of the document (#733). */}
@@ -146,7 +136,7 @@ export default function SleepDetailScreen() {
                     (h-10 sm:h-9), and only the default shares that height —
                     an sm pill sits 4px shorter and reads as broken (#911). */}
                 <Button
-                  onPress={() => router.push(`/tools/sleep/${entry.id}/edit`)}
+                  onPress={() => pushWithOrigin(`/tools/sleep/${entry.id}/edit`)}
                   variant="outline"
                 >
                   <Icon name="edit" className="size-4" />
@@ -175,7 +165,7 @@ export default function SleepDetailScreen() {
             ) : null}
 
             <View className="items-end">
-              <ShowAllSleepLink />
+              <ShowAllLink label={t("allHistory.link")} route="/tools/sleep/history" />
             </View>
           </View>
         </ScrollView>

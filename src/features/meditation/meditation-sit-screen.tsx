@@ -11,6 +11,7 @@ import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { FocusSessionShell } from "@/src/components/app/focus-session-shell";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
 import { formatClock } from "@/src/features/breathing/cycle-math";
 import {
@@ -28,8 +29,8 @@ import { announceMessage } from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { playOneShot } from "@/src/lib/native-audio";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import { useUserPreferences } from "@/src/features/settings/queries";
 import { useAccentHsl, useThemeHex } from "@/src/lib/theme-palette";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 
@@ -96,6 +97,7 @@ export function MeditationSitScreen() {
   const navigation = useNavigation();
   const showToast = useToastStore((state) => state.showToast);
   const params = useLocalSearchParams<{ duration?: string; bell?: string }>();
+  const { data: preferences } = useUserPreferences(userId);
 
   const durationMinutes = safeMinutes(
     params.duration,
@@ -156,6 +158,14 @@ export function MeditationSitScreen() {
   // instead of replayed after a background stretch: three missed bells on
   // foreground would be noise, not timekeeping.
   const bellCountRef = useRef(0);
+  // Bell volume rides a ref, not the closure: the tick and the focus effect are
+  // created once per sit, so a value read directly would be the one that
+  // happened to be loaded at the time - and the preferences query resolves
+  // after first paint. 1 until it arrives, which is the pre-#1188 behaviour.
+  const bellVolumeRef = useRef(1);
+  useEffect(() => {
+    bellVolumeRef.current = preferences?.bellVolume ?? 1;
+  }, [preferences?.bellVolume]);
   // The end bell and the finish request fire once per sit: a pause/resume while
   // the finish waits on the stage query resubscribes the tick, and an unguarded
   // completion branch would ring the end bell again.
@@ -250,7 +260,7 @@ export function MeditationSitScreen() {
         intervalRef.current = null;
         if (!completionRef.current) {
           completionRef.current = true;
-          playOneShot(bellSound, 1);
+          playOneShot(bellSound, bellVolumeRef.current);
           setFinishRequested("after");
         }
         return;
@@ -265,7 +275,7 @@ export function MeditationSitScreen() {
           // not timekeeping.
           const sinceBoundarySeconds = elapsed - boundary * bellSeconds;
           if (boundary - bellCountRef.current === 1 && sinceBoundarySeconds < 2) {
-            playOneShot(intervalSound, 1);
+            playOneShot(intervalSound, bellVolumeRef.current);
           }
           bellCountRef.current = boundary;
         }
@@ -284,8 +294,9 @@ export function MeditationSitScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, paused, focused]);
 
-  // Shell B has no chrome, so the OS back gesture and the web back button are
-  // the only uninvited exits. Mid-sit they pause the clock and ask (#777) -
+  // Shell B's Escape (#1256) leaves through `router.replace`, so it lands here
+  // with the OS back gesture and the web back button - every uninvited exit
+  // passes this guard. Mid-sit they pause the clock and ask (#777) -
   // confirming finishes and saves, then honours the exit rather than detouring
   // through a reflection the user was leaving. Once the sit is recorded the
   // guard stands down: backing out of the reflection is just skipping it.
@@ -309,7 +320,7 @@ export function MeditationSitScreen() {
       bellCountRef.current = 0;
       completionRef.current = false;
       finishingRef.current = false;
-      playOneShot(bellSound, 1);
+      playOneShot(bellSound, bellVolumeRef.current);
       setFocused(true);
       return () => {
         if (intervalRef.current) {
@@ -335,8 +346,6 @@ export function MeditationSitScreen() {
     }, []),
   );
 
-  const roomStyle = useRoomStyle("iris");
-
   if (phase === "after" && savedSession) {
     return (
       <AfterSit
@@ -350,7 +359,6 @@ export function MeditationSitScreen() {
         note={note}
         onChangeNote={setNote}
         isPending={updateMutation.isPending}
-        roomStyle={roomStyle}
         onSkip={() => router.replace("/tools/meditation")}
         onSave={async () => {
           try {
@@ -516,7 +524,6 @@ function AfterSit({
   note,
   onChangeNote,
   isPending,
-  roomStyle,
   onSkip,
   onSave,
 }: {
@@ -526,18 +533,20 @@ function AfterSit({
   note: string;
   onChangeNote: (value: string) => void;
   isPending: boolean;
-  roomStyle: ReturnType<typeof useRoomStyle>;
   onSkip: () => void;
   onSave: () => void;
 }) {
   const { t } = useTranslation("meditation");
 
   return (
-    // The room wrapper carries the iris token re-pour; MobileFormScreen's
-    // bg-background surfaces re-resolve through it.
-    <View className="flex-1" style={roomStyle} testID="meditation-sit-after-room">
+    <View className="flex-1" testID="meditation-sit-after-room">
       <MobileFormScreen
         contentClassName={cn(FORM_COLUMN, "gap-6")}
+        // The sit itself escapes through `FocusSessionShell`; this after-sit
+        // form is a separate return that carried no chrome, so the only ways
+        // off it were its own Skip and Save buttons - "some pressable" rather
+        // than the Escape, which is the widening G4 forbids (#1328).
+        topBar={<ScreenTopBar />}
         footer={
           <View className={cn(FORM_COLUMN, "flex-row items-center justify-between gap-3")}>
             <Button disabled={isPending} onPress={onSkip} variant="ghost">

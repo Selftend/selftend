@@ -4,16 +4,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { ErrorState, LoadingState } from "@/src/components/app/screen-state";
+import { ErrorState, ScreenLoading } from "@/src/components/app/screen-state";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { BeforeAfterPair } from "@/src/features/cbt/before-after-pair";
 import { useThoughtRecord } from "@/src/features/cbt/queries";
+import { resolveHotThought } from "@/src/features/cbt/thought-record-form";
 import { useSession } from "@/src/providers/session-provider";
 
 // The calm completion screen shown after a NEW thought record is saved (never for
 // edits - see app/(app)/modules/cbt/new.tsx onSaved). Intentionally quiet: no
-// streaks, no confetti - just an acknowledgement and the intensity drop, if any.
+// streaks, no confetti - just an acknowledgement and the numbers, if any.
+//
+// The BELIEF pair leads (#1381): the hot thought's rating before against the
+// record-level re-rating after - the same pair the detail screen and the module
+// home's stat read, so this screen stops disagreeing with both. The emotion
+// intensity pair stays underneath it when both of its values exist; either pair
+// is OMITTED, never dashed, when a number is missing.
 export default function ThoughtRecordSavedScreen() {
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -23,11 +31,7 @@ export default function ThoughtRecordSavedScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.loading")} description={t("detail.loadingDescription")} />
-        </View>
-      </SafeAreaView>
+      <ScreenLoading title={t("detail.loading")} description={t("detail.loadingDescription")} />
     );
   }
 
@@ -47,14 +51,27 @@ export default function ThoughtRecordSavedScreen() {
     );
   }
 
+  // The belief-before is the hot thought's own rating: nats travel encrypted
+  // and are decrypted by the record query, so the pair is assembled here, not
+  // read off a column.
+  const beliefBefore = resolveHotThought(data.nats)?.beliefRating ?? null;
+  const showBelief =
+    beliefBefore !== null && data.beliefAfter !== null && data.beliefAfter !== undefined;
   const showIntensity =
-    data?.emotionIntensityBefore !== null &&
-    data?.emotionIntensityBefore !== undefined &&
-    data?.emotionIntensityAfter !== null &&
-    data?.emotionIntensityAfter !== undefined;
+    data.emotionIntensityBefore !== null &&
+    data.emotionIntensityBefore !== undefined &&
+    data.emotionIntensityAfter !== null &&
+    data.emotionIntensityAfter !== undefined;
 
   return (
     <SafeAreaView className="flex-1 bg-background">
+      {/* The success path carries the bar too. It reads as the one screen that
+          does not need a way out - it offers two buttons of its own - but those
+          are "some pressable", which is exactly the widening G4 forbids, and
+          this whole file passed the coverage gate on the ScreenHeader inside
+          its not-found branch while the branch users actually reach had no
+          chrome at all (#1328). */}
+      <ScreenTopBar />
       <View className="flex-1 justify-center gap-10 p-6">
         <View className="items-center gap-2">
           <Text variant="h2" className="text-center">
@@ -62,18 +79,22 @@ export default function ThoughtRecordSavedScreen() {
           </Text>
         </View>
 
+        {showBelief ? (
+          <BeforeAfterPair
+            beforeLabel={t("saved.beliefBefore")}
+            beforeValue={beliefBefore}
+            afterLabel={t("saved.beliefAfter")}
+            afterValue={data.beliefAfter}
+          />
+        ) : null}
+
         {showIntensity ? (
-          <View className="flex-row items-center justify-center gap-6">
-            <View className="items-center gap-1">
-              <Text variant="muted">{t("saved.intensityBefore")}</Text>
-              <Text variant="h3">{data.emotionIntensityBefore}</Text>
-            </View>
-            <Icon name="arrow-forward" className="size-5 text-muted-foreground" />
-            <View className="items-center gap-1">
-              <Text variant="muted">{t("saved.intensityAfter")}</Text>
-              <Text variant="h3">{data.emotionIntensityAfter}</Text>
-            </View>
-          </View>
+          <BeforeAfterPair
+            beforeLabel={t("saved.intensityBefore")}
+            beforeValue={data.emotionIntensityBefore}
+            afterLabel={t("saved.intensityAfter")}
+            afterValue={data.emotionIntensityAfter}
+          />
         ) : null}
 
         <View className="gap-3">

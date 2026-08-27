@@ -1,6 +1,5 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import JournalListScreen from "@/src/features/journal/journal-list-screen";
 import {
@@ -11,7 +10,6 @@ import {
 import type { JournalEntry } from "@/src/features/journal/types";
 import { lastNDayKeys } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -151,7 +149,6 @@ describe("JournalListScreen", () => {
 
     renderWithProviders(<JournalListScreen />);
 
-    expectNeutralRoom(screen.UNSAFE_getByType(SafeAreaView));
     const stats = screen.getAllByTestId("module-header-stat");
     expect(stats).toHaveLength(3);
     expect(screen.getByText("421 words")).toBeTruthy();

@@ -5,17 +5,11 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 
 export default function MeditationLearnScreen() {
   const { t } = useTranslation("meditation");
-  const roomStyle = useRoomStyle("iris");
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={["bottom", "left", "right"]}
-      style={roomStyle}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">

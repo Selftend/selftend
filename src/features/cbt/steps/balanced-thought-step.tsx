@@ -1,20 +1,22 @@
-import { Controller, type Control, type FieldErrors, type UseFormGetValues } from "react-hook-form";
+import { Controller, type Control, type FieldErrors } from "react-hook-form";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
-import { ThoughtRecordSummaryCard } from "@/src/features/cbt/steps/thought-record-summary-card";
 import type { ThoughtRecordFormSchema } from "@/src/features/cbt/schemas";
 
 interface BalancedThoughtStepProps {
   control: Control<ThoughtRecordFormSchema>;
   errors: FieldErrors<ThoughtRecordFormSchema>;
-  getValues: UseFormGetValues<ThoughtRecordFormSchema>;
 }
 
-export function BalancedThoughtStep({ control, errors, getValues }: BalancedThoughtStepProps) {
+// The wizard rendered a summary card here - a recap of answers from steps that
+// were no longer on screen. The column deleted it (#1381): every answer it
+// recapped is visible by scrolling, so the recap had become a duplicate of the
+// form directly above it.
+export function BalancedThoughtStep({ control, errors }: BalancedThoughtStepProps) {
   const { t } = useTranslation("cbt");
 
   return (
@@ -40,8 +42,6 @@ export function BalancedThoughtStep({ control, errors, getValues }: BalancedThou
           </View>
         )}
       />
-
-      <ThoughtRecordSummaryCard getValues={getValues} />
     </View>
   );
 }

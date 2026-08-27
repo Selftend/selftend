@@ -149,9 +149,9 @@ Multi-step wizard flows persist in-progress drafts via
 [src/lib/use-wizard-draft.ts](../src/lib/use-wizard-draft.ts)):
 
 - **Key scheme:** `selftend:wizard-draft:<flowKey>` - one draft per flow key
-  (`cbt-thought-record`, `act-defusion`, `goal`, `core-belief`,
-  `procrastination-task`, `exposure-hierarchy`). One mode+entityId draft at a
-  time; switching wipes the previous draft.
+  (`cbt-thought-record`, `goal`, `core-belief`, `procrastination-task`,
+  `exposure-hierarchy`). One mode+entityId draft at a time; switching wipes the
+  previous draft.
 - **TTL:** drafts older than 24h are dropped at rehydrate (and their disk copy
   removed - drafts are PHI).
 - **Versioning:** the persisted envelope carries a `version`; bump
@@ -166,6 +166,15 @@ Multi-step wizard flows persist in-progress drafts via
   write's promise. Store action bodies use braces (return `void`) so callers -
   including `act()` in tests - never receive a stray thenable. Keep new actions
   braced.
+
+**One-column forms do not use this store.** The persisted envelope exists to
+carry a **step index** across a page load, and a column has no step. ACT's
+defusion form (#1380) and the values check-in (#1379) hold their unsaved entry
+in the non-wizard
+[src/stores/create-draft-store.ts](../src/stores/create-draft-store.ts) instead:
+in memory, so it survives leaving the screen ("Finish later") but not a reload,
+and registered with the same draft-store registry, so `resetAllDraftStores()`
+clears it on sign-out like every other draft. It is still PHI.
 
 ## Field-level encryption layer
 
@@ -242,7 +251,7 @@ changes one surface; the channel changes both.
 - Falls back to `expo-localization`.
 - On change, persists to AsyncStorage _and_ writes to `user_preferences.language` in Supabase.
 
-Components use `useTranslation("namespace")` and `t("key")`. Policy screens use `t(sectionKey, { returnObjects: true })` to load arrays of section content from JSON. The seven namespaces are defined in [stack.md](stack.md#internationalization-i18n).
+Components use `useTranslation("namespace")` and `t("key")`. Structured content — policy sections, grounding steps, meditation instructions, gratitude prompts — is loaded from JSON arrays with `t(key, { returnObjects: true })`. The 20 namespaces — each with an `en` and a `bg` file — are defined in [stack.md](stack.md#internationalization-i18n), which also records how much of the set Weblate currently tracks.
 
 Direct imports of `i18n.t(...)` are reserved for non-component code (utility functions, validation). Components should use the hook so re-render-on-language-change works.
 
@@ -277,6 +286,8 @@ NativeWind and React Navigation both receive the active scheme from the root lay
 
 Repository errors bubble to TanStack Query. Screens use `src/components/app/screen-state.tsx` for loading/empty/error states. Failed saves use `src/stores/toast-store.ts` and keep unsaved input in place.
 
+**Exception - a write fired from inside a modal that stays open.** A toast cannot be raised over a native modal on Android (`FullWindowOverlay` is iOS-only, and a toast in its own Android `Modal` would block every touch below it). Such a write sets `meta: { suppressGlobalErrorToast: true }` and reports the failure **inline** on the surface instead, via `src/lib/use-inline-write-error.ts`. Two rules come with it: the inline message carries `role="alert"`, because it replaces an announcement the toast used to make; and the state must live on a surface that **outlives the write**, since a mutate-level `onError` is dropped once its component unmounts. A write whose surface closes before the toast lands is not this case and keeps toasting.
+
 ## Adding A Module
 
 When a placeholder route becomes real, add:
@@ -287,7 +298,7 @@ When a placeholder route becomes real, add:
 4. `src/features/{name}/queries.ts` - TanStack Query hooks
 5. A migration in `supabase/migrations/` - table, RLS policies, ownership column, export coverage update, deletion coverage update
 6. Screens under `app/(app)/{name}/` that use the queries
-7. i18n keys in all seven namespaces, in every supported locale
+7. i18n keys in the module's own namespace (plus any shared namespaces it touches), in every supported locale
 8. At least one schema/repository test and one component-state test
 9. A spec at `docs/modules/{name}.md` covering [modules/tools.md](modules/tools.md)
 

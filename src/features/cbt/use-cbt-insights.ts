@@ -6,15 +6,15 @@ import { useAngerLogs } from "@/src/features/anger/queries";
 import { useCoreBeliefs } from "@/src/features/beliefs/queries";
 import type { CoreBelief } from "@/src/features/beliefs/types";
 import { useThoughtRecords } from "@/src/features/cbt/queries";
+import { instantOnOrAfter } from "@/src/utils/date";
 import { useAllExposureItems } from "@/src/features/exposure/queries";
 import { useGratitudeEntries } from "@/src/features/gratitude/queries";
 import { useMoodHistory } from "@/src/features/mood/queries";
-import { useRecoveryPlan } from "@/src/features/recovery/queries";
 import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useSleepLogs } from "@/src/features/sleep/queries";
 import { roundTo1 as roundedTenth } from "@/src/utils/number";
 
-export interface TopDistortion {
+export interface DistortionCount {
   key: string;
   count: number;
 }
@@ -56,7 +56,7 @@ export interface ExposureProgress {
 }
 
 export interface CbtInsights {
-  topDistortions: TopDistortion[];
+  distortionCounts: DistortionCount[];
   exerciseMoodLift: ExerciseMoodLift | null;
   activityMoodLiftByCategory: ActivityMoodLift[];
   beliefReviewSuggestions: CoreBelief[];
@@ -64,7 +64,6 @@ export interface CbtInsights {
   selfCareTrend: SelfCareTrend | null;
   angerPattern: AngerPattern | null;
   exposureProgress: ExposureProgress | null;
-  slogan: string;
 }
 
 function average(values: number[]) {
@@ -83,7 +82,7 @@ function normalizeLabel(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-export function useCbtInsights(userId: string | null): CbtInsights {
+export function useCbtInsights(userId: string | null, monthStartIso: string): CbtInsights {
   const { data: activities } = useActivities(userId);
   const { data: angerLogs } = useAngerLogs(userId);
   const { data: thoughtRecords } = useThoughtRecords(userId);
@@ -96,15 +95,35 @@ export function useCbtInsights(userId: string | null): CbtInsights {
   const { data: sleepLogs } = useSleepLogs(userId, 50);
   const { data: gratitudeEntries } = useGratitudeEntries(userId, 50);
   const { data: coreBeliefs } = useCoreBeliefs(userId);
-  const { data: recoveryPlan } = useRecoveryPlan(userId);
 
-  const topDistortions = useMemo<TopDistortion[]>(() => {
-    if (!thoughtRecords || thoughtRecords.length < 5) {
+  /**
+   * Thinking-pattern counts for the overview's bars (#1387, SR-1): this month,
+   * every pattern with a count of one or more, no record floor. The previous
+   * shape - lifetime, top three, hidden below five records - computed a
+   * lifetime figure over `listThoughtRecords`' capped 500-row fetch, which is
+   * ADR-0001's anti-pattern by name; a month provably fits inside the cap (a
+   * record created this month can only leave the top 500 when 500 others were
+   * touched later, which puts them in the month too).
+   *
+   * The boundary is the CALLER's `monthStartIso` - the same value the screen
+   * hands `deriveCbtHomeView` for header stats 2 and 3, so the bars and the
+   * stats read one window by construction, not by two clocks agreeing.
+   *
+   * ⚠️ Written assumption, recorded rather than engineered around: the window
+   * is on the created INSTANT (device-local month), while records carry a
+   * captured occurrence offset and the rest of the app buckets them by civil
+   * day. At a month boundary the blast radius is one row, only for travellers.
+   */
+  const distortionCounts = useMemo<DistortionCount[]>(() => {
+    if (!thoughtRecords) {
       return [];
     }
 
     const counts = new Map<string, number>();
     for (const record of thoughtRecords) {
+      if (!instantOnOrAfter(record.createdAt, monthStartIso)) {
+        continue;
+      }
       for (const distortion of record.distortions) {
         counts.set(distortion, (counts.get(distortion) ?? 0) + 1);
       }
@@ -112,9 +131,8 @@ export function useCbtInsights(userId: string | null): CbtInsights {
 
     return [...counts.entries()]
       .map(([key, count]) => ({ key, count }))
-      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key))
-      .slice(0, 3);
-  }, [thoughtRecords]);
+      .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+  }, [thoughtRecords, monthStartIso]);
 
   const exerciseMoodLift = useMemo<ExerciseMoodLift | null>(() => {
     if (!selfCareLogs || selfCareLogs.length < 7 || !moodLogs) {
@@ -239,6 +257,11 @@ export function useCbtInsights(userId: string | null): CbtInsights {
       });
     }
 
+    // ⚠️ The `count >= 2` floor below is load-bearing for Bulgarian, three files
+    // away. `cbt:dashboard.insights.recurringThoughtDetail` renders `{{count}} пъти`
+    // with no plural forms, which is correct for 2 and up but wrong for 1
+    // (Bulgarian's бройна форма would need "1 път"). Drop the floor to `>= 1` and
+    // the string breaks silently, in bg only, with no test to catch it.
     return [...counts.values()]
       .filter((item) => item.count >= 2)
       .sort((a, b) => b.count - a.count || a.thought.localeCompare(b.thought))
@@ -319,11 +342,9 @@ export function useCbtInsights(userId: string | null): CbtInsights {
     };
   }, [exposureItems]);
 
-  const slogan = recoveryPlan?.personalSlogan.trim() ?? "";
-
   return useMemo(
     () => ({
-      topDistortions,
+      distortionCounts,
       exerciseMoodLift,
       activityMoodLiftByCategory,
       beliefReviewSuggestions,
@@ -331,10 +352,9 @@ export function useCbtInsights(userId: string | null): CbtInsights {
       selfCareTrend,
       angerPattern,
       exposureProgress,
-      slogan,
     }),
     [
-      topDistortions,
+      distortionCounts,
       exerciseMoodLift,
       activityMoodLiftByCategory,
       beliefReviewSuggestions,
@@ -342,7 +362,6 @@ export function useCbtInsights(userId: string | null): CbtInsights {
       selfCareTrend,
       angerPattern,
       exposureProgress,
-      slogan,
     ],
   );
 }

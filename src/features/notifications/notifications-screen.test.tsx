@@ -126,6 +126,19 @@ describe("NotificationsScreen", () => {
     expect(screen.queryByText("Notifications")).toBeNull();
   });
 
+  // The reported symptom behind the escape spec (#1160): reaching Reminders from
+  // a module left the user with no way back to it. `/notifications` is a one-crumb
+  // route, and the Escape used to live inside the trail - so it vanished with it.
+  it("carries an Escape even though its trail is hidden (#1250)", () => {
+    renderWithProviders(<NotificationsScreen />);
+
+    expect(screen.getAllByTestId("screen-escape")).toHaveLength(1);
+    expect(screen.getByLabelText("Back to Home")).toBeTruthy();
+    // The trail itself stays hidden: a lone current-page crumb just repeats the
+    // title, which is what "Reminders" appearing exactly once asserts.
+    expect(screen.getAllByText("Reminders")).toHaveLength(1);
+  });
+
   it("renders ten rows in the registry's order, each switch named for its target", () => {
     renderWithProviders(<NotificationsScreen />);
 

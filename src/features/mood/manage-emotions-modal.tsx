@@ -1,7 +1,6 @@
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   TextInput,
@@ -11,6 +10,7 @@ import {
 import { useCallback, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { AnimatedScrollView } from "@/src/components/app/animated-scroll-view";
 import Sortable from "react-native-sortables";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -22,12 +22,9 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { NARROW_STEP_INDICATOR_BREAKPOINT } from "@/src/constants/layout";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import {
-  DEFAULT_INTERACTIVE_HIT_SLOP,
-  reorderMoveProps,
-  useReduceMotionEnabled,
-} from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, reorderMoveProps } from "@/src/lib/accessibility";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
+import { useInlineWriteError } from "@/src/lib/use-inline-write-error";
 import {
   useAddCustomEmotion,
   useEmotionUsageCounts,
@@ -58,10 +55,15 @@ const VIEW_SURFACE = Platform.select({ web: "bg-popover", default: "bg-backgroun
 
 interface EmotionEditorViewProps {
   state: EditorState;
-  /** Position to assign to a newly added custom emotion. */
-  addPosition: number;
   /** Lifetime uses of the emotion being edited, or null while the count is loading. */
   uses: number | null;
+  /**
+   * Reports the submitted values. ☠️ This view does NOT own the write - see
+   * `ManageEmotionsModal`, where the mutations live and why they must.
+   */
+  onSubmit: (input: { name: string; emoji: string }) => void;
+  /** Reports a confirmed delete of the emotion being edited. Owned by the list, as above. */
+  onDelete: () => void;
   onClose: () => void;
 }
 
@@ -72,13 +74,8 @@ interface EmotionEditorViewProps {
  * the first, which on a phone means two back gestures to get out of one task, and on web
  * two stacked focus traps.
  */
-function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorViewProps) {
+function EmotionEditorView({ state, uses, onSubmit, onDelete, onClose }: EmotionEditorViewProps) {
   const { t } = useTranslation("mood");
-  const { user } = useSession();
-  const userId = user?.id ?? null;
-  const upsertEmotion = useUpsertEmotionPreference(userId);
-  const addEmotion = useAddCustomEmotion(userId);
-  const removeEmotion = useRemoveEmotion(userId);
 
   const [name, setName] = useState<string>(() => (state.mode === "edit" ? state.emotion.name : ""));
   const [emoji, setEmoji] = useState<string>(() =>
@@ -88,28 +85,17 @@ function EmotionEditorView({ state, addPosition, uses, onClose }: EmotionEditorV
 
   const canSave = name.trim().length > 0 && emoji.trim().length > 0;
 
+  // Both hand the values up and close immediately - the write is optimistic, so the
+  // change is already on screen behind this view.
   const handleSave = () => {
     if (!canSave) return;
-    if (state.mode === "edit") {
-      upsertEmotion.mutate({
-        emotionId: state.emotion.id,
-        name: name.trim(),
-        emoji: emoji.trim(),
-      });
-    } else {
-      addEmotion.mutate({
-        emotionId: `custom_${Date.now()}`,
-        name: name.trim(),
-        emoji: emoji.trim(),
-        position: addPosition,
-      });
-    }
+    onSubmit({ name: name.trim(), emoji: emoji.trim() });
     onClose();
   };
 
   const handleDelete = () => {
     if (state.mode !== "edit") return;
-    removeEmotion.mutate({ emotionId: state.emotion.id, isCustom: state.emotion.isCustom });
+    onDelete();
     setConfirmDeleteOpen(false);
     onClose();
   };
@@ -354,11 +340,24 @@ interface ManageEmotionsModalProps {
 
 export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalProps) {
   const { t } = useTranslation("mood");
-  const reduceMotionEnabled = useReduceMotionEnabled();
   const { allEmotions, isLoading } = useEmotionDisplay();
   const { user } = useSession();
   const userId = user?.id ?? null;
+  /**
+   * ☠️ ALL FOUR writes live here, on the list, and none of them may move into
+   * `EmotionEditorView` however naturally they read there (#1335).
+   *
+   * The editor fires its write and closes itself in the same handler, so it is unmounted
+   * long before a real network failure lands. MEASURED: `MutationObserver` gates every
+   * mutate-level callback on `hasListeners()`, so an `onError` handed to `mutate` from a
+   * view that has since unmounted is DROPPED - and because these mutations also suppress
+   * the global toast, a rename, add or delete would then fail in total silence. The
+   * `emotion-preferences-queries.test.tsx` guard pins that behaviour.
+   */
   const reorderEmotions = useReorderEmotions(userId);
+  const upsertEmotion = useUpsertEmotionPreference(userId);
+  const addEmotion = useAddCustomEmotion(userId);
+  const removeEmotion = useRemoveEmotion(userId);
   // Gated on `visible`: the check-in editor mounts this modal unconditionally and merely
   // hides it, so an ungated query would run the lifetime aggregate on every create and
   // edit screen for a number only this modal shows.
@@ -367,6 +366,10 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
 
   const [editorState, setEditorState] = useState<EditorState | null>(null);
 
+  // Inline rather than a toast, and on the list rather than the editor, for the same
+  // two reasons as above. `useInlineWriteError` carries the rule.
+  const writeError = useInlineWriteError(t("emotions.manage.saveError"));
+
   const openEditor = useCallback((emotion: EmotionDisplay) => {
     setEditorState({ mode: "edit", emotion });
   }, []);
@@ -374,6 +377,35 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   const closeEditor = useCallback(() => {
     setEditorState(null);
   }, []);
+
+  /** The editor reports values; this owns the write, because it outlives the editor. */
+  const submitEditor = useCallback(
+    (input: { name: string; emoji: string }) => {
+      if (!editorState) return;
+      writeError.onStart();
+      if (editorState.mode === "edit") {
+        upsertEmotion.mutate(
+          { emotionId: editorState.emotion.id, ...input },
+          { onError: writeError.onError },
+        );
+      } else {
+        addEmotion.mutate(
+          { emotionId: `custom_${Date.now()}`, ...input, position: allEmotions.length },
+          { onError: writeError.onError },
+        );
+      }
+    },
+    [addEmotion, allEmotions.length, editorState, upsertEmotion, writeError],
+  );
+
+  const deleteEditing = useCallback(() => {
+    if (editorState?.mode !== "edit") return;
+    writeError.onStart();
+    removeEmotion.mutate(
+      { emotionId: editorState.emotion.id, isCustom: editorState.emotion.isCustom },
+      { onError: writeError.onError },
+    );
+  }, [editorState, removeEmotion, writeError]);
 
   /**
    * The non-drag half of reordering: swap with the neighbour and write the whole order,
@@ -395,9 +427,10 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
       const nextIndex = currentIndex + offset;
       if (currentIndex < 0 || nextIndex < 0 || nextIndex >= ids.length) return;
       [ids[currentIndex], ids[nextIndex]] = [ids[nextIndex], ids[currentIndex]];
-      reorderEmotions.mutate(ids);
+      writeError.onStart();
+      reorderEmotions.mutate(ids, { onError: writeError.onError });
     },
-    [allEmotions, reorderEmotions],
+    [allEmotions, reorderEmotions, writeError],
   );
 
   /**
@@ -457,25 +490,34 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
   const { width } = useWindowDimensions();
   const isDesktopWeb = isWeb && width >= NARROW_STEP_INDICATOR_BREAKPOINT;
 
+  // Closing takes the error with it. This component is never unmounted - the check-in
+  // editor mounts it and merely flips `visible` - so a failure left behind would still
+  // be on screen the next time the surface is opened.
+  const closeSurface = useCallback(() => {
+    writeError.onStart();
+    onClose();
+  }, [onClose, writeError]);
+
   // The backdrop and the web Escape handler dismiss exactly like the native back
   // gesture: the editor peels first, the surface itself only closes from the list (#743).
-  const handleRequestClose = editorState ? closeEditor : onClose;
-
-  // ⚠️ WEB: a closed surface unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). This surface is the most focus-sensitive of the
-  // sweep: its rows carry a keyboard reorder path (#965/#1046). Native keeps
-  // its exit animation: it has none of this. This return only drops the
-  // rendered tree — `editorState` and the rest of the component's state
-  // survive a close on both platforms, exactly as before.
-  if (!visible && Platform.OS === "web") return null;
+  const handleRequestClose = editorState ? closeEditor : closeSurface;
 
   return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : isDesktopWeb ? "fade" : "slide"}
+    // PressShieldModal owns the #1054 web-unmount gate, and only its own
+    // render is gated — `editorState` and the rest of this component's state
+    // survive a close on both platforms, exactly as with the per-site gate
+    // this surface used to carry (it is the most focus-sensitive of the
+    // #1054 sweep: its rows carry a keyboard reorder path, #965/#1046).
+    <PressShieldModal
+      animation={isDesktopWeb ? "fade" : "slide"}
       onRequestClose={handleRequestClose}
       presentationStyle={isWeb ? undefined : "pageSheet"}
+      // Neither platform presents this full-screen — `pageSheet` on native, a
+      // card or drawer over its own backdrop on web — and it already pins its
+      // X above the scroller on both, which is the shape the modal rule names
+      // as the one to copy (#1165). So it declines the wrapper's row rather
+      // than growing a second header above its own (#1252).
+      surface="sheet"
       transparent={isWeb}
       visible={visible}
     >
@@ -483,8 +525,9 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
         {editorState ? (
           <EmotionEditorView
             state={editorState}
-            addPosition={allEmotions.length}
             uses={editingUses}
+            onSubmit={submitEditor}
+            onDelete={deleteEditing}
             onClose={closeEditor}
           />
         ) : (
@@ -501,15 +544,28 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                   </Text>
                 </View>
                 <Pressable
-                  onPress={onClose}
+                  onPress={closeSurface}
                   accessibilityRole="button"
-                  accessibilityLabel={t("emotions.manage.close")}
+                  accessibilityLabel={t("common:close")}
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                 >
                   <Icon name="close" className="size-6 text-foreground" />
                 </Pressable>
               </View>
             </View>
+
+            {/* Pinned between the header and the scroller, never inside it: a failure
+                reported from a list scrolled halfway down would otherwise be raised
+                somewhere the user is not looking. */}
+            {writeError.message ? (
+              <View className="border-b border-border px-4 py-3">
+                <View className={FORM_COLUMN}>
+                  <Text className="text-sm text-destructive" role="alert">
+                    {writeError.message}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
 
             <AnimatedScrollView ref={scrollableRef} contentContainerClassName="p-4 pb-8">
               <View className={cn(FORM_COLUMN, "gap-4")}>
@@ -545,7 +601,13 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                       scrollableRef={scrollableRef}
                       customHandle
                       dragActivationDelay={0}
-                      onDragEnd={({ data }) => reorderEmotions.mutate(data.map((e) => e.id))}
+                      onDragEnd={({ data }) => {
+                        writeError.onStart();
+                        reorderEmotions.mutate(
+                          data.map((e) => e.id),
+                          { onError: writeError.onError },
+                        );
+                      }}
                       renderItem={renderEmotionRow}
                     />
                     {/* Closing hairline: the rows are top-ruled, so the last needs a floor. */}
@@ -566,6 +628,6 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
           </View>
         )}
       </ManageEmotionsShell>
-    </Modal>
+    </PressShieldModal>
   );
 }

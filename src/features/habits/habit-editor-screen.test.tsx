@@ -6,7 +6,6 @@ import { HabitEditorScreen } from "@/src/features/habits/habit-editor-screen";
 import { useHabit, useHabits, useSaveHabit } from "@/src/features/habits/queries";
 import type { Habit } from "@/src/features/habits/types";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -79,15 +78,13 @@ describe("HabitEditorScreen", () => {
     saveHabit.mockResolvedValue({ id: "h-1" });
   });
 
-  it("create mode renders the top bar on the room pour", () => {
+  it("create mode renders the top bar", () => {
     renderWithProviders(<HabitEditorScreen fallbackHref="/tools/habits" mode="create" />);
 
     expect(screen.getByText("New habit")).toBeTruthy();
-    // The wrapper carries the act room re-pour; a wrong or missing room fails here.
-    expectNeutralRoom(screen.getByTestId("habit-editor-room"));
   });
 
-  it("edit mode renders the top bar on the room pour too", () => {
+  it("edit mode renders the top bar and the loaded habit", () => {
     mockUseHabits.mockReturnValue({ data: [existingHabit] } as unknown as ReturnType<
       typeof useHabits
     >);
@@ -97,7 +94,6 @@ describe("HabitEditorScreen", () => {
     );
 
     expect(screen.getByText("Edit habit")).toBeTruthy();
-    expectNeutralRoom(screen.getByTestId("habit-editor-room"));
     expect(screen.getByDisplayValue("Morning walk")).toBeTruthy();
   });
 

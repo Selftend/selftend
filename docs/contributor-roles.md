@@ -33,7 +33,7 @@ Translations are managed in [Weblate](https://hosted.weblate.org/projects/selfte
 
 Start with [.github/CONTRIBUTING.md#translation](../.github/CONTRIBUTING.md#translation), [stack.md#internationalization-i18n](stack.md#internationalization-i18n), and the English source files in `src/i18n/locales/en/`.
 
-Keep in mind: translate values, not keys; new languages need all seven namespaces; mental-health and crisis terms need careful review; RTL languages need layout work, not just strings.
+Keep in mind: translate values, not keys; new languages need all 20 namespaces; mental-health and crisis terms need careful review; RTL languages need layout work, not just strings.
 
 ## Tester
 

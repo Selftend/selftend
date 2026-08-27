@@ -1,6 +1,6 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { Disclosure } from "@/src/components/app/disclosure";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { Section } from "@/src/components/app/section";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -30,11 +31,11 @@ import { parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function HabitsHomeScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("habits");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -128,15 +129,10 @@ export default function HabitsHomeScreen() {
     setUntickTarget(null);
   }
 
-  const roomStyle = useRoomStyle("act");
   const palette = useHabitChipPalette();
 
   if (habitsLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background" style={roomStyle}>
-        <ActivityIndicator />
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("home.title")} />;
   }
 
   return (
@@ -156,11 +152,7 @@ export default function HabitsHomeScreen() {
         onCancel={() => setUntickTarget(null)}
         onConfirm={confirmUntick}
       />
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-4">
           {/* No gap: `Section` carries its own py-6, and the hairline belongs
               between two sections' padding rather than across a flex gap. */}
@@ -197,7 +189,7 @@ export default function HabitsHomeScreen() {
                   opens (#762) - a door beside its own room rather than in the
                   hallway. */}
               <View className="flex-row flex-wrap gap-2">
-                <Button onPress={() => router.push("/tools/habits/new")} className="self-start">
+                <Button onPress={() => pushWithOrigin("/tools/habits/new")} className="self-start">
                   <Icon name="add" className="size-4 text-primary-foreground" />
                   <Text>{t("cta.newHabit")}</Text>
                 </Button>
@@ -259,7 +251,7 @@ export default function HabitsHomeScreen() {
                       canTick={logsLoaded}
                       onToggle={() => handleToggle(habit)}
                       onOpen={() =>
-                        router.push({
+                        pushWithOrigin({
                           pathname: "/tools/habits/[id]",
                           params: { id: habit.id },
                         })
@@ -289,7 +281,7 @@ export default function HabitsHomeScreen() {
                         accessibilityRole="button"
                         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
                         onPress={() =>
-                          router.push({
+                          pushWithOrigin({
                             pathname: "/tools/habits/[id]",
                             params: { id: habit.id },
                           })
@@ -325,7 +317,7 @@ export default function HabitsHomeScreen() {
                 accessibilityHint={t("learn.openHint")}
                 accessibilityRole="button"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => router.push("/tools/habits/learn")}
+                onPress={() => pushWithOrigin("/tools/habits/learn")}
                 className="flex-row items-center gap-4 active:opacity-70"
                 role="button"
                 testID="habits-learn-row"
@@ -353,7 +345,7 @@ export default function HabitsHomeScreen() {
                 <Pressable
                   accessibilityRole="link"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() => router.push("/tools/habits/history")}
+                  onPress={() => pushWithOrigin("/tools/habits/history")}
                   className="flex-row items-center gap-1 active:opacity-70"
                   role="link"
                 >
@@ -380,7 +372,7 @@ export default function HabitsHomeScreen() {
                         accessibilityLabel={t("list.openNamedDetail", { habit: habit.name })}
                         accessibilityRole="button"
                         onPress={() =>
-                          router.push({
+                          pushWithOrigin({
                             pathname: "/tools/habits/[id]",
                             params: { id: habit.id },
                           })

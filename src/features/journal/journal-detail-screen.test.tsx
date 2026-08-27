@@ -1,5 +1,4 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
 import JournalDetailScreen, { joinMeta } from "@/src/features/journal/journal-detail-screen";
@@ -9,7 +8,6 @@ import {
   useJournalEntry,
 } from "@/src/features/journal/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
-import { expectNeutralRoom } from "@/test/room-pour";
 
 jest.mock("expo-router", () => ({
   router: {
@@ -78,7 +76,7 @@ describe("JournalDetailScreen", () => {
     } as unknown as ReturnType<typeof useDeleteJournalEntry>);
   });
 
-  it("renders the loaded entry inside the ink room", () => {
+  it("renders the loaded entry", () => {
     renderWithProviders(<JournalDetailScreen />);
 
     expect(screen.getByText("Quiet morning")).toBeTruthy();
@@ -86,9 +84,6 @@ describe("JournalDetailScreen", () => {
     // The logged-at card is gone: a timestamp is not a section, and it was the
     // emptiest card on the screen (#769). Its content lives in the meta line.
     expect(screen.queryByText("When")).toBeNull();
-    // The wrapper carries the ink re-pour now that the top bar sits above the
-    // SafeAreaView's content; a wrong or missing room fails here.
-    expectNeutralRoom(screen.getByTestId("journal-detail-room"));
   });
 
   it("folds the meta into one line that carries the word count", () => {
@@ -150,28 +145,13 @@ describe("JournalDetailScreen", () => {
     expect(mockRouter.replace).toHaveBeenCalledWith("/tools/journal");
   });
 
-  it("shows the not-found state on the room pour when the entry is missing", () => {
+  it("shows the not-found state when the entry is missing", () => {
     mockUseJournalEntries.mockReturnValue({ data: [] } as unknown as ReturnType<
       typeof useJournalEntries
     >);
 
-    const { UNSAFE_getByType } = renderWithProviders(<JournalDetailScreen />);
+    renderWithProviders(<JournalDetailScreen />);
 
     expect(screen.getByText("We couldn't find that journal entry.")).toBeTruthy();
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
-  });
-
-  it("shows the loading state on the room pour while fetching", () => {
-    mockUseJournalEntries.mockReturnValue({ data: undefined } as unknown as ReturnType<
-      typeof useJournalEntries
-    >);
-    mockUseJournalEntry.mockReturnValue({
-      data: null,
-      isLoading: true,
-    } as unknown as ReturnType<typeof useJournalEntry>);
-
-    const { UNSAFE_getByType } = renderWithProviders(<JournalDetailScreen />);
-
-    expectNeutralRoom(UNSAFE_getByType(SafeAreaView));
   });
 });

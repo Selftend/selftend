@@ -1,8 +1,9 @@
-import { router } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { TimeField } from "@/src/components/app/time-field";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -14,7 +15,7 @@ import {
   firstOpenRoutineView,
   type RoutineTodayView,
 } from "@/src/features/routines/use-routines-today";
-import { useReduceMotionEnabled, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { getReminderTimeZone } from "@/src/lib/notifications";
 import { clampTime } from "@/src/utils/time";
 import { cn } from "@/lib/utils";
@@ -48,8 +49,8 @@ export function ContinueRoutineSheet({
   initialRoutineId = null,
   onClose,
 }: ContinueRoutineSheetProps) {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("routines");
-  const reduceMotion = useReduceMotionEnabled();
   const updateRoutine = useUpdateRoutine(userId);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -75,15 +76,6 @@ export function ContinueRoutineSheet({
     );
   }
 
-  // ⚠️ WEB: a closed sheet unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap that would steal focus from the FAB re-rendering behind it
-  // (#1034; swept in #1054 — the full story lives on ConfirmDialog's gate).
-  // Native keeps its exit animation: it has none of this. The reset block
-  // above still runs on BOTH platforms — this return only drops the rendered
-  // tree, never the component's state.
-  if (!visible && Platform.OS === "web") return null;
-
   // Pre-pin fallback goes through the SAME selector the FAB counts with
   // (#121): a naive first-scheduled-open pick could disagree for the first
   // visible frame when a later routine is in progress, flashing (and
@@ -107,7 +99,7 @@ export function ContinueRoutineSheet({
   function doNextStep() {
     if (!day.nextStep) return;
     onClose();
-    router.push(routeForTool(day.nextStep.toolId));
+    pushWithOrigin(routeForTool(day.nextStep.toolId));
   }
 
   async function acceptReminder() {
@@ -130,12 +122,10 @@ export function ContinueRoutineSheet({
   }
 
   return (
-    <Modal
-      animationType={reduceMotion ? "none" : "slide"}
-      onRequestClose={onClose}
-      transparent
-      visible={visible}
-    >
+    // A bottom sheet over a dimmed backdrop, so the wrapper pins no row: the
+    // X in the sheet's own header already sits outside its scrollers, which
+    // is the shape M1 asks for.
+    <PressShieldModal surface="sheet" onRequestClose={onClose} transparent visible={visible}>
       <View className="flex-1">
         <Pressable
           accessibilityLabel={t("sheet.close")}
@@ -311,6 +301,6 @@ export function ContinueRoutineSheet({
           </ScrollView>
         </View>
       </View>
-    </Modal>
+    </PressShieldModal>
   );
 }

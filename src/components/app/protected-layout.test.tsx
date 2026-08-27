@@ -12,7 +12,6 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
-import { useBannerInsetStore } from "@/src/stores/banner-inset-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 type MockSessionState = {
@@ -110,13 +109,25 @@ jest.mock("@/src/components/app/verify-email-banner", () => {
   };
 });
 
-jest.mock("@/src/components/app/update-banner", () => {
+jest.mock("@/src/components/app/update-popup", () => {
   const Text = mockText;
 
   return {
-    UpdateBanner: () => <Text>Update banner</Text>,
+    UpdatePopup: () => <Text>Update popup</Text>,
   };
 });
+
+// The layout itself mounts the update trigger since #1474 (the banner is
+// presentational). The hook owns timers and listeners and has its own suite;
+// stub it so this one stays about the shell's gates and placement.
+jest.mock("@/src/lib/use-update-availability", () => ({
+  useUpdateAvailability: () => ({
+    available: false,
+    version: null,
+    act: jest.fn(),
+    dismiss: jest.fn(),
+  }),
+}));
 
 // The date strip and native widget bridge each own timers/listeners and have dedicated
 // tests. This suite only verifies the protected-layout gates, so render inert boundaries.
@@ -242,6 +253,25 @@ describe("ProtectedLayout app onboarding", () => {
     await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
   });
 
+  it("wears 'Skip for now' on the gate's pinned Escape, and it skips for good (#1258)", async () => {
+    renderWithProviders(<ProtectedLayout />);
+    await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
+
+    // The word, promoted out of the footer — exactly one "Skip for now" on
+    // the surface, and it is the pinned Escape's accessible name. A bare X
+    // here would disguise the only close in the app with a lasting
+    // consequence as a free dismissal (M2).
+    const escape = screen.getByTestId("modal-escape");
+    expect(escape.props.accessibilityLabel).toBe("Skip for now");
+    expect(screen.getAllByText("Skip for now")).toHaveLength(1);
+
+    fireEvent.press(escape);
+    // The skip path persists onboarding as done — not the step-Back dismiss.
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({ selectedConcerns: null, widgetIds: [] }),
+    );
+  });
+
   it("hides the wizard when app onboarding is complete", async () => {
     mockUseUserPreferences.mockReturnValue({
       data: {
@@ -361,10 +391,13 @@ describe("ProtectedLayout headerless shell (#667)", () => {
     expect(stackAt).toBeGreaterThanOrEqual(0);
     expect(stackAt).toBeLessThan(output.indexOf("Offline banner"));
     expect(stackAt).toBeLessThan(output.indexOf("Verify-email banner"));
-    expect(stackAt).toBeLessThan(output.indexOf("Update banner"));
+    // The update offer left the strip for a modal (#1475) but must still be
+    // mounted in the authenticated shell — inside AppLockGate's children,
+    // where suppression and the lock screen can gate it (#1142 spec §3).
+    expect(output.indexOf("Update popup")).toBeGreaterThanOrEqual(0);
   });
 
-  it("publishes the strip's content height and reserves the safe area only while visible", async () => {
+  it("reserves the safe area only while a banner is visible", async () => {
     renderWithProviders(<ProtectedLayout />);
 
     const content = await screen.findByTestId("bottom-banner-strip-content");
@@ -380,19 +413,26 @@ describe("ProtectedLayout headerless shell (#667)", () => {
     expect(stripPadding()).toBe(0);
 
     fireEvent(content, "layout", { nativeEvent: { layout: { height: 40 } } });
-    // The store gets the CONTENT height only — floating widgets add
-    // insets.bottom themselves — while the strip pads the mocked 34px inset.
-    expect(useBannerInsetStore.getState().height).toBe(40);
+    // The inner layout decides the padding only; the published inset is the
+    // OUTER strip's measured edge, which covers this padding as well.
     expect(stripPadding()).toBe(34);
 
-    // Banner gone: padding released, store cleared.
+    // Banner gone: padding released.
     fireEvent(content, "layout", { nativeEvent: { layout: { height: 0 } } });
-    expect(useBannerInsetStore.getState().height).toBe(0);
     expect(stripPadding()).toBe(0);
+  });
 
-    // Sign-out unmounts the layout; a stale inset must not survive it.
-    fireEvent(content, "layout", { nativeEvent: { layout: { height: 40 } } });
-    screen.unmount();
-    expect(useBannerInsetStore.getState().height).toBe(0);
+  it("publishes the padded strip's top edge into layer 1 from its first frame", async () => {
+    renderWithProviders(<ProtectedLayout />);
+
+    const strip = await screen.findByTestId("bottom-banner-strip");
+
+    // ☠️ RNW decides at MOUNT whether a view is observed, so the handler has to
+    // be on the very first frame — attaching it once a banner appears would
+    // never be heard. What the handler then measures (and that it clears on
+    // unmount, which sign-out depends on) is covered in
+    // `layered-inset-store.test.tsx`: jest's View is a class mock with no
+    // measureInWindow, so no rendered publisher can measure here.
+    expect(strip.props.onLayout).toEqual(expect.any(Function));
   });
 });

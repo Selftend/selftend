@@ -1,7 +1,8 @@
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { OnboardingIllustration } from "@/src/components/app/onboarding-illustration";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Card, CardContent, CardTitle } from "@/src/components/react-native-reusables/card";
@@ -11,7 +12,6 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { suggestStageFromAssessment } from "@/src/features/meditation/stages";
 import type { StageNumber } from "@/src/features/meditation/types";
-import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 
 type Step = "welcome" | "attention" | "assessment" | "gardener" | "commit";
@@ -35,7 +35,13 @@ interface Props {
   isPending?: boolean;
   errorMessage?: string;
   onComplete: (result: MeditationOnboardingResult) => void;
-  onDismiss?: () => void;
+  /**
+   * Required since #1252: the pinned Escape is this wizard's way out on all
+   * five panels, so there is no longer a shape where dismissing is
+   * unavailable. The panel-1 ghost "Skip" it made redundant was removed in
+   * #1257.
+   */
+  onDismiss: () => void;
 }
 
 interface AssessmentAnswers {
@@ -62,7 +68,6 @@ export function MeditationOnboarding({
   onDismiss,
 }: Props) {
   const { t } = useTranslation("meditation");
-  const reduceMotionEnabled = useReduceMotionEnabled();
 
   const [step, setStep] = useState<Step>("welcome");
   const [answers, setAnswers] = useState<AssessmentAnswers>(EMPTY_ANSWERS);
@@ -116,21 +121,14 @@ export function MeditationOnboarding({
     });
   }
 
-  // ⚠️ WEB: a closed wizard unmounts outright instead of lingering for its
-  // 250ms fade-out, during which react-native-web's Modal is a non-inert
-  // focus trap (#1034; swept in #1054 — the full story lives on
-  // ConfirmDialog's gate). Native keeps its exit animation: it has none of
-  // this. Wizard state (step, answers) survives a close on both platforms —
-  // this return only drops the rendered tree.
-  if (!visible && Platform.OS === "web") return null;
-
   return (
-    <Modal
-      animationType={reduceMotionEnabled ? "none" : "slide"}
-      onRequestClose={onDismiss ?? (() => undefined)}
-      visible={visible}
-    >
-      <SafeAreaView className="flex-1 bg-background">
+    // A replay opened from the `tune` button, so closing is free and the row
+    // wears a bare X (M2) — the one close affordance on all five panels,
+    // since #1257 removed the panel-1 ghost "Skip" the pinned row had made
+    // redundant.
+    <PressShieldModal onEscape={onDismiss} onRequestClose={onDismiss} visible={visible}>
+      {/* No "top": the wrapper's escape row already sits in the top inset. */}
+      <SafeAreaView edges={["bottom", "left", "right"]} className="flex-1 bg-background">
         <ScrollView contentContainerClassName="gap-8 p-6 pb-12">
           {step === "welcome" ? (
             <View className="gap-6">
@@ -154,11 +152,6 @@ export function MeditationOnboarding({
               <Button onPress={goNext}>
                 <Text>{t("onboarding.welcome.continue")}</Text>
               </Button>
-              {onDismiss ? (
-                <Button onPress={onDismiss} variant="ghost">
-                  <Text>{t("onboarding.skip")}</Text>
-                </Button>
-              ) : null}
             </View>
           ) : null}
 
@@ -431,7 +424,7 @@ export function MeditationOnboarding({
           ) : null}
         </ScrollView>
       </SafeAreaView>
-    </Modal>
+    </PressShieldModal>
   );
 }
 

@@ -33,6 +33,18 @@ vent channels, and any hosted bot.
   welcome screen (greeting), AutoMod (spam/slurs/mention raids), rules
   screening. The `#changelog` feed is a plain channel webhook that GitHub
   posts to natively — zero bots.
+- **The `#feedback-inbox` mirror** is likewise a plain channel webhook
+  ("Feedback Mirror"): the `send-feedback` Edge Function posts each in-app
+  feedback submission's category + message text to it — nothing else, per the
+  privacy review (#1482). The webhook URL is a full credential (anyone holding
+  it can post, modify, or delete the webhook); it lives only as the
+  `DISCORD_WEBHOOK_URL` Edge Function secret, set per Supabase project
+  (staging and production), and is recorded in control-tower#130. The channel
+  is visible to `@Maintainer` and the bot only — deliberately **not**
+  `@Moderator`. ☠️ Never add `#feedback-inbox` to `setup-server.mjs`
+  `STRUCTURE`: the script's generic `private: true` handling would reconcile
+  `@Moderator` view back in. The script matches channels by name and never
+  touches unknown ones, so leaving it unlisted is safe.
 - Third-party bots (Carl-bot/Dyno) are deferred until member volume justifies
   them.
 
@@ -54,7 +66,12 @@ vent channels, and any hosted bot.
  ├ #app-help              forum · support threads
  ├ #feedback              third feedback route besides in-app + GitHub issues
  ├ #feature-ideas         forum · one idea per post
- └ #changelog             read-only, announcement type · GitHub release webhook
+ ├ #changelog             read-only, announcement type · GitHub release webhook
+ └ #feedback-inbox        private: Maintainer + Selftend Admin bot ONLY ·
+                          in-app feedback mirror (category + message text),
+                          posted by the send-feedback Edge Function via the
+                          "Feedback Mirror" webhook · provisioned manually
+                          (2026-08-27, #1484), NOT managed by setup-server.mjs
 
 🌱 Practice                each channel has a pinned scope post
  ├ #cbt  ├ #act  ├ #habits  ├ #gratitude

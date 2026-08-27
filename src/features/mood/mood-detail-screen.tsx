@@ -1,4 +1,5 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
@@ -12,11 +13,11 @@ import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { DetailRow } from "@/src/components/app/detail-row";
 import { ChipRun, StaticChip } from "@/src/components/app/selectable-chip";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { MOOD_EMOJI_BY_SCORE } from "@/src/components/app/mood-scale";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { useDeleteMoodLog, useMoodLog, useMoodLogs } from "@/src/features/mood/queries";
-import { ShowAllHistoryLink } from "@/src/features/mood/show-all-history-link";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
 import type { MoodLog } from "@/src/features/mood/types";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { useEmotionDisplay } from "@/src/features/mood/use-emotion-display";
@@ -24,7 +25,6 @@ import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { formatAtOffset, formatCompactAtOffset } from "@/src/utils/date";
-import { useRoomStyle } from "@/src/lib/use-room-style";
 
 /**
  * The one linked strategy the app can produce, and where its row leads.
@@ -46,9 +46,9 @@ const LINKED_STRATEGIES: Record<string, { labelKey: string; href: string }> = {
 };
 
 export default function MoodDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("mood");
   const { t: tCbt } = useTranslation("cbt");
-  const roomStyle = useRoomStyle("be");
   // The header row's flanks (emoji + actions) never shrink, so every pixel of
   // narrowness comes out of the title block. At phone width the design's 2c
   // collapses Edit to an icon button and keeps the date on one compact line —
@@ -90,22 +90,12 @@ export default function MoodDetailScreen() {
   };
 
   if (!fromCache && isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background" style={roomStyle}>
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("detail.title")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("detail.title")} />;
   }
 
   if (!entry) {
     return (
-      <SafeAreaView
-        className="flex-1 bg-background"
-        edges={["bottom", "left", "right"]}
-        style={roomStyle}
-      >
+      <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         <ScrollView contentContainerClassName="grow p-6">
           <View className="gap-6">
             <ScreenHeader title={t("detail.title")} />
@@ -165,7 +155,7 @@ export default function MoodDetailScreen() {
         <Pressable
           accessibilityRole="link"
           hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => router.push(linked.href as Parameters<typeof router.push>[0])}
+          onPress={() => pushWithOrigin(linked.href as Href)}
           className="flex-row items-center gap-1 self-start active:opacity-70"
           role="link"
         >
@@ -177,7 +167,7 @@ export default function MoodDetailScreen() {
   ].filter(Boolean);
 
   return (
-    <View className="flex-1" style={roomStyle}>
+    <View className="flex-1">
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
         {/* The trail rides the bar, not the column: chrome for the screen rather than
             part of the document (#733). */}
@@ -213,7 +203,7 @@ export default function MoodDetailScreen() {
                   // (h-10 sm:h-9), and only the default shares that height —
                   // an sm pill sits 4px shorter and reads as broken (#901).
                   <Button
-                    onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
+                    onPress={() => pushWithOrigin(`/tools/check-in/${entry.id}/edit`)}
                     variant="outline"
                   >
                     <Icon name="edit" className="size-4" />
@@ -224,7 +214,7 @@ export default function MoodDetailScreen() {
                   // labelled button is a third of the row a 360dp screen
                   // cannot spare.
                   <Button
-                    onPress={() => router.push(`/tools/check-in/${entry.id}/edit`)}
+                    onPress={() => pushWithOrigin(`/tools/check-in/${entry.id}/edit`)}
                     variant="outline"
                     size="icon"
                     accessibilityLabel={t("detail.edit")}
@@ -253,7 +243,7 @@ export default function MoodDetailScreen() {
             ) : null}
 
             <View className="items-end">
-              <ShowAllHistoryLink />
+              <ShowAllLink label={t("allHistory.link")} route="/tools/check-in/history" />
             </View>
           </View>
         </ScrollView>

@@ -38,6 +38,7 @@
     "db:start": "npm exec supabase -- start",
     "db:stop": "npm exec supabase -- stop",
     "db:reset": "node scripts/db-reset.js",
+    "db:seed:demo": "node scripts/seed-demo-data.mjs",
     "db:status": "npm exec supabase -- status",
     "db:push:prod": "npm exec supabase -- db push --linked",
     "analytics:onboarding": "node scripts/analytics-report.js onboarding",

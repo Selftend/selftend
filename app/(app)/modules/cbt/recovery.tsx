@@ -1,6 +1,5 @@
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import {
@@ -13,7 +12,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading } from "@/src/components/app/screen-state";
 import { resolveActiveStrategyKeys } from "@/src/features/recovery/active-strategies";
 import { ChallengeDraftEditor } from "@/src/features/recovery/components/challenge-draft-editor";
 import { ChallengePlanList } from "@/src/features/recovery/components/challenge-plan-list";
@@ -97,13 +96,7 @@ export default function RecoveryScreen() {
   );
 
   if (isRecoveryLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("recovery.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("recovery.loading")} />;
   }
 
   return (

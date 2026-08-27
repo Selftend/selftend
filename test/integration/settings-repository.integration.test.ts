@@ -298,6 +298,62 @@ describe("web_push_subscriptions (integration)", () => {
     }
   });
 
+  // ---- DB guards from 20260571_web_push_endpoint_allowlist.sql ----
+  // These document the exact contract the e2e push stub's canned endpoint is
+  // written against (test/e2e/reminder-rearm.e2e.test.ts): an FCM-shaped
+  // endpoint must insert, anything off the push-service allowlist must not,
+  // and rows per user are capped. Neither guard had a test in either direction.
+
+  it("accepts an allowlisted FCM-shaped endpoint and rejects a foreign origin", async () => {
+    const allowed = await bob.from("web_push_subscriptions").insert({
+      user_id: SEED_USERS.bob.id,
+      endpoint,
+      p256dh: "allowlist-p256dh",
+      auth: "allowlist-auth",
+    });
+    expect(allowed.error).toBeNull();
+
+    const rejected = await bob.from("web_push_subscriptions").insert({
+      user_id: SEED_USERS.bob.id,
+      endpoint: "https://attacker.example/fcm/send/integration-test",
+      p256dh: "hostile-p256dh",
+      auth: "hostile-auth",
+    });
+    expect(rejected.error).not.toBeNull();
+    expect(rejected.error?.message).toMatch(/web_push_subscriptions_endpoint_allowlist/);
+  });
+
+  it("caps a user at 20 subscriptions: the 21st insert is rejected", async () => {
+    const admin = createServiceClient();
+    // Deterministic starting point: the cap trigger counts EXISTING rows.
+    await admin.from("web_push_subscriptions").delete().eq("user_id", SEED_USERS.bob.id);
+    try {
+      const capEndpoint = (n: number) => `https://fcm.googleapis.com/fcm/send/integration-cap-${n}`;
+      const twenty = await bob.from("web_push_subscriptions").insert(
+        Array.from({ length: 20 }, (_, n) => ({
+          user_id: SEED_USERS.bob.id,
+          endpoint: capEndpoint(n),
+          p256dh: `cap-p256dh-${n}`,
+          auth: `cap-auth-${n}`,
+        })),
+      );
+      expect(twenty.error).toBeNull();
+
+      const overCap = await bob.from("web_push_subscriptions").insert({
+        user_id: SEED_USERS.bob.id,
+        endpoint: capEndpoint(20),
+        p256dh: "cap-p256dh-20",
+        auth: "cap-auth-20",
+      });
+      expect(overCap.error).not.toBeNull();
+      expect(overCap.error?.message).toMatch(
+        /web_push_subscriptions limit reached for user \(max 20\)/,
+      );
+    } finally {
+      await admin.from("web_push_subscriptions").delete().eq("user_id", SEED_USERS.bob.id);
+    }
+  });
+
   it("deletes a subscription scoped to user + endpoint", async () => {
     await bob.from("web_push_subscriptions").upsert(
       {

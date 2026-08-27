@@ -18,31 +18,16 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
 //    accent is tuned for fills, borders and icons, and fails AA as text
 //    (act is 3.64:1 on `--background`). #406 swept 29 such sites in act alone.
 //
-// 2. **Whether an area is a room decides which ink is even legal**, and the
-//    areas here answer that differently:
-//
-//    - `src/features/act` and `src/features/home` are not rooms - with one
-//      file-level exception since Wave C (#493): `act-home-screen.tsx` wears
-//      the act room. Beyond that screen, `act`'s room is `src/features/habits/`
-//      (see the header of test/chip-contrast.test.ts: "Every habit screen wears
-//      the act room"), and the home hub is not a room at all - it shows every
-//      module's hue side by side, so there is no single hue to pour. No *other*
-//      file under either calls `useRoomStyle`, which the assertions below check
-//      rather than trust. So outside ROOMED_HOMES `--accent-ink` is never
-//      poured and resolves to `--primary`: `text-accent-ink` in either area
-//      renders violet text on a green card, and the correct off-room class is
-//      `text-<hue>-ink`.
-//    - `src/components/app` renders both inside and outside rooms, so neither
-//      class is right for all of its call sites - each one is judged on the
-//      surface its actual callers give it.
-//    - `app/` is mixed: the two breathing routes do call `useRoomStyle`, so
-//      room ink is legitimate there and only there.
-//    - The module tail contains real rooms - habits wears act, meditation wears
-//      iris - so room ink is legitimate in those too.
-//
-//    That is why the room-ink assertions below are scoped to ROOMLESS_AREAS,
-//    whose premise the suite checks rather than trusts, instead of being swept
-//    across everything.
+// 2. **Rooms are gone, so `text-accent-ink` is never legal anywhere.** While
+//    the room pour existed, whether an area was a room decided which ink was
+//    legal, and the assertions below were scoped to the room-less areas with
+//    the roomed exceptions carved out. #586 neutralised the pour and #1292
+//    deleted `useRoomStyle` outright, so no screen can wear a room any more:
+//    `--accent-ink` is never poured (the token itself is gone - see
+//    test/theme-token-sync.test.ts), and `text-accent-ink` anywhere is either
+//    dead or violet. The correct hue-ink class everywhere is `text-<hue>-ink`.
+//    The area scoping below survives because the ALLOWED enumeration is still
+//    per-area; the room-ink sweeps now simply admit no exceptions.
 //
 // Every surviving occurrence in a classified area is enumerated in ALLOWED with
 // the surface it actually sits on and the contrast it measures there, keyed on
@@ -70,24 +55,20 @@ const HOME_DIR = "src/features/home";
 const CLASSIFIED_AREAS = [ACT_DIR, HOME_DIR, "src/components/app", "app"] as const;
 
 /**
- * The subset of those that contain no room at all, and so may never use
- * `text-accent-ink`. `src/components/app` and `app/` are deliberately absent:
- * the shared components render from inside rooms as well as outside, and the
- * two breathing routes under `app/` are rooms. See rule 2 above.
+ * The areas the room-ink sweep covers file-by-file. Historically "the subset
+ * that contained no room"; with rooms deleted (#1292) that is every area, and
+ * the name survives only to keep the sweep's scoping readable.
  */
 const ROOMLESS_AREAS = [ACT_DIR, HOME_DIR] as const;
 
 /**
- * The Wave-C exception (#493): the act module home became a room - it wears
- * the act room - so exactly that file may call `useRoomStyle` and use room
- * ink. Every *other* file in its directory stays off-room, which is why the
- * room-less assertions exclude this file instead of dropping the directory
- * wholesale: dropping the dir would stop the suite seeing a `text-accent-ink`
- * added to any of the twenty screens around it that still resolve it to
- * `--primary`. The cbt home briefly sat here too; #500 un-roomed it (its
- * field pours from primary and the default violet surfaces ARE its room).
+ * Files exempt from the room-ink sweeps. Always empty since #1292 deleted the
+ * room surface (the last entry was the Wave-C act home, #493, un-roomed by the
+ * CBT/ACT redesign): with no rooms, no file can justify `text-accent-ink`.
+ * The wiring stays so a deliberate future exception is a one-line entry
+ * rather than a rediscovery of these scans.
  */
-const ROOMED_HOMES = ["src/features/act/act-home-screen.tsx"] as const;
+const ROOMED_HOMES = [] as const;
 
 /**
  * A bare hue accent used as a color, in EITHER form the codebase writes it:
@@ -200,38 +181,24 @@ const ACT_SITES: AllowedSite[] = [];
 //
 // Three findings did the work, and each is load-bearing for the numbers:
 //
-// 1. **The onboarding modals mount outside every room.** Each home screen
-//    renders them as a *sibling* of the roomed SafeAreaView, not a child:
+// 1. **The onboarding modals mount outside every room** - each home screen
+//    rendered them as a *sibling* of the roomed SafeAreaView, not a child, so
+//    even while rooms poured, no pour was in scope from any caller: the
+//    shell's own `bg-background` was the neutral app surface, and
+//    `text-accent-ink` inside one of these modals would resolve to
+//    `--primary` - violet. The hard-coded `text-be` is the platform-stable
+//    choice, and the suite below pins that these files never reach for room
+//    ink. (With rooms deleted, #1292, the trap is simply "the token no longer
+//    exists"; the finding stays recorded because a Modal would not have saved
+//    a nested mount either - nativewind inherits variables through a React
+//    context on native, which a <Modal> preserves, but on web `vars()` emits
+//    inline CSS custom properties and react-native-web's Modal portals its
+//    children to document.body, outside the provider's subtree. Two
+//    platforms, two colours.)
 //
-//      <>
-//        <SleepOnboarding ... />                        <- here
-//        <SafeAreaView style={roomStyle}> ... </SafeAreaView>
-//      </>
-//
-//    (src/features/sleep/sleep-tracker-screen.tsx:72, and the same shape in
-//    habits-home-screen.tsx:118, grounding-home-screen.tsx:56 and
-//    mood-tracker-screen.tsx:156.) So no room pour is in scope, on any
-//    platform, from any caller: the shell's own `bg-background` is the neutral
-//    app surface, and `text-accent-ink` inside one of these modals would
-//    resolve to `--primary` - violet - exactly as in the ACT module. The
-//    hard-coded `text-be` is the platform-stable choice, and the suite below
-//    pins that these files never reach for room ink.
-//
-//    Worth stating because the nesting could easily change: a Modal would *not*
-//    have saved it either. nativewind inherits variables through a React
-//    context provider on native (react-native-css-interop's
-//    runtime/native/render-component.js wraps VariableContext.Provider), which
-//    a <Modal> preserves, but on web `vars()` emits inline CSS custom
-//    properties and react-native-web's Modal portals its children to
-//    document.body (exports/Modal/ModalPortal.js), outside the room root. So a
-//    modal nested inside a room would read the pour on native and the neutral
-//    tokens on web. Two platforms, two colours - keep them mounted outside.
-//
-// 2. **ProgramCard and ProgramGraduation are always off-room.** Their only
-//    callers are act-home-screen.tsx and the cbt-home tree, neither of which
-//    calls useRoomStyle (nor does any layout above them; `app/` calls it only
-//    in the two breathing routes). Their surfaces are the neutral
-//    `--background` / `--card` and washes over them.
+// 2. **ProgramCard and ProgramGraduation sit on the neutral surfaces.** Their
+//    only callers are act-home-screen.tsx and the cbt-home tree; their
+//    surfaces are the neutral `--background` / `--card` and washes over them.
 //
 // 3. **ToolStats ignores `accentClassName` when `tone="onField"`** - that
 //    branch paints white ink on the hue field and never reads the prop
@@ -372,24 +339,15 @@ describe("classified areas keep the raw hue accent only where it is evidenced", 
   });
 });
 
-describe("act and home are not rooms, apart from the act home itself", () => {
-  it("never reaches for room ink outside the roomed home", () => {
-    // `text-accent-ink` resolves to `--primary` outside a room: violet text in a
-    // green module. The off-room class is `text-<hue>-ink`. This is the single
-    // assertion most likely to catch a well-meaning future sweep.
+describe("act and home never reach for room ink", () => {
+  it("never reaches for room ink", () => {
+    // `text-accent-ink` has no token behind it since rooms went (#586/#1292):
+    // it is dead output at best, violet at worst. The hue-ink class is
+    // `text-<hue>-ink`. This is the single assertion most likely to catch a
+    // well-meaning future sweep. (The premise used to be checked by scanning
+    // for `useRoomStyle` calls; #1292 deleted the hook itself, so the premise
+    // is structural now.)
     expect(findings(ROOM_INK, ROOMLESS_AREAS, ROOMED_HOMES)).toEqual([]);
-  });
-
-  it("has no useRoomStyle call outside the roomed home to justify room ink", () => {
-    // The premise of the assertion above, checked rather than trusted - a new
-    // room in either area needs a ROOMED_HOMES entry, not a deleted test.
-    const roomed = sourceFiles(ROOT, {
-      dirs: [...ROOMLESS_AREAS],
-      exclude: [...ROOMED_HOMES],
-    }).filter((file) =>
-      /\buseRoomStyle\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
-    );
-    expect(roomed).toEqual([]);
   });
 });
 
@@ -430,9 +388,9 @@ describe("act and home are not rooms, apart from the act home itself", () => {
 // Contrast figures below are the raw published accent against each site's real
 // backdrop, computed with the helper math in test/chip-contrast.test.ts. Light
 // is the binding scheme throughout; dark is never the constraint for these.
-// Room surfaces are the re-poured `--background` / `--card` from
-// src/lib/module-room.ts, which is why the same `bg-be/10` chip reads 4.55 in
-// mood's own room and 4.22 on the neutral app background.
+// Figures quoted "in a room" were measured against the room pour that existed
+// when the site was judged (deleted by #1292 - every backdrop is the neutral
+// app surface now, which was always the harder pairing of the two).
 
 /** Every area of the tail, including the four that now hold no sites. */
 const TAIL_DIRS = [
@@ -453,12 +411,9 @@ const TAIL_DIRS = [
 ];
 
 /**
- * Tail areas where no file calls `useRoomStyle`. (The cbt home briefly wore
- * the think room in Wave C; #500 un-roomed it, so cbt is fully room-less
- * again.) In these areas `--accent-ink` is never poured and
- * `text-accent-ink` would resolve to `--primary` - violet text in a module
- * that is not violet. Same trap as rule 2 for the ACT module above; the suite
- * checks the premise rather than trusting it.
+ * The tail areas the room-ink sweep covers. Historically "the tail areas
+ * where no file calls `useRoomStyle`"; since #1292 deleted the hook that is
+ * all of them, and the list survives only as the sweep's scope.
  */
 const ROOMLESS_TAIL_DIRS = [
   "src/features/cbt",
@@ -537,24 +492,10 @@ describe("the module tail keeps the raw hue accent only where it is justified (#
     expect(unevidenced).toEqual([]);
   });
 
-  it("never reaches for room ink in the areas that are not rooms", () => {
-    // ROOMED_HOMES excludes nothing under these dirs today (the act home
-    // lives outside the tail), but stays wired so a future roomed home in
-    // the tail is a one-line entry, not a rediscovery of this scan.
+  it("never reaches for room ink in these areas", () => {
+    // ROOMED_HOMES is empty since #1292, and stays wired so a deliberate
+    // future exception is a one-line entry, not a rediscovery of this scan.
     expect(findings(ROOM_INK, ROOMLESS_TAIL_DIRS, ROOMED_HOMES)).toEqual([]);
-  });
-
-  it("has no useRoomStyle call in those areas to justify room ink", () => {
-    // The premise of the assertion above. A new room in one of these areas
-    // needs a ROOMED_HOMES entry, not a deleted test.
-    const roomed = sourceFiles(ROOT, {
-      dirs: ROOMLESS_TAIL_DIRS,
-      exclude: [...ROOMED_HOMES],
-    }).filter((file) =>
-      /\buseRoomStyle\b/.test(stripComments(readFileSync(join(ROOT, file), "utf8"))),
-    );
-
-    expect(roomed).toEqual([]);
   });
 
   it("passes only ink tokens to any surviving accentClassName, app-wide", () => {
@@ -748,13 +689,9 @@ describe("the onboarding modals mount outside every room", () => {
   });
 
   it("never reaches for room ink", () => {
-    // Every home screen mounts its modal as a sibling of the roomed
-    // SafeAreaView, so `--accent-ink` is never poured over these subtrees and
-    // `text-accent-ink` would render violet. If a modal is ever nested inside a
-    // room instead, this test should be revisited rather than deleted - and
-    // note that nesting alone would still not make room ink safe, because the
-    // pour crosses a Modal on native (React context) but not on web (the RNW
-    // Modal portals to document.body, escaping the inline CSS variables).
+    // `--accent-ink` no longer exists (#586/#1292), so `text-accent-ink` here
+    // would render violet at best. See finding 1 above for why even the
+    // roomed-era nesting never made it safe.
     expect(findingsIn(ROOM_INK, shellUsers)).toEqual([]);
   });
 });

@@ -38,6 +38,16 @@ interface AppOnboardingWizardProps {
   errorMessage?: string;
   includeWelcome?: boolean;
   introductionOnly?: boolean;
+  /**
+   * Whether `onSkip` decides something that sticks (M2, #1258). The
+   * protected-layout gate passes `true`: its skip persists onboarding as
+   * done and the wizard never returns, so the pinned Escape wears the word —
+   * the footer's own "Skip for now", promoted into the row. The
+   * empty-dashboard re-offer passes `false`: skipping only hides a
+   * suggestion, so the Escape stays a bare X and the footer keeps the word.
+   * Required, so each call site states which close it is offering.
+   */
+  skipPersists: boolean;
   onFinish: (result: AppOnboardingResult) => void;
   onSkip: () => void;
 }
@@ -78,6 +88,7 @@ export function AppOnboardingWizard({
   errorMessage,
   includeWelcome = true,
   introductionOnly = false,
+  skipPersists,
   onFinish,
   onSkip,
 }: AppOnboardingWizardProps) {
@@ -188,12 +199,27 @@ export function AppOnboardingWizard({
     else onSkip();
   };
 
+  // The pinned Escape reaches the skip path DIRECTLY, never `handleDismiss`
+  // (#1258): the dismiss is a step-Back that falls through to skip only on
+  // panel one, and an Escape wired to it would mean "previous panel" on every
+  // panel after the first. The system gesture keeps that stepping (M4) — this
+  // is only the visible affordance.
+  const handleEscape = () => {
+    if (isPending || starterSaving) return;
+    onSkip();
+  };
+
   return (
     <RichOnboardingShell
       visible={visible}
       isPending={isPending || starterSaving}
       errorMessage={errorMessage ?? (starterError || undefined)}
       accessibilityLabel={t("onboarding.appTitle")}
+      onEscape={handleEscape}
+      // The word marks the one close in the app with a lasting consequence
+      // (M2): the gate's skip persists onboarding as done. Where skipping is
+      // free, the Escape stays a bare X.
+      escapeLabel={skipPersists ? t("onboarding.wizSkip") : undefined}
       ctaLabel={
         panel === "routines"
           ? t("routines:cta.keep")
@@ -206,6 +232,15 @@ export function AppOnboardingWizard({
       onDismiss={handleDismiss}
       footerSlot={
         <View className="gap-3">
+          {/* The wizard's half of the invitation to register (#1446): one calm
+              informational line, guests only, shown with whichever panel is
+              the final one. The other half is the settings card - and that is
+              the whole invitation surface, by spec. */}
+          {isLast && user?.is_anonymous ? (
+            <Text variant="muted" className="text-center text-xs">
+              {t("onboarding.guestInviteLine")}
+            </Text>
+          ) : null}
           <View className="flex-row items-center justify-between">
             {previousPanel ? (
               <Pressable
@@ -219,14 +254,19 @@ export function AppOnboardingWizard({
             ) : (
               <View />
             )}
-            <Pressable
-              accessibilityRole="button"
-              disabled={isPending || starterSaving}
-              hitSlop={8}
-              onPress={onSkip}
-            >
-              <Text className="text-sm text-muted-foreground">{t("onboarding.wizSkip")}</Text>
-            </Pressable>
+            {/* Promoted, not duplicated: when the pinned Escape wears the
+                word, a second "Skip for now" down here would be two identical
+                controls making the same promise. */}
+            {skipPersists ? null : (
+              <Pressable
+                accessibilityRole="button"
+                disabled={isPending || starterSaving}
+                hitSlop={8}
+                onPress={onSkip}
+              >
+                <Text className="text-sm text-muted-foreground">{t("onboarding.wizSkip")}</Text>
+              </Pressable>
+            )}
           </View>
         </View>
       }

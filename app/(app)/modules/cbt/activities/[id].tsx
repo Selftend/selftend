@@ -1,4 +1,5 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, type Href } from "expo-router";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -11,13 +12,14 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { LoadingState } from "@/src/components/app/screen-state";
+import { ScreenLoading, ScreenNotFound } from "@/src/components/app/screen-state";
 import { useActivity } from "@/src/features/activities/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { formatAtOffset } from "@/src/utils/date";
 
 export default function ActivityDetailScreen() {
+  const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("cbt");
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useSession();
@@ -25,23 +27,11 @@ export default function ActivityDetailScreen() {
   const { data: activity, isLoading } = useActivity(user?.id ?? null, id ?? null);
 
   if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center">
-          <LoadingState title={t("activities.loading")} />
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenLoading title={t("activities.loading")} />;
   }
 
   if (!activity) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 justify-center p-6">
-          <Text variant="h2">{t("activities.notFound")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ScreenNotFound title={t("activities.notFound")} />;
   }
 
   const moodLift =
@@ -132,17 +122,17 @@ export default function ActivityDetailScreen() {
             <View className="gap-3">
               <Button
                 onPress={() =>
-                  router.push(
-                    `/tools/check-in/new?linkedStrategy=behavioral-activation&completeActivityId=${activity.id}` as Parameters<
-                      typeof router.push
-                    >[0],
+                  pushWithOrigin(
+                    `/tools/check-in/new?linkedStrategy=behavioral-activation&completeActivityId=${activity.id}` as Href,
                   )
                 }
               >
                 <Text>{t("activities.markComplete")}</Text>
               </Button>
               <Button
-                onPress={() => router.push(`/modules/cbt/activities/new?activityId=${activity.id}`)}
+                onPress={() =>
+                  pushWithOrigin(`/modules/cbt/activities/new?activityId=${activity.id}`)
+                }
                 variant="secondary"
               >
                 <Text>{t("activities.edit")}</Text>
