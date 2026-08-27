@@ -24,6 +24,12 @@ import ts from "typescript";
  * remove. `typescript` is already a direct devDependency (it compiles the repo),
  * so this adds no dependency.
  *
+ * ☠️ Platform forks are outside this walk's sight, exactly as they are outside
+ * `escape-coverage.test.ts`'s: `resolveSpec` resolves one specifier to one file
+ * and never considers a `.web.tsx` sibling, so a web fork of a screen could drop
+ * chrome on one platform invisibly. If a fork ever appears on a route's path,
+ * this resolver must learn to demand chrome of BOTH variants.
+ *
  * The walk deliberately fails CLOSED in one direction and OPEN in another, and
  * the asymmetry is the design: a path whose chrome it cannot see is REPORTED
  * (better a false alarm someone must read than a strand nobody does), but a
@@ -107,10 +113,36 @@ export function scanRenderPaths(repo: string, routes: string[], maxHops: number)
     return map;
   };
 
-  /** Root names of every capitalized JSX tag anywhere inside a node. */
-  const tagsIn = (node: ts.Node): Set<string> => {
+  /**
+   * Root names of the capitalized JSX tags a node renders UNCONDITIONALLY.
+   *
+   * ☠️ Conditional subtrees are not descended into, and that is the whole point.
+   * `renderPaths` splits branching written as a whole-screen swap, but branching
+   * written INSIDE the children is the same defect wearing different brackets:
+   *
+   *     <SafeAreaView>{isLoading ? <LoadingState/> : <><ScreenTopBar/>…</>}</SafeAreaView>
+   *
+   * A walk that counted every tag in the subtree would find `ScreenTopBar` and
+   * pass the screen, while the branch that renders during loading has no way
+   * out. Refusing to look inside a conditional encodes G1 directly - chrome is
+   * rendered unconditionally, never `{cond ? <ScreenEscape/> : null}` - so a
+   * screen that hides its chrome behind a condition FAILS rather than passing on
+   * the strength of a tag it might not render.
+   *
+   * `throughConditionals` is for the coarse per-file backstop only, which stays
+   * as permissive as the suite it backs up.
+   */
+  const tagsIn = (node: ts.Node, throughConditionals = false): Set<string> => {
     const tags = new Set<string>();
     const visit = (current: ts.Node): void => {
+      if (!throughConditionals) {
+        if (ts.isConditionalExpression(current)) return;
+        if (
+          ts.isBinaryExpression(current) &&
+          current.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+        )
+          return;
+      }
       if (ts.isJsxOpeningElement(current) || ts.isJsxSelfClosingElement(current)) {
         let name: ts.JsxTagNameExpression = current.tagName;
         while (ts.isPropertyAccessExpression(name)) name = name.expression;
@@ -204,15 +236,26 @@ export function scanRenderPaths(repo: string, routes: string[], maxHops: number)
 
   /**
    * One returned expression split into the trees it can actually render. Only
-   * ROOT-level ternaries split: `cond ? <A/> : <B/>` swaps the whole screen, so
+   * ROOT-level branching splits: `cond ? <A/> : <B/>` swaps the whole screen, so
    * each side is its own path, while a ternary nested among JSX children is
    * body content rendered UNDER chrome that is already mounted above it.
+   *
+   * `cond && <A/>` splits the same way, and its second path is deliberately
+   * `null`: when the guard is false that return renders NOTHING, which is the
+   * blank screen `return null` draws and the same strand. No route writes this
+   * shape today - which is the point of handling it now, while the cost is
+   * three lines, rather than discovering the gate fails open on the first one.
    */
   const renderPaths = (expression: ts.Expression | undefined): (ts.Expression | null)[] => {
     if (!expression) return [null];
     if (ts.isParenthesizedExpression(expression)) return renderPaths(expression.expression);
     if (ts.isConditionalExpression(expression))
       return [...renderPaths(expression.whenTrue), ...renderPaths(expression.whenFalse)];
+    if (
+      ts.isBinaryExpression(expression) &&
+      expression.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+    )
+      return [...renderPaths(expression.right), null];
     return [expression];
   };
 
@@ -225,7 +268,7 @@ export function scanRenderPaths(repo: string, routes: string[], maxHops: number)
     const cached = fileVerdicts.get(key);
     if (cached !== undefined) return cached;
     fileVerdicts.set(key, false); // Cycles terminate as "not found via this path".
-    const tags = tagsIn(sourceOf(file));
+    const tags = tagsIn(sourceOf(file), true);
     let found = [...tags].some((tag) => CHROME.has(tag));
     if (!found && hopsLeft > 0) {
       const imports = importMap(file);
@@ -311,6 +354,28 @@ export function scanRenderPaths(repo: string, routes: string[], maxHops: number)
     return target ? { file: resolved, component: target } : null;
   };
 
+  /**
+   * The outermost conditionals inside a node - those not themselves nested in
+   * another conditional. Each is a fork the screen can take while rendering this
+   * path, so each is checked as a set of sub-paths rather than ignored.
+   */
+  const spineConditionals = (node: ts.Node): ts.Expression[] => {
+    const forks: ts.Expression[] = [];
+    const visit = (current: ts.Node): void => {
+      if (
+        ts.isConditionalExpression(current) ||
+        (ts.isBinaryExpression(current) &&
+          current.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken)
+      ) {
+        forks.push(current);
+        return; // Its own branches are explored by the recursive check below.
+      }
+      ts.forEachChild(current, visit);
+    };
+    visit(node);
+    return forks;
+  };
+
   /** Does this one render path put chrome on screen? */
   const pathReachesChrome = (
     file: string,
@@ -328,6 +393,15 @@ export function scanRenderPaths(repo: string, routes: string[], maxHops: number)
       const resolved = spec ? resolveSpec(spec, file) : null;
       if (resolved && !componentByName(resolved, tag) && fileReachesChrome(resolved, hopsLeft - 1))
         return true;
+    }
+    // A fork puts chrome on screen only if EVERY way through it does. That is
+    // what separates the grounding flow - which picks between two shells that
+    // each carry an Escape - from a screen whose chrome sits in one arm of a
+    // ternary and vanishes on the other. `renderPaths` supplies the arms, so an
+    // `&&` contributes its empty arm and can never satisfy this.
+    for (const fork of spineConditionals(expression)) {
+      const arms = renderPaths(fork);
+      if (arms.every((arm) => arm !== null && pathReachesChrome(file, arm, hopsLeft))) return true;
     }
     return false;
   };
@@ -396,7 +470,12 @@ export function scanRenderPaths(repo: string, routes: string[], maxHops: number)
     }
     const component = defaultComponent(file);
     if (!component) {
-      if (!fileReachesChrome(file, maxHops)) unanalysable.push(route);
+      // Listed WHENEVER the component cannot be found, never only when the
+      // coarse fallback also fails. Reporting it only in the second case would
+      // let `export default memo(Screen)` opt a screen out of the branch walk
+      // for good, as long as the file mentioned chrome somewhere - which is
+      // this very ticket's defect, rebuilt inside the gate meant to close it.
+      unanalysable.push(route);
       continue;
     }
     for (const finding of chromelessIn(file, component, maxHops))

@@ -7,6 +7,8 @@ import { Card, CardDescription, CardTitle } from "@/src/components/react-native-
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { FORM_COLUMN } from "@/src/lib/layout";
+import { cn } from "@/lib/utils";
 
 interface StateAction {
   label: string;
@@ -54,9 +56,18 @@ function ScreenStateShell({ children }: PropsWithChildren) {
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Full bleed, outside the padding: the bar's bottom hairline has to
-          reach both edges. */}
-      <ScreenTopBar />
-      <View className="grow justify-center p-6">{children}</View>
+          reach both edges.
+
+          ☠️ `consumeOrigin={false}`, because this is a PLACEHOLDER: the screen
+          it stands in for mounts its own Escape moments later, and an arrival
+          can only be consumed once. Without it the spinner would eat the Origin
+          and the real screen would fall back to Up. */}
+      <ScreenTopBar consumeOrigin={false} />
+      {/* `FORM_COLUMN`, because a screen riding `ScreenTopBar` is a form or
+          detail screen and never picks a width by hand (CONTEXT.md, "Content
+          column"). Without it a not-found card ran the full width of a desktop
+          window. */}
+      <View className={cn(FORM_COLUMN, "grow justify-center p-6")}>{children}</View>
     </SafeAreaView>
   );
 }

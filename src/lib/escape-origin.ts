@@ -167,13 +167,23 @@ export function nameOrigin(origin: string, t: (key: string) => string): string |
  * A web reload loses the Origin and the Escape falls back to Up. That is
  * correct, not merely tolerated (O7) - a reload *is* a cold arrival, and so is a
  * deep link from a notification.
+ *
+ * ☠️ `consume` is what keeps all of that true now that a screen's LOADING branch
+ * carries chrome too (#1328). Such a screen mounts two Escapes in turn - the
+ * placeholder's, then its own - and if the first consumed the arrival the second
+ * would peek an emptied store, so every Origin-carrying screen with a loading
+ * branch would silently fall back to Up. A placeholder therefore peeks WITHOUT
+ * consuming: it still points where the user came from, and it leaves the arrival
+ * for the screen that replaces it. Staleness is unaffected, because the entry is
+ * still only ever retired by the mount of a real screen.
  */
-export function useEscapeOrigin(pathname: string): string | null {
+export function useEscapeOrigin(pathname: string, consume = true): string | null {
   const [origin] = useState(() => peekOrigin(pathname));
 
   useEffect(() => {
+    if (!consume) return;
     clearOrigin(pathname);
-  }, [pathname]);
+  }, [consume, pathname]);
 
   return origin;
 }

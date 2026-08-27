@@ -12,6 +12,8 @@ interface ScreenTopBarProps {
    */
   leading?: "back" | "close";
   className?: string;
+  /** Forwarded to the Escape; false on a placeholder screen (#1328). */
+  consumeOrigin?: boolean;
 }
 
 /**
@@ -39,7 +41,11 @@ interface ScreenTopBarProps {
  * gone, not guarded: the Escape is a slot of its own now and renders whether or
  * not the trail does (#1250). Keep it unconditional.
  */
-export function ScreenTopBar({ leading = "back", className }: ScreenTopBarProps) {
+export function ScreenTopBar({
+  leading = "back",
+  className,
+  consumeOrigin = true,
+}: ScreenTopBarProps) {
   return (
     <View
       testID="screen-top-bar"
@@ -50,7 +56,10 @@ export function ScreenTopBar({ leading = "back", className }: ScreenTopBarProps)
           trail onto a second line. (The trail still wraps internally, exactly as
           it did before the Escape moved out - unchanged here, not fixed here.) */}
       <View className="flex-row items-center gap-2">
-        <ScreenEscape glyph={leading === "close" ? "close" : "arrow-back"} />
+        <ScreenEscape
+          consumeOrigin={consumeOrigin}
+          glyph={leading === "close" ? "close" : "arrow-back"}
+        />
         <ScreenBreadcrumb />
       </View>
     </View>
