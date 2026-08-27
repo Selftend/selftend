@@ -16,7 +16,7 @@ import {
   MeditationOnboarding,
   type MeditationOnboardingResult,
 } from "@/src/components/app/meditation-onboarding-modal";
-import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/timer/interval";
+import { INTERVAL_OPTIONS_MINUTES } from "@/src/features/meditation/interval";
 import { DurationSlider } from "@/src/features/meditation/duration-slider";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
 import { computeWindowInsights } from "@/src/features/meditation/insights";
