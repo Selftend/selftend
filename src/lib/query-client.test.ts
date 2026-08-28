@@ -41,6 +41,20 @@ describe("reportQueryError", () => {
 
     expect(captureError).not.toHaveBeenCalled();
   });
+
+  // SELFTEND-9 (#1548): the ACT list query rejected with a plain object rather than an
+  // `Error`, which used to bypass every suppression rule and page on a cellular blip.
+  it("ignores an offline network failure thrown as a plain object", () => {
+    reportQueryError({ message: "Network request failed" }, [
+      "act",
+      "committedAction",
+      "list",
+      "uid",
+      "active",
+    ]);
+
+    expect(captureError).not.toHaveBeenCalled();
+  });
 });
 
 describe("reportMutationError", () => {
