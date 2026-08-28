@@ -70,11 +70,13 @@ describe("ActExpansionListScreen", () => {
   });
 
   /**
-   * The header help door (#1543). `HelpButton` composes its own label
-   * (`"Help: " + the help title`), so matching that label is what pins this door
-   * to the `expansion` key - whose title is "Acceptance", the name this process
-   * goes by in the app; the press proves the sheet's `how`/`why` - the only copy
-   * this door unlocks - actually reach the screen.
+   * The header help door (#1543): the label `HelpButton` composes is what pins
+   * this door to the `expansion` key, and the sheet's own rendering is pinned in
+   * `help-sheet.test.tsx`.
+   *
+   * The label reads "Acceptance", not "Expansion": `expansion` is the key, but
+   * "Acceptance" is the name this process goes by everywhere the user can see -
+   * this screen's own heading included.
    */
   it("opens the acceptance help sheet from the header", () => {
     mockUseExpansionLogs.mockReturnValue({
@@ -86,10 +88,6 @@ describe("ActExpansionListScreen", () => {
 
     fireEvent.press(screen.getByLabelText("Help: Acceptance"));
 
-    expect(
-      screen.getByText(
-        "Struggling against difficult feelings amplifies them. Expanding around them turns off the fight response and lets them pass naturally.",
-      ),
-    ).toBeTruthy();
+    expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
 });

@@ -65,12 +65,9 @@ describe("ActObservingSelfListScreen", () => {
     expect(screen.queryByText("old observation")).toBeNull();
   });
 
-  /**
-   * The header help door (#1543). `HelpButton` composes its own label
-   * (`"Help: " + the help title`), so matching that label is what pins this door
-   * to the `observingSelf` key; the press proves the sheet's `how`/`why` - the
-   * only copy this door unlocks - actually reach the screen.
-   */
+  // The header help door (#1543): the label `HelpButton` composes is what pins
+  // this door to the `observingSelf` key, and the sheet's own rendering is
+  // pinned in `help-sheet.test.tsx`.
   it("opens the observing self help sheet from the header", () => {
     mockUseObservingSelfSessions.mockReturnValue({
       data: [],
@@ -81,10 +78,6 @@ describe("ActObservingSelfListScreen", () => {
 
     fireEvent.press(screen.getByLabelText("Help: Observing Self"));
 
-    expect(
-      screen.getByText(
-        "Identifying with a constant observer reduces the power of fluctuating thoughts and feelings to dictate your sense of self.",
-      ),
-    ).toBeTruthy();
+    expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
 });

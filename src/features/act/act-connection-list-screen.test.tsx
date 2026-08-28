@@ -65,12 +65,9 @@ describe("ActConnectionListScreen", () => {
     expect(screen.queryByText("old notice")).toBeNull();
   });
 
-  /**
-   * The header help door (#1543). `HelpButton` composes its own label
-   * (`"Help: " + the help title`), so matching that label is what pins this door
-   * to the `connection` key; the press proves the sheet's `how`/`why` - the only
-   * copy this door unlocks - actually reach the screen.
-   */
+  // The header help door (#1543): the label `HelpButton` composes is what pins
+  // this door to the `connection` key, and the sheet's own rendering is pinned
+  // in `help-sheet.test.tsx`.
   it("opens the connection help sheet from the header", () => {
     mockUseConnectionLogs.mockReturnValue({
       data: [],
@@ -81,10 +78,6 @@ describe("ActConnectionListScreen", () => {
 
     fireEvent.press(screen.getByLabelText("Help: Connection"));
 
-    expect(
-      screen.getByText(
-        "Most suffering happens in thoughts about past or future. Returning to the present interrupts rumination and creates a moment of calm.",
-      ),
-    ).toBeTruthy();
+    expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
 });
