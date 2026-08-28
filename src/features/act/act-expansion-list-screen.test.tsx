@@ -1,7 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActExpansionListScreen from "@/src/features/act/act-expansion-list-screen";
-import { useExpansionLogs } from "@/src/features/act/queries";
+import { useExpansionLogPages } from "@/src/features/act/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -14,59 +14,116 @@ jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
 
-jest.mock("@/src/stores/selected-date-store", () => ({
-  useSelectedDate: () => ({ selectedDate: "2026-05-24" }),
-  toLocalDateKey: (iso: string) => iso.slice(0, 10),
-}));
-
 jest.mock("@/src/features/act/queries", () => ({
-  useExpansionLogs: jest.fn(),
+  useExpansionLogPages: jest.fn(),
 }));
 
-const mockUseExpansionLogs = useExpansionLogs as jest.MockedFunction<typeof useExpansionLogs>;
+const mockPages = useExpansionLogPages as jest.MockedFunction<typeof useExpansionLogPages>;
+
+function pages(over: Record<string, unknown> = {}) {
+  mockPages.mockReturnValue({
+    data: undefined,
+    fetchNextPage: jest.fn(),
+    hasNextPage: false,
+    isError: false,
+    isFetchingNextPage: false,
+    isPending: false,
+    refetch: jest.fn(),
+    ...over,
+  } as unknown as ReturnType<typeof useExpansionLogPages>);
+}
+
+const log = (over: Record<string, unknown> = {}) => ({
+  id: "log-1",
+  userId: "user-1",
+  emotion: "an emotion",
+  bodySensation: "",
+  intensityBefore: null,
+  intensityAfter: null,
+  struggleSwitchOn: null,
+  discomfortType: null,
+  techniqueUsed: "fourStepExpansion",
+  notes: "",
+  createdAt: "2026-05-24T09:00:00.000Z",
+  updatedAt: "2026-05-24T09:00:00.000Z",
+  ...over,
+});
 
 describe("ActExpansionListScreen", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    pages();
+  });
 
-  it("shows only logs whose createdAt is the selected day", () => {
-    mockUseExpansionLogs.mockReturnValue({
-      data: [
-        {
-          id: "today",
-          userId: "user-1",
-          emotion: "today emotion",
-          bodySensation: "",
-          intensityBefore: null,
-          intensityAfter: null,
-          struggleSwitchOn: null,
-          discomfortType: null,
-          techniqueUsed: "makeRoom",
-          notes: "",
-          createdAt: "2026-05-24T09:00:00.000Z",
-          updatedAt: "2026-05-24T09:00:00.000Z",
-        },
-        {
-          id: "old",
-          userId: "user-1",
-          emotion: "old emotion",
-          bodySensation: "",
-          intensityBefore: null,
-          intensityAfter: null,
-          struggleSwitchOn: null,
-          discomfortType: null,
-          techniqueUsed: "makeRoom",
-          notes: "",
-          createdAt: "2026-05-20T09:00:00.000Z",
-          updatedAt: "2026-05-20T09:00:00.000Z",
-        },
-      ],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useExpansionLogs>);
+  /**
+   * ☠️ **The inverse of the test it replaces.** The old assertion pinned the day filter
+   * #1517 removes: this screen kept only entries whose `createdAt` matched a
+   * `useSelectedDate()` that returns today and has no setter, so yesterday's acceptance
+   * work was unreachable from the only screen that lists it.
+   */
+  it("renders entries written on other days, not just today's", () => {
+    pages({
+      data: {
+        pages: [
+          [
+            log({ id: "today", emotion: "today emotion" }),
+            log({ id: "old", emotion: "old emotion", createdAt: "2026-05-20T09:00:00.000Z" }),
+          ],
+        ],
+        pageParams: [null],
+      },
+    });
 
     renderWithProviders(<ActExpansionListScreen />);
 
     expect(screen.getByText("today emotion")).toBeTruthy();
-    expect(screen.queryByText("old emotion")).toBeNull();
+    expect(screen.getByText("old emotion")).toBeTruthy();
+  });
+
+  it("flattens every loaded page", () => {
+    pages({
+      data: {
+        pages: [
+          [log({ id: "p1", emotion: "page one emotion" })],
+          [log({ id: "p2", emotion: "page two emotion" })],
+        ],
+        pageParams: [null, { timestamp: "2026-05-24T09:00:00.000Z", id: "p1" }],
+      },
+    });
+
+    renderWithProviders(<ActExpansionListScreen />);
+
+    expect(screen.getByText("page one emotion")).toBeTruthy();
+    expect(screen.getByText("page two emotion")).toBeTruthy();
+  });
+
+  /** ☠️ A failed read must not read as an empty history — see the defusion screen's test. */
+  it("tells a failed read apart from an empty one", () => {
+    pages({ isError: true });
+
+    renderWithProviders(<ActExpansionListScreen />);
+
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(
+      screen.queryByText(
+        "No entries yet. Use acceptance when a difficult emotion or sensation is present.",
+      ),
+    ).toBeNull();
+  });
+
+  /**
+   * ☠️ #1515 made this route the tool's front door as well as its archive, so both write
+   * controls have to stay above the entries. They live in the FlatList header for that
+   * reason; anything that pushes them below the fold reopens that decision.
+   */
+  it("keeps both write controls on the screen alongside the archive", () => {
+    pages({ data: { pages: [[log({ emotion: "an entry" })]], pageParams: [null] } });
+
+    renderWithProviders(<ActExpansionListScreen />);
+
+    expect(screen.getByText("Make room for a feeling")).toBeTruthy();
+    expect(screen.getByText("Surf an urge")).toBeTruthy();
+    expect(screen.getByText("an entry")).toBeTruthy();
   });
 
   /**
@@ -79,10 +136,7 @@ describe("ActExpansionListScreen", () => {
    * this screen's own heading included.
    */
   it("opens the acceptance help sheet from the header", () => {
-    mockUseExpansionLogs.mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useExpansionLogs>);
+    pages({ data: { pages: [[]], pageParams: [null] } });
 
     renderWithProviders(<ActExpansionListScreen />);
 

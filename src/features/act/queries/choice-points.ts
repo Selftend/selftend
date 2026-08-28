@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   countChoicePoints,
@@ -6,12 +6,14 @@ import {
   getChoicePoint,
   getLatestChoicePointAt,
   listChoicePoints,
+  listChoicePointsPage,
   saveChoicePoint,
 } from "@/src/features/act/repository";
 import type { ChoicePointInput } from "@/src/features/act/types";
+import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
-import { actKeys } from "./keys";
+import { ACT_HISTORY_PAGE_SIZE, actKeys } from "./keys";
 
 export function useChoicePoints(userId: string | null, limit = 30) {
   return useQuery({
@@ -19,6 +21,26 @@ export function useChoicePoints(userId: string | null, limit = 30) {
     // prefix in actKeys.choicePointList still matches every variant on invalidation.
     queryKey: [...actKeys.choicePointList(userId), limit],
     queryFn: () => listChoicePoints(userId!, limit),
+    enabled: Boolean(userId),
+  });
+}
+
+/**
+ * Every choice point, newest first, a page at a time — the choice-point screen's archive (#1517).
+ * Flat and newest-first, never day-sectioned: #1513 binds ACT to the flat family, so no
+ * day heading, date control or `formatRelativeDayKey` label belongs on what this feeds.
+ */
+export function useChoicePointPages(userId: string | null) {
+  return useInfiniteQuery({
+    queryKey: actKeys.choicePointHistoryPages(userId),
+    queryFn: ({ pageParam }) => listChoicePointsPage(userId!, ACT_HISTORY_PAGE_SIZE, pageParam),
+    initialPageParam: null as RecordCursor | null,
+    // A short page is the last page: asking for another would spend a round trip to
+    // learn nothing. Only a FULL page can have more behind it.
+    getNextPageParam: (lastPage) =>
+      lastPage.length < ACT_HISTORY_PAGE_SIZE
+        ? undefined
+        : nextDescendingCursor(lastPage, (choicePoint) => choicePoint.createdAt),
     enabled: Boolean(userId),
   });
 }

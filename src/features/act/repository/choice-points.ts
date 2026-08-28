@@ -10,6 +10,7 @@ import {
   selectMaybe,
   writeSingle,
 } from "./helpers";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 
 interface ChoicePointRow {
   id: string;
@@ -61,6 +62,34 @@ export async function listChoicePoints(userId: string, limit = 30) {
         .limit(limit),
     mapChoicePoint,
   );
+}
+
+/**
+ * One page of every choice point, newest first - the archive read behind `/modules/act/choice-point` (#1517).
+ *
+ * Keyset on the plaintext `created_at` rather than `.range()`: ACT rows are encrypted, so
+ * ADR-0001 prices a read at `rows returned x encrypted columns`, and an offset page
+ * re-reads and re-decrypts every row it skips. Ordering and filtering stay plaintext,
+ * which is exactly what lets the `LIMIT` push below the decrypt.
+ *
+ * `id` breaks the tie so a page boundary cannot straddle two rows sharing a
+ * timestamp - `created_at` is not unique.
+ */
+export async function listChoicePointsPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  return selectList<ChoicePointRow, ChoicePoint>((c) => {
+    let query = c
+      .from("act_choice_points")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (cursor) query = query.or(descendingCursorFilter("created_at", cursor));
+    return query.limit(limit);
+  }, mapChoicePoint);
 }
 
 export async function getChoicePoint(userId: string, choicePointId: string) {

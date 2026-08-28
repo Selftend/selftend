@@ -12,6 +12,7 @@ import { isValidDayKey } from "@/src/utils/date";
 import { isValidUuid } from "@/src/utils/uuid";
 import { sanitizeUserText } from "@/src/utils/sanitize-text";
 import { countRows, selectList, selectMaybe, writeSingle, mutateVoid } from "./helpers";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 
 interface CommittedActionRow {
   id: string;
@@ -103,11 +104,14 @@ export async function countCommittedActions(
  * row as a row that does not exist. A cap there would silently drop an active commitment a
  * user is still working on, which is a worse failure than an expensive read.
  *
- * The bound arrives with paging, not instead of it: when the committed-action list screen
- * takes the keyset shape the other ACT history lists take (#1517 owns that coverage call),
- * the paged read joins `test/history-pagination-contract.test.ts` and the screen stops
- * needing this one. The non-list callers keep a complete read, and anything that only needs
- * a number already has `countCommittedActions` instead of `list(...).length` (#1378).
+ * ☠️ #1517 resolved that coverage call, and NOT the way the paragraph above expected. The
+ * list screen could not simply "take the keyset shape": it renders three status sections
+ * from one fetch, and a flat `created_at desc` page cuts across all three — page 1 can
+ * legitimately hold zero active rows, and the sections would fill raggedly as the user
+ * scrolls. So the read is SPLIT by status instead. This function stays unbounded and keeps
+ * serving `status: "active"` and the non-list callers, whole; the finished half moved to
+ * `listCommittedActionArchivePage`, which is what joins the contract test. Status sectioning
+ * names no day, so this is not a #1513 second-frame problem.
  */
 export async function listCommittedActions(userId: string, status?: ActionStatus) {
   return selectList<CommittedActionRow, CommittedAction>((c) => {
@@ -120,6 +124,44 @@ export async function listCommittedActions(userId: string, status?: ActionStatus
     if (status) query = query.eq("status", status);
 
     return query;
+  }, mapCommittedAction);
+}
+
+/**
+ * The statuses that are history rather than a working set.
+ *
+ * Exported so the screen's "everything not in this list is still live" split and the read
+ * agree by construction — a fourth status added to one and not the other would silently
+ * vanish from both sections.
+ */
+export const COMMITTED_ACTION_ARCHIVE_STATUSES = ["completed", "abandoned"] as const;
+
+/**
+ * One page of the finished committed actions, newest first (#1517).
+ *
+ * This is the half of the committed-action list that grows without bound: a user only ever
+ * adds to what they have completed or abandoned, while the active set stays a working list
+ * they keep short themselves. Bounding the growing half is what makes the unbounded read
+ * above safe to keep — see its docblock for why a cap on `active` is the worse failure.
+ *
+ * Keyset on the plaintext `created_at`, never `.range()`, for ADR-0001's reason: an offset
+ * page re-reads and re-decrypts every row it skips.
+ */
+export async function listCommittedActionArchivePage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  return selectList<CommittedActionRow, CommittedAction>((c) => {
+    let query = c
+      .from("act_committed_actions")
+      .select("*")
+      .eq("user_id", userId)
+      .in("status", [...COMMITTED_ACTION_ARCHIVE_STATUSES])
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (cursor) query = query.or(descendingCursorFilter("created_at", cursor));
+    return query.limit(limit);
   }, mapCommittedAction);
 }
 

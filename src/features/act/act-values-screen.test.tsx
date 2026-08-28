@@ -44,12 +44,31 @@ mockNumberRatingImpl = ({ onChange }) => (
 
 const mockEntries = jest.fn(() => ({ data: [], isLoading: false }));
 const mockLatest = jest.fn(() => ({ data: undefined }) as { data: unknown });
-const mockSnapshots = jest.fn(() => ({ data: [] }) as { data: unknown });
+const mockSnapshots = jest.fn(
+  () =>
+    ({
+      data: undefined,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+    }) as Record<string, unknown>,
+);
+
+/** One page of snapshots, in the `useInfiniteQuery` envelope the screen reads. */
+function snapshotPages(rows: unknown[], over: Record<string, unknown> = {}) {
+  mockSnapshots.mockReturnValue({
+    data: { pages: [rows], pageParams: [null] },
+    fetchNextPage: jest.fn(),
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    ...over,
+  });
+}
 
 jest.mock("@/src/features/act/queries", () => ({
   useValueEntries: (...args: unknown[]) => mockEntries(...(args as [])),
   useLatestBullsEyeByDomain: (...args: unknown[]) => mockLatest(...(args as [])),
-  useBullsEyeSnapshots: (...args: unknown[]) => mockSnapshots(...(args as [])),
+  useBullsEyeSnapshotPages: (...args: unknown[]) => mockSnapshots(...(args as [])),
   useSaveBullsEyeSnapshot: jest.fn(),
 }));
 
@@ -67,8 +86,80 @@ beforeEach(() => {
   useActValuesCheckInDraftStore.getState().reset();
   mockEntries.mockReturnValue({ data: [], isLoading: false });
   mockLatest.mockReturnValue({ data: undefined });
-  mockSnapshots.mockReturnValue({ data: [] });
+  snapshotPages([]);
   mockSaveResolving();
+});
+
+/**
+ * ☠️ The cap #1517 removed, and why it was worse than it looked. This section sliced its
+ * read to `HISTORY_ROWS = 12`. Twelve rows sounds like twelve reviews, but a check-in
+ * writes ONE ROW PER RATED DOMAIN — up to four — so the visible history was **three
+ * review dates**. #1379 chose the twelve deliberately ("enough to read as a run without
+ * turning the screen into a log"), which is why this was the judgement call on #1517 and
+ * not an obvious oversight; the resolution keeps the recap shape and lets the user extend
+ * it, rather than turning the screen into a log by default.
+ */
+describe("ActValuesScreen - the bull's-eye history is no longer capped at twelve rows", () => {
+  const snapshot = (i: number) => ({
+    id: `snap-${i}`,
+    userId: "user-1",
+    domain: "work",
+    alignmentRating: (i % 10) + 1,
+    reviewedAt: `2026-05-${String((i % 28) + 1).padStart(2, "0")}T09:00:00.000Z`,
+    createdAt: `2026-05-${String((i % 28) + 1).padStart(2, "0")}T09:00:00.000Z`,
+  });
+
+  it("renders every loaded snapshot, past the old twelve-row slice", () => {
+    snapshotPages(Array.from({ length: 20 }, (_, i) => snapshot(i)));
+
+    renderWithProviders(<ActValuesScreen />);
+
+    // The pill text is unique per row's rating position; counting rows is what matters.
+    expect(screen.getByTestId("bulls-eye-history").children.length).toBeGreaterThan(12);
+  });
+
+  it("offers to extend the recap only when another page exists", () => {
+    snapshotPages([snapshot(0)], { hasNextPage: false });
+    const { unmount } = renderWithProviders(<ActValuesScreen />);
+    expect(screen.queryByText("Show more")).toBeNull();
+    unmount();
+
+    snapshotPages([snapshot(0)], { hasNextPage: true });
+    renderWithProviders(<ActValuesScreen />);
+    expect(screen.getByText("Show more")).toBeTruthy();
+  });
+
+  /**
+   * ☠️ A failed read is NOT an empty history, and this is the section where it lies
+   * loudest: "No previous ratings yet." over a network error tells a user who checks in
+   * every week that none of it was recorded. Exactly the "cap wearing the face of an
+   * absence" that `getLatestBullsEyeByDomain` already exists one surface over to avoid.
+   */
+  it("tells a failed history read apart from an empty one", () => {
+    mockSnapshots.mockReturnValue({
+      data: undefined,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isError: true,
+      isFetchingNextPage: false,
+      refetch: jest.fn(),
+    });
+
+    renderWithProviders(<ActValuesScreen />);
+
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.queryByText("No previous ratings yet.")).toBeNull();
+  });
+
+  it("asks for the next page when the user presses Show more", () => {
+    const fetchNextPage = jest.fn();
+    snapshotPages([snapshot(0)], { hasNextPage: true, fetchNextPage });
+
+    renderWithProviders(<ActValuesScreen />);
+    fireEvent.press(screen.getByText("Show more"));
+
+    expect(fetchNextPage).toHaveBeenCalled();
+  });
 });
 
 /**

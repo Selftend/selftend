@@ -289,7 +289,8 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/act/defusion/[id]" />
             <Stack.Screen name="modules/act/expansion/index" dangerouslySingular />
             {/* Plain: a nine-state exercise, mid-practice. See HOLDS_UNSAVED_WORK. */}
-            <Stack.Screen name="modules/act/expansion/urge-surfing" />
+            <Stack.Screen name="modules/act/expansion/urge-surfing/index" />
+            <Stack.Screen name="modules/act/expansion/urge-surfing/[id]" />
             <Stack.Screen name="modules/act/expansion/new" />
             <Stack.Screen name="modules/act/expansion/[id]" />
             <Stack.Screen name="modules/act/observing-self/index" dangerouslySingular />
