@@ -59,7 +59,7 @@
       "practiceLabel": "Your practice",
       "stageRow": "Stage {{stage}} — {{name}}",
       "stageRowSubtitle": "Where you are now · ten stages, four milestones",
-      "practicesRowSubtitle": "Step-by-step reference for each seated practice",
+      "practicesRowSubtitle": "Step-by-step reference for each practice",
       "minutesSat": "Minutes sat",
       "minutesA11y": "{{count}} minutes sat over the last {{days}} days.",
       "recentTitle": "Recent sits",
