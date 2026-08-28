@@ -15,7 +15,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { ActDetailLoading, ActDetailNotFound } from "@/src/features/act/act-detail-scaffold";
 import { useUrgeSurfLog, useUrgeSurfLogPages } from "@/src/features/act/queries";
 import { useSession } from "@/src/providers/session-provider";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatAtOffset } from "@/src/utils/date";
 
 /**
  * One urge-surf entry, read back whole — the route #1517 adds.
@@ -41,7 +41,6 @@ import { useLocaleFormats } from "@/src/lib/locale-format";
  */
 export default function ActUrgeSurfDetailScreen() {
   const { t } = useTranslation("act");
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const logId = typeof id === "string" ? id : null;
@@ -74,7 +73,7 @@ export default function ActUrgeSurfDetailScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <ScreenHeader title={log.urgeDescription} />
-            <Text variant="muted">{formatDateTime(log.createdAt)}</Text>
+            <Text variant="muted">{formatAtOffset(log.createdAt, null)}</Text>
           </View>
 
           {log.trigger ? (

@@ -16,7 +16,7 @@ import { useObservingSelfSessionPages } from "@/src/features/act/queries";
 import type { ObservingSelfSession } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatCompactAtOffset } from "@/src/utils/date";
 
 /**
  * The observing self's front door AND its archive (#1515 shape A, #1517 tier 1). The day
@@ -26,7 +26,6 @@ import { useLocaleFormats } from "@/src/lib/locale-format";
 export default function ActObservingSelfListScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation(["act", "errors"]);
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
     useObservingSelfSessionPages(user?.id ?? null);
@@ -110,7 +109,7 @@ export default function ActObservingSelfListScreen() {
                   {session.moodAfter !== null ? `  ·  ${session.moodAfter}/10` : null}
                 </Text>
                 <Text variant="muted" className="text-xs">
-                  {formatDateTime(session.createdAt)}
+                  {formatCompactAtOffset(session.createdAt, null)}
                 </Text>
               </View>
               <Icon name="chevron-right" className="size-4 text-muted-foreground" />

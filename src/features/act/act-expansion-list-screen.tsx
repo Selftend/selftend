@@ -16,7 +16,7 @@ import { useExpansionLogPages } from "@/src/features/act/queries";
 import type { ExpansionLog } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatCompactAtOffset } from "@/src/utils/date";
 
 /**
  * Acceptance's front door AND its archive (#1515 shape A, #1517 tier 1). The day filter
@@ -26,7 +26,6 @@ import { useLocaleFormats } from "@/src/lib/locale-format";
 export default function ActExpansionListScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation(["act", "errors"]);
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
     useExpansionLogPages(user?.id ?? null);
@@ -121,7 +120,7 @@ export default function ActExpansionListScreen() {
                   {t(`act:expansion.techniques.${log.techniqueUsed}`)}
                 </Text>
                 <Text variant="muted" className="text-xs">
-                  {formatDateTime(log.createdAt)}
+                  {formatCompactAtOffset(log.createdAt, null)}
                 </Text>
               </View>
               {log.intensityBefore !== null && log.intensityAfter !== null ? (

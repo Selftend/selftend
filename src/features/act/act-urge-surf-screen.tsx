@@ -29,7 +29,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatCompactAtOffset } from "@/src/utils/date";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 
 type Step = "urge" | "trigger" | "observe" | "complete";
@@ -40,9 +40,23 @@ const STEP_ORDER: Step[] = ["urge", "trigger", "observe", "complete"];
  * pass. This row renders `urgeDescription` and a timestamp — two of the six fields the
  * four-step form writes. Without somewhere to press, the other four (`trigger`,
  * `peakIntensity`, `urgeActedOn`, `surfingNotes`) were readable by nobody at any depth.
+ *
+ * ⚠️ `lang` is passed in rather than left to `formatCompactAtOffset`'s default, which
+ * reads `i18n.language` at call time without subscribing. This row renders no
+ * translated string, so it holds no `useTranslation` subscription of its own — every
+ * other compact row in the repo has one incidentally, through a `t()` call it also
+ * makes. Without a changing prop, a memoized row could keep a stale-locale label after
+ * a language switch. Same explicit-`lang` shape as `journal-detail-screen`.
  */
-function UrgeSurfHistoryItem({ log, onPress }: { log: UrgeSurfLog; onPress: () => void }) {
-  const { formatDateTime } = useLocaleFormats();
+function UrgeSurfHistoryItem({
+  log,
+  lang,
+  onPress,
+}: {
+  log: UrgeSurfLog;
+  lang: string;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -56,7 +70,7 @@ function UrgeSurfHistoryItem({ log, onPress }: { log: UrgeSurfLog; onPress: () =
             {log.urgeDescription}
           </Text>
           <Text variant="muted" className="mt-1 text-xs">
-            {formatDateTime(log.createdAt)}
+            {formatCompactAtOffset(log.createdAt, null, lang)}
           </Text>
         </View>
         <Icon name="chevron-right" className="size-4 text-muted-foreground" />
@@ -66,7 +80,7 @@ function UrgeSurfHistoryItem({ log, onPress }: { log: UrgeSurfLog; onPress: () =
 }
 
 export default function ActUrgeSurfScreen() {
-  const { t } = useTranslation(["act", "common", "errors"]);
+  const { t, i18n } = useTranslation(["act", "common", "errors"]);
   const pushWithOrigin = usePushWithOrigin();
   const { user } = useSession();
   // ⚠️ Write path only, and #1517 verified that: `selectedDate` reaches `createdAt` on save
@@ -212,6 +226,7 @@ export default function ActUrgeSurfScreen() {
           renderItem={({ item }) => (
             <UrgeSurfHistoryItem
               log={item}
+              lang={i18n.language}
               onPress={() =>
                 pushWithOrigin({
                   pathname: "/modules/act/expansion/urge-surfing/[id]",
