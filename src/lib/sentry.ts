@@ -101,34 +101,117 @@ export function setSentryUser(userId: string | null): void {
   Sentry.setUser(userId ? { id: userId } : null);
 }
 
+type ErrorLike = { name?: unknown; message?: unknown; status?: unknown; code?: unknown };
+
+/** The thrown value's own fields, or an empty bag when it is a primitive. */
+function errorLikeFields(value: unknown): ErrorLike {
+  return typeof value === "object" && value !== null ? (value as ErrorLike) : {};
+}
+
+/**
+ * A message for a value that arrived without a usable one.
+ *
+ * Only the shape is described - the key names, plus `code`/`status`, which are server
+ * diagnostics rather than anything the user typed. The value itself still travels as
+ * `cause`, so nothing is lost; this is only what has to read well as a Sentry title.
+ */
+function describeThrownValue(value: unknown, fields: ErrorLike): string {
+  if (typeof value !== "object" || value === null) {
+    return `Non-Error thrown: ${String(value)}`;
+  }
+
+  const parts: string[] = [];
+  if (typeof fields.code === "string" || typeof fields.code === "number") {
+    parts.push(`code ${fields.code}`);
+  }
+  if (typeof fields.status === "number") {
+    parts.push(`status ${fields.status}`);
+  }
+  const keys = Object.keys(value as Record<string, unknown>);
+  if (keys.length > 0) {
+    parts.push(`keys: ${keys.join(", ")}`);
+  }
+
+  return parts.length > 0 ? `Non-Error thrown (${parts.join(", ")})` : "Non-Error thrown (no keys)";
+}
+
+/**
+ * Turn any thrown value into an `Error`, keeping the original as `cause`.
+ *
+ * Two things depend on this (#1548). Sentry serialises a thrown non-`Error` into
+ * "Object captured as exception with keys: message" - which, for the PostgREST-shaped
+ * `{ message: "" }` seen eleven times in SELFTEND-9, said nothing at all: no message, no
+ * stack, no way to tell which layer failed. And `isReportableError` below reads
+ * `name`/`message`/`status`, so a non-`Error` used to skip every suppression rule and page
+ * someone for being offline.
+ *
+ * `instanceof Error` is unreliable across realms and bundles, so a genuine `Error` can
+ * arrive here looking like a plain object; copying `name`, `message` and `status` off the
+ * value means such an error is judged on its fields either way.
+ */
+export function normalizeError(value: unknown): Error {
+  if (value instanceof Error) {
+    return value;
+  }
+
+  const fields = errorLikeFields(value);
+  const message =
+    typeof value === "string" && value
+      ? value
+      : typeof fields.message === "string" && fields.message
+        ? fields.message
+        : describeThrownValue(value, fields);
+
+  const normalized = new Error(message);
+  // Assigned rather than passed to the constructor: the `cause` option is ES2022, and this
+  // has to hold on whatever Hermes an already-installed build ships.
+  normalized.cause = value;
+
+  if (typeof fields.name === "string" && fields.name) {
+    normalized.name = fields.name;
+  }
+  if (typeof fields.status === "number") {
+    (normalized as Error & { status?: number }).status = fields.status;
+  }
+
+  return normalized;
+}
+
 export function captureError(error: unknown, context?: Record<string, unknown>): void {
   if (!isEnabled()) {
     return;
   }
 
-  Sentry.captureException(error, context ? { extra: context } : undefined);
+  const normalized = normalizeError(error);
+  // The raw value rides along as an extra for whatever the normalised copy left behind:
+  // Sentry only follows `cause` when the cause is itself an `Error`.
+  const extra = normalized === error ? context : { ...context, originalError: error };
+
+  Sentry.captureException(normalized, extra ? { extra } : undefined);
 }
 
 // Expected-in-normal-operation failures that must not page anyone: user is
 // offline, request aborted on unmount, or an auth token simply expired.
+//
+// The rules run against the normalised error, so a non-`Error` throw - a bare string, or
+// the `{ message }` object a fetch/PostgREST layer can reject with - is judged on the same
+// fields as its `Error` twin instead of being waved straight through (#1548).
 export function isReportableError(error: unknown): boolean {
-  if (!(error instanceof Error)) {
-    return true;
-  }
+  const normalized = normalizeError(error);
 
-  if (error.name === "AbortError") {
+  if (normalized.name === "AbortError") {
     return false;
   }
 
   if (
-    error.message.includes("Network request failed") ||
-    error.message.includes("Failed to fetch")
+    normalized.message.includes("Network request failed") ||
+    normalized.message.includes("Failed to fetch")
   ) {
     return false;
   }
 
-  const status = (error as { status?: unknown }).status;
-  if (error.name.startsWith("Auth") && typeof status === "number" && status < 500) {
+  const status = (normalized as { status?: unknown }).status;
+  if (normalized.name.startsWith("Auth") && typeof status === "number" && status < 500) {
     return false;
   }
 
