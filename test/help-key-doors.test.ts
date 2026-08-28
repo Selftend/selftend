@@ -34,6 +34,10 @@ import { sourceFiles, stripComments } from "@/test/source-scan";
  * keys, 18 doors and zero orphans, so there is nothing to suppress - and a list seeded at
  * birth with the six orphans would have emptied within the same batch while permanently
  * installing the discretionary mechanism these gates exist to refuse.
+ *
+ * **One count is pinned, and only one**: the door literals below. Every other clause is
+ * anti-vacuous structurally or through a positive control, because a count floor is itself
+ * a pin - and keys, entry blocks and illustrations must all stay free to change.
  */
 
 const REPO = join(__dirname, "..");
@@ -57,23 +61,25 @@ const REPO = join(__dirname, "..");
 const DOOR = /\bhelpKey\s*=\s*"([A-Za-z]+)"/g;
 
 /** `helpKey` as an object property with a literal value - the #1198 / #1544 shape. */
-const OBJECT_PROPERTY = /\bhelpKey\s*:\s*"/;
+const OBJECT_PROPERTY = /\bhelpKey\s*:\s*"/g;
 
 /**
- * Comments blanked, string literals KEPT - the key lives inside the literal. Blanking
- * prose is what stops `shared-tools-row.tsx`'s #1198 epitaph, which names `helpKey` in
- * a sentence, from reading as a call site.
+ * Every scanned file, read once. Comments blanked, string literals KEPT - the key lives
+ * inside the literal. Blanking prose is what stops `shared-tools-row.tsx`'s #1198 epitaph,
+ * which names `helpKey` in a sentence, from reading as a call site.
  *
  * `sourceFiles` skips `*.test.ts(x)` by default, which is why the `helpKey="beliefs"` and
  * `helpKey="worry"` literals in the help components' own tests cost nothing to exclude.
  */
-const scannedSources = (): { file: string; source: string }[] =>
-  sourceFiles(REPO, { dirs: ["src", "app"] }).map((file) => ({
-    file,
-    source: stripComments(readFileSync(join(REPO, file), "utf8")),
-  }));
+const SOURCES = sourceFiles(REPO, { dirs: ["src", "app"] }).map((file) => ({
+  file,
+  source: stripComments(readFileSync(join(REPO, file), "utf8")),
+}));
 
-const doorLiterals = scannedSources().flatMap(({ file, source }) =>
+/** 1-based line of `index`, so a finding points at the entry and not just the file. */
+const lineOf = (source: string, index: number): number => source.slice(0, index).split("\n").length;
+
+const doorLiterals = SOURCES.flatMap(({ file, source }) =>
   [...source.matchAll(DOOR)].map((match) => ({ file, key: match[1] })),
 );
 
@@ -129,27 +135,47 @@ describe.each([
 ])("src/i18n/locales/%s/help.json holds exactly the live help entries", (locale, bundle) => {
   const ENTRY_FIELDS = ["title", "what", "how", "why"];
 
-  const blocks = Object.entries(bundle as Record<string, unknown>)
-    .filter((entry): entry is [string, Record<string, unknown>] => typeof entry[1] === "object")
-    .map(([name, block]) => ({
-      name,
-      present: ENTRY_FIELDS.filter((field) => field in block),
-    }));
+  const blocks = Object.entries(bundle as Record<string, unknown>).map(([name, value]) => {
+    // ☠️ A non-object top-level value is reported, never skipped. Filtering it out would
+    // reopen the very hole this clause exists to close: a half-finished deletion leaving
+    // `"distortions": "…"` behind would be neither an entry nor chrome, and would vanish
+    // from both assertions below. (`typeof null === "object"`, so null is excluded here
+    // rather than thrown on by the `in` checks.)
+    const isBlock = typeof value === "object" && value !== null;
 
-  it(`reads the ${locale} bundle at all, so the assertions below cannot pass vacuously`, () => {
-    expect(blocks.length).toBeGreaterThan(10);
+    return {
+      name,
+      malformed: !isBlock,
+      present: isBlock ? ENTRY_FIELDS.filter((field) => field in value) : [],
+    };
+  });
+
+  /**
+   * A positive control, not an exemption list. The classification above stays derived from
+   * block shape; this only proves the derivation is still running - if it silently started
+   * scoring every block as an entry, `ui` would be the first to say so. It is the control
+   * `accent-ink-call-sites.test.ts` uses when a clause's healthy state is "nothing found",
+   * and it pins no count, so keys and blocks stay free to change.
+   */
+  it(`still classifies the ${locale} sheet chrome as chrome, not an entry`, () => {
+    expect(blocks.find(({ name }) => name === "ui")?.present).toEqual([]);
   });
 
   it("leaves no block half-deleted", () => {
-    const partial = blocks
-      .filter(({ present }) => present.length > 0 && present.length < ENTRY_FIELDS.length)
-      .map(
-        ({ name, present }) =>
-          `${name}: has ${present.join("/")} but not all of ${ENTRY_FIELDS.join("/")}. ` +
-          `A help entry carries all four; finish the deletion or restore the missing fields.`,
+    const broken = blocks
+      .filter(
+        ({ malformed, present }) =>
+          malformed || (present.length > 0 && present.length < ENTRY_FIELDS.length),
+      )
+      .map(({ name, malformed, present }) =>
+        malformed
+          ? `${name}: is not an object, so it is neither a help entry nor sheet chrome. ` +
+            `Finish whatever edit left it behind.`
+          : `${name}: has ${present.join("/")} but not all of ${ENTRY_FIELDS.join("/")}. ` +
+            `A help entry carries all four; finish the deletion or restore the missing fields.`,
       );
 
-    expect(partial).toEqual([]);
+    expect(broken).toEqual([]);
   });
 
   it("holds one entry block per help key, and no others", () => {
@@ -160,7 +186,8 @@ describe.each([
 
     // Both directions in one assertion, so jest's diff names the surplus (a block whose
     // key is gone - its strings are dead and still translatable on Weblate) and the
-    // missing (a key with no copy) at once.
+    // missing (a key with no copy) at once. Self-anchoring, so it needs no floor: an
+    // empty bundle fails against a non-empty HELP_KEYS rather than passing quietly.
     expect(entries).toEqual([...HELP_KEYS].sort());
   });
 });
@@ -179,24 +206,41 @@ describe.each([
  */
 describe("every help illustration is referenced", () => {
   const IMAGE_DIR = "assets/images/help";
+  const REGISTRY = "src/features/help/help-images.ts";
 
   const pngs = readdirSync(join(REPO, IMAGE_DIR)).filter((file) => file.endsWith(".png"));
-  // A filename appears in exactly one place in the repo, so a substring match against
-  // `help-images.ts`'s own source is the whole test.
-  const registry = readFileSync(join(REPO, "src/features/help/help-images.ts"), "utf8");
 
-  it("finds the illustrations at all, so the assertion below cannot pass vacuously", () => {
-    expect(pngs.length).toBeGreaterThan(10);
-  });
+  /**
+   * ☠️ Exact filenames parsed out of the `require()` paths - NOT a substring search of the
+   * registry source. `source.includes("program.png")` is satisfied by `cbt_program.png`,
+   * so an orphaned `program.png` - the natural filename for the `program` key - would be
+   * masked by an entry it is no part of. The same collision hides `beliefs.png` behind
+   * `core_beliefs.png`, `exposure.png` behind `graded_exposure.png`, and `records.png`,
+   * `self.png` and `log.png` behind theirs: six of the eighteen, and the likeliest six.
+   *
+   * Comments are stripped, so a filename merely named in prose cannot count as a use.
+   */
+  const referenced = new Set(
+    [
+      ...stripComments(readFileSync(join(REPO, REGISTRY), "utf8")).matchAll(
+        /assets\/images\/help\/([\w.-]+\.png)/g,
+      ),
+    ].map((match) => match[1]),
+  );
 
+  // No floor pin here, deliberately. Images are optional, so the illustration count must
+  // stay free to fall, and pinning it would fail a legal future for a reason this clause
+  // has nothing to say about. Vacuity is structural instead: a regex that stopped matching
+  // empties `referenced` and reports every PNG at once, and a missing directory throws out
+  // of `readdirSync` rather than reading as "no orphans found".
   it("names each of them in help-images.ts", () => {
     const unreferenced = pngs
-      .filter((png) => !registry.includes(png))
+      .filter((png) => !referenced.has(png))
       .map(
         (png) =>
-          `${IMAGE_DIR}/${png}: no require() in src/features/help/help-images.ts. ` +
-          `It ships in the bundle reachable by nothing - delete the file, or add the ` +
-          `HELP_IMAGES entry that was meant to use it.`,
+          `${IMAGE_DIR}/${png}: no require() in ${REGISTRY}. It ships in the repo ` +
+          `reachable by nothing - delete the file, or add the HELP_IMAGES entry that was ` +
+          `meant to use it.`,
       );
 
     expect(unreferenced).toEqual([]);
@@ -212,15 +256,32 @@ describe("every help illustration is referenced", () => {
  * kept the data. Both looked like reachability from a grep and were nothing of the kind.
  */
 describe("no help key is declared as data", () => {
+  /**
+   * ☠️ This is the one clause whose healthy state is "nothing found anywhere" - which is
+   * also exactly what a typo in the pattern returns, silently and forever. So the pattern
+   * is run over a known-bad line and a known-good one, the control
+   * `accent-ink-call-sites.test.ts` uses for the same shape.
+   *
+   * Rebuilt from `.source` because `OBJECT_PROPERTY` is global for `matchAll`, and `.test`
+   * on a global regex advances `lastIndex` - a second call would answer about the wrong
+   * offset and quietly report false.
+   */
+  it("still recognises the shape it is looking for", () => {
+    const probe = () => new RegExp(OBJECT_PROPERTY.source);
+
+    expect(probe().test('helpKey: "distortions"')).toBe(true);
+    expect(probe().test('helpKey="distortions"')).toBe(false);
+  });
+
   it("keeps helpKey out of object literals in src/ and app/", () => {
-    const declarations = scannedSources()
-      .filter(({ source }) => OBJECT_PROPERTY.test(source))
-      .map(
-        ({ file }) =>
-          `${file}: declares helpKey as an object property. A help key belongs at a JSX ` +
-          `door (helpKey="…"), never in config - data nothing renders reads as ` +
-          `reachability to every grep and to no user.`,
-      );
+    const declarations = SOURCES.flatMap(({ file, source }) =>
+      [...source.matchAll(OBJECT_PROPERTY)].map(
+        (match) =>
+          `${file}:${lineOf(source, match.index ?? 0)}: declares helpKey as an object ` +
+          `property. A help key belongs at a JSX door (helpKey="…"), never in config - ` +
+          `data nothing renders reads as reachability to every grep and to no user.`,
+      ),
+    );
 
     expect(declarations).toEqual([]);
   });
