@@ -1,7 +1,7 @@
 ﻿# Meditation Program Spec - Yates: The Mind Illuminated
 
 **Source:** _The Mind Illuminated: A Complete Meditation Guide Integrating Buddhist Wisdom and Brain Science for Greater Mindfulness_ - John Yates (Culadasa) / Matthew Immergut / Jeremy Graves (Simon & Schuster, 2017, ISBN 9781501156984)
-**Status:** Canonical spec for the meditation feature - not yet implemented
+**Status:** Canonical spec for the meditation feature - **implemented and shipped** under the `/tools/meditation` prefix. The ten-stage programme is live (`stages.ts`, `meditation_program_state`, `StageNumber = 1..10`). Where this spec and the code disagree, the code is the truth: the `/modules/meditation` prefix in §5 and §8 was anticipated but never adopted.
 **Audience:** Developers and product contributors
 
 ---
@@ -433,17 +433,21 @@ This module follows the contract documented in `tools.md`:
 
 ## 5. Routes
 
-| Route                               | Purpose                                                                                                                                                                                         |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/modules/meditation`               | Home: today's practice card (current stage + suggested duration), recent sessions, stage progress strip.                                                                                        |
-| `/modules/meditation/onboarding`    | Full-screen fallback for the onboarding modal (used when the modal is dismissed or revisited).                                                                                                  |
-| `/modules/meditation/learn`         | First-visit primer: Attention vs. Awareness, Gardener's Mindset, non-linearity, safety.                                                                                                         |
-| `/modules/meditation/session/new`   | Pre-sit primer (Stage-aware) → timer → post-sit reflection. Wraps the existing timer UI.                                                                                                        |
-| `/modules/meditation/sessions`      | Private session history list.                                                                                                                                                                   |
-| `/modules/meditation/sessions/[id]` | Session detail; edit reflection / archive.                                                                                                                                                      |
-| `/modules/meditation/stages`        | Read-only library of all ten Stages; each row expands in place with goals, obstacles, skills, mastery, prompts, and the "switch to this Stage" action (#851 removed the per-stage detail page). |
-| `/tools/meditation/practices`       | Info-only reference for the seated practices; `?practice=` pre-opens one (#853). Implemented under `/tools/`, the app's current meditation prefix.                                              |
-| `/tools/meditation`                 | Compatibility redirect to `/modules/meditation`.                                                                                                                                                |
+As shipped, every route lives under `/tools/meditation`. The `/modules/meditation` prefix below was the spec's intention and was never adopted; there is no `/modules/meditation` route.
+
+| Route                             | Purpose                                                                                                                                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/tools/meditation`               | Home: today's practice card (current stage + suggested duration), recent sessions, stage progress strip.                                                                                        |
+| `/tools/meditation/learn`         | First-visit primer: Attention vs. Awareness, Gardener's Mindset, non-linearity, safety.                                                                                                         |
+| `/tools/meditation/session`       | Pre-sit primer (Stage-aware) → timer → post-sit reflection. Wraps the existing timer UI.                                                                                                        |
+| `/tools/meditation/sessions`      | Private session history list.                                                                                                                                                                   |
+| `/tools/meditation/sessions/[id]` | Session detail; edit reflection / archive.                                                                                                                                                      |
+| `/tools/meditation/stages`        | Read-only library of all ten Stages; each row expands in place with goals, obstacles, skills, mastery, prompts, and the "switch to this Stage" action (#851 removed the per-stage detail page). |
+| `/tools/meditation/stages/[n]`    | Compatibility redirect to the stages list, so a bookmarked per-stage URL does not 404.                                                                                                          |
+| `/tools/meditation/practices`     | Info-only reference for the practices; `?practice=` pre-opens one (#853).                                                                                                                       |
+| `/tools/meditation/daily-life`    | Daily-life mindfulness notes - carrying the sit into the rest of the day.                                                                                                                       |
+
+The onboarding wizard has no route of its own: it is opened from the module's info action (§6 describes the intended `/modules/meditation/onboarding` fallback, which was not built).
 
 ---
 
@@ -477,9 +481,12 @@ Onboarding can be skipped after Step 1; doing so lands the user on Stage 1 by de
 
 ## 8. Cross-Module Links
 
-- The mindfulness library at `/tools/mindfulness/*` continues to host the seven exercises tied to CBT Strategy 5. The meditation module links to it as a list of **supporting practices** - Walking Meditation (Appendix A in the book), Loving-Kindness (Appendix C), and the rest. Sessions logged through `/tools/mindfulness` remain `mindfulness_sessions` and do **not** count as TMI sessions.
-- CBT's Strategy 5 module link continues to point at `/tools/mindfulness`; meditation does not replace that path.
-- Care plan (`src/features/plan/generate-plan.ts`): once this module ships, the `meditation` tool entry's `route` updates from `/tools/meditation` to `/modules/meditation`. The change is small and lives in the implementation PR, not this spec.
+- **The mindfulness library at `/tools/mindfulness/*` no longer exists.** `bb5e7a9a` (2026-06-03, "absorb mindfulness tool into meditation") deleted it and split its seven Strategy 5 exercises across this module and grounding:
+  - Six are an **info-only** reference section at `/tools/meditation/practices` - breath awareness, body scan, loving-kindness, observing thoughts, and (restored by #1530) mindful walking and mindful eating. The section launches nothing; the sit itself starts from the module home.
+  - `5-4-3-2-1` is a grounding technique at `/tools/grounding`.
+- None of those practices writes a session row, so none of them counts as a TMI session. `mindfulness_sessions` still exists but is **breathing + grounding only** - this module writes `meditation_sessions`, `meditation_program_state`, and `stage_practice_notes`. **Do not give a practice a session-writing runner without reading this first:** the breathing tool tallies `mindfulness_sessions` by _exclusion_ of the grounding slugs, so any new `exercise_name` there is silently counted as breathing.
+- CBT's Strategy 5 has no module link of its own. Meditation, breathing, and grounding serve it as shared tools (`cbt-home-config.ts` routes the calming practice at `/tools/meditation`).
+- Care plan: the `meditation` entry's `route` is `/tools/meditation` and stays there. The `/modules/meditation` move this spec anticipated **did not happen**, and the `src/features/plan/generate-plan.ts` this section used to cite no longer exists.
 
 ---
 

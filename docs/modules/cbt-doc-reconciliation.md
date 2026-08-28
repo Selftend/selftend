@@ -81,9 +81,12 @@ Other `cbt.md` claims that check out against code:
   and so are invisible to `test/i18n-key-coverage.test.ts`.
 
   The recovery `mindfulness` label reads **"Calming Practice"**, not "Mindfulness": the
-  key is fed by `listMindfulnessSessions`, and `mindfulness_sessions` is the shared table
-  that breathing, grounding **and** meditation all write to, so one round of box breathing
-  used to produce a recovery field labelled "Mindfulness". The key id is deliberately
+  key is fed by `listMindfulnessSessions`, and `mindfulness_sessions` is the table
+  breathing **and** grounding share, so one round of box breathing
+  used to produce a recovery field labelled "Mindfulness". (Meditation does _not_ write
+  that table, contrary to an earlier version of this line: `meditation/repository.ts`
+  touches only `meditation_sessions`, `meditation_program_state`, and
+  `stage_practice_notes`.) The key id is deliberately
   unchanged — it is persisted as a key of `recovery_plans.strategyIntegrationNotes`, and
   renaming it would orphan every note already stored under it (#1507). Because the key id
   still reads `mindfulness`, `strategies.test.ts` holds the label to that decision: it
@@ -102,6 +105,34 @@ Other `cbt.md` claims that check out against code:
 - **Mindfulness relocation** — `program-definition.ts` routes calming tasks to
   `/tools/meditation`; matches `cbt.md`'s note that mindfulness moved to the shared
   meditation tool.
+
+  The relocation was **not** a pure move, which the earlier record here missed.
+  `bb5e7a9a` (2026-06-03) kept only "the 4 seated techniques" and **dropped mindful
+  walking and mindful eating outright** — the two exercises that work away from the
+  phone. That deletion is what later made the pair read as an unbuilt content gap
+  rather than a reversible one (#1206). #1530 restored both, verbatim from
+  `bb5e7a9a^` including the Bulgarian, so the practices reference now carries six of
+  the target doc's seven Strategy 5 exercises; `5-4-3-2-1` is the seventh and lives
+  in grounding.
+
+  Two further divergences from `cbt-gillihan-made-simple.md` Strategy 5, recorded so
+  they stop being re-derived:
+
+  - **Durations do not match, and do not render.** Of the seven exercises, only
+    _observing thoughts_ (5/10) ships the duration options the target doc specifies.
+    Breathing ships `[3,5,10]` against 2/5/10; body scan `[5,10,15]` against 5/10/20;
+    loving-kindness `[5,10]` against 10/20; mindful walking `[5,10,15]` against 10/20;
+    mindful eating `[5,10]` against "with a meal"; and `5-4-3-2-1` has no duration
+    field at all against the doc's 5 min. This is close to moot in practice:
+    `MeditationPractice.durations` is a **dead field** — the practices section is an
+    info-only accordion reading `slug` + `icon`, and `suggestedDuration()` has no
+    non-test callers. Do not treat the target doc's table as a spec to converge on
+    without first deciding whether durations should render at all.
+  - **The spec's "Practice streak / consistency calendar" will not be built.**
+    `AGENTS.md` forbids default-on streak mechanics, so that bullet is a permanent
+    divergence, not a backlog item. Its "duration selection per session" and
+    "post-session mood rating" likewise do not apply to an info-only reference that
+    writes no session row.
 
 ### Where the spec is ahead of the code (intended, not yet built)
 
