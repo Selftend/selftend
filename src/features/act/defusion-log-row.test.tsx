@@ -22,6 +22,12 @@ function log(over: Partial<DefusionLog> = {}): DefusionLog {
 }
 
 describe("DefusionLogRow", () => {
+  // Unconditional, so a failed assertion inside the frozen-clock test cannot leave
+  // fake timers switched on for every test after it.
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it("leads with the thought and opens the log", () => {
     const onPress = jest.fn();
     renderWithProviders(<DefusionLogRow log={log()} onPress={onPress} />);
@@ -94,8 +100,6 @@ describe("DefusionLogRow", () => {
 
     expect(screen.getByText("2:30 PM")).toBeTruthy();
     expect(screen.queryByText("May 24, 2026, 2:30 PM")).toBeNull();
-
-    jest.useRealTimers();
   });
 
   /**
