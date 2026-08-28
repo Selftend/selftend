@@ -149,20 +149,57 @@ describe.each(listHooks)("%s enabled gate", (_name, useHook, repoFn) => {
   });
 });
 
-// The connection list key includes the limit (PR #124 review): the routines
-// engine's wide window and the default-30 program/list consumers must live in
-// separate cache entries, each fetching its own size.
-describe("useConnectionLogs limit keying", () => {
-  it("forwards the limit to the repository and keeps per-limit cache entries", async () => {
-    const client = createTestQueryClient();
-    renderHook(() => useConnectionLogs("u1", 250), { wrapper: wrap(client) });
-    await waitFor(() => expect(repo.listConnectionLogs).toHaveBeenCalledWith("u1", 250));
+// ---------------------------------------------------------------------------
+// Every ACT list hook that accepts a `limit` must key on it.
+//
+// ☠️ The limit is an argument to the fetch, so a key that omits it lets two
+// callers asking for different depths share one cache entry: whichever mounts
+// first wins, and the other silently gets the wrong number of rows. That is not
+// hypothetical - `use-act-program.ts` reads these at the default 30 while
+// `count-queries.ts` asks the same keys for COUNT_LIMIT = 500, so the ACT
+// programme's summary counts varied with navigation order until #1516. The
+// limit-less prefix in `actKeys.*List` still matches every variant on
+// invalidation, so keying on the limit costs nothing.
+//
+// Covering all six together is the point: this was fixed one hook at a time
+// (connection in PR #124 review, defusion/expansion/urge-surf later), and the
+// two that were missed stayed missed because nothing asserted the rule as a rule.
+// ---------------------------------------------------------------------------
+const limitedListHooks = [
+  ["useChoicePoints", useChoicePoints, repo.listChoicePoints],
+  ["useConnectionLogs", useConnectionLogs, repo.listConnectionLogs],
+  ["useDefusionLogs", useDefusionLogs, repo.listDefusionLogs],
+  ["useExpansionLogs", useExpansionLogs, repo.listExpansionLogs],
+  ["useObservingSelfSessions", useObservingSelfSessions, repo.listObservingSelfSessions],
+  ["useUrgeSurfLogs", useUrgeSurfLogs, repo.listUrgeSurfLogs],
+] as const;
 
-    // A default-limit consumer on the same client fetches separately (no
-    // cache-entry collision with the 250-row window).
-    renderHook(() => useConnectionLogs("u1"), { wrapper: wrap(client) });
-    await waitFor(() => expect(repo.listConnectionLogs).toHaveBeenCalledWith("u1", 30));
-    expect(repo.listConnectionLogs).toHaveBeenCalledTimes(2);
+describe.each(limitedListHooks)("%s limit keying", (_name, useHook, repoFn) => {
+  it("gives each caller the depth it asked for, not the depth that mounted first", async () => {
+    const client = createTestQueryClient();
+    const hook = useHook as (
+      userId: string | null,
+      limit?: number,
+    ) => { data: unknown[] | undefined };
+
+    // Row count mirrors the requested limit, so the data each caller observes
+    // says which fetch filled its cache entry.
+    (repoFn as jest.Mock).mockImplementation((_userId: string, limit: number) =>
+      Promise.resolve(Array.from({ length: limit }, (_, i) => ({ id: `r${i}` }))),
+    );
+
+    const wide = renderHook(() => hook("u1", 500), { wrapper: wrap(client) });
+    await waitFor(() => expect(wide.result.current.data).toHaveLength(500));
+
+    const narrow = renderHook(() => hook("u1"), { wrapper: wrap(client) });
+    await waitFor(() => expect(narrow.result.current.data).toHaveLength(30));
+
+    // ☠️ The assertion that actually catches a shared key. Asserting only that
+    // the repository "was called with 30" passes even on a colliding key: a
+    // second observer on one stale entry refetches at its own limit and
+    // overwrites the wide caller's rows. Both callers must hold their own rows
+    // at the same time.
+    expect(wide.result.current.data).toHaveLength(500);
   });
 });
 
