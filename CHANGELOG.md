@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.17.0](https://github.com/Selftend/selftend/compare/v0.16.0...v0.17.0) (2026-08-28)
+
+
+### Features
+
+* **i18n:** screen the Weblate component pass against main before it creates anything ([#1105](https://github.com/Selftend/selftend/issues/1105)) ([#1503](https://github.com/Selftend/selftend/issues/1503)) ([be2cc78](https://github.com/Selftend/selftend/commit/be2cc78152e0e83ca06effaa61a03e47ff3f9805))
+* **meditation:** mindful walking and eating return to the practices reference ([#1530](https://github.com/Selftend/selftend/issues/1530)) ([#1534](https://github.com/Selftend/selftend/issues/1534)) ([1fac11c](https://github.com/Selftend/selftend/commit/1fac11c741fda453b14f0bf77f21fb76ec011ca5))
+* **meditation:** TMI's half-time check-in bell ([#1189](https://github.com/Selftend/selftend/issues/1189)) ([#1276](https://github.com/Selftend/selftend/issues/1276)) ([d2a9e18](https://github.com/Selftend/selftend/commit/d2a9e182449b2466de13b2d2ae6f069f8503432f))
+
+
+### Bug Fixes
+
+* **i18n:** call the recovery mindfulness strategy a calming practice ([#1507](https://github.com/Selftend/selftend/issues/1507)) ([#1508](https://github.com/Selftend/selftend/issues/1508)) ([180500e](https://github.com/Selftend/selftend/commit/180500ef8a76a8c6cefdd0ca480dd6d7dc56e9b6))
+* **i18n:** tell a missing alerts endpoint apart from an unreadable one ([#1105](https://github.com/Selftend/selftend/issues/1105)) ([#1506](https://github.com/Selftend/selftend/issues/1506)) ([5bada16](https://github.com/Selftend/selftend/commit/5bada169e96b826c07f4c11a26e65a3b2f17cfc4))
+* **i18n:** title-case the calming practice strategy label ([#1507](https://github.com/Selftend/selftend/issues/1507)) ([#1509](https://github.com/Selftend/selftend/issues/1509)) ([4b85652](https://github.com/Selftend/selftend/commit/4b856520b136ca8dbb3aba6c42e68dc553d82e0e))
+
 ## [0.16.0](https://github.com/Selftend/selftend/compare/v0.15.0...v0.16.0) (2026-08-27)
 
 
