@@ -2,7 +2,6 @@ import { type Href } from "expo-router";
 
 import { type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import type { SharedTool } from "@/src/components/app/shared-tools-row";
-import type { HelpKey } from "@/src/features/help/help-content";
 
 export type Pillar = "think" | "act" | "be";
 
@@ -12,7 +11,6 @@ export interface PillarStrategy {
   icon: MaterialIconName;
   labelKey: string;
   descKey: string;
-  helpKey: HelpKey;
 }
 
 export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
@@ -23,7 +21,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "article",
       labelKey: "dashboard.strategies.thoughts",
       descKey: "pillars.strategyDescriptions.thoughts",
-      helpKey: "thoughtRecords",
     },
     {
       key: "beliefs",
@@ -31,7 +28,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "anchor",
       labelKey: "dashboard.strategies.beliefs",
       descKey: "pillars.strategyDescriptions.beliefs",
-      helpKey: "beliefs",
     },
     {
       key: "worry",
@@ -39,7 +35,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "psychology",
       labelKey: "dashboard.strategies.worry",
       descKey: "pillars.strategyDescriptions.worry",
-      helpKey: "worry",
     },
     {
       key: "distortions",
@@ -47,7 +42,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "menu-book",
       labelKey: "home.distortionGuide",
       descKey: "pillars.strategyDescriptions.distortions",
-      helpKey: "distortions",
     },
   ],
   act: [
@@ -57,7 +51,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "gps-fixed",
       labelKey: "dashboard.strategies.goals",
       descKey: "pillars.strategyDescriptions.goals",
-      helpKey: "goals",
     },
     {
       key: "values",
@@ -65,7 +58,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "explore",
       labelKey: "dashboard.strategies.values",
       descKey: "pillars.strategyDescriptions.values",
-      helpKey: "values",
     },
     {
       key: "activities",
@@ -73,7 +65,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "directions-run",
       labelKey: "dashboard.strategies.activities",
       descKey: "pillars.strategyDescriptions.activities",
-      helpKey: "activities",
     },
     {
       key: "exposure",
@@ -81,7 +72,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "layers",
       labelKey: "dashboard.strategies.exposure",
       descKey: "pillars.strategyDescriptions.exposure",
-      helpKey: "exposure",
     },
     {
       key: "tasks",
@@ -89,7 +79,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "hiking",
       labelKey: "dashboard.strategies.tasks",
       descKey: "pillars.strategyDescriptions.tasks",
-      helpKey: "tasks",
     },
     {
       key: "anger",
@@ -97,7 +86,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "local-fire-department",
       labelKey: "dashboard.strategies.anger",
       descKey: "pillars.strategyDescriptions.anger",
-      helpKey: "anger",
     },
   ],
   be: [
@@ -107,7 +95,6 @@ export const PILLAR_STRATEGIES: Record<Pillar, PillarStrategy[]> = {
       icon: "favorite",
       labelKey: "dashboard.strategies.selfCare",
       descKey: "pillars.strategyDescriptions.selfCare",
-      helpKey: "selfCare",
     },
   ],
 };
