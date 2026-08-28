@@ -60,6 +60,42 @@ Other `cbt.md` claims that check out against code:
   thoughts, values, beliefs, exposure, worry, mindfulness, tasks, anger, selfCare);
   `cbt-home-screen.tsx` renders strategy pillars + recovery/weekly-review. Matches the
   `cbt.md` "Current CBT implementation" bullet list.
+
+  There are **two intentional strategy vocabularies**, not one list that has drifted:
+
+  - **Pillar/home vocabulary** — `PILLAR_STRATEGIES` (`cbt-home/cbt-home-config.ts`),
+    11 keys across think/act/be, described by `pillars.strategyDescriptions` (13 entries
+    = the same 11 plus `weeklyReview` and `recovery`, which are `REVIEW_LINKS`, not
+    pillar strategies). Includes `distortions`.
+  - **Recovery vocabulary** — `strategyKeys` (`strategies.ts`), 11 keys, driving which
+    integration-note fields a recovery plan offers (`recovery/active-strategies.ts`).
+    Includes `mindfulness`.
+
+  They overlap in 10 keys and differ by exactly one each way. `distortions` stays out of
+  the recovery list because `/modules/cbt/learn` is a reference guide, not a practice, and
+  a recovery plan asks which practices you will keep using — it has no
+  `dashboard.strategies.*` label at all, only `home.distortionGuide` ("Thinking
+  patterns"). `mindfulness` stays out of the pillar list because the relocation ruled by
+  #1198 stands: shared tools are not CBT strategies. `src/features/cbt/strategies.test.ts`
+  gates that delta, and also gates the two label maps, which are read with dynamic keys
+  and so are invisible to `test/i18n-key-coverage.test.ts`.
+
+  The recovery `mindfulness` label reads **"Calming Practice"**, not "Mindfulness": the
+  key is fed by `listMindfulnessSessions`, and `mindfulness_sessions` is the table
+  breathing **and** grounding share, so one round of box breathing
+  used to produce a recovery field labelled "Mindfulness". (Meditation does _not_ write
+  that table, contrary to an earlier version of this line: `meditation/repository.ts`
+  touches only `meditation_sessions`, `meditation_program_state`, and
+  `stage_practice_notes`.) The key id is deliberately
+  unchanged — it is persisted as a key of `recovery_plans.strategyIntegrationNotes`, and
+  renaming it would orphan every note already stored under it (#1507). Because the key id
+  still reads `mindfulness`, `strategies.test.ts` holds the label to that decision: it
+  fails if either locale's label claims mindfulness again. The same file also holds the
+  English labels to Title Case, the convention every sibling in the map already follows —
+  the labels render as a set, and editing a source string after translators have worked on
+  it sends them back round to it, so casing is cheapest to settle early. The rule is
+  English-only: Bulgarian is sentence case throughout, as its orthography requires.
+
 - **Dashboard** — `cbt-home-screen.tsx` uses `useCbtInsights`, `personalSlogan`
   (from `recoveryPlan`), and read-only insight cards. Matches `cbt.md`'s "dashboard with
   quick actions, strategy links, recovery slogan, and read-only insights".
@@ -69,6 +105,36 @@ Other `cbt.md` claims that check out against code:
 - **Mindfulness relocation** — `program-definition.ts` routes calming tasks to
   `/tools/meditation`; matches `cbt.md`'s note that mindfulness moved to the shared
   meditation tool.
+
+  The relocation was **not** a pure move, which the earlier record here missed.
+  `bb5e7a9a` (2026-06-03) kept only "the 4 seated techniques" and **dropped mindful
+  walking and mindful eating outright** — the two exercises that work away from the
+  phone. That deletion is what later made the pair read as an unbuilt content gap
+  rather than a reversible one (#1206). #1530 restored both, verbatim from
+  `bb5e7a9a^` including the Bulgarian, so the practices reference now carries six of
+  the target doc's seven Strategy 5 exercises; `5-4-3-2-1` is the seventh and lives
+  in grounding.
+
+  Two further divergences from `cbt-gillihan-made-simple.md` Strategy 5:
+
+  - **Durations do not match, and do not render.** Of the seven exercises, only
+    _observing thoughts_ (5/10) ships the duration options the target doc specifies.
+    Breathing ships `[3,5,10]` against 2/5/10; body scan `[5,10,15]` against 5/10/20;
+    loving-kindness `[5,10]` against 10/20; mindful walking `[5,10,15]` against 10/20;
+    mindful eating `[5,10]` against "with a meal"; and `5-4-3-2-1` has no duration
+    field at all against the doc's 5 min. This is close to moot in practice:
+    `MeditationPractice.durations` is a **dead field** — the practices section is an
+    info-only accordion reading `slug` + `icon`, and `suggestedDuration()` has no
+    non-test callers. Converging on the target doc's table would first mean deciding
+    whether durations should render at all — an open question, not a backlog item.
+  - **The spec's "Practice streak / consistency calendar" has constraints attached.**
+    `AGENTS.md` requires streaks to be optional and non-punitive, and a missed day must
+    never create shame or product punishment. A consistency calendar is therefore not
+    forbidden, but it cannot ship in the default-on, pressure-generating form the phrase
+    usually implies. Whether to build one at all is an open product question. Its
+    "duration selection per session" and "post-session mood rating" do not currently
+    apply either way, because the practices reference is info-only and writes no session
+    row.
 
 ### Where the spec is ahead of the code (intended, not yet built)
 

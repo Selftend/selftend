@@ -1,7 +1,7 @@
 ﻿# Meditation Program Spec - Yates: The Mind Illuminated
 
 **Source:** _The Mind Illuminated: A Complete Meditation Guide Integrating Buddhist Wisdom and Brain Science for Greater Mindfulness_ - John Yates (Culadasa) / Matthew Immergut / Jeremy Graves (Simon & Schuster, 2017, ISBN 9781501156984)
-**Status:** Canonical spec for the meditation feature - not yet implemented
+**Status:** Canonical spec for the meditation feature - **implemented and shipped** under the `/tools/meditation` prefix. The ten-stage programme is live (`stages.ts`, `meditation_program_state`, `StageNumber = 1..10`). This spec originally routed the module under `/modules/meditation`; that move was never made, and the route references throughout have been corrected to the shipped `/tools/` paths.
 **Audience:** Developers and product contributors
 
 ---
@@ -116,7 +116,7 @@ Progress comes from clear intentions, not from force. The practitioner is a gard
 **Tool features:**
 
 - Stage 3 sit options offer Following and Connecting as selectable techniques in the pre-sit screen.
-- Optional silent half-time bell (a single quiet chime) helps with the "check in" practice.
+- Optional silent half-time bell (a single quiet chime) helps with the "check in" practice. The control itself is available at every Stage (see section 7).
 - Post-sit prompt to log whether sleepiness was present.
 
 **Key prompts (post-sit):**
@@ -419,7 +419,7 @@ This module follows the contract documented in `tools.md`:
 
 - New `ModuleKey`: `"meditation"`. Added to the union in `src/features/modules/types.ts` alongside `"cbt"`. Default `enabledModules` stays `["cbt"]` - meditation is opt-in via the modules discovery screen.
 - i18n namespace: `meditation:*`.
-- Route group: `/modules/meditation/*` (see §6).
+- Route group: `/tools/meditation/*` (see §5).
 - New `user_preferences` fields, mirroring the CBT reminder fields:
   - `meditation_reminders_enabled: boolean`
   - `meditation_reminder_hour: integer` (0-23)
@@ -427,29 +427,33 @@ This module follows the contract documented in `tools.md`:
   - `meditation_reminder_timezone: string | null`
 - Reminders default off, single daily reminder at the chosen practice time, non-punitive copy. Same web-push / Expo Notifications path as CBT.
 - Settings does not reset a meditation onboarding flag. The current client opens the introduction explicitly; legacy onboarding columns remain temporarily for compatibility with supported mobile builds.
-- The placeholder route at `/tools/meditation` becomes a compatibility redirect to `/modules/meditation`.
+- `/tools/meditation` is the module's real home, not a placeholder and not a redirect. The `/modules/meditation` path this spec anticipated was never created.
 
 ---
 
 ## 5. Routes
 
-| Route                               | Purpose                                                                                                                                                                                         |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/modules/meditation`               | Home: today's practice card (current stage + suggested duration), recent sessions, stage progress strip.                                                                                        |
-| `/modules/meditation/onboarding`    | Full-screen fallback for the onboarding modal (used when the modal is dismissed or revisited).                                                                                                  |
-| `/modules/meditation/learn`         | First-visit primer: Attention vs. Awareness, Gardener's Mindset, non-linearity, safety.                                                                                                         |
-| `/modules/meditation/session/new`   | Pre-sit primer (Stage-aware) → timer → post-sit reflection. Wraps the existing timer UI.                                                                                                        |
-| `/modules/meditation/sessions`      | Private session history list.                                                                                                                                                                   |
-| `/modules/meditation/sessions/[id]` | Session detail; edit reflection / archive.                                                                                                                                                      |
-| `/modules/meditation/stages`        | Read-only library of all ten Stages; each row expands in place with goals, obstacles, skills, mastery, prompts, and the "switch to this Stage" action (#851 removed the per-stage detail page). |
-| `/tools/meditation/practices`       | Info-only reference for the seated practices; `?practice=` pre-opens one (#853). Implemented under `/tools/`, the app's current meditation prefix.                                              |
-| `/tools/meditation`                 | Compatibility redirect to `/modules/meditation`.                                                                                                                                                |
+Every route lives under `/tools/meditation`. There is no `/modules/meditation` route; this table previously used that prefix, which was planned and never adopted.
+
+| Route                             | Purpose                                                                                                                                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/tools/meditation`               | Home: today's practice card (current stage + suggested duration), recent sessions, stage progress strip.                                                                                        |
+| `/tools/meditation/learn`         | First-visit primer: Attention vs. Awareness, Gardener's Mindset, non-linearity, safety.                                                                                                         |
+| `/tools/meditation/session`       | Pre-sit primer (Stage-aware) → timer → post-sit reflection. Wraps the existing timer UI.                                                                                                        |
+| `/tools/meditation/sessions`      | Private session history list.                                                                                                                                                                   |
+| `/tools/meditation/sessions/[id]` | Session detail; edit reflection / archive.                                                                                                                                                      |
+| `/tools/meditation/stages`        | Read-only library of all ten Stages; each row expands in place with goals, obstacles, skills, mastery, prompts, and the "switch to this Stage" action (#851 removed the per-stage detail page). |
+| `/tools/meditation/stages/[n]`    | Compatibility redirect to the stages list, so a bookmarked per-stage URL does not 404.                                                                                                          |
+| `/tools/meditation/practices`     | Info-only reference for the practices; `?practice=` pre-opens one (#853).                                                                                                                       |
+| `/tools/meditation/daily-life`    | Daily-life mindfulness notes - carrying the sit into the rest of the day.                                                                                                                       |
+
+The onboarding wizard has no route of its own: it is opened from the module's info action. The standalone onboarding route §6 describes was not built.
 
 ---
 
 ## 6. Onboarding Flow (Modal Wizard)
 
-Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 is mandatory. The current client opens the introduction explicitly from the module's info action and does not store per-user completion state. The legacy meditation onboarding columns remain temporarily so supported older builds can continue writing safely. The full content is also available as a route (`/modules/meditation/onboarding`) so the user can revisit it.
+Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 is mandatory. The current client opens the introduction explicitly from the module's info action and does not store per-user completion state. The legacy meditation onboarding columns remain temporarily so supported older builds can continue writing safely. The standalone `/modules/meditation/onboarding` route described here was never built - the wizard is reachable only from the module's info action.
 
 1. **Welcome** - the "Path to Awakening" infographic + two sentences of framing. Emphasis: ten Stages, non-linear, this is a practice, not a finish line. No claims about Awakening.
 2. **Attention vs. Peripheral Awareness** - paired bullseye/landscape illustration. One short paragraph each. The product's central concept; readers see it once during onboarding and revisit it via the Learn route.
@@ -469,7 +473,7 @@ Onboarding can be skipped after Step 1; doing so lands the user on Stage 1 by de
 ## 7. Daily / Session Flow
 
 - **Pre-sit:** Stage-aware primer card. Stage 1 shows the Six-Point Preparation; later Stages show one or two relevant reminders ("test for effortlessness today" at Stage 7, "body scan at the midpoint?" at Stage 5). The pre-sit collapses to a single tap once the user marks it familiar.
-- **Sit:** The existing timer UI (`src/features/meditation/meditation-screen.tsx`) is reused. Optional silent half-time bell (single soft chime) for the "check-in" practice introduced at Stage 3.
+- **Sit:** The existing timer UI (`src/features/meditation/meditation-sit-screen.tsx`) is reused. Optional silent half-time bell (single soft chime) for the "check-in" practice, taught at Stage 3. **Shipped ungated (#1189):** the bell is offered at every Stage, not unlocked at 3. Checking in is useful from the first sit, and withholding a quiet chime until a user has advanced would be a progress gate on a comfort setting - a retention mechanic wearing a teaching hat. Stage 3 is where the book introduces the practice, not a condition on the control.
 - **Post-sit reflection:** Two to four prompts pulled from the current Stage's prompt list. All optional. Mood-after (1-10) and free-text reflection always available.
 - **Stage check-in:** After seven days at the current Stage, surface a non-pushy "Want to reassess where you are?" link. The tool **never auto-advances**.
 
@@ -477,9 +481,12 @@ Onboarding can be skipped after Step 1; doing so lands the user on Stage 1 by de
 
 ## 8. Cross-Module Links
 
-- The mindfulness library at `/tools/mindfulness/*` continues to host the seven exercises tied to CBT Strategy 5. The meditation module links to it as a list of **supporting practices** - Walking Meditation (Appendix A in the book), Loving-Kindness (Appendix C), and the rest. Sessions logged through `/tools/mindfulness` remain `mindfulness_sessions` and do **not** count as TMI sessions.
-- CBT's Strategy 5 module link continues to point at `/tools/mindfulness`; meditation does not replace that path.
-- Care plan (`src/features/plan/generate-plan.ts`): once this module ships, the `meditation` tool entry's `route` updates from `/tools/meditation` to `/modules/meditation`. The change is small and lives in the implementation PR, not this spec.
+- **The mindfulness library at `/tools/mindfulness/*` no longer exists.** `bb5e7a9a` (2026-06-03, "absorb mindfulness tool into meditation") deleted it and split its seven Strategy 5 exercises across this module and grounding:
+  - Six are an **info-only** reference section at `/tools/meditation/practices` - breath awareness, body scan, loving-kindness, observing thoughts, and (restored by #1530) mindful walking and mindful eating. The section launches nothing; the sit itself starts from the module home.
+  - `5-4-3-2-1` is a grounding technique at `/tools/grounding`.
+- None of those practices writes a session row, so none of them counts as a TMI session. `mindfulness_sessions` still exists but is **breathing + grounding only** - this module writes `meditation_sessions`, `meditation_program_state`, and `stage_practice_notes`. Giving a practice a session-writing runner is not a self-contained change: the breathing tool tallies `mindfulness_sessions` by _exclusion_ of the grounding slugs, so any new `exercise_name` written there is counted as breathing until the slug lists are updated in both the client and `supabase/functions/_shared/web-reminders.ts`.
+- CBT's Strategy 5 has no module link of its own. Meditation, breathing, and grounding serve it as shared tools (`cbt-home-config.ts` routes the calming practice at `/tools/meditation`).
+- Care plan: the `meditation` entry's `route` is `/tools/meditation` and stays there. The `/modules/meditation` move this spec anticipated **did not happen**, and the `src/features/plan/generate-plan.ts` this section used to cite no longer exists.
 
 ---
 
@@ -487,7 +494,7 @@ Onboarding can be skipped after Step 1; doing so lands the user on Stage 1 by de
 
 ### Stage Progress Display
 
-A single horizontal strip on `/modules/meditation` showing Stages 1-10 with the current Stage highlighted. The strip is informational only - no "X% complete" framing, no time estimates, no comparison to other users. Milestones appear as small dividers between Stages.
+A single horizontal strip on `/tools/meditation` showing Stages 1-10 with the current Stage highlighted. The strip is informational only - no "X% complete" framing, no time estimates, no comparison to other users. Milestones appear as small dividers between Stages.
 
 ### Insights (deferred to Phase 5)
 
@@ -592,13 +599,13 @@ The module itself is ready to ship its first phase when:
 
 ## 13. Implementation Sequencing
 
-| Phase                  | Modules                                                                                                                     | Notes                                                                                                       |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **1 - Foundation**     | `meditation_program_state`, extended `meditation_sessions`, onboarding modal, `/modules/meditation` home, Stages 1-3 flows. | Mirrors CBT Phase 1. Lands the daily-practice loop and the basic Stage-aware pre-sit / post-sit primitives. |
-| **2 - Skilled stages** | Stage 4-6 flows (body scan helper, whole-body-with-breath variant, dullness logging).                                       | Depends on Phase 1 being stable.                                                                            |
-| **3 - Transition**     | Stage 7 flow (effortlessness test, bizarre-sensation private note).                                                         | Smallest phase - single Stage but conceptually distinct.                                                    |
-| **4 - Adept stages**   | Stage 8-10 flows; extended-duration timer presets; daily-life mindfulness log.                                              | Most users won't reach this; ship behind the same module gate.                                              |
-| **5 - Synthesis**      | Stage-time insights, cross-Stage history, export.                                                                           | Capstone - quiet, no badges.                                                                                |
+| Phase                  | Modules                                                                                                                   | Notes                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **1 - Foundation**     | `meditation_program_state`, extended `meditation_sessions`, onboarding modal, `/tools/meditation` home, Stages 1-3 flows. | Mirrors CBT Phase 1. Lands the daily-practice loop and the basic Stage-aware pre-sit / post-sit primitives. |
+| **2 - Skilled stages** | Stage 4-6 flows (body scan helper, whole-body-with-breath variant, dullness logging).                                     | Depends on Phase 1 being stable.                                                                            |
+| **3 - Transition**     | Stage 7 flow (effortlessness test, bizarre-sensation private note).                                                       | Smallest phase - single Stage but conceptually distinct.                                                    |
+| **4 - Adept stages**   | Stage 8-10 flows; extended-duration timer presets; daily-life mindfulness log.                                            | Most users won't reach this; ship behind the same module gate.                                              |
+| **5 - Synthesis**      | Stage-time insights, cross-Stage history, export.                                                                         | Capstone - quiet, no badges.                                                                                |
 
 ---
 

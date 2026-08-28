@@ -4,52 +4,51 @@ The product stays modular without implying planned tools are already ready.
 
 ## Current State
 
-The protected app sidebar groups tools as:
+The protected app sidebar (`src/components/app/sidebar-nav.tsx`) groups navigation as:
 
-- CBT
-  - Overview
-  - History
-  - Learn
-- Check-in
-- Journal
-- Mindfulness
-- Meditation
-- ACT
-- Gratitude log
+- Home, Progress, Routines
+- Modules: CBT, ACT, DBT
+- Tools: Mood tracker, Journal, Breathing, Grounding, Gratitude log, Meditation, Sleep, Habits
+- Account: Notifications, Settings, Support
 
-CBT, Check-in, Journal, Mindfulness, and Gratitude log are the working modules. The app shell introduction is tracked in `user_preferences`; module introductions are opened explicitly from their info actions and Settings does not reset per-module flags. Legacy module-onboarding columns remain temporarily for compatibility with supported mobile builds.
+**There is no Mindfulness entry.** The mindfulness library was absorbed into meditation in `bb5e7a9a` (2026-06-03) and its routes were deleted. Its practices are now an info-only reference section inside meditation (`/tools/meditation/practices`), and `5-4-3-2-1` is a grounding technique under `/tools/grounding`. Nothing in the app serves `/tools/mindfulness` or `/cbt/mindfulness`.
 
-Meditation and ACT are placeholders. They must not collect data, schedule reminders, create streak pressure, or imply therapeutic outcomes until each has a reviewed module spec.
+The app shell introduction is tracked in `user_preferences`; module introductions are opened explicitly from their info actions and Settings does not reset per-module flags. Legacy module-onboarding columns remain temporarily for compatibility with supported mobile builds.
+
+Meditation and ACT are no longer placeholders - both shipped with reviewed module specs (`meditation-tmi.md`, `act-harris-happiness-trap.md`) and both persist their own data (`meditation_sessions` / `meditation_program_state`; the ACT exercise tables). The conditions the placeholder rule set have been met, so the standing product guardrails apply to them as they do to every shipped module: reminders stay opt-in and quiet by default, no streak pressure, no implied therapeutic outcomes.
 
 ## Routes
 
-Working CBT routes:
+Working CBT routes (all under the `/modules/cbt` prefix - there is no top-level `/cbt` route):
 
-- `/cbt`
-- `/cbt/learn`
-- `/cbt/history`
-- `/cbt/new`
-- `/cbt/[id]`
-- `/cbt/goals`, `/cbt/goals/new`, `/cbt/goals/[id]`
-- `/cbt/activities`, `/cbt/activities/new`, `/cbt/activities/[id]`
-- `/cbt/values`
-- `/cbt/weekly-review`
-- `/cbt/beliefs`, `/cbt/beliefs/new`, `/cbt/beliefs/[id]`
-- `/cbt/exposure`, `/cbt/exposure/new`, `/cbt/exposure/[id]`
-- `/cbt/worry`, `/cbt/worry/new`
-- `/cbt/mindfulness`, `/cbt/mindfulness/[slug]`
-- `/cbt/tasks`, `/cbt/tasks/new`, `/cbt/tasks/[id]`
-- `/cbt/anger`, `/cbt/anger/new`, `/cbt/anger/[id]`
-- `/cbt/self-care`
-- `/cbt/recovery`
+- `/modules/cbt`
+- `/modules/cbt/learn`
+- `/modules/cbt/history`, `/modules/cbt/history/[id]`
+- `/modules/cbt/new`
+- `/modules/cbt/[id]`, `/modules/cbt/saved/[id]`
+- `/modules/cbt/goals`, `/modules/cbt/goals/new`, `/modules/cbt/goals/[id]`
+- `/modules/cbt/activities`, `/modules/cbt/activities/new`, `/modules/cbt/activities/[id]`
+- `/modules/cbt/values`
+- `/modules/cbt/weekly-review`
+- `/modules/cbt/beliefs`, `/modules/cbt/beliefs/new`, `/modules/cbt/beliefs/[id]`
+- `/modules/cbt/exposure`, `/modules/cbt/exposure/new`, `/modules/cbt/exposure/[id]`
+- `/modules/cbt/worry`, `/modules/cbt/worry/new`, `/modules/cbt/worry/[id]`
+- `/modules/cbt/tasks`, `/modules/cbt/tasks/new`, `/modules/cbt/tasks/[id]`
+- `/modules/cbt/anger`, `/modules/cbt/anger/new`, `/modules/cbt/anger/[id]`
+- `/modules/cbt/self-care`
+- `/modules/cbt/recovery`
+
+There is no `/modules/cbt/mindfulness`. Strategy 5 is served by the shared meditation, breathing, and grounding tools; see the note in Current State.
 
 Working tool routes:
 
-- `/tools/check-in`, `/tools/check-in/new`, `/tools/check-in/[id]`, `/tools/check-in/[id]/edit`
-- `/tools/journal`, `/tools/journal/new`, `/tools/journal/[id]`, `/tools/journal/[id]/edit`
-- `/tools/mindfulness`, `/tools/mindfulness/[slug]`
+- `/tools/check-in`, `/tools/check-in/new`, `/tools/check-in/[id]`, `/tools/check-in/[id]/edit`, `/tools/check-in/history`
+- `/tools/journal`, `/tools/journal/new`, `/tools/journal/[id]`, `/tools/journal/[id]/edit`, `/tools/journal/entries`
+- `/tools/breathing`, `/tools/breathing/new`, `/tools/breathing/session`, `/tools/breathing/history`
 - `/tools/grounding`, `/tools/grounding/history`, `/tools/grounding/[slug]`
-- `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit` (compat redirects → `/modules/gratitude/*`)
+- `/tools/mood-tracker`, `/tools/mood-tracker/new`, `/tools/mood-tracker/[id]`, `/tools/mood-tracker/[id]/edit`
+- `/tools/sleep`, `/tools/sleep/new`, `/tools/sleep/[id]`, `/tools/sleep/[id]/edit`, `/tools/sleep/history`
+- `/tools/gratitude-log`, `/tools/gratitude-log/new`, `/tools/gratitude-log/[id]`, `/tools/gratitude-log/[id]/edit`, `/tools/gratitude-log/entries`, `/tools/gratitude-log/favorites` (these are the live routes; the `/modules/gratitude/*` move below is still planned, and nothing redirects there yet)
 - `/tools/habits`, `/tools/habits/new`, `/tools/habits/[id]`, `/tools/habits/[id]/edit`, `/tools/habits/[id]/log`, `/tools/habits/history`, `/tools/habits/learn`, `/tools/habits/learn/[slug]`
 
 Working gratitude routes (planned - Phase 1):
@@ -61,18 +60,19 @@ Working gratitude routes (planned - Phase 1):
 - `/modules/gratitude/favorites` - Favorite Moments collection for starred entries
 - `/modules/gratitude/breaks/[slug]` - individual exercise or science card
 
-Working meditation routes:
+Working meditation routes (all under `/tools/meditation`; there is no `/modules/meditation`):
 
-- `/modules/meditation` - home (stage-aware)
-- `/modules/meditation/learn` - framework primer
-- `/modules/meditation/session/new` - pre-sit primer, timer, post-sit reflection
-- `/modules/meditation/sessions`, `/modules/meditation/sessions/[id]`
-- `/modules/meditation/stages`
-- `/tools/meditation/practices` (the app's meditation routes currently live under `/tools/`; the `/modules/` spellings above are the planned canonical paths)
+- `/tools/meditation` - home (stage-aware)
+- `/tools/meditation/learn` - framework primer
+- `/tools/meditation/session` - pre-sit primer, timer, post-sit reflection
+- `/tools/meditation/sessions`, `/tools/meditation/sessions/[id]`
+- `/tools/meditation/stages`, `/tools/meditation/stages/[n]` (the `[n]` route is a compatibility redirect to the list)
+- `/tools/meditation/practices` - info-only reference for the practices
+- `/tools/meditation/daily-life` - daily-life mindfulness notes
 
-`/tools/meditation` is kept as a compatibility redirect to `/modules/meditation`.
+`meditation-tmi.md` is the module spec; its §5 lists the same routes.
 
-Placeholder routes: `/tools/act`.
+Compatibility redirects: `/tools/act` → `/modules/act`.
 
 ## Expansion Rule
 

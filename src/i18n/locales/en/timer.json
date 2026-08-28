@@ -6,7 +6,8 @@
   },
   "interval": {
     "label": "Interval bell",
-    "off": "Off"
+    "off": "Off",
+    "half": "Half-time"
   },
   "bell": {
     "volumeLabel": "Bell volume",

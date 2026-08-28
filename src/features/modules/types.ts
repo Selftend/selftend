@@ -105,6 +105,14 @@ export interface UserPreferences {
    */
   meditationIntervalBellMinutes: number;
   /**
+   * TMI's half-time check-in bell: one chime at the sit's midpoint (#1189).
+   * A separate flag rather than a value in the column above, because that one
+   * is an absolute spacing in minutes and this is relative to a sit length the
+   * user changes independently. Read the pair through
+   * `bellChoiceFromStored`; write it through `bellChoicePatch`.
+   */
+  meditationBellAtHalf: boolean;
+  /**
    * Volume for all three meditation bells, 0..1; 0 is off (#1188). Until this
    * shipped they fired at a hardcoded 1, which measured as the loudest sound in
    * the app - louder than either breathing lane, both of which had a slider.
@@ -199,6 +207,7 @@ export const defaultUserPreferences: UserPreferences = {
   lastBreathingPatternId: null,
   breathingCycles: null,
   meditationIntervalBellMinutes: 0,
+  meditationBellAtHalf: false,
   bellVolume: 1,
   emailVerified: false,
 };

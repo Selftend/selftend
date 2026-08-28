@@ -9,6 +9,15 @@ const {
   indentFixPayload,
   fixComponentIndent,
   repairIndents,
+  pluralCollisions,
+  rawFileUrl,
+  screenNamespaces,
+  rootComponent,
+  healthProblems,
+  updateRepository,
+  fetchAlerts,
+  finishPass,
+  passExitCode,
   API_ROOT,
 } = require("./weblate-create-components");
 
@@ -466,6 +475,483 @@ describe("indent repair", () => {
       await repairIndents([drifted("cbt", 5), drifted("common", 3)], { request, log, logError });
       expect(logError).toHaveBeenCalledWith(expect.stringMatching(/FAILED cbt/));
       expect(log).toHaveBeenCalledWith(expect.stringMatching(/common/));
+    });
+  });
+});
+
+// Weblate tracks `main`, not `dev`. A namespace whose file on `main` still carries
+// a shape Weblate reads as broken would come up with error-level alerts the moment
+// its component exists - and #1103 established that Libre approval is gated on zero
+// of those. The pass screens every namespace against the tracked branch first.
+describe("tracked-branch preconditions", () => {
+  describe("pluralCollisions", () => {
+    it("finds a bare key sitting next to its own _other form", () => {
+      expect(
+        pluralCollisions({
+          program: {
+            statChoicePoints: "{{count}} choice point mapped",
+            statChoicePoints_other: "{{count}} choice points mapped",
+          },
+        }),
+      ).toEqual(["program.statChoicePoints"]);
+    });
+
+    it("reports the four act keys that hold this ticket, and only those", () => {
+      expect(
+        pluralCollisions({
+          program: {
+            statChoicePoints: "a",
+            statChoicePoints_other: "b",
+            statDefusion: "a",
+            statDefusion_other: "b",
+            statExpansion: "a",
+            statExpansion_other: "b",
+            statActions: "a",
+            statActions_other: "b",
+            title: "ACT",
+          },
+        }),
+      ).toEqual([
+        "program.statActions",
+        "program.statChoicePoints",
+        "program.statDefusion",
+        "program.statExpansion",
+      ]);
+    });
+
+    it("passes the repaired _one/_other pair - that is the shape v4 wants", () => {
+      expect(
+        pluralCollisions({
+          program: {
+            statChoicePoints_one: "{{count}} choice point mapped",
+            statChoicePoints_other: "{{count}} choice points mapped",
+          },
+        }),
+      ).toEqual([]);
+    });
+
+    it("catches every CLDR plural suffix, not just _other", () => {
+      expect(pluralCollisions({ a: "x", a_zero: "x", b: "x", b_many: "x" })).toEqual(["a", "b"]);
+    });
+
+    // `_otherwise` is not a plural category; treating any underscore suffix as one
+    // would withhold namespaces over ordinary key names.
+    it("does not mistake a key that merely starts with a plural suffix for a collision", () => {
+      expect(pluralCollisions({ label: "x", label_otherwise: "y", label_ones: "z" })).toEqual([]);
+    });
+
+    it("keeps the two halves of a collision apart when they live at different depths", () => {
+      expect(
+        pluralCollisions({ stat: "bare", nested: { stat_other: "unrelated namesake" } }),
+      ).toEqual([]);
+    });
+
+    // Policy screens load structured arrays through `returnObjects`; an array is a
+    // leaf value here, not a level to walk into.
+    it("treats an array value as a leaf", () => {
+      expect(pluralCollisions({ sections: ["one", "two"], sections_other: "x" })).toEqual([
+        "sections",
+      ]);
+    });
+  });
+
+  describe("rawFileUrl", () => {
+    it("points at the namespace file on the branch Weblate tracks", () => {
+      expect(
+        rawFileUrl({ repo: "https://github.com/Selftend/selftend", branch: "main" }, "act"),
+      ).toBe(
+        "https://raw.githubusercontent.com/Selftend/selftend/main/src/i18n/locales/en/act.json",
+      );
+    });
+
+    it("tolerates the .git suffix and a trailing slash on the repo URL", () => {
+      expect(
+        rawFileUrl({ repo: "https://github.com/Selftend/selftend.git/", branch: "main" }, "mood"),
+      ).toBe(
+        "https://raw.githubusercontent.com/Selftend/selftend/main/src/i18n/locales/en/mood.json",
+      );
+    });
+
+    // Guessing a URL for a repo we cannot read would turn every screening fetch into
+    // a 404 and withhold all 13 namespaces for the wrong reason.
+    it("refuses to guess for a repo host it cannot read", () => {
+      expect(() =>
+        rawFileUrl({ repo: "git@gitlab.com:selftend/selftend.git", branch: "main" }, "act"),
+      ).toThrow(/GitHub/);
+    });
+  });
+
+  describe("screenNamespaces", () => {
+    const root = { repo: "https://github.com/Selftend/selftend", branch: "main" };
+    const stubFetch = (byNs) =>
+      jest.fn(async (url) => {
+        const ns = url.split("/").pop().replace(".json", "");
+        const entry = byNs[ns];
+        if (!entry) throw new Error(`unexpected fetch: ${url}`);
+        return entry;
+      });
+
+    it("lets a namespace through when its file on the tracked branch is clean", async () => {
+      const fetchText = stubFetch({ mood: { status: 200, text: '{"title":"Mood"}' } });
+      const screened = await screenNamespaces(["mood"], root, { fetchText });
+      expect(screened.ready).toEqual(["mood"]);
+      expect(screened.withheld).toEqual([]);
+    });
+
+    it("withholds a namespace whose tracked-branch file has plural collisions, naming the keys", async () => {
+      const fetchText = stubFetch({
+        act: { status: 200, text: '{"program":{"stat":"a","stat_other":"b"}}' },
+      });
+      const screened = await screenNamespaces(["act"], root, { fetchText });
+      expect(screened.ready).toEqual([]);
+      expect(screened.withheld).toHaveLength(1);
+      expect(screened.withheld[0].ns).toBe("act");
+      expect(screened.withheld[0].reason).toMatch(/program\.stat/);
+      expect(screened.withheld[0].reason).toMatch(/main/);
+    });
+
+    // The filemask finds no file and the creation fails with "Could not find any
+    // matching file" - the same dev-is-ahead-of-main cause, caught before the POST.
+    it("withholds a namespace that has not reached the tracked branch at all", async () => {
+      const fetchText = stubFetch({ brandnew: { status: 404, text: "404: Not Found" } });
+      const screened = await screenNamespaces(["brandnew"], root, { fetchText });
+      expect(screened.ready).toEqual([]);
+      expect(screened.withheld[0].reason).toMatch(/not on main/);
+    });
+
+    // A transient upstream failure read as "clean" is the one outcome that defeats
+    // the guard entirely, so it stops the pass instead.
+    it("throws rather than assuming clean when the fetch fails unexpectedly", async () => {
+      const fetchText = stubFetch({ mood: { status: 500, text: "boom" } });
+      await expect(screenNamespaces(["mood"], root, { fetchText })).rejects.toThrow(/500/);
+    });
+
+    it("throws rather than assuming clean when the tracked file is not parseable JSON", async () => {
+      const fetchText = stubFetch({ mood: { status: 200, text: "<!DOCTYPE html>" } });
+      await expect(screenNamespaces(["mood"], root, { fetchText })).rejects.toThrow(/parse/i);
+    });
+
+    it("screens each namespace independently so one blocked file cannot strand the rest", async () => {
+      const fetchText = stubFetch({
+        act: { status: 200, text: '{"stat":"a","stat_other":"b"}' },
+        mood: { status: 200, text: "{}" },
+        sleep: { status: 200, text: "{}" },
+      });
+      const screened = await screenNamespaces(["act", "mood", "sleep"], root, { fetchText });
+      expect(screened.ready).toEqual(["mood", "sleep"]);
+      expect(screened.withheld.map((w) => w.ns)).toEqual(["act"]);
+    });
+  });
+
+  describe("rootComponent", () => {
+    it("finds the component every other one links to", () => {
+      const components = [
+        { slug: "cbt", is_glossary: false },
+        { slug: "auth", is_glossary: false, repo: "https://github.com/Selftend/selftend" },
+      ];
+      expect(rootComponent(components).slug).toBe("auth");
+    });
+
+    it("fails loudly when auth is absent instead of screening against a guess", () => {
+      expect(() => rootComponent([{ slug: "cbt", is_glossary: false }])).toThrow(/auth/);
+    });
+  });
+});
+
+// Run-order step 4: after the creations, pull the repository and confirm the
+// project is clean before the owner revokes the token.
+describe("post-pass health", () => {
+  describe("healthProblems", () => {
+    it("reports nothing when every namespace is tracked and no check is failing", () => {
+      expect(
+        healthProblems({
+          statistics: { failing: 0, translated_percent: 100 },
+          namespaces: ["act", "mood"],
+          components: [
+            { slug: "act", is_glossary: false },
+            { slug: "mood", is_glossary: false },
+          ],
+        }),
+      ).toEqual([]);
+    });
+
+    it("reports failing checks", () => {
+      const problems = healthProblems({
+        statistics: { failing: 4 },
+        namespaces: [],
+        components: [],
+      });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/4 failing check/);
+    });
+
+    it("reports namespaces that still have no component", () => {
+      const problems = healthProblems({
+        statistics: { failing: 0 },
+        namespaces: ["act", "mood"],
+        components: [{ slug: "mood", is_glossary: false }],
+      });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/act/);
+    });
+
+    // The glossary is a real component but tracks no namespace file, so it must not
+    // be counted as coverage for one.
+    it("does not let the glossary stand in for a namespace", () => {
+      const problems = healthProblems({
+        statistics: { failing: 0 },
+        namespaces: ["act"],
+        components: [{ slug: "act", is_glossary: true }],
+      });
+      expect(problems).toHaveLength(1);
+    });
+  });
+
+  // The standing instruction on this project is to pull only while outgoing
+  // commits are 0: Weblate pushes through a pull request whose path is still
+  // untested live (#1104), and pulling over pending local work is how a component
+  // gets wedged.
+  describe("updateRepository", () => {
+    const clean = {
+      status: 200,
+      body: { needs_commit: false, needs_merge: false, needs_push: false },
+    };
+
+    const stubRequest = (responses) => {
+      const calls = [];
+      const request = jest.fn(async (method, url, body) => {
+        calls.push({ method, url, body });
+        const next = responses.shift();
+        if (!next) throw new Error(`unexpected request: ${method} ${url}`);
+        return next;
+      });
+      return { request, calls };
+    };
+
+    it("reads the repository status before it pulls", async () => {
+      const { request, calls } = stubRequest([clean, { status: 200, body: { result: true } }]);
+      await updateRepository({ request });
+      expect(calls[0].method).toBe("GET");
+      expect(calls[0].url).toBe(`${API_ROOT}/projects/selftend/repository/`);
+    });
+
+    it("POSTs the documented update operation once the status is clean", async () => {
+      const { request, calls } = stubRequest([clean, { status: 200, body: { result: true } }]);
+      expect(await updateRepository({ request })).toBeNull();
+      expect(calls[1].method).toBe("POST");
+      expect(calls[1].url).toBe(`${API_ROOT}/projects/selftend/repository/`);
+      expect(calls[1].body).toEqual({ operation: "update" });
+    });
+
+    it("refuses to pull over uncommitted work", async () => {
+      const { request, calls } = stubRequest([{ status: 200, body: { needs_commit: true } }]);
+      const problem = await updateRepository({ request });
+      expect(problem).toMatch(/needs_commit/);
+      expect(calls.filter((c) => c.method === "POST")).toHaveLength(0);
+    });
+
+    it("refuses to pull while a push is still outstanding", async () => {
+      const { request, calls } = stubRequest([{ status: 200, body: { needs_push: true } }]);
+      const problem = await updateRepository({ request });
+      expect(problem).toMatch(/needs_push/);
+      expect(calls.filter((c) => c.method === "POST")).toHaveLength(0);
+    });
+
+    // An unreadable status is treated exactly like a dirty one - the point of the
+    // check is not to pull without knowing.
+    it("does not pull blind when the status cannot be read", async () => {
+      const { request, calls } = stubRequest([{ status: 403, body: { detail: "nope" } }]);
+      const problem = await updateRepository({ request });
+      expect(problem).toMatch(/not pulling blind/);
+      expect(calls.filter((c) => c.method === "POST")).toHaveLength(0);
+    });
+
+    // A failed pull is worth reporting but must not bury the creations that just
+    // succeeded, so it comes back as a problem string rather than a throw.
+    it("returns the failure instead of throwing so a finished pass is still reported", async () => {
+      const { request } = stubRequest([clean, { status: 403, body: { detail: "no permission" } }]);
+      expect(await updateRepository({ request })).toMatch(/no permission/);
+    });
+  });
+
+  describe("fetchAlerts", () => {
+    it("returns the alert names for a component", async () => {
+      const request = jest.fn(async () => ({
+        status: 200,
+        body: { results: [{ name: "RepositoryOutdated" }, { name: "DuplicateString" }] },
+      }));
+      expect(await fetchAlerts("cbt", { request })).toEqual({
+        status: "ok",
+        names: ["RepositoryOutdated", "DuplicateString"],
+      });
+    });
+
+    // 404 and 403 are not the same fact and must not collapse into one. hosted
+    // Weblate stopped serving this endpoint (verified 2026-08-27), so a 404 says
+    // "there is nothing here to read"; a 403 says "there is, and you cannot".
+    it("reports a 404 as an absent endpoint, not an unreadable one", async () => {
+      const request = jest.fn(async () => ({ status: 404, body: "" }));
+      expect(await fetchAlerts("cbt", { request })).toEqual({ status: "absent" });
+    });
+
+    it("reports a 403 as unreadable, and keeps the status", async () => {
+      const request = jest.fn(async () => ({ status: 403, body: { detail: "nope" } }));
+      expect(await fetchAlerts("cbt", { request })).toEqual({
+        status: "unreadable",
+        httpStatus: 403,
+      });
+    });
+
+    // A 200 that is not a result list is not a clean read either.
+    it("reports a malformed 200 as unreadable", async () => {
+      const request = jest.fn(async () => ({ status: 200, body: { nope: true } }));
+      expect(await fetchAlerts("cbt", { request })).toEqual({
+        status: "unreadable",
+        httpStatus: 200,
+      });
+    });
+  });
+
+  describe("finishPass", () => {
+    // One stub for the whole closing sequence: repository status, the pull,
+    // the component list, project statistics, then one alerts read per component.
+    const stubProject = ({ alerts = { status: 200, body: { results: [] } }, failing = 0 } = {}) => {
+      const request = jest.fn(async (method, url) => {
+        if (url.endsWith("/repository/") && method === "GET") {
+          return { status: 200, body: { needs_commit: false, needs_push: false } };
+        }
+        if (url.endsWith("/repository/")) return { status: 200, body: { result: true } };
+        if (url.includes("/alerts/")) return alerts;
+        if (url.includes("/statistics/")) return { status: 200, body: { failing } };
+        return {
+          status: 200,
+          body: { results: [{ slug: "mood", is_glossary: false }], next: null },
+        };
+      });
+      return request;
+    };
+
+    it("reports nothing to fix when the project is clean", async () => {
+      expect(await finishPass(["mood"], { request: stubProject() })).toEqual([]);
+    });
+
+    it("reports failing checks", async () => {
+      const problems = await finishPass(["mood"], { request: stubProject({ failing: 3 }) });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/3 failing check/);
+    });
+
+    // The regression this exists for: a token without component-manage rights makes
+    // every alerts read fail, and folding that into "nothing to report" would hand
+    // back a clean bill of health on the one check Libre approval is gated on.
+    it("never reports a clean bill of health when the alerts could not be read", async () => {
+      const log = jest.fn();
+      const problems = await finishPass(["mood"], {
+        request: stubProject({ alerts: { status: 403, body: { detail: "nope" } } }),
+        log,
+      });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/NOT made/);
+      expect(log).not.toHaveBeenCalledWith(expect.stringMatching(/no alerts reported/));
+    });
+
+    it("says so plainly when every component really is alert-free", async () => {
+      const log = jest.fn();
+      await finishPass(["mood"], { request: stubProject(), log });
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/no alerts reported/));
+    });
+
+    // hosted Weblate serves no alerts endpoint as of 2026-08-27. That is a property
+    // of the deployment, not a fault in the run, so it must not hold the exit code
+    // at 1 forever - but it must also never read as "alerts checked, none found".
+    it("does not fail the pass when the deployment serves no alerts endpoint", async () => {
+      const log = jest.fn();
+      const problems = await finishPass(["mood"], {
+        request: stubProject({ alerts: { status: 404, body: "" } }),
+        log,
+      });
+      expect(problems).toEqual([]);
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/serves no alerts endpoint/));
+      expect(log).not.toHaveBeenCalledWith(expect.stringMatching(/no alerts reported/));
+    });
+
+    it("still refuses to claim the zero-errors confirmation on that green run", async () => {
+      const log = jest.fn();
+      await finishPass(["mood"], {
+        request: stubProject({ alerts: { status: 404, body: "" } }),
+        log,
+      });
+      expect(log).toHaveBeenCalledWith(expect.stringMatching(/alerts NOT confirmed/));
+    });
+
+    // A 404 on some components while others answer is not "the endpoint is gone".
+    // It is a surprise, and a surprise gets the loud path.
+    it("treats a 404 on only some components as unreadable", async () => {
+      const request = jest.fn(async (method, url) => {
+        if (url.endsWith("/repository/") && method === "GET") {
+          return { status: 200, body: { needs_commit: false, needs_push: false } };
+        }
+        if (url.endsWith("/repository/")) return { status: 200, body: { result: true } };
+        if (url.includes("/mood/alerts/")) return { status: 404, body: "" };
+        if (url.includes("/alerts/")) return { status: 200, body: { results: [] } };
+        if (url.includes("/statistics/")) return { status: 200, body: { failing: 0 } };
+        return {
+          status: 200,
+          body: {
+            results: [
+              { slug: "mood", is_glossary: false },
+              { slug: "cbt", is_glossary: false },
+            ],
+            next: null,
+          },
+        };
+      });
+      const problems = await finishPass(["mood", "cbt"], { request });
+      expect(problems).toHaveLength(1);
+      expect(problems[0]).toMatch(/NOT made/);
+      expect(problems[0]).toMatch(/mood/);
+    });
+
+    it("carries a refused pull through as a problem", async () => {
+      const request = jest.fn(async (method, url) => {
+        if (url.endsWith("/repository/") && method === "GET") {
+          return { status: 200, body: { needs_push: true } };
+        }
+        if (url.includes("/alerts/")) return { status: 200, body: { results: [] } };
+        if (url.includes("/statistics/")) return { status: 200, body: { failing: 0 } };
+        return { status: 200, body: { results: [{ slug: "mood", is_glossary: false }] } };
+      });
+      const problems = await finishPass(["mood"], { request });
+      expect(problems.some((p) => /needs_push/.test(p))).toBe(true);
+    });
+
+    it("writes through the injected logger rather than the global console", async () => {
+      const log = jest.fn();
+      const logError = jest.fn();
+      await finishPass(["mood"], { request: stubProject({ failing: 1 }), log, logError });
+      expect(log).toHaveBeenCalled();
+      expect(logError).toHaveBeenCalledWith(expect.stringMatching(/failing check/));
+    });
+  });
+
+  // Nothing may read a run that left namespaces behind as "all 20 tracked".
+  describe("passExitCode", () => {
+    it("is 0 only when nothing failed, nothing is wrong, and nothing was withheld", () => {
+      expect(passExitCode({ failures: [], problems: [], withheld: [] })).toBe(0);
+    });
+
+    it("is 1 when a namespace was withheld, even though withholding was correct", () => {
+      expect(passExitCode({ failures: [], problems: [], withheld: [{ ns: "act" }] })).toBe(1);
+    });
+
+    it("is 1 when a creation failed", () => {
+      expect(passExitCode({ failures: ["act: boom"], problems: [], withheld: [] })).toBe(1);
+    });
+
+    it("is 1 when the closing health check found a problem", () => {
+      expect(passExitCode({ failures: [], problems: ["4 failing check(s)"], withheld: [] })).toBe(
+        1,
+      );
     });
   });
 });
