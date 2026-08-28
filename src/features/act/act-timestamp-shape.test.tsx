@@ -242,7 +242,7 @@ describe("ACT archive rows read compact", () => {
 });
 
 /**
- * Absolute on details, matching five detail screens across four modules (journal,
+ * Absolute on details, matching the detail screens of five other modules (journal,
  * meditation session, sleep, cbt activities, mood). One timestamp, no density
  * pressure, and no reason to make the reader convert "Wed 7:40 pm" back into a date.
  */

@@ -101,6 +101,12 @@ const defaultActProgram = {
 };
 
 describe("ActHomeScreen", () => {
+  // Unconditional, so a failure inside the frozen-clock test below cannot leave fake
+  // timers switched on for every test after it.
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseUpdateShownButtonTours.mockReturnValue({
@@ -223,6 +229,26 @@ describe("ActHomeScreen", () => {
       fireEvent.press(screen.getByRole("link", { name: "Show all logs" }));
 
       expect(router.push as jest.Mock).toHaveBeenCalledWith("/modules/act/defusion");
+    });
+
+    /**
+     * ☠️ Home's timestamp shape is #1388's whole point, and #1539 is where it moved.
+     * The shared row is the mechanism, but this asserts the consequence AT the home
+     * surface: a future home screen that stopped using `DefusionLogRow` and inlined
+     * its own row would keep every other test here green while silently restoring the
+     * mid-journey shape change #1388 exists to prevent.
+     */
+    it("reads the recent row's timestamp compact, exactly as the list does (#1539)", () => {
+      // Frozen because the compact form is relative to today; 09:00Z reads 2:30 PM in
+      // the runner's pinned Asia/Kolkata frame, which is the viewer frame ACT resolves
+      // a null offset into (#1513).
+      jest.useFakeTimers({ doNotFake: ["nextTick"] });
+      jest.setSystemTime(new Date("2026-05-24T12:00:00.000Z"));
+
+      renderWithProviders(<ActHomeScreen />);
+
+      expect(screen.getByText("2:30 PM")).toBeTruthy();
+      expect(screen.queryByText("May 24, 2026, 2:30 PM")).toBeNull();
     });
   });
 

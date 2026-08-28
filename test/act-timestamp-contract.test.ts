@@ -60,13 +60,16 @@ describe("ACT timestamp contract", () => {
 
     expect(source).toContain("formatCompactAtOffset(");
     // ACT captures no occurrence offset, so the viewer frame is the only frame (#1513).
-    expect(source).toMatch(/formatCompactAtOffset\([^)]*,\s*null\)/);
+    // `[,)]` because a row may also pass an explicit `lang` third argument — the urge
+    // surf row does, being the one row that renders no translated string and so holds
+    // no `useTranslation` subscription of its own.
+    expect(source).toMatch(/formatCompactAtOffset\([^)]*,\s*null[,)]/);
   });
 
   it.each(ABSOLUTE_DETAILS)("%s renders its timestamp absolute", (file) => {
     const source = readFileSync(join(ACT, file), "utf8");
 
-    expect(source).toMatch(/formatAtOffset\([^)]*,\s*null\)/);
+    expect(source).toMatch(/formatAtOffset\([^)]*,\s*null[,)]/);
     expect(source).not.toContain("formatCompactAtOffset(");
   });
 
