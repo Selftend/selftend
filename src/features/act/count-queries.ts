@@ -26,10 +26,14 @@ interface UseActEntryCountSinceResult {
 // The six list hooks that accept a `limit` are asked for COUNT_LIMIT rows (matching
 // listThoughtRecords' 500 cap) instead of their default 30, so a user with many entries of one
 // practice type in the 30-day window isn't undercounted. This reuses the existing list
-// endpoints - no new queries. Note: useDefusionLogs/useExpansionLogs/useUrgeSurfLogs put the
-// limit in their query key, so their 500-row fetch is a distinct cache entry; useChoicePoints/
-// useConnectionLogs/useObservingSelfSessions do not, so they still share one cache entry with
-// their default-30 list-screen callers (best-effort raise, never an undercount regression).
+// endpoints - no new queries.
+//
+// All six put the limit in their query key, so this 500-row fetch is a distinct cache entry
+// from the default-30 one the list screens and `use-act-program.ts` read (#1516). Until then
+// `useChoicePoints` and `useObservingSelfSessions` omitted it and shared one entry with their
+// default-30 callers, so whichever mounted first decided how many rows BOTH saw - the count
+// here and the ACT programme's summary counts each varied with navigation order. The rule is
+// asserted for all six in `queries/queries.test.tsx`; don't reintroduce a limit-less list key.
 const COUNT_LIMIT = 500;
 
 export function useActEntryCountSince(

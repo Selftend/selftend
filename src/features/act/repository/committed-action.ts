@@ -93,6 +93,22 @@ export async function countCommittedActions(
   });
 }
 
+/**
+ * Deliberately unbounded, and #1516 kept it that way rather than reaching for a cap.
+ *
+ * This is the one ACT read whose cost grows without bound (ADR-0001: `rows returned ×
+ * encrypted columns`), so a `.limit()` is the obvious reflex - but committed actions are a
+ * task list, not a history feed, and its callers need completeness for different reasons:
+ * the widget's `"active"` read, the routines engine and the programme all treat a missing
+ * row as a row that does not exist. A cap there would silently drop an active commitment a
+ * user is still working on, which is a worse failure than an expensive read.
+ *
+ * The bound arrives with paging, not instead of it: when the committed-action list screen
+ * takes the keyset shape the other ACT history lists take (#1517 owns that coverage call),
+ * the paged read joins `test/history-pagination-contract.test.ts` and the screen stops
+ * needing this one. The non-list callers keep a complete read, and anything that only needs
+ * a number already has `countCommittedActions` instead of `list(...).length` (#1378).
+ */
 export async function listCommittedActions(userId: string, status?: ActionStatus) {
   return selectList<CommittedActionRow, CommittedAction>((c) => {
     let query = c

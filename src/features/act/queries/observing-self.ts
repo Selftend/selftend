@@ -14,7 +14,9 @@ import { actKeys } from "./keys";
 
 export function useObservingSelfSessions(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: actKeys.observingList(userId),
+    // Include limit so 30/N callers don't collide on one cache entry; the limit-less
+    // prefix in actKeys.observingList still matches every variant on invalidation.
+    queryKey: [...actKeys.observingList(userId), limit],
     queryFn: () => listObservingSelfSessions(userId!, limit),
     enabled: Boolean(userId),
   });

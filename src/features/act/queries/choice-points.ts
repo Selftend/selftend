@@ -15,7 +15,9 @@ import { actKeys } from "./keys";
 
 export function useChoicePoints(userId: string | null, limit = 30) {
   return useQuery({
-    queryKey: actKeys.choicePointList(userId),
+    // Include limit so 30/N callers don't collide on one cache entry; the limit-less
+    // prefix in actKeys.choicePointList still matches every variant on invalidation.
+    queryKey: [...actKeys.choicePointList(userId), limit],
     queryFn: () => listChoicePoints(userId!, limit),
     enabled: Boolean(userId),
   });
