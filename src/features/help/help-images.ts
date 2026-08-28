@@ -8,7 +8,6 @@ export const HELP_IMAGES: Partial<Record<HelpKey, ImageSourcePropType>> = {
   thoughtRecords: require("../../../assets/images/help/thought_records.png"),
   beliefs: require("../../../assets/images/help/core_beliefs.png"),
   worry: require("../../../assets/images/help/worry_journal.png"),
-  distortions: require("../../../assets/images/help/distortion_guide.png"),
   goals: require("../../../assets/images/help/goals.png"),
   values: require("../../../assets/images/help/values.png"),
   activities: require("../../../assets/images/help/activity_scheduling.png"),

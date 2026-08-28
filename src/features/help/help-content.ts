@@ -4,7 +4,6 @@ export const HELP_KEYS = [
   "thoughtRecords",
   "beliefs",
   "worry",
-  "distortions",
   "goals",
   "values",
   "activities",
