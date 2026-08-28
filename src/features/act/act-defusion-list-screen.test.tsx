@@ -134,4 +134,20 @@ describe("ActDefusionListScreen", () => {
 
     expect(router.push as jest.Mock).toHaveBeenCalledWith("/tools/journal");
   });
+
+  // The header help door (#1543): the label `HelpButton` composes is what pins
+  // this door to the `defusion` key, and the sheet's own rendering is pinned in
+  // `help-sheet.test.tsx`.
+  it("opens the defusion help sheet from the header", () => {
+    mockUseDefusionLogs.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDefusionLogs>);
+
+    renderWithProviders(<ActDefusionListScreen />);
+
+    fireEvent.press(screen.getByLabelText("Help: Defusion"));
+
+    expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
+  });
 });

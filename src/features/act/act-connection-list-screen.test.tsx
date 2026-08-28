@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActConnectionListScreen from "@/src/features/act/act-connection-list-screen";
 import { useConnectionLogs } from "@/src/features/act/queries";
@@ -63,5 +63,21 @@ describe("ActConnectionListScreen", () => {
 
     expect(screen.getByText("today notice")).toBeTruthy();
     expect(screen.queryByText("old notice")).toBeNull();
+  });
+
+  // The header help door (#1543): the label `HelpButton` composes is what pins
+  // this door to the `connection` key, and the sheet's own rendering is pinned
+  // in `help-sheet.test.tsx`.
+  it("opens the connection help sheet from the header", () => {
+    mockUseConnectionLogs.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useConnectionLogs>);
+
+    renderWithProviders(<ActConnectionListScreen />);
+
+    fireEvent.press(screen.getByLabelText("Help: Connection"));
+
+    expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
 });

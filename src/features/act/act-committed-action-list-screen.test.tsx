@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActCommittedActionListScreen from "@/src/features/act/act-committed-action-list-screen";
 import { useCommittedActions } from "@/src/features/act/queries";
@@ -60,5 +60,26 @@ describe("the committed action list's target date", () => {
     renderList([{ ...ACTION, targetDate: null }]);
 
     expect(screen.queryByText(/^Target: /)).toBeNull();
+  });
+});
+
+describe("the committed action list's help door", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  /**
+   * The header help door (#1543): the label `HelpButton` composes is what pins
+   * this door to the `committedAction` key, and the sheet's own rendering is
+   * pinned in `help-sheet.test.tsx`.
+   *
+   * Matching the composed label rather than the sheet's title matters here:
+   * this screen's own heading is "Committed Action" too, so a title match would
+   * pass with no door on the screen at all.
+   */
+  it("opens the committed action help sheet from the header", () => {
+    renderList([]);
+
+    fireEvent.press(screen.getByLabelText("Help: Committed Action"));
+
+    expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
 });

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { HelpButton } from "@/src/components/app/help-button";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
@@ -42,7 +43,10 @@ export default function ActCommittedActionListScreen() {
       <ScrollView contentContainerClassName="grow p-6">
         <View className="gap-6">
           <View className="gap-2">
-            <ScreenHeader title={t("committedAction.listTitle")} />
+            <ScreenHeader
+              title={t("committedAction.listTitle")}
+              right={<HelpButton helpKey="committedAction" />}
+            />
             <Text variant="muted">{t("committedAction.listSubtitle")}</Text>
           </View>
 

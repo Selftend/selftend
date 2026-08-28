@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActExpansionListScreen from "@/src/features/act/act-expansion-list-screen";
 import { useExpansionLogs } from "@/src/features/act/queries";
@@ -67,5 +67,27 @@ describe("ActExpansionListScreen", () => {
 
     expect(screen.getByText("today emotion")).toBeTruthy();
     expect(screen.queryByText("old emotion")).toBeNull();
+  });
+
+  /**
+   * The header help door (#1543): the label `HelpButton` composes is what pins
+   * this door to the `expansion` key, and the sheet's own rendering is pinned in
+   * `help-sheet.test.tsx`.
+   *
+   * The label reads "Acceptance", not "Expansion": `expansion` is the key, but
+   * "Acceptance" is the name this process goes by everywhere the user can see -
+   * this screen's own heading included.
+   */
+  it("opens the acceptance help sheet from the header", () => {
+    mockUseExpansionLogs.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useExpansionLogs>);
+
+    renderWithProviders(<ActExpansionListScreen />);
+
+    fireEvent.press(screen.getByLabelText("Help: Acceptance"));
+
+    expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
 });

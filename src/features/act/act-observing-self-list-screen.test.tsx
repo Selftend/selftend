@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActObservingSelfListScreen from "@/src/features/act/act-observing-self-list-screen";
 import { useObservingSelfSessions } from "@/src/features/act/queries";
@@ -63,5 +63,21 @@ describe("ActObservingSelfListScreen", () => {
 
     expect(screen.getByText("today observation")).toBeTruthy();
     expect(screen.queryByText("old observation")).toBeNull();
+  });
+
+  // The header help door (#1543): the label `HelpButton` composes is what pins
+  // this door to the `observingSelf` key, and the sheet's own rendering is
+  // pinned in `help-sheet.test.tsx`.
+  it("opens the observing self help sheet from the header", () => {
+    mockUseObservingSelfSessions.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useObservingSelfSessions>);
+
+    renderWithProviders(<ActObservingSelfListScreen />);
+
+    fireEvent.press(screen.getByLabelText("Help: Observing Self"));
+
+    expect(screen.getByTestId("help-sheet-content")).toBeTruthy();
   });
 });
