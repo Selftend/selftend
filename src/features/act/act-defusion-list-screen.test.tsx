@@ -134,4 +134,27 @@ describe("ActDefusionListScreen", () => {
 
     expect(router.push as jest.Mock).toHaveBeenCalledWith("/tools/journal");
   });
+
+  /**
+   * The header help door (#1543). `HelpButton` composes its own label
+   * (`"Help: " + the help title`), so matching that label is what pins this door
+   * to the `defusion` key; the press proves the sheet's `how`/`why` - the only
+   * copy this door unlocks - actually reach the screen.
+   */
+  it("opens the defusion help sheet from the header", () => {
+    mockUseDefusionLogs.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useDefusionLogs>);
+
+    renderWithProviders(<ActDefusionListScreen />);
+
+    fireEvent.press(screen.getByLabelText("Help: Defusion"));
+
+    expect(
+      screen.getByText(
+        "When fused with a thought it controls your behaviour. Defusion reduces its grip without arguing, fixing, or suppressing it.",
+      ),
+    ).toBeTruthy();
+  });
 });

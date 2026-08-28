@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActCommittedActionListScreen from "@/src/features/act/act-committed-action-list-screen";
 import { useCommittedActions } from "@/src/features/act/queries";
@@ -60,5 +60,31 @@ describe("the committed action list's target date", () => {
     renderList([{ ...ACTION, targetDate: null }]);
 
     expect(screen.queryByText(/^Target: /)).toBeNull();
+  });
+});
+
+describe("the committed action list's help door", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  /**
+   * The header help door (#1543). `HelpButton` composes its own label
+   * (`"Help: " + the help title`), so matching that label is what pins this door
+   * to the `committedAction` key; the press proves the sheet's `how`/`why` - the
+   * only copy this door unlocks - actually reach the screen.
+   *
+   * Asserting the label rather than the sheet title matters here: this screen's
+   * own heading is "Committed Action" too, so a title match would pass without a
+   * door.
+   */
+  it("opens the committed action help sheet from the header", () => {
+    renderList([]);
+
+    fireEvent.press(screen.getByLabelText("Help: Committed Action"));
+
+    expect(
+      screen.getByText(
+        "Waiting to feel ready means waiting forever. Small committed steps build momentum and prove values-guided living is possible even in difficulty.",
+      ),
+    ).toBeTruthy();
   });
 });

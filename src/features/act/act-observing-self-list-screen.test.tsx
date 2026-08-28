@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActObservingSelfListScreen from "@/src/features/act/act-observing-self-list-screen";
 import { useObservingSelfSessions } from "@/src/features/act/queries";
@@ -63,5 +63,28 @@ describe("ActObservingSelfListScreen", () => {
 
     expect(screen.getByText("today observation")).toBeTruthy();
     expect(screen.queryByText("old observation")).toBeNull();
+  });
+
+  /**
+   * The header help door (#1543). `HelpButton` composes its own label
+   * (`"Help: " + the help title`), so matching that label is what pins this door
+   * to the `observingSelf` key; the press proves the sheet's `how`/`why` - the
+   * only copy this door unlocks - actually reach the screen.
+   */
+  it("opens the observing self help sheet from the header", () => {
+    mockUseObservingSelfSessions.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useObservingSelfSessions>);
+
+    renderWithProviders(<ActObservingSelfListScreen />);
+
+    fireEvent.press(screen.getByLabelText("Help: Observing Self"));
+
+    expect(
+      screen.getByText(
+        "Identifying with a constant observer reduces the power of fluctuating thoughts and feelings to dictate your sense of self.",
+      ),
+    ).toBeTruthy();
   });
 });

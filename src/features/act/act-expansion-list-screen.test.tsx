@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActExpansionListScreen from "@/src/features/act/act-expansion-list-screen";
 import { useExpansionLogs } from "@/src/features/act/queries";
@@ -67,5 +67,29 @@ describe("ActExpansionListScreen", () => {
 
     expect(screen.getByText("today emotion")).toBeTruthy();
     expect(screen.queryByText("old emotion")).toBeNull();
+  });
+
+  /**
+   * The header help door (#1543). `HelpButton` composes its own label
+   * (`"Help: " + the help title`), so matching that label is what pins this door
+   * to the `expansion` key - whose title is "Acceptance", the name this process
+   * goes by in the app; the press proves the sheet's `how`/`why` - the only copy
+   * this door unlocks - actually reach the screen.
+   */
+  it("opens the acceptance help sheet from the header", () => {
+    mockUseExpansionLogs.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useExpansionLogs>);
+
+    renderWithProviders(<ActExpansionListScreen />);
+
+    fireEvent.press(screen.getByLabelText("Help: Acceptance"));
+
+    expect(
+      screen.getByText(
+        "Struggling against difficult feelings amplifies them. Expanding around them turns off the fight response and lets them pass naturally.",
+      ),
+    ).toBeTruthy();
   });
 });

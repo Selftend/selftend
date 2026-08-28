@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react-native";
+import { fireEvent, screen } from "@testing-library/react-native";
 
 import ActConnectionListScreen from "@/src/features/act/act-connection-list-screen";
 import { useConnectionLogs } from "@/src/features/act/queries";
@@ -63,5 +63,28 @@ describe("ActConnectionListScreen", () => {
 
     expect(screen.getByText("today notice")).toBeTruthy();
     expect(screen.queryByText("old notice")).toBeNull();
+  });
+
+  /**
+   * The header help door (#1543). `HelpButton` composes its own label
+   * (`"Help: " + the help title`), so matching that label is what pins this door
+   * to the `connection` key; the press proves the sheet's `how`/`why` - the only
+   * copy this door unlocks - actually reach the screen.
+   */
+  it("opens the connection help sheet from the header", () => {
+    mockUseConnectionLogs.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useConnectionLogs>);
+
+    renderWithProviders(<ActConnectionListScreen />);
+
+    fireEvent.press(screen.getByLabelText("Help: Connection"));
+
+    expect(
+      screen.getByText(
+        "Most suffering happens in thoughts about past or future. Returning to the present interrupts rumination and creates a moment of calm.",
+      ),
+    ).toBeTruthy();
   });
 });
