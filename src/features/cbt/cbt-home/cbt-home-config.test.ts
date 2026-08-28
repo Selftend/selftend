@@ -17,8 +17,8 @@ describe("PILLAR_STRATEGIES", () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 
-  // A pillar strategy row is a plain link now, so `helpKey` is gone - route,
-  // label, desc and icon are the only fields the row reads.
+  // A pillar strategy row is a plain link now, so `helpKey` is gone - key,
+  // route, label, desc and icon are the only fields the row reads.
   it.each(PILLARS)("has a defined route and non-empty label/desc keys for %s", (pillar) => {
     for (const strategy of PILLAR_STRATEGIES[pillar]) {
       expect(strategy.route).toBeTruthy();

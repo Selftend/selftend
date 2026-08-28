@@ -5,6 +5,11 @@ import type { SharedTool } from "@/src/components/app/shared-tools-row";
 
 export type Pillar = "think" | "act" | "be";
 
+// A pillar strategy is a plain link. It used to carry a `helpKey` too, for a
+// `HelpButton` pinned over the row - but the row is a single pressable now, so
+// a button inside it would be a button inside a button. The destination
+// screens carry their own help doors instead - except `/learn`, which is the
+// explainer rather than a screen needing one.
 export interface PillarStrategy {
   key: string;
   route: Href;
