@@ -29,7 +29,7 @@ import { useSession } from "@/src/providers/session-provider";
 import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-date-store";
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatCompactAtOffset } from "@/src/utils/date";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 
 type Step = "urge" | "trigger" | "observe" | "complete";
@@ -42,7 +42,6 @@ const STEP_ORDER: Step[] = ["urge", "trigger", "observe", "complete"];
  * `peakIntensity`, `urgeActedOn`, `surfingNotes`) were readable by nobody at any depth.
  */
 function UrgeSurfHistoryItem({ log, onPress }: { log: UrgeSurfLog; onPress: () => void }) {
-  const { formatDateTime } = useLocaleFormats();
   return (
     <Pressable
       accessibilityRole="button"
@@ -56,7 +55,7 @@ function UrgeSurfHistoryItem({ log, onPress }: { log: UrgeSurfLog; onPress: () =
             {log.urgeDescription}
           </Text>
           <Text variant="muted" className="mt-1 text-xs">
-            {formatDateTime(log.createdAt)}
+            {formatCompactAtOffset(log.createdAt, null)}
           </Text>
         </View>
         <Icon name="chevron-right" className="size-4 text-muted-foreground" />

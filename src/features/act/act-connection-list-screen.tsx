@@ -16,7 +16,7 @@ import { useConnectionLogPages } from "@/src/features/act/queries";
 import type { ConnectionLog } from "@/src/features/act/types";
 import { useSession } from "@/src/providers/session-provider";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatCompactAtOffset } from "@/src/utils/date";
 
 /**
  * Connection's front door AND its archive (#1515 shape A, #1517 tier 1). The day filter
@@ -29,7 +29,6 @@ import { useLocaleFormats } from "@/src/lib/locale-format";
 export default function ActConnectionListScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation(["act", "errors"]);
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { data, fetchNextPage, hasNextPage, isError, isFetchingNextPage, isPending, refetch } =
     useConnectionLogPages(user?.id ?? null);
@@ -112,7 +111,7 @@ export default function ActConnectionListScreen() {
                   {log.moodAfter !== null ? `  ·  ${log.moodAfter}/10` : null}
                 </Text>
                 <Text variant="muted" className="text-xs">
-                  {formatDateTime(log.createdAt)}
+                  {formatCompactAtOffset(log.createdAt, null)}
                 </Text>
               </View>
               <Icon name="chevron-right" className="size-4 text-muted-foreground" />

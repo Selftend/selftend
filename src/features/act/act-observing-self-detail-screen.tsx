@@ -25,11 +25,10 @@ import {
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function ActObservingSelfDetailScreen() {
   const { t } = useTranslation("act");
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const sessionId = typeof id === "string" ? id : null;
@@ -76,7 +75,7 @@ export default function ActObservingSelfDetailScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <ScreenHeader title={heading} />
-            <Text variant="muted">{formatDateTime(session.createdAt)}</Text>
+            <Text variant="muted">{formatAtOffset(session.createdAt, null)}</Text>
             <View className="flex-row">
               <Button onPress={() => setConfirmOpen(true)} variant="ghost">
                 <Icon name="delete-outline" className="size-4 text-destructive" />

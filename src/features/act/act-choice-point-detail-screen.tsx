@@ -20,11 +20,10 @@ import { useChoicePoint, useChoicePoints, useDeleteChoicePoint } from "@/src/fea
 import { useCachedItem } from "@/src/features/act/use-cached-item";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
-import { useLocaleFormats } from "@/src/lib/locale-format";
+import { formatAtOffset } from "@/src/utils/date";
 
 export default function ActChoicePointDetailScreen() {
   const { t } = useTranslation(["act", "common"]);
-  const { formatDateTime } = useLocaleFormats();
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
   const cpId = typeof id === "string" ? id : null;
@@ -72,7 +71,7 @@ export default function ActChoicePointDetailScreen() {
         <View className="gap-6">
           <View className="gap-2">
             <ScreenHeader title={t("act:choicePoint.title")} />
-            <Text variant="muted">{formatDateTime(cp.createdAt)}</Text>
+            <Text variant="muted">{formatAtOffset(cp.createdAt, null)}</Text>
             <View className="flex-row">
               <Button onPress={() => setConfirmOpen(true)} variant="ghost">
                 <Icon name="delete-outline" className="size-4 text-destructive" />

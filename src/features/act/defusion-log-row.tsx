@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { HairlineRow } from "@/src/components/app/hairline-row";
 import type { DefusionLog } from "@/src/features/act/types";
-import { formatTimestamp } from "@/src/utils/date";
+import { formatCompactAtOffset } from "@/src/utils/date";
 
 interface DefusionLogRowProps {
   log: DefusionLog;
@@ -28,9 +28,21 @@ interface DefusionLogRowProps {
  * omitted when either number is null, matching the gate both screens already
  * applied.
  *
- * ⚠️ The timestamp stays **absolute** (`formatTimestamp`). The drawn relative
- * form would need `formatRelativeActivity`, which the captured-frame lint gate
+ * ⚠️ The timestamp reads **compact** (`formatCompactAtOffset`) since #1539, and
+ * that change reaches ACT home's recent block through this same component - which
+ * is the point rather than a side effect. #1388 shares this row precisely so the
+ * shape does not change mid-journey, so moving both together honours it and
+ * converting only the list would have broken it.
+ *
+ * ☠️ Compact is NOT `formatRelativeActivity`, which the captured-frame lint gate
  * restricts to last-updated timestamps - this is a creation timestamp.
+ * `formatCompactAtOffset` is a different function and the one the flat archives
+ * already render (grounding, breathing, meditation sessions).
+ *
+ * ⚠️ The `null` offset is deliberate, not a stub: ACT's tables capture no
+ * occurrence offset, so every ACT surface resolves the day in the viewer's
+ * current device frame (#1513). When those tables ever gain an offset this
+ * becomes a one-argument change.
  *
  * ☠️ Through `HairlineRow`, the row carries **no explicit accessible name**:
  * its children are the name, which is what keeps the pair and the timestamp
@@ -69,7 +81,7 @@ export function DefusionLogRow({ log, onPress }: DefusionLogRowProps) {
             </Text>
           ) : null}
           <Text variant="muted" className="text-xs">
-            {formatTimestamp(log.createdAt)}
+            {formatCompactAtOffset(log.createdAt, null)}
           </Text>
         </Fragment>
       }
