@@ -3,7 +3,7 @@ import { fireEvent, screen } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 import ActDefusionListScreen from "@/src/features/act/act-defusion-list-screen";
-import { useDefusionLogs } from "@/src/features/act/queries";
+import { useDefusionLogPages } from "@/src/features/act/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -16,57 +16,111 @@ jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
 
-jest.mock("@/src/stores/selected-date-store", () => ({
-  useSelectedDate: () => ({ selectedDate: "2026-05-24" }),
-  toLocalDateKey: (iso: string) => iso.slice(0, 10),
-}));
-
 jest.mock("@/src/features/act/queries", () => ({
-  useDefusionLogs: jest.fn(),
+  useDefusionLogPages: jest.fn(),
 }));
 
-const mockUseDefusionLogs = useDefusionLogs as jest.MockedFunction<typeof useDefusionLogs>;
+const mockPages = useDefusionLogPages as jest.MockedFunction<typeof useDefusionLogPages>;
+
+function pages(over: Record<string, unknown> = {}) {
+  mockPages.mockReturnValue({
+    data: undefined,
+    fetchNextPage: jest.fn(),
+    hasNextPage: false,
+    isError: false,
+    isFetchingNextPage: false,
+    isPending: false,
+    refetch: jest.fn(),
+    ...over,
+  } as unknown as ReturnType<typeof useDefusionLogPages>);
+}
+
+const log = (over: Record<string, unknown> = {}) => ({
+  id: "log-1",
+  userId: "user-1",
+  fusedThought: "a thought",
+  thoughtCategory: "selfJudgment",
+  techniqueUsed: "havingTheThoughtThat",
+  defusedVersion: "",
+  fusionLevelBefore: null,
+  fusionLevelAfter: null,
+  notes: "",
+  createdAt: "2026-05-24T09:00:00.000Z",
+  updatedAt: "2026-05-24T09:00:00.000Z",
+  ...over,
+});
 
 describe("ActDefusionListScreen", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    pages();
+  });
 
-  it("shows only logs whose createdAt is the selected day", () => {
-    mockUseDefusionLogs.mockReturnValue({
-      data: [
-        {
-          id: "today",
-          userId: "user-1",
-          fusedThought: "today thought",
-          thoughtCategory: "selfJudgment",
-          techniqueUsed: "havingTheThoughtThat",
-          defusedVersion: "",
-          fusionLevelBefore: null,
-          fusionLevelAfter: null,
-          notes: "",
-          createdAt: "2026-05-24T09:00:00.000Z",
-          updatedAt: "2026-05-24T09:00:00.000Z",
-        },
-        {
-          id: "old",
-          userId: "user-1",
-          fusedThought: "old thought",
-          thoughtCategory: "selfJudgment",
-          techniqueUsed: "havingTheThoughtThat",
-          defusedVersion: "",
-          fusionLevelBefore: null,
-          fusionLevelAfter: null,
-          notes: "",
-          createdAt: "2026-05-20T09:00:00.000Z",
-          updatedAt: "2026-05-20T09:00:00.000Z",
-        },
-      ],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useDefusionLogs>);
+  /**
+   * ☠️ **This test is the inverse of the one it replaces, deliberately.** The old
+   * assertion — `queryByText("old thought")).toBeNull()` — pinned the defect #1517 exists
+   * to remove: the screen filtered itself to
+   * `toLocalDateKey(createdAt) === useSelectedDate()`, and `useSelectedDate()` returns
+   * today with no setter anywhere in the app, so an entry written yesterday was
+   * unreachable from the only screen that lists defusion logs. The behaviour it pinned
+   * was wrong, so the assertion is inverted rather than weakened, and the old
+   * `selected-date-store` mock is gone because the screen no longer reads it.
+   */
+  it("renders entries written on other days, not just today's", () => {
+    pages({
+      data: {
+        pages: [
+          [
+            log({ id: "today", fusedThought: "today thought" }),
+            log({
+              id: "old",
+              fusedThought: "old thought",
+              createdAt: "2026-05-20T09:00:00.000Z",
+            }),
+          ],
+        ],
+        pageParams: [null],
+      },
+    });
 
     renderWithProviders(<ActDefusionListScreen />);
 
     expect(screen.getByText("today thought")).toBeTruthy();
-    expect(screen.queryByText("old thought")).toBeNull();
+    expect(screen.getByText("old thought")).toBeTruthy();
+  });
+
+  /** Every loaded page is on screen, not just the newest one. */
+  it("flattens every loaded page", () => {
+    pages({
+      data: {
+        pages: [
+          [log({ id: "p1", fusedThought: "page one thought" })],
+          [log({ id: "p2", fusedThought: "page two thought" })],
+        ],
+        pageParams: [null, { timestamp: "2026-05-24T09:00:00.000Z", id: "p1" }],
+      },
+    });
+
+    renderWithProviders(<ActDefusionListScreen />);
+
+    expect(screen.getByText("page one thought")).toBeTruthy();
+    expect(screen.getByText("page two thought")).toBeTruthy();
+  });
+
+  /**
+   * ☠️ A failed read must not read as an empty history. This screen is the complete
+   * record of a user's defusion work; "No entries yet" over a network error tells them
+   * their own writing is gone.
+   */
+  it("tells a failed read apart from an empty one", () => {
+    pages({ isError: true });
+
+    renderWithProviders(<ActDefusionListScreen />);
+
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(
+      screen.queryByText("No entries yet. Use defusion when a sticky thought shows up."),
+    ).toBeNull();
   });
 
   /**
@@ -74,29 +128,27 @@ describe("ActDefusionListScreen", () => {
    * ACT home shows - so tapping through from home does not change the shape of
    * what the user is reading.
    *
-   * ⚠️ Asserts on rendered TEXT and ROUTES only, never on how `dayLogs` is
+   * ⚠️ Asserts on rendered TEXT and ROUTES only, never on how the list is
    * derived: #1332 owns a rewrite of this screen's filtering, and these
    * assertions must survive it.
    */
   it("renders each log as a shared row: technique, pair on the meta line, no category", () => {
-    mockUseDefusionLogs.mockReturnValue({
-      data: [
-        {
-          id: "log-1",
-          userId: "user-1",
-          fusedThought: "today thought",
-          thoughtCategory: "selfJudgment",
-          techniqueUsed: "musicalThoughts",
-          defusedVersion: "",
-          fusionLevelBefore: 60,
-          fusionLevelAfter: 20,
-          notes: "",
-          createdAt: "2026-05-24T09:00:00.000Z",
-          updatedAt: "2026-05-24T09:00:00.000Z",
-        },
-      ],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useDefusionLogs>);
+    pages({
+      data: {
+        pages: [
+          [
+            log({
+              id: "log-1",
+              fusedThought: "today thought",
+              techniqueUsed: "musicalThoughts",
+              fusionLevelBefore: 60,
+              fusionLevelAfter: 20,
+            }),
+          ],
+        ],
+        pageParams: [null],
+      },
+    });
 
     renderWithProviders(<ActDefusionListScreen />);
 
@@ -119,12 +171,13 @@ describe("ActDefusionListScreen", () => {
    * ACT call sites so the row cannot silently drop out of a screen; the row's
    * own behaviour (role, origin recording, order) is pinned in
    * `shared-tools-row.test.tsx`.
+   *
+   * ☠️ It sits in the FlatList header, above the list, and that placement is load-bearing:
+   * #1515 made this route the tool's front door as well as its archive, so the New button
+   * and this row must stay above the entries.
    */
   it("offers the journal under Also try, as a link that opens it", () => {
-    mockUseDefusionLogs.mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useDefusionLogs>);
+    pages({ data: { pages: [[]], pageParams: [null] } });
 
     renderWithProviders(<ActDefusionListScreen />);
 
@@ -139,10 +192,7 @@ describe("ActDefusionListScreen", () => {
   // this door to the `defusion` key, and the sheet's own rendering is pinned in
   // `help-sheet.test.tsx`.
   it("opens the defusion help sheet from the header", () => {
-    mockUseDefusionLogs.mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useDefusionLogs>);
+    pages({ data: { pages: [[]], pageParams: [null] } });
 
     renderWithProviders(<ActDefusionListScreen />);
 

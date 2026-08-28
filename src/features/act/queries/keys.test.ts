@@ -45,6 +45,47 @@ describe("actKeys", () => {
     ).toBe(true);
   });
 
+  /**
+   * ☠️ Every archive key sits UNDER the list prefix its tool's mutations already
+   * invalidate (#1517). ACT's save and delete mutations invalidate the list prefix and
+   * nothing else — move an archive key to a sibling root and a user who writes an entry
+   * watches the archive they are looking at not gain it, with nothing failing anywhere.
+   * That is the same failure `bullsEyeLatest` is pinned against above, on a surface
+   * whose entire job is being the complete record.
+   */
+  it("nests every archive-page key under the list prefix its mutations invalidate", () => {
+    const isPrefixOf = (prefix: readonly unknown[], key: readonly unknown[]) =>
+      prefix.every((part, i) => key[i] === part) && key.length > prefix.length;
+
+    const pairs = [
+      [actKeys.defusionList("u1"), actKeys.defusionHistoryPages("u1")],
+      [actKeys.expansionList("u1"), actKeys.expansionHistoryPages("u1")],
+      [actKeys.connectionList("u1"), actKeys.connectionHistoryPages("u1")],
+      [actKeys.observingList("u1"), actKeys.observingHistoryPages("u1")],
+      [actKeys.choicePointList("u1"), actKeys.choicePointHistoryPages("u1")],
+      [actKeys.urgeSurfList("u1"), actKeys.urgeSurfHistoryPages("u1")],
+      [actKeys.bullsEyeList("u1"), actKeys.bullsEyeHistoryPages("u1")],
+      [actKeys.committedActionListPrefix("u1"), actKeys.committedActionArchivePages("u1")],
+    ] as const;
+
+    for (const [list, archive] of pairs) {
+      expect(isPrefixOf(list, archive)).toBe(true);
+    }
+  });
+
+  /**
+   * ☠️ An archive is a `useInfiniteQuery`: its cache entry is a `{ pages, pageParams }`
+   * envelope, while the list hooks cache a bare array. Collapse the two keys onto one
+   * entry and whichever mounts second reads the other's shape — the limit-key collision
+   * (#1516) in a worse costume, because there the two callers at least agreed on the type.
+   */
+  it("keeps each archive key distinct from the list key it hangs under", () => {
+    expect(actKeys.defusionHistoryPages("u1")).not.toEqual(actKeys.defusionList("u1"));
+    expect(actKeys.committedActionArchivePages("u1")).not.toEqual(
+      actKeys.committedActionList("u1", "active"),
+    );
+  });
+
   it("keeps the lifetime committed-action count apart from a single status's", () => {
     expect(actKeys.committedActionCount("u1")).not.toEqual(
       actKeys.committedActionCount("u1", "active"),

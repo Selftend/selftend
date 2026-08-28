@@ -232,7 +232,12 @@ const covered = ROUTES.filter((route) => !isRedirectStub(route) && !isStackRoot(
 
 describe("the route population (pinned, G5)", () => {
   it("walks every route", () => {
-    expect(ROUTES).toHaveLength(135);
+    // 135 → 136: #1517 gave urge surf a detail route. It was the one ACT feed with
+    // neither a full list nor an `[id]`, so four of the six fields its form writes were
+    // readable by nobody at any depth. Its route leaf became a directory to hold the
+    // sibling (`urge-surfing/index.tsx` + `urge-surfing/[id].tsx`); the route PATH of the
+    // tool screen is unchanged.
+    expect(ROUTES).toHaveLength(136);
   });
 
   it("derives exactly the eight <Redirect>-only stubs", () => {
@@ -258,10 +263,12 @@ describe("the route population (pinned, G5)", () => {
   });
 
   it("covers everything else", () => {
-    // 126 → 125: the bulls-eye route moved from covered to stub above. The walk
-    // still finds all 135 routes, which is the number this class exists to
-    // protect — a drop there would mean the walk itself had gone blind.
-    expect(covered).toHaveLength(125);
+    // 126 → 125: the bulls-eye route moved from covered to stub above. Then 125 → 126
+    // with urge surf's new detail route (#1517), which is a real screen and so lands in
+    // this class rather than among the stubs. The walk still finds all 136 routes, which
+    // is the number this class exists to protect — a drop there would mean the walk
+    // itself had gone blind.
+    expect(covered).toHaveLength(126);
   });
 });
 

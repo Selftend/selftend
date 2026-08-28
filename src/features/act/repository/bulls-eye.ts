@@ -5,6 +5,7 @@ import {
   type BullsEyeSnapshotInput,
 } from "@/src/features/act/types";
 import { selectList, selectMaybe, writeSingle } from "./helpers";
+import { descendingCursorFilter, type RecordCursor } from "@/src/lib/descending-cursor";
 
 interface BullsEyeSnapshotRow {
   id: string;
@@ -37,6 +38,34 @@ export async function listBullsEyeSnapshots(userId: string, limit = 50) {
         .limit(limit),
     mapBullsEyeSnapshot,
   );
+}
+
+/**
+ * One page of every bull's-eye snapshot, newest first - the archive read behind the values screen's history section (#1517).
+ *
+ * Keyset on the plaintext `reviewed_at` rather than `.range()`: ACT rows are encrypted, so
+ * ADR-0001 prices a read at `rows returned x encrypted columns`, and an offset page
+ * re-reads and re-decrypts every row it skips. Ordering and filtering stay plaintext,
+ * which is exactly what lets the `LIMIT` push below the decrypt.
+ *
+ * `id` breaks the tie so a page boundary cannot straddle two rows sharing a
+ * timestamp - `reviewed_at` is not unique.
+ */
+export async function listBullsEyeSnapshotsPage(
+  userId: string,
+  limit: number,
+  cursor: RecordCursor | null,
+) {
+  return selectList<BullsEyeSnapshotRow, BullsEyeSnapshot>((c) => {
+    let query = c
+      .from("act_bulls_eye_snapshots")
+      .select("*")
+      .eq("user_id", userId)
+      .order("reviewed_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (cursor) query = query.or(descendingCursorFilter("reviewed_at", cursor));
+    return query.limit(limit);
+  }, mapBullsEyeSnapshot);
 }
 
 /**

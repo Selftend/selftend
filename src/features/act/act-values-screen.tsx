@@ -1,18 +1,19 @@
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
-import { Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Section } from "@/src/components/app/section";
-import { ScreenLoading } from "@/src/components/app/screen-state";
+import { ErrorState, ScreenLoading } from "@/src/components/app/screen-state";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
 import { ACT_SHARED_TOOLS } from "@/src/features/act/act-shared-tools";
 import { ActValuesCheckIn } from "@/src/features/act/act-values-check-in";
 import {
-  useBullsEyeSnapshots,
+  useBullsEyeSnapshotPages,
   useLatestBullsEyeByDomain,
   useValueEntries,
 } from "@/src/features/act/queries";
@@ -36,12 +37,6 @@ const DOMAIN_ICONS: Record<ACTLifeDomain, MaterialIconName> = {
 };
 
 /**
- * The history window, newest first. A check-in writes four rows, so twelve is three
- * review dates - enough to read as a run without turning the screen into a log.
- */
-const HISTORY_ROWS = 12;
-
-/**
  * Values, with the alignment check-in folded in below them (#1379).
  *
  * The check-in used to live one push away at `/modules/act/values/bulls-eye`, and the
@@ -54,14 +49,22 @@ export default function ActValuesScreen() {
   // No screen-level push any more: dev's only caller here was the "Bull's eye"
   // button, and folding that check-in in is what this ticket does. `DomainRow`
   // keeps its own.
-  const { t } = useTranslation("act");
+  const { t } = useTranslation(["act", "errors"]);
   const { formatDate } = useLocaleFormats();
   const { user } = useSession();
   const { data: entries, isLoading: entriesLoading } = useValueEntries(user?.id ?? null);
   const { data: latestRatings, isLoading: latestLoading } = useLatestBullsEyeByDomain(
     user?.id ?? null,
   );
-  const { data: snapshots } = useBullsEyeSnapshots(user?.id ?? null);
+  const {
+    data: snapshotPages,
+    fetchNextPage,
+    hasNextPage,
+    isError: historyFailed,
+    isFetchingNextPage,
+    refetch: refetchHistory,
+  } = useBullsEyeSnapshotPages(user?.id ?? null);
+  const snapshots = snapshotPages?.pages.flat() ?? [];
 
   const entryForDomain = (domain: ACTLifeDomain) =>
     entries?.find((e) => e.lifeDomain === domain) ?? null;
@@ -84,8 +87,6 @@ export default function ActValuesScreen() {
     if (latestRatings === undefined) return null;
     return latestRatings[domain] ?? entryForDomain(domain)?.currentAlignmentRating ?? null;
   };
-
-  const recentSnapshots = snapshots?.slice(0, HISTORY_ROWS) ?? [];
 
   // Both reads gate the screen, not just the entries: they fire in parallel, so waiting
   // for the slower costs nothing, and it keeps the rows from painting once without an
@@ -128,12 +129,45 @@ export default function ActValuesScreen() {
             <ActValuesCheckIn />
           </Section>
 
+          {/*
+            ☠️ This section used to slice its 50-row read down to a `HISTORY_ROWS = 12`
+            constant, and #1517 removed it. Twelve rows sounds like twelve reviews but a
+            check-in writes ONE ROW PER RATED DOMAIN - up to four - so the visible history
+            was **three review dates**. A weekly reviewer lost sight of week four. That is
+            the tightest ceiling in ACT, on the one bull's-eye surface that still exists
+            (#1379 folded the standalone check-in onto this screen).
+
+            #1379's "enough to read as a run without turning the screen into a log" is
+            honoured rather than overturned: the concern was the SCREEN becoming a log, and
+            a section below the check-in, extended only when a user asks, does not do that.
+
+            ⚠️ A "Show more" button rather than an infinite `FlatList`: this section lives
+            inside the values `ScrollView`, and a nested virtualised list there is the
+            React Native anti-pattern that breaks both scrollers.
+          */}
           <Section title={t("values.bullsEye.historyTitle")}>
             <View testID="bulls-eye-history" className="gap-2">
-              {recentSnapshots.length === 0 ? (
+              {/*
+                ☠️ A failed read is NOT an empty history, and this section is where that
+                matters most: "No previous ratings yet." over a network error tells a user
+                who reviews their values every week that none of it was ever recorded.
+                It is the same "cap wearing the face of an absence" that
+                `getLatestBullsEyeByDomain` already exists to avoid, one surface over.
+              */}
+              {historyFailed ? (
+                <ErrorState
+                  icon="cloud-off"
+                  title={t("errors:fallback.title")}
+                  description={t("errors:fallback.description")}
+                  action={{
+                    label: t("errors:fallback.retry"),
+                    onPress: () => void refetchHistory(),
+                  }}
+                />
+              ) : snapshots.length === 0 ? (
                 <Text variant="muted">{t("values.bullsEye.noHistory")}</Text>
               ) : (
-                recentSnapshots.map((snap) => (
+                snapshots.map((snap) => (
                   <View
                     key={snap.id}
                     className="flex-row items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3"
@@ -141,6 +175,13 @@ export default function ActValuesScreen() {
                     <View className="flex-1">
                       <Text className="text-sm font-medium">{t(`values.${snap.domain}`)}</Text>
                       <Text variant="muted" className="text-xs">
+                        {/*
+                          A bare date, not a compact timestamp, and deliberately so:
+                          `saveBullsEyeSnapshot` defaults `reviewed_at` per row and the
+                          check-in saves domains through `Promise.allSettled`, so one
+                          check-in writes up to four rows milliseconds apart. A
+                          time-bearing label would stack four near-identical timestamps.
+                        */}
                         {formatDate(snap.reviewedAt)}
                       </Text>
                     </View>
@@ -148,6 +189,17 @@ export default function ActValuesScreen() {
                   </View>
                 ))
               )}
+
+              {hasNextPage ? (
+                <Button
+                  variant="secondary"
+                  disabled={isFetchingNextPage}
+                  onPress={() => void fetchNextPage()}
+                >
+                  {isFetchingNextPage ? <ActivityIndicator /> : null}
+                  <Text>{t("values.bullsEye.showMore")}</Text>
+                </Button>
+              ) : null}
             </View>
           </Section>
         </View>

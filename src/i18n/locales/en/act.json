@@ -422,6 +422,7 @@
       "saveProblem": "Could not save",
       "historyTitle": "Recent snapshots",
       "noHistory": "No previous ratings yet.",
+      "showMore": "Show more",
       "savedToast": "Ratings saved"
     }
   },
@@ -536,6 +537,7 @@
     "activeTitle": "Active",
     "completedTitle": "Completed",
     "abandonedTitle": "Abandoned",
+    "showMore": "Show more",
     "newTitle": "New committed action",
     "newSubtitle": "A small, concrete step in a values direction.",
     "domainLabel": "Which area of life?",
