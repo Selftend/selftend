@@ -115,8 +115,7 @@ Other `cbt.md` claims that check out against code:
   the target doc's seven Strategy 5 exercises; `5-4-3-2-1` is the seventh and lives
   in grounding.
 
-  Two further divergences from `cbt-gillihan-made-simple.md` Strategy 5, recorded so
-  they stop being re-derived:
+  Two further divergences from `cbt-gillihan-made-simple.md` Strategy 5:
 
   - **Durations do not match, and do not render.** Of the seven exercises, only
     _observing thoughts_ (5/10) ships the duration options the target doc specifies.
@@ -126,13 +125,16 @@ Other `cbt.md` claims that check out against code:
     field at all against the doc's 5 min. This is close to moot in practice:
     `MeditationPractice.durations` is a **dead field** — the practices section is an
     info-only accordion reading `slug` + `icon`, and `suggestedDuration()` has no
-    non-test callers. Do not treat the target doc's table as a spec to converge on
-    without first deciding whether durations should render at all.
-  - **The spec's "Practice streak / consistency calendar" will not be built.**
-    `AGENTS.md` forbids default-on streak mechanics, so that bullet is a permanent
-    divergence, not a backlog item. Its "duration selection per session" and
-    "post-session mood rating" likewise do not apply to an info-only reference that
-    writes no session row.
+    non-test callers. Converging on the target doc's table would first mean deciding
+    whether durations should render at all — an open question, not a backlog item.
+  - **The spec's "Practice streak / consistency calendar" has constraints attached.**
+    `AGENTS.md` requires streaks to be optional and non-punitive, and a missed day must
+    never create shame or product punishment. A consistency calendar is therefore not
+    forbidden, but it cannot ship in the default-on, pressure-generating form the phrase
+    usually implies. Whether to build one at all is an open product question. Its
+    "duration selection per session" and "post-session mood rating" do not currently
+    apply either way, because the practices reference is info-only and writes no session
+    row.
 
 ### Where the spec is ahead of the code (intended, not yet built)
 
