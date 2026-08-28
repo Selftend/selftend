@@ -3476,11 +3476,15 @@ const ACT_TODAY = DAYS - 1;
   // rows since the phase start, so a single late urge-surf row closes the
   // milestone on its own.
   //
-  // ⚠️ This feature has NO list route: it surfaces only as the inline recent
-  // strip on the urge-surf screen itself, at `useUrgeSurfLogs(userId, 5)`. Only
-  // the newest five are ever visible, so the stride only has to clear five — but
-  // it clears it comfortably rather than exactly, because a dataset sized to the
-  // current limit breaks on the day the limit moves.
+  // ✅ #1517 removed the constraint this stride was sized against. Urge surf used to
+  // surface only as an inline five-row strip at `useUrgeSurfLogs(userId, 5)`, with no
+  // list route and no `[id]` route, so only the newest five were ever visible. It is now
+  // a keyset-paged archive on the same screen, with a detail route — every seeded row is
+  // reachable, and so are the four fields (`trigger`, `peakIntensity`, `urgeActedOn`,
+  // `surfingNotes`) that no surface used to render.
+  //
+  // The stride is left as it is: it was deliberately sized to clear the old limit
+  // comfortably rather than exactly, so it was never actually pinned to five.
   const lastUrgeDay = ACT_PHASE_STARTED_DAY - 2;
   const days = new Set();
   for (let d = 7; d <= lastUrgeDay; d += inSetback(d) ? between(2, 3) : between(5, 9)) {
@@ -3574,9 +3578,15 @@ const ACT_TODAY = DAYS - 1;
 
   const rows = [...days].sort((a, b) => a - b).map(buildRow);
 
-  // TODAY, twice. The reason is the LIST SCREEN, which shows only today: a
-  // single row opens it on one entry, a thinner picture than this account has
-  // and one that reads as a surface barely used.
+  // TODAY, twice.
+  //
+  // ✅ The original reason is GONE: the list screen showed only today, so a single row
+  // opened it on one entry — a thinner picture than this account has, reading as a
+  // surface barely used. #1517 dropped that day filter and the screen is now the tool's
+  // full archive, so every seeded connection log is visible on arrival and the rows below
+  // no longer carry the picture on their own.
+  //
+  // They stay for the SECOND reason, which never depended on the day filter:
   //
   // Two of a KIND rather than two of anything, because `dropAnchor` is a subset
   // of connection rather than a separate table and the app splits the table on

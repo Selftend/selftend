@@ -1,6 +1,6 @@
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -14,11 +14,15 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { ErrorState } from "@/src/components/app/screen-state";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { NumberRating } from "@/src/components/app/number-rating";
-import { useUrgeSurfLogs, useSaveUrgeSurfLog } from "@/src/features/act/queries";
+import { useUrgeSurfLogPages, useSaveUrgeSurfLog } from "@/src/features/act/queries";
+import type { UrgeSurfLog } from "@/src/features/act/types";
 import { StepPills } from "@/src/features/act/step-pills";
+import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
@@ -26,31 +30,65 @@ import { loggedAtForSelectedDate, useSelectedDate } from "@/src/stores/selected-
 import { useToastStore } from "@/src/stores/toast-store";
 import { cn } from "@/lib/utils";
 import { useLocaleFormats } from "@/src/lib/locale-format";
+import { Icon } from "@/src/components/react-native-reusables/icon";
 
 type Step = "urge" | "trigger" | "observe" | "complete";
 const STEP_ORDER: Step[] = ["urge", "trigger", "observe", "complete"];
 
-function UrgeSurfHistoryItem({ urge, date }: { urge: string; date: string }) {
+/**
+ * ☠️ Pressable since #1517, and that is the point of the change rather than a polish
+ * pass. This row renders `urgeDescription` and a timestamp — two of the six fields the
+ * four-step form writes. Without somewhere to press, the other four (`trigger`,
+ * `peakIntensity`, `urgeActedOn`, `surfingNotes`) were readable by nobody at any depth.
+ */
+function UrgeSurfHistoryItem({ log, onPress }: { log: UrgeSurfLog; onPress: () => void }) {
   const { formatDateTime } = useLocaleFormats();
   return (
-    <View className="rounded-lg border border-border bg-card p-3">
-      <Text className="font-medium" numberOfLines={2}>
-        {urge}
-      </Text>
-      <Text variant="muted" className="mt-1 text-xs">
-        {formatDateTime(date)}
-      </Text>
-    </View>
+    <Pressable
+      accessibilityRole="button"
+      hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+      onPress={onPress}
+      className="rounded-lg border border-border bg-card p-3 active:bg-accent/40"
+    >
+      <View className="flex-row items-start justify-between gap-2">
+        <View className="flex-1">
+          <Text className="font-medium" numberOfLines={2}>
+            {log.urgeDescription}
+          </Text>
+          <Text variant="muted" className="mt-1 text-xs">
+            {formatDateTime(log.createdAt)}
+          </Text>
+        </View>
+        <Icon name="chevron-right" className="size-4 text-muted-foreground" />
+      </View>
+    </Pressable>
   );
 }
 
 export default function ActUrgeSurfScreen() {
-  const { t } = useTranslation(["act", "common"]);
+  const { t } = useTranslation(["act", "common", "errors"]);
+  const pushWithOrigin = usePushWithOrigin();
   const { user } = useSession();
+  // ⚠️ Write path only, and #1517 verified that: `selectedDate` reaches `createdAt` on save
+  // and nothing else. The archive read below carries no day filter, so there was never a
+  // filter here to remove — unlike the five list screens.
   const { selectedDate } = useSelectedDate();
   const saveMutation = useSaveUrgeSurfLog(user?.id ?? null);
-  const { data: logs } = useUrgeSurfLogs(user?.id ?? null, 5);
+  const {
+    data: pageData,
+    fetchNextPage,
+    hasNextPage,
+    isError,
+    isFetchingNextPage,
+    isPending,
+    refetch,
+  } = useUrgeSurfLogPages(user?.id ?? null);
+  const logs = pageData?.pages.flat() ?? [];
   const showToast = useToastStore((state) => state.showToast);
+
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const [mode, setMode] = useState<"list" | "form">("list");
   const [step, setStep] = useState<Step>("urge");
@@ -115,38 +153,74 @@ export default function ActUrgeSurfScreen() {
     }
   });
 
+  /**
+   * List mode was already shape A's layout — header, then the New button, then the logs —
+   * so #1517 changed the DEPTH rather than the shape. It read a hard
+   * `useUrgeSurfLogs(user, 5)`; the sixth-oldest entry was unreachable by every path,
+   * because urge surf had neither a full list nor an `[id]` route.
+   *
+   * ☠️ The New button stays above the list (#1515): this route is the tool's front door
+   * as much as its archive.
+   */
   if (mode === "list") {
     return (
       <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
-        <ScrollView contentContainerClassName="grow p-6">
-          <View className="gap-6">
-            <View className="gap-2">
-              <ScreenHeader title={t("act:expansion.urgeSurfTitle")} />
-              <Text variant="muted">{t("act:expansion.urgeSurfSubtitle")}</Text>
-            </View>
-
-            <Button onPress={startNew}>
-              <Text>{t("act:expansion.urgeSurfTitle")}</Text>
-            </Button>
-
-            {!logs || logs.length === 0 ? (
-              <Text variant="muted">{t("act:expansion.noUrgeLogs")}</Text>
-            ) : (
+        <FlatList<UrgeSurfLog>
+          data={logs}
+          keyExtractor={(log) => log.id}
+          contentContainerStyle={{ flexGrow: 1, padding: 24 }}
+          ItemSeparatorComponent={() => <View className="h-2" />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListHeaderComponent={
+            <View className="mb-6 gap-6">
               <View className="gap-2">
+                <ScreenHeader title={t("act:expansion.urgeSurfTitle")} />
+                <Text variant="muted">{t("act:expansion.urgeSurfSubtitle")}</Text>
+              </View>
+
+              <Button onPress={startNew}>
+                <Text>{t("act:expansion.urgeSurfTitle")}</Text>
+              </Button>
+
+              {logs.length > 0 ? (
                 <Text variant="muted" className="text-xs uppercase tracking-wider">
                   {t("act:expansion.urgeSurfingTitle")}
                 </Text>
-                {logs.map((log) => (
-                  <UrgeSurfHistoryItem
-                    key={log.id}
-                    urge={log.urgeDescription}
-                    date={log.createdAt}
-                  />
-                ))}
+              ) : null}
+            </View>
+          }
+          ListEmptyComponent={
+            isPending ? null : isError ? (
+              <ErrorState
+                icon="cloud-off"
+                title={t("errors:fallback.title")}
+                description={t("errors:fallback.description")}
+                action={{ label: t("errors:fallback.retry"), onPress: () => void refetch() }}
+              />
+            ) : (
+              <Text variant="muted">{t("act:expansion.noUrgeLogs")}</Text>
+            )
+          }
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View className="py-6">
+                <ActivityIndicator />
               </View>
-            )}
-          </View>
-        </ScrollView>
+            ) : null
+          }
+          renderItem={({ item }) => (
+            <UrgeSurfHistoryItem
+              log={item}
+              onPress={() =>
+                pushWithOrigin({
+                  pathname: "/modules/act/expansion/urge-surfing/[id]",
+                  params: { id: item.id },
+                })
+              }
+            />
+          )}
+        />
       </SafeAreaView>
     );
   }

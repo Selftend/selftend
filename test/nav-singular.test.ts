@@ -88,7 +88,10 @@ function readsSearchParams(file: string, depth = 0): boolean {
  */
 const MUST_REMOUNT: Record<string, string> = {
   // Nine pieces of state driving a timed practice; re-entering mid-surf is not a resume.
-  "modules/act/expansion/urge-surfing": "in-progress exercise",
+  // ⚠️ The route leaf became a directory in #1517 (it grew an `[id]` sibling for the detail
+  // screen), so the screen name gained `/index`. The route PATH is unchanged; only the
+  // Expo Router screen name moved, and this exception is keyed by the latter.
+  "modules/act/expansion/urge-surfing/index": "in-progress exercise",
   // ⚠️ `modules/act/values/bulls-eye` used to be here, for exactly the reason this list
   // exists: it held four ratings the user had typed and not saved. #1379 folded that
   // check-in onto `modules/act/values`, which is single-instance, so the entry is
