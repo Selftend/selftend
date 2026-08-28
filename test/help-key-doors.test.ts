@@ -97,12 +97,10 @@ const sources = sourceFiles(REPO, { dirs: ["src", "app"] }).map((file) => ({
   code: stripComments(readFileSync(join(REPO, file), "utf8")),
 }));
 
-/** Every `helpKey="…"` literal found, as [key, file]. */
-const literals = sources.flatMap(({ file, code }) =>
-  [...code.matchAll(DOOR)].map((match) => ({ key: match[1], file })),
-);
+/** The key each `helpKey="…"` literal names — one entry per literal, not per key. */
+const literals = sources.flatMap(({ code }) => [...code.matchAll(DOOR)].map((match) => match[1]));
 
-const doors = new Set(literals.map(({ key }) => key));
+const doors = new Set(literals);
 
 describe("help keys have doors", () => {
   /**
@@ -177,16 +175,27 @@ describe("help keys have doors", () => {
  * Both locales are checked even though `help-content.test.ts` already forces
  * their top-level keys equal. That parity is a different suite's invariant, and
  * this clause should not silently inherit its correctness from it.
+ *
+ * ⚠️ For the same reason the *forward* direction below (a key must have a
+ * block) deliberately overlaps `help-content.test.ts`, which already resolves
+ * all four fields per key. The overlap is the price of asserting this both
+ * ways in one place: the orphan direction is the new one, and a bidirectional
+ * pair that borrowed half its meaning from another suite would quietly stop
+ * being bidirectional the day that suite changed. Only the orphan and
+ * half-written clauses are genuinely new ground.
  */
 describe.each([
   ["en", enHelp],
   ["bg", bgHelp],
 ])("%s/help.json entry blocks", (locale, bundle) => {
   const blocks = Object.entries(bundle as Record<string, Record<string, unknown>>);
-  const has = (block: Record<string, unknown>, field: string) => typeof block[field] === "string";
+
+  /** Carries `field` AS A STRING — the shape test, not mere key presence. */
+  const hasStringField = (block: Record<string, unknown>, field: string) =>
+    typeof block[field] === "string";
 
   const entryBlocks = blocks
-    .filter(([, block]) => ENTRY_FIELDS.every((field) => has(block, field)))
+    .filter(([, block]) => ENTRY_FIELDS.every((field) => hasStringField(block, field)))
     .map(([name]) => name);
 
   it("has a key for every entry block", () => {
@@ -223,11 +232,11 @@ describe.each([
     const partial = blocks
       .filter(
         ([, block]) =>
-          ENTRY_FIELDS.some((field) => has(block, field)) &&
-          !ENTRY_FIELDS.every((field) => has(block, field)),
+          ENTRY_FIELDS.some((field) => hasStringField(block, field)) &&
+          !ENTRY_FIELDS.every((field) => hasStringField(block, field)),
       )
       .map(([name, block]) => {
-        const absent = ENTRY_FIELDS.filter((field) => !has(block, field));
+        const absent = ENTRY_FIELDS.filter((field) => !hasStringField(block, field));
         return (
           `${locale}/help.json: "${name}" has some help fields but is missing ` +
           `${absent.join("/")}. Complete it, or delete the block entirely — a partial block ` +
