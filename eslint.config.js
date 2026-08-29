@@ -411,6 +411,12 @@ module.exports = [
     // `formatTimestamp` from a module this gate does not name. Unexploited today (every
     // caller outside ACT renders `updatedAt`, the sanctioned viewer-local use), but it
     // means an import-layer gate naming one of two modules exporting the same string.
+    // ⚠️ Note also what this block does NOT ban: `formatRelativeDayKey`, correctly, since
+    // captured-frame features are supposed to use it. That makes gratitude a trap for ACT
+    // rather than a model - `gratitude-entry-card.tsx` renders it, and gratitude is
+    // flat-family and keyset-paged, so it is the closest structural match to ACT's own
+    // archives and the likeliest screen to be copied. It measures a CAPTURED dayKey
+    // against the viewer's today, which is the second frame ACT may not have.
     // Habits are already correct by a different route:
     // `habit_logs.logged_on` stores the resolved civil date, so no timestamp is
     // ever converted.
