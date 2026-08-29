@@ -391,10 +391,27 @@ module.exports = [
     // after travel and skews daily averages. Activities carry TWO such days -
     // `completedDayKey` for when it was done, `scheduledDayKey` for the day it was
     // planned for - so neither the completion nor the plan may be re-derived from
-    // its timestamp here. The viewer-local helpers stay available to ACT, which has
-    // no captured offset and is deliberately out of #330's scope until it grows a
-    // history surface, and to routines, whose day axis is deliberately viewer-local
-    // (#330 owner decision). Habits are already correct by a different route:
+    // its timestamp here. The viewer-local helpers stay available to ACT, and that is
+    // permanent until ACT graduates as a whole, NOT a gap waiting to be closed: ACT
+    // carries no captured offset on any of its tables, so the viewer's frame is the
+    // only frame it has, and #1513 holds the deferral on that being true UNIFORMLY -
+    // every ACT day-namer resolving from the viewer's device, so ACT's surfaces can
+    // be wrong together after travel but never contradict each other. ACT growing a
+    // history surface (#1514, shipped #1517) did NOT expire this; the archives are
+    // flat and newest-first precisely so they name no second frame.
+    // ☠️ So do NOT add `src/features/act/` to CAPTURED_FRAME_FILES - it is backwards.
+    // This block bans the viewer-local helpers; #1513 REQUIRES ACT to use them. ACT's
+    // guard is this block's mirror and lives in `test/act-captured-offset-gate.test.ts`,
+    // which fires if any one ACT table graduates alone. Graduation is a single
+    // module-wide change across every day-stamped ACT table, and it deletes that gate
+    // and this sentence together. Routines are viewer-local for a different reason -
+    // their day axis is deliberately so (#330 owner decision).
+    // ⚠️ Known hole, unrelated to ACT: `@/src/lib/locale-format`'s
+    // `useLocaleFormats().formatDateTime` renders the byte-identical string to
+    // `formatTimestamp` from a module this gate does not name. Unexploited today (every
+    // caller outside ACT renders `updatedAt`, the sanctioned viewer-local use), but it
+    // means an import-layer gate naming one of two modules exporting the same string.
+    // Habits are already correct by a different route:
     // `habit_logs.logged_on` stores the resolved civil date, so no timestamp is
     // ever converted.
     files: CAPTURED_FRAME_FILES,
