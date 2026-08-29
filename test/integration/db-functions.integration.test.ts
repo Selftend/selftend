@@ -658,9 +658,10 @@ describe("schedule_send_web_reminders_cron() - access control + idempotency (int
 // and is its own base table. Kept as logical names so this list reads like the
 // module inventory rather than like the storage layer.
 //
-// `routines` and `routine_steps` are here because the seed's two routines are
-// composed of CBT and ACT practices and are wiped by the same parents-only
-// contract (#1290) - the sixth chain, and the last one to join this guard.
+// `routines` and `routine_steps` are here because the seed's four routines are
+// composed of CBT, ACT and shared-tool practices and are wiped by the same
+// parents-only contract (#1290/#1271) - the sixth chain, and the last one to join
+// this guard.
 const DEMO_SEED_TABLES = [
   // ACT
   "act_action_steps",

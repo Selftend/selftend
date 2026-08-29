@@ -38,16 +38,14 @@
 //   its Bulgarian weekday join render nowhere. Days nobody chose is a lie a
 //   reviewer finds the moment they open the editor (#1524); tests cover the
 //   strings instead.
+// - `schedule.weekdays` on the routines list. The one `weekdays` routine is
+//   complete every day by construction, and that label only renders on an
+//   off-day card that is also quiet, so it may go unseen on any given weekend.
+//   The `weekdays` cadence is seeded for the strip's not-scheduled cell, which it
+//   delivers every day of the week.
 // - UTC+13 and UTC+14. The ACT tables carry no captured-offset column, so their
 //   rows are pinned to a UTC band that resolves to the intended civil day from
 //   −11 through +12 and can slip a day further east.
-//
-// DECIDED BUT NOT YET SEEDED. One gap is settled but unbuilt, and its spec is a
-// comment on its own issue — deliberately NOT restated here, so there is one copy
-// to keep true rather than three:
-// - The routine roster, cadences, the one reminder, and demo's reminder
-//   consent (#1271).
-// `supabase/README.md` describes what a reviewer sees until it lands.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -261,14 +259,39 @@ const counts = {};
 //
 // `app_onboarding_completed_via` / `_at` are deliberately NOT touched. Demo already
 // reads as a completed-onboarding account and they are part of no decision here.
+//
+// ☠️ `reminder_consent` is seeded TRUE here, and the false this upsert used to
+// write is the defect #1525 named (#1271). Consent is a hard DELIVERY gate —
+// `send-web-reminders/index.ts` continues on a falsy one, and `enableTargetPatch`
+// always writes consent beside the enabled column so no surface can arm a
+// reminder without it — while `supabase/seed.sql` gives demo an armed CBT
+// reminder at 20:00 Europe/Sofia. A false here therefore produced a state NO USER
+// PATH CAN PRODUCE: the Reminders screen drew the row as armed and the server
+// could never send it. The old `reminder_consent_updated_at` beside it made it
+// worse, because false + a non-null timestamp is the DECLINED shape, which
+// permanently withholds the one-time contextual reminder prompt on every tool —
+// and declined has no positive rendering, so it cost a surface and bought
+// nothing.
+//
+// WRITTEN rather than merely left alone. #1525 framed the fix as deleting two
+// lines, and on a full `npm run db:reset` that is enough: seed.sql sets consent
+// true first and an upsert only touches the columns it names. But `db:seed:demo`
+// is a standing command that runs against whatever the account has drifted to,
+// and a reviewer who declines a prompt in the app would leave a row this script
+// could then neither repair nor explain — it would simply fail the consent guard
+// at the end of the file. Every other preference here is written for the same
+// reason. `reminder_consent_updated_at` is deliberately NOT written: seed.sql's
+// relative timestamp is realistic and a true consent does not depend on it.
+//
+// Consent is a PERMISSION, not a nudge. The quiet-by-default guardrail bites on
+// the per-tool enabled flags, and every target other than CBT stays off.
 {
   const { error } = await admin.from("user_preferences").upsert(
     {
       user_id: DEMO_USER_ID,
       app_onboarding_completed: true,
       policy_version_accepted: policyVersion,
-      reminder_consent: false,
-      reminder_consent_updated_at: "2026-01-01T00:00:00.000Z",
+      reminder_consent: true,
       email_verified: true,
       emotions_seeded: true,
       enabled_modules: ["cbt", "act"],
@@ -917,10 +940,10 @@ for (const table of DEMO_SEED_WIPE_TABLES) {
 }
 
 // ------------------------------------ the routine strips: PLACED, never added
-// Two routines close this section (#1290) and both are composed of CBT and ACT
-// practices. Each one's seven-day strip lights a day only when EVERY step was
-// done on it, and the strip ignores cadence entirely, so the only way to light
-// a day is to have every step's row already dated it.
+// Four routines close this section (#1290, #1271), composed of CBT, ACT and
+// shared-tool practices. Each one's seven-day strip lights a day only when EVERY
+// step was done on it, and the strip ignores cadence entirely, so the only way to
+// light a day is to have every step's row already dated it.
 //
 // ☠️ PLACED, NEVER ADDED. The per-surface row counts are fixed (#1181) and this
 // slice may not raise any of them, so nothing below writes an extra row: the CBT
@@ -948,12 +971,13 @@ const DAY_INDEX_BY_KEY = new Map(Array.from({ length: DAYS }, (_, i) => [dayKeyA
  * step, however well dated it is. Getting one wrong makes every check below
  * agree with a screen that shows something else.
  *
- * Only the tools the two seeded routines actually step through are listed. A new
+ * Only the tools the four seeded routines actually step through are listed. A new
  * step id needs its entry here, and the read-back below fails loudly rather than
  * skipping a tool it cannot resolve.
  */
 const ROUTINE_STEP_SOURCES = {
   mood: { table: "mood_logs", timestamp: "logged_at", offset: "logged_offset_minutes" },
+  sleep: { table: "sleep_logs", timestamp: "logged_at", offset: "logged_offset_minutes" },
   meditation: {
     table: "meditation_sessions",
     timestamp: "completed_at",
@@ -965,8 +989,21 @@ const ROUTINE_STEP_SOURCES = {
     offset: "created_offset_minutes",
     requireNull: "archived_at",
   },
+  // ☠️ COMPLETION ONLY, and that is why the timestamp is `completed_at` rather
+  // than `scheduled_at`: `stepDoneOnDate` counts an activity through
+  // `completedDayKey`, so a planned-but-open row files under no day at all. A
+  // null `completed_at` makes `seededDayKey` return null and the row is skipped,
+  // which is exactly the app's rule — swapping in `scheduled_at` would count the
+  // three open rows this seed pins today and derive a step the screen shows open.
+  activities: {
+    table: "activity_logs",
+    timestamp: "completed_at",
+    offset: "completed_offset_minutes",
+  },
   connection: { table: "act_connection_logs", timestamp: "created_at" },
   choicePoint: { table: "act_choice_points", timestamp: "created_at" },
+  defusion: { table: "act_defusion_logs", timestamp: "created_at" },
+  expansion: { table: "act_expansion_logs", timestamp: "created_at" },
 };
 
 /** The civil day a seeded row files under, through the shared `capturedDayKey`. */
@@ -1643,6 +1680,21 @@ function requireEveryVariant(column, variants, rows, field = "status") {
   counts.core_beliefs = await insert("core_beliefs", rows);
 }
 
+// "Back on my feet" is a sleep log and a completed activity. Sleep is a tools
+// block and untouchable by this slice, activities is a CBT block that already
+// PLACES two of its completions by hand, so the activities rows move onto the
+// days sleep already covers rather than the other way round (#1271).
+//
+// ☠️ Two, not one, and this routine is the reason: unlike "Steadying myself" it
+// is deliberately NOT complete today, so it has no today-lit day to make up the
+// difference and has to find both inside the pre-today window.
+const BACK_ON_MY_FEET_LIT_DAYS = requireLitDays(
+  await daysAlreadyCoveredBy(["sleep"]),
+  2,
+  "Back on my feet",
+  "a sleep log",
+);
+
 // --------------------------------------------------------------- activities
 {
   // Behavioural activation. The completed history is strided; the open rows are
@@ -1740,11 +1792,16 @@ function requireEveryVariant(column, variants, rows, field = "status") {
           : between(2, 3);
     rows.push(completed(d, between(9, 19), lift));
   }
-  // Placed rather than left to the stride, because a programme signal rides on
-  // each: `behavioural`'s "complete one activity" milestone reads done only if
-  // something was completed at or after the phase start.
-  rows.push(completed(CBT_PHASE_STARTED_DAY + 3, 18, 2));
-  rows.push(completed(DAYS - 4, 8, 3));
+  // Placed rather than left to the stride, because two signals ride on them.
+  // `behavioural`'s "complete one activity" milestone reads done only if
+  // something was completed at or after the phase start — both days below are
+  // inside the last week and so comfortably after it — and "Back on my feet"
+  // lights a strip day only where a completed activity and a sleep log agree,
+  // which a 3-6 day stride cannot be trusted to arrange twice inside a seven-day
+  // window. MOVED, NOT ADDED: this is the same pair of placed rows the block
+  // always had, re-dated onto the days sleep already covers (#1271).
+  rows.push(completed(BACK_ON_MY_FEET_LIT_DAYS[0], 18, 2));
+  rows.push(completed(BACK_ON_MY_FEET_LIT_DAYS[1], 8, 3));
 
   // Overdue and today, both still open — the screen files both under "Today".
   rows.push(planned(at(DAYS - 2, 18, 30)));
@@ -3329,8 +3386,9 @@ function bandClosesAt(dayIndex) {
 //
 // The placements stay anyway, and now earn their keep differently: today's
 // connection and choice-point rows are what make the "Steadying myself" routine
-// derive COMPLETE today and light its second strip day, which the LIT_DAYS
-// guard at the end of this file enforces. Do not remove them as dead weight —
+// derive COMPLETE today and light its second strip day, which that routine's
+// `lit` entry in EXPECTED at the end of this file enforces. Do not remove them
+// as dead weight —
 // re-read the routines block first.
 //
 // Defusion and expansion still CANNOT have a row today. Both feed `openUp`'s
@@ -4747,73 +4805,146 @@ function alignmentFor(domain, dayIndex) {
 }
 
 // ------------------------------------------------------------------ routines
-// Two routines whose steps are CBT and ACT practices (#1290). Nothing seeded
-// routines before this, so the /routines list, Home's routines widget, the
-// native widget snapshot, the floating progress button and the continue sheet
-// all rendered empty on the demo account while twelve of the twenty steppable
-// tools — with a picker group each — sat behind them.
+// Four routines whose steps are CBT, ACT and shared-tool practices (#1290,
+// #1271). Nothing seeded routines before #1290, so the /routines list, Home's
+// routines widget, the floating progress button and the continue sheet all
+// rendered empty on the demo account while twelve of the twenty steppable tools
+// - with a picker group each - sat behind them.
 //
-// BOTH ARE `daily` — for now, and NOT for the reason this comment used to give.
-//
-// ☠️ The old rationale ("a weekday cadence would make those surfaces depend on
-// which weekday the seed happened to run, breaking determinism") is false.
-// `isScheduledOn` is evaluated at RENDER against `new Date()` (the
+// CADENCE VARIETY IS DELIBERATE, and the rationale this comment used to give for
+// avoiding it was false. "A weekday cadence would make those surfaces depend on
+// which weekday the seed happened to run, breaking determinism" is not what the
+// code does: `isScheduledOn` is evaluated at RENDER against `new Date()` (the
 // `scheduledToday` field in `use-routines-today.ts`), never at seed time, so
-// re-seeding changes nothing about it. "The same picture" is a contract about reproducibility
-// across RUNS, not invariance across VIEWING DAYS, and the seeded window has
-// been anchored on `new Date()` from the start. A weekday-varying routine sits
-// inside that contract (#1524).
+// re-seeding changes nothing about it. "The same picture" is a contract about
+// reproducibility across RUNS, not invariance across VIEWING DAYS, and the
+// seeded window has been anchored on `new Date()` from the start. A
+// weekday-varying routine sits inside that contract (#1524).
 //
 // What was actually at stake was reviewability, and the product already answers
-// it: an off-day card swaps in "Runs weekdays" (#106) and Home's row says
-// "Nothing scheduled today". #1271 carries the decided four-routine roster.
+// it: an off-day card swaps in "Runs weekdays" (#106 - "not expected today",
+// never "behind") and Home's row says "Nothing scheduled today". The two `daily`
+// routines carry every surface that needs two open scheduled routines, so
+// nothing below depends on the weekday either.
 //
-// BOTH HAVE REMINDERS OFF: the editor defaults them off, this script currently
-// sets reminder consent to false, and a demo account shipping a default-on
-// notification sits against the standing guardrail that notifications are
-// explicit and quiet by default.
+// WHAT THE TWO NON-`daily` CADENCES BUY, and neither is reachable without them:
+//   - `weekdays` -> the strip's THIRD cell state, `strip.dayNotScheduled`
+//     (`border-transparent bg-muted/15`, day-strip.tsx), on both the list and the
+//     detail screen. Unconditional: a weekdays routine always has a Saturday and
+//     a Sunday inside the last seven days, whichever day you look.
+//   - `on-demand` -> the resting card's `schedule.onDemand` label, gated on
+//     `restingToday` (`routines-home-screen.tsx`). On-demand is the one cadence
+//     that is weekday-INDEPENDENT by construction, so this renders every day.
+// WARNING: `schedule.weekdays` itself may stay unexercised - it renders only on a
+// weekend where that routine is ALSO quiet, and "Steadying myself" is complete
+// every day by construction (below). Stated rather than chased.
 //
-// ☠️ The consent half of that justification is itself a defect, not a setting.
-// `supabase/seed.sql` writes demo consent TRUE with an armed CBT reminder; the
-// upsert near the top of THIS file then overwrites it with a false carrying a
-// non-null timestamp, which reads as DECLINED and suppresses the one-time
-// contextual reminder prompt on every tool — while leaving a CBT reminder the
-// server can never deliver, since consent is a hard delivery gate. #1525
-// resolved it: the fix is deleting those two lines, and #1271 carries that plus
-// the one seeded routine reminder. So "reminders stay off" cannot lean on the
-// consent state; it holds here only until #1271 lands.
+// NO `custom` ROUTINE (#1524). `schedule.customDays` and its Bulgarian weekday
+// join stay a known unexercised string: computing `custom_days` from the seeding
+// weekday so the screen looks identical every run is exactly the lie a reviewer
+// trips over the first time they open the editor and find days nobody chose.
 //
-// ☠️ "Steadying myself" derives COMPLETE today BY CONSTRUCTION, not by choice,
-// and nothing here used to say so. Its steps are `connection` and `choicePoint`,
-// and the ACT block above pins a row dated today on each of them. Un-completing
-// this routine means deleting one of those, which drops it to ONE lit strip day
-// — below LIT_DAYS_MIN, so the guard at the end of this file throws. There is no
-// second pre-today lit day to find: row counts are fixed (#1181, PLACED NEVER
-// ADDED), and the choice-point block already had to MOVE its newest worksheet to
-// manufacture the one it has. Anyone tempted to make this routine `in_progress`
-// (#1541 was) hits that wall.
+// EXACTLY ONE REMINDER, on "Back on my feet" (#1527, placed by #1541). Three
+// routines keep reminders off - the editor defaults them off, and a demo account
+// shipping default-on notifications sits against the standing guardrail that
+// notifications are explicit and quiet by default. The fourth carries one
+// because the guardrail is about the NUDGE and this fixture depicts an invented
+// person who set one:
+//   - NOT "Morning reset": it is the routine `firstOpenRoutineView` selects, and
+//     `continue-routine-sheet.tsx` swaps its rich reminder-OFFER card for a bare
+//     Close as soon as `reminderEnabled` is true. A reminder there spends the
+//     offer for a button.
+//   - NOT "Steadying myself": #1527 put it there and #1541 found it renders on
+//     ZERO surfaces - neither `routine-detail-screen.tsx` nor
+//     `routines-home-screen.tsx` reads `reminderEnabled` (test fixtures only),
+//     and a complete routine is never selected by the sheet.
+//   - ON "Back on my feet": both sheet branches light on one account for the
+//     first time - complete Morning reset for the offer card, switch and
+//     complete this one for the bare Close. 08:00 Europe/Sofia matches the
+//     account's zone and sits clear of the CBT reminder at 20:00, so the two
+//     read as distinct decisions rather than a copy.
+// NOT an impossible state, unlike the consent shape #1525 fixed: consent is an
+// ACCOUNT column, a push channel is a PER-DEVICE row (`web_push_subscriptions`).
+// A reminder set with no subscription on this browser is what every real account
+// looks like on a new device, and the editor already saves exactly that whenever
+// the master switch is off.
+// Seeding can never reach the OS permission prompt - it fires inside
+// `ensureReminderChannel` at the moment of enabling, which seeding bypasses. A
+// permanent gap for any seed-based fixture, not something a better fixture fixes.
 //
-// ⚠️ #1541 gave a SECOND reason — that deleting the row would empty an ACT list
+// "Steadying myself" derives COMPLETE today BY CONSTRUCTION, not by choice.
+// Its steps are `connection` and `choicePoint`, and the ACT block above pins a
+// row dated today on each of them. Un-completing this routine means deleting one
+// of those, which drops it to ONE lit strip day - below the two this routine's
+// entry in EXPECTED requires, so the
+// guard at the end of this file throws. There is no second pre-today lit day to
+// find: row counts are fixed (#1181, PLACED NEVER ADDED), and the choice-point
+// block already had to MOVE its newest worksheet to manufacture the one it has.
+// Anyone tempted to make this routine `in_progress` (#1541 was) hits that wall.
+//
+// #1541 gave a SECOND reason - that deleting the row would empty an ACT list
 // screen, which was then a per-day view. #1515/#1517 retired that: the ACT lists
 // are archives now. The decision survives on the lit-day guard alone.
 //
-// ☠️ Activity, defusion, expansion and urge-surf steps are deliberately absent.
-// Activities is the current CBT phase's own daily practice and the other three
-// are pinned dark by #1284's margins, so a step on any of them would render a
-// deliberately-open state a SECOND time on another screen, where it reads as a
-// bug rather than as the one row a reviewer is invited to fill in.
+// THE OPEN STEPS ARE CHOSEN SO THEIR ABSENCE IS GUARDED, NOT LUCKY. A routine
+// only reads "in progress" or "resting" while some step has no row today, so
+// every tool picked to be dark today is one whose darkness something else already
+// asserts:
+//   - `meditation` - the tools stride, held by this file's own EXPECTED check.
+//   - `activities` - the activities block THROWS if anything is completed today,
+//     keeping CBT's `behavioural` daily practice open (#1178). Completion-only by
+//     the app's rule, so the three open rows pinned today do not count and a
+//     reviewer can mark one done and watch the routine complete.
+//   - `defusion` + `expansion` - both feed `openUp`'s daily practice, which #1178
+//     rules deliberately open, so neither can carry a row dated today on any
+//     fully seeded account. Their HISTORY is reachable: #1515/#1517 made the ACT
+//     lists archives, so what is absent is the today-row, which is exactly what
+//     `restingToday` reads.
+// `journal` + `gratitude` do NOT work for the on-demand routine, which is what
+// #1524 originally specified: `restingToday = !scheduledToday && doneCount === 0`
+// and gratitude IS present today (see the Morning reset note above), so one done
+// step is enough to make `restingToday` false and the `schedule.onDemand` label
+// the routine exists for would never render.
+// And NOT `meditation` on "Back on my feet": one session would complete both it
+// and Morning reset at once, collapsing the queue and the chip row in a single
+// tap.
 const SEEDED_ROUTINES = [
-  // Order is oldest first; the list orders by `created_at` descending, so
-  // "Steadying myself" heads the /routines list and "Morning reset" follows.
-  { name: "Morning reset", createdDay: 26, steps: ["mood", "meditation", "cbt"] },
-  { name: "Steadying myself", createdDay: 44, steps: ["connection", "choicePoint"] },
+  // Order is oldest first; the list orders by `created_at` descending, so a
+  // reviewer reads this array bottom-up: "Steadying myself", "Morning reset",
+  // "Back on my feet", "When I need to slow down".
+  //
+  // BOTH createdDay constraints below are load bearing. "Back on my feet" sits
+  // BELOW 26 so `firstOpenRoutineView` reaches Morning reset first (2/3 reads
+  // richer than 1/2) and the FAB renders `+1` beside it; the on-demand routine
+  // keeps the LOWEST so it still sorts last, where a thing you reach for rather
+  // than schedule belongs.
+  {
+    name: "When I need to slow down",
+    createdDay: 8,
+    cadence: "on-demand",
+    steps: ["defusion", "expansion"],
+  },
+  {
+    name: "Back on my feet",
+    createdDay: 19,
+    cadence: "daily",
+    reminder: { hour: 8, minute: 0, timezone: "Europe/Sofia" },
+    steps: ["sleep", "activities"],
+  },
+  { name: "Morning reset", createdDay: 26, cadence: "daily", steps: ["mood", "meditation", "cbt"] },
+  {
+    name: "Steadying myself",
+    createdDay: 44,
+    cadence: "weekdays",
+    steps: ["connection", "choicePoint"],
+  },
 ];
 
 {
   const stepRows = [];
   // Counted off the ids the database handed back, never off the array that asked
   // for them: every other `counts.*` here is an insert's own return, and a count
-  // restated from the input reports two routines whatever the database did.
+  // restated from the input reports four routines whatever the database did.
   const insertedIds = [];
   for (const routine of SEEDED_ROUTINES) {
     const createdAt = at(routine.createdDay, 7, 45);
@@ -4824,11 +4955,20 @@ const SEEDED_ROUTINES = [
     // ☠️ `updated_at` cannot be backdated here — the trigger hard-sets it to
     // now() with no coalesce, the same shape `values_profile` has. Nothing
     // renders a routine's `updated_at`, so this is recorded, not worked around.
+    //
+    // The reminder columns are written as a SET or not at all: a routine with
+    // `reminder_enabled` false keeps its hour, minute and timezone null, which is
+    // the shape the editor saves and the shape the reminder sender skips on. An
+    // enabled routine carries all three, because a time with no zone beside it
+    // fires wherever the server happens to think the account lives.
     routine.id = await insertReturningId("routines", {
       user_id: DEMO_USER_ID,
       name: routine.name,
-      reminder_enabled: false,
-      cadence: "daily",
+      reminder_enabled: Boolean(routine.reminder),
+      reminder_hour: routine.reminder?.hour ?? null,
+      reminder_minute: routine.reminder?.minute ?? null,
+      reminder_timezone: routine.reminder?.timezone ?? null,
+      cadence: routine.cadence,
       custom_days: [],
       created_at: createdAt,
     });
@@ -4862,23 +5002,70 @@ const SEEDED_ROUTINES = [
 // disagree with the app. That half is held by the app's own suite, which
 // derives the same statuses through `deriveRoutine` from the same columns.
 {
-  // Restated from #1290, step order included: `nextStep` is the FIRST not-done
-  // step in routine order, and that is the step the continue sheet opens on and
-  // the floating button names. Order is advisory to the derivation and load
-  // bearing for what a reviewer is handed.
+  // Restated from #1290 and #1271, step order included: `nextStep` is the FIRST
+  // not-done step in routine order, and that is the step the continue sheet opens
+  // on and the floating button names. Order is advisory to the derivation and
+  // load bearing for what a reviewer is handed.
+  //
+  // A PER-ROUTINE ALLOWLIST, not a blanket rule (#1271). Cadence, the reminder
+  // and the lit-day count are stated one routine at a time, so an UNINTENDED
+  // reminder or a cadence that drifts still fails as loudly as it did when every
+  // routine had to be `daily` with reminders off - the guard just now knows which
+  // three of the four are which.
+  //
+  // `lit` is the number of days in the seven-day strip window that derive
+  // complete. Two to three for a scheduled routine: not zero, which reads as a
+  // dead surface, and not seven, which reads as a streak trophy the feature
+  // refuses to draw.
+  //
+  // EXCEPT for the on-demand routine, whose `lit` is ZERO and STRUCTURALLY so.
+  // Its steps are `defusion` and `expansion`, and the expansion block pins every
+  // one of its rows on or before `ACT_PHASE_STARTED_DAY - 2` so `makeRoomOnce`
+  // stays open (#1178) - which is 76, six days before the strip window even
+  // opens. Expansion therefore cannot light a window day at all, and no pairing
+  // fixes it: `urgeSurf` stops at the same day, and every other steppable tool
+  // that is quiet TODAY (which `restingToday` requires) is already spoken for by
+  // another routine. THIS IS NOT A DEAD SURFACE: `isScheduledOn` is false on every
+  // day for an on-demand routine, so all seven cells render as
+  // `strip.dayNotScheduled` - "nothing was expected here" (#106) - and this is the
+  // only routine on the account that draws that strip whole. Asserted as exactly
+  // zero rather than exempted, so a row drifting into the window still fails.
   const EXPECTED = {
-    "Morning reset": { today: "in_progress", steps: ["mood", "meditation", "cbt"] },
-    "Steadying myself": { today: "complete", steps: ["connection", "choicePoint"] },
+    "Morning reset": {
+      today: "in_progress",
+      cadence: "daily",
+      reminder: false,
+      lit: [2, 3],
+      steps: ["mood", "meditation", "cbt"],
+    },
+    "Steadying myself": {
+      today: "complete",
+      cadence: "weekdays",
+      reminder: false,
+      lit: [2, 3],
+      steps: ["connection", "choicePoint"],
+    },
+    "Back on my feet": {
+      today: "in_progress",
+      cadence: "daily",
+      reminder: true,
+      lit: [2, 3],
+      steps: ["sleep", "activities"],
+    },
+    "When I need to slow down": {
+      today: "not_started",
+      cadence: "on-demand",
+      reminder: false,
+      lit: [0, 0],
+      steps: ["defusion", "expansion"],
+    },
   };
-  // "Two to three lit days per routine": not zero, which reads as a dead
-  // surface, and not seven, which reads as a streak trophy the feature refuses
-  // to draw.
-  const LIT_DAYS_MIN = 2;
-  const LIT_DAYS_MAX = 3;
 
   const { data: seededRoutines, error: routinesError } = await admin
     .from("routines")
-    .select("id,name,reminder_enabled,cadence,custom_days")
+    .select(
+      "id,name,reminder_enabled,reminder_hour,reminder_minute,reminder_timezone,cadence,custom_days",
+    )
     .eq("user_id", DEMO_USER_ID);
   if (routinesError) throw new Error(`read routines: ${routinesError.message}`);
 
@@ -4921,22 +5108,62 @@ const SEEDED_ROUTINES = [
   };
 
   let openStepsToday = 0;
+  // Names, gathered in the same pass rather than re-derived below: the switch-chip
+  // row and the FAB's `+N` queue turn on HOW MANY scheduled routines are open, which
+  // is a different question from how many steps are, and a second filter over the
+  // same rows would only ever restate this loop.
+  const openScheduledNames = [];
   for (const routine of seededRoutines) {
     const steps = seededSteps
       .filter((step) => step.routine_id === routine.id)
       .map((step) => step.tool_id);
 
-    if (routine.reminder_enabled || routine.cadence !== "daily" || routine.custom_days.length > 0) {
+    const expected = EXPECTED[routine.name];
+
+    if (routine.cadence !== expected.cadence || routine.custom_days.length > 0) {
       throw new Error(
-        `"${routine.name}" came back as cadence ${routine.cadence} with reminders ` +
-          `${routine.reminder_enabled ? "ON" : "off"}. Both routines are still daily with ` +
-          "reminders off, so anything else here is drift rather than a decision: #1271 carries " +
-          "the decided four-routine roster and its one reminder, and this guard becomes a " +
-          "per-routine allowlist in that same change.",
+        `"${routine.name}" came back as cadence ${routine.cadence}` +
+          `${routine.custom_days.length > 0 ? ` with custom days [${routine.custom_days}]` : ""}, ` +
+          `not ${expected.cadence}. The roster is decided one routine at a time (#1271) and ` +
+          "each cadence buys a specific surface - `weekdays` the strip's not-scheduled cell, " +
+          "`on-demand` the resting card's schedule label - so a cadence that moves silently " +
+          "takes one of them away. No routine is `custom`: that string stays deliberately " +
+          "unexercised rather than seeded from the weekday the script happened to run.",
       );
     }
 
-    const expected = EXPECTED[routine.name];
+    if (routine.reminder_enabled !== expected.reminder) {
+      throw new Error(
+        `"${routine.name}" came back with reminders ` +
+          `${routine.reminder_enabled ? "ON" : "off"}, not ` +
+          `${expected.reminder ? "ON" : "off"}. Exactly one seeded routine carries a reminder ` +
+          "(#1527/#1541), and it is not this one by default: an unintended reminder on " +
+          '"Morning reset" swaps the continue sheet\'s reminder-offer card for a bare Close, ' +
+          "and one on a complete routine renders nowhere at all.",
+      );
+    }
+
+    // A time is only half a reminder. Written as a set or not at all, checked the
+    // same way - an armed routine with a null zone fires wherever the server
+    // guesses the account lives, and an off routine holding a stale time is a
+    // shape the editor never saves.
+    const reminderFields = [
+      routine.reminder_hour,
+      routine.reminder_minute,
+      routine.reminder_timezone,
+    ];
+    if (
+      expected.reminder
+        ? reminderFields.some((v) => v === null)
+        : reminderFields.some((v) => v !== null)
+    ) {
+      throw new Error(
+        `"${routine.name}" has reminders ${routine.reminder_enabled ? "ON" : "off"} but holds ` +
+          `hour ${routine.reminder_hour}, minute ${routine.reminder_minute}, timezone ` +
+          `${routine.reminder_timezone}. An enabled reminder needs all three; a disabled one ` +
+          "needs none of them.",
+      );
+    }
     if (JSON.stringify(steps) !== JSON.stringify(expected.steps)) {
       throw new Error(
         `"${routine.name}" came back with steps [${steps.join(", ")}], not ` +
@@ -4955,26 +5182,61 @@ const SEEDED_ROUTINES = [
       );
     }
 
+    const [litMin, litMax] = expected.lit;
     const lit = stripWindow().filter((day) => statusOn(steps, day) === "complete");
-    if (lit.length < LIT_DAYS_MIN || lit.length > LIT_DAYS_MAX) {
+    if (lit.length < litMin || lit.length > litMax) {
       throw new Error(
         `"${routine.name}" lights ${lit.length} of the last ${ROUTINE_STRIP_DAYS} days ` +
-          `(${lit.join(", ") || "none"}), outside the ${LIT_DAYS_MIN}-${LIT_DAYS_MAX} this ` +
-          "slice keeps. Zero reads as a dead surface and a full strip reads as a streak.",
+          `(${lit.join(", ") || "none"}), outside the ${litMin}-${litMax} this slice keeps for ` +
+          "it. For a scheduled routine zero reads as a dead surface and a full strip reads as " +
+          "a streak; the on-demand routine is the one that expects zero, because its expansion " +
+          "step cannot carry a row inside the window without completing `makeRoomOnce`, and an " +
+          "unscheduled day draws quieter than an open one anyway.",
       );
     }
 
-    openStepsToday += steps.filter((toolId) => !dayIndexes[toolId].has(DAYS - 1)).length;
+    // COUNTED ONLY FOR SCHEDULED ROUTINES, which is what the FAB itself does
+    // (`openScheduledViews` filters by `isScheduledOn`). Without the filter the
+    // on-demand routine's two permanently-open steps would keep this above zero
+    // for ever, and the check below - whose whole job is to notice that every
+    // scheduled routine went complete - could never fail again.
+    //
+    // `weekdays` is counted here as scheduled whatever today is: this runs at seed
+    // time and the FAB decides at render time, so a Saturday reviewer sees one
+    // fewer scheduled routine than this counts. That is safe in this direction -
+    // the two `daily` routines carry the check on their own - and pinning it to
+    // the seeding weekday would make the guard, not the app, the thing that
+    // varies.
+    if (routine.cadence !== "on-demand") {
+      const openSteps = steps.filter((toolId) => !dayIndexes[toolId].has(DAYS - 1)).length;
+      openStepsToday += openSteps;
+      if (openSteps > 0) openScheduledNames.push(routine.name);
+    }
   }
 
   // The floating progress button is visible ONLY while a scheduled routine has
   // an open step today, so "the FAB renders" is this number being above zero —
   // a separate fact from any one routine's status, and the one that goes first
-  // if both routines ever derive complete.
+  // if every scheduled routine ever derives complete.
   if (openStepsToday === 0) {
     throw new Error(
-      "Every seeded routine step is done today, so the floating routine-progress button and " +
-        "the continue sheet behind it never appear on the demo account.",
+      "Every scheduled seeded routine step is done today, so the floating routine-progress " +
+        "button and the continue sheet behind it never appear on the demo account.",
+    );
+  }
+
+  // TWO OPEN SCHEDULED ROUTINES, not one. The continue sheet's switch chip row
+  // (`switchable.length > 1`) and the FAB's `+N` queue (`fab.progressQueued`,
+  // `fab.moreAfter_one`/`_other`, `sheet.switchLabel`) share the exact same gate,
+  // so four i18n keys across two affordances render on this account or on none.
+  // Counted the way `openScheduledViews` counts: a scheduled routine is open when
+  // at least one step has no row today.
+  if (openScheduledNames.length < 2) {
+    throw new Error(
+      `Only ${openScheduledNames.length} scheduled routine ` +
+        `(${openScheduledNames.join(", ") || "none"}) has an open step today, so the continue ` +
+        "sheet's switch chip row and the FAB's `+N` queue both stay hidden and four i18n keys " +
+        "render nowhere on this account.",
     );
   }
 }
@@ -5056,6 +5318,123 @@ const SEEDED_ROUTINES = [
   // regex TypeScript. A guard that reads another file's type annotation and
   // indentation would break `npm run db:reset` on a reformat that changed nothing.
   // This block owns what only a database can answer; that test owns the rest.
+}
+
+// ------------------- reminder consent, read back out of the DB (#1271/#1525)
+// ACCOUNT-LEVEL, NOT DEMO-SPECIFIC, so all three seeded accounts are checked
+// together for the same reason the Home layouts are: this script is the last
+// thing `npm run db:reset` runs, and `supabase/seed.sql` is a plain data file
+// with no way to assert anything about itself.
+//
+// The invariant: `reminder_consent` must be TRUE wherever any per-tool enabled
+// flag is true. Consent is a hard DELIVERY gate — `send-web-reminders` continues
+// on a falsy one — and `enableTargetPatch` always writes consent alongside the
+// enabled column precisely so no surface can arm a reminder without it. A false
+// consent sitting beside an armed target is therefore a state NO USER PATH CAN
+// PRODUCE: the Reminders screen draws the row as armed and the server can never
+// send it. Demo held exactly that until #1271, because this script overwrote the
+// consent `supabase/seed.sql` had already granted.
+//
+// The timestamp half is checked too, because it is the difference between two
+// states with the same boolean. `false` + NULL is NEVER ASKED and the one-time
+// contextual prompt is offered; `false` + a non-null timestamp is DECLINED and
+// the prompt is withheld for good. Declined has no positive rendering — it is
+// only ever an absence — so seeding it costs a surface and buys nothing, and
+// alice is deliberately the never-asked account rather than the declined one.
+{
+  const ACCOUNTS = [
+    ["demo", DEMO_USER_ID],
+    ["alice", "00000000-0000-0000-0000-000000000001"],
+    ["bob", "00000000-0000-0000-0000-000000000002"],
+  ];
+  // Every per-tool reminder switch on `user_preferences`. Listed rather than
+  // globbed: a new tool's column has to be added here on purpose, and a guard
+  // that silently stopped covering one would be worse than no guard.
+  const TARGET_COLUMNS = [
+    "act_reminders_enabled",
+    "breathing_reminders_enabled",
+    "cbt_reminders_enabled",
+    "gratitude_reminders_enabled",
+    "grounding_reminders_enabled",
+    "habits_reminders_enabled",
+    "journal_reminders_enabled",
+    "meditation_reminders_enabled",
+    "mood_reminders_enabled",
+    "sleep_reminders_enabled",
+  ];
+
+  for (const [label, userId] of ACCOUNTS) {
+    const { data, error } = await admin
+      .from("user_preferences")
+      .select(["reminder_consent", "reminder_consent_updated_at", ...TARGET_COLUMNS].join(","))
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw new Error(`${label} user_preferences read-back: ${error.message}`);
+    if (!data) throw new Error(`${label} has no user_preferences row to check consent on.`);
+
+    const armed = TARGET_COLUMNS.filter((column) => data[column]);
+    if (armed.length > 0 && !data.reminder_consent) {
+      throw new Error(
+        `${label} has reminder consent off while ${armed.join(", ")} ` +
+          `${armed.length === 1 ? "is" : "are"} armed. Consent is a hard delivery gate, so ` +
+          "this account renders reminders it can never be sent — a state no user path can " +
+          "produce.",
+      );
+    }
+    // Applied to all three accounts rather than to demo alone, and that IS a
+    // stronger rule than the defect it came from. It holds because declined buys
+    // nothing anywhere: it has no positive rendering on any account, so a fixture
+    // seeded into it can only ever be missing a surface. If a declined fixture is
+    // ever genuinely wanted — to review something that reads the timestamp rather
+    // than the prompt's absence — this is the line to relax, and the reason to
+    // relax it belongs beside it.
+    if (!data.reminder_consent && data.reminder_consent_updated_at !== null) {
+      throw new Error(
+        `${label} reads as DECLINED (consent false with a timestamp of ` +
+          `${data.reminder_consent_updated_at}), which permanently withholds the one-time ` +
+          "contextual reminder prompt on every tool. Declined has no positive rendering, so " +
+          "no account seeded into the DATABASE should hold it. (An e2e run overriding a " +
+          "pooled session's preferences is a different thing and is not checked here.)",
+      );
+    }
+  }
+
+  // Demo specifically: consented, with the CBT target armed. Restated here rather
+  // than left to the invariant above, because "no contradiction" is also true of
+  // an account with consent off and nothing armed — which is what demo used to be
+  // one line away from, and which shows the reviewer no armed reminder row at all.
+  const { data: demoPreferences, error: demoError } = await admin
+    .from("user_preferences")
+    .select("reminder_consent,cbt_reminders_enabled,cbt_reminder_hour,cbt_reminder_timezone")
+    .eq("user_id", DEMO_USER_ID)
+    .maybeSingle();
+  if (demoError) throw new Error(`demo consent read-back: ${demoError.message}`);
+  if (!demoPreferences.reminder_consent || !demoPreferences.cbt_reminders_enabled) {
+    throw new Error(
+      `Demo came back with consent ${demoPreferences.reminder_consent} and the CBT reminder ` +
+        `${demoPreferences.cbt_reminders_enabled ? "on" : "off"}. Both are seeded true by ` +
+        "`supabase/seed.sql` and this script must leave them alone: with every target off, " +
+        "the Reminders screen is ten off toggles and an armed row is never rendered without " +
+        "a reviewer arming one by hand.",
+    );
+  }
+  // The time and the zone, asserted rather than merely selected. The point of
+  // keeping this target armed is that a reviewer sees a REAL armed row — a time
+  // and a named zone, not just a toggle in the on position — and a null zone
+  // would leave the sender guessing where the account lives. 20:00 also has to
+  // stay clear of the routine reminder at 08:00, so the two read as two
+  // decisions rather than one copied twice.
+  if (
+    demoPreferences.cbt_reminder_hour !== 20 ||
+    demoPreferences.cbt_reminder_timezone !== "Europe/Sofia"
+  ) {
+    throw new Error(
+      `Demo's armed CBT reminder came back at hour ${demoPreferences.cbt_reminder_hour} in ` +
+        `timezone ${demoPreferences.cbt_reminder_timezone}, not 20:00 Europe/Sofia. ` +
+        "`supabase/seed.sql` writes both, `supabase/README.md` quotes them, and the seeded " +
+        "routine reminder at 08:00 is placed to sit clear of this one.",
+    );
+  }
 }
 
 // ---------------------------------------------------------------------- done
