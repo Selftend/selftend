@@ -5010,14 +5010,13 @@ const SEEDED_ROUTINES = [
     return data;
   };
 
-  const expectLayout = (rows, expected, label, hint = "") => {
+  const expectLayout = (rows, expected, label) => {
     const ids = rows.map((row) => row.widget_id);
     if (JSON.stringify(ids) !== JSON.stringify(expected)) {
       throw new Error(
         `${label}'s Home layout reads [${ids.join(", ")}], not [${expected.join(", ")}]. ` +
           "An id that is not in WIDGET_META inserts fine and renders nothing, so a typo " +
-          "here surfaces as a Home row the reviewer thinks the screen dropped." +
-          hint,
+          "here surfaces as a Home row the reviewer thinks the screen dropped.",
       );
     }
     // 0-based and contiguous, the way `apply_widget_recommendations` assigns them.
@@ -5032,18 +5031,12 @@ const SEEDED_ROUTINES = [
   };
 
   expectLayout(await readLayout(DEMO_USER_ID, "demo"), DEMO_WIDGET_IDS, "demo");
-  expectLayout(
-    await readLayout(BOB_USER_ID, "bob"),
-    BOB_WIDGET_IDS,
-    "bob",
-    // ⚠️ bob's rows come from seed.sql, and this script never writes them — so an
-    // EMPTY read here is very likely not a seeding bug at all. The integration
-    // suite's `home-widgets-repository` test deletes every widget preference alice
-    // and bob hold in its `afterEach`, by design, and only `npm run db:reset` puts
-    // them back. `npm run db:seed:demo` alone cannot.
-    " If bob's list is EMPTY and you last ran `npm run test:integration`, that suite" +
-      " cleared his rows and only `npm run db:reset` restores them.",
-  );
+  // ⚠️ bob's rows come from seed.sql and this script never writes them, so this leg
+  // can only fail on a stack whose seed.sql did not run or was undone. Anything that
+  // clears a seed user's `widget_preferences` wholesale strips a layout nothing short
+  // of `npm run db:reset` restores — which is why the integration suite's cleanup is
+  // scoped to its own `test-widget-*` ids rather than deleting by user.
+  expectLayout(await readLayout(BOB_USER_ID, "bob"), BOB_WIDGET_IDS, "bob");
 
   const aliceLayout = await readLayout(ALICE_USER_ID, "alice");
   if (aliceLayout.length > 0) {
@@ -5055,36 +5048,14 @@ const SEEDED_ROUTINES = [
     );
   }
 
-  // Rule 2 (#1523): `/arrange`'s add row is every registry id demo does not already
-  // own, so a demo owning all of them empties the surface it exists to be reviewed
-  // on. Read against the live registry rather than a hardcoded 25, because the number
-  // that rots silently is this one — adding an id to WIDGET_META moves it.
-  const registrySource = fs.readFileSync(
-    path.join(process.cwd(), "src/features/home/widget-registry.tsx"),
-    "utf8",
-  );
-  const catalogue = registrySource.match(
-    /export const WIDGET_META: Record<string, WidgetMeta> = \{([\s\S]*?)\n\};/,
-  );
-  if (!catalogue) throw new Error("Could not read WIDGET_META from widget-registry.tsx");
-  const registryIds = Array.from(catalogue[1].matchAll(/^ {2}"([a-z0-9-]+)": \{/gm)).map(
-    (match) => match[1],
-  );
-  const unknown = DEMO_WIDGET_IDS.filter((widgetId) => !registryIds.includes(widgetId));
-  if (unknown.length > 0) {
-    throw new Error(
-      `Demo is seeded widget ids the registry does not declare: ${unknown.join(", ")}.`,
-    );
-  }
-  const chipRun = registryIds.length - DEMO_WIDGET_IDS.length;
-  if (chipRun !== 11) {
-    throw new Error(
-      `The /arrange add row would offer ${chipRun} chips on demo, not 11 ` +
-        `(${registryIds.length} registry ids − ${DEMO_WIDGET_IDS.length} seeded). ` +
-        "Demo is the account /arrange is judged on, and a demo owning nearly everything " +
-        "buys Home rows by deleting the surface that produces them.",
-    );
-  }
+  // The other two invariants this layout decided — demo's remaining `/arrange` chip
+  // run of 11, and bob's four ids composing a THREE-step starter card — are asserted
+  // in `test/seed-widget-layouts.test.ts`, not here, and deliberately so. Both are
+  // facts about SOURCE (`WIDGET_META`, `buildStarterSteps`), not about rows, and that
+  // test can `import` the real thing where this script, being plain `.mjs`, could only
+  // regex TypeScript. A guard that reads another file's type annotation and
+  // indentation would break `npm run db:reset` on a reformat that changed nothing.
+  // This block owns what only a database can answer; that test owns the rest.
 }
 
 // ---------------------------------------------------------------------- done

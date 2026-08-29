@@ -1,16 +1,24 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { SEED_USERS, deleteAllWidgetPreferencesForUser, signInAs } from "./helpers";
+import { SEED_USERS, deleteTestWidgetPreferencesForUser, signInAs } from "./helpers";
 
 // Tests the DB contract for widget_preferences (20260539_widget_preferences.sql).
 // widget_preferences: id, user_id, widget_id, position (default 0), created_at
 // UNIQUE (user_id, widget_id)
 // RLS: ALL via auth.uid() = user_id
 //
-// CAUTION: seed users may already have widget_preferences rows from seed.sql.
-// We use a made-up widget_id prefix ("test-widget-") to avoid collisions with
-// real seeded data. afterEach deletes by user_id (clearing all rows), which is
-// acceptable in the test DB - the app re-seeds on next launch.
+// CAUTION: seed users already have widget_preferences rows from seed.sql - bob
+// carries the four-id Home layout onboarding would have given him (#1352), and
+// alice's ZERO rows are themselves a fixture. So we use a made-up widget_id prefix
+// ("test-widget-") to avoid collisions with real seeded data, and afterEach deletes
+// only rows carrying that prefix.
+//
+// ☠️ afterEach used to delete by user_id, clearing ALL of a seed user's rows, on the
+// since-falsified grounds that "the app re-seeds on next launch". Nothing re-seeds
+// them: `npm run db:seed:demo` writes the demo user only, so bob's layout stayed gone
+// until the next full `npm run db:reset` - and the demo seeder's own read-back guard
+// failed on it. Every assertion below scopes its read by widget_id or row id, so the
+// narrower cleanup costs the tests nothing.
 
 const TEST_WIDGET_A = "test-widget-alpha";
 const TEST_WIDGET_B = "test-widget-beta";
@@ -26,8 +34,8 @@ describe("widget_preferences (integration)", () => {
 
   afterEach(async () => {
     await Promise.all([
-      deleteAllWidgetPreferencesForUser(SEED_USERS.alice.id),
-      deleteAllWidgetPreferencesForUser(SEED_USERS.bob.id),
+      deleteTestWidgetPreferencesForUser(SEED_USERS.alice.id),
+      deleteTestWidgetPreferencesForUser(SEED_USERS.bob.id),
     ]);
   });
 
