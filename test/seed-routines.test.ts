@@ -13,9 +13,10 @@ import { ROUTINE_CADENCES } from "@/src/features/routines/types";
  * there. What it cannot hold is whether the strings it wrote mean anything to the
  * app, because it is plain `.mjs` and cannot import TypeScript:
  *
- * ☠️ `routine_steps.tool_id` is free text — `CHECK (length(btrim(tool_id)) > 0)` and
- * `char_length <= 64`, no enum and no FK (`20260715_routines.sql`) — and validity is
- * client-side only. A mistyped step id therefore inserts fine, is skipped by
+ * ☠️ `routine_steps.tool_id` is an **app-defined identifier**, in the words of
+ * `20260715_routines.sql` itself — the database checks only that it is non-empty and
+ * at most 64 characters, with no enum and no foreign key, so validity is enforced
+ * client-side and nowhere else. A mistyped step id therefore inserts fine, is skipped by
  * `stepDoneOnDate`'s exhaustive switch, and leaves a routine that can never derive
  * complete. The seed's own read-back would agree with it, because it reads the same
  * typo back out. The same shape as `widget_preferences.widget_id` in

@@ -3386,8 +3386,9 @@ function bandClosesAt(dayIndex) {
 //
 // The placements stay anyway, and now earn their keep differently: today's
 // connection and choice-point rows are what make the "Steadying myself" routine
-// derive COMPLETE today and light its second strip day, which the LIT_DAYS
-// guard at the end of this file enforces. Do not remove them as dead weight —
+// derive COMPLETE today and light its second strip day, which that routine's
+// `lit` entry in EXPECTED at the end of this file enforces. Do not remove them
+// as dead weight —
 // re-read the routines block first.
 //
 // Defusion and expansion still CANNOT have a row today. Both feed `openUp`'s
@@ -4874,7 +4875,8 @@ function alignmentFor(domain, dayIndex) {
 // "Steadying myself" derives COMPLETE today BY CONSTRUCTION, not by choice.
 // Its steps are `connection` and `choicePoint`, and the ACT block above pins a
 // row dated today on each of them. Un-completing this routine means deleting one
-// of those, which drops it to ONE lit strip day - below LIT_DAYS_MIN, so the
+// of those, which drops it to ONE lit strip day - below the two this routine's
+// entry in EXPECTED requires, so the
 // guard at the end of this file throws. There is no second pre-today lit day to
 // find: row counts are fixed (#1181, PLACED NEVER ADDED), and the choice-point
 // block already had to MOVE its newest worksheet to manufacture the one it has.
@@ -5106,6 +5108,11 @@ const SEEDED_ROUTINES = [
   };
 
   let openStepsToday = 0;
+  // Names, gathered in the same pass rather than re-derived below: the switch-chip
+  // row and the FAB's `+N` queue turn on HOW MANY scheduled routines are open, which
+  // is a different question from how many steps are, and a second filter over the
+  // same rows would only ever restate this loop.
+  const openScheduledNames = [];
   for (const routine of seededRoutines) {
     const steps = seededSteps
       .filter((step) => step.routine_id === routine.id)
@@ -5201,7 +5208,9 @@ const SEEDED_ROUTINES = [
     // the seeding weekday would make the guard, not the app, the thing that
     // varies.
     if (routine.cadence !== "on-demand") {
-      openStepsToday += steps.filter((toolId) => !dayIndexes[toolId].has(DAYS - 1)).length;
+      const openSteps = steps.filter((toolId) => !dayIndexes[toolId].has(DAYS - 1)).length;
+      openStepsToday += openSteps;
+      if (openSteps > 0) openScheduledNames.push(routine.name);
     }
   }
 
@@ -5220,20 +5229,14 @@ const SEEDED_ROUTINES = [
   // (`switchable.length > 1`) and the FAB's `+N` queue (`fab.progressQueued`,
   // `fab.moreAfter_one`/`_other`, `sheet.switchLabel`) share the exact same gate,
   // so four i18n keys across two affordances render on this account or on none.
-  // Counted the way `openScheduledViews` counts: a routine is open when at least
-  // one step has no row today.
-  const openScheduled = seededRoutines.filter((routine) => {
-    if (routine.cadence === "on-demand") return false;
-    const steps = seededSteps
-      .filter((step) => step.routine_id === routine.id)
-      .map((step) => step.tool_id);
-    return steps.some((toolId) => !dayIndexes[toolId].has(DAYS - 1));
-  });
-  if (openScheduled.length < 2) {
+  // Counted the way `openScheduledViews` counts: a scheduled routine is open when
+  // at least one step has no row today.
+  if (openScheduledNames.length < 2) {
     throw new Error(
-      `Only ${openScheduled.length} scheduled routine (${openScheduled.map((r) => r.name).join(", ") || "none"}) ` +
-        "has an open step today, so the continue sheet's switch chip row and the FAB's `+N` " +
-        "queue both stay hidden and four i18n keys render nowhere on this account.",
+      `Only ${openScheduledNames.length} scheduled routine ` +
+        `(${openScheduledNames.join(", ") || "none"}) has an open step today, so the continue ` +
+        "sheet's switch chip row and the FAB's `+N` queue both stay hidden and four i18n keys " +
+        "render nowhere on this account.",
     );
   }
 }
@@ -5378,12 +5381,20 @@ const SEEDED_ROUTINES = [
           "produce.",
       );
     }
+    // Applied to all three accounts rather than to demo alone, and that IS a
+    // stronger rule than the defect it came from. It holds because declined buys
+    // nothing anywhere: it has no positive rendering on any account, so a fixture
+    // seeded into it can only ever be missing a surface. If a declined fixture is
+    // ever genuinely wanted — to review something that reads the timestamp rather
+    // than the prompt's absence — this is the line to relax, and the reason to
+    // relax it belongs beside it.
     if (!data.reminder_consent && data.reminder_consent_updated_at !== null) {
       throw new Error(
         `${label} reads as DECLINED (consent false with a timestamp of ` +
           `${data.reminder_consent_updated_at}), which permanently withholds the one-time ` +
           "contextual reminder prompt on every tool. Declined has no positive rendering, so " +
-          "no fixture should be seeded into it.",
+          "no account seeded into the DATABASE should hold it. (An e2e run overriding a " +
+          "pooled session's preferences is a different thing and is not checked here.)",
       );
     }
   }
@@ -5403,8 +5414,25 @@ const SEEDED_ROUTINES = [
       `Demo came back with consent ${demoPreferences.reminder_consent} and the CBT reminder ` +
         `${demoPreferences.cbt_reminders_enabled ? "on" : "off"}. Both are seeded true by ` +
         "`supabase/seed.sql` and this script must leave them alone: with every target off, " +
-        "the Reminders screen is ten off toggles and an armed row — its time, its zone — is " +
-        "never rendered without a reviewer arming one by hand.",
+        "the Reminders screen is ten off toggles and an armed row is never rendered without " +
+        "a reviewer arming one by hand.",
+    );
+  }
+  // The time and the zone, asserted rather than merely selected. The point of
+  // keeping this target armed is that a reviewer sees a REAL armed row — a time
+  // and a named zone, not just a toggle in the on position — and a null zone
+  // would leave the sender guessing where the account lives. 20:00 also has to
+  // stay clear of the routine reminder at 08:00, so the two read as two
+  // decisions rather than one copied twice.
+  if (
+    demoPreferences.cbt_reminder_hour !== 20 ||
+    demoPreferences.cbt_reminder_timezone !== "Europe/Sofia"
+  ) {
+    throw new Error(
+      `Demo's armed CBT reminder came back at hour ${demoPreferences.cbt_reminder_hour} in ` +
+        `timezone ${demoPreferences.cbt_reminder_timezone}, not 20:00 Europe/Sofia. ` +
+        "`supabase/seed.sql` writes both, `supabase/README.md` quotes them, and the seeded " +
+        "routine reminder at 08:00 is placed to sit clear of this one.",
     );
   }
 }
