@@ -42,15 +42,13 @@
 //   rows are pinned to a UTC band that resolves to the intended civil day from
 //   −11 through +12 and can slip a day further east.
 //
-// DECIDED BUT NOT YET SEEDED (settled on #1511; the spec is on each issue):
-// - Home's widget layout. `widget_preferences` is written only by onboarding's
-//   concern resolution and by the Add-Widget flow, and demo is seeded with
-//   onboarding already complete, so Home renders no tool rows until someone
-//   adds them by hand — the routines row included. Decided: 14 ids for demo,
-//   4 for bob, none for alice (#1352).
-// - Routine cadence and the reminder state. Decided: four routines — one
-//   `weekdays`, two `daily`, one `on-demand` — carrying exactly one reminder at
-//   08:00 Europe/Sofia, and demo's reminder consent corrected to true (#1271).
+// DECIDED BUT NOT YET SEEDED. Two gaps are settled but unbuilt, and the spec
+// for each is a comment on its own issue — deliberately NOT restated here, so
+// there is one copy to keep true rather than three:
+// - Home's widget layout, for demo and bob (#1352).
+// - The routine roster, cadences, the one reminder, and demo's reminder
+//   consent (#1271).
+// `supabase/README.md` describes what a reviewer sees until they land.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -4686,9 +4684,9 @@ function alignmentFor(domain, dayIndex) {
 //
 // ☠️ The old rationale ("a weekday cadence would make those surfaces depend on
 // which weekday the seed happened to run, breaking determinism") is false.
-// `isScheduledOn` is evaluated at RENDER against `new Date()`
-// (`use-routines-today.ts:83-87`), never at seed time, so re-seeding changes
-// nothing about it. "The same picture" is a contract about reproducibility
+// `isScheduledOn` is evaluated at RENDER against `new Date()` (the
+// `scheduledToday` field in `use-routines-today.ts`), never at seed time, so
+// re-seeding changes nothing about it. "The same picture" is a contract about reproducibility
 // across RUNS, not invariance across VIEWING DAYS, and the seeded window has
 // been anchored on `new Date()` from the start. A weekday-varying routine sits
 // inside that contract (#1524).
