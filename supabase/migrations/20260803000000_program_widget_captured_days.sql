@@ -18,9 +18,30 @@
 -- scanning `completed_at` through the viewer's window - so this migration closes
 -- a live drift as well as opening none.
 --
--- The five ACT legs stay viewer-local: no ACT table has a captured offset yet
--- (#330 item 6). After this migration that is the only viewer-local family left
--- in this function, and it is commented as such below.
+-- The five ACT legs stay viewer-local, and NOT as a pending item: no ACT table
+-- has a captured offset, and #1513 settled that this is how ACT stays. The
+-- deferral rests on a single-frame invariant - every ACT day-namer resolves the
+-- day from the viewer's current device timezone, so ACT's surfaces can be wrong
+-- together after travel but can never contradict each other, which is the harm
+-- the captured day exists to prevent. ACT growing a full cross-day archive
+-- (#1514, shipped #1517) did not expire that; those archives are flat and
+-- newest-first precisely so they name no second frame.
+--
+-- ☠️ So do not "finish the job" by copying a captured leg above onto an ACT
+-- table. That is the breach #1513 forbids, and it starts exactly here, with one
+-- table. ACT graduates module-wide across every day-stamped ACT table or not at
+-- all; `test/act-captured-offset-gate.test.ts` fires on the first table that
+-- goes alone, and is deleted by the change that graduates them all.
+--
+-- A copied leg is loud rather than subtly wrong, which is why the ACT legs below
+-- are safe to sit beside the captured ones: `occurrence_day_key(created_at,
+-- created_offset_minutes)` on an ACT table references a column that does not
+-- exist (SQLSTATE 42703 - immediate and timezone-independent), and adapting it to
+-- pass null makes the expression null, so the `coalesce` falls through to the
+-- viewer's window, which is byte-for-byte what the ACT legs already do.
+--
+-- After this migration ACT is the only viewer-local family left in this
+-- function, and it is commented as such below.
 --
 -- The signature is unchanged, so this is a plain replace with no drop and no
 -- client change: `p_day_key` has been sent by the app since 20260730120000 and

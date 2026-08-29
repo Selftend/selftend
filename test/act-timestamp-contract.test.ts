@@ -17,10 +17,12 @@ const ACT = join(__dirname, "..", "src", "features", "act");
  * the app's `updatedAt` formatter (its two CBT callers are lint exemptions); ACT's
  * defusion row was its one misuse for an occurrence timestamp.
  *
- * ⚠️ This is NOT #1533's gate. That one is the mirror of the captured-frame gate and
- * bans ACT's viewer-local DAY helpers; this one is about which timestamp FORMATTER a
- * surface renders. Adding `src/features/act/` to `CAPTURED_FRAME_FILES` would be
- * actively wrong — see #1533.
+ * ⚠️ This is NOT #1533's gate, which shipped as `act-captured-offset-gate.test.ts`. That
+ * one guards the SCHEMA — no ACT table or type may grow a captured `*_offset_minutes`
+ * alone — because #1533 found every import-shaped breach already locked and settled that
+ * no import fence would be built. This one is about which timestamp FORMATTER a surface
+ * renders. Adding `src/features/act/` to `CAPTURED_FRAME_FILES` would still be actively
+ * wrong: that gate bans the viewer-local helpers #1513 requires ACT to use.
  */
 
 /** The six archive rows: flat, newest-first, keyset-paged (#1515, #1517). */
