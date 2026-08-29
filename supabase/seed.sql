@@ -2,8 +2,10 @@
 -- Auto-applied by `supabase db reset`. Never runs against the linked cloud project.
 --
 -- Accounts (test-pass-{name}-123, see test/integration/helpers.ts):
---   alice@test.local - fresh post-onboarding, no records
---   bob@test.local   - mid-use, 5 thought records, reminders on
+--   alice@test.local - fresh post-onboarding, no records, and NO Home layout: she is
+--     the empty-dashboard fixture, and that emptiness is the fixture (#1352)
+--   bob@test.local   - mid-use, 5 thought records, reminders on, and the four-widget
+--     Home layout onboarding emits for his answers
 --   demo@test.local  - the fully populated review account. Only its profile and
 --     preferences are set here; every record it holds comes from
 --     scripts/seed-demo-data.mjs, which `npm run db:reset` runs last. Demo's ten
@@ -172,9 +174,23 @@ values (
 );
 
 -- bob: full onboarding done, reminders enabled at 19:30 local
+--
+-- The four onboarding-answer columns below (`selected_concerns`, `widgets_seeded`,
+-- `app_onboarding_completed_via`, `app_onboarding_completed_at`) belong to the same
+-- change as bob's `widget_preferences` rows further down, and are NOT optional trim
+-- (#1352). Seed the rows alone and bob becomes a *grandfathered* user - `via` null,
+-- `widgets_seeded` false, `selected_concerns` `{}` - who happens to hold four widgets.
+-- That state is producible (it is what `/arrange` leaves behind), but it makes the
+-- layout unexplainable, which is exactly what the decision refused.
+--
+-- `anxious-thoughts` is the concern that EXPLAINS this account: it is the only one
+-- whose `START_HERE_TARGETS` is `/modules/cbt/new`, and bob's whole dataset is five
+-- thought records nudged by a 19:30 CBT reminder. `enabled_modules` stays `['cbt']` -
+-- unlike demo, bob needs no module edit.
 insert into public.user_preferences (
   user_id,
   enabled_modules,
+  selected_concerns,
   reminder_consent,
   reminder_consent_updated_at,
   cbt_reminders_enabled,
@@ -183,6 +199,9 @@ insert into public.user_preferences (
   cbt_reminder_timezone,
   language,
   app_onboarding_completed,
+  app_onboarding_completed_via,
+  app_onboarding_completed_at,
+  widgets_seeded,
   cbt_onboarding_completed,
   privacy_policy_accepted_at,
   terms_accepted_at,
@@ -193,12 +212,16 @@ insert into public.user_preferences (
 values (
   '00000000-0000-0000-0000-000000000002',
   array['cbt']::text[],
+  array['anxious-thoughts']::text[],
   true,
   timezone('utc', now()) - interval '29 days',
   true,
   19, 30,
   'Europe/Sofia',
   'en',
+  true,
+  'finish',
+  timezone('utc', now()) - interval '30 days',
   true,
   true,
   timezone('utc', now()) - interval '30 days',
@@ -244,6 +267,36 @@ values (
   timezone('utc', now()) - interval '60 days',
   timezone('utc', now())
 );
+
+-- public.widget_preferences - bob (4)
+-- Exactly what onboarding's `buildWidgetRecommendations` emits for concerns
+-- ['anxious-thoughts'] and modules ['cbt'], and nothing else - no `/arrange` tail
+-- (#1352). Positions are 0-BASED: `apply_widget_recommendations` assigns
+-- `min(ordinality)::integer - 1`, so a direct insert has to use 0..n-1 to reproduce a
+-- real wizard run. The RPC itself is unusable from here - it is `security invoker` and
+-- reads `auth.uid()`, which is null under seed.sql - hence the direct insert.
+--
+-- ⚠️ `widget_id` is bare TEXT with no FK and no check, and the dashboard filters on
+-- `widgetId in WIDGET_META`, so a typo lands silently and renders nothing. The ids are
+-- checked against the live registry by test/seed-widget-layouts.test.ts.
+--
+-- WHAT THIS LAYOUT IS FOR: the Routines-page empty-state starter card (spec #37,
+-- surface #45), which renders only at zero routines AND at least two steppable stored
+-- widget ids, and today renders on no account at all. `buildStarterSteps` maps these
+-- four to [mood, breathing, journal] - three steps, exactly STARTER_STEP_CAP.
+-- ☠️ Which is why bob keeps ZERO routines, permanently: give him one and the only
+-- account that card can be reviewed on is gone. See supabase/README.md.
+--
+-- alice deliberately gets no rows here: with demo and bob both carrying a layout, she
+-- is the only account left on which Home's empty dashboard - and the wizard's starter
+-- panel behind its re-offer - is reachable at all. demo's fourteen ids are written by
+-- scripts/seed-demo-data.mjs, which `npm run db:reset` runs last.
+insert into public.widget_preferences (user_id, widget_id, position)
+values
+  ('00000000-0000-0000-0000-000000000002', 'cbt-programme',       0),
+  ('00000000-0000-0000-0000-000000000002', 'mood-checkin',        1),
+  ('00000000-0000-0000-0000-000000000002', 'breathing-suggested', 2),
+  ('00000000-0000-0000-0000-000000000002', 'journal-week',        3);
 
 -- ──────────────────────────────────────────────────────────────────────────
 -- e2e worker-pool users (w0..w7)
