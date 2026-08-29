@@ -63,6 +63,16 @@ _Avoid_: subscription (only half the channel), per-reminder permission
 Restoring a lost reminder channel for a user who has already said yes, without asking again. A re-arm never prompts; when consent cannot be presumed, what happens instead is a fresh request, not a re-arm.
 _Avoid_: re-subscribe (names the mechanism, not the promise), re-prompt (the thing a re-arm must never do)
 
+**Reminder consent**:
+Account-level permission to deliver any reminder at all. It is a **hard delivery gate, not an audit field**: with it off, nothing is ever sent regardless of per-tool settings — `send-web-reminders` skips the row. It also arms nothing by itself. Delivery needs three separate things: consent, a per-tool enabled flag, and a channel. Consent is a **permission**, the per-tool flag is the **nudge**, and the quiet-by-default guardrail bites on the nudge. Unlike the channel it is an **account** column, not a per-device row — which is why a reminder that is on with no channel is the ordinary state of a new device, while a reminder that is on with no consent is a state no user path can produce. Its three states are named, because two of them look identical in the database until you check the timestamp:
+
+- **Never asked** — `false` with a **null** timestamp. The one-time post-completion prompt is offered.
+- **Declined** — `false` with a **non-null** timestamp. The prompt is permanently withheld. It **has no positive rendering**: nothing anywhere draws differently for declined than for never-asked, so declined is only ever the _absence_ of the prompt.
+- **Consented** — `true`. The prompt is offered for any tool not already armed.
+
+Invariant: consent must be `true` whenever any per-tool enabled flag is `true`.
+_Avoid_: notification permission (that is the channel's half, and it is per-device), opt-in (does not distinguish never-asked from declined)
+
 ### Design language ("Color field")
 
 The app-wide visual direction (decided on the design redesign map, first shipped by the mood workstream).

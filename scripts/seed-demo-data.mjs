@@ -21,23 +21,36 @@
 //   encryption layer does its own work — never the *_data base tables.
 // - Run `npx supabase migration up` first if the stack has been reset.
 //
-// WHAT THIS CANNOT REACH (the known gaps, also in supabase/README.md):
+// WHAT THIS CANNOT REACH (the permanent gaps, also in supabase/README.md):
 // - The thought-record intro card. `selftend:cbt:thoughtRecordIntroDismissed`
 //   is AsyncStorage plus zustand, device-local by design; no server-side seed
 //   can dismiss it.
-// - The routine reminder UI. Both seeded routines have reminders off on
-//   purpose, so the time picker and its permission prompt never render.
-// - Routine cadence, one variant of four. Both routines are `daily`, because
-//   scheduled-ness gates Home's widget, the progress button and the continue
-//   sheet, and any other cadence would make those depend on the weekday the
-//   seed ran.
-// - Home's widget layout. `widget_preferences` is written only by onboarding's
-//   concern resolution and by the Add-Widget flow, and demo is seeded with
-//   onboarding already complete, so Home renders no tool rows until someone
-//   adds them by hand — the routines row included (#1352).
+// - The routine reminder permission prompt. It fires inside
+//   `ensureReminderChannel` at the moment a reminder is enabled, and seeding is
+//   exactly what bypasses that call, so no fixture can ever produce it. The
+//   reminder section itself is NOT a gap: it already renders in the editor for
+//   any routine that is not `on-demand`, time field and all.
+// - Home's routines row reading "Nothing scheduled today". It needs every
+//   routine unscheduled today, which is mutually exclusive with this script's
+//   own guard that some scheduled routine always has an open step — the guard
+//   that keeps the floating progress button visible. The button wins.
+// - A `custom` cadence, deliberately never seeded, so `schedule.customDays` and
+//   its Bulgarian weekday join render nowhere. Days nobody chose is a lie a
+//   reviewer finds the moment they open the editor (#1524); tests cover the
+//   strings instead.
 // - UTC+13 and UTC+14. The ACT tables carry no captured-offset column, so their
 //   rows are pinned to a UTC band that resolves to the intended civil day from
 //   −11 through +12 and can slip a day further east.
+//
+// DECIDED BUT NOT YET SEEDED (settled on #1511; the spec is on each issue):
+// - Home's widget layout. `widget_preferences` is written only by onboarding's
+//   concern resolution and by the Add-Widget flow, and demo is seeded with
+//   onboarding already complete, so Home renders no tool rows until someone
+//   adds them by hand — the routines row included. Decided: 14 ids for demo,
+//   4 for bob, none for alice (#1352).
+// - Routine cadence and the reminder state. Decided: four routines — one
+//   `weekdays`, two `daily`, one `on-demand` — carrying exactly one reminder at
+//   08:00 Europe/Sofia, and demo's reminder consent corrected to true (#1271).
 
 import fs from "node:fs";
 import path from "node:path";
@@ -3234,22 +3247,25 @@ function bandClosesAt(dayIndex) {
   return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), ACT_BAND_END_HOUR, 0, 0, 0);
 }
 
-// ☠️ ALL FIVE ACT LIST SCREENS ARE PER-DAY VIEWS, and `useSelectedDate()` is
-// hardcoded to `currentDateKey()` with no setter anywhere in the app — so they
-// can only ever show TODAY. A row on any other day is unreachable through the
-// UI, which is why connection, observing self and choice points each get a row
-// dated today below. (Urge surfing is the exception that proves it: it has no
-// list route at all, only an inline recent strip, and that strip is not
-// day-filtered.)
+// ☠️ THE PER-DAY-VIEW REASON THESE ROWS WERE PLACED HERE IS GONE. It used to be
+// that all five ACT list screens filtered to `useSelectedDate()` — hardcoded to
+// `currentDateKey()` with no setter anywhere in the app — so a row on any other
+// day was unreachable through the UI, and that is why connection, observing
+// self and choice points each get a row dated today below. #1515/#1517 made
+// every ACT record type's list a flat, newest-first, keyset-paged ARCHIVE, so
+// all of the seeded history is now reachable whatever the date, and
+// `useSelectedDate()` survives on ACT's WRITE path only.
 //
-// Defusion and expansion CANNOT have a row today. Both feed `openUp`'s daily
-// practice, which #1178 rules deliberately open, so their list screens open on
-// their empty state even on a fully seeded account. That is a genuine conflict
-// inside #1284's own acceptance criteria — "all six screens render seeded
-// content" against the two boundary margins — and the margins win, because they
-// are the constraint with a reason and an owner ruling behind them. Raised on
-// the issue: it wants a product decision about the per-day views, not a quieter
-// seed.
+// The placements stay anyway, and now earn their keep differently: today's
+// connection and choice-point rows are what make the "Steadying myself" routine
+// derive COMPLETE today and light its second strip day, which the LIT_DAYS
+// guard at the end of this file enforces. Do not remove them as dead weight —
+// re-read the routines block first.
+//
+// Defusion and expansion still CANNOT have a row today. Both feed `openUp`'s
+// daily practice, which #1178 rules deliberately open. That used to cost them a
+// whole screen; now it costs only a today-row, so #1284's "all six screens
+// render seeded content" criterion is satisfied by the archives.
 const ACT_TODAY = DAYS - 1;
 
 // ------------------------------------------------------------- defusion
@@ -4666,15 +4682,49 @@ function alignmentFor(domain, dayIndex) {
 // all rendered empty on the demo account while twelve of the twenty steppable
 // tools — with a picker group each — sat behind them.
 //
-// BOTH ARE `daily`, deliberately. Scheduled-ness gates the widget, the button
-// and the sheet (`isScheduledOn`), so a weekday or custom cadence would make
-// those three surfaces depend on which weekday the seed happened to run —
-// breaking determinism exactly where a reviewer looks first.
+// BOTH ARE `daily` — for now, and NOT for the reason this comment used to give.
 //
-// BOTH HAVE REMINDERS OFF, and must: the editor defaults them off, the seed
-// already sets reminder consent to false, and a demo account shipping a
-// default-on notification sits against the standing guardrail that
-// notifications are explicit and quiet by default.
+// ☠️ The old rationale ("a weekday cadence would make those surfaces depend on
+// which weekday the seed happened to run, breaking determinism") is false.
+// `isScheduledOn` is evaluated at RENDER against `new Date()`
+// (`use-routines-today.ts:83-87`), never at seed time, so re-seeding changes
+// nothing about it. "The same picture" is a contract about reproducibility
+// across RUNS, not invariance across VIEWING DAYS, and the seeded window has
+// been anchored on `new Date()` from the start. A weekday-varying routine sits
+// inside that contract (#1524).
+//
+// What was actually at stake was reviewability, and the product already answers
+// it: an off-day card swaps in "Runs weekdays" (#106) and Home's row says
+// "Nothing scheduled today". #1271 carries the decided four-routine roster.
+//
+// BOTH HAVE REMINDERS OFF: the editor defaults them off, this script currently
+// sets reminder consent to false, and a demo account shipping a default-on
+// notification sits against the standing guardrail that notifications are
+// explicit and quiet by default.
+//
+// ☠️ The consent half of that justification is itself a defect, not a setting.
+// `supabase/seed.sql` writes demo consent TRUE with an armed CBT reminder; the
+// upsert near the top of THIS file then overwrites it with a false carrying a
+// non-null timestamp, which reads as DECLINED and suppresses the one-time
+// contextual reminder prompt on every tool — while leaving a CBT reminder the
+// server can never deliver, since consent is a hard delivery gate. #1525
+// resolved it: the fix is deleting those two lines, and #1271 carries that plus
+// the one seeded routine reminder. So "reminders stay off" cannot lean on the
+// consent state; it holds here only until #1271 lands.
+//
+// ☠️ "Steadying myself" derives COMPLETE today BY CONSTRUCTION, not by choice,
+// and nothing here used to say so. Its steps are `connection` and `choicePoint`,
+// and the ACT block above pins a row dated today on each of them. Un-completing
+// this routine means deleting one of those, which drops it to ONE lit strip day
+// — below LIT_DAYS_MIN, so the guard at the end of this file throws. There is no
+// second pre-today lit day to find: row counts are fixed (#1181, PLACED NEVER
+// ADDED), and the choice-point block already had to MOVE its newest worksheet to
+// manufacture the one it has. Anyone tempted to make this routine `in_progress`
+// (#1541 was) hits that wall.
+//
+// ⚠️ #1541 gave a SECOND reason — that deleting the row would empty an ACT list
+// screen, which was then a per-day view. #1515/#1517 retired that: the ACT lists
+// are archives now. The decision survives on the lit-day guard alone.
 //
 // ☠️ Activity, defusion, expansion and urge-surf steps are deliberately absent.
 // Activities is the current CBT phase's own daily practice and the other three
@@ -4808,9 +4858,10 @@ const SEEDED_ROUTINES = [
     if (routine.reminder_enabled || routine.cadence !== "daily" || routine.custom_days.length > 0) {
       throw new Error(
         `"${routine.name}" came back as cadence ${routine.cadence} with reminders ` +
-          `${routine.reminder_enabled ? "ON" : "off"}. Both routines are daily with reminders ` +
-          "off: a weekday cadence makes Home's widget depend on the day the seed ran, and a " +
-          "default-on reminder is a notification nobody asked for.",
+          `${routine.reminder_enabled ? "ON" : "off"}. Both routines are still daily with ` +
+          "reminders off, so anything else here is drift rather than a decision: #1271 carries " +
+          "the decided four-routine roster and its one reminder, and this guard becomes a " +
+          "per-routine allowlist in that same change.",
       );
     }
 
