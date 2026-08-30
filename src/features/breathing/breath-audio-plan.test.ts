@@ -2,7 +2,18 @@ import { breathClipFor } from "@/src/features/breathing/breath-audio-plan";
 import { breathSoundLookup } from "@/src/constants/breathing-sounds";
 
 describe("breathClipFor", () => {
-  const soft = breathSoundLookup["soft-breath"];
+  // ☠️ A local fixture, not a catalog entry. `soft-breath` was the looped texture
+  // this branch was written against, and the whole texture lane was retired on
+  // 2026-08-30 (owner: background beds only). `breathClipFor`'s CONTRACT is
+  // unchanged — it still has to handle a sound with inhale/exhale assets and no
+  // hold cue — so the branch keeps its coverage from a literal instead of from an
+  // id that no longer exists.
+  const soft = {
+    id: "retired-texture",
+    labelKey: "x",
+    inhaleAsset: 101,
+    exhaleAsset: 102,
+  };
   const none = breathSoundLookup["none"];
   const guided = breathSoundLookup["guided"];
 

@@ -3,7 +3,11 @@ import { Platform } from "react-native";
 import type { AudioPlayer } from "expo-audio";
 
 import type { PhaseLabel } from "@/src/constants/breathing";
-import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
+import {
+  ambientSoundLookup,
+  breathSoundLookup,
+  resolveBreathSoundId,
+} from "@/src/constants/breathing-sounds";
 import { breathClipFor } from "@/src/features/breathing/breath-audio-plan";
 import { ensureNativeAudioMode, loadExpoAudio, playOneShot } from "@/src/lib/native-audio";
 
@@ -121,7 +125,10 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
       void lane.stop();
       return;
     }
-    const sound = breathSoundLookup[breathSoundId];
+    // ☠️ Resolved, not looked up raw: the three retired texture ids are still in the
+    // database on any account that picked one, and an unresolved id would silently
+    // play nothing while the sheet showed "None".
+    const sound = breathSoundLookup[resolveBreathSoundId(breathSoundId)];
     const clip = breathClipFor(phaseLabel, sound);
     if (clip === breathClipRef.current) return;
     breathClipRef.current = clip;
