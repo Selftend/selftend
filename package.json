@@ -161,7 +161,7 @@
     "eslint": "^10.7.0"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
+    "*.{js,jsx,mjs,cjs,ts,tsx}": [
       "eslint --fix --no-warn-ignored",
       "prettier --write",
       "jest --findRelatedTests --bail --passWithNoTests"

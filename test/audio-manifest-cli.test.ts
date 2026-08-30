@@ -89,7 +89,11 @@ describe("the manifest CLI", () => {
     await expect(write("B", { out: out() })).resolves.toBe(false);
     const doc = JSON.parse(await readFile(out(), "utf8"));
     expect(doc.complete).toBe(false);
-    expect(doc.totals.units).toBe(19);
+    // 11 since #1130: three generated beds (`rain`, `forest`, `night`) plus the
+    // eight voice slots. The breath textures were retired, and six beds moved to
+    // `synth-noise.mjs` — three noise beds, then `ocean`/`stream`/`fire` once the
+    // API failed all 36 of their takes.
+    expect(doc.totals.units).toBe(11);
   });
 
   it("☠️ does not green-light an unfinished pass through --check either", async () => {

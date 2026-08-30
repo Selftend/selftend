@@ -15,6 +15,7 @@
  * the rate. Wording cannot fix a distribution; measuring each draw and drawing
  * again can.
  */
+import { TRUE_PEAK_CEILING_DBTP } from "./catalog.mjs";
 
 /**
  * The same two thresholds `preflight` grades with, so a prompt faces one bar.
@@ -26,6 +27,67 @@
  */
 export const SILENT_DBTP = -30;
 export const USABLE_DBTP = -12;
+
+/**
+ * The upper bound. ☠️ THE GATE HAD A FLOOR AND NO CEILING (#1130).
+ *
+ * `brown-noise` came back from Round B hard-clipped at source — all three takes
+ * at 0.0 dBTP with 5,050 / 18,701 / 18 samples pinned at full scale against
+ * `rain`'s control of 2 — and was graded `ok`, because every rule above only
+ * asked whether a take was loud ENOUGH. Gain reduction cannot unflatten a
+ * clipped peak, so a clipped master is unusable no matter what the normaliser
+ * does to it afterwards; it has to be re-rolled, which means it has to be
+ * rejected here.
+ *
+ * -0.1 rather than 0.0: true peak is an inter-sample estimate, so genuine
+ * full-scale material reads slightly over while undamaged audio has no reason
+ * to sit in the last tenth of a dB.
+ */
+export const CLIPPED_DBTP = -0.1;
+
+/**
+ * How peaky a take may be and still reach its loudness target.
+ *
+ * ☠️ THE GATE MEASURED PEAK WHILE THE SPEC WAS LOUDNESS (#1130). Everything
+ * above grades `dBTP`; #1138 ships on `-20 LUFS-I inside <= -3 dBTP`. Sparse,
+ * peaky material clears the peak bar and then *cannot be gained to the target
+ * without breaching the ceiling* — `normalisationGain` sets `ceilingBound` and
+ * stops, and nothing rejected it. Round B accepted 10 such takes out of 22 and
+ * produced a set spanning 9.57 LU, worse than the 7.5 LU spread #1138 exists to
+ * fix.
+ *
+ * For an UNLIMITED class, normalisation is a single arithmetic gain, so it moves
+ * loudness and peak together and the whole question reduces to one number: a take
+ * fits iff its crest `dBTP - LUFS` is no larger than the distance between the
+ * ceiling and the target. The -20 bells allow 17 dB, the -23 temple block 20, and
+ * voice at -16 allows 13.
+ *
+ * ☠️ BEDS ARE LIMITED AND SO GET MORE (2026-08-30). Their target moved to -28 and
+ * a limiter now runs ahead of the gain, because no source on earth could meet the
+ * old bar for ambience — 36 generations, six human-vetted library sounds and
+ * synthesis all failed it. Their budget is 25 dB plus {@link LIMITER_HEADROOM_DB},
+ * and callers say which they are with `limited`.
+ */
+export function maxCrestDb(targetLufs, { limited = false } = {}) {
+  return TRUE_PEAK_CEILING_DBTP - targetLufs + (limited ? LIMITER_HEADROOM_DB : 0);
+}
+
+/**
+ * How much crest a limiter is allowed to recover, for classes that get one.
+ *
+ * ☠️ WITHOUT THIS THE GATE REJECTS EVERY REAL AMBIENCE EVER MADE. Once beds gained
+ * a limiter (2026-08-30), the pure-gain arithmetic above stopped describing what
+ * happens to them: peaks are taken down before the gain is computed, so a take
+ * whose raw crest exceeds the budget can still reach its target cleanly.
+ *
+ * 12 dB is set from the measurements that forced the change. The six library
+ * candidates the owner approved span 17.9 to 35.6 dB of crest against a -28
+ * target, whose unlimited budget is 25 — so the worst of them needs ~11 dB of
+ * help. ⚠️ It is a bound, not a licence: past this the limiter would be doing so
+ * much work that the bed audibly flattens, which is the failure mode the whole
+ * exercise is trying to avoid. A take beyond it is still refused.
+ */
+export const LIMITER_HEADROOM_DB = 12;
 
 /**
  * How many times one candidate slot may be re-drawn before the run gives up.
@@ -47,11 +109,35 @@ export const MAX_ATTEMPTS = 4;
  * is false, so the naive comparison happens to reject it, but only by accident
  * and it would serialise into the manifest as a bare `null` with no reason
  * attached. The worst possible take must be classified deliberately, not by luck.
+ *
+ * `lufs`/`targetLufs` are optional so a caller holding only a peak still gets the
+ * three level verdicts. ⚠️ Optional, NOT absent: omitting them restores exactly
+ * the gate that let Round B through, so every caller that can reach a spec must
+ * pass one. `preflight` and `render` both do, which is what keeps a prompt facing
+ * one bar rather than two.
+ *
+ * @param {number} dbtp measured true peak
+ * @param {{ lufs?: number, targetLufs?: number, limited?: boolean }} [measured]
+ *   ⚠️ Annotated explicitly: `limited` carries a default and the other two do
+ *   not, so inference would narrow this to `{ limited?: boolean }` alone and
+ *   every caller passing a loudness would fail typecheck.
  */
-export function classifyTake(dbtp) {
+export function classifyTake(dbtp, { lufs, targetLufs, limited = false } = {}) {
   if (!Number.isFinite(dbtp)) return { accepted: false, rejectedFor: "silent" };
   if (dbtp < SILENT_DBTP) return { accepted: false, rejectedFor: "silent" };
   if (dbtp < USABLE_DBTP) return { accepted: false, rejectedFor: "quiet" };
+  if (dbtp >= CLIPPED_DBTP) return { accepted: false, rejectedFor: "clipped" };
+  // Only when both numbers are real. A take with no measurable loudness is
+  // already rejected as silent above, and deriving a crest from a NaN would
+  // reject healthy audio for an arithmetic accident.
+  if (Number.isFinite(lufs) && Number.isFinite(targetLufs)) {
+    // The 1e-9 mirrors `normalisationGain`'s own slack so the gate and the
+    // normaliser agree on the boundary instead of disagreeing by a rounding
+    // error: a take sitting exactly on the ceiling is reachable, not bound.
+    if (dbtp - lufs > maxCrestDb(targetLufs, { limited }) + 1e-9) {
+      return { accepted: false, rejectedFor: "ceiling-bound" };
+    }
+  }
   return { accepted: true, rejectedFor: null };
 }
 

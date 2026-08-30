@@ -1504,16 +1504,18 @@
       "pickAmbient": "Choose an ambient sound",
       "none": "None",
       "breath": {
-        "guided": "Guided voice",
-        "soft": "Soft breath",
-        "ocean": "Ocean swell",
-        "wind": "Wind"
+        "guided": "Guided voice"
       },
       "ambient": {
         "rain": "Rain",
+        "ocean": "Ocean",
+        "stream": "Stream",
         "forest": "Forest",
         "night": "Night",
-        "brown": "Brown noise"
+        "fire": "Fireplace",
+        "brown": "Brown noise",
+        "pink": "Pink noise",
+        "white": "White noise"
       }
     },
     "overview": {

@@ -44,9 +44,13 @@ describe("SoundsSheet", () => {
   it("opens the breath picker and selects a sound, writing prefs", () => {
     renderWithProviders(<SoundsSheet visible onDismiss={() => {}} />);
     fireEvent.press(screen.getByLabelText("Choose a breath sound"));
-    fireEvent.press(screen.getByText("Ocean swell"));
+    // "Ocean swell" until 2026-08-30, when the breath-texture lane was retired.
+    // ⚠️ `none` and not `guided`: guided is the DEFAULT, so selecting it would assert
+    // nothing changed, and its label also appears in the summary row above the picker.
+    // By role, so it matches the radio rather than that summary.
+    fireEvent.press(screen.getByRole("radio", { name: "None" }));
     expect(mockUpdate).toHaveBeenCalled();
-    expect(mockUpdate.mock.calls[0][0].breathSoundId).toBe("ocean-swell");
+    expect(mockUpdate.mock.calls[0][0].breathSoundId).toBe("none");
   });
 
   it("exposes the open picker as radios in a labelled radiogroup", () => {
@@ -58,6 +62,8 @@ describe("SoundsSheet", () => {
     expect(screen.getAllByRole("radio").length).toBeGreaterThan(1);
     // Default selection is the "guided" breath sound.
     expect(screen.getByRole("radio", { name: "Guided voice" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "Ocean swell" })).not.toBeChecked();
+    // "Ocean swell" until the texture lane was retired; `none` is the other option
+    // the breath picker still offers, and it must read as unselected.
+    expect(screen.getByRole("radio", { name: "None" })).not.toBeChecked();
   });
 });

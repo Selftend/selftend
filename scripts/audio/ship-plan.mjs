@@ -20,7 +20,7 @@
  */
 
 import { choiceKey } from "./audition-plan.mjs";
-import { SFX_CLIPS, VOICE_CUES, VOICES, outputSpecFor, voiceSlotSpec } from "./catalog.mjs";
+import { SHIPPED_SFX_CLIPS, VOICE_CUES, VOICES, outputSpecFor, voiceSlotSpec } from "./catalog.mjs";
 
 /**
  * The round whose voice half the app ships — all of it, both voices.
@@ -43,8 +43,20 @@ const VOICE_ROUND = "B";
  */
 export const SHIP_BUDGET_BYTES = 4 * 1024 * 1024;
 
-/** How many finished files the set has, stated so a survey can disagree loudly. */
-export const SHIP_FILE_COUNT = 21;
+/**
+ * How many finished files the set has, stated so a survey can disagree loudly.
+ *
+ * 19 since #1130: 21, plus `stream`, `fire`, `white-noise` and `pink-noise`,
+ * minus the six breath textures the owner retired on 2026-08-30.
+ *
+ * ☠️ THE SET HAS ~12 KB OF HEADROOM AT 25, AND THAT IS NOT A MARGIN. Nine beds fit
+ * at all only because #1130 dropped the bed bitrate to 96k, and the six breath
+ * textures the owner retired on 2026-08-29 are still counted here because the app
+ * has not dropped them yet. Removing them takes the set to ~3.30 MiB with ~0.70
+ * MiB spare, which is where this count is expected to settle. Until then, DO NOT
+ * ADD ANOTHER CLIP: one more bed is 0.34 MiB against 12 KB of room.
+ */
+export const SHIP_FILE_COUNT = 19;
 
 /**
  * The finished file one shipping unit is written to.
@@ -96,7 +108,9 @@ export function shipFileName({ clip, voice = null }) {
  *            seconds: number|null, bitrate: string, channels: number}[]}
  */
 export function shippingUnits() {
-  const sfx = SFX_CLIPS.map((clip) => {
+  // ☠️ SHIPPED_SFX_CLIPS, not SFX_CLIPS: the budget counts what lands in `assets/`,
+  // and the three synth noise beds ship without ever being rendered.
+  const sfx = SHIPPED_SFX_CLIPS.map((clip) => {
     const spec = outputSpecFor(clip.id);
     return {
       id: choiceKey({ clip: clip.id, voice: null }),

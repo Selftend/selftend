@@ -19,7 +19,12 @@ import { outputSpecFor } from "../scripts/audio/catalog.mjs";
 
 const BED = outputSpecFor("brown-noise");
 const BELL = outputSpecFor("meditation-bell");
-const TEXTURE = outputSpecFor("soft-breath_inhale");
+// ⚠️ A voice cue, not a texture. The texture lane was retired on 2026-08-30, so
+// its spec no longer exists — but `foldPlan`'s rule is per-CLASS, not per-clip,
+// and voice is the other class that carries no fold length. The assertion below
+// is unchanged in substance: a class with nothing to fold refuses `--fold` loudly
+// instead of reporting a fold that never ran.
+const VOICE = outputSpecFor("guide_intro");
 
 describe("a natively looping bed is not folded", () => {
   it("skips the fold by default, and says why", () => {
@@ -62,7 +67,7 @@ describe("nothing but a bed is ever folded", () => {
   });
 
   it("leaves a texture alone", () => {
-    expect(foldPlan(TEXTURE).foldSeconds).toBeNull();
+    expect(foldPlan(VOICE).foldSeconds).toBeNull();
   });
 
   it("refuses to fold a bell that was asked for one, rather than ignoring the ask", () => {
@@ -70,7 +75,7 @@ describe("nothing but a bed is ever folded", () => {
     // The fold trims 0.4s off the end, which on a 2s temple block is a fifth of
     // its decay — an operator who typed it deserves an error, not a no-op.
     expect(() => foldPlan(BELL, { fold: true })).toThrow(/bells/);
-    expect(() => foldPlan(TEXTURE, { fold: true })).toThrow(/textures/);
+    expect(() => foldPlan(VOICE, { fold: true })).toThrow(/voice/);
   });
 });
 
@@ -84,8 +89,11 @@ describe("nothing but a bed is ever folded", () => {
 describe("the fold hint is printed but never counted as a failure", () => {
   const seamFail = (folded: boolean) => ({
     spec: BED,
-    pre: { lufs: -21.5, dbtp: -8.6 },
-    post: { lufs: -20.1, dbtp: -7.1 },
+    // ⚠️ Numbers sit ON the bed target, which moved from -20 to -28 on 2026-08-30.
+    // The point of this fixture is a clip whose ONLY fault is the seam, so a
+    // loudness miss here would add a second FAIL and quietly defeat the test.
+    pre: { lufs: -29.5, dbtp: -8.6 },
+    post: { lufs: -28.05, dbtp: -7.1 },
     size: 486_800,
     // Over the head/tail limit, which is how a natively looping bed actually failed.
     seam: { wrapStepRatio: 0.94, energyDeltaRatio: 2.05, headTailDb: 1.02, naturalDb: 0.5 },

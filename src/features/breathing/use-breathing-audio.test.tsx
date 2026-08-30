@@ -39,7 +39,7 @@ describe("useBreathingAudio", () => {
       useBreathingAudio({
         active: false,
         phaseLabel: "inhale",
-        breathSoundId: "soft-breath",
+        breathSoundId: "guided",
         ambientSoundId: "rain",
         breathVolume: 0.7,
         ambientVolume: 0.5,
@@ -53,7 +53,7 @@ describe("useBreathingAudio", () => {
       useBreathingAudio({
         active: true,
         phaseLabel: "inhale",
-        breathSoundId: "soft-breath",
+        breathSoundId: "guided",
         ambientSoundId: "none",
         breathVolume: 0.7,
         ambientVolume: 0.5,

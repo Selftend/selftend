@@ -48,8 +48,12 @@ const RING_SIZE = 220;
 const RING_RADIUS = 100;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-const bellSound = require("@/assets/sounds/meditation-bell.wav") as number;
-const intervalSound = require("@/assets/sounds/interval-temple-block.wav") as number;
+// #1130 replaced both placeholders with the Round A ElevenLabs masters, encoded to
+// .m4a like the rest of the set. ⚠️ `interval-temple-block` ships 2.85 LU under the
+// -23 #1139 asked for: its only take peaks at -0.63 dBTP, so it can only be
+// attenuated to reach the ceiling. Recorded rather than hidden.
+const bellSound = require("@/assets/sounds/meditation-bell.m4a") as number;
+const intervalSound = require("@/assets/sounds/interval-temple-block.m4a") as number;
 
 /**
  * The reflection's five chips, fixed as `7b` draws them - not the per-stage

@@ -34,6 +34,7 @@ import {
   TRUE_PEAK_CEILING_DBTP,
   AAC_ENCODER,
   BED_FOLD_SECONDS,
+  BED_LIMITER_PEAK,
 } from "./catalog.mjs";
 import {
   SHIP_BUDGET_BYTES,
@@ -621,6 +622,36 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
     // exactly predictable: scaling a signal by G dB moves both its integrated
     // loudness and its true peak by G. So the ceiling is arithmetic, not a limiter,
     // and no peak-squashing ever touches the audio.
+    // 3.5. limit peaks — BEDS ONLY, and only since 2026-08-30.
+    //
+    // ☠️ The paragraph above says "no peak-squashing ever touches the audio", and
+    // for bells and voice that still holds exactly. Beds are the documented
+    // exception, because the alternative was shipping nothing: ambience is quiet
+    // on average with occasional peaks, so its crest exceeds any budget a pure
+    // gain can satisfy. Measured across 36 generations, six human-vetted library
+    // sounds and synthesis — see CLASS_OUTPUT.beds.
+    //
+    // The limiter runs BEFORE the measurement, so the gain that follows is still
+    // one exact arithmetic constant applied to whatever the limiter produced.
+    // #1138's real invariant — that the final level move is predictable and not a
+    // silent dynamic-mode fallback — survives intact.
+    if (spec.limit) {
+      step("limit peaks (bed)");
+      const limited = join(dir, "limited.wav");
+      await ffmpeg([
+        "-i",
+        working,
+        "-af",
+        // `level=disabled` stops alimiter applying its own auto make-up gain,
+        // which would move the loudness this chain is about to measure.
+        `alimiter=limit=${BED_LIMITER_PEAK}:level=disabled`,
+        "-c:a",
+        "pcm_f32le",
+        limited,
+      ]);
+      working = limited;
+    }
+
     step("measure source");
     const pre = await measure(working);
     const { gain, ceilingBound } = normalisationGain(pre, spec, basename(input));
