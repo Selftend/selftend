@@ -640,14 +640,19 @@ export const TEXTURES = [];
  * *and* the sheet displays "None") and shipped store clients live forever, so
  * the male voice is purely additive and there is no migration.
  *
- * Voice ids are deliberately empty: #1136 routed the actual pick to the render
- * session on stated criteria — Voice Library only (defaults expire
- * 2026-12-31), a matched pair, auditioned on the shipping words rather than on
- * the library's demo reel. Fill these in at Round B.
+ * ☠️ THE VOICES ARE CHOSEN (owner, 2026-08-30). #1136 routed the pick to the
+ * render session on stated criteria — Voice Library only (defaults expire
+ * 2026-12-31), a matched pair — and these are the two the owner picked.
+ *
+ * ⚠️ These are ENGLISH. #1133 settled the whole map as English-only, and the owner
+ * has since asked about per-language voices (Bulgarian ids are in hand). That is a
+ * real expansion — it doubles the voice set, needs Bulgarian cue WORDING that
+ * nobody has written, and the app has no language-aware voice selection — so it is
+ * deliberately NOT smuggled in here. It gets decided and costed on its own.
  */
 export const VOICES = [
-  { id: "guided", axis: "female", voiceId: null },
-  { id: "guided-male", axis: "male", voiceId: null },
+  { id: "guided", axis: "female", voiceId: "s3TPKV1kjDlVtZbl4Ksh" },
+  { id: "guided-male", axis: "male", voiceId: "l32B8XDoylOsZKiSdfhE" },
 ];
 
 /**
