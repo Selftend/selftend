@@ -519,9 +519,12 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
       // The clip's own loudness target, so a peaky take is rejected here rather
       // than surviving to `postprocess` and stopping there as `ceilingBound`
       // with no re-roll left to spend (#1130).
+      const spec = outputSpecFor(clip.id);
       const verdict = classifyTake(measured.dbtp, {
         lufs: measured.lufs,
-        targetLufs: outputSpecFor(clip.id).lufs,
+        targetLufs: spec.lufs,
+        // Beds are limited before the gain, so their crest budget is wider.
+        limited: Boolean(spec.limit),
       });
       const { channels, ratio } = derivePcmChannels(buffer.length, clip.durationSeconds, 48000);
 

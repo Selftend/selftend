@@ -56,16 +56,38 @@ export const CLIPPED_DBTP = -0.1;
  * produced a set spanning 9.57 LU, worse than the 7.5 LU spread #1138 exists to
  * fix.
  *
- * Normalisation is a single arithmetic gain (no limiter, see
- * `normalisationGain`), so it moves loudness and peak together and the whole
- * question reduces to one number: a take fits iff its crest factor
- * `dBTP - LUFS` is no larger than the distance between the ceiling and the
- * target. Beds and textures at -20 allow 17 dB, the -23 temple block 20 dB,
- * voice at -16 allows 13 dB.
+ * For an UNLIMITED class, normalisation is a single arithmetic gain, so it moves
+ * loudness and peak together and the whole question reduces to one number: a take
+ * fits iff its crest `dBTP - LUFS` is no larger than the distance between the
+ * ceiling and the target. The -20 bells allow 17 dB, the -23 temple block 20, and
+ * voice at -16 allows 13.
+ *
+ * ☠️ BEDS ARE LIMITED AND SO GET MORE (2026-08-30). Their target moved to -28 and
+ * a limiter now runs ahead of the gain, because no source on earth could meet the
+ * old bar for ambience — 36 generations, six human-vetted library sounds and
+ * synthesis all failed it. Their budget is 25 dB plus {@link LIMITER_HEADROOM_DB},
+ * and callers say which they are with `limited`.
  */
-export function maxCrestDb(targetLufs) {
-  return TRUE_PEAK_CEILING_DBTP - targetLufs;
+export function maxCrestDb(targetLufs, { limited = false } = {}) {
+  return TRUE_PEAK_CEILING_DBTP - targetLufs + (limited ? LIMITER_HEADROOM_DB : 0);
 }
+
+/**
+ * How much crest a limiter is allowed to recover, for classes that get one.
+ *
+ * ☠️ WITHOUT THIS THE GATE REJECTS EVERY REAL AMBIENCE EVER MADE. Once beds gained
+ * a limiter (2026-08-30), the pure-gain arithmetic above stopped describing what
+ * happens to them: peaks are taken down before the gain is computed, so a take
+ * whose raw crest exceeds the budget can still reach its target cleanly.
+ *
+ * 12 dB is set from the measurements that forced the change. The six library
+ * candidates the owner approved span 17.9 to 35.6 dB of crest against a -28
+ * target, whose unlimited budget is 25 — so the worst of them needs ~11 dB of
+ * help. ⚠️ It is a bound, not a licence: past this the limiter would be doing so
+ * much work that the bed audibly flattens, which is the failure mode the whole
+ * exercise is trying to avoid. A take beyond it is still refused.
+ */
+export const LIMITER_HEADROOM_DB = 12;
 
 /**
  * How many times one candidate slot may be re-drawn before the run gives up.
@@ -93,8 +115,14 @@ export const MAX_ATTEMPTS = 4;
  * the gate that let Round B through, so every caller that can reach a spec must
  * pass one. `preflight` and `render` both do, which is what keeps a prompt facing
  * one bar rather than two.
+ *
+ * @param {number} dbtp measured true peak
+ * @param {{ lufs?: number, targetLufs?: number, limited?: boolean }} [measured]
+ *   ⚠️ Annotated explicitly: `limited` carries a default and the other two do
+ *   not, so inference would narrow this to `{ limited?: boolean }` alone and
+ *   every caller passing a loudness would fail typecheck.
  */
-export function classifyTake(dbtp, { lufs, targetLufs } = {}) {
+export function classifyTake(dbtp, { lufs, targetLufs, limited = false } = {}) {
   if (!Number.isFinite(dbtp)) return { accepted: false, rejectedFor: "silent" };
   if (dbtp < SILENT_DBTP) return { accepted: false, rejectedFor: "silent" };
   if (dbtp < USABLE_DBTP) return { accepted: false, rejectedFor: "quiet" };
@@ -106,7 +134,7 @@ export function classifyTake(dbtp, { lufs, targetLufs } = {}) {
     // The 1e-9 mirrors `normalisationGain`'s own slack so the gate and the
     // normaliser agree on the boundary instead of disagreeing by a rounding
     // error: a take sitting exactly on the ceiling is reachable, not bound.
-    if (dbtp - lufs > maxCrestDb(targetLufs) + 1e-9) {
+    if (dbtp - lufs > maxCrestDb(targetLufs, { limited }) + 1e-9) {
       return { accepted: false, rejectedFor: "ceiling-bound" };
     }
   }

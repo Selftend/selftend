@@ -241,6 +241,16 @@ export const AAC_ENCODER = "aac"; // pinned: ffmpeg's native encoder, what #1138
  */
 export const BED_FOLD_SECONDS = 0.4; // CF in generate-breathing-sounds.py:154
 
+/**
+ * The peak the bed limiter works to, in linear amplitude (0.7 ~ -3.1 dBFS).
+ *
+ * Gentle on purpose. The job is to take the tops off the occasional crackle or
+ * wave so the gain that follows can reach the target, NOT to compress the bed
+ * into a flat wall — that would remove the very movement that makes ambience
+ * sound alive, which is the whole reason the synthesised beds were rejected.
+ */
+export const BED_LIMITER_PEAK = 0.6;
+
 const CLASS_OUTPUT = {
   // ☠️ 96k, not #1138's 128k. The 2026-08-29 bed request takes the set from five
   // beds to nine, and nine 30s beds at 128k are 4.12 MiB on their own — over the
@@ -252,7 +262,28 @@ const CLASS_OUTPUT = {
   // AAC codes most efficiently and where a listener has least to miss. Owner
   // decision, 2026-08-29, made against the measured numbers rather than as a
   // default. ⚠️ Bells stay at 128k: a struck bowl IS a transient.
-  beds: { channels: 2, bitrate: "96k", lufs: -20 },
+  // ☠️☠️ -28 AND LIMITED, NOT -20 WITH PURE GAIN. #1138 chose -20 under a -3 dBTP
+  // ceiling and explicitly refused a limiter, so that normalisation stayed one
+  // exact arithmetic gain. For a bell that is right. For ambience it is
+  // unreachable, and this was established from three independent directions on
+  // 2026-08-30 rather than argued:
+  //
+  //   · 36 ElevenLabs generations of `ocean`/`stream`/`fire` — every one rejected
+  //     `ceiling-bound` or `clipped`, 13,530 credits.
+  //   · SIX human-vetted sounds from the Explore library, one with 183 downloads
+  //     — crest 17.9, 20.0, 20.3, 20.5, 33.7, 35.6 dB against a 17 dB budget.
+  //     Every one over.
+  //   · Synthesis, which met the spec and did not sound like the thing.
+  //
+  // Real ambience has a high crest factor: it is quiet on average with occasional
+  // peaks, and that IS the sound. A target that forbids it forbids the material.
+  // So beds move to -28 with a gentle limiter ahead of the gain — the one class
+  // where a limiter is the correct tool rather than a compromise.
+  //
+  // ⚠️ Beds are now deliberately QUIETER than the other classes (bells -20/-23,
+  // voice -16). That is the right order for a background layer under a spoken cue.
+  // Owner approved 2026-08-30 after auditioning all six candidates.
+  beds: { channels: 2, bitrate: "96k", lufs: -28, limit: true },
   textures: { channels: 1, bitrate: "96k", lufs: -20 },
   voice: { channels: 1, bitrate: "64k", lufs: -16 },
 };
@@ -376,7 +407,25 @@ export const BEDS = [
     // it, which is the one lever the prompt route never had. ⚠️ The prompt below
     // is kept as the record of what was asked for and what came back; nothing
     // reads it any more.
-    source: "synth",
+    // ☠️ FROM THE ELEVENLABS **EXPLORE LIBRARY**, not generated and not computed.
+    // Owner-approved 2026-08-30 after auditioning six candidates.
+    //
+    // Two earlier routes failed this slot. The API produced 12 takes and zero
+    // usable ones (20.0 dB crest here is why — see CLASS_OUTPUT.beds), and
+    // synthesis met the spec but the owner's verdict was "nothing like" the real
+    // thing. 📌 Filtered noise imitates a SPECTRUM; it does not imitate a place.
+    //
+    // Chosen because the owner rejected every generated take with "the waves are too frequent", and this one's own description promises "wave intensity remains consistent with no sudden crashes or strong surges".
+    //
+    // ⚠️ Library downloads cost NO credits and arrive as 30s looping WAV at 48 kHz,
+    // which is exactly SFX_MASTER_PCM — so the file drops into the same pipeline
+    // with no special case. Browse: elevenlabs.io/app/sound-effects?loop=true&q=...
+    source: "library",
+    /** The file as downloaded, kept so the master can be traced to its origin. */
+    libraryFile: "AMBSea-A_long,_uninterrupte-Elevenlabs.wav",
+    libraryDescription:
+      "A long, uninterrupted nighttime ocean waves ambience recorded from inside a quiet luxury hotel room near the shore",
+    libraryDownloads: 115,
     // ☠️ #1137 separated this bed from the `ocean-swell` texture "by distance in
     // the prompt" — bed wide and distant, texture close. That mechanism does not
     // exist: SHARED_TAIL is appended to *every* SFX prompt, beds included, and it
@@ -439,7 +488,25 @@ export const BEDS = [
     // it, which is the one lever the prompt route never had. ⚠️ The prompt below
     // is kept as the record of what was asked for and what came back; nothing
     // reads it any more.
-    source: "synth",
+    // ☠️ FROM THE ELEVENLABS **EXPLORE LIBRARY**, not generated and not computed.
+    // Owner-approved 2026-08-30 after auditioning six candidates.
+    //
+    // Two earlier routes failed this slot. The API produced 12 takes and zero
+    // usable ones (17.9 dB crest here is why — see CLASS_OUTPUT.beds), and
+    // synthesis met the spec but the owner's verdict was "nothing like" the real
+    // thing. 📌 Filtered noise imitates a SPECTRUM; it does not imitate a place.
+    //
+    // Chosen because the cleanest measurement of the six candidates, and free of the birdsong that would put a recurring event in a 30-second loop.
+    //
+    // ⚠️ Library downloads cost NO credits and arrive as 30s looping WAV at 48 kHz,
+    // which is exactly SFX_MASTER_PCM — so the file drops into the same pipeline
+    // with no special case. Browse: elevenlabs.io/app/sound-effects?loop=true&q=...
+    source: "library",
+    /** The file as downloaded, kept so the master can be traced to its origin. */
+    libraryFile: "AMBMisc-Natural_river_stream-Elevenlabs.wav",
+    libraryDescription:
+      "Natural river stream ambience, clear flowing water rushing over smooth stones and small boulders",
+    libraryDownloads: 32,
     // Added on the owner's 2026-08-29 bed request, with `fire`. It has to be
     // fenced from both neighbours: from `rain` because both are water on a
     // surface, and from `ocean` because both are a continuous body of it. Moving
@@ -466,7 +533,26 @@ export const BEDS = [
     // it, which is the one lever the prompt route never had. ⚠️ The prompt below
     // is kept as the record of what was asked for and what came back; nothing
     // reads it any more.
-    source: "synth",
+    // ☠️ FROM THE ELEVENLABS **EXPLORE LIBRARY**, not generated and not computed.
+    // Owner-approved 2026-08-30 after auditioning six candidates.
+    //
+    // Two earlier routes failed this slot. The API produced 12 takes and zero
+    // usable ones (35.6 dB crest here is why — see CLASS_OUTPUT.beds), and
+    // synthesis met the spec but the owner's verdict was "nothing like" the real
+    // thing. 📌 Filtered noise imitates a SPECTRUM; it does not imitate a place.
+    //
+    // Chosen because by far the most downloaded of any candidate, and "minimal crackle, very low volume" is what a bed under a meditation should be.
+    //
+    // ⚠️ Library downloads cost NO credits and arrive as 30s looping WAV at 48 kHz,
+    // which is exactly SFX_MASTER_PCM — so the file drops into the same pipeline
+    // with no special case. Browse: elevenlabs.io/app/sound-effects?loop=true&q=...
+    source: "library",
+    /** The file as downloaded, kept so the master can be traced to its origin. */
+    output: { lufs: -36 },
+    libraryFile: "FIRECrkl-Ultra-soft_small_fir-Elevenlabs.wav",
+    libraryDescription:
+      "Ultra-soft small fireplace fire, gentle warm crackling, very light and subtle embers",
+    libraryDownloads: 183,
     // ☠️ THE RISKIEST BED IN THE SET, knowingly. A hearth fire IS crackle, and a
     // crackle is a discrete event — precisely the sparse shape that made `rain`
     // unusable at spec (#1130). So the prompt asks for the crackle to be dense
@@ -489,9 +575,18 @@ export const BEDS = [
     text: null,
   },
 ].map((bed) => ({
-  // ☠️ `elevenlabs` unless the bed says otherwise. `source: "synth"` beds are
-  // generated by `synth-noise.mjs` and NEVER reach the API — see the block below
-  // and `SFX_CLIPS`, which is what actually keeps them out of a render.
+  // ☠️ THREE SOURCES NOW, and only one of them costs anything.
+  //
+  //   `elevenlabs` — generated by `render.mjs` against the prompt below. The
+  //                 default, and the only one that spends credits.
+  //   `synth`      — computed by `synth-noise.mjs`. Exact for noise whose
+  //                 definition IS a spectrum: white, pink, brown.
+  //   `library`    — downloaded from the ElevenLabs Explore library. Free, and
+  //                 the only route that produced a convincing ocean, stream or
+  //                 fire after the other two were tried and rejected.
+  //
+  // `SFX_CLIPS` is what keeps the non-`elevenlabs` beds out of a render; they
+  // stay in `BEDS` and `SHIPPED_SFX_CLIPS` because they still ship.
   source: "elevenlabs",
   ...bed,
   klass: "beds",
@@ -500,8 +595,18 @@ export const BEDS = [
   promptInfluence: 0.6,
   loop: CLASS_LOOP.beds,
   candidates: 3,
-  output: CLASS_OUTPUT.beds,
-  loudnessTarget: loudnessLabel(CLASS_OUTPUT.beds.lufs),
+  // ☠️ A bed MAY carry its own target, and one does. `fire` measures -34.7 LUFS
+  // with a +0.88 dBTP peak — a 35.6 dB crest — so reaching the class -28 would
+  // take limiting so heavy the crackle flattens into noise, which is exactly the
+  // character the owner approved it for. Measured: un-limited it can only be
+  // attenuated to -38.6; at the gentle 0.7 limiter it reaches -36.2; only at a
+  // brutal 0.18 does it touch -28.4. So it ships at its own honest level.
+  //
+  // ⚠️ THE CONSEQUENCE IS AUDIBLE AND DELIBERATE: `fire` sits ~8 dB below the
+  // other beds, so switching to it is a real drop in level. Accepted in exchange
+  // for keeping the sound; the alternative is a squashed fire at matched level.
+  output: { ...CLASS_OUTPUT.beds, ...(bed.output ?? {}) },
+  loudnessTarget: loudnessLabel(bed.output?.lufs ?? CLASS_OUTPUT.beds.lufs),
   // The only class whose seam is gated, and the only one the fold can apply to.
   // ⚠️ Carrying a fold length is no longer the same as folding: since #1359 this
   // is the length available to the fallback, and `foldPlan` decides whether it
@@ -645,14 +750,19 @@ export const TTS_VOICE_SETTINGS = {
  * remain in {@link BEDS} and in {@link OUTPUT_CLIPS} because they still ship and
  * still need a post-processing spec; they are simply not *rendered*.
  */
-export const SFX_CLIPS = [...BELLS, ...BEDS.filter((bed) => bed.source !== "synth"), ...TEXTURES];
+export const SFX_CLIPS = [
+  ...BELLS,
+  ...BEDS.filter((bed) => bed.source === "elevenlabs"),
+  ...TEXTURES,
+];
 
 /**
  * Every non-voice clip the app SHIPS — the superset `SFX_CLIPS` used to be.
  *
  * ☠️ THESE TWO LISTS ARE NOT THE SAME AND THE DIFFERENCE COSTS MONEY OR TRUTH.
  * `SFX_CLIPS` is what the API generates; this is what ends up in `assets/`. The
- * three synth beds sit in this list only. Read the wrong one and you either quote
+ * six non-generated beds — three computed, three from the library — sit in this
+ * list only. Read the wrong one and you either quote
  * credits for a sound that is computed for free (`SFX_CLIPS` too wide) or under-
  * count the bundle by three 30s beds (this one too narrow) — the second is what
  * `shippingUnits` did the moment the synth beds appeared, reporting 2.88 MiB for
@@ -662,6 +772,15 @@ export const SHIPPED_SFX_CLIPS = [...BELLS, ...BEDS, ...TEXTURES];
 
 /** The beds `synth-noise.mjs` owns — the complement of `SFX_CLIPS`'s filter. */
 export const SYNTH_BEDS = BEDS.filter((bed) => bed.source === "synth");
+
+/**
+ * The beds downloaded from the ElevenLabs Explore library.
+ *
+ * ⚠️ These have no prompt and no seed, so unlike every other clip they cannot be
+ * remade from anything in this repo — the WAV IS the source. Archive them with
+ * the masters; a lost library file is as unrecoverable as a lost generation.
+ */
+export const LIBRARY_BEDS = BEDS.filter((bed) => bed.source === "library");
 
 /**
  * Every clip the post-processor can be asked about, keyed by id — the thirteen

@@ -14,6 +14,7 @@
  */
 import {
   CLIPPED_DBTP,
+  LIMITER_HEADROOM_DB,
   MAX_ATTEMPTS,
   SILENT_DBTP,
   USABLE_DBTP,
@@ -103,6 +104,30 @@ describe("classifyTake", () => {
     expect(classifyTake(-4, { lufs: -25, targetLufs: -23 }).rejectedFor).toBe("ceiling-bound");
   });
 
+  it("gives a LIMITED class more crest, because a limiter really does buy some", () => {
+    // ☠️☠️ WITHOUT THIS THE GATE REJECTS EVERY REAL AMBIENCE. Beds moved to -28
+    // with a limiter on 2026-08-30 after three independent sources failed the old
+    // bar: 36 API generations, six human-vetted library sounds (crest 17.9 to
+    // 35.6 against a 17 dB budget) and synthesis. A -28 bed gets 25 dB unlimited
+    // and 37 with the limiter counted.
+    expect(maxCrestDb(-28)).toBe(25);
+    expect(maxCrestDb(-28, { limited: true })).toBe(25 + LIMITER_HEADROOM_DB);
+
+    // The measured `fire` master: -34.7 LUFS at +0.88 dBTP, a 35.6 dB crest.
+    // Refused as an unlimited take, allowed once the limiter is in the chain.
+    const fire = { lufs: -34.7, targetLufs: -28 };
+    expect(classifyTake(-4, fire).rejectedFor).toBe("ceiling-bound");
+    expect(classifyTake(-4, { ...fire, limited: true }).accepted).toBe(true);
+  });
+
+  it("still refuses a take past even the limited budget", () => {
+    // ⚠️ The headroom is a bound, not a licence. Past it the limiter would be
+    // working so hard the bed audibly flattens — the exact failure the move to a
+    // library sound was meant to avoid.
+    expect(classifyTake(-4, { lufs: -60, targetLufs: -28, limited: true }).rejectedFor).toBe(
+      "ceiling-bound",
+    );
+  });
   it("falls back to the level verdicts when no target is supplied", () => {
     // ⚠️ Documented, not endorsed: a caller with only a peak still gets an
     // answer, and that answer is exactly the old gate. Every caller that can

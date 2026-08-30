@@ -141,65 +141,6 @@ function brownStep(x, s) {
 }
 
 /**
- * A one-pole low-pass, given a corner frequency.
- *
- * `alpha = exp(-2*pi*fc/fs)` is the standard mapping, and the gain is normalised
- * so the filter passes DC at unity — otherwise every cascade quietly loses level
- * and the peak normalisation at the end has to make it back up as gain, which
- * lifts the noise with it.
- */
-function lowpass(fc, sampleRate) {
-  const a = Math.exp((-2 * Math.PI * fc) / sampleRate);
-  return (x, s) => {
-    s.y = a * (s.y ?? 0) + (1 - a) * x;
-    return s.y;
-  };
-}
-
-/** Run several circular passes in sequence — a steeper slope than one pole. */
-function chain(input, steps) {
-  return steps.reduce((signal, step) => filterCircular(signal, step), input);
-}
-
-function mix(...parts) {
-  const n = parts[0][0].length;
-  const out = new Float64Array(n);
-  for (const [buf, gain] of parts) {
-    for (let i = 0; i < n; i += 1) out[i] += buf[i] * gain;
-  }
-  return out;
-}
-
-/**
- * Sparse decaying impulses, placed so they WRAP rather than stopping at the end.
- *
- * ☠️ The whole seam guarantee depends on this. An impulse struck near the end of
- * the buffer has to finish inside the head of the same buffer, or the loop point
- * cuts a crackle in half and clicks once per lap — audible forever on a bed that
- * repeats every 30 seconds. Writing with `(start + k) % n` makes the buffer a
- * circle for the events too, matching what `filterCircular` does for the filters.
- */
-function crackle(n, random, { perSecond, sampleRate, decaySeconds }) {
-  const out = new Float64Array(n);
-  const count = Math.round((n / sampleRate) * perSecond);
-  const tail = Math.max(1, Math.round(decaySeconds * sampleRate));
-  for (let e = 0; e < count; e += 1) {
-    const start = Math.floor(random() * n);
-    // Each event gets its own amplitude and decay so the texture does not pulse
-    // with one recognisable click repeated at different times.
-    const amp = 0.35 + random() * 0.65;
-    const decay = Math.exp(-1 / (tail * (0.4 + random())));
-    let env = amp;
-    for (let k = 0; k < tail; k += 1) {
-      out[(start + k) % n] += env * (random() * 2 - 1);
-      env *= decay;
-      if (env < 1e-4) break;
-    }
-  }
-  return out;
-}
-
-/**
  * How each bed is built. A kind is a function of (n, seed, sampleRate) returning
  * one channel, so a bed can be a plain filtered noise or several layers mixed.
  *
@@ -219,69 +160,18 @@ const KINDS = {
 
   "brown-noise": (n, seed) => filterCircular(whiteBuffer(n, mulberry32(seed)), brownStep),
 
-  /**
-   * A deep body of water: pink noise rolled off hard, with no modulation at all.
-   *
-   * ⚠️ DELIBERATELY NO SWELL, and that is the owner's ruling, not an omission.
-   * The audition rejected every generated take and singled out `ocean-c03-a01`
-   * as closest with "the waves are too frequent". A periodic swell would also
-   * break the loop: its cycle would have to divide 30s exactly or the wrap lands
-   * mid-wave. So this is a steady wash — the sound of water, not of waves.
-   */
-  ocean: (n, seed, sampleRate) =>
-    chain(filterCircular(whiteBuffer(n, mulberry32(seed)), pinkStep), [
-      lowpass(680, sampleRate),
-      lowpass(680, sampleRate),
-    ]),
-
-  /**
-   * A small stream: the same water body with a band of moving-water detail over
-   * it. The upper band is a high-passed noise (the signal minus its own
-   * low-passed self), which is what puts stones under the water without adding
-   * the discrete splashes the prompt route kept producing.
-   */
-  stream: (n, seed, sampleRate) => {
-    const source = whiteBuffer(n, mulberry32(seed));
-    const body = chain(source, [lowpass(400, sampleRate), lowpass(400, sampleRate)]);
-    const wide = filterCircular(source, lowpass(3200, sampleRate));
-    const narrow = filterCircular(source, lowpass(900, sampleRate));
-    const band = new Float64Array(n);
-    for (let i = 0; i < n; i += 1) band[i] = wide[i] - narrow[i];
-    return mix([body, 1], [band, 0.9]);
-  },
-
-  /**
-   * A hearth fire: a warm bed with dense fine crackle over it.
-   *
-   * The density is the whole trick. #1130's prompt asked for "crackle so dense
-   * that it blends into one continuous even wash" and the model would not do it;
-   * here `perSecond` says so directly. High enough and the events stop reading as
-   * separate pops, which is both what the owner asked for and what keeps the
-   * crest factor inside the loudness budget.
-   */
-  fire: (n, seed, sampleRate) => {
-    const rng = mulberry32(seed);
-    const bed = chain(whiteBuffer(n, mulberry32(seed + 101)), [
-      lowpass(320, sampleRate),
-      lowpass(320, sampleRate),
-    ]);
-    // ☠️ 2,200 events a second is not a guess — it is the tuned answer to the
-    // crest budget. At 900/s this bed measured 17.2 dB, i.e. CEILING-BOUND, the
-    // identical fault that killed all 12 API takes: too few events, each too
-    // exposed. Density is the cure, because overlapping events sum toward an
-    // average instead of standing out as peaks. Measured: 900 -> 17.2 dB,
-    // 2,200 -> 14.7, 5,000 -> 13.6.
-    //
-    // ⚠️ Denser is not simply better. Push it far enough and the crackle stops
-    // being fire and becomes plain filtered noise, which is `brown-noise` with
-    // extra steps. 2,200 keeps individual crackles audible while leaving ~2 dB
-    // under the 17 dB limit — the balance, not the extreme.
-    const sparks = filterCircular(
-      crackle(n, rng, { perSecond: 2200, sampleRate, decaySeconds: 0.006 }),
-      lowpass(5200, sampleRate),
-    );
-    return mix([bed, 1], [sparks, 0.45]);
-  },
+  // ☠️ `ocean`, `stream` and `fire` WERE HERE AND WERE REJECTED BY EAR.
+  //
+  // They measured beautifully — every one inside the crest budget, seamless and
+  // deterministic — and the owner's verdict was "nothing like an ocean",
+  // "nothing like fire". The numbers were never the question.
+  //
+  // 📌 THE LESSON, AND WHY THE THREE ABOVE SURVIVED: synthesis is exact for noise
+  // whose DEFINITION is a spectrum. White, pink and brown ARE their slopes, so
+  // computing them is not an imitation at all. An ocean, a stream or a fire is a
+  // place full of structured events; filtered noise reproduces its spectrum and
+  // sounds nothing like it. Do not reach for DSP again for a naturalistic bed —
+  // those three now come from the ElevenLabs Explore library.
 };
 
 /** Scale to a target peak. Left well below full scale — `postprocess` sets the

@@ -19,6 +19,7 @@ import {
   BELLS,
   CLASS_LOOP,
   CREDITS_PER_SECOND,
+  LIBRARY_BEDS,
   SFX_CLIPS,
   SYNTH_BEDS,
   TEXTURES,
@@ -42,13 +43,16 @@ describe("only beds render loop: true", () => {
     // ☠️ The saving lives here: a synth bed inside `SFX_CLIPS` would be quoted
     // and paid for. `BEDS` is the ship set; `SFX_CLIPS` is what the API renders.
     //
-    // SIX since 2026-08-30. `ocean`, `stream` and `fire` joined the three noise
-    // beds after 36 API takes were rejected for 13,530 credits: waves, splashes
-    // and crackle are discrete events, so no take could reach -20 LUFS under the
-    // -3 dBTP ceiling. Synthesis sets event density as a number instead.
-    expect(SYNTH_BEDS).toHaveLength(6);
+    // Three computed, and three more from the Explore LIBRARY. `ocean`,
+    // `stream` and `fire` were tried both other ways — 36 API takes rejected for
+    // 13,530 credits, then synthesised and rejected by ear — before a free
+    // library download settled all three.
+    expect(SYNTH_BEDS).toHaveLength(3);
+    expect(LIBRARY_BEDS).toHaveLength(3);
     const rendered = SFX_CLIPS.map((clip: { id: string }) => clip.id);
-    for (const bed of SYNTH_BEDS) expect(rendered).not.toContain(bed.id);
+    for (const bed of [...SYNTH_BEDS, ...LIBRARY_BEDS]) {
+      expect(rendered).not.toContain(bed.id);
+    }
   });
 
   it("leaves the bells one-shots", () => {

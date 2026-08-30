@@ -21,6 +21,7 @@ import {
 } from "../scripts/audio/ship-plan.mjs";
 import {
   SFX_CLIPS,
+  LIBRARY_BEDS,
   SHIPPED_SFX_CLIPS,
   SYNTH_BEDS,
   VOICES,
@@ -131,11 +132,11 @@ describe("shippingUnits", () => {
     const fromRounds = [...clipsForRound("A"), ...clipsForRound("B")].map(
       (clip: { id: string }) => clip.id,
     );
-    const synthIds = SYNTH_BEDS.map((bed: { id: string }) => bed.id);
+    const notRendered = [...SYNTH_BEDS, ...LIBRARY_BEDS].map((bed: { id: string }) => bed.id);
 
-    expect([...sfxIds].sort()).toEqual([...fromRounds, ...synthIds].sort());
+    expect([...sfxIds].sort()).toEqual([...fromRounds, ...notRendered].sort());
     expect(sfxIds).toHaveLength(SHIPPED_SFX_CLIPS.length);
-    expect(SHIPPED_SFX_CLIPS.length).toBe(SFX_CLIPS.length + synthIds.length);
+    expect(SHIPPED_SFX_CLIPS.length).toBe(SFX_CLIPS.length + notRendered.length);
 
     const spec = voiceSlotSpec("B");
     const voiceUnits = units.filter((unit) => unit.voice);

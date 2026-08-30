@@ -23,7 +23,7 @@ import {
   SYNTH_BEDS,
   TRUE_PEAK_CEILING_DBTP,
 } from "../scripts/audio/catalog.mjs";
-import { maxCrestDb } from "../scripts/audio/take-gate.mjs";
+import { LIMITER_HEADROOM_DB, maxCrestDb } from "../scripts/audio/take-gate.mjs";
 
 /** Left channel as floats, which is where every measurement below is taken. */
 function leftChannel(pcm: Buffer): Float64Array {
@@ -64,7 +64,12 @@ function highFrequencyRatio(x: Float64Array): number {
   return Math.sqrt(sum / (x.length - 1)) / rms(x);
 }
 
-const KINDS = ["white-noise", "pink-noise", "brown-noise", "ocean", "stream", "fire"] as const;
+// ☠️ Three again. `ocean`, `stream` and `fire` were synthesised, measured
+// beautifully — inside the crest budget, seamless, deterministic — and were
+// rejected BY EAR: "nothing like an ocean", "nothing like fire". They now come
+// from the ElevenLabs Explore library. 📌 Synthesis is exact for noise whose
+// definition IS a spectrum, and no substitute for a place.
+const KINDS = ["white-noise", "pink-noise", "brown-noise"] as const;
 
 describe("the noise beds are computed, not generated", () => {
   it("keeps every computed bed out of the render list and inside the ship list", () => {
@@ -72,10 +77,7 @@ describe("the noise beds are computed, not generated", () => {
     // would be quoted, generated and paid for.
     expect(SYNTH_BEDS.map((b: { id: string }) => b.id).sort()).toEqual([
       "brown-noise",
-      "fire",
-      "ocean",
       "pink-noise",
-      "stream",
       "white-noise",
     ]);
     const rendered = SFX_CLIPS.map((c: { id: string }) => c.id);
@@ -122,7 +124,9 @@ describe("synthesiseBed", () => {
     // its crest exceeds `maxCrestDb`. Beds target -20, so the budget is 17 dB;
     // 10 of Round B's 22 accepted takes failed this and nothing noticed.
     const x = leftChannel(synthesiseBed({ kind, seconds: 3 }));
-    expect(crestDb(x)).toBeLessThan(maxCrestDb(-20));
+    // Beds target -28 since 2026-08-30, so the unlimited budget is 25 dB. These
+    // three clear it with room to spare and never needed the limiter.
+    expect(crestDb(x)).toBeLessThan(maxCrestDb(-28));
   });
 
   it.each(KINDS)("leaves %s real headroom rather than arriving at the rail", (kind) => {
@@ -169,60 +173,18 @@ describe("synthesiseBed", () => {
   });
 });
 
-describe("the beds ElevenLabs could not make", () => {
-  // ☠️ `ocean`, `stream` and `fire` were each rendered three candidates deep with
-  // the full four-attempt re-roll and produced ZERO usable takes — 36 for 36,
-  // 13,530 credits, every one `ceiling-bound` or `clipped`. Waves, splashes and
-  // crackle are DISCRETE EVENTS, so the peaks tower over the average and no take
-  // can be gained to -20 LUFS under a -3 dBTP ceiling. These assertions are the
-  // reason to believe synthesis does not repeat that.
-
-  it.each(["ocean", "stream", "fire"] as const)(
-    "gives %s a crest with real margin, not just a passing one",
-    (kind) => {
-      // The API takes failed by exceeding 17 dB. Passing at 16.9 would be no
-      // safer than what it replaced, so these are held well clear.
-      const x = leftChannel(synthesiseBed({ kind, seconds: 3 }));
-      expect(crestDb(x)).toBeLessThan(maxCrestDb(-20) - 1);
-    },
-  );
-
-  it("keeps fire's crackle dense enough to stay inside the budget", () => {
-    // Density is the lever the prompt route never had: at 900 events/second this
-    // bed measured 17.2 dB — ceiling-bound, the identical fault — and only the
-    // tuned density brings it back inside. A future edit that thins the crackle
-    // for "more character" fails here rather than in a render.
-    const x = leftChannel(synthesiseBed({ kind: "fire", seconds: 3 }));
-    expect(crestDb(x)).toBeLessThan(maxCrestDb(-20));
-  });
-
-  it("makes ocean darker than stream, which is the difference between them", () => {
-    // Both are water. What separates them is where the energy sits: a deep body
-    // versus moving water over stones. If a filter change collapses that, the two
-    // beds become one bed shipped twice.
-    const ocean = highFrequencyRatio(leftChannel(synthesiseBed({ kind: "ocean", seconds: 3 })));
-    const stream = highFrequencyRatio(leftChannel(synthesiseBed({ kind: "stream", seconds: 3 })));
-    expect(ocean).toBeLessThan(stream);
-  });
-
-  it("holds ocean steady, because the owner rejected waves", () => {
-    // ⚠️ "the waves are too frequent" was the verdict on the closest generated
-    // take. A swell would also break the loop unless its period divided 30s
-    // exactly. So the envelope must not drift: compare the energy of the first
-    // and last thirds and hold them close.
-    const x = leftChannel(synthesiseBed({ kind: "ocean", seconds: 6 }));
-    const third = Math.floor(x.length / 3);
-    const energy = (from: number, to: number) => {
-      let sum = 0;
-      for (let i = from; i < to; i += 1) sum += x[i] * x[i];
-      return Math.sqrt(sum / (to - from));
-    };
-    const head = energy(0, third);
-    const tail = energy(x.length - third, x.length);
-    expect(Math.abs(20 * Math.log10(head / tail))).toBeLessThan(1.5);
-  });
-});
-
+// ☠️ A `describe("the beds ElevenLabs could not make")` block stood here, proving
+// the synthesised `ocean`, `stream` and `fire` sat inside the crest budget, that
+// fire's crackle density held it there, that ocean was darker than stream, and
+// that ocean never drifted into waves. Every assertion passed. The owner listened
+// and rejected all three anyway.
+//
+// 📌 Kept as a note rather than deleted silently, because the lesson is the most
+// expensive one on this map: A MEASUREMENT IS NOT A JUDGEMENT. Those tests were
+// correct and the beds were still wrong. The three that survive above are the
+// ones whose definition IS a number — white, pink and brown noise ARE their
+// spectra, so measuring them really does settle it. For anything that imitates a
+// place, only the audition decides.
 describe("mulberry32", () => {
   it("is a pure function of its seed", () => {
     const a = mulberry32(SYNTH_SEED);
@@ -251,5 +213,8 @@ describe("the ceiling the crest budget is derived from", () => {
     expect(TRUE_PEAK_CEILING_DBTP).toBe(-3);
     expect(maxCrestDb(-20)).toBe(17);
     expect(maxCrestDb(-23)).toBe(20);
+    // Beds at -28 get 25 dB unlimited, and more once the limiter is counted.
+    expect(maxCrestDb(-28)).toBe(25);
+    expect(maxCrestDb(-28, { limited: true })).toBe(25 + LIMITER_HEADROOM_DB);
   });
 });
