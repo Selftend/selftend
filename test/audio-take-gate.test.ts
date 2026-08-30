@@ -13,9 +13,11 @@
  * than the prompt renders nothing at all.
  */
 import {
+  CLIPPED_DBTP,
   MAX_ATTEMPTS,
   SILENT_DBTP,
   USABLE_DBTP,
+  maxCrestDb,
   attemptFile,
   classifyTake,
   planSlot,
@@ -58,6 +60,61 @@ describe("classifyTake", () => {
     // Number() turns that into NaN. Verified against a real silent .pcm.
     expect(classifyTake(NaN)).toEqual({ accepted: false, rejectedFor: "silent" });
     expect(classifyTake(-Infinity)).toEqual({ accepted: false, rejectedFor: "silent" });
+  });
+
+  it("rejects a clipped take even though it is the loudest thing the API can return", () => {
+    // ☠️ THE GATE HAD A FLOOR AND NO CEILING (#1130). All three of Round B's
+    // `brown-noise` takes came back at 0.0 dBTP with thousands of samples pinned
+    // at full scale and were graded `ok`, because every rule above only asked
+    // whether a take was loud ENOUGH. Gain reduction cannot unflatten a clip.
+    expect(classifyTake(0)).toEqual({ accepted: false, rejectedFor: "clipped" });
+    expect(classifyTake(CLIPPED_DBTP).rejectedFor).toBe("clipped");
+    expect(classifyTake(CLIPPED_DBTP - 0.01).accepted).toBe(true);
+  });
+
+  it("rejects a take that cannot reach its target under the ceiling", () => {
+    // ☠️ THE GATE MEASURED PEAK WHILE THE SPEC WAS LOUDNESS (#1130). A bed
+    // targets -20 LUFS under a -3 dBTP ceiling, so 17 dB of crest is all that
+    // fits. -4 dBTP against -25 LUFS is 21 dB of crest: the take is comfortably
+    // loud at the peak and still cannot be gained to target.
+    expect(classifyTake(-4, { lufs: -25, targetLufs: -20 })).toEqual({
+      accepted: false,
+      rejectedFor: "ceiling-bound",
+    });
+  });
+
+  it("accepts the same peak when the loudness behind it is real", () => {
+    // The other half: peak alone decides nothing, which is the whole point.
+    expect(classifyTake(-4, { lufs: -18, targetLufs: -20 }).accepted).toBe(true);
+  });
+
+  it("treats a take sitting exactly on the ceiling as reachable, not bound", () => {
+    // Mirrors `normalisationGain`'s own slack. A gate and a normaliser that
+    // disagree by a rounding error is a ceiling with two answers.
+    expect(classifyTake(-3, { lufs: -20, targetLufs: -20 }).accepted).toBe(true);
+    expect(classifyTake(-3, { lufs: -20.02, targetLufs: -20 }).rejectedFor).toBe("ceiling-bound");
+  });
+
+  it("lets the quieter bell target buy more crest, because the arithmetic says so", () => {
+    // The temple block ships at -23, so it may be 20 dB peaky where a bed may be
+    // 17. The budget is derived from the spec rather than being a second constant.
+    expect(maxCrestDb(-23)).toBe(20);
+    expect(classifyTake(-4, { lufs: -23.5, targetLufs: -23 }).accepted).toBe(true);
+    expect(classifyTake(-4, { lufs: -25, targetLufs: -23 }).rejectedFor).toBe("ceiling-bound");
+  });
+
+  it("falls back to the level verdicts when no target is supplied", () => {
+    // ⚠️ Documented, not endorsed: a caller with only a peak still gets an
+    // answer, and that answer is exactly the old gate. Every caller that can
+    // reach a spec passes one.
+    expect(classifyTake(-4).accepted).toBe(true);
+    expect(classifyTake(-4, { lufs: -40 }).accepted).toBe(true);
+  });
+
+  it("does not invent a crest from an unmeasurable loudness", () => {
+    // A silent take is already caught above; NaN arithmetic must not reject a
+    // healthy one on the way past.
+    expect(classifyTake(-4, { lufs: NaN, targetLufs: -20 }).accepted).toBe(true);
   });
 
   it("puts the thresholds themselves on the generous side", () => {

@@ -140,9 +140,54 @@ afterEach(() => {
 });
 
 describe("the loop probe asks exactly one question", () => {
+  /**
+   * ☠️ THIS SUITE USED TO PROBE `brown-noise` — the very clip #1347's ruling was
+   * measured on. It became synthesised on #1130, which took it out of `SFX_CLIPS`
+   * and made every case here exit 1 with "unknown clip: brown-noise": false, and
+   * the least useful thing the tool could say. The subject moved to `ocean`, a bed
+   * that is still generated, and the two cases below pin the refusal that replaced
+   * it so the next clip to leave the render list fails loudly instead.
+   */
+  it("refuses a computed bed with a reason, not with 'unknown clip'", async () => {
+    const exit = jest.spyOn(process, "exit").mockImplementation((() => {
+      throw new Error("exit");
+    }) as never);
+    const error = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(
+      loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true }),
+    ).rejects.toThrow("exit");
+
+    const said = error.mock.calls.flat().join("\n");
+    expect(said).toContain("synth-noise.mjs");
+    expect(said).toContain("periodic BY CONSTRUCTION");
+    expect(said).not.toContain("unknown clip");
+    expect(fetchMock).not.toHaveBeenCalled();
+    exit.mockRestore();
+    error.mockRestore();
+  });
+
+  it("still names a genuinely unknown clip as unknown", async () => {
+    const exit = jest.spyOn(process, "exit").mockImplementation((() => {
+      throw new Error("exit");
+    }) as never);
+    const error = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(
+      loopProbe({ clipId: "not-a-clip", seconds: PROBE_SECONDS, go: true, withControl: true }),
+    ).rejects.toThrow("exit");
+
+    const said = error.mock.calls.flat().join("\n");
+    expect(said).toContain("unknown clip");
+    // ...and it lists the SHIP set, so a computed bed appears as a real option.
+    expect(said).toContain("brown-noise");
+    exit.mockRestore();
+    error.mockRestore();
+  });
+
   it("spends nothing on a dry run", async () => {
     await loopProbe({
-      clipId: "brown-noise",
+      clipId: "ocean",
       seconds: PROBE_SECONDS,
       go: false,
       withControl: true,
@@ -153,7 +198,7 @@ describe("the loop probe asks exactly one question", () => {
   });
 
   it("sends the loop call and its control differing in one flag only", async () => {
-    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+    await loopProbe({ clipId: "ocean", seconds: PROBE_SECONDS, go: true, withControl: true });
 
     expect(sentBodies).toHaveLength(2);
     const [loop, control] = sentBodies;
@@ -173,10 +218,10 @@ describe("the loop probe asks exactly one question", () => {
   });
 
   it("falls back to the balance when the response carries no cost header", async () => {
-    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+    await loopProbe({ clipId: "ocean", seconds: PROBE_SECONDS, go: true, withControl: true });
 
     expect(sentUrls.filter((url) => url.includes("/user/subscription"))).toHaveLength(2);
-    const recorded = results("brown-noise", PROBE_SECONDS);
+    const recorded = results("ocean", PROBE_SECONDS);
     // 2s requested + 3s returned for the loop call, 2s each way for the control.
     const billed = Math.round(3 * CREDITS_PER_SECOND) + Math.round(2 * CREDITS_PER_SECOND);
     expect(recorded.creditsSpent).toBe(billed);
@@ -219,9 +264,9 @@ describe("the loop probe asks exactly one question", () => {
       };
     });
 
-    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+    await loopProbe({ clipId: "ocean", seconds: PROBE_SECONDS, go: true, withControl: true });
 
-    const recorded = results("brown-noise", PROBE_SECONDS);
+    const recorded = results("ocean", PROBE_SECONDS);
     // Both calls priced, summed: 2s x 2 at the API rate.
     expect(recorded.creditsCharged).toBe(2 * PROBE_SECONDS * CREDITS_PER_SECOND);
     expect(recorded.creditSource).toMatch(/character-cost/);
@@ -262,9 +307,9 @@ describe("the loop probe asks exactly one question", () => {
       };
     });
 
-    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+    await loopProbe({ clipId: "ocean", seconds: PROBE_SECONDS, go: true, withControl: true });
 
-    const recorded = results("brown-noise", PROBE_SECONDS);
+    const recorded = results("ocean", PROBE_SECONDS);
     // NOT `PROBE_SECONDS * CREDITS_PER_SECOND` — the one priced call's figure must
     // not be recorded as the pass's cost.
     expect(recorded.creditsCharged).toBeNull();
@@ -272,14 +317,14 @@ describe("the loop probe asks exactly one question", () => {
   });
 
   it("records both readings of what came back", async () => {
-    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+    await loopProbe({ clipId: "ocean", seconds: PROBE_SECONDS, go: true, withControl: true });
 
-    const recorded = results("brown-noise", PROBE_SECONDS);
+    const recorded = results("ocean", PROBE_SECONDS);
     expect(recorded.takes).toHaveLength(2);
     expect(recorded.takes[0].loop).toBe(true);
     expect(recorded.takes[0].shape.secondsIfStereo).toBe(PROBE_SECONDS * 1.5);
     expect(recorded.takes[1].shape.secondsIfStereo).toBe(PROBE_SECONDS);
-    expect(recorded.prompt).toContain("brown noise");
+    expect(recorded.prompt).toContain("open water");
     // The prompt is the only reproducible artifact of a seedless render, so it is
     // recorded verbatim beside the bytes it produced.
     expect(recorded.prompt).toBe(sentBodies[0].text);
@@ -292,7 +337,7 @@ describe("the loop probe asks exactly one question", () => {
    * INPUT side, and the crossing-rate comparison is worthless if it is not.
    */
   it("decodes each take both ways, declaring the mono reading on the input", async () => {
-    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+    await loopProbe({ clipId: "ocean", seconds: PROBE_SECONDS, go: true, withControl: true });
 
     const monoDecodes = decodeCalls.filter((call) => call.out.endsWith("-as-mono.wav"));
     const stereoDecodes = decodeCalls.filter((call) => call.out.endsWith("-as-stereo.wav"));
@@ -311,11 +356,11 @@ describe("the loop probe asks exactly one question", () => {
   });
 
   it("writes both takes under names that say which is which", async () => {
-    await loopProbe({ clipId: "brown-noise", seconds: PROBE_SECONDS, go: true, withControl: true });
+    await loopProbe({ clipId: "ocean", seconds: PROBE_SECONDS, go: true, withControl: true });
 
     const dir = join(outDir, "loop-probe");
-    expect(existsSync(join(dir, `brown-noise-loop-${PROBE_SECONDS}s.pcm`))).toBe(true);
-    expect(existsSync(join(dir, `brown-noise-control-${PROBE_SECONDS}s.pcm`))).toBe(true);
+    expect(existsSync(join(dir, `ocean-loop-${PROBE_SECONDS}s.pcm`))).toBe(true);
+    expect(existsSync(join(dir, `ocean-control-${PROBE_SECONDS}s.pcm`))).toBe(true);
   });
 
   it("renders the loop call alone when the control is declined", async () => {

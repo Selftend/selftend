@@ -21,6 +21,8 @@ import {
 } from "../scripts/audio/ship-plan.mjs";
 import {
   SFX_CLIPS,
+  SHIPPED_SFX_CLIPS,
+  SYNTH_BEDS,
   VOICES,
   VOICE_CUES,
   clipsForRound,
@@ -103,9 +105,11 @@ describe("the budget ceiling", () => {
 });
 
 describe("shippingUnits", () => {
-  it("is the twenty-one files #1210 and #1138 both count", () => {
+  it("is the twenty-five files the set now counts", () => {
+    // 21 until #1130's bed request added `stream`, `fire`, `white-noise` and
+    // `pink-noise`. Two are generated; two are computed by `synth-noise.mjs`.
     expect(shippingUnits()).toHaveLength(SHIP_FILE_COUNT);
-    expect(SHIP_FILE_COUNT).toBe(21);
+    expect(SHIP_FILE_COUNT).toBe(25);
   });
 
   /**
@@ -119,12 +123,19 @@ describe("shippingUnits", () => {
   it("is exactly both rounds' sound effects plus every cue in every voice", () => {
     const units: Unit[] = shippingUnits();
     const sfxIds = units.filter((unit) => !unit.voice).map((unit) => unit.clip);
+    // ☠️ THE SHIP SET IS NO LONGER THE RENDER SET. Since #1130 the three noise
+    // beds are computed by `synth-noise.mjs` and never rendered, so they appear in
+    // no round's clip list while still landing in `assets/`. The budget must count
+    // them — undercounting by three 30s beds is 1.03 MiB of a 4 MiB ceiling — and
+    // `SFX_CLIPS` must not, or they would be quoted and paid for.
     const fromRounds = [...clipsForRound("A"), ...clipsForRound("B")].map(
       (clip: { id: string }) => clip.id,
     );
+    const synthIds = SYNTH_BEDS.map((bed: { id: string }) => bed.id);
 
-    expect([...sfxIds].sort()).toEqual([...fromRounds].sort());
-    expect(sfxIds).toHaveLength(SFX_CLIPS.length);
+    expect([...sfxIds].sort()).toEqual([...fromRounds, ...synthIds].sort());
+    expect(sfxIds).toHaveLength(SHIPPED_SFX_CLIPS.length);
+    expect(SHIPPED_SFX_CLIPS.length).toBe(SFX_CLIPS.length + synthIds.length);
 
     const spec = voiceSlotSpec("B");
     const voiceUnits = units.filter((unit) => unit.voice);
@@ -153,7 +164,9 @@ describe("shippingUnits", () => {
     const texture = units.find((unit) => unit.clip === "wind_inhale")!;
     const voice = units.find((unit) => unit.clip === "guide_hold")!;
 
-    expect(bed).toMatchObject({ bitrate: "128k", channels: 2, seconds: 30 });
+    // 96k since #1130: nine beds do not fit under the ceiling at 128k. Bells stay
+    // at 128k — a struck bowl is a transient, where a bed is stationary noise.
+    expect(bed).toMatchObject({ bitrate: "96k", channels: 2, seconds: 30 });
     expect(texture).toMatchObject({ bitrate: "96k", channels: 1, seconds: 10 });
     expect(voice).toMatchObject({ bitrate: "64k", channels: 1, klass: "voice" });
   });
@@ -242,9 +255,13 @@ describe("predictShipping", () => {
    * one — if they ever diverge, the check is measuring against a number that was
    * decided about something else.
    */
-  it("reproduces the 3.21 MB #1138 published", () => {
+  it("still fits, and shows how little room four more beds left", () => {
+    // ☠️ #1138 published 3.21 MB for the 21-file set. #1130 added four beds and
+    // paid for them by dropping the bed bitrate to 96k, landing the set at ~3.99
+    // MiB — inside the ceiling by about 12 KB and no more. The six retired breath
+    // textures are still counted here; dropping them returns ~0.69 MiB.
     const predicted = predictShipping(shippingUnits(), withVoiceSeconds);
-    expect(predicted.totalBytes / 1024 / 1024).toBeCloseTo(3.2, 1);
+    expect(predicted.totalBytes / 1024 / 1024).toBeCloseTo(3.99, 1);
     expect(predicted.complete).toBe(true);
     expect(predicted.over).toBe(false);
   });

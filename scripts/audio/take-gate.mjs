@@ -15,6 +15,7 @@
  * the rate. Wording cannot fix a distribution; measuring each draw and drawing
  * again can.
  */
+import { TRUE_PEAK_CEILING_DBTP } from "./catalog.mjs";
 
 /**
  * The same two thresholds `preflight` grades with, so a prompt faces one bar.
@@ -26,6 +27,45 @@
  */
 export const SILENT_DBTP = -30;
 export const USABLE_DBTP = -12;
+
+/**
+ * The upper bound. ☠️ THE GATE HAD A FLOOR AND NO CEILING (#1130).
+ *
+ * `brown-noise` came back from Round B hard-clipped at source — all three takes
+ * at 0.0 dBTP with 5,050 / 18,701 / 18 samples pinned at full scale against
+ * `rain`'s control of 2 — and was graded `ok`, because every rule above only
+ * asked whether a take was loud ENOUGH. Gain reduction cannot unflatten a
+ * clipped peak, so a clipped master is unusable no matter what the normaliser
+ * does to it afterwards; it has to be re-rolled, which means it has to be
+ * rejected here.
+ *
+ * -0.1 rather than 0.0: true peak is an inter-sample estimate, so genuine
+ * full-scale material reads slightly over while undamaged audio has no reason
+ * to sit in the last tenth of a dB.
+ */
+export const CLIPPED_DBTP = -0.1;
+
+/**
+ * How peaky a take may be and still reach its loudness target.
+ *
+ * ☠️ THE GATE MEASURED PEAK WHILE THE SPEC WAS LOUDNESS (#1130). Everything
+ * above grades `dBTP`; #1138 ships on `-20 LUFS-I inside <= -3 dBTP`. Sparse,
+ * peaky material clears the peak bar and then *cannot be gained to the target
+ * without breaching the ceiling* — `normalisationGain` sets `ceilingBound` and
+ * stops, and nothing rejected it. Round B accepted 10 such takes out of 22 and
+ * produced a set spanning 9.57 LU, worse than the 7.5 LU spread #1138 exists to
+ * fix.
+ *
+ * Normalisation is a single arithmetic gain (no limiter, see
+ * `normalisationGain`), so it moves loudness and peak together and the whole
+ * question reduces to one number: a take fits iff its crest factor
+ * `dBTP - LUFS` is no larger than the distance between the ceiling and the
+ * target. Beds and textures at -20 allow 17 dB, the -23 temple block 20 dB,
+ * voice at -16 allows 13 dB.
+ */
+export function maxCrestDb(targetLufs) {
+  return TRUE_PEAK_CEILING_DBTP - targetLufs;
+}
 
 /**
  * How many times one candidate slot may be re-drawn before the run gives up.
@@ -47,11 +87,29 @@ export const MAX_ATTEMPTS = 4;
  * is false, so the naive comparison happens to reject it, but only by accident
  * and it would serialise into the manifest as a bare `null` with no reason
  * attached. The worst possible take must be classified deliberately, not by luck.
+ *
+ * `lufs`/`targetLufs` are optional so a caller holding only a peak still gets the
+ * three level verdicts. ⚠️ Optional, NOT absent: omitting them restores exactly
+ * the gate that let Round B through, so every caller that can reach a spec must
+ * pass one. `preflight` and `render` both do, which is what keeps a prompt facing
+ * one bar rather than two.
  */
-export function classifyTake(dbtp) {
+export function classifyTake(dbtp, { lufs, targetLufs } = {}) {
   if (!Number.isFinite(dbtp)) return { accepted: false, rejectedFor: "silent" };
   if (dbtp < SILENT_DBTP) return { accepted: false, rejectedFor: "silent" };
   if (dbtp < USABLE_DBTP) return { accepted: false, rejectedFor: "quiet" };
+  if (dbtp >= CLIPPED_DBTP) return { accepted: false, rejectedFor: "clipped" };
+  // Only when both numbers are real. A take with no measurable loudness is
+  // already rejected as silent above, and deriving a crest from a NaN would
+  // reject healthy audio for an arithmetic accident.
+  if (Number.isFinite(lufs) && Number.isFinite(targetLufs)) {
+    // The 1e-9 mirrors `normalisationGain`'s own slack so the gate and the
+    // normaliser agree on the boundary instead of disagreeing by a rounding
+    // error: a take sitting exactly on the ceiling is reachable, not bound.
+    if (dbtp - lufs > maxCrestDb(targetLufs) + 1e-9) {
+      return { accepted: false, rejectedFor: "ceiling-bound" };
+    }
+  }
   return { accepted: true, rejectedFor: null };
 }
 

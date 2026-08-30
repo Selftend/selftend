@@ -51,6 +51,7 @@ import {
   zeroCrossingsPerSecond,
 } from "./loop-probe.mjs";
 import {
+  CLIPPED_DBTP,
   MAX_ATTEMPTS,
   SILENT_DBTP,
   USABLE_DBTP,
@@ -62,7 +63,6 @@ import {
 } from "./take-gate.mjs";
 import {
   BELLS,
-  SFX_CLIPS,
   SFX_MASTER_PCM,
   SFX_MODEL,
   SFX_OUTPUT_FORMAT,
@@ -76,7 +76,9 @@ import {
   clipsForRound,
   composePrompt,
   creditEstimate,
+  outputSpecFor,
   resolveVoices,
+  SHIPPED_SFX_CLIPS,
 } from "./catalog.mjs";
 
 const API = "https://api.elevenlabs.io/v1";
@@ -514,7 +516,13 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
       }
 
       const measured = await measure(path);
-      const verdict = classifyTake(measured.dbtp);
+      // The clip's own loudness target, so a peaky take is rejected here rather
+      // than surviving to `postprocess` and stopping there as `ceilingBound`
+      // with no re-roll left to spend (#1130).
+      const verdict = classifyTake(measured.dbtp, {
+        lufs: measured.lufs,
+        targetLufs: outputSpecFor(clip.id).lufs,
+      });
       const { channels, ratio } = derivePcmChannels(buffer.length, clip.durationSeconds, 48000);
 
       // Appended per take, not written at the end: a crash mid-pass must not lose
@@ -683,15 +691,21 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
       )} credits).\n`,
   );
   console.log(
-    `Gate: usable at >= ${USABLE_DBTP} dBTP, silent below ${SILENT_DBTP} — the same bar ` +
-      "`render` applies to every take.\n",
+    `Gate: usable at >= ${USABLE_DBTP} dBTP, silent below ${SILENT_DBTP}, clipped at ` +
+      `>= ${CLIPPED_DBTP}, and rejected when the crest (dBTP - LUFS) cannot reach the ` +
+      "clip's target under the -3 dBTP ceiling — the same bar `render` applies to every take.\n",
   );
   console.log("clip                          dBTP per take        verdict");
 
   const broken = [];
   const flaky = [];
   for (const clip of clips) {
-    const peaks = [];
+    // ☠️ Full measurements, not just peaks: since #1130 the gate also weighs
+    // loudness against the clip's target, and a probe that kept only `dbtp`
+    // would grade on a strictly easier bar than `render` — the two-bar split
+    // this function's own banner promises never to have.
+    const measured = [];
+    const targetLufs = outputSpecFor(clip.id).lufs;
     for (let take = 1; take <= takes; take += 1) {
       const path = join(dir, `${clip.id}-t${take}.pcm`);
       if (!(await exists(path))) {
@@ -703,23 +717,37 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
         });
         await writeFile(path, buffer);
       }
-      peaks.push((await measure(path)).dbtp);
+      measured.push(await measure(path));
     }
 
-    const usable = peaks.filter((p) => classifyTake(p).accepted).length;
-    const anySilent = peaks.some((p) => classifyTake(p).rejectedFor === "silent");
+    const grade = (m) => classifyTake(m.dbtp, { lufs: m.lufs, targetLufs });
+    const peaks = measured.map((m) => m.dbtp);
+    const usable = measured.filter((m) => grade(m).accepted).length;
+    const anySilent = measured.some((m) => grade(m).rejectedFor === "silent");
+    // Named separately because the cure differs: a silent or quiet prompt wants
+    // new words, while a ceiling-bound or clipped one is producing the wrong
+    // SHAPE of sound and re-rolling it just buys the same shape again.
+    const shapeFailures = [
+      ...new Set(
+        measured.map((m) => grade(m).rejectedFor).filter((r) => r === "ceiling-bound" || r === "clipped"),
+      ),
+    ];
     let verdict;
     if (usable === 0) {
       verdict = "BROKEN";
-      broken.push({ id: clip.id, peaks });
-    } else if (usable < peaks.length) {
+      broken.push({ id: clip.id, peaks, shapeFailures });
+    } else if (usable < measured.length) {
       verdict = anySilent ? "FLAKY (a take was silent)" : "FLAKY";
-      flaky.push({ id: clip.id, peaks });
+      flaky.push({ id: clip.id, peaks, shapeFailures });
     } else {
       verdict = "ok";
     }
     console.log(
-      clip.id.padEnd(26) + peaks.map((p) => String(p).padStart(8)).join("") + "   " + verdict,
+      clip.id.padEnd(26) +
+        peaks.map((p) => String(p).padStart(8)).join("") +
+        "   " +
+        verdict +
+        (shapeFailures.length ? ` [${shapeFailures.join(", ")}]` : ""),
     );
   }
 
@@ -736,9 +764,20 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
   if (broken.length) {
     console.error(
       `${broken.length} prompt(s) produced NO usable take:\n` +
-        broken.map((b) => `  ${b.id} - ${b.peaks.join(", ")} dBTP`).join("\n") +
+        broken
+          .map(
+            (b) =>
+              `  ${b.id} - ${b.peaks.join(", ")} dBTP` +
+              (b.shapeFailures.length ? ` (${b.shapeFailures.join(", ")})` : ""),
+          )
+          .join("\n") +
         "\n\nFix these before spending on the full pass. Negation is the usual cause\n" +
-        "- describe what the sound IS, not what it is not (#1316).",
+        "- describe what the sound IS, not what it is not (#1316).\n" +
+        "☠️ A `ceiling-bound` or `clipped` prompt is a DIFFERENT fault: the model is\n" +
+        "producing the wrong shape, not the wrong level. Ceiling-bound means sparse\n" +
+        "discrete events where a continuous wash was asked for (#1130: `rain` at a\n" +
+        "24.6 dB crest against `forest`'s 12.7), and re-rolling buys the same shape\n" +
+        "again - ask for density, not for volume.",
     );
     process.exit(1);
   }
@@ -950,10 +989,24 @@ async function analyseTake({ pcmPath, wavStem, bytes, requestedSeconds }) {
  * because `CREDITS_PER_SECOND` carried the web composer's 3.3.
  */
 async function loopProbe({ clipId, seconds, go, withControl }) {
-  const clip = SFX_CLIPS.find((candidate) => candidate.id === clipId);
+  // ☠️ Looked up in the SHIP set, not the render set. `brown-noise` — this
+  // probe's own canonical subject, and the clip #1347's ruling was measured on —
+  // left `SFX_CLIPS` when the noise beds became synthesised (#1130). Searching the
+  // render list would answer "unknown clip: brown-noise", which is both false and
+  // the least useful thing it could say.
+  const clip = SHIPPED_SFX_CLIPS.find((candidate) => candidate.id === clipId);
   if (!clip) {
     console.error(
-      `unknown clip "${clipId}" — expected one of: ${SFX_CLIPS.map((c) => c.id).join(", ")}`,
+      `unknown clip "${clipId}" — expected one of: ${SHIPPED_SFX_CLIPS.map((c) => c.id).join(", ")}`,
+    );
+    process.exit(1);
+  }
+  if (clip.source === "synth") {
+    console.error(
+      `"${clipId}" is computed by synth-noise.mjs, not generated, so there is no draw to\n` +
+        "probe. Its loop is periodic BY CONSTRUCTION — the noise is filtered circularly,\n" +
+        "so the wrap is a sample transition like any other and no seam question arises.\n" +
+        "test/audio-synth-noise.test.ts asserts that directly, for free.",
     );
     process.exit(1);
   }

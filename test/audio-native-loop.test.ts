@@ -20,6 +20,7 @@ import {
   CLASS_LOOP,
   CREDITS_PER_SECOND,
   SFX_CLIPS,
+  SYNTH_BEDS,
   TEXTURES,
   creditEstimate,
   outputSpecFor,
@@ -27,9 +28,22 @@ import {
 import { loopReturnedSeconds, requestSecondsFor } from "../scripts/audio/loop-probe.mjs";
 
 describe("only beds render loop: true", () => {
-  it("asks the API to loop every bed", () => {
-    expect(BEDS).toHaveLength(5);
+  it("makes every bed loop, whether the API or the DSP delivers it", () => {
+    // Nine since the 2026-08-29 bed request (#1130): six generated, plus the
+    // three computed noise beds. ⚠️ `loop: true` means two different things now
+    // and both land in the same place — for a generated bed it is a flag sent to
+    // the API, and for a synth bed it is a property the circular filtering makes
+    // true by construction. Either way `foldPlan` reads it and skips the fold.
+    expect(BEDS).toHaveLength(9);
     for (const bed of BEDS) expect(bed.loop).toBe(true);
+  });
+
+  it("keeps the three computed beds out of the render list", () => {
+    // ☠️ The saving lives here: a synth bed inside `SFX_CLIPS` would be quoted
+    // and paid for. `BEDS` is the ship set; `SFX_CLIPS` is what the API renders.
+    expect(SYNTH_BEDS).toHaveLength(3);
+    const rendered = SFX_CLIPS.map((clip: { id: string }) => clip.id);
+    for (const bed of SYNTH_BEDS) expect(rendered).not.toContain(bed.id);
   });
 
   it("leaves the bells one-shots", () => {
@@ -74,8 +88,10 @@ describe("a looping request is a duration loop mode will honour exactly", () => 
   });
 
   it("gives every looping clip the length it asked for", () => {
+    // Six: the generated beds only. The three synth beds also loop, but they are
+    // not in `SFX_CLIPS` because nothing asks the API for them.
     const looping = SFX_CLIPS.filter((clip) => clip.loop);
-    expect(looping).toHaveLength(5);
+    expect(looping).toHaveLength(6);
     for (const clip of looping) {
       expect(loopReturnedSeconds(clip.durationSeconds)).toBeCloseTo(clip.durationSeconds, 6);
     }
@@ -156,9 +172,14 @@ describe("the credit rate is the API's, not the web composer's", () => {
   it("quotes Round B at the number the API would actually charge", () => {
     const roundB = SFX_CLIPS.filter((clip) => clip.round === "B");
     const { seconds, credits } = creditEstimate(roundB);
-    // 5 beds x 3 x 30s + 6 textures x 2 x 10s.
-    expect(seconds).toBe(570);
-    expect(credits).toBe(6270);
+    // 6 beds x 3 x 30s + 6 textures x 2 x 10s. Six, not the original five: the
+    // 2026-08-29 request added `stream` and `fire`, while `brown-noise` LEFT the
+    // render for `synth-noise.mjs` along with the two new noise beds.
+    //
+    // 📌 The three synth beds would have cost 3 x 3 x 30s x 11 = 2,970 credits.
+    // They cost nothing and are exact, seamless and reproducible instead.
+    expect(seconds).toBe(660);
+    expect(credits).toBe(7260);
   });
 
   it("quotes the two bells at what Round A really cost", () => {

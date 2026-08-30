@@ -89,7 +89,9 @@ describe("the manifest CLI", () => {
     await expect(write("B", { out: out() })).resolves.toBe(false);
     const doc = JSON.parse(await readFile(out(), "utf8"));
     expect(doc.complete).toBe(false);
-    expect(doc.totals.units).toBe(19);
+    // 20 since #1130: Round B renders six beds where it rendered five —
+    // `stream` and `fire` joined, `brown-noise` left for `synth-noise.mjs`.
+    expect(doc.totals.units).toBe(20);
   });
 
   it("☠️ does not green-light an unfinished pass through --check either", async () => {
