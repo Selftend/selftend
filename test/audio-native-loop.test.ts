@@ -38,10 +38,15 @@ describe("only beds render loop: true", () => {
     for (const bed of BEDS) expect(bed.loop).toBe(true);
   });
 
-  it("keeps the three computed beds out of the render list", () => {
+  it("keeps the computed beds out of the render list", () => {
     // ☠️ The saving lives here: a synth bed inside `SFX_CLIPS` would be quoted
     // and paid for. `BEDS` is the ship set; `SFX_CLIPS` is what the API renders.
-    expect(SYNTH_BEDS).toHaveLength(3);
+    //
+    // SIX since 2026-08-30. `ocean`, `stream` and `fire` joined the three noise
+    // beds after 36 API takes were rejected for 13,530 credits: waves, splashes
+    // and crackle are discrete events, so no take could reach -20 LUFS under the
+    // -3 dBTP ceiling. Synthesis sets event density as a number instead.
+    expect(SYNTH_BEDS).toHaveLength(6);
     const rendered = SFX_CLIPS.map((clip: { id: string }) => clip.id);
     for (const bed of SYNTH_BEDS) expect(rendered).not.toContain(bed.id);
   });
@@ -95,10 +100,10 @@ describe("a looping request is a duration loop mode will honour exactly", () => 
   });
 
   it("gives every looping clip the length it asked for", () => {
-    // Six: the generated beds only. The three synth beds also loop, but they are
-    // not in `SFX_CLIPS` because nothing asks the API for them.
+    // Three: `rain`, `forest` and `night` — the only beds still generated. The
+    // other six loop too, but are computed rather than asked for.
     const looping = SFX_CLIPS.filter((clip) => clip.loop);
-    expect(looping).toHaveLength(6);
+    expect(looping).toHaveLength(3);
     for (const clip of looping) {
       expect(loopReturnedSeconds(clip.durationSeconds)).toBeCloseTo(clip.durationSeconds, 6);
     }
@@ -188,17 +193,18 @@ describe("the credit rate is the API's, not the web composer's", () => {
   it("quotes Round B at the number the API would actually charge", () => {
     const roundB = SFX_CLIPS.filter((clip) => clip.round === "B");
     const { seconds, credits } = creditEstimate(roundB);
-    // 6 beds x 3 x 30s. Six beds, not the original five: the
+    // 3 beds x 3 x 30s. Three, not the original five: the
     // 2026-08-29 request added `stream` and `fire`, while `brown-noise` LEFT the
     // render for `synth-noise.mjs` along with the two new noise beds.
     //
     // 📌 The three synth beds would have cost 3 x 3 x 30s x 11 = 2,970 credits.
     // They cost nothing and are exact, seamless and reproducible instead.
     //
-    // ⚠️ The six breath textures are gone too (2026-08-30), so this is six beds
-    // and nothing else: 6 x 3 x 30s.
-    expect(seconds).toBe(540);
-    expect(credits).toBe(5940);
+    // ⚠️ Three beds and nothing else: 3 x 3 x 30s. The breath textures were
+    // retired, and `ocean`/`stream`/`fire` moved to synthesis after the API
+    // failed all 36 of their takes.
+    expect(seconds).toBe(270);
+    expect(credits).toBe(2970);
   });
 
   it("quotes the two bells at what Round A really cost", () => {

@@ -64,15 +64,18 @@ function highFrequencyRatio(x: Float64Array): number {
   return Math.sqrt(sum / (x.length - 1)) / rms(x);
 }
 
-const KINDS = ["white-noise", "pink-noise", "brown-noise"] as const;
+const KINDS = ["white-noise", "pink-noise", "brown-noise", "ocean", "stream", "fire"] as const;
 
 describe("the noise beds are computed, not generated", () => {
-  it("keeps all three out of the render list and inside the ship list", () => {
+  it("keeps every computed bed out of the render list and inside the ship list", () => {
     // The whole saving depends on this: a synth bed that leaked into SFX_CLIPS
     // would be quoted, generated and paid for.
     expect(SYNTH_BEDS.map((b: { id: string }) => b.id).sort()).toEqual([
       "brown-noise",
+      "fire",
+      "ocean",
       "pink-noise",
+      "stream",
       "white-noise",
     ]);
     const rendered = SFX_CLIPS.map((c: { id: string }) => c.id);
@@ -163,6 +166,60 @@ describe("synthesiseBed", () => {
       if (pcm.readInt16LE(i * 4) !== pcm.readInt16LE(i * 4 + 2)) identical = false;
     }
     expect(identical).toBe(false);
+  });
+});
+
+describe("the beds ElevenLabs could not make", () => {
+  // ☠️ `ocean`, `stream` and `fire` were each rendered three candidates deep with
+  // the full four-attempt re-roll and produced ZERO usable takes — 36 for 36,
+  // 13,530 credits, every one `ceiling-bound` or `clipped`. Waves, splashes and
+  // crackle are DISCRETE EVENTS, so the peaks tower over the average and no take
+  // can be gained to -20 LUFS under a -3 dBTP ceiling. These assertions are the
+  // reason to believe synthesis does not repeat that.
+
+  it.each(["ocean", "stream", "fire"] as const)(
+    "gives %s a crest with real margin, not just a passing one",
+    (kind) => {
+      // The API takes failed by exceeding 17 dB. Passing at 16.9 would be no
+      // safer than what it replaced, so these are held well clear.
+      const x = leftChannel(synthesiseBed({ kind, seconds: 3 }));
+      expect(crestDb(x)).toBeLessThan(maxCrestDb(-20) - 1);
+    },
+  );
+
+  it("keeps fire's crackle dense enough to stay inside the budget", () => {
+    // Density is the lever the prompt route never had: at 900 events/second this
+    // bed measured 17.2 dB — ceiling-bound, the identical fault — and only the
+    // tuned density brings it back inside. A future edit that thins the crackle
+    // for "more character" fails here rather than in a render.
+    const x = leftChannel(synthesiseBed({ kind: "fire", seconds: 3 }));
+    expect(crestDb(x)).toBeLessThan(maxCrestDb(-20));
+  });
+
+  it("makes ocean darker than stream, which is the difference between them", () => {
+    // Both are water. What separates them is where the energy sits: a deep body
+    // versus moving water over stones. If a filter change collapses that, the two
+    // beds become one bed shipped twice.
+    const ocean = highFrequencyRatio(leftChannel(synthesiseBed({ kind: "ocean", seconds: 3 })));
+    const stream = highFrequencyRatio(leftChannel(synthesiseBed({ kind: "stream", seconds: 3 })));
+    expect(ocean).toBeLessThan(stream);
+  });
+
+  it("holds ocean steady, because the owner rejected waves", () => {
+    // ⚠️ "the waves are too frequent" was the verdict on the closest generated
+    // take. A swell would also break the loop unless its period divided 30s
+    // exactly. So the envelope must not drift: compare the energy of the first
+    // and last thirds and hold them close.
+    const x = leftChannel(synthesiseBed({ kind: "ocean", seconds: 6 }));
+    const third = Math.floor(x.length / 3);
+    const energy = (from: number, to: number) => {
+      let sum = 0;
+      for (let i = from; i < to; i += 1) sum += x[i] * x[i];
+      return Math.sqrt(sum / (to - from));
+    };
+    const head = energy(0, third);
+    const tail = energy(x.length - third, x.length);
+    expect(Math.abs(20 * Math.log10(head / tail))).toBeLessThan(1.5);
   });
 });
 

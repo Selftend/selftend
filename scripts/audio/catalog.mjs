@@ -324,12 +324,18 @@ export const BEDS = [
     // #1316: +22.6 dB median over three takes against the old wording. "Evenly
     // blended" carries what "no single insect audible above the others" meant.
     //
-    // ☠️ "Very low noise floor." added 2026-08-30: the owner auditioned all three
-    // takes and rejected every one for audible hiss. It sits HERE and not in
-    // SHARED_TAIL because a tail edit supersedes the whole round's accepted takes
-    // — see the SHARED_TAIL docblock. Positive phrasing, so #1316's negation
-    // finding is not reopened.
-    text: "A warm summer night heard from indoors. A low, continuous, evenly blended chorus of distant crickets over soft dark air, one steady unbroken texture held at exactly the same level from beginning to end.",
+    // ☠️ "over soft dark air" REMOVED 2026-08-30, and it was asking for the very
+    // thing the owner rejected. All three takes came back with audible hiss; an
+    // "air tone" under the crickets IS broadband hiss, so the prompt was ordering
+    // it. Asking for a low noise floor was tried first and SILENCED the clip
+    // (-44 dBTP — see the SHARED_TAIL docblock), which is what sent the search
+    // back to the clip's own words.
+    //
+    // The one exclusion this clip is allowed now spends itself on that air tone
+    // rather than on insect behaviour, which "evenly blended" already covers.
+    // ⚠️ Unverified by ear at the time of writing: it is a reasoned change, not a
+    // measured one, and the audition is what settles it.
+    text: "A warm summer night heard from indoors. A low, continuous, evenly blended chorus of distant crickets, one steady unbroken texture held at exactly the same level from beginning to end. Crickets only, with no air tone under them.",
   },
   {
     id: "brown-noise",
@@ -358,6 +364,19 @@ export const BEDS = [
   },
   {
     id: "ocean",
+    // ☠️ SYNTHESISED SINCE 2026-08-30, AFTER 12 REJECTED TAKES.
+    // `ocean` was rendered three candidates deep with the full four-attempt
+    // re-roll and produced ZERO usable takes - every one `ceiling-bound` or
+    // `clipped`. Across `ocean`, `stream` and `fire` that was 36 for 36 and
+    // 13,530 credits. The fault is structural, not unlucky: breaking waves are DISCRETE
+    // EVENTS, so the model returns peaks towering over the average, and no such
+    // take can be gained to -20 LUFS under a -3 dBTP ceiling whatever the wording.
+    //
+    // `synth-noise.mjs` sets the event density as a number instead of asking for
+    // it, which is the one lever the prompt route never had. ⚠️ The prompt below
+    // is kept as the record of what was asked for and what came back; nothing
+    // reads it any more.
+    source: "synth",
     // ☠️ #1137 separated this bed from the `ocean-swell` texture "by distance in
     // the prompt" — bed wide and distant, texture close. That mechanism does not
     // exist: SHARED_TAIL is appended to *every* SFX prompt, beds included, and it
@@ -372,28 +391,55 @@ export const BEDS = [
     // surf on sand at the ear. The shoreline ban is the fence — "no surf on sand"
     // alone let the model drift into the texture's territory.
     //
-    // ⚠️ Swell is still barred, and not only for #1137's loop-tell reason: the
-    // seam gate measures short-time energy delta across the wrap, SFX is
-    // non-deterministic so a swell cannot be phase-aligned to 30s, and a
-    // mid-cycle swell at the wrap fails that check by construction.
+    // ☠️ THIS COMMENT USED TO SAY "SWELL IS STILL BARRED" AND THE PROMPT DID NOT
+    // BAR IT. #1316 cut the exclusion list down to one and took the swell ban out
+    // with it, leaving the claim behind — so the file asserted a constraint it had
+    // stopped carrying. The owner then auditioned the result and reported exactly
+    // the thing the vanished clause forbade: "the waves are too frequent".
+    //
+    // The reason swell must not be there is unchanged and worth keeping: the seam
+    // gate measures short-time energy delta across the wrap, SFX is
+    // non-deterministic so a swell cannot be phase-aligned to 30s, and a mid-cycle
+    // swell at the wrap fails that check by construction.
     //
     // ⚠️ Open risk, deliberately deferred to the audition (#1262): stripped of
     // distance, breaking, swell and sand, this may be indistinguishable from
     // `brown-noise` — the very redundancy that got a warm drone rejected in
     // #1137. Three candidates cost ~297 credits, so the call is made by ear.
-    // ⚠️ #1316 keeps ONE exclusion here on purpose. #1262's separation from the
-    // `ocean-swell` texture IS the shoreline, so it cannot be dropped — but the
-    // rest of the old list goes, since the pile-up is what silences. Positive
-    // description plus at most one essential exclusion is the rule.
+    // ⚠️ #1316 keeps ONE exclusion here, and 2026-08-30 MOVED WHICH ONE.
+    //
+    // It used to be the shoreline, because #1262 needed a fence between this bed
+    // and the `ocean-swell` TEXTURE — "so it cannot be dropped", said the note
+    // that stood here. That texture was retired the same day the owner asked for
+    // background beds only, so the fence now guards nothing at all, while the
+    // clause the set actually needed had been dropped two rounds earlier.
+    //
+    // So the single slot is spent on swell instead. Still one exclusion, still
+    // positive-description-first — the rule is unchanged, only its target moved.
+    // 📌 The general lesson: an exclusion that exists to separate two clips dies
+    // with the clip it was separating from. Re-check the fences after a retirement.
     // ☠️ "Very low noise floor." added 2026-08-30: the owner rejected all three
     // takes as noisy — "none, all noisy". Per-clip rather than in SHARED_TAIL for
     // the resume reason in that docblock. ⚠️ This clip already carried an open
     // risk of being indistinguishable from `brown-noise`; if the quieter draw
     // lands there, `ocean` is the bed to reconsider rather than to re-roll again.
-    text: "The deep body of open water heard as one smooth even wash of moving water, a steady unbroken texture held at exactly the same level from beginning to end. Open sea only, with no shoreline in it.",
+    text: "The deep body of open water heard as one smooth even wash of moving water, a steady unbroken texture held at exactly the same level from beginning to end. One unchanging wash only, with no swell rising or falling in it.",
   },
   {
     id: "stream",
+    // ☠️ SYNTHESISED SINCE 2026-08-30, AFTER 12 REJECTED TAKES.
+    // `stream` was rendered three candidates deep with the full four-attempt
+    // re-roll and produced ZERO usable takes - every one `ceiling-bound` or
+    // `clipped`. Across `ocean`, `stream` and `fire` that was 36 for 36 and
+    // 13,530 credits. The fault is structural, not unlucky: splashes over stones are DISCRETE
+    // EVENTS, so the model returns peaks towering over the average, and no such
+    // take can be gained to -20 LUFS under a -3 dBTP ceiling whatever the wording.
+    //
+    // `synth-noise.mjs` sets the event density as a number instead of asking for
+    // it, which is the one lever the prompt route never had. ⚠️ The prompt below
+    // is kept as the record of what was asked for and what came back; nothing
+    // reads it any more.
+    source: "synth",
     // Added on the owner's 2026-08-29 bed request, with `fire`. It has to be
     // fenced from both neighbours: from `rain` because both are water on a
     // surface, and from `ocean` because both are a continuous body of it. Moving
@@ -408,6 +454,19 @@ export const BEDS = [
   },
   {
     id: "fire",
+    // ☠️ SYNTHESISED SINCE 2026-08-30, AFTER 12 REJECTED TAKES.
+    // `fire` was rendered three candidates deep with the full four-attempt
+    // re-roll and produced ZERO usable takes - every one `ceiling-bound` or
+    // `clipped`. Across `ocean`, `stream` and `fire` that was 36 for 36 and
+    // 13,530 credits. The fault is structural, not unlucky: crackles are DISCRETE
+    // EVENTS, so the model returns peaks towering over the average, and no such
+    // take can be gained to -20 LUFS under a -3 dBTP ceiling whatever the wording.
+    //
+    // `synth-noise.mjs` sets the event density as a number instead of asking for
+    // it, which is the one lever the prompt route never had. ⚠️ The prompt below
+    // is kept as the record of what was asked for and what came back; nothing
+    // reads it any more.
+    source: "synth",
     // ☠️ THE RISKIEST BED IN THE SET, knowingly. A hearth fire IS crackle, and a
     // crackle is a discrete event — precisely the sparse shape that made `rain`
     // unusable at spec (#1130). So the prompt asks for the crackle to be dense

@@ -116,18 +116,172 @@ function pinkStep(x, s) {
  * ⚠️ Leaky, not a true integrator. A pure `y += x` has infinite DC gain and walks
  * away from zero, which shows up as an inaudible sub-sonic wander that eats all
  * the headroom before the audible part is anywhere near full scale — one of the
- * ways the shipped placeholder ended up misbehaving. The 0.999 pole puts a corner
- * a few Hz up, well below anything a bed is meant to be heard through.
+ * ways the shipped placeholder ended up misbehaving.
+ *
+ * ☠️☠️ THE POLE IS 0.995 AND NOT 0.999 BECAUSE LUFS IS K-WEIGHTED. At 0.999 this
+ * bed measured **-26.3 LUFS-I against -6.0 dBTP — a 20.3 dB crest**, so it could
+ * not be gained to the -20 LUFS target under the -3 dBTP ceiling and came out
+ * CEILING-BOUND. Nothing is wrong with the audio: K-weighting deliberately
+ * discounts low frequencies, so a bed made almost entirely of them reads far
+ * quieter than it peaks. The loudness target is simply unreachable for a signal
+ * that dark, and no amount of gain fixes a ratio.
+ *
+ * 📌 This is very probably why ElevenLabs' own `brown-noise` takes came back
+ * HARD-CLIPPED at 0.0 dBTP: the same physics, met by a model pushing for level.
+ *
+ * Measured against the real meter (crest, lower is safer): 0.999 -> 20.3,
+ * 0.997 -> 16.7, 0.995 -> 14.8, 0.99 -> 13.3, 0.97 -> 11.7. 0.995 puts the corner
+ * near 38 Hz — still deep and dark to the ear — and leaves ~2 dB of margin.
+ * ⚠️ Do not push it back down for "more brown" without re-measuring: the ceiling
+ * is where that road ends.
  */
 function brownStep(x, s) {
-  s.y = 0.999 * (s.y ?? 0) + x * 0.035;
+  s.y = 0.995 * (s.y ?? 0) + x * 0.035;
   return s.y;
 }
 
+/**
+ * A one-pole low-pass, given a corner frequency.
+ *
+ * `alpha = exp(-2*pi*fc/fs)` is the standard mapping, and the gain is normalised
+ * so the filter passes DC at unity — otherwise every cascade quietly loses level
+ * and the peak normalisation at the end has to make it back up as gain, which
+ * lifts the noise with it.
+ */
+function lowpass(fc, sampleRate) {
+  const a = Math.exp((-2 * Math.PI * fc) / sampleRate);
+  return (x, s) => {
+    s.y = a * (s.y ?? 0) + (1 - a) * x;
+    return s.y;
+  };
+}
+
+/** Run several circular passes in sequence — a steeper slope than one pole. */
+function chain(input, steps) {
+  return steps.reduce((signal, step) => filterCircular(signal, step), input);
+}
+
+function mix(...parts) {
+  const n = parts[0][0].length;
+  const out = new Float64Array(n);
+  for (const [buf, gain] of parts) {
+    for (let i = 0; i < n; i += 1) out[i] += buf[i] * gain;
+  }
+  return out;
+}
+
+/**
+ * Sparse decaying impulses, placed so they WRAP rather than stopping at the end.
+ *
+ * ☠️ The whole seam guarantee depends on this. An impulse struck near the end of
+ * the buffer has to finish inside the head of the same buffer, or the loop point
+ * cuts a crackle in half and clicks once per lap — audible forever on a bed that
+ * repeats every 30 seconds. Writing with `(start + k) % n` makes the buffer a
+ * circle for the events too, matching what `filterCircular` does for the filters.
+ */
+function crackle(n, random, { perSecond, sampleRate, decaySeconds }) {
+  const out = new Float64Array(n);
+  const count = Math.round((n / sampleRate) * perSecond);
+  const tail = Math.max(1, Math.round(decaySeconds * sampleRate));
+  for (let e = 0; e < count; e += 1) {
+    const start = Math.floor(random() * n);
+    // Each event gets its own amplitude and decay so the texture does not pulse
+    // with one recognisable click repeated at different times.
+    const amp = 0.35 + random() * 0.65;
+    const decay = Math.exp(-1 / (tail * (0.4 + random())));
+    let env = amp;
+    for (let k = 0; k < tail; k += 1) {
+      out[(start + k) % n] += env * (random() * 2 - 1);
+      env *= decay;
+      if (env < 1e-4) break;
+    }
+  }
+  return out;
+}
+
+/**
+ * How each bed is built. A kind is a function of (n, seed, sampleRate) returning
+ * one channel, so a bed can be a plain filtered noise or several layers mixed.
+ *
+ * ☠️ THE WATER AND FIRE BEDS ARE HERE BECAUSE ELEVENLABS COULD NOT MAKE THEM.
+ * `ocean`, `stream` and `fire` were rendered 12 times each on 2026-08-30 and
+ * every single take was rejected as `ceiling-bound` or `clipped` — 36 for 36,
+ * 13,530 credits. The cause is structural rather than unlucky: splashes, crackle
+ * and breaking waves are DISCRETE EVENTS, so the model returns a signal whose
+ * peaks tower over its average, and such a take cannot be gained to -20 LUFS
+ * under a -3 dBTP ceiling however it is worded. Synthesis controls that ratio
+ * directly — the event density is a number here, not a wish in a prompt.
+ */
 const KINDS = {
-  "white-noise": null,
-  "pink-noise": pinkStep,
-  "brown-noise": brownStep,
+  "white-noise": (n, seed) => whiteBuffer(n, mulberry32(seed)),
+
+  "pink-noise": (n, seed) => filterCircular(whiteBuffer(n, mulberry32(seed)), pinkStep),
+
+  "brown-noise": (n, seed) => filterCircular(whiteBuffer(n, mulberry32(seed)), brownStep),
+
+  /**
+   * A deep body of water: pink noise rolled off hard, with no modulation at all.
+   *
+   * ⚠️ DELIBERATELY NO SWELL, and that is the owner's ruling, not an omission.
+   * The audition rejected every generated take and singled out `ocean-c03-a01`
+   * as closest with "the waves are too frequent". A periodic swell would also
+   * break the loop: its cycle would have to divide 30s exactly or the wrap lands
+   * mid-wave. So this is a steady wash — the sound of water, not of waves.
+   */
+  ocean: (n, seed, sampleRate) =>
+    chain(filterCircular(whiteBuffer(n, mulberry32(seed)), pinkStep), [
+      lowpass(680, sampleRate),
+      lowpass(680, sampleRate),
+    ]),
+
+  /**
+   * A small stream: the same water body with a band of moving-water detail over
+   * it. The upper band is a high-passed noise (the signal minus its own
+   * low-passed self), which is what puts stones under the water without adding
+   * the discrete splashes the prompt route kept producing.
+   */
+  stream: (n, seed, sampleRate) => {
+    const source = whiteBuffer(n, mulberry32(seed));
+    const body = chain(source, [lowpass(400, sampleRate), lowpass(400, sampleRate)]);
+    const wide = filterCircular(source, lowpass(3200, sampleRate));
+    const narrow = filterCircular(source, lowpass(900, sampleRate));
+    const band = new Float64Array(n);
+    for (let i = 0; i < n; i += 1) band[i] = wide[i] - narrow[i];
+    return mix([body, 1], [band, 0.9]);
+  },
+
+  /**
+   * A hearth fire: a warm bed with dense fine crackle over it.
+   *
+   * The density is the whole trick. #1130's prompt asked for "crackle so dense
+   * that it blends into one continuous even wash" and the model would not do it;
+   * here `perSecond` says so directly. High enough and the events stop reading as
+   * separate pops, which is both what the owner asked for and what keeps the
+   * crest factor inside the loudness budget.
+   */
+  fire: (n, seed, sampleRate) => {
+    const rng = mulberry32(seed);
+    const bed = chain(whiteBuffer(n, mulberry32(seed + 101)), [
+      lowpass(320, sampleRate),
+      lowpass(320, sampleRate),
+    ]);
+    // ☠️ 2,200 events a second is not a guess — it is the tuned answer to the
+    // crest budget. At 900/s this bed measured 17.2 dB, i.e. CEILING-BOUND, the
+    // identical fault that killed all 12 API takes: too few events, each too
+    // exposed. Density is the cure, because overlapping events sum toward an
+    // average instead of standing out as peaks. Measured: 900 -> 17.2 dB,
+    // 2,200 -> 14.7, 5,000 -> 13.6.
+    //
+    // ⚠️ Denser is not simply better. Push it far enough and the crackle stops
+    // being fire and becomes plain filtered noise, which is `brown-noise` with
+    // extra steps. 2,200 keeps individual crackles audible while leaving ~2 dB
+    // under the 17 dB limit — the balance, not the extreme.
+    const sparks = filterCircular(
+      crackle(n, rng, { perSecond: 2200, sampleRate, decaySeconds: 0.006 }),
+      lowpass(5200, sampleRate),
+    );
+    return mix([bed, 1], [sparks, 0.45]);
+  },
 };
 
 /** Scale to a target peak. Left well below full scale — `postprocess` sets the
@@ -162,11 +316,10 @@ export function synthesiseBed({
     );
   }
   const n = Math.round(seconds * sampleRate);
-  const step = KINDS[kind];
-  const channels = [0, 1].map((channel) => {
-    const source = whiteBuffer(n, mulberry32(seed + channel * 7919));
-    return step ? filterCircular(source, step) : source;
-  });
+  const build = KINDS[kind];
+  // 7919 is just a prime offset: the two channels must be decorrelated, and
+  // adjacent seeds in a 32-bit PRNG are not guaranteed to be.
+  const channels = [0, 1].map((channel) => build(n, seed + channel * 7919, sampleRate));
   normalisePeak(channels, peak);
 
   const out = Buffer.alloc(n * 2 * 2);
