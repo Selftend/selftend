@@ -20,13 +20,7 @@
  */
 
 import { choiceKey } from "./audition-plan.mjs";
-import {
-  SHIPPED_SFX_CLIPS,
-  VOICE_CUES,
-  VOICES,
-  outputSpecFor,
-  voiceSlotSpec,
-} from "./catalog.mjs";
+import { SHIPPED_SFX_CLIPS, VOICE_CUES, VOICES, outputSpecFor, voiceSlotSpec } from "./catalog.mjs";
 
 /**
  * The round whose voice half the app ships — all of it, both voices.

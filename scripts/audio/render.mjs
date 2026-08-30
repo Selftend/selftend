@@ -729,7 +729,9 @@ async function preflight(round, takes = PREFLIGHT_TAKES) {
     // SHAPE of sound and re-rolling it just buys the same shape again.
     const shapeFailures = [
       ...new Set(
-        measured.map((m) => grade(m).rejectedFor).filter((r) => r === "ceiling-bound" || r === "clipped"),
+        measured
+          .map((m) => grade(m).rejectedFor)
+          .filter((r) => r === "ceiling-bound" || r === "clipped"),
       ),
     ];
     let verdict;

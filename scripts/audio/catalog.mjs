@@ -599,11 +599,7 @@ export const TTS_VOICE_SETTINGS = {
  * remain in {@link BEDS} and in {@link OUTPUT_CLIPS} because they still ship and
  * still need a post-processing spec; they are simply not *rendered*.
  */
-export const SFX_CLIPS = [
-  ...BELLS,
-  ...BEDS.filter((bed) => bed.source !== "synth"),
-  ...TEXTURES,
-];
+export const SFX_CLIPS = [...BELLS, ...BEDS.filter((bed) => bed.source !== "synth"), ...TEXTURES];
 
 /**
  * Every non-voice clip the app SHIPS — the superset `SFX_CLIPS` used to be.

@@ -157,7 +157,9 @@ export function synthesiseBed({
   peak = 0.5,
 }) {
   if (!(kind in KINDS)) {
-    throw new Error(`unknown noise kind "${kind}" — expected one of: ${Object.keys(KINDS).join(", ")}`);
+    throw new Error(
+      `unknown noise kind "${kind}" — expected one of: ${Object.keys(KINDS).join(", ")}`,
+    );
   }
   const n = Math.round(seconds * sampleRate);
   const step = KINDS[kind];
