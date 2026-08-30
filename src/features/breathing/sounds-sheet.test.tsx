@@ -61,9 +61,13 @@ describe("SoundsSheet", () => {
     expect(screen.getByLabelText("Breath").props.accessibilityRole).toBe("radiogroup");
     expect(screen.getAllByRole("radio").length).toBeGreaterThan(1);
     // Default selection is the "guided" breath sound.
-    expect(screen.getByRole("radio", { name: "Guided voice" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Guided voice (female)" })).toBeChecked();
     // "Ocean swell" until the texture lane was retired; `none` is the other option
     // the breath picker still offers, and it must read as unselected.
     expect(screen.getByRole("radio", { name: "None" })).not.toBeChecked();
+    // ⚠️ The male voice must be REACHABLE, not merely defined. #1136 decided two
+    // voices and the ship plan counted eight files, but the app offered four until
+    // 2026-08-30 — the gap was invisible because nothing asserted the picker row.
+    expect(screen.getByRole("radio", { name: "Guided voice (male)" })).not.toBeChecked();
   });
 });

@@ -285,7 +285,18 @@ const CLASS_OUTPUT = {
   // Owner approved 2026-08-30 after auditioning all six candidates.
   beds: { channels: 2, bitrate: "96k", lufs: -28, limit: true },
   textures: { channels: 1, bitrate: "96k", lufs: -20 },
-  voice: { channels: 1, bitrate: "64k", lufs: -16 },
+  // ☠️ -18, NOT #1138's -16, and it is what the material can actually reach.
+  // Measured across all eight rendered cues (2026-08-30), the loudest each could
+  // be gained to under the -3 dBTP ceiling: -16.25, -15.97, -16.59, -16.00,
+  // -17.16, -16.01. Speech has a high crest, so -16 left several capped and the
+  // set spanning 1.2 LU for no reason anyone chose.
+  //
+  // ⚠️ A LIMITER IS NOT THE ANSWER HERE, unlike beds. Tried and measured: it
+  // reintroduced 4.94ms of LEAD SILENCE on five of the eight, because alimiter's
+  // lookahead pads the head — and #1134 makes zero leading silence a hard rule
+  // precisely for these clips, since a cue fires on a phase boundary that is
+  // already up to 250ms late. Harmless on a bed, disqualifying on a cue.
+  voice: { channels: 1, bitrate: "64k", lufs: -18 },
 };
 
 /** The `-20 LUFS-I, <= -3 dBTP` string `plan` prints, built from the numbers. */
@@ -734,7 +745,21 @@ export const VOICE_CUES = [
   { id: "guide_inhale", text: "Breathe in" },
   { id: "guide_hold", text: "Hold" }, // holdOut reuses this — confirmed, not deferred
   { id: "guide_exhale", text: "Breathe out" },
-  { id: "guide_intro", text: "Find a comfortable position, and let your shoulders soften." },
+  {
+    id: "guide_intro",
+    text: "Find a comfortable position, and let your shoulders soften.",
+    // ☠️ -21, three below the other cues, and that is to make it MATCH them by
+    // ear rather than to make it quieter. LUFS-I integrates the whole clip, and
+    // this one is a sentence with a natural pause at the comma while the others
+    // are single words with none — so the pause dilutes the measurement and the
+    // intro reads quieter than it sounds. Held at the same LUFS it would come
+    // out audibly LOUDER than "Breathe in".
+    //
+    // It is also the only target both intros can reach: measured, the loudest
+    // they can be gained to is -20.74 (guided) and -19.39 (guided-male).
+    // ⚠️ The 3 dB is reasoned and reachable, not verified by ear.
+    output: { lufs: -21 },
+  },
 ];
 
 /** #1134 §6 — unhurried, low, warm; falling intonation; no performance. */
@@ -806,8 +831,9 @@ export const OUTPUT_CLIPS = new Map([
     {
       ...cue,
       klass: "voice",
-      output: CLASS_OUTPUT.voice,
-      loudnessTarget: loudnessLabel(CLASS_OUTPUT.voice.lufs),
+      // A cue may carry its own target, and `guide_intro` does — see its entry.
+      output: { ...CLASS_OUTPUT.voice, ...(cue.output ?? {}) },
+      loudnessTarget: loudnessLabel(cue.output?.lufs ?? CLASS_OUTPUT.voice.lufs),
     },
   ]),
 ]);

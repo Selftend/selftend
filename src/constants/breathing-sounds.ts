@@ -1,6 +1,6 @@
 // Bundled breathing audio catalog. Two independent lanes:
-//   - BREATH: fires with the inhale/hold/exhale phases. Only the "guided" voice cue remains
-//     (loop: false — one clip per phase). `none` keeps the lane silent.
+//   - BREATH: fires with the inhale/hold/exhale phases. Two guided voices on a gender
+//     axis (#1136), each one clip per phase, fired once. `none` keeps the lane silent.
 //   - AMBIENT: one seamless looping bed that plays underneath, unrelated to phase.
 //
 // ☠️ THE BREATH-TEXTURE LANE IS GONE (owner, 2026-08-30). `soft-breath`, `ocean-swell` and
@@ -16,8 +16,10 @@
 //   ocean, stream, fire        — the ElevenLabs Explore library (free download)
 //   brown/white/pink noise     — computed by scripts/audio/synth-noise.mjs
 //
-// ⚠️ guide_*.wav are still the ORIGINAL placeholders. The voice half of #1130 is blocked
-// on choosing a Voice Library voice, so `guided` alone has not been replaced yet.
+// ✅ Nothing here is a placeholder any more. The voice cues were the last, and they are
+// ElevenLabs TTS as of 2026-08-30 — so every sound the app plays is the replacement set.
+// ⚠️ Voice masters are mp3, not WAV: lossless TTS output is rejected on the Creator plan.
+// Tolerable only because TTS is re-renderable from a seed, unlike a Sound Effects bed.
 const rain = require("@/assets/sounds/breathing/rain.m4a") as number;
 const forest = require("@/assets/sounds/breathing/forest.m4a") as number;
 const night = require("@/assets/sounds/breathing/night.m4a") as number;
@@ -27,11 +29,17 @@ const fire = require("@/assets/sounds/breathing/fire.m4a") as number;
 const brownNoise = require("@/assets/sounds/breathing/brown-noise.m4a") as number;
 const whiteNoise = require("@/assets/sounds/breathing/white-noise.m4a") as number;
 const pinkNoise = require("@/assets/sounds/breathing/pink-noise.m4a") as number;
-// Guided voice cues (cut from a single recording) - one-shot per phase, not looped.
-const guideInhale = require("@/assets/sounds/breathing/guide_inhale.wav") as number;
-const guideHold = require("@/assets/sounds/breathing/guide_hold.wav") as number;
-const guideExhale = require("@/assets/sounds/breathing/guide_exhale.wav") as number;
-const guideIntro = require("@/assets/sounds/breathing/guide_intro.wav") as number;
+// Guided voice cues — ElevenLabs TTS, one clip per phase, fired once (not looped).
+// Two voices on a gender axis (#1136); the female keeps the bare `guided` id because
+// an unrecognised breath_sound_id fails twice over and shipped clients live forever.
+const guidedInhale = require("@/assets/sounds/breathing/guide_inhale.guided.m4a") as number;
+const guidedHold = require("@/assets/sounds/breathing/guide_hold.guided.m4a") as number;
+const guidedExhale = require("@/assets/sounds/breathing/guide_exhale.guided.m4a") as number;
+const guidedIntro = require("@/assets/sounds/breathing/guide_intro.guided.m4a") as number;
+const maleInhale = require("@/assets/sounds/breathing/guide_inhale.guided-male.m4a") as number;
+const maleHold = require("@/assets/sounds/breathing/guide_hold.guided-male.m4a") as number;
+const maleExhale = require("@/assets/sounds/breathing/guide_exhale.guided-male.m4a") as number;
+const maleIntro = require("@/assets/sounds/breathing/guide_intro.guided-male.m4a") as number;
 
 export interface BreathSound {
   id: string;
@@ -80,12 +88,30 @@ export const BREATH_SOUNDS: BreathSound[] = [
   {
     id: "guided",
     labelKey: "breathing.sounds.breath.guided",
-    inhaleAsset: guideInhale,
-    exhaleAsset: guideExhale,
-    holdAsset: guideHold,
+    inhaleAsset: guidedInhale,
+    exhaleAsset: guidedExhale,
+    holdAsset: guidedHold,
     loop: false,
-    introAsset: guideIntro,
-    introMs: 3300,
+    introAsset: guidedIntro,
+    // ☠️ MEASURED, never estimated (#1136). It was a hardcoded 3300 while the
+    // real clip is 2.662s — and the male one is 4.557s, so a single shared value
+    // cut that intro off more than a second early. Each voice carries its own,
+    // read off the SHIPPED file.
+    introMs: 2662,
+  },
+  {
+    // ⚠️ ADDED 2026-08-30, and it was already paid for. #1136 decided two voices
+    // and `shippingUnits()` has always counted EIGHT voice files, but the app
+    // wired only four — the male half was rendered, budgeted and never reachable.
+    // Purely additive: no stored preference has to move.
+    id: "guided-male",
+    labelKey: "breathing.sounds.breath.guidedMale",
+    inhaleAsset: maleInhale,
+    exhaleAsset: maleExhale,
+    holdAsset: maleHold,
+    loop: false,
+    introAsset: maleIntro,
+    introMs: 4557,
   },
 ];
 

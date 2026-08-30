@@ -1504,7 +1504,8 @@
       "pickAmbient": "Choose an ambient sound",
       "none": "None",
       "breath": {
-        "guided": "Guided voice"
+        "guided": "Guided voice (female)",
+        "guidedMale": "Guided voice (male)"
       },
       "ambient": {
         "rain": "Rain",

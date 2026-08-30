@@ -48,8 +48,42 @@ describe("the retired breath textures", () => {
 });
 
 describe("the breath lane", () => {
-  it("is silence and the guided voice, and nothing else", () => {
-    expect(BREATH_SOUNDS.map((s) => s.id)).toEqual(["none", "guided"]);
+  it("is silence and the two guided voices, and nothing else", () => {
+    // ⚠️ `guided-male` was added 2026-08-30. #1136 decided two voices and the ship
+    // plan always counted EIGHT voice files, but the app wired four — the male half
+    // was rendered and budgeted and unreachable.
+    expect(BREATH_SOUNDS.map((s) => s.id)).toEqual(["none", "guided", "guided-male"]);
+  });
+
+  it("gives each voice its own MEASURED intro length", () => {
+    // ☠️ A single hardcoded 3300 stood here. The female intro is 2.662s and the male
+    // 4.557s, so one shared value cut the male off more than a second early. #1136
+    // requires these come from the measured duration of the CHOSEN clip.
+    const ms = Object.fromEntries(
+      BREATH_SOUNDS.filter((s) => s.introAsset).map((s) => [s.id, s.introMs]),
+    );
+    expect(ms).toEqual({ guided: 2662, "guided-male": 4557 });
+    // The two differ by well over a second — which is the whole reason one number
+    // could not serve both.
+    expect(Math.abs((ms["guided-male"] ?? 0) - (ms.guided ?? 0))).toBeGreaterThan(1000);
+  });
+
+  it("gives both voices a full set of cues and a distinct label", () => {
+    const voices = BREATH_SOUNDS.filter((s) => s.id.startsWith("guided"));
+    expect(voices).toHaveLength(2);
+    for (const v of voices) {
+      expect(v.loop).toBe(false);
+      for (const a of [v.inhaleAsset, v.exhaleAsset, v.holdAsset, v.introAsset]) {
+        expect(a).toBeTruthy();
+      }
+    }
+    expect(voices[0].labelKey).not.toBe(voices[1].labelKey);
+    // ☠️ WHAT THIS CANNOT CHECK: that the two voices point at DIFFERENT FILES. Jest
+    // mocks `require()` of an asset to the number 1 for every file, so a copy-paste
+    // that gave the male voice the female clips is indistinguishable here — every
+    // assertion above would still pass. The real guard is the web export, which
+    // resolves and hashes each path separately (verified 2026-08-30: eight distinct
+    // guide_* files in dist), plus the differing introMs asserted above.
   });
 
   it("still fires the guided cue once per phase rather than looping it", () => {
