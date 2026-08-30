@@ -46,8 +46,8 @@ export const SHIP_BUDGET_BYTES = 4 * 1024 * 1024;
 /**
  * How many finished files the set has, stated so a survey can disagree loudly.
  *
- * 25 since the 2026-08-29 bed request (#1130): 21 + `stream`, `fire`,
- * `white-noise` and `pink-noise`.
+ * 19 since #1130: 21, plus `stream`, `fire`, `white-noise` and `pink-noise`,
+ * minus the six breath textures the owner retired on 2026-08-30.
  *
  * ☠️ THE SET HAS ~12 KB OF HEADROOM AT 25, AND THAT IS NOT A MARGIN. Nine beds fit
  * at all only because #1130 dropped the bed bitrate to 96k, and the six breath
@@ -56,7 +56,7 @@ export const SHIP_BUDGET_BYTES = 4 * 1024 * 1024;
  * MiB spare, which is where this count is expected to settle. Until then, DO NOT
  * ADD ANOTHER CLIP: one more bed is 0.34 MiB against 12 KB of room.
  */
-export const SHIP_FILE_COUNT = 25;
+export const SHIP_FILE_COUNT = 19;
 
 /**
  * The finished file one shipping unit is written to.

@@ -19,7 +19,12 @@ import { outputSpecFor } from "../scripts/audio/catalog.mjs";
 
 const BED = outputSpecFor("brown-noise");
 const BELL = outputSpecFor("meditation-bell");
-const TEXTURE = outputSpecFor("soft-breath_inhale");
+// ⚠️ A voice cue, not a texture. The texture lane was retired on 2026-08-30, so
+// its spec no longer exists — but `foldPlan`'s rule is per-CLASS, not per-clip,
+// and voice is the other class that carries no fold length. The assertion below
+// is unchanged in substance: a class with nothing to fold refuses `--fold` loudly
+// instead of reporting a fold that never ran.
+const VOICE = outputSpecFor("guide_intro");
 
 describe("a natively looping bed is not folded", () => {
   it("skips the fold by default, and says why", () => {
@@ -62,7 +67,7 @@ describe("nothing but a bed is ever folded", () => {
   });
 
   it("leaves a texture alone", () => {
-    expect(foldPlan(TEXTURE).foldSeconds).toBeNull();
+    expect(foldPlan(VOICE).foldSeconds).toBeNull();
   });
 
   it("refuses to fold a bell that was asked for one, rather than ignoring the ask", () => {
@@ -70,7 +75,7 @@ describe("nothing but a bed is ever folded", () => {
     // The fold trims 0.4s off the end, which on a 2s temple block is a fifth of
     // its decay — an operator who typed it deserves an error, not a no-op.
     expect(() => foldPlan(BELL, { fold: true })).toThrow(/bells/);
-    expect(() => foldPlan(TEXTURE, { fold: true })).toThrow(/textures/);
+    expect(() => foldPlan(VOICE, { fold: true })).toThrow(/voice/);
   });
 });
 

@@ -89,9 +89,10 @@ describe("the manifest CLI", () => {
     await expect(write("B", { out: out() })).resolves.toBe(false);
     const doc = JSON.parse(await readFile(out(), "utf8"));
     expect(doc.complete).toBe(false);
-    // 20 since #1130: Round B renders six beds where it rendered five —
-    // `stream` and `fire` joined, `brown-noise` left for `synth-noise.mjs`.
-    expect(doc.totals.units).toBe(20);
+    // 14 since #1130: six beds (`stream` and `fire` joined, `brown-noise` left
+    // for `synth-noise.mjs`) plus the eight voice slots. The six breath textures
+    // that used to make up the difference were retired on 2026-08-30.
+    expect(doc.totals.units).toBe(14);
   });
 
   it("☠️ does not green-light an unfinished pass through --check either", async () => {

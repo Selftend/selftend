@@ -51,9 +51,16 @@ describe("only beds render loop: true", () => {
     for (const bell of BELLS) expect(bell.loop).toBe(false);
   });
 
-  it("leaves the textures non-looping, as #1137 ruled", () => {
-    expect(TEXTURES).toHaveLength(6);
-    for (const texture of TEXTURES) expect(texture.loop).toBe(false);
+  it("has retired the texture lane entirely", () => {
+    // ☠️ Six until 2026-08-30. The owner auditioned the rendered set and asked for
+    // background beds only — "no inhale/exhale specific noises" — so `soft-breath`,
+    // `ocean-swell` and `wind` are gone as a lane, not as failed takes
+    // (`ocean-swell_inhale` was judged good). #1137's "textures never loop" ruling
+    // has nothing left to rule on.
+    //
+    // ⚠️ Also load-bearing for the bundle: nine beds only fit under the 4 MiB
+    // ceiling once these six stopped being counted.
+    expect(TEXTURES).toHaveLength(0);
   });
 
   it("has exactly one loop answer per class, and beds are the only true one", () => {
@@ -124,9 +131,11 @@ describe("preflight asks for a duration loop mode will honour", () => {
     expect(requestSecondsFor(BEDS[0], PREFLIGHT_SECONDS)).toBe(loopReturnedSeconds(4));
   });
 
-  it("leaves the non-looping classes at exactly 4s", () => {
-    expect(requestSecondsFor(TEXTURES[0], PREFLIGHT_SECONDS)).toBe(4);
+  it("leaves the non-looping class at exactly 4s", () => {
+    // Bells only since the texture lane was retired (2026-08-30) — they are now
+    // the sole class that does not loop, so they are the whole of this check.
     expect(requestSecondsFor(BELLS[0], PREFLIGHT_SECONDS)).toBe(4);
+    expect(BELLS.every((bell: { loop: boolean }) => !bell.loop)).toBe(true);
   });
 
   it("asks every clip for a length its own render mode returns unchanged", () => {
@@ -146,10 +155,17 @@ describe("a natively looping bed carries its render mode into the pipeline", () 
     expect(outputSpecFor("brown-noise").foldSeconds).toBeCloseTo(0.4, 6);
   });
 
-  it("gives a bell and a texture no fold length at all", () => {
+  it("gives a bell no fold length at all", () => {
     expect(outputSpecFor("meditation-bell").foldSeconds).toBeNull();
-    expect(outputSpecFor("soft-breath_inhale").foldSeconds).toBeNull();
     expect(outputSpecFor("meditation-bell").loop).toBe(false);
+  });
+
+  it("no longer knows the retired texture ids at all", () => {
+    // ☠️ The lane is gone from OUTPUT_CLIPS with it, so a spec lookup THROWS
+    // rather than quietly returning a bed's. The six .wav files are still in
+    // assets/ until the app change lands, but nothing re-processes them — and a
+    // loud throw is the right answer if anything tries.
+    expect(() => outputSpecFor("soft-breath_inhale")).toThrow(/unknown clip id/);
   });
 
   it("says a voice cue neither loops nor folds", () => {
@@ -172,14 +188,17 @@ describe("the credit rate is the API's, not the web composer's", () => {
   it("quotes Round B at the number the API would actually charge", () => {
     const roundB = SFX_CLIPS.filter((clip) => clip.round === "B");
     const { seconds, credits } = creditEstimate(roundB);
-    // 6 beds x 3 x 30s + 6 textures x 2 x 10s. Six, not the original five: the
+    // 6 beds x 3 x 30s. Six beds, not the original five: the
     // 2026-08-29 request added `stream` and `fire`, while `brown-noise` LEFT the
     // render for `synth-noise.mjs` along with the two new noise beds.
     //
     // 📌 The three synth beds would have cost 3 x 3 x 30s x 11 = 2,970 credits.
     // They cost nothing and are exact, seamless and reproducible instead.
-    expect(seconds).toBe(660);
-    expect(credits).toBe(7260);
+    //
+    // ⚠️ The six breath textures are gone too (2026-08-30), so this is six beds
+    // and nothing else: 6 x 3 x 30s.
+    expect(seconds).toBe(540);
+    expect(credits).toBe(5940);
   });
 
   it("quotes the two bells at what Round A really cost", () => {

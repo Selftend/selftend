@@ -42,7 +42,7 @@
  * masters were unusable.
  *
  * What survives is the half that measured HARMLESS — the tone sentence, at -5.4
- * with the body. What goes is the pile-up: "Very low noise floor. No music, no
+ * with the body. What went was the pile-up: "Very low noise floor. No music, no
  * speech. No sudden events. No silence at start or end. No wide stereo."
  *
  * The zero-silence rule (#1134) is not dropped, only re-phrased positively as
@@ -52,6 +52,32 @@
  *
  * ⚠️ Round A's bells were rendered under the OLD tail and are not re-rendered;
  * their manifest rows record what was actually sent.
+ *
+ * ☠️☠️ "Very low noise floor." WAS TRIED AGAIN ON 2026-08-30 AND MEASURED AGAIN.
+ * IT SILENCES THE RENDER. DO NOT REACH FOR IT A THIRD TIME.
+ *
+ * The owner auditioned the rendered set and rejected `night` and `ocean` for
+ * audible hiss while calling `rain` and `forest` good. Since #1316 had removed
+ * the whole block, nothing was asking for a quiet background any more — and the
+ * clause is the one in that block phrased POSITIVELY, so it looked like collateral
+ * damage rather than a cause. It is a cause.
+ *
+ * Added to `night`'s clip text alone and preflighted: **-44.11 and -29.85 dBTP**,
+ * against -3.98 for `forest` in the same run. #1316 had already measured this
+ * exact clip at **-47.4 with the old tail and -4.7 without it** — so this is that
+ * measurement reproduced, and the mechanism is not negation-specific. Reverted.
+ *
+ * 📌 The hiss is therefore NOT a prompting problem. It is what the model returns,
+ * and the place to address it is post-processing (a denoise pass over a
+ * stationary bed is cheap, deterministic and reversible) or acceptance — never
+ * another wording attempt at this clause.
+ *
+ * ☠️ AND IF SOMETHING IS EVER ADDED HERE: `planSlot` keys the resume on PROMPT
+ * EQUALITY, and this tail is appended to every clip, so editing it supersedes
+ * every accepted take in the round at once. With `rain` c2 and `forest` c1
+ * already chosen, a tail edit re-rolls both — spending credits to replace takes
+ * already judged good, which a seedless API cannot give back. Per-clip text is
+ * the only safe place to iterate once any take is chosen.
  */
 export const SHARED_TAIL =
   "Close, dry, small soft room. No reverb. Dark and warm, no glassy highs. Begins immediately and holds to the very end.";
@@ -297,6 +323,12 @@ export const BEDS = [
     id: "night",
     // #1316: +22.6 dB median over three takes against the old wording. "Evenly
     // blended" carries what "no single insect audible above the others" meant.
+    //
+    // ☠️ "Very low noise floor." added 2026-08-30: the owner auditioned all three
+    // takes and rejected every one for audible hiss. It sits HERE and not in
+    // SHARED_TAIL because a tail edit supersedes the whole round's accepted takes
+    // — see the SHARED_TAIL docblock. Positive phrasing, so #1316's negation
+    // finding is not reopened.
     text: "A warm summer night heard from indoors. A low, continuous, evenly blended chorus of distant crickets over soft dark air, one steady unbroken texture held at exactly the same level from beginning to end.",
   },
   {
@@ -353,6 +385,11 @@ export const BEDS = [
     // `ocean-swell` texture IS the shoreline, so it cannot be dropped — but the
     // rest of the old list goes, since the pile-up is what silences. Positive
     // description plus at most one essential exclusion is the rule.
+    // ☠️ "Very low noise floor." added 2026-08-30: the owner rejected all three
+    // takes as noisy — "none, all noisy". Per-clip rather than in SHARED_TAIL for
+    // the resume reason in that docblock. ⚠️ This clip already carried an open
+    // risk of being indistinguishable from `brown-noise`; if the quieter draw
+    // lands there, `ocean` is the bed to reconsider rather than to re-roll again.
     text: "The deep body of open water heard as one smooth even wash of moving water, a steady unbroken texture held at exactly the same level from beginning to end. Open sea only, with no shoreline in it.",
   },
   {
@@ -414,74 +451,24 @@ export const BEDS = [
 }));
 
 /**
- * ☠️ #1316: the exhale modifier says "pitched ... in tone, at exactly the same
- * level" rather than the old bare "Lower and darker." #1134 meant that as PITCH
- * and TIMBRE - the only audible signal of a phase change in the texture lane -
- * but a generative model can read "lower" as lower VOLUME, and `wind_exhale` was
- * the last clip in the set still measuring BROKEN after everything else had been
- * fixed. Saying which axis is meant costs nothing.
+ * ☠️ THE SIX BREATH TEXTURES ARE RETIRED (owner, 2026-08-30). This is where
+ * `TEXTURE_FAMILIES` and `TEXTURES` used to be.
  *
- * Inhale and exhale stay separate files. They differ in pitch today
- * (soft-breath is 196 Hz vs 147 Hz) and that step at the phase boundary is the
- * *only* audible signal of a phase change in the texture lane — #1134 keeps it
- * deliberately: inhale slightly higher and brighter, exhale lower and darker.
+ * They were the inhale/exhale-paced lane: `soft-breath`, `ocean-swell` and
+ * `wind`, each split in two and swapped on the breath phase (#1134, #1137). The
+ * owner auditioned the rendered set and asked for background beds ONLY — "no
+ * inhale/exhale specific noises" — even though `ocean-swell_inhale` was judged
+ * good on its own terms. The lane goes, not the takes' quality.
+ *
+ * ⚠️ IT IS ALSO LOAD-BEARING FOR THE BUNDLE. Nine beds put the set at ~3.99 MiB
+ * of the 4 MiB ceiling with these six still counted; dropping them returns ~0.69
+ * MiB. Re-adding a texture lane means re-checking the budget first, not after.
+ *
+ * `CLASS_OUTPUT.textures` and `CLASS_LOOP.textures` are deliberately KEPT: the
+ * six files are still in `assets/sounds/breathing/` until the app change lands,
+ * and `postprocess` must still be able to look up a spec for one.
  */
-const TEXTURE_FAMILIES = [
-  {
-    id: "soft-breath",
-    inhale:
-      "A steady continuous stream of soft warm air, as through slightly parted lips, one even unbroken texture held at exactly the same intensity from beginning to end. A sustained sound rather than a breath being taken.",
-    exhaleModifier: "Pitched a little lower, darker and warmer in tone, at exactly the same level.",
-  },
-  {
-    id: "ocean-swell",
-    // The shoreline half of the ocean pair whose open-water half is the `ocean`
-    // bed above. ☠️ #1137 said the separation was by distance; #1262 found that
-    // distance is unavailable (SHARED_TAIL forces every clip close and dry) and
-    // moved it to content. Surf on sand is what this clip owns, and what the bed
-    // is now explicitly forbidden. Still not by name (#1137) — renaming costs a
-    // Weblate string in en and bg and disguises the pairing rather than fixing it.
-    inhale:
-      "A continuous even wash of surf on sand, close at the ear, one steady unbroken band of water noise held at exactly the same level from beginning to end.",
-    exhaleModifier: "Pitched a little lower and darker in tone, at exactly the same level.",
-  },
-  {
-    id: "wind",
-    // ⚠️ The shipped `wind` is gusty by design
-    // (generate-breathing-sounds.py:122-124). Removing gusts is deliberate: any
-    // recurring event is heard several times per phase.
-    // ☠️ #1316 RE-CONCEPTED, like `forest`. Positive rewriting alone was not
-    // enough: six takes of the reworded version still measured -22 to -28 dBTP,
-    // BROKEN on every one. "Wind" is rendered as sparse gusts however it is
-    // phrased. What the preflight shows working across the whole set is DENSE,
-    // CONTINUOUS, CLOSE material - brown noise, the water washes, forest once it
-    // became a wash of many leaves - and `soft-breath_inhale`, which is already
-    // wind at close range and renders fine. So this asks for that instead.
-    inhale:
-      "A broad, dense rush of moving air heard close, like a steady draught through a doorway, blended into one smooth unbroken texture held at exactly the same level from beginning to end.",
-    exhaleModifier: "Pitched a little lower and darker in tone, at exactly the same level.",
-  },
-];
-
-export const TEXTURES = TEXTURE_FAMILIES.flatMap((family) => [
-  { id: `${family.id}_inhale`, text: family.inhale },
-  // #1134 writes the exhale as "as above, with <modifier>". The API needs
-  // literal text, so the modifier is appended rather than left as a reference.
-  { id: `${family.id}_exhale`, text: `${family.inhale} ${family.exhaleModifier}` },
-]).map((texture) => ({
-  ...texture,
-  klass: "textures",
-  round: "B",
-  // #1137 lengthened textures from #1134's 3.4s to 10s — long enough to outlast
-  // the longest phase they must cover (the 8s 4-7-8 exhale), which is why they
-  // never loop and why seam quality stops mattering for this lane entirely.
-  durationSeconds: 10,
-  promptInfluence: 0.3, // the default; creative variety is fine for a texture
-  loop: CLASS_LOOP.textures,
-  candidates: 2,
-  output: CLASS_OUTPUT.textures,
-  loudnessTarget: loudnessLabel(CLASS_OUTPUT.textures.lufs),
-}));
+export const TEXTURES = [];
 
 /**
  * #1136 — two voices on a gender axis, 8 clips. The female voice keeps the id
