@@ -31,6 +31,7 @@ Use this as the map for project docs. Each entry below links to the doc that own
 
 ## Policy And Planning
 
+- [positioning.md](positioning.md) - the market frame, the value themes, and the words every surface must use
 - [policies.md](policies.md) - public policy surfaces, crisis guidance posture, and launch-review status
 - [gdpr-compliance.md](gdpr-compliance.md) - GDPR/CCPA posture
 - [analytics.md](analytics.md) - analytics and observability posture

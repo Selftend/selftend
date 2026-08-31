@@ -18,6 +18,7 @@
 - [ ] no new tracking, analytics, ads, paywalls, or social scope added without explicit review
 - [ ] reminders, streaks, quests, notifications, or progress mechanics remain optional and non-punitive
 - [ ] Architectural change (service/host/provider/domain/dependency/credential)? → control-tower updated (issue filed or inventory.md edited), or N/A
+- [ ] Copy saying what Selftend _is_ matches `docs/positioning.md`? Ungated surfaces (AlternativeTo, GitHub repo description/topics, Reddit, video narrations, Play listing) updated too, or N/A
 
 ## Review Notes
 
