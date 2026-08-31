@@ -83,9 +83,11 @@ function assertRound(round) {
  * Both halves of the round, in one list.
  *
  * ☠️ THE VOICE HALF WAS MISSING ENTIRELY. This function used to return
- * `clipsForRound(round)` alone, which filters `SFX_CLIPS` — so Round B's eight
- * voice cues were never surveyed, never previewed, never choosable, and never
- * counted by `status`. Eleven clips of twenty-one, reported as the whole round.
+ * `clipsForRound(round)` alone, which filters `SFX_CLIPS` — so Round B's voice
+ * cues were never surveyed, never previewed, never choosable, and never counted
+ * by `status`. Eleven clips of twenty-one, reported as the whole round. (Those
+ * figures are the 2026-08 set as it stood; the shape of the bug is the point, and
+ * the counts have since moved twice.)
  *
  * The two halves are planned separately rather than forced through one function
  * because they supersede on different things: a sound effect on its composed
@@ -233,11 +235,13 @@ async function choose(round, clipId, candidate, note, voice) {
   // "is this a real slot" instead of "is this a real voice" is the same move #1581
   // made everywhere else, and it is why the question is asked of the pairing rather
   // than of either list.
-  const voiceSlotIds = new Set(voiceSlots(voiceSlotSpec(round)).map((slot) => slot.id));
+  const roundSlots = voiceSlots(voiceSlotSpec(round));
   if (VOICE_CUE_IDS.has(clipId)) {
-    const speakers = [...voiceSlotIds]
-      .filter((id) => id.startsWith(`${clipId}|`))
-      .map((id) => id.slice(clipId.length + 1));
+    // ⚠️ Read off the slot OBJECTS, not by splitting their ids back apart. The id
+    // is `choiceKey`'s format, and re-parsing it here would make this a second
+    // place that knows how a unit id is spelled — the same shape of duplication
+    // the pairing refactor just removed.
+    const speakers = roundSlots.filter((slot) => slot.clipId === clipId).map((slot) => slot.voice);
     // The voice cues are Round B's. Asking for one against Round A used to get as
     // far as "no rendered take", which reads as "render it" rather than "wrong
     // round" — and with the speaker list now derived, it would name nobody at all.
@@ -252,7 +256,7 @@ async function choose(round, clipId, candidate, note, voice) {
             .join(", ")}`,
       );
     }
-    if (!voiceSlotIds.has(choiceKey({ clip: clipId, voice }))) {
+    if (!roundSlots.some((slot) => slot.id === choiceKey({ clip: clipId, voice }))) {
       throw new Error(
         `"${voice}" does not say ${clipId} — expected ${speakers.join(" or ")}. ` +
           `A voice speaks one language's cues only (#1581).`,
@@ -315,7 +319,7 @@ async function choose(round, clipId, candidate, note, voice) {
  * ☠️ THIS IS #1210's PROGRESS METER, AND IT COUNTED 11 OF 21.
  *
  * It surveyed `clipsForRound` alone, so once the sound-effect half was picked it
- * printed "Every clip in round B has a pick" and exited 0 with all eight voice
+ * printed "Every clip in round B has a pick" and exited 0 with every voice
  * cues untouched — a green light on a half-finished pass, which is the same shape
  * as #1317's `render --round B` producing 11 clips and saying nothing.
  */

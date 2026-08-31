@@ -638,18 +638,26 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
       "unreproducible as a chosen one.",
   );
 
-  // ☠️ This command renders SOUND EFFECTS only. `clipsForRound` filters
-  // SFX_CLIPS, so the voice cues are not in it and never were — Round B
-  // is 11 clips here and 8 more from `render-voices`. Saying so out loud is the
-  // point: a silent 11 reads as a finished 19.
+  // ☠️ This command renders SOUND EFFECTS only. `clipsForRound` filters SFX_CLIPS,
+  // so the voice cues are not in it and never were — Round B is 11 clips here and
+  // 16 voice slots from `render-voices`. Saying so out loud is the point: a silent
+  // 11 reads as a finished 27.
+  //
+  // ☠️ The counts are DERIVED, not typed. This comment said "8 more … a finished
+  // 19" and the string beneath it said the same, and both were a language behind
+  // within one change — which is the half-fix `SHIP_FILE_COUNT`'s own docblock is
+  // a warning about.
   if (round === "B") {
     const missing = VOICES.filter((voice) => !voice.voiceId).map((voice) => voice.id);
+    const { slots } = voiceSlotSpec(VOICE_ROUND);
     console.log(
-      `\nThis rendered SOUND EFFECTS only — ${clips.length} clips. The voice slots are separate:\n` +
-        (missing.length
-          ? `  still need a voiceId in catalog.mjs: ${missing.join(", ")}\n` +
-            "  then:  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"
-          : "  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"),
+      `\nThis rendered SOUND EFFECTS only — ${clips.length} clips. The ${slots.length} voice ` +
+        "slots are separate:\n" +
+        (missing.length ? `  still need a voiceId in catalog.mjs: ${missing.join(", ")}\n` : "") +
+        // ☠️ NO INLINE KEY HERE. This footer is where a render operator lands after
+        // `render --round B`, so it is exactly the moment the burned
+        // `ELEVENLABS_API_KEY=... node ...` form would get copied — see `apiKey()`.
+        "  node scripts/audio/render.mjs render-voices --go",
     );
   }
 

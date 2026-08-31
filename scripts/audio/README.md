@@ -106,10 +106,15 @@ node scripts/audio/render.mjs preflight --round A
 node scripts/audio/render.mjs render --round A --go
 
 # The sixteen voice slots — 4 cues x 2 voices, in English and Bulgarian — which
-# `render` does NOT cover. `--voice-id` renders a SHORTLISTED voice without
-# writing it into catalog.mjs; name only the voices you are trialling.
+# `render` does NOT cover. Renders every slot from the catalog's four voices:
+node scripts/audio/render.mjs render-voices --go
+
+# `--voice-id` renders a SHORTLISTED voice without writing it into catalog.mjs.
+# ⚠️ Name only the voices you are trialling; the others keep their catalog id, and
+# ALL sixteen slots still render. The ids are guided | guided-male (en) and
+# guided-bg | guided-male-bg (bg) — run with no --go to see the quote first.
 node scripts/audio/render.mjs render-voices \
-  --voice-id guided=<voiceId> --voice-id guided-male=<voiceId> --go
+  --voice-id guided-bg=<voiceId> --go
 ```
 
 ☠️ **`--voice-id` exists because #1136's own criterion had a chicken-and-egg in
@@ -352,6 +357,13 @@ picker rows. The `-bg` voice ids exist so the render can name files apart
 (`guide_inhale_bg.guided-bg.m4a`).
 
 ### The size budget, and why a voice cue's filename carries its voice
+
+☠️ **Three file counts appear on this page and only one is the target.** `21` is
+#1210's original acceptance check, quoted below as history. `19` is what ships
+**today**, measured. `27` is the target — `SHIP_FILE_COUNT`, the set once #1573's
+eight Bulgarian cues are rendered. The set is not complete until the survey says
+27; if a number here disagrees with `SHIP_FILE_COUNT`, `SHIP_FILE_COUNT` is right
+and this prose is stale.
 
 #1210's fifth acceptance check is "**Budget**: 21 files, ~3.21 MB, under the 4.0 MB
 ceiling", and it was the last item on that list with no instrument behind it —
@@ -607,28 +619,27 @@ node scripts/audio/audition.mjs status --round B
 ```
 
 ☠️ **It covers BOTH halves of the round, and it did not.** `survey` built its clip
-list from `clipsForRound`, which filters `SFX_CLIPS` — so Round B's eight voice
-cues were never in it. `build` could not make one playable, `choose` threw on a
+list from `clipsForRound`, which filters `SFX_CLIPS` — so Round B's voice cues were
+never in it. `build` could not make one playable, `choose` threw on a
 `guide_*` id, and `status` — this pass's own progress meter — would have printed
 "Every clip in round B has a pick" and exited 0 with the whole voice half
 untouched. Eleven units of nineteen, reported as the round. That is #1317's
 `render --round B` producing 11 clips and saying nothing, one subsystem later, and
 it landed on the class #1210 calls its FIRST task.
 
-☠️ **A voice pick is per cue AND per voice OF THAT CUE'S LANGUAGE.** `--voice` is
-validated against the slot list, not against `VOICES`, so
+☠️ **A voice pick is per cue AND per voice — of that cue's language.** Both voices
+ship — #1136 makes the male one purely additive, so nothing migrates and each cue is
+owed two picks — so `--voice` is required on a `guide_*` id and refused on a sound
+effect. Keyed on the clip alone, choosing the female take would mark the male one
+settled and half the voice set would ship unheard. The two voices sit in one section
+of the page on purpose: #1136 asks for a **matched pair auditioned on the shipping
+words**, and the two halves of that comparison have to be adjacent to be one.
+
+`--voice` is validated against the **slot list**, not against `VOICES`, so
 `choose guide_inhale 1 --voice guided-bg` is refused: a Bulgarian voice does not say
 an English cue. That check was the **fourth** pairing site and #1581 missed it — the
-other three (render, ship, manifest) were centralised and this one was still asking
-"is that a real voice?" instead of "is that a real pairing?".
-
-☠️ **A voice pick is per cue AND per voice.** Both voices ship — #1136 makes the
-male one purely additive, so nothing migrates and each cue is owed two picks — and
-`--voice` is therefore required on a `guide_*` id and refused on a sound effect.
-Keyed on the clip alone, choosing the female take would mark the male one settled
-and half the voice set would ship unheard. The two voices sit in one section of
-the page on purpose: #1136 asks for a **matched pair auditioned on the shipping
-words**, and the two halves of that comparison have to be adjacent to be one.
+other three (render, ship, manifest) were centralised while this one still asked "is
+that a real voice?" instead of "is that a real pairing?".
 
 ⚠️ **A voice take is not graded by level.** #1320's usable/silent thresholds exist
 for the seedless Sound Effects tail, where a fixed prompt varies 16-26 dB run to
