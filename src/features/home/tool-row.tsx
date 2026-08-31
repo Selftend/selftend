@@ -84,7 +84,14 @@ export function ToolRow({ id, stat }: ToolRowProps) {
 
       <View className={cn("min-w-0 flex-1", wide ? "flex-row items-center gap-3" : "gap-0.5")}>
         <Text
-          numberOfLines={1}
+          // Two lines on phone, where the name already sits on its own stacked line, so the
+          // fix is the line count and not the stacking. "Дневник на благодарността" is 212.8px
+          // at 15px NotoSans_600SemiBold against a 236px box at the 360dp floor: it fits
+          // unscaled, but nothing here sets `allowFontScaling`, so it ellipsizes from
+          // fontScale 1.11 - the first accessibility step - while the 124px of chrome around
+          // it does not grow. One line stays right in the `wide` branch, where the name sits
+          // beside the stat and nothing truncates (#1590, the same class as #1248).
+          numberOfLines={wide ? 1 : 2}
           className={cn("text-[15px] font-semibold", wide && "min-w-[150px] shrink-0")}
           // The drawn desktop name column is `width: 150px`. It has to be a MINIMUM:
           // a fixed width overruns in Bulgarian, where the longest tool name is

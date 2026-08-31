@@ -4,6 +4,7 @@ import { useWindowDimensions } from "react-native";
 
 import { ToolRow } from "@/src/features/home/tool-row";
 import { WIDGET_META } from "@/src/features/home/widget-registry";
+import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -132,5 +133,67 @@ describe("ToolRow", () => {
     renderWithProviders(<ToolRow id="not-a-widget" stat="x" />);
 
     expect(screen.queryByTestId("tool-row-not-a-widget")).toBeNull();
+  });
+});
+
+/**
+ * Measured, not estimated: at 15px `NotoSans_600SemiBold` the longest Bulgarian tool name,
+ * "Дневник на благодарността", is **212.8px** wide. Its box on home is the screen less the
+ * 124px of chrome around it - 48 (`AnimatedScrollView` PADDING 24x2), 8 (`px-1`), 20+14 for
+ * the leading mark and its gap, 20+14 for the chevron and its gap - so 236px at the 360dp
+ * floor #1231 set, and 196px at 320.
+ *
+ * On one line that fits at 360 with 23.2px spare, so this is NOT the floor violation #1248
+ * was. What makes it real is font scaling: nothing in the repo sets `allowFontScaling` or
+ * `maxFontSizeMultiplier`, so the name grows with the OS text-size setting while the 124px
+ * around it does not, and 236/212.8 puts the ellipsis at **fontScale 1.11** - the first
+ * accessibility step - on a supported device. English clears every width to 1.52.
+ *
+ * Wrapped it takes two lines whose widest is its longest word at 120.2px, and the widest
+ * unbreakable word across all bg tool names is "Наблюдаващото" at 126.2px, so two lines are
+ * enough even in the 196px box at 320 and nothing breaks mid-word (#1590).
+ */
+describe("ToolRow - the name is not locked to one line at phone width (#1590)", () => {
+  it.each([
+    [360, 2],
+    [1280, 1],
+  ])("at %ipx the name may run to %i line(s)", (width, lines) => {
+    atWidth(width);
+    renderWithProviders(<ToolRow id="sleep-latest" stat="7-day average 7.2h" />);
+
+    expect(screen.getByText("Sleep").props.numberOfLines).toBe(lines);
+  });
+});
+
+describe("ToolRow - the longest Bulgarian name (#1590)", () => {
+  const LONGEST_BG_NAME = "Дневник на благодарността";
+
+  beforeAll(async () => {
+    // Via the helper, never a bare `changeLanguage`: bg's bundles are lazy, and without them
+    // these assertions would run against English and go vacuous.
+    await setLanguage("bg");
+  });
+
+  afterAll(async () => {
+    await setLanguage("en");
+  });
+
+  it("gets a second line at the 360dp floor, so a scaled-up name still reads whole", () => {
+    atWidth(360);
+    renderWithProviders(<ToolRow id="gratitude-latest" stat={null} />);
+
+    // The whole string, not a prefix: an ellipsized name is the bug.
+    expect(screen.getByText(LONGEST_BG_NAME).props.numberOfLines).toBe(2);
+  });
+
+  it("stays on one line in the wide branch, where nothing truncates", () => {
+    atWidth(1280);
+    renderWithProviders(<ToolRow id="gratitude-latest" stat="29 записа" />);
+
+    const name = screen.getByText(LONGEST_BG_NAME);
+    expect(name.props.numberOfLines).toBe(1);
+    // `min-w-[150px]` is a MINIMUM on the desktop name column and has nothing to do with the
+    // phone truncation - widening it would fix nothing here and squeeze the stat.
+    expect(name.props.className).toContain("min-w-[150px]");
   });
 });
