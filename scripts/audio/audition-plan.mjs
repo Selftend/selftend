@@ -184,9 +184,9 @@ export function previewName(entry, { repeats = null } = {}) {
  *
  * ☠️ THIS NO LONGER BUILDS THE PRODUCT — it maps the slots `voiceSlotSpec` already
  * paired (#1581). It used to be `cues.flatMap(cue => voices.map(...))`, one of
- * three identical copies, and with a second language that line pairs a Bulgarian
- * voice with English cue text and gets the COUNT right while getting the CONTENT
- * wrong. Keeping it a mapper is what makes mis-pairing unwritable here.
+ * three identical copies, and on #1573's second language that line paired a
+ * Bulgarian voice with English cue text and got the COUNT right while getting the
+ * CONTENT wrong. Keeping it a mapper is what makes mis-pairing unwritable here.
  *
  * Cue-major order comes from the slot list and is preserved by mapping it in
  * place, so the matched pair is heard back to back on the same words. Grouping by

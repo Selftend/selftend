@@ -646,8 +646,7 @@ export const BEDS = [
 export const TEXTURES = [];
 
 /**
- * #1136 — a gender axis per language: 2 voices x 4 cues in English, the same again
- * in Bulgarian, 16 clips. The female voice keeps the id `guided` because an
+ * #1136 — a gender axis, 2 voices x 4 cues, 8 clips. The female voice keeps the id `guided` because an
  * unrecognised breath_sound_id fails twice over (silence, *and* the sheet displays
  * "None") and shipped store clients live forever, so the male voice is purely
  * additive and there is no migration.
@@ -657,28 +656,40 @@ export const TEXTURES = [];
  * 2026-12-31), a matched pair — and these are the two the owner picked.
  *
  * ☠️ `lang` IS LOAD-BEARING, NOT A LABEL. It is the join key {@link voiceSlotSpec}
- * pairs on, and it is the only thing standing between the render and sixteen takes
- * of a Bulgarian voice reading "Breathe in" — see that function's docblock.
+ * pairs on. With one language it is trivially satisfied — that is the point, and
+ * not a reason to delete it: the moment a second language exists, the join is the
+ * only thing standing between the render and a whole set of takes in which a
+ * voice reads another language's words. See that function's docblock.
  *
- * #1573 added the Bulgarian pair (#1578's spec). Both ids were confirmed live on
- * #1579 as `professional` Voice Library voices — NEITHER is a Default (defaults
- * expire 2026-12-31) — both on a 730-day notice period, and both verified for
- * Bulgarian on `eleven_multilingual_v2`, which is why one model still spans both
- * languages.
+ * ☠️☠️ BULGARIAN WAS RENDERED, AUDITIONED AND REJECTED BY EAR (owner, 2026-08-31).
+ * #1573 ran to completion: both voices were added to the account, all 32 takes
+ * rendered and measured, and the owner's verdict on the listen was that neither
+ * Bulgarian voice was good enough to ship. **The lane is English-only again.**
  *
- * ⚠️ These four ids are ids on the ACCOUNT'S side, not the app's. A stored
- * `user_preferences.breath_sound_id` is still only ever `guided` or `guided-male`:
- * #1573 swaps the assets underneath those two rows by app language and moves no
- * stored value. The `-bg` ids exist so the RENDER can name files apart.
+ * ⚠️ THIS IS THE AUDITION WORKING, NOT A FAILURE OF IT. The whole reason #1578
+ * put an ear test after the measurements is that no number can say whether a voice
+ * is pleasant, and the rejection landed BEFORE the app-side wiring was built —
+ * which is the cheap place to find out. Do not re-open the expansion on the
+ * grounds that "the pipeline supports it": the pipeline is not what said no.
+ *
+ * 📌 The measurements, kept because they are the expensive part to re-obtain:
+ * Moonglow (`vnewfQdVVk9Y9DZWVRNm`) was technically clean — all 8 takes at -18
+ * LUFS with 0 ms lead. Yakim Petrov (`NG3DzyUGmLkog1AFB5iv`) was not: 6 of 8 takes
+ * breached the 1.0 ms lead-silence rule, and `guide_exhale_bg` and `guide_intro_bg`
+ * had NO passing candidate. Both are `professional` Library voices on a 730-day
+ * notice, verified for bg on `eleven_multilingual_v2`, if anyone revisits.
+ *
+ * ⚠️ The `lang` field STAYS. It is one word per entry, it is what the slot join
+ * reads, and it is the difference between adding a language being a data change
+ * and being a re-run of #1581's whole mis-pairing problem.
  */
 export const VOICES = [
-  { id: "guided", axis: "female", lang: "en", voiceId: "s3TPKV1kjDlVtZbl4Ksh" },
-  { id: "guided-male", axis: "male", lang: "en", voiceId: "l32B8XDoylOsZKiSdfhE" },
-  // "Moonglow — Mediative and Polished" (5,414 clones, 11.8M chars/yr).
-  { id: "guided-bg", axis: "female", lang: "bg", voiceId: "vnewfQdVVk9Y9DZWVRNm" },
-  // ⚠️ "Yakim Petrov" — published 2026-08-27, `cloned_by_count: 0`, zero usage.
-  // NO crowd signal at all, so the audition's ear is the only check this one gets.
-  { id: "guided-male-bg", axis: "male", lang: "bg", voiceId: "NG3DzyUGmLkog1AFB5iv" },
+  // ☠️ #1580: these two ids were TRANSPOSED until 2026-08-31 — `guided` (the row
+  // the app labels female) carried Adam, and `guided-male` carried Carla. Confirmed
+  // twice over: by the owner's ear on the audition, and by the provider's own
+  // `gender` label. Check the NAME, not the position, before editing either line.
+  { id: "guided", axis: "female", lang: "en", voiceId: "l32B8XDoylOsZKiSdfhE" }, // Carla
+  { id: "guided-male", axis: "male", lang: "en", voiceId: "s3TPKV1kjDlVtZbl4Ksh" }, // Adam
 ];
 
 /**
@@ -726,11 +737,11 @@ export function resolveVoices(voices, pairs = []) {
   //
   // ☠️☠️ THE CHECK IS PER-LANGUAGE, AND THAT IS NOT A DETAIL. A global uniqueness
   // check across all of `VOICES` would fire on #1578's own documented escape hatch:
-  // language is a property of the REQUEST, not of the voice, so if a Bulgarian
-  // voice fails the ear test the fallback is to hand Bulgarian text to the ENGLISH
-  // pair — which makes `guided` and `guided-bg` share a voiceId legitimately. A
-  // global check turns that fallback into a dead render with a message about a
-  // matched pair, which is the opposite of what went wrong.
+  // language is a property of the REQUEST, not of the voice, so a second language
+  // may legitimately be spoken by a voice this list already holds — which makes two
+  // entries share a voiceId on purpose. A global check turns that into a dead
+  // render with a message about a matched pair, which is the opposite of what went
+  // wrong. (#1573 named that as its own fallback before the lane was dropped.)
   //
   // What must stay unique is the pair WITHIN one language: that is the comparison
   // #1136 asks for, and it is still nonsense to audition a voice against itself.
@@ -769,20 +780,17 @@ export function resolveVoices(voices, pairs = []) {
  * user a *content* reason to prefer one voice, contradicting #1136's framing of the
  * pair as a pure gender axis.
  *
- * ☠️ ACROSS languages they deliberately do NOT say the same thing — see the
- * Bulgarian block below. `lang` is what keeps the two scripts apart: it is the key
- * {@link voiceSlotSpec} joins on, and without it every voice would meet every cue
- * and a Bulgarian voice would be billed for reading "Breathe in".
- *
- * ☠️ ONE CUE ENTRY PER LANGUAGE, not a `text: {en, bg}` map. {@link OUTPUT_CLIPS} is
- * keyed by `cue.id`, so a distinct id is exactly what lets `guide_intro_bg` carry
- * its OWN loudness target instead of inheriting the English one (#1581).
+ * ☠️ ACROSS languages a cue set deliberately would NOT say the same thing, which is
+ * why `lang` is on every entry: it is the key {@link voiceSlotSpec} joins on, and
+ * without it every voice meets every cue and a voice gets billed for reading words
+ * it does not speak. One entry per language, never a `text: {en, bg}` map —
+ * {@link OUTPUT_CLIPS} is keyed by `cue.id`, so a distinct id per language is what
+ * lets each carry its OWN loudness target rather than inheriting another's (#1581).
  *
  * ⚠️ `introMs` is then set from the RENDERED clip's own header, never from this
  * text (#1136 corrected #1134 on exactly this). Today's clip measures 3.08s
  * against `introMs: 3300` — that 220ms of slop goes; the 1000ms
- * POST_INTRO_PAUSE_MS settling beat after it stays, deliberately. Bulgarian adds
- * two more numbers, each read off its own render and neither guessable from here.
+ * POST_INTRO_PAUSE_MS settling beat after it stays, deliberately.
  */
 export const VOICE_CUES = [
   { id: "guide_inhale", lang: "en", text: "Breathe in" },
@@ -806,51 +814,12 @@ export const VOICE_CUES = [
     output: { lufs: -21 },
   },
 
-  // -------------------------------------------------------------------------
-  // Bulgarian (#1573, wording settled on #1577, render spec on #1578)
-  // -------------------------------------------------------------------------
-  //
-  // ☠️ THE PRINCIPLE IS "THE VOICE SAYS EXACTLY WHAT THE SCREEN SAYS", and it is a
-  // DELIBERATE divergence from English, which shows `Inhale` and speaks "Breathe
-  // in". These four words already ship on screen — `src/i18n/locales/bg/cbt.json`
-  // renders Вдишай/Задръж/Издишай in the same 28px polite live region the preroll
-  // uses — so a cue plays WHILE the screen shows its word and a screen reader
-  // speaks it. Do not "fix" the mismatch by reaching for a phrasal form.
-  //
-  // ☠️ A CUE WORD MUST BE GREPPED AGAINST THE SHIPPED `bg` STRINGS FOR ITS OWN
-  // SCREEN. `Пауза` was the wording survey's joint-best hold word and is
-  // disqualified: it is the Pause button's label on this very screen. A corpus
-  // says a word is idiomatic; only the repo says it collides.
-  { id: "guide_inhale_bg", lang: "bg", text: "Вдишай" },
-  // ☠️ Same word for BOTH holds, exactly as English "Hold" is — `holdOut` reuses
-  // the clip (`src/features/breathing/breath-audio-plan.ts`). The wording survey
-  // found the friction attaches to the OBJECT (`дъха`/`въздуха`), not the verb, so
-  // a bare imperative serves a lungs-full and a lungs-empty hold alike.
-  { id: "guide_hold_bg", lang: "bg", text: "Задръж" },
-  // ☠️☠️ `Вдишай` and `Издишай` STRESS THE SAME SYLLABLE and differ only in the
-  // UNSTRESSED prefix `в-`/`из-`, where English puts the whole distinction on a
-  // stressed word. This was accepted for screen coherence, not resolved — which
-  // makes it the audition's problem: judge the pair BY EAR, back to back, under a
-  // bed, at the app's loudness target, never on a clean solo render. Confusing
-  // inhale for exhale is the worst failure this lane has.
-  { id: "guide_exhale_bg", lang: "bg", text: "Издишай" },
-  {
-    id: "guide_intro_bg",
-    lang: "bg",
-    text: "Настани се удобно. Отпусни раменете си.",
-    // ☠️☠️ NO `output.lufs` HERE YET, AND THAT IS ON PURPOSE — DO NOT INHERIT -21.
-    //
-    // `guide_intro`'s -21 exists to make it MATCH the single-word cues by ear:
-    // LUFS-I integrates its comma pause, so at the class target it would come out
-    // audibly LOUDER. For Bulgarian both inputs to that reasoning moved AT ONCE
-    // and in OPPOSITE directions — this is two sentences (a full stop, a stronger
-    // pause than a comma) but also shorter (38 chars against 57). The net effect
-    // cannot be reasoned into place; it has to be measured off the rendered clip.
-    //
-    // Until then it takes the class target. `outputSpecFor` honours a per-cue
-    // override with no code change (`cue.output?.lufs ?? CLASS_OUTPUT.voice.lufs`),
-    // so the render session sets `output: { lufs: … }` here from its measurement.
-  },
+  // ☠️ THE FOUR BULGARIAN CUES WERE HERE AND WERE REMOVED (owner, 2026-08-31).
+  // #1573 rendered and auditioned them (Вдишай / Задръж / Издишай / "Настани се
+  // удобно. Отпусни раменете си.") and the owner rejected both Bulgarian voices on
+  // the listen. The wording itself was never the problem and is recorded on #1577
+  // if the lane is ever reopened — but reopening it is a product decision, not a
+  // matter of pasting these back.
 ];
 
 /** #1134 §6 — unhurried, low, warm; falling intonation; no performance. */
@@ -905,10 +874,10 @@ export const LIBRARY_BEDS = BEDS.filter((bed) => bed.source === "library");
 
 /**
  * Every clip the post-processor can be asked about, keyed by id — the thirteen
- * sound effects plus the eight voice cues — four English, four Bulgarian. Keying by
- * cue id alone is what keeps this list right by construction as languages are
- * added: eight cues give eight entries with no edit here, and each one can carry
- * its own loudness target. Voice cues carry no prompt-side fields
+ * sound effects plus the four voice cues. Keying by cue id alone is what keeps this
+ * list right by construction as cues come and go — N cues give N entries with no
+ * edit here, and each one can carry its own loudness target. Voice cues carry no
+ * prompt-side fields
  * (no duration, no candidates); they exist here only so `postprocess` can look up
  * the channels, bitrate and loudness target a `guide_*` file has to hit.
  */
@@ -974,13 +943,14 @@ export function clipsForRound(round) {
  * ☠️☠️ IT RETURNS PAIRED SLOTS, NOT TWO LISTS, AND THAT CHANGE IS THE WHOLE POINT
  * OF #1581. It used to hand back `{voices, cues}` and every consumer built the
  * cartesian product itself — `render`, `ship-plan` and `audition-plan`, three
- * copies of one line. With one language that product is correct by luck: every
- * voice does say every cue. With two it is CORRECT IN COUNT AND WRONG IN CONTENT —
- * 4 voices x 8 cues is 32 slots where 16 ship, and half of the extras are a
- * Bulgarian voice reading "Breathe in", each with a plausible unique filename that
- * sails through the budget gate. A measurement of the right size taken of the
- * wrong render is the failure this repo is worst at seeing. Pairing lives here so
- * no consumer CAN mis-pair.
+ * copies of one line. With one language — today's state — that product is correct
+ * BY LUCK: every voice does say every cue. #1573 worked the two-language case all
+ * the way to a real render and it is CORRECT IN COUNT AND WRONG IN CONTENT — 4
+ * voices x 8 cues is 32 slots where 16 ship, and half the extras were a Bulgarian
+ * voice reading "Breathe in", each with a plausible unique filename that sails
+ * through the budget gate. A measurement of the right size taken of the wrong
+ * render is the failure this repo is worst at seeing. Pairing lives here so no
+ * consumer CAN mis-pair, and that is why it survives the lane being dropped.
  *
  * ☠️ CUE-MAJOR ORDER IS LOAD-BEARING and must survive any edit here: #1136's
  * matched female/male pair has to be heard back to back on the same words, and

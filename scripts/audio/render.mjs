@@ -828,8 +828,9 @@ function formatExtension(format) {
 }
 
 /**
- * The sixteen voice slots: 4 cues x 2 voices per language, in two languages, 2
- * candidates each (#1136, #1210, #1573).
+ * The eight voice slots: 4 cues x 2 voices, 2 candidates each (#1136, #1210).
+ * Derived from the slot join, so a second language would be a data change here and
+ * nothing else — #1573 proved that end to end before its voices were rejected.
  *
  * Separate from `render` because the voice PICK is Round B's own first task and
  * needs a human ear, while the thirteen sound effects do not — so the sound
@@ -867,10 +868,11 @@ async function renderVoices(go, voiceIdOverrides = []) {
   }
 
   // ☠️☠️ THE QUOTE AND THE LOOP READ THE SAME SLOT LIST, AND THAT IS A BILLING
-  // GUARD, NOT TIDINESS. Both used to be `voices x cues` — which with two languages
-  // quotes 64 generations, then ISSUES 64, of which 32 are a Bulgarian voice
-  // reading "Breathe in": billed, saved under plausible names, and caught by
-  // nothing downstream because every filename is unique. #1320's rule is that the
+  // GUARD, NOT TIDINESS. Both used to be `voices x cues` — which on #1573's
+  // two-language set quoted 64 generations, then ISSUED 64, of which 32 were a
+  // voice reading another language's words: billed, saved under plausible names,
+  // and caught by nothing downstream because every filename is unique. #1320's
+  // rule is that the
   // worst case is on screen BEFORE the irreversible spend; a quote derived
   // differently from the loop it precedes is not that quote.
   const { slots, candidates } = voiceSlotSpec(VOICE_ROUND, voices);

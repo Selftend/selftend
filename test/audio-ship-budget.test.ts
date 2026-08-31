@@ -38,32 +38,33 @@ import {
 type Unit = ReturnType<typeof shippingUnits>[number];
 
 /**
- * The lengths the cues take to say, measured off the clips shipping today.
+ * The lengths the four cues take to say, measured off the clips shipping today.
  *
- * ☠️ THE BULGARIAN FOUR ARE ESTIMATES, NOT MEASUREMENTS, and they are here only so
- * this fixture covers the whole set. The English four were read off rendered files;
- * the Bulgarian ones cannot be, because the render has not happened — so they are
- * the English lengths scaled by the text-length ratio, which is exactly the kind of
- * number `predictShipping` is designed to report as a FLOOR rather than a fact.
- * Nothing ships off these. Replace them with measurements when the files exist.
- *
- * ⚠️ Leaving them out is the trap this block exists to avoid: `withVoiceSeconds`
- * falls back to `?? null`, so four missing cues would silently resolve to "unknown"
- * and every assertion about a complete set would still pass while testing half of
- * one.
+ * ☠️ THIS MUST COVER EVERY CUE, and the trap is that nothing makes it.
+ * `withVoiceSeconds` falls back to `?? null`, so a cue missing from this map
+ * silently resolves to "unknown" — and every assertion about a complete set still
+ * passes while testing a subset of one. #1573 hit exactly that: it added four
+ * Bulgarian cues and this fixture kept quietly covering only the English four.
  */
 const VOICE_SECONDS: Record<string, number> = {
   guide_intro: 3.08,
   guide_inhale: 0.939637,
   guide_hold: 0.630023,
   guide_exhale: 0.789705,
-  guide_intro_bg: 2.1,
-  guide_inhale_bg: 0.75,
-  guide_hold_bg: 0.7,
-  guide_exhale_bg: 0.85,
 };
 
 const withVoiceSeconds = (unit: Unit) => VOICE_SECONDS[unit.clip] ?? null;
+
+/**
+ * ☠️ The guard for the trap above, by construction rather than by remembering.
+ * A cue absent from `VOICE_SECONDS` weakens every prediction test in this file
+ * without failing any of them, so the absence itself has to be the failure.
+ */
+it("has a measured length for every voice cue, so no prediction test is vacuous", () => {
+  for (const cue of VOICE_CUES as { id: string }[]) {
+    expect(VOICE_SECONDS[cue.id]).toBeGreaterThan(0);
+  }
+});
 
 const fileFor = (units: Unit[], id: string) => units.find((unit) => unit.id === id)!.file;
 
@@ -124,12 +125,12 @@ describe("the budget ceiling", () => {
 });
 
 describe("shippingUnits", () => {
-  it("is the twenty-seven files the set now counts", () => {
-    // 19 — itself 21, plus `stream`, `fire`, `white-noise` and `pink-noise`, minus
-    // the six breath textures the owner retired on 2026-08-30 — plus #1573's eight
-    // Bulgarian cues (4 cues x 2 voices).
+  it("is the nineteen files the set now counts", () => {
+    // 21, plus `stream`, `fire`, `white-noise` and `pink-noise`, minus the six
+    // breath textures the owner retired on 2026-08-30. ⚠️ Briefly 27 for #1573's
+    // Bulgarian set, which was rendered, auditioned and rejected by ear.
     expect(shippingUnits()).toHaveLength(SHIP_FILE_COUNT);
-    expect(SHIP_FILE_COUNT).toBe(27);
+    expect(SHIP_FILE_COUNT).toBe(19);
   });
 
   /**
@@ -297,38 +298,11 @@ describe("predictShipping", () => {
     // ☠️ #1138 published 3.21 MB for the 21-file set. #1130 added four beds and
     // paid for them by dropping the bed bitrate to 96k, landing the set at ~3.99
     // MiB — inside the ceiling by about 12 KB and no more. The six retired breath
-    // textures are still counted here; dropping them returns ~0.69 MiB. #1573's
-    // eight Bulgarian cues then add ~0.07 MiB back.
+    // textures are still counted here; dropping them returns ~0.69 MiB.
     const predicted = predictShipping(shippingUnits(), withVoiceSeconds);
-    expect(predicted.totalBytes / 1024 / 1024).toBeCloseTo(3.38, 1);
+    expect(predicted.totalBytes / 1024 / 1024).toBeCloseTo(3.31, 1);
     expect(predicted.complete).toBe(true);
     expect(predicted.over).toBe(false);
-  });
-
-  /**
-   * ☠️ THE SECOND LANGUAGE MUST COST WHAT IT WEIGHS AND NOTHING MORE. The failure
-   * this guards is a mis-pair that still balances: 4 voices x 8 cues is 32 units of
-   * plausible size, comfortably under the ceiling, so "it fits" is true of a set
-   * that is half Bulgarian voices reading English. Tying the growth to the eight
-   * bg units specifically is the part a total cannot say.
-   */
-  it("grows by exactly the eight Bulgarian files, not by a cartesian product", () => {
-    const units: Unit[] = shippingUnits();
-    const bg = units.filter((unit) => unit.clip.endsWith("_bg"));
-    expect(bg).toHaveLength(8);
-
-    const predicted = predictShipping(units, withVoiceSeconds);
-    const withoutBg = predictShipping(
-      units.filter((unit) => !unit.clip.endsWith("_bg")),
-      withVoiceSeconds,
-    );
-    const bgBytes = bg.reduce(
-      (total, unit) => total + bytesForSeconds(VOICE_SECONDS[unit.clip], unit.bitrate),
-      0,
-    );
-    expect(predicted.totalBytes - withoutBg.totalBytes).toBe(bgBytes);
-    // Well inside the 601 KiB the 19-file set measured as headroom on 2026-08-31.
-    expect(bgBytes).toBeLessThan(200 * 1024);
   });
 
   it("leaves the set real headroom, and says how much", () => {
@@ -341,14 +315,14 @@ describe("predictShipping", () => {
   /**
    * ☠️ An unknown length must not weigh zero and pass by being absent.
    *
-   * Sixteen since #1573, and every one of them is a voice unit: in a clean checkout
-   * `referenceClipFor` probes a `.wav` that exists nowhere in this repo (the masters
-   * live in `app-audio-masters` and `audio-masters/` is gitignored), so PREDICTED is
+   * Every one of them is a voice unit: in a clean checkout `referenceClipFor`
+   * probes a `.wav` that exists nowhere in this repo (the masters live in
+   * `app-audio-masters` and `audio-masters/` is gitignored), so PREDICTED is
    * permanently a FLOOR for the voice half. Quote the ACTUAL survey instead.
    */
   it("reports unknown lengths instead of counting them as nothing", () => {
     const predicted = predictShipping(shippingUnits());
-    expect(predicted.unknown).toHaveLength(16);
+    expect(predicted.unknown).toHaveLength(8);
     expect(predicted.unknown.every((row) => row.voice)).toBe(true);
     expect(predicted.complete).toBe(false);
     for (const row of predicted.unknown) {
