@@ -224,16 +224,38 @@ async function choose(round, clipId, candidate, note, voice) {
   // purely additive), so `choose guide_inhale 1` on its own is ambiguous — and
   // filing it under the clip alone would mark the other voice settled and ship
   // half the voice set unheard.
+  //
+  // ☠️☠️ THE VOICE IS VALIDATED AGAINST THE SLOTS, NOT AGAINST `VOICES`. This was a
+  // FOURTH pairing site and #1581 did not catch it: `VOICES.some(v => v.id ===
+  // voice)` is language-blind, so with two languages `choose guide_inhale 1 --voice
+  // guided-bg` would be ACCEPTED — filing a Bulgarian voice's pick against an
+  // English cue, in the one file whose whole job is recording decisions. Asking
+  // "is this a real slot" instead of "is this a real voice" is the same move #1581
+  // made everywhere else, and it is why the question is asked of the pairing rather
+  // than of either list.
+  const voiceSlotIds = new Set(voiceSlots(voiceSlotSpec(round)).map((slot) => slot.id));
   if (VOICE_CUE_IDS.has(clipId)) {
+    const speakers = [...voiceSlotIds]
+      .filter((id) => id.startsWith(`${clipId}|`))
+      .map((id) => id.slice(clipId.length + 1));
+    // The voice cues are Round B's. Asking for one against Round A used to get as
+    // far as "no rendered take", which reads as "render it" rather than "wrong
+    // round" — and with the speaker list now derived, it would name nobody at all.
+    if (!speakers.length) {
+      throw new Error(`${clipId} is not a unit of round ${round} — the voice cues are round B's`);
+    }
     if (!voice) {
       throw new Error(
         `${clipId} is said by both voices, so a pick needs --voice: ` +
-          `${VOICES.map((v) => `${v.id} (${v.axis})`).join(", ")}`,
+          `${VOICES.filter((v) => speakers.includes(v.id))
+            .map((v) => `${v.id} (${v.axis})`)
+            .join(", ")}`,
       );
     }
-    if (!VOICES.some((v) => v.id === voice)) {
+    if (!voiceSlotIds.has(choiceKey({ clip: clipId, voice }))) {
       throw new Error(
-        `unknown voice "${voice}" — expected ${VOICES.map((v) => v.id).join(" or ")}`,
+        `"${voice}" does not say ${clipId} — expected ${speakers.join(" or ")}. ` +
+          `A voice speaks one language's cues only (#1581).`,
       );
     }
   } else if (voice) {
@@ -319,7 +341,9 @@ async function status(round) {
     // Named apart so the two halves are legible as halves — they are rendered by
     // different commands (`render` and `render-voices`) and can be finished on
     // different days.
-    console.log(`\n  voice (#1136 — both voices ship, so each cue is owed two picks)`);
+    console.log(
+      `\n  voice (#1136 — both voices of a language ship, so each cue is owed two picks)`,
+    );
     for (const slot of slots) {
       line(slot.clipId, slot.id, voiceIdentity(slot), `  ${slot.voice}`);
     }
@@ -353,7 +377,8 @@ Usage:
   --all      also preview takes below the level gate and takes of superseded
              prompts. Both cost the same unreproducible credits.
   --repeats  how many times a bed is tiled for the seam listen (default ${DEFAULT_REPEATS}).
-  --voice    required for a guide_* cue, which both voices say: ${VOICES.map((v) => v.id).join(" | ")}.
+  --voice    required for a guide_* cue. A voice says its OWN language's cues only,
+             so the valid values depend on the cue: ${VOICES.map((v) => `${v.id} (${v.lang})`).join(" | ")}.
 
 Spends nothing. Requires ffmpeg on PATH (#1138).
 `.trim();

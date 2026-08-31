@@ -144,9 +144,9 @@ export function planAudition({ clips, promptFor, history, all = false }) {
 /**
  * The preview filename for one entry. Distinct per attempt, so nothing collides.
  *
- * ☠️ The voice segment is not decoration. Both voices say the same four cues
- * (#1136 keeps one script for the pair deliberately, so a user never gets a
- * *content* reason to prefer a voice), so `guide_inhale` candidate 1 exists twice.
+ * ☠️ The voice segment is not decoration. Both voices of a language say the same
+ * four cues (#1136 keeps one script for the pair deliberately, so a user never gets
+ * a *content* reason to prefer a voice), so `guide_inhale` candidate 1 exists twice.
  * Without the voice in the name the second preview silently overwrites the first
  * and the matched-pair comparison becomes a clip compared against itself.
  *
@@ -182,33 +182,40 @@ export function previewName(entry, { repeats = null } = {}) {
  * voices ship (#1136 makes the male voice purely additive, so nothing migrates and
  * both are owed a pick).
  *
- * Cue-major order, so the matched pair is heard back to back on the same words.
- * Grouping by voice instead puts the two halves of #1136's comparison four players
- * apart.
+ * ☠️ THIS NO LONGER BUILDS THE PRODUCT — it maps the slots `voiceSlotSpec` already
+ * paired (#1581). It used to be `cues.flatMap(cue => voices.map(...))`, one of
+ * three identical copies, and with a second language that line pairs a Bulgarian
+ * voice with English cue text and gets the COUNT right while getting the CONTENT
+ * wrong. Keeping it a mapper is what makes mis-pairing unwritable here.
+ *
+ * Cue-major order comes from the slot list and is preserved by mapping it in
+ * place, so the matched pair is heard back to back on the same words. Grouping by
+ * voice instead puts the two halves of #1136's comparison four players apart.
  *
  * @param {{
- *   voices: {id: string, axis: string, voiceId: string|null}[],
- *   cues: {id: string, text: string}[],
+ *   slots: {
+ *     cue: {id: string, lang: string, text: string},
+ *     voice: {id: string, axis: string, lang: string, voiceId: string|null},
+ *   }[],
  *   candidates: number,
  * }} args
  * @returns {{
  *   id: string, clipId: string, klass: string, voice: string, axis: string,
- *   voiceId: string|null, text: string, candidates: number,
+ *   voiceId: string|null, lang: string, text: string, candidates: number,
  * }[]}
  */
-export function voiceSlots({ voices, cues, candidates }) {
-  return cues.flatMap((cue) =>
-    voices.map((voice) => ({
-      id: `${cue.id}|${voice.id}`,
-      clipId: cue.id,
-      klass: "voice",
-      voice: voice.id,
-      axis: voice.axis,
-      voiceId: voice.voiceId,
-      text: cue.text,
-      candidates,
-    })),
-  );
+export function voiceSlots({ slots, candidates }) {
+  return slots.map(({ cue, voice }) => ({
+    id: `${cue.id}|${voice.id}`,
+    clipId: cue.id,
+    klass: "voice",
+    voice: voice.id,
+    axis: voice.axis,
+    voiceId: voice.voiceId,
+    lang: cue.lang,
+    text: cue.text,
+    candidates,
+  }));
 }
 
 /**

@@ -59,19 +59,37 @@ behind — every one of their prompts since rewritten by #1316, two re-concepted
 into a different sound entirely — would read as "already done" and a re-run would
 render nothing at all.
 
-Text to Speech _does_ have a seed, so the eight voice cues are semi-reproducible
-where the thirteen sound effects permanently are not. The manifest records it.
+Text to Speech _does_ have a seed, so the voice cues are semi-reproducible where
+the sound effects permanently are not. The manifest records it.
 
 ## Running it
 
-The key lives in the password manager (#1141) and is passed in for the run. It
-is deliberately **not** a GitHub Actions or EAS secret — this is an owner-run
-local script, the same shape as `DISCORD_BOT_TOKEN`.
+The key lives in the password manager (#1141). It is deliberately **not** a GitHub
+Actions or EAS secret — this is an owner-run local script, the same shape as
+`DISCORD_BOT_TOKEN`.
+
+☠️☠️ **Never put the key on the command line. Two keys have been burned that way.**
+`ELEVENLABS_API_KEY=... node ...` is an inline prefix: it goes into shell history,
+into any terminal transcript, and — when an agent is driving the terminal — straight
+into a conversation log that outlives the run. An agent's `!` prefix does **not**
+hide it either; the command text is recorded verbatim. This file used to show that
+form in five places, which is why it is called out here rather than assumed.
+
+Set it once, in your **own** terminal, then open a **new** one (`setx` only affects
+future sessions) and run with no key on the command line at all:
+
+```powershell
+setx ELEVENLABS_API_KEY "<paste it here>"     # Windows; then open a new terminal
+```
+
+```bash
+export ELEVENLABS_API_KEY='<paste it here>'   # macOS/Linux, in your shell rc
+```
 
 ```bash
 # No credits. Confirms the plan tier and live balance, and answers the
 # capability probes that #1159 needs before any real spend.
-ELEVENLABS_API_KEY=... node scripts/audio/render.mjs probe
+node scripts/audio/render.mjs probe
 
 # Prints every composed prompt and the credit cost. Spends nothing.
 node scripts/audio/render.mjs plan --round A
@@ -79,17 +97,18 @@ node scripts/audio/render.mjs plan --round A
 # #1347. One bed prompt rendered twice — `loop: true` and a paired control —
 # and every measurement that separates them. ~660 credits. Dry run without --go.
 # It has RUN and ruled: beds loop natively (#1347). Kept for the tonal follow-up.
-ELEVENLABS_API_KEY=... node scripts/audio/render.mjs loopprobe --clip brown-noise --go
+node scripts/audio/render.mjs loopprobe --clip brown-noise --go
 
 # Grades every prompt at 4s before any real spend. Run after ANY prompt change.
-ELEVENLABS_API_KEY=... node scripts/audio/render.mjs preflight --round A
+node scripts/audio/render.mjs preflight --round A
 
 # The real thing. Measures each take and re-rolls the ones below the gate.
-ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render --round A --go
+node scripts/audio/render.mjs render --round A --go
 
-# The eight voice cues, which `render` does NOT cover. `--voice-id` renders a
-# SHORTLISTED voice without writing it into catalog.mjs.
-ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices \
+# The sixteen voice slots — 4 cues x 2 voices, in English and Bulgarian — which
+# `render` does NOT cover. `--voice-id` renders a SHORTLISTED voice without
+# writing it into catalog.mjs; name only the voices you are trialling.
+node scripts/audio/render.mjs render-voices \
   --voice-id guided=<voiceId> --voice-id guided-male=<voiceId> --go
 ```
 
@@ -117,7 +136,13 @@ The pass splits once, at the known risk (#1134 §5).
 |                                                                         | What                                              | Cost                     |
 | ----------------------------------------------------------------------- | ------------------------------------------------- | ------------------------ |
 | **Round A** — [#1159](https://github.com/Selftend/selftend/issues/1159) | Two bells, 5 candidates each, plus the API probes | 45s ≈ **495 credits**    |
-| **Round B** — [#1210](https://github.com/Selftend/selftend/issues/1210) | 5 beds, 6 texture files, 8 voice cues             | 570s ≈ **6,270 credits** |
+| **Round B** — [#1210](https://github.com/Selftend/selftend/issues/1210) | 5 beds, 6 texture files, 16 voice slots           | 570s ≈ **6,270 credits** |
+
+⚠️ **The voice half is not in those credit figures.** Sound Effects are priced per
+second (11 credits/sec, #1347); Text to Speech is priced per **character**, so all
+sixteen voice slots at two candidates each come to a few hundred characters —
+cents, not credits. Adding Bulgarian roughly doubled the slot count and did not
+move the number below.
 
 ≈**6,765 credits** if every slot passes on its first draw. ⚠️ The number that
 matters before `--go` is the **worst** case — every slot re-rolling to the bound
@@ -290,6 +315,42 @@ Requires **ffmpeg** on PATH. That is a deliberate `scripts/`-only dependency:
 #1138 retired the post-processor's "pure stdlib" property because Python's
 `wave` decodes no MP3 and encodes no AAC.
 
+### Two languages, and why pairing lives in one function
+
+The voice half is **cues ⋈ voices joined ON `lang`** — 8 cues (4 English, 4
+Bulgarian) against 4 voices (2 per language) giving **16 slots**, not the 32 a
+cartesian product gives. `voiceSlotSpec` performs that join and returns the paired
+slots; `render`, `ship-plan`, `manifest` and the audition all map what it hands
+them (#1581).
+
+☠️ **The reason it is one function is that the wrong version fails silently and
+expensively.** Each of those consumers used to build `cues × voices` itself — one
+line, three copies, correct by luck while there was one language, because every
+voice really did say every cue. With two, the product is **right in count and wrong
+in content**: half of the 32 pair a Bulgarian voice with English words. Every one of
+them renders, bills, and lands under a unique `shipFileName`, so the budget gate
+passes a set that is half nonsense. A correct measurement of an incorrect render is
+the failure mode this pipeline has hit most often (#1317, #1393) and is worst at
+seeing.
+
+☠️ **A join fails silently by returning fewer rows, so both empty sides throw.**
+Misspell a cue's `lang` and it simply matches no voice; the slot list quietly loses
+two entries and every downstream count still agrees with every other count, because
+they all read the same list. `pairByLanguage` therefore refuses a cue no voice can
+say and a voice with nothing to say.
+
+☠️ **`resolveVoices`' duplicate check is PER-LANGUAGE, deliberately.** Language is a
+property of the **request**, not of the voice, so if a Bulgarian voice fails its ear
+test the documented fallback is to hand Bulgarian text to the English pair — which
+makes `guided` and `guided-bg` share a `voiceId` legitimately. A global uniqueness
+check would kill that fallback with a message about a matched pair. What must stay
+unique is the female/male pair **within** one language.
+
+⚠️ The app-side ids never move. A stored `user_preferences.breath_sound_id` is only
+ever `guided` or `guided-male`; language swaps the assets underneath those two
+picker rows. The `-bg` voice ids exist so the render can name files apart
+(`guide_inhale_bg.guided-bg.m4a`).
+
 ### The size budget, and why a voice cue's filename carries its voice
 
 #1210's fifth acceptance check is "**Budget**: 21 files, ~3.21 MB, under the 4.0 MB
@@ -309,6 +370,15 @@ finished file, the seam by `seamcheck`, and the budget was a number in a ticket 
   the command, and it fails on a **missing unit**, on a file **too small to be** its
   unit, and on a **stray file**, as readily as on the total.
 
+☠️ **Quote the ACTUAL survey, never PREDICTED, for the voice half.** The prediction
+estimates a cue's length from `assets/sounds/breathing/<clip>.wav`, and no `.wav`
+exists anywhere in this repo — the masters live in the separate `app-audio-masters`
+repo and `audio-masters/` is gitignored. So every voice unit probes to nothing, is
+counted _unknown_ rather than zero, and the command labels its total a **FLOOR**.
+Measured on 2026-08-31, the ACTUAL set is **19 files / 3,578,571 B / 3.413 MiB**,
+leaving **601 KiB** under the 4.000 MiB ceiling. The eight English cues are 117,126
+B of that, so #1573's Bulgarian eight cost about **19% of the headroom**.
+
 ☠️ **A set that fits because four of its files were never written is not a set that
 fits.** By byte count, twenty of twenty-one is the healthiest set the pass could
 possibly hand over.
@@ -317,8 +387,8 @@ possibly hand over.
 the command: twenty-one correctly named ZERO-BYTE files printed `21/21 files · the set
 is complete and fits` and exited **0**, because presence was only "a name matched".
 A present file must now also be big enough to be its unit — at least half its
-predicted size for the thirteen sound effects, whose lengths the catalog fixes, and
-simply non-empty for the eight cues, whose length TTS decides and where no honest
+predicted size for the sound effects, whose lengths the catalog fixes, and
+simply non-empty for the voice cues, whose length TTS decides and where no honest
 floor exists yet. The floor is loose on purpose: it catches a truncated or failed
 encode, it does not grade one. ⚠️ `bytes === 0` is its own clause rather than a case
 of `bytes < floor` — a cue's floor is 0, `0 < 0` is false, and an empty cue slipped
@@ -361,8 +431,15 @@ local-only.
 ⚠️ The predicted total is **payload only** — the `.m4a` container adds a few KB of
 `moov` per file, and #1138's figure was computed the same way. A prediction landing
 within a hair of the ceiling should be read as "too close", never as "it fits". And
-the eight voice lengths are **estimated** from the clips shipping today, which say
-the same words; TTS decides the real ones, and they do not exist until the pass runs.
+the voice lengths are **estimated** from the clips shipping today, which say the
+same words; TTS decides the real ones, and they do not exist until the pass runs.
+
+☠️ **In a clean checkout the estimate is not even available, so PREDICTED is always
+a FLOOR for the voice half — quote the ACTUAL survey.** The estimate is read off
+`assets/sounds/breathing/<clip>.wav`, and no `.wav` exists anywhere in this repo:
+the masters live in the separate `app-audio-masters` repo and `audio-masters/` is
+gitignored. Every voice unit therefore counts as _unknown_ rather than as zero, and
+`budget` says so in as many words.
 
 ### ☠️ Leading silence is gated on the FINISHED file
 
@@ -537,6 +614,13 @@ cues were never in it. `build` could not make one playable, `choose` threw on a
 untouched. Eleven units of nineteen, reported as the round. That is #1317's
 `render --round B` producing 11 clips and saying nothing, one subsystem later, and
 it landed on the class #1210 calls its FIRST task.
+
+☠️ **A voice pick is per cue AND per voice OF THAT CUE'S LANGUAGE.** `--voice` is
+validated against the slot list, not against `VOICES`, so
+`choose guide_inhale 1 --voice guided-bg` is refused: a Bulgarian voice does not say
+an English cue. That check was the **fourth** pairing site and #1581 missed it — the
+other three (render, ship, manifest) were centralised and this one was still asking
+"is that a real voice?" instead of "is that a real pairing?".
 
 ☠️ **A voice pick is per cue AND per voice.** Both voices ship — #1136 makes the
 male one purely additive, so nothing migrates and each cue is owed two picks — and
