@@ -37,12 +37,30 @@ import {
  */
 type Unit = ReturnType<typeof shippingUnits>[number];
 
-/** The lengths the four cues take to say, measured off the clips shipping today. */
+/**
+ * The lengths the cues take to say, measured off the clips shipping today.
+ *
+ * ☠️ THE BULGARIAN FOUR ARE ESTIMATES, NOT MEASUREMENTS, and they are here only so
+ * this fixture covers the whole set. The English four were read off rendered files;
+ * the Bulgarian ones cannot be, because the render has not happened — so they are
+ * the English lengths scaled by the text-length ratio, which is exactly the kind of
+ * number `predictShipping` is designed to report as a FLOOR rather than a fact.
+ * Nothing ships off these. Replace them with measurements when the files exist.
+ *
+ * ⚠️ Leaving them out is the trap this block exists to avoid: `withVoiceSeconds`
+ * falls back to `?? null`, so four missing cues would silently resolve to "unknown"
+ * and every assertion about a complete set would still pass while testing half of
+ * one.
+ */
 const VOICE_SECONDS: Record<string, number> = {
   guide_intro: 3.08,
   guide_inhale: 0.939637,
   guide_hold: 0.630023,
   guide_exhale: 0.789705,
+  guide_intro_bg: 2.1,
+  guide_inhale_bg: 0.75,
+  guide_hold_bg: 0.7,
+  guide_exhale_bg: 0.85,
 };
 
 const withVoiceSeconds = (unit: Unit) => VOICE_SECONDS[unit.clip] ?? null;
@@ -106,11 +124,12 @@ describe("the budget ceiling", () => {
 });
 
 describe("shippingUnits", () => {
-  it("is the nineteen files the set now counts", () => {
-    // 21, plus `stream`, `fire`, `white-noise` and `pink-noise`, minus the six
-    // breath textures the owner retired on 2026-08-30.
+  it("is the twenty-seven files the set now counts", () => {
+    // 19 — itself 21, plus `stream`, `fire`, `white-noise` and `pink-noise`, minus
+    // the six breath textures the owner retired on 2026-08-30 — plus #1573's eight
+    // Bulgarian cues (4 cues x 2 voices).
     expect(shippingUnits()).toHaveLength(SHIP_FILE_COUNT);
-    expect(SHIP_FILE_COUNT).toBe(19);
+    expect(SHIP_FILE_COUNT).toBe(27);
   });
 
   /**
@@ -138,18 +157,30 @@ describe("shippingUnits", () => {
     expect(sfxIds).toHaveLength(SHIPPED_SFX_CLIPS.length);
     expect(SHIPPED_SFX_CLIPS.length).toBe(SFX_CLIPS.length + notRendered.length);
 
+    // ☠️ NOT `cues.length * voices.length`. That product is what `shippingUnits`
+    // used to compute for itself, and with two languages it is 32 against a real
+    // 16 — every extra one a voice paired with a language it does not speak, each
+    // with a unique filename that this budget would happily wave through (#1581).
     const spec = voiceSlotSpec("B");
     const voiceUnits = units.filter((unit) => unit.voice);
-    expect(voiceUnits).toHaveLength(spec.cues.length * spec.voices.length);
+    expect(voiceUnits).toHaveLength(spec.slots.length);
   });
 
-  it("gives every cue one unit per voice, and they are distinct files", () => {
+  it("gives every cue one unit per voice OF ITS OWN LANGUAGE, in distinct files", () => {
     const units: Unit[] = shippingUnits();
-    for (const cue of VOICE_CUES as { id: string }[]) {
+    const voices = VOICES as { id: string; lang: string }[];
+    for (const cue of VOICE_CUES as { id: string; lang: string }[]) {
       const mine = units.filter((unit) => unit.clip === cue.id);
       expect(mine.map((unit) => unit.voice).sort()).toEqual(
-        (VOICES as { id: string }[]).map((voice) => voice.id).sort(),
+        voices
+          .filter((voice) => voice.lang === cue.lang)
+          .map((voice) => voice.id)
+          .sort(),
       );
+      // ☠️ The assertion that actually bites: two per cue, not four. A cue paired
+      // with all four voices still yields distinct filenames, so the file-name
+      // check below cannot notice a mis-pair on its own.
+      expect(mine).toHaveLength(2);
       expect(new Set(mine.map((unit) => unit.file)).size).toBe(mine.length);
     }
   });
@@ -266,11 +297,38 @@ describe("predictShipping", () => {
     // ☠️ #1138 published 3.21 MB for the 21-file set. #1130 added four beds and
     // paid for them by dropping the bed bitrate to 96k, landing the set at ~3.99
     // MiB — inside the ceiling by about 12 KB and no more. The six retired breath
-    // textures are still counted here; dropping them returns ~0.69 MiB.
+    // textures are still counted here; dropping them returns ~0.69 MiB. #1573's
+    // eight Bulgarian cues then add ~0.07 MiB back.
     const predicted = predictShipping(shippingUnits(), withVoiceSeconds);
-    expect(predicted.totalBytes / 1024 / 1024).toBeCloseTo(3.31, 1);
+    expect(predicted.totalBytes / 1024 / 1024).toBeCloseTo(3.38, 1);
     expect(predicted.complete).toBe(true);
     expect(predicted.over).toBe(false);
+  });
+
+  /**
+   * ☠️ THE SECOND LANGUAGE MUST COST WHAT IT WEIGHS AND NOTHING MORE. The failure
+   * this guards is a mis-pair that still balances: 4 voices x 8 cues is 32 units of
+   * plausible size, comfortably under the ceiling, so "it fits" is true of a set
+   * that is half Bulgarian voices reading English. Tying the growth to the eight
+   * bg units specifically is the part a total cannot say.
+   */
+  it("grows by exactly the eight Bulgarian files, not by a cartesian product", () => {
+    const units: Unit[] = shippingUnits();
+    const bg = units.filter((unit) => unit.clip.endsWith("_bg"));
+    expect(bg).toHaveLength(8);
+
+    const predicted = predictShipping(units, withVoiceSeconds);
+    const withoutBg = predictShipping(
+      units.filter((unit) => !unit.clip.endsWith("_bg")),
+      withVoiceSeconds,
+    );
+    const bgBytes = bg.reduce(
+      (total, unit) => total + bytesForSeconds(VOICE_SECONDS[unit.clip], unit.bitrate),
+      0,
+    );
+    expect(predicted.totalBytes - withoutBg.totalBytes).toBe(bgBytes);
+    // Well inside the 601 KiB the 19-file set measured as headroom on 2026-08-31.
+    expect(bgBytes).toBeLessThan(200 * 1024);
   });
 
   it("leaves the set real headroom, and says how much", () => {
@@ -280,10 +338,18 @@ describe("predictShipping", () => {
     expect(predicted.budgetBytes).toBe(SHIP_BUDGET_BYTES);
   });
 
-  /** ☠️ An unknown length must not weigh zero and pass by being absent. */
+  /**
+   * ☠️ An unknown length must not weigh zero and pass by being absent.
+   *
+   * Sixteen since #1573, and every one of them is a voice unit: in a clean checkout
+   * `referenceClipFor` probes a `.wav` that exists nowhere in this repo (the masters
+   * live in `app-audio-masters` and `audio-masters/` is gitignored), so PREDICTED is
+   * permanently a FLOOR for the voice half. Quote the ACTUAL survey instead.
+   */
   it("reports unknown lengths instead of counting them as nothing", () => {
     const predicted = predictShipping(shippingUnits());
-    expect(predicted.unknown).toHaveLength(8);
+    expect(predicted.unknown).toHaveLength(16);
+    expect(predicted.unknown.every((row) => row.voice)).toBe(true);
     expect(predicted.complete).toBe(false);
     for (const row of predicted.unknown) {
       expect(row.bytes).toBeNull();
