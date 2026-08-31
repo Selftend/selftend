@@ -10,7 +10,7 @@
  * looks at, and when it refuses.
  *
  * The one behaviour worth more than the byte count is that a set is refused for
- * being INCOMPLETE even when it comfortably fits. Eighteen files of nineteen is
+ * being INCOMPLETE even when it comfortably fits. One file short of the set is
  * exactly what the voice-name collision used to produce, and by bytes alone that
  * reads as the healthiest set the pass could possibly hand over.
  *
@@ -23,12 +23,26 @@ import { join } from "node:path";
 
 // Static, not dynamic: jest has no --experimental-vm-modules here.
 import { budget } from "../scripts/audio/postprocess.mjs";
-import { SHIP_BUDGET_BYTES, predictShipping, shippingUnits } from "../scripts/audio/ship-plan.mjs";
+import {
+  SHIP_BUDGET_BYTES,
+  SHIP_FILE_COUNT,
+  predictShipping,
+  shippingUnits,
+} from "../scripts/audio/ship-plan.mjs";
+
+/**
+ * ☠️ THE COUNTS BELOW ARE DERIVED, NOT TYPED. Every one of them was a literal `19`
+ * until #1573 added a second language, and each was a separate little edit that a
+ * reader had to notice — the same restated-claim rot that left `ship-plan.mjs`
+ * telling people a second language could not fit. `n/n files` is a fact about the
+ * catalog, so it is read from the catalog.
+ */
+const ALL = `${SHIP_FILE_COUNT}/${SHIP_FILE_COUNT} files`;
 
 /**
  * ☠️ Wall-clock, not logic — the same bound `audio-manifest-cli.test.ts` and
  * `audio-render-reroll.test.ts` carry, for the same reason and now on the same
- * evidence. These cases write a scratch tree of nineteen real files EACH and
+ * evidence. These cases write a scratch tree of the whole set EACH and
  * finish in well under a second on an idle machine, but under a full suite run the
  * workers compete for disk, and one of the sibling suites crossed jest's 5000ms
  * default and reported a broken honesty check where there was none.
@@ -85,7 +99,7 @@ describe("the budget CLI", () => {
   it("passes a complete set that fits", async () => {
     await writeSet();
     await expect(budget(dir, { measureSeconds })).resolves.toBe(true);
-    expect(printed()).toContain("19/19 files");
+    expect(printed()).toContain(ALL);
     expect(printed()).toContain("the set is complete and fits");
   });
 
@@ -101,7 +115,7 @@ describe("the budget CLI", () => {
     await writeSet({ skip: male });
 
     await expect(budget(dir, { measureSeconds })).resolves.toBe(false);
-    expect(printed()).toContain("15/19 files");
+    expect(printed()).toContain(`${SHIP_FILE_COUNT - male.length}/${SHIP_FILE_COUNT} files`);
     // It still reports the byte verdict honestly — it just does not let it decide.
     expect(printed()).toContain("fits");
     expect(printed()).toContain("the set is NOT ready to ship");
@@ -110,12 +124,12 @@ describe("the budget CLI", () => {
 
   it("refuses a complete set that is over the ceiling", async () => {
     // ⚠️ Divisor must stay BELOW the file count or the "over" case is not over:
-    // 19 files at a 20th of the budget each is 19/20 of it, which fits. A 15th
-    // each puts the set past the ceiling with room to spare.
-    await writeSet({ bytes: Math.ceil(SHIP_BUDGET_BYTES / 15) });
+    // n files at an (n+1)th of the budget each is n/(n+1) of it, which fits.
+    // Derived so it cannot silently stop being over when the set grows again.
+    await writeSet({ bytes: Math.ceil(SHIP_BUDGET_BYTES / (SHIP_FILE_COUNT - 1)) });
 
     await expect(budget(dir, { measureSeconds })).resolves.toBe(false);
-    expect(printed()).toContain("19/19 files");
+    expect(printed()).toContain(ALL);
     expect(printed()).toContain("OVER");
     expect(printed()).toContain("over-budget");
   });
@@ -142,7 +156,7 @@ describe("the budget CLI", () => {
     await writeFile(join(dir, "rain-c01-a01.pcm"), Buffer.alloc(5_760_000));
 
     await expect(budget(dir, { measureSeconds })).resolves.toBe(false);
-    expect(printed()).toContain("19/19 files");
+    expect(printed()).toContain(ALL);
     expect(printed()).toContain("unexpected");
     expect(printed()).toContain("rain-c01-a01.pcm");
     expect(printed()).toContain("OVER");
@@ -152,11 +166,11 @@ describe("the budget CLI", () => {
    * ☠️ THE ONE `/code-review` FOUND BY RUNNING THE COMMAND. Twenty-one correctly
    * named zero-byte files printed "19/19 files · complete and fits" and exited 0.
    */
-  it("refuses nineteen correctly named empty files", async () => {
+  it("refuses a full set of correctly named empty files", async () => {
     await writeSet({ bytes: 0 });
 
     await expect(budget(dir, { measureSeconds })).resolves.toBe(false);
-    expect(printed()).toContain("19/19 files");
+    expect(printed()).toContain(ALL);
     expect(printed()).toContain("undersized");
     expect(printed()).toContain("the file is empty");
     expect(printed()).toContain("the set is NOT ready to ship");
@@ -201,7 +215,7 @@ describe("the budget CLI", () => {
     await expect(budget(join(dir, "nothing-here"), { measureSeconds: exploding })).resolves.toBe(
       false,
     );
-    expect(printed()).toContain("PREDICTED (19 files");
+    expect(printed()).toContain(`PREDICTED (${SHIP_FILE_COUNT} files`);
     expect(printed()).toContain("FLOOR");
   });
 
@@ -213,18 +227,20 @@ describe("the budget CLI", () => {
   /** The predicted half runs with no files at all — that is the point of it. */
   it("predicts the set from the catalog before anything is rendered", async () => {
     await budget(join(dir, "nothing-here"), { measureSeconds });
-    expect(printed()).toContain("PREDICTED (19 files");
+    expect(printed()).toContain(`PREDICTED (${SHIP_FILE_COUNT} files`);
     expect(printed()).toContain("of 4.000 MiB");
   });
 
   /**
-   * ☠️ A length nobody knows must not weigh nothing. With no probe the eight cues
+   * ☠️ A length nobody knows must not weigh nothing. With no probe the sixteen cues
    * are unknown, and the total has to announce itself as a floor rather than
    * quietly reporting a smaller set that fits more easily.
    */
   it("calls the total a floor when a length is unknown", async () => {
     await budget(join(dir, "nothing-here"), { measureSeconds: async () => null });
-    expect(printed()).toContain("8 unit(s) have no length");
+    expect(printed()).toContain(
+      `${shippingUnits().filter((unit) => unit.voice).length} unit(s) have no length`,
+    );
     expect(printed()).toContain("FLOOR");
   });
 

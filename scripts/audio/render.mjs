@@ -78,10 +78,18 @@ import {
   creditEstimate,
   outputSpecFor,
   resolveVoices,
+  voiceSlotSpec,
   SHIPPED_SFX_CLIPS,
 } from "./catalog.mjs";
 
 const API = "https://api.elevenlabs.io/v1";
+
+/**
+ * The round the voice cues belong to, named once. Same reason `ship-plan.mjs` does
+ * it: "which round has the voice half" is `voiceSlotSpec`'s answer, and re-deciding
+ * it here would make this a second opinion on round membership.
+ */
+const VOICE_ROUND = "B";
 /**
  * Where masters land. Overridable only so `test/audio-render-reroll.test.ts` can
  * drive the real spending loop into a scratch directory — the re-roll and the
@@ -98,13 +106,30 @@ const OUT_DIR =
   process.env.AUDIO_MASTERS_DIR ??
   join(dirname(fileURLToPath(import.meta.url)), "../../audio-masters");
 
+/**
+ * ☠️☠️ THIS MESSAGE USED TO PRINT `ELEVENLABS_API_KEY=... node …`, AND TWO KEYS HAVE
+ * BEEN BURNED ON THAT EXACT PATTERN. An inline prefix puts the key into shell
+ * history, into any terminal transcript, and — when an agent is driving — straight
+ * into a conversation log that outlives the run. The hygiene rule for this lives in
+ * a spec, and a rule in a spec loses every time to the program's own help text,
+ * because the help text is what someone is reading at the moment they need it.
+ *
+ * So the instruction the tool gives is the safe one: set it once, in a session
+ * whose transcript nobody keeps, then run with no key on the command line at all.
+ */
 function apiKey() {
   const key = process.env.ELEVENLABS_API_KEY;
   if (!key) {
     console.error(
       "ELEVENLABS_API_KEY is not set.\n" +
-        "Per #1141 it lives in the password manager and is passed in for the run:\n" +
-        "  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs probe",
+        "Per #1141 it lives in the password manager. Set it once in your OWN terminal,\n" +
+        "then open a NEW terminal (setx only affects future sessions) and re-run:\n" +
+        '  setx ELEVENLABS_API_KEY "<paste it here>"      # Windows\n' +
+        "  export ELEVENLABS_API_KEY='<paste it here>'     # macOS/Linux, in your shell rc\n" +
+        "  node scripts/audio/render.mjs probe\n" +
+        "\n" +
+        "☠️ Never put the key on the command line — not as ELEVENLABS_API_KEY=... node ...,\n" +
+        "   and not behind an agent's `!` prefix. Both land it in a transcript verbatim.",
     );
     process.exit(1);
   }
@@ -613,18 +638,26 @@ async function render(round, go, maxAttempts = MAX_ATTEMPTS) {
       "unreproducible as a chosen one.",
   );
 
-  // ☠️ This command renders SOUND EFFECTS only. `clipsForRound` filters
-  // SFX_CLIPS, so the eight voice cues are not in it and never were — Round B
-  // is 11 clips here and 8 more from `render-voices`. Saying so out loud is the
-  // point: a silent 11 reads as a finished 19.
+  // ☠️ This command renders SOUND EFFECTS only. `clipsForRound` filters SFX_CLIPS,
+  // so the voice cues are not in it and never were — Round B is 11 clips here and
+  // 16 voice slots from `render-voices`. Saying so out loud is the point: a silent
+  // 11 reads as a finished 27.
+  //
+  // ☠️ The counts are DERIVED, not typed. This comment said "8 more … a finished
+  // 19" and the string beneath it said the same, and both were a language behind
+  // within one change — which is the half-fix `SHIP_FILE_COUNT`'s own docblock is
+  // a warning about.
   if (round === "B") {
     const missing = VOICES.filter((voice) => !voice.voiceId).map((voice) => voice.id);
+    const { slots } = voiceSlotSpec(VOICE_ROUND);
     console.log(
-      `\nThis rendered SOUND EFFECTS only — ${clips.length} clips. The 8 voice cues are separate:\n` +
-        (missing.length
-          ? `  still need a voiceId in catalog.mjs: ${missing.join(", ")}\n` +
-            "  then:  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"
-          : "  ELEVENLABS_API_KEY=... node scripts/audio/render.mjs render-voices --go"),
+      `\nThis rendered SOUND EFFECTS only — ${clips.length} clips. The ${slots.length} voice ` +
+        "slots are separate:\n" +
+        (missing.length ? `  still need a voiceId in catalog.mjs: ${missing.join(", ")}\n` : "") +
+        // ☠️ NO INLINE KEY HERE. This footer is where a render operator lands after
+        // `render --round B`, so it is exactly the moment the burned
+        // `ELEVENLABS_API_KEY=... node ...` form would get copied — see `apiKey()`.
+        "  node scripts/audio/render.mjs render-voices --go",
     );
   }
 
@@ -795,7 +828,8 @@ function formatExtension(format) {
 }
 
 /**
- * The eight voice cues: 4 cues x 2 voices, 2 candidates each (#1136, #1210).
+ * The sixteen voice slots: 4 cues x 2 voices per language, in two languages, 2
+ * candidates each (#1136, #1210, #1573).
  *
  * Separate from `render` because the voice PICK is Round B's own first task and
  * needs a human ear, while the thirteen sound effects do not — so the sound
@@ -823,20 +857,29 @@ async function renderVoices(go, voiceIdOverrides = []) {
         (missingVoice.length
           ? `  no voiceId for: ${missingVoice.map((v) => v.id).join(", ")}\n` +
             "  #1136 fixed the criteria: Voice Library only (defaults expire 2026-12-31),\n" +
-            "  a matched female/male pair, auditioned on the shipping words.\n" +
+            "  a matched female/male pair per language, auditioned on the shipping words.\n" +
             "  To hear a shortlist without deciding anything yet:\n" +
-            "    render-voices --voice-id guided=<id> --voice-id guided-male=<id> --go\n"
+            `    render-voices ${voices.map((v) => `--voice-id ${v.id}=<id>`).join(" ")} --go\n`
           : "") +
         (missingText.length ? `  no text for: ${missingText.map((c) => c.id).join(", ")}\n` : ""),
     );
     process.exit(1);
   }
 
-  const total = voices.length * VOICE_CUES.length * TTS_CANDIDATE_SEEDS.length;
+  // ☠️☠️ THE QUOTE AND THE LOOP READ THE SAME SLOT LIST, AND THAT IS A BILLING
+  // GUARD, NOT TIDINESS. Both used to be `voices x cues` — which with two languages
+  // quotes 64 generations, then ISSUES 64, of which 32 are a Bulgarian voice
+  // reading "Breathe in": billed, saved under plausible names, and caught by
+  // nothing downstream because every filename is unique. #1320's rule is that the
+  // worst case is on screen BEFORE the irreversible spend; a quote derived
+  // differently from the loop it precedes is not that quote.
+  const { slots, candidates } = voiceSlotSpec(VOICE_ROUND, voices);
+  const total = slots.length * candidates;
   if (!go) {
     console.error(
-      `Refusing to spend. ${total} generations (${voices.length} voices x ` +
-        `${VOICE_CUES.length} cues x ${TTS_CANDIDATE_SEEDS.length} candidates).\n` +
+      `Refusing to spend. ${total} generations (${slots.length} voice slots x ` +
+        `${candidates} candidates, from ${voices.length} voices paired with ` +
+        `${VOICE_CUES.length} cues by language).\n` +
         "Re-run with --go.",
     );
     process.exit(1);
@@ -857,63 +900,61 @@ async function renderVoices(go, voiceIdOverrides = []) {
   await mkdir(classDir, { recursive: true });
   const manifestPath = join(runDir, "manifest.jsonl");
 
-  for (const voice of voices) {
-    for (const cue of VOICE_CUES) {
-      for (const [index, seed] of TTS_CANDIDATE_SEEDS.entries()) {
-        const candidate = index + 1;
-        const stem = `${cue.id}-${voice.id}-c${String(candidate).padStart(2, "0")}`;
+  for (const { cue, voice } of slots) {
+    for (const [index, seed] of TTS_CANDIDATE_SEEDS.entries()) {
+      const candidate = index + 1;
+      const stem = `${cue.id}-${voice.id}-c${String(candidate).padStart(2, "0")}`;
 
-        // The format is asked, not assumed: try lossless, fall back on rejection.
-        let rendered = null;
-        let usedFormat = null;
-        let lastError = null;
-        for (const format of TTS_OUTPUT_FORMATS) {
-          const path = join(classDir, `${stem}.${formatExtension(format)}`);
-          if (await exists(path)) {
-            console.log(`skip ${stem} — already exists`);
-            rendered = "skipped";
-            break;
-          }
-          try {
-            rendered = await textToSpeech(key, {
-              voiceId: voice.voiceId,
-              text: cue.text,
-              outputFormat: format,
-              seed,
-            });
-            usedFormat = format;
-            break;
-          } catch (error) {
-            lastError = error;
-          }
+      // The format is asked, not assumed: try lossless, fall back on rejection.
+      let rendered = null;
+      let usedFormat = null;
+      let lastError = null;
+      for (const format of TTS_OUTPUT_FORMATS) {
+        const path = join(classDir, `${stem}.${formatExtension(format)}`);
+        if (await exists(path)) {
+          console.log(`skip ${stem} — already exists`);
+          rendered = "skipped";
+          break;
         }
-        if (rendered === "skipped") continue;
-        if (!usedFormat) throw lastError;
-
-        const name = `${stem}.${formatExtension(usedFormat)}`;
-        await writeFile(join(classDir, name), rendered.buffer);
-        await appendFile(
-          manifestPath,
-          `${JSON.stringify({
-            clip: cue.id,
-            klass: "voice",
-            voice: voice.id,
-            axis: voice.axis,
+        try {
+          rendered = await textToSpeech(key, {
             voiceId: voice.voiceId,
-            candidate,
-            file: name,
             text: cue.text,
-            model: TTS_MODEL,
-            voiceSettings: TTS_VOICE_SETTINGS,
-            outputFormat: usedFormat,
-            // TTS has one, which is why this class alone is re-renderable.
+            outputFormat: format,
             seed,
-            bytes: rendered.buffer.length,
-            contentType: rendered.contentType,
-          })}\n`,
-        );
-        console.log(`ok   ${name}  ${rendered.buffer.length} bytes  ${usedFormat}`);
+          });
+          usedFormat = format;
+          break;
+        } catch (error) {
+          lastError = error;
+        }
       }
+      if (rendered === "skipped") continue;
+      if (!usedFormat) throw lastError;
+
+      const name = `${stem}.${formatExtension(usedFormat)}`;
+      await writeFile(join(classDir, name), rendered.buffer);
+      await appendFile(
+        manifestPath,
+        `${JSON.stringify({
+          clip: cue.id,
+          klass: "voice",
+          voice: voice.id,
+          axis: voice.axis,
+          voiceId: voice.voiceId,
+          candidate,
+          file: name,
+          text: cue.text,
+          model: TTS_MODEL,
+          voiceSettings: TTS_VOICE_SETTINGS,
+          outputFormat: usedFormat,
+          // TTS has one, which is why this class alone is re-renderable.
+          seed,
+          bytes: rendered.buffer.length,
+          contentType: rendered.contentType,
+        })}\n`,
+      );
+      console.log(`ok   ${name}  ${rendered.buffer.length} bytes  ${usedFormat}`);
     }
   }
 

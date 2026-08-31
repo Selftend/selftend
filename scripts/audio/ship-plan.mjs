@@ -46,17 +46,26 @@ export const SHIP_BUDGET_BYTES = 4 * 1024 * 1024;
 /**
  * How many finished files the set has, stated so a survey can disagree loudly.
  *
- * 19 since #1130: 21, plus `stream`, `fire`, `white-noise` and `pink-noise`,
- * minus the six breath textures the owner retired on 2026-08-30.
+ * 27 since #1573: 19, plus the eight Bulgarian voice cues (4 cues x 2 voices).
+ * The 19 was 21, plus `stream`, `fire`, `white-noise` and `pink-noise`, minus the
+ * six breath textures the owner retired on 2026-08-30.
  *
- * ☠️ THE SET HAS ~12 KB OF HEADROOM AT 25, AND THAT IS NOT A MARGIN. Nine beds fit
- * at all only because #1130 dropped the bed bitrate to 96k, and the six breath
- * textures the owner retired on 2026-08-29 are still counted here because the app
- * has not dropped them yet. Removing them takes the set to ~3.30 MiB with ~0.70
- * MiB spare, which is where this count is expected to settle. Until then, DO NOT
- * ADD ANOTHER CLIP: one more bed is 0.34 MiB against 12 KB of room.
+ * ☠️ THIS BLOCK USED TO SAY "~12 KB OF HEADROOM AT 25 … DO NOT ADD ANOTHER CLIP",
+ * AND ANYONE WHO TRUSTED IT CONCLUDED A SECOND LANGUAGE WAS IMPOSSIBLE. That was
+ * the PRE-RETIREMENT 25-file set — the same block already said elsewhere that the
+ * six textures were gone, so it contradicted itself and the stale half was the
+ * scarier one. Measured 2026-08-31: the 19 files total 3,578,571 B (3.413 MiB)
+ * against the 4.000 MiB ceiling, so real headroom is 615,733 B (601 KiB). The eight
+ * English cues weigh 117,126 B, and Bulgarian is 57 characters of cue text against
+ * English's 82 — so the second language costs ~19% of the headroom, not more of it
+ * than exists.
+ *
+ * ⚠️ Still not a licence to add beds: one more 30s bed is 0.34 MiB, over half of
+ * what is left. Re-measure before adding anything, and quote the ACTUAL survey
+ * rather than PREDICTED — see {@link referenceClipFor} for why the prediction is
+ * only ever a floor for the voice half.
  */
-export const SHIP_FILE_COUNT = 19;
+export const SHIP_FILE_COUNT = 27;
 
 /**
  * The finished file one shipping unit is written to.
@@ -99,10 +108,13 @@ export function shipFileName({ clip, voice = null }) {
 /**
  * Every finished file the app ships, as units.
  *
- * The thirteen sound effects plus one file per cue per voice: 13 + 4 x 2 = 21,
- * which is the count #1138 and #1210 both quote. `seconds` is the catalog's
- * rendered length for a sound effect and **null** for a voice cue, because how
- * long a cue takes to say is not a decision anyone made — it comes back from TTS.
+ * The eleven sound effects (2 bells + 9 beds; the six textures were retired on
+ * 2026-08-30) plus one file per voice slot: 11 + 16 = 27. ⚠️ This block used to
+ * read "13 + 4 x 2 = 21", which was wrong in both terms by the time anyone read it.
+ *
+ * `seconds` is the catalog's rendered length for a sound effect and **null** for a
+ * voice cue, because how long a cue takes to say is not a decision anyone made —
+ * it comes back from TTS.
  *
  * @returns {{id: string, clip: string, klass: string, voice: string|null, file: string,
  *            seconds: number|null, bitrate: string, channels: number}[]}
@@ -124,15 +136,22 @@ export function shippingUnits() {
     };
   });
 
-  // ☠️ Built FROM `voiceSlotSpec`, not from `VOICE_CUES` x `VOICES` beside it. Its
-  // docblock says in as many words that "a third consumer cannot disagree with the
-  // first two" — and this is the third consumer. A test asserting the two agree is
-  // weaker than not being able to disagree: the assertion catches a drift after
-  // someone writes it, construction makes the drift unwritable.
-  const { cues, voices } = voiceSlotSpec(VOICE_ROUND);
-  const voice = cues.flatMap((cue) => {
+  // ☠️ Built FROM `voiceSlotSpec`'s SLOTS, not from `VOICE_CUES` x `VOICES` beside
+  // it. Its docblock says in as many words that "a third consumer cannot disagree
+  // with the first two" — and this is the third consumer. A test asserting the two
+  // agree is weaker than not being able to disagree: the assertion catches a drift
+  // after someone writes it, construction makes the drift unwritable.
+  //
+  // ☠️☠️ THIS USED TO REBUILD THE PRODUCT ITSELF (`cues.flatMap(… voices.map(…))`)
+  // and that was safe only while there was one language. With two it would count 32
+  // units where 16 ship, every one of them with a unique `shipFileName` — so the
+  // budget gate would pass a set that is half mis-paired renders. Mapping the
+  // already-joined slots is the difference between a correct measurement and a
+  // correct measurement of the wrong thing.
+  const { slots } = voiceSlotSpec(VOICE_ROUND);
+  const voice = slots.map(({ cue, voice: v }) => {
     const spec = outputSpecFor(cue.id);
-    return voices.map((v) => ({
+    return {
       id: choiceKey({ clip: cue.id, voice: v.id }),
       clip: cue.id,
       klass: spec.klass,
@@ -143,7 +162,7 @@ export function shippingUnits() {
       seconds: null,
       bitrate: spec.bitrate,
       channels: spec.channels,
-    }));
+    };
   });
 
   return [...sfx, ...voice];
@@ -206,7 +225,7 @@ export function bytesForSeconds(seconds, bitrate) {
  *
  * Half is deliberately loose. `postprocess` encodes at a fixed `-b:a`, so a healthy
  * file lands near its prediction and the slack is only there to absorb the
- * container, VBR wobble and — for the eight cues — a spoken length that differs from
+ * container, VBR wobble and — for the sixteen cues — a spoken length that differs from
  * the clip saying the same words today. The job here is catching a truncated or
  * failed encode, not grading one: anything this catches is broken by a wide margin.
  */
@@ -216,7 +235,7 @@ export const PLAUSIBLE_SIZE_FRACTION = 0.5;
  * The smallest a unit's finished file can be and still be that unit, or null when
  * the unit's length is not known yet and no floor can be honest.
  *
- * ⚠️ Only the thirteen sound effects have a floor. A voice cue's length comes back
+ * ⚠️ Only the sound effects have a floor. A voice cue's length comes back
  * from TTS, so the only number available is an estimate off a different rendering
  * of the same words — too soft to fail a file on. An empty file is still caught,
  * because zero is below every floor including the smallest one this can return.
@@ -238,6 +257,14 @@ export function plausibleFloorBytes(unit) {
  * shipping unit, not about reading a disk, and the command should not be the only
  * place it can be read.
  *
+ * ☠️ IN A CLEAN CHECKOUT THIS PATH NEVER EXISTS, SO **PREDICTED IS ALWAYS A FLOOR
+ * FOR THE VOICE HALF** — quote the ACTUAL survey instead. There is no `.wav`
+ * anywhere in this repo: the masters live in the separate `app-audio-masters` repo
+ * and `audio-masters/` is gitignored. Every voice unit therefore probes to null and
+ * is counted UNKNOWN rather than zero, which is why `budget` prints "N unit(s) have
+ * no length — the total above is a FLOOR". Pre-existing and not the second
+ * language's doing; Bulgarian only makes it sixteen unknowns instead of eight.
+ *
  * @param {{voice: string|null, clip: string}} unit
  * @returns {string[]|null} path segments, or null when the unit needs no estimate
  */
@@ -249,7 +276,7 @@ export function referenceClipFor(unit) {
  * What the set is predicted to weigh, before any of it has been rendered.
  *
  * `secondsFor` fills in the lengths the catalog does not fix — in practice the
- * eight voice cues, measured off the clips shipping today, which say the same
+ * sixteen voice slots, measured off the clips shipping today, which say the same
  * words. Returning null for a unit leaves it counted as **unknown** rather than
  * as zero, and the total is then explicitly a floor.
  *
