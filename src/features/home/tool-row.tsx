@@ -31,6 +31,34 @@ export interface ToolRowProps {
 const WIDE_ROW_WIDTH = 640;
 
 /**
+ * Two lines on phone, one where the name sits beside the stat.
+ *
+ * Named rather than inlined, because the stat below it carries a textually identical
+ * `wide ? 1 : 2` for an unrelated reason - a future reader must not fold the two into one
+ * shared constant. Same shape and same name as `notification-target-row.tsx:56`, the other
+ * surface that renders these strings (#1248).
+ *
+ * At 15px `NotoSans_600SemiBold` the longest Bulgarian tool name, "Дневник на
+ * благодарността", measures 212.8px. Home's name box is the screen less 124px of chrome -
+ * 48 (`AnimatedScrollView` PADDING 24x2), 8 (`px-1`), 20+14 for the leading mark and its
+ * gap, 20+14 for the chevron and its gap - so 236px at the 360dp floor #1231 set. (The
+ * notification row quotes 198px for the same string: a different surface with different
+ * chrome, not a contradiction.)
+ *
+ * So unlike #1248 it FITS here unscaled, with 23.2px spare. What makes it worth wrapping is
+ * font scaling: nothing in the repo sets `allowFontScaling` or `maxFontSizeMultiplier`, so
+ * the name grows with the OS text-size setting while those 124px do not, and 236/212.8 puts
+ * the ellipsis at fontScale 1.11 - the first accessibility step on both platforms - on a
+ * supported device. English survives to 1.52, so this is bg-only, as #1248 was.
+ *
+ * Two lines are enough and nothing breaks mid-word: the widest unbreakable word across all
+ * bg tool names is "Наблюдаващото" at 126.2px, clear even of the 196px box at 320dp (#1590).
+ */
+function nameLineCount(wide: boolean) {
+  return wide ? 1 : 2;
+}
+
+/**
  * One row of the `Your tools` tier: icon · name · stat · chevron, pressed whole.
  *
  * The leading glyph is the neutral `CHROME_MARK`, not a per-tool hue. #951 measured the
@@ -84,7 +112,9 @@ export function ToolRow({ id, stat }: ToolRowProps) {
 
       <View className={cn("min-w-0 flex-1", wide ? "flex-row items-center gap-3" : "gap-0.5")}>
         <Text
-          numberOfLines={1}
+          // The name is ALREADY on its own stacked line below the breakpoint, so the fix for
+          // the Bulgarian overrun is the line count and not the stacking (#1590).
+          numberOfLines={nameLineCount(wide)}
           className={cn("text-[15px] font-semibold", wide && "min-w-[150px] shrink-0")}
           // The drawn desktop name column is `width: 150px`. It has to be a MINIMUM:
           // a fixed width overruns in Bulgarian, where the longest tool name is
