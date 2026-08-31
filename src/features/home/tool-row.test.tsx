@@ -23,6 +23,15 @@ const atWidth = (width: number) => mockDimensions.mockReturnValue({ width, heigh
 
 const mockRouter = jest.mocked(router);
 
+/**
+ * Pinned explicitly, not inherited: the Bulgarian block below switches the language for the
+ * whole i18n instance, so the English assertions must not depend on it being declared last
+ * and restoring itself.
+ */
+beforeAll(async () => {
+  await setLanguage("en");
+});
+
 describe("ToolRow", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -154,6 +163,10 @@ describe("ToolRow", () => {
  * enough even in the 196px box at 320 and nothing breaks mid-word (#1590).
  */
 describe("ToolRow - the name is not locked to one line at phone width (#1590)", () => {
+  // `atWidth` is sticky and the reset to 390 lives in the first describe's `beforeEach`, so
+  // a block that ends wide would hand 1280 to whatever gets appended below it.
+  afterAll(() => atWidth(390));
+
   it.each([
     [360, 2],
     [1280, 1],
@@ -176,6 +189,8 @@ describe("ToolRow - the longest Bulgarian name (#1590)", () => {
 
   afterAll(async () => {
     await setLanguage("en");
+    // Same reason as the block above: this one ends in the wide branch.
+    atWidth(390);
   });
 
   it("gets a second line at the 360dp floor, so a scaled-up name still reads whole", () => {
