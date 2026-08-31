@@ -155,10 +155,11 @@ describe.each(listHooks)("%s enabled gate", (_name, useHook, repoFn) => {
 // ☠️ The limit is an argument to the fetch, so a key that omits it lets two
 // callers asking for different depths share one cache entry: whichever mounts
 // first wins, and the other silently gets the wrong number of rows. That is not
-// hypothetical - `use-act-program.ts` reads these at the default 30 while
-// `count-queries.ts` asks the same keys for COUNT_LIMIT = 500, so the ACT
-// programme's summary counts varied with navigation order until #1516. The
-// limit-less prefix in `actKeys.*List` still matches every variant on
+// hypothetical, and it is not historical either: `act-home-screen.tsx` reads
+// `useDefusionLogs(userId, 50)` while `use-act-program.ts` reads the same hook at
+// the default 30, and ACT home renders BOTH on one screen; `use-routine-tool-records.ts`
+// reads four of these six at RECENT_LIST_LIMIT = 250 against that same default.
+// The limit-less prefix in `actKeys.*List` still matches every variant on
 // invalidation, so keying on the limit costs nothing.
 //
 // Covering all six together is the point: this was fixed one hook at a time
