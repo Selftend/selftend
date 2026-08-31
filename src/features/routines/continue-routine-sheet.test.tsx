@@ -234,11 +234,23 @@ describe("ContinueRoutineSheet", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("skips the offer for an on-demand routine: only the plain Close (#102)", () => {
+  // The sheet's DEFENSIVE contract, not an app path (#1542): the FAB is the
+  // sheet's only mount point and it passes `scheduledViews`, so an on-demand
+  // routine never actually arrives here - routine-fab.test.tsx pins that. This
+  // test hands one in directly to prove the guard holds if that ever widens, so
+  // the #102 rule (on-demand routines never nudge) cannot be lost by accident.
+  //
+  // ☠️ `scheduledToday` MUST stay false: an on-demand view with
+  // `scheduledToday: true` is a state `useRoutinesToday` can never build
+  // (`isScheduledOn` returns false for on-demand before anything else), and
+  // pinning the guard against an impossible input proves nothing.
+  it("skips the offer for an on-demand routine handed in directly (#102)", () => {
     const records: RoutineToolRecords = {
       moodLogs: [{ dayKey: currentDateKey() }],
     };
-    renderSheet([view(makeRoutine("r-1", "Morning reset", ["mood"], false, "on-demand"), records)]);
+    renderSheet([
+      view(makeRoutine("r-1", "Morning reset", ["mood"], false, "on-demand"), records, false),
+    ]);
 
     // Completion state shows, but an on-demand routine never nudges - so no
     // reminder offer, just the Close button (same branch as reminderEnabled).

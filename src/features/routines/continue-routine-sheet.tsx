@@ -201,8 +201,18 @@ export function ContinueRoutineSheet({
                   </Text>
                 </View>
 
-                {/* On-demand routines never nudge (#102): no reminder offer,
-                    just the plain close - same as when the reminder is set. */}
+                {/* The reminder offer, or the plain close when there is nothing
+                    to offer. The `on-demand` disjunct is DEFENCE IN DEPTH, not
+                    a live path (#1542): an on-demand routine cannot reach here,
+                    because the FAB - the sheet's only mount point - passes
+                    `scheduledViews`, and `isScheduledOn` keeps on-demand off
+                    every schedule (#104). It stays because the rule it guards is
+                    a product guardrail - on-demand routines never nudge (#102) -
+                    so widening the sheet's input beyond scheduled-today cannot
+                    silently start nudging them. The upstream filter is where the
+                    rule is really enforced; routine-fab.test.tsx pins it, in
+                    "scheduled-today filtering (#104)" and in "the reminder offer
+                    never reaches an on-demand routine (#102)". */}
                 {routine.reminderEnabled || routine.cadence === "on-demand" ? (
                   <Button variant="outline" onPress={onClose}>
                     <Text>{t("sheet.close")}</Text>
