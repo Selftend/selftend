@@ -72,9 +72,45 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
    */
   {
     locale: "en",
-    pattern: /\bwithout\s+(?:\S+\s+)?(pressure|punishment|penalty|shame)/i,
+    pattern: /\bwithout\s+(?:\S+\s+)?(pressure|punishment|penalty|shame|scores?)/i,
   },
+  /**
+   * The fourth form, after *shame* (#763), *punishment* (#805) and *pressure*
+   * (#963/#1342). `meditation:module.insights.subtitle` read "The last {{count}}
+   * days of practice - no scores." — the product telling the user it does not
+   * grade them, which is the "not keeping a streak" example #711 names outright.
+   *
+   * ☠️ The pattern is `no scores`, never bare `score`. A user's own mood number
+   * is called a score all over `mood` and `cbt` ("Pick a mood score first.",
+   * "Average score per day…"), and those are the record, not restraint about it.
+   */
+  { locale: "en", pattern: /\bno scores?\b/i },
   { locale: "bg", pattern: /без\s+(?:\S+\s+)?(натиск|напрежени)/i },
+  /**
+   * The bg half of `no scores`, and ☠️ **it must stay PLURAL**. In Bulgarian the
+   * two senses split on number, and only one of them is the product's voice:
+   *
+   *   - `без оценки` (plural, countable) = *no grades* — the restraint claim.
+   *   - `без оценка` / `без преценка` (singular, abstract) = *without judgement* —
+   *     the vocabulary of the technique itself.
+   *
+   * A `без оценк` stem pattern fails two live, correct strings:
+   * `meditation:practices.body-scan.instructions` ("забелязвайки усещанията без
+   * оценка") and `gratitude:onboarding.levels.level1Body` ("без преценка"). That
+   * is the same line the en list draws by leaving `judgment`/`judgement` out
+   * deliberately — non-judgemental awareness is what these practices ARE.
+   *
+   * Bare `оценки` is also legal and stays legal: `act:*.saveAll` ("Запази
+   * оценките") and `cbt:*.strengthTrackerDescription` name real ratings the user
+   * gives. The negation is what makes it a restraint claim.
+   *
+   * ☠️ **No trailing `\b` on a Cyrillic pattern.** JavaScript's `\b` is defined
+   * against ASCII `\w`, so between "оценки" and the "." that follows it there is
+   * no word boundary at all — `/оценки\b/` matched NOTHING and the guard went
+   * green on the very string it was written for. Caught only because this pattern
+   * was added while the offending copy was still in the file.
+   */
+  { locale: "bg", pattern: /без\s+(?:\S+\s+)?оценки/i },
   { locale: "bg", pattern: /създава\w*\s+натиск/i },
   { locale: "bg", pattern: /без срам/i },
   { locale: "bg", pattern: /не наказва/i },

@@ -130,7 +130,7 @@
     },
     "insights": {
       "title": "Reflect",
-      "subtitle": "The last {{count}} days of practice - no scores.",
+      "subtitle": "A look back over the last {{count}} days of practice.",
       "totalSessions": "Sessions",
       "totalMinutes": "Total time",
       "sessionCount_one": "{{count}} sit",
