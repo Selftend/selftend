@@ -1182,11 +1182,10 @@ async function loopProbe({ clipId, seconds, go, withControl }) {
     console.log(`   level     ${take.level.lufs} LUFS-I · ${take.level.dbtp} dBTP`);
     console.log(
       `   seam      wrap step ${take.seam.wrapStepRatio.toFixed(2)}x median · ` +
-        `head/tail ${take.seam.energyDeltaRatio.toFixed(2)}x natural · ` +
-        (take.seam.wrapStepRatio <= SEAM_LIMITS.wrapStepRatio &&
-        take.seam.energyDeltaRatio <= SEAM_LIMITS.energyDeltaRatio
-          ? "PASS"
-          : "FAIL"),
+        // ⚠️ Printed, not judged (#1571) — the head/tail ratio cannot separate a
+        // clean bed from a defective one, so only the wrap step decides here.
+        `head/tail ${take.seam.energyDeltaRatio.toFixed(2)}x (reported) · ` +
+        (take.seam.wrapStepRatio <= SEAM_LIMITS.wrapStepRatio ? "PASS" : "FAIL"),
     );
     console.log(
       `   edges     lead ${take.edges.leadMs.toFixed(1)} ms · tail ${take.edges.tailMs.toFixed(1)} ms`,

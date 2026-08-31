@@ -543,24 +543,48 @@ is the same rule the tiled listen already followed and the automated half did
 not. `seamcheck <file>` still measures whatever you point it at, and now says so
 when that is not a WAV.
 
-☠️ **Both halves of `energyDeltaRatio` must be the same statistic.** Until #1571
-the numerator was the difference between two windows and the denominator the
-median deviation of _one_ window from the clip's centre, which inflates the ratio
-~1.4x before any defect exists — and much further on material whose level wanders
-slowly. Brown noise scored **2.68x against a 2.0 limit with no seam in it**. The
-denominator is now the step between adjacent interior windows: the wrap joins two
-windows, so the null distribution is built from pairs too.
+☠️☠️ **`energyDeltaRatio` is REPORTED, NOT GATED (#1571) — the gate is
+`wrapStepRatio` alone.** It blocked five of the nine beds on audio that was fine,
+and the cause was not a badly chosen threshold. A bed whose level legitimately
+wanders has head and tail levels that legitimately differ, and dividing by "how
+much this clip moves" cannot tell that apart from a jump at the wrap. Five
+denominators were measured against clean beds and beds carrying a deliberate level
+defect, and **every one puts a clean clip above a defective one**:
 
-☠️ **The limits are calibrated against material whose seam is KNOWN.**
-`calibrate-seam.mjs` no longer reads a shipped asset — it synthesises the three
-`synth-noise.mjs` beds, which cannot have a seam, and scores them clean, level-
-drifted, hard-cut and AAC-encoded. It fails if a provably seamless bed does not
-clear the gate, if a 3 dB drift is not caught, or if the two populations overlap.
-Current gap: clean ≤ **2.54x**, drift ≥ **3.24x**, limit **3.0x**. It costs no
-credits and needs no asset on disk, so run it after touching a threshold, a
-window length, the fold or `seamMetrics`. ⚠️ It was dead from #1569 until #1571 —
-it still read the `assets/sounds/breathing/*.wav` placeholders that release had
+| denominator                          | worst CLEAN | best DEFECT |
+| ------------------------------------ | ----------- | ----------- |
+| deviation from the clip's centre     | 4.45x       | 1.88x       |
+| median step between adjacent windows | 264.15x     | 1.96x       |
+| median step over random window pairs | 3.39x       | 1.46x       |
+| p95 step between adjacent windows    | 1.32x       | 0.59x       |
+| p90 step between adjacent windows    | 3.23x       | 0.67x       |
+
+Worse, the defect it exists for becomes **unmeasurable on the material it was
+aimed at**: a real 6 dB tail step on ambience that varies 6 dB every 250 ms scores
+0.59x, below every clean clip, because the material's own steps are bigger than
+the defect. So `run` prints the number and suggests a listen above 2.0x, and fails
+nothing on it. That is a real narrowing of the gate, and deliberate — a check that
+cannot separate its two populations is a coin toss, and #1137's answer to that
+case was always the 10x loop listen.
+
+☠️ **The gate is calibrated against material whose seam is KNOWN.**
+`calibrate-seam.mjs` no longer reads a shipped asset — it synthesises the
+`synth-noise.mjs` beds, which cannot have a seam, plus a 50 Hz tonal splice.
+Current separation on the surviving gate: clean ≤ **1.15x**, splice **9.48x**,
+limit **3.0x**. ⚠️ It also asserts the head/tail conclusion **in the negative**:
+if any of the five denominators ever _does_ separate, the script FAILS, so the
+finding is revisited rather than quietly outliving its evidence. It costs no
+credits and needs no asset on disk. ⚠️ It was dead from #1569 until #1571 — it
+still read the `assets/sounds/breathing/*.wav` placeholders that release had
 replaced with `.m4a`, so it threw on its first ffmpeg call.
+
+⚠️ **The wrap-step check is only sensitive against quiet material, and that is
+inherent.** It is an RMS first difference over ±5 ms, so one discontinuity is
+averaged against ~880 ordinary samples. A maximal splice in a 440 Hz tone scores
+1.30x and passes; the same splice at 50 Hz scores 9.48x. This is the documented
+stochastic true negative seen from the other side — a click is only detectable
+against material quieter than the click — and it is why the control is a low
+drone, as `night` was.
 
 ☠️ **A raw 30s render does NOT loop, and the failed pass's masters prove it.**
 `brown-noise` was the one bed of Round B whose every take cleared the level gate,

@@ -1,61 +1,48 @@
 #!/usr/bin/env node
 /**
- * Where the seam-gate thresholds in postprocess.mjs come from (#1296, re-derived
- * by #1571).
+ * Where the seam gate's threshold comes from, and why there is only one left
+ * (#1296, re-derived by #1571).
  *
- * A gate nobody has calibrated is decoration: set the limits too loose and it
+ * A gate nobody has calibrated is decoration: set the limit too loose and it
  * passes everything, too tight and it fails the known-good beds and gets ignored.
  * The second is what happened — `energyDeltaRatio` blocked five of the nine
  * shipped beds on evidence that said the audio was fine.
  *
- * ☠️ THIS SCRIPT USED TO READ `assets/sounds/breathing/*.wav` AND HAS BEEN DEAD
- * SINCE #1569 REPLACED THEM WITH `.m4a`. It threw on its first ffmpeg call. So the
- * one tool that could have answered "is the limit right?" could not be run at the
- * moment the limit started failing beds — which is most of why #1571 took the
- * shape of an argument rather than a measurement.
+ * ☠️ THIS SCRIPT WAS DEAD FROM #1569 UNTIL #1571. It read
+ * `assets/sounds/breathing/*.wav`, which that release replaced with `.m4a`, so it
+ * threw on its first ffmpeg call. The one tool that could answer "is the limit
+ * right?" could not be run at the moment the limit started failing beds.
  *
- * It no longer reads a shipped asset at all. The population is SYNTHESISED:
+ * It no longer reads a shipped asset at all. The population is SYNTHESISED from
+ * `synth-noise.mjs`, whose beds are built by circular filtering — the last sample
+ * flows into the first exactly as it flows into any other, asserted in
+ * `test/audio-synth-noise.test.ts`. That is the only material in the project whose
+ * seam is known to be zero, it costs no credits, and no asset swap can break it.
  *
- *   clean    — `synth-noise.mjs`'s three beds, built by circular filtering, so the
- *              last sample flows into the first exactly as it flows into any
- *              other. `test/audio-synth-noise.test.ts` asserts that directly.
- *              ☠️ This is the only material in the project whose seam is known to
- *              be zero, which is what makes it the calibration reference. Nothing
- *              here can go stale, cost credits, or be deleted by an asset swap.
+ * Two tables:
  *
- *   drift    — the same clip with its level walked steadily down across the whole
- *              30s. This is the defect the head/tail half exists to catch: every
- *              loop point becomes an audible jump back up.
+ *   1. WRAP STEP — the click detector, and the only surviving gate. Clean beds
+ *      against a tonal splice, which is the audible defect it exists for.
  *
- *   hard cut — the clip truncated with no crossfade, so the loop jumps from an
- *              arbitrary interior sample to sample zero. ⚠️ On STOCHASTIC material
- *              this is a deliberate true negative, not a miss — see postprocess.mjs.
+ *   2. HEAD/TAIL — why that ratio is reported and not gated. Five denominators
+ *      against clean beds and beds carrying a deliberate level defect. Every one
+ *      of them puts a clean clip above a defective one, so no threshold works.
  *
- *   encoded  — the clean clip, AAC-encoded and decoded back. Present to keep
- *              #1571's finding executable rather than remembered: the gate must
- *              measure the master, and this prints what happens when it does not.
- *
- * Run it after changing a threshold, a window length, the fold, or `seamMetrics`.
- * Exits non-zero if the current limits do not sit cleanly between the populations.
+ * Run it after changing a threshold, a window length, the fold or `seamMetrics`.
+ * Exits non-zero if the wrap-step limit stops separating its two populations, or
+ * if the head/tail ratio unexpectedly starts separating its own (which would mean
+ * this script's conclusion is stale and the gate could be restored).
  *
  *   node scripts/audio/calibrate-seam.mjs
  */
 
-import { Buffer } from "node:buffer";
-import { spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-
 import { OUTPUT_SAMPLE_RATE } from "./catalog.mjs";
-import { decodeToFloatWav, seamMetrics, SEAM_LIMITS } from "./postprocess.mjs";
-import { synthesiseBed } from "./synth-noise.mjs";
+import { seamMetrics, SEAM_LIMITS } from "./postprocess.mjs";
+import { mulberry32, synthesiseBed } from "./synth-noise.mjs";
 
-const KINDS = ["white-noise", "pink-noise", "brown-noise"];
 const CHANNELS = 2;
 const SECONDS = 30;
-/** Large enough to be plainly audible at a loop point, small enough to be a fair test. */
-const DRIFT_DB = 3;
+const WINDOW_MS = 250;
 
 /** `synthesiseBed` returns interleaved s16le; `seamMetrics` wants floats. */
 function toFloat(buf) {
@@ -64,152 +51,213 @@ function toFloat(buf) {
   return out;
 }
 
-function withDrift(samples, db) {
+function scaled(samples, gainAt) {
   const out = Float32Array.from(samples);
   const frames = samples.length / CHANNELS;
   for (let i = 0; i < frames; i += 1) {
-    const gain = 10 ** ((-db * (i / frames)) / 20);
-    for (let c = 0; c < CHANNELS; c += 1) out[i * CHANNELS + c] *= gain;
+    const g = gainAt(i, frames);
+    for (let c = 0; c < CHANNELS; c += 1) out[i * CHANNELS + c] *= g;
   }
   return out;
 }
 
-function hardCut(samples, cutFrames) {
-  const frames = samples.length / CHANNELS;
-  return samples.slice(0, (frames - cutFrames) * CHANNELS);
-}
+/** The defect the head/tail half was built for: level walks steadily down. */
+const withDrift = (samples, db) =>
+  scaled(samples, (i, frames) => 10 ** ((-db * (i / frames)) / 20));
 
-/** Minimal float WAV, so the encode round-trip needs nothing but ffmpeg. */
-function wavBuffer(samples, channels, sampleRate) {
-  const n = samples.length;
-  const buf = Buffer.alloc(44 + n * 4);
-  buf.write("RIFF", 0);
-  buf.writeUInt32LE(36 + n * 4, 4);
-  buf.write("WAVEfmt ", 8);
-  buf.writeUInt32LE(16, 16);
-  buf.writeUInt16LE(3, 20);
-  buf.writeUInt16LE(channels, 22);
-  buf.writeUInt32LE(sampleRate, 24);
-  buf.writeUInt32LE(sampleRate * channels * 4, 28);
-  buf.writeUInt16LE(channels * 4, 32);
-  buf.writeUInt16LE(32, 34);
-  buf.write("data", 36);
-  buf.writeUInt32LE(n * 4, 40);
-  for (let i = 0; i < n; i += 1) buf.writeFloatLE(samples[i], 44 + i * 4);
-  return buf;
-}
-
-const dir = await mkdtemp(join(tmpdir(), "calibrate-"));
-const rows = [];
-
-try {
-  for (const kind of KINDS) {
-    const clean = toFloat(
-      synthesiseBed({ kind, seconds: SECONDS, sampleRate: OUTPUT_SAMPLE_RATE }),
-    );
-    const score = (k, s) => rows.push({ kind, k, ...seamMetrics(s, CHANNELS, OUTPUT_SAMPLE_RATE) });
-
-    score("clean", clean);
-    score("drift", withDrift(clean, DRIFT_DB));
-    score("cut", hardCut(clean, 3 * OUTPUT_SAMPLE_RATE));
-
-    const wav = join(dir, `${kind}.wav`);
-    await writeFile(wav, wavBuffer(clean, CHANNELS, OUTPUT_SAMPLE_RATE));
-    const m4a = join(dir, `${kind}.m4a`);
-    const encoded = spawnSync(
-      "ffmpeg",
-      ["-hide_banner", "-nostdin", "-y", "-i", wav, "-c:a", "aac", "-b:a", "96k", m4a],
-      { windowsHide: true, stdio: "ignore" },
-    );
-    if (encoded.status !== 0) throw new Error(`could not encode ${kind} — is ffmpeg on PATH?`);
-    const back = await decodeToFloatWav(m4a, join(dir, `${kind}-decoded.wav`), {
-      channels: CHANNELS,
-      sampleRate: OUTPUT_SAMPLE_RATE,
-    });
-    rows.push({
-      kind,
-      k: "encoded",
-      ...seamMetrics(back.samples, back.channels, back.sampleRate),
-    });
+/** Ambience that legitimately changes level in blocks. Clean — no seam added. */
+function withWander(samples, db, blockSeconds) {
+  const rnd = mulberry32(7);
+  const block = Math.round(blockSeconds * OUTPUT_SAMPLE_RATE);
+  const gains = [];
+  for (let b = 0; b * block < samples.length / CHANNELS; b += 1) {
+    gains.push(10 ** (((rnd() * 2 - 1) * db) / 20));
   }
-} finally {
-  await rm(dir, { recursive: true, force: true });
+  return scaled(samples, (i) => gains[Math.floor(i / block)]);
 }
 
-console.log(
-  `\n${"bed".padEnd(13)}${"kind".padEnd(9)}${"wrapStep".padStart(10)}${"h/t dB".padStart(9)}` +
-    `${"own step".padStart(10)}${"energy".padStart(9)}`,
+/** A real, audible defect: the last tenth of the clip sits `db` lower. */
+const withTailStep = (samples, db) =>
+  scaled(samples, (i, frames) => (i >= Math.floor(frames * 0.9) ? 10 ** (-db / 20) : 1));
+
+/** A low drone ending a quarter-cycle past zero — see the test for why 50 Hz. */
+function tonalSplice(hz = 50) {
+  const quarter = Math.round(OUTPUT_SAMPLE_RATE / hz / 4);
+  const frames = SECONDS * OUTPUT_SAMPLE_RATE + quarter + 1;
+  const out = new Float32Array(frames * CHANNELS);
+  for (let i = 0; i < frames; i += 1) {
+    const v = 0.5 * Math.sin((2 * Math.PI * hz * i) / OUTPUT_SAMPLE_RATE);
+    for (let c = 0; c < CHANNELS; c += 1) out[i * CHANNELS + c] = v;
+  }
+  return out;
+}
+
+/**
+ * The five denominators #1571 measured, so the conclusion stays executable.
+ * The numerator is always |rmsDb(tail window) - rmsDb(head window)|.
+ */
+function denominators(samples) {
+  const frames = samples.length / CHANNELS;
+  const win = Math.min(Math.floor((WINDOW_MS / 1000) * OUTPUT_SAMPLE_RATE), Math.floor(frames / 4));
+  const rmsDb = (start) => {
+    let sum = 0;
+    for (let i = 0; i < win; i += 1) {
+      for (let c = 0; c < CHANNELS; c += 1) {
+        const v = samples[(start + i) * CHANNELS + c];
+        sum += v * v;
+      }
+    }
+    return 20 * Math.log10(Math.sqrt(sum / (win * CHANNELS)) || Number.EPSILON);
+  };
+
+  const headTail = Math.abs(rmsDb(frames - win) - rmsDb(0));
+  const positions = Math.min(200, Math.floor(frames / win));
+  const levels = [];
+  for (let i = 0; i < positions; i += 1) {
+    levels.push(rmsDb(Math.floor((i * (frames - win)) / Math.max(1, positions - 1))));
+  }
+
+  const sorted = (a) => [...a].sort((x, y) => x - y);
+  const median = (a) => sorted(a)[Math.floor(a.length / 2)];
+  const quantile = (a, q) => {
+    const s = sorted(a);
+    return s[Math.min(s.length - 1, Math.floor(q * s.length))];
+  };
+
+  const centre = Math.max(median(levels.map((v) => Math.abs(v - median(levels)))), 0.5);
+
+  const adjacent = [];
+  for (let i = 0; i + 1 < levels.length; i += 1) {
+    adjacent.push(Math.abs(levels[i + 1] - levels[i]));
+  }
+
+  const rnd = mulberry32(1571);
+  const anyPair = [];
+  for (let i = 0; i < 2000; i += 1) {
+    const a = Math.floor(rnd() * levels.length);
+    const b = Math.floor(rnd() * levels.length);
+    if (a !== b) anyPair.push(Math.abs(levels[a] - levels[b]));
+  }
+
+  return {
+    headTail,
+    centre: headTail / centre,
+    adjacent: headTail / Math.max(median(adjacent), 0.02),
+    anyPair: headTail / Math.max(median(anyPair), 0.02),
+    p95: headTail / Math.max(quantile(adjacent, 0.95), 0.02),
+    p90: headTail / Math.max(quantile(adjacent, 0.9), 0.02),
+  };
+}
+
+const white = toFloat(
+  synthesiseBed({ kind: "white-noise", seconds: SECONDS, sampleRate: OUTPUT_SAMPLE_RATE }),
 );
-for (const r of rows) {
-  console.log(
-    r.kind.padEnd(13) +
-      r.k.padEnd(9) +
-      `${r.wrapStepRatio.toFixed(2)}x`.padStart(10) +
-      r.headTailDb.toFixed(2).padStart(9) +
-      r.naturalStepDb.toFixed(2).padStart(10) +
-      `${r.energyDeltaRatio.toFixed(2)}x`.padStart(9),
-  );
-}
+const brown = toFloat(
+  synthesiseBed({ kind: "brown-noise", seconds: SECONDS, sampleRate: OUTPUT_SAMPLE_RATE }),
+);
 
-const of = (k) => rows.filter((r) => r.k === k);
-const energies = (k) => of(k).map((r) => r.energyDeltaRatio);
 const problems = [];
 
-// 1. The reference population must pass. A bed that cannot have a seam must not
-//    be told it has one — this is the assertion #1571 opened on.
-for (const r of of("clean")) {
-  if (r.energyDeltaRatio > SEAM_LIMITS.energyDeltaRatio) {
-    problems.push(`${r.kind}: a clip with no seam by construction FAILS the gate`);
-  }
-  if (r.wrapStepRatio > SEAM_LIMITS.wrapStepRatio) {
-    problems.push(`${r.kind}: a clip with no seam by construction fails the wrap check`);
-  }
+// ---------------------------------------------------------------------------
+// 1. The wrap step — the surviving gate.
+// ---------------------------------------------------------------------------
+
+const wrapCases = [
+  ["white noise", "clean", white],
+  ["brown noise", "clean", brown],
+  ["white +6dB drift", "clean", withDrift(white, 6)],
+  ["50 Hz tonal splice", "defect", tonalSplice()],
+];
+
+console.log(`\n1. WRAP STEP — the click detector (limit ${SEAM_LIMITS.wrapStepRatio}x)\n`);
+console.log(`${"material".padEnd(22)}${"kind".padEnd(9)}${"wrapStep".padStart(10)}`);
+const wrapScores = { clean: [], defect: [] };
+for (const [name, kind, samples] of wrapCases) {
+  const { wrapStepRatio } = seamMetrics(samples, CHANNELS, OUTPUT_SAMPLE_RATE);
+  wrapScores[kind].push(wrapStepRatio);
+  console.log(name.padEnd(22) + kind.padEnd(9) + `${wrapStepRatio.toFixed(2)}x`.padStart(10));
 }
 
-// 2. The audible defect must be caught, on every kind of material.
-for (const r of of("drift")) {
-  if (r.energyDeltaRatio <= SEAM_LIMITS.energyDeltaRatio) {
-    problems.push(`${r.kind}: a ${DRIFT_DB} dB level drift PASSES - the gate is too loose`);
-  }
+const worstClean = Math.max(...wrapScores.clean);
+const bestDefect = Math.min(...wrapScores.defect);
+if (worstClean > SEAM_LIMITS.wrapStepRatio) {
+  problems.push(`a clean bed fails the wrap-step gate (${worstClean.toFixed(2)}x)`);
 }
+if (bestDefect <= SEAM_LIMITS.wrapStepRatio) {
+  problems.push(`a tonal splice passes the wrap-step gate (${bestDefect.toFixed(2)}x)`);
+}
+console.log(
+  `\n   clean <= ${worstClean.toFixed(2)}x, splice >= ${bestDefect.toFixed(2)}x, ` +
+    `limit ${SEAM_LIMITS.wrapStepRatio}x`,
+);
 
-// 3. The limit has to sit in a gap, not inside an overlap. Two populations that
-//    interleave cannot be separated by any threshold, and a limit chosen from an
-//    overlap is a coin toss dressed as a measurement.
-const worstClean = Math.max(...energies("clean"));
-const bestDrift = Math.min(...energies("drift"));
-if (!(worstClean < bestDrift)) {
-  problems.push(
-    `the two populations overlap (worst clean ${worstClean.toFixed(2)}x, ` +
-      `best drift ${bestDrift.toFixed(2)}x) - no threshold separates them`,
+// ---------------------------------------------------------------------------
+// 2. The head/tail ratio — reported, not gated, and this is why.
+// ---------------------------------------------------------------------------
+
+const energyCases = [
+  ["white flat", "clean", white],
+  ["brown flat", "clean", brown],
+  ["wander 6dB @0.25s", "clean", withWander(white, 6, 0.25)],
+  ["wander 6dB @1s", "clean", withWander(white, 6, 1)],
+  ["wander 3dB @1s", "clean", withWander(white, 3, 1)],
+  ["white +3dB drift", "defect", withDrift(white, 3)],
+  ["white +6dB drift", "defect", withDrift(white, 6)],
+  ["brown +6dB drift", "defect", withDrift(brown, 6)],
+  ["wander6@.25 tail -6dB", "defect", withTailStep(withWander(white, 6, 0.25), 6)],
+  ["wander6@1s tail -6dB", "defect", withTailStep(withWander(white, 6, 1), 6)],
+];
+
+const NAMES = ["centre", "adjacent", "anyPair", "p95", "p90"];
+
+console.log("\n\n2. HEAD/TAIL — five denominators, none of which separates\n");
+console.log(
+  "material".padEnd(23) +
+    "kind".padEnd(8) +
+    "h/t dB".padStart(8) +
+    NAMES.map((n) => n.padStart(11)).join(""),
+);
+const byDenominator = Object.fromEntries(NAMES.map((n) => [n, { clean: [], defect: [] }]));
+for (const [name, kind, samples] of energyCases) {
+  const d = denominators(samples);
+  for (const n of NAMES) byDenominator[n][kind].push(d[n]);
+  console.log(
+    name.padEnd(23) +
+      kind.padEnd(8) +
+      d.headTail.toFixed(2).padStart(8) +
+      NAMES.map((n) => `${d[n].toFixed(2)}x`.padStart(11)).join(""),
   );
 }
 
 console.log(
-  `\nlimits: wrapStep ${SEAM_LIMITS.wrapStepRatio}x - energy ${SEAM_LIMITS.energyDeltaRatio}x` +
-    `   (gap: clean <= ${worstClean.toFixed(2)}x, drift >= ${bestDrift.toFixed(2)}x)`,
+  "\n   worst CLEAN vs best DEFECT — a separating statistic would have clean < defect:\n",
 );
-
-console.log("\n☠️ Why the gate measures the MASTER and not the finished .m4a (#1571):");
-for (const r of of("encoded")) {
-  const clean = of("clean").find((c) => c.kind === r.kind);
+let anySeparates = false;
+for (const n of NAMES) {
+  const clean = Math.max(...byDenominator[n].clean);
+  const defect = Math.min(...byDenominator[n].defect);
+  const separates = clean < defect;
+  if (separates) anySeparates = true;
   console.log(
-    `  ${r.kind.padEnd(12)} ${clean.energyDeltaRatio.toFixed(2)}x on the master -> ` +
-      `${r.energyDeltaRatio.toFixed(2)}x encoded, on identical audio`,
+    `   ${n.padEnd(10)} clean <= ${clean.toFixed(2).padStart(8)}x   ` +
+      `defect >= ${defect.toFixed(2).padStart(8)}x   ${separates ? "SEPARATES" : "overlaps"}`,
   );
 }
 
-console.log("\nKnown true negative: a hard cut of STOCHASTIC material is not caught");
-for (const r of of("cut")) {
-  console.log(
-    `  ${r.kind.padEnd(12)} hard cut scores ${r.energyDeltaRatio.toFixed(2)}x - inaudible, see postprocess.mjs`,
+// ☠️ Deliberately asserted in the NEGATIVE. If someone finds a statistic that
+// separates, this script must fail so the finding is revisited rather than
+// quietly outliving its evidence — the gate could then be restored.
+if (anySeparates) {
+  problems.push(
+    "a head/tail denominator now SEPARATES clean from defective — #1571's conclusion " +
+      "may be stale, and `energyDeltaRatio` could go back into SEAM_LIMITS",
   );
 }
 
 console.log("");
 for (const p of problems) console.log(`FAIL: ${p}`);
 if (!problems.length) {
-  console.log("PASS: a provably seamless bed clears the gate, a level drift is caught,");
-  console.log("      and the limit sits in the gap between the two populations.");
+  console.log("PASS: the wrap step separates a tonal splice from clean beds, and no head/tail");
+  console.log("      denominator separates its own two populations — so it stays a report.");
 }
 process.exit(problems.length ? 1 : 0);

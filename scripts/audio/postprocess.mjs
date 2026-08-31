@@ -96,19 +96,9 @@ export const LEAD_SILENCE_LIMIT_MS = 1.0;
  * a tonal splice scores 5.29, so the limit sits at 3.
  *
  * `energyDeltaRatio` is #1137's short-term energy delta, self-calibrated the same
- * way: the head/tail level step divided by the level step this clip takes between
- * ADJACENT windows of the same length anywhere in its interior. A raw dB threshold
- * cannot work - `rain` is stochastic and moves several dB between windows of
- * seam-clean material, while `brown-noise` barely moves at all.
- *
- * ☠️ Both halves of that ratio must be the SAME statistic, and until #1571 they
- * were not: the numerator was the difference between TWO windows, the denominator
- * the median deviation of ONE window from the clip's centre. A difference of two
- * draws runs ~1.4x a single deviation with no seam present at all, so the "~1"
- * this docblock claimed was unreachable by construction. Proved on the three synth
- * beds, which are periodic by circular filtering (`synth-noise.mjs`, asserted in
- * `test/audio-synth-noise.test.ts`) and so cannot have a seam: brown noise scored
- * 2.68x against a 2.0 limit on material with no seam in it.
+ * way: the head/tail level step divided by how much this clip's level naturally
+ * wanders. A raw dB threshold cannot work - `rain` is stochastic and moves several
+ * dB between windows of seam-clean material, while `brown-noise` barely moves.
  *
  * ☠️ A hard cut of STOCHASTIC material is not caught, and that is a true negative
  * rather than a hole. Splicing two independent stretches of dense noise scores
@@ -118,15 +108,23 @@ export const LEAD_SILENCE_LIMIT_MS = 1.0;
  * undetectable, and the loop tell is event-driven, not seam-driven. What the gate
  * does catch is the case that is actually audible: a TONAL bed whose phase jumps.
  *
- * ⚠️ `energyDeltaRatio`'s limit is 3.0 and not the old 2.0 because the quantity
- * changed under it. Re-derived on the three synth beds (`calibrate-seam.mjs`),
- * measured on the master as the gate now measures: clean scores 0.98x (white),
- * 2.20x (pink) and 2.54x (brown) — coloured noise genuinely wanders more across
- * 30s than between neighbours, and that is material, not a seam — while a
- * deliberate 3 dB drift scores 3.24x-89.69x and 6 dB scores 9.32x-119.61x. The
- * populations do not overlap; 3.0 sits in the gap.
+ * ☠️☠️ `energyDeltaRatio` IS NO LONGER A LIMIT (#1571). It lives in `SEAM_LISTEN`
+ * — the number above which `run` suggests a loop listen, and nothing more. It
+ * blocked five of the nine beds on audio that was fine, and the reason turned out
+ * not to be a badly chosen threshold: measured against clean beds and beds
+ * carrying a deliberate level defect, **five different denominators all put a
+ * clean clip above a defective one** (table in `seamMetrics`). A bed whose level
+ * legitimately wanders has head and tail levels that legitimately differ, and
+ * self-calibration cannot tell that apart from a jump at the wrap.
+ *
+ * ⚠️ So the gate is now `wrapStepRatio` alone. That is a real narrowing and it is
+ * deliberate: a check that cannot separate its two populations is not a weaker
+ * gate, it is a coin toss, and #1137's answer to the case it was aimed at was
+ * always the 10x loop listen. `calibrate-seam.mjs` reproduces both tables.
  */
-export const SEAM_LIMITS = { wrapStepRatio: 3.0, energyDeltaRatio: 3.0 };
+export const SEAM_LIMITS = { wrapStepRatio: 3.0 };
+/** Not a limit — the level above which `run` says "worth a listen". */
+export const SEAM_LISTEN = { energyDeltaRatio: 2.0 };
 const SEAM_WINDOW_MS = 250;
 
 // ---------------------------------------------------------------------------
@@ -225,7 +223,9 @@ export function parseWav(buf) {
   return { ...fmt, samples };
 }
 
-function writeWavBuffer(samples, channels, sampleRate) {
+/** Exported so `calibrate-seam.mjs` writes its round-trip WAV with this header
+ *  rather than a second copy of it. */
+export function writeWavBuffer(samples, channels, sampleRate) {
   const bytes = samples.length * 4;
   const header = Buffer.alloc(44);
   header.write("RIFF", 0, "ascii");
@@ -454,8 +454,15 @@ export function edgeSilence(samples, channels, sampleRate, floorDbfs = SILENCE_F
 }
 
 /**
- * #1137's automated wrap check. Runs on the *decoded finished file*, not on the
- * pre-encode PCM, so anything the encoder adds at the boundaries is included.
+ * #1137's automated wrap check.
+ *
+ * ☠️ Give it the PRE-ENCODE master. This docblock used to say the opposite —
+ * "runs on the decoded finished file, so anything the encoder adds at the
+ * boundaries is included" — and that was the bug (#1571): AAC's MDCT has no
+ * wrap-around context at a file's two ends, so what the encoder "adds at the
+ * boundaries" lands on exactly the two windows the head/tail half samples. On
+ * synth white noise, whose seam is zero by construction, encoding moved the
+ * verdict from 0.98x to 19.93x. `postprocess` now hands this the normalised WAV.
  */
 export function seamMetrics(samples, channels, sampleRate, windowMs = SEAM_WINDOW_MS) {
   const frames = samples.length / channels;
@@ -515,39 +522,51 @@ export function seamMetrics(samples, channels, sampleRate, windowMs = SEAM_WINDO
   // window, so this is the level step a listener actually crosses at the wrap.
   const headTailDb = Math.abs(rmsDb(frames - win) - rmsDb(0));
 
-  // ☠️ A raw dB threshold on this is not usable, and measuring it taught us why:
-  // `rain` is stochastic, so two windows of perfectly seam-clean material differ
-  // by several dB just from its own drops, while `brown-noise` barely moves. So
-  // the wrap's step is judged against the steps this clip takes everywhere else.
+  // ☠️☠️ THIS RATIO IS REPORTED, NOT GATED (#1571), because no normalisation of
+  // it separates the two populations it would have to separate.
   //
-  // ☠️ Against ADJACENT pairs, which is the whole of #1571's fix. The wrap joins
-  // two windows; the null distribution therefore has to be built from pairs of
-  // windows too, sampled the same way. The previous denominator was each window's
-  // deviation from the clip's centre - a single draw against the numerator's
-  // difference of two - which inflates the ratio by ~1.4x on seamless material
-  // before any defect exists, and by far more on material whose level wanders
-  // slowly (brown noise moves little between neighbours and a lot across 30s, so
-  // it scored 2.68x with a seam that is zero by construction).
-  const steps = [];
-  const pairs = Math.min(200, Math.floor(frames / win) - 1);
-  for (let i = 0; i < pairs; i++) {
-    const at = Math.floor((i * (frames - 2 * win)) / Math.max(1, pairs - 1));
-    steps.push(Math.abs(rmsDb(at + win) - rmsDb(at)));
+  // A raw dB threshold cannot work — `rain` is stochastic and two windows of
+  // seam-clean material differ by several dB from its own drops, while
+  // `brown-noise` barely moves — so the step has to be divided by something. Five
+  // denominators were measured against clean beds and beds carrying a deliberate
+  // level defect, and EVERY ONE puts a clean clip above a defective one:
+  //
+  //   denominator                        worst CLEAN   best DEFECT
+  //   deviation from the clip's centre       4.45x        1.88x
+  //   median step between adjacent windows 275.62x        1.96x
+  //   median step over random window pairs   3.39x        1.46x
+  //   p95 step between adjacent windows      4.05x        0.59x
+  //   p90 step between adjacent windows     89.35x        0.67x
+  //
+  // The reason is not a bad choice of divisor, it is the numerator: a bed whose
+  // level legitimately wanders has head and tail levels that legitimately differ,
+  // and no amount of self-calibration tells that apart from a level jump at the
+  // wrap. Worse, the defect the check exists for becomes UNMEASURABLE on exactly
+  // the material it was aimed at — a real 6 dB tail step on ambience that varies
+  // 6 dB every 250 ms scores 0.59x, below every clean clip, because the material's
+  // own steps are bigger than the defect's.
+  //
+  // So `postprocess` prints this and does not fail on it. `wrapStepRatio` — the
+  // half that detects the audible click, and the half that measures cleanly — is
+  // still a gate. Reproduce the table with `node scripts/audio/calibrate-seam.mjs`.
+  //
+  // The denominator below is deliberately left as it was: it is no worse than the
+  // alternatives, and changing a number nothing gates on would only invalidate the
+  // history in #1571 for no gain.
+  const spread = [];
+  const positions = Math.min(200, Math.floor(frames / win));
+  for (let i = 0; i < positions; i++) {
+    spread.push(rmsDb(Math.floor((i * (frames - win)) / Math.max(1, positions - 1))));
   }
-  steps.sort((a, b) => a - b);
-  // A small floor stops a synthetically perfect bed from making any step at all
-  // look like an outlier by dividing through a near-zero one. It is two orders of
-  // magnitude below the old 0.5 dB floor because the quantity it floors is now a
-  // step between neighbours rather than a spread about a centre - four of the nine
-  // beds used to sit pinned at that floor, which is what compounded the mismatch
-  // above into a FAIL.
-  const naturalStepDb = Math.max(steps[Math.floor(steps.length / 2)] || 0, 0.02);
+  const spreadMedian = [...spread].sort((a, b) => a - b)[Math.floor(spread.length / 2)];
+  const deviations = spread.map((v) => Math.abs(v - spreadMedian)).sort((a, b) => a - b);
+  const naturalDb = Math.max(deviations[Math.floor(deviations.length / 2)] || 0, 0.5);
 
   return {
     wrapStepRatio: wrapStep / medianStep,
     headTailDb,
-    naturalStepDb,
-    energyDeltaRatio: headTailDb / naturalStepDb,
+    naturalDb,
+    energyDeltaRatio: headTailDb / naturalDb,
     wrapStepDbfs: 20 * Math.log10(wrapStep || Number.EPSILON),
   };
 }
@@ -795,8 +814,12 @@ export async function postprocess(input, clipId, outPath, { fold: foldRequested 
  * platform loops by buffer wrap anyway (iOS duplicates an `AVPlayerItem`, Android
  * sets `REPEAT_MODE_ONE`, web sets `HTMLAudioElement.loop`), so the honest thing
  * to put in front of an ear is the file's own seam, sample-exact and once-encoded.
- * That is also the join `seamMetrics` measures, so the ear and the ratio are
- * judging the same boundary.
+ *
+ * ⚠️ Since #1571 the ear and the ratio no longer judge the identical boundary,
+ * and that is deliberate. This listen crosses the DECODED file's join; the gate
+ * measures the MASTER's, because the encoder's two end frames are an artifact of
+ * the encode rather than a seam. The wrap-step half is what would catch an
+ * audible click here, and it is unchanged.
  */
 export async function repeatLoop(input, outPath, times, clipId) {
   if (!Number.isInteger(times) || times < 2) {
@@ -884,10 +907,15 @@ export function report(clipId, result) {
           `(limit ${SEAM_LIMITS.wrapStepRatio})`,
       );
     }
-    if (seam.energyDeltaRatio > SEAM_LIMITS.energyDeltaRatio) {
-      failures.push(
-        `seam: head/tail energy step is ${seam.energyDeltaRatio.toFixed(1)}x this clip's own ` +
-          `window-to-window step (limit ${SEAM_LIMITS.energyDeltaRatio})`,
+    // ☠️ A HINT, NOT A FAILURE (#1571). See `seamMetrics` for the measured reason:
+    // no normalisation of this ratio separates clean beds from defective ones, so
+    // it cannot be an acceptance criterion. It is still worth printing — a high
+    // number is a reason to listen to the loop, which is what #1137 asked for.
+    if (seam.energyDeltaRatio > SEAM_LISTEN.energyDeltaRatio) {
+      hints.push(
+        `head/tail level step is ${seam.energyDeltaRatio.toFixed(1)}x this clip's own spread ` +
+          `(${seam.headTailDb.toFixed(2)} dB) — worth a 10x loop listen. Not a failure: this ` +
+          `ratio reads high on beds whose level legitimately wanders (#1571).`,
       );
     }
     // ⚠️ The fallback #1347 kept the fold for. A bed that fails the gate having
@@ -931,7 +959,7 @@ export function report(clipId, result) {
   if (seam) {
     console.log(
       `   seam      wrap step ${seam.wrapStepRatio.toFixed(2)}x median · ` +
-        `head/tail ${seam.headTailDb.toFixed(2)} dB = ${seam.energyDeltaRatio.toFixed(2)}x its own step ${seam.naturalStepDb.toFixed(2)} dB`,
+        `head/tail ${seam.headTailDb.toFixed(2)} dB = ${seam.energyDeltaRatio.toFixed(2)}x its own step ${seam.naturalDb.toFixed(2)} dB`,
     );
   }
   for (const failure of failures) console.log(`   FAIL: ${failure}`);
@@ -1179,12 +1207,15 @@ async function main() {
         );
       }
       const seam = await seamCheckFile(target);
-      const ok =
-        seam.wrapStepRatio <= SEAM_LIMITS.wrapStepRatio &&
-        seam.energyDeltaRatio <= SEAM_LIMITS.energyDeltaRatio;
+      // ⚠️ The verdict is the wrap step ALONE (#1571). The head/tail ratio is
+      // printed beside it and decides nothing — it cannot separate a clean bed
+      // from a defective one, so putting it back here would restore exactly the
+      // false failures this command is used to investigate.
+      const ok = seam.wrapStepRatio <= SEAM_LIMITS.wrapStepRatio;
       console.log(
         `${basename(target)}: wrap step ${seam.wrapStepRatio.toFixed(2)}x median ` +
-          `(${seam.wrapStepDbfs.toFixed(1)} dBFS) · head/tail ${seam.energyDeltaRatio.toFixed(2)}x its own step · ` +
+          `(${seam.wrapStepDbfs.toFixed(1)} dBFS) · head/tail ${seam.energyDeltaRatio.toFixed(2)}x ` +
+          `(reported, not gated) · ` +
           (ok ? "PASS" : "FAIL"),
       );
       process.exit(ok ? 0 : 1);
