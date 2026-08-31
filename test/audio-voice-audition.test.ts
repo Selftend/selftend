@@ -113,22 +113,22 @@ describe("voiceSlots", () => {
     expect(slotsFor()[0]).toMatchObject({ voiceId: FEMALE, klass: "voice", candidates: 2 });
   });
 
-  it("covers the whole shipping voice set — 16 units, 32 takes, not 8 clips", () => {
+  it("covers the whole shipping voice set — 8 units, 16 takes, not 4 clips", () => {
     // ☠️ The count that was wrong. #1210 ships 21 clips: 5 beds + 6 texture files
     // + 2 bells + **8 voice** (2 voices x 4 cues). The audition saw 11 of them.
-    // #1573 doubles the voice half: 4 cues x 2 voices, in each of two languages.
     const shipping = voiceSlots(voiceSlotSpec("B"));
-    expect(shipping).toHaveLength(16);
-    expect(shipping.reduce((n, slot) => n + slot.candidates, 0)).toBe(32);
+    expect(shipping).toHaveLength(8);
+    expect(shipping.reduce((n, slot) => n + slot.candidates, 0)).toBe(16);
   });
 
   /**
-   * ☠️☠️ THE GUARD THIS WHOLE REFACTOR EXISTS FOR (#1581). The cartesian product of
-   * 4 voices and 8 cues is 32 slots — the wrong number — but the more dangerous
-   * half is that 16 of those 32 pair a voice with a language it does not speak. A
-   * Bulgarian voice reading "Breathe in" renders, bills, and lands under a unique
-   * filename that every count downstream accepts. This asserts the join, not the
-   * count, because the count alone cannot tell the two apart.
+   * ☠️☠️ THE GUARD THE PAIRING REFACTOR EXISTS FOR (#1581). With one language it
+   * passes trivially — that is fine and it is why it is written against the join
+   * rather than against a count. On #1573's two-language set the cartesian product
+   * was 32 slots where 16 shipped, and the dangerous half was not the count but
+   * that 16 of them paired a voice with a language it does not speak: each one
+   * renders, bills, and lands under a unique filename every downstream count
+   * accepts. A count alone cannot tell those two failures apart.
    */
   it("never pairs a voice with another language's cue", () => {
     const shipping = voiceSlots(voiceSlotSpec("B"));
@@ -138,18 +138,18 @@ describe("voiceSlots", () => {
     for (const slot of shipping) {
       expect(langOf.get(slot.voice)).toBe(slot.lang);
     }
-    // And every language is actually served, so "no mis-pairs" cannot be satisfied
-    // by silently dropping a language.
-    expect(new Set(shipping.map((slot) => slot.lang))).toEqual(new Set(["en", "bg"]));
+    // Every language the catalog declares is actually served, so "no mis-pairs"
+    // cannot be satisfied by silently dropping one.
+    expect(new Set(shipping.map((slot) => slot.lang))).toEqual(
+      new Set((CATALOG_CUES as { lang: string }[]).map((cue) => cue.lang)),
+    );
   });
 
-  it("keeps cue-major order within each language, so a matched pair stays adjacent", () => {
+  it("keeps cue-major order, so a matched pair stays adjacent", () => {
     // #1136's comparison is female-against-male on the SAME words. Voice-major
     // ordering puts the two halves of it four players apart.
     const ids = voiceSlots(voiceSlotSpec("B")).map((slot) => `${slot.clipId}:${slot.voice}`);
     expect(ids.slice(0, 2)).toEqual(["guide_inhale:guided", "guide_inhale:guided-male"]);
-    const bg = ids.indexOf("guide_inhale_bg:guided-bg");
-    expect(ids[bg + 1]).toBe("guide_inhale_bg:guided-male-bg");
   });
 });
 
@@ -502,26 +502,37 @@ describe("auditioning a shortlist on the shipping words", () => {
   });
 
   /**
-   * ☠️☠️ THE CHECK IS PER-LANGUAGE, AND A GLOBAL ONE WOULD BLOCK #1578'S OWN
-   * DOCUMENTED FALLBACK. Language is a property of the REQUEST, not of the voice,
-   * so if a Bulgarian voice fails the ear test the escape hatch is to hand
-   * Bulgarian text to the English pair — which makes `guided` and `guided-bg` share
-   * a voiceId legitimately. Under a global uniqueness check that fallback dies with
-   * a message about a matched pair, which is not the problem it has.
+   * ☠️☠️ THE CHECK IS PER-LANGUAGE, AND A GLOBAL ONE BLOCKS A LEGITIMATE CASE.
+   * Language is a property of the REQUEST, not of the voice, so a second language
+   * may be spoken by a voice the list already holds — two entries sharing a
+   * voiceId on purpose. #1573 named exactly that as its fallback if a voice failed
+   * the ear test. Under a global uniqueness check it dies with a message about a
+   * matched pair, which is not the problem it has.
+   *
+   * ⚠️ Driven off a SYNTHETIC two-language list, not the catalog: the catalog is
+   * single-language again since #1573's voices were rejected, so testing this
+   * against it would assert nothing.
    */
+  const TWO_LANGUAGES = [
+    { id: "guided", axis: "female", lang: "en", voiceId: FEMALE },
+    { id: "guided-male", axis: "male", lang: "en", voiceId: MALE },
+    { id: "guided-xx", axis: "female", lang: "xx", voiceId: "xx-female" },
+    { id: "guided-male-xx", axis: "male", lang: "xx", voiceId: "xx-male" },
+  ];
+
   it("allows one voice to serve two languages, which is the documented fallback", () => {
-    const resolved = resolveVoices(CATALOG_VOICES, [
-      "guided-bg=s3TPKV1kjDlVtZbl4Ksh",
-      "guided-male-bg=l32B8XDoylOsZKiSdfhE",
+    const resolved = resolveVoices(TWO_LANGUAGES, [
+      `guided-xx=${FEMALE}`,
+      `guided-male-xx=${MALE}`,
     ]);
-    expect(resolved.find((v) => v.id === "guided-bg")!.voiceId).toBe(
+    expect(resolved.find((v) => v.id === "guided-xx")!.voiceId).toBe(
       resolved.find((v) => v.id === "guided")!.voiceId,
     );
   });
 
   it("still refuses one voice twice WITHIN a language", () => {
-    expect(() => resolveVoices(CATALOG_VOICES, ["guided-bg=dup", "guided-male-bg=dup"])).toThrow(
-      /both bg voices resolve to "dup"/,
+    expect(() => resolveVoices(TWO_LANGUAGES, ["guided-xx=dup", "guided-male-xx=dup"])).toThrow(
+      /both xx voices resolve to "dup"/,
     );
   });
 });
@@ -587,25 +598,21 @@ describe("voiceSlotSpec", () => {
   it("gives round B every cue in the voices that speak its language", () => {
     const spec = voiceSlotSpec("B");
     expect(spec.candidates).toBe(TTS_CANDIDATE_SEEDS.length);
-    // ☠️ NOT `cues.length * voices.length`. That product is 32 and the answer is 16
-    // — and the eight-language-short version of this assertion is exactly the one
-    // that would have passed while half the render was mis-paired (#1581).
-    expect(spec.slots).toHaveLength(16);
+    expect(spec.slots).toHaveLength(8);
     expect(voiceSlots(spec)).toHaveLength(spec.slots.length);
-    expect(CATALOG_CUES.length * CATALOG_VOICES.length).toBe(32);
   });
 
   it("hands `render-voices` the same join it hands everyone else", () => {
     // ☠️ The `--voice-id` shortlist path pairs through this function rather than
     // beside it. That is what stops the quote and the loop being computed two
-    // different ways — the shape that would have billed 64 generations, 32 of them
-    // mis-paired, while printing a number derived from somewhere else.
+    // different ways — the shape that billed 64 generations on #1573's set, 32 of
+    // them mis-paired, while printing a number derived from somewhere else.
     const trial = voiceSlotSpec("B", resolveVoices(CATALOG_VOICES, ["guided=trial-a"]));
-    expect(trial.slots).toHaveLength(16);
+    expect(trial.slots).toHaveLength(8);
     const female = trial.slots.filter((slot) => slot.voice.id === "guided");
     expect(female).toHaveLength(4);
     for (const slot of female) expect(slot.voice.voiceId).toBe("trial-a");
-    // The shortlist swaps a voice, never the pairing: English cues only.
+    // The shortlist swaps a voice, never the pairing.
     for (const slot of female) expect(slot.cue.lang).toBe("en");
   });
 

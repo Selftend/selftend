@@ -229,8 +229,8 @@ async function choose(round, clipId, candidate, note, voice) {
   //
   // ☠️☠️ THE VOICE IS VALIDATED AGAINST THE SLOTS, NOT AGAINST `VOICES`. This was a
   // FOURTH pairing site and #1581 did not catch it: `VOICES.some(v => v.id ===
-  // voice)` is language-blind, so with two languages `choose guide_inhale 1 --voice
-  // guided-bg` would be ACCEPTED — filing a Bulgarian voice's pick against an
+  // voice)` is language-blind, so on #1573's two-language set `choose guide_inhale
+  // 1 --voice guided-bg` was ACCEPTED — filing a Bulgarian voice's pick against an
   // English cue, in the one file whose whole job is recording decisions. Asking
   // "is this a real slot" instead of "is this a real voice" is the same move #1581
   // made everywhere else, and it is why the question is asked of the pairing rather

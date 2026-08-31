@@ -56,15 +56,21 @@ describe("the breath lane", () => {
   });
 
   it("gives each voice its own MEASURED intro length", () => {
-    // ☠️ A single hardcoded 3300 stood here. The female intro is 2.662s and the male
-    // 4.557s, so one shared value cut the male off more than a second early. #1136
+    // ☠️ A single hardcoded 3300 stood here. The two intros are 2.662s and 4.557s,
+    // so one shared value cut the longer one off more than a second early. #1136
     // requires these come from the measured duration of the CHOSEN clip.
+    //
+    // ☠️ #1580 SWAPPED WHICH VOICE HOLDS WHICH NUMBER on 2026-08-31. The two ids
+    // were transposed — `guided` shipped Adam (male) behind a female label — and
+    // fixing it swapped the file contents, so `guided` now holds Carla's 4.557s
+    // read and `guided-male` holds Adam's 2.662s. Re-measured with ffprobe off the
+    // shipped files; a number must never be carried across a voice change.
     const ms = Object.fromEntries(
       BREATH_SOUNDS.filter((s) => s.introAsset).map((s) => [s.id, s.introMs]),
     );
-    expect(ms).toEqual({ guided: 2662, "guided-male": 4557 });
+    expect(ms).toEqual({ guided: 4557, "guided-male": 2662 });
     // The two differ by well over a second — which is the whole reason one number
-    // could not serve both.
+    // could not serve both, and the half of this test that survives a voice swap.
     expect(Math.abs((ms["guided-male"] ?? 0) - (ms.guided ?? 0))).toBeGreaterThan(1000);
   });
 

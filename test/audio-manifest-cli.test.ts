@@ -89,11 +89,11 @@ describe("the manifest CLI", () => {
     await expect(write("B", { out: out() })).resolves.toBe(false);
     const doc = JSON.parse(await readFile(out(), "utf8"));
     expect(doc.complete).toBe(false);
-    // 19 since #1573: three generated beds (`rain`, `forest`, `night`) plus the
-    // SIXTEEN voice slots — 4 cues x 2 voices, in each of two languages. The breath
-    // textures were retired, and six beds moved to `synth-noise.mjs` — three noise
-    // beds, then `ocean`/`stream`/`fire` once the API failed all 36 of their takes.
-    expect(doc.totals.units).toBe(19);
+    // 11 since #1130: three generated beds (`rain`, `forest`, `night`) plus the
+    // eight voice slots (4 cues x 2 voices). The breath textures were retired, and
+    // six beds moved to `synth-noise.mjs` — three noise beds, then
+    // `ocean`/`stream`/`fire` once the API failed all 36 of their takes.
+    expect(doc.totals.units).toBe(11);
     // ☠️ Tied back to the join, so this number cannot drift from the one the render
     // will actually bill for. Written out as well, because a bare `toBe` next to a
     // derived expression is how a stale literal survives.

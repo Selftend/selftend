@@ -32,6 +32,19 @@ const pinkNoise = require("@/assets/sounds/breathing/pink-noise.m4a") as number;
 // Guided voice cues — ElevenLabs TTS, one clip per phase, fired once (not looped).
 // Two voices on a gender axis (#1136); the female keeps the bare `guided` id because
 // an unrecognised breath_sound_id fails twice over and shipped clients live forever.
+//
+// ☠️☠️ #1580: THESE TWO VOICES WERE TRANSPOSED AND SHIPPED THAT WAY. Until
+// 2026-08-31 `guide_*.guided.m4a` held "Adam" (male) while the picker row above it
+// reads "Водещ глас (жена)" / the female label, and `guide_*.guided-male.m4a` held
+// "Carla" (female). Anyone who picked the female voice heard a man. Confirmed twice
+// — by ear on the audition, and by ElevenLabs' own `gender` label on each voice —
+// then fixed by swapping the FILE CONTENTS, so no stored `breath_sound_id` moved and
+// no require path changed.
+//
+// ⚠️ WHICH MEANS THE FILENAMES ARE UNCHANGED AND THE AUDIO IS NOT. A diff of that
+// commit shows eight binary files touched and nothing else explaining it; the
+// provenance lives in `scripts/audio/catalog.mjs`'s VOICES table, which was swapped
+// in the same change so the ids still say truthfully who speaks each file.
 const guidedInhale = require("@/assets/sounds/breathing/guide_inhale.guided.m4a") as number;
 const guidedHold = require("@/assets/sounds/breathing/guide_hold.guided.m4a") as number;
 const guidedExhale = require("@/assets/sounds/breathing/guide_exhale.guided.m4a") as number;
@@ -93,11 +106,15 @@ export const BREATH_SOUNDS: BreathSound[] = [
     holdAsset: guidedHold,
     loop: false,
     introAsset: guidedIntro,
-    // ☠️ MEASURED, never estimated (#1136). It was a hardcoded 3300 while the
-    // real clip is 2.662s — and the male one is 4.557s, so a single shared value
-    // cut that intro off more than a second early. Each voice carries its own,
-    // read off the SHIPPED file.
-    introMs: 2662,
+    // ☠️ MEASURED, never estimated (#1136). A hardcoded 3300 once cut an intro off
+    // more than a second early. Each voice carries its own, read off the SHIPPED
+    // file with ffprobe.
+    //
+    // ☠️ #1580 SWAPPED THE TWO VOICES ON 2026-08-31 AND THESE TWO NUMBERS SWAPPED
+    // WITH THEM. `guided` used to be 2662 because it used to hold Adam's take; it
+    // now holds Carla's, measured at 4557. If either voice is ever re-rendered or
+    // reassigned, re-measure — do not carry a number across a voice change.
+    introMs: 4557,
   },
   {
     // ⚠️ ADDED 2026-08-30, and it was already paid for. #1136 decided two voices
@@ -111,7 +128,9 @@ export const BREATH_SOUNDS: BreathSound[] = [
     holdAsset: maleHold,
     loop: false,
     introAsset: maleIntro,
-    introMs: 4557,
+    // Measured off the shipped file after #1580's swap (was 4557 when this row
+    // held Carla's take).
+    introMs: 2662,
   },
 ];
 
