@@ -142,6 +142,28 @@ jobs:
 
           echo "App Store Connect matches the committed declaration."
 
+      # The listing-text half (#1611). store/apple-info.json holds the fields
+      # docs/positioning.md governs, so a silent edit in App Store Connect shows
+      # up here the same way an age-rating change does.
+      #
+      # ☠️ LOCALE-AGNOSTIC ON PURPOSE. These fields live under `apple.info.<locale>`,
+      # not `apple.advisory`, and the locale key App Store Connect actually uses
+      # was never read - the repository has no store.config.json and nothing else
+      # records it. Guessing "en-US" would be exactly the guessed value
+      # store/README.md forbids: wrong, it reports a missing key forever and the
+      # job gets muted. So the check asks the weaker question it can actually
+      # answer honestly - does SOME locale carry this exact value - which still
+      # fires the moment Apple's English listing changes. Once someone reads the
+      # real locale keys, tighten this to compare per locale.
+      # Node rather than jq, unlike the advisory step above: this comparison has
+      # real logic in it (search every locale), and scripts/check-store-listing-
+      # drift.mjs is unit-tested in `verify` by test/store-listing-drift.test.ts.
+      # An untestable comparison inside a weekly guard is how a guard starts
+      # lying without anyone noticing.
+      - name: Compare the listing text against the committed copy
+        if: steps.gate.outputs.enabled == 'true'
+        run: node scripts/check-store-listing-drift.mjs store/apple-info.json store.config.json
+
       # store.config.json is gitignored and must never become a committed
       # artifact: a partial metadata file is something `eas metadata:push` could
       # send at an app under review.

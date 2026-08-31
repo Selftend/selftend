@@ -1,4 +1,16 @@
-# App Store Connect declarations kept under version control
+# Store declarations kept under version control
+
+## What is in here
+
+| File                  | What it mirrors                                                                  | What checks it                                                                                                          |
+| --------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `apple-advisory.json` | The age-rating half of the App Store Connect record                              | `.github/workflows/store-metadata-drift.yml` weekly; `test/store-advisory-invariants.test.ts` on every PR               |
+| `apple-info.json`     | App Store listing text governed by [docs/positioning.md](../docs/positioning.md) | the same weekly workflow, via `scripts/check-store-listing-drift.mjs`; `test/store-info-invariants.test.ts` on every PR |
+| `play-listing.md`     | The Google Play listing text                                                     | **Nothing.** Diff and review only — see the file's own header                                                           |
+
+The rest of this document is about `apple-advisory.json`, which came first and set the pattern; the two rules that matter apply to all three. **Read the live value, commit it, never guess** — and **never silence a check to make it green.**
+
+⚠️ **`apple-info.json` holds two fields, not four.** [#1606](https://github.com/Selftend/selftend/issues/1606) specified `subtitle`, `description`, `keywords` and `promoText`; only `subtitle` and `promoText` could honestly be committed. `keywords` is a hidden field that **cannot be read from outside App Store Connect at all**, and only the first line and second paragraph of `description` were ever captured — committing a truncated description would turn the weekly check red on arrival, for a reason that is not drift. Both are welcome additions the moment someone reads them from the live record.
 
 ## Why this directory exists
 
