@@ -309,8 +309,11 @@ node scripts/audio/postprocess.mjs run audio-masters/rain-2.wav --clip rain --ou
 node scripts/audio/postprocess.mjs run audio-masters/rain-2.wav --clip rain --fold --out /tmp/rain-folded.m4a
 
 # Just the numbers.
-node scripts/audio/postprocess.mjs measure assets/sounds/meditation-bell.wav
-node scripts/audio/postprocess.mjs seamcheck assets/sounds/breathing/rain.wav
+node scripts/audio/postprocess.mjs measure assets/sounds/meditation-bell.m4a
+# ⚠️ Point seamcheck at a MASTER. On an encoded file the head/tail half reads high
+# for a reason that is not in the audio (#1571) — it warns, but the number is still
+# not the one `run` gates on.
+node scripts/audio/postprocess.mjs seamcheck audio-masters/rain-2.wav
 
 # The set, not one clip: #1210's size acceptance check. Runs before the render too.
 node scripts/audio/postprocess.mjs budget
@@ -531,12 +534,57 @@ on. A single gain is exactly predictable, because scaling by G dB moves both
 integrated loudness and true peak by G, so the -3 dBTP ceiling is arithmetic
 rather than a limiter.
 
-☠️ **The seam gate's limits are calibrated, and one gap is a true negative.**
-`calibrate-seam.mjs` scores the shipped beds three ways — as they ship, hard-cut,
-and folded by the pipeline — and fails if the pipeline's own output does not
-clear the gate, if a tonal splice is not caught, or if equal-power folding stops
-beating the shipped linear fold. Run it after touching a threshold, a window
-length or the fold.
+☠️ **The seam gate measures the MASTER, not the finished `.m4a` (#1571).** AAC's
+MDCT has no wrap-around context at a file's two ends, so the decoded head and
+tail differ from the master at exactly the two windows the head/tail check
+samples. On synth white noise — periodic by circular filtering, so its seam is
+zero by construction — encoding moves the verdict from **0.98x to 19.93x**. This
+is the same rule the tiled listen already followed and the automated half did
+not. `seamcheck <file>` still measures whatever you point it at, and now says so
+when that is not a WAV.
+
+☠️☠️ **`energyDeltaRatio` is REPORTED, NOT GATED (#1571) — the gate is
+`wrapStepRatio` alone.** It blocked five of the nine beds on audio that was fine,
+and the cause was not a badly chosen threshold. A bed whose level legitimately
+wanders has head and tail levels that legitimately differ, and dividing by "how
+much this clip moves" cannot tell that apart from a jump at the wrap. Five
+denominators were measured against clean beds and beds carrying a deliberate level
+defect, and **every one puts a clean clip above a defective one**:
+
+| denominator                          | worst CLEAN | best DEFECT |
+| ------------------------------------ | ----------- | ----------- |
+| deviation from the clip's centre     | 4.45x       | 1.88x       |
+| median step between adjacent windows | 264.15x     | 1.96x       |
+| median step over random window pairs | 3.39x       | 1.46x       |
+| p95 step between adjacent windows    | 1.32x       | 0.59x       |
+| p90 step between adjacent windows    | 3.23x       | 0.67x       |
+
+Worse, the defect it exists for becomes **unmeasurable on the material it was
+aimed at**: a real 6 dB tail step on ambience that varies 6 dB every 250 ms scores
+0.59x, below every clean clip, because the material's own steps are bigger than
+the defect. So `run` prints the number and suggests a listen above 2.0x, and fails
+nothing on it. That is a real narrowing of the gate, and deliberate — a check that
+cannot separate its two populations is a coin toss, and #1137's answer to that
+case was always the 10x loop listen.
+
+☠️ **The gate is calibrated against material whose seam is KNOWN.**
+`calibrate-seam.mjs` no longer reads a shipped asset — it synthesises the
+`synth-noise.mjs` beds, which cannot have a seam, plus a 50 Hz tonal splice.
+Current separation on the surviving gate: clean ≤ **1.15x**, splice **9.48x**,
+limit **3.0x**. ⚠️ It also asserts the head/tail conclusion **in the negative**:
+if any of the five denominators ever _does_ separate, the script FAILS, so the
+finding is revisited rather than quietly outliving its evidence. It costs no
+credits and needs no asset on disk. ⚠️ It was dead from #1569 until #1571 — it
+still read the `assets/sounds/breathing/*.wav` placeholders that release had
+replaced with `.m4a`, so it threw on its first ffmpeg call.
+
+⚠️ **The wrap-step check is only sensitive against quiet material, and that is
+inherent.** It is an RMS first difference over ±5 ms, so one discontinuity is
+averaged against ~880 ordinary samples. A maximal splice in a 440 Hz tone scores
+1.30x and passes; the same splice at 50 Hz scores 9.48x. This is the documented
+stochastic true negative seen from the other side — a click is only detectable
+against material quieter than the click — and it is why the control is a low
+drone, as `night` was.
 
 ☠️ **A raw 30s render does NOT loop, and the failed pass's masters prove it.**
 `brown-noise` was the one bed of Round B whose every take cleared the level gate,
@@ -658,8 +706,12 @@ the artifact the listen exists to detect, and failing a bed for a defect the app
 would never play. #1138 established that no platform loops by buffer wrap anyway
 (iOS duplicates an `AVPlayerItem`, Android sets `REPEAT_MODE_ONE`, web sets
 `HTMLAudioElement.loop`), so what goes in front of an ear is the file's own seam,
-sample-exact and encoded once — the same join `seamMetrics` measures. Only beds
-are tiled: textures never loop (#1137) and bells are one-shots.
+sample-exact and encoded once. Only beds are tiled: textures never loop (#1137)
+and bells are one-shots. ⚠️ Since #1571 the ear and the ratio no longer see the
+identical join — the listen crosses the decoded file's boundary, the gate
+measures the master's — because the encoder's two end frames are an artifact of
+the encode and not a seam. The wrap-step half is what would catch an audible
+click there, and it is unchanged.
 
 ☠️ **Choices go in `choices.jsonl`, never in `manifest.jsonl`.** `planSlot`
 classifies any row without an `attempt` and a `dbtp` as a superseded take, so a

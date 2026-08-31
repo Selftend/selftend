@@ -95,8 +95,16 @@ describe("the fold hint is printed but never counted as a failure", () => {
     pre: { lufs: -29.5, dbtp: -8.6 },
     post: { lufs: -28.05, dbtp: -7.1 },
     size: 486_800,
-    // Over the head/tail limit, which is how a natively looping bed actually failed.
-    seam: { wrapStepRatio: 0.94, energyDeltaRatio: 2.05, headTailDb: 1.02, naturalDb: 0.5 },
+    // ☠️ Over the WRAP-STEP limit, not the head/tail one. #1571 demoted
+    // `energyDeltaRatio` from a limit to a printed hint — no denominator of it
+    // separates clean beds from defective ones — so a fixture that only exceeded
+    // the head/tail number would now produce ZERO failures and turn all three
+    // tests below vacuous. `wrapStepRatio` is the surviving gate, and a tonal
+    // splice is what pushes it over: 9.48x measured, against a 3.0 limit.
+    //
+    // The head/tail number is kept high on purpose too, so the "exactly one
+    // problem" assertion still proves the hint is not counted as a failure.
+    seam: { wrapStepRatio: 4.5, energyDeltaRatio: 3.4, headTailDb: 1.7, naturalDb: 0.5 },
     foldNote: folded ? "0.4s fold (seam-gate fallback)" : "rendered loop: true, no fold (#1347)",
     gain: 1.55,
     ceilingBound: false,
