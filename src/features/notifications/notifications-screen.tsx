@@ -297,7 +297,7 @@ export default function NotificationsScreen() {
                       key={`skeleton-${target.key}`}
                       className={cn(index > 0 && "border-t border-border")}
                     >
-                      <NotificationRowSkeleton targetKey={target.key} />
+                      <NotificationRowSkeleton target={target} />
                     </View>
                   ))}
             </View>

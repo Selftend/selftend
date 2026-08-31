@@ -183,9 +183,14 @@ export function NotificationTargetRow({
           )}
         >
           <Text
-            numberOfLines={1}
-            // A MINIMUM, not a width: the longest Bulgarian label is
-            // "Дневник на благодарността", which a fixed column overruns. Same shape as
+            // Two lines on phone, one beside the time. At 15px `NotoSans_600SemiBold` the
+            // longest Bulgarian label, "Дневник на благодарността", measures 212.8px against
+            // a body box of 158px at 320dp and 198px at 360dp - so on one line it ellipsized
+            // across the whole range #1231 declared supported, and 375dp cleared it by 0.2px
+            // (#1248). Wrapped it needs two lines, and its longest word is 120.2px, so it
+            // still does not break mid-word at 320.
+            numberOfLines={wide ? 1 : 2}
+            // A MINIMUM, not a width: that same label overruns a fixed column. Same shape as
             // home's tool row, which lists these same ten names.
             className={cn("text-[15px] font-semibold", wide && "min-w-[150px] shrink-0")}
           >
@@ -238,26 +243,51 @@ export function NotificationTargetRow({
  * One row's silhouette at its REAL height, for the moment before preferences land.
  *
  * It lives beside the row and shares its breakpoint deliberately: a skeleton that is the
- * wrong height is a layout jump dressed up as a loading state, and the desktop row is 64px
- * against the phone's 88px. The registry is static, so ten of these are known before any
- * query resolves - and a loading surface never claims emptiness.
+ * wrong height is a layout jump dressed up as a loading state (#981). The registry is
+ * static, so ten of these are known before any query resolves - and a loading surface never
+ * claims emptiness.
+ *
+ * That height used to be two constants, 64px wide against the phone's 88px. It cannot be,
+ * now that the name may take a second line (#1248): whether it does depends on the locale,
+ * the width and which target, so "Дневник на благодарността" at 360dp would have handed the
+ * skeleton a 20px lie. So the box is BUILT the way the row builds it - the same padding, the
+ * same gap, and the same name in the same type, rendered invisibly purely to take up its
+ * real height - and the two agree by construction instead of by a number kept in step.
  */
-export function NotificationRowSkeleton({ targetKey }: { targetKey: string }) {
+export function NotificationRowSkeleton({ target }: { target: NotificationTarget }) {
+  const { t } = useTranslation("notifications");
   const { width } = useWindowDimensions();
   const wide = width >= WIDE_ROW_WIDTH;
 
   return (
     <View
-      testID={`notification-row-skeleton-${targetKey}`}
+      testID={`notification-row-skeleton-${target.key}`}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      className={cn("flex-row items-center gap-[14px]", wide ? "h-16" : "h-[88px]")}
+      className="flex-row items-center gap-[14px] py-3.5"
     >
       {/* `bg-muted` measures 1.10:1 on a card and is therefore invisible (#725);
           `muted-foreground/25` is 1.41 light / 1.68 dark - faint on purpose, but there. */}
       <View className="size-5 rounded bg-muted-foreground/25" />
-      <View className={cn("min-w-0 flex-1", wide ? "flex-row items-center gap-3" : "gap-2")}>
-        <View className={cn("h-4 rounded bg-muted-foreground/25", wide ? "w-[150px]" : "w-1/3")} />
+      <View
+        testID={`notification-row-skeleton-body-${target.key}`}
+        className={cn("min-w-0 flex-1", wide ? "flex-row items-center gap-3" : "items-start gap-1")}
+      >
+        <View className={cn("justify-center", wide ? "shrink-0" : "self-stretch")}>
+          {/* The measuring stick. `opacity-0` keeps it out of sight while leaving it in the
+              layout, and the wrapper above hides it from assistive tech with the rest. */}
+          <Text
+            numberOfLines={wide ? 1 : 2}
+            className={cn("text-[15px] font-semibold opacity-0", wide && "min-w-[150px]")}
+          >
+            {t(target.labelKey)}
+          </Text>
+          <View className="absolute inset-0 justify-center">
+            <View
+              className={cn("h-4 rounded bg-muted-foreground/25", wide ? "w-[150px]" : "w-1/3")}
+            />
+          </View>
+        </View>
         <View className="h-9 w-16 rounded-md bg-muted-foreground/25" />
       </View>
       <View className="h-[1.15rem] w-8 rounded-full bg-muted-foreground/25" />
