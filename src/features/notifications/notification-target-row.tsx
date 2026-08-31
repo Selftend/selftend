@@ -29,6 +29,34 @@ import { cn } from "@/lib/utils";
  */
 const WIDE_ROW_WIDTH = 640;
 
+/*
+ * The row's frame, shared with `NotificationRowSkeleton` at the bottom of this file rather
+ * than copied into it. The skeleton's only job is to be this row's height, and two sets of
+ * the same literals is precisely how that promise rots - so they are one set, and the
+ * skeleton cannot drift without the row moving with it (#981, #1248).
+ */
+const ROW_PADDING_Y = "py-3.5";
+const ROW_FRAME = "flex-row items-center gap-[14px]";
+const NAME_TYPE = "text-[15px] font-semibold";
+
+/** Phone stacks the name over the time; desktop lays them side by side. */
+function rowBodyClassName(wide: boolean) {
+  return cn("min-w-0 flex-1", wide ? "flex-row items-center gap-3" : "items-start gap-1");
+}
+
+/**
+ * Two lines on phone, one where the name sits beside the time.
+ *
+ * At 15px `NotoSans_600SemiBold` the longest Bulgarian name, "Дневник на благодарността",
+ * measures 212.8px against a body box of 158px at 320dp and 198px at 360dp - so on one line
+ * it ellipsized across the whole range #1231 declared supported, and 375dp cleared it by
+ * 0.2px, which is not a margin (#1248). Wrapped it needs two lines, and its longest word is
+ * 120.2px, so it still does not break mid-word at 320.
+ */
+function nameLineCount(wide: boolean) {
+  return wide ? 1 : 2;
+}
+
 interface NotificationTargetRowProps {
   target: NotificationTarget;
   preferences: UserPreferences;
@@ -171,28 +199,16 @@ export function NotificationTargetRow({
       // 0.55 while the master is off - the row still renders its true `checked` state and its
       // real time. Rendering `checked && master` would show every switch off and contradict
       // the master's own sentence 20px above it.
-      className={cn("gap-1.5 py-3.5", !masterEnabled && "opacity-[0.55]")}
+      className={cn("gap-1.5", ROW_PADDING_Y, !masterEnabled && "opacity-[0.55]")}
     >
-      <View className="flex-row items-center gap-[14px]">
+      <View className={ROW_FRAME}>
         <Icon name={target.icon} className={cn("size-5 shrink-0", CHROME_MARK)} />
-        <View
-          testID={`notification-row-body-${target.key}`}
-          className={cn(
-            "min-w-0 flex-1",
-            wide ? "flex-row items-center gap-3" : "items-start gap-1",
-          )}
-        >
+        <View testID={`notification-row-body-${target.key}`} className={rowBodyClassName(wide)}>
           <Text
-            // Two lines on phone, one beside the time. At 15px `NotoSans_600SemiBold` the
-            // longest Bulgarian label, "Дневник на благодарността", measures 212.8px against
-            // a body box of 158px at 320dp and 198px at 360dp - so on one line it ellipsized
-            // across the whole range #1231 declared supported, and 375dp cleared it by 0.2px
-            // (#1248). Wrapped it needs two lines, and its longest word is 120.2px, so it
-            // still does not break mid-word at 320.
-            numberOfLines={wide ? 1 : 2}
-            // A MINIMUM, not a width: that same label overruns a fixed column. Same shape as
-            // home's tool row, which lists these same ten names.
-            className={cn("text-[15px] font-semibold", wide && "min-w-[150px] shrink-0")}
+            numberOfLines={nameLineCount(wide)}
+            // A MINIMUM, not a width: the longest Bulgarian name overruns a fixed column.
+            // Same shape as home's tool row, which lists these same ten names.
+            className={cn(NAME_TYPE, wide && "min-w-[150px] shrink-0")}
           >
             {label}
           </Text>
@@ -252,7 +268,11 @@ export function NotificationTargetRow({
  * the width and which target, so "Дневник на благодарността" at 360dp would have handed the
  * skeleton a 20px lie. So the box is BUILT the way the row builds it - the same padding, the
  * same gap, and the same name in the same type, rendered invisibly purely to take up its
- * real height - and the two agree by construction instead of by a number kept in step.
+ * real height - off the constants above, which the row uses too, so the two agree by
+ * construction rather than by a number somebody has to remember to keep in step.
+ *
+ * ☠️ Holding a real name means this subtree has to be hidden on EVERY platform, not just the
+ * two that read `accessibilityElementsHidden` - see the root below.
  */
 export function NotificationRowSkeleton({ target }: { target: NotificationTarget }) {
   const { t } = useTranslation("notifications");
@@ -262,23 +282,30 @@ export function NotificationRowSkeleton({ target }: { target: NotificationTarget
   return (
     <View
       testID={`notification-row-skeleton-${target.key}`}
+      // All three, the way `Icon` does it: the two React Native props cover iOS and Android,
+      // and `aria-hidden` covers web, where react-native-web implements NEITHER of them.
+      // That was harmless while this was ten empty boxes; it stopped being harmless the
+      // moment the box started holding a real name, because a name in the DOM is a name a
+      // screen reader reads - ten of them, over a surface that is still loading.
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      className="flex-row items-center gap-[14px] py-3.5"
+      aria-hidden
+      className={cn(ROW_FRAME, ROW_PADDING_Y)}
     >
       {/* `bg-muted` measures 1.10:1 on a card and is therefore invisible (#725);
           `muted-foreground/25` is 1.41 light / 1.68 dark - faint on purpose, but there. */}
       <View className="size-5 rounded bg-muted-foreground/25" />
       <View
         testID={`notification-row-skeleton-body-${target.key}`}
-        className={cn("min-w-0 flex-1", wide ? "flex-row items-center gap-3" : "items-start gap-1")}
+        className={rowBodyClassName(wide)}
       >
         <View className={cn("justify-center", wide ? "shrink-0" : "self-stretch")}>
-          {/* The measuring stick. `opacity-0` keeps it out of sight while leaving it in the
-              layout, and the wrapper above hides it from assistive tech with the rest. */}
+          {/* The measuring stick: the real name, in the row's own type, sized and wrapped
+              exactly as the row will wrap it. `opacity-0` takes it out of sight while leaving
+              it in the layout, which is the whole point - it is here for its height. */}
           <Text
-            numberOfLines={wide ? 1 : 2}
-            className={cn("text-[15px] font-semibold opacity-0", wide && "min-w-[150px]")}
+            numberOfLines={nameLineCount(wide)}
+            className={cn(NAME_TYPE, "opacity-0", wide && "min-w-[150px]")}
           >
             {t(target.labelKey)}
           </Text>
