@@ -96,7 +96,12 @@ describe("the fold hint is printed but never counted as a failure", () => {
     post: { lufs: -28.05, dbtp: -7.1 },
     size: 486_800,
     // Over the head/tail limit, which is how a natively looping bed actually failed.
-    seam: { wrapStepRatio: 0.94, energyDeltaRatio: 2.05, headTailDb: 1.02, naturalDb: 0.5 },
+    // ⚠️ The limit moved 2.0 -> 3.0 and `naturalDb` became `naturalStepDb` when
+    // #1571 made both halves of the ratio the same statistic. The numbers are a
+    // real drifting bed's shape: a 1.7 dB step at the wrap against a 0.5 dB step
+    // between neighbours. Keep it over the limit — a fixture that quietly starts
+    // passing turns all three tests below vacuous.
+    seam: { wrapStepRatio: 0.94, energyDeltaRatio: 3.4, headTailDb: 1.7, naturalStepDb: 0.5 },
     foldNote: folded ? "0.4s fold (seam-gate fallback)" : "rendered loop: true, no fold (#1347)",
     gain: 1.55,
     ceilingBound: false,

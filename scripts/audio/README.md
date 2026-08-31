@@ -309,8 +309,11 @@ node scripts/audio/postprocess.mjs run audio-masters/rain-2.wav --clip rain --ou
 node scripts/audio/postprocess.mjs run audio-masters/rain-2.wav --clip rain --fold --out /tmp/rain-folded.m4a
 
 # Just the numbers.
-node scripts/audio/postprocess.mjs measure assets/sounds/meditation-bell.wav
-node scripts/audio/postprocess.mjs seamcheck assets/sounds/breathing/rain.wav
+node scripts/audio/postprocess.mjs measure assets/sounds/meditation-bell.m4a
+# ⚠️ Point seamcheck at a MASTER. On an encoded file the head/tail half reads high
+# for a reason that is not in the audio (#1571) — it warns, but the number is still
+# not the one `run` gates on.
+node scripts/audio/postprocess.mjs seamcheck audio-masters/rain-2.wav
 
 # The set, not one clip: #1210's size acceptance check. Runs before the render too.
 node scripts/audio/postprocess.mjs budget
@@ -531,12 +534,33 @@ on. A single gain is exactly predictable, because scaling by G dB moves both
 integrated loudness and true peak by G, so the -3 dBTP ceiling is arithmetic
 rather than a limiter.
 
-☠️ **The seam gate's limits are calibrated, and one gap is a true negative.**
-`calibrate-seam.mjs` scores the shipped beds three ways — as they ship, hard-cut,
-and folded by the pipeline — and fails if the pipeline's own output does not
-clear the gate, if a tonal splice is not caught, or if equal-power folding stops
-beating the shipped linear fold. Run it after touching a threshold, a window
-length or the fold.
+☠️ **The seam gate measures the MASTER, not the finished `.m4a` (#1571).** AAC's
+MDCT has no wrap-around context at a file's two ends, so the decoded head and
+tail differ from the master at exactly the two windows the head/tail check
+samples. On synth white noise — periodic by circular filtering, so its seam is
+zero by construction — encoding moves the verdict from **0.98x to 19.93x**. This
+is the same rule the tiled listen already followed and the automated half did
+not. `seamcheck <file>` still measures whatever you point it at, and now says so
+when that is not a WAV.
+
+☠️ **Both halves of `energyDeltaRatio` must be the same statistic.** Until #1571
+the numerator was the difference between two windows and the denominator the
+median deviation of _one_ window from the clip's centre, which inflates the ratio
+~1.4x before any defect exists — and much further on material whose level wanders
+slowly. Brown noise scored **2.68x against a 2.0 limit with no seam in it**. The
+denominator is now the step between adjacent interior windows: the wrap joins two
+windows, so the null distribution is built from pairs too.
+
+☠️ **The limits are calibrated against material whose seam is KNOWN.**
+`calibrate-seam.mjs` no longer reads a shipped asset — it synthesises the three
+`synth-noise.mjs` beds, which cannot have a seam, and scores them clean, level-
+drifted, hard-cut and AAC-encoded. It fails if a provably seamless bed does not
+clear the gate, if a 3 dB drift is not caught, or if the two populations overlap.
+Current gap: clean ≤ **2.54x**, drift ≥ **3.24x**, limit **3.0x**. It costs no
+credits and needs no asset on disk, so run it after touching a threshold, a
+window length, the fold or `seamMetrics`. ⚠️ It was dead from #1569 until #1571 —
+it still read the `assets/sounds/breathing/*.wav` placeholders that release had
+replaced with `.m4a`, so it threw on its first ffmpeg call.
 
 ☠️ **A raw 30s render does NOT loop, and the failed pass's masters prove it.**
 `brown-noise` was the one bed of Round B whose every take cleared the level gate,
@@ -658,8 +682,12 @@ the artifact the listen exists to detect, and failing a bed for a defect the app
 would never play. #1138 established that no platform loops by buffer wrap anyway
 (iOS duplicates an `AVPlayerItem`, Android sets `REPEAT_MODE_ONE`, web sets
 `HTMLAudioElement.loop`), so what goes in front of an ear is the file's own seam,
-sample-exact and encoded once — the same join `seamMetrics` measures. Only beds
-are tiled: textures never loop (#1137) and bells are one-shots.
+sample-exact and encoded once. Only beds are tiled: textures never loop (#1137)
+and bells are one-shots. ⚠️ Since #1571 the ear and the ratio no longer see the
+identical join — the listen crosses the decoded file's boundary, the gate
+measures the master's — because the encoder's two end frames are an artifact of
+the encode and not a seam. The wrap-step half is what would catch an audible
+click there, and it is unchanged.
 
 ☠️ **Choices go in `choices.jsonl`, never in `manifest.jsonl`.** `planSlot`
 classifies any row without an `attempt` and a `dbtp` as a superseded take, so a
