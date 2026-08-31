@@ -41,6 +41,39 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
    */
   { locale: "en", pattern: /no pressure/i },
   { locale: "en", pattern: /create pressure/i },
+  /**
+   * ☠️ The mirror of the warning above, and it stayed open two rules longer. bg
+   * has caught the `без <noun>` construction since #963; en only ever had the
+   * `no <noun>` form - so **"without pressure" walked straight past this guard**
+   * while "без натиск" was caught. The same locale-blind spot the note above
+   * describes, pointing the other way.
+   *
+   * The string that proved it is the one #1342 rewrote: "…without pressure or
+   * punishment." was caught ONLY by `/punishment/i`. Trim it to "…without
+   * pressure." and the whole suite goes green on a live violation.
+   *
+   * Same shape as the bg pattern (one optional intervening word, so "without any
+   * pressure" is caught) and, like it, keyed on the NEGATION rather than the
+   * noun - bare "pressure" stays legal for the grounding content that teaches it.
+   *
+   * ☠️ `judgment`/`judgement` is DELIBERATELY not in this list, and must not be
+   * added. "Without judgment" is the vocabulary of the technique itself, not the
+   * product's voice - non-judgmental awareness is what body-scan and noticing
+   * practices ARE. Including it failed three live strings, all of them correct:
+   *   - `act:observingSelf.techniqueDescriptions.bodyAwareness` - "Notice
+   *     sensations as a witness - without judgment or the urge to change anything."
+   *   - `gratitude:onboarding.levels.level1Body` - "Simply report what happened
+   *     today without judgment."
+   *   - `meditation:practices.body-scan.instructions[3]` - "noticing sensation
+   *     without judgement."
+   * That is the #711 rule working as written: the framework may talk about
+   * missing, and it may teach non-judgement; only the product may not advertise
+   * its own restraint. Same reasoning that keeps bare "pressure" legal above.
+   */
+  {
+    locale: "en",
+    pattern: /\bwithout\s+(?:\S+\s+)?(pressure|punishment|penalty|shame)/i,
+  },
   { locale: "bg", pattern: /без\s+(?:\S+\s+)?(натиск|напрежени)/i },
   { locale: "bg", pattern: /създава\w*\s+натиск/i },
   { locale: "bg", pattern: /без срам/i },
@@ -58,20 +91,23 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
  * silently rewriting copy on surfaces whose wording is not this change's to
  * decide. Removing an entry is the fix; adding one needs a reason.
  *
- * - `cbt:recovery.maintenanceCommitmentsHint` - "Small practices you want to keep,
- *   without pressure or punishment." / "без натиск или наказание". Same shape as
- *   the four #763 rewrote, on a surface #805 did not cover. Tracked separately.
+ * **It is now EMPTY, and that is the finished state (#1342).** The last entry was
+ * `cbt:recovery.maintenanceCommitmentsHint` - "Small practices you want to keep,
+ * without pressure or punishment." / "без натиск или наказание" - the sixth
+ * instance, on the recovery-plan form that #805 did not cover. Its rewrite
+ * retired the entry in the same change, which is exactly what the stale-exemption
+ * test below exists to force.
  *
- * It is the ONLY remaining offender across all twenty namespaces in both locales.
+ * So every restraint pattern below now runs unexempted across all twenty
+ * namespaces in both locales. An empty allowlist makes that test vacuous by
+ * construction - there is nothing left to check - and that is the point: the
+ * scan it guards is the one doing the work now.
  *
  * Each entry names its **namespace** as well as its key. A key-only entry would
  * exempt the same dotted path in every other namespace too - a namespace blind
  * spot inside the guard built to remove one.
  */
-const ALLOWED: { locale: Locale; namespace: string; keyPattern: RegExp }[] = [
-  { locale: "en", namespace: "cbt", keyPattern: /^recovery\.maintenanceCommitmentsHint$/ },
-  { locale: "bg", namespace: "cbt", keyPattern: /^recovery\.maintenanceCommitmentsHint$/ },
-];
+const ALLOWED: { locale: Locale; namespace: string; keyPattern: RegExp }[] = [];
 
 function isAllowed(locale: Locale, namespace: string, key: string) {
   return ALLOWED.some(
