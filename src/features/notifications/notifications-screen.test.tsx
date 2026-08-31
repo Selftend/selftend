@@ -154,9 +154,9 @@ describe("NotificationsScreen", () => {
   });
 
   it.each([
-    [390, "h-[88px]"],
-    [1280, "h-16"],
-  ])("renders ten skeleton rows at the real %ipx row height while loading", (width, height) => {
+    [390, "items-start gap-1"],
+    [1280, "flex-row items-center gap-3"],
+  ])("renders ten skeleton rows in the real %ipx row box while loading", (width, layout) => {
     const spy = jest
       .spyOn(Dimensions, "get")
       .mockReturnValue({ width, height: 844, scale: 3, fontScale: 1 });
@@ -167,12 +167,18 @@ describe("NotificationsScreen", () => {
       for (const target of NOTIFICATION_TARGETS) {
         // `includeHiddenElements` because the skeletons are deliberately hidden from
         // assistive tech - ten empty rows are worth nothing to announce.
-        const skeleton = screen.getByTestId(`notification-row-skeleton-${target.key}`, {
+        const body = screen.getByTestId(`notification-row-skeleton-body-${target.key}`, {
           includeHiddenElements: true,
         });
-        // The REAL height for this width, so nothing jumps when the data lands: the desktop
-        // row is one line at 64px against the phone's stacked 88px.
-        expect(skeleton.props.className).toContain(height);
+        // The row's own box at this width rather than a copied pixel height: the name may
+        // now take a second line (#1248), so the height is content-derived, and each
+        // skeleton reserves ITS OWN target's name so nothing jumps when data lands (#981).
+        expect(body.props.className).toContain(layout);
+        expect(
+          screen.queryAllByText(i18n.t(`notifications:${target.labelKey}`), {
+            includeHiddenElements: true,
+          }),
+        ).toHaveLength(1);
       }
       // A loading surface claims nothing: no control is offered yet.
       expect(screen.queryByLabelText("Sleep")).toBeNull();
