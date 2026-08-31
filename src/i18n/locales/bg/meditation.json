@@ -208,7 +208,7 @@
     },
     "insights": {
       "title": "Размисъл",
-      "subtitle": "Последните {{count}} дни практика - без оценки.",
+      "subtitle": "Поглед назад към последните {{count}} дни практика.",
       "totalSessions": "Сесии",
       "totalMinutes": "Общо време",
       "sessionCount_one": "{{count}} седене",
