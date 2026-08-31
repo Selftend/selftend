@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -57,8 +57,14 @@ const NAME_LINE_COUNT = 2;
  * count can be tested against the REAL registry and the REAL bg bundles: the screen suite
  * stubs `widget-registry` with the id as the title key, so no shipped string reaches it and
  * a truncation assertion there could only interrogate its own fixture (#1592).
+ *
+ * It reads its own `t` rather than taking one, which is what `tool-row.tsx:74` and
+ * `notification-target-row.tsx` do. The screen still hands `t` down to `DragHandle` and
+ * `RemoveButton`, and that stays a screen-local convention: those two are private to it,
+ * this is not.
  */
-export function ArrangeRow({ id, t }: { id: string; t: TFunction }) {
+export function ArrangeRow({ id }: { id: string }) {
+  const { t } = useTranslation("navigation");
   const meta = metaForWidget(id);
   return (
     <View className="min-w-0 flex-1 flex-row items-center gap-3 py-1">

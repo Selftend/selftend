@@ -576,8 +576,13 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                 ) : (
                   <View>
                     {/* `Sortable.Grid columns={1}`, explicitly, never `Sortable.Flex`:
-                        Flex drops sub-pixel re-measures, so a row can end up one pixel off
-                        and never settle.
+                        Flex alone re-derives which items share a line, from measurements it
+                        rounds, so rows of near-identical height can group unpredictably.
+                        `arrange-screen.tsx` carries the full statement (#1592).
+
+                        ⚠️ NOT because "Flex drops sub-pixel re-measures", which is what
+                        this comment used to say: that 1px gate is in the SHARED
+                        `MeasurementsProvider` and Grid has it too.
 
                         ☠️ There is deliberately NO `sortEnabled={!reorderEmotions.isPending}`
                         here, though `arrange-screen` carries the equivalent and a reviewer

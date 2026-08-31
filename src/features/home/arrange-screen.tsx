@@ -408,7 +408,7 @@ export default function ArrangeScreen() {
                             t={t}
                           />
                         </Sortable.Handle>
-                        <ArrangeRow id={id} t={t} />
+                        <ArrangeRow id={id} />
                         <RemoveButton
                           id={id}
                           title={title}
@@ -437,7 +437,7 @@ export default function ArrangeScreen() {
                   const title = meta ? t(meta.titleKey) : id;
                   return (
                     <View key={id} className="flex-row items-center gap-2">
-                      <ArrangeRow id={id} t={t} />
+                      <ArrangeRow id={id} />
                       <RemoveButton
                         id={id}
                         title={title}
