@@ -489,6 +489,36 @@ describe("NotificationRowSkeleton - the row's real height", () => {
     });
   });
 
+  it("reserves the time control's real height, the one piece the row does not share", () => {
+    const spy = jest
+      .spyOn(Dimensions, "get")
+      .mockReturnValue({ width: 360, height: 844, scale: 3, fontScale: 1 });
+    try {
+      const target = getNotificationTarget("sleep");
+      renderWithProviders(
+        <NotificationTargetRow
+          target={target}
+          preferences={defaultUserPreferences}
+          userId="user-1"
+          masterEnabled
+          channel={channel("granted")}
+          locked={false}
+          onRequestChange={onRequestChange}
+        />,
+      );
+      // The real compact TimeField, by its own accessible name.
+      expect(screen.getByLabelText("Sleep reminder time").props.className).toContain("h-9");
+
+      renderWithProviders(<NotificationRowSkeleton target={target} />);
+      expect(
+        screen.getByTestId("notification-row-skeleton-time-sleep", { includeHiddenElements: true })
+          .props.className,
+      ).toContain("h-9");
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("no longer claims a fixed height, which a wrapping name would make a lie", () => {
     const { skeletonBody } = renderRowAndSkeleton(360, "sleep");
 

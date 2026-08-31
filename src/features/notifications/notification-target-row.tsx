@@ -315,7 +315,12 @@ export function NotificationRowSkeleton({ target }: { target: NotificationTarget
             />
           </View>
         </View>
-        <View className="h-9 w-16 rounded-md bg-muted-foreground/25" />
+        {/* `h-9` is `TimeField compact`'s own height. It is the last thing in this box the
+            row does not hand us directly, so a test pins it against the real control. */}
+        <View
+          testID={`notification-row-skeleton-time-${target.key}`}
+          className="h-9 w-16 rounded-md bg-muted-foreground/25"
+        />
       </View>
       <View className="h-[1.15rem] w-8 rounded-full bg-muted-foreground/25" />
     </View>
