@@ -217,6 +217,21 @@ describe("ArrangeScreen sections", () => {
     expect(screen.getByTestId("arrange-handle-mood-checkin")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Remove mood-checkin" })).toBeTruthy();
   });
+
+  /**
+   * The name may now run to two lines (#1592), which makes the row taller than the 36px
+   * controls beside it. Both stay `size-9` and the row stays `items-center`, so a taller
+   * row centres them rather than stretching or shrinking either hit target - the thing a
+   * wrapped name could plausibly have cost.
+   */
+  it("keeps the drag and remove hit targets at 36px, whatever the name's height", () => {
+    renderArrange(["mood-checkin"]);
+
+    expect(screen.getByTestId("arrange-handle-mood-checkin").props.className).toContain("size-9");
+    expect(screen.getByRole("button", { name: "Remove mood-checkin" }).props.className).toContain(
+      "size-9",
+    );
+  });
 });
 
 describe("ArrangeScreen reorder", () => {

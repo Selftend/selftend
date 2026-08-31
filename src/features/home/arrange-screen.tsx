@@ -13,9 +13,10 @@ import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { reorderMoveProps } from "@/src/lib/accessibility";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
-import { CHROME_MARK, CHROME_MUTED_TEXT } from "@/src/lib/theme/chrome";
+import { CHROME_MUTED_TEXT } from "@/src/lib/theme/chrome";
 import { useSession } from "@/src/providers/session-provider";
 import { WIDGET_META, metaForWidget, moduleTagFor } from "@/src/features/home/widget-registry";
+import { ArrangeRow } from "@/src/features/home/arrange-row";
 import { MODULE_TAG_KEYS } from "@/src/features/home/module-tag-copy";
 import { useWidgetTiers } from "@/src/features/home/widget-tiers";
 import {
@@ -39,30 +40,6 @@ type WidgetEditAction =
   | { type: "add"; widgetId: string }
   | { type: "remove"; widgetId: string; position: number }
   | { type: "reorder"; widgetIds: string[] };
-
-/**
- * One arranged row: glyph and name, and nothing else.
- *
- * There is no `Pressable` here - not a disabled one, not one wrapped in
- * `pointerEvents="none"`. Rows are inert on this screen, so the honest structure is a row
- * that was never interactive: no tab stop, no hover response, nothing announced as a
- * button that does not act. The two interactive children (handle, remove) are siblings.
- *
- * It also does not mount `ToolTierRow`: that would pull the whole stat-query fleet onto a
- * preferences screen to render numbers nobody is arranging. Arrange is about names and
- * order, so it renders names and order.
- */
-function ArrangeRow({ id, t }: { id: string; t: TFunction }) {
-  const meta = metaForWidget(id);
-  return (
-    <View className="min-w-0 flex-1 flex-row items-center gap-3 py-1">
-      <Icon name={meta?.icon ?? "widgets"} className={cn("size-5 shrink-0", CHROME_MARK)} />
-      <Text numberOfLines={1} className="min-w-0 flex-1 text-[15px] font-semibold">
-        {meta ? t(meta.titleKey) : id}
-      </Text>
-    </View>
-  );
-}
 
 /**
  * The drag handle, and the non-drag path with it.
@@ -392,8 +369,18 @@ export default function ArrangeScreen() {
               `Your tools`, named with home's own tier name. No heading when empty - a
               heading over nothing is a claim about a list that is not there.
 
-              `Sortable.Grid columns={1}`, never `Sortable.Flex`: Flex drops re-measures of
-              1px or less, which is exactly the delta between two rows of the same height.
+              `Sortable.Grid columns={1}`, never `Sortable.Flex`: Flex alone re-derives which
+              items share a line, and a wrap threshold it applies at 0.1px decides that from
+              measurements it also rounds - so two rows of near-identical height can land in
+              one group or two.
+
+              ⚠️ The 1px re-measure gate is NOT the difference: it lives in the shared
+              `MeasurementsProvider` and Grid carries it too. It is also far below what
+              matters here - `ArrangeRow`'s Bulgarian second line (#1592) is a ~20px delta.
+              Grid takes that in its stride: for a vertical grid the CROSS axis (height) is a
+              per-key record of measured heights, not one shared row pitch, so with
+              `columns={1}` each row is exactly as tall as its own item, and the drag strategy
+              walks those real offsets rather than assuming a uniform step.
             */}
             {toolIds.length > 0 ? (
               <View className="gap-2">
@@ -421,7 +408,7 @@ export default function ArrangeScreen() {
                             t={t}
                           />
                         </Sortable.Handle>
-                        <ArrangeRow id={id} t={t} />
+                        <ArrangeRow id={id} />
                         <RemoveButton
                           id={id}
                           title={title}
@@ -450,7 +437,7 @@ export default function ArrangeScreen() {
                   const title = meta ? t(meta.titleKey) : id;
                   return (
                     <View key={id} className="flex-row items-center gap-2">
-                      <ArrangeRow id={id} t={t} />
+                      <ArrangeRow id={id} />
                       <RemoveButton
                         id={id}
                         title={title}
