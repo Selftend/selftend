@@ -221,14 +221,15 @@
   },
   "feedback": {
     "title": "Send feedback",
-    "description": "Share a bug report, suggestion, or question. Your message is sent to our support team.",
+    "description": "Share a bug report, suggestion, question, or anything else. Your message is sent to our support team.",
     "crisisWarning": "Do not use this form for urgent crisis situations. If you need immediate help, use local emergency services or crisis resources.",
     "openCrisis": "Open crisis guidance",
     "categoryLabel": "Category",
     "category": {
       "bug": "Bug",
       "suggestion": "Suggestion",
-      "question": "Question"
+      "question": "Question",
+      "helped": "This helped"
     },
     "messageLabel": "Message",
     "messagePlaceholder": "Describe the issue or idea. Do not include private self-help entries or crisis details.",
