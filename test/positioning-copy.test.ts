@@ -164,11 +164,13 @@ const GUIDED_SELF_HELP: Rule[] = [
  *
  * `docs/positioning.md` § *Words to use* fixes the frame term as **cognitive
  * behavioural therapy**, spelled out on first use. Before #1627 the product
- * spelled its own defining word two ways in shipped English copy - nine British
- * against four American, including inside `cbt.json` twice over and with
- * "Behavioural activation" and "Behavioral activation" reachable in one session
- * from `mood.json` and `navigation.json`. British wins because the doc says so,
- * not because it was ahead on the count.
+ * spelled its own defining word two ways in shipped English copy - counting the
+ * `-al` adjective in i18n VALUES on `origin/dev`, ten British against five
+ * American, of which four were this sense and the fifth is the privacy one
+ * below. Both spellings shipped inside `cbt.json`, and "Behavioural activation"
+ * and "Behavioral activation" were reachable in one session from `mood.json` and
+ * `navigation.json`. British wins because the doc says so, not because it was
+ * ahead on the count.
  *
  * ☠️ **KEYED ON THE CBT-SENSE COMPOUND, NEVER ON BARE `behavioral`.** This is
  * the same trap as the AI block below, in a third costume. `behavioral` has a
