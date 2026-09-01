@@ -11,7 +11,7 @@
       {
         "title": "1. Who we are",
         "body": [
-          "Selftend is a free, open-source wellness and guided self-help application available on web, iOS, and Android.",
+          "Selftend is a free, open-source cognitive behavioural therapy (CBT) programme available on web, iOS, and Android.",
           "Data controller: Selftend (operated by Vasil Yoshev), contact: privacy@selftend.org.",
           "This policy applies to all users of the Selftend application regardless of platform."
         ]
@@ -159,7 +159,7 @@
   },
   "terms": {
     "pageTitle": "Terms of service",
-    "pageDescription": "Terms of service for Selftend, a free wellness and guided self-help product.",
+    "pageDescription": "Terms of service for Selftend, a free, private CBT programme.",
     "reviewBanner": "These terms require final legal review before public launch.",
     "sections": [
       {
@@ -180,7 +180,7 @@
       {
         "title": "3. Product scope and boundaries",
         "body": [
-          "Selftend is a wellness and guided self-help tool. It is not therapy, medical care, diagnosis, treatment, crisis intervention, or emergency support.",
+          "Selftend is a CBT programme you work through on your own. It is not therapy, medical care, diagnosis, treatment, crisis intervention, or emergency support.",
           "The app provides structured cognitive behavioral exercises for personal reflection. It does not replace professional mental health care.",
           "Do not use this app as your only support in a serious or urgent situation. For medical advice, diagnosis, or treatment, consult a qualified professional. For emergencies, contact local emergency services."
         ]
@@ -197,7 +197,7 @@
       {
         "title": "5. Acceptable use",
         "body": [
-          "Use the app for its intended purpose: personal wellness and guided self-help.",
+          "Use the app for its intended purpose: your own reflection and the CBT programme.",
           "Do not enter personally identifiable information about other people in your thought records without a legitimate reason.",
           "Do not attempt to access other users' data, reverse engineer the service, or exploit vulnerabilities.",
           "Do not use the app to generate content that is illegal, harmful, or violates others' rights."
@@ -388,7 +388,7 @@
       {
         "title": "Is Selftend therapy?",
         "body": [
-          "No. Selftend is guided self-help. It is not therapy, counseling, diagnosis, treatment, or a substitute for a licensed mental health professional. If you need clinical care, contact a qualified provider in your area."
+          "No. Selftend is a CBT programme you work through on your own, with no practitioner involved. It is not therapy, counseling, diagnosis, treatment, or a substitute for a licensed mental health professional. If you need clinical care, contact a qualified provider in your area."
         ]
       },
       {

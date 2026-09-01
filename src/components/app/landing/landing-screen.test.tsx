@@ -46,7 +46,7 @@ describe("LandingScreen", () => {
 
     expect(
       screen.getByText(
-        "Calm, guided self-help - CBT and ACT modules plus eight everyday tools. No ads, no subscriptions.",
+        "A free, private CBT programme - cognitive behavioural therapy - with ACT and eight everyday tools alongside it. No ads, no subscriptions.",
       ),
     ).toBeTruthy();
   });

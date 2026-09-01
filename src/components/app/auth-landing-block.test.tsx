@@ -44,12 +44,12 @@ afterEach(() => {
 });
 
 describe("AuthLandingBlock", () => {
-  it("shows the self-help disclaimer so the not-medical boundary is visible without an account", () => {
+  it("shows the boundary disclaimer so the not-medical boundary is visible without an account", () => {
     renderWithProviders(<AuthLandingBlock />);
 
     expect(
       screen.getByText(
-        "Selftend is for guided self-help when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders.",
+        "Selftend is a CBT programme for when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders.",
       ),
     ).toBeTruthy();
   });

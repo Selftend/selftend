@@ -63,11 +63,13 @@ The instrument that will fill it is designed and specified in [#1605](https://gi
 
 Theme 3 stays in the positioning because half the declared onboarding goals route to standalone tools; a positioning that never mentions them misdescribes the product a `sleep` or `habits` user actually arrives at.
 
-The live landing hero shows exactly how it fails. `src/i18n/locales/en/auth.json` currently reads:
+The landing hero shows exactly how it fails. Before [#1616](https://github.com/Selftend/selftend/issues/1616), `src/i18n/locales/en/auth.json` read:
 
 > _"Calm, guided self-help - CBT and ACT modules plus eight everyday tools. No ads, no subscriptions."_
 
 **That string fails not because it mentions the tools, but because it lists everything flat.** Supporting is not co-equal. The frame sentence lands first; the tools appear _afterwards_, as what is there on a day someone cannot face the programme.
+
+#1616 removed the banned compound and moved the frame sentence to the front. It did **not** clear this rule: ACT and the eight tools are still listed flat behind it, which is what [#1628](https://github.com/Selftend/selftend/issues/1628) is for.
 
 **No regex reaches this rule.** `test/positioning-copy.test.ts` is one-sided by design and cannot express "mentioned, but second". This paragraph is the enforcement. It is written down precisely so nobody builds a brittle gate for it, watches it fail on good copy, and deletes the guard along with it.
 
@@ -202,11 +204,11 @@ Four gates, split by what each can physically reach. **Nothing reaches the last 
 | Play listing text                                                                                                                        | [`store/play-listing.md`](../store/play-listing.md), carrying a `last verified` date                                 | Diff and review only. No remote verification exists.                                |
 | AlternativeTo, GitHub repo `description`/`homepage`/`topics`, the Reddit banner and sidebar, eight published video narrations            | This list, plus one line in `.github/pull_request_template.md`                                                       | **Human habit. Nothing stronger is available.**                                     |
 
-☠️ **The merge gate is deliberately seeded short.** It does **not** yet guard "guided self-help", the loudest decision here, because that phrase ships in 22 i18n strings plus the manifest today and the rule would fail on arrival. A 22-entry suppression list was rejected: a list that size silently becomes permanent. The rule joins the guard the day that copy is fixed. What is seeded instead are the rules with zero live violations — which are the highest-consequence ones, the claims a person writing marketing copy in good faith reaches for first.
+☠️ **The merge gate was seeded deliberately short, and "guided self-help" was its first growth ring.** That rule could not ship alongside the guard: the phrase was in 22 i18n strings plus the manifest and three prose docs, so it would have failed on arrival, and a 22-entry suppression list was rejected because a list that size silently becomes permanent. [#1616](https://github.com/Selftend/selftend/issues/1616) therefore fixed the copy and added the rule **in the same change**, with no exemptions — the only order that leaves the guard meaning what it says. What was seeded originally are the rules with zero live violations — the highest-consequence ones, the claims a person writing marketing copy in good faith reaches for first. The frame-spelling invariant ([#1627](https://github.com/Selftend/selftend/issues/1627)) is still outstanding.
 
-`CONTEXT.md` takes the **vocabulary** and only the vocabulary — what "CBT programme" means, and why "guided self-help" is banned. The position itself stays here.
+`CONTEXT.md` takes the **vocabulary** and only the vocabulary — what "CBT programme" means, and why the retired compound is banned. The position itself stays here.
 
-⚠️ **That entry is not written yet, deliberately.** `CONTEXT.md` line 3 still describes Selftend as "a free guided self-help app". Adding a "CBT programme" entry above it would leave one glossary contradicting itself in two places, so the term and the line are fixed together, in the change that clears map defect 1 — not before.
+☠️ **That entry cannot spell the banned compound out, because `CONTEXT.md` is inside the merge gate's scan.** #1616 wrote the entry and fixed line 3 in one change; the entry names the ban by pointing back here rather than by quoting it. This document is the only surface excluded from the scan, which is why the banned words themselves live in the table above and nowhere else in the repo's guarded set.
 
 ## The re-check
 

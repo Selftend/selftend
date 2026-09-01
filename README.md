@@ -4,13 +4,13 @@
   <img src="./assets/icon.png" alt="Selftend logo" width="200" height="200" />
 </div>
 
-**Free, open-source guided self-help for web, iOS, and Android.**
+**A free, open-source cognitive behavioural therapy (CBT) programme for web, iOS, and Android.**
 
-Selftend is being built around private guided self-help. The current working slice pairs two evidence-based modules - a Gillihan-based CBT toolkit (thought records, exposure, worry, anger, beliefs, recovery planning) and an ACT module - with a set of shared tools: mood tracker, journal, gratitude log, grounding, meditation and breathing, sleep, and habits. A DBT module is on the roadmap. It has no ads, subscriptions, or paywalls.
+Selftend is being built around a private CBT programme. The current working slice pairs two evidence-based modules - a Gillihan-based CBT toolkit (thought records, exposure, worry, anger, beliefs, recovery planning) and an ACT module - with a set of shared tools: mood tracker, journal, gratitude log, grounding, meditation and breathing, sleep, and habits. A DBT module is on the roadmap. It has no ads, subscriptions, or paywalls.
 
 Your entries are encrypted in the database at the field level; a leaked database backup exposes only ciphertext, not your content. See [.github/SECURITY.md](.github/SECURITY.md) for the full security posture.
 
-Selftend is guided self-help - not therapy, diagnosis, or crisis support. If things feel heavy, see [selftend.org/crisis](https://selftend.org/crisis).
+Selftend is a CBT programme you work through on your own - not therapy, diagnosis, or crisis support. If things feel heavy, see [selftend.org/crisis](https://selftend.org/crisis).
 
 ## Try it
 
