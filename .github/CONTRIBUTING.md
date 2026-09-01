@@ -81,7 +81,7 @@ Do not open public issues for vulnerabilities, private account data, private hea
 2. Branch from `dev` with a short descriptive name, such as `fix/cbt-empty-state` or `docs/contributing-map`.
 3. Keep each PR to one concern.
 4. Open the PR against `dev` (GitHub defaults the base to `main` — retarget it) and fill in the template honestly. Give it a Conventional Commit title (`feat:`, `fix:`, `docs:` …): PRs are squash-merged and the title becomes the commit release-please versions from.
-5. Update [.github/ROADMAP.md](ROADMAP.md) when the change affects product status, implementation progress, or next steps.
+5. Open or update a [GitHub issue](https://github.com/Selftend/selftend/issues) when the change affects product status or next steps. Task tracking lives in issues, not in the repo.
 6. Update docs in the same PR when setup, commands, deployment, env vars, safety boundaries, legal boundaries, or current blockers change.
 
 ## Local Checks

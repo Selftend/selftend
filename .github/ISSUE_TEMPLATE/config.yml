@@ -9,6 +9,6 @@ contact_links:
   - name: Translation in Weblate
     url: https://hosted.weblate.org/projects/selftend/
     about: Contribute translation updates through Weblate when possible.
-  - name: Roadmap
-    url: https://github.com/Selftend/selftend/blob/main/.github/ROADMAP.md
-    about: Check current priorities before proposing larger product scope.
+  - name: Current priorities
+    url: https://github.com/Selftend/selftend/issues
+    about: Check open issues before proposing larger product scope.

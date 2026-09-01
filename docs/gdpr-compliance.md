@@ -1,6 +1,6 @@
 # GDPR Compliance Posture
 
-This document records Selftend's compliance posture under the GDPR and equivalent frameworks. Lawful-basis, processor, and retention specifics live in [policies.md](policies.md); operational workflows for incidents, requests, and breach notification live in [operations-runbook.md](operations-runbook.md). Open compliance work is tracked in [.github/ROADMAP.md](../.github/ROADMAP.md).
+This document records Selftend's compliance posture under the GDPR and equivalent frameworks. Lawful-basis, processor, and retention specifics live in [policies.md](policies.md); operational workflows for incidents, requests, and breach notification live in [operations-runbook.md](operations-runbook.md). Open compliance work is tracked in [GitHub Issues](https://github.com/Selftend/selftend/issues), not in the repo.
 
 ## Principles (Article 5)
 
