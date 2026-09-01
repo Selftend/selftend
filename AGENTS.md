@@ -122,7 +122,7 @@ https://github.com/vasilyoshev/control-tower/blob/main/docs/architecture-rule.md
 ## Product discipline
 
 - Do not add task checklists to docs in `docs/`, `supabase/`, or anywhere else - task tracking lives outside the repo.
-- MVP should stay focused on guided self-help.
+- MVP should stay focused on self-help the person runs themselves - the CBT programme and the everyday tools around it, with no practitioner in the loop.
 - Community operations can start early outside the app, but community product features should not crowd out MVP utility.
 - Expansion beyond CBT is allowed, but the product should avoid becoming a vague "everything app."
 - Favor depth in a few useful tools over shallow breadth.

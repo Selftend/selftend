@@ -247,7 +247,7 @@ Reasons:
 - No automated decision-making, profiling, diagnosis, treatment recommendation, or therapist-replacement feature.
 - No systematic monitoring of public areas.
 - No advertising, behavioral analytics, social feed, or tracking pixels.
-- Processing is user-initiated, account-based, and scoped to guided self-help records and preferences.
+- Processing is user-initiated, account-based, and scoped to self-help records and preferences.
 - Sensitive content risk exists because users may enter wellness or mental-health reflections, but current processing is not intended to be large scale and is limited to storing and showing the user's own records.
 
 Revisit the DPIA decision before:

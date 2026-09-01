@@ -1,6 +1,6 @@
 # Shared Data And Privacy Model
 
-Selftend stores only what is needed for account-based guided self-help across devices. New modules must justify persisted fields before adding schema, export, deletion, notification, or settings behavior.
+Selftend stores only what is needed for account-based self-help across devices. New modules must justify persisted fields before adding schema, export, deletion, notification, or settings behavior.
 
 ## Data Classes
 

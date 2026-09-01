@@ -87,6 +87,58 @@ const USER_FACING: Scanned[] = [
 const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.startsWith("i18n/"));
 
 /**
+ * Docs that REPRODUCE something already published, and the one doc these rules
+ * come from. They are excluded from the prose corpus below — and the distinction
+ * matters, because this is a list of files that are not copy, never a list of
+ * violations that are tolerated.
+ *
+ * A record's job is to match the artefact it records, not the current
+ * positioning. Editing one does not change the artefact; it only makes the
+ * record lie about it.
+ *
+ *   - `positioning.md` is the document the rules come from, so it necessarily
+ *     quotes every banned phrasing in order to ban it. Same reason it is absent
+ *     from `ALL_SURFACES`.
+ *   - `app-store-review-information.md` is the reply ALREADY SENT to Apple for
+ *     build 6, and its own line 84 forbids syncing it until the build under
+ *     review carries the change.
+ *   - `app-store-recording-script.md` quotes the sign-in copy as it was when a
+ *     video was recorded. Correcting the quote would make the script describe a
+ *     recording that does not exist.
+ *   - `android-closed-testing.md` reproduces the LIVE Play short and full
+ *     descriptions verbatim, inside fenced blocks. It changes when the listing
+ *     changes — which is an owner action in App Store Connect and Play Console,
+ *     not a file edit. ☠️ #1644 listed only `store/play-listing.md` for that;
+ *     fixing one without the other silently desynchronises them.
+ *   - `campaign/scripts/` are the narrations of eight videos already on YouTube.
+ *     Changing a script does not change a video.
+ *   - `launch/` holds a published Reddit banner.
+ */
+const PUBLISHED_RECORDS = [
+  "docs/positioning.md",
+  "docs/app-store-review-information.md",
+  "docs/app-store-recording-script.md",
+  "docs/android-closed-testing.md",
+  "docs/campaign/scripts/",
+  "docs/launch/",
+];
+
+/**
+ * Contributor-facing prose: `AGENTS.md` and the docs tree, minus the records
+ * above. Only the `guided self-help` rules run over this — see their block for
+ * why that phrase, and only that phrase, can safely reach this far.
+ */
+const PROSE_DOCS: Scanned[] = [
+  "AGENTS.md",
+  ...fs
+    .readdirSync(path.join(ROOT, "docs"), { recursive: true, encoding: "utf8" })
+    .map((entry) => `docs/${entry.split(path.sep).join("/")}`)
+    .filter((file) => file.endsWith(".md"))
+    .filter((file) => !PUBLISHED_RECORDS.some((record) => file.startsWith(record)))
+    .sort(),
+].map(readFile);
+
+/**
  * The user-facing copy plus the three prose surfaces that also declare what
  * Selftend is. `README.md` and `CONTEXT.md` are the two files a stranger and an
  * agent session respectively read first; `docs/product-principles.md` is the
@@ -105,6 +157,11 @@ const ALL_SURFACES: Scanned[] = [
   readFile("docs/product-principles.md"),
 ];
 
+/** `ALL_SURFACES` plus the prose docs, deduplicated - `product-principles.md` is in both. */
+const WITH_PROSE_DOCS: Scanned[] = [...ALL_SURFACES, ...PROSE_DOCS].filter(
+  (entry, index, all) => all.findIndex((other) => other.id === entry.id) === index,
+);
+
 interface Rule {
   name: string;
   pattern: RegExp;
@@ -115,7 +172,7 @@ interface Rule {
    * `i18n` is narrower still - translated values only, no static files. The
    * house-style block explains why it has to exist.
    */
-  scope: "i18n" | "user-facing" | "all";
+  scope: "i18n" | "user-facing" | "all" | "prose";
   /**
    * A string this rule MUST match. ☠️ This is not decoration - see the Cyrillic
    * note on the test that runs it.
@@ -159,19 +216,19 @@ const GUIDED_SELF_HELP: Rule[] = [
   {
     name: "en: guided self-help",
     pattern: /\bguided\s+self[-\s]help\b/i,
-    scope: "all",
+    scope: "prose",
     probe: "Calm, guided self-help tools for personal reflection.",
   },
   {
     name: "bg: насочена самопомощ",
     pattern: /насочен\S*\s+самопомощ/i,
-    scope: "all",
+    scope: "prose",
     probe: "Спокойни инструменти за насочена самопомощ и лична рефлексия.",
   },
   {
     name: "bg: ръководена самопомощ",
     pattern: /ръководен\S*\s+самопомощ/i,
-    scope: "all",
+    scope: "prose",
     probe: "Не. Selftend е ръководена самопомощ.",
   },
 ];
@@ -592,6 +649,7 @@ const RULES: Rule[] = [
 
 function corpusFor(scope: Rule["scope"]) {
   if (scope === "i18n") return I18N_VALUES;
+  if (scope === "prose") return WITH_PROSE_DOCS;
   return scope === "user-facing" ? USER_FACING : ALL_SURFACES;
 }
 
@@ -618,6 +676,44 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
     // directory would make every ban below vacuously green.
     const namespaces = new Set(LOCALE_STRINGS.en.map((entry) => entry.namespace));
     expect(namespaces.size).toBeGreaterThanOrEqual(20);
+  });
+
+  /**
+   * The same positive control for the prose corpus (#1644), which is built by
+   * walking `docs/` rather than from a literal list. A renamed directory or a
+   * changed extension would return an empty array and make the guided-self-help
+   * ban vacuously green over exactly the surfaces it was widened to cover.
+   *
+   * The exclusions are asserted too, because they are the half that is easy to
+   * get wrong in the damaging direction: a record swept into the corpus turns
+   * the build red on a file nobody may edit, and the tempting fix is to weaken
+   * the rule.
+   */
+  it("walks the docs tree for prose, and holds the published records out of it", () => {
+    const ids = new Set(PROSE_DOCS.map((entry) => entry.id));
+
+    expect(PROSE_DOCS.length).toBeGreaterThanOrEqual(20);
+    expect(ids).toContain("AGENTS.md");
+    expect(ids).toContain("docs/naming.md");
+    expect(ids).toContain("docs/self-hosting.md");
+    // Nested, so the walk is genuinely recursive rather than one level deep.
+    expect(ids).toContain("docs/modules/tools.md");
+
+    for (const record of [
+      "docs/positioning.md",
+      "docs/app-store-review-information.md",
+      "docs/app-store-recording-script.md",
+      "docs/android-closed-testing.md",
+      "docs/campaign/scripts/cbt.md",
+    ]) {
+      expect({ record, scanned: ids.has(record) }).toEqual({ record, scanned: false });
+    }
+
+    // And each of those really does still contain the phrase - so the exclusion
+    // is load-bearing, not a leftover.
+    for (const record of ["docs/app-store-review-information.md", "docs/campaign/scripts/cbt.md"]) {
+      expect(readFile(record).text).toMatch(/guided self-help/i);
+    }
   });
 
   /**

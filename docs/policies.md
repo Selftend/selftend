@@ -109,7 +109,7 @@ Manual request deadlines and logging are documented in [operations-runbook.md](o
 
 The policy text maintains these boundaries:
 
-- Wellness and guided self-help, not therapy or diagnosis
+- Wellness and self-help, not therapy or diagnosis
 - Not emergency support
 - No claims to treat, cure, prevent, or monitor a condition
 - Account-required with data minimization

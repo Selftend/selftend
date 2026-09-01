@@ -100,7 +100,7 @@ Every real module must use the shared app foundation:
 
 Planned boundaries:
 
-- **CBT:** guided self-help strategies under the Gillihan CBT program, private history, recovery planning, pattern insights, and optional quiet reminders
+- **CBT:** self-help strategies under the Gillihan CBT program, private history, recovery planning, pattern insights, and optional quiet reminders
 - **Check-in:** check-ins only; do not mix in generic journaling
 - **Journaling:** private free-text reflection, separate from CBT and check-ins. Spec: [journaling.md](journaling.md)
 - **ACT:** focused exercises after a spec
