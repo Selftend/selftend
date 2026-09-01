@@ -6,7 +6,7 @@
 
 **A free, open-source cognitive behavioural therapy (CBT) programme for web, iOS, and Android.**
 
-Selftend is being built around a private CBT programme. The current working slice pairs two evidence-based modules - a Gillihan-based CBT toolkit (thought records, exposure, worry, anger, beliefs, recovery planning) and an ACT module - with a set of shared tools: mood tracker, journal, gratitude log, grounding, meditation and breathing, sleep, and habits. A DBT module is on the roadmap. It has no ads, subscriptions, or paywalls.
+Selftend is being built around a private CBT programme. The current working slice pairs two evidence-based modules - a Gillihan-based CBT toolkit (thought records, exposure, worry, anger, beliefs, recovery planning) and an ACT module - with a set of shared tools: mood tracker, journal, gratitude log, grounding, meditation and breathing, sleep, and habits. A DBT module adds an overview of that approach, not a set of exercises. It has no ads, subscriptions, or paywalls.
 
 Your entries are encrypted in the database at the field level; a leaked database backup exposes only ciphertext, not your content. See [.github/SECURITY.md](.github/SECURITY.md) for the full security posture.
 
