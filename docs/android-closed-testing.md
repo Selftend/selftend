@@ -204,7 +204,7 @@ The first manual upload requirement is now satisfied. Do not set `GOOGLE_PLAY_SE
 
 The app exists in Play Console under the confirmed public app name and package name, with the required content forms completed (privacy policy URL, data safety, health apps declaration, target audience and content, ads declaration, app access instructions for the account-required tester flow). The first production AAB was built with `npm run build:android:production` and uploaded manually.
 
-Remaining work is tracked in [.github/ROADMAP.md](../.github/ROADMAP.md) under P2: local Android verification including the permission check, store-listing copy and screenshots, the closed-testing track and tester list, release submission for Google review, and Play service account JSON setup so closed-testing builds can ship through the manual GitHub Actions release workflow or EAS Submit.
+That list of remaining work — store-listing copy and screenshots, the closed-testing track and tester list, release submission for Google review, and Play service account JSON setup — is now complete. The app is live on [Google Play](https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend), and `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is wired into [android-release.yml](../.github/workflows/android-release.yml), so builds ship through the release workflow. Anything still outstanding is tracked in [GitHub Issues](https://github.com/Selftend/selftend/issues), not in the repo.
 
 ## Closed-test acceptance checklist
 

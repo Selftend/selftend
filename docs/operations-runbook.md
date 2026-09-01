@@ -236,7 +236,7 @@ A personal data breach means a security incident that affects confidentiality, a
 4. If the breach is likely to risk individuals' rights and freedoms, notify the relevant supervisory authority without undue delay and no later than 72 hours after becoming aware of it.
 5. If the breach is likely to create high risk for affected users, notify those users directly unless effective measures make the risk unlikely to materialize.
 6. If Selftend receives a processor breach notice from Supabase, Cloudflare, Google, Expo, or another provider, assess whether Selftend must notify authorities or users.
-7. After closure, add prevention tasks to [.github/ROADMAP.md](../.github/ROADMAP.md) without exposing private incident details.
+7. After closure, open a [GitHub issue](https://github.com/Selftend/selftend/issues) for each prevention task, without exposing private incident details.
 
 ## DPIA Screening
 
@@ -349,4 +349,4 @@ Before broad public launch:
 
 - Final human/legal review of privacy policy, terms, crisis guidance, and the adults-only 18+ launch posture.
 - Confirm support, privacy, security, and deletion aliases are monitored.
-- Keep this runbook, [gdpr-compliance.md](gdpr-compliance.md), and [.github/ROADMAP.md](../.github/ROADMAP.md) in sync.
+- Keep this runbook and [gdpr-compliance.md](gdpr-compliance.md) in sync.
