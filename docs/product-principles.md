@@ -1,6 +1,6 @@
 # Product Principles
 
-Selftend is a free guided self-help product. It should make support more available without becoming a paid trap, ad funnel, engagement game, diagnosis engine, or therapist replacement.
+Selftend is a free cognitive behavioural therapy (CBT) programme, worked through on your own. It should make support more available without becoming a paid trap, ad funnel, engagement game, diagnosis engine, or therapist replacement.
 
 ## Principles
 

@@ -1,7 +1,7 @@
 {
   "name": "Selftend",
   "short_name": "Selftend",
-  "description": "Calm guided self-help and private reflection.",
+  "description": "A free, private CBT programme with calm everyday tools.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -12,19 +12,20 @@ import { LOCALE_STRINGS } from "@/test/locale-strings";
  * reason: a positioning decision that lives only in a closed issue is a
  * decision the next person with a good idea reverses without knowing.
  *
- * ☠️ **IT IS SEEDED DELIBERATELY SHORT, AND THAT IS NOT AN OVERSIGHT.** The
- * loudest positioning decision on the map - that "guided self-help" is unsayable,
- * because it is a clinical term meaning *with a practitioner* and Selftend has
- * none - is NOT guarded here yet. It ships in 22 i18n strings plus the PWA
- * manifest today, so the rule would fail on arrival, and #1606 rejected a
+ * ☠️ **IT WAS SEEDED DELIBERATELY SHORT, AND #1616 IS ITS FIRST GROWTH RING.**
+ * The loudest positioning decision on the map - that "guided self-help" is
+ * unsayable, because it is a clinical term meaning *with a practitioner* and
+ * Selftend has none - could not be guarded on arrival: it shipped in 22 i18n
+ * strings plus the PWA manifest and three prose docs, and #1606 rejected a
  * 22-entry suppression list on the grounds that a list that size silently
- * becomes permanent. Fixing that copy is a separate change (map defect 1); the
- * rule joins this file the day it lands, and so does the frame-spelling
- * invariant (map defect 12).
+ * becomes permanent. So the copy was fixed first and the rule joined this file
+ * in the SAME change, with no exemptions - the only order that leaves the guard
+ * meaning what it says. The frame-spelling invariant (map defect 12, #1627) is
+ * still to come.
  *
- * What IS seeded are the rules with zero live violations - which, as #1606 put
- * it, turn out to be the highest-consequence ones on the map: the claims a
- * person writing marketing copy in good faith reaches for first.
+ * What was seeded originally are the rules with zero live violations - which, as
+ * #1606 put it, turn out to be the highest-consequence ones on the map: the
+ * claims a person writing marketing copy in good faith reaches for first.
  *
  * ☠️ **ONE-SIDED ON PURPOSE (#1606 §9).** Every rule here is a ban. There is no
  * assertion that the hero *contains* "CBT", because that pins a string and fails
@@ -103,6 +104,59 @@ interface Rule {
    */
   probe: string;
 }
+
+/**
+ * The frame decision itself (#1604, swept by #1616), and the one banned phrase
+ * on this map that is unsafe rather than merely off-frame: "guided self-help" is
+ * a clinical term for self-help *with a practitioner*, and Selftend employs
+ * none. `AGENTS.md` already forbids therapist-replacement framing, so this is a
+ * claim the product cannot back rather than a weak pitch. `docs/positioning.md`
+ * § *Words never to use* bans it outright; the vocabulary that replaced it is
+ * "a CBT programme".
+ *
+ * ☠️ **SCOPE IS `all`, WHICH INCLUDES `CONTEXT.md`.** The glossary's own entry
+ * for "CBT programme" therefore CANNOT spell the banned compound out, and
+ * deliberately does not - it names the ban by pointing at `docs/positioning.md`,
+ * the one file excluded from this scan. If you are reading this because
+ * CONTEXT.md just went red, the fix is to refer to the ban rather than quote it.
+ * Adding an exemption instead is what the test at the bottom of this file exists
+ * to argue you out of.
+ *
+ * ☠️ **BULGARIAN SPELLS IT TWO WAYS, WHICH IS WHY THERE ARE TWO PATTERNS.**
+ * `насочена самопомощ` shipped in ten of the eleven bg strings and
+ * `ръководена самопомощ` in the FAQ answer alone, so a single find-and-replace
+ * misses one - as #1616 recorded after finding it the hard way.
+ *
+ * ⚠️ **BARE "self-help" IS LEGITIMATE AND MUST STAY LEGAL.** Only the
+ * adjective+noun compound is banned. Twenty live strings use the bare noun
+ * correctly - the GDPR clauses naming "self-help entries", the support form's
+ * warning not to email them, and `settings:modulesQuestion` en ("Would a
+ * self-help module be useful?"). A rule keyed on the noun alone fails all
+ * twenty, which is the same over-sweep failure the AI block below is shaped to
+ * avoid (#1606 §9). The test that pins them is at the bottom of this file.
+ *
+ * ☠️ No `\b` anywhere near Cyrillic - see the probe test below.
+ */
+const GUIDED_SELF_HELP: Rule[] = [
+  {
+    name: "en: guided self-help",
+    pattern: /\bguided\s+self[-\s]help\b/i,
+    scope: "all",
+    probe: "Calm, guided self-help tools for personal reflection.",
+  },
+  {
+    name: "bg: насочена самопомощ",
+    pattern: /насочен\S*\s+самопомощ/i,
+    scope: "all",
+    probe: "Спокойни инструменти за насочена самопомощ и лична рефлексия.",
+  },
+  {
+    name: "bg: ръководена самопомощ",
+    pattern: /ръководен\S*\s+самопомощ/i,
+    scope: "all",
+    probe: "Не. Selftend е ръководена самопомощ.",
+  },
+];
 
 /**
  * #1602 named a permanent boundary on the encryption claim, and it is the one
@@ -291,7 +345,12 @@ const STREAK_PROMOTION: Rule[] = [
   },
 ];
 
-const RULES: Rule[] = [...NEVER_SAYABLE_ENCRYPTION, ...AI_AFFIRMATIVE, ...STREAK_PROMOTION];
+const RULES: Rule[] = [
+  ...GUIDED_SELF_HELP,
+  ...NEVER_SAYABLE_ENCRYPTION,
+  ...AI_AFFIRMATIVE,
+  ...STREAK_PROMOTION,
+];
 
 function corpusFor(scope: Rule["scope"]) {
   return scope === "user-facing" ? USER_FACING : ALL_SURFACES;
@@ -382,6 +441,40 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
   });
 
   /**
+   * The mirror of the AI test above, and it exists for the same reason.
+   *
+   * ☠️ The compound is banned; the bare noun is not. #1616 swept 22 strings and
+   * deliberately left twenty alone, because "self-help" on its own is accurate
+   * and legally load-bearing where it appears: the GDPR clauses that name
+   * "private CBT thought records or other self-help entries", the support form's
+   * warning not to email them, and `settings:modulesQuestion` ("Would a
+   * self-help module be useful?"). Bulgarian mirrors all ten with bare
+   * `самопомощ`.
+   *
+   * So if someone later "simplifies" the rules above to `/self-help/i` or
+   * `/самопомощ/i`, this test names exactly what the simplification broke,
+   * instead of leaving twenty failures to be read as twenty bad strings.
+   */
+  it("leaves the bare self-help noun alone in both locales", () => {
+    const bare = USER_FACING.filter(({ text }) => /self-help|самопомощ/i.test(text));
+
+    // Ten per locale today. A floor rather than an equality, so rewording one
+    // string is not a test change - but high enough that an empty or moved
+    // corpus cannot make the loop below vacuous.
+    expect(bare.length).toBeGreaterThanOrEqual(18);
+
+    for (const rule of GUIDED_SELF_HELP) {
+      for (const entry of bare) {
+        expect({ rule: rule.name, id: entry.id, matched: rule.pattern.test(entry.text) }).toEqual({
+          rule: rule.name,
+          id: entry.id,
+          matched: false,
+        });
+      }
+    }
+  });
+
+  /**
    * There is no allowlist here, and adding one needs a very good reason.
    *
    * `restraint-copy` has an `ALLOWED` list that is now empty, and its docstring
@@ -390,8 +483,13 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
    * "guided self-help" strings for exactly that reason - a 22-entry list is one
    * nobody ever finishes, and it would have made this file a record of what
    * Selftend tolerates rather than what it has decided.
+   *
+   * ✅ That call was vindicated: #1616 fixed all 22 and the rule landed clean in
+   * the same change. The list would still be here, at 22 entries, had it been
+   * seeded. Every rule added after this one inherits the same bargain - fix the
+   * copy first, or do not add the rule.
    */
-  it("has no exemptions, because it was seeded only with rules that already pass", () => {
+  it("has no exemptions, because every rule was added only once its copy already passed", () => {
     for (const rule of RULES) {
       expect({
         rule: rule.name,
