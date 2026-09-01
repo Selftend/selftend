@@ -15,6 +15,16 @@ _Avoid_: wellness app, toolkit, mood tracker, journalling app — and above all 
 
 > Note: **programme** names this progression and the product frame — never a user's routine, which keeps its own `_Avoid_: program` below. A routine is user-named and user-owned, and has no authored order to graduate from; a programme is authored and staged.
 
+### Practice
+
+**Practice**:
+A person's repeated use of a Selftend skill in their life. Its success measure is the skill becoming automatic — never opens, sessions, or frequency. A user who needs Selftend less is a practice succeeding. (User copy may still call a meditation sit a "practice" — that is the ordinary word, not this term.)
+_Avoid_: engagement, usage, stickiness, habit loop
+
+**Return**:
+Came back at all within a window — the only sense in which Selftend counts retention ([#1598](https://github.com/Selftend/selftend/issues/1598)). Never duration, frequency, or depth. The product may deserve a return; it must not prescribe one.
+_Avoid_: retention-as-frequency, re-engagement, win-back, DAU/WAU
+
 ### Routines
 
 A routine is the "second-action bridge": it couples small in-app tool actions a user can do in one sitting, to help someone move past a single isolated action into a repeatable practice.

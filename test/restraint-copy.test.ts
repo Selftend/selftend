@@ -16,6 +16,16 @@ import { LOCALE_STRINGS, type Locale, type LocaleString } from "@/test/locale-st
  *
  * So this guard reads **every namespace in both locales**. A namespace-scoped
  * version of this test has now been wrong twice.
+ *
+ * ☠️ CONFIG SURFACES ARE DISCLOSURE; PRACTICE SURFACES ARE ADVERTISING
+ * (#1662). On a configuration screen, stating the default and what a control
+ * does answers a configuration question the user is standing in front of —
+ * the settings and notifications descriptions ("off by default", the
+ * routines steps note, `form.onDemandHelp`) are legal by that ruling. The
+ * same sentence on a practice surface is restraint advertising. Before
+ * adding a tempting pattern like `/no reminders/`, check which surface the
+ * hits live on; its sibling `practice-copy.test.ts` records the same
+ * exception.
  */
 const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
   { locale: "en", pattern: /no shame/i },

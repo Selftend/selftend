@@ -48,6 +48,15 @@ Growth should come from usefulness, trust, and clarity, not fear-of-loss tactics
 
 The MVP must not present itself as an AI therapist, counselor, or mental-health coach.
 
+### 12. Fulfilling, And Done
+
+Selftend wants people to return, and refuses to engineer the wanting. Every completion moment satisfies and ends; the skill becomes automatic, never the app — a user who needs Selftend less is a success.
+
+- **Trigger**: every nudge opt-in, off by default, traced to one explicit choice; nothing on any channel is triggered by non-use.
+- **Action**: remove steps toward the practice, never toward the account.
+- **Reward**: completion copy states the record and stops; nothing varies by date or visit; no levels, badges, or run-lengths.
+- **Investment**: what a user builds is theirs — user-authored commitments welcome, everything exportable, nothing that cannot leave.
+
 ## Audience Note
 
 The launch posture is adults-only: Selftend is for users aged 18 and older. Under-18 support needs legal review, child-safety review, and a parental-consent or age-assurance plan. Minors, user-generated content, or peer-to-peer communication require higher review before implementation.
