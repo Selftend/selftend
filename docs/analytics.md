@@ -22,9 +22,34 @@ Contributors must not add ad-hoc tracking without explicit review through the ro
 
 #### Phase 1 in use (2026-07)
 
-Two aggregate-only reports run through the shared runner `scripts/analytics-report.js`.
+Three aggregate-only reports run through the shared runner `scripts/analytics-report.js`.
 Pass `--local` to run against the local Docker stack; for the linked production
 project, set `SUPABASE_DB_URL` (from the dashboard) in the environment first.
+
+`test/integration/analytics-reports.integration.test.ts` executes all three
+against the local schema on every CI run, so a renamed column fails there rather
+than three months later when someone runs a report by hand.
+
+##### Everything is split by account type
+
+Every table in every report carries an `account` column: `registered` or
+`guest`. Guest accounts are `auth.users` rows with `is_anonymous = true`, minted
+one per tap of the landing CTA by `useStartAsGuest`, and only purged after 12
+months of dormancy. Without the split, the day anonymous sign-ins are switched
+on, "signups" quietly becomes "visitors who tapped a button" and every
+percentage in these reports collapses toward zero with nothing on screen to say
+why. The split landed while the toggle was still off, on purpose.
+
+Two things to know when reading it:
+
+- **Fixed-shape tables print both populations always**, zeros included — the two
+  account types, the four modules, the ten concern arms. Open-shape tables
+  (weeks, widget ids, feature names) print only what exists. Section 0 of each
+  report carries the axis unconditionally.
+- **The split reads current account state, not state at signup.** Signing up
+  from a guest session converts the same `auth.users` row in place, so a
+  converted guest reads as `registered` across their whole history. The `guest`
+  rows are unconverted guests only, and conversion itself is invisible here.
 
 `npm run analytics:engagement` runs `scripts/analytics-engagement.sql` (added
 2026-07-14). It covers: activation (first row in any user-content table, ever
@@ -42,6 +67,44 @@ completion), concern distribution, current Home widget selection, and home-tour
 engagement. The wizard can legitimately finish or skip with zero widgets; it never
 seeds hidden defaults. The two funnel columns are ordinary first-party preferences,
 included in `export_user_data()` and account deletion.
+
+`npm run analytics:segment` runs `scripts/analytics-segment.sql` (added
+2026-09-01). It cross-tabs W4 retention against the concern each person declared
+when they arrived, read from the immutable `user_preferences.initial_concerns`
+column — never from `selected_concerns`, which is last-write-wins and therefore
+flatters retained users by construction. It collects nothing new: every column it
+reads already exists.
+
+How to read it, in the order the report prints:
+
+- **Read orderings, never percentages, until the gate opens.** Section 2 is
+  ordered by retention rate for exactly that reason.
+- **The gate is 30 W4-retained users**, reusing the warrant-to-continue number
+  rather than inventing a second constant. Section 1 prints how far off it is.
+  That puts the segment question on the **2027-08-31** clock, not the
+  **2027-02-28** frame-review clock: the February read is informational only,
+  and the segment slot in [positioning.md](positioning.md) cannot be filled
+  there.
+- **The arms overlap; they are not a partition.** Concerns are multi-select, so
+  someone with three picks appears in three rows and the rows sum past 100%.
+  Section 3 prints that overlap so it stays visible. Alongside the six concern
+  keys there are `skipped` and `finished-with-none` (distinguishable only via
+  `app_onboarding_completed_via` — the empty array cannot tell them apart),
+  `zero-concerns-no-mode`, and `unknown` for rows predating the column. There is
+  no backfill, deliberately.
+- **Cells below k=5 print `<5`, and a percentage resting on one prints `-`.**
+  This is a false-precision control first: a printed "67%" that means two users
+  out of three is the number that gets believed.
+- **A flat reading is a finding, not a failure.** If every arm retains alike,
+  the concern axis is not the segment axis, and the next axes to look at are
+  module adoption, platform, and locale (EN/BG). That is decided in advance so
+  the standing interpretation cannot quietly become "not enough data yet",
+  permanently.
+
+Cadence: **quarterly by hand**, mandatory at both dates above, no third clock.
+Only the owner can run it (`SUPABASE_DB_URL` from the dashboard); there is no CI
+job and no schedule. The report is the instrument, not the judgement — the
+segment decision stays something a person makes while looking at it.
 
 When basic product questions arise ("how many users signed up this week?", "how many exercises were completed?"), use server-side SQL against existing tables:
 

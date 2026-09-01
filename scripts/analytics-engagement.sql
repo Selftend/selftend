@@ -12,13 +12,39 @@
 --                Core tools (mood, journal, sleep, habits, mindfulness) are
 --                always available, so only usage % is reported for them.
 --
+-- The W4 column of section 3 is the canonical retention definition that
+-- `scripts/analytics-segment.sql` (#1613) cohorts by concern. There is exactly
+-- one definition of retention; do not fork a second one.
+--
 -- Content tables are decrypt-on-read views over *_data base tables; we select
 -- only user_id/created_at (never encrypted), and closed-test row counts make
 -- any decrypt overhead irrelevant.
 --
 -- The runner pipes this file through a single psql session, so the temp views
 -- below live for the run and vanish afterwards.
+--
+-- ☠️ Every table below is split by account type (#1613); see the header of
+-- `scripts/analytics-onboarding.sql` for why, and for the one thing the split
+-- cannot show (guest -> registered conversion happens in place, so a converted
+-- guest reads as `registered` for their whole history).
 
+-- The block below is byte-identical in analytics-onboarding.sql and
+-- analytics-segment.sql; test/analytics-shared-sql.test.ts fails if they drift.
+-- >>> shared:accounts
+create temp view accounts as
+  select id as user_id,
+         created_at,
+         case when coalesce(is_anonymous, false) then 'guest' else 'registered' end as account
+  from auth.users;
+
+-- Both labels, so section 0 prints the guest population even while it is zero.
+create temp view account_labels(account) as values ('registered'), ('guest');
+-- <<< shared:accounts
+
+-- The block below is byte-identical in analytics-segment.sql;
+-- test/analytics-shared-sql.test.ts fails if they drift. A new content table
+-- must be added to both, or the segment report silently under-counts retention.
+-- >>> shared:content_events
 create temp view content_events as
   -- core tools (always available, not part of enabled_modules)
   select user_id, created_at, 'core' as module, 'mood' as feature from public.mood_logs
@@ -46,56 +72,73 @@ create temp view content_events as
   union all select user_id, created_at, 'act', 'observing_self' from public.act_observing_self_sessions
   union all select user_id, created_at, 'act', 'choice_point' from public.act_choice_points
   union all select user_id, created_at, 'act', 'committed_action' from public.act_committed_actions;
+-- <<< shared:content_events
 
 create temp view first_content as
-  select u.id, u.created_at as signup_at, min(c.created_at) as first_content_at
-  from auth.users u
-  left join content_events c on c.user_id = u.id
-  group by 1, 2;
+  select a.user_id as id, a.account, a.created_at as signup_at, min(c.created_at) as first_content_at
+  from accounts a
+  left join content_events c on c.user_id = a.user_id
+  group by 1, 2, 3;
+
+\echo
+\echo '=== 0) Population split (every table below carries this axis) ==='
+select l.account,
+       count(a.user_id) as users,
+       round(100.0 * count(a.user_id) / nullif((select count(*) from accounts), 0), 1) as pct
+from account_labels l
+left join accounts a on a.account = l.account
+group by 1 order by 2 desc, 1;
 
 \echo
 \echo '=== 1) Activation summary (72h metrics count only signups older than 72h) ==='
-select count(*) as signups,
-       count(first_content_at) as activated,
-       round(100.0 * count(first_content_at) / nullif(count(*), 0), 1) as activated_pct,
-       count(*) filter (where signup_at <= now() - interval '72 hours') as signups_72h_mature,
-       count(*) filter (where first_content_at <= signup_at + interval '72 hours'
-                          and signup_at <= now() - interval '72 hours') as activated_within_72h,
-       round(100.0 * count(*) filter (where first_content_at <= signup_at + interval '72 hours'
-                                        and signup_at <= now() - interval '72 hours')
-             / nullif(count(*) filter (where signup_at <= now() - interval '72 hours'), 0), 1)
+select l.account,
+       count(f.id) as signups,
+       count(f.first_content_at) as activated,
+       round(100.0 * count(f.first_content_at) / nullif(count(f.id), 0), 1) as activated_pct,
+       count(f.id) filter (where f.signup_at <= now() - interval '72 hours') as signups_72h_mature,
+       count(f.id) filter (where f.first_content_at <= f.signup_at + interval '72 hours'
+                             and f.signup_at <= now() - interval '72 hours') as activated_within_72h,
+       round(100.0 * count(f.id) filter (where f.first_content_at <= f.signup_at + interval '72 hours'
+                                           and f.signup_at <= now() - interval '72 hours')
+             / nullif(count(f.id) filter (where f.signup_at <= now() - interval '72 hours'), 0), 1)
          as activated_72h_pct
-from first_content;
+from account_labels l
+left join first_content f on f.account = l.account
+group by 1 order by 1;
 
 \echo
 \echo '=== 2) Activation by signup week, last 12 weeks ==='
-select date_trunc('week', signup_at)::date as week,
+select account,
+       date_trunc('week', signup_at)::date as week,
        count(*) as signups,
        count(first_content_at) as activated,
        round(100.0 * count(first_content_at) / count(*), 1) as activated_pct,
        count(*) filter (where first_content_at <= signup_at + interval '72 hours')
          as activated_within_72h
 from first_content
-group by 1 order by 1 desc limit 12;
+where signup_at >= date_trunc('week', now()) - interval '11 weeks'
+group by 1, 2 order by 2 desc, 1;
 
 \echo
 \echo '=== 3) Retention cohorts (week N = days 7N..7(N+1) after own signup; pct over mature users) ==='
 with flags as (
-  select date_trunc('week', u.created_at)::date as signup_week,
-         u.created_at as signup_at,
-         bool_or(c.created_at >= u.created_at + interval '7 days'
-             and c.created_at <  u.created_at + interval '14 days') as w1,
-         bool_or(c.created_at >= u.created_at + interval '14 days'
-             and c.created_at <  u.created_at + interval '21 days') as w2,
-         bool_or(c.created_at >= u.created_at + interval '21 days'
-             and c.created_at <  u.created_at + interval '28 days') as w3,
-         bool_or(c.created_at >= u.created_at + interval '28 days'
-             and c.created_at <  u.created_at + interval '35 days') as w4
-  from auth.users u
-  left join content_events c on c.user_id = u.id
-  group by u.id, 1, 2
+  select a.account,
+         date_trunc('week', a.created_at)::date as signup_week,
+         a.created_at as signup_at,
+         bool_or(c.created_at >= a.created_at + interval '7 days'
+             and c.created_at <  a.created_at + interval '14 days') as w1,
+         bool_or(c.created_at >= a.created_at + interval '14 days'
+             and c.created_at <  a.created_at + interval '21 days') as w2,
+         bool_or(c.created_at >= a.created_at + interval '21 days'
+             and c.created_at <  a.created_at + interval '28 days') as w3,
+         bool_or(c.created_at >= a.created_at + interval '28 days'
+             and c.created_at <  a.created_at + interval '35 days') as w4
+  from accounts a
+  left join content_events c on c.user_id = a.user_id
+  group by a.user_id, 1, 2, 3
 )
-select signup_week,
+select account,
+       signup_week,
        count(*) as cohort_size,
        round(100.0 * count(*) filter (where w1)
              / nullif(count(*) filter (where signup_at <= now() - interval '14 days'), 0), 1) as w1_pct,
@@ -106,33 +149,43 @@ select signup_week,
        round(100.0 * count(*) filter (where w4)
              / nullif(count(*) filter (where signup_at <= now() - interval '35 days'), 0), 1) as w4_pct
 from flags
-group by 1 order by 1 desc limit 12;
+where signup_week >= date_trunc('week', now())::date - interval '11 weeks'
+group by 1, 2 order by 2 desc, 1;
 
 \echo
-\echo '=== 4) Module adoption (enableable modules; pct of all users, distinct users only) ==='
-with totals as (select count(*)::numeric as all_users from auth.users),
+\echo '=== 4) Module adoption (enableable modules; pct of that account population, distinct users only) ==='
+with totals as (
+  select l.account, count(a.user_id)::numeric as all_users
+  from account_labels l
+  left join accounts a on a.account = l.account
+  group by 1
+),
 enabled as (
-  select m.module, count(distinct p.user_id) as enabled_users
+  select a.account, m.module, count(distinct p.user_id) as enabled_users
   from public.user_preferences p
+  join accounts a on a.user_id = p.user_id
   cross join lateral unnest(p.enabled_modules) as m(module)
   where m.module in ('cbt', 'meditation', 'gratitude', 'act')
-  group by 1
+  group by 1, 2
 ),
 used as (
-  select module, count(distinct user_id) as used_users
-  from content_events
-  where module in ('cbt', 'meditation', 'gratitude', 'act')
-  group by 1
+  select a.account, c.module, count(distinct c.user_id) as used_users
+  from content_events c
+  join accounts a on a.user_id = c.user_id
+  where c.module in ('cbt', 'meditation', 'gratitude', 'act')
+  group by 1, 2
 ),
 enabled_used as (
-  select m.module, count(distinct p.user_id) as enabled_used_users
+  select a.account, m.module, count(distinct p.user_id) as enabled_used_users
   from public.user_preferences p
+  join accounts a on a.user_id = p.user_id
   cross join lateral unnest(p.enabled_modules) as m(module)
   where exists (select 1 from content_events c
                 where c.user_id = p.user_id and c.module = m.module)
-  group by 1
+  group by 1, 2
 )
-select mods.module,
+select t.account,
+       mods.module,
        coalesce(e.enabled_users, 0) as enabled_users,
        round(100.0 * coalesce(e.enabled_users, 0) / nullif(t.all_users, 0), 1) as enabled_pct,
        coalesce(u.used_users, 0) as used_users,
@@ -141,17 +194,19 @@ select mods.module,
              / nullif(coalesce(e.enabled_users, 0), 0), 1) as enabled_never_used_pct
 from (values ('cbt'), ('meditation'), ('gratitude'), ('act')) as mods(module)
 cross join totals t
-left join enabled e on e.module = mods.module
-left join used u on u.module = mods.module
-left join enabled_used eu on eu.module = mods.module
-order by mods.module;
+left join enabled e on e.module = mods.module and e.account = t.account
+left join used u on u.module = mods.module and u.account = t.account
+left join enabled_used eu on eu.module = mods.module and eu.account = t.account
+order by t.account, mods.module;
 
 \echo
-\echo '=== 5) Core tool usage (always available; pct of all users) ==='
-select feature,
-       count(distinct user_id) as users,
-       round(100.0 * count(distinct user_id)
-             / nullif((select count(*) from auth.users), 0), 1) as users_pct
-from content_events
-where module = 'core'
-group by 1 order by 2 desc, 1;
+\echo '=== 5) Core tool usage (always available; pct of that account population) ==='
+select a.account,
+       c.feature,
+       count(distinct c.user_id) as users,
+       round(100.0 * count(distinct c.user_id)
+             / nullif((select count(*) from accounts x where x.account = a.account), 0), 1) as users_pct
+from content_events c
+join accounts a on a.user_id = c.user_id
+where c.module = 'core'
+group by 1, 2 order by 3 desc, 2, 1;
