@@ -48,7 +48,7 @@ Dunford's Step 1 assumes you already have enough happy customers to see a patter
 
 **A placeholder would silently harden into the answer. An empty dated slot is a visible obligation; a placeholder is an invisible decision.** If you are reading this and the slot is still empty, do not helpfully fill it in — fill it from the instrument, or leave it.
 
-The instrument that will fill it is designed and specified in [#1605](https://github.com/Selftend/selftend/issues/1605): a concern-cohorted retention cross-tab, run by hand, collecting nothing new. **It is gated on 30 W4-retained users** — the same threshold as the warrant to continue — so the segment becomes answerable on the **2027-08-31** clock, not the February one.
+The instrument that will fill it was specified in [#1605](https://github.com/Selftend/selftend/issues/1605) and built in [#1613](https://github.com/Selftend/selftend/issues/1613): a concern-cohorted retention cross-tab, run by hand, collecting nothing new. It is `scripts/analytics-segment.sql` (`npm run analytics:segment`), and how to read it is written down in [analytics.md](analytics.md). **It is gated on 30 W4-retained users** — the same threshold as the warrant to continue — so the segment becomes answerable on the **2027-08-31** clock, not the February one.
 
 ⚠️ **A _pond_ is not a _segment_.** A pond is a strategic aim — who you point at. A segment is an empirical finding — who turns out to love you. Bulgarian was declined as a pond on supply-side-only evidence and remains the strongest candidate for the segment. Naming a pond would not fill this slot.
 

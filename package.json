@@ -43,6 +43,7 @@
     "db:push:prod": "npm exec supabase -- db push --linked",
     "analytics:onboarding": "node scripts/analytics-report.js onboarding",
     "analytics:engagement": "node scripts/analytics-report.js engagement",
+    "analytics:segment": "node scripts/analytics-report.js segment",
     "prepare": "husky",
     "android": "expo run:android",
     "postinstall": "patch-package"
