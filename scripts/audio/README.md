@@ -433,15 +433,23 @@ audition's own `status` reporting a settled set with the voice half untouched
 (#1393), one subsystem further along. Both voices carry the suffix: an asymmetric
 scheme is how "the default voice" quietly becomes "the only voice".
 
-⚠️ **`budget` is not a CI gate, and #1210 is why.** #1138 asked for the ceiling to be
-enforced "in `npm run verify`", but #1210 routes `scripts/check-audio-budget.js` — the
-guard over the assets the app actually ships — to `/to-tickets` along with the
-extension swap and `.gitattributes`. Those are different artifacts at different
-times: this measures the finished set in `audio-masters/finished/` during the pass,
-while the render can still be acted on. Wiring it into `verify` today would also fail
-every build until the pass has run. Said out loud here rather than leaving a later
-session to assume a guard exists, the same way `manifest --check` says it is
-local-only.
+✅ **`budget` is still not a CI gate, but the ceiling now is** (#1607). #1138 asked for
+the ceiling to be enforced "in `npm run verify`", and `test/audio-shipped-assets.test.ts`
+now does it — over `assets/sounds/`, the bytes that actually ship. This command is the
+other half and stays local by design: it measures the finished set in
+`audio-masters/finished/` **during** the pass, while the render can still be acted on,
+and that directory is gitignored and per-worktree. Two artifacts at two different
+times, not one guard in two places.
+
+#1210's stated reason for deferring the CI half — that it "would fail every build until
+the pass has run" — expired when the pass ran. The guard landed green at 3.41 MiB of
+4.00, and `*.m4a` joined `.gitattributes` in the same change (#1608), so the extension
+swap's two loose ends are both closed.
+
+⚠️ **The ceiling is the least of what that test asserts, and that is deliberate.** An
+emptied `assets/sounds/` is comfortably under 4 MiB, so it also pins the file count
+against `SHIP_FILE_COUNT` and the filenames against `shipFileName` — a bed that quietly
+stops shipping only ever makes a byte ceiling _happier_.
 
 ⚠️ The predicted total is **payload only** — the `.m4a` container adds a few KB of
 `moov` per file, and #1138's figure was computed the same way. A prediction landing
