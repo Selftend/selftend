@@ -27,6 +27,17 @@ where app_onboarding_completed
 group by 1 order by 2 desc;
 
 -- 4a) Concern distribution (each user may pick several)
+--
+-- ☠️ This reads CURRENT concerns, not concerns at intake. `selected_concerns` is
+-- last-write-wins: `apply_widget_recommendations` overwrites it, and Home
+-- re-runs the wizard through the same RPC. Only a RETURNING user re-runs it, so
+-- reading this as "what people arrived wanting" is biased in the flattering
+-- direction by construction (#1612).
+--
+-- `user_preferences.initial_concerns` is the immutable intake record, written
+-- once at a first onboarding completion. Use it for anything cohorted by what
+-- someone declared on arrival — that is #1613's report. NULL there means the row
+-- predates the column and belongs in an explicit `unknown` arm, never in zero.
 select concern, count(*) as picks
 from public.user_preferences p, unnest(p.selected_concerns) as concern
 group by 1 order by 2 desc;
