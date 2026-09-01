@@ -51,8 +51,17 @@ Every one of these is recorded on [map #1597](https://github.com/Selftend/selfte
 | "no streak pressure"                                | Against the owner's 2026-07-24 decision that the absence of streaks is never a pitch. Now also banned by `test/positioning-copy.test.ts`, which cannot reach Play.                                                                                       |
 | "between the web and **Android app**"               | Omits iOS, live since 2026-08-19.                                                                                                                                                                                                                        |
 | "Selftend is for adults (18+)"                      | The same listing's content rating reads "Everyone", and Apple is told 13+ for the same build.                                                                                                                                                            |
-| "Routines and **home-screen widgets**"              | `src/features/widgets` is the in-app dashboard, not OS home-screen widgets.                                                                                                                                                                              |
+
+### ✅ Checked and NOT a contradiction: "Routines and home-screen widgets"
+
+This row used to sit in the table above, reading _"`src/features/widgets` is the in-app dashboard, not OS home-screen widgets."_ **That is wrong, and it was instructing the next editor to delete an accurate, load-bearing feature claim** ([#1623](https://github.com/Selftend/selftend/issues/1623)). It is recorded here rather than deleted so the same false lead is not rediscovered.
+
+Verified on `dev`, 2026-09-01: Selftend ships a **real Android home-screen widget**. `react-native-android-widget` is a production dependency (`package.json:102`), registered as an Expo config plugin (`app.config.ts:258`) which maps `src/features/widgets/widget-catalog.json` into a real Android AppWidget. The catalog declares **`SelftendCard`** — _"Show any Selftend home card on your launcher"_, reconfigurable, resizable 150×110dp to 400×320dp. `CONTEXT.md` names the Android launcher widget as a live surface.
+
+The name collision is what caused it: `src/features/widgets` holds **both** the 28 in-app dashboard cards **and** the launcher widget that renders any one of them. Both exist.
+
+⚠️ **The phrasing is fair for Play but is not portable.** There is exactly **one** OS widget, and it is **Android-only** — nothing in `app.config.ts` declares an iOS WidgetKit extension. Reused verbatim on the App Store listing, "home-screen widgets" would be inaccurate twice over.
 
 ## When the listing is rewritten
 
-Take the frame sentence and the approved supporting lines from [docs/positioning.md](../docs/positioning.md), fix the six rows above in the same pass, then update the verbatim block here **and the date at the top** in the same PR.
+Take the frame sentence and the approved supporting lines from [docs/positioning.md](../docs/positioning.md), fix the five rows above in the same pass, then update the verbatim block here **and the date at the top** in the same PR.

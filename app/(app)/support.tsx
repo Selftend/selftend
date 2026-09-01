@@ -23,7 +23,30 @@ import { ScreenHeader } from "@/src/components/app/screen-header";
 import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
-type FeedbackCategory = "bug" | "suggestion" | "question";
+/**
+ * ☠️ `helped` is the one that is not a support request (#1614, decided in #1605).
+ *
+ * #1598 named "this helped" as the unnumbered half of the yardstick — the half
+ * that speaks to the actual failure mode (the owner stopping) rather than to
+ * sizing a segment. Without a label for it, someone moved to say it had to file
+ * it as a bug, a suggestion, or a question.
+ *
+ * ⚠️ It is a DROPDOWN, never a prompt. Nobody is asked to praise anything; the
+ * label exists for a person who has already decided to write. Turning it into an
+ * invitation would be the retention nudge `AGENTS.md` forbids.
+ *
+ * The value travels to the edge function and into the Discord mirror as
+ * `**[helped]**`. `validateFeedbackInput` takes any sanitized string within its
+ * length limit, so there is no server-side allowlist to extend.
+ */
+type FeedbackCategory = "bug" | "suggestion" | "question" | "helped";
+
+const FEEDBACK_CATEGORIES: readonly FeedbackCategory[] = [
+  "bug",
+  "suggestion",
+  "question",
+  "helped",
+];
 
 // Mirrors the function-side gate (resolveReplyTo in _shared/feedback.ts):
 // simple on purpose - it gates a Reply-To header, not deliverability.
@@ -139,8 +162,12 @@ export default function SupportScreen() {
 
                 <View className="gap-2">
                   <Label>{t("feedback.categoryLabel")}</Label>
-                  <View className="flex-row gap-2">
-                    {(["bug", "suggestion", "question"] as FeedbackCategory[]).map((cat) => (
+                  {/* ⚠️ `flex-wrap` is load-bearing since #1614 took this row to
+                      four: "Bug · Suggestion · Question · This helped" does not
+                      fit one line at 360dp, and without wrapping the last button
+                      is clipped rather than moved. */}
+                  <View className="flex-row flex-wrap gap-2">
+                    {FEEDBACK_CATEGORIES.map((cat) => (
                       <Button
                         key={cat}
                         onPress={() => setFeedbackCategory(cat)}
