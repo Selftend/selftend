@@ -455,7 +455,7 @@
         "title": "How can I contact you, and what should I expect?",
         "body": [
           "Use support@selftend.org for product questions and bug reports, privacy@selftend.org for data requests, and security@selftend.org for security concerns.",
-          "Include the minimum needed to help: platform, browser or app version, steps to reproduce, expected and actual behavior. Please do not include the body of your thought records or other sensitive self-help content in email.",
+          "Include the minimum needed to help: platform, browser or app version, steps to reproduce, expected and actual behaviour. Please do not include the body of your thought records or other sensitive self-help content in email.",
           "We acknowledge support emails within a week during launch and complete valid GDPR/CCPA privacy requests within one month of receipt."
         ]
       }

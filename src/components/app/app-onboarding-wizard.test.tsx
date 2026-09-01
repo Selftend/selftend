@@ -103,7 +103,7 @@ it("defaults module structure to the guided programme", () => {
   renderWizard();
   fireEvent.press(screen.getByText("Continue"));
   fireEvent.press(screen.getByText("Continue"));
-  fireEvent.press(screen.getByText("CBT - work with thoughts and behavior"));
+  fireEvent.press(screen.getByText("CBT - work with thoughts and behaviour"));
   fireEvent.press(screen.getByText("Continue"));
 
   expect(
