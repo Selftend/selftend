@@ -430,7 +430,7 @@
       {
         "title": "Why is there no AI counselor?",
         "body": [
-          "Because we don't think a self-help app should pretend to be one. The MVP intentionally has no AI therapist, AI counselor, or AI coach. Any future AI features would need explicit safety review."
+          "Because we don't think a self-help app should pretend to be one. Selftend has no AI therapist, AI counselor, or AI coach, and nothing you write is used to train AI models."
         ]
       },
       {
