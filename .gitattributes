@@ -10,6 +10,7 @@
 *.ttf binary
 *.otf binary
 *.mp3 binary
+*.m4a binary
 *.wav binary
 *.jar binary
 *.keystore binary
