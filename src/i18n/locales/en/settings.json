@@ -64,7 +64,7 @@
     "modulesQuestion": "Would a self-help module be useful?",
     "modulesHint": "Choose CBT, ACT, both, or neither. This is a preference, not an assessment.",
     "modulesOptional": "Leave both unselected if you only want individual tools.",
-    "cbtChoice": "CBT - work with thoughts and behavior",
+    "cbtChoice": "CBT - work with thoughts and behaviour",
     "actChoice": "ACT - make room for feelings and act on values",
     "guidanceQuestion": "How much structure would you like?",
     "guidanceHint": "This choice applies to any modules you selected.",

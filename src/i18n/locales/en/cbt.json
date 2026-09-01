@@ -146,7 +146,7 @@
       "letter": "A",
       "title": "Act",
       "sub": "Behavioural",
-      "description": "Action precedes motivation. Schedule meaningful behavior, expose yourself gradually to what you avoid, and watch mood follow."
+      "description": "Action precedes motivation. Schedule meaningful behaviour, expose yourself gradually to what you avoid, and watch mood follow."
     },
     "be": {
       "letter": "B",
@@ -311,8 +311,8 @@
       "postSuds": "Post-exposure SUDS (0-100)",
       "postSudsHint": "How anxious you felt after.",
       "duration": "Duration (minutes)",
-      "safetyBehaviorsUsed": "I used safety behaviors",
-      "safetyBehaviorDescription": "Which safety behaviors?",
+      "safetyBehaviorsUsed": "I used safety behaviours",
+      "safetyBehaviorDescription": "Which safety behaviours?",
       "safetyBehaviorPlaceholder": "Example: Stayed near the exit, looked at my phone.",
       "notes": "Notes (optional)",
       "notesPlaceholder": "Anything worth remembering for next time.",
@@ -453,7 +453,7 @@
     "emptyDescription": "Try another date, or log an episode to start spotting patterns.",
     "new": "New entry",
     "newTitle": "New anger log",
-    "newDescription": "Walk through the cycle: trigger, interpretation, urge, behavior, consequence.",
+    "newDescription": "Walk through the cycle: trigger, interpretation, urge, behaviour, consequence.",
     "save": "Save entry",
     "saving": "Saving...",
     "saveError": "Unable to save the entry.",

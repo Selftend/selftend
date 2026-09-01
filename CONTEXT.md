@@ -44,7 +44,7 @@ An optional, single, user-chosen daily time at which the app nudges the user tow
 _Avoid_: notification, alarm, schedule
 
 **Anchor**:
-The everyday behavior a user is encouraged to attach a routine to ("right after my morning coffee"). It is coaching guidance offered when a routine is set up, not a stored property of the routine.
+The everyday behaviour a user is encouraged to attach a routine to ("right after my morning coffee"). It is coaching guidance offered when a routine is set up, not a stored property of the routine.
 _Avoid_: trigger, cue-field, hook
 
 **Day**:

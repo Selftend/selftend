@@ -21,7 +21,9 @@ import { LOCALE_STRINGS } from "@/test/locale-strings";
  * becomes permanent. So the copy was fixed first and the rule joined this file
  * in the SAME change, with no exemptions - the only order that leaves the guard
  * meaning what it says. The frame-spelling invariant (map defect 12, #1627) is
- * still to come.
+ * the second ring and landed the same way; the plain noun beneath it (#1638) is
+ * the third, and is the one nobody had promised - #1627 closed believing it was
+ * the last rule this file would need, and the copy disagreed the following day.
  *
  * What was seeded originally are the rules with zero live violations - which, as
  * #1606 put it, turn out to be the highest-consequence ones on the map: the
@@ -245,6 +247,55 @@ const FRAME_SPELLING: Rule[] = [
 ];
 
 /**
+ * The plain noun underneath the frame word - the third growth ring (#1638), and
+ * the one this file did not expect. `docs/positioning.md` called the ring above
+ * "the last one this document promised". That was true of what had been
+ * *promised*. It was not true of the copy.
+ *
+ * `FRAME_SPELLING` settled the ADJECTIVE. Counted on `dev` the day after, the
+ * ordinary noun beneath it was split wider than the adjective ever had been:
+ * **thirteen American strings (fourteen occurrences) against nine British**,
+ * across four namespaces. ☠️ One pair rendered on the SAME CARD - `cbt.json`
+ * `pillars.act.sub` is the kicker "Behavioural" and `pillars.act.description`
+ * directly beneath it read "Schedule meaningful behavior"; `PillarCard` draws
+ * both. That is #1627's lesson one level down: check what renders BESIDE the
+ * thing you are fixing.
+ *
+ * ✅ **THIS RULE NEEDS NO CARVE-OUT, AND THAT IS A PROPERTY OF THE WORD RATHER
+ * THAN A CLEVERNESS IN THE PATTERN.** The block above warns that a bare
+ * `/\bbehavioral\b/` would fail the privacy sense, and expected the same trap
+ * here. It does not arise: there is no word boundary between the `r` of
+ * `behavior` and the `al` of `behavioral`, so `\bbehaviors?\b` cannot match the
+ * adjective at all. "behavioral profiling tools", `mood.json`'s
+ * `behavioralActivation` key and the persisted `behavioral-activation` slug are
+ * excluded BY CONSTRUCTION - no lookahead, no exemption. The test below asserts
+ * exactly that, because it is the kind of claim that stays obvious right up
+ * until someone loosens a `\b` and it silently stops being true.
+ *
+ * ⚠️ **SCOPE IS `all`, AND THE SURFACE LIST IS THE REASON THAT IS SAFE.** The
+ * American noun is alive and CORRECT in the software sense throughout the repo -
+ * `AGENTS.md` ("assertions rewritten to match broken behavior"),
+ * `.github/CONTRIBUTING.md` ("backend behavior"), `docs/analytics.md`,
+ * `docs/deployment.md`, and the whole vendored `.github/CODE_OF_CONDUCT.md`
+ * ("Encouraged Behaviors"). None of those are in `ALL_SURFACES`, and none should
+ * be. ☠️ If the surface list ever grows to `docs/` or `.github/`, this is the
+ * rule that goes red first, and the answer is to narrow the surface - never to
+ * weaken the rule.
+ *
+ * ⚠️ **NO BULGARIAN HALF**, for the reason `FRAME_SPELLING` gives: Cyrillic has
+ * no British/American split. Verified for this noun specifically - zero matches
+ * for either form anywhere in `bg`.
+ */
+const PLAIN_NOUN_SPELLING: Rule[] = [
+  {
+    name: "en: behavior/behaviors (American)",
+    pattern: /\bbehaviors?\b/i,
+    scope: "all",
+    probe: "I used safety behaviors",
+  },
+];
+
+/**
  * #1602 named a permanent boundary on the encryption claim, and it is the one
  * place on this map where the wrong word is a lie rather than a weak pitch.
  *
@@ -434,6 +485,7 @@ const STREAK_PROMOTION: Rule[] = [
 const RULES: Rule[] = [
   ...GUIDED_SELF_HELP,
   ...FRAME_SPELLING,
+  ...PLAIN_NOUN_SPELLING,
   ...NEVER_SAYABLE_ENCRYPTION,
   ...AI_AFFIRMATIVE,
   ...STREAK_PROMOTION,
@@ -584,8 +636,66 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
     expect(privacySense.map((entry) => entry.id)).toHaveLength(1);
     expect(privacySense[0].text).toMatch(/behavioral profiling tools/i);
 
-    for (const rule of FRAME_SPELLING) {
+    // #1638 added a rule for the plain noun and claims the adjective is outside
+    // it by construction. That claim is checked against the LIVE string here,
+    // and against the two invisible survivors in the test below.
+    for (const rule of [...FRAME_SPELLING, ...PLAIN_NOUN_SPELLING]) {
       for (const entry of privacySense) {
+        expect({ rule: rule.name, id: entry.id, matched: rule.pattern.test(entry.text) }).toEqual({
+          rule: rule.name,
+          id: entry.id,
+          matched: false,
+        });
+      }
+    }
+  });
+
+  /**
+   * The fourth of these tests, and the only one that pins a claim about the
+   * PATTERN rather than about a string.
+   *
+   * `PLAIN_NOUN_SPELLING` bans the bare American noun with no exemption list,
+   * and is only safe to do so because `\b` cannot fall between the `r` of
+   * `behavior` and the `al` of `behavioral`. Three American spellings survive on
+   * that fact alone, and two of them are invisible to every corpus this file
+   * scans - `loadLocale` reads values, so the `behavioralActivation` KEY is not
+   * in `USER_FACING` at all, and `behavioral-activation` lives in Postgres.
+   *
+   * ☠️ The slug is the expensive one: it is written to
+   * `mood_logs.linked_strategy` and read back by `mood-detail-screen.tsx`, so a
+   * rule that reached it would invite a rename that orphans rows users have
+   * already saved. Asserting them as literals is the point - there is no corpus
+   * that would otherwise notice if the pattern were loosened to `/behaviors?/i`
+   * or `/\bbehavior/i`, both of which look harmless and match all three.
+   *
+   * The second half is the positive control the ban needs: a rule whose corpus
+   * contains no near-misses proves nothing, so this checks the British noun is
+   * genuinely present in shipped copy and genuinely unmatched.
+   */
+  it("leaves the American adjective, the i18n key and the persisted slug alone", () => {
+    const survivesOnPurpose = [
+      "behavioral profiling tools",
+      "behavioralActivation",
+      "behavioral-activation",
+    ];
+
+    const british = USER_FACING.filter(({ text }) => /\bbehaviours?\b/i.test(text));
+
+    // 22 en strings once #1638 swept its thirteen across. A floor rather than an
+    // equality, so rewording one string is not a test change - but high enough
+    // that an empty or moved corpus cannot make the loop below vacuous.
+    expect(british.length).toBeGreaterThanOrEqual(20);
+
+    for (const rule of PLAIN_NOUN_SPELLING) {
+      for (const kept of survivesOnPurpose) {
+        expect({ rule: rule.name, kept, matched: rule.pattern.test(kept) }).toEqual({
+          rule: rule.name,
+          kept,
+          matched: false,
+        });
+      }
+
+      for (const entry of british) {
         expect({ rule: rule.name, id: entry.id, matched: rule.pattern.test(entry.text) }).toEqual({
           rule: rule.name,
           id: entry.id,
