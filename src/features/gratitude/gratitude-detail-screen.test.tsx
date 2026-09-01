@@ -123,15 +123,15 @@ describe("GratitudeDetailScreen", () => {
     mockUseWindowDimensions.mockReturnValue({ width: 320, height: 800, scale: 2, fontScale: 1 });
     renderWithProviders(<GratitudeDetailScreen />);
 
-    expect(screen.getByLabelText("Favorite")).toBeTruthy();
-    expect(screen.queryByText("Favorite")).toBeNull();
+    expect(screen.getByLabelText("Favourite")).toBeTruthy();
+    expect(screen.queryByText("Favourite")).toBeNull();
   });
 
   it("keeps the labelled Favourite button at desktop width", () => {
     mockUseWindowDimensions.mockReturnValue({ width: 1280, height: 800, scale: 2, fontScale: 1 });
     renderWithProviders(<GratitudeDetailScreen />);
 
-    expect(screen.getByText("Favorite")).toBeTruthy();
+    expect(screen.getByText("Favourite")).toBeTruthy();
   });
 
   it("renders one numbered list without legacy prompt labels", () => {

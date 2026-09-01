@@ -87,7 +87,7 @@
     "customDaysLabel": "Days of the week",
     "customDaysHelp": "Pick at least one day.",
     "customDaysRequired": "Pick at least one day for a custom cadence.",
-    "colorLabel": "Color",
+    "colorLabel": "Colour",
     "colors": {
       "primary": "Purple",
       "be": "Pink",

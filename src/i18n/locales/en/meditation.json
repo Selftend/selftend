@@ -285,7 +285,7 @@
     "welcome": {
       "title": "The path to awakening",
       "subtitle": "Ten stages, four milestones - a practice, not a finish line.",
-      "body": "The training is organized as a sequence of ten distinct stages. The path is not linear: a single sit can move between stages, and a hard day can drop you back. That's normal.",
+      "body": "The training is organised as a sequence of ten distinct stages. The path is not linear: a single sit can move between stages, and a hard day can drop you back. That's normal.",
       "continue": "Begin"
     },
     "attention": {
@@ -394,7 +394,7 @@
     "s5": {
       "short": "Overcoming subtle dullness",
       "goal": "Overcome subtle dullness and increase the power of mindfulness.",
-      "obstacles": "Subtle dullness is hard to recognize, creates an illusion of stability, and is seductively pleasant.",
+      "obstacles": "Subtle dullness is hard to recognise, creates an illusion of stability, and is seductively pleasant.",
       "skills": "Vigilant introspective awareness to detect subtle dullness. The body-scanning technique refreshes mindfulness without sacrificing stability.",
       "mastery": "Mindfulness can be sustained or even increased through the course of each sit.",
       "prompts": {

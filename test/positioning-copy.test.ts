@@ -74,6 +74,19 @@ const USER_FACING: Scanned[] = [
 ];
 
 /**
+ * The i18n half of `USER_FACING`, on its own.
+ *
+ * ☠️ The house-style spelling rules (#1639) MUST run against this and not
+ * against `USER_FACING`, because the two static files in that list are full of
+ * CSS and manifest tokens that are correctly American and are not copy at all:
+ * `theme_color` and `background_color` in `manifest.webmanifest`,
+ * `prefers-color-scheme`, `theme-color` and `backgroundColor` in `index.html`.
+ * A `colour` rule at `user-facing` scope goes red on all five on the day it
+ * lands - the over-sweep failure that gets a guard deleted rather than fixed.
+ */
+const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.startsWith("i18n/"));
+
+/**
  * The user-facing copy plus the three prose surfaces that also declare what
  * Selftend is. `README.md` and `CONTEXT.md` are the two files a stranger and an
  * agent session respectively read first; `docs/product-principles.md` is the
@@ -98,8 +111,11 @@ interface Rule {
   /**
    * `user-facing` rules are NOT run over the prose docs. See the encryption
    * block for the one trap that makes this distinction load-bearing.
+   *
+   * `i18n` is narrower still - translated values only, no static files. The
+   * house-style block explains why it has to exist.
    */
-  scope: "user-facing" | "all";
+  scope: "i18n" | "user-facing" | "all";
   /**
    * A string this rule MUST match. ☠️ This is not decoration - see the Cyrillic
    * note on the test that runs it.
@@ -482,16 +498,100 @@ const STREAK_PROMOTION: Rule[] = [
   },
 ];
 
+/**
+ * The house style itself (#1639) - the fourth growth ring, and the one that
+ * stops the rule being about a single word.
+ *
+ * #1627 settled the frame ADJECTIVE and #1638 the plain NOUN, both appealing to
+ * a house style - *British spelling, and it is not a preference* - that was
+ * enforced for exactly one word. Recounted on `origin/dev` for this change,
+ * reading i18n VALUES only, **28 strings across 9 namespaces** still spelled a
+ * different word American. They were fixed in the same change that added these
+ * rules, inheriting the bargain #1616, #1627 and #1638 each kept: fix the copy
+ * first, or do not add the rule. There are no exemptions here either.
+ *
+ * ☠️ **SCOPED TO `i18n`, NOT `user-facing`, AND THAT IS LOAD-BEARING.** See
+ * `I18N_VALUES` - `colour` alone would fail five correct CSS and manifest
+ * tokens at the wider scope. The prose docs are excluded for a second reason:
+ * `README.md`, `CONTEXT.md` and the docs tree are contributor-facing technical
+ * writing where `color`, `program` and `license` are code identifiers.
+ *
+ * ☠️ **EVERY PATTERN IS BOUNDED ON BOTH SIDES, AND THE DRY RUN PROVES WHY.** A
+ * bare `/color/` rewrote the US state **Colorado** to "Colourado" in privacy §9
+ * while this change was being made. The same shape of bug is one character away
+ * for each of the others: `fulfill` must not reach the correct British
+ * "fulfilled" / "fulfilling"; `practic` must not reach the noun "practice",
+ * which is identical in both; `humor` is not banned at all because its only
+ * occurrence is "humorous", also identical in both. The test below pins all
+ * four as literals.
+ *
+ * ⚠️ **VALUES ONLY, SO THE ROUTE AND THE PLURAL KEYS SURVIVE ON PURPOSE.**
+ * `app/(app)/tools/gratitude-log/favorites.tsx` serves
+ * `/tools/gratitude-log/favorites`, and `hero.favorites_one` /
+ * `hero.favorites_other` are i18next plural keys whose suffixes are structural.
+ * Respelling either breaks bookmarks or pluralisation for a word no user reads.
+ * Same discipline that kept `behavioral-activation` intact in #1638.
+ *
+ * ⚠️ **NO BULGARIAN PATTERNS**, for the same reason as `FRAME_SPELLING`:
+ * Cyrillic has no British/American split. A census of `bg` values returns zero.
+ */
+const HOUSE_STYLE_SPELLING: Rule[] = [
+  {
+    name: "en: favorite (American)",
+    pattern: /\bfavorit(e|es|ed|ing)?\b/i,
+    scope: "i18n",
+    probe: "Added to favorites",
+  },
+  {
+    name: "en: color (American)",
+    pattern: /\bcolor(s|ed|ing|ful|less)?\b/i,
+    scope: "i18n",
+    probe: "Pick a color for this habit",
+  },
+  {
+    name: "en: organize (American)",
+    pattern: /\borganiz(e|es|ed|ing|ation|ations)\b/i,
+    scope: "i18n",
+    probe: "organized as a sequence of ten stages",
+  },
+  {
+    name: "en: practicing/practiced (American)",
+    pattern: /\bpractic(ing|ed)\b/i,
+    scope: "i18n",
+    probe: "a path for practicing psychological flexibility",
+  },
+  {
+    name: "en: recognize (American)",
+    pattern: /\brecogniz(e|es|ed|ing|able)\b/i,
+    scope: "i18n",
+    probe: "Subtle dullness is hard to recognize",
+  },
+  {
+    name: "en: fulfill (American)",
+    pattern: /\bfulfill\b/i,
+    scope: "i18n",
+    probe: "to fulfill a verified privacy request",
+  },
+  {
+    name: "en: fueled/fueling (American)",
+    pattern: /\bfuel(ed|ing)\b/i,
+    scope: "i18n",
+    probe: "The interpretation that fueled the anger",
+  },
+];
+
 const RULES: Rule[] = [
   ...GUIDED_SELF_HELP,
   ...FRAME_SPELLING,
   ...PLAIN_NOUN_SPELLING,
+  ...HOUSE_STYLE_SPELLING,
   ...NEVER_SAYABLE_ENCRYPTION,
   ...AI_AFFIRMATIVE,
   ...STREAK_PROMOTION,
 ];
 
 function corpusFor(scope: Rule["scope"]) {
+  if (scope === "i18n") return I18N_VALUES;
   return scope === "user-facing" ? USER_FACING : ALL_SURFACES;
 }
 
@@ -695,6 +795,71 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
         });
       }
 
+      for (const entry of british) {
+        expect({ rule: rule.name, id: entry.id, matched: rule.pattern.test(entry.text) }).toEqual({
+          rule: rule.name,
+          id: entry.id,
+          matched: false,
+        });
+      }
+    }
+  });
+
+  /**
+   * ☠️ The near-misses the house-style block must never reach, as literals.
+   *
+   * Every one of these is a real string that a plausible loosening of a pattern
+   * would match, and four of them are the difference between a guard and a
+   * liability:
+   *
+   *   - **Colorado** is in privacy §9's list of US state privacy laws. A bare
+   *     `/color/` rewrote it to "Colourado" during this change, on the dry run,
+   *     in a consent-bearing section. This is not hypothetical.
+   *   - **fulfilled / fulfilling** are CORRECT British spellings - the double l
+   *     returns in the inflected forms - so only the bare verb is banned.
+   *   - **practice** the noun is identical in both, and appears everywhere in a
+   *     meditation app. Only the `-ing` / `-ed` verb forms differ.
+   *   - **humorous** is identical in both, which is why there is no `humour`
+   *     rule at all even though a prefix census flagged it.
+   *
+   * The CSS and manifest tokens are the scope half of the same argument: they
+   * are not in `I18N_VALUES`, so the rules cannot see them, and asserting the
+   * patterns WOULD match them is what makes the scoping deliberate rather than
+   * lucky.
+   */
+  it("leaves correct British inflections, identical-in-both words and CSS tokens alone", () => {
+    const survivesOnPurpose = [
+      "Colorado (CPA)",
+      "We do not read your records except to fulfilled",
+      "fulfilling a legal obligation",
+      "Practice for ten minutes",
+      "the humorous side of life",
+    ];
+
+    for (const rule of HOUSE_STYLE_SPELLING) {
+      for (const kept of survivesOnPurpose) {
+        expect({ rule: rule.name, kept, matched: rule.pattern.test(kept) }).toEqual({
+          rule: rule.name,
+          kept,
+          matched: false,
+        });
+      }
+    }
+
+    // The scoping, asserted from both sides: these WOULD be caught, and the
+    // only thing keeping them safe is that they are not in the corpus.
+    const colour = HOUSE_STYLE_SPELLING.find((rule) => rule.name.startsWith("en: color"))!;
+    expect(colour.pattern.test("prefers-color-scheme")).toBe(true);
+    expect(I18N_VALUES.some(({ text }) => /prefers-color-scheme/.test(text))).toBe(false);
+    expect(USER_FACING.some(({ text }) => /prefers-color-scheme/.test(text))).toBe(true);
+
+    // Positive control: the British forms are genuinely present in shipped copy
+    // and genuinely unmatched, so the rules are not passing over an empty set.
+    const british = I18N_VALUES.filter(({ text }) =>
+      /\bfavourit|\bcolour|\borganis|\bpractis|\brecognis|\bfulfil\b/i.test(text),
+    );
+    expect(british.length).toBeGreaterThanOrEqual(25);
+    for (const rule of HOUSE_STYLE_SPELLING) {
       for (const entry of british) {
         expect({ rule: rule.name, id: entry.id, matched: rule.pattern.test(entry.text) }).toEqual({
           rule: rule.name,

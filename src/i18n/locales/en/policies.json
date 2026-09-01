@@ -70,7 +70,7 @@
       {
         "title": "7. International data transfers",
         "body": [
-          "Our data processors are based in the United States. For transfers of personal data from the European Economic Area (EEA), United Kingdom, or Switzerland, we rely on Standard Contractual Clauses (SCCs) as adopted by the European Commission, or the processor's participation in recognized data transfer frameworks.",
+          "Our data processors are based in the United States. For transfers of personal data from the European Economic Area (EEA), United Kingdom, or Switzerland, we rely on Standard Contractual Clauses (SCCs) as adopted by the European Commission, or the processor's participation in recognised data transfer frameworks.",
           "You can request a copy of the relevant transfer safeguards by contacting privacy@selftend.org."
         ]
       },
@@ -418,7 +418,7 @@
       {
         "title": "Who can see my records?",
         "body": [
-          "Your records are private to your account. Records are scoped to your account through Supabase Row-Level Security and HTTPS in transit. We do not read your records except to fulfill a verified privacy request, investigate a security incident, or satisfy a legal obligation."
+          "Your records are private to your account. Records are scoped to your account through Supabase Row-Level Security and HTTPS in transit. We do not read your records except to fulfil a verified privacy request, investigate a security incident, or satisfy a legal obligation."
         ]
       },
       {
