@@ -38,13 +38,3 @@ export function resolveConcernWidgetIds(selected: readonly string[]): string[] {
   }
   return ordered;
 }
-
-// Where the home "Start here" card sends the user, per (first-picked) concern.
-export const START_HERE_TARGETS: Record<ConcernKey, string> = {
-  "anxious-thoughts": "/modules/cbt/new",
-  "low-mood": "/modules/cbt",
-  "stress-overwhelm": "/modules/act/connection/drop-anchor",
-  sleep: "/tools/sleep",
-  habits: "/tools/habits",
-  reflection: "/tools/journal",
-};
