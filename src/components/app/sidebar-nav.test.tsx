@@ -53,7 +53,7 @@ describe("SidebarNav module rows", () => {
   it.each([
     ["CBT", "CBT module - Cognitive Behavioural Therapy"],
     ["ACT", "ACT module - Acceptance and Commitment Therapy"],
-    ["DBT", "DBT overview - Dialectical Behavior Therapy"],
+    ["DBT", "DBT overview - Dialectical Behaviour Therapy"],
   ])("renders %s as a bare label with no status chip beside it", (label, accessibilityLabel) => {
     renderWithProviders(<SidebarNav />);
 
@@ -65,7 +65,7 @@ describe("SidebarNav module rows", () => {
   it("announces DBT without a coming-soon suffix", () => {
     renderWithProviders(<SidebarNav />);
 
-    expect(screen.getByLabelText("DBT overview - Dialectical Behavior Therapy")).toBeTruthy();
+    expect(screen.getByLabelText("DBT overview - Dialectical Behaviour Therapy")).toBeTruthy();
     expect(screen.queryByLabelText(/coming soon/i)).toBeNull();
   });
 

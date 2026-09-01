@@ -34,7 +34,7 @@ describe("ModulesScreen", () => {
   // an empty string, which `/.+/` does not match - so a fourth node here means a
   // chip or a status line came back.
   it.each([
-    ["CBT", "Cognitive behavioral therapy"],
+    ["CBT", "Cognitive behavioural therapy"],
     ["ACT", "Acceptance & commitment"],
   ])("gives %s a name and a description, with no status beside them", (mark, name) => {
     renderWithProviders(<ModulesScreen />);
@@ -52,7 +52,7 @@ describe("ModulesScreen", () => {
   it("marks DBT as an overview rather than as something still coming", () => {
     renderWithProviders(<ModulesScreen />);
 
-    const texts = textsInTile("Dialectical behavior therapy");
+    const texts = textsInTile("Dialectical behaviour therapy");
 
     expect(texts).toHaveLength(4);
     expect(texts[0]).toBe("DBT");
@@ -70,9 +70,9 @@ describe("ModulesScreen", () => {
     renderWithProviders(<ModulesScreen />);
 
     for (const name of [
-      "Cognitive behavioral therapy",
+      "Cognitive behavioural therapy",
       "Acceptance & commitment",
-      "Dialectical behavior therapy",
+      "Dialectical behaviour therapy",
     ]) {
       expect(screen.getByLabelText(name)).toBeTruthy();
     }

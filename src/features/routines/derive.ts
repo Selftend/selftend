@@ -90,7 +90,7 @@ export interface RoutineToolRecords {
   /** HabitLog.loggedOn is already a local civil date key (YYYY-MM-DD). */
   habitLogs?: readonly { loggedOn: string }[];
   /**
-   * Behavioral activation (CBT Activities): only completion counts - an
+   * Behavioural activation (CBT Activities): only completion counts - an
    * activity can be created/scheduled days before it is done, so the planned day
    * would celebrate planning, not doing. `completedDayKey` is the captured civil
    * day it was DONE on, and is null until then (#330).
