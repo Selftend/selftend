@@ -131,3 +131,63 @@ describe("SupportScreen guest reply-to (#1447)", () => {
     });
   });
 });
+
+/**
+ * #1614: the form had three categories and none of them was "this helped".
+ *
+ * #1598 named that signal the unnumbered half of the yardstick, so someone
+ * moved to send it had to file it as a bug, a suggestion or a question — and it
+ * then counted as one in the only aggregate that exists.
+ *
+ * ⚠️ These tests pin the LABEL SET, not just the new member. A fourth button was
+ * the change; a row that silently drops back to three, or grows a fifth nobody
+ * decided on, is what the equality catches.
+ */
+describe("SupportScreen feedback categories (#1614)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUser = { id: "user-1", email: "person@example.com", is_anonymous: false };
+    appEnv.supportEmail = "support@selftend.org";
+    mockInvoke.mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue({
+      functions: { invoke: mockInvoke },
+    } as unknown as ReturnType<typeof requireSupabase>);
+  });
+
+  afterEach(() => {
+    appEnv.supportEmail = originalSupportEmail;
+  });
+
+  it("offers four categories, including one that is not a support request", () => {
+    renderWithProviders(<SupportScreen />);
+
+    for (const label of ["Bug", "Suggestion", "Question", "This helped"]) {
+      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    }
+  });
+
+  it("sends `helped` when that category is picked", async () => {
+    renderWithProviders(<SupportScreen />);
+    fireEvent.changeText(screen.getByLabelText("Message"), MESSAGE);
+
+    await act(async () => fireEvent.press(screen.getByRole("button", { name: "This helped" })));
+    await submit();
+
+    // The value, not the label, is what reaches the edge function and the
+    // Discord mirror - and `validateFeedbackInput` has no allowlist to extend.
+    expect(mockInvoke).toHaveBeenCalledWith("send-feedback", {
+      body: { category: "helped", message: MESSAGE },
+    });
+  });
+
+  it("still defaults to suggestion, so the new category is opt-in", async () => {
+    renderWithProviders(<SupportScreen />);
+    fireEvent.changeText(screen.getByLabelText("Message"), MESSAGE);
+
+    await submit();
+
+    expect(mockInvoke).toHaveBeenCalledWith("send-feedback", {
+      body: { category: "suggestion", message: MESSAGE },
+    });
+  });
+});
