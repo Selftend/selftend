@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
  * today, at fontScale 1.0, on a supported device. #1590's 236px box fitted unscaled and
  * only clipped from fontScale 1.11, so it argued from font scaling; this one does not have
  * to. Two of the 25 bg names overrun 192px - this one and "Поведенческо активиране" at
- * 202.2 - while the widest English name, "Behavioral activation", is 154.9 and clears it,
+ * 202.2 - while the widest English name, "Behavioural activation", is 164.5 and clears it,
  * so this is bg-only, as both predecessors were.
  *
  * The programme tier renders the same row without a handle, so its box is 236px: nothing

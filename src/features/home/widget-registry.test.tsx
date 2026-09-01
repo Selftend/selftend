@@ -93,7 +93,7 @@ function copyAt(bundle: unknown, keyPath: string): string | undefined {
  * A module acronym standing as its own word, in either script.
  *
  * ☠️ Case-sensitive and boundary-anchored, both deliberately. `Committed actions` and
- * `Behavioral activation` are shipped titles that contain the letters `act`, and a
+ * `Behavioural activation` are shipped titles that contain the letters `act`, and a
  * loose match would condemn them; conversely `Practice` contains `act` mid-word. The
  * boundaries are `\p{L}\p{N}` rather than `\b`, because `\b` is ASCII-only and would
  * mis-anchor around Cyrillic `КПТ`.

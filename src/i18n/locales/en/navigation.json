@@ -28,7 +28,7 @@
     "cbt": "CBT",
     "cbtA11y": "CBT module - Cognitive Behavioural Therapy",
     "actA11y": "ACT module - Acceptance and Commitment Therapy",
-    "dbtA11y": "DBT overview - Dialectical Behavior Therapy",
+    "dbtA11y": "DBT overview - Dialectical Behaviour Therapy",
     "modules": "Modules",
     "gratitudeLog": "Gratitude log",
     "sleep": "Sleep",
@@ -82,11 +82,11 @@
       "open": "Open"
     },
     "modules": {
-      "cbtName": "Cognitive behavioral therapy",
+      "cbtName": "Cognitive behavioural therapy",
       "cbtDescription": "The Think · Act · Be framework. Evidence-based strategies for anxiety, depression, anger, panic and worry.",
       "actName": "Acceptance & commitment",
       "actDescription": "Skills for handling difficult feelings and acting on what matters to you (Acceptance and Commitment Therapy).",
-      "dbtName": "Dialectical behavior therapy",
+      "dbtName": "Dialectical behaviour therapy",
       "dbtDescription": "Four skill groups - mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness. An overview of the approach."
     },
     "tools": {
@@ -303,7 +303,7 @@
         "shortcutCta": "New belief"
       },
       "cbtActivities": {
-        "title": "Behavioral activation",
+        "title": "Behavioural activation",
         "metaDesc": "Plan small, mood-lifting activities.",
         "shortcutCta": "Plan activity"
       },

@@ -171,6 +171,14 @@ Short form, where length is capped:
 
 > **A free, private CBT programme.**
 
+☠️ **The short form drops the tail, never the gloss — and "length is capped" means a cap that actually exists.** [#1628](https://github.com/Selftend/selftend/issues/1628) left `auth:landing.subtitle` reading _"A free, private CBT programme, with everyday tools for the days you cannot face it."_ — the frame sentence with the spell-out surgically removed — and justified it under this clause. [#1627](https://github.com/Selftend/selftend/issues/1627) overruled it on three counts, recorded here so the same shortcut is not re-derived:
+
+1. **There was no cap.** `AuthLandingBlock` renders the subtitle in a plain wrapping `<Text>` with no `numberOfLines`, no truncation and no width constraint. Nothing was capped; the clause did not apply.
+2. **It was not the short form anyway.** The sanctioned short form is the eight words above, full stop. That string kept the 62-character tail and dropped the 31-character gloss — a string with room for the tail has room for the gloss.
+3. **It is a genuine first use.** § _Words to use_ says spelled out **on first use**, and the auth landing is a different screen from the web hero — an app-shell visitor may never see `landingPage.heroSupport` at all. Bulgarian already spelled it out in both twins, so the deviation was English-only inconsistency.
+
+Both locales now carry the gloss. If length is ever genuinely capped somewhere, the answer is the short form above, not a third shape.
+
 ### Approved supporting lines
 
 - **On honesty (theme 1, lead with this):** "A thought record only works if you were honest in it. Yours is encrypted at rest, the key is held outside the database, the source is public, and no AI is reading it."
@@ -182,6 +190,8 @@ Short form, where length is capped:
 ### Words to use
 
 **Programme** · **cognitive behavioural therapy** (spelled out on first use, then CBT) · **private** · **encrypted at rest** · **non-profit** · **free**.
+
+**British spelling, and it is not a preference.** _behavioural_, not _behavioral_ — in the frame term, in "behavioural activation", and in the DBT sibling beside them. **Guarded by `verify`** ([#1627](https://github.com/Selftend/selftend/issues/1627)). The one legitimate American use is the privacy sense — "behavioral profiling tools" — which is a different word and stays.
 
 ### Words never to use
 
@@ -208,7 +218,17 @@ Four gates, split by what each can physically reach. **Nothing reaches the last 
 | Play listing text                                                                                                                        | [`store/play-listing.md`](../store/play-listing.md), carrying a `last verified` date                                 | Diff and review only. No remote verification exists.                                |
 | AlternativeTo, GitHub repo `description`/`homepage`/`topics`, the Reddit banner and sidebar, eight published video narrations            | This list, plus one line in `.github/pull_request_template.md`                                                       | **Human habit. Nothing stronger is available.**                                     |
 
-☠️ **The merge gate was seeded deliberately short, and "guided self-help" was its first growth ring.** That rule could not ship alongside the guard: the phrase was in 22 i18n strings plus the manifest and three prose docs, so it would have failed on arrival, and a 22-entry suppression list was rejected because a list that size silently becomes permanent. [#1616](https://github.com/Selftend/selftend/issues/1616) therefore fixed the copy and added the rule **in the same change**, with no exemptions — the only order that leaves the guard meaning what it says. What was seeded originally are the rules with zero live violations — the highest-consequence ones, the claims a person writing marketing copy in good faith reaches for first. The frame-spelling invariant ([#1627](https://github.com/Selftend/selftend/issues/1627)) is still outstanding.
+☠️ **The merge gate was seeded deliberately short, and "guided self-help" was its first growth ring.** That rule could not ship alongside the guard: the phrase was in 22 i18n strings plus the manifest and three prose docs, so it would have failed on arrival, and a 22-entry suppression list was rejected because a list that size silently becomes permanent. [#1616](https://github.com/Selftend/selftend/issues/1616) therefore fixed the copy and added the rule **in the same change**, with no exemptions — the only order that leaves the guard meaning what it says. What was seeded originally are the rules with zero live violations — the highest-consequence ones, the claims a person writing marketing copy in good faith reaches for first.
+
+✅ **The frame-spelling invariant ([#1627](https://github.com/Selftend/selftend/issues/1627)) is the second growth ring, and the last one this document promised.** The product spelled its own defining word two ways — ten British against five American in shipped English copy, four of those five being this sense and the fifth the privacy one below. Both spellings shipped inside `cbt.json`, and "Behavioural activation" and "Behavioral activation" were reachable in one session. British wins because § _Words to use_ says so. The four American strings were respelled and the rule landed in the same change, on the same bargain as the first: fix the copy, or do not add the rule.
+
+☠️ **It is keyed on the CBT-sense compound, never on bare `behavioral`, and that is not fussiness.** The word has a second legitimate sense here — `policies.json` privacy §3 promises no "behavioral profiling tools", and the same sense recurs as _nudges_ in `AGENTS.md`, _profiling_ and _analytics_ in `docs/analytics.md` and the operations runbook. A bare ban fails correct, consent-bearing copy on sight, which is the over-sweep failure that gets a guard deleted rather than fixed. A test beside the rule pins the privacy string so a later "simplification" names what it broke.
+
+⚠️ **Two American spellings survive on purpose, and both are invisible.** `mood.json`'s key is `behavioralActivation` above a British value, and `behavioral-activation` is a **persisted database value** in `mood_logs.linked_strategy` — renaming it orphans rows users have already saved. The guard reads values and never keys, so it cannot see either.
+
+⚠️ **DBT came along, and it is a rider rather than a positioning claim.** Nothing here mandates how _dialectical behaviour therapy_ is spelled. It was respelled and guarded because the two render side by side — the sidebar puts "CBT module - Cognitive Behavioural Therapy" two lines above the DBT label, and the Modules screen lists all three names in one column. Fixing the frame word while leaving its neighbour American moves the carelessness one row down instead of removing it.
+
+**With this, every rule the four-gate table can physically reach is in place.** What remains unreachable is unchanged, and the ordering constraint on theme 3 above is still prose for the reason stated there.
 
 `CONTEXT.md` takes the **vocabulary** and only the vocabulary — what "CBT programme" means, and why the retired compound is banned. The position itself stays here.
 

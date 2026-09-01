@@ -159,6 +159,92 @@ const GUIDED_SELF_HELP: Rule[] = [
 ];
 
 /**
+ * The frame-spelling invariant (#1627) - the second growth ring, and the last
+ * gate `docs/positioning.md` promised.
+ *
+ * `docs/positioning.md` § *Words to use* fixes the frame term as **cognitive
+ * behavioural therapy**, spelled out on first use. Before #1627 the product
+ * spelled its own defining word two ways in shipped English copy - counting the
+ * `-al` adjective in i18n VALUES on `origin/dev`, ten British against five
+ * American, of which four were this sense and the fifth is the privacy one
+ * below. Both spellings shipped inside `cbt.json`, and "Behavioural activation"
+ * and "Behavioral activation" were reachable in one session from `mood.json` and
+ * `navigation.json`. British wins because the doc says so, not because it was
+ * ahead on the count.
+ *
+ * ☠️ **KEYED ON THE CBT-SENSE COMPOUND, NEVER ON BARE `behavioral`.** This is
+ * the same trap as the AI block below, in a third costume. `behavioral` has a
+ * second, entirely legitimate sense in this repo - the privacy one - and a bare
+ * `/\bbehavioral\b/i` fails live, CORRECT copy on sight:
+ *
+ *   - `policies:*` en - "…analytics tracking services, behavioral profiling
+ *     tools, or social media pixels." (privacy §3, a consent-bearing section)
+ *   - `AGENTS.md` - "behavioral nudges", twice, in the review guardrails
+ *   - `docs/analytics.md` - "heavy behavioral profiling", "User-level
+ *     behavioral profiling"
+ *   - `docs/operations-runbook.md` - "No advertising, behavioral analytics…"
+ *
+ * Only the first is scanned today, but the sense recurs with a different noun
+ * each time - profiling, nudges, analytics, tracking - so a lookahead exemption
+ * for `profiling` alone would go red the first time someone writes the next one.
+ * The compound is the discriminator; the adjective is not. #1606 §9 again: over-
+ * sweeping is the more damaging failure, because a guard that fails on correct
+ * copy gets deleted rather than fixed. The test below pins the privacy sense.
+ *
+ * ☠️ **THE DBT RULE IS A RIDER, AND IT IS WORTH KNOWING HOW MUCH AUTHORITY IT
+ * CARRIES.** Positioning mandates the spelling of the frame word and says
+ * nothing about DBT. It is guarded anyway because the two render *side by side*
+ * - `navigation.json` sidebar has "CBT module - Cognitive Behavioural Therapy"
+ * two lines above the DBT label, and the Modules screen lists all three names in
+ * one column. A British frame word directly above an American sibling is the
+ * exact carelessness this invariant exists to remove, one row down. So: the CBT
+ * halves are positioning, the DBT half is the consistency that keeps them
+ * credible. #1627 respelled DBT for that reason and this rule holds it.
+ *
+ * ⚠️ **NO BULGARIAN PATTERNS, DELIBERATELY** - unlike all three blocks around
+ * it. Cyrillic has no British/American split: bg spells the frame word
+ * `когнитивно-поведенческа терапия` and there is no second form to ban. An empty
+ * bg half here is a fact about the language, not an omission to be filled.
+ *
+ * ⚠️ **THIS READS VALUES, NEVER KEYS, WHICH IS WHY TWO AMERICAN SPELLINGS
+ * SURVIVE #1627 ON PURPOSE.** `mood.json`'s key is `behavioralActivation` while
+ * its value is the British "Behavioural activation", and `cbt.json`'s sibling
+ * key is `behavioural` - the keys disagree with each other and no user can see
+ * either. ☠️ More sharply, `behavioral-activation` is a **persisted database
+ * value**: it is written to `mood_logs.linked_strategy` and read back by
+ * `mood-detail-screen.tsx`. Renaming it orphans every row a user has already
+ * saved. The ticket's own acceptance line - `git grep -i behavioral` returns
+ * only the privacy string - is therefore unmeetable as literally written, and
+ * that is correct rather than a shortfall.
+ *
+ * ☠️ `docs/positioning.md:92` spells it **American** on purpose - it quotes the
+ * search-volume figure for `cognitive behavioral therapy` (>100K/mo), which is
+ * what people actually type. Respelling it would falsify the data point. That
+ * file is outside this scan by design (see `ALL_SURFACES`), so the two never
+ * meet; if it is ever added, that line is the first thing that breaks.
+ */
+const FRAME_SPELLING: Rule[] = [
+  {
+    name: "en: cognitive behavioral (American)",
+    pattern: /\bcognitive\s+behavioral\b/i,
+    scope: "all",
+    probe: "Cognitive behavioral therapy",
+  },
+  {
+    name: "en: behavioral activation (American)",
+    pattern: /\bbehavioral\s+activation\b/i,
+    scope: "all",
+    probe: "Behavioral Activation",
+  },
+  {
+    name: "en: dialectical behavior (American)",
+    pattern: /\bdialectical\s+behavior\b/i,
+    scope: "all",
+    probe: "DBT overview - Dialectical Behavior Therapy",
+  },
+];
+
+/**
  * #1602 named a permanent boundary on the encryption claim, and it is the one
  * place on this map where the wrong word is a lie rather than a weak pitch.
  *
@@ -347,6 +433,7 @@ const STREAK_PROMOTION: Rule[] = [
 
 const RULES: Rule[] = [
   ...GUIDED_SELF_HELP,
+  ...FRAME_SPELLING,
   ...NEVER_SAYABLE_ENCRYPTION,
   ...AI_AFFIRMATIVE,
   ...STREAK_PROMOTION,
@@ -465,6 +552,40 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
 
     for (const rule of GUIDED_SELF_HELP) {
       for (const entry of bare) {
+        expect({ rule: rule.name, id: entry.id, matched: rule.pattern.test(entry.text) }).toEqual({
+          rule: rule.name,
+          id: entry.id,
+          matched: false,
+        });
+      }
+    }
+  });
+
+  /**
+   * The third of these, and it exists for exactly the reason the other two do.
+   *
+   * ☠️ `behavioral` is British in the frame word and correct as-is in the privacy
+   * sense, and the two live in the SAME FILE - `policies.json` privacy §3 says
+   * "behavioral profiling tools" three sections before terms §3 says "cognitive
+   * behavioural exercises". #1627 respelled the second and deliberately left the
+   * first, because "behavioral profiling" is the term of art for the thing the
+   * privacy policy is promising not to do.
+   *
+   * So if someone later "simplifies" `FRAME_SPELLING` to a bare
+   * `/\bbehavioral\b/i`, this test names what the simplification broke - and it
+   * breaks a consent-bearing section, which is the expensive kind. It also fails
+   * loudly if the string is ever reworded away, which is the point of a floor
+   * that is an equality rather than a `>=`: there is exactly one, and a second
+   * one appearing is a question worth asking rather than a number to bump.
+   */
+  it("leaves the privacy sense of 'behavioral' alone", () => {
+    const privacySense = USER_FACING.filter(({ text }) => /\bbehavioral\b/i.test(text));
+
+    expect(privacySense.map((entry) => entry.id)).toHaveLength(1);
+    expect(privacySense[0].text).toMatch(/behavioral profiling tools/i);
+
+    for (const rule of FRAME_SPELLING) {
+      for (const entry of privacySense) {
         expect({ rule: rule.name, id: entry.id, matched: rule.pattern.test(entry.text) }).toEqual({
           rule: rule.name,
           id: entry.id,

@@ -99,11 +99,19 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // spends their attention on nothing and teaches them to click consent gates
 // through. That is the opposite of what this gate is for.
 //
+// ⚠️ #1627 is the SECOND digest-only move, and it is smaller than the first: it
+// changed ONE letter. Terms §3 read "structured cognitive behavioral exercises"
+// while the rest of the product spelled the frame word British, so the sentence
+// now reads "cognitive behavioural exercises". Nothing disclosed changed - the
+// same sentence, the same scope, the same boundary, one spelling. If a rewording
+// that discloses nothing must not re-gate users, a respelling that changes no
+// word certainly must not.
+//
 // So: a disclosure change bumps BOTH fields. A rewording moves the digest alone,
 // and says why, right here.
 const pinnedPolicyRelease = {
   version: "2026-08-27-feedback-processors",
-  englishDigest: "dad00391cac004ccc1b0ceb51bbc3ff264b7184e27ae127248c6c1db2d6415e0",
+  englishDigest: "cc8fbcb44110649f86269ca2fa1ef18a2e46d72955469876fbec46ed540e86e4",
 };
 
 describe("policy content - version pinning", () => {

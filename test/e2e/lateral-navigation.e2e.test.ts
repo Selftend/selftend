@@ -44,7 +44,7 @@ test("a breadcrumb returns to its ancestor instead of stacking a second copy", a
   expect(await modulesRoots(page)).toBe(1);
 
   // Down one level, so `/modules` is now an ancestor sitting in the stack.
-  await page.getByRole("button", { name: "Cognitive behavioral therapy", exact: true }).click();
+  await page.getByRole("button", { name: "Cognitive behavioural therapy", exact: true }).click();
   await expect(page).toHaveURL(/\/modules\/cbt$/, { timeout: 15_000 });
 
   // The breadcrumb's `Modules` crumb targets that ancestor. Before #1027 this pushed a
