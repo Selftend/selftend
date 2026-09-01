@@ -84,7 +84,7 @@
       "reminderLabel": "Daily reminder",
       "reminderHint": "Off by default. You can change this any time in settings.",
       "timeLabel": "Reminder time",
-      "finish": "Start the program",
+      "finish": "Start the programme",
       "saving": "Saving...",
       "error": "Something went wrong. Please try again."
     }
@@ -143,7 +143,7 @@
       "subtitles": "For distressing mental images: imagine foreign-language subtitles beneath the image. Observe the effect."
     },
     "categories": {
-      "selfJudgment": "Self-judgment",
+      "selfJudgment": "Self-judgement",
       "worry": "Worry",
       "pastRegret": "Past regret",
       "prediction": "Negative prediction",
@@ -351,7 +351,7 @@
     "techniqueDescriptions": {
       "tenDeepBreaths": "Take ten slow, deep breaths. With each breath, notice what you observe - thoughts, feelings, sensations - from a witness perspective.",
       "skyAndWeather": "The sky & weather metaphor: thoughts and feelings are the weather. You are the sky - vast, unchanged, never harmed by any storm passing through.",
-      "bodyAwareness": "Scan the body from feet to head. Notice sensations as a witness - without judgment or the urge to change anything."
+      "bodyAwareness": "Scan the body from feet to head. Notice sensations as a witness - without judgement or the urge to change anything."
     },
     "tenBreathsGuide": {
       "title": "Ten Deep Breaths",
@@ -461,11 +461,11 @@
     }
   },
   "program": {
-    "startTitle": "Start the ACT program",
+    "startTitle": "Start the ACT programme",
     "startDescription": "A guided path through four phases - notice your choice points, be present, open up, and do what matters. Go at your own pace.",
-    "startCta": "Start the program",
-    "dismissStartLabel": "Dismiss program invitation",
-    "heroTitle": "ACT program",
+    "startCta": "Start the programme",
+    "dismissStartLabel": "Dismiss programme invitation",
+    "heroTitle": "ACT programme",
     "milestonesLabel": "This phase",
     "practiceLabel": "Today's practice",
     "noDailyPractice": "No daily task this phase - take your time with the step above.",
@@ -474,17 +474,17 @@
     "advanceEarlyConfirmBody": "You haven't finished this phase's steps yet. Move on anyway?",
     "advanceConfirm": "Advance",
     "advanceCancel": "Not yet",
-    "graduateCta": "Finish the program",
+    "graduateCta": "Finish the programme",
     "ready": "You've finished this phase - ready for the next?",
-    "manageLabel": "Manage program",
-    "abandon": "Leave the program",
-    "abandonTitle": "Leave the ACT program?",
-    "abandonDescription": "Your logged practices stay saved. You can start the program again any time.",
+    "manageLabel": "Manage programme",
+    "abandon": "Leave the programme",
+    "abandonTitle": "Leave the ACT programme?",
+    "abandonDescription": "Your logged practices stay saved. You can start the programme again any time.",
     "abandonConfirm": "Leave",
     "abandonCancel": "Stay",
-    "showPromptLabel": "Show the program invitation",
-    "replay": "Replay the ACT program",
-    "graduationTitle": "You finished the ACT program",
+    "showPromptLabel": "Show the programme invitation",
+    "replay": "Replay the ACT programme",
+    "graduationTitle": "You finished the ACT programme",
     "graduationBody": "You built skills to be present, open up, and do what matters. Keep using them.",
     "graduationBodyEmpty": "You reached the end at your own pace. Your tools are here whenever you need them.",
     "graduationDismiss": "Done",

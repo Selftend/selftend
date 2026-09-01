@@ -56,7 +56,7 @@ describe("ModuleHomeHeader action buttons", () => {
 
     expect(screen.getByLabelText("Customise")).toBeTruthy();
     expect(screen.getByLabelText("Reminders")).toBeTruthy();
-    expect(screen.getByLabelText("CBT program")).toBeTruthy();
+    expect(screen.getByLabelText("CBT programme")).toBeTruthy();
     expect(screen.getByLabelText("About this module")).toBeTruthy();
   });
 
@@ -112,7 +112,7 @@ describe("ModuleHomeHeader action buttons", () => {
   it("fires onPress for the program action button", () => {
     const { onPressProgram } = renderHeader({ includeProgram: true });
 
-    fireEvent.press(screen.getByLabelText("CBT program"));
+    fireEvent.press(screen.getByLabelText("CBT programme"));
 
     expect(onPressProgram).toHaveBeenCalledTimes(1);
   });

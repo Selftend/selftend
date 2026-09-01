@@ -417,7 +417,7 @@
   "headerButton": {
     "tune": "Customise",
     "notifications": "Reminders",
-    "program": "CBT program",
+    "program": "CBT programme",
     "info": "About this module"
   },
   "homeTour": {
@@ -475,7 +475,7 @@
   },
   "modulesPage": {
     "title": "Modules",
-    "description": "Structured therapeutic programs you can work through over time. Each draws on the shared tools.",
+    "description": "Structured therapeutic programmes you can work through over time. Each draws on the shared tools.",
     "whereToStart": "Not sure where to start? The everyday tools help with general wellbeing. Try CBT if difficult thoughts are your main concern. Mixing is fine.",
     "stats": {
       "overview": "Overview"

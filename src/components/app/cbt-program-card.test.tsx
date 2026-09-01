@@ -99,7 +99,7 @@ describe("CbtProgramCard", () => {
       expect(onAdvance).toHaveBeenCalledTimes(1);
     });
 
-    it("shows 'Finish the program' as the advance label on the last phase", () => {
+    it("shows 'Finish the programme' as the advance label on the last phase", () => {
       const onAdvance = jest.fn();
       renderWithProviders(
         <CbtProgramCard
@@ -109,7 +109,7 @@ describe("CbtProgramCard", () => {
         />,
       );
 
-      const graduateBtn = screen.getByText("Finish the program");
+      const graduateBtn = screen.getByText("Finish the programme");
       expect(graduateBtn).toBeTruthy();
       fireEvent.press(graduateBtn);
       expect(onAdvance).toHaveBeenCalledTimes(1);
@@ -239,10 +239,10 @@ describe("CbtProgramCard", () => {
         />,
       );
 
-      expect(screen.getByText("Your CBT program")).toBeTruthy();
-      expect(screen.getByText("Start program")).toBeTruthy();
+      expect(screen.getByText("Your CBT programme")).toBeTruthy();
+      expect(screen.getByText("Start programme")).toBeTruthy();
 
-      fireEvent.press(screen.getByText("Start program"));
+      fireEvent.press(screen.getByText("Start programme"));
       expect(onStart).toHaveBeenCalledTimes(1);
     });
 
@@ -257,7 +257,7 @@ describe("CbtProgramCard", () => {
         />,
       );
 
-      fireEvent.press(screen.getByLabelText("Hide the program invitation"));
+      fireEvent.press(screen.getByLabelText("Hide the programme invitation"));
       expect(onDismissStart).toHaveBeenCalledTimes(1);
     });
   });

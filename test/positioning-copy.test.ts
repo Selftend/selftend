@@ -635,6 +635,51 @@ const HOUSE_STYLE_SPELLING: Rule[] = [
     scope: "i18n",
     probe: "The interpretation that fueled the anger",
   },
+  /**
+   * ☠️ **The fifth ring's headline: this one is the market category itself**
+   * (#1651). `docs/positioning.md` § *Words to use* opens with **Programme** and
+   * the canvas names the category "a CBT programme" — and shipped copy spelled
+   * it `program` 31 times against `programme` 19, with BOTH inside
+   * `navigation.json` where `headerButton.program` and
+   * `home.widgets.cbtProgramme.title` can render on one screen. A wider split
+   * than `behaviour` ever had, on a more important word.
+   *
+   * ✅ **All 31 turned out to be the course, not software** — the suspicion
+   * #1651 recorded, checked one string at a time: "Start the ACT program",
+   * "Abandon this program?", "Structured therapeutic programs you can work
+   * through". Not one was the software sense, so there is no carve-out and none
+   * is needed. Had there been, this would have needed a compound discriminator
+   * like `FRAME_SPELLING`'s rather than a bare ban.
+   *
+   * ⚠️ **`program` remains a KEY namespace in `act.json` and `cbt.json`**
+   * (`program.startTitle`, `program.heroTitle`, …), and `navigation.json` has a
+   * key literally named `program`. The guard reads values and never keys, so
+   * they are outside it by construction — the same reason `behavioralActivation`
+   * survived #1638.
+   */
+  {
+    name: "en: program (American)",
+    pattern: /\bprograms?\b/i,
+    scope: "i18n",
+    probe: "Start the ACT program",
+  },
+  /**
+   * `judgment` was split 4 against 2, and the pair rendered in near-identical
+   * sentences two surfaces apart: `meditation.json` body-scan said "noticing
+   * sensation without judgement" while `act.json` observing-self said "without
+   * judgment". `cbt.json` carried both spellings.
+   *
+   * ⚠️ `judgment` is standard in LEGAL English, which is the one context that
+   * could have argued to keep it. None of the four is legal — they are ACT and
+   * CBT phrasings about noticing without evaluating — so British wins with no
+   * carve-out.
+   */
+  {
+    name: "en: judgment (American)",
+    pattern: /\bjudgm/i,
+    scope: "i18n",
+    probe: "Notice sensations without judgment",
+  },
 ];
 
 const RULES: Rule[] = [
@@ -930,6 +975,24 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
       "fulfilling a legal obligation",
       "Practice for ten minutes",
       "the humorous side of life",
+      // #1651: the British forms must not be re-matched by their own rules.
+      // `\bprogram\b` cannot reach "programme" because the next character is a
+      // word char, and "judgement" does not contain the substring "judgm".
+      "Start the ACT programme",
+      "Structured therapeutic programmes you can work through",
+      "noticing sensation without judgement",
+      "Cultivate non-judgemental awareness",
+      // ☠️ #1651 decided `licence` is NOT guarded and NOT swept. Three of the
+      // four occurrences are the verb/participle "licensed", which is already
+      // correct British; the two nouns both refer to the AGPL, an instrument
+      // titled "GNU Affero General Public License", matching the repo's own
+      // LICENSE file. Respelling a noun that names a document makes it disagree
+      // with the document. Asserted here so a later "completeness" sweep meets
+      // the decision instead of rediscovering it as an oversight.
+      "The Selftend application source code is licensed under AGPL-3.0-only.",
+      "This license applies to the software, not to your personal data.",
+      "a substitute for a licensed mental health professional",
+      "License direction",
     ];
 
     for (const rule of HOUSE_STYLE_SPELLING) {

@@ -220,7 +220,7 @@ describe("ActHomeScreen", () => {
       renderWithProviders(<ActHomeScreen />);
 
       expect(screen.getByText("Musical thoughts")).toBeTruthy();
-      expect(screen.queryByText("Self-judgment")).toBeNull();
+      expect(screen.queryByText("Self-judgement")).toBeNull();
     });
 
     it("shows the door as a 'Show all logs' link to the full list", () => {
@@ -364,7 +364,7 @@ describe("ActHomeScreen", () => {
     renderWithProviders(<ActHomeScreen />);
 
     // Collapsed: the full graduation hero title is hidden; the replay row shows.
-    expect(screen.queryByText("You finished the ACT program")).toBeNull();
-    expect(screen.getByText("Replay the ACT program")).toBeTruthy();
+    expect(screen.queryByText("You finished the ACT programme")).toBeNull();
+    expect(screen.getByText("Replay the ACT programme")).toBeTruthy();
   });
 });

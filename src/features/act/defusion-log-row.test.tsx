@@ -45,7 +45,7 @@ describe("DefusionLogRow", () => {
     renderWithProviders(<DefusionLogRow log={log()} onPress={jest.fn()} />);
 
     expect(screen.getByText("Musical thoughts")).toBeTruthy();
-    expect(screen.queryByText("Self-judgment")).toBeNull();
+    expect(screen.queryByText("Self-judgement")).toBeNull();
   });
 
   it("puts before → after on the meta line as one readable run", () => {

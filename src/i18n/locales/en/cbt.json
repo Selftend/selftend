@@ -16,13 +16,13 @@
     "statBeliefShift_other": "points mean belief shift"
   },
   "program": {
-    "startTitle": "Your CBT program",
+    "startTitle": "Your CBT programme",
     "startDescription": "A guided journey through the CBT process - from assessment to lasting resilience - using the tools in this module. Go at your own pace.",
-    "startCta": "Start program",
-    "dismissStartLabel": "Hide the program invitation",
-    "showPromptLabel": "Show the CBT program invitation",
-    "heroTitle": "Your Program",
-    "graduationTitle": "Program complete",
+    "startCta": "Start programme",
+    "dismissStartLabel": "Hide the programme invitation",
+    "showPromptLabel": "Show the CBT programme invitation",
+    "heroTitle": "Your Programme",
+    "graduationTitle": "Programme complete",
     "graduationBody": "You built real momentum. Here's what you did:",
     "graduationBodyEmpty": "You reached the end at your own pace. Your tools are here whenever you need them.",
     "statThoughtRecords": "{{count}} thought records",
@@ -30,12 +30,12 @@
     "statGoals": "{{count}} goals set",
     "statBeliefs": "{{count}} beliefs examined",
     "graduationDismiss": "Continue with my tools",
-    "replay": "Replay the program",
-    "abandon": "Abandon program",
-    "manageLabel": "Program options",
-    "abandonTitle": "Abandon this program?",
-    "abandonDescription": "This only stops the program tracking. Your saved thought records, activities, goals, and logs stay in place.",
-    "abandonConfirm": "Abandon program",
+    "replay": "Replay the programme",
+    "abandon": "Abandon programme",
+    "manageLabel": "Programme options",
+    "abandonTitle": "Abandon this programme?",
+    "abandonDescription": "This only stops the programme tracking. Your saved thought records, activities, goals, and logs stay in place.",
+    "abandonConfirm": "Abandon programme",
     "abandonCancel": "Keep going",
     "weeks": {
       "assessment": {
@@ -87,7 +87,7 @@
     "milestonesLabel": "This phase",
     "practiceLabel": "Today's practice",
     "noDailyPractice": "No daily task this phase - take your time with the step above.",
-    "graduateCta": "Finish the program"
+    "graduateCta": "Finish the programme"
   },
   "dashboard": {
     "activeGoals": "Active goals",
@@ -630,7 +630,7 @@
       "thinkTitle": "THINK: Challenge Negative Patterns",
       "thinkBody": "Identify negative automatic thoughts and test them against objective facts to find more accurate perspectives.",
       "beTitle": "BE: Practice Mindful Presence",
-      "beBody": "Cultivate non-judgmental awareness of the present moment to disengage from rumination and future-oriented worries.",
+      "beBody": "Cultivate non-judgemental awareness of the present moment to disengage from rumination and future-oriented worries.",
       "toolsTitle": "Tools for Lasting Change",
       "beliefsTitle": "Core Beliefs (Schemas)",
       "beliefsBody": "Uncover the deep-rooted mental 'maps' that act as filters, often causing us to ignore positive data.",
