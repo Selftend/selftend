@@ -29,7 +29,7 @@ describe("ProgramGraduation", () => {
         onReplay={jest.fn()}
       />,
     );
-    fireEvent.press(screen.getByText("Continue with my tools"));
+    fireEvent.press(screen.getByText("Done"));
     expect(onDismiss).toHaveBeenCalled();
   });
 
