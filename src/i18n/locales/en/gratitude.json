@@ -15,8 +15,8 @@
   "hero": {
     "entries_one": "entry",
     "entries_other": "entries",
-    "favorites_one": "favorite",
-    "favorites_other": "favorites",
+    "favorites_one": "favourite",
+    "favorites_other": "favourites",
     "thisWeek": "this week",
     "loadingValue": "—"
   },
@@ -31,7 +31,7 @@
     "dayCount_other": "{{date}}: {{count}} entries",
     "thisWeek": "This week",
     "themes": "Common themes",
-    "favorites": "Favorites",
+    "favorites": "Favourites",
     "savedCount_one": "{{count}} saved",
     "savedCount_other": "{{count}} saved"
   },
@@ -54,7 +54,7 @@
       "level1Body": "Simply report what happened today without judgment. A good meal, a calm moment, a conversation. Nothing is too small.",
       "level2Title": "Level 2 - Reflecting & Appreciating",
       "level2Body": "Think about what you would miss if it were gone. Notice things you usually take for granted - running water, sunlight, a friend nearby.",
-      "level3Title": "Level 3 - Practicing Gratitude",
+      "level3Title": "Level 3 - Practising Gratitude",
       "level3Body": "The ongoing practice brings the earlier steps together: notice what's here, appreciate it, and write \"I'm grateful for...\" reflections."
     },
     "frequency": {
@@ -83,7 +83,7 @@
     "collapseEntry": "Collapse gratitude entry from {{when}}",
     "filters": {
       "all": "All",
-      "favorites": "Favorites"
+      "favorites": "Favourites"
     },
     "error": {
       "title": "Entries could not be loaded",
@@ -125,8 +125,8 @@
   "detail": {
     "title": "Gratitude entry",
     "open": "Open",
-    "favorite": "Favorite",
-    "unfavorite": "Favorited",
+    "favorite": "Favourite",
+    "unfavorite": "Favourited",
     "edit": "Edit",
     "delete": "Delete",
     "itemsTitle": "Things noticed",
@@ -137,7 +137,7 @@
     "loggedSummary_one": "Logged {{time}} · {{count}} thing",
     "loggedSummary_other": "Logged {{time}} · {{count}} things",
     "notFound": "We couldn't find that gratitude entry.",
-    "favoriteError": "Couldn't update this favorite. Try again.",
+    "favoriteError": "Couldn't update this favourite. Try again.",
     "deleteError": "Couldn't delete this entry. Try again.",
     "confirmDelete": {
       "title": "Delete this entry?",
@@ -147,12 +147,12 @@
     }
   },
   "favorites": {
-    "title": "Favorite moments",
+    "title": "Favourite moments",
     "description": "Entries you marked for easy return.",
-    "viewEntry": "View favorite gratitude entry from {{when}}",
+    "viewEntry": "View favourite gratitude entry from {{when}}",
     "empty": {
-      "title": "No favorites yet",
-      "description": "Open an entry and mark it as a favorite when it feels worth returning to."
+      "title": "No favourites yet",
+      "description": "Open an entry and mark it as a favourite when it feels worth returning to."
     }
   },
   "breaks": {
@@ -186,7 +186,7 @@
       "dont-make-things-harder": {
         "title": "Don't Make Things Harder",
         "short": "When the list feels hard, notice what's already here.",
-        "body": "When gratitude feels forced or the list feels impossible, look around you. The color of the wall. The temperature of the air. The fact that you are breathing. Nothing is too small. Gratitude does not require a good day - it only requires a moment of attention."
+        "body": "When gratitude feels forced or the list feels impossible, look around you. The colour of the wall. The temperature of the air. The fact that you are breathing. Nothing is too small. Gratitude does not require a good day - it only requires a moment of attention."
       },
       "instructions-for-unhappiness": {
         "title": "Instructions for Unhappiness",
@@ -208,7 +208,7 @@
   "feedback": {
     "saved": "Entry saved",
     "deleted": "Entry deleted",
-    "favoriteAdded": "Added to favorites",
-    "favoriteRemoved": "Removed from favorites"
+    "favoriteAdded": "Added to favourites",
+    "favoriteRemoved": "Removed from favourites"
   }
 }

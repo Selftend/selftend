@@ -468,7 +468,7 @@
     "triggerHint": "Be specific about the event.",
     "triggerPlaceholder": "Example: My partner left dishes in the sink again.",
     "interpretation": "What did you tell yourself about it?",
-    "interpretationHint": "The interpretation that fueled the anger.",
+    "interpretationHint": "The interpretation that fuelled the anger.",
     "interpretationPlaceholder": "Example: They don't respect my time.",
     "arousalLevel": "Arousal level (1-10)",
     "arousalLevelHint": "How intense did the anger feel?",
@@ -576,7 +576,7 @@
     "removeKey": "Remove",
     "keyPlaceholder": "Example: Take a walk before deciding what the day means.",
     "personalSlogan": "Personal slogan",
-    "personalSloganHint": "A short phrase that captures the way you want to keep practicing.",
+    "personalSloganHint": "A short phrase that captures the way you want to keep practising.",
     "personalSloganPlaceholder": "Example: Notice, choose, begin again.",
     "strategyNotes": "Strategy integration notes",
     "strategyNotesHint": "Write how each active strategy connects with the rest of your toolkit.",
@@ -937,7 +937,7 @@
     },
     "orderly": {
       "label": "Orderly",
-      "description": "Planning, prioritising and being organized in my life."
+      "description": "Planning, prioritising and being organised in my life."
     },
     "patient": {
       "label": "Patient",
@@ -1447,7 +1447,7 @@
       "patternLabel": "Breathing pattern",
       "suggestedLabel": "Suggested patterns",
       "cyclesLabel": "Breath cycles & duration",
-      "colorLabel": "Exercise card color",
+      "colorLabel": "Exercise card colour",
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving...",

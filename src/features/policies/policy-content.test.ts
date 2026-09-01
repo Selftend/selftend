@@ -107,11 +107,34 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // that discloses nothing must not re-gate users, a respelling that changes no
 // word certainly must not.
 //
+// ⚠️ #1639 is the THIRD digest-only move, and it is the same size as the second:
+// one letter, in one word, in one sentence. Privacy §6 read "the processor's
+// participation in recognized data transfer frameworks" and now reads
+// "recognised", bringing it in line with the house style the rest of the product
+// spells British (docs/positioning.md § "Words to use").
+//
+// The ticket flagged this string as the one place American might be CORRECT,
+// because it sits beside GDPR/SCC terms of art. It is not: the terms of art in
+// that sentence are "Standard Contractual Clauses (SCCs)" and "European
+// Commission", both untouched. "recognised data transfer frameworks" is our own
+// descriptive prose ABOUT them, and the EU's own English-language style guide
+// mandates British spelling - so for a sentence addressed to EEA, UK and Swiss
+// residents the British form is if anything the better fit.
+//
+// Nothing DISCLOSED changed: same processors, same transfer mechanism, same
+// jurisdictions, same rights. Per the two moves above the version therefore does
+// not move - re-gating every existing user over one letter is precisely how a
+// consent gate teaches people to click through it.
+//
+// ☠️ The neighbouring "fulfill" -> "fulfil" fix in the same change lives in
+// `faq`, which is NOT one of the four consent-bearing sections, so it does not
+// touch this digest at all. Only privacy §6 moved it.
+//
 // So: a disclosure change bumps BOTH fields. A rewording moves the digest alone,
 // and says why, right here.
 const pinnedPolicyRelease = {
   version: "2026-08-27-feedback-processors",
-  englishDigest: "cc8fbcb44110649f86269ca2fa1ef18a2e46d72955469876fbec46ed540e86e4",
+  englishDigest: "a0acbe079278e3c4932c5d58b174ec469c63a191e89622cfeccf80ff3c77e82e",
 };
 
 describe("policy content - version pinning", () => {
