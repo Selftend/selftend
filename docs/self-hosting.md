@@ -175,4 +175,4 @@ PikaPods is not supported yet. Future review should check whether it can run or 
 
 Document managed self-hosting as a possibility, not a launch promise.
 
-The app remains wellness and guided self-help, not therapy, diagnosis, or emergency support, regardless of who hosts it.
+The app remains wellness and self-help, not therapy, diagnosis, or emergency support, regardless of who hosts it.
