@@ -6,16 +6,16 @@
     "helpPrefix": "Help: "
   },
   "program": {
-    "title": "The CBT program",
+    "title": "The CBT programme",
     "what": "A guided journey through the CBT process, built from the tools already in this module.",
     "how": "Each phase follows a stage of the CBT process - from assessment through to resilience - mixing recurring daily practices with one-time milestones. Work through them at your own pace.",
     "why": "Spacing practice over days builds real habits and lasting change rather than a one-off burst."
   },
   "actProgram": {
-    "title": "The ACT program",
+    "title": "The ACT programme",
     "what": "A guided 4-week ACT path for practising psychological flexibility: be present, open up, and do what matters.",
     "how": "Each week combines a recurring ACT practice with small milestones such as anchoring, mapping choice points, unhooking from thoughts, clarifying values, and taking committed action.",
-    "why": "ACT skills are learned through repeated, values-guided practice. The program helps you practice responding flexibly without promising to remove difficult thoughts or feelings."
+    "why": "ACT skills are learned through repeated, values-guided practice. The programme helps you practice responding flexibly without promising to remove difficult thoughts or feelings."
   },
   "thoughtRecords": {
     "title": "Thought records",

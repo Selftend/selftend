@@ -87,7 +87,7 @@ describe("ActProgramCard", () => {
       expect(onAdvance).toHaveBeenCalledTimes(1);
     });
 
-    it("shows 'Finish the program' as the advance label on the last phase", () => {
+    it("shows 'Finish the programme' as the advance label on the last phase", () => {
       const onAdvance = jest.fn();
       renderWithProviders(
         <ActProgramCard
@@ -97,7 +97,7 @@ describe("ActProgramCard", () => {
         />,
       );
 
-      const graduateBtn = screen.getByText("Finish the program");
+      const graduateBtn = screen.getByText("Finish the programme");
       expect(graduateBtn).toBeTruthy();
       fireEvent.press(graduateBtn);
       expect(onAdvance).toHaveBeenCalledTimes(1);
@@ -199,10 +199,10 @@ describe("ActProgramCard", () => {
         />,
       );
 
-      expect(screen.getByText("Start the ACT program")).toBeTruthy();
-      expect(screen.getByText("Start the program")).toBeTruthy();
+      expect(screen.getByText("Start the ACT programme")).toBeTruthy();
+      expect(screen.getByText("Start the programme")).toBeTruthy();
 
-      fireEvent.press(screen.getByText("Start the program"));
+      fireEvent.press(screen.getByText("Start the programme"));
       expect(onStart).toHaveBeenCalledTimes(1);
     });
 
@@ -217,7 +217,7 @@ describe("ActProgramCard", () => {
         />,
       );
 
-      fireEvent.press(screen.getByLabelText("Dismiss program invitation"));
+      fireEvent.press(screen.getByLabelText("Dismiss programme invitation"));
       expect(onDismissStart).toHaveBeenCalledTimes(1);
     });
   });

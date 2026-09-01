@@ -37,7 +37,7 @@ const privacyRoots = (page: Page) =>
 
 test("a breadcrumb returns to its ancestor instead of stacking a second copy", async ({ page }) => {
   await page.goto("/modules");
-  await expect(page.getByText("Structured therapeutic programs", { exact: false })).toBeVisible({
+  await expect(page.getByText("Structured therapeutic programmes", { exact: false })).toBeVisible({
     timeout: 15_000,
   });
   await dismissPostSignInModals(page);
@@ -55,7 +55,7 @@ test("a breadcrumb returns to its ancestor instead of stacking a second copy", a
   // backgrounded copy, so this readiness wait would fail on visibility and the duplicate
   // would be reported as "not visible" rather than by the COUNT below, which names it.
   await expect(
-    page.getByText("Structured therapeutic programs", { exact: false }).last(),
+    page.getByText("Structured therapeutic programmes", { exact: false }).last(),
   ).toBeVisible({ timeout: 15_000 });
 
   expect(await modulesRoots(page)).toBe(1);
@@ -67,7 +67,7 @@ test("a breadcrumb returns to its ancestor instead of stacking a second copy", a
   // come back with it.
   await page.goBack();
   await expect(
-    page.getByText("Structured therapeutic programs", { exact: false }).last(),
+    page.getByText("Structured therapeutic programmes", { exact: false }).last(),
   ).toBeVisible({ timeout: 15_000 });
   expect(await modulesRoots(page)).toBe(1);
 });

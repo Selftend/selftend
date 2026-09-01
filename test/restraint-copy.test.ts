@@ -56,16 +56,21 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
    * pressure" is caught) and, like it, keyed on the NEGATION rather than the
    * noun - bare "pressure" stays legal for the grounding content that teaches it.
    *
-   * ☠️ `judgment`/`judgement` is DELIBERATELY not in this list, and must not be
-   * added. "Without judgment" is the vocabulary of the technique itself, not the
-   * product's voice - non-judgmental awareness is what body-scan and noticing
+   * ☠️ `judgement` is DELIBERATELY not in this list, and must not be added.
+   * "Without judgement" is the vocabulary of the technique itself, not the
+   * product's voice - non-judgemental awareness is what body-scan and noticing
    * practices ARE. Including it failed three live strings, all of them correct:
    *   - `act:observingSelf.techniqueDescriptions.bodyAwareness` - "Notice
-   *     sensations as a witness - without judgment or the urge to change anything."
+   *     sensations as a witness - without judgement or the urge to change anything."
    *   - `gratitude:onboarding.levels.level1Body` - "Simply report what happened
-   *     today without judgment."
+   *     today without judgement."
    *   - `meditation:practices.body-scan.instructions[3]` - "noticing sensation
    *     without judgement."
+   *
+   * ⚠️ Two of those three quoted the AMERICAN spelling until #1651 standardised
+   * them; the citations are updated with the copy. A guard's rationale that
+   * quotes strings which no longer exist is how the next reader concludes the
+   * rationale is stale and deletes the rule.
    * That is the #711 rule working as written: the framework may talk about
    * missing, and it may teach non-judgement; only the product may not advertise
    * its own restraint. Same reasoning that keeps bare "pressure" legal above.

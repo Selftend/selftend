@@ -153,7 +153,7 @@ describe("ActDefusionListScreen", () => {
     renderWithProviders(<ActDefusionListScreen />);
 
     expect(screen.getByText("Musical thoughts")).toBeTruthy();
-    expect(screen.queryByText("Self-judgment")).toBeNull();
+    expect(screen.queryByText("Self-judgement")).toBeNull();
     expect(screen.getByText("60 → 20")).toBeTruthy();
 
     fireEvent.press(screen.getByText("today thought"));

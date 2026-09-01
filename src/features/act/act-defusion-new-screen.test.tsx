@@ -322,7 +322,7 @@ describe("the category chips and technique cards", () => {
 
     const chips = screen.getAllByRole("radio").slice(0, 6);
 
-    // Arrow moves and activates: the first chip is "Self-judgment", the second "Worry".
+    // Arrow moves and activates: the first chip is "Self-judgement", the second "Worry".
     fireEvent(chips[0], "keyDown", { key: "ArrowRight", repeat: false, preventDefault: jest.fn() });
     expect(screen.getByText("1 of 5 parts filled in")).toBeTruthy();
     expect(screen.getAllByRole("radio")[1]).toBeChecked();

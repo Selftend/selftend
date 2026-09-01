@@ -53,7 +53,7 @@ describe("ACT connection techniques", () => {
   });
 });
 
-describe("ACT program pillars", () => {
+describe("ACT programme pillars", () => {
   it("lists the four 2nd-edition pillars in order", () => {
     expect(ACT_PROGRAM_PILLARS).toEqual(["foundation", "bePresent", "openUp", "doWhatMatters"]);
   });

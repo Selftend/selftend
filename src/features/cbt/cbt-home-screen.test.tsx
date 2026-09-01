@@ -174,7 +174,7 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    expect(screen.getByText("Start program")).toBeTruthy();
+    expect(screen.getByText("Start programme")).toBeTruthy();
     expect(screen.queryByText("Today check-in")).toBeNull();
     expect(screen.queryByText("Today")).toBeNull();
     expect(screen.queryByText("Mood summaries")).toBeNull();
@@ -217,8 +217,8 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    expect(screen.queryByText("Start program")).toBeNull();
-    fireEvent.press(screen.getByLabelText("Show the CBT program invitation"));
+    expect(screen.queryByText("Start programme")).toBeNull();
+    fireEvent.press(screen.getByLabelText("Show the CBT programme invitation"));
     expect(showProgramPrompt).toHaveBeenCalled();
   });
 
@@ -325,9 +325,9 @@ describe("CbtHomeScreen onboarding", () => {
 
     renderWithProviders(<CbtHomeScreen />);
 
-    fireEvent.press(screen.getByLabelText("Program options"));
-    fireEvent.press(screen.getByText("Abandon program"));
-    expect(screen.getByText("Abandon this program?")).toBeTruthy();
+    fireEvent.press(screen.getByLabelText("Programme options"));
+    fireEvent.press(screen.getByText("Abandon programme"));
+    expect(screen.getByText("Abandon this programme?")).toBeTruthy();
 
     fireEvent.press(screen.getByTestId("confirm-dialog-confirm"));
     expect(abandonProgram).toHaveBeenCalled();
@@ -440,7 +440,7 @@ describe("CbtHomeScreen layout (#1386)", () => {
     const positions = orderOf(
       "Cognitive Behavioural Therapy",
       "New thought record",
-      "Start program",
+      "Start programme",
       "Your slogan",
       "Active goals",
       "Recent thought records",
@@ -509,7 +509,7 @@ describe("CbtHomeScreen layout (#1386)", () => {
 
     expect(screen.getByText('"one step at a time"')).toBeTruthy();
     expect(screen.getByText("goal g1")).toBeTruthy();
-    expect(screen.getByText("Start program")).toBeTruthy();
+    expect(screen.getByText("Start programme")).toBeTruthy();
   });
 
   it("gives every section heading a real level-3 heading role", () => {
@@ -550,7 +550,7 @@ describe("CbtHomeScreen layout (#1386)", () => {
 
     expect(screen.getByText("Cognitive Behavioural Therapy")).toBeTruthy();
     expect(screen.getByText("New thought record")).toBeTruthy();
-    expect(screen.getByText("Start program")).toBeTruthy();
+    expect(screen.getByText("Start programme")).toBeTruthy();
     expect(screen.getByText(/framework/)).toBeTruthy();
     expect(screen.getByText("Think")).toBeTruthy();
     expect(screen.getByText("Review")).toBeTruthy();
