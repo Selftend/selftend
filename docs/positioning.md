@@ -69,7 +69,11 @@ The landing hero shows exactly how it fails. Before [#1616](https://github.com/S
 
 **That string fails not because it mentions the tools, but because it lists everything flat.** Supporting is not co-equal. The frame sentence lands first; the tools appear _afterwards_, as what is there on a day someone cannot face the programme.
 
-#1616 removed the banned compound and moved the frame sentence to the front. It did **not** clear this rule: ACT and the eight tools are still listed flat behind it, which is what [#1628](https://github.com/Selftend/selftend/issues/1628) is for.
+#1616 removed the banned compound and moved the frame sentence to the front, but did **not** clear this rule — ACT and the eight tools were still listed flat behind it. [#1628](https://github.com/Selftend/selftend/issues/1628) cleared it, on the web hero and on the native landing subtitle that is its twin. The hero now reads:
+
+> _"A free, private CBT programme - cognitive behavioural therapy - with everyday tools for the days you cannot face it. No ads, no subscriptions."_
+
+☠️ **Neither half of the fix was a deletion, and reading it as one is how this gets reverted.** The eight tools are still on the page, as the chip row under the CTA — inventory, which the frame does not bind ([#1610](https://github.com/Selftend/selftend/issues/1610)); what stopped is the prose enumerating what the page already shows. ACT is still on the page too, in its own module section, which is exactly what _named where a user actually meets it_ means. The frame sentence is the one place it does not appear.
 
 **No regex reaches this rule.** `test/positioning-copy.test.ts` is one-sided by design and cannot express "mentioned, but second". This paragraph is the enforcement. It is written down precisely so nobody builds a brittle gate for it, watches it fail on good copy, and deletes the guard along with it.
 
