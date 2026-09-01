@@ -250,8 +250,9 @@ const counts = {};
 // ---------------------------------------------------------------- preferences
 // `selected_concerns` and `enabled_modules` are the onboarding answers demo's Home
 // layout below is DERIVED from, and they move with it (#1352). Neither steers
-// anything live today — `START_HERE_TARGETS` has no consumer outside `concerns.ts`,
-// and `enabled_modules` is only ever written, never read as a gate — so both are
+// anything live today — `selected_concerns` is read only during onboarding, where it
+// seeds Home's widgets and the starter routine, and is never consulted again; and
+// `enabled_modules` is only ever written, never read as a gate — so both are
 // seeded as documentation-in-data: without them the fourteen ids are a list nobody
 // can explain, which is the state the decision refused. `widgets_seeded` is the same
 // character: only the RPC writes it and nothing live reads it, but it is what a real

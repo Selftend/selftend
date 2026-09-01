@@ -183,9 +183,9 @@ values (
 -- That state is producible (it is what `/arrange` leaves behind), but it makes the
 -- layout unexplainable, which is exactly what the decision refused.
 --
--- `anxious-thoughts` is the concern that EXPLAINS this account: it is the only one
--- whose `START_HERE_TARGETS` is `/modules/cbt/new`, and bob's whole dataset is five
--- thought records nudged by a 19:30 CBT reminder. `enabled_modules` stays `['cbt']` -
+-- `anxious-thoughts` is the concern that EXPLAINS this account: bob's whole dataset
+-- is five thought records nudged by a 19:30 CBT reminder, and that is the concern a
+-- person arriving with them would pick. `enabled_modules` stays `['cbt']` -
 -- unlike demo, bob needs no module edit.
 insert into public.user_preferences (
   user_id,
