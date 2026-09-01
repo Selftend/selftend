@@ -1,9 +1,4 @@
-import {
-  CONCERN_KEYS,
-  isConcernKey,
-  resolveConcernWidgetIds,
-  START_HERE_TARGETS,
-} from "@/src/features/onboarding/concerns";
+import { isConcernKey, resolveConcernWidgetIds } from "@/src/features/onboarding/concerns";
 
 describe("resolveConcernWidgetIds", () => {
   it("returns no widgets when nothing is picked", () => {
@@ -34,12 +29,6 @@ describe("resolveConcernWidgetIds", () => {
 });
 
 describe("concern metadata", () => {
-  it("has a start-here target for every concern", () => {
-    for (const key of CONCERN_KEYS) {
-      expect(START_HERE_TARGETS[key]).toMatch(/^\//);
-    }
-  });
-
   it("isConcernKey narrows correctly", () => {
     expect(isConcernKey("sleep")).toBe(true);
     expect(isConcernKey("nope")).toBe(false);

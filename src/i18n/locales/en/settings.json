@@ -40,7 +40,7 @@
     "saving": "Saving...",
     "replaySaved": "The app introduction will be shown again. Your Home widgets stay unchanged.",
     "replayError": "Unable to replay the introduction.",
-    "tipsSaved": "Optional button tips and the Start here suggestion can appear again.",
+    "tipsSaved": "Optional button tips can appear again.",
     "tipsError": "Unable to show tips again.",
     "appTitle": "Welcome to Selftend",
     "appBody1": "Selftend is a CBT programme - cognitive behavioural therapy - and a place for private reflection: structured exercises drawn from established approaches, plus everyday wellbeing tools, arranged your way.",
@@ -51,16 +51,8 @@
     "wizBack": "Back",
     "wizFinish": "Finish",
     "wizSkip": "Skip for now",
-    "wizStructureTitle": "How Selftend is organized",
-    "wizStructureIntro": "Two kinds of help, one place.",
-    "wizModulesTitle": "Modules",
-    "wizModulesBody": "Guided, structured programs based on established approaches. CBT - practical ways to examine unhelpful thoughts. ACT - skills for handling difficult feelings while acting on your values.",
-    "wizToolsTitle": "Tools",
-    "wizToolsBody": "Quick everyday utilities - check-in, journal, breathing, sleep, habits and more.",
-    "wizDashboardTitle": "Your dashboard",
-    "wizDashboardBody": "The home screen is yours to arrange - add, remove and reorder widgets any time.",
     "wizConcernsTitle": "What brings you here?",
-    "wizConcernsBody": "Pick anything that fits - this only arranges your dashboard. You can change it later, and nothing here is a diagnosis.",
+    "wizConcernsBody": "Pick anything that fits - it shapes your dashboard and the starter routine offered next. You can change it later, and nothing here is a diagnosis.",
     "modulesQuestion": "Would a self-help module be useful?",
     "modulesHint": "Choose CBT, ACT, both, or neither. This is a preference, not an assessment.",
     "modulesOptional": "Leave both unselected if you only want individual tools.",
@@ -78,19 +70,6 @@
       "sleep": "Sleep",
       "habits": "Building habits",
       "reflection": "Reflection & gratitude"
-    },
-    "startHere": {
-      "title": "Start here",
-      "dismiss": "Dismiss",
-      "cta": "Try it",
-      "body": {
-        "anxious-thoughts": "Anxious thoughts on your mind? A thought record helps you examine one.",
-        "low-mood": "The CBT module has gentle, structured ways to work with low mood.",
-        "stress-overwhelm": "Feeling swept up? Drop anchor - a short ACT steadying practice.",
-        "sleep": "Start by logging last night - patterns appear within a week.",
-        "habits": "Set up your first small habit - tiny and repeatable beats ambitious.",
-        "reflection": "Open the journal and write a few unpolished lines to begin."
-      }
     }
   },
   "onboardingSection": {
