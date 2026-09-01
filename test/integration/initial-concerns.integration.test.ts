@@ -140,6 +140,90 @@ describe("initial_concerns is written once (integration)", () => {
     await client.auth.signOut();
   });
 
+  /**
+   * ☠️ The hole the guard above still had (#1648).
+   *
+   * The `app_onboarding_completed_at` clause is a PROXY for "has been here
+   * before", and `20260705_grandfather_widget_onboarding.sql` breaks the proxy:
+   * every account that existed on 2026-07-05 was preserved with the flag TRUE
+   * and the timestamp NULL. For those rows both clauses of the old guard were
+   * false, so the oldest users — the ones most likely to still be around, and
+   * therefore the ones whose bias matters most — could still be filled in from
+   * a later re-run.
+   *
+   * `useApplyWidgetSuggestions` is the live path that reaches this: the
+   * empty-Home "Get suggestions" flow passes `completionMode: null` and still
+   * hits the same upsert.
+   */
+  it("leaves a GRANDFATHERED user NULL, even though their completion timestamp is null", async () => {
+    const { userId, client } = await newSignedInUser();
+
+    await client.rpc("apply_widget_recommendations", {
+      p_widget_ids: ["sleep-latest"],
+      p_selected_concerns: ["sleep"],
+      p_completion_mode: "finish",
+    });
+
+    // Exactly the shape 20260705_grandfather_widget_onboarding.sql leaves
+    // behind: onboarding marked done, but no `via` and no `_at` to prove it.
+    const grandfathered = await admin
+      .from("user_preferences")
+      .update({
+        initial_concerns: null,
+        app_onboarding_completed: true,
+        app_onboarding_completed_via: null,
+        app_onboarding_completed_at: null,
+      })
+      .eq("user_id", userId);
+    expect(grandfathered.error).toBeNull();
+
+    // The empty-Home suggestion flow: no completion mode, but the same upsert.
+    const suggestions = await client.rpc("apply_widget_recommendations", {
+      p_widget_ids: ["mood-checkin"],
+      p_selected_concerns: ["low-mood"],
+      p_completion_mode: null,
+    });
+    expect(suggestions.error).toBeNull();
+
+    expect(await readConcerns(client, userId)).toEqual({
+      selected_concerns: ["low-mood"],
+      initial_concerns: null,
+    });
+
+    // And a full completion must not fill it either.
+    const completed = await client.rpc("apply_widget_recommendations", {
+      p_widget_ids: ["habits-today"],
+      p_selected_concerns: ["habits"],
+      p_completion_mode: "finish",
+    });
+    expect(completed.error).toBeNull();
+
+    expect((await readConcerns(client, userId)).initial_concerns).toBeNull();
+
+    await client.auth.signOut();
+  });
+
+  it("still records intake for a genuinely new user who meets Home suggestions first", async () => {
+    // The counterpart the widened guard must not break: someone with no
+    // user_preferences row at all takes the INSERT branch, where the flag is
+    // false and there is nothing to guard against.
+    const { userId, client } = await newSignedInUser();
+
+    const suggestions = await client.rpc("apply_widget_recommendations", {
+      p_widget_ids: ["mood-checkin"],
+      p_selected_concerns: ["low-mood"],
+      p_completion_mode: null,
+    });
+    expect(suggestions.error).toBeNull();
+
+    expect(await readConcerns(client, userId)).toEqual({
+      selected_concerns: ["low-mood"],
+      initial_concerns: ["low-mood"],
+    });
+
+    await client.auth.signOut();
+  });
+
   it("exports the column, so a person can see what was recorded about them", async () => {
     const { client } = await newSignedInUser();
 
