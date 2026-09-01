@@ -79,9 +79,31 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // the digest alone still lets the version be reverted to a superseded release with
 // the suite green - the text would be unchanged, so the digest would still match.
 // Coupling them means either half moving alone fails the build.
+//
+// ⚠️ #1616 is the FIRST digest-only move, and the reasoning is recorded here
+// because a silently-moved digest is exactly how this gate stops meaning
+// anything. It rewrote three consent-bearing sentences - privacy §1 "Who we
+// are", terms §3 "Product scope and boundaries" and terms §5 "Acceptable use" -
+// to drop the phrase "guided self-help", which clinically means *with a
+// practitioner* and which Selftend does not have (docs/positioning.md).
+//
+// The version deliberately did NOT move, because nothing DISCLOSED changed:
+// not the data collected, not a processor, not retention, not a user right, not
+// eligibility, not liability, and not one item of the "not therapy, not medical
+// care, not diagnosis, not crisis intervention" boundary list. All three
+// sentences describe what Selftend *is*; terms §3 now also states that no
+// practitioner is involved, which is strictly more protective than what it
+// replaced. Every earlier bump here was a real disclosure - Apple as a
+// processor, the guest model and 12-month retention, SES and Discord - and
+// re-gating every existing user for a wording change that discloses nothing new
+// spends their attention on nothing and teaches them to click consent gates
+// through. That is the opposite of what this gate is for.
+//
+// So: a disclosure change bumps BOTH fields. A rewording moves the digest alone,
+// and says why, right here.
 const pinnedPolicyRelease = {
   version: "2026-08-27-feedback-processors",
-  englishDigest: "f81267ba3bbf3a1131d32f5a9bc7036f7021927f1cc95e5e307a6c16f2ce0864",
+  englishDigest: "dad00391cac004ccc1b0ceb51bbc3ff264b7184e27ae127248c6c1db2d6415e0",
 };
 
 describe("policy content - version pinning", () => {
