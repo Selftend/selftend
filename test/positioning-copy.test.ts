@@ -826,22 +826,23 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
    * ☠️ The compound is banned; the bare noun is not. #1616 swept 22 strings and
    * deliberately left twenty alone, because "self-help" on its own is accurate
    * and legally load-bearing where it appears: the GDPR clauses that name
-   * "private CBT thought records or other self-help entries", the support form's
-   * warning not to email them, and `settings:modulesQuestion` ("Would a
-   * self-help module be useful?"). Bulgarian mirrors all ten with bare
-   * `самопомощ`.
+   * "private CBT thought records or other self-help entries" and
+   * `settings:modulesQuestion` ("Would a self-help module be useful?"). The
+   * support form's placeholder was one of the twenty until #1727 replaced it
+   * with four per-category placeholders, none of which needs the noun.
+   * Bulgarian mirrors every remaining one with bare `самопомощ`.
    *
    * So if someone later "simplifies" the rules above to `/self-help/i` or
    * `/самопомощ/i`, this test names exactly what the simplification broke,
-   * instead of leaving twenty failures to be read as twenty bad strings.
+   * instead of leaving eighteen failures to be read as eighteen bad strings.
    */
   it("leaves the bare self-help noun alone in both locales", () => {
     const bare = USER_FACING.filter(({ text }) => /self-help|самопомощ/i.test(text));
 
-    // Ten per locale today. A floor rather than an equality, so rewording one
-    // string is not a test change - but high enough that an empty or moved
-    // corpus cannot make the loop below vacuous.
-    expect(bare.length).toBeGreaterThanOrEqual(18);
+    // Nine per locale today (ten until #1727). A floor rather than an equality,
+    // so rewording one string is not a test change - but high enough that an
+    // empty or moved corpus cannot make the loop below vacuous.
+    expect(bare.length).toBeGreaterThanOrEqual(16);
 
     for (const rule of GUIDED_SELF_HELP) {
       for (const entry of bare) {
