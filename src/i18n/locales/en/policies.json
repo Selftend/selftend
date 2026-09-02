@@ -446,6 +446,12 @@
         ]
       },
       {
+        "title": "Can I use Selftend too much?",
+        "body": [
+          "Not by count. No number of records is watched, and none is judged: Selftend does not read your records back to you. What matters is how a tool is being used, not how often. A thought record helps when it moves from \"why am I like this\" toward \"what is the evidence\"; it has stopped helping when you re-open the same thought to feel certain, or when challenging has become checking. Either of those, or reflection that consistently leaves you worse, is a pattern worth bringing to a professional. The programme's own rhythm - check-ins, a record when a feeling shifts, a weekly review - is the pace."
+        ]
+      },
+      {
         "title": "Is Selftend open source?",
         "body": [
           "Yes - the code is licensed under AGPL-3.0. Issues, contributor docs, and the roadmap are public on GitHub. The Selftend name, logo, and branding are not licensed for reuse."

@@ -1,0 +1,319 @@
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+
+import { defaultUserPreferences, type UserPreferences } from "@/src/features/modules/types";
+import type { RoutineToolRecords } from "@/src/features/routines/derive";
+import {
+  useCreateRoutine,
+  useAddStep,
+  useDeleteRoutine,
+  useRoutines,
+} from "@/src/features/routines/queries";
+import { StarterOfferCard } from "@/src/features/routines/starter-offer-card";
+import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
+import { useWidgetPreferences } from "@/src/features/home/queries";
+import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { useLayeredInsetStore } from "@/src/stores/layered-inset-store";
+import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
+import { renderWithProviders } from "@/test/render-with-providers";
+
+jest.mock("@/src/providers/session-provider", () => ({
+  useSession: () => ({ user: { id: "user-1" } }),
+}));
+
+jest.mock("@/src/features/settings/queries", () => ({
+  useUserPreferences: jest.fn(),
+  useUpdateUserPreferences: jest.fn(),
+}));
+
+jest.mock("@/src/features/routines/queries", () => ({
+  useRoutines: jest.fn(),
+  useCreateRoutine: jest.fn(),
+  useAddStep: jest.fn(),
+  useDeleteRoutine: jest.fn(),
+}));
+
+jest.mock("@/src/features/home/queries", () => ({
+  useWidgetPreferences: jest.fn(),
+}));
+
+jest.mock("@/src/features/routines/use-routine-tool-records", () => ({
+  useRoutineToolRecords: jest.fn(),
+}));
+
+const mockUseUserPreferences = jest.mocked(useUserPreferences);
+const mockUseUpdateUserPreferences = jest.mocked(useUpdateUserPreferences);
+const mockUseRoutines = jest.mocked(useRoutines);
+const mockUseCreateRoutine = jest.mocked(useCreateRoutine);
+const mockUseAddStep = jest.mocked(useAddStep);
+const mockUseDeleteRoutine = jest.mocked(useDeleteRoutine);
+const mockUseWidgetPreferences = jest.mocked(useWidgetPreferences);
+const mockUseRoutineToolRecords = jest.mocked(useRoutineToolRecords);
+
+const OFFER_TITLE = "Start with a ready-made routine?";
+
+// Every slice fetched; overrides add the records a scenario needs.
+function readyRecords(overrides: Partial<RoutineToolRecords> = {}): RoutineToolRecords {
+  return {
+    moodLogs: [],
+    journalEntries: [],
+    gratitudeEntries: [],
+    sleepLogs: [],
+    thoughtRecords: [],
+    mindfulnessSessions: [],
+    meditationSessions: [],
+    habitLogs: [],
+    activityLogs: [],
+    exposureSessions: [],
+    defusionLogs: [],
+    expansionLogs: [],
+    urgeSurfLogs: [],
+    connectionLogs: [],
+    observingSelfSessions: [],
+    bullsEyeSnapshots: [],
+    choicePoints: [],
+    committedActions: [],
+    actionSteps: [],
+    ...overrides,
+  };
+}
+
+function setPreferences(overrides: Partial<UserPreferences> = {}) {
+  const preferences = { ...defaultUserPreferences, ...overrides };
+  mockUseUserPreferences.mockReturnValue({ data: preferences } as ReturnType<
+    typeof useUserPreferences
+  >);
+  return preferences;
+}
+
+function setUpdateMutation() {
+  const mutateAsync = jest.fn().mockResolvedValue(undefined);
+  mockUseUpdateUserPreferences.mockReturnValue({
+    isPending: false,
+    mutateAsync,
+  } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+  return mutateAsync;
+}
+
+function setRoutineMutations() {
+  const createRoutine = jest.fn().mockResolvedValue({ id: "routine-1" });
+  const addStep = jest.fn().mockResolvedValue(undefined);
+  const deleteRoutine = jest.fn().mockResolvedValue(undefined);
+  mockUseCreateRoutine.mockReturnValue({
+    isPending: false,
+    mutateAsync: createRoutine,
+  } as unknown as ReturnType<typeof useCreateRoutine>);
+  mockUseAddStep.mockReturnValue({
+    isPending: false,
+    mutateAsync: addStep,
+  } as unknown as ReturnType<typeof useAddStep>);
+  mockUseDeleteRoutine.mockReturnValue({
+    isPending: false,
+    mutateAsync: deleteRoutine,
+  } as unknown as ReturnType<typeof useDeleteRoutine>);
+  return { createRoutine, addStep, deleteRoutine };
+}
+
+// The second-action baseline: two distinct tools have records, no routine
+// exists, two kept widgets compose the starter, and the reminder prompt was
+// already asked for the saved tool - so the save is the starter offer's.
+function setEligibleScenario() {
+  const preferences = setPreferences({ reminderPromptedTools: ["journal"] });
+  const prefsMutate = setUpdateMutation();
+  const mutations = setRoutineMutations();
+  mockUseRoutines.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useRoutines>);
+  mockUseWidgetPreferences.mockReturnValue({
+    data: [
+      { widgetId: "mood-checkin", position: 0 },
+      { widgetId: "journal-week", position: 1 },
+    ],
+  } as unknown as ReturnType<typeof useWidgetPreferences>);
+  mockUseRoutineToolRecords.mockReturnValue(
+    readyRecords({
+      moodLogs: [{ dayKey: "2026-09-01" }],
+      journalEntries: [{ dayKey: "2026-09-02" }],
+    }),
+  );
+  return { preferences, prefsMutate, ...mutations };
+}
+
+function requestSave(targetKey: "mood" | "journal" = "journal") {
+  act(() => {
+    useReminderPromptStore.getState().requestReminderPrompt(targetKey);
+  });
+}
+
+describe("StarterOfferCard", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    act(() => {
+      useReminderPromptStore.setState({ request: null, promptVisible: false });
+      useLayeredInsetStore.setState({ edges: {} });
+    });
+  });
+
+  it("renders nothing while no save was requested", () => {
+    setEligibleScenario();
+
+    renderWithProviders(<StarterOfferCard />);
+
+    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+  });
+
+  it("shows the offer at the second action and marks it offered on show", async () => {
+    const { prefsMutate } = setEligibleScenario();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    expect(await screen.findByText(OFFER_TITLE)).toBeTruthy();
+    // The composed steps are on the card, in kept-widget order.
+    expect(screen.getByText("Mood check-in")).toBeTruthy();
+    expect(screen.getByText("Journal")).toBeTruthy();
+    await waitFor(() => {
+      expect(prefsMutate).toHaveBeenCalledWith({ starterRoutineOffered: true });
+    });
+  });
+
+  it("yields the save to the reminder prompt", async () => {
+    // Same second-action state, but the saved tool was never reminder-prompted:
+    // the reminder prompt is eligible, so it wins this save outright.
+    setEligibleScenario();
+    setPreferences({ reminderPromptedTools: [] });
+    const prefsMutate = setUpdateMutation();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    await act(async () => {});
+
+    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    expect(prefsMutate).not.toHaveBeenCalled();
+  });
+
+  it("never shows again once the offer was shown", async () => {
+    setEligibleScenario();
+    setPreferences({ reminderPromptedTools: ["journal"], starterRoutineOffered: true });
+    const prefsMutate = setUpdateMutation();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    await act(async () => {});
+
+    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    expect(prefsMutate).not.toHaveBeenCalled();
+  });
+
+  it("renders nothing when the user already owns a routine", async () => {
+    setEligibleScenario();
+    mockUseRoutines.mockReturnValue({
+      data: [{ id: "routine-1", steps: [] }],
+    } as unknown as ReturnType<typeof useRoutines>);
+    const prefsMutate = setUpdateMutation();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    await act(async () => {});
+
+    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    expect(prefsMutate).not.toHaveBeenCalled();
+  });
+
+  it("renders nothing before the second distinct tool has records", async () => {
+    setEligibleScenario();
+    mockUseRoutineToolRecords.mockReturnValue(
+      readyRecords({ journalEntries: [{ dayKey: "2026-09-02" }] }),
+    );
+    const prefsMutate = setUpdateMutation();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    await act(async () => {});
+
+    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    expect(prefsMutate).not.toHaveBeenCalled();
+  });
+
+  it("renders nothing when the kept widgets compose fewer than two steps", async () => {
+    setEligibleScenario();
+    mockUseWidgetPreferences.mockReturnValue({
+      data: [{ widgetId: "mood-checkin", position: 0 }],
+    } as unknown as ReturnType<typeof useWidgetPreferences>);
+    const prefsMutate = setUpdateMutation();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    await act(async () => {});
+
+    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    expect(prefsMutate).not.toHaveBeenCalled();
+  });
+
+  it("yields while the reminder prompt card is on screen", async () => {
+    setEligibleScenario();
+    act(() => {
+      useReminderPromptStore.getState().setPromptVisible(true);
+    });
+    const prefsMutate = setUpdateMutation();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    await act(async () => {});
+
+    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    expect(prefsMutate).not.toHaveBeenCalled();
+  });
+
+  it("keeps the routine through the normal write path on accept, with no reminder", async () => {
+    const { prefsMutate, createRoutine, addStep } = setEligibleScenario();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    fireEvent.press(await screen.findByText("Keep"));
+
+    await waitFor(() => {
+      expect(createRoutine).toHaveBeenCalledWith({ name: "My daily routine" });
+    });
+    await waitFor(() => {
+      expect(addStep).toHaveBeenCalledTimes(2);
+    });
+    expect(addStep).toHaveBeenNthCalledWith(1, {
+      routineId: "routine-1",
+      toolId: "mood",
+      position: 0,
+    });
+    expect(addStep).toHaveBeenNthCalledWith(2, {
+      routineId: "routine-1",
+      toolId: "journal",
+      position: 1,
+    });
+    await waitFor(() => {
+      expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    });
+    // The only preference write is the on-show mark: keeping the routine
+    // attaches no reminder and touches nothing else.
+    expect(prefsMutate).toHaveBeenCalledTimes(1);
+    expect(prefsMutate).toHaveBeenCalledWith({ starterRoutineOffered: true });
+  });
+
+  it("declines silently: the shown-flag is the only write", async () => {
+    const { prefsMutate, createRoutine } = setEligibleScenario();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    fireEvent.press(await screen.findByText("Skip"));
+
+    await waitFor(() => {
+      expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    });
+    expect(createRoutine).not.toHaveBeenCalled();
+    expect(prefsMutate).toHaveBeenCalledTimes(1);
+    expect(prefsMutate).toHaveBeenCalledWith({ starterRoutineOffered: true });
+  });
+});

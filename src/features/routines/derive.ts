@@ -162,8 +162,9 @@ const onCapturedDay = (items: readonly { dayKey: string }[] | undefined, dayKey:
 
 // Grounding is the closed set of technique slugs; every other mindfulness
 // session is a breathing session (built-in breathing slugs plus user-defined
-// custom exercise ids, which cannot be enumerated statically).
-const isGroundingSession = (exerciseName: string): boolean =>
+// custom exercise ids, which cannot be enumerated statically). Exported so the
+// starter-offer's distinct-tool count splits the shared table by the same rule.
+export const isGroundingSession = (exerciseName: string): boolean =>
   (groundingSlugs as readonly string[]).includes(exerciseName);
 
 /**

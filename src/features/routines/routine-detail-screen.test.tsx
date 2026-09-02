@@ -106,11 +106,10 @@ describe("RoutineDetailScreen", () => {
     renderWithProviders(<RoutineDetailScreen routineId="r-1" />);
 
     expect(screen.getByText("Last 7 days")).toBeTruthy();
-    expect(
-      screen.getByText(
-        "Filled days are days the whole routine came together. Empty days are just empty - one missed day doesn't undo what you're building.",
-      ),
-    ).toBeTruthy();
+    // Trimmed to the record (#1669): the old tail ("one missed day doesn't
+    // undo what you're building") named the absent breakage - the negated-
+    // undoing family test/restraint-copy.test.ts now guards against.
+    expect(screen.getByText("Filled days are days the whole routine came together.")).toBeTruthy();
     expect(screen.queryAllByLabelText(/: routine complete$/)).toHaveLength(0);
     expect(screen.getAllByLabelText(/: not completed$/)).toHaveLength(7);
     expect(screen.queryByText(/streak/i)).toBeNull();

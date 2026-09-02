@@ -14,7 +14,7 @@
     "dayComplete": "{{date}}: routine complete",
     "dayOpen": "{{date}}: not completed",
     "dayNotScheduled": "{{date}}: not scheduled",
-    "note": "Filled days are days the whole routine came together. Empty days are just empty - one missed day doesn't undo what you're building."
+    "note": "Filled days are days the whole routine came together."
   },
   "status": {
     "notStarted": "Not started",

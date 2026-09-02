@@ -187,6 +187,22 @@ describe("ReminderPromptCard", () => {
     });
   });
 
+  it("publishes visibility while shown, so the starter offer can yield (#1677)", async () => {
+    setPreferences();
+    setUpdateMutation();
+
+    renderWithProviders(<ReminderPromptCard />);
+    requestPrompt("mood");
+
+    await screen.findByText("Set reminder");
+    expect(useReminderPromptStore.getState().promptVisible).toBe(true);
+
+    fireEvent.press(screen.getByText("No thanks"));
+    await waitFor(() => {
+      expect(useReminderPromptStore.getState().promptVisible).toBe(false);
+    });
+  });
+
   it("rides above the bottom banner strip by the published inset (#667)", async () => {
     setPreferences();
     setUpdateMutation();

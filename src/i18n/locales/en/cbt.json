@@ -619,7 +619,13 @@
     "title": "Thinking patterns",
     "description": "Short explanations of the common thinking patterns to watch for. Sometimes called cognitive distortions. Naming the pattern makes an automatic thought easier to challenge and let go.",
     "useGently": "Use gently",
-    "useGentlyDescription": "These patterns are prompts for reflection, not labels to pin on yourself."
+    "useGentlyDescription": "These patterns are prompts for reflection, not labels to pin on yourself.",
+    "pacing": {
+      "title": "How much, and how",
+      "rhythm": "CBT works between sessions, in the life the records are about. More records in a day is not more progress. The programme's own rhythm is the pace: check-ins, a thought record when a feeling shifts, a review once a week.",
+      "mode": "A record helps when it moves from \"why am I like this\" toward \"what is the evidence\". Concrete beats abstract, and naming the thought alongside the feeling beats sitting in the feeling alone.",
+      "signs": "The signs it has stopped helping: re-opening the same thought to feel certain, or challenging that has become checking. Either of those, or reflection that consistently leaves you worse, is a pattern worth bringing to a professional."
+    }
   },
   "onboarding": {
     "intro": {
