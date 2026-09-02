@@ -97,4 +97,10 @@ export const NORMALIZED_GATE_PREFS = {
   // (plain @playwright/test, fresh user), which the normalization never
   // touches.
   email_verified: true,
+  // The once-ever starter-routine offer (#1677) counts as already shown.
+  // With reminder consent declined above, the reminder prompt never wins a
+  // save here, so a pooled user with records in two distinct tools and zero
+  // routines (bob, by design - see supabase/seed.sql) would otherwise pop
+  // the offer after any tool save and block unrelated specs' buttons.
+  starter_routine_offered: true,
 } as const;
