@@ -82,6 +82,7 @@ interface UserPreferenceRow {
   start_here_dismissed_at: string | null;
   shown_button_tours: string[] | null;
   reminder_prompted_tools: string[] | null;
+  starter_routine_offered: boolean | null;
   breath_sound_id: string | null;
   ambient_sound_id: string | null;
   breath_volume: number | null;
@@ -185,6 +186,7 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     startHereDismissedAt: row.start_here_dismissed_at ?? null,
     shownButtonTours: (row.shown_button_tours ?? []) as ButtonTourKey[],
     reminderPromptedTools: (row.reminder_prompted_tools ?? []) as ReminderPromptedTool[],
+    starterRoutineOffered: Boolean(row.starter_routine_offered),
     breathSoundId: row.breath_sound_id ?? defaultUserPreferences.breathSoundId,
     ambientSoundId: row.ambient_sound_id ?? defaultUserPreferences.ambientSoundId,
     breathVolume: row.breath_volume ?? defaultUserPreferences.breathVolume,
@@ -303,6 +305,7 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   startHereDismissedAt: "start_here_dismissed_at",
   shownButtonTours: "shown_button_tours",
   reminderPromptedTools: "reminder_prompted_tools",
+  starterRoutineOffered: "starter_routine_offered",
   breathSoundId: "breath_sound_id",
   ambientSoundId: "ambient_sound_id",
   breathVolume: "breath_volume",
