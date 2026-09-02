@@ -59,9 +59,7 @@ export default function ProgressScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      {/* The column sits on the padded scroll box, as `/support` applies it:
-          720 outer minus the `p-6` gutters is the 672 that Settings and
-          Notifications show (#1721). Inside the gutters it would read 720. */}
+      {/* Column on the padded box, not inside it - see `layout.ts` (#1721). */}
       <ScrollView contentContainerClassName={cn("grow p-6", HOME_COLUMN)}>
         <View className="gap-6">
           <View className="gap-2">
