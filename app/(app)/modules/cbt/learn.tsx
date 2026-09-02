@@ -32,12 +32,10 @@ export default function LearnScreen() {
           </Card>
 
           {/*
-           * Pace and mode, in the framework's voice (#1659 → #1671). This is the
-           * one place the over-use answer is taught: "too much" is a way of
-           * using, not an amount. Static on purpose - a computed "enough" was
-           * refused doubly (it appraises the record back at the user, #711/#952,
-           * and a count measures the wrong variable). The last paragraph carries
-           * the professional door itself; there is no link and no page behind it.
+           * Pace and mode, in the framework's voice: the one place the over-use
+           * answer is taught, static by ruling, with the professional door as the
+           * last sentence and nothing behind it. Why static, and why here:
+           * ADR-0004 § "The over-use obligation" (#1659 → #1671).
            */}
           <Card>
             <CardHeader>

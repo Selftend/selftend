@@ -33,13 +33,15 @@ const VOICE: Record<
     faqTitle: /^Can I use Selftend too much\?$/,
     door: /worth bringing to a professional/i,
     modeNotAmount: /more records in a day is not more progress/i,
-    signature: /challenging that has become checking/i,
+    // The card says "challenging that has become checking", the FAQ
+    // "challenging has become checking" - one phrase, two grammatical seats.
+    signature: /challenging (that )?has become checking/i,
   },
   bg: {
     faqTitle: /^Мога ли да използвам Selftend прекалено много\?$/,
     door: /да споделиш със специалист/i,
     modeNotAmount: /повече записи в един ден не са повече напредък/i,
-    signature: /оспорване, което е станало проверяване/i,
+    signature: /оспорване(то|, което)? е станало проверяване/i,
   },
 };
 

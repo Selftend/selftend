@@ -64,7 +64,7 @@ describe("CBT LearnScreen - the pacing-and-mode card (#1671)", () => {
     it("renders the card", () => {
       renderWithProviders(<LearnScreen />);
 
-      expect(screen.getByRole("heading", { name: "Колко, и как" })).toBeTruthy();
+      expect(screen.getByRole("heading", { name: "Колко и как" })).toBeTruthy();
       expect(screen.getByText(/Повече записи в един ден не са повече напредък/)).toBeTruthy();
       expect(screen.getByText(/да споделиш със специалист/)).toBeTruthy();
     });
