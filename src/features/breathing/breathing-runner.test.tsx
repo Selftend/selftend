@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, within } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react-native";
 
 import BreathingExerciseScreen from "@/app/(app)/tools/breathing/session";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
@@ -55,16 +55,39 @@ jest.mock("@/src/lib/color-scheme", () => ({ useColorSchemeName: () => "light" }
 // breathSoundId "none" => no spoken intro, so Start goes straight to the active
 // screen. A test that needs the preroll swaps in "guided" (which has an intro).
 const mockPrefs = { breathSoundId: "none", ambientSoundId: "none" };
-jest.mock("@/src/features/settings/queries", () => ({
-  useUserPreferences: () => ({ data: mockPrefs }),
-  useUpdateUserPreferences: () => ({
-    mutateAsync: jest.fn().mockResolvedValue(undefined),
-    isPending: false,
+// Set a `user_preferences` row here to bypass `mockPrefs` and read through the REAL
+// repository and query hook instead (mocked database -> mapper -> query -> screen),
+// for a test about what the mapper does to a stored id (#1745). Null = `mockPrefs`.
+let mockStoredRow: Record<string, unknown> | null = null;
+jest.mock("@/src/lib/supabase", () => ({
+  requireSupabase: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({ maybeSingle: async () => ({ data: mockStoredRow, error: null }) }),
+      }),
+    }),
   }),
 }));
+jest.mock("@/src/features/settings/queries", () => {
+  const actual = jest.requireActual<typeof import("@/src/features/settings/queries")>(
+    "@/src/features/settings/queries",
+  );
+  return {
+    useUserPreferences: () => {
+      // Called unconditionally (hooks rule); a null user id disables the query.
+      const real = actual.useUserPreferences(mockStoredRow ? "user-1" : null);
+      return mockStoredRow ? real : { data: mockPrefs };
+    },
+    useUpdateUserPreferences: () => ({
+      mutateAsync: jest.fn().mockResolvedValue(undefined),
+      isPending: false,
+    }),
+  };
+});
+const mockPlayIntroCue = jest.fn();
 jest.mock("@/src/features/breathing/use-breathing-audio", () => ({
   useBreathingAudio: () => {},
-  playIntroCue: () => {},
+  playIntroCue: (...args: unknown[]) => mockPlayIntroCue(...args),
 }));
 
 jest.mock("@/src/stores/toast-store", () => ({
@@ -89,6 +112,8 @@ beforeEach(() => {
   mockSaveMutateAsync.mockClear();
   beforeRemoveListeners.length = 0;
   mockPrefs.breathSoundId = "none";
+  mockStoredRow = null;
+  mockPlayIntroCue.mockClear();
 });
 
 const startSession = () => {
@@ -291,6 +316,30 @@ describe("Breathing session (4c)", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it("plays no intro and reads None on the Sounds row for a stored, retired breath id", async () => {
+    // ☠️ `wind` is still in `user_preferences.breath_sound_id` on any account that
+    // picked it before 2026-08-30. The screen does not resolve it - the repository
+    // does, once, when the row is read (#1745) - so the row goes in RAW and travels
+    // the real path (mocked database -> mapper -> query -> screen). Asserted: the
+    // two things the raw lookups used to decide on their own - no spoken intro, and
+    // a Sounds row that reads "None" rather than a raw key or a blank.
+    //
+    // ⚠️ Pre-load the screen shows the DEFAULT voice (guided, one "None" for the
+    // bed); the second "None" is what proves the row was read and resolved.
+    mockStoredRow = { user_id: "user-1", breath_sound_id: "wind", ambient_sound_id: "none" };
+    renderWithProviders(<BreathingExerciseScreen />);
+    expect(screen.getByText("Voice guidance")).toBeTruthy();
+    // ☠️ `findAllByText` would resolve on the FIRST match - the pre-load bed's "None"
+    // - so wait for the count instead.
+    await waitFor(() => expect(screen.getAllByText("None")).toHaveLength(2));
+    expect(screen.queryByText(/^breathing\./)).toBeNull();
+    fireEvent.press(screen.getByText("Start"));
+    // Straight to the active screen: no preroll, no cue.
+    expect(screen.queryByText("Get ready...")).toBeNull();
+    expect(mockPlayIntroCue).not.toHaveBeenCalled();
+    expect(screen.getByText("Inhale")).toBeTruthy();
   });
 
   it("animates the pacer with withTiming when motion is allowed", () => {

@@ -140,6 +140,13 @@ export default function BreathingSessionScreen() {
   const cycleProgress = useSharedValue(0);
   const saveMutation = useSaveBreathingSession(user?.id ?? null);
   const audioPrefs = mergeUserPreferences(prefs, {});
+  // Looked up ONCE, from ids the repository has already resolved: a stored id the
+  // catalog lacks reaches this screen as `none` (#1745). The intro decision and the
+  // two Sounds rows below all read these, where each used to index the catalog on
+  // its own and this screen, unlike the runner and the sheet, never resolved first.
+  const { breathSoundId, ambientSoundId } = audioPrefs;
+  const breathSound = breathSoundLookup[breathSoundId];
+  const ambientSound = ambientSoundLookup[ambientSoundId];
 
   const elapsedNow = () => ((pausedAtMsRef.current || Date.now()) - startMsRef.current) / 1000;
 
@@ -165,8 +172,8 @@ export default function BreathingSessionScreen() {
   useBreathingAudio({
     active: screenPhase === "active" && !paused,
     phaseLabel: currentPhase?.label ?? null,
-    breathSoundId: audioPrefs.breathSoundId,
-    ambientSoundId: audioPrefs.ambientSoundId,
+    breathSoundId,
+    ambientSoundId,
     breathVolume,
     ambientVolume,
   });
@@ -432,7 +439,6 @@ export default function BreathingSessionScreen() {
     if (prefs?.lastBreathingPatternId !== patternId)
       patchPrefs({ lastBreathingPatternId: patternId });
     // Guided voice sounds get a short spoken intro before the cycle starts.
-    const breathSound = breathSoundLookup[audioPrefs.breathSoundId];
     if (breathSound?.introAsset) {
       setScreenPhase("preroll");
       playIntroCue(breathSound.introAsset, audioPrefs.breathVolume);
@@ -652,21 +658,13 @@ export default function BreathingSessionScreen() {
               // `sounds.none`, not under `sounds.breath.*`, so building the
               // key from the id here would render a raw key string for the
               // default selection.
-              value={
-                breathSoundLookup[audioPrefs.breathSoundId]
-                  ? t(breathSoundLookup[audioPrefs.breathSoundId].labelKey)
-                  : t("breathing.setup.none")
-              }
+              value={breathSound ? t(breathSound.labelKey) : t("breathing.setup.none")}
               onPress={() => setSoundsOpen(true)}
             />
             <SoundRow
               icon="graphic-eq"
               label={t("breathing.setup.ambientSound")}
-              value={
-                ambientSoundLookup[audioPrefs.ambientSoundId]
-                  ? t(ambientSoundLookup[audioPrefs.ambientSoundId].labelKey)
-                  : t("breathing.setup.none")
-              }
+              value={ambientSound ? t(ambientSound.labelKey) : t("breathing.setup.none")}
               onPress={() => setSoundsOpen(true)}
               last
             />
