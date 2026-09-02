@@ -23,6 +23,7 @@ const assessmentPhase: CurrentPhaseView = {
   themeLabelKey: "program.weeks.assessment.title",
   themeSubKey: "program.weeks.assessment.sub",
   themeDescKey: "program.weeks.assessment.description",
+  leadsWithDailyPractice: true,
   milestones: [
     {
       key: "setGoals",
@@ -75,6 +76,50 @@ function makeProgram(overrides: Partial<CbtProgramView>): CbtProgramView {
 
 describe("CbtProgramCard", () => {
   beforeEach(() => jest.clearAllMocks());
+
+  describe("section order (#1676)", () => {
+    it("renders the daily practice before the milestones when the phase leads with it", () => {
+      renderWithProviders(
+        <CbtProgramCard
+          program={makeProgram({ phaseReady: false, phase: assessmentPhaseNotReady })}
+          onStart={jest.fn()}
+          onAdvance={jest.fn()}
+        />,
+      );
+
+      const headings = screen.getAllByText(/^(This phase|Today's practice)$/);
+      expect(headings.map((node) => node.props.children)).toEqual([
+        "Today's practice",
+        "This phase",
+      ]);
+
+      // The rows follow their headings: the practice row renders above the
+      // first milestone row.
+      const rows = screen.getAllByText(
+        /^(Notice your thoughts, feelings & behaviours today|Set 1-2 goals)$/,
+      );
+      expect(rows[0].props.children).toBe("Notice your thoughts, feelings & behaviours today");
+    });
+
+    it("renders the milestones first when the phase does not lead with its practice", () => {
+      renderWithProviders(
+        <CbtProgramCard
+          program={makeProgram({
+            phaseReady: false,
+            phase: { ...assessmentPhaseNotReady, leadsWithDailyPractice: false },
+          })}
+          onStart={jest.fn()}
+          onAdvance={jest.fn()}
+        />,
+      );
+
+      const headings = screen.getAllByText(/^(This phase|Today's practice)$/);
+      expect(headings.map((node) => node.props.children)).toEqual([
+        "This phase",
+        "Today's practice",
+      ]);
+    });
+  });
 
   describe("in_progress with phaseReady=true", () => {
     it("shows the ready banner and advance CTA, pressing advance calls onAdvance directly", () => {
