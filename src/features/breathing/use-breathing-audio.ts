@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Platform } from "react-native";
-import type { AudioPlayer } from "expo-audio";
 
 import type { PhaseLabel } from "@/src/constants/breathing";
 import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { breathClipFor } from "@/src/features/breathing/breath-audio-plan";
-import { ensureNativeAudioMode, loadExpoAudio, playOneShot } from "@/src/lib/native-audio";
+import { createLanePlayer } from "@/src/features/breathing/lane-player";
+import { playOneShot } from "@/src/lib/native-audio";
 
 interface BreathingAudioOptions {
   active: boolean;
@@ -14,73 +13,6 @@ interface BreathingAudioOptions {
   ambientSoundId: string;
   breathVolume: number;
   ambientVolume: number;
-}
-
-// A tiny platform-abstracted player so the controller logic stays readable.
-interface LanePlayer {
-  play: (asset: number, volume: number, loop: boolean) => Promise<void>;
-  setVolume: (volume: number) => Promise<void>;
-  stop: () => Promise<void>;
-}
-
-function createLanePlayer(): LanePlayer {
-  if (Platform.OS === "web") {
-    let el: HTMLAudioElement | null = null;
-    return {
-      async play(asset, volume, loop) {
-        el?.pause();
-        el = new window.Audio(asset as unknown as string);
-        el.loop = loop;
-        el.volume = volume;
-        await el.play().catch(() => {});
-      },
-      async setVolume(volume) {
-        if (el) el.volume = volume;
-      },
-      async stop() {
-        el?.pause();
-        el = null;
-      },
-    };
-  }
-
-  let player: AudioPlayer | null = null;
-  // Bumped by every play()/stop(); a play() that resumes after awaiting the
-  // audio-mode setup only proceeds if it hasn't been superseded meanwhile.
-  let playGen = 0;
-  return {
-    async play(asset, volume, loop) {
-      const gen = ++playGen;
-      try {
-        const audio = loadExpoAudio();
-        await ensureNativeAudioMode(audio);
-        if (gen !== playGen) return;
-        player?.remove();
-        player = audio.createAudioPlayer(asset);
-        player.loop = loop;
-        player.volume = volume;
-        player.play();
-      } catch {
-        // Audio is best-effort; never crash a breathing session.
-      }
-    },
-    async setVolume(volume) {
-      try {
-        if (player) player.volume = volume;
-      } catch {
-        // ignore
-      }
-    },
-    async stop() {
-      playGen++;
-      try {
-        player?.remove();
-      } catch {
-        // ignore
-      }
-      player = null;
-    },
-  };
 }
 
 /** Fire-and-forget one-shot (used for the spoken intro before a session). Self-releases. */
@@ -97,6 +29,10 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
   const breathClipRef = useRef<number | null>(null);
 
   // Ambient: start/stop with the session; restart when the chosen sound changes.
+  // `active` drops on every pause as well as at the end, and the lane fades on both
+  // (#1743): stop() ramps the bed to 0 before releasing it, play() ramps the next one
+  // up from 0. A swap runs this effect's cleanup (stop) and body (play) in one tick;
+  // the lane cuts the outgoing bed and fades the new one in - see `lane-player.ts`.
   useEffect(() => {
     const lane = ambientLane;
     if (!active) {
@@ -142,6 +78,10 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
     void ambientLane.setVolume(ambientVolume);
   }, [ambientLane, ambientVolume]);
 
+  // Unmount: stop() on a looping lane starts a fade-out that OUTLIVES this component -
+  // the ramp is a setInterval with no React owner, finishes within LOOP_FADE_MS and
+  // releases the player itself. Chosen over an immediate cut so that leaving the
+  // screen mid-session sounds like the session ending, not like a cable pulled.
   useEffect(() => {
     return () => {
       void breathLane.stop();
