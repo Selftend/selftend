@@ -31,6 +31,23 @@ export default function LearnScreen() {
             </CardHeader>
           </Card>
 
+          {/*
+           * Pace and mode, in the framework's voice (#1659 → #1671). This is the
+           * one place the over-use answer is taught: "too much" is a way of
+           * using, not an amount. Static on purpose - a computed "enough" was
+           * refused doubly (it appraises the record back at the user, #711/#952,
+           * and a count measures the wrong variable). The last paragraph carries
+           * the professional door itself; there is no link and no page behind it.
+           */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("learn.pacing.title")}</CardTitle>
+              <CardDescription>{t("learn.pacing.rhythm")}</CardDescription>
+              <CardDescription>{t("learn.pacing.mode")}</CardDescription>
+              <CardDescription>{t("learn.pacing.signs")}</CardDescription>
+            </CardHeader>
+          </Card>
+
           {distortionDefinitions.map((distortion) => (
             <Card key={distortion.key}>
               <CardHeader>
