@@ -1,6 +1,6 @@
 # Google Play listing text
 
-**Last verified against Play Console: 2026-09-02** (the text below was saved and sent for review that day; see the note under the verbatim heading).
+**Last verified against Play Console and the public listing page: 2026-09-02.**
 
 Governed by [docs/positioning.md](../docs/positioning.md). Play Console text is an owner-only hand edit, so this file is a **mirror**, not a source — editing it changes nothing in the store.
 
@@ -14,11 +14,9 @@ That makes this file the weakest gate in `docs/positioning.md`, and it is kept a
 
 Play was also the most-contradicted listing on the positioning map until the 2026-09-02 edit, which is why leaving it with zero repository representation was the worse end of the trade.
 
-## Verbatim, as saved in Play Console on 2026-09-02
+## Verbatim, as read on 2026-09-02
 
-Read back from the Play Console store-listing form on 2026-09-02, after the owner saved the edit and sent it for review (the [#1694](https://github.com/Selftend/selftend/issues/1694) visit: new short description, new first paragraph, new sync line; nothing else changed). This block is the form word for word, not a summary.
-
-⚠️ **In review as of 2026-09-02.** Every store-listing edit is reviewed by Google for up to seven days, and the public listing page keeps showing the previous text until the review clears. If the public page still reads "Guided self-help…" after that window, the edit was rejected — check Publishing overview, fix, and update this block. Once the public page matches this block, delete this paragraph and bump the date at the top; nothing else needs to change.
+Saved in the Play Console store-listing form on 2026-09-02 (the [#1694](https://github.com/Selftend/selftend/issues/1694) visit: new short description, new first paragraph, new sync line; nothing else changed), read back from the form after the save, and cross-checked against the public listing page the same day once Google's review had cleared (the raw HTML carried the new short description, first paragraph and sync line, and none of the previous phrasing). This block is the listing word for word, not a summary.
 
 **Short description (62 of 80 characters):**
 
