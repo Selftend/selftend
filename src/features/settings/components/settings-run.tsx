@@ -15,6 +15,14 @@ interface SettingsRunProps {
    */
   label?: string;
   children: ReactNode;
+  /**
+   * What the rows sit on. `card` (the default) is the settings page: a bordered,
+   * filled panel with its own inset. `hairline` (#1725) is for a run that lives
+   * inside a titled `Section`, where the section already carries the chrome - a
+   * card there would be a box inside a box, so the run draws nothing of its own
+   * and keeps only the eyebrow and the rules between rows.
+   */
+  surface?: "card" | "hairline";
   testID?: string;
 }
 
@@ -30,10 +38,13 @@ interface SettingsRunProps {
  * ⚠️ `Children.toArray` drops a `null` CHILD, but not a child element that
  * returns `null` once rendered. A platform-gated row must therefore be gated at
  * its mount point (`{Platform.OS === "web" ? null : <AppLockRow />}`) and never
- * by hiding itself, or its slot survives as a rule with nothing under it.
+ * by hiding itself, or its slot survives as a rule with nothing under it. This
+ * holds on either surface: a hairline run has no border to hide a stray rule
+ * against, so the empty slot would read as a rule with nothing under it there too.
  */
-export function SettingsRun({ label, children, testID }: SettingsRunProps) {
+export function SettingsRun({ label, children, surface = "card", testID }: SettingsRunProps) {
   const rows = Children.toArray(children);
+  const card = surface === "card";
 
   return (
     <View className="gap-2">
@@ -44,11 +55,13 @@ export function SettingsRun({ label, children, testID }: SettingsRunProps) {
         runs a screen-reader user can jump between.
       */}
       {label ? (
-        <Text variant="eyebrow" accessibilityRole="header" className="px-1">
+        // The eyebrow's inset is optical, against the card's rounded edge; with no
+        // card it sits on the same left edge as the rows' glyphs.
+        <Text variant="eyebrow" accessibilityRole="header" className={cn(card && "px-1")}>
           {label}
         </Text>
       ) : null}
-      <View className="rounded-xl border border-border bg-card px-4" testID={testID}>
+      <View className={cn(card && "rounded-xl border border-border bg-card px-4")} testID={testID}>
         {rows.map((row, index) => (
           <View
             key={index}

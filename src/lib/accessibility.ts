@@ -54,6 +54,31 @@ export function spaceKeyActivationProps(onPress: () => void) {
   };
 }
 
+/**
+ * Web-only Enter-key activation for a `role="link"` Pressable that has no
+ * `href`. react-native-web (0.21.2, `PressResponder.js:217`) treats a `link`
+ * role as a native anchor and hands its Enter to the browser instead of calling
+ * `onPress` - but a Pressable without `href` renders `<div role="link">`, which
+ * the browser does nothing with, so the row is dead to the keyboard. Spread the
+ * result onto the Pressable. Space is deliberately not handled: a link never
+ * activates on Space. No-op on native.
+ */
+export function enterKeyActivationProps(onPress: () => void) {
+  if (Platform.OS !== "web") {
+    return {};
+  }
+
+  return {
+    onKeyDown: (event: WebSpaceKeyEvent) => {
+      if (event.key !== "Enter" || event.repeat) {
+        return;
+      }
+      event.preventDefault();
+      onPress();
+    },
+  };
+}
+
 interface WebArrowKeyEvent {
   key: string;
   preventDefault: () => void;

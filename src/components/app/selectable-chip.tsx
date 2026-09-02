@@ -3,11 +3,28 @@ import { Pressable, View } from "react-native";
 import { cn } from "@/lib/utils";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
+import type { RovingItemProps } from "@/src/lib/roving-focus";
 
 interface SelectableChipProps {
   label: string;
   selected: boolean;
+  /** For a radio chip this is "select me" - the name is kept so no consumer moves. */
   onToggle: () => void;
+  /**
+   * `checkbox` (the default) picks any number from a run; `radio` (#1725) picks
+   * one. A radio chip belongs inside a `radiogroup` the CALLER renders - the
+   * chip cannot know its siblings, so it never draws the group itself.
+   */
+  role?: "checkbox" | "radio";
+  /**
+   * The caller's `useRovingFocus().getItemProps(index, onToggle)`, for a chip in
+   * a radiogroup: arrows move between chips, Space selects, as in the emoji
+   * picker. When given, it REPLACES the chip's own Space handler rather than
+   * stacking on it - both own `onKeyDown`, so stacked they would either clobber
+   * each other or fire the selection twice per Space (the RNW Space-activation
+   * trap). `{}` on native, where there is nothing to rove.
+   */
+  rovingProps?: RovingItemProps;
   /**
    * Optional leading glyph, rendered **inline at text size** — deliberately not
    * a tile. The design's caption objects to emoji *tiles* ("no emoji tiles, no
@@ -40,11 +57,18 @@ interface SelectableChipProps {
  * The chip stays ~32px tall so a long list does not become a scroll; the ≥44dp
  * touch target comes from `hitSlop`, as it does on the body-sensation chips
  * beside it.
+ *
+ * `aria-checked`, never `accessibilityState`: react-native-web drops the latter
+ * and the eslint gate forbids it. React Native maps `aria-checked` onto
+ * `accessibilityState.checked` itself, so a radio's checked state follows
+ * `selected` on every platform through the one prop.
  */
 export function SelectableChip({
   label,
   selected,
   onToggle,
+  role = "checkbox",
+  rovingProps,
   emoji,
   accessibilityLabel,
   testID,
@@ -52,7 +76,8 @@ export function SelectableChip({
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityRole="checkbox"
+      accessibilityRole={role}
+      role={role}
       aria-checked={selected}
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
       onPress={onToggle}
@@ -61,7 +86,10 @@ export function SelectableChip({
         "flex-row items-center gap-1.5 rounded-full border px-3 py-1.5",
         selected ? "border-primary bg-primary/10" : "border-border bg-card",
       )}
-      {...spaceKeyActivationProps(onToggle)}
+      // One owner of `onKeyDown`. RNW activates neither a checkbox nor a radio
+      // on Space, so a chip outside a roving group needs its own handler; inside
+      // one, the group's item props already carry it.
+      {...(rovingProps ?? spaceKeyActivationProps(onToggle))}
     >
       {emoji ? (
         // Decorative: the label already carries the name, and announcing the
