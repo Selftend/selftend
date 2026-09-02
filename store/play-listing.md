@@ -1,6 +1,6 @@
 # Google Play listing text
 
-**Last verified against Play Console: 2026-09-02.**
+**Last verified against Play Console: 2026-09-02** (the text below was saved and sent for review that day; see the note under the verbatim heading).
 
 Governed by [docs/positioning.md](../docs/positioning.md). Play Console text is an owner-only hand edit, so this file is a **mirror**, not a source — editing it changes nothing in the store.
 
@@ -12,19 +12,21 @@ That makes this file the weakest gate in `docs/positioning.md`, and it is kept a
 
 ⚠️ **An unverified mirror can rot into a lie.** If the date above is old, trust Play Console and not this file — then update this file in a PR, so the change is reviewed and the reason is in the commit message.
 
-Play is also the most-contradicted listing on the map, which is why leaving it with zero repository representation was the worse end of the trade.
+Play was also the most-contradicted listing on the positioning map until the 2026-09-02 edit, which is why leaving it with zero repository representation was the worse end of the trade.
 
-## Verbatim, as read on 2026-09-02
+## Verbatim, as saved in Play Console on 2026-09-02
 
-Captured from the public listing page (a full browser render, cross-checked against the raw HTML — the two agreed) and confirmed against Play Console the same day. The public page shows the live text, so this block is the listing word for word, not a summary.
+Read back from the Play Console store-listing form on 2026-09-02, after the owner saved the edit and sent it for review (the [#1694](https://github.com/Selftend/selftend/issues/1694) visit: new short description, new first paragraph, new sync line; nothing else changed). This block is the form word for word, not a summary.
 
-**Short description (80 characters):**
+⚠️ **In review as of 2026-09-02.** Every store-listing edit is reviewed by Google for up to seven days, and the public listing page keeps showing the previous text until the review clears. If the public page still reads "Guided self-help…" after that window, the edit was rejected — check Publishing overview, fix, and update this block. Once the public page matches this block, delete this paragraph and bump the date at the top; nothing else needs to change.
 
-> Guided self-help and private CBT thought records for calm reflection.
+**Short description (62 of 80 characters):**
+
+> A free, private CBT programme — cognitive behavioural therapy.
 
 **Full description:**
 
-> Selftend is a free, open-source wellness app for guided self-help and everyday reflection. It gathers a small set of calm, private tools in one place — no ads, no feeds, no streak pressure, no AI coach.
+> Selftend is a free, private CBT programme — cognitive behavioural therapy — with everyday tools for the days you cannot face it. A small set of calm, private tools in one place: no ads, no feeds, no pressure, no AI coach.
 >
 > What's inside:
 >
@@ -44,7 +46,7 @@ Captured from the public listing page (a full browser render, cross-checked agai
 > • No ads, no subscriptions, no selling of your data, and no social posting.
 > • You can export or delete your data at any time in Settings.
 >
-> An account keeps your entries in sync between the web and Android app.
+> An account keeps your entries in sync across web, iOS and Android.
 >
 > Available in English and Bulgarian. Selftend is for adults (18+).
 >
@@ -79,16 +81,16 @@ So the listing tells one story in Play's own terms: _mild content, designed for 
 
 ## Known contradictions in the live text
 
-Every one of these is recorded on [map #1597](https://github.com/Selftend/selftend/issues/1597) and has its own issue. **None of them is fixed by this file** — they are listed so that whoever next edits the listing fixes them in the same pass, rather than rediscovering them.
+**None as of the 2026-09-02 edit.** The four that [map #1597](https://github.com/Selftend/selftend/issues/1597) recorded were all fixed in that one Console visit ([#1694](https://github.com/Selftend/selftend/issues/1694)). They are kept here so the next editor knows the changes were deliberate and does not reintroduce them:
 
-| In the live listing                                 | Problem                                                                                                                                                                                                                                                  |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "Guided self-help and private CBT thought records…" | "Guided self-help" is clinically _with a practitioner_, which Selftend does not have. Off-frame and unsafe. The single highest-leverage string Selftend owns — it is the only place where the ranking surface and the reading surface are the same text. |
-| "a free, open-source **wellness app**"              | The wellness frame was ruled out. The frame is a CBT programme.                                                                                                                                                                                          |
-| "no streak pressure"                                | Against the owner's 2026-07-24 decision that the absence of streaks is never a pitch. Now also banned by `test/positioning-copy.test.ts`, which cannot reach Play. [#1619](https://github.com/Selftend/selftend/issues/1619).                            |
-| "between the web and **Android app**"               | Omits iOS, live since 2026-08-19. [#1621](https://github.com/Selftend/selftend/issues/1621).                                                                                                                                                             |
+| Was in the listing                                  | Why it went                                                                                                                                                                                                                           | Now                                                              |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| "Guided self-help and private CBT thought records…" | "Guided self-help" is clinically _with a practitioner_, which Selftend does not have. Off-frame and unsafe. The single highest-leverage string Selftend owns. Play half of [#1616](https://github.com/Selftend/selftend/issues/1616). | "A free, private CBT programme — cognitive behavioural therapy." |
+| "a free, open-source **wellness app**"              | The wellness frame was ruled out; the frame is a CBT programme. Play half of #1616.                                                                                                                                                   | "a free, private CBT programme — cognitive behavioural therapy"  |
+| "no streak pressure"                                | The absence of streaks is never a pitch (owner decision 2026-07-24); banned by `test/positioning-copy.test.ts`, which cannot reach Play. [#1619](https://github.com/Selftend/selftend/issues/1619).                                   | "no pressure"                                                    |
+| "between the web and **Android app**"               | Omitted iOS, live since 2026-08-19. [#1621](https://github.com/Selftend/selftend/issues/1621).                                                                                                                                        | "across web, iOS and Android"                                    |
 
-⚠️ The first two rows are the Play half of [#1616](https://github.com/Selftend/selftend/issues/1616), which swept the repo and deliberately left Play to the owner. They are still live.
+The rest of the description was left as it was on purpose: the feature list, the "Private by design" block, the 18+ line, and the closing "Important:" paragraph. That paragraph says "wellness and self-help tool" because it is the not-a-medical-device statement Play's health policy wants, and a guardrail outranks the frame ([AGENTS.md](../AGENTS.md) § Product guardrails).
 
 ### ✅ Checked and NOT a contradiction: "Routines and home-screen widgets"
 
@@ -102,4 +104,4 @@ The name collision is what caused it: `src/features/widgets` holds **both** the 
 
 ## When the listing is rewritten
 
-Take the frame sentence and the approved supporting lines from [docs/positioning.md](../docs/positioning.md), fix the four rows above in the same pass, then update the verbatim block here **and the date at the top** in the same PR. Every store-listing text edit is itself sent for review, so one visit that fixes everything costs one review; four visits cost four.
+Take the frame sentence and the approved supporting lines from [docs/positioning.md](../docs/positioning.md), bundle every pending fix into the same visit, then update the verbatim block here **and the date at the top** in the same PR. Every store-listing text edit is itself sent for review, so one visit that fixes everything costs one review; four visits cost four.
