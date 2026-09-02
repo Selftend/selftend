@@ -7,6 +7,7 @@ import {
   useMeditationProgramState,
   useMeditationSessionCount,
   useMeditationSessions,
+  useStagePracticeNotes,
   useUpsertMeditationProgramState,
 } from "@/src/features/meditation/queries";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/src/features/meditation/minutes-window";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 import { currentDateKey } from "@/src/utils/date";
 
 jest.mock("expo-router", () => {
@@ -661,6 +663,94 @@ describe("MeditationHomeScreen", () => {
       expect(screen.getByText("Your practice")).toBeTruthy();
       expect(screen.getByText("Stage 3 — Overcoming forgetting")).toBeTruthy();
       expect(screen.getByText("Learn the framework")).toBeTruthy();
+    });
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor - and this href-less Pressable is a `<div role="link">` the browser
+   * does nothing with, so Tab reached a link and Enter opened nothing (#1735).
+   * The link brings its own Enter handler: once per press, never on auto-repeat,
+   * never on Space (a link does not activate on Space) - and never on a button,
+   * which react-native-web activates itself; a second handler there would fire
+   * the press twice.
+   *
+   * ⚠️ jest can only prove the handler is there. The browser half - a real Enter
+   * on a real `<div role="link">` - is proven once for the helper itself, on the
+   * support page's Show-all door, in `test/e2e/support-page.e2e.test.ts`.
+   */
+  describe("links on web", () => {
+    const { router } = jest.requireMock<{ router: { push: jest.Mock } }>("expo-router");
+
+    beforeEach(() => {
+      setPlatformOS("web");
+    });
+
+    afterEach(() => {
+      setPlatformOS("ios");
+      jest.mocked(useStagePracticeNotes).mockReturnValue({
+        data: undefined,
+      } as unknown as ReturnType<typeof useStagePracticeNotes>);
+    });
+
+    it("the sessions link activates on Enter, once, and not on a held key or on Space; no button brings a handler", () => {
+      // The link renders only once a sit exists.
+      setSessions([session({ id: "s0" })]);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const door = screen.getByRole("link", { name: "Show all sits" });
+      const preventDefault = jest.fn();
+      door.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+      expect(router.push).toHaveBeenCalledTimes(1);
+      expect(router.push).toHaveBeenCalledWith("/tools/meditation/sessions");
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+
+      door.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+      door.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+      expect(router.push).toHaveBeenCalledTimes(1);
+
+      const buttons = screen.getAllByRole("button");
+      expect(buttons.length).toBeGreaterThan(0);
+      for (const button of buttons) {
+        expect(button.props.onKeyDown).toBeUndefined();
+      }
+    });
+
+    it("the daily-life link activates on Enter, once, and not on a held key or on Space", () => {
+      // The link renders only at stage 10, and only once more notes exist than the
+      // card shows.
+      mockUseMeditationProgramState.mockReturnValue({
+        data: { currentStage: 10, preferredDurationMinutes: 20 },
+      } as unknown as ReturnType<typeof useMeditationProgramState>);
+      jest.mocked(useStagePracticeNotes).mockReturnValue({
+        data: Array.from({ length: 8 }, (_, i) => ({
+          id: `n${i}`,
+          stage: 10,
+          note: `practice note ${i}`,
+          updatedAt: "2026-05-01T08:00:00.000Z",
+        })),
+      } as unknown as ReturnType<typeof useStagePracticeNotes>);
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const door = screen.getByRole("link", { name: "View all" });
+      const preventDefault = jest.fn();
+      door.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+      expect(router.push).toHaveBeenCalledTimes(1);
+      expect(router.push).toHaveBeenCalledWith("/tools/meditation/daily-life");
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+
+      door.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+      door.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+      expect(router.push).toHaveBeenCalledTimes(1);
+
+      // The card's own Save button sits in the same tree.
+      const buttons = screen.getAllByRole("button");
+      expect(buttons.length).toBeGreaterThan(0);
+      for (const button of buttons) {
+        expect(button.props.onKeyDown).toBeUndefined();
+      }
     });
   });
 });

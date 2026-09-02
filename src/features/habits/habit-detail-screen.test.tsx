@@ -16,6 +16,18 @@ import { tickGridStartKey } from "@/src/features/habits/tick-grid";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { setPlatformOS } from "@/test/modal-marker-mock";
+
+// Load-bearing for the "on web" test alone, which flips `Platform.OS` to "web".
+// This screen renders its overflow menu through `popover.tsx`, and the popover
+// picks its overlay wrapper at MODULE LOAD, under jest-expo's default iOS - so
+// the real `FullWindowOverlay` is already frozen in by the time the platform
+// moves, and its off-iOS branch warns (which `test/setup.js` turns into a
+// failure). The same local mock as `user-menu.test.tsx` (#1338).
+jest.mock("react-native-screens", () => ({
+  ...jest.requireActual("react-native-screens"),
+  FullWindowOverlay: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 jest.mock("expo-router", () => ({
   router: {
@@ -465,5 +477,54 @@ describe("HabitDetailScreen overflow menu", () => {
       pathname: "/tools/habits/[id]/edit",
       params: { id: "h-1" },
     });
+  });
+});
+
+/**
+ * react-native-web hands a `link`'s Enter to the browser, expecting a native
+ * anchor - and this href-less Pressable is a `<div role="link">` the browser
+ * does nothing with, so Tab reached the today's-note link and Enter opened nothing (#1735).
+ * The link brings its own Enter handler: once per press, never on auto-repeat,
+ * never on Space (a link does not activate on Space) - and never on a button,
+ * which react-native-web activates itself; a second handler there would fire
+ * the press twice.
+ *
+ * ⚠️ jest can only prove the handler is there. The browser half - a real Enter
+ * on a real `<div role="link">` - is proven once for the helper itself, on the
+ * support page's Show-all door, in `test/e2e/support-page.e2e.test.ts`.
+ */
+describe("HabitDetailScreen today's-note link on web", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+    setPlatformOS("web");
+  });
+
+  afterEach(() => {
+    setPlatformOS("ios");
+  });
+
+  it("activates on Enter, once, and not on a held key or on Space; no button brings a handler", () => {
+    renderWithProviders(<HabitDetailScreen habitId="h-1" />);
+
+    const door = screen.getByRole("link", { name: "Add note" });
+    const preventDefault = jest.fn();
+    door.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/tools/habits/[id]/log",
+      params: { id: "h-1", date: currentDateKey() },
+    });
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+
+    door.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+    door.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+    expect(router.push).toHaveBeenCalledTimes(1);
+
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(button.props.onKeyDown).toBeUndefined();
+    }
   });
 });

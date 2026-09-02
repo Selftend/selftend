@@ -29,13 +29,18 @@ import type { Habit, HabitLog } from "@/src/features/habits/types";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
 import { parseLocalNoon } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
-import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
+import {
+  DEFAULT_INTERACTIVE_HIT_SLOP,
+  enterKeyActivationProps,
+  spaceKeyActivationProps,
+} from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
 export default function HabitsHomeScreen() {
   const pushWithOrigin = usePushWithOrigin();
+  const openHistory = () => pushWithOrigin("/tools/habits/history");
   const { t } = useTranslation("habits");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -345,9 +350,10 @@ export default function HabitsHomeScreen() {
                 <Pressable
                   accessibilityRole="link"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() => pushWithOrigin("/tools/habits/history")}
+                  onPress={openHistory}
                   className="flex-row items-center gap-1 active:opacity-70"
                   role="link"
+                  {...enterKeyActivationProps(openHistory)}
                 >
                   <Text className="text-[13px] font-semibold text-primary-ink">
                     {t("cta.viewHistory")}

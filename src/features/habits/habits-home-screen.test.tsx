@@ -14,7 +14,21 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
+
+// Load-bearing for the "on web" test alone, which flips `Platform.OS` to "web".
+// This screen renders the real `ModuleHomeHeader` → `AddToHomeButton` →
+// `popover.tsx`, and the popover picks its overlay wrapper at MODULE LOAD, under
+// jest-expo's default iOS - so the real `FullWindowOverlay` is already frozen in
+// by the time the platform moves, and its off-iOS branch warns (which
+// `test/setup.js` turns into a failure). The same local mock as
+// `user-menu.test.tsx` (#1338); the journal and meditation tests need none
+// because they mock `AddToHomeButton` away.
+jest.mock("react-native-screens", () => ({
+  ...jest.requireActual("react-native-screens"),
+  FullWindowOverlay: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 jest.mock("expo-router", () => ({
   router: {
@@ -759,5 +773,51 @@ describe("HabitsHomeScreen ticked-state contrast", () => {
     // (test/chip-contrast.test.ts), not the decorative `border`.
     expect(style.borderColor).toBe(chip.ink);
     expect(style.borderColor).not.toBe(chip.border);
+  });
+});
+
+/**
+ * react-native-web hands a `link`'s Enter to the browser, expecting a native
+ * anchor - and this href-less Pressable is a `<div role="link">` the browser
+ * does nothing with, so Tab reached the history link and Enter opened nothing (#1735).
+ * The link brings its own Enter handler: once per press, never on auto-repeat,
+ * never on Space (a link does not activate on Space) - and never on a button,
+ * which react-native-web activates itself; a second handler there would fire
+ * the press twice.
+ *
+ * ⚠️ jest can only prove the handler is there. The browser half - a real Enter
+ * on a real `<div role="link">` - is proven once for the helper itself, on the
+ * support page's Show-all door, in `test/e2e/support-page.e2e.test.ts`.
+ */
+describe("HabitsHomeScreen history link on web", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDefaults();
+    setPlatformOS("web");
+  });
+
+  afterEach(() => {
+    setPlatformOS("ios");
+  });
+
+  it("activates on Enter, once, and not on a held key or on Space; no button brings a handler", async () => {
+    renderWithProviders(<HabitsHomeScreen />);
+
+    const door = await screen.findByRole("link", { name: /View history/i });
+    const preventDefault = jest.fn();
+    door.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+    expect(jest.mocked(router).push).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(router).push).toHaveBeenCalledWith("/tools/habits/history");
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+
+    door.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+    door.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+    expect(jest.mocked(router).push).toHaveBeenCalledTimes(1);
+
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(button.props.onKeyDown).toBeUndefined();
+    }
   });
 });

@@ -37,7 +37,11 @@ import {
   type TickGridWeek,
 } from "@/src/features/habits/tick-grid";
 import type { Habit, HabitLog } from "@/src/features/habits/types";
-import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
+import {
+  DEFAULT_INTERACTIVE_HIT_SLOP,
+  enterKeyActivationProps,
+  spaceKeyActivationProps,
+} from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { useSession } from "@/src/providers/session-provider";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
@@ -147,6 +151,7 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
       params: { id: habitId, date: dayKey },
     });
   }
+  const openTodayNote = () => openNote(todayKey);
 
   async function confirmArchive() {
     setActionError(undefined);
@@ -352,9 +357,10 @@ export function HabitDetailScreen({ habitId }: HabitDetailScreenProps) {
                 <Pressable
                   accessibilityRole="link"
                   hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                  onPress={() => openNote(todayKey)}
+                  onPress={openTodayNote}
                   className="flex-row items-center gap-1 active:opacity-70"
                   role="link"
+                  {...enterKeyActivationProps(openTodayNote)}
                 >
                   <Icon name="add" className="size-3.5 text-primary-ink" />
                   <Text className="text-[13px] font-semibold text-primary-ink">

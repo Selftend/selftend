@@ -7,6 +7,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useSaveStagePracticeNote, useStagePracticeNotes } from "@/src/features/meditation/queries";
+import { enterKeyActivationProps } from "@/src/lib/accessibility";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useLocaleFormats } from "@/src/lib/locale-format";
@@ -16,6 +17,7 @@ const MAX_RECENT = 7;
 
 export function MeditationDailyLifeCard() {
   const pushWithOrigin = usePushWithOrigin();
+  const openArchive = () => pushWithOrigin("/tools/meditation/daily-life");
   const { t } = useTranslation("meditation");
   const { formatDate } = useLocaleFormats();
   const { user } = useSession();
@@ -74,7 +76,9 @@ export function MeditationDailyLifeCard() {
           {(notes?.length ?? 0) > MAX_RECENT ? (
             <Pressable
               accessibilityRole="link"
-              onPress={() => pushWithOrigin("/tools/meditation/daily-life")}
+              onPress={openArchive}
+              role="link"
+              {...enterKeyActivationProps(openArchive)}
             >
               <Text className="text-sm text-primary-ink">{t("module.dailyLife.viewAll")}</Text>
             </Pressable>
