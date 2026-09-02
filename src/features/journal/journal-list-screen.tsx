@@ -13,6 +13,7 @@ import { BarChart } from "@/src/components/charts/bar-chart";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { enterKeyActivationProps } from "@/src/lib/accessibility";
 import { formatRelativeActivity } from "@/src/utils/relative-time";
 import { countWords } from "@/src/features/journal/word-count";
 import { JournalCard } from "@/src/features/journal/journal-card";
@@ -40,6 +41,7 @@ import { formatInstantAtOffset } from "@/src/utils/date";
 
 export default function JournalListScreen() {
   const pushWithOrigin = usePushWithOrigin();
+  const openAllEntries = () => pushWithOrigin("/tools/journal/entries");
   const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -244,8 +246,10 @@ export default function JournalListScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={8}
-                    onPress={() => pushWithOrigin("/tools/journal/entries")}
+                    onPress={openAllEntries}
                     className="flex-row items-center gap-1 active:opacity-80"
+                    role="link"
+                    {...enterKeyActivationProps(openAllEntries)}
                   >
                     <Text className="text-[13px] font-medium text-primary">
                       {t("list.showAll")}

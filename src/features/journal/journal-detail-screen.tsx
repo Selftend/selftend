@@ -13,7 +13,7 @@ import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { formatRelativeActivity, formatRelativeDayKey } from "@/src/utils/relative-time";
 import {
   useDeleteJournalEntry,
@@ -40,6 +40,7 @@ export function joinMeta(segments: (string | null | undefined)[]): string {
 
 export default function JournalDetailScreen() {
   const pushWithOrigin = usePushWithOrigin();
+  const openAllEntries = () => pushWithOrigin("/tools/journal/entries");
   const { t, i18n } = useTranslation("journal");
   const { user } = useSession();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -184,9 +185,10 @@ export default function JournalDetailScreen() {
               <Pressable
                 accessibilityRole="link"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => pushWithOrigin("/tools/journal/entries")}
+                onPress={openAllEntries}
                 className="flex-row items-center gap-1 active:opacity-70"
                 role="link"
+                {...enterKeyActivationProps(openAllEntries)}
               >
                 <Text className="text-[13px] font-semibold text-primary-ink">
                   {t("detail.showAll")}

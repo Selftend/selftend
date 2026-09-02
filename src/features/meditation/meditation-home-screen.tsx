@@ -49,7 +49,11 @@ import { useUserPreferences, useUpdateUserPreferences } from "@/src/features/set
 import { useSession } from "@/src/providers/session-provider";
 import { parseHHmm } from "@/src/utils/time";
 import { cn } from "@/lib/utils";
-import { DEFAULT_INTERACTIVE_HIT_SLOP, spaceKeyActivationProps } from "@/src/lib/accessibility";
+import {
+  DEFAULT_INTERACTIVE_HIT_SLOP,
+  enterKeyActivationProps,
+  spaceKeyActivationProps,
+} from "@/src/lib/accessibility";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { formatCompactAtOffset, parseLocalNoon } from "@/src/utils/date";
 import { formatRelativeDayKey } from "@/src/utils/relative-time";
@@ -62,6 +66,7 @@ const RECENT_SITS = 5;
 
 export default function MeditationHomeScreen() {
   const pushWithOrigin = usePushWithOrigin();
+  const openSessions = () => pushWithOrigin("/tools/meditation/sessions");
   const { t, i18n } = useTranslation("meditation");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -516,9 +521,10 @@ export default function MeditationHomeScreen() {
                   <Pressable
                     accessibilityRole="link"
                     hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => pushWithOrigin("/tools/meditation/sessions")}
+                    onPress={openSessions}
                     className="flex-row items-center gap-1 active:opacity-70"
                     role="link"
+                    {...enterKeyActivationProps(openSessions)}
                   >
                     <Text className="text-[13px] font-semibold text-primary-ink">
                       {t("module.home.showAllSits")}
