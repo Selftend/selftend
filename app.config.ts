@@ -217,6 +217,35 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     "expo-router",
     "expo-localization",
     "expo-web-browser",
+    [
+      "expo-build-properties",
+      {
+        android: {
+          // Google Play's app-optimisation requirement (#1707): from February
+          // 2027 an app whose DEX exceeds 10 MB must show at least 25%
+          // optimisation, obfuscation and shrinking, and Play Console already
+          // flags 0.17.0 at "obfuscation 1%". Expo's default is no R8 at all,
+          // so release builds shipped every class name intact. Both flags are
+          // Expo's own wiring for `minifyEnabled` / `shrinkResources` on the
+          // release build type; debug and development builds are untouched.
+          // Play reads mapping.txt straight out of the AAB, and Sentry gets it
+          // from the Android Gradle plugin enabled on the Sentry plugin below.
+          // See docs/releasing.md, "Android app optimisation (R8)".
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
+          extraProguardRules: [
+            "# react-native-android-widget (#1707). The library ships no consumer",
+            "# ProGuard rules. Its native side names a widget by the receiver class's",
+            "# simple name (RNWidgetProvider -> getClass().getSimpleName()) and the JS",
+            "# task handler maps that name onto widget-catalog.json, so the generated",
+            "# receivers must keep their names. Being manifest-declared already keeps",
+            "# them, but the contract should not hang on that alone.",
+            "-keepnames class * extends com.reactnativeandroidwidget.RNWidgetProvider",
+            "-keep class com.reactnativeandroidwidget.** { *; }",
+          ].join("\n"),
+        },
+      },
+    ],
     // SDK 56 removed the top-level `splash` key; the plugin is the only way.
     [
       "expo-splash-screen",
@@ -290,6 +319,16 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
         // EU-region Sentry org (DSN host is ingest.de.sentry.io). This URL is used by
         // sentry-cli for source-map upload; it must be the EU endpoint, not sentry.io.
         url: "https://de.sentry.io/",
+        // With R8 on (expo-build-properties above) the Java/Kotlin frames of a
+        // native crash arrive obfuscated. Sentry's React Native Gradle script
+        // uploads only the JS source maps; the ProGuard mapping needs the Sentry
+        // Android Gradle Plugin, which this flag adds (Sentry still labels the
+        // option experimental, checked 2026-09-03). The plugin gates the mapping
+        // and native-symbol uploads on the same SENTRY_DISABLE_AUTO_UPLOAD switch
+        // as the source maps, so a build without a token still succeeds.
+        experimental_android: {
+          enableAndroidGradlePlugin: true,
+        },
       },
     ],
   ],
