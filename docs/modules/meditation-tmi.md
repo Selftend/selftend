@@ -59,7 +59,7 @@ Progress comes from clear intentions, not from force. The practitioner is a gard
 - **Six-Point Preparation for Meditation** - six brief intentions set before each sit: (1) Motivation, (2) Goals for this sit, (3) Expectations (realistic for this sit, not for the program), (4) Diligence, (5) Distractions (what's likely to pull at attention today), (6) Posture.
 - **Four-Step Transition to the Meditation Object** - gradually narrowing attention into the breath: (1) attention rests in open peripheral awareness; (2) attention narrows to the body and bodily sensations; (3) attention narrows to breath sensations anywhere in the body; (4) attention rests on the breath at a chosen anchor point (typically the nostrils or upper lip).
 
-**Mastery:** Never missing a daily practice session except when absolutely unavoidable.
+**Mastery:** The book's bar is never missing a daily session except when absolutely unavoidable. The app shows the default that bar establishes, not the perfection: _"A daily practice is established - sitting happens even on the days you don't feel like it."_ The book's wording, displayed as a mastery line, set an all-or-nothing cadence that habits' own teaching ("missing once is data") argues against. The product does not contradict itself across modules (#1670, practice boundary #1655).
 
 **Tool features:**
 
