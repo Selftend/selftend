@@ -105,6 +105,7 @@ EXPO_PUBLIC_PLAY_STORE_URL=<your-play-store-listing-url>
 EXPO_PUBLIC_APP_STORE_URL=<your-app-store-listing-url>
 EXPO_PUBLIC_DISCORD_URL=<your-discord-invite-url>
 EXPO_PUBLIC_REDDIT_URL=<your-subreddit-url>
+EXPO_PUBLIC_SPONSORS_URL=<your-sponsors-url>
 EXPO_PUBLIC_YOUTUBE_URL=<your-youtube-channel-url>
 ```
 
@@ -115,6 +116,8 @@ Store links: `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` are sh
 Discord: `EXPO_PUBLIC_DISCORD_URL` defaults in code to the maintainer's community server. Set it to your own invite URL, or set it to an empty string to hide all Discord UI - this is the documented self-hoster affordance for running without a Discord community.
 
 Reddit and YouTube: `EXPO_PUBLIC_REDDIT_URL` and `EXPO_PUBLIC_YOUTUBE_URL` default in code to the maintainer's subreddit (r/Selftend) and YouTube channel (@Selftend). Set each to your own URL, or to an empty string to hide that link - each community link is independently removable by config. The GitHub source link is always shown.
+
+Donations: `EXPO_PUBLIC_SPONSORS_URL` defaults in code to the maintainer's GitHub Sponsors page and drives exactly one surface, the Donate row at the end of the app sidebar. A fork must set it to its own page or to an empty string, which removes the row - never ship a build that sends your users to someone else's donation page. The repository's own Sponsor button comes from `.github/FUNDING.yml`, which a fork edits separately.
 
 Never put service-role keys, database passwords, SMTP passwords, OAuth secrets, JWT secrets, private API keys, or backup credentials in Expo public variables. They are bundled into the client app.
 

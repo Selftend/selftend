@@ -6,6 +6,10 @@ export const appEnv = {
   appStoreUrl: process.env.EXPO_PUBLIC_APP_STORE_URL ?? "",
   discordUrl: process.env.EXPO_PUBLIC_DISCORD_URL ?? "https://discord.gg/pdaAr9FhcQ",
   redditUrl: process.env.EXPO_PUBLIC_REDDIT_URL ?? "https://www.reddit.com/r/Selftend/",
+  // The one donation path (#1625, decided 2026-09-02): GitHub Sponsors on the
+  // maintainer's personal account. A fork sets its own URL, or an empty string to
+  // drop the Donate row - a self-hoster must never ship a link to someone else's page.
+  sponsorsUrl: process.env.EXPO_PUBLIC_SPONSORS_URL ?? "https://github.com/sponsors/vasilyoshev",
   youtubeUrl: process.env.EXPO_PUBLIC_YOUTUBE_URL ?? "https://www.youtube.com/@Selftend",
   publicAppUrl: process.env.EXPO_PUBLIC_PUBLIC_APP_URL ?? "",
   privacyEmail: process.env.EXPO_PUBLIC_PRIVACY_EMAIL ?? "",

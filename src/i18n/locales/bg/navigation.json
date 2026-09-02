@@ -33,7 +33,9 @@
     "gratitudeLog": "Дневник на благодарността",
     "sleep": "Сън",
     "habits": "Проследяване на навици",
-    "tools": "Инструменти"
+    "tools": "Инструменти",
+    "donate": "Дарение",
+    "donateA11y": "Дари на Selftend през GitHub Sponsors - отваря се в браузъра"
   },
   "userMenu": {
     "account": "Акаунт",

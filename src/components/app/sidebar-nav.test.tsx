@@ -1,8 +1,12 @@
-import { screen, within } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import type { ReactElement } from "react";
 
 import { SidebarNav } from "./sidebar-nav";
+import { appEnv } from "@/src/lib/env";
+import { openExternalUrl } from "@/src/lib/linking";
 import { renderWithProviders } from "@/test/render-with-providers";
+
+jest.mock("@/src/lib/linking", () => ({ openExternalUrl: jest.fn() }));
 
 jest.mock("expo-router", () => {
   const React = require("react");
@@ -93,8 +97,12 @@ describe("SidebarNav link identity", () => {
 
     // Report the hrefs that are NOT singular rather than asserting row by row: the
     // failure then names the destination that regressed instead of just "false !== true".
+    //
+    // Only rows that carry an `href` are destinations: the Donate row is a link by
+    // role but leaves the app (#1711), so it has no route to keep singular.
     const notSingular = screen
       .getAllByRole("link")
+      .filter((link) => link.props.href !== undefined)
       .filter((link) => link.props.dangerouslySingular !== true)
       .map((link) => String(link.props.href));
 
@@ -110,5 +118,59 @@ describe("SidebarNav link identity", () => {
     const hrefs = screen.getAllByRole("link").map((link) => String(link.props.href));
 
     expect(hrefs).toEqual(expect.arrayContaining(["/(app)", "/(app)/routines", "/(app)/settings"]));
+  });
+});
+
+/**
+ * The donation path (#1625, decided 2026-09-02): one plain row, last in the panel,
+ * that opens GitHub Sponsors and nothing else. The ruling's negative space is the
+ * part a test can hold - no badge, no count, no prompt - so the row is asserted the
+ * way the module rows are: one label and nothing beside it.
+ */
+describe("SidebarNav donate row", () => {
+  const A11Y = "Donate to Selftend on GitHub Sponsors - opens in your browser";
+
+  it("renders Donate as a bare label with nothing beside it", () => {
+    renderWithProviders(<SidebarNav />);
+
+    expect(textsInRow(A11Y)).toEqual(["Donate"]);
+  });
+
+  it("is the last row in the panel", () => {
+    renderWithProviders(<SidebarNav />);
+
+    const labels = screen.getAllByRole("link").map((link) => link.props.accessibilityLabel);
+
+    expect(labels.at(-1)).toBe(A11Y);
+  });
+
+  it("opens the Sponsors page externally instead of routing", () => {
+    const onSelect = jest.fn();
+    renderWithProviders(<SidebarNav onSelect={onSelect} />);
+
+    const row = screen.getByLabelText(A11Y);
+    fireEvent.press(row);
+
+    expect(row.props.href).toBeUndefined();
+    expect(openExternalUrl).toHaveBeenCalledWith("https://github.com/sponsors/vasilyoshev");
+    // The phone drawer closes on any selection; leaving the app is a selection too.
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  // A fork that has not set its own page must not ship a link to the maintainer's
+  // (docs/self-hosting.md). Blank URL, no row - and Support stays the last row, so the
+  // panel does not end in a gap.
+  it("drops the row entirely when no Sponsors URL is configured, keeping Support last", () => {
+    const original = appEnv.sponsorsUrl;
+    appEnv.sponsorsUrl = "";
+    try {
+      renderWithProviders(<SidebarNav />);
+
+      expect(screen.queryByLabelText(A11Y)).toBeNull();
+      const labels = screen.getAllByRole("link").map((link) => link.props.accessibilityLabel);
+      expect(labels.at(-1)).toBe("Support");
+    } finally {
+      appEnv.sponsorsUrl = original;
+    }
   });
 });
