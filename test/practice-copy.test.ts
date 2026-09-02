@@ -52,6 +52,13 @@ const RETURN_PRESCRIPTIONS: { locale: Locale; pattern: RegExp }[] = [
   { locale: "en", pattern: /\bsee you\b/i },
   { locale: "en", pattern: /come back (tomorrow|later|soon|every|each|daily)/i },
   { locale: "en", pattern: /built (real )?momentum/i },
+  // A perfection cadence set as a bar (#1670): "never missing a session"
+  // contradicts habits' own "missing once is data". The -ing form keeps the
+  // framework's quoted rule out of reach — habits says the rule *isn't*
+  // "never miss", it's "never miss twice" (#711). The imperative ("never
+  // miss a session") is deliberately out of reach in both locales for the
+  // same reason: it is the shape habits' teaching legitimately uses.
+  { locale: "en", pattern: /never missing/i },
   // ☠️ The Cyrillic patterns carry NO \b — JS \b is ASCII-only, so a Cyrillic
   // pattern written with it matches nothing and the guard is vacuous. Each of
   // these was proven red against a planted string before landing.
@@ -63,6 +70,7 @@ const RETURN_PRESCRIPTIONS: { locale: Locale; pattern: RegExp }[] = [
   { locale: "bg", pattern: /ще се видим/i },
   { locale: "bg", pattern: /(върни се|се върни) (утре|по-късно|скоро|всеки)/i },
   { locale: "bg", pattern: /постигна (истински )?устрем/i },
+  { locale: "bg", pattern: /никога да не пропускаш/i },
 ];
 
 describe("practice copy never prescribes a return, and never names a run to keep", () => {
