@@ -1,9 +1,9 @@
-import { createClient } from "npm:@supabase/supabase-js@2.103.2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.103.2";
 import webpush from "npm:web-push@3.6.7";
 import bgNotifications from "../../../src/i18n/locales/bg/notifications.json" with { type: "json" };
 import enNotifications from "../../../src/i18n/locales/en/notifications.json" with { type: "json" };
 import {
-  activityWindowForTarget,
+  activityWindowsForTarget,
   classifyPushError,
   isAllowedPushEndpoint,
   buildExpoPushMessage,
@@ -12,6 +12,7 @@ import {
   fetchAllPaged,
   nextRoutineReminderKeys,
   PAGE_SIZE,
+  postgrestInList,
   reminderKeyIfDue,
   resolveReminderLanguage,
   routineNotificationCopy,
@@ -20,6 +21,7 @@ import {
   routineUrl,
   TARGET_CONFIGS,
   TARGETS,
+  type ActivityWindow,
   type ExpoPushMessage,
   type ExpoTicket,
   type ReminderTarget,
@@ -73,6 +75,50 @@ function getNotificationCopy(language: string | null, target: NotificationCopyKe
 }
 
 type TokenRow = WebPushSubscriptionRow & { expo_push_token: string };
+
+// "Did this user use `target` today, in their timezone?" - true when ANY of the target's
+// activity windows has a row (ACT reads seven practice tables any-of, #1668). Each window
+// is one `select id ... limit 1`, with the secondary name filter for tables shared across
+// tools: grounding is IN its slugs, breathing is NOT IN them (mindfulness_sessions).
+// #24: a failed lookup is logged, never swallowed - a silent error here means suppression
+// silently never runs and the user is over-notified. It counts as "not used" for that one
+// window only, so a broken source degrades to over-notifying rather than mis-suppressing.
+async function usedToolToday(
+  supabase: SupabaseClient,
+  userId: string,
+  target: ReminderTarget,
+  windows: ActivityWindow[],
+  channel: "web" | "native",
+): Promise<boolean> {
+  for (const activityWindow of windows) {
+    let query = supabase.from(activityWindow.table).select("id").eq("user_id", userId).limit(1);
+    query =
+      activityWindow.op === "eq"
+        ? query.eq(activityWindow.column, activityWindow.value)
+        : query.gte(activityWindow.column, activityWindow.value);
+    if (activityWindow.inColumn && activityWindow.inValues) {
+      query = query.in(activityWindow.inColumn, [...activityWindow.inValues]);
+    }
+    if (activityWindow.notInColumn && activityWindow.notInValues) {
+      query = query.not(
+        activityWindow.notInColumn,
+        "in",
+        postgrestInList(activityWindow.notInValues),
+      );
+    }
+    const { data, error } = await query;
+    if (error) {
+      console.error(
+        `send-web-reminders: activity lookup failed (${channel})`,
+        { target, table: activityWindow.table },
+        error,
+      );
+      continue;
+    }
+    if ((data?.length ?? 0) > 0) return true;
+  }
+  return false;
+}
 
 Deno.serve(async (request) => {
   try {
@@ -250,42 +296,18 @@ Deno.serve(async (request) => {
 
         const config = TARGET_CONFIGS[target];
 
-        // Smart suppression (web-only): if the user already used this tool today in their
-        // timezone, skip the push but stamp the key so we don't re-check it every cron tick.
+        // Suppression: if the user already used this tool today in their timezone, skip the
+        // push but stamp the key so we don't re-check it every cron tick.
         const activityTimeZone =
           subscription.time_zone ?? (preferences[config.timezoneField] as string | null) ?? "UTC";
-        const activityWindow = activityWindowForTarget(target, activityTimeZone, now);
-        if (activityWindow) {
-          let activityQuery = supabase
-            .from(activityWindow.table)
-            .select("id")
-            .eq("user_id", subscription.user_id)
-            .limit(1);
-          activityQuery =
-            activityWindow.op === "eq"
-              ? activityQuery.eq(activityWindow.column, activityWindow.value)
-              : activityQuery.gte(activityWindow.column, activityWindow.value);
-          // Secondary IN-filter for tables shared across tools (grounding in mindfulness_sessions).
-          if (activityWindow.inColumn && activityWindow.inValues) {
-            activityQuery = activityQuery.in(activityWindow.inColumn, [...activityWindow.inValues]);
-          }
-          const { data: activityRows, error: activityError } = await activityQuery;
-          // #24: surface the activity-lookup error instead of silently discarding it (a swallowed
-          // error here means suppression silently never runs and the user is over-notified).
-          if (activityError) {
-            console.error(
-              "send-web-reminders: activity lookup failed",
-              { target, table: activityWindow.table },
-              activityError,
-            );
-          } else if ((activityRows?.length ?? 0) > 0) {
-            await supabase
-              .from("web_push_subscriptions")
-              .update({ [config.lastKeyField]: reminderKey })
-              .eq("id", subscription.id);
-            (subscription as unknown as Record<string, unknown>)[config.lastKeyField] = reminderKey;
-            continue;
-          }
+        const activityWindows = activityWindowsForTarget(target, activityTimeZone, now);
+        if (await usedToolToday(supabase, subscription.user_id, target, activityWindows, "web")) {
+          await supabase
+            .from("web_push_subscriptions")
+            .update({ [config.lastKeyField]: reminderKey })
+            .eq("id", subscription.id);
+          (subscription as unknown as Record<string, unknown>)[config.lastKeyField] = reminderKey;
+          continue;
         }
 
         const copy = getNotificationCopy(preferences.language, target);
@@ -351,8 +373,8 @@ Deno.serve(async (request) => {
       // Per-routine fan-out (issue #47): same consent/global/SSRF gates as above
       // (already applied for this subscription), same failure handling; dedup via
       // the last_routine_reminder_keys map (<= 1 per routine per day per channel).
-      // No activity suppression - routines have no single activity table (like
-      // breathing/act, they never suppress).
+      // No activity suppression - routines are the one reminder without it, since
+      // "complete today" would mean joining every step tool's table per routine.
       for (const routine of routinesByUser.get(subscription.user_id) ?? []) {
         if (subscriptionDisabled) break;
 
@@ -456,36 +478,14 @@ Deno.serve(async (request) => {
         const config = TARGET_CONFIGS[target];
         const timeZone =
           row.time_zone ?? (preferences[config.timezoneField] as string | null) ?? "UTC";
-        const activityWindow = activityWindowForTarget(target, timeZone, now);
-        if (activityWindow) {
-          let activityQuery = supabase
-            .from(activityWindow.table)
-            .select("id")
-            .eq("user_id", row.user_id)
-            .limit(1);
-          activityQuery =
-            activityWindow.op === "eq"
-              ? activityQuery.eq(activityWindow.column, activityWindow.value)
-              : activityQuery.gte(activityWindow.column, activityWindow.value);
-          if (activityWindow.inColumn && activityWindow.inValues) {
-            activityQuery = activityQuery.in(activityWindow.inColumn, [...activityWindow.inValues]);
-          }
-          const { data: usedRows, error: usedError } = await activityQuery;
-          // #24: surface the lookup error rather than silently treating it as "no activity".
-          if (usedError) {
-            console.error(
-              "send-web-reminders: activity lookup failed (native)",
-              { target, table: activityWindow.table },
-              usedError,
-            );
-          } else if ((usedRows?.length ?? 0) > 0) {
-            await supabase
-              .from("device_push_tokens")
-              .update({ [config.lastKeyField]: reminderKey })
-              .eq("id", row.id);
-            (row as unknown as Record<string, unknown>)[config.lastKeyField] = reminderKey;
-            continue;
-          }
+        const activityWindows = activityWindowsForTarget(target, timeZone, now);
+        if (await usedToolToday(supabase, row.user_id, target, activityWindows, "native")) {
+          await supabase
+            .from("device_push_tokens")
+            .update({ [config.lastKeyField]: reminderKey })
+            .eq("id", row.id);
+          (row as unknown as Record<string, unknown>)[config.lastKeyField] = reminderKey;
+          continue;
         }
 
         const copy = getNotificationCopy(preferences.language, target);
