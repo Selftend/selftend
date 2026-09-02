@@ -19,7 +19,7 @@
 --     cannot be filled there.
 --   * A FLAT READING IS A FINDING, not a failure. If every arm retains alike,
 --     the concern axis is not the segment axis, and the next axes to look at
---     are module adoption (cbt/meditation/gratitude/act), platform, and locale
+--     are module usage (cbt/meditation/gratitude/act), platform, and locale
 --     (EN/BG). Decided in advance so the standing interpretation cannot quietly
 --     become "not enough data yet", permanently.
 --
@@ -48,7 +48,8 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- must be added to both, or this report silently under-counts retention.
 -- >>> shared:content_events
 create temp view content_events as
-  -- core tools (always available, not part of enabled_modules)
+  -- core tools, grouped as 'core'. Nothing below is gated: every tool is on the
+  -- tools grid whether or not enabled_modules lists its module (#1672).
   select user_id, created_at, 'core' as module, 'mood' as feature from public.mood_logs
   union all select user_id, created_at, 'core', 'journal' from public.journal_entries
   union all select user_id, created_at, 'core', 'sleep' from public.sleep_logs

@@ -625,7 +625,7 @@ Column additions: `act_committed_actions.willingness_level`, `act_committed_acti
 
 Follows the contract in `tools.md`:
 
-- `ModuleKey: "act"` (already in the union). ACT is opt-in via the modules discovery screen; default `enabledModules` stays `["cbt"]`.
+- `ModuleKey: "act"` (already in the union). Default `enabledModules` stays `["cbt"]`, and the array gates nothing: ACT's tools are reachable from the tools grid without enabling anything (#1672).
 - i18n namespace: `act:*`. Program strings live under `act:program.*` (weeks, tasks, pillars), mirroring `cbt:program.*`.
 - Route group: `/modules/act/*` (see §7).
 - `user_preferences` fields: existing onboarding/reminder fields plus the three new program flags (`act_program_started_at`, `act_program_completed_at`, `act_program_prompt_dismissed_at`).
