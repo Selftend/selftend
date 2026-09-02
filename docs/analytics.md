@@ -38,7 +38,8 @@ one per tap of the landing CTA by `useStartAsGuest`, and only purged after 12
 months of dormancy. Without the split, the day anonymous sign-ins are switched
 on, "signups" quietly becomes "visitors who tapped a button" and every
 percentage in these reports collapses toward zero with nothing on screen to say
-why. The split landed while the toggle was still off, on purpose.
+why. The split landed while the toggle was still off, on purpose; the
+production toggle went live 2026-09-02 (#1674).
 
 Two things to know when reading it:
 

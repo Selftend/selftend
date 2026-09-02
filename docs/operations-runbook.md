@@ -56,6 +56,7 @@ These settings live outside the repo (Supabase Dashboard). Apply per environment
 - **Authentication → Sign In / Providers → Email → Minimum password length:** `12` (production). Required-characters field left empty (NIST-modern stance - length over class rules). Also mirrored in `supabase/config.toml` as `minimum_password_length = 12` for local dev parity.
 - **Authentication → Settings → Email confirmations:** ON (already configured via `[auth.email]` in `config.toml` - verify the Dashboard view matches).
 - **Authentication → Multi-Factor → TOTP (App Authenticator):** Enabled. UI for end-users to enroll ships in a future phase; the factor type is enabled in advance so it's ready when that UI lands.
+- **Authentication → Sign In / Providers → User Signups:** "Allow anonymous sign-ins" ON and "Allow manual linking" ON (production since 2026-09-02, #1674 - guest entry live; manual linking is required by the guest→registered OAuth conversion, `linkIdentity`, #1445). Mirrored in `supabase/config.toml` as `enable_anonymous_sign_ins` / `enable_manual_linking`. The anonymous rate cap stays at the Supabase default 30 guest creations/hour/IP (Authentication → Rate Limits; #1432 ruling, confirmed live 2026-09-02). Turning "Allow anonymous sign-ins" OFF is the guest-entry kill switch - the client degrades the landing CTA to the sign-up form on `anonymous_provider_disabled`.
 
 ### Not currently enabled (paid-plan gated)
 
