@@ -105,17 +105,24 @@ export interface ActivitySource {
 // module stays dependency-free for the Deno bundle and Node/jest alike.
 export const GROUNDING_EXERCISE_NAMES = ["54321", "cold-water", "feet-floor"] as const;
 
-// The seven signals the ACT programme itself reads as "practiced" (src/features/act/
-// program-definition.ts): six per-log tables plus a committed-action step completed today,
-// which is the committed-action phase's daily practice. Not here on purpose:
+// What "practiced ACT today" reads, any-of (#1668): the six tools whose sessions the ACT
+// home archives as practice logs (the same six rows test/act-timestamp-contract.test.ts
+// pins), plus a committed-action step completed today. In the programme's own terms
+// (src/features/act/program-definition.ts) connection, defusion, expansion, urge surf and
+// the step are its daily-practice signals; choice points and observing-self are milestone
+// signals - still a practice done in a tool today, so they count here. Not here on purpose:
+// act_committed_actions (creating an action is planning, its practice is the step),
+// act_bulls_eye_snapshots (a values review that feeds no programme signal),
 // act_value_entries (one upserted row per life domain, so no per-day timestamp) and
-// act_program_state (updated_at moves for non-practice reasons). Each is a security-invoker
-// view over an encrypted `_data` table; the service role reads through the view exactly as
-// it does for thought_records and mindfulness_sessions, selecting `id` only.
+// act_program_state (updated_at moves for non-practice reasons). Each source is a
+// security-invoker view over an encrypted `_data` table; the service role reads through the
+// view exactly as it does for thought_records and mindfulness_sessions, selecting `id` only.
 const ACT_PRACTICE_SOURCES: readonly [ActivitySource, ...ActivitySource[]] = [
   { table: "act_connection_logs", timestampColumn: "created_at" },
   { table: "act_defusion_logs", timestampColumn: "created_at" },
   { table: "act_expansion_logs", timestampColumn: "created_at" },
+  // The client sets completed_at to "now" at insert (act-urge-surf-screen.tsx), so it is
+  // the row's occurrence time, same as created_at.
   { table: "act_urge_surf_logs", timestampColumn: "completed_at" },
   { table: "act_observing_self_sessions", timestampColumn: "created_at" },
   { table: "act_choice_points", timestampColumn: "created_at" },

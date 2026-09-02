@@ -267,10 +267,12 @@ describe("activityWindowsForTarget", () => {
   });
 
   it("act suppresses on any practice log, or a step completed today (#1668)", () => {
-    // The seven signals the ACT programme itself reads as practice (program-definition.ts):
-    // six per-log tables plus act_action_steps.completed_at, the committed-action phase's
-    // daily practice. act_value_entries (one upserted row per domain) and act_program_state
-    // (updated for non-practice reasons) are deliberately absent.
+    // The six tools the ACT home archives as practice logs, plus a committed-action step
+    // completed today. Five of the seven are the programme's daily-practice signals; choice
+    // points and observing-self are milestone signals but still a practice done today.
+    // act_committed_actions (planning, not practice), act_bulls_eye_snapshots (a values
+    // review), act_value_entries (one upserted row per domain) and act_program_state
+    // (updated for non-practice reasons) are deliberately absent - see ACT_PRACTICE_SOURCES.
     const START = "2026-06-05T00:00:00.000Z";
     expect(activityWindowsForTarget("act", "UTC", FIXED)).toEqual([
       { table: "act_connection_logs", column: "created_at", op: "gte", value: START },

@@ -90,23 +90,27 @@ async function usedToolToday(
   windows: ActivityWindow[],
   channel: "web" | "native",
 ): Promise<boolean> {
-  for (const window of windows) {
-    let query = supabase.from(window.table).select("id").eq("user_id", userId).limit(1);
+  for (const activityWindow of windows) {
+    let query = supabase.from(activityWindow.table).select("id").eq("user_id", userId).limit(1);
     query =
-      window.op === "eq"
-        ? query.eq(window.column, window.value)
-        : query.gte(window.column, window.value);
-    if (window.inColumn && window.inValues) {
-      query = query.in(window.inColumn, [...window.inValues]);
+      activityWindow.op === "eq"
+        ? query.eq(activityWindow.column, activityWindow.value)
+        : query.gte(activityWindow.column, activityWindow.value);
+    if (activityWindow.inColumn && activityWindow.inValues) {
+      query = query.in(activityWindow.inColumn, [...activityWindow.inValues]);
     }
-    if (window.notInColumn && window.notInValues) {
-      query = query.not(window.notInColumn, "in", postgrestInList(window.notInValues));
+    if (activityWindow.notInColumn && activityWindow.notInValues) {
+      query = query.not(
+        activityWindow.notInColumn,
+        "in",
+        postgrestInList(activityWindow.notInValues),
+      );
     }
     const { data, error } = await query;
     if (error) {
       console.error(
         `send-web-reminders: activity lookup failed (${channel})`,
-        { target, table: window.table },
+        { target, table: activityWindow.table },
         error,
       );
       continue;
