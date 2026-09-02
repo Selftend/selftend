@@ -88,13 +88,12 @@ interface AmbientSound {
  * `none` is the honest destination. The lane is gone, so there is no equivalent to migrate
  * to — a bed is not a breath texture — and silently reassigning someone to `guided` would
  * start talking to them, which is worse than going quiet.
+ *
+ * ⚠️ Documentation, not the mechanism. `resolveBreathSoundId` below is keyed on the
+ * CATALOG, so these resolve to `none` because they are absent from it, not because they
+ * are listed here — the next retirement needs no entry added to keep working (#1745).
  */
 export const RETIRED_BREATH_SOUND_IDS = ["soft-breath", "ocean-swell", "wind"] as const;
-
-/** Resolve a stored breath id, mapping retired ones to `none` rather than to nothing. */
-export function resolveBreathSoundId(id: string): string {
-  return (RETIRED_BREATH_SOUND_IDS as readonly string[]).includes(id) ? "none" : id;
-}
 
 export const BREATH_SOUNDS: BreathSound[] = [
   { id: "none", labelKey: "breathing.sounds.none", inhaleAsset: null, exhaleAsset: null },
@@ -160,3 +159,23 @@ export const breathSoundLookup: Record<string, BreathSound> = Object.fromEntries
 export const ambientSoundLookup: Record<string, AmbientSound> = Object.fromEntries(
   AMBIENT_SOUNDS.map((s) => [s.id, s]),
 );
+
+/**
+ * Resolve a stored breath id to one the catalog has: anything absent lands on `none`.
+ *
+ * Applied ONCE, where the preferences row is mapped (`settings/repository.ts`), so every
+ * consumer holds a lookup-able id and none re-handles the miss on its own (#1745). Before
+ * that, the runner and the sheet each resolved and the session screen did not, so the
+ * next retirement re-opened the gap on whichever surface had been skipped.
+ *
+ * ☠️ Membership is tested against the catalog list, never with `in` or an index read on
+ * the lookup: `"constructor"` is a hit on any plain object, and a stored id is free text.
+ */
+export function resolveBreathSoundId(id: string): string {
+  return BREATH_SOUNDS.some((s) => s.id === id) ? id : "none";
+}
+
+/** The ambient-lane twin of `resolveBreathSoundId`: a bed the catalog lacks is `none`. */
+export function resolveAmbientSoundId(id: string): string {
+  return AMBIENT_SOUNDS.some((s) => s.id === id) ? id : "none";
+}

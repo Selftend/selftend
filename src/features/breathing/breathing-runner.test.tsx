@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, within } from "@testing-library/react-native";
 
 import BreathingExerciseScreen from "@/app/(app)/tools/breathing/session";
+import { resolveBreathSoundId } from "@/src/constants/breathing-sounds";
 import { useReduceMotionEnabled } from "@/src/lib/accessibility";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -62,9 +63,10 @@ jest.mock("@/src/features/settings/queries", () => ({
     isPending: false,
   }),
 }));
+const mockPlayIntroCue = jest.fn();
 jest.mock("@/src/features/breathing/use-breathing-audio", () => ({
   useBreathingAudio: () => {},
-  playIntroCue: () => {},
+  playIntroCue: (...args: unknown[]) => mockPlayIntroCue(...args),
 }));
 
 jest.mock("@/src/stores/toast-store", () => ({
@@ -89,6 +91,7 @@ beforeEach(() => {
   mockSaveMutateAsync.mockClear();
   beforeRemoveListeners.length = 0;
   mockPrefs.breathSoundId = "none";
+  mockPlayIntroCue.mockClear();
 });
 
 const startSession = () => {
@@ -291,6 +294,27 @@ describe("Breathing session (4c)", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it("plays no intro and reads None on the Sounds row for a retired breath id", () => {
+    // ☠️ `wind` is still in `user_preferences.breath_sound_id` on any account that
+    // picked it before 2026-08-30. The screen does not resolve it - the repository
+    // does, once, when the row is read (#1745) - so this feeds the screen exactly
+    // what the repository hands over for a stored `wind`, and asserts the two
+    // things the raw lookups used to decide on their own: no spoken intro, and a
+    // Sounds row that reads "None" rather than a raw key or a blank.
+    const breathSoundId = resolveBreathSoundId("wind");
+    expect(breathSoundId).toBe("none");
+    mockPrefs.breathSoundId = breathSoundId;
+    renderWithProviders(<BreathingExerciseScreen />);
+    expect(screen.getByText("Voice guidance")).toBeTruthy();
+    expect(screen.getAllByText("None")).toHaveLength(2);
+    expect(screen.queryByText(/^breathing\./)).toBeNull();
+    fireEvent.press(screen.getByText("Start"));
+    // Straight to the active screen: no preroll, no cue.
+    expect(screen.queryByText("Get ready...")).toBeNull();
+    expect(mockPlayIntroCue).not.toHaveBeenCalled();
+    expect(screen.getByText("Inhale")).toBeTruthy();
   });
 
   it("animates the pacer with withTiming when motion is allowed", () => {

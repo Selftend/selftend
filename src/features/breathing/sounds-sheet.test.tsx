@@ -2,15 +2,21 @@ import { fireEvent, screen, within } from "@testing-library/react-native";
 import { ScrollView } from "react-native";
 
 import { SoundsSheet } from "@/src/features/breathing/sounds-sheet";
+import type { UserPreferences } from "@/src/features/modules/types";
+import { resolveAmbientSoundId } from "@/src/constants/breathing-sounds";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockUpdate = jest.fn().mockResolvedValue(undefined);
+// What the preferences query hands the sheet. `undefined` = defaults (guided / none).
+// ⚠️ This bypasses the repository, so a test that puts an id here is asserting what
+// the sheet does with a value it RECEIVES, not what the database holds.
+let mockPrefs: Partial<UserPreferences> | undefined;
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
 jest.mock("@/src/features/settings/queries", () => ({
-  useUserPreferences: () => ({ data: undefined }),
+  useUserPreferences: () => ({ data: mockPrefs }),
   useUpdateUserPreferences: () => ({ mutateAsync: mockUpdate, isPending: false }),
 }));
 jest.mock("@/src/lib/accessibility", () => ({
@@ -19,7 +25,10 @@ jest.mock("@/src/lib/accessibility", () => ({
 }));
 
 describe("SoundsSheet", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPrefs = undefined;
+  });
 
   // W20/#1257: the X is this sheet's ONE Escape (the sheet declines the
   // wrapper's pinned row via surface="sheet"), and it sits in its own header
@@ -69,5 +78,25 @@ describe("SoundsSheet", () => {
     // voices and the ship plan counted eight files, but the app offered four until
     // 2026-08-30 — the gap was invisible because nothing asserted the picker row.
     expect(screen.getByRole("radio", { name: "Guided voice (male)" })).not.toBeChecked();
+  });
+
+  it("shows None on the lane AND highlights the None row for an ambient id the catalog lacks", () => {
+    // ☠️ Before #1745 the ambient lane had no resolver at all: for an unknown id the
+    // lane label fell back to "None" while the picker highlighted NO row, so the
+    // sheet disagreed with itself. The sheet does not resolve on its own - the
+    // repository does, once, when the row is read - so this feeds the sheet exactly
+    // what the repository hands over for a stored `not-a-bed`, and asserts that the
+    // two surfaces now agree on the one answer.
+    const ambientSoundId = resolveAmbientSoundId("not-a-bed");
+    expect(ambientSoundId).toBe("none");
+    mockPrefs = { ambientSoundId };
+    renderWithProviders(<SoundsSheet visible onDismiss={() => {}} />);
+    // The lane's own summary reads "None" (the breath lane still shows its default) -
+    // counted BEFORE the picker opens, since the picker adds a "None" row of its own.
+    expect(screen.getAllByText("None")).toHaveLength(1);
+    fireEvent.press(screen.getByLabelText("Choose an ambient sound"));
+    // And the ambient picker highlights it as the selected row, not nothing.
+    expect(screen.getByRole("radio", { name: "None" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Rain" })).not.toBeChecked();
   });
 });

@@ -6,11 +6,7 @@ import { useTranslation } from "react-i18next";
 import { PressShieldModal } from "@/src/components/app/press-shield-modal";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import {
-  AMBIENT_SOUNDS,
-  BREATH_SOUNDS,
-  resolveBreathSoundId,
-} from "@/src/constants/breathing-sounds";
+import { AMBIENT_SOUNDS, BREATH_SOUNDS } from "@/src/constants/breathing-sounds";
 import { mergeUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
@@ -41,11 +37,14 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
     void updateMutation.mutateAsync(p).catch(() => undefined);
   };
 
-  // ☠️ Resolved before the lookup so a retired texture id lands on `none` deliberately
-  // rather than by falling off the end of `find`. Same answer, but the picker and the
-  // runner now agree on WHY, and `selectedId` below highlights the row it shows.
-  const storedBreathId = resolveBreathSoundId(effective.breathSoundId);
-  const breathSound = BREATH_SOUNDS.find((s) => s.id === storedBreathId) ?? BREATH_SOUNDS[0];
+  // Both ids arrive already resolved: the repository maps a stored id the catalog lacks
+  // to `none` on read (#1745), so each lane's summary and its picker's `selectedId`
+  // name the same row. The sheet used to resolve the breath lane itself and the
+  // ambient lane not at all - an unknown bed read "None" while the picker highlighted
+  // nothing. The `?? [0]` fallbacks are belt-and-braces for a caller that bypasses
+  // the repository, not a second resolver.
+  const breathSound =
+    BREATH_SOUNDS.find((s) => s.id === effective.breathSoundId) ?? BREATH_SOUNDS[0];
   const ambientSound =
     AMBIENT_SOUNDS.find((s) => s.id === effective.ambientSoundId) ?? AMBIENT_SOUNDS[0];
 
@@ -79,7 +78,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
               <Picker
                 label={t("breathing.sounds.breathLabel")}
                 items={BREATH_SOUNDS.map((s) => ({ id: s.id, label: t(s.labelKey) }))}
-                selectedId={storedBreathId}
+                selectedId={breathSound.id}
                 onSelect={(id) => patch({ breathSoundId: id })}
               />
             ) : null}
@@ -94,7 +93,7 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
               <Picker
                 label={t("breathing.sounds.ambientLabel")}
                 items={AMBIENT_SOUNDS.map((s) => ({ id: s.id, label: t(s.labelKey) }))}
-                selectedId={effective.ambientSoundId}
+                selectedId={ambientSound.id}
                 onSelect={(id) => patch({ ambientSoundId: id })}
               />
             ) : null}
