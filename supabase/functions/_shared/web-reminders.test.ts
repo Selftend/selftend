@@ -1,7 +1,7 @@
 import { groundingSlugs } from "@/src/constants/grounding";
 
 import {
-  activityWindowForTarget,
+  activityWindowsForTarget,
   buildExpoPushMessage,
   buildRoutineExpoPushMessage,
   classifyExpoTicket,
@@ -10,6 +10,7 @@ import {
   GROUNDING_EXERCISE_NAMES,
   isAllowedPushEndpoint,
   nextRoutineReminderKeys,
+  postgrestInList,
   reminderKeyIfDue,
   resolveReminderLanguage,
   routineNotificationCopy,
@@ -19,6 +20,8 @@ import {
   startOfZonedDay,
   fetchAllPaged,
   PAGE_SIZE,
+  TARGET_CONFIGS,
+  TARGETS,
   type PagedQuery,
   type RoutineReminderRow,
   type UserPreferenceRow,
@@ -183,36 +186,44 @@ describe("reminderKeyIfDue", () => {
   });
 });
 
-describe("activityWindowForTarget", () => {
+describe("activityWindowsForTarget", () => {
   const FIXED = new Date("2026-06-05T13:30:45.000Z"); // 13:30:45 UTC
 
   it("builds a start-of-day timestamp window for a ts-column target (UTC)", () => {
-    expect(activityWindowForTarget("mood", "UTC", FIXED)).toEqual({
-      table: "mood_logs",
-      column: "logged_at",
-      op: "gte",
-      value: "2026-06-05T00:00:00.000Z",
-    });
+    expect(activityWindowsForTarget("mood", "UTC", FIXED)).toEqual([
+      {
+        table: "mood_logs",
+        column: "logged_at",
+        op: "gte",
+        value: "2026-06-05T00:00:00.000Z",
+      },
+    ]);
   });
 
   it("builds an equality date window for a date-column target (habits)", () => {
-    expect(activityWindowForTarget("habits", "UTC", FIXED)).toEqual({
-      table: "habit_logs",
-      column: "logged_on",
-      op: "eq",
-      value: "2026-06-05",
-    });
+    expect(activityWindowsForTarget("habits", "UTC", FIXED)).toEqual([
+      {
+        table: "habit_logs",
+        column: "logged_on",
+        op: "eq",
+        value: "2026-06-05",
+      },
+    ]);
   });
 
-  it("returns null for targets with no activity source (breathing, act)", () => {
-    expect(activityWindowForTarget("breathing", "UTC", FIXED)).toBeNull();
-    expect(activityWindowForTarget("act", "UTC", FIXED)).toBeNull();
+  it("every tool reminder suppresses on same-day use - none is exempt (#1668)", () => {
+    // Map #1655's rule: a nudge vanishes when satisfied. Breathing and ACT were exempt for
+    // wiring reasons, not design reasons; the config now has to name a source per tool.
+    for (const target of TARGETS) {
+      expect(TARGET_CONFIGS[target].activitySources.length).toBeGreaterThan(0);
+      expect(activityWindowsForTarget(target, "UTC", FIXED)).not.toHaveLength(0);
+    }
   });
 
   it("anchors start-of-day to the user's timezone, not UTC", () => {
     // 2026-06-05T01:00Z is 04:00 in Europe/Sofia (UTC+3, summer);
     // start-of-day-in-Sofia is 2026-06-04T21:00Z.
-    const window = activityWindowForTarget(
+    const [window] = activityWindowsForTarget(
       "mood",
       "Europe/Sofia",
       new Date("2026-06-05T01:00:00.000Z"),
@@ -220,21 +231,72 @@ describe("activityWindowForTarget", () => {
     expect(window?.value).toBe("2026-06-04T21:00:00.000Z");
   });
 
-  it("returns null for an invalid timezone", () => {
-    expect(activityWindowForTarget("mood", "Not/AZone", FIXED)).toBeNull();
+  it("returns no windows for an invalid timezone", () => {
+    expect(activityWindowsForTarget("mood", "Not/AZone", FIXED)).toEqual([]);
   });
 
   it("filters grounding by exercise_name against mindfulness_sessions (#24)", () => {
     // Grounding used to query the dropped noticing_logs table (suppression silently broken);
     // it now suppresses on a same-day grounding session in mindfulness_sessions.
-    expect(activityWindowForTarget("grounding", "UTC", FIXED)).toEqual({
-      table: "mindfulness_sessions",
-      column: "completed_at",
-      op: "gte",
-      value: "2026-06-05T00:00:00.000Z",
-      inColumn: "exercise_name",
-      inValues: GROUNDING_EXERCISE_NAMES,
-    });
+    expect(activityWindowsForTarget("grounding", "UTC", FIXED)).toEqual([
+      {
+        table: "mindfulness_sessions",
+        column: "completed_at",
+        op: "gte",
+        value: "2026-06-05T00:00:00.000Z",
+        inColumn: "exercise_name",
+        inValues: GROUNDING_EXERCISE_NAMES,
+      },
+    ]);
+  });
+
+  it("breathing is the complement of grounding in mindfulness_sessions (#1668)", () => {
+    // Breathing exercise names are user-authored (a custom exercise stores its row id as
+    // the name), so an IN-list cannot enumerate them. The app tallies breathing by the same
+    // exclusion (src/features/breathing/queries.ts); the reminder draws the same line.
+    expect(activityWindowsForTarget("breathing", "UTC", FIXED)).toEqual([
+      {
+        table: "mindfulness_sessions",
+        column: "completed_at",
+        op: "gte",
+        value: "2026-06-05T00:00:00.000Z",
+        notInColumn: "exercise_name",
+        notInValues: GROUNDING_EXERCISE_NAMES,
+      },
+    ]);
+  });
+
+  it("act suppresses on any practice log, or a step completed today (#1668)", () => {
+    // The six tools the ACT home archives as practice logs, plus a committed-action step
+    // completed today. Five of the seven are the programme's daily-practice signals; choice
+    // points and observing-self are milestone signals but still a practice done today.
+    // act_committed_actions (planning, not practice), act_bulls_eye_snapshots (a values
+    // review), act_value_entries (one upserted row per domain) and act_program_state
+    // (updated for non-practice reasons) are deliberately absent - see ACT_PRACTICE_SOURCES.
+    const START = "2026-06-05T00:00:00.000Z";
+    expect(activityWindowsForTarget("act", "UTC", FIXED)).toEqual([
+      { table: "act_connection_logs", column: "created_at", op: "gte", value: START },
+      { table: "act_defusion_logs", column: "created_at", op: "gte", value: START },
+      { table: "act_expansion_logs", column: "created_at", op: "gte", value: START },
+      { table: "act_urge_surf_logs", column: "completed_at", op: "gte", value: START },
+      { table: "act_observing_self_sessions", column: "created_at", op: "gte", value: START },
+      { table: "act_choice_points", column: "created_at", op: "gte", value: START },
+      { table: "act_action_steps", column: "completed_at", op: "gte", value: START },
+    ]);
+  });
+});
+
+describe("postgrestInList", () => {
+  it("renders a PostgREST `in` list literal with each value double-quoted", () => {
+    // The shape supabase-js's `.not(column, "in", literal)` expects - the same one
+    // src/features/mindfulness/repository.ts builds by hand for the breathing tally.
+    expect(postgrestInList(["54321", "cold-water", "feet-floor"])).toBe(
+      '("54321","cold-water","feet-floor")',
+    );
+  });
+
+  it("escapes a quote or backslash inside a value instead of breaking the literal", () => {
+    expect(postgrestInList(['say "hi"', "back\\slash"])).toBe('("say \\"hi\\"","back\\\\slash")');
   });
 });
 

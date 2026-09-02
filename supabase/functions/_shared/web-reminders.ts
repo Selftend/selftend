@@ -88,17 +88,47 @@ export interface ActivitySource {
   timestampColumn?: string;
   // ...or a `date` column compared with `= today's zoned date string`.
   dateColumn?: string;
-  // Optional secondary `nameColumn IN (nameValues)` filter, for tables shared across
-  // tools (grounding lives in mindfulness_sessions alongside breathing/meditation,
-  // distinguished by exercise_name). Omitted for single-purpose tables.
+  // Optional secondary filter on a name column, for tables shared across tools: grounding
+  // and breathing both live in mindfulness_sessions, told apart by exercise_name. Grounding
+  // keeps the rows IN its slug list (`nameValues`); breathing keeps the rows NOT IN it
+  // (`excludedNameValues`) - its names are user-authored (a custom exercise stores its row
+  // id as the name), so the complement is the only way to enumerate it. The app's own
+  // breathing tally draws the same line (src/features/breathing/queries.ts). Omitted for
+  // single-purpose tables.
   nameColumn?: string;
   nameValues?: readonly string[];
+  excludedNameValues?: readonly string[];
 }
 
 // Grounding sessions are stored in mindfulness_sessions keyed by exercise_name. Kept in sync
 // with src/constants/grounding.ts groundingSlugs (asserted by a parity unit test) so this
 // module stays dependency-free for the Deno bundle and Node/jest alike.
 export const GROUNDING_EXERCISE_NAMES = ["54321", "cold-water", "feet-floor"] as const;
+
+// What "practiced ACT today" reads, any-of (#1668): the six tools whose sessions the ACT
+// home archives as practice logs (the same six rows test/act-timestamp-contract.test.ts
+// pins), plus a committed-action step completed today. In the programme's own terms
+// (src/features/act/program-definition.ts) connection, defusion, expansion, urge surf and
+// the step are its daily-practice signals; choice points and observing-self are milestone
+// signals - still a practice done in a tool today, so they count here. Not here on purpose:
+// act_committed_actions (creating an action is planning, its practice is the step),
+// act_bulls_eye_snapshots (a values review that feeds no programme signal),
+// act_value_entries (one upserted row per life domain, so no per-day timestamp) and
+// act_program_state (updated_at moves for non-practice reasons). Each source is a
+// security-invoker view over an encrypted `_data` table; the service role reads through the
+// view exactly as it does for thought_records and mindfulness_sessions, selecting `id` only.
+const ACT_PRACTICE_SOURCES: readonly [ActivitySource, ...ActivitySource[]] = [
+  { table: "act_connection_logs", timestampColumn: "created_at" },
+  { table: "act_defusion_logs", timestampColumn: "created_at" },
+  { table: "act_expansion_logs", timestampColumn: "created_at" },
+  // The client sets completed_at to "now" at insert (act-urge-surf-screen.tsx), so it is
+  // the row's occurrence time, same as created_at.
+  { table: "act_urge_surf_logs", timestampColumn: "completed_at" },
+  { table: "act_observing_self_sessions", timestampColumn: "created_at" },
+  { table: "act_choice_points", timestampColumn: "created_at" },
+  // completed_at is null until the step is ticked, so `>= start-of-day` excludes open steps.
+  { table: "act_action_steps", timestampColumn: "completed_at" },
+];
 
 export interface TargetConfig {
   enabledField: keyof UserPreferenceRow;
@@ -108,8 +138,11 @@ export interface TargetConfig {
   lastKeyField: keyof WebPushSubscriptionRow;
   url: string;
   tag: string;
-  // Omitted for targets with no per-day activity log (breathing, act) - those never suppress.
-  activitySource?: ActivitySource;
+  // Where "the user already used this tool today" is read from. Any-of: a row in ANY listed
+  // source suppresses the reminder. Required and non-empty by type: every tool reminder
+  // vanishes when satisfied (map #1655), so a target with nothing to read is not a
+  // configuration this module accepts - breathing and act were the last two exempt (#1668).
+  activitySources: readonly [ActivitySource, ...ActivitySource[]];
 }
 
 export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
@@ -121,7 +154,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_cbt_reminder_key",
     url: "/modules/cbt",
     tag: "selftend-cbt-reminder",
-    activitySource: { table: "thought_records", timestampColumn: "created_at" },
+    activitySources: [{ table: "thought_records", timestampColumn: "created_at" }],
   },
   meditation: {
     enabledField: "meditation_reminders_enabled",
@@ -131,7 +164,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_meditation_reminder_key",
     url: "/tools/meditation",
     tag: "selftend-meditation-reminder",
-    activitySource: { table: "meditation_sessions", timestampColumn: "completed_at" },
+    activitySources: [{ table: "meditation_sessions", timestampColumn: "completed_at" }],
   },
   act: {
     enabledField: "act_reminders_enabled",
@@ -141,8 +174,8 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_act_reminder_key",
     url: "/modules/act",
     tag: "selftend-act-reminder",
-    // No single ACT activity table; act_program_state.updated_at changes for non-activity
-    // reasons, so ACT degrades (never suppressed) rather than mis-suppress.
+    // No single ACT activity table, so the practice logs are read any-of (#1668).
+    activitySources: ACT_PRACTICE_SOURCES,
   },
   mood: {
     enabledField: "mood_reminders_enabled",
@@ -159,7 +192,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     // for anyone who has not updated. `test/check-in-route-compat.test.tsx` guards both sides.
     url: "/tools/mood-tracker",
     tag: "selftend-mood-reminder",
-    activitySource: { table: "mood_logs", timestampColumn: "logged_at" },
+    activitySources: [{ table: "mood_logs", timestampColumn: "logged_at" }],
   },
   journal: {
     enabledField: "journal_reminders_enabled",
@@ -169,7 +202,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_journal_reminder_key",
     url: "/tools/journal",
     tag: "selftend-journal-reminder",
-    activitySource: { table: "journal_entries", timestampColumn: "created_at" },
+    activitySources: [{ table: "journal_entries", timestampColumn: "created_at" }],
   },
   gratitude: {
     enabledField: "gratitude_reminders_enabled",
@@ -179,7 +212,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_gratitude_reminder_key",
     url: "/tools/gratitude-log",
     tag: "selftend-gratitude-reminder",
-    activitySource: { table: "gratitude_entries", timestampColumn: "logged_at" },
+    activitySources: [{ table: "gratitude_entries", timestampColumn: "logged_at" }],
   },
   grounding: {
     enabledField: "grounding_reminders_enabled",
@@ -192,12 +225,14 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     // Grounding logs to mindfulness_sessions (exercise_name in the grounding slugs), not the
     // dropped noticing_logs table. Suppress a grounding reminder when the user completed a
     // grounding exercise today, in their timezone.
-    activitySource: {
-      table: "mindfulness_sessions",
-      timestampColumn: "completed_at",
-      nameColumn: "exercise_name",
-      nameValues: GROUNDING_EXERCISE_NAMES,
-    },
+    activitySources: [
+      {
+        table: "mindfulness_sessions",
+        timestampColumn: "completed_at",
+        nameColumn: "exercise_name",
+        nameValues: GROUNDING_EXERCISE_NAMES,
+      },
+    ],
   },
   breathing: {
     enabledField: "breathing_reminders_enabled",
@@ -207,7 +242,16 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_breathing_reminder_key",
     url: "/tools/breathing",
     tag: "selftend-breathing-reminder",
-    // No per-session breathing log → never suppressed.
+    // Breathing sessions share mindfulness_sessions with grounding and are everything in it
+    // that is NOT a grounding slug (#1668) - see ActivitySource.excludedNameValues.
+    activitySources: [
+      {
+        table: "mindfulness_sessions",
+        timestampColumn: "completed_at",
+        nameColumn: "exercise_name",
+        excludedNameValues: GROUNDING_EXERCISE_NAMES,
+      },
+    ],
   },
   sleep: {
     enabledField: "sleep_reminders_enabled",
@@ -217,7 +261,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_sleep_reminder_key",
     url: "/tools/sleep",
     tag: "selftend-sleep-reminder",
-    activitySource: { table: "sleep_logs", timestampColumn: "logged_at" },
+    activitySources: [{ table: "sleep_logs", timestampColumn: "logged_at" }],
   },
   habits: {
     enabledField: "habits_reminders_enabled",
@@ -227,7 +271,7 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     lastKeyField: "last_habits_reminder_key",
     url: "/tools/habits",
     tag: "selftend-habits-reminder",
-    activitySource: { table: "habit_logs", dateColumn: "logged_on" },
+    activitySources: [{ table: "habit_logs", dateColumn: "logged_on" }],
   },
 };
 
@@ -320,9 +364,20 @@ export interface ActivityWindow {
   column: string;
   op: "gte" | "eq";
   value: string;
-  // Optional secondary `inColumn IN (inValues)` filter (see ActivitySource.nameColumn).
+  // Optional secondary `inColumn IN (inValues)` filter (see ActivitySource.nameValues)...
   inColumn?: string;
   inValues?: readonly string[];
+  // ...or its complement, `notInColumn NOT IN (notInValues)` (ActivitySource.excludedNameValues).
+  notInColumn?: string;
+  notInValues?: readonly string[];
+}
+
+// The list literal PostgREST's `in` operator takes - `("a","b")` - for supabase-js's
+// `.not(column, "in", literal)`, which has no array form the way `.in()` does. Each value is
+// double-quoted and quote/backslash-escaped so a name can never close the literal early.
+export function postgrestInList(values: readonly string[]): string {
+  const quoted = values.map((value) => `"${value.replace(/["\\]/g, (ch) => `\\${ch}`)}"`);
+  return `(${quoted.join(",")})`;
 }
 
 // The UTC instant of local midnight (00:00) on `now`'s civil date in `timeZone`, or null for
@@ -354,45 +409,46 @@ export function startOfZonedDay(now: Date, timeZone: string): Date | null {
   return candidate;
 }
 
-// Describes the "did the user use this tool today, in their timezone?" query for a target,
-// or null when the target has no activity source (breathing, act) and so never suppresses.
-// Pure + Deno-free so it is unit-tested; index.ts turns it into a supabase query.
-export function activityWindowForTarget(
+// Describes the "did the user use this tool today, in their timezone?" queries for a target,
+// one per activity source - a hit in ANY of them suppresses. Empty only for an invalid
+// timezone (every target has at least one source, by type). Pure + Deno-free so it is
+// unit-tested; index.ts turns each window into a supabase query.
+export function activityWindowsForTarget(
   target: ReminderTarget,
   timeZone: string,
   now: Date,
-): ActivityWindow | null {
-  const source = TARGET_CONFIGS[target].activitySource;
-  if (!source) return null;
-
+): ActivityWindow[] {
   const parts = getZonedParts(now, timeZone);
-  if (!parts) return null;
+  if (!parts) return [];
+  const startOfDay = startOfZonedDay(now, timeZone);
+  if (!startOfDay) return [];
 
-  const nameFilter =
-    source.nameColumn && source.nameValues
-      ? { inColumn: source.nameColumn, inValues: source.nameValues }
-      : {};
+  return TARGET_CONFIGS[target].activitySources.map((source) => {
+    const nameFilter =
+      source.nameColumn && source.nameValues
+        ? { inColumn: source.nameColumn, inValues: source.nameValues }
+        : source.nameColumn && source.excludedNameValues
+          ? { notInColumn: source.nameColumn, notInValues: source.excludedNameValues }
+          : {};
 
-  if (source.dateColumn) {
+    if (source.dateColumn) {
+      return {
+        table: source.table,
+        column: source.dateColumn,
+        op: "eq" as const,
+        value: `${parts.year}-${parts.month}-${parts.day}`,
+        ...nameFilter,
+      };
+    }
+
     return {
       table: source.table,
-      column: source.dateColumn,
-      op: "eq",
-      value: `${parts.year}-${parts.month}-${parts.day}`,
+      column: source.timestampColumn as string,
+      op: "gte" as const,
+      value: startOfDay.toISOString(),
       ...nameFilter,
     };
-  }
-
-  const startOfDay = startOfZonedDay(now, timeZone);
-  if (!startOfDay) return null;
-
-  return {
-    table: source.table,
-    column: source.timestampColumn as string,
-    op: "gte",
-    value: startOfDay.toISOString(),
-    ...nameFilter,
-  };
+  });
 }
 
 // ----- Per-routine reminders (issue #47) -----
@@ -402,9 +458,10 @@ export function activityWindowForTarget(
 // mechanism: the same 5-minute due window and day-key stamp, but the stamp lives
 // in a `{ routineId: 'YYYY-MM-DD' }` jsonb map per delivery-channel row
 // (last_routine_reminder_keys), guaranteeing <= 1 notification per routine per
-// day per channel. Routines have no server-side activity suppression (deriving
-// "routine complete today" would need every step tool's table; like breathing
-// and act, they simply never suppress).
+// day per channel. Routines are the ONE reminder with no server-side activity
+// suppression: deriving "routine complete today" would need every step tool's
+// table joined per routine, so they simply never suppress. Every per-tool
+// target does (#1668 closed the breathing/act gap).
 
 /**
  * When a routine runs (#103/#113). Mirrors RoutineCadence in
