@@ -228,36 +228,79 @@ B's own first task (#1136 routed the pick there deliberately, not to a ticket).
 ## Output
 
 Raw output lands in `audio-masters/` at the repo root, which is **gitignored**.
-Masters go to Drive `Selftend/app-audio-masters/` (#1141); the repo keeps the
-prompts and `manifest.jsonl`. Only the finished `.m4a` clips under
-`assets/sounds/` are ever committed.
+Only the finished `.m4a` clips under `assets/sounds/` are ever committed. #1141
+sent the masters to Drive `Selftend/app-audio-masters/` with the repo keeping the
+prompts and the record; the owner's ruling on
+[#1159](https://github.com/Selftend/selftend/issues/1159) amended that, and the
+masters stay in `Downloads`. Nothing has ever reached the Drive path.
 
-### The repo-side manifest
+### Where the record of the pass lives
 
-`manifest.jsonl`, `choices.jsonl` and `archive.jsonl` all live _inside_
-`audio-masters/`, which is gitignored — so on their own they are not the repo half
-of anything. `manifest.mjs` is what makes the split real:
+**Not in this repo.** The repo used to commit `scripts/audio/round-B.manifest.json`
+as its half of #1141's split — prompts and decisions in git, masters off-repo. It
+was deleted under [#1702](https://github.com/Selftend/selftend/issues/1702): it
+was written once on 2026-08-21, before a single take had been picked, and never
+rewritten, so it recorded `chosen: 0`, five beds and six breath textures while
+nineteen clips shipped with no textures at all. A record that misdescribes the
+shipped set is worse than none, and nothing on a clean checkout could notice
+(see the `--check` warning below).
+
+The truthful record is the **closing comment of
+[#1210](https://github.com/Selftend/selftend/issues/1210)** (2026-09-02): the
+table of every shipped clip → its master → how it was chosen, including the
+crossed voice master names #1585 left behind. Its sources are on the owner's
+machine, per #1159:
+
+- `C:\Users\vasil\Downloads\selftend-audio-masters\round-B\` — every Round B
+  take (123 files, 455 MB), with `manifest.jsonl` (49 rows) and `choices.jsonl`
+  (14 rows, including the owner's audition notes of 2026-08-30).
+- `Downloads\selftend-audio-library-0830\` — the three ElevenLabs library WAVs
+  that ship as `ocean`, `stream` and `fire`.
+- The two Round A bells, in the `Downloads` root — chosen on #1159, rendered in
+  the web composer rather than through `render.mjs`, so they have no manifest
+  rows at all; `write --round A` reports two units and zero takes.
+
+☠️ Everything seedless — two bells, three Sound Effects beds, three library WAVs
+— is one `Downloads` cleanup from gone. The three noises come from
+`synth-noise.mjs` and `SYNTH_SEED`, and the voices are re-renderable.
+
+Regenerating the committed file truthfully was the other route on #1702 and was
+not taken. It needs the 455 MB copied into `audio-masters/round-B/`, an
+attestation the tool accepts for "Downloads, per #1159" instead of Drive, adopt
+paths for the library and synthesised beds, and hand-written rows for Round A.
+The attestation wording is the owner's call, because an attestation is a
+person's claim.
+
+### `manifest.mjs`
+
+The tooling stays — the record it builds is the right shape, and the logic is
+what any future regeneration would run:
 
 ```bash
-node scripts/audio/manifest.mjs write   --round B [--out <path>] [--check]
+node scripts/audio/manifest.mjs write   --round B --out <path> [--check]
 node scripts/audio/manifest.mjs archive --round B --all [--note "..."]
 node scripts/audio/manifest.mjs archive --round B --file <name> [--note "..."]
 ```
 
-`write` rebuilds `scripts/audio/round-<R>.manifest.json` — committed, and holding
-#1210's definition of done for every unit: the prompt asked for today, each take's
-parameters and its TTS seed where one exists, the chosen candidate, and the Drive
-path. It **exits 1 while any unit is unpicked or any take unarchived**, so a
-half-finished pass cannot read as a finished one. Each take also carries a
-`measured` block joined from the audition's `audition.json` — the finished file's
-duration and lead silence, which `postprocess run` alone produces and which #1136
-requires for `introMs`; without this they lived only on a page `build` overwrites.
+`--out` is **required** for `write`. It used to default to the committed
+`round-<R>.manifest.json`; since #1702 a `write` without `--out` exits 1 and
+prints where the record lives instead, so a stale file cannot quietly come back.
+`write` builds a record holding #1210's definition of done for every unit: the
+prompt asked for today, each take's parameters and its TTS seed where one exists,
+the chosen candidate, and the archive path. It **exits 1 while any unit is
+unpicked or any take unarchived**, so a half-finished pass cannot read as a
+finished one. Each take also carries a `measured` block joined from the
+audition's `audition.json` — the finished file's duration and lead silence, which
+`postprocess run` alone produces and which #1136 requires for `introMs`; without
+this they lived only on a page `build` overwrites.
 
-`archive` records that masters reached Drive. ⚠️ It **attests, it does not
-upload** — nothing in this repo talks to Drive, so the row is a person's claim
-that they did it, and the record says so in its own `archivedMeans` field. A take
-whose master is not on this disk is refused rather than attested, because an
-attestation given for free is worth nothing.
+`archive` records that masters were archived. ⚠️ It **attests, it does not
+upload** — nothing in this repo talks to any archive, so the row is a person's
+claim that they did it, and the record says so in its own `archivedMeans` field.
+A take whose master is not on this disk is refused rather than attested, because
+an attestation given for free is worth nothing. ⚠️ Its path and `archivedMeans`
+still describe the #1141 Drive layout; the #1159 ruling has no wording in the
+tool yet, which is one of the things the regeneration route above would need.
 
 The logic lives in `manifest-plan.mjs` and the disk and exit codes in
 `manifest.mjs`, the same split `audition-plan.mjs`/`audition.mjs` and
@@ -274,14 +317,8 @@ to be drivable from jest without ffmpeg, a key, or a rendered byte.
 > ☠️ **`--check` is local-only and no CI gate can replace it.** Everything the
 > record derives from is gitignored and lives on whichever machine ran the pass, so
 > nothing on a clean checkout can notice a stale manifest. That is the price of the
-> split #1141 chose, and it is worth stating rather than implying a guard exists.
-
-> ⚠️ **Round A's masters are not on this machine.** `write --round A` reports two
-> units and **zero takes**: #1159's bell gate passed and spent 120 credits, but
-> `audio-masters/` is gitignored and per-worktree, and the worktree that rendered
-> them is gone. Whether those two bells still exist depends entirely on whether
-> someone uploaded them to Drive — and nothing recorded it, which is exactly the
-> hole `archive` closes for Round B.
+> split #1141 chose, and it is why #1702 deleted the stale file rather than leave
+> a record nothing could contradict.
 
 Post-processing — the fold, loudness normalisation, true-peak limiting and AAC
 encode fixed by [#1138](https://github.com/Selftend/selftend/issues/1138) — runs
