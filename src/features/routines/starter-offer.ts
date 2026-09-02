@@ -33,8 +33,12 @@ const DISTINCT_STEPPABLE_TOOLS: readonly SteppableToolId[] = STEPPABLE_TOOL_IDS.
  * toward the second action (#1677, decided 2026-09-02): the offer is about
  * the person having acted twice, and the routine it offers is composed from
  * the kept widgets, not from these records. Existence is all the count reads,
- * so the element type is left open. Self-care's list is the 14-day window
- * the home row reads; an older-only history biases the count DOWN only.
+ * so the element type is left open. The three lists are row-capped (worry and
+ * anger at 500, self-care at its newest 14), never date-windowed, so any
+ * record at all makes its list non-empty - unlike habits, nothing here can
+ * undercount. Reading whole lists for an existence question is heavier than
+ * needed, but bounded: the fetch runs once, for no-routine users only, on
+ * the cache the list screens already share.
  */
 export type OfferOnlyRecords = {
   worryEntries?: readonly unknown[];
