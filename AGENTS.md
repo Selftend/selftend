@@ -75,7 +75,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - Require explicit review before adding tracking, analytics, ads, social feeds, or behavioral nudges.
 - Do not write product copy that implies medical outcomes, diagnosis, or emergency support.
 - Safety and crisis guidance should be visible, calm, and clearly separate from the app's self-help features.
-- The product currently targets all ages, so call out any child-safety, moderation, or legal-review burden you notice.
+- The launch posture is adults-only: Selftend is for users aged 18 and older, per `docs/product-principles.md`, and under-18 support is a separate decision gated on legal and child-safety review. Still call out any child-safety, moderation, or legal-review burden you notice.
 
 ## Email deliverability rule
 
