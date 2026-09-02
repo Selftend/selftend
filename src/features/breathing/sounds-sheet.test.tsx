@@ -2,23 +2,37 @@ import { fireEvent, screen, within } from "@testing-library/react-native";
 import { ScrollView } from "react-native";
 
 import { SoundsSheet } from "@/src/features/breathing/sounds-sheet";
-import type { UserPreferences } from "@/src/features/modules/types";
-import { resolveAmbientSoundId } from "@/src/constants/breathing-sounds";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 const mockUpdate = jest.fn().mockResolvedValue(undefined);
-// What the preferences query hands the sheet. `undefined` = defaults (guided / none).
-// ⚠️ This bypasses the repository, so a test that puts an id here is asserting what
-// the sheet does with a value it RECEIVES, not what the database holds.
-let mockPrefs: Partial<UserPreferences> | undefined;
+// The `user_preferences` row the (mocked) database returns, or `null` for no row.
+// ⚠️ Read through the REAL repository and query hook, so a test that puts a stored id
+// here exercises the mapper that resolves it (#1745) - the sheet never sees this raw.
+// With no row the query is left disabled, which is the pre-#1745 `data: undefined`.
+let mockStoredRow: Record<string, unknown> | null = null;
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
-jest.mock("@/src/features/settings/queries", () => ({
-  useUserPreferences: () => ({ data: mockPrefs }),
-  useUpdateUserPreferences: () => ({ mutateAsync: mockUpdate, isPending: false }),
+jest.mock("@/src/lib/supabase", () => ({
+  requireSupabase: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({ maybeSingle: async () => ({ data: mockStoredRow, error: null }) }),
+      }),
+    }),
+  }),
 }));
+jest.mock("@/src/features/settings/queries", () => {
+  const actual = jest.requireActual<typeof import("@/src/features/settings/queries")>(
+    "@/src/features/settings/queries",
+  );
+  return {
+    // Called unconditionally (hooks rule); a null user id disables the query.
+    useUserPreferences: () => actual.useUserPreferences(mockStoredRow ? "user-1" : null),
+    useUpdateUserPreferences: () => ({ mutateAsync: mockUpdate, isPending: false }),
+  };
+});
 jest.mock("@/src/lib/accessibility", () => ({
   ...jest.requireActual("@/src/lib/accessibility"),
   useReduceMotionEnabled: () => false,
@@ -27,7 +41,7 @@ jest.mock("@/src/lib/accessibility", () => ({
 describe("SoundsSheet", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockPrefs = undefined;
+    mockStoredRow = null;
   });
 
   // W20/#1257: the X is this sheet's ONE Escape (the sheet declines the
@@ -80,19 +94,27 @@ describe("SoundsSheet", () => {
     expect(screen.getByRole("radio", { name: "Guided voice (male)" })).not.toBeChecked();
   });
 
-  it("shows None on the lane AND highlights the None row for an ambient id the catalog lacks", () => {
-    // ☠️ Before #1745 the ambient lane had no resolver at all: for an unknown id the
-    // lane label fell back to "None" while the picker highlighted NO row, so the
-    // sheet disagreed with itself. The sheet does not resolve on its own - the
-    // repository does, once, when the row is read - so this feeds the sheet exactly
-    // what the repository hands over for a stored `not-a-bed`, and asserts that the
-    // two surfaces now agree on the one answer.
-    const ambientSoundId = resolveAmbientSoundId("not-a-bed");
-    expect(ambientSoundId).toBe("none");
-    mockPrefs = { ambientSoundId };
+  it("shows None on the lane AND highlights the None row for a stored ambient id the catalog lacks", async () => {
+    // ☠️ Before #1745 the ambient lane had no resolver at all: for an unknown stored
+    // id the lane label fell back to "None" while the picker highlighted NO row, so
+    // the sheet disagreed with itself. The sheet does not resolve on its own - the
+    // repository does, once, when the row is read - so the row goes in RAW here and
+    // travels the real path: mocked database -> repository mapper -> query -> sheet.
+    // Were the mapper to pass `not-a-bed` through, the lane would still read "None"
+    // (the `??` null-guard) but the radio below would not be checked.
+    //
+    // ⚠️ The breath column is deliberately NOT the default: the resolved ambient id
+    // is `none`, which is also the default, so "None" on the lane cannot by itself
+    // tell a loaded row from the pre-load defaults. The male voice can.
+    mockStoredRow = {
+      user_id: "user-1",
+      breath_sound_id: "guided-male",
+      ambient_sound_id: "not-a-bed",
+    };
     renderWithProviders(<SoundsSheet visible onDismiss={() => {}} />);
-    // The lane's own summary reads "None" (the breath lane still shows its default) -
-    // counted BEFORE the picker opens, since the picker adds a "None" row of its own.
+    expect(await screen.findByText("Guided voice (male)")).toBeTruthy();
+    // The lane's own summary reads "None" - counted BEFORE the picker opens, since
+    // the picker adds a "None" row of its own.
     expect(screen.getAllByText("None")).toHaveLength(1);
     fireEvent.press(screen.getByLabelText("Choose an ambient sound"));
     // And the ambient picker highlights it as the selected row, not nothing.

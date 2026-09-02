@@ -41,8 +41,8 @@ export function SoundsSheet({ visible, onDismiss }: SoundsSheetProps) {
   // to `none` on read (#1745), so each lane's summary and its picker's `selectedId`
   // name the same row. The sheet used to resolve the breath lane itself and the
   // ambient lane not at all - an unknown bed read "None" while the picker highlighted
-  // nothing. The `?? [0]` fallbacks are belt-and-braces for a caller that bypasses
-  // the repository, not a second resolver.
+  // nothing. The `?? [0]` fallbacks below are null-guards for a caller that bypasses
+  // the repository; they land on the same `none` row the repository would.
   const breathSound =
     BREATH_SOUNDS.find((s) => s.id === effective.breathSoundId) ?? BREATH_SOUNDS[0];
   const ambientSound =

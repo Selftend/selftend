@@ -160,22 +160,28 @@ export const ambientSoundLookup: Record<string, AmbientSound> = Object.fromEntri
   AMBIENT_SOUNDS.map((s) => [s.id, s]),
 );
 
+// ☠️ Membership is tested against the catalog LIST, never with `in` or an index read on
+// the lookup object: `"constructor"` is a hit on any plain object, and a stored id is
+// free text.
+function resolveSoundId(catalog: readonly { id: string }[], id: string): string {
+  return catalog.some((s) => s.id === id) ? id : "none";
+}
+
 /**
  * Resolve a stored breath id to one the catalog has: anything absent lands on `none`.
  *
  * Applied ONCE, where the preferences row is mapped (`settings/repository.ts`), so every
- * consumer holds a lookup-able id and none re-handles the miss on its own (#1745). Before
- * that, the runner and the sheet each resolved and the session screen did not, so the
- * next retirement re-opened the gap on whichever surface had been skipped.
- *
- * ☠️ Membership is tested against the catalog list, never with `in` or an index read on
- * the lookup: `"constructor"` is a hit on any plain object, and a stored id is free text.
+ * consumer holds a lookup-able id and no consumer needs a resolver of its own (#1745).
+ * Before that, the runner and the sheet each resolved and the session screen did not, so
+ * the next retirement re-opened the gap on whichever surface had been skipped. The `??`
+ * and ternary fallbacks that remain in those consumers are null-guards for a caller that
+ * bypasses the repository, not a second policy: every one of them lands on `none` too.
  */
 export function resolveBreathSoundId(id: string): string {
-  return BREATH_SOUNDS.some((s) => s.id === id) ? id : "none";
+  return resolveSoundId(BREATH_SOUNDS, id);
 }
 
 /** The ambient-lane twin of `resolveBreathSoundId`: a bed the catalog lacks is `none`. */
 export function resolveAmbientSoundId(id: string): string {
-  return AMBIENT_SOUNDS.some((s) => s.id === id) ? id : "none";
+  return resolveSoundId(AMBIENT_SOUNDS, id);
 }
