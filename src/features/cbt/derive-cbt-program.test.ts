@@ -209,6 +209,14 @@ describe("deriveCbtProgram", () => {
     expect(high.phaseIndex).toBe(4);
   });
 
+  it("carries the presentation-only leadsWithDailyPractice flag through to the phase view (#1676)", () => {
+    const assessment = deriveCbtProgram(input({ phaseIndex: 0 }));
+    expect(assessment.phase!.leadsWithDailyPractice).toBe(true);
+
+    const thinking = deriveCbtProgram(input({ phaseIndex: 2 }));
+    expect(thinking.phase!.leadsWithDailyPractice).toBe(false);
+  });
+
   it("phase is null when status is not_started", () => {
     const result = deriveCbtProgram(input({ startedAt: null }));
     expect(result.status).toBe("not_started");

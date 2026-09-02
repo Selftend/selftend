@@ -44,6 +44,15 @@ interface ProgramWeek {
   themeDescKey: string; // i18n key under cbt:program.weeks.<key>.description
   milestones: ProgramTaskDef[];
   dailyPractice?: ProgramTaskDef;
+  /**
+   * Presentation order only (#1676): the card renders the daily practice above
+   * the milestones, so the week opens with a skill rather than setup. Nothing
+   * about the legs moves - not their rules, their week, or their signals. If a
+   * leg ever needs to actually move weeks, that is a different ticket: a moved
+   * leg triggers the three-copies rule (this definition, the server
+   * widget-status twin, and the demo seed move together).
+   */
+  leadsWithDailyPractice?: true;
 }
 
 export const atOrAfter = (iso: string | null | undefined, since: number) =>
@@ -225,6 +234,9 @@ export const CBT_PROGRAM: ProgramWeek[] = [
     themeDescKey: "program.weeks.assessment.description",
     milestones: [SET_GOALS, CLARIFY_VALUES],
     dailyPractice: DAILY_NOTICING,
+    // The programme opens with the active practice, setup follows (#1676): the
+    // exit is before lesson 3 (#1660), and the skill is the point, not the form.
+    leadsWithDailyPractice: true,
   },
   {
     key: "formulation",
