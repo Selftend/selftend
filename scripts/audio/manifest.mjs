@@ -18,7 +18,7 @@
  * Whether those two seedless bells still exist anywhere depends entirely on
  * whether someone uploaded them, and nothing recorded it.
  *
- *   node scripts/audio/manifest.mjs write   --round A|B [--out <path>] [--check]
+ *   node scripts/audio/manifest.mjs write   --round A|B --out <path> [--check]
  *   node scripts/audio/manifest.mjs archive --round A|B --all [--note "..."]
  *   node scripts/audio/manifest.mjs archive --round A|B --file <name> [--note "..."]
  *
@@ -30,6 +30,17 @@
  * "is the committed manifest current *here*" and nothing more. There is no gate
  * that can catch a stale one on a clean checkout, which is the price of the split
  * #1141 chose and is worth saying out loud rather than implying a guard exists.
+ *
+ * ☠️ AND THAT IS WHY THERE IS NO COMMITTED FILE ANY MORE (#1702). The one this
+ * tool wrote, `round-B.manifest.json`, was generated once on 2026-08-21 before a
+ * single take was picked and never rewritten, so it said `chosen: 0`, five beds
+ * and six textures while nineteen clips shipped with no textures. Nothing could
+ * contradict it. `write` therefore no longer has a default target: without
+ * `--out` it exits 1 and says where the truthful record lives — the closing
+ * comment of #1210, with the masters in `Downloads` per the owner's ruling on
+ * #1159. Regenerating the file truthfully is possible (copy the masters in, rule
+ * on the attestation wording, adopt the library and synthesised beds and Round
+ * A's composer-rendered bells) but was not the route #1702 took.
  */
 
 import { readFile, writeFile, appendFile, mkdir, access } from "node:fs/promises";
@@ -96,8 +107,19 @@ const showPath = (target) => {
 const roundDir = (round) => join(outDir(), `round-${round}`);
 const archivePath = (round) => join(roundDir(round), "archive.jsonl");
 
-/** Where the committed record lives — beside the prompts it is the record of. */
-export const manifestPath = (round) => join(requireModuleDir(), `round-${round}.manifest.json`);
+/**
+ * Where the record lives now that the repo no longer carries one (#1702).
+ *
+ * `write` used to default to `scripts/audio/round-<R>.manifest.json` beside the
+ * prompts. That file is gone — see the docblock — and a default target is exactly
+ * how a stale one would come back, so the pointer is what a bare `write` prints.
+ */
+export const RECORD_POINTER =
+  "the repo carries no committed manifest since #1702: the stale round-B.manifest.json " +
+  "was deleted. The truthful record is the closing comment of #1210 " +
+  "(https://github.com/Selftend/selftend/issues/1210), with the masters in " +
+  "Downloads per the owner's ruling on #1159. Pass --out <path> to build a record " +
+  "from audio-masters/ on this disk.";
 
 async function readJsonl(path) {
   try {
@@ -188,8 +210,12 @@ async function readMeasurements(round) {
  * @param {string} round
  * @param {{out?: string|null, check?: boolean}} [options]
  * @returns {Promise<boolean>} whether the round is current AND finished
+ * @throws when `out` is missing — there is no committed file to default to (#1702)
  */
 export async function write(round, { out = null, check = false } = {}) {
+  // ☠️ Loudly, and before a byte is read: a default target is how the stale
+  // record came to exist, and a quiet fallback would let it come back.
+  if (!out) throw new Error(`write needs --out: ${RECORD_POINTER}`);
   const { clips, slots } = unitsOf(round);
   const { rows, choices, archives, measurements } = await readRound(round);
   const doc = buildManifest({
@@ -205,7 +231,7 @@ export async function write(round, { out = null, check = false } = {}) {
     at: new Date().toISOString(),
   });
 
-  const target = out ?? manifestPath(round);
+  const target = out;
   const body = `${JSON.stringify(doc, null, 2)}\n`;
 
   if (check) {
@@ -341,12 +367,14 @@ function flag(name, fallback = null) {
 
 const USAGE = `
 Usage:
-  node scripts/audio/manifest.mjs write   --round A|B [--out <path>] [--check]
+  node scripts/audio/manifest.mjs write   --round A|B --out <path> [--check]
   node scripts/audio/manifest.mjs archive --round A|B --all [--note "..."]
   node scripts/audio/manifest.mjs archive --round A|B --file <name> [--note "..."]
 
-  write    rebuilds the committed record from audio-masters/, and exits 1 while
+  write    builds the record from audio-masters/ into --out, and exits 1 while
            any unit is unpicked or any take unarchived (#1210's definition of done).
+           --out is required: the repo carries no committed manifest since #1702
+           (the record is the closing comment of #1210; masters in Downloads, #1159).
   --check  compares instead of writing. Local only — everything it reads is
            gitignored, so no CI gate can catch a stale manifest.
   archive  records that masters reached Drive ${DRIVE_ROOT}/ (#1141).
