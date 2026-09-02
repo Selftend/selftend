@@ -78,6 +78,34 @@ describe("ProgressScreen", () => {
     expect(chartSvg.props.width).toBe(294);
   });
 
+  it("pins one reflection prompt - the same question on every weekday (#1665)", () => {
+    mockUseMoodScorePoints.mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useMoodScorePoints>);
+
+    // A Sunday and a Wednesday: the retired weekday-modulo pick rendered a
+    // different question on each (#1665) - content that changes daily on a rule
+    // the user cannot see is a schedule, not a library. The Sunday case is the
+    // one that went red against the old code (index 0 was a different string);
+    // the retired strings are gone from every locale, so there is nothing to
+    // assert absent.
+    for (const now of ["2026-09-06T12:00:00", "2026-09-09T12:00:00"]) {
+      jest.useFakeTimers({ now: new Date(now) });
+      try {
+        const view = renderWithProviders(<ProgressScreen />);
+
+        expect(
+          screen.getByText("What is one thing you noticed about your mood or energy?"),
+        ).toBeTruthy();
+
+        view.unmount();
+      } finally {
+        jest.useRealTimers();
+      }
+    }
+  });
+
   it("shows the empty state when the window has no points", () => {
     mockUseMoodScorePoints.mockReturnValue({
       data: [],
