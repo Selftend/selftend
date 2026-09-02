@@ -82,6 +82,17 @@ Expected monthly core infra:
 
 - about `$64-$244+/month` depending on build volume, email volume, and infra growth
 
+## Content tooling: ElevenLabs
+
+A paid subscription since 2026-08-04, on the owner's individual account. It is content-production tooling, not core infrastructure, so it sits outside the Scenario A–C totals and inside the "light design or content tooling" room of the comfortable budget below.
+
+- Plan: **Creator**, `$22/month` on monthly billing (`$18.33/month` equivalent on annual billing, `$220/year`); 121k credits/month; Eleven Music costs 900 credits per minute.
+- What it pays for: the campaign voice-over, music beds and UI sound effects (registry: `docs/campaign/assets.md`), and the app's meditation and breathing audio set.
+- Why Creator and not Pro: Creator covers MP3 44.1 kHz/192 kbps and Sound Effects WAV 48 kHz; PCM/WAV at 44.1 kHz needs Pro, which the app render does not require.
+- Commercial rights: paid plans include commercial use. Eleven Music output keeps the rights of the plan it was created on even after a downgrade (Eleven Music Model-Specific Terms §2(c)); the general terms make no equivalent statement for voice and sound-effects output, so re-check before cancelling.
+- Not available: the ElevenLabs Impact Program (12 months of free Pro for non-profits) requires a registered entity, which the project does not have (checked 2026-08-20).
+- Source: <https://elevenlabs.io/pricing> (checked 2026-09-02)
+
 ## Shared inbox and email operations
 
 Recommended early setup:
@@ -179,6 +190,8 @@ Avoid paying for these before the product earns them:
 - PikaPods docs: <https://docs.pikapods.com/>
 - AWS SES pricing: <https://aws.amazon.com/ses/pricing/>
 - Cloudflare Workers pricing: <https://developers.cloudflare.com/workers/platform/pricing/>
+- ElevenLabs pricing: <https://elevenlabs.io/pricing>
+- ElevenLabs Eleven Music Model-Specific Terms (commercial-rights table by plan): <https://elevenlabs.io/eleven-music-model-specific-terms>
 - Google Play developer account requirements: <https://support.google.com/googleplay/android-developer/answer/13628312>
 - Google Play registration payment: <https://support.google.com/googleplay/android-developer/answer/6112435>
 - Google Workspace pricing update reference: <https://workspace.google.com/blog/product-announcements/pricing-updates-and-more-flexible-payment-options-google-workspace>
