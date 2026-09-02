@@ -159,12 +159,9 @@ group by 1, 2 order by 2 desc, 1;
 \echo '=== 4) Module usage (cbt, meditation, gratitude, act; distinct users with >=1 record, pct of that account population) ==='
 -- A content row is the only adoption signal the schema carries. This table
 -- used to add "enabled" and "enabled-but-never-used" columns read from
--- `user_preferences.enabled_modules`, but that array gates nothing - every
--- module's tools sit on the tools grid regardless, the last write hook went in
--- the May 2026 dead-code sweep (059ae523), and what remains is the column
--- default `['cbt']` plus one write from the meditation wizard. So "cbt enabled
--- 45 of 46" was the default, not a choice, and gratitude read as used-but-never-
--- enabled (#1672). test/analytics-shared-sql.test.ts keeps the column out.
+-- `user_preferences.enabled_modules`, an array that gates nothing (#1672; the
+-- history is in docs/analytics.md, under this report).
+-- test/analytics-shared-sql.test.ts keeps the column out.
 with totals as (
   select l.account, count(a.user_id)::numeric as all_users
   from account_labels l

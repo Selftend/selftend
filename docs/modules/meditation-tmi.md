@@ -417,7 +417,7 @@ All tables RLS owner-only, mirroring CBT.
 
 This module follows the contract documented in `tools.md`:
 
-- New `ModuleKey`: `"meditation"`. Added to the union in `src/features/modules/types.ts` alongside `"cbt"`. Default `enabledModules` stays `["cbt"]` - meditation is opt-in via the modules discovery screen.
+- New `ModuleKey`: `"meditation"`. Added to the union in `src/features/modules/types.ts` alongside `"cbt"`. Default `enabledModules` stays `["cbt"]`, and the array gates nothing: meditation is reachable from the tools grid without enabling anything, and the wizard's `addModule` write on completion is the column's only client write (#1672).
 - i18n namespace: `meditation:*`.
 - Route group: `/tools/meditation/*` (see §5).
 - New `user_preferences` fields, mirroring the CBT reminder fields:

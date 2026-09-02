@@ -114,23 +114,23 @@ describe("analytics report shared SQL blocks", () => {
   });
 });
 
+/** The report's SQL lines matching `pattern`, with whole-line `--` comments left out. */
+function sqlLinesMatching(file: string, pattern: RegExp): string[] {
+  return fs
+    .readFileSync(path.join(SCRIPTS_DIR, file), "utf8")
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("--"))
+    .filter((line) => pattern.test(line));
+}
+
 describe("analytics reports never read enabled_modules as an axis", () => {
-  // #1672. `user_preferences.enabled_modules` gates nothing: every module's
-  // tools sit on the tools grid whether or not the array lists them, the last
-  // write hook went in the May 2026 dead-code sweep (059ae523), and what is
-  // left is the column default (`['cbt']`) plus one write from the meditation
-  // wizard. A report that unnests it is therefore reading a default and calling
-  // it adoption - "cbt enabled 45 of 46" was the default, not a choice, and
-  // gratitude read as "used but never enabled" by five people. Usage (a content
-  // row) is the only adoption signal the schema carries; the reports count that.
+  // #1672. `user_preferences.enabled_modules` gates nothing, so a report that
+  // unnests it reads the column default and calls it adoption; usage (a content
+  // row) is the only adoption signal the schema carries. The history is in
+  // docs/analytics.md, under the engagement report.
   for (const file of reportFiles()) {
     it(`${file} does not unnest or filter on enabled_modules`, () => {
-      const source = fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8");
-      const outsideComments = source
-        .split("\n")
-        .filter((line) => !line.trim().startsWith("--"))
-        .filter((line) => /enabled_modules/.test(line));
-      expect(outsideComments).toEqual([]);
+      expect(sqlLinesMatching(file, /enabled_modules/)).toEqual([]);
     });
   }
 });
@@ -147,13 +147,8 @@ describe("analytics reports carry the account split", () => {
     });
 
     it(`${file} reads auth.users only through the accounts view`, () => {
-      const source = fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8");
       // The one permitted mention is inside the shared accounts block.
-      const outside = source
-        .split("\n")
-        .filter((line) => !line.trim().startsWith("--"))
-        .filter((line) => /auth\.users/.test(line));
-      expect(outside).toEqual(["  from auth.users;"]);
+      expect(sqlLinesMatching(file, /auth\.users/)).toEqual(["  from auth.users;"]);
     });
   }
 });

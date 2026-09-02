@@ -437,6 +437,11 @@ describe("aggregate analytics reports (integration)", () => {
 
     let before: Map<string, number>;
 
+    /** How many users the fixtures added to one `account/module` cell. */
+    function delta(key: string): number {
+      return moduleUsers().get(key)! - before.get(key)!;
+    }
+
     beforeAll(() => {
       deleteSuiteUsers();
       before = moduleUsers();
@@ -461,14 +466,12 @@ describe("aggregate analytics reports (integration)", () => {
     afterAll(deleteSuiteUsers);
 
     it("counts a person with a record once, whether or not enabled_modules lists the module", () => {
-      const after = moduleUsers();
-      expect(after.get(REGISTERED_GRATITUDE)! - before.get(REGISTERED_GRATITUDE)!).toBe(2);
+      expect(delta(REGISTERED_GRATITUDE)).toBe(2);
     });
 
     it("never counts a person enabled_modules lists who has no record", () => {
-      const after = moduleUsers();
-      expect(after.get(REGISTERED_ACT)! - before.get(REGISTERED_ACT)!).toBe(0);
-      expect(after.get(REGISTERED_CBT)! - before.get(REGISTERED_CBT)!).toBe(0);
+      expect(delta(REGISTERED_ACT)).toBe(0);
+      expect(delta(REGISTERED_CBT)).toBe(0);
     });
 
     it("prints every module for every account type, zeros included", () => {
