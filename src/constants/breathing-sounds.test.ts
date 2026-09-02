@@ -14,6 +14,7 @@ import {
   RETIRED_BREATH_SOUND_IDS,
   ambientSoundLookup,
   breathSoundLookup,
+  resolveAmbientSoundId,
   resolveBreathSoundId,
 } from "@/src/constants/breathing-sounds";
 
@@ -44,6 +45,37 @@ describe("the retired breath textures", () => {
   it("keeps them out of the catalog", () => {
     const ids = BREATH_SOUNDS.map((s) => s.id);
     for (const id of RETIRED_BREATH_SOUND_IDS) expect(ids).not.toContain(id);
+  });
+});
+
+describe("resolving a stored id (#1745)", () => {
+  // ⚠️ The resolver is keyed on the CATALOG, not on the retired list: the next
+  // retirement must not re-open the gap by forgetting to extend a list. The
+  // retired ids stay as documentation of why those three values are in the
+  // database, but they are only a subset of what resolves to `none`.
+  it("sends any breath id the catalog lacks to `none`, not only the retired three", () => {
+    expect(resolveBreathSoundId("not-a-voice")).toBe("none");
+    expect(resolveBreathSoundId("")).toBe("none");
+  });
+
+  it("does not let a prototype key masquerade as a breath sound", () => {
+    // ☠️ `"constructor" in lookup` is true on a plain object. A stored id that
+    // happens to name an Object.prototype member must still be a miss.
+    expect(resolveBreathSoundId("constructor")).toBe("none");
+    expect(resolveAmbientSoundId("__proto__")).toBe("none");
+  });
+
+  it("sends an ambient id the catalog lacks to `none`, and leaves a bed alone", () => {
+    expect(resolveAmbientSoundId("not-a-bed")).toBe("none");
+    expect(resolveAmbientSoundId("rain")).toBe("rain");
+    expect(resolveAmbientSoundId("none")).toBe("none");
+  });
+
+  it("returns an id each catalog actually has, for every input", () => {
+    for (const id of ["wind", "rain", "guided", "zzz"]) {
+      expect(breathSoundLookup[resolveBreathSoundId(id)]).toBeDefined();
+      expect(ambientSoundLookup[resolveAmbientSoundId(id)]).toBeDefined();
+    }
   });
 });
 

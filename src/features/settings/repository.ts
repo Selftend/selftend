@@ -1,3 +1,4 @@
+import { resolveAmbientSoundId, resolveBreathSoundId } from "@/src/constants/breathing-sounds";
 import {
   defaultUserPreferences,
   sanitizeEnabledModules,
@@ -187,8 +188,16 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     shownButtonTours: (row.shown_button_tours ?? []) as ButtonTourKey[],
     reminderPromptedTools: (row.reminder_prompted_tools ?? []) as ReminderPromptedTool[],
     starterRoutineOffered: Boolean(row.starter_routine_offered),
-    breathSoundId: row.breath_sound_id ?? defaultUserPreferences.breathSoundId,
-    ambientSoundId: row.ambient_sound_id ?? defaultUserPreferences.ambientSoundId,
+    // Resolved HERE, once, for every consumer (#1745): both columns are plain text with
+    // no CHECK, shipped clients may still write a retired id, so the database can hold
+    // `wind` forever. Read-side only - the resolved value is never written back, and
+    // `updateUserPreferences` sends a patch through untouched.
+    breathSoundId: resolveBreathSoundId(
+      row.breath_sound_id ?? defaultUserPreferences.breathSoundId,
+    ),
+    ambientSoundId: resolveAmbientSoundId(
+      row.ambient_sound_id ?? defaultUserPreferences.ambientSoundId,
+    ),
     breathVolume: row.breath_volume ?? defaultUserPreferences.breathVolume,
     ambientVolume: row.ambient_volume ?? defaultUserPreferences.ambientVolume,
     lastBreathingPatternId: row.last_breathing_pattern_id ?? null,
