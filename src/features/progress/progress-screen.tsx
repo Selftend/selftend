@@ -16,8 +16,10 @@ import { LineChart } from "@/src/components/charts/line-chart";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { buildMoodChartData } from "@/src/features/mood/chart-data";
 import { useMoodScorePoints } from "@/src/features/mood/queries";
+import { HOME_COLUMN } from "@/src/lib/layout";
 import { useSession } from "@/src/providers/session-provider";
 import { startOfDayDaysAgo } from "@/src/utils/date";
+import { cn } from "@/lib/utils";
 
 const TREND_DAYS = 30;
 
@@ -57,7 +59,8 @@ export default function ProgressScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="grow p-6">
+      {/* Column on the padded box, not inside it - see `layout.ts` (#1721). */}
+      <ScrollView contentContainerClassName={cn("grow p-6", HOME_COLUMN)}>
         <View className="gap-6">
           <View className="gap-2">
             <ScreenHeader title={t("progress.title")} />
