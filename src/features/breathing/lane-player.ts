@@ -6,8 +6,9 @@ import { ensureNativeAudioMode, loadExpoAudio } from "@/src/lib/native-audio";
  * One lane of session audio: a looping bed, or the one-shot cue of the moment.
  *
  * Looping playback FADES (#1743): `play` ramps from 0 up to the requested volume and
- * `stop` ramps down to 0 before the player is released, so a pause, a resume, a bed
- * swap and the end of a session no longer cut dead. One-shot cues (`loop === false`,
+ * `stop` ramps down to 0 before the player is released, so a pause, a resume and the
+ * end of a session no longer cut dead. A bed SWAP is half-faded: the outgoing bed is
+ * cut (see `play`) and the incoming one rises from 0. One-shot cues (`loop === false`,
  * the guided voice) are not faded — a clip that starts under a ramp is a clip with its
  * first syllable missing.
  *
@@ -57,9 +58,15 @@ async function openNative(asset: number, volume: number, loop: boolean): Promise
   const audio = loadExpoAudio();
   await ensureNativeAudioMode(audio);
   const player = audio.createAudioPlayer(asset);
-  player.loop = loop;
-  player.volume = volume;
-  player.play();
+  try {
+    player.loop = loop;
+    player.volume = volume;
+    player.play();
+  } catch (error) {
+    // A player that never started is still a native handle; do not leak it.
+    player.remove();
+    throw error;
+  }
   return {
     setVolume: (v) => {
       player.volume = v;
@@ -129,13 +136,19 @@ export function createLanePlayer(): LanePlayer {
   // Where the volume actually is, ramp or not: a fade-out starts from here, so a
   // slider move applied while idle is not undone by a jump when the bed leaves.
   let lastVolume = 0;
+  // Where the caller wants it. Set by play() and overwritten by every setVolume(),
+  // including one that lands while play() is still awaiting the audio-mode setup -
+  // the fade-in then targets the slider's value, not the one play() was called with.
+  let requestedVolume = 0;
 
   const applyVolume = (volume: number) => {
     lastVolume = volume;
     try {
       handle?.setVolume(volume);
     } catch {
-      // A player released underneath us; the ramp's next tick is cancelled below.
+      // A player released underneath us. The ramp keeps ticking into this catch
+      // until it finishes (at most LOOP_FADE_MS) - harmless, and simpler than
+      // cancelling from inside the apply callback.
     }
   };
   const ramp = createVolumeRamp(applyVolume);
@@ -157,6 +170,7 @@ export function createLanePlayer(): LanePlayer {
   return {
     async play(asset, volume, loop) {
       const gen = ++playGen;
+      requestedVolume = volume;
       // Whatever is playing - or fading out - is cut here, once. A crossfade would
       // need two live players and a second set of invariants; the bed that is leaving
       // is already on its way to 0, and the new one rises from 0 either way.
@@ -174,12 +188,14 @@ export function createLanePlayer(): LanePlayer {
         }
         handle = opened;
         looping = loop;
-        if (loop) ramp.start(0, volume);
+        if (loop) ramp.start(0, requestedVolume);
+        else if (requestedVolume !== volume) applyVolume(requestedVolume);
       } catch {
         // Audio is best-effort; never crash a breathing session.
       }
     },
     async setVolume(volume) {
+      requestedVolume = volume;
       if (!handle || fadingOut) return;
       if (ramp.running) {
         ramp.retarget(volume);
@@ -189,10 +205,9 @@ export function createLanePlayer(): LanePlayer {
     },
     async stop() {
       playGen++;
-      if (!handle) {
-        ramp.cancel();
-        return;
-      }
+      // No handle means no ramp either: release() cancels the ramp whenever it
+      // nulls the handle, and play() releases before it awaits.
+      if (!handle) return;
       if (!looping) {
         release();
         return;

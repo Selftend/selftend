@@ -7,39 +7,19 @@
  * advances, so the assertions are on the shape of the ramp, not on step counts.
  */
 import { LOOP_FADE_MS, createLanePlayer } from "@/src/features/breathing/lane-player";
+import {
+  fakePlayers as players,
+  flushAudioSetup as flush,
+  livePlayers as live,
+  resetFakeAudio,
+} from "@/test/expo-audio-mock";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
-type FakePlayer = {
-  play: jest.Mock;
-  remove: jest.Mock;
-  addListener: jest.Mock;
-  loop: boolean;
-  volume: number;
-};
-
-const players: FakePlayer[] = [];
-const mockCreateAudioPlayer = jest.fn((..._args: unknown[]) => {
-  const player: FakePlayer = {
-    play: jest.fn(),
-    remove: jest.fn(),
-    addListener: jest.fn(),
-    loop: false,
-    volume: 1,
-  };
-  players.push(player);
-  return player;
-});
-
-jest.mock("expo-audio", () => ({
-  setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
-  createAudioPlayer: (...args: unknown[]) => mockCreateAudioPlayer(...args),
-}));
-
-// Let the `await ensureNativeAudioMode(...)` inside play() settle without touching
-// the fake clock (microtasks, not timers).
-const flush = async () => {
-  for (let i = 0; i < 4; i++) await Promise.resolve();
-};
+jest.mock("expo-audio", () =>
+  jest
+    .requireActual<typeof import("@/test/expo-audio-mock")>("@/test/expo-audio-mock")
+    .expoAudioModuleMock(),
+);
 
 /** Advance the clock in `parts` slices, sampling the player's volume after each. */
 function sampleRamp(read: () => number, parts = 4): number[] {
@@ -51,12 +31,9 @@ function sampleRamp(read: () => number, parts = 4): number[] {
   return samples;
 }
 
-const live = () => players.filter((p) => p.remove.mock.calls.length === 0);
-
 beforeEach(() => {
   jest.useFakeTimers();
-  jest.clearAllMocks();
-  players.length = 0;
+  resetFakeAudio();
 });
 afterEach(() => {
   jest.useRealTimers();
@@ -95,14 +72,21 @@ describe("a looping bed on native", () => {
     expect(player.remove).toHaveBeenCalledTimes(1);
   });
 
-  it("removes exactly once when stop() is called again during the fade-out", async () => {
+  it("ignores a second stop() during the fade-out: same ramp, same release time, one remove", async () => {
     const lane = createLanePlayer();
     void lane.play(1, 0.6, true);
     await flush();
     jest.advanceTimersByTime(LOOP_FADE_MS);
     void lane.stop();
     jest.advanceTimersByTime(LOOP_FADE_MS / 2);
+    const midway = players[0].volume;
     void lane.stop();
+    // ⚠️ Not restarted: a restart would begin a fresh LOOP_FADE_MS from here and
+    // push the release out to 1.5 ramps. The original ramp finishes on schedule.
+    expect(players[0].volume).toBe(midway);
+    jest.advanceTimersByTime(LOOP_FADE_MS / 2);
+    expect(players[0].volume).toBe(0);
+    expect(players[0].remove).toHaveBeenCalledTimes(1);
     jest.advanceTimersByTime(LOOP_FADE_MS);
     expect(players[0].remove).toHaveBeenCalledTimes(1);
   });
@@ -169,11 +153,27 @@ describe("a looping bed on native", () => {
     const midway = player.volume;
     expect(midway).toBeGreaterThan(0);
     void lane.stop();
-    jest.advanceTimersByTime(1);
-    expect(player.volume).toBeLessThanOrEqual(midway);
+    // From WHERE IT IS: no jump to 0, no jump up to the play() target first.
+    expect(player.volume).toBe(midway);
+    jest.advanceTimersByTime(LOOP_FADE_MS / 4);
+    expect(player.volume).toBeLessThan(midway);
+    expect(player.volume).toBeGreaterThan(0);
     jest.advanceTimersByTime(LOOP_FADE_MS);
     expect(player.volume).toBe(0);
     expect(player.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it("fades in to a setVolume() that landed while play() was still awaiting the audio mode", async () => {
+    // The hook's volume effect and its play effect run in the same commit, so on
+    // native the slider's value can arrive BEFORE the player exists. It must not be
+    // lost to the value play() was called with.
+    const lane = createLanePlayer();
+    void lane.play(1, 0.6, true);
+    void lane.setVolume(0.3);
+    await flush();
+    expect(players[0].volume).toBe(0);
+    jest.advanceTimersByTime(LOOP_FADE_MS);
+    expect(players[0].volume).toBeCloseTo(0.3, 6);
   });
 
   it("releases a player whose play() was still awaiting the audio mode when stop() came", async () => {
