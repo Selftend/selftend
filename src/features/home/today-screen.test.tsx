@@ -435,6 +435,7 @@ describe("HomeScreen empty state (#979)", () => {
 
     expect(screen.getByRole("button", { name: /add manually/i })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /get suggestions/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /log your mood/i })).toBeNull();
   });
 
   /**
@@ -451,6 +452,7 @@ describe("HomeScreen empty state (#979)", () => {
     expect(screen.getByTestId("home-empty-state")).toBeTruthy();
     expect(screen.getByRole("button", { name: /add manually/i })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /get suggestions/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /log your mood/i })).toBeNull();
   });
 
   /**
@@ -487,37 +489,54 @@ describe("HomeScreen empty state (#979)", () => {
     expect(screen.queryByText(/needs a newer version/i)).toBeNull();
   });
 
-  it("offers both choices, Add manually first, on a wholly empty dashboard", () => {
+  it("offers all three doors, Add manually first, on a wholly empty dashboard", () => {
     renderWithProviders(<HomeScreen />);
 
     // Order is the assertion, not just presence: `Add manually` leads.
     const order = screen.UNSAFE_root.findAll(
       (node) =>
-        node.props?.children === "Add manually" || node.props?.children === "Get suggestions",
+        node.props?.children === "Add manually" ||
+        node.props?.children === "Get suggestions" ||
+        node.props?.children === "Log your mood",
     )
       .map((node) => node.props.children as string)
       // One label is carried by a stack of Text wrappers, so keep first sightings only.
       .filter((label, index, all) => all.indexOf(label) === index);
-    expect(order).toEqual(["Add manually", "Get suggestions"]);
+    expect(order).toEqual(["Add manually", "Get suggestions", "Log your mood"]);
   });
 
   /**
    * Neither is primary. Three different arrangements existed across the two drawn frames
-   * and the shipped code, so there was nothing to preserve - and the two are peers, one
-   * building the dashboard by hand and the other by questionnaire.
+   * and the shipped code, so there was nothing to preserve - and all are peers:
+   * dashboard by hand, dashboard by questionnaire, and the check-in door (#1675).
    *
    * Asserted on the class string rather than a computed style: NativeWind never resolves
    * `className` into `style` under jest, so a style assertion here would read `undefined`
    * and pass for the wrong reason.
    */
-  it("gives both choices the outline variant, neither the primary fill", () => {
+  it("gives every door the outline variant, none the primary fill", () => {
     renderWithProviders(<HomeScreen />);
 
-    for (const name of [/add manually/i, /get suggestions/i]) {
+    for (const name of [/add manually/i, /get suggestions/i, /log your mood/i]) {
       const className = screen.getByRole("button", { name }).props.className as string;
       expect(className).toContain("border-border");
       expect(className).not.toContain("bg-primary");
     }
+  });
+
+  /**
+   * #1675: the skip path lands on this box with only dashboard builders for doors, so a
+   * third one opens the one-tap tool itself - pushWithOrigin to a new check-in, an
+   * Escape-origin-recording push like every door on this screen, writing nothing until
+   * the user saves inside the tool. It shares Get suggestions' wholly-empty gate rather
+   * than Add manually's: once rows exist the tools are their own doors, and the
+   * unsupported box already has a job to do.
+   */
+  it("opens a new check-in from the mood door on a wholly empty dashboard", () => {
+    renderWithProviders(<HomeScreen />);
+
+    fireEvent.press(screen.getByRole("button", { name: /log your mood/i }));
+    expect(mockPush).toHaveBeenCalledWith("/tools/check-in/new");
   });
 
   /** A loading surface never claims emptiness. */
@@ -544,6 +563,7 @@ describe("HomeScreen empty state (#979)", () => {
     expect(screen.getByTestId("home-empty-state")).toBeTruthy();
     expect(screen.getByRole("button", { name: /add manually/i })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /get suggestions/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /log your mood/i })).toBeNull();
   });
 
   /**
