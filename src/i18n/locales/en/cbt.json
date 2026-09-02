@@ -193,10 +193,7 @@
     "reflection": {
       "title": "Reflection prompt",
       "description": "One question to sit with before the next week begins.",
-      "prompt1": "What is one thing that went better than expected this week?",
-      "prompt2": "Where did you notice yourself being hardest on yourself? What would you say to a friend in the same situation?",
-      "prompt3": "Which activity gave you the most energy or sense of accomplishment?",
-      "prompt4": "What is one small thing you would like to do differently next week?"
+      "prompt": "What is one thing that went better than expected this week?"
     }
   },
   "beliefs": {
