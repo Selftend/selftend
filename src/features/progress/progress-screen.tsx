@@ -21,13 +21,6 @@ import { startOfDayDaysAgo } from "@/src/utils/date";
 
 const TREND_DAYS = 30;
 
-const REFLECTION_PROMPTS = [
-  "progress.prompt1",
-  "progress.prompt2",
-  "progress.prompt3",
-  "progress.prompt4",
-] as const;
-
 export default function ProgressScreen() {
   const { t, i18n } = useTranslation("navigation");
   const { user } = useSession();
@@ -53,8 +46,6 @@ export default function ProgressScreen() {
       label: i === 0 || i === days.length - 1 ? d.day : undefined,
     }));
   })();
-
-  const promptKey = REFLECTION_PROMPTS[new Date().getDay() % REFLECTION_PROMPTS.length];
 
   const handleChartLayout = (e: LayoutChangeEvent) => {
     setChartContainerWidth(e.nativeEvent.layout.width);
@@ -90,14 +81,20 @@ export default function ProgressScreen() {
             </CardContent>
           </Card>
 
-          {/* Reflection prompt */}
+          {/*
+            One pinned prompt (#1665). Four questions used to rotate by
+            `new Date().getDay() % 4` - the card's only sentence changed daily
+            on a rule nobody could see, which is a schedule, not a library
+            (the same mechanism #765 removed from habits home). Content may
+            vary only in a fixed order the user advances themselves.
+          */}
           <Card>
             <CardHeader>
               <CardTitle>{t("progress.reflectionTitle")}</CardTitle>
               <CardDescription>{t("progress.reflectionDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Text className="italic text-muted-foreground">{t(promptKey)}</Text>
+              <Text className="italic text-muted-foreground">{t("progress.prompt")}</Text>
             </CardContent>
           </Card>
         </View>
