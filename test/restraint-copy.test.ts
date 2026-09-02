@@ -132,6 +132,30 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
   { locale: "bg", pattern: /наказва(ме|ш|т)?\b/i },
   { locale: "bg", pattern: /наказание/i },
   { locale: "bg", pattern: /не провал/i },
+  /**
+   * The fifth form: negated undoing (#1669, ruled in #1662 from #1658's
+   * contested list). `routines:strip.note` said "one missed day doesn't undo
+   * what you're building" / "един пропуснат ден не разваля това, което градиш"
+   * — naming the absent breakage is the #711 shape ("naming the absent
+   * punishment is what puts it in the room"), and "missed day" imports
+   * miss-vocabulary into a tool whose own glossary refuses it (routine status
+   * is deliberately neutral; miss-talk belongs to habits' Never-Miss-Twice
+   * framework, which stays legal - "one missed day is data, not damage" is the
+   * framework teaching, not the product promising its record can't break).
+   *
+   * ☠️ The pattern is the ACTIVE reassurance, never the passive disclosure.
+   * "This can't be undone." on a delete confirmation states a destructive
+   * action's real consequence and stays legal - the guard keys on
+   * doesn't/won't/does-not + undo-family, the product promising that absence
+   * breaks nothing.
+   *
+   * ☠️ No trailing `\b` on the bg twin - JS `\b` is ASCII-only (see the
+   * `оценки` note above), so a Cyrillic pattern ending in `\b` matches
+   * NOTHING. Like the `без` patterns, the bg shape allows one intervening
+   * word ("не го разваля").
+   */
+  { locale: "en", pattern: /(doesn'?t|won'?t|does not) (undo|erase|break|reset)/i },
+  { locale: "bg", pattern: /не\s+(?:\S+\s+)?(разваля|отменя|изтрива|нулира|заличава|чупи)/i },
 ];
 
 /**
