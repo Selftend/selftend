@@ -514,7 +514,7 @@ describe("HomeScreen empty state (#979)", () => {
    * `className` into `style` under jest, so a style assertion here would read `undefined`
    * and pass for the wrong reason.
    */
-  it("gives both choices the outline variant, neither the primary fill", () => {
+  it("gives every door the outline variant, none the primary fill", () => {
     renderWithProviders(<HomeScreen />);
 
     for (const name of [/add manually/i, /get suggestions/i, /log your mood/i]) {
@@ -526,10 +526,11 @@ describe("HomeScreen empty state (#979)", () => {
 
   /**
    * #1675: the skip path lands on this box with only dashboard builders for doors, so a
-   * third one opens the one-tap tool itself - a plain push to a new check-in, which
-   * writes nothing until the user saves inside the tool. It shares Get suggestions'
-   * wholly-empty gate rather than Add manually's: once rows exist the tools are their
-   * own doors, and the unsupported box already has a job to do.
+   * third one opens the one-tap tool itself - pushWithOrigin to a new check-in, an
+   * Escape-origin-recording push like every door on this screen, writing nothing until
+   * the user saves inside the tool. It shares Get suggestions' wholly-empty gate rather
+   * than Add manually's: once rows exist the tools are their own doors, and the
+   * unsupported box already has a job to do.
    */
   it("opens a new check-in from the mood door on a wholly empty dashboard", () => {
     renderWithProviders(<HomeScreen />);
