@@ -17,9 +17,10 @@ minimum_password_length = 12
 
 # Optional registration (#1440): a native first launch silently creates a guest
 # account via anonymous sign-in, so the local stack and e2e need the provider
-# on. Hosted projects gate it with the Dashboard toggle instead - the client
-# ships dark, and that toggle is the permanent kill switch. Manual linking is
-# what the OAuth conversion path (linkIdentity) requires.
+# on. Hosted projects gate it with the Dashboard toggle instead; production
+# flipped it on 2026-09-02 (#1674), and that toggle stays the permanent kill
+# switch. Manual linking is what the OAuth conversion path (linkIdentity)
+# requires.
 enable_anonymous_sign_ins = true
 enable_manual_linking = true
 
