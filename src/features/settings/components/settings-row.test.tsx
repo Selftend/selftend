@@ -1,6 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
 import { SettingsRow } from "@/src/features/settings/components/settings-row";
+import { setPlatformOS } from "@/test/modal-marker-mock";
+
+afterEach(() => {
+  setPlatformOS("ios");
+});
 
 /**
  * The trailing slot is the row's whole contract (#958), so these tests are about
@@ -101,5 +106,115 @@ describe("SettingsRow trailing slot", () => {
     expect(screen.UNSAFE_queryAllByProps({ name: "delete-forever" })[0].props.className).toContain(
       "text-destructive",
     );
+  });
+
+  /**
+   * The fourth mark (#1725): a row that LEAVES THE APP is a link, not a button,
+   * and says so with `open-in-new` rather than a chevron - a chevron promises a
+   * screen inside the app.
+   */
+  it("an external row is a link marked open-in-new, and assistive tech never sees the mark", () => {
+    const onPress = jest.fn();
+    render(
+      <SettingsRow
+        icon="forum"
+        label="Join the Discord"
+        description="Other people using the app, plus the maintainers."
+        trailing={{ kind: "external" }}
+        onPress={onPress}
+        testID="row"
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Join the Discord" })).toBeTruthy();
+    expect(screen.queryByRole("button")).toBeNull();
+
+    // `name` is forwarded down the icon's wrappers, so `[0]` is the `Icon` element
+    // itself - the one that carries the hiding props.
+    const mark = screen.UNSAFE_queryAllByProps({ name: "open-in-new" })[0];
+    expect(mark.props.accessibilityElementsHidden).toBe(true);
+    expect(mark.props.importantForAccessibility).toBe("no");
+    expect(screen.UNSAFE_queryAllByProps({ name: "chevron-right" })).toHaveLength(0);
+
+    fireEvent.press(screen.getByTestId("row"));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("a disabled external row keeps its description - the second line is WHY it is off", () => {
+    const onPress = jest.fn();
+    render(
+      <SettingsRow
+        icon="mail-outline"
+        label="Email support"
+        description="Email support is not set up."
+        trailing={{ kind: "external" }}
+        disabled
+        onPress={onPress}
+        testID="row"
+      />,
+    );
+
+    expect(screen.getByText("Email support is not set up.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Email support", disabled: true })).toBeTruthy();
+    fireEvent.press(screen.getByTestId("row"));
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor - and an href-less Pressable is a `<div role="link">` the browser
+   * does nothing with. So the external row activates itself on Enter, once, and
+   * a button row must NOT (RNW already activates buttons; a second handler
+   * would fire the press twice - the Space-activation trap, on the other key).
+   */
+  it("on web, an external row activates on Enter and only on Enter; a button row has no handler of its own", () => {
+    setPlatformOS("web");
+    const onExternal = jest.fn();
+    const onButton = jest.fn();
+    render(
+      <>
+        <SettingsRow
+          icon="forum"
+          label="Join the Discord"
+          trailing={{ kind: "external" }}
+          onPress={onExternal}
+          testID="external"
+        />
+        <SettingsRow
+          icon="shield"
+          label="Privacy"
+          trailing={{ kind: "chevron" }}
+          onPress={onButton}
+          testID="button"
+        />
+      </>,
+    );
+
+    const external = screen.getByTestId("external");
+    const preventDefault = jest.fn();
+    external.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+    expect(onExternal).toHaveBeenCalledTimes(1);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    external.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+    external.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+    expect(onExternal).toHaveBeenCalledTimes(1);
+
+    expect(screen.getByTestId("button").props.onKeyDown).toBeUndefined();
+  });
+
+  it("on web, a disabled external row has no Enter handler at all", () => {
+    setPlatformOS("web");
+    render(
+      <SettingsRow
+        icon="mail-outline"
+        label="Email support"
+        trailing={{ kind: "external" }}
+        disabled
+        onPress={jest.fn()}
+        testID="row"
+      />,
+    );
+
+    expect(screen.getByTestId("row").props.onKeyDown).toBeUndefined();
   });
 });

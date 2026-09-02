@@ -3,7 +3,7 @@ import { ActivityIndicator, Platform, Pressable, View } from "react-native";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
 import { cn } from "@/lib/utils";
 
@@ -11,14 +11,19 @@ import { cn } from "@/lib/utils";
  * What may sit in a settings row's trailing slot.
  *
  * The trailing slot is the row's whole contract (#958): **chevron navigates ·
- * switch _is_ the setting · spinner is acting now · nothing acts in place.** No
- * row has two meanings, which is what kills the drawn chevron on `Sign out` and
- * `Delete my account` - a chevron there would promise a destination that does
- * not exist.
+ * switch _is_ the setting · spinner is acting now · open-in-new leaves the app ·
+ * nothing acts in place.** No row has two meanings, which is what kills the
+ * drawn chevron on `Sign out` and `Delete my account` - a chevron there would
+ * promise a destination that does not exist.
  *
  * `"act"` is the empty slot, and it is a kind rather than an omission: it says
- * the press does the thing right here, so a reader who has learnt the three
- * marks can also read their absence.
+ * the press does the thing right here, so a reader who has learnt the marks can
+ * also read their absence.
+ *
+ * `"external"` (#1725) is the one kind that changes the row's ROLE as well as
+ * its mark: a press opens a mailbox, a browser tab, a store page - somewhere the
+ * app is not - so the row is a `link`, not a button, and a chevron would lie
+ * about there being a screen behind it.
  */
 export type SettingsRowTrailing =
   | { kind: "chevron" }
@@ -28,7 +33,8 @@ export type SettingsRowTrailing =
       disabled?: boolean;
       onCheckedChange: (next: boolean) => void;
     }
-  | { kind: "act" };
+  | { kind: "act" }
+  | { kind: "external" };
 
 interface SettingsRowProps {
   icon: MaterialIconName;
@@ -109,9 +115,11 @@ export function SettingsRow({
           testID={testID ? `${testID}-pending` : undefined}
           accessibilityLabel={pendingLabel}
         />
-      ) : trailing.kind === "chevron" ? (
+      ) : trailing.kind === "chevron" || trailing.kind === "external" ? (
+        // Both marks are decorative: the row's role (button, link) already tells
+        // a screen-reader user what the press does.
         <Icon
-          name="chevron-right"
+          name={trailing.kind === "chevron" ? "chevron-right" : "open-in-new"}
           accessibilityElementsHidden
           importantForAccessibility="no"
           className={cn("size-5 shrink-0", CHROME_MARK)}
@@ -135,10 +143,22 @@ export function SettingsRow({
     );
   }
 
+  /**
+   * A `link` activates on Enter and never on Space. react-native-web expects a
+   * link to be a native anchor and leaves its Enter to the browser - which does
+   * nothing with an href-less `<div role="link">` - so the external row brings
+   * its own Enter handler. A button row must NOT get one: RNW already activates
+   * buttons from the keyboard, and a second handler would fire the press twice.
+   */
+  const role = trailing.kind === "external" ? "link" : "button";
+  const keyActivation =
+    role === "link" && onPress && !inert ? enterKeyActivationProps(onPress) : {};
+
   return (
     <Pressable
-      accessibilityRole="button"
-      role="button"
+      accessibilityRole={role}
+      role={role}
+      {...keyActivation}
       /**
        * The label alone, never label + description. Three e2e specs address these
        * rows by exact button name (`Show tips again`, `Export my data`,

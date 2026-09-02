@@ -1,7 +1,13 @@
 import { fireEvent, screen } from "@testing-library/react-native";
+import { View } from "react-native";
 
 import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
+
+afterEach(() => {
+  setPlatformOS("ios");
+});
 
 describe("SelectableChip", () => {
   it("announces itself as a checkbox carrying its selected state", () => {
@@ -93,5 +99,70 @@ describe("SelectableChip", () => {
 
     expect(screen.getByLabelText("Anxious")).toBeTruthy();
     expect(screen.getByLabelText("Overwhelmed, custom emotion")).toBeTruthy();
+  });
+});
+
+/**
+ * #1725: the same chip as ONE OF a set rather than any of a set. The chip does
+ * not draw the `radiogroup` - the caller owns the group, its roving focus and
+ * which chip is checked - so the tests wrap it the way a caller would.
+ */
+describe("SelectableChip as a radio", () => {
+  it("announces itself as a radio whose checked state follows `selected`", () => {
+    renderWithProviders(
+      <View accessibilityLabel="What is it about?" accessibilityRole="radiogroup" role="radiogroup">
+        <SelectableChip role="radio" label="Bug" selected={false} onToggle={jest.fn()} />
+        <SelectableChip role="radio" label="Idea" selected onToggle={jest.fn()} />
+      </View>,
+    );
+
+    expect(screen.getAllByRole("radio")).toHaveLength(2);
+    expect(screen.getByRole("radio", { name: "Idea", checked: true })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Bug", checked: false })).toBeTruthy();
+    expect(screen.queryByRole("checkbox")).toBeNull();
+  });
+
+  it("stays a checkbox when no role is asked for", () => {
+    renderWithProviders(<SelectableChip label="Calm" selected onToggle={jest.fn()} />);
+
+    expect(screen.getByRole("checkbox", { name: "Calm", checked: true })).toBeTruthy();
+    expect(screen.queryByRole("radio")).toBeNull();
+  });
+
+  /**
+   * ☠️ The RNW Space-activation trap, in its roving form. The caller's
+   * `useRovingFocus().getItemProps(index, onToggle)` already owns `onKeyDown`
+   * (arrows move, Space selects); if the chip kept its own Space handler
+   * underneath, whichever spread came last would clobber the other - and a
+   * merge of the two would fire the selection twice per Space.
+   */
+  it("takes the caller's roving-focus props in place of its own Space handler", () => {
+    setPlatformOS("web");
+    const onKeyDown = jest.fn();
+    renderWithProviders(
+      <SelectableChip
+        role="radio"
+        label="Bug"
+        selected={false}
+        onToggle={jest.fn()}
+        rovingProps={{ tabIndex: -1, onKeyDown }}
+      />,
+    );
+
+    const chip = screen.getByRole("radio", { name: "Bug" });
+    expect(chip.props.onKeyDown).toBe(onKeyDown);
+    expect(chip.props.tabIndex).toBe(-1);
+  });
+
+  it("without roving props, a radio chip still selects on Space on web - RNW never does that for it", () => {
+    setPlatformOS("web");
+    const onToggle = jest.fn();
+    renderWithProviders(
+      <SelectableChip role="radio" label="Bug" selected={false} onToggle={onToggle} />,
+    );
+
+    const chip = screen.getByRole("radio", { name: "Bug" });
+    chip.props.onKeyDown({ key: " ", repeat: false, preventDefault: jest.fn() });
+    expect(onToggle).toHaveBeenCalledTimes(1);
   });
 });
