@@ -1,5 +1,5 @@
 import type { ExpoConfig } from "expo/config";
-import { withAndroidManifest, type ConfigPlugin } from "expo/config-plugins";
+import { withAndroidManifest, withGradleProperties, type ConfigPlugin } from "expo/config-plugins";
 
 const widgetCatalog = require("./src/features/widgets/widget-catalog.json") as {
   name: string;
@@ -99,7 +99,28 @@ const withDevelopmentCleartextTraffic: ConfigPlugin = (config) => {
   });
 };
 
-const config: ExpoConfig = withDevelopmentCleartextTraffic({
+// Gradle daemon heap and metaspace for the native build. Expo's template ships
+// `-Xmx2048m -XX:MaxMetaspaceSize=512m`, sized for a build that never runs R8.
+// With minification on (#1707) the daemon that has just compiled every module
+// also hosts R8 over ~54 MB of DEX, and the first local proof build died in
+// `minifyReleaseWithR8` with `java.lang.OutOfMemoryError: Metaspace` after R8
+// had already written mapping.txt - on a daemon reused across two builds, so
+// CI's fresh daemon may well fit in 512m. The margin is unknown, and a release
+// build failing in CI costs a version code (`autoIncrement`), so the ceiling
+// is raised rather than measured to the edge. Runners have 16 GB; the values
+// are what React Native's own docs suggest for larger projects.
+const GRADLE_JVM_ARGS = "-Xmx4096m -XX:MaxMetaspaceSize=1024m";
+
+const withReleaseGradleJvmArgs: ConfigPlugin = (config) =>
+  withGradleProperties(config, (config) => {
+    config.modResults = config.modResults.filter(
+      (item) => !(item.type === "property" && item.key === "org.gradle.jvmargs"),
+    );
+    config.modResults.push({ type: "property", key: "org.gradle.jvmargs", value: GRADLE_JVM_ARGS });
+    return config;
+  });
+
+const baseConfig: ExpoConfig = withDevelopmentCleartextTraffic({
   owner: "vasil.yoshev",
   name: appName,
   slug: appSlug,
@@ -217,6 +238,35 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     "expo-router",
     "expo-localization",
     "expo-web-browser",
+    [
+      "expo-build-properties",
+      {
+        android: {
+          // Google Play's app-optimisation requirement (#1707): from February
+          // 2027 an app whose DEX exceeds 10 MB must show at least 25%
+          // optimisation, obfuscation and shrinking, and Play Console already
+          // flags 0.17.0 at "obfuscation 1%". Expo's default is no R8 at all,
+          // so release builds shipped every class name intact. Both flags are
+          // Expo's own wiring for `minifyEnabled` / `shrinkResources` on the
+          // release build type; debug and development builds are untouched.
+          // Play reads mapping.txt straight out of the AAB, and Sentry gets it
+          // from the Android Gradle plugin enabled on the Sentry plugin below.
+          // See docs/releasing.md, "Android app optimisation (R8)".
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
+          extraProguardRules: [
+            "# react-native-android-widget (#1707). The library ships no consumer",
+            "# ProGuard rules. Its native side names a widget by the receiver class's",
+            "# simple name (RNWidgetProvider -> getClass().getSimpleName()) and the JS",
+            "# task handler maps that name onto widget-catalog.json, so the generated",
+            "# receivers must keep their names. Being manifest-declared already keeps",
+            "# them, but the contract should not hang on that alone.",
+            "-keepnames class * extends com.reactnativeandroidwidget.RNWidgetProvider",
+            "-keep class com.reactnativeandroidwidget.** { *; }",
+          ].join("\n"),
+        },
+      },
+    ],
     // SDK 56 removed the top-level `splash` key; the plugin is the only way.
     [
       "expo-splash-screen",
@@ -290,6 +340,16 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
         // EU-region Sentry org (DSN host is ingest.de.sentry.io). This URL is used by
         // sentry-cli for source-map upload; it must be the EU endpoint, not sentry.io.
         url: "https://de.sentry.io/",
+        // With R8 on (expo-build-properties above) the Java/Kotlin frames of a
+        // native crash arrive obfuscated. Sentry's React Native Gradle script
+        // uploads only the JS source maps; the ProGuard mapping needs the Sentry
+        // Android Gradle Plugin, which this flag adds (Sentry still labels the
+        // option experimental, checked 2026-09-03). The plugin gates the mapping
+        // and native-symbol uploads on the same SENTRY_DISABLE_AUTO_UPLOAD switch
+        // as the source maps, so a build without a token still succeeds.
+        experimental_android: {
+          enableAndroidGradlePlugin: true,
+        },
       },
     ],
   ],
@@ -303,5 +363,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     },
   },
 });
+
+const config: ExpoConfig = withReleaseGradleJvmArgs(baseConfig);
 
 export default config;

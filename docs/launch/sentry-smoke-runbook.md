@@ -151,6 +151,14 @@ If frames are minified: the source-map upload did not run. Confirm
 "Uploading source maps" / "Uploaded release" line), and that the org/project
 slugs in `app.config.ts` match Step 1. Re-build after fixing.
 
+Release builds are also R8-minified since #1707, so a crash with **native**
+frames (Java/Kotlin, e.g. an `expo.modules.*` or `com.facebook.react.*` frame)
+is a second check: those frames must show real class and method names, not
+`a.b.c`. If they are obfuscated, the ProGuard mapping upload did not run —
+look for the Sentry Android Gradle Plugin's "Uploading mapping" step in the
+build log; it is gated on the same token and `SENTRY_DISABLE_AUTO_UPLOAD`
+switch as the source maps (see `docs/releasing.md`, "Android app optimisation").
+
 ---
 
 ## 7. 🔒 OWNER-ONLY — Verify PII scrubbing (the privacy gate)
