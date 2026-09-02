@@ -379,10 +379,7 @@
     "noMoodData": "Log a mood to start your trend.",
     "reflectionTitle": "Reflection prompt",
     "reflectionDescription": "A quiet question to sit with.",
-    "prompt1": "What felt manageable this month that felt hard before?",
-    "prompt2": "Where did you show up for yourself, even in a small way?",
-    "prompt3": "What would you tell a friend who had a month like yours?",
-    "prompt4": "What is one thing you noticed about your mood or energy?"
+    "prompt": "What is one thing you noticed about your mood or energy?"
   },
   "tools": {
     "title": "Tools",
