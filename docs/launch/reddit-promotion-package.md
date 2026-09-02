@@ -45,12 +45,15 @@ threads are a natural place to bank real contributions. This also directly unblo
 
 ## Pre-flight checklist (before the first post)
 
-- [ ] r/Selftend sidebar "Get Selftend" button: add the App Store link and remove
-      "iOS app coming soon" from the description.
-- [ ] r/Selftend intro post (reddit.com/r/Selftend/comments/1va9p0l/): update the
-      "iOS coming soon" line to the live App Store link.
-- [ ] Owner profile: short bio naming Selftend + link to r/Selftend, so participate-only
-      subs still convert curiosity without any promo post.
+- [x] r/Selftend sidebar "Get Selftend" button: add the App Store link and remove
+      "iOS app coming soon" from the description. Done 2026-08-19 (description is now
+      "Free and open source." with Web / Android / iOS buttons); re-verified live 2026-09-02.
+- [x] r/Selftend intro post (reddit.com/r/Selftend/comments/1va9p0l/): update the
+      "iOS coming soon" line to the live App Store link. Done 2026-08-19; re-verified live
+      2026-09-02.
+- [x] Owner profile: short bio naming Selftend + link to r/Selftend, so participate-only
+      subs still convert curiosity without any promo post. Done 2026-08-20; re-verified
+      2026-09-02.
 - [ ] Re-read the target sub's rules the same day as each post (issue rule 1). This file's
       rule summaries are a 2026-08-19 snapshot, not permission.
 
