@@ -23,6 +23,7 @@ import {
   countToolsWithRecords,
   SECOND_ACTION_MIN,
 } from "@/src/features/routines/starter-offer";
+import { StarterStepList } from "@/src/features/routines/starter-step-list";
 import { useKeepStarterRoutine } from "@/src/features/routines/use-keep-starter-routine";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
@@ -175,14 +176,7 @@ export function StarterOfferCard() {
         <CardContent className="gap-4">
           <View className="gap-2">
             <Text className="text-sm font-semibold">{t("form.defaultName")}</Text>
-            {steps.map((toolId, index) => (
-              <View key={toolId} className="flex-row items-center gap-3">
-                <View className="size-7 items-center justify-center rounded-full border border-primary/40 bg-primary/10">
-                  <Text className="text-xs font-semibold text-primary">{index + 1}</Text>
-                </View>
-                <Text className="text-sm">{t(`tools.${toolId}`)}</Text>
-              </View>
-            ))}
+            <StarterStepList steps={steps} />
           </View>
           {keepError ? <Text className="text-sm text-destructive">{keepError}</Text> : null}
           <View className="flex-row gap-3">
