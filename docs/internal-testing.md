@@ -161,7 +161,7 @@ Before publishing a preview or production build to testers:
 
 ## iOS TestFlight note
 
-**The spend decision has been made: the Apple Developer Program enrolment is done** (2026-07-30). The deferral that previously governed this section is therefore resolved, and the **seller-name tradeoff** it named — an Individual enrolment publishes the maintainer's legal name as the App Store seller — is accepted rather than open. A later move to an organization or nonprofit enrolment remains possible; it is not a blocker.
+**The spend decision has been made: the Apple Developer Program enrolment is done** (2026-07-30). The deferral that previously governed this section is therefore resolved, and the **seller-name tradeoff** it named — an Individual enrolment publishes the maintainer's legal name as the App Store seller — is accepted rather than open. A later move to an organization or nonprofit enrolment remains possible; it is not a blocker. The seller staying an individual — against App Review Guideline 5.1.1(ix)'s "should" for healthcare apps — was ruled on deliberately on 2026-09-02, with the events that reopen it, in [ADR-0005](adr/0005-store-seller-stays-an-individual.md).
 
 The release scripts are no longer omitted: `ios-release.yml` exists and is wired into the release orchestrator. It stays **inert** behind the `IOS_RELEASE_ENABLED` variable, so no release reaches Apple and no Apple service is contacted while that variable is unset.
 
