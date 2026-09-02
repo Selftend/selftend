@@ -1,7 +1,10 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 
+import { useAngerLogs } from "@/src/features/anger/queries";
 import { defaultUserPreferences, type UserPreferences } from "@/src/features/modules/types";
 import type { RoutineToolRecords } from "@/src/features/routines/derive";
+import { useSelfCareLogs } from "@/src/features/self-care/queries";
+import { useWorryEntries } from "@/src/features/worry/queries";
 import {
   useCreateRoutine,
   useAddStep,
@@ -40,6 +43,12 @@ jest.mock("@/src/features/routines/use-routine-tool-records", () => ({
   useRoutineToolRecords: jest.fn(),
 }));
 
+// The three prompting tools a routine cannot admit, counted since #1677's
+// second-action decision.
+jest.mock("@/src/features/worry/queries", () => ({ useWorryEntries: jest.fn() }));
+jest.mock("@/src/features/anger/queries", () => ({ useAngerLogs: jest.fn() }));
+jest.mock("@/src/features/self-care/queries", () => ({ useSelfCareLogs: jest.fn() }));
+
 const mockUseUserPreferences = jest.mocked(useUserPreferences);
 const mockUseUpdateUserPreferences = jest.mocked(useUpdateUserPreferences);
 const mockUseRoutines = jest.mocked(useRoutines);
@@ -48,6 +57,24 @@ const mockUseAddStep = jest.mocked(useAddStep);
 const mockUseDeleteRoutine = jest.mocked(useDeleteRoutine);
 const mockUseWidgetPreferences = jest.mocked(useWidgetPreferences);
 const mockUseRoutineToolRecords = jest.mocked(useRoutineToolRecords);
+const mockUseWorryEntries = jest.mocked(useWorryEntries);
+const mockUseAngerLogs = jest.mocked(useAngerLogs);
+const mockUseSelfCareLogs = jest.mocked(useSelfCareLogs);
+
+/** Fetched-and-empty offer-only slices; a scenario overrides the one it needs. */
+function setOfferOnlyRecords(
+  overrides: { worry?: unknown[]; anger?: unknown[]; selfCare?: unknown[] } = {},
+) {
+  mockUseWorryEntries.mockReturnValue({ data: overrides.worry ?? [] } as unknown as ReturnType<
+    typeof useWorryEntries
+  >);
+  mockUseAngerLogs.mockReturnValue({ data: overrides.anger ?? [] } as unknown as ReturnType<
+    typeof useAngerLogs
+  >);
+  mockUseSelfCareLogs.mockReturnValue({ data: overrides.selfCare ?? [] } as unknown as ReturnType<
+    typeof useSelfCareLogs
+  >);
+}
 
 const OFFER_TITLE = "Start with a ready-made routine?";
 
@@ -133,10 +160,11 @@ function setEligibleScenario() {
       journalEntries: [{ dayKey: "2026-09-02" }],
     }),
   );
+  setOfferOnlyRecords();
   return { preferences, prefsMutate, ...mutations };
 }
 
-function requestSave(targetKey: "mood" | "journal" = "journal") {
+function requestSave(targetKey: "mood" | "journal" | "cbt" = "journal") {
   act(() => {
     useReminderPromptStore.getState().requestReminderPrompt(targetKey);
   });
@@ -229,6 +257,50 @@ describe("StarterOfferCard", () => {
 
     renderWithProviders(<StarterOfferCard />);
     requestSave("journal");
+
+    await act(async () => {});
+
+    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    expect(prefsMutate).not.toHaveBeenCalled();
+  });
+
+  it("counts a worry entry as the second action", async () => {
+    // Mood then a worry entry: the second tool is one a routine cannot hold,
+    // and it still counts (#1677). Worry saves prompt under the "cbt" target,
+    // already asked here so the reminder prompt yields this save.
+    setEligibleScenario();
+    setPreferences({ reminderPromptedTools: ["cbt"] });
+    const prefsMutate = setUpdateMutation();
+    mockUseRoutineToolRecords.mockReturnValue(
+      readyRecords({ moodLogs: [{ dayKey: "2026-09-01" }] }),
+    );
+    setOfferOnlyRecords({ worry: [{ id: "worry-1" }] });
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("cbt");
+
+    expect(await screen.findByText(OFFER_TITLE)).toBeTruthy();
+    await waitFor(() => {
+      expect(prefsMutate).toHaveBeenCalledWith({ starterRoutineOffered: true });
+    });
+  });
+
+  it("waits while an offer-only slice is still loading", async () => {
+    // Mood + worry would qualify, but worry's list has not arrived: the
+    // readiness gate holds rather than deciding on a half-loaded shape.
+    setEligibleScenario();
+    setPreferences({ reminderPromptedTools: ["cbt"] });
+    const prefsMutate = setUpdateMutation();
+    mockUseRoutineToolRecords.mockReturnValue(
+      readyRecords({ moodLogs: [{ dayKey: "2026-09-01" }] }),
+    );
+    setOfferOnlyRecords();
+    mockUseWorryEntries.mockReturnValue({ data: undefined } as unknown as ReturnType<
+      typeof useWorryEntries
+    >);
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("cbt");
 
     await act(async () => {});
 

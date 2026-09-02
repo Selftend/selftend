@@ -13,6 +13,7 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { useAngerLogs } from "@/src/features/anger/queries";
 import { useWidgetPreferences } from "@/src/features/home/queries";
 import { isReminderPromptEligible } from "@/src/features/notifications/reminder-prompt";
 import { STEPPABLE_TOOL_IDS, type SteppableToolId } from "@/src/features/routines/derive";
@@ -26,7 +27,9 @@ import {
 import { StarterStepList } from "@/src/features/routines/starter-step-list";
 import { useKeepStarterRoutine } from "@/src/features/routines/use-keep-starter-routine";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
+import { useSelfCareLogs } from "@/src/features/self-care/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
+import { useWorryEntries } from "@/src/features/worry/queries";
 import { useSession } from "@/src/providers/session-provider";
 import { INSET_LAYER, useInsetBelow, useInsetPublisher } from "@/src/stores/layered-inset-store";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
@@ -89,6 +92,12 @@ export function StarterOfferCard() {
     evaluating && routines !== undefined && routines.length === 0 ? userId : null;
   const { data: widgetPrefs } = useWidgetPreferences(noRoutineUserId);
   const records = useRoutineToolRecords(noRoutineUserId, STEPPABLE_TOOL_IDS);
+  // The three prompting tools a routine cannot admit count toward the second
+  // action too (#1677); same gate, same "owns no routine" moment.
+  const { data: worryEntries } = useWorryEntries(noRoutineUserId);
+  const { data: angerLogs } = useAngerLogs(noRoutineUserId);
+  const { data: selfCareLogs } = useSelfCareLogs(noRoutineUserId);
+  const offerOnly = { worryEntries, angerLogs, selfCareLogs };
 
   // The decision, made as render-time adjustments (the reminder card's
   // consumption pattern): derived entirely from the record, never stored
@@ -107,9 +116,9 @@ export function StarterOfferCard() {
         const composed = buildStarterSteps(widgetPrefs.map((pref) => pref.widgetId));
         if (!composed) {
           setPendingSave(false);
-        } else if (areOfferRecordsReady(records)) {
+        } else if (areOfferRecordsReady(records, offerOnly)) {
           setPendingSave(false);
-          if (countToolsWithRecords(records) >= SECOND_ACTION_MIN) {
+          if (countToolsWithRecords(records, offerOnly) >= SECOND_ACTION_MIN) {
             setSteps(composed);
             setVisible(true);
           }
