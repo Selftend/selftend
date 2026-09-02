@@ -20,6 +20,7 @@ import {
 } from "@/src/features/routines/derive";
 import { useRoutines } from "@/src/features/routines/queries";
 import { buildStarterSteps } from "@/src/features/routines/starter";
+import { StarterStepList } from "@/src/features/routines/starter-step-list";
 import { useKeepStarterRoutine } from "@/src/features/routines/use-keep-starter-routine";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
 import type { RoutineWithSteps } from "@/src/features/routines/types";
@@ -222,14 +223,7 @@ function RoutinesEmptyState({ keptWidgetIds }: { keptWidgetIds: readonly string[
         <Text variant="muted">{t("home.starterBody")}</Text>
         <View className="gap-2">
           <Text className="text-sm font-semibold">{t("form.defaultName")}</Text>
-          {starterSteps.map((toolId, index) => (
-            <View key={toolId} className="flex-row items-center gap-3">
-              <View className="size-7 items-center justify-center rounded-full border border-primary/40 bg-primary/10">
-                <Text className="text-xs font-semibold text-primary">{index + 1}</Text>
-              </View>
-              <Text className="text-sm">{t(`tools.${toolId}`)}</Text>
-            </View>
-          ))}
+          <StarterStepList steps={starterSteps} />
         </View>
         {starterError ? <Text className="text-sm text-destructive">{starterError}</Text> : null}
         <View className="flex-row gap-2">
