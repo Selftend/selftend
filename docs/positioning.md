@@ -126,7 +126,7 @@ Dunford's Step 9 is declined ([#1609](https://github.com/Selftend/selftend/issue
 
 **AI stays a rationale, never a claim** — the same shape as the AGPL ruling.
 
-Two closures are conditional rather than dated: **durability** reopens if a donation path is wired (none exists today, which is why theme 4 cannot claim longevity); **the AI trend** reopens if the frame stops being ~3 orders of magnitude quieter than the trend.
+Two closures are conditional rather than dated: **durability** reopens only if donations cover a full year of running costs — a link alone does not (a GitHub Sponsors path into a personal account was decided 2026-09-02, [#1625](https://github.com/Selftend/selftend/issues/1625); it pays hosting, not the maintainer's time, and the maintainer stopping is the failure mode theme 4 cannot insure against); **the AI trend** reopens if the frame stops being ~3 orders of magnitude quieter than the trend.
 
 ### The refusals
 
@@ -284,7 +284,7 @@ Conflating them would turn a positioning review into a survival referendum, or t
 **Named triggers**, recorded so a re-check is not mistaken for a rediscovery:
 
 - **#1605 returns a segment.** That fills the empty canvas field, which is a positioning change by definition. Earliest 2027-08-31.
-- **A donation path is wired** → durability reopens as a claim.
+- **Donations cover a full year of running costs** → durability reopens as a claim. The path itself was wired by ruling on 2026-09-02 ([#1625](https://github.com/Selftend/selftend/issues/1625)) and did not reopen it.
 - **The frame stops being ~3 orders of magnitude quieter than the AI trend** → that trend reopens.
 - **2026-09-30, Youper's shutdown passes.** Already decided not to act on; the trigger is "note that it expired", not "revisit".
 
