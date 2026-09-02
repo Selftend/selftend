@@ -65,6 +65,20 @@ Rules that keep the rest of the suite quiet:
   does this without the stub + grant hangs on `waitForURL`
   (`routine-editor-screen.tsx`).
 
+## Outbound email never leaves the machine
+
+The `send-feedback` function emails the support mailbox, so no spec may let a
+send reach it (the email-deliverability rule in `AGENTS.md`; CI also starts the
+stack without an edge runtime). `support-page.e2e.test.ts` intercepts
+`**/functions/v1/send-feedback` with `page.route`, fulfils every call locally,
+and counts handler hits to prove both "no request was made" and "every send
+was answered here". The Playwright web server pins a `.test.local` support
+address so the form renders at all (without one the page has no form); a
+developer's `.env.local` can still win that bake, which is why the intercept,
+not the address, is what keeps mail from going out. The manifest records the
+address that was baked, and `E2E_SKIP_BUILD=1` refuses an export that has
+none.
+
 ## Layout
 
 - `fixtures.ts` — per-worker pool users (`e2e-w<n>`), auto sign-in.

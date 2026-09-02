@@ -55,10 +55,15 @@ export async function resetWidgetPreferencesForUser(userId: string): Promise<voi
 // authenticated tabs.
 export async function signInAsViaUi(page: Page, name: SeedUserName) {
   const user = SEED_USERS[name];
+  await signInWithPasswordViaUi(page, user.email, user.password);
+}
+
+// The same form, for an account the spec created itself (a throwaway).
+export async function signInWithPasswordViaUi(page: Page, email: string, password: string) {
   await page.goto("/sign-in");
   await dismissCookieBanner(page);
-  await page.getByPlaceholder("m@example.com").fill(user.email);
-  await page.locator('input[type="password"]').fill(user.password);
+  await page.getByPlaceholder("m@example.com").fill(email);
+  await page.locator('input[type="password"]').fill(password);
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   // After sign-in, the app routes to /(app). The most stable post-auth
   // signal is that the sign-in form (CardTitle "Sign in to your account") is gone.
