@@ -225,34 +225,9 @@ Use a real Android device, not only an emulator.
 - crisis guidance opens
 - account deletion page opens and has a real deletion contact
 
-## Draft store listing copy
+## Store listing copy
 
-Short description:
-
-```text
-Guided self-help and private CBT thought records for calm reflection.
-```
-
-Full description:
-
-```text
-Selftend is a free, nonprofit-oriented wellness app for guided self-help and reflection.
-
-The first section focuses on private CBT thought records. You can notice a situation, name emotions, identify common thinking patterns, and write a more balanced response.
-
-The app uses an account so your records can sync across web and mobile builds. Reminders are optional and off by default. The project does not include ads, subscriptions, public posting, or AI coaching in the MVP.
-
-Important: this app is not therapy, diagnosis, treatment, crisis support, or emergency support. If you need urgent help, contact local emergency services or a crisis support service available where you are.
-```
-
-What to avoid in store copy:
-
-- "therapy app"
-- "AI therapist"
-- "treats anxiety/depression"
-- "emergency support"
-- guaranteed outcomes
-- pressure-based streak or habit claims
+The listing text is owner-edited in Play Console and mirrored, verbatim and dated, in [store/play-listing.md](../store/play-listing.md); the words it may and may not use are in [docs/positioning.md](positioning.md). The draft that used to sit here predates both and was retired on 2026-09-02 so the copy lives in one place.
 
 ## Initial Data safety inputs
 
