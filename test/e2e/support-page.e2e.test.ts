@@ -19,6 +19,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import enCommon from "../../src/i18n/locales/en/common.json";
+import enPolicies from "../../src/i18n/locales/en/policies.json";
 import enSettings from "../../src/i18n/locales/en/settings.json";
 import {
   createServiceClient,
@@ -146,6 +147,31 @@ test.describe("support page", () => {
 
       await page.getByRole("button", { name: safety.openCrisis, exact: true }).click();
       await expect(page).toHaveURL(/\/crisis$/);
+      await page.goBack();
+      await expect(
+        page.getByRole("heading", { name: supportPage.title, exact: true, level: 1 }),
+      ).toBeVisible({ timeout: 10_000 });
+    });
+
+    /**
+     * #1734: the one browser proof for the shared link components. "Read the full
+     * FAQ" is a `ShowAllLink` - an href-less `role="link"` Pressable - and
+     * react-native-web hands a link's Enter to the browser, which does nothing
+     * with a `<div role="link">`. jest can only see that the handler exists; only
+     * a real Enter on a real page proves the door opens. Focused, not clicked,
+     * so the activation is the keyboard's own.
+     */
+    await test.step("Read the full FAQ opens on Enter from the keyboard and lands on /faq", async () => {
+      const door = page.getByRole("link", { name: supportPage.openFaq, exact: true });
+      await door.focus();
+      await expect(door).toBeFocused();
+      await page.keyboard.press("Enter");
+
+      await expect(page).toHaveURL(/\/faq$/);
+      await expect(
+        page.getByRole("heading", { name: enPolicies.faq.pageTitle, exact: true, level: 1 }),
+      ).toBeVisible({ timeout: 10_000 });
+
       await page.goBack();
       await expect(
         page.getByRole("heading", { name: supportPage.title, exact: true, level: 1 }),

@@ -6,7 +6,11 @@ import { useTranslation } from "react-i18next";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
-import { currentStateProps, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import {
+  currentStateProps,
+  DEFAULT_INTERACTIVE_HIT_SLOP,
+  enterKeyActivationProps,
+} from "@/src/lib/accessibility";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
@@ -290,20 +294,27 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
   //
   // Empty `sponsorsUrl` (a fork that has not set its own) drops the row entirely
   // rather than pointing a self-hoster's users at someone else's page.
+  //
+  // Not rendering through `Link` has a web cost the route rows never pay: they are
+  // real anchors, which the browser follows on Enter, and this row is a
+  // `<div role="link">` that react-native-web ALSO leaves to the browser on Enter -
+  // which does nothing with it. So the row brings its own Enter handler (#1730).
   function renderDonateRow() {
     const url = appEnv.sponsorsUrl;
     if (!url) {
       return null;
     }
+    const donate = () => {
+      openExternalUrl(url);
+      onSelect?.();
+    };
 
     return (
       <Pressable
         accessibilityLabel={t("sidebar.donateA11y")}
         accessibilityRole="link"
-        onPress={() => {
-          openExternalUrl(url);
-          onSelect?.();
-        }}
+        onPress={donate}
+        {...enterKeyActivationProps(donate)}
         hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
         role="link"
         className="flex-row items-center gap-3 rounded-md px-3 py-2.5 active:bg-muted/50"

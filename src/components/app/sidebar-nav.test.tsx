@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { SidebarNav } from "./sidebar-nav";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/lib/linking", () => ({ openExternalUrl: jest.fn() }));
@@ -172,5 +173,51 @@ describe("SidebarNav donate row", () => {
     } finally {
       appEnv.sponsorsUrl = original;
     }
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor. The panel's route rows ARE anchors - `Link asChild` forwards a real
+   * `href`, RNW renders `<a>` - so the browser opens them itself. The donate row
+   * is the one row that is not: it leaves the app through `openExternalUrl`, has
+   * no `href`, and so was a `<div role="link">` Tab could reach and Enter could
+   * not open (#1730). It brings its own Enter handler: once per press, never on
+   * auto-repeat, never on Space. The anchor rows must NOT get one - the browser
+   * already follows an anchor on Enter, and a second handler would open the
+   * screen twice.
+   */
+  describe("on web", () => {
+    // The pointer test above has already opened Sponsors once on the same mock.
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    afterEach(() => {
+      setPlatformOS("ios");
+    });
+
+    it("activates on Enter, once, and the anchor rows keep no handler of their own", () => {
+      setPlatformOS("web");
+      const onSelect = jest.fn();
+      renderWithProviders(<SidebarNav onSelect={onSelect} />);
+
+      const row = screen.getByLabelText(A11Y);
+      const preventDefault = jest.fn();
+      row.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+      expect(openExternalUrl).toHaveBeenCalledTimes(1);
+      expect(openExternalUrl).toHaveBeenCalledWith("https://github.com/sponsors/vasilyoshev");
+      expect(onSelect).toHaveBeenCalledTimes(1);
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+
+      row.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+      row.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+      expect(openExternalUrl).toHaveBeenCalledTimes(1);
+
+      const anchors = screen.getAllByRole("link").filter((link) => link.props.href !== undefined);
+      expect(anchors.length).toBeGreaterThan(0);
+      for (const anchor of anchors) {
+        expect(anchor.props.onKeyDown).toBeUndefined();
+      }
+    });
   });
 });

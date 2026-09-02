@@ -7,6 +7,7 @@ import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { targetPathname } from "@/src/lib/escape-origin";
 import { expectEscapeReturnsTo } from "@/test/escape-round-trip";
 import { setLanguage } from "@/test/i18n-language";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 let mockPathname = "/modules/cbt";
@@ -113,6 +114,42 @@ describe("SharedToolsRow", () => {
 
     expect(screen.getByText("Also try")).toBeTruthy();
     expect(screen.queryByText("Uses these shared tools")).toBeNull();
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor - and an href-less chip is a `<div role="link">` the browser does
+   * nothing with, so Tab reached every chip and Enter opened none (#1730). Each
+   * chip brings its own Enter handler: once per press, never on auto-repeat, and
+   * never on Space. Every chip, because the tools are config and a chip that
+   * happened to be last would otherwise be the one nobody pressed.
+   */
+  describe("on web", () => {
+    afterEach(() => {
+      setPlatformOS("ios");
+    });
+
+    it("every chip activates on Enter, once, and not on a held key or on Space", () => {
+      setPlatformOS("web");
+      const tools = SHARED_TOOLS_BY_PILLAR.think;
+      renderWithProviders(<SharedToolsRow heading="Uses these shared tools" tools={tools} />);
+
+      const chips = screen.getAllByRole("link");
+      expect(chips).toHaveLength(tools.length);
+
+      tools.forEach((tool, index) => {
+        pushMock.mockClear();
+        const preventDefault = jest.fn();
+        chips[index].props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+        expect(pushMock).toHaveBeenCalledTimes(1);
+        expect(pushMock).toHaveBeenCalledWith(tool.route);
+        expect(preventDefault).toHaveBeenCalledTimes(1);
+
+        chips[index].props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+        chips[index].props.onKeyDown({ key: " ", repeat: false, preventDefault });
+        expect(pushMock).toHaveBeenCalledTimes(1);
+      });
+    });
   });
 });
 

@@ -3,7 +3,7 @@ import { Pressable } from "react-native";
 
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 
 /**
@@ -49,6 +49,11 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
  * Navigation is a push, not a `<Link>`, because every door is a forward push into a
  * list from a surface that stays in the stack behind it.
  *
+ * A push without an `href` is a `<div role="link">` on web, and react-native-web
+ * hands a link's Enter to the browser expecting a native anchor - which the div
+ * is not - so the door brings its own Enter handler (#1730, #1734). Space is left
+ * alone: a link never activates on Space.
+ *
  * ⚠️ Through `usePushWithOrigin`, never a bare `router.push` (#1269, and the two
  * per-module copies this replaces had already been migrated on `dev` before this
  * branch merged). Every one of these doors is a cross-hierarchy arrival — a list
@@ -59,12 +64,14 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
  */
 export function ShowAllLink({ label, route }: { label: string; route: Href }) {
   const pushWithOrigin = usePushWithOrigin();
+  const open = () => pushWithOrigin(route);
 
   return (
     <Pressable
       accessibilityRole="link"
       hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-      onPress={() => pushWithOrigin(route)}
+      onPress={open}
+      {...enterKeyActivationProps(open)}
       className="flex-row items-center gap-1 active:opacity-70"
       role="link"
     >

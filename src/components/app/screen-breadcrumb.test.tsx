@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 import i18n from "@/src/i18n";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
 jest.mock("@/src/lib/use-breadcrumbs", () => ({ useBreadcrumbs: jest.fn() }));
@@ -65,5 +66,39 @@ describe("ScreenBreadcrumb", () => {
     expect(queryByLabelText(/^Back to /)).toBeNull();
     expect(queryByLabelText("Go back")).toBeNull();
     expect(queryByLabelText("Close")).toBeNull();
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor - and an href-less crumb is a `<div role="link">` the browser does
+   * nothing with, so Tab reached the crumb and Enter went nowhere (#1730). A
+   * crumb brings its own Enter handler: once per press, never on auto-repeat,
+   * never on Space - and the press it fires is the singular push a pointer
+   * press makes, not a second, plain one.
+   */
+  describe("on web", () => {
+    afterEach(() => {
+      setPlatformOS("ios");
+    });
+
+    it("a parent crumb activates on Enter, once, with the same singular push a pointer makes", () => {
+      setPlatformOS("web");
+      mockUseBreadcrumbs.mockReturnValue([
+        { label: "Tools", href: "/tools" },
+        { label: "Mindfulness" },
+      ]);
+      const { getByRole } = render(<ScreenBreadcrumb />);
+
+      const crumb = getByRole("link", { name: "Tools" });
+      const preventDefault = jest.fn();
+      crumb.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+      expect(router.push).toHaveBeenCalledTimes(1);
+      expect(router.push).toHaveBeenCalledWith("/tools", { dangerouslySingular: true });
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+
+      crumb.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+      crumb.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+      expect(router.push).toHaveBeenCalledTimes(1);
+    });
   });
 });

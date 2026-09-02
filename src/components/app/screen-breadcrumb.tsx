@@ -4,6 +4,7 @@ import { router } from "expo-router";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
+import { enterKeyActivationProps } from "@/src/lib/accessibility";
 import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
 
 /**
@@ -32,6 +33,35 @@ import { useBreadcrumbs } from "@/src/lib/use-breadcrumbs";
  */
 export const CHROME_EYEBROW_TYPE = "text-[11px] font-semibold uppercase tracking-[0.14em]";
 
+/**
+ * A crumb with somewhere to go. The current crumb has no `href` and renders as
+ * plain text in `ScreenBreadcrumb` itself.
+ */
+function ParentCrumb({ href, label }: { href: string; label: string }) {
+  // A crumb targets an ANCESTOR, so the destination is in the stack by
+  // definition and a plain push mounted a second copy of it every time
+  // (#1027). Marked here rather than on the destination screens because
+  // breadcrumbs reach routes the layouts never declare.
+  const open = () => router.push(href as never, { dangerouslySingular: true });
+
+  return (
+    <Pressable
+      accessibilityRole="link"
+      hitSlop={4}
+      onPress={open}
+      // The crumb's `href` is a breadcrumb datum, never a Pressable prop, so on
+      // web this is a `<div role="link">` - which react-native-web leaves to the
+      // browser on Enter as though it were an anchor. The crumb brings its own
+      // Enter handler, firing the same singular push (#1730).
+      {...enterKeyActivationProps(open)}
+    >
+      <Text className={cn(CHROME_EYEBROW_TYPE, "text-muted-foreground active:opacity-70")}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function ScreenBreadcrumb() {
   const crumbs = useBreadcrumbs();
 
@@ -43,19 +73,7 @@ export function ScreenBreadcrumb() {
         <Fragment key={i}>
           {i > 0 ? <Text className="text-[11px] text-muted-foreground/50">·</Text> : null}
           {crumb.href ? (
-            <Pressable
-              accessibilityRole="link"
-              hitSlop={4}
-              // A crumb targets an ANCESTOR, so the destination is in the stack by
-              // definition and a plain push mounted a second copy of it every time
-              // (#1027). Marked here rather than on the destination screens because
-              // breadcrumbs reach routes the layouts never declare.
-              onPress={() => router.push(crumb.href as never, { dangerouslySingular: true })}
-            >
-              <Text className={cn(CHROME_EYEBROW_TYPE, "text-muted-foreground active:opacity-70")}>
-                {crumb.label}
-              </Text>
-            </Pressable>
+            <ParentCrumb href={crumb.href} label={crumb.label} />
           ) : (
             <Text className={cn(CHROME_EYEBROW_TYPE, "text-foreground")}>{crumb.label}</Text>
           )}
