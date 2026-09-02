@@ -17,6 +17,7 @@ import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { appEnv } from "@/src/lib/env";
+import { politeLiveRegionProps } from "@/src/lib/accessibility";
 import { openExternalUrl } from "@/src/lib/linking";
 import { captureError, isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
@@ -59,7 +60,11 @@ type FeedbackCategory = "bug" | "idea" | "question" | "helped";
 
 const FEEDBACK_CATEGORIES: readonly FeedbackCategory[] = ["bug", "idea", "question", "helped"];
 
-/** The second chip, as `suggestion` was before it. */
+/**
+ * `idea`, the second chip, as `suggestion` was before it: the widest of the
+ * four, so a person who does not pick one still lands somewhere true. Never
+ * `helped` - pre-selecting the praise chip would make the form a prompt for it.
+ */
 const DEFAULT_CATEGORY: FeedbackCategory = "idea";
 
 /**
@@ -266,17 +271,20 @@ export default function SupportScreen() {
                   role="radiogroup"
                 >
                   <ChipRun>
-                    {FEEDBACK_CATEGORIES.map((cat, index) => (
-                      <SelectableChip
-                        key={cat}
-                        role="radio"
-                        label={t(`feedback.category.${cat}`)}
-                        selected={feedbackCategory === cat}
-                        onToggle={() => setFeedbackCategory(cat)}
-                        rovingProps={roving.getItemProps(index, () => setFeedbackCategory(cat))}
-                        testID={`support-category-${cat}`}
-                      />
-                    ))}
+                    {FEEDBACK_CATEGORIES.map((cat, index) => {
+                      const select = () => setFeedbackCategory(cat);
+                      return (
+                        <SelectableChip
+                          key={cat}
+                          role="radio"
+                          label={t(`feedback.category.${cat}`)}
+                          selected={feedbackCategory === cat}
+                          onToggle={select}
+                          rovingProps={roving.getItemProps(index, select)}
+                          testID={`support-category-${cat}`}
+                        />
+                      );
+                    })}
                   </ChipRun>
                 </View>
               </View>
@@ -301,7 +309,11 @@ export default function SupportScreen() {
                 */}
                 <View className="flex-row items-start justify-between gap-3">
                   {feedbackError ? (
-                    <Text className="flex-1 text-sm text-destructive">{feedbackError}</Text>
+                    // A polite live region: the error appears on press, away
+                    // from where focus is, so it is announced rather than found.
+                    <Text className="flex-1 text-sm text-destructive" {...politeLiveRegionProps()}>
+                      {feedbackError}
+                    </Text>
                   ) : (
                     <View className="flex-1" />
                   )}

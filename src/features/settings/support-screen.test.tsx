@@ -492,7 +492,9 @@ describe("SupportScreen form (#1727)", () => {
     }
   });
 
-  it("caps the message at 1000 and counts as the user types", () => {
+  // RNTL never enforces `maxLength`, so this pins the prop the platform caps
+  // on, not the cap itself; the counter's behaviour is what is exercised.
+  it("sets maxLength 1000 on the textarea and counts as the user types", () => {
     renderWithProviders(<SupportScreen />);
 
     const textarea = screen.getByLabelText(MESSAGE_LABEL);
@@ -541,6 +543,8 @@ describe("SupportScreen form (#1727)", () => {
     expect(screen.getByText("0 / 1000")).toBeTruthy();
     expect(screen.getByRole("radio", { name: "Idea", checked: true })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Send message" })).toBeTruthy();
+    // The old inline success line is gone. `renderWithProviders` mounts no toast
+    // host, so the toast's title (the same copy) is in the store, not the tree.
     expect(screen.queryByText("Your feedback was sent. Thank you!")).toBeNull();
   });
 
