@@ -365,22 +365,38 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   {/*
-                    Neither button is primary, and `Add manually` is first. Three different
+                    No button is primary, and `Add manually` is first. Three different
                     arrangements existed across the two frames and the shipped code, so
-                    there was no intent to preserve - and the two choices are peers: one
-                    builds the dashboard by hand, the other by questionnaire.
+                    there was no intent to preserve - and the choices are peers: one
+                    builds the dashboard by hand, one by questionnaire, and the third
+                    (#1675) opens the one-tap tool itself, for the user who skipped the
+                    wizard and has nothing to open. It is not the starter card rejected
+                    above: it reads as the plain action it is, writes no row until the
+                    user saves inside the tool, and shares `Get suggestions`'
+                    wholly-empty gate - once rows exist the tools are their own doors,
+                    and an unknown or unsupported dashboard keeps the narrower offer.
                   */}
-                  <View className="mt-2 w-full max-w-sm gap-2 sm:flex-row">
-                    <Button variant="outline" className="flex-1" onPress={openArrange}>
-                      <Text>{t("today.addManually")}</Text>
-                    </Button>
+                  <View className="mt-2 w-full max-w-sm gap-2">
+                    <View className="gap-2 sm:flex-row">
+                      <Button variant="outline" className="flex-1" onPress={openArrange}>
+                        <Text>{t("today.addManually")}</Text>
+                      </Button>
+                      {dashboardIsEmpty ? (
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onPress={() => setSuggestionsVisible(true)}
+                        >
+                          <Text>{t("today.getSuggestions")}</Text>
+                        </Button>
+                      ) : null}
+                    </View>
                     {dashboardIsEmpty ? (
                       <Button
                         variant="outline"
-                        className="flex-1"
-                        onPress={() => setSuggestionsVisible(true)}
+                        onPress={() => pushWithOrigin("/tools/check-in/new")}
                       >
-                        <Text>{t("today.getSuggestions")}</Text>
+                        <Text>{t("today.logMood")}</Text>
                       </Button>
                     ) : null}
                   </View>
