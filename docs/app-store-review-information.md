@@ -71,7 +71,7 @@ Selftend is a free, non-profit, open-source **wellness and guided self-help** ap
 | Home          | A dashboard the user assembles from 28 widgets; nothing is seeded without the user choosing it                                                                                                                                                    |
 | Notifications | Ten reminder targets, **every one off by default**                                                                                                                                                                                                |
 
-**Target audience:** adults and older teenagers who want structured self-help they can run themselves. It is **not** a diagnosis engine, a therapist replacement, or crisis support, and the app says so in six separate places — see item 7.
+**Target audience:** adults aged 18 and older who want structured self-help they can run themselves. It is **not** a diagnosis engine, a therapist replacement, or crisis support, and the app says so in six separate places — see item 7.
 
 **Value:** the record is the point. Entries are private, encrypted at rest, exportable, and deletable, and the app never charges, advertises, or nags.
 
@@ -81,7 +81,7 @@ The **DBT** module is a nav entry badged **"Soon"** leading to a screen headed _
 
 A copy change cannot reach build 6, so the only lever is the reply, which therefore names DBT as an educational overview of a planned module rather than leaving the reviewer to discover it.
 
-⚠️ **Everything above this line describes build 6 and must stay that way until the next release ships.** Whether the placeholder should survive was settled on [#1020](https://github.com/Selftend/selftend/issues/1020): it does not. On `dev`, the "Soon" badge, the "On the roadmap" screen and the **"Beta"** badges on CBT and ACT are all gone — DBT is now framed as an overview of the approach, which is what the screen always was. None of that reaches build 6, so **this document must not be updated to match `dev` until the release that carries it is the build under review** — the reply quoted below is sized and worded against build 6, and it is measured with only 9 characters to spare.
+⚠️ **Everything above this line describes build 6 and must stay that way until the next release ships.** Whether the placeholder should survive was settled on [#1020](https://github.com/Selftend/selftend/issues/1020): it does not. On `dev`, the "Soon" badge, the "On the roadmap" screen and the **"Beta"** badges on CBT and ACT are all gone — DBT is now framed as an overview of the approach, which is what the screen always was. None of that reaches build 6, so **this document must not be updated to match `dev` until the release that carries it is the build under review** — the reply quoted below is sized and worded against build 6, and it is measured with only 11 characters to spare.
 
 ## Item 4 — Setting up and accessing the main features
 
@@ -191,11 +191,13 @@ iPhone 17 running iOS 26.6.
 
 ## Paste block — App Review **reply**
 
+⚠️ **Item 3 was corrected 2026-09-02 — the reply that was actually sent on 2026-08-15 said "adults and older teenagers".** That wording contradicted the app's own consent checkbox ("I am 18 or older") and the adults-only launch posture recorded in `docs/product-principles.md`; [#1622](https://github.com/Selftend/selftend/issues/1622) records the mismatch. The block below now carries the corrected sentence so the next submission inherits it rather than the sent draft. The App Store Connect **Notes** field still holds the sent wording and is updated with the next submission — it is not urgent, and it does not touch the age rating. Whether Selftend ever admits under-18s is the teen-access effort's decision, not this document's.
+
 Answers items 1–7 in Apple's order so a reviewer can tick them off. Attach `selftend-0.11.1-build6-review.mp4` to the same reply. Device values are filled in; re-measure if the confirmed model name is longer than "iPhone 17".
 
-⚠️ **The shot index carries no timestamps.** [Grilling: what must each recording show, shot by shot?](https://github.com/Selftend/selftend/issues/1004) decided the reply would index the recording by time. It does not, and cannot: at 73 characters spare there is no room for ten `mm:ss` markers, and timestamps would have to be re-derived from every re-take. The index is in shot order instead, which matches the recording exactly and survives a re-cut. If timestamps are wanted, something else has to come out.
+⚠️ **The shot index carries no timestamps.** [Grilling: what must each recording show, shot by shot?](https://github.com/Selftend/selftend/issues/1004) decided the reply would index the recording by time. It does not, and cannot: at 11 characters spare there is no room for ten `mm:ss` markers, and timestamps would have to be re-derived from every re-take. The index is in shot order instead, which matches the recording exactly and survives a re-cut. If timestamps are wanted, something else has to come out.
 
-⚠️ **3,927 characters as written — only 73 spare against the 4,000-character reply cap.** Substituting the two placeholders moves it by a few characters either way, so **re-measure before sending**; a device name longer than "iPhone 15 Pro" needs a sentence trimmed somewhere. This is the tightest constraint on the whole reply, and it is why the wording is dense.
+⚠️ **3,989 characters as written (re-measured 2026-09-02) — only 11 spare against the 4,000-character reply cap.** Substituting the two placeholders moves it by a few characters either way, so **re-measure before sending**; a device name longer than "iPhone 15 Pro" needs a sentence trimmed somewhere. This is the tightest constraint on the whole reply, and it is why the wording is dense.
 
 ```text
 Answering each item in order.
@@ -207,7 +209,7 @@ Attached, captured on a physical iPhone 17 running iOS 26.6, from app launch. It
 iPhone 17, iOS 26.6. iPhone only for this submission. The app supports iPad but iPad was not exercised in this round. The same codebase also runs on Android and on the web at https://selftend.org.
 
 3. FUNCTION AND AUDIENCE
-Selftend is a free, non-profit, open-source wellness and guided self-help app for adults and older teenagers who want structure they can run themselves. It provides eight tools - mood tracker, journal, breathing, gratitude log, grounding, meditation, sleep and habit tracking - each recording entries and showing their history; two modules of educational CBT and ACT exercises; user-built routines; an insights screen; and a home dashboard of 28 widgets. No in-app purchases or subscriptions.
+Selftend is a free, non-profit, open-source wellness and guided self-help app for adults aged 18 and older who want structure they can run themselves. It provides eight tools - mood tracker, journal, breathing, gratitude log, grounding, meditation, sleep and habit tracking - each recording entries and showing their history; two modules of educational CBT and ACT exercises; user-built routines; an insights screen; and a home dashboard of 28 widgets. No in-app purchases or subscriptions.
 
 Two labels in this build are cosmetic rather than functional gaps: DBT is an overview marked "On the roadmap" and is the only planned module, and CBT and ACT are tagged "Beta" though both are complete and usable. Everything else is fully implemented.
 
