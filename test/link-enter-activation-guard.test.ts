@@ -29,12 +29,14 @@ import { sourceFiles } from "./source-scan";
  * tag it could not pair, which is the failure mode this gate exists to remove.
  * `typescript` is already a direct devDependency; this adds none.
  *
- * ☠️ One blind spot, named: `settings-row.tsx` takes its role as a PROP and
- * spreads the helper behind `role === "link" && …` at runtime. A static walk
- * sees neither a literal link nor a literal button there, so it is out of this
- * suite's sight either way; `settings-row.test.tsx` covers it (#1725). The
- * last test below pins that the blind spot is still that one file, so a second
- * runtime-role site cannot hide behind the same note.
+ * ☠️ The walk's one blind spot, and how it is fenced: an element whose role is
+ * an EXPRESSION (`role={role}`) may or may not be a link, and a static walk
+ * cannot tell. `settings-row.tsx` is the live case - it takes its role as a
+ * prop and spreads the helper behind `role === "link" && …` at runtime, which
+ * `settings-row.test.tsx` covers (#1725). So every element with a non-literal
+ * role is recorded, and the set of files carrying one is pinned below with a
+ * reason each: a new runtime-role element fails here until someone has said
+ * why it can never be an href-less link (or has covered it in its own suite).
  *
  * Derived from `src/` and `app/` rather than pinned, so a new site lands
  * already covered or fails CI here.
@@ -48,36 +50,69 @@ const HELPER = "enterKeyActivationProps";
  * child of an expo-router `<Link … asChild>`, which forwards the `href` to the
  * child's Pressable so react-native-web renders `<a>` and the browser itself
  * activates Enter. They need no helper - spreading one would double-activate.
- * Keyed by file, with the number of such sites in it: the suite derives the
- * same map from source and requires equality, so an entry that outlives its
- * anchor (or an anchor this list does not name) fails.
+ * Each entry names one site by its file and the `href` expression of the Link
+ * that wraps it: the suite derives the same set from source and requires
+ * equality, so an entry that outlives its anchor (or an anchor this list does
+ * not name) fails - per site, not per file, so one anchor swapped for another
+ * in the same file cannot hide behind a count.
  */
-const ANCHOR_BACKED: Record<string, { sites: number; reason: string }> = {
-  "src/components/app/invisible-header.tsx": {
-    sites: 1,
+const ANCHOR_BACKED: { file: string; href: string; reason: string }[] = [
+  {
+    file: "src/components/app/invisible-header.tsx",
+    href: "homeHref",
     reason: "the brand's go-home link, a singular Link to the home route",
   },
-  "src/components/app/link-button.tsx": {
-    sites: 1,
+  {
+    file: "src/components/app/link-button.tsx",
+    href: "href",
     reason: "the navigating Button - Link asChild forwards the href to its Pressable",
   },
-  "src/components/app/sidebar-nav.tsx": {
-    sites: 2,
-    reason:
-      "the route rows and the group rows - both singular Links (the donate row is not one; it carries the helper)",
+  {
+    file: "src/components/app/sidebar-nav.tsx",
+    href: "item.href",
+    reason: "the route rows - singular Links (the donate row is not one; it carries the helper)",
   },
+  {
+    file: "src/components/app/sidebar-nav.tsx",
+    href: "href",
+    reason: "the group rows - singular Links to a group's landing route",
+  },
+];
+
+/**
+ * Files with an element whose role is an expression, and why each can never
+ * be an href-less link the walk would otherwise miss. A new one fails the
+ * suite until it is listed here with its reason - or, if it CAN be a link,
+ * until it carries the helper behind the same runtime check settings-row does
+ * and its own suite proves it.
+ */
+const RUNTIME_ROLE: Record<string, string> = {
+  "src/components/app/selectable-chip.tsx": "role is `checkbox` or `radio`, never a link",
+  "src/components/react-native-reusables/button.tsx":
+    "passes the caller's role through and defaults to button; a link role arrives only via LinkButton, a real anchor",
+  "src/components/react-native-reusables/checkbox.tsx":
+    "passes the caller's role through; a toggle, never a link",
+  "src/components/react-native-reusables/switch.tsx":
+    "passes the caller's role through; a toggle, never a link",
+  "src/components/react-native-reusables/text.tsx":
+    "heading, blockquote and code roles, never a link",
+  "src/features/settings/components/settings-row.tsx":
+    'role is `link` or `button` by prop; spreads the helper behind `role === "link"` at runtime, covered by settings-row.test.tsx (#1725)',
 };
 
 interface LinkSite {
   file: string;
   line: number;
-  /** Direct child of a `<Link … asChild>` - a real anchor on web. */
-  anchorBacked: boolean;
+  /**
+   * The `href` expression of the `<Link … asChild>` this element is the direct
+   * child of - a real anchor on web - or undefined when it is not one.
+   */
+  anchorHref: string | undefined;
   /** Spreads `{...enterKeyActivationProps(…)}` on the element itself. */
   hasHelper: boolean;
 }
 
-interface ButtonSite {
+interface Site {
   file: string;
   line: number;
 }
@@ -85,7 +120,9 @@ interface ButtonSite {
 interface Scan {
   links: LinkSite[];
   /** Button-role elements that spread the helper. */
-  helperOnButtons: ButtonSite[];
+  helperOnButtons: Site[];
+  /** Elements whose role is an expression the walk cannot read. */
+  runtimeRoles: Site[];
 }
 
 function tagName(node: ts.JsxOpeningLikeElement): string {
@@ -132,27 +169,48 @@ function spreadsHelper(node: ts.JsxOpeningLikeElement): boolean {
   });
 }
 
+/** The role attribute's own text - `role={role}` reads as `role`. */
+function attributeText(node: ts.JsxOpeningLikeElement, name: string): string | undefined {
+  for (const attribute of node.attributes.properties) {
+    if (!ts.isJsxAttribute(attribute) || attribute.name.getText() !== name) continue;
+    const initializer = attribute.initializer;
+    if (initializer && ts.isJsxExpression(initializer) && initializer.expression) {
+      return initializer.expression.getText();
+    }
+    return initializer?.getText();
+  }
+  return undefined;
+}
+
+const RUNTIME = Symbol("a role the walk cannot read");
+
 /**
  * The role the element announces, as this suite classifies it: an explicit
- * literal `role` / `accessibilityRole` wins; a `<Button>` with neither is a
+ * literal `role` / `accessibilityRole` wins; a role given as an expression is
+ * RUNTIME, which the suite fences separately; a `<Button>` with neither is a
  * button, because the shared component defaults to `role="button"`.
  */
-function roleOf(node: ts.JsxOpeningLikeElement): string | undefined {
+function roleOf(node: ts.JsxOpeningLikeElement): string | typeof RUNTIME | undefined {
   const explicit = literalAttribute(node, "role") ?? literalAttribute(node, "accessibilityRole");
   if (explicit !== undefined) return explicit;
-  if (hasAttribute(node, "role") || hasAttribute(node, "accessibilityRole")) return undefined;
+  if (hasAttribute(node, "role") || hasAttribute(node, "accessibilityRole")) return RUNTIME;
   return tagName(node) === "Button" ? "button" : undefined;
 }
 
-/** Whether the element is the DIRECT child of `<Link … asChild>`. */
-function isAnchorBacked(node: ts.JsxOpeningLikeElement): boolean {
+/**
+ * The `href` expression of the `<Link … asChild>` the element is the DIRECT
+ * child of, or undefined when it is not one. `asChild` clones only its
+ * immediate child, so a grandchild would receive no href and be just as dead.
+ */
+function anchorHrefOf(node: ts.JsxOpeningLikeElement): string | undefined {
   // An opening element's parent is its own JsxElement; a self-closing element
   // sits directly among the parent's children.
   const own = ts.isJsxOpeningElement(node) ? node.parent : node;
   const parent = own.parent;
-  if (!parent || !ts.isJsxElement(parent)) return false;
+  if (!parent || !ts.isJsxElement(parent)) return undefined;
   const wrapper = parent.openingElement;
-  return tagName(wrapper) === "Link" && hasAttribute(wrapper, "asChild");
+  if (tagName(wrapper) !== "Link" || !hasAttribute(wrapper, "asChild")) return undefined;
+  return attributeText(wrapper, "href") ?? "";
 }
 
 /** Every link-role element and every helper-on-button in one source text. */
@@ -164,7 +222,7 @@ export function scanSource(file: string, source: string): Scan {
     true,
     ts.ScriptKind.TSX,
   );
-  const scan: Scan = { links: [], helperOnButtons: [] };
+  const scan: Scan = { links: [], helperOnButtons: [], runtimeRoles: [] };
 
   const visit = (node: ts.Node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
@@ -174,11 +232,13 @@ export function scanSource(file: string, source: string): Scan {
         scan.links.push({
           file,
           line,
-          anchorBacked: isAnchorBacked(node),
+          anchorHref: anchorHrefOf(node),
           hasHelper: spreadsHelper(node),
         });
       } else if (role === "button" && spreadsHelper(node)) {
         scan.helperOnButtons.push({ file, line });
+      } else if (role === RUNTIME) {
+        scan.runtimeRoles.push({ file, line });
       }
     }
     ts.forEachChild(node, visit);
@@ -190,14 +250,18 @@ export function scanSource(file: string, source: string): Scan {
 
 function scanTree(): Scan {
   const files = sourceFiles(ROOT, { dirs: ["src", "app"] });
-  const scan: Scan = { links: [], helperOnButtons: [] };
+  const scan: Scan = { links: [], helperOnButtons: [], runtimeRoles: [] };
   for (const file of files) {
     const result = scanSource(file, readFileSync(join(ROOT, file), "utf8"));
     scan.links.push(...result.links);
     scan.helperOnButtons.push(...result.helperOnButtons);
+    scan.runtimeRoles.push(...result.runtimeRoles);
   }
   return scan;
 }
+
+const anchorKey = (site: { file: string; href: string }) =>
+  `${site.file} <Link href={${site.href}}>`;
 
 const at = (site: { file: string; line: number }) => `${site.file}:${site.line}`;
 
@@ -214,7 +278,9 @@ describe("every href-less link activates on Enter, and no button does so twice (
   });
 
   it("every link that is not a real anchor spreads the Enter activation helper", () => {
-    const offenders = tree.links.filter((site) => !site.anchorBacked && !site.hasHelper).map(at);
+    const offenders = tree.links
+      .filter((site) => site.anchorHref === undefined && !site.hasHelper)
+      .map(at);
 
     // Each listed element is a `<div role="link">` on web that react-native-web
     // leaves to the browser on Enter - which does nothing with it. Hoist the
@@ -225,23 +291,22 @@ describe("every href-less link activates on Enter, and no button does so twice (
   });
 
   it("no real anchor carries the helper - the browser already activates it", () => {
-    const offenders = tree.links.filter((site) => site.anchorBacked && site.hasHelper).map(at);
+    const offenders = tree.links
+      .filter((site) => site.anchorHref !== undefined && site.hasHelper)
+      .map(at);
     expect(offenders).toEqual([]);
   });
 
   it("the anchor-backed sites are exactly the listed ones, so the list cannot go stale", () => {
-    const derived: Record<string, number> = {};
-    for (const site of tree.links) {
-      if (!site.anchorBacked) continue;
-      derived[site.file] = (derived[site.file] ?? 0) + 1;
-    }
-    const listed = Object.fromEntries(
-      Object.entries(ANCHOR_BACKED).map(([file, { sites }]) => [file, sites]),
-    );
+    const derived = tree.links
+      .filter((site) => site.anchorHref !== undefined)
+      .map((site) => anchorKey({ file: site.file, href: site.anchorHref ?? "" }))
+      .sort();
+    const listed = ANCHOR_BACKED.map(anchorKey).sort();
 
     // A mismatch in either direction: an entry whose site no longer sits inside
-    // a `Link asChild` (drop it from ANCHOR_BACKED), or a new anchor this list
-    // does not name (add it, with the reason).
+    // a `Link asChild` with that href (drop it from ANCHOR_BACKED), or a new
+    // anchor this list does not name (add it, with the reason).
     expect(derived).toEqual(listed);
   });
 
@@ -251,15 +316,14 @@ describe("every href-less link activates on Enter, and no button does so twice (
     expect(tree.helperOnButtons.map(at)).toEqual([]);
   });
 
-  it("the one runtime-role carrier is still only settings-row.tsx", () => {
-    // Files that call the helper but expose no literal link to the walk are
-    // outside its sight; keep that set to the one file whose own suite covers
-    // it, so a second runtime-role site cannot hide behind the same note.
-    const unseen = sourceFiles(ROOT, { dirs: ["src", "app"] })
-      .filter((file) => file !== "src/lib/accessibility.ts")
-      .filter((file) => readFileSync(join(ROOT, file), "utf8").includes(`${HELPER}(`))
-      .filter((file) => !tree.links.some((site) => site.file === file && site.hasHelper));
-    expect(unseen).toEqual(["src/features/settings/components/settings-row.tsx"]);
+  it("every element whose role the walk cannot read is in a file listed with its reason", () => {
+    // A `role={expression}` may be a link the walk cannot see. The files that
+    // carry one are pinned, each with why it can never be an href-less link
+    // (or which suite proves its own Enter handling); a new one fails here
+    // until it is reasoned about. Both directions: a listed file with no
+    // runtime role left is stale too.
+    const derived = [...new Set(tree.runtimeRoles.map((site) => site.file))].sort();
+    expect(derived).toEqual(Object.keys(RUNTIME_ROLE).sort());
   });
 });
 
@@ -273,7 +337,7 @@ describe("the detector itself", () => {
   it("flags a fresh href-less link Pressable that brings no helper", () => {
     const scan = probe(`<Pressable role="link" onPress={open} />`);
     expect(scan.links).toEqual([
-      { file: "probe.tsx", line: 1, anchorBacked: false, hasHelper: false },
+      { file: "probe.tsx", line: 1, anchorHref: undefined, hasHelper: false },
     ]);
   });
 
@@ -291,7 +355,7 @@ describe("the detector itself", () => {
       <Text>x</Text>
     </Pressable>`);
     expect(scan.links).toEqual([
-      { file: "probe.tsx", line: 1, anchorBacked: false, hasHelper: true },
+      { file: "probe.tsx", line: 1, anchorHref: undefined, hasHelper: true },
     ]);
   });
 
@@ -306,18 +370,25 @@ describe("the detector itself", () => {
   it("recognises the direct child of a Link asChild as a real anchor", () => {
     const scan = probe(`<Link href="/" asChild><Pressable role="link" /></Link>`);
     expect(scan.links).toEqual([
-      { file: "probe.tsx", line: 1, anchorBacked: true, hasHelper: false },
+      { file: "probe.tsx", line: 1, anchorHref: '"/"', hasHelper: false },
     ]);
   });
 
   it("does not treat a Link without asChild, or a grandchild of one, as an anchor", () => {
-    expect(probe(`<Link href="/"><Pressable role="link" /></Link>`).links[0].anchorBacked).toBe(
-      false,
-    );
+    expect(
+      probe(`<Link href="/"><Pressable role="link" /></Link>`).links[0].anchorHref,
+    ).toBeUndefined();
     expect(
       probe(`<Link href="/" asChild><View><Pressable role="link" /></View></Link>`).links[0]
-        .anchorBacked,
-    ).toBe(false);
+        .anchorHref,
+    ).toBeUndefined();
+  });
+
+  it("records an element whose role is an expression, without guessing what it is", () => {
+    const scan = probe(`<Pressable role={role} onPress={open} />`);
+    expect(scan.links).toEqual([]);
+    expect(scan.helperOnButtons).toEqual([]);
+    expect(scan.runtimeRoles).toEqual([{ file: "probe.tsx", line: 1 }]);
   });
 
   it('flags the helper on a role="button" element, and on a bare <Button>', () => {

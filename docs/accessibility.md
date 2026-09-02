@@ -49,10 +49,11 @@ Shared accessibility helpers live in [src/lib/accessibility.ts](../src/lib/acces
   (react-native-web already activates buttons on Enter, and the pair double-fires) or
   onto an expo-router `Link asChild` (that renders a real anchor, which the browser
   already follows). It does not handle Space: a link never activates on Space.
-  `test/link-enter-activation-guard.test.ts` (#1737) derives every link-role element
-  from `src/` and `app/` and fails CI when one is neither a `Link asChild` child nor
-  carries the helper, when the helper lands on a button, or when its pinned list of
-  anchor-backed sites no longer matches the tree.
+  `test/link-enter-activation-guard.test.ts` (#1737) derives every element with a
+  literal link role from `src/` and `app/` and fails CI when one is neither a
+  `Link asChild` child nor carries the helper, when the helper lands on a button, or
+  when its pinned lists no longer match the tree: the anchor-backed sites, and the
+  files whose role is an expression the walk cannot read (each with its reason).
 - `toggleButtonStateProps(pressed)` is the state for add/remove toggle buttons:
   `aria-pressed` on web (the valid ARIA for a toggle), the selected announcement on native.
 - `currentStateProps(active, "page" | "step")` is the "you are here" state for navigation
