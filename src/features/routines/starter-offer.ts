@@ -16,18 +16,41 @@ import {
 export const SECOND_ACTION_MIN = 2;
 
 /**
- * The distinct-tool universe: every steppable tool except `dropAnchor`.
- * Drop-anchor logs are a subset of connection logs (dropping anchor IS
- * connecting - see RoutineToolRecords), so counting both would turn one saved
- * log into two "distinct tools" and fire the offer at the first action.
- *
- * Steppable tools only, deliberately: a routine is what the offer bridges to,
- * so "a distinct tool" means a tool a routine can admit (#123). Saves in
- * non-admissible tools (worry, anger, self-care) never count toward the two.
+ * The steppable half of the distinct-tool universe: every steppable tool
+ * except `dropAnchor`. Drop-anchor logs are a subset of connection logs
+ * (dropping anchor IS connecting - see RoutineToolRecords), so counting both
+ * would turn one saved log into two "distinct tools" and fire the offer at
+ * the first action.
  */
-const DISTINCT_TOOLS: readonly SteppableToolId[] = STEPPABLE_TOOL_IDS.filter(
+const DISTINCT_STEPPABLE_TOOLS: readonly SteppableToolId[] = STEPPABLE_TOOL_IDS.filter(
   (tool) => tool !== "dropAnchor",
 );
+
+/**
+ * Records of the three prompting tools a routine cannot admit - worry, anger
+ * and self-care. Their saves request the reminder prompt like every other
+ * tool's, so they are in-app actions in the glossary's sense, and they count
+ * toward the second action (#1677, decided 2026-09-02): the offer is about
+ * the person having acted twice, and the routine it offers is composed from
+ * the kept widgets, not from these records. Existence is all the count reads,
+ * so the element type is left open. Self-care's list is the 14-day window
+ * the home row reads; an older-only history biases the count DOWN only.
+ */
+export type OfferOnlyRecords = {
+  worryEntries?: readonly unknown[];
+  angerLogs?: readonly unknown[];
+  selfCareLogs?: readonly unknown[];
+};
+
+// Same exhaustive-map shape as REQUIRED_SLICE_MAP below: a slice added to
+// OfferOnlyRecords later is a compile error here, not a hole in the gate.
+const OFFER_ONLY_SLICE_MAP: Record<keyof OfferOnlyRecords, true> = {
+  worryEntries: true,
+  angerLogs: true,
+  selfCareLogs: true,
+};
+
+const OFFER_ONLY_SLICES = Object.keys(OFFER_ONLY_SLICE_MAP) as (keyof OfferOnlyRecords)[];
 
 // Readiness gate: `RoutineToolRecords` cannot tell "still loading" from "no
 // records" (absent slices derive as none existing), but the offer decision
@@ -61,8 +84,14 @@ const REQUIRED_SLICE_MAP: Record<keyof RoutineToolRecords, true> = {
 const REQUIRED_SLICES = Object.keys(REQUIRED_SLICE_MAP) as (keyof RoutineToolRecords)[];
 
 /** True once every slice the distinct-tool count reads has been fetched. */
-export function areOfferRecordsReady(records: RoutineToolRecords): boolean {
-  return REQUIRED_SLICES.every((slice) => records[slice] !== undefined);
+export function areOfferRecordsReady(
+  records: RoutineToolRecords,
+  offerOnly: OfferOnlyRecords,
+): boolean {
+  return (
+    REQUIRED_SLICES.every((slice) => records[slice] !== undefined) &&
+    OFFER_ONLY_SLICES.every((slice) => offerOnly[slice] !== undefined)
+  );
 }
 
 // Existence twin of derive's stepDoneOnDate: the same slice mapping and the
@@ -122,10 +151,20 @@ function toolHasAnyRecord(toolId: SteppableToolId, records: RoutineToolRecords):
 }
 
 /**
- * How many distinct tools have at least one record. Compared against
- * {@link SECOND_ACTION_MIN} by the host card: at two, the person has taken
- * their second action and the starter offer's moment has arrived.
+ * How many distinct tools have at least one record - steppable tools and the
+ * three offer-only ones alike. Compared against {@link SECOND_ACTION_MIN} by
+ * the host card: at two, the person has taken their second action and the
+ * starter offer's moment has arrived.
  */
-export function countToolsWithRecords(records: RoutineToolRecords): number {
-  return DISTINCT_TOOLS.filter((tool) => toolHasAnyRecord(tool, records)).length;
+export function countToolsWithRecords(
+  records: RoutineToolRecords,
+  offerOnly: OfferOnlyRecords,
+): number {
+  const steppable = DISTINCT_STEPPABLE_TOOLS.filter((tool) =>
+    toolHasAnyRecord(tool, records),
+  ).length;
+  const offerOnlyCount = OFFER_ONLY_SLICES.filter(
+    (slice) => (offerOnly[slice] ?? []).length > 0,
+  ).length;
+  return steppable + offerOnlyCount;
 }
