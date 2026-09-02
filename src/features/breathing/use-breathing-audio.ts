@@ -3,11 +3,7 @@ import { Platform } from "react-native";
 import type { AudioPlayer } from "expo-audio";
 
 import type { PhaseLabel } from "@/src/constants/breathing";
-import {
-  ambientSoundLookup,
-  breathSoundLookup,
-  resolveBreathSoundId,
-} from "@/src/constants/breathing-sounds";
+import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { breathClipFor } from "@/src/features/breathing/breath-audio-plan";
 import { ensureNativeAudioMode, loadExpoAudio, playOneShot } from "@/src/lib/native-audio";
 
@@ -125,10 +121,10 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
       void lane.stop();
       return;
     }
-    // ☠️ Resolved, not looked up raw: the three retired texture ids are still in the
-    // database on any account that picked one, and an unresolved id would silently
-    // play nothing while the sheet showed "None".
-    const sound = breathSoundLookup[resolveBreathSoundId(breathSoundId)];
+    // Already resolved: the repository maps a stored id the catalog lacks to `none`
+    // on read (#1745), so this lookup never sees a retired texture id. It used to
+    // resolve here as well, and the session screen did not - the gap this closes.
+    const sound = breathSoundLookup[breathSoundId];
     const clip = breathClipFor(phaseLabel, sound);
     if (clip === breathClipRef.current) return;
     breathClipRef.current = clip;
