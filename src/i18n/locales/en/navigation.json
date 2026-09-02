@@ -33,7 +33,9 @@
     "gratitudeLog": "Gratitude log",
     "sleep": "Sleep",
     "habits": "Habit tracking",
-    "tools": "Tools"
+    "tools": "Tools",
+    "donate": "Donate",
+    "donateA11y": "Donate to Selftend on GitHub Sponsors - opens in your browser"
   },
   "userMenu": {
     "account": "Account",

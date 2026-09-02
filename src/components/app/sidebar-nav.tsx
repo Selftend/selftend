@@ -7,6 +7,8 @@ import { Icon, type MaterialIconName } from "@/src/components/react-native-reusa
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { currentStateProps, DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { appEnv } from "@/src/lib/env";
+import { openExternalUrl } from "@/src/lib/linking";
 import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
 
 // No nav row carries a status chip (#1020). The field was a three-value union -
@@ -277,6 +279,41 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     );
   }
 
+  // The donation path (#1625, decided 2026-09-02): one plain row, last, that opens
+  // GitHub Sponsors and nothing else. It is deliberately NOT a NavItemDef - it has
+  // no route to be active on, nothing to keep singular, and it leaves the app - so
+  // it renders through `openExternalUrl` like every other outbound link, not
+  // through `Link`. What it must never grow is the other half of the ruling: no
+  // badge, no count, no modal, no banner, and nothing keyed to use or absence. A
+  // donation surface is reviewed as a behavioural nudge would be; this one is a
+  // static link, and the test pins it to one label and nothing beside it.
+  //
+  // Empty `sponsorsUrl` (a fork that has not set its own) drops the row entirely
+  // rather than pointing a self-hoster's users at someone else's page.
+  function renderDonateRow() {
+    const url = appEnv.sponsorsUrl;
+    if (!url) {
+      return null;
+    }
+
+    return (
+      <Pressable
+        accessibilityLabel={t("sidebar.donateA11y")}
+        accessibilityRole="link"
+        onPress={() => {
+          openExternalUrl(url);
+          onSelect?.();
+        }}
+        hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+        role="link"
+        className="flex-row items-center gap-3 rounded-md px-3 py-2.5 active:bg-muted/50"
+      >
+        <Icon name="volunteer-activism" className="size-6 text-muted-foreground" />
+        <Text className="flex-1 text-sm font-medium text-foreground">{t("sidebar.donate")}</Text>
+      </Pressable>
+    );
+  }
+
   return (
     <View
       className="w-60 flex-shrink-0 border-r border-border bg-card"
@@ -303,6 +340,7 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
         <View className="gap-1 pt-3">
           <View className="mx-1 mb-2 h-px bg-border" />
           {ACCOUNT_ITEMS.map((item) => renderNavItem(item))}
+          {renderDonateRow()}
         </View>
       </ScrollView>
     </View>

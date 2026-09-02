@@ -165,6 +165,20 @@ describe("store and community links", () => {
     expect(appEnv.redditUrl).toBe("");
     expect(appEnv.youtubeUrl).toBe("");
   });
+
+  // The Donate row (#1711) has the same shape: defaults to the maintainer's page,
+  // blank hides it - a fork must never ship a link to someone else's Sponsors page.
+  it("defaults EXPO_PUBLIC_SPONSORS_URL to the maintainer's page and lets it be blanked", () => {
+    delete process.env.EXPO_PUBLIC_SPONSORS_URL;
+    jest.resetModules();
+    const withDefault = require("@/src/lib/env") as typeof import("@/src/lib/env");
+    expect(withDefault.appEnv.sponsorsUrl).toBe("https://github.com/sponsors/vasilyoshev");
+
+    process.env.EXPO_PUBLIC_SPONSORS_URL = "";
+    jest.resetModules();
+    const blanked = require("@/src/lib/env") as typeof import("@/src/lib/env");
+    expect(blanked.appEnv.sponsorsUrl).toBe("");
+  });
 });
 
 // ---------------------------------------------------------------------------

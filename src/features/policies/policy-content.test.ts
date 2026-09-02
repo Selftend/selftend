@@ -132,9 +132,19 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 //
 // So: a disclosure change bumps BOTH fields. A rewording moves the digest alone,
 // and says why, right here.
+//
+// 2026-09-02-donations (#1625 / #1711) is a BOTH-fields move, and it is worth
+// saying why when the sentence that moved is one line in terms §8: "Optional
+// donations may be introduced in the future" became "Selftend accepts optional
+// donations". That is a new fact about money - the product now has a surface
+// that takes it - which is the kind of thing a person consents to knowing, and
+// the ruling on #1625 accepted the one-time re-gate over a terms document that
+// misstates a money fact. The half that did NOT change is the half that
+// matters most and is pinned by the required-statements suite below: donations
+// are never required for access to any feature.
 const pinnedPolicyRelease = {
-  version: "2026-08-27-feedback-processors",
-  englishDigest: "a0acbe079278e3c4932c5d58b174ec469c63a191e89622cfeccf80ff3c77e82e",
+  version: "2026-09-02-donations",
+  englishDigest: "9053ec6fa305547faf50e02db2b23c8f3be6834b083e05c1e51c1959c2c7a3d6",
 };
 
 describe("policy content - version pinning", () => {
@@ -189,6 +199,15 @@ describe.each(locales)("policy content - required statements (%s)", (_locale, po
 
   it("crisis sections mention contacting emergency services", () => {
     expect(flatBody(policies.crisis.sections).toLowerCase()).toMatch(/emergency|спешн/);
+  });
+
+  // The donation path exists since 2026-09-02 (#1625). The sentence that makes it
+  // acceptable under AGENTS.md - free to users, never a gate - has to survive
+  // translation and every future rewording of terms §8, not just the English source.
+  it("terms say donations are never a condition of access", () => {
+    expect(flatBody(policies.terms.sections)).toMatch(
+      /donations\. they are never required for access|дарения\. те никога не са условие за достъп/i,
+    );
   });
 });
 

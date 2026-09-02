@@ -62,6 +62,8 @@ Expected monthly core infra:
 - lean public launch: about `$44/month` (email on SES is pay-per-use and rounds
   to `~$0` at this volume, so it does not materially change the total)
 
+What donations cover: optional [GitHub Sponsors](https://github.com/sponsors/vasilyoshev) donations (decided 2026-09-02, [community.md](community.md) § _Donation path_) go toward this baseline plus the annual items below and the audio plan - and nothing else; no running total is published, and donations never buy access to anything.
+
 Plus annual / one-time:
 
 - Apple Developer Program: `$99/year`
