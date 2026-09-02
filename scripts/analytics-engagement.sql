@@ -1,4 +1,4 @@
--- Engagement report: activation, retention, module adoption. Aggregate-only by
+-- Engagement report: activation, retention, module usage. Aggregate-only by
 -- policy (docs/analytics.md): no per-user rows, no user ids, no emails.
 --
 -- Definitions (agreed 2026-07-14, see docs/analytics.md "Phase 1 in use"):
@@ -7,10 +7,12 @@
 --   retention  : signup-anchored windows, week N = days 7*N .. 7*(N+1) after the
 --                user's own signup; retained = any content row in the window.
 --                Percentages use mature users only (window fully elapsed).
---   adoption   : per enableable module (cbt, meditation, gratitude, act):
---                % enabled, % with >=1 record, % enabled-but-never-used.
---                Core tools (mood, journal, sleep, habits, mindfulness) are
---                always available, so only usage % is reported for them.
+--   usage      : per module (cbt, meditation, gratitude, act), % of the account
+--                population with >=1 record in the module's tables; then the
+--                same per core tool (mood, journal, sleep, habits, mindfulness).
+--                Nothing is enableable: every tool is reachable from the tools
+--                grid, and `user_preferences.enabled_modules` gates nothing
+--                (#1672), so "enabled" is not an axis this report carries.
 --
 -- The W4 column of section 3 is the canonical retention definition that
 -- `scripts/analytics-segment.sql` (#1613) cohorts by concern. There is exactly
@@ -46,7 +48,8 @@ create temp view account_labels(account) as values ('registered'), ('guest');
 -- must be added to both, or the segment report silently under-counts retention.
 -- >>> shared:content_events
 create temp view content_events as
-  -- core tools (always available, not part of enabled_modules)
+  -- core tools, grouped as 'core'. Nothing below is gated: every tool is on the
+  -- tools grid whether or not enabled_modules lists its module (#1672).
   select user_id, created_at, 'core' as module, 'mood' as feature from public.mood_logs
   union all select user_id, created_at, 'core', 'journal' from public.journal_entries
   union all select user_id, created_at, 'core', 'sleep' from public.sleep_logs
@@ -153,20 +156,20 @@ where signup_week >= date_trunc('week', now())::date - interval '11 weeks'
 group by 1, 2 order by 2 desc, 1;
 
 \echo
-\echo '=== 4) Module adoption (enableable modules; pct of that account population, distinct users only) ==='
+\echo '=== 4) Module usage (cbt, meditation, gratitude, act; distinct users with >=1 record, pct of that account population) ==='
+-- A content row is the only adoption signal the schema carries. This table
+-- used to add "enabled" and "enabled-but-never-used" columns read from
+-- `user_preferences.enabled_modules`, but that array gates nothing - every
+-- module's tools sit on the tools grid regardless, the last write hook went in
+-- the May 2026 dead-code sweep (059ae523), and what remains is the column
+-- default `['cbt']` plus one write from the meditation wizard. So "cbt enabled
+-- 45 of 46" was the default, not a choice, and gratitude read as used-but-never-
+-- enabled (#1672). test/analytics-shared-sql.test.ts keeps the column out.
 with totals as (
   select l.account, count(a.user_id)::numeric as all_users
   from account_labels l
   left join accounts a on a.account = l.account
   group by 1
-),
-enabled as (
-  select a.account, m.module, count(distinct p.user_id) as enabled_users
-  from public.user_preferences p
-  join accounts a on a.user_id = p.user_id
-  cross join lateral unnest(p.enabled_modules) as m(module)
-  where m.module in ('cbt', 'meditation', 'gratitude', 'act')
-  group by 1, 2
 ),
 used as (
   select a.account, c.module, count(distinct c.user_id) as used_users
@@ -174,33 +177,18 @@ used as (
   join accounts a on a.user_id = c.user_id
   where c.module in ('cbt', 'meditation', 'gratitude', 'act')
   group by 1, 2
-),
-enabled_used as (
-  select a.account, m.module, count(distinct p.user_id) as enabled_used_users
-  from public.user_preferences p
-  join accounts a on a.user_id = p.user_id
-  cross join lateral unnest(p.enabled_modules) as m(module)
-  where exists (select 1 from content_events c
-                where c.user_id = p.user_id and c.module = m.module)
-  group by 1, 2
 )
 select t.account,
        mods.module,
-       coalesce(e.enabled_users, 0) as enabled_users,
-       round(100.0 * coalesce(e.enabled_users, 0) / nullif(t.all_users, 0), 1) as enabled_pct,
-       coalesce(u.used_users, 0) as used_users,
-       round(100.0 * coalesce(u.used_users, 0) / nullif(t.all_users, 0), 1) as used_pct,
-       round(100.0 * (coalesce(e.enabled_users, 0) - coalesce(eu.enabled_used_users, 0))
-             / nullif(coalesce(e.enabled_users, 0), 0), 1) as enabled_never_used_pct
+       coalesce(u.used_users, 0) as users,
+       round(100.0 * coalesce(u.used_users, 0) / nullif(t.all_users, 0), 1) as users_pct
 from (values ('cbt'), ('meditation'), ('gratitude'), ('act')) as mods(module)
 cross join totals t
-left join enabled e on e.module = mods.module and e.account = t.account
 left join used u on u.module = mods.module and u.account = t.account
-left join enabled_used eu on eu.module = mods.module and eu.account = t.account
 order by t.account, mods.module;
 
 \echo
-\echo '=== 5) Core tool usage (always available; pct of that account population) ==='
+\echo '=== 5) Core tool usage (per feature; distinct users with >=1 record, pct of that account population) ==='
 select a.account,
        c.feature,
        count(distinct c.user_id) as users,

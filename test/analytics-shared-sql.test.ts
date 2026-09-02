@@ -114,6 +114,27 @@ describe("analytics report shared SQL blocks", () => {
   });
 });
 
+describe("analytics reports never read enabled_modules as an axis", () => {
+  // #1672. `user_preferences.enabled_modules` gates nothing: every module's
+  // tools sit on the tools grid whether or not the array lists them, the last
+  // write hook went in the May 2026 dead-code sweep (059ae523), and what is
+  // left is the column default (`['cbt']`) plus one write from the meditation
+  // wizard. A report that unnests it is therefore reading a default and calling
+  // it adoption - "cbt enabled 45 of 46" was the default, not a choice, and
+  // gratitude read as "used but never enabled" by five people. Usage (a content
+  // row) is the only adoption signal the schema carries; the reports count that.
+  for (const file of reportFiles()) {
+    it(`${file} does not unnest or filter on enabled_modules`, () => {
+      const source = fs.readFileSync(path.join(SCRIPTS_DIR, file), "utf8");
+      const outsideComments = source
+        .split("\n")
+        .filter((line) => !line.trim().startsWith("--"))
+        .filter((line) => /enabled_modules/.test(line));
+      expect(outsideComments).toEqual([]);
+    });
+  }
+});
+
 describe("analytics reports carry the account split", () => {
   // Part A of #1613. Guest accounts are minted one per tap of the landing CTA,
   // so a report that counts auth.users without splitting on is_anonymous starts

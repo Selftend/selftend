@@ -50,6 +50,24 @@ function definitions(name: string): string {
   return `${source.slice(0, firstSection)}\n`;
 }
 
+/**
+ * One printed section of a report, by its `=== n)` number: the statements
+ * between that `\echo` heading and the next one, with the `\echo` lines
+ * themselves dropped. Running it through `queryWithin` executes the shipped
+ * section verbatim against the report's own views.
+ */
+function section(name: string, number: number): string {
+  const lines = reportSql(name).split("\n");
+  const start = lines.findIndex((line) => line.startsWith(`\\echo '=== ${number})`));
+  if (start === -1) throw new Error(`analytics-${name}.sql has no section ${number}`);
+  const body: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (line.startsWith("\\echo")) break;
+    body.push(line);
+  }
+  return body.join("\n");
+}
+
 // psql prints a command tag (CREATE VIEW, CREATE FUNCTION) for every statement
 // in the definitions block, so the rows we want are whatever follows this.
 const ROW_MARKER = "__rows_below__";
@@ -109,7 +127,23 @@ function insertMoodLog(id: string, createdAtSql: string) {
   `);
 }
 
+/** A preferences row whose only interesting column is the enabled_modules array. */
+function insertEnabledModules(id: string, enabledModulesSql: string) {
+  runSql(`
+    insert into public.user_preferences (user_id, enabled_modules)
+    values ('${id}', ${enabledModulesSql});
+  `);
+}
+
+/** A gratitude record, the module content row the #1672 drift was first seen on. */
+function insertGratitudeEntry(id: string) {
+  runSql(`insert into public.gratitude_entries (user_id, item_1) values ('${id}', 'a warm cup');`);
+}
+
 function deleteSuiteUsers() {
+  runSql(
+    `delete from public.gratitude_entries_data where user_id::text like '${TEST_UUID_PREFIX}-%';`,
+  );
   runSql(`delete from public.mood_logs_data where user_id::text like '${TEST_UUID_PREFIX}-%';`);
   runSql(`delete from public.user_preferences where user_id::text like '${TEST_UUID_PREFIX}-%';`);
   runSql(`delete from auth.users where id::text like '${TEST_UUID_PREFIX}-%';`);
@@ -378,6 +412,74 @@ describe("aggregate analytics reports (integration)", () => {
           where user_id::text like '${TEST_UUID_PREFIX}-%' order by user_id;`,
       );
       expect(segment).toEqual(engagement);
+    });
+  });
+
+  describe("engagement report: module usage counts records, never enabled_modules", () => {
+    // #1672. `enabled_modules` gates nothing (see test/analytics-shared-sql.test.ts
+    // for the history), so the module table reports one thing: distinct people
+    // with at least one record in the module's tables. The suite cannot filter
+    // the shipped section to its own cohort, so it reads §4 before and after
+    // seeding and asserts on the difference, which seed users cannot move.
+    const REGISTERED_GRATITUDE = "registered/gratitude";
+    const REGISTERED_ACT = "registered/act";
+    const REGISTERED_CBT = "registered/cbt";
+
+    /** `account/module` -> distinct users with a record, as §4 prints it. */
+    function moduleUsers(): Map<string, number> {
+      return new Map(
+        queryWithin("engagement", section("engagement", 4)).map(([account, module, users]) => [
+          `${account}/${module}`,
+          Number(users),
+        ]),
+      );
+    }
+
+    let before: Map<string, number>;
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+      before = moduleUsers();
+
+      // 30: a gratitude record and an EMPTY enabled_modules - the row shape
+      // that surfaced the drift (gratitude used, never "enabled").
+      insertAuthUser({ id: userId(30), createdAtSql: "now() - interval '40 days'" });
+      insertEnabledModules(userId(30), "'{}'");
+      insertGratitudeEntry(userId(30));
+
+      // 31: enabled_modules lists act and cbt, and there is no record of anything.
+      insertAuthUser({ id: userId(31), createdAtSql: "now() - interval '40 days'" });
+      insertEnabledModules(userId(31), "'{cbt,act}'");
+
+      // 32: two gratitude records, so distinct counting is what is tested.
+      insertAuthUser({ id: userId(32), createdAtSql: "now() - interval '40 days'" });
+      insertEnabledModules(userId(32), "'{cbt,gratitude}'");
+      insertGratitudeEntry(userId(32));
+      insertGratitudeEntry(userId(32));
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("counts a person with a record once, whether or not enabled_modules lists the module", () => {
+      const after = moduleUsers();
+      expect(after.get(REGISTERED_GRATITUDE)! - before.get(REGISTERED_GRATITUDE)!).toBe(2);
+    });
+
+    it("never counts a person enabled_modules lists who has no record", () => {
+      const after = moduleUsers();
+      expect(after.get(REGISTERED_ACT)! - before.get(REGISTERED_ACT)!).toBe(0);
+      expect(after.get(REGISTERED_CBT)! - before.get(REGISTERED_CBT)!).toBe(0);
+    });
+
+    it("prints every module for every account type, zeros included", () => {
+      const keys = [...moduleUsers().keys()].sort();
+      expect(keys).toEqual(
+        ["guest", "registered"]
+          .flatMap((account) =>
+            ["cbt", "meditation", "gratitude", "act"].map((m) => `${account}/${m}`),
+          )
+          .sort(),
+      );
     });
   });
 

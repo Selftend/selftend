@@ -56,10 +56,21 @@ Two things to know when reading it:
 2026-07-14). It covers: activation (first row in any user-content table, ever
 and within 72h of signup; setup actions excluded), retention (signup-anchored
 weekly cohorts, W1-W4, retained = any content row in the window, percentages
-over mature users only), module adoption (per enableable module: % enabled,
-% with >=1 record, % enabled-but-never-used), and core tool usage (mood,
-journal, sleep, habits, mindfulness — always available, so usage % only).
-All queries count distinct users; none emit per-user rows.
+over mature users only), module usage (per module — cbt, meditation,
+gratitude, act — % with >=1 record in the module's tables), and core tool usage
+(mood, journal, sleep, habits, mindfulness, per feature). All queries count
+distinct users; none emit per-user rows.
+
+The module table carried an "enabled" and an "enabled-but-never-used" column
+until 2026-09-02, read from `user_preferences.enabled_modules`. That array
+gates nothing: every module's tools are on the tools grid whether or not it
+lists them, the last write hook went in the May 2026 dead-code sweep, and what
+is left is the column default (`['cbt']`) plus one write from the meditation
+wizard. Read against production it said cbt was "enabled" by 45 of 46 people
+(the default) while gratitude was used by people who had never "enabled" it —
+an instrument measuring a mechanism that does not exist (#1672). Usage is the
+only adoption signal the schema carries, so it is the only one reported;
+`test/analytics-shared-sql.test.ts` fails any report that reads the column.
 
 `npm run analytics:onboarding` runs `scripts/analytics-onboarding.sql`.
 The report covers: signups, widget-suggestion wizard conversion, finish-vs-skip
@@ -98,7 +109,7 @@ How to read it, in the order the report prints:
   out of three is the number that gets believed.
 - **A flat reading is a finding, not a failure.** If every arm retains alike,
   the concern axis is not the segment axis, and the next axes to look at are
-  module adoption, platform, and locale (EN/BG). That is decided in advance so
+  module usage, platform, and locale (EN/BG). That is decided in advance so
   the standing interpretation cannot quietly become "not enough data yet",
   permanently.
 
