@@ -90,6 +90,12 @@ export interface UserPreferences {
   startHereDismissedAt: string | null;
   shownButtonTours: ButtonTourKey[];
   reminderPromptedTools: ReminderPromptedTool[];
+  /**
+   * The once-ever starter-routine offer at the second action (#1677) has been
+   * shown. Marked on show, mirroring `reminderPromptedTools`: navigating away
+   * counts as asked, and declining writes nothing further.
+   */
+  starterRoutineOffered: boolean;
   breathSoundId: string;
   ambientSoundId: string;
   breathVolume: number;
@@ -200,6 +206,7 @@ export const defaultUserPreferences: UserPreferences = {
   startHereDismissedAt: null,
   shownButtonTours: [],
   reminderPromptedTools: [],
+  starterRoutineOffered: false,
   breathSoundId: "guided",
   ambientSoundId: "none",
   breathVolume: 0.7,
