@@ -46,7 +46,7 @@ Shared accessibility helpers live in [src/lib/accessibility.ts](../src/lib/acces
   settings colophon and the external settings row), and so do the screen-local links in
   the habits, meditation, journal and mood screens (#1735) and the CBT route screens'
   sleep, gratitude and values links (#1736); a guard against the next bare `role="link"`
-  is tracked under #1730. Never spread it onto `role="button"`
+  is tracked as #1737 under #1730. Never spread it onto `role="button"`
   (react-native-web already activates buttons on Enter, and the pair double-fires) or
   onto an expo-router `Link asChild` (that renders a real anchor, which the browser
   already follows). It does not handle Space: a link never activates on Space.
