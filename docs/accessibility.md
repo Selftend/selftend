@@ -37,6 +37,17 @@ Shared accessibility helpers live in [src/lib/accessibility.ts](../src/lib/acces
   ignores OS key auto-repeat. Spread it onto any raw Pressable with a toggle role. Never
   combine it with `role="button"` - react-native-web already activates Space there, and
   the pair double-fires (the control toggles on at keydown and back off at keyup).
+- `enterKeyActivationProps()` adds web-only Enter activation to a `role="link"` Pressable
+  that has no `href`. react-native-web treats a link as a native anchor and leaves its
+  Enter to the browser, but an href-less Pressable renders `<div role="link">`, which the
+  browser does nothing with - Tab reaches it, Enter is dead. Spread it onto every such
+  Pressable, and skip it when the element is disabled. The shared components do (the
+  "Show all" door, the shared-tools chips, the breadcrumb, the sidebar's donate row, the
+  settings colophon and the external settings row); the screen-local links in the tool and
+  CBT screens are tracked under #1730. Never spread it onto `role="button"`
+  (react-native-web already activates buttons on Enter, and the pair double-fires) or
+  onto an expo-router `Link asChild` (that renders a real anchor, which the browser
+  already follows). It does not handle Space: a link never activates on Space.
 - `toggleButtonStateProps(pressed)` is the state for add/remove toggle buttons:
   `aria-pressed` on web (the valid ARIA for a toggle), the selected announcement on native.
 - `currentStateProps(active, "page" | "step")` is the "you are here" state for navigation

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
 
@@ -76,22 +76,30 @@ export function SharedToolsRow({ heading, tools }: SharedToolsRowProps) {
           {heading}
         </Text>
       </View>
-      {tools.map((tool) => (
-        <Pressable
-          key={tool.key}
-          // "link", because every press navigates - "button" promises an
-          // on-screen action that never happens (#1216). No explicit
-          // accessibilityLabel: the child text IS the accessible name, and an
-          // explicit label would hide the children from AT (the RNW trap).
-          accessibilityRole="link"
-          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => pushWithOrigin(tool.route)}
-          className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 active:bg-accent/40"
-        >
-          <Icon name={tool.icon} size={13} className={CHROME_MARK} />
-          <Text className="text-xs font-medium">{t(tool.labelKey)}</Text>
-        </Pressable>
-      ))}
+      {tools.map((tool) => {
+        const open = () => pushWithOrigin(tool.route);
+        return (
+          <Pressable
+            key={tool.key}
+            // "link", because every press navigates - "button" promises an
+            // on-screen action that never happens (#1216). No explicit
+            // accessibilityLabel: the child text IS the accessible name, and an
+            // explicit label would hide the children from AT (the RNW trap).
+            //
+            // And a link with no `href` is a `<div role="link">` on web, which
+            // react-native-web leaves to the browser on Enter as though it were
+            // an anchor - so each chip brings its own Enter handler (#1730).
+            accessibilityRole="link"
+            hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+            onPress={open}
+            {...enterKeyActivationProps(open)}
+            className="flex-row items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 active:bg-accent/40"
+          >
+            <Icon name={tool.icon} size={13} className={CHROME_MARK} />
+            <Text className="text-xs font-medium">{t(tool.labelKey)}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

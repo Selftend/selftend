@@ -2,7 +2,7 @@ import { Platform, Pressable, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
-import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
+import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { getRunningVersion } from "@/src/lib/update-availability";
@@ -36,6 +36,7 @@ export function SettingsColophon() {
   const { width } = useWindowDimensions();
   const wide = width >= WIDE_WIDTH;
   const version = getRunningVersion();
+  const openRepo = () => openExternalUrl(appEnv.githubRepoUrl);
 
   return (
     <View
@@ -72,7 +73,11 @@ export function SettingsColophon() {
         // a new tab with `noopener,noreferrer`, where `Linking.openURL` navigates
         // the app's own tab away - and it logs the native rejection that a `void`
         // would swallow. Every other outbound link in the app already uses it.
-        onPress={() => openExternalUrl(appEnv.githubRepoUrl)}
+        onPress={openRepo}
+        // No `href`, so on web this is a `<div role="link">` that react-native-web
+        // leaves to the browser on Enter as though it were an anchor. The link
+        // brings its own Enter handler (#1730).
+        {...enterKeyActivationProps(openRepo)}
         testID="settings-open-source"
         className={cn("active:opacity-70", Platform.select({ web: "hover:opacity-80" }))}
       >

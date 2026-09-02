@@ -3,6 +3,7 @@ import { router } from "expo-router";
 
 import { ShowAllLink } from "./show-all-link";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 
 /** The screen the door is pressed FROM — what the Origin should record. */
 let mockPathname = "/tools/gratitude-log";
@@ -69,6 +70,38 @@ describe("ShowAllLink", () => {
     expect(useNavigationOriginStore.getState().pending).toEqual({
       origin: "/tools/sleep",
       forPathname: "/tools/sleep/history",
+    });
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor - and this href-less Pressable is a `<div role="link">` the browser
+   * does nothing with, so Tab reached the door and Enter opened nothing (#1730).
+   * The door brings its own Enter handler: once per press, never on auto-repeat,
+   * and never on Space - a link does not activate on Space.
+   *
+   * ⚠️ jest can only prove the handler is there. The browser half - a real Enter
+   * on a real `<div role="link">` - is `test/e2e/support-page.e2e.test.ts`.
+   */
+  describe("on web", () => {
+    afterEach(() => {
+      setPlatformOS("ios");
+    });
+
+    it("activates on Enter, once, and not on a held key or on Space", () => {
+      setPlatformOS("web");
+      render(<ShowAllLink label="Show all records" route="/modules/cbt/history" />);
+
+      const door = screen.getByRole("link", { name: "Show all records" });
+      const preventDefault = jest.fn();
+      door.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+      expect(mockRouter.push).toHaveBeenCalledTimes(1);
+      expect(mockRouter.push).toHaveBeenCalledWith("/modules/cbt/history");
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+
+      door.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+      door.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+      expect(mockRouter.push).toHaveBeenCalledTimes(1);
     });
   });
 });

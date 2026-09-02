@@ -4,6 +4,7 @@ import { useWindowDimensions } from "react-native";
 import { SettingsColophon } from "@/src/features/settings/components/settings-colophon";
 import { openExternalUrl } from "@/src/lib/linking";
 import { getRunningVersion } from "@/src/lib/update-availability";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 
 jest.mock("react-i18next", () => ({
   ...jest.requireActual("react-i18next"),
@@ -91,5 +92,34 @@ describe("SettingsColophon", () => {
     // "open source" names a licence, not a destination, so it cannot be the
     // link's accessible name.
     expect(link.props.accessibilityLabel).toBe("openSourceA11y");
+  });
+
+  /**
+   * react-native-web hands a `link`'s Enter to the browser, expecting a native
+   * anchor - and this href-less Pressable is a `<div role="link">` the browser
+   * does nothing with, so Tab reached the colophon and Enter opened nothing
+   * (#1730). The link brings its own Enter handler: once per press, never on
+   * auto-repeat, and never on Space.
+   */
+  describe("on web", () => {
+    afterEach(() => {
+      setPlatformOS("ios");
+    });
+
+    it("opens the repo on Enter, once, and not on a held key or on Space", () => {
+      setPlatformOS("web");
+      renderAt(900);
+
+      const link = screen.getByTestId("settings-open-source");
+      const preventDefault = jest.fn();
+      link.props.onKeyDown({ key: "Enter", repeat: false, preventDefault });
+      expect(openExternalUrl).toHaveBeenCalledTimes(1);
+      expect(openExternalUrl).toHaveBeenCalledWith("https://github.com/Selftend/selftend");
+      expect(preventDefault).toHaveBeenCalledTimes(1);
+
+      link.props.onKeyDown({ key: "Enter", repeat: true, preventDefault });
+      link.props.onKeyDown({ key: " ", repeat: false, preventDefault });
+      expect(openExternalUrl).toHaveBeenCalledTimes(1);
+    });
   });
 });
