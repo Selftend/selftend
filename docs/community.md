@@ -35,7 +35,18 @@ Avoid guilt-based retention, fake urgency, and panic marketing.
 
 Public thanks should value docs, design, QA, translation, moderation, content, and code. Donations are acceptable only when optional, transparent, separate from product access, and framed as sustaining the mission rather than buying care.
 
-Possible later tools: GitHub Sponsors, Open Collective, or direct donation links.
+### Donation path — decided 2026-09-02
+
+Owner ruling, recorded from [#1625](https://github.com/Selftend/selftend/issues/1625):
+
+- **Vehicle: GitHub Sponsors, on the owner's personal account.** No legal entity is formed for this, and none is planned. Bulgaria is a supported region for individuals, personal-account sponsorships carry no platform fee, and one-off and monthly both work (checked against GitHub's own docs, 2026-09-02). Ko-fi is the fallback if Sponsors onboarding stalls.
+- **Where it shows:** one plain item labelled **Donate** at the end of the app sidebar, after Support, wherever the sidebar items show; and the repository Sponsor button via `.github/FUNDING.yml`. Both open the Sponsors page and nothing else.
+- **What it never is:** a modal, a banner, a badge, a count, or a prompt — and it is never tied to use, absence, progress, or any fact about the person. A donation surface is reviewed as a behavioural nudge would be, and this one is a static link.
+- **Transparency:** one sentence on the Sponsors page and in [costs.md](costs.md) saying what the money covers — hosting, the developer programmes, the domain, the audio plan. No running total is published; a stale number is worse than none.
+- **Policy copy** moves from "may be introduced" to present tense, which bumps the policy version and re-consents every user once. Accepted: a terms document that misstates a money fact is the worse trade.
+- **Durability stays closed** as a value claim. Money at this scale covers costs, not the maintainer's time, which the positioning work names as the project's failure mode. The reopen trigger in [positioning.md](positioning.md) is amended accordingly.
+- **Tax and reporting** on donations to an individual are the owner's responsibility. Accepted 2026-09-02.
+- This ruling also settles the seller-entity question the same way: the App Store seller stays an individual account ([#1618](https://github.com/Selftend/selftend/issues/1618)).
 
 ## Moderation Note
 
