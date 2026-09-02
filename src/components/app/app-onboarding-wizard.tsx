@@ -18,6 +18,7 @@ import {
 import { useRoutines } from "@/src/features/routines/queries";
 import { ROUTINE_NAME_MAX } from "@/src/features/routines/schemas";
 import { buildStarterSteps } from "@/src/features/routines/starter";
+import { StarterStepList } from "@/src/features/routines/starter-step-list";
 import { useKeepStarterRoutine } from "@/src/features/routines/use-keep-starter-routine";
 import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
@@ -366,16 +367,7 @@ export function AppOnboardingWizard({
               value={routineName}
             />
           </View>
-          <View className="gap-2">
-            {starterSteps.map((toolId, index) => (
-              <View key={toolId} className="flex-row items-center gap-3">
-                <View className="size-7 items-center justify-center rounded-full border border-primary/40 bg-primary/10">
-                  <Text className="text-xs font-semibold text-primary">{index + 1}</Text>
-                </View>
-                <Text className="text-sm">{t(`routines:tools.${toolId}`)}</Text>
-              </View>
-            ))}
-          </View>
+          <StarterStepList steps={starterSteps} />
           <Text variant="muted" className="text-center text-xs">
             {t("routines:onboarding.stepsNote")}
           </Text>
