@@ -1,4 +1,5 @@
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { FunctionsHttpError } from "@supabase/supabase-js";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 
 // ☠️ This test must NOT live beside the screen: everything under app/ is an
@@ -8,9 +9,18 @@ import { router } from "expo-router";
 import SupportScreen from "@/app/(app)/support";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
+import { captureError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
+import { useToastStore } from "@/src/stores/toast-store";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
+
+jest.mock("@/src/lib/sentry", () => ({
+  captureError: jest.fn(),
+  // The real predicate: "a 429 is not reported" is tested against the rule the
+  // rest of the app reports by, not against a stub of it.
+  isReportableError: jest.requireActual("@/src/lib/sentry").isReportableError,
+}));
 
 // The delete row's dependencies, mocked the way the Settings screen test does.
 jest.mock("@/src/features/settings/queries", () => ({
@@ -49,8 +59,8 @@ const MESSAGE = "A message long enough to pass validation.";
 const originalSupportEmail = appEnv.supportEmail;
 
 async function submit() {
-  // The card's TITLE is also "Send feedback"; the role narrows it to the button.
-  await act(async () => fireEvent.press(screen.getByRole("button", { name: "Send feedback" })));
+  // The card's TITLE is also "Send a message"; the role narrows it to the button.
+  await act(async () => fireEvent.press(screen.getByRole("button", { name: "Send message" })));
 }
 
 describe("SupportScreen guest reply-to (#1447)", () => {
@@ -101,7 +111,7 @@ describe("SupportScreen guest reply-to (#1447)", () => {
     await submit();
 
     expect(mockInvoke).toHaveBeenCalledWith("send-feedback", {
-      body: { category: "suggestion", message: MESSAGE, replyTo: "reply@example.com" },
+      body: { category: "idea", message: MESSAGE, replyTo: "reply@example.com" },
     });
   });
 
@@ -112,7 +122,7 @@ describe("SupportScreen guest reply-to (#1447)", () => {
     await submit();
 
     expect(mockInvoke).toHaveBeenCalledWith("send-feedback", {
-      body: { category: "suggestion", message: MESSAGE },
+      body: { category: "idea", message: MESSAGE },
     });
   });
 
@@ -136,7 +146,7 @@ describe("SupportScreen guest reply-to (#1447)", () => {
     await submit();
 
     expect(mockInvoke).toHaveBeenCalledWith("send-feedback", {
-      body: { category: "suggestion", message: MESSAGE },
+      body: { category: "idea", message: MESSAGE },
     });
   });
 });
@@ -170,8 +180,8 @@ describe("SupportScreen feedback categories (#1614)", () => {
   it("offers four categories, including one that is not a support request", () => {
     renderWithProviders(<SupportScreen />);
 
-    for (const label of ["Bug", "Suggestion", "Question", "This helped"]) {
-      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    for (const label of ["Bug", "Idea", "Question", "This helped"]) {
+      expect(screen.getByRole("radio", { name: label })).toBeTruthy();
     }
   });
 
@@ -179,7 +189,7 @@ describe("SupportScreen feedback categories (#1614)", () => {
     renderWithProviders(<SupportScreen />);
     fireEvent.changeText(screen.getByLabelText("Message"), MESSAGE);
 
-    await act(async () => fireEvent.press(screen.getByRole("button", { name: "This helped" })));
+    await act(async () => fireEvent.press(screen.getByRole("radio", { name: "This helped" })));
     await submit();
 
     // The value, not the label, is what reaches the edge function and the
@@ -189,14 +199,14 @@ describe("SupportScreen feedback categories (#1614)", () => {
     });
   });
 
-  it("still defaults to suggestion, so the new category is opt-in", async () => {
+  it("still defaults to idea, so the new category is opt-in", async () => {
     renderWithProviders(<SupportScreen />);
     fireEvent.changeText(screen.getByLabelText("Message"), MESSAGE);
 
     await submit();
 
     expect(mockInvoke).toHaveBeenCalledWith("send-feedback", {
-      body: { category: "suggestion", message: MESSAGE },
+      body: { category: "idea", message: MESSAGE },
     });
   });
 });
@@ -246,7 +256,7 @@ describe("SupportScreen column (#1726)", () => {
     expect(headings.map((h) => h.props.children)).toEqual([
       "Support",
       "Use urgent support for urgent risk",
-      "Send feedback",
+      "Send a message",
       ...SECTION_TITLES,
     ]);
     expect(
@@ -391,5 +401,231 @@ describe("SupportScreen column (#1726)", () => {
     fireEvent.press(screen.getByLabelText("Delete my account"));
     expect(screen.getByText("Delete account permanently?")).toBeTruthy();
     expect(router.push).not.toHaveBeenCalledWith("/account-deletion");
+  });
+});
+
+/**
+ * #1727: the form, field by field - radio chips, a counter, a reply-to line, and
+ * a Send that returns. Closes #1722: Send never came back after one success,
+ * and the category buttons announced no selection.
+ */
+describe("SupportScreen form (#1727)", () => {
+  const mockCaptureError = captureError as jest.MockedFunction<typeof captureError>;
+  const MESSAGE_LABEL = "Message";
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    useToastStore.getState().clearToasts();
+    mockUser = { id: "user-1", email: "person@example.com", is_anonymous: false };
+    appEnv.supportEmail = "support@selftend.org";
+    mockInvoke.mockResolvedValue({ error: null });
+    mockRequireSupabase.mockReturnValue({
+      functions: { invoke: mockInvoke },
+    } as unknown as ReturnType<typeof requireSupabase>);
+  });
+
+  afterEach(() => {
+    appEnv.supportEmail = originalSupportEmail;
+    setPlatformOS("ios");
+  });
+
+  // The emoji picker's pattern: one tab stop for the group, arrows move the
+  // selection, Space selects. The roving props REPLACE the chip's own Space
+  // handler, so one Space is one selection (the RNW Space-activation trap).
+  it("on web: arrows move the checked chip and the tab stop, Space selects", () => {
+    setPlatformOS("web");
+    renderWithProviders(<SupportScreen />);
+
+    const idea = screen.getByRole("radio", { name: "Idea" });
+    expect(idea.props.tabIndex).toBe(0);
+    expect(screen.getByRole("radio", { name: "Bug" }).props.tabIndex).toBe(-1);
+
+    const preventDefault = jest.fn();
+    fireEvent(idea, "keyDown", { key: "ArrowRight", repeat: false, preventDefault });
+
+    expect(preventDefault).toHaveBeenCalled();
+    const question = screen.getByRole("radio", { name: "Question", checked: true });
+    expect(question.props.tabIndex).toBe(0);
+    expect(screen.getByRole("radio", { name: "Idea", checked: false }).props.tabIndex).toBe(-1);
+
+    fireEvent(screen.getByRole("radio", { name: "Bug" }), "keyDown", {
+      key: " ",
+      repeat: false,
+      preventDefault: jest.fn(),
+    });
+    expect(screen.getByRole("radio", { name: "Bug", checked: true })).toBeTruthy();
+    expect(screen.getAllByRole("radio", { checked: true })).toHaveLength(1);
+  });
+
+  it("is a radiogroup of four radios with idea checked by default", () => {
+    renderWithProviders(<SupportScreen />);
+
+    // The group is a plain View, which RNTL's role query never matches (it is
+    // not `accessible`, and must not be - that would fold the radios into one
+    // element on iOS). The emoji picker's test reads the role the same way.
+    expect(screen.getByLabelText("What is it about?").props.accessibilityRole).toBe("radiogroup");
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
+    expect(screen.getByRole("radio", { name: "Idea", checked: true })).toBeTruthy();
+    for (const label of ["Bug", "Question", "This helped"]) {
+      expect(screen.getByRole("radio", { name: label, checked: false })).toBeTruthy();
+    }
+    // The old buttons are gone, not doubled.
+    expect(screen.queryByRole("button", { name: "Idea" })).toBeNull();
+  });
+
+  // The static key-coverage guard cannot see a template key, so every value the
+  // two `feedback.*.${cat}` templates can take is resolved here, by rendering.
+  it("resolves a label and a placeholder for each of the four categories", () => {
+    renderWithProviders(<SupportScreen />);
+
+    const placeholders: Record<string, string> = {
+      Bug: "What happened, and what you expected instead.",
+      Idea: "What would you change, add, or remove?",
+      Question: "Ask anything about how the app or a tool works.",
+      "This helped": "What worked, and how? It shapes what gets built next.",
+    };
+    expect(screen.getByPlaceholderText(placeholders.Idea)).toBeTruthy();
+    for (const [label, placeholder] of Object.entries(placeholders)) {
+      fireEvent.press(screen.getByRole("radio", { name: label }));
+      expect(screen.getByRole("radio", { name: label, checked: true })).toBeTruthy();
+      expect(screen.getByPlaceholderText(placeholder)).toBeTruthy();
+    }
+  });
+
+  it("caps the message at 1000 and counts as the user types", () => {
+    renderWithProviders(<SupportScreen />);
+
+    const textarea = screen.getByLabelText(MESSAGE_LABEL);
+    expect(textarea.props.maxLength).toBe(1000);
+    expect(screen.getByText("0 / 1000")).toBeTruthy();
+    expect(screen.getByLabelText("0 of 1000 characters")).toBeTruthy();
+
+    fireEvent.changeText(textarea, "Hello");
+
+    expect(screen.getByText("5 / 1000")).toBeTruthy();
+    // ☠️ `{{current}}`, never `{{count}}` - the latter is i18next's plural
+    // selector, and the lookup would walk `counterLabel_one` / `_other` first.
+    expect(screen.getByLabelText("5 of 1000 characters")).toBeTruthy();
+  });
+
+  it("refuses a message shorter than ten characters inline, without invoking", async () => {
+    renderWithProviders(<SupportScreen />);
+    fireEvent.changeText(screen.getByLabelText(MESSAGE_LABEL), "Hello");
+
+    await submit();
+
+    expect(mockInvoke).not.toHaveBeenCalled();
+    expect(screen.getByText("Please write at least 10 characters.")).toBeTruthy();
+    expect(useToastStore.getState().visible).toBeNull();
+  });
+
+  // #1722: the success used to REPLACE the button with a line of text, so a
+  // second message had no way to be sent without leaving the page.
+  it("on success: a toast, a cleared form, idea again, and the Send button still there", async () => {
+    renderWithProviders(<SupportScreen />);
+    fireEvent.press(screen.getByRole("radio", { name: "Question" }));
+    fireEvent.changeText(screen.getByLabelText(MESSAGE_LABEL), MESSAGE);
+
+    await submit();
+
+    expect(mockInvoke).toHaveBeenCalledWith("send-feedback", {
+      body: { category: "question", message: MESSAGE },
+    });
+    await waitFor(() =>
+      expect(useToastStore.getState().visible).toMatchObject({
+        tone: "success",
+        title: "Your feedback was sent. Thank you!",
+      }),
+    );
+    expect(screen.getByLabelText(MESSAGE_LABEL).props.value).toBe("");
+    expect(screen.getByText("0 / 1000")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Idea", checked: true })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Send message" })).toBeTruthy();
+    expect(screen.queryByText("Your feedback was sent. Thank you!")).toBeNull();
+  });
+
+  it("on a failure that is not a 429: an error toast, the message kept, and a capture", async () => {
+    mockInvoke.mockResolvedValue({ error: new FunctionsHttpError({ status: 500 }) });
+    renderWithProviders(<SupportScreen />);
+    fireEvent.changeText(screen.getByLabelText(MESSAGE_LABEL), MESSAGE);
+
+    await submit();
+
+    await waitFor(() =>
+      expect(useToastStore.getState().visible).toMatchObject({
+        tone: "error",
+        title: "Failed to send feedback. Please try again.",
+      }),
+    );
+    expect(screen.getByLabelText(MESSAGE_LABEL).props.value).toBe(MESSAGE);
+    expect(mockCaptureError).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Send message" })).toBeTruthy();
+  });
+
+  it("on a 429: the rate-limit toast, the message kept, and nothing reported", async () => {
+    mockInvoke.mockResolvedValue({ error: new FunctionsHttpError({ status: 429 }) });
+    renderWithProviders(<SupportScreen />);
+    fireEvent.changeText(screen.getByLabelText(MESSAGE_LABEL), MESSAGE);
+
+    await submit();
+
+    await waitFor(() =>
+      expect(useToastStore.getState().visible).toMatchObject({
+        tone: "error",
+        title: "You've sent a few messages recently. Please try again in an hour.",
+      }),
+    );
+    expect(screen.getByLabelText(MESSAGE_LABEL).props.value).toBe(MESSAGE);
+    expect(mockCaptureError).not.toHaveBeenCalled();
+  });
+
+  it("tells an account holder where replies go, and offers them no field", () => {
+    renderWithProviders(<SupportScreen />);
+
+    expect(screen.getByText("Replies go to person@example.com.")).toBeTruthy();
+    expect(screen.queryByLabelText(REPLY_TO_LABEL)).toBeNull();
+  });
+
+  it("offers a guest the field and no address line", () => {
+    mockUser = { id: "guest-1", is_anonymous: true };
+    renderWithProviders(<SupportScreen />);
+
+    expect(screen.getByLabelText(REPLY_TO_LABEL)).toBeTruthy();
+    expect(screen.queryByText(/Replies go to/)).toBeNull();
+  });
+
+  it("shows an account without an email neither the field nor the line", () => {
+    mockUser = { id: "user-2", is_anonymous: false };
+    renderWithProviders(<SupportScreen />);
+
+    expect(screen.queryByLabelText(REPLY_TO_LABEL)).toBeNull();
+    expect(screen.queryByText(/Replies go to/)).toBeNull();
+  });
+
+  it("says beside the button that nothing from the person's records is attached", () => {
+    renderWithProviders(<SupportScreen />);
+
+    expect(
+      screen.getByText("Nothing from your journal, records, or check-ins is attached."),
+    ).toBeTruthy();
+  });
+
+  it("disables Send only while sending, with the sending label", async () => {
+    let resolveInvoke: (value: { error: null }) => void = () => {};
+    mockInvoke.mockReturnValue(
+      new Promise<{ error: null }>((resolve) => {
+        resolveInvoke = resolve;
+      }),
+    );
+    renderWithProviders(<SupportScreen />);
+    fireEvent.changeText(screen.getByLabelText(MESSAGE_LABEL), MESSAGE);
+
+    await act(async () => fireEvent.press(screen.getByRole("button", { name: "Send message" })));
+
+    expect(screen.getByRole("button", { name: "Sending...", disabled: true })).toBeTruthy();
+
+    await act(async () => resolveInvoke({ error: null }));
+
+    expect(screen.getByRole("button", { name: "Send message", disabled: false })).toBeTruthy();
   });
 });

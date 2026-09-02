@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { Platform, View } from "react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,18 +18,22 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
+import { captureError, isReportableError } from "@/src/lib/sentry";
 import { requireSupabase } from "@/src/lib/supabase";
 import { useSession } from "@/src/providers/session-provider";
+import { useToastStore } from "@/src/stores/toast-store";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
 import { Section } from "@/src/components/app/section";
+import { ChipRun, SelectableChip } from "@/src/components/app/selectable-chip";
 import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { DeleteAccountRow } from "@/src/features/settings/components/delete-account-row";
 import { SettingsRow } from "@/src/features/settings/components/settings-row";
 import { SettingsRun } from "@/src/features/settings/components/settings-run";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { HOME_COLUMN } from "@/src/lib/layout";
+import { useRovingFocus } from "@/src/lib/roving-focus";
 import { cn } from "@/lib/utils";
 
 /**
@@ -37,28 +42,52 @@ import { cn } from "@/lib/utils";
  * #1598 named "this helped" as the unnumbered half of the yardstick — the half
  * that speaks to the actual failure mode (the owner stopping) rather than to
  * sizing a segment. Without a label for it, someone moved to say it had to file
- * it as a bug, a suggestion, or a question.
+ * it as a bug, an idea, or a question.
  *
- * ⚠️ It is a DROPDOWN, never a prompt. Nobody is asked to praise anything; the
- * label exists for a person who has already decided to write. Turning it into an
- * invitation would be the retention nudge `AGENTS.md` forbids.
+ * ⚠️ It is one chip of four, never a prompt, and never pre-selected. Nobody is
+ * asked to praise anything; the label exists for a person who has already
+ * decided to write. Turning it into an invitation would be the retention nudge
+ * `AGENTS.md` forbids.
  *
  * The value travels to the edge function and into the Discord mirror as
  * `**[helped]**`. `validateFeedbackInput` takes any sanitized string within its
- * length limit, so there is no server-side allowlist to extend.
+ * length limit, so there is no server-side allowlist to extend - which is also
+ * why `suggestion` could become `idea` (#1727) with no server change: the
+ * mailbox subject is now `Selftend feedback [idea]`, and nothing filters on it.
  */
-type FeedbackCategory = "bug" | "suggestion" | "question" | "helped";
+type FeedbackCategory = "bug" | "idea" | "question" | "helped";
 
-const FEEDBACK_CATEGORIES: readonly FeedbackCategory[] = [
-  "bug",
-  "suggestion",
-  "question",
-  "helped",
-];
+const FEEDBACK_CATEGORIES: readonly FeedbackCategory[] = ["bug", "idea", "question", "helped"];
+
+/** The second chip, as `suggestion` was before it. */
+const DEFAULT_CATEGORY: FeedbackCategory = "idea";
+
+/**
+ * The textarea's `maxLength`: the old "1000 or fewer" error is unreachable now
+ * that the field itself stops at the limit, so the counter is the only sign of it.
+ */
+const FEEDBACK_MAX_LENGTH = 1000;
+
+/** Fewer than this after trimming is refused inline, before any request. */
+const FEEDBACK_MIN_LENGTH = 10;
 
 // Mirrors the function-side gate (resolveReplyTo in _shared/feedback.ts):
 // simple on purpose - it gates a Reply-To header, not deliverability.
 const REPLY_TO_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * The function answers 429 past five messages in sixty minutes (hard-coded in
+ * the fixed-threshold rate-limit migration). `functions.invoke` wraps any non-2xx
+ * in a `FunctionsHttpError` whose `context` is the `Response`, so the status is
+ * read from there - it is an expected outcome, told to the user and never
+ * reported.
+ */
+function isRateLimited(error: unknown): boolean {
+  return (
+    error instanceof FunctionsHttpError &&
+    (error.context as { status?: unknown } | undefined)?.status === 429
+  );
+}
 
 /** A locale array, or nothing - never a string spread into characters. */
 function asList(value: unknown): string[] {
@@ -111,13 +140,19 @@ function SupportList({
  * (spec §2 lists every element's fate). The one crisis notice on the page is the
  * shared callout: the boundary card and the in-form red card both folded into
  * it, and the form's intro keeps the "leave out crisis details" sentence as its
- * only reminder. The form itself is left as shipped here apart from that card -
- * its chips, counter and toasts are #1727.
+ * only reminder.
+ *
+ * The form (#1727, spec §1.3 and §3) is chips → message with a counter → a
+ * reply-to slot → footnote + Send. Sending, success, failure and the rate limit
+ * are toasts; after a success the fields clear and **the Send button stays** -
+ * the old success line replaced the button, so a second message had no way out
+ * of the page (#1722).
  */
 export default function SupportScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation(["settings", "navigation"]);
   const { user } = useSession();
+  const showToast = useToastStore((state) => state.showToast);
   const supportEmail = appEnv.supportEmail;
   const supportSubject = encodeURIComponent("Selftend support");
 
@@ -127,27 +162,33 @@ export default function SupportScreen() {
   // matters: a just-converted guest can still carry a stale is_anonymous
   // claim until token refresh (#1443), and offering them the field would take
   // an address the server then silently ignores in favour of their account
-  // email.
+  // email. That same person sees the address line instead: the server will
+  // use it, so it is the truthful thing to say.
   const isGuest = user?.is_anonymous === true && !user.email;
+  const accountEmail = isGuest ? "" : (user?.email ?? "");
 
-  const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>("suggestion");
+  const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>(DEFAULT_CATEGORY);
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [replyToEmail, setReplyToEmail] = useState("");
   const [feedbackError, setFeedbackError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  // The chips are one radiogroup: on web, arrows move between them and Space
+  // selects (the emoji picker's pattern). The item props REPLACE the chip's own
+  // Space handler rather than stacking on it - stacked, Space would fire twice.
+  const roving = useRovingFocus({
+    count: FEEDBACK_CATEGORIES.length,
+    activeIndex: FEEDBACK_CATEGORIES.indexOf(feedbackCategory),
+    onActivate: (index) => setFeedbackCategory(FEEDBACK_CATEGORIES[index]),
+  });
 
   const canDo = asList(t("supportPage.canDo", { returnObjects: true }));
   const cantDo = asList(t("supportPage.cantDo", { returnObjects: true }));
 
   const handleFeedbackSubmit = async () => {
     const trimmed = feedbackMessage.trim();
-    if (trimmed.length < 10) {
+    if (trimmed.length < FEEDBACK_MIN_LENGTH) {
       setFeedbackError(t("feedback.messageTooShort"));
-      return;
-    }
-    if (trimmed.length > 1000) {
-      setFeedbackError(t("feedback.messageTooLong"));
       return;
     }
     const replyTo = isGuest ? replyToEmail.trim() : "";
@@ -166,12 +207,23 @@ export default function SupportScreen() {
         },
       });
       if (error) throw error;
-      setSubmitSuccess(true);
+      showToast({ title: t("feedback.submitSuccess"), tone: "success" });
       setFeedbackMessage("");
       setReplyToEmail("");
-      setFeedbackCategory("suggestion");
-    } catch {
-      setFeedbackError(t("feedback.submitError"));
+      setFeedbackCategory(DEFAULT_CATEGORY);
+    } catch (error) {
+      // The message stays in the box on every failure: the person can try again.
+      if (isRateLimited(error)) {
+        showToast({ title: t("feedback.rateLimited"), tone: "error" });
+      } else {
+        // This is a bare `functions.invoke`, not a TanStack mutation, so no
+        // global reporter sees it - the capture here is the only one.
+        // `isReportableError` drops the expected offline case.
+        if (isReportableError(error)) {
+          captureError(error);
+        }
+        showToast({ title: t("feedback.submitError"), tone: "error" });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -202,21 +254,30 @@ export default function SupportScreen() {
             <View className="gap-4">
               <View className="gap-2">
                 <Label>{t("feedback.categoryLabel")}</Label>
-                {/* ⚠️ `flex-wrap` is load-bearing since #1614 took this row to
-                    four: "Bug · Suggestion · Question · This helped" does not
-                    fit one line at 360dp, and without wrapping the last button
-                    is clipped rather than moved. */}
-                <View className="flex-row flex-wrap gap-2">
-                  {FEEDBACK_CATEGORIES.map((cat) => (
-                    <Button
-                      key={cat}
-                      onPress={() => setFeedbackCategory(cat)}
-                      size="sm"
-                      variant={feedbackCategory === cat ? "default" : "outline"}
-                    >
-                      <Text>{t(`feedback.category.${cat}`)}</Text>
-                    </Button>
-                  ))}
+                {/*
+                  The chip cannot know its siblings, so the group is drawn here.
+                  `ChipRun` wraps: "Bug · Idea · Question · This helped" is two
+                  lines at 360dp, and without wrapping the last chip would be
+                  clipped rather than moved.
+                */}
+                <View
+                  accessibilityLabel={t("feedback.categoryLabel")}
+                  accessibilityRole="radiogroup"
+                  role="radiogroup"
+                >
+                  <ChipRun>
+                    {FEEDBACK_CATEGORIES.map((cat, index) => (
+                      <SelectableChip
+                        key={cat}
+                        role="radio"
+                        label={t(`feedback.category.${cat}`)}
+                        selected={feedbackCategory === cat}
+                        onToggle={() => setFeedbackCategory(cat)}
+                        rovingProps={roving.getItemProps(index, () => setFeedbackCategory(cat))}
+                        testID={`support-category-${cat}`}
+                      />
+                    ))}
+                  </ChipRun>
                 </View>
               </View>
 
@@ -224,17 +285,40 @@ export default function SupportScreen() {
                 <Label>{t("feedback.messageLabel")}</Label>
                 <Textarea
                   accessibilityLabel={t("feedback.messageLabel")}
+                  maxLength={FEEDBACK_MAX_LENGTH}
                   numberOfLines={5}
                   onChangeText={(text) => {
                     setFeedbackMessage(text);
                     if (feedbackError) setFeedbackError("");
                   }}
-                  placeholder={t("feedback.messagePlaceholder")}
+                  placeholder={t(`feedback.placeholder.${feedbackCategory}`)}
                   value={feedbackMessage}
                 />
-                {feedbackError ? (
-                  <Text className="text-sm text-destructive">{feedbackError}</Text>
-                ) : null}
+                {/*
+                  The inline error (too short, or a malformed reply-to) on the
+                  left; the counter always on the right, so it never jumps when
+                  an error appears.
+                */}
+                <View className="flex-row items-start justify-between gap-3">
+                  {feedbackError ? (
+                    <Text className="flex-1 text-sm text-destructive">{feedbackError}</Text>
+                  ) : (
+                    <View className="flex-1" />
+                  )}
+                  <Text
+                    // ☠️ `current`, never `count`: `count` is i18next's plural
+                    // selector and the lookup would walk `counterLabel_one` first.
+                    accessibilityLabel={t("feedback.counterLabel", {
+                      current: feedbackMessage.length,
+                      max: FEEDBACK_MAX_LENGTH,
+                    })}
+                    variant="muted"
+                    className="shrink-0 text-xs tabular-nums"
+                    testID="support-message-counter"
+                  >
+                    {`${feedbackMessage.length} / ${FEEDBACK_MAX_LENGTH}`}
+                  </Text>
+                </View>
               </View>
 
               {isGuest ? (
@@ -257,15 +341,33 @@ export default function SupportScreen() {
                     {t("feedback.replyToHint")}
                   </Text>
                 </View>
+              ) : accountEmail ? (
+                // No field for an account holder - the server resolves their
+                // address - just the fact of where the reply will land.
+                <Text variant="muted" className="text-xs">
+                  {t("feedback.replyToAccount", { email: accountEmail })}
+                </Text>
               ) : null}
 
-              {submitSuccess ? (
-                <Text className="text-sm">{t("feedback.submitSuccess")}</Text>
-              ) : (
-                <Button disabled={isSubmitting} onPress={() => void handleFeedbackSubmit()}>
+              {/*
+                Footnote beside the button, wrapping under it in the 312px
+                column at 360dp: the button grows to the full width there and
+                sits at its own width from `sm:` up, where the footnote takes
+                the rest of the line. `disabled` only while sending - a success
+                never takes the button away (#1722).
+              */}
+              <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2">
+                <Button
+                  className="grow sm:grow-0"
+                  disabled={isSubmitting}
+                  onPress={() => void handleFeedbackSubmit()}
+                >
                   <Text>{isSubmitting ? t("feedback.submitting") : t("feedback.submit")}</Text>
                 </Button>
-              )}
+                <Text variant="muted" className="min-w-0 flex-1 basis-56 text-xs">
+                  {t("feedback.attachNothing")}
+                </Text>
+              </View>
             </View>
           </CardContent>
         </Card>
