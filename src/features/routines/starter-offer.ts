@@ -20,6 +20,10 @@ export const SECOND_ACTION_MIN = 2;
  * Drop-anchor logs are a subset of connection logs (dropping anchor IS
  * connecting - see RoutineToolRecords), so counting both would turn one saved
  * log into two "distinct tools" and fire the offer at the first action.
+ *
+ * Steppable tools only, deliberately: a routine is what the offer bridges to,
+ * so "a distinct tool" means a tool a routine can admit (#123). Saves in
+ * non-admissible tools (worry, anger, self-care) never count toward the two.
  */
 const DISTINCT_TOOLS: readonly SteppableToolId[] = STEPPABLE_TOOL_IDS.filter(
   (tool) => tool !== "dropAnchor",
@@ -30,27 +34,31 @@ const DISTINCT_TOOLS: readonly SteppableToolId[] = STEPPABLE_TOOL_IDS.filter(
 // must not read a half-loaded shape - an in-flight fetch would undercount and
 // silently drop an eligible save. A slice that errors stays undefined, which
 // calmly resolves to "no offer" rather than a wrong one.
-const REQUIRED_SLICES: readonly (keyof RoutineToolRecords)[] = [
-  "moodLogs",
-  "journalEntries",
-  "gratitudeEntries",
-  "sleepLogs",
-  "thoughtRecords",
-  "mindfulnessSessions",
-  "meditationSessions",
-  "habitLogs",
-  "activityLogs",
-  "exposureSessions",
-  "defusionLogs",
-  "expansionLogs",
-  "urgeSurfLogs",
-  "connectionLogs",
-  "observingSelfSessions",
-  "bullsEyeSnapshots",
-  "choicePoints",
-  "committedActions",
-  "actionSteps",
-];
+// A full Record over the slice keys, so a slice added to RoutineToolRecords
+// later is a compile error here rather than a silent hole in the gate.
+const REQUIRED_SLICE_MAP: Record<keyof RoutineToolRecords, true> = {
+  moodLogs: true,
+  journalEntries: true,
+  gratitudeEntries: true,
+  sleepLogs: true,
+  thoughtRecords: true,
+  mindfulnessSessions: true,
+  meditationSessions: true,
+  habitLogs: true,
+  activityLogs: true,
+  exposureSessions: true,
+  defusionLogs: true,
+  expansionLogs: true,
+  urgeSurfLogs: true,
+  connectionLogs: true,
+  observingSelfSessions: true,
+  bullsEyeSnapshots: true,
+  choicePoints: true,
+  committedActions: true,
+  actionSteps: true,
+};
+
+const REQUIRED_SLICES = Object.keys(REQUIRED_SLICE_MAP) as (keyof RoutineToolRecords)[];
 
 /** True once every slice the distinct-tool count reads has been fetched. */
 export function areOfferRecordsReady(records: RoutineToolRecords): boolean {

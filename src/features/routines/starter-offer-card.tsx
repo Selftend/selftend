@@ -84,9 +84,10 @@ export function StarterOfferCard() {
   // with a routine, or one already offered, costs nothing here.
   const evaluating = pendingSave && !visible;
   const { data: routines } = useRoutines(evaluating ? userId : null);
-  const deepUserId = evaluating && routines !== undefined && routines.length === 0 ? userId : null;
-  const { data: widgetPrefs } = useWidgetPreferences(deepUserId);
-  const records = useRoutineToolRecords(deepUserId, STEPPABLE_TOOL_IDS);
+  const noRoutineUserId =
+    evaluating && routines !== undefined && routines.length === 0 ? userId : null;
+  const { data: widgetPrefs } = useWidgetPreferences(noRoutineUserId);
+  const records = useRoutineToolRecords(noRoutineUserId, STEPPABLE_TOOL_IDS);
 
   // The decision, made as render-time adjustments (the reminder card's
   // consumption pattern): derived entirely from the record, never stored
