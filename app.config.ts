@@ -1,5 +1,5 @@
 import type { ExpoConfig } from "expo/config";
-import { withAndroidManifest, type ConfigPlugin } from "expo/config-plugins";
+import { withAndroidManifest, withGradleProperties, type ConfigPlugin } from "expo/config-plugins";
 
 const widgetCatalog = require("./src/features/widgets/widget-catalog.json") as {
   name: string;
@@ -99,7 +99,28 @@ const withDevelopmentCleartextTraffic: ConfigPlugin = (config) => {
   });
 };
 
-const config: ExpoConfig = withDevelopmentCleartextTraffic({
+// Gradle daemon heap and metaspace for the native build. Expo's template ships
+// `-Xmx2048m -XX:MaxMetaspaceSize=512m`, sized for a build that never runs R8.
+// With minification on (#1707) the daemon that has just compiled every module
+// also hosts R8 over ~54 MB of DEX, and the first local proof build died in
+// `minifyReleaseWithR8` with `java.lang.OutOfMemoryError: Metaspace` after R8
+// had already written mapping.txt - on a daemon reused across two builds, so
+// CI's fresh daemon may well fit in 512m. The margin is unknown, and a release
+// build failing in CI costs a version code (`autoIncrement`), so the ceiling
+// is raised rather than measured to the edge. Runners have 16 GB; the values
+// are what React Native's own docs suggest for larger projects.
+const GRADLE_JVM_ARGS = "-Xmx4096m -XX:MaxMetaspaceSize=1024m";
+
+const withReleaseGradleJvmArgs: ConfigPlugin = (config) =>
+  withGradleProperties(config, (config) => {
+    config.modResults = config.modResults.filter(
+      (item) => !(item.type === "property" && item.key === "org.gradle.jvmargs"),
+    );
+    config.modResults.push({ type: "property", key: "org.gradle.jvmargs", value: GRADLE_JVM_ARGS });
+    return config;
+  });
+
+const baseConfig: ExpoConfig = withDevelopmentCleartextTraffic({
   owner: "vasil.yoshev",
   name: appName,
   slug: appSlug,
@@ -342,5 +363,7 @@ const config: ExpoConfig = withDevelopmentCleartextTraffic({
     },
   },
 });
+
+const config: ExpoConfig = withReleaseGradleJvmArgs(baseConfig);
 
 export default config;

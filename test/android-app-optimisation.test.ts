@@ -32,12 +32,13 @@ import { resolve } from "node:path";
 // spelled through a variable still counts. The workflow is a text scan,
 // matching the repo's dependency-free convention tests.
 
-// expo/config-plugins is Node-only and fails to load under jest-expo. The
-// default (production) config path only imports it - the cleartext-traffic
-// plugin runs solely for dev-variant builds - so a pass-through stub is safe.
-// Same stub as app.config.test.ts.
+// expo/config-plugins is Node-only and fails to load under jest-expo, so the
+// two mods are pass-through stubs (same as app.config.test.ts). The
+// cleartext-traffic one runs solely for dev-variant builds; the Gradle JVM
+// args one is asserted on below by text, since the stub never runs it.
 jest.mock("expo/config-plugins", () => ({
   withAndroidManifest: (config: unknown) => config,
+  withGradleProperties: (config: unknown) => config,
 }));
 
 const ROOT = resolve(__dirname, "..");
@@ -90,6 +91,17 @@ describe("Android release builds run R8 (#1707)", () => {
     const sentry = pluginProps(plugins, "@sentry/react-native/expo") as
       { experimental_android?: { enableAndroidGradlePlugin?: boolean } } | undefined;
     expect(sentry?.experimental_android?.enableAndroidGradlePlugin).toBe(true);
+  });
+
+  it("raises the Gradle daemon metaspace R8 exhausted on the first proof build", () => {
+    // Expo's template ships `-XX:MaxMetaspaceSize=512m`; the first local
+    // release build with R8 on died in `minifyReleaseWithR8` with
+    // `OutOfMemoryError: Metaspace`. The ceiling is set through a
+    // withGradleProperties mod, which the stub above cannot run, so this is
+    // the one text assertion here.
+    const appConfigSource = readFileSync(resolve(ROOT, "app.config.ts"), "utf8");
+    expect(appConfigSource).toMatch(/MaxMetaspaceSize=(1024m|[2-9]\d{3}m|\dg)/);
+    expect(appConfigSource).toContain('key: "org.gradle.jvmargs"');
   });
 
   it("keeps the release workflow's Sentry token and its no-token fail-safe", () => {
