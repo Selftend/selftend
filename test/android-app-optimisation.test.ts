@@ -28,43 +28,75 @@ import { resolve } from "node:path";
 //     plugin gates the mapping upload on the same SENTRY_DISABLE_AUTO_UPLOAD
 //     switch as the source maps, so both still have to be there.
 //
-// Text scan, no config evaluation - matching the repo's dependency-free
-// convention tests (see ios-release-config.test.ts, android-release-track.test.ts).
+// The config is evaluated, not text-scanned, so a flag that moves or is
+// spelled through a variable still counts. The workflow is a text scan,
+// matching the repo's dependency-free convention tests.
+
+// expo/config-plugins is Node-only and fails to load under jest-expo. The
+// default (production) config path only imports it - the cleartext-traffic
+// plugin runs solely for dev-variant builds - so a pass-through stub is safe.
+// Same stub as app.config.test.ts.
+jest.mock("expo/config-plugins", () => ({
+  withAndroidManifest: (config: unknown) => config,
+}));
 
 const ROOT = resolve(__dirname, "..");
 
-const appConfigSource = readFileSync(resolve(ROOT, "app.config.ts"), "utf8");
-const releaseWorkflow = readFileSync(
-  resolve(ROOT, ".github/workflows/android-release.yml"),
-  "utf8",
-);
-const packageJson = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")) as {
-  dependencies?: Record<string, string>;
-};
+type PluginEntry = string | [string, Record<string, unknown>?];
+
+function loadPlugins(): PluginEntry[] {
+  const config = (require("../app.config") as { default: { plugins?: PluginEntry[] } }).default;
+  return config.plugins ?? [];
+}
+
+function pluginProps(plugins: PluginEntry[], name: string): Record<string, unknown> | undefined {
+  const entry = plugins.find((p) => (Array.isArray(p) ? p[0] : p) === name);
+  return Array.isArray(entry) ? entry[1] : undefined;
+}
 
 describe("Android release builds run R8 (#1707)", () => {
+  const plugins = loadPlugins();
+  const buildProperties = pluginProps(plugins, "expo-build-properties");
+  const android = buildProperties?.android as
+    | {
+        enableMinifyInReleaseBuilds?: boolean;
+        enableShrinkResourcesInReleaseBuilds?: boolean;
+        extraProguardRules?: string;
+      }
+    | undefined;
+
   it("depends on expo-build-properties, the only supported way to flip minify in a managed project", () => {
+    const packageJson = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")) as {
+      dependencies?: Record<string, string>;
+    };
     expect(packageJson.dependencies?.["expo-build-properties"]).toBeDefined();
-    expect(appConfigSource).toContain('"expo-build-properties"');
+    expect(buildProperties).toBeDefined();
   });
 
   it("turns on code minification and resource shrinking for release builds", () => {
-    expect(appConfigSource).toMatch(/enableMinifyInReleaseBuilds:\s*true/);
-    expect(appConfigSource).toMatch(/enableShrinkResourcesInReleaseBuilds:\s*true/);
+    expect(android?.enableMinifyInReleaseBuilds).toBe(true);
+    expect(android?.enableShrinkResourcesInReleaseBuilds).toBe(true);
   });
 
   it("keeps the widget receiver names the native side matches on", () => {
-    expect(appConfigSource).toContain(
+    const rules = android?.extraProguardRules ?? "";
+    expect(rules).toContain(
       "-keepnames class * extends com.reactnativeandroidwidget.RNWidgetProvider",
     );
-    expect(appConfigSource).toContain("-keep class com.reactnativeandroidwidget.** { *; }");
+    expect(rules).toContain("-keep class com.reactnativeandroidwidget.** { *; }");
   });
 
   it("wires the Sentry Android Gradle Plugin so mapping.txt reaches Sentry", () => {
-    expect(appConfigSource).toMatch(/enableAndroidGradlePlugin:\s*true/);
+    const sentry = pluginProps(plugins, "@sentry/react-native/expo") as
+      { experimental_android?: { enableAndroidGradlePlugin?: boolean } } | undefined;
+    expect(sentry?.experimental_android?.enableAndroidGradlePlugin).toBe(true);
   });
 
   it("keeps the release workflow's Sentry token and its no-token fail-safe", () => {
+    const releaseWorkflow = readFileSync(
+      resolve(ROOT, ".github/workflows/android-release.yml"),
+      "utf8",
+    );
     expect(releaseWorkflow).toContain("SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}");
     expect(releaseWorkflow).toMatch(/SENTRY_DISABLE_AUTO_UPLOAD:.*secrets\.SENTRY_AUTH_TOKEN/);
   });
