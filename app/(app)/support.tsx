@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
+import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -18,10 +19,17 @@ import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
 import { requireSupabase } from "@/src/lib/supabase";
 import { useSession } from "@/src/providers/session-provider";
+import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
+import { Section } from "@/src/components/app/section";
+import { ShowAllLink } from "@/src/components/app/show-all-link";
+import { DeleteAccountRow } from "@/src/features/settings/components/delete-account-row";
+import { SettingsRow } from "@/src/features/settings/components/settings-row";
+import { SettingsRun } from "@/src/features/settings/components/settings-run";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { HOME_COLUMN } from "@/src/lib/layout";
+import { cn } from "@/lib/utils";
 
 /**
  * ☠️ `helped` is the one that is not a support request (#1614, decided in #1605).
@@ -52,9 +60,63 @@ const FEEDBACK_CATEGORIES: readonly FeedbackCategory[] = [
 // simple on purpose - it gates a Reply-To header, not deliverability.
 const REPLY_TO_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** A locale array, or nothing - never a string spread into characters. */
+function asList(value: unknown): string[] {
+  return Array.isArray(value) ? (value as string[]) : [];
+}
+
+/**
+ * One of the two "what support can and can't do" lists (#1726, spec §1.5).
+ *
+ * The sub-heading is 13px semibold foreground, deliberately NOT a heading role:
+ * the page's outline is one h1, the form's h2 and four h3 sections, and two h4s
+ * under one of them would make this section read as deeper than its neighbours.
+ * The marks are decorative - the list's title already says which list this is.
+ */
+function SupportList({
+  title,
+  items,
+  mark,
+  markClassName,
+}: {
+  title: string;
+  items: string[];
+  mark: MaterialIconName;
+  markClassName: string;
+}) {
+  return (
+    <View className="flex-1 gap-2">
+      <Text className="text-[13px] font-semibold text-foreground">{title}</Text>
+      <View role="list" className="gap-1.5">
+        {items.map((item) => (
+          // `accessible`: one item is one element to a screen reader, mark and
+          // text together, rather than a hidden glyph and then a loose string.
+          <View key={item} accessible role="listitem" className="flex-row items-start gap-2">
+            {/* `Icon` is decorative by default - hidden from assistive tech already. */}
+            <Icon name={mark} className={cn("mt-0.5 size-4 shrink-0", markClassName)} />
+            <Text className="flex-1 text-[13px] leading-snug text-foreground">{item}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/**
+ * `/support`, one column in the home width (#1726, design 13a, spec on #1719):
+ * header → safety callout → the message form → Other ways to reach us → What
+ * support can and can't do → The project → Policies → Delete my account.
+ *
+ * Seven cards became this column, and nothing shipping before is silently gone
+ * (spec §2 lists every element's fate). The one crisis notice on the page is the
+ * shared callout: the boundary card and the in-form red card both folded into
+ * it, and the form's intro keeps the "leave out crisis details" sentence as its
+ * only reminder. The form itself is left as shipped here apart from that card -
+ * its chips, counter and toasts are #1727.
+ */
 export default function SupportScreen() {
   const pushWithOrigin = usePushWithOrigin();
-  const { t } = useTranslation("settings");
+  const { t } = useTranslation(["settings", "navigation"]);
   const { user } = useSession();
   const supportEmail = appEnv.supportEmail;
   const supportSubject = encodeURIComponent("Selftend support");
@@ -74,6 +136,9 @@ export default function SupportScreen() {
   const [feedbackError, setFeedbackError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  const canDo = asList(t("supportPage.canDo", { returnObjects: true }));
+  const cantDo = asList(t("supportPage.cantDo", { returnObjects: true }));
 
   const handleFeedbackSubmit = async () => {
     const trimmed = feedbackMessage.trim();
@@ -113,223 +178,251 @@ export default function SupportScreen() {
   };
 
   return (
-    <MobileFormScreen>
-      <View className="gap-6">
-        <View className="gap-2">
-          <ScreenHeader title={t("supportPage.title")} />
-          <Text variant="muted">{t("supportPage.description")}</Text>
-        </View>
+    <MobileFormScreen contentClassName={cn(HOME_COLUMN, "gap-6")}>
+      {/* No eyebrow, no back arrow: `/support` is a top-level route. */}
+      <View className="gap-2">
+        <ScreenHeader title={t("supportPage.title")} />
+        <Text variant="muted">{t("supportPage.description")}</Text>
+      </View>
 
+      {/* The page's ONE crisis notice. No second card, no crisis row below. */}
+      <CrisisSupportCallout />
+
+      {supportEmail ? (
         <Card>
           <CardHeader>
-            <CardTitle>{t("supportPage.boundary")}</CardTitle>
-            <CardDescription>{t("supportPage.boundaryDescription")}</CardDescription>
+            {/*
+              The form is the page's h2: the sections that follow are h3s, and
+              the form is the one block a reader jumps to by name.
+            */}
+            <CardTitle aria-level={2}>{t("feedback.title")}</CardTitle>
+            <CardDescription>{t("feedback.description")}</CardDescription>
           </CardHeader>
-        </Card>
-
-        {supportEmail ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("feedback.title")}</CardTitle>
-              <CardDescription>{t("feedback.description")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <View className="gap-4">
-                {/*
-                  No `bg-destructive/5` here: this is crisis guidance, and red
-                  text on a wash of its own red measured below AA (#603). Card
-                  already paints `bg-card`, where `text-destructive` is gated at
-                  or above 4.5 on every palette, so the warning keeps its red
-                  border and red text and becomes legible rather than louder.
-                */}
-                <Card className="border-destructive/50">
-                  <CardContent className="pt-4">
-                    <Text className="text-sm font-medium text-destructive">
-                      {t("feedback.crisisWarning")}
-                    </Text>
+          <CardContent>
+            <View className="gap-4">
+              <View className="gap-2">
+                <Label>{t("feedback.categoryLabel")}</Label>
+                {/* ⚠️ `flex-wrap` is load-bearing since #1614 took this row to
+                    four: "Bug · Suggestion · Question · This helped" does not
+                    fit one line at 360dp, and without wrapping the last button
+                    is clipped rather than moved. */}
+                <View className="flex-row flex-wrap gap-2">
+                  {FEEDBACK_CATEGORIES.map((cat) => (
                     <Button
-                      onPress={() => pushWithOrigin("/crisis")}
+                      key={cat}
+                      onPress={() => setFeedbackCategory(cat)}
                       size="sm"
-                      variant="ghost"
-                      className="mt-2 self-start px-0"
+                      variant={feedbackCategory === cat ? "default" : "outline"}
                     >
-                      <Text className="text-sm text-destructive underline">
-                        {t("feedback.openCrisis")}
-                      </Text>
+                      <Text>{t(`feedback.category.${cat}`)}</Text>
                     </Button>
-                  </CardContent>
-                </Card>
-
-                <View className="gap-2">
-                  <Label>{t("feedback.categoryLabel")}</Label>
-                  {/* ⚠️ `flex-wrap` is load-bearing since #1614 took this row to
-                      four: "Bug · Suggestion · Question · This helped" does not
-                      fit one line at 360dp, and without wrapping the last button
-                      is clipped rather than moved. */}
-                  <View className="flex-row flex-wrap gap-2">
-                    {FEEDBACK_CATEGORIES.map((cat) => (
-                      <Button
-                        key={cat}
-                        onPress={() => setFeedbackCategory(cat)}
-                        size="sm"
-                        variant={feedbackCategory === cat ? "default" : "outline"}
-                      >
-                        <Text>{t(`feedback.category.${cat}`)}</Text>
-                      </Button>
-                    ))}
-                  </View>
+                  ))}
                 </View>
+              </View>
 
+              <View className="gap-2">
+                <Label>{t("feedback.messageLabel")}</Label>
+                <Textarea
+                  accessibilityLabel={t("feedback.messageLabel")}
+                  numberOfLines={5}
+                  onChangeText={(text) => {
+                    setFeedbackMessage(text);
+                    if (feedbackError) setFeedbackError("");
+                  }}
+                  placeholder={t("feedback.messagePlaceholder")}
+                  value={feedbackMessage}
+                />
+                {feedbackError ? (
+                  <Text className="text-sm text-destructive">{feedbackError}</Text>
+                ) : null}
+              </View>
+
+              {isGuest ? (
                 <View className="gap-2">
-                  <Label>{t("feedback.messageLabel")}</Label>
-                  <Textarea
-                    accessibilityLabel={t("feedback.messageLabel")}
-                    numberOfLines={5}
+                  <Label>{t("feedback.replyToLabel")}</Label>
+                  <Input
+                    accessibilityLabel={t("feedback.replyToLabel")}
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    autoCorrect={false}
+                    keyboardType="email-address"
                     onChangeText={(text) => {
-                      setFeedbackMessage(text);
+                      setReplyToEmail(text);
                       if (feedbackError) setFeedbackError("");
                     }}
-                    placeholder={t("feedback.messagePlaceholder")}
-                    value={feedbackMessage}
+                    placeholder={t("feedback.replyToPlaceholder")}
+                    value={replyToEmail}
                   />
-                  {feedbackError ? (
-                    <Text className="text-sm text-destructive">{feedbackError}</Text>
-                  ) : null}
+                  <Text variant="muted" className="text-xs">
+                    {t("feedback.replyToHint")}
+                  </Text>
                 </View>
-
-                {isGuest ? (
-                  <View className="gap-2">
-                    <Label>{t("feedback.replyToLabel")}</Label>
-                    <Input
-                      accessibilityLabel={t("feedback.replyToLabel")}
-                      autoCapitalize="none"
-                      autoComplete="email"
-                      autoCorrect={false}
-                      keyboardType="email-address"
-                      onChangeText={(text) => {
-                        setReplyToEmail(text);
-                        if (feedbackError) setFeedbackError("");
-                      }}
-                      placeholder={t("feedback.replyToPlaceholder")}
-                      value={replyToEmail}
-                    />
-                    <Text variant="muted" className="text-xs">
-                      {t("feedback.replyToHint")}
-                    </Text>
-                  </View>
-                ) : null}
-
-                {submitSuccess ? (
-                  <Text className="text-sm">{t("feedback.submitSuccess")}</Text>
-                ) : (
-                  <Button disabled={isSubmitting} onPress={() => void handleFeedbackSubmit()}>
-                    <Text>{isSubmitting ? t("feedback.submitting") : t("feedback.submit")}</Text>
-                  </Button>
-                )}
-              </View>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("feedback.otherChannels")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <View className="gap-3">
-              <Button
-                variant="secondary"
-                onPress={() => openExternalUrl(`${appEnv.githubRepoUrl}/issues`)}
-              >
-                <Text>{t("feedback.reportOnGitHub")}</Text>
-              </Button>
-              {appEnv.discordUrl ? (
-                <Button variant="secondary" onPress={() => openExternalUrl(appEnv.discordUrl)}>
-                  <Text>{t("feedback.joinDiscord")}</Text>
-                </Button>
               ) : null}
-            </View>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("supportPage.handles")}</CardTitle>
-            <CardDescription>{t("supportPage.handlesCovers")}</CardDescription>
-            <CardDescription>{t("supportPage.handlesNot")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onPress={() => pushWithOrigin("/faq")} variant="secondary">
-              <Text>{t("supportPage.openFaq")}</Text>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("supportPage.contact")}</CardTitle>
-            <CardDescription>{t("supportPage.contactDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <View className="gap-3">
-              {supportEmail ? (
-                <Button
-                  onPress={() =>
-                    openExternalUrl(`mailto:${supportEmail}?subject=${supportSubject}`)
-                  }
-                >
-                  <Text>{t("supportPage.emailSupport")}</Text>
-                </Button>
+              {submitSuccess ? (
+                <Text className="text-sm">{t("feedback.submitSuccess")}</Text>
               ) : (
-                <Text variant="muted">{t("supportPage.emailNotConfigured")}</Text>
+                <Button disabled={isSubmitting} onPress={() => void handleFeedbackSubmit()}>
+                  <Text>{isSubmitting ? t("feedback.submitting") : t("feedback.submit")}</Text>
+                </Button>
               )}
-              <Button onPress={() => pushWithOrigin("/account-deletion")} variant="ghost">
-                <Text>{t("supportPage.deleteAccount")}</Text>
-              </Button>
             </View>
           </CardContent>
         </Card>
+      ) : null}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("supportPage.projectLinks")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <View className="gap-3">
-              <Button onPress={() => openExternalUrl(appEnv.githubRepoUrl)}>
-                <Text>{t("supportPage.openRepo")}</Text>
-              </Button>
-              <Button
-                onPress={() =>
-                  openExternalUrl(`${appEnv.githubRepoUrl}/blob/main/.github/CONTRIBUTING.md`)
+      {/*
+        The Sections sit in a no-gap group: each carries its own py-6, so the
+        column's gap-6 would compound into a 72px band between them (the
+        grounding and gratitude homes wrap theirs for the same reason).
+      */}
+      <View>
+        <Section title={t("feedback.otherChannels")}>
+          {/*
+          A hairline run: the section already carries the chrome, and a card
+          here would be a box inside a box. The Discord row is gated at the
+          mount point (`Children.toArray` drops a null CHILD, not a child that
+          renders null), so a blank URL leaves no rule behind.
+        */}
+          <SettingsRun surface="hairline">
+            <SettingsRow
+              icon="mail-outline"
+              label={t("supportPage.emailSupport")}
+              description={
+                supportEmail
+                  ? t("supportPage.emailSupportDescription", { email: supportEmail })
+                  : t("supportPage.emailNotConfigured")
+              }
+              trailing={{ kind: "external" }}
+              disabled={!supportEmail}
+              onPress={() => openExternalUrl(`mailto:${supportEmail}?subject=${supportSubject}`)}
+              testID="support-row-email"
+            />
+            <SettingsRow
+              icon="bug-report"
+              label={t("feedback.reportOnGitHub")}
+              description={t("feedback.reportOnGitHubDescription")}
+              trailing={{ kind: "external" }}
+              onPress={() => openExternalUrl(`${appEnv.githubRepoUrl}/issues`)}
+              testID="support-row-github"
+            />
+            {appEnv.discordUrl ? (
+              <SettingsRow
+                icon="forum"
+                label={t("feedback.joinDiscord")}
+                description={t("feedback.joinDiscordDescription")}
+                trailing={{ kind: "external" }}
+                onPress={() => openExternalUrl(appEnv.discordUrl)}
+                testID="support-row-discord"
+              />
+            ) : null}
+          </SettingsRun>
+        </Section>
+
+        <Section title={t("supportPage.handles")}>
+          {/* Two columns from `sm:` up, stacked below it. */}
+          <View className="gap-4 sm:flex-row sm:gap-6">
+            <SupportList
+              title={t("supportPage.canDoTitle")}
+              items={canDo}
+              mark="check"
+              markClassName="text-primary"
+            />
+            <SupportList
+              title={t("supportPage.cantDoTitle")}
+              items={cantDo}
+              mark="remove"
+              markClassName="text-muted-foreground"
+            />
+          </View>
+          <ShowAllLink label={t("supportPage.openFaq")} route="/faq" />
+        </Section>
+
+        <Section title={t("supportPage.projectLinks")}>
+          <SettingsRun surface="hairline">
+            <SettingsRow
+              icon="code"
+              label={t("supportPage.openRepo")}
+              description={t("supportPage.repoMeta")}
+              trailing={{ kind: "external" }}
+              onPress={() => openExternalUrl(appEnv.githubRepoUrl)}
+              testID="support-row-repo"
+            />
+            <SettingsRow
+              icon="volunteer-activism"
+              label={t("supportPage.openContributing")}
+              trailing={{ kind: "external" }}
+              onPress={() =>
+                openExternalUrl(`${appEnv.githubRepoUrl}/blob/main/.github/CONTRIBUTING.md`)
+              }
+              testID="support-row-contributing"
+            />
+            {/*
+            Store referral is a web-only surface: advertising the Android app
+            inside the Android app is noise. Gated here, at the mount point, for
+            the same `Children.toArray` reason as the Discord row.
+          */}
+            {Platform.OS === "web" ? (
+              <SettingsRow
+                icon="android"
+                label={t("supportPage.getAndroid")}
+                description={
+                  appEnv.playStoreUrl
+                    ? t("supportPage.playStore")
+                    : t("navigation:getTheApp.comingSoon")
                 }
-                variant="secondary"
-              >
-                <Text>{t("supportPage.openContributing")}</Text>
-              </Button>
-              <GetTheAppSection />
-            </View>
-          </CardContent>
-        </Card>
+                trailing={{ kind: "external" }}
+                disabled={!appEnv.playStoreUrl}
+                onPress={() => openExternalUrl(appEnv.playStoreUrl)}
+                testID="support-row-android"
+              />
+            ) : null}
+            {Platform.OS === "web" ? (
+              <SettingsRow
+                icon="phone-iphone"
+                label={t("supportPage.getIos")}
+                description={
+                  appEnv.appStoreUrl
+                    ? t("supportPage.appStore")
+                    : t("navigation:getTheApp.comingSoon")
+                }
+                trailing={{ kind: "external" }}
+                disabled={!appEnv.appStoreUrl}
+                onPress={() => openExternalUrl(appEnv.appStoreUrl)}
+                testID="support-row-ios"
+              />
+            ) : null}
+          </SettingsRun>
+        </Section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("supportPage.policiesAndSafety")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <View className="gap-3">
-              <Button onPress={() => pushWithOrigin("/crisis")} variant="secondary">
-                <Text>{t("supportPage.openCrisis")}</Text>
-              </Button>
-              <Button onPress={() => pushWithOrigin("/privacy")} variant="ghost">
-                <Text>{t("supportPage.openPrivacy")}</Text>
-              </Button>
-              <Button onPress={() => pushWithOrigin("/terms")} variant="ghost">
-                <Text>{t("supportPage.openTerms")}</Text>
-              </Button>
-            </View>
-          </CardContent>
-        </Card>
+        {/* No crisis row: the callout above is the page's crisis door. */}
+        <Section title={t("supportPage.policiesAndSafety")}>
+          <SettingsRun surface="hairline">
+            <SettingsRow
+              icon="shield"
+              label={t("supportPage.openPrivacy")}
+              trailing={{ kind: "chevron" }}
+              onPress={() => pushWithOrigin("/privacy")}
+              testID="support-row-privacy"
+            />
+            <SettingsRow
+              icon="gavel"
+              label={t("supportPage.openTerms")}
+              trailing={{ kind: "chevron" }}
+              onPress={() => pushWithOrigin("/terms")}
+              testID="support-row-terms"
+            />
+          </SettingsRun>
+        </Section>
+
+        {/*
+        Title-less and ruled: the row is its own name. Guests see it too, for
+        Settings' reason. The `/account-deletion` route stays public and linked
+        from `/legal` and the store forms; it just no longer needs a door here.
+      */}
+        <Section>
+          <DeleteAccountRow />
+        </Section>
       </View>
     </MobileFormScreen>
   );

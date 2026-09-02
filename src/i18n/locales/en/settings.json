@@ -158,25 +158,38 @@
   },
   "supportPage": {
     "title": "Support",
-    "description": "Project links, public contact paths, policy pages, and clear safety boundaries.",
-    "boundary": "Important boundary",
-    "boundaryDescription": "This app is a CBT programme you work through on your own. If you need urgent help or crisis support, use local emergency and crisis resources instead of relying on the app.",
-    "contact": "Contact",
-    "contactDescription": "For support, include only the minimum details needed. Do not email urgent crisis details or private self-help entries.",
+    "description": "Reach a person, read the policies, or open the project.",
     "emailSupport": "Email support",
+    "emailSupportDescription": "{{email}} · Include the minimum needed.",
     "emailNotConfigured": "Set EXPO_PUBLIC_SUPPORT_EMAIL before public launch. Until then, use GitHub issues for project feedback that does not include private health details.",
-    "deleteAccount": "Delete account",
-    "projectLinks": "Project links",
+    "handles": "What support can and can't do",
+    "canDoTitle": "Can help with",
+    "canDo": [
+      "Sign-in problems and sync failures",
+      "Missing records or app crashes",
+      "Account deletion when the in-app flow fails",
+      "Accessibility issues",
+      "Translation feedback"
+    ],
+    "cantDoTitle": "Can't help with",
+    "cantDo": [
+      "Crisis response",
+      "Therapy or diagnosis",
+      "Clinical advice",
+      "Interpreting your own records"
+    ],
+    "openFaq": "Read the full FAQ",
+    "projectLinks": "The project",
     "openRepo": "Open repository",
+    "repoMeta": "GitHub · AGPL-3.0",
     "openContributing": "Open contribution guide",
-    "policiesAndSafety": "Policies and safety",
-    "openCrisis": "Open crisis guidance",
-    "openPrivacy": "Open privacy policy",
-    "openTerms": "Open terms and boundaries",
-    "handles": "What support handles",
-    "handlesCovers": "Sign-in problems, sync failures, missing records, app crashes, bug reports, account deletion fallback, accessibility issues, and translation feedback.",
-    "handlesNot": "Support cannot provide crisis response, therapy, diagnosis, clinical advice, or help interpreting your records.",
-    "openFaq": "Read full FAQ"
+    "getAndroid": "Get it on Android",
+    "playStore": "Google Play",
+    "getIos": "Get it on iOS",
+    "appStore": "App Store",
+    "policiesAndSafety": "Policies",
+    "openPrivacy": "Privacy policy",
+    "openTerms": "Terms and boundaries"
   },
   "legal": {
     "title": "Legal and boundaries",
@@ -200,9 +213,7 @@
   },
   "feedback": {
     "title": "Send feedback",
-    "description": "Share a bug report, suggestion, question, or anything else. Your message is sent to our support team.",
-    "crisisWarning": "Do not use this form for urgent crisis situations. If you need immediate help, use local emergency services or crisis resources.",
-    "openCrisis": "Open crisis guidance",
+    "description": "A bug, an idea, a question, or what's working. Leave out private entries and crisis details.",
     "categoryLabel": "Category",
     "category": {
       "bug": "Bug",
@@ -222,9 +233,11 @@
     "submitError": "Failed to send feedback. Please try again.",
     "messageTooShort": "Please write at least 10 characters.",
     "messageTooLong": "Message must be 1000 characters or fewer.",
-    "otherChannels": "Prefer other channels?",
+    "otherChannels": "Other ways to reach us",
     "reportOnGitHub": "Report on GitHub",
-    "joinDiscord": "Join our Discord"
+    "reportOnGitHubDescription": "Public issue tracker for bugs and feature requests.",
+    "joinDiscord": "Join our Discord",
+    "joinDiscordDescription": "Other people using the app, plus the maintainers."
   },
   "appearance": {
     "description": "Choose a palette. This device only."
