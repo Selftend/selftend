@@ -12,6 +12,12 @@
  * are different widths because they hold different things: a home holds charts
  * and lists that want the room, a form holds a single column of fields that
  * gets harder to read the wider it runs.
+ *
+ * Where the constant sits decides what the reader gets. A module home puts
+ * `HOME_COLUMN` on the View inside its padded scroll box, so its content reads
+ * the full 720. The `ScreenHeader` pages that share Settings' 672 column
+ * (`/support`, `/legal`, `/progress`) put it on the padded box itself - 720
+ * outer minus the `p-6` gutters (#1721).
  */
 
 /** 720px - module homes, matching the design's `2a` column. */
