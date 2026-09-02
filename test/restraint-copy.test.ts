@@ -140,8 +140,9 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
    * punishment is what puts it in the room"), and "missed day" imports
    * miss-vocabulary into a tool whose own glossary refuses it (routine status
    * is deliberately neutral; miss-talk belongs to habits' Never-Miss-Twice
-   * framework, which stays legal - "one missed day is data, not damage" is the
-   * framework teaching, not the product promising its record can't break).
+   * framework, which stays legal - "Missing once is data. Missing twice starts
+   * a new habit." is the framework teaching, not the product promising its
+   * record can't break).
    *
    * ☠️ The pattern is the ACTIVE reassurance, never the passive disclosure.
    * "This can't be undone." on a delete confirmation states a destructive
@@ -151,11 +152,18 @@ const RESTRAINT_CLAIMS: { locale: Locale; pattern: RegExp }[] = [
    *
    * ☠️ No trailing `\b` on the bg twin - JS `\b` is ASCII-only (see the
    * `оценки` note above), so a Cyrillic pattern ending in `\b` matches
-   * NOTHING. Like the `без` patterns, the bg shape allows one intervening
-   * word ("не го разваля").
+   * NOTHING. Both shapes allow one intervening word ("doesn't ever undo",
+   * "не го разваля") - a slot only one locale has is the documented
+   * `without`/`без` blind spot, pointing whichever way was forgotten.
+   *
+   * ☠️ `изтрива` is DELIBERATELY not in the bg alternation. It is Bulgarian's
+   * ordinary *delete*, and bg disclosure speaks in the active voice where
+   * English gets to lean on the passive carve-out above - "не изтрива данните
+   * ти" (doesn't delete your data) would be disclosure about a destructive
+   * action, not restraint advertising. `заличава` keeps the erase sense.
    */
-  { locale: "en", pattern: /(doesn'?t|won'?t|does not) (undo|erase|break|reset)/i },
-  { locale: "bg", pattern: /не\s+(?:\S+\s+)?(разваля|отменя|изтрива|нулира|заличава|чупи)/i },
+  { locale: "en", pattern: /(doesn'?t|won'?t|does not)\s+(?:\S+\s+)?(undo|erase|break|reset)/i },
+  { locale: "bg", pattern: /не\s+(?:\S+\s+)?(разваля|отменя|нулира|заличава|чупи)/i },
 ];
 
 /**
