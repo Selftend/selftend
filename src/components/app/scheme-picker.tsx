@@ -101,16 +101,23 @@ export function SchemePicker({ showLabel = true }: SchemePickerProps = {}) {
               key={value}
               // `flex-1` is what makes the three options equal-width; `py-2`
               // is the tap target, since react-native-web ignores `hitSlop`
-              // and real padding is the only lever there (#1231). The Bulgarian
-              // labels are the tight case - `Системна` against roughly 58px of
-              // text room in the 288px menu - hence `px-1` and `gap-1`.
+              // and real padding is the only lever there (#1231).
+              //
+              // ⚠️ `px-0.5` and the `size-3.5` icon are MEASURED, not chosen.
+              // The tight case is Bulgarian in the 288px popover: the segment is
+              // 86.1px, and `Системна` needs 59px at 12px/600. `px-1` + `size-4`
+              // left it exactly 58px and the label rendered as `Систем…` - a
+              // one-pixel clip that arithmetic called a fit and the browser did
+              // not. These leave 64.1px against that 59. The menu is the narrow
+              // mount; Settings gives each segment 118px on a phone and 224px on
+              // the 672px column. Re-measure in `bg` before tightening either.
               //
               // `active:bg-accent` is the PRESS state, which the raised fill
               // does not cover: the vertical rows this replaced had one, and a
               // control that only shows what is already chosen says nothing
               // back when you tap the option you have not chosen yet.
               className={cn(
-                "flex-1 flex-row items-center justify-center gap-1 rounded-full px-1 py-2 active:bg-accent",
+                "flex-1 flex-row items-center justify-center gap-1 rounded-full px-0.5 py-2 active:bg-accent",
                 selected ? SEGMENTED_RAISED_CLASS : "",
               )}
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
@@ -122,7 +129,7 @@ export function SchemePicker({ showLabel = true }: SchemePickerProps = {}) {
               <Icon
                 name={THEME_ICONS[value]}
                 className={cn(
-                  "size-4 shrink-0",
+                  "size-3.5 shrink-0",
                   selected ? "text-foreground" : "text-muted-foreground",
                 )}
               />
