@@ -13,6 +13,10 @@
     "volumeLabel": "Сила на звъна",
     "muted": "Изкл."
   },
+  "ambient": {
+    "label": "Фонов звук",
+    "volumeLabel": "Сила на фоновия звук"
+  },
   "timer": {
     "start": "Започни",
     "pause": "Пауза",

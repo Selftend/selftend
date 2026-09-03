@@ -1,6 +1,8 @@
 import { act, fireEvent, screen } from "@testing-library/react-native";
 
+import { ambientSoundLookup } from "@/src/constants/breathing-sounds";
 import { MeditationSitScreen } from "@/src/features/meditation/meditation-sit-screen";
+import { defaultUserPreferences } from "@/src/features/modules/types";
 import type { MeditationSessionInput } from "@/src/features/meditation/types";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -77,9 +79,21 @@ jest.mock("@/src/lib/native-audio", () => ({
   playOneShot: (asset: number, volume: number) => mockPlayOneShot(asset, volume),
 }));
 
+// The ambient bed's lane (#1742), replaced at the player seam: what the screen
+// asks of it - play looped at a volume, re-volume, stop - is the contract under
+// test here; the ramps behind those calls are lane-player.test.ts's business.
+const mockLane = { play: jest.fn(), setVolume: jest.fn(), stop: jest.fn() };
+jest.mock("@/src/lib/lane-player", () => ({
+  createLanePlayer: () => mockLane,
+}));
+
 // Only the one hook is replaced - the rest of the module stays real, because
 // other things in this screen's import graph use it.
-const mockPreferences: { data: { bellVolume?: number } | undefined } = { data: undefined };
+const mockPreferences: {
+  data:
+    | { bellVolume?: number; meditationAmbientSoundId?: string; meditationAmbientVolume?: number }
+    | undefined;
+} = { data: undefined };
 jest.mock("@/src/features/settings/queries", () => ({
   ...jest.requireActual("@/src/features/settings/queries"),
   useUserPreferences: () => mockPreferences,
@@ -106,6 +120,9 @@ beforeEach(() => {
   beforeRemoveListeners.length = 0;
   router.replace.mockClear();
   mockPlayOneShot.mockClear();
+  mockLane.play.mockClear();
+  mockLane.setVolume.mockClear();
+  mockLane.stop.mockClear();
   mockPreferences.data = undefined;
   mockUpdateMutateAsync.mockClear();
   mockSaveMutateAsync.mockReset().mockImplementation(async (input: MeditationSessionInput) => ({
@@ -489,5 +506,86 @@ describe("Meditation reflection (7b, after)", () => {
 
     // Backing out of the reflection is just skipping it - the sit is saved.
     expect(event.preventDefault).not.toHaveBeenCalled();
+  });
+});
+
+describe("the ambient bed (#1742)", () => {
+  const rain = ambientSoundLookup.rain.asset;
+  const withRain = () => {
+    mockPreferences.data = { meditationAmbientSoundId: "rain", meditationAmbientVolume: 0.3 };
+  };
+
+  it("sits in silence by default: the lane never plays, before or after the preference loads", async () => {
+    // The guardrail the whole ticket hangs on: a fresh account and every
+    // existing one sit exactly as before. `none` is the default, and the
+    // preference arriving after first paint must not change that.
+    const view = renderWithProviders(<MeditationSitScreen />);
+    await advance(1_000);
+    mockPreferences.data = { ...defaultUserPreferences };
+    view.rerender(<MeditationSitScreen />);
+    await advance(12 * 60_000 + 250);
+
+    expect(mockLane.play).not.toHaveBeenCalled();
+  });
+
+  it("plays the chosen bed, looped, at the chosen volume once the sit begins", () => {
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+
+    expect(mockLane.play).toHaveBeenCalledTimes(1);
+    expect(mockLane.play).toHaveBeenCalledWith(rain, 0.3, true);
+  });
+
+  it("stops the bed when the sit is finished early", async () => {
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+    mockLane.stop.mockClear();
+
+    fireEvent.press(screen.getByText("Finish early"));
+    await advance(0);
+
+    expect(mockLane.stop).toHaveBeenCalled();
+    expect(mockLane.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops the bed when the clock runs out", async () => {
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+    mockLane.stop.mockClear();
+
+    await advance(12 * 60_000 + 250);
+
+    expect(mockLane.stop).toHaveBeenCalled();
+    expect(mockLane.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("takes a volume change mid-sit live, without restarting playback", async () => {
+    withRain();
+    const view = renderWithProviders(<MeditationSitScreen />);
+    await advance(60_000);
+    mockLane.setVolume.mockClear();
+
+    mockPreferences.data = { meditationAmbientSoundId: "rain", meditationAmbientVolume: 0.8 };
+    view.rerender(<MeditationSitScreen />);
+
+    expect(mockLane.setVolume).toHaveBeenCalledWith(0.8);
+    expect(mockLane.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops the bed while paused and starts it again on resume", async () => {
+    // The breathing session's shape (#1743): pause fades the bed out, resume
+    // fades it back in - a paused sit is a quiet one.
+    withRain();
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(30_000);
+    mockLane.stop.mockClear();
+    mockLane.play.mockClear();
+
+    fireEvent.press(screen.getByText("Pause"));
+    expect(mockLane.stop).toHaveBeenCalled();
+    expect(mockLane.play).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByText("Resume"));
+    expect(mockLane.play).toHaveBeenCalledWith(rain, 0.3, true);
   });
 });

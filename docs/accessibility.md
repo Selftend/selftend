@@ -101,6 +101,9 @@ persisted on `user_preferences`:
 - `breath_volume` and `ambient_volume` — the breathing session's two lanes.
 - `bell_volume` — all three meditation bells; **0 is off**, and at 0 nothing is played and
   the global audio session is never configured at all.
+- `meditation_ambient_volume` — the meditation sit's looping bed, its own preference rather
+  than the breathing one so a bed chosen for breathing never plays under a sit uninvited.
+  `meditation_ambient_sound_id` defaults to `none`, which is the off switch.
 
 A new audio lane without a volume control is an accessibility regression, not a follow-up.
 

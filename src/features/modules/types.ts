@@ -126,6 +126,15 @@ export interface UserPreferences {
    * would stack with its re-render.
    */
   bellVolume: number;
+  /**
+   * The meditation sit's looping ambient bed and its volume (#1742), the same
+   * shape as the breathing pair above. Deliberately NOT the breathing columns:
+   * a rain bed chosen for breathing must not start playing under a sit the
+   * person never asked it for. `none` is the default and the first row, so a
+   * fresh account and every existing one sits in silence exactly as before.
+   */
+  meditationAmbientSoundId: string;
+  meditationAmbientVolume: number;
   // The app's own mailbox-ownership flag (#489). Under mailer_autoconfirm,
   // auth's email_confirmed_at is stamped at signup and proves nothing; this
   // is set after an OTP code entry or an emailed-link round trip. Advisory -
@@ -216,6 +225,8 @@ export const defaultUserPreferences: UserPreferences = {
   meditationIntervalBellMinutes: 0,
   meditationBellAtHalf: false,
   bellVolume: 1,
+  meditationAmbientSoundId: "none",
+  meditationAmbientVolume: 0.5,
   emailVerified: false,
 };
 

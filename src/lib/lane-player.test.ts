@@ -6,7 +6,7 @@
  * pass or fail for the wrong reason. Volume is SAMPLED off the fake player between
  * advances, so the assertions are on the shape of the ramp, not on step counts.
  */
-import { LOOP_FADE_MS, createLanePlayer } from "@/src/features/breathing/lane-player";
+import { LOOP_FADE_MS, createLanePlayer } from "@/src/lib/lane-player";
 import {
   fakePlayers as players,
   flushAudioSetup as flush,

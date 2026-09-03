@@ -477,6 +477,64 @@ describe("MeditationHomeScreen", () => {
       await waitFor(() => expect(updatePreferences).toHaveBeenCalledWith({ bellVolume: 0.6 }));
     });
 
+    it("offers a background sound for the sit, None first and chosen by default", () => {
+      // #1742: a bed beside the bell volume, never in place of silence. The
+      // default is `none`, it is the first row, and nothing on the card says a
+      // bed is expected - the volume control only appears once one is chosen.
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const beds = within(screen.getByTestId("sit-bed-choices"));
+      expect(within(beds.getAllByRole("radio")[0]).getByText("None")).toBeTruthy();
+      expect(beds.getByRole("radio", { name: "None", checked: true })).toBeTruthy();
+      expect(beds.getByText("Rain")).toBeTruthy();
+      expect(screen.queryByTestId("sit-bed-volume")).toBeNull();
+    });
+
+    it("writes the picked bed, and only then offers its volume", async () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      fireEvent.press(within(screen.getByTestId("sit-bed-choices")).getByText("Rain"));
+
+      await waitFor(() =>
+        expect(updatePreferences).toHaveBeenCalledWith({ meditationAmbientSoundId: "rain" }),
+      );
+      const volume = within(screen.getByTestId("sit-bed-volume"));
+      expect(volume.getByText("50%")).toBeTruthy();
+      expect(volume.getByLabelText("Background sound volume").props.accessibilityValue).toEqual({
+        min: 0,
+        max: 100,
+        now: 50,
+      });
+    });
+
+    it("starts from the stored bed and volume, and persists the volume on commit", async () => {
+      setStoredPreferences({ meditationAmbientSoundId: "ocean", meditationAmbientVolume: 0.3 });
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const beds = within(screen.getByTestId("sit-bed-choices"));
+      expect(beds.getByRole("radio", { name: "Ocean", checked: true })).toBeTruthy();
+      const volume = within(screen.getByTestId("sit-bed-volume"));
+      expect(volume.getByText("30%")).toBeTruthy();
+      expect(updatePreferences).not.toHaveBeenCalled();
+
+      fireEvent(volume.getByLabelText("Background sound volume"), "responderRelease");
+
+      await waitFor(() =>
+        expect(updatePreferences).toHaveBeenCalledWith({ meditationAmbientVolume: 0.3 }),
+      );
+    });
+
+    it("never borrows the breathing bed", () => {
+      // The one thing #1742 forbids: rain chosen for breathing must not play
+      // under a sit the person never asked it for. Its own columns, its own row.
+      setStoredPreferences({ ambientSoundId: "rain", ambientVolume: 0.9 });
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const beds = within(screen.getByTestId("sit-bed-choices"));
+      expect(beds.getByRole("radio", { name: "None", checked: true })).toBeTruthy();
+      expect(screen.queryByTestId("sit-bed-volume")).toBeNull();
+    });
+
     it("hands both choices to the sitting screen when the sit begins", () => {
       const { router } = jest.requireMock<{ router: { push: jest.Mock } }>("expo-router");
       renderWithProviders(<MeditationHomeScreen />);

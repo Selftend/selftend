@@ -93,6 +93,8 @@ interface UserPreferenceRow {
   meditation_interval_bell_minutes: number | null;
   meditation_bell_at_half: boolean | null;
   bell_volume: number | null;
+  meditation_ambient_sound_id: string | null;
+  meditation_ambient_volume: number | null;
   email_verified: boolean | null;
 }
 
@@ -206,6 +208,12 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
       row.meditation_interval_bell_minutes ?? defaultUserPreferences.meditationIntervalBellMinutes,
     bellVolume: row.bell_volume ?? defaultUserPreferences.bellVolume,
     meditationBellAtHalf: Boolean(row.meditation_bell_at_half),
+    // The sit's bed resolves like the breathing one: same catalog, same `none`.
+    meditationAmbientSoundId: resolveAmbientSoundId(
+      row.meditation_ambient_sound_id ?? defaultUserPreferences.meditationAmbientSoundId,
+    ),
+    meditationAmbientVolume:
+      row.meditation_ambient_volume ?? defaultUserPreferences.meditationAmbientVolume,
     emailVerified: row.email_verified ?? defaultUserPreferences.emailVerified,
   };
 }
@@ -324,6 +332,8 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   meditationIntervalBellMinutes: "meditation_interval_bell_minutes",
   meditationBellAtHalf: "meditation_bell_at_half",
   bellVolume: "bell_volume",
+  meditationAmbientSoundId: "meditation_ambient_sound_id",
+  meditationAmbientVolume: "meditation_ambient_volume",
   emailVerified: "email_verified",
 };
 
