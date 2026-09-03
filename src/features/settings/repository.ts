@@ -92,6 +92,7 @@ interface UserPreferenceRow {
   breathing_cycles: number | null;
   meditation_interval_bell_minutes: number | null;
   meditation_bell_at_half: boolean | null;
+  haptic_cues: boolean | null;
   bell_volume: number | null;
   meditation_ambient_sound_id: string | null;
   meditation_ambient_volume: number | null;
@@ -208,6 +209,7 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
       row.meditation_interval_bell_minutes ?? defaultUserPreferences.meditationIntervalBellMinutes,
     bellVolume: row.bell_volume ?? defaultUserPreferences.bellVolume,
     meditationBellAtHalf: Boolean(row.meditation_bell_at_half),
+    hapticCues: Boolean(row.haptic_cues),
     // The sit's bed resolves like the breathing one: same catalog, same `none`.
     meditationAmbientSoundId: resolveAmbientSoundId(
       row.meditation_ambient_sound_id ?? defaultUserPreferences.meditationAmbientSoundId,
@@ -331,6 +333,7 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   breathingCycles: "breathing_cycles",
   meditationIntervalBellMinutes: "meditation_interval_bell_minutes",
   meditationBellAtHalf: "meditation_bell_at_half",
+  hapticCues: "haptic_cues",
   bellVolume: "bell_volume",
   meditationAmbientSoundId: "meditation_ambient_sound_id",
   meditationAmbientVolume: "meditation_ambient_volume",

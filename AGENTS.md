@@ -39,6 +39,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - State: TanStack Query for server state, Zustand for local state
 - Forms and validation: React Hook Form + Zod
 - Notifications: Expo Notifications
+- Haptics: Expo Haptics (`expo-haptics`), native-only through `src/lib/native-haptics.ts` — never called on web
 - Secure local secrets: Expo SecureStore
 - Local storage: @react-native-async-storage/async-storage
 - Animation: react-native-reanimated

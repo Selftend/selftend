@@ -477,6 +477,33 @@ describe("MeditationHomeScreen", () => {
       await waitFor(() => expect(updatePreferences).toHaveBeenCalledWith({ bellVolume: 0.6 }));
     });
 
+    it("offers the bells' tap beside the volume, off unless it was stored on (#1741)", () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const row = within(screen.getByTestId("sit-haptic-cues"));
+      expect(row.getByLabelText("Vibration").props.accessibilityState.checked).toBe(false);
+      expect(row.getByText(/A tap for each bell/)).toBeTruthy();
+    });
+
+    it("starts the tap switch on when that is what was stored", () => {
+      setStoredPreferences({ hapticCues: true });
+
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const row = within(screen.getByTestId("sit-haptic-cues"));
+      expect(row.getByLabelText("Vibration").props.accessibilityState.checked).toBe(true);
+    });
+
+    it("persists the tap switch the moment it is flipped", async () => {
+      renderWithProviders(<MeditationHomeScreen />);
+
+      const toggle = within(screen.getByTestId("sit-haptic-cues")).getByLabelText("Vibration");
+      fireEvent(toggle, "checkedChange", true);
+
+      expect(toggle.props.accessibilityState.checked).toBe(true);
+      await waitFor(() => expect(updatePreferences).toHaveBeenCalledWith({ hapticCues: true }));
+    });
+
     it("offers a background sound for the sit, None first and chosen by default", () => {
       // #1742: a bed beside the bell volume, never in place of silence. The
       // default is `none`, it is the first row, and nothing on the card says a

@@ -429,3 +429,23 @@ describe("Breathing session (4c)", () => {
     expect(withTimingSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("Breathing session haptic switch (#1741)", () => {
+  it("offers the tap beside the volume rails, off by default, and flips at once", () => {
+    // One preference, also toggled from the sit setup, so the copy is the same
+    // in both places. Native only: this suite runs as iOS.
+    jest.useFakeTimers();
+    try {
+      startSession();
+      const row = within(screen.getByTestId("breathing-haptic-cues"));
+      const toggle = row.getByLabelText("Vibration");
+      expect(toggle.props.accessibilityState.checked).toBe(false);
+      expect(row.getByText(/A tap for each bell/)).toBeTruthy();
+
+      fireEvent(toggle, "checkedChange", true);
+      expect(toggle.props.accessibilityState.checked).toBe(true);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});

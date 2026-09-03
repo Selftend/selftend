@@ -1,5 +1,5 @@
 import { router, useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
-import { Pressable, View, ScrollView } from "react-native";
+import { Platform, Pressable, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import { cancelAnimation, useSharedValue, withTiming, Easing } from "react-nativ
 
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
@@ -65,6 +66,7 @@ const PACER_SIZE = 268;
 type PrefsPatch = {
   breathVolume?: number;
   ambientVolume?: number;
+  hapticCues?: boolean;
   lastBreathingPatternId?: string;
   breathingCycles?: number;
 };
@@ -116,6 +118,10 @@ export default function BreathingSessionScreen() {
   const [ambientVolumeOverride, setAmbientVolumeOverride] = useState<number | null>(null);
   const breathVolume = breathVolumeOverride ?? prefs?.breathVolume ?? 0.7;
   const ambientVolume = ambientVolumeOverride ?? prefs?.ambientVolume ?? 0.5;
+  // The phase's tap (#1741): the same one preference the sit setup toggles,
+  // frontend-authoritative like the volumes. Off by default.
+  const [hapticOverride, setHapticOverride] = useState<boolean | null>(null);
+  const hapticCues = hapticOverride ?? prefs?.hapticCues ?? false;
 
   // Global cycle count: the local override, else the server-remembered count,
   // else the resolved pattern's default once it loads.
@@ -177,6 +183,7 @@ export default function BreathingSessionScreen() {
     ambientSoundId,
     breathVolume,
     ambientVolume,
+    hapticCues,
   });
 
   // The guided intro is LOADED while setup shows (#1744): Start used to build its
@@ -546,6 +553,33 @@ export default function BreathingSessionScreen() {
             onCommit={(v) => patchPrefs({ ambientVolume: v })}
             value={ambientVolume}
           />
+          {/* The cues' non-sound counterpart (#1741): a tap at each phase
+              boundary, and per bell in a meditation sit - the same one
+              preference the sit setup toggles, so the copy is the same in both
+              places. Opt-in, off by default, never required (#777). Native
+              only, so not offered on web (docs/accessibility.md). */}
+          {Platform.OS !== "web" ? (
+            <View className="flex-row items-center gap-3.5" testID="breathing-haptic-cues">
+              <Icon name="vibration" size={18} className="text-muted-foreground" />
+              <View className="flex-1 gap-0.5">
+                <Text variant="muted" className="text-[13px]">
+                  {t("breathing.sounds.hapticLabel")}
+                </Text>
+                <Text variant="muted" className="text-xs">
+                  {t("breathing.sounds.hapticHint")}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel={t("breathing.sounds.hapticLabel")}
+                accessibilityHint={t("breathing.sounds.hapticHint")}
+                checked={hapticCues}
+                onCheckedChange={(value) => {
+                  setHapticOverride(value);
+                  patchPrefs({ hapticCues: value });
+                }}
+              />
+            </View>
+          ) : null}
         </View>
 
         {/* Controls exist only once the clock does. During the preroll there is
