@@ -294,8 +294,9 @@ test.describe("support page", () => {
       expect(box!.x + box!.width).toBeLessThanOrEqual(column!.x + column!.width + 1);
     }
 
-    // Store referral is a web-only surface, and both rows are drawn whether or
-    // not their URL is configured (the e2e build bakes only the Play one).
+    // Store referral is a web-only surface. Both rows draw because both store
+    // URLs now fall back to the live listings (#1777), so a build handed no
+    // store config still has one; an empty URL drops its row entirely.
     await expect(page.getByTestId("support-row-android")).toBeVisible();
     await expect(page.getByTestId("support-row-ios")).toBeVisible();
 
