@@ -100,7 +100,7 @@ export default function SettingsScreen() {
               <StylePicker itemClassName="w-1/2 md:w-1/4 p-1" heading={false} />
             </View>
 
-            <SettingsRun label={t("runs.app")} testID="settings-run-app">
+            <SettingsRun surface="hairline" label={t("runs.app")} testID="settings-run-app">
               <SettingsRow
                 icon="notifications-active"
                 label={t("reminders.title")}
@@ -138,7 +138,7 @@ export default function SettingsScreen() {
               />
             </SettingsRun>
 
-            <SettingsRun label={t("runs.data")} testID="settings-run-data">
+            <SettingsRun surface="hairline" label={t("runs.data")} testID="settings-run-data">
               <ExportDataRow />
               <SettingsRow
                 icon="shield"
@@ -164,7 +164,7 @@ export default function SettingsScreen() {
               ) : null}
             </SettingsRun>
 
-            <SettingsRun label={t("runs.help")} testID="settings-run-help">
+            <SettingsRun surface="hairline" label={t("runs.help")} testID="settings-run-help">
               <SettingsRow
                 icon="support-agent"
                 label={t("support.support")}
@@ -181,7 +181,7 @@ export default function SettingsScreen() {
               />
             </SettingsRun>
 
-            <SettingsRun label={t("runs.account")} testID="settings-run-account">
+            <SettingsRun surface="hairline" label={t("runs.account")} testID="settings-run-account">
               {/*
                 The drawn "You'll stay signed in on other devices." is back, and
                 now true. It was deleted while `signOut()` still took supabase-js's

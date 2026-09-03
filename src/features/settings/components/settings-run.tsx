@@ -61,13 +61,31 @@ export function SettingsRun({ label, children, surface = "card", testID }: Setti
           {label}
         </Text>
       ) : null}
-      <View className={cn(card && "rounded-xl border border-border bg-card px-4")} testID={testID}>
+      <View
+        className={cn(
+          card && "rounded-xl border border-border bg-card px-4",
+          // A hairline run's closing rule. The card's own bottom border ends the
+          // run; with no card the last row would stop mid-air, so the run draws
+          // the rule both drawings put there. Guarded on actually having rows, so
+          // a run whose every child is gated away leaves nothing behind.
+          !card && rows.length > 0 && "border-b border-border",
+        )}
+        testID={testID}
+      >
         {rows.map((row, index) => (
           <View
             key={index}
-            // Hairlines BETWEEN rows only. A leading or trailing rule would read
-            // as a fifth, empty row against the card's own border.
-            className={cn(index > 0 && "border-t border-border")}
+            /*
+              On a card, hairlines sit BETWEEN rows only: a leading rule would
+              read as a fifth, empty row against the card's own border. That
+              reasoning belongs to the card and expires with it (#1800) - a
+              hairline run has no border for a rule to fight, and `13a` and `14a`
+              both rule above every row including the first.
+
+              `Children.toArray` still drops a `null` child on either surface, so
+              a mount-point-gated row leaves no rule with nothing under it.
+            */
+            className={cn((!card || index > 0) && "border-t border-border")}
           >
             {row}
           </View>
