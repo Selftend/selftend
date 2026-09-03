@@ -1504,7 +1504,7 @@
       "breathVolume": "Breath volume",
       "ambientVolume": "Ambient volume",
       "hapticLabel": "Vibration",
-      "hapticHint": "A tap for each bell and each breath phase, alongside the sound or instead of it. Phones and tablets only.",
+      "hapticHint": "A tap for each bell and each breath phase, alongside the sound or instead of it.",
       "pickBreath": "Choose a breath sound",
       "pickAmbient": "Choose an ambient sound",
       "none": "None",

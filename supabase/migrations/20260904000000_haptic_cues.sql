@@ -958,7 +958,7 @@ $$;
 revoke execute on function public.export_user_data() from public, anon;
 grant execute on function public.export_user_data() to authenticated;
 
--- PostgREST caches the schema, and this migration adds columns. Without the
--- reload the pair stays invisible to the client until the cache happens to
+-- PostgREST caches the schema, and this migration adds a column. Without the
+-- reload it stays invisible to the client until the cache happens to
 -- refresh on its own.
 notify pgrst, 'reload schema';

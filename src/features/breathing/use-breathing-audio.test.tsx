@@ -203,7 +203,12 @@ describe("phase haptic (#1741)", () => {
   });
 
   it("taps nothing with the switch off, and waits for the next boundary when it flips on mid-phase", () => {
+    // A full cycle with the switch off - the default, and every existing account.
     const { rerender } = mount({ ...on, hapticCues: false, phaseLabel: "inhale" });
+    rerender({ ...on, hapticCues: false, phaseLabel: "hold" });
+    rerender({ ...on, hapticCues: false, phaseLabel: "exhale" });
+    rerender({ ...on, hapticCues: false, phaseLabel: "holdOut" });
+    rerender({ ...on, hapticCues: false, phaseLabel: "inhale" });
     rerender({ ...on, hapticCues: false, phaseLabel: "exhale" });
     expect(mockPhaseHaptic).not.toHaveBeenCalled();
 

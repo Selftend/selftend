@@ -10,21 +10,23 @@ import { Platform } from "react-native";
 // the Vibration API on the browsers that have it (Chrome on Android; not Safari,
 // not desktop), which would be a fake on most of the web and a surprise on the
 // rest. The lazy require behind the platform branch - the same shape as
-// `loadExpoAudio` - is what keeps it out of the web bundle altogether.
+// `loadExpoAudio` - means the module is never loaded, let alone called, on web.
 type ExpoHapticsModule = typeof import("expo-haptics");
 
 function loadExpoHaptics(): ExpoHapticsModule | null {
   if (Platform.OS === "web") return null;
-  // eslint-disable-next-line @typescript-eslint/no-require-imports -- native-only path; lazy require keeps expo-haptics out of the web bundle
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- native-only path; the lazy require is never evaluated on web
   return require("expo-haptics") as ExpoHapticsModule;
 }
 
-/** Best-effort: a haptic must never crash a session. */
-function tap(pick: (haptics: ExpoHapticsModule) => Promise<void>): void {
+/** One impact at the given weight. Best-effort: a haptic must never crash a session. */
+function tap(style: "heavy" | "light"): void {
   try {
     const haptics = loadExpoHaptics();
     if (!haptics) return;
-    void pick(haptics).catch(() => {});
+    const weight =
+      style === "heavy" ? haptics.ImpactFeedbackStyle.Heavy : haptics.ImpactFeedbackStyle.Light;
+    void haptics.impactAsync(weight).catch(() => {});
   } catch {
     // best-effort
   }
@@ -36,10 +38,10 @@ function tap(pick: (haptics: ExpoHapticsModule) => Promise<void>): void {
  * a sit. The two cues differ only in weight.
  */
 export function bellHaptic(): void {
-  tap((haptics) => haptics.impactAsync(haptics.ImpactFeedbackStyle.Heavy));
+  tap("heavy");
 }
 
 /** A breath phase boundary's tap: one light impact. */
 export function phaseHaptic(): void {
-  tap((haptics) => haptics.impactAsync(haptics.ImpactFeedbackStyle.Light));
+  tap("light");
 }
