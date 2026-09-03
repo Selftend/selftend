@@ -497,7 +497,6 @@
   "styleToggle": {
     "toggle": "Palette",
     "default": "Default",
-    "open": "Choose a palette",
     "back": "Back"
   }
 }
