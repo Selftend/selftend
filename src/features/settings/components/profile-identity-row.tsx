@@ -35,7 +35,11 @@ export function ProfileIdentityRow({
 }: ProfileIdentityRowProps) {
   const accent = useAccentHsl();
   return (
-    <View className="flex-row items-center gap-4 rounded-xl border border-border p-3">
+    // A band, not a box (#1800, design 14a): rules above and below, no side
+    // borders and no radius, so the row sits flush in the column like every
+    // group under it. A rounded, bordered panel here made the identity read as
+    // the one card on a page that has none.
+    <View className="flex-row items-center gap-4 border-b border-t border-border py-5">
       <View
         accessibilityElementsHidden
         importantForAccessibility="no"
