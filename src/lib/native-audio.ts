@@ -18,17 +18,22 @@ export function loadExpoAudio(): ExpoAudioModule {
 }
 
 async function configureNativeAudioMode(audio: ExpoAudioModule): Promise<void> {
-  try {
-    await audio.setAudioModeAsync({ playsInSilentMode: true });
-  } catch (error) {
-    nativeAudioMode = null;
-    throw error;
-  }
+  await audio.setAudioModeAsync({ playsInSilentMode: true });
 }
 
 /** Plays through the iOS mute switch, once per app run. */
 export function ensureNativeAudioMode(audio: ExpoAudioModule): Promise<void> {
-  if (nativeAudioMode === null) nativeAudioMode = configureNativeAudioMode(audio);
+  if (nativeAudioMode === null) {
+    const attempt = configureNativeAudioMode(audio);
+    nativeAudioMode = attempt;
+    // Forgotten AFTER it is stored, never inside the attempt: a setup that fails
+    // synchronously would otherwise reset the latch first and then be stored over
+    // it, wedging every later sound on a rejection. Guarded on identity so a
+    // retry that is already in flight is not thrown away by the old failure.
+    attempt.catch(() => {
+      if (nativeAudioMode === attempt) nativeAudioMode = null;
+    });
+  }
   return nativeAudioMode;
 }
 

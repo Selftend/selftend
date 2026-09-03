@@ -62,6 +62,11 @@ const intervalSound = require("@/assets/sounds/interval-temple-block.m4a") as nu
  */
 type BellSlot = "opening" | "end" | "interval";
 type SitBells = Record<BellSlot, PreparedOneShot | null>;
+const BELL_ASSETS: Record<BellSlot, number> = {
+  opening: bellSound,
+  end: bellSound,
+  interval: intervalSound,
+};
 
 /**
  * The reflection's five chips, fixed as `7b` draws them - not the per-stage
@@ -198,9 +203,9 @@ export function MeditationSitScreen() {
   useEffect(() => {
     if (!bellsOn || phase !== "sitting") return;
     const bells: SitBells = {
-      opening: prepareOneShot(bellSound),
-      end: prepareOneShot(bellSound),
-      interval: bellSeconds > 0 ? prepareOneShot(intervalSound) : null,
+      opening: prepareOneShot(BELL_ASSETS.opening),
+      end: prepareOneShot(BELL_ASSETS.end),
+      interval: bellSeconds > 0 ? prepareOneShot(BELL_ASSETS.interval) : null,
     };
     bellsRef.current = bells;
     return () => {
@@ -209,7 +214,7 @@ export function MeditationSitScreen() {
     };
   }, [bellsOn, bellSeconds, phase]);
   const ring = (slot: BellSlot) => {
-    const asset = slot === "interval" ? intervalSound : bellSound;
+    const asset = BELL_ASSETS[slot];
     const volume = bellVolumeRef.current;
     const bells = bellsRef.current;
     const prepared = bells?.[slot];

@@ -55,7 +55,10 @@ jest.mock("@/src/lib/color-scheme", () => ({ useColorSchemeName: () => "light" }
 
 // breathSoundId "none" => no spoken intro, so Start goes straight to the active
 // screen. A test that needs the preroll swaps in "guided" (which has an intro).
-const mockPrefs = { breathSoundId: "none", ambientSoundId: "none" };
+const mockPrefs: { breathSoundId: string; ambientSoundId: string; breathVolume?: number } = {
+  breathSoundId: "none",
+  ambientSoundId: "none",
+};
 // Set a `user_preferences` row here to bypass `mockPrefs` and read through the REAL
 // repository and query hook instead (mocked database -> mapper -> query -> screen),
 // for a test about what the mapper does to a stored id (#1745). Null = `mockPrefs`.
@@ -124,6 +127,7 @@ beforeEach(() => {
   mockSaveMutateAsync.mockClear();
   beforeRemoveListeners.length = 0;
   mockPrefs.breathSoundId = "none";
+  delete mockPrefs.breathVolume;
   mockStoredRow = null;
   mockPrepareOneShot.mockClear();
   mockIntroPlay.mockClear();
@@ -349,6 +353,23 @@ describe("Breathing session (4c)", () => {
       expect(mockIntroPlay).toHaveBeenCalledWith(0.7);
       // The tap built nothing.
       expect(mockPrepareOneShot).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("builds no intro at volume 0, so a muted voice never configures the audio session", () => {
+    // The #1188 rule, on the breathing side: nothing is prepared - and so nothing
+    // reaches ensureNativeAudioMode - for a sound nobody would hear. Start still
+    // runs the silent preroll; it just has nothing to play.
+    jest.useFakeTimers();
+    try {
+      mockPrefs.breathSoundId = "guided";
+      mockPrefs.breathVolume = 0;
+      startSession();
+      expect(screen.getByText("Get ready...")).toBeTruthy();
+      expect(mockPrepareOneShot).not.toHaveBeenCalled();
+      expect(mockIntroPlay).not.toHaveBeenCalled();
     } finally {
       jest.useRealTimers();
     }
