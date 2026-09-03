@@ -70,6 +70,33 @@ jobs:
           fi
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
+      # ☠️ WITHOUT THIS THE JOB CANNOT REACH EITHER OF ITS COMPARISONS, and for
+      # three weeks it did not (#1798). `eas metadata:pull` evaluates the Expo
+      # config to resolve the project, app.config.ts imports
+      # `expo/config-plugins`, and `npm exec --yes eas-cli` installs eas-cli
+      # into an npx cache without installing this project - so the pull died on
+      # "Cannot find module 'expo/config-plugins'" on every scheduled run from
+      # the job's first Monday (2026-08-17) onward.
+      #
+      # That is the muted-guard outcome store/README.md names, on the guard
+      # built after Selftend was rated 18+ in 173 countries unnoticed: the job
+      # that "is the thing that would have complained" had never once compared
+      # anything. ios-release.yml has always installed before calling eas-cli;
+      # this job was the copy that left the step out. Keep the two in step.
+      #
+      # Placed AFTER the gate on purpose, so a skipped run still costs nothing.
+      - name: Cache node_modules
+        if: steps.gate.outputs.enabled == 'true'
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'patches/**') }}
+
+      - name: Install dependencies
+        if: steps.gate.outputs.enabled == 'true' && steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
       # Same trick, and the same reason, as ios-release.yml: eas-cli does not
       # env-interpolate ascAppId/appleTeamId (only the three ascApiKey* fields),
       # so a committed "$ASC_APP_ID" would be a literal that fails validation.
