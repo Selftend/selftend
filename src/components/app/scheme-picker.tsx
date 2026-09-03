@@ -2,6 +2,10 @@ import { Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
+import {
+  SEGMENTED_RAISED_CLASS,
+  SEGMENTED_TRACK_CLASS,
+} from "@/src/components/app/segmented-control";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
@@ -53,7 +57,9 @@ interface SchemePickerProps {
  * ⚠️ Segmented, but NOT `SegmentedControl`: that component is a `tablist` of
  * `tab`s, which is the right widget for switching a view (week/month) and the
  * wrong one for choosing a stored value. This is a `radiogroup` of `radio`s —
- * the semantics `user-menu.test.tsx` and the preferences e2e spec both pin.
+ * the semantics `user-menu.test.tsx` and the preferences e2e spec both pin. The
+ * two share the LOOK though (`SEGMENTED_TRACK_CLASS`), so the appearance has one
+ * owner even where the roles cannot.
  *
  * The track fills its container: in the 288px menu that is the popover's width,
  * and on Settings it lines up with the palette grid directly below it.
@@ -84,7 +90,7 @@ export function SchemePicker({ showLabel = true }: SchemePickerProps = {}) {
           {t("themeToggle.toggle")}
         </Text>
       ) : null}
-      <View className="flex-row rounded-full bg-muted p-0.5">
+      <View className={SEGMENTED_TRACK_CLASS}>
         {THEME_OPTIONS.map((value, index) => {
           const selected = preference === value;
           return (
@@ -98,9 +104,14 @@ export function SchemePicker({ showLabel = true }: SchemePickerProps = {}) {
               // and real padding is the only lever there (#1231). The Bulgarian
               // labels are the tight case - `Системна` against roughly 58px of
               // text room in the 288px menu - hence `px-1` and `gap-1`.
+              //
+              // `active:bg-accent` is the PRESS state, which the raised fill
+              // does not cover: the vertical rows this replaced had one, and a
+              // control that only shows what is already chosen says nothing
+              // back when you tap the option you have not chosen yet.
               className={cn(
-                "flex-1 flex-row items-center justify-center gap-1 rounded-full px-1 py-2",
-                selected ? "bg-card" : "",
+                "flex-1 flex-row items-center justify-center gap-1 rounded-full px-1 py-2 active:bg-accent",
+                selected ? SEGMENTED_RAISED_CLASS : "",
               )}
               hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
               onPress={() => setPreference(value)}

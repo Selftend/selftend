@@ -1,11 +1,14 @@
 import { fireEvent, screen } from "@testing-library/react-native";
 
 import { SchemePicker } from "@/src/components/app/scheme-picker";
+import { SEGMENTED_RAISED_CLASS } from "@/src/components/app/segmented-control";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { useThemeStore, type ThemePreference } from "@/src/stores/theme-store";
 
-const ORIGINAL_OS = "ios" as const;
+// jest-expo loads with `defaultPlatform: "ios"`, so this is the value to put
+// back after a test moves the platform - not a captured original.
+const JEST_DEFAULT_OS = "ios" as const;
 
 const LABELS: Record<ThemePreference, string> = {
   system: "System",
@@ -19,7 +22,7 @@ describe("SchemePicker", () => {
   });
 
   afterEach(() => {
-    setPlatformOS(ORIGINAL_OS);
+    setPlatformOS(JEST_DEFAULT_OS);
   });
 
   // Order is the one place the drawing loses (#1781): `14a` draws
@@ -42,6 +45,22 @@ describe("SchemePicker", () => {
     renderWithProviders(<SchemePicker />);
 
     expect(screen.getByLabelText("Switch theme").props.accessibilityRole).toBe("radiogroup");
+  });
+
+  // The other half of "segmented": one track, and the chosen option RAISED out
+  // of it. Asserted through the shared class rather than a literal, so the two
+  // components that draw this track cannot drift apart silently.
+  it("raises the chosen option out of the track, and only that one", () => {
+    useThemeStore.setState({ preference: "light", hydrated: true });
+    renderWithProviders(<SchemePicker />);
+
+    const raised = (["system", "light", "dark"] as const).filter((value) =>
+      String(screen.getByTestId(`scheme-option-${value}`).props.className).includes(
+        SEGMENTED_RAISED_CLASS,
+      ),
+    );
+
+    expect(raised).toEqual(["light"]);
   });
 
   it("checks the active preference, and only that one", () => {

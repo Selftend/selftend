@@ -4,6 +4,19 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { cn } from "@/lib/utils";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 
+/**
+ * The segmented look, in one place because two components draw it with two
+ * different semantics: this `tablist`, and `scheme-picker.tsx`'s `radiogroup`.
+ * The roles are the reason they are separate components; the appearance is not,
+ * and left duplicated it would drift. A restyle of the track belongs here.
+ *
+ * Only the track and the raised-segment fill are shared — the segments
+ * themselves differ on purpose (content-width text here, equal-width icon +
+ * label there).
+ */
+export const SEGMENTED_TRACK_CLASS = "flex-row rounded-full bg-muted p-0.5";
+export const SEGMENTED_RAISED_CLASS = "bg-card";
+
 interface SegmentOption<T extends string | number> {
   value: T;
   label: string;
@@ -54,7 +67,7 @@ export function SegmentedControl<T extends string | number>({
     <View
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="tablist"
-      className="flex-row rounded-full bg-muted p-0.5"
+      className={SEGMENTED_TRACK_CLASS}
       role="tablist"
     >
       {options.map((opt, index) => {
@@ -68,7 +81,7 @@ export function SegmentedControl<T extends string | number>({
             disabled={disabled}
             role="tab"
             onPress={() => onChange(opt.value)}
-            className={cn("rounded-full px-3 py-1.5", active ? "bg-card" : "")}
+            className={cn("rounded-full px-3 py-1.5", active ? SEGMENTED_RAISED_CLASS : "")}
             // Skipped entirely while disabled, so the group leaves the tab order
             // instead of offering keys that do nothing.
             {...(disabled ? {} : roving.getItemProps(index, () => onChange(opt.value)))}
