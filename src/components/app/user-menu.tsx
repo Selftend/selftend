@@ -1,7 +1,7 @@
 import { router, usePathname } from "expo-router";
 import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import * as React from "react";
-import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
+import { Platform, Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
 import { ProfileAvatar } from "@/src/components/app/profile-avatar";
@@ -26,6 +26,8 @@ import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useRovingFocus } from "@/src/lib/roving-focus";
 import { useLanguage } from "@/src/providers/i18n-provider";
 import { useSession } from "@/src/providers/session-provider";
+import { useStyleName } from "@/src/lib/style";
+import { STYLE_LABELS } from "@/src/lib/theme/styles";
 import { useThemeStore, type ThemePreference } from "@/src/stores/theme-store";
 import type { TriggerRef } from "@rn-primitives/popover";
 
@@ -35,6 +37,20 @@ const THEME_ICONS: Record<ThemePreference, MaterialIconName> = {
   light: "light-mode",
   dark: "dark-mode",
 };
+
+/** Which view the menu body is showing. See `pane` in `UserMenu` for why. */
+type MenuPane = "root" | "palette";
+
+/**
+ * `.focus()` on whatever a `Pressable`'s ref hands back.
+ *
+ * Native gives a `View` with no `focus`, react-native-web gives the DOM node
+ * that does - so the call is optional at both hops rather than cast to one
+ * platform's shape. `calendar-roving-focus.ts` reaches for a node the same way.
+ */
+function focusNode(node: unknown) {
+  (node as { focus?: () => void } | null)?.focus?.();
+}
 
 export function UserMenu() {
   const { t } = useTranslation("navigation");
@@ -57,8 +73,43 @@ export function UserMenu() {
   // palettes simply became unreachable. Bounding the body to a fraction of the
   // viewport and letting it scroll keeps every row reachable at any height,
   // and costs nothing on a tall screen where the content already fits.
+  //
+  // The bound stays now that the grid has moved behind a row (#1774): the grid
+  // is still tall once its pane is open, and this is still a phone.
   const { height: windowHeight } = useWindowDimensions();
   const menuMaxHeight = Math.round(windowHeight * 0.7);
+
+  // #1774: eight palette cards were about 470px of a 288px-wide popover,
+  // against roughly 180px for language and appearance together - the single
+  // largest thing in the menu, and the reason the scroller above exists. The
+  // grid collapses to one row, and opens as a pane that REPLACES the body.
+  //
+  // A view swap, not a nested popover. #583 put the control in this menu
+  // precisely because there was "only one popover" to reason about (#561), and
+  // that invariant is not worth spending to save a tap.
+  const [pane, setPane] = React.useState<MenuPane>("root");
+  const activeStyle = useStyleName();
+  const paletteRowRef = React.useRef<unknown>(null);
+  const paletteBackRef = React.useRef<unknown>(null);
+
+  // Swapping the body unmounts whichever row the keyboard was on, and on the
+  // web an unmounted focus owner drops focus to `document.body` - out of the
+  // popover entirely. Hand it to the row that replaces it, in both directions.
+  const previousPane = React.useRef(pane);
+  React.useEffect(() => {
+    if (previousPane.current === pane) {
+      // First render. Opening the menu must not steal focus from the trigger,
+      // whose own restore the popover primitive already owns.
+      return;
+    }
+    previousPane.current = pane;
+    if (Platform.OS !== "web") {
+      return;
+    }
+    // On close both refs are null - the content is gone - so this is a no-op
+    // and never fights the primitive's focus restore.
+    focusNode(pane === "palette" ? paletteBackRef.current : paletteRowRef.current);
+  }, [pane]);
 
   const { session, user } = useSession();
   const isSignedIn = Boolean(session);
@@ -105,7 +156,17 @@ export function UserMenu() {
   }
 
   return (
-    <Popover>
+    <Popover
+      // Every close path lands here, including the imperative
+      // `popoverTriggerRef.current.close()` used by a route change and by the
+      // actions below - the trigger's `close` calls `onOpenChange(false)`. So
+      // reopening the menu always lands on the root view, never mid-pane.
+      onOpenChange={(open) => {
+        if (!open) {
+          setPane("root");
+        }
+      }}
+    >
       <PopoverTrigger asChild ref={popoverTriggerRef}>
         <Button
           accessibilityLabel={t("userMenu.openMenu")}
@@ -129,179 +190,244 @@ export function UserMenu() {
           // content is cut off when it is not.
           showsVerticalScrollIndicator={false}
         >
-          {isSignedIn ? (
-            <View className="flex-row items-center gap-3">
-              <ProfileAvatar
-                avatarUrl={avatarUrl}
-                email={email}
-                name={displayName}
-                className="size-10"
-              />
-              <View className="flex-1">
-                {displayName ? (
-                  <Text className="text-sm font-medium leading-5" numberOfLines={1}>
-                    {displayName}
-                  </Text>
-                ) : null}
-                <Text
-                  className="text-sm text-muted-foreground font-normal leading-4"
-                  numberOfLines={1}
-                >
-                  {email ?? t("userMenu.account")}
+          {pane === "palette" ? (
+            <>
+              {/* The pane replaces the body rather than expanding inside it: an
+              accordion would leave the grid competing with six other sections
+              in a 288px column, which is the shape being retired. */}
+              <Pressable
+                // "Back" is the whole meaning; the visible "Palette" beside it is
+                // the pane's title. An explicit label hides a Pressable's children
+                // from assistive tech on the web (see `HairlineRow`), so anything
+                // the name needs has to be IN the name.
+                accessibilityLabel={t("styleToggle.back")}
+                accessibilityRole="button"
+                className="flex-row items-center gap-2 rounded-sm px-2 py-2 active:bg-accent"
+                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                onPress={() => setPane("root")}
+                ref={(node) => {
+                  paletteBackRef.current = node;
+                }}
+                role="button"
+                testID="user-menu-palette-back"
+              >
+                <Icon name="arrow-back" className="size-4 text-foreground" />
+                <Text className="text-sm font-medium">{t("styleToggle.toggle")}</Text>
+              </Pressable>
+              {/* No caption: the back row above already says Palette, and the
+                  picker keeps its radiogroup name either way.
+
+                  Choosing a palette applies it and STAYS in the pane. Picking a
+                  palette is comparative - you want to see two or three against
+                  the same screen - and bouncing to the root view after each tap
+                  would make that a four-tap loop. The back row is the exit. */}
+              <StylePicker heading={false} />
+            </>
+          ) : (
+            <>
+              {isSignedIn ? (
+                <View className="flex-row items-center gap-3">
+                  <ProfileAvatar
+                    avatarUrl={avatarUrl}
+                    email={email}
+                    name={displayName}
+                    className="size-10"
+                  />
+                  <View className="flex-1">
+                    {displayName ? (
+                      <Text className="text-sm font-medium leading-5" numberOfLines={1}>
+                        {displayName}
+                      </Text>
+                    ) : null}
+                    <Text
+                      className="text-sm text-muted-foreground font-normal leading-4"
+                      numberOfLines={1}
+                    >
+                      {email ?? t("userMenu.account")}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+
+              <View
+                accessibilityLabel={t("languageToggle.toggle")}
+                accessibilityRole="radiogroup"
+                role="radiogroup"
+              >
+                <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
+                  {t("languageToggle.toggle")}
                 </Text>
+                {supportedLanguages.map((code, index) => (
+                  <Pressable
+                    accessibilityLabel={t(`languageToggle.${code}`)}
+                    accessibilityRole="radio"
+                    aria-checked={language === code}
+                    key={code}
+                    className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
+                    hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                    onPress={() => void setLanguage(code)}
+                    role="radio"
+                    {...languageRoving.getItemProps(index, () => void setLanguage(code))}
+                  >
+                    <View className="size-4 items-center justify-center">
+                      {language === code ? (
+                        <Icon name="check" className="size-4 text-foreground" />
+                      ) : null}
+                    </View>
+                    <Text className="text-sm">{t(`languageToggle.${code}`)}</Text>
+                  </Pressable>
+                ))}
               </View>
-            </View>
-          ) : null}
 
-          <View
-            accessibilityLabel={t("languageToggle.toggle")}
-            accessibilityRole="radiogroup"
-            role="radiogroup"
-          >
-            <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
-              {t("languageToggle.toggle")}
-            </Text>
-            {supportedLanguages.map((code, index) => (
+              <View
+                accessibilityLabel={t("themeToggle.toggle")}
+                accessibilityRole="radiogroup"
+                role="radiogroup"
+              >
+                <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
+                  {t("themeToggle.toggle")}
+                </Text>
+                {THEME_OPTIONS.map((value, index) => (
+                  <Pressable
+                    accessibilityLabel={t(`themeToggle.${value}`)}
+                    accessibilityRole="radio"
+                    aria-checked={preference === value}
+                    key={value}
+                    className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
+                    hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                    onPress={() => setPreference(value)}
+                    role="radio"
+                    {...themeRoving.getItemProps(index, () => setPreference(value))}
+                  >
+                    <View className="size-4 items-center justify-center">
+                      {preference === value ? (
+                        <Icon name="check" className="size-4 text-foreground" />
+                      ) : null}
+                    </View>
+                    <Icon name={THEME_ICONS[value]} className="size-4 text-foreground" />
+                    <Text className="text-sm">{t(`themeToggle.${value}`)}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* One row where eight cards were. The palette name is a proper noun
+              and stays untranslated (#561); the section word around it does not. */}
               <Pressable
-                accessibilityLabel={t(`languageToggle.${code}`)}
-                accessibilityRole="radio"
-                aria-checked={language === code}
-                key={code}
+                // Both halves live in the name because the explicit label hides the
+                // two Texts below it from assistive tech on the web, and
+                // `accessibilityHint` - the only other home for the value - is a
+                // prop react-native-web never implements.
+                accessibilityLabel={`${t("styleToggle.toggle")}, ${STYLE_LABELS[activeStyle]}`}
+                accessibilityRole="button"
                 className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
                 hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => void setLanguage(code)}
-                role="radio"
-                {...languageRoving.getItemProps(index, () => void setLanguage(code))}
+                onPress={() => setPane("palette")}
+                ref={(node) => {
+                  paletteRowRef.current = node;
+                }}
+                role="button"
+                testID="user-menu-palette-row"
               >
-                <View className="size-4 items-center justify-center">
-                  {language === code ? (
-                    <Icon name="check" className="size-4 text-foreground" />
-                  ) : null}
-                </View>
-                <Text className="text-sm">{t(`languageToggle.${code}`)}</Text>
+                <Text className="flex-1 text-sm">{t("styleToggle.toggle")}</Text>
+                <Text className="text-sm text-muted-foreground" numberOfLines={1}>
+                  {STYLE_LABELS[activeStyle]}
+                </Text>
+                <Icon name="chevron-right" className="size-4 shrink-0 text-muted-foreground" />
               </Pressable>
-            ))}
-          </View>
 
-          <View
-            accessibilityLabel={t("themeToggle.toggle")}
-            accessibilityRole="radiogroup"
-            role="radiogroup"
-          >
-            <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
-              {t("themeToggle.toggle")}
-            </Text>
-            {THEME_OPTIONS.map((value, index) => (
-              <Pressable
-                accessibilityLabel={t(`themeToggle.${value}`)}
-                accessibilityRole="radio"
-                aria-checked={preference === value}
-                key={value}
-                className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
-                hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                onPress={() => setPreference(value)}
-                role="radio"
-                {...themeRoving.getItemProps(index, () => setPreference(value))}
-              >
-                <View className="size-4 items-center justify-center">
-                  {preference === value ? (
-                    <Icon name="check" className="size-4 text-foreground" />
-                  ) : null}
-                </View>
-                <Icon name={THEME_ICONS[value]} className="size-4 text-foreground" />
-                <Text className="text-sm">{t(`themeToggle.${value}`)}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <StylePicker />
-
-          <GetTheAppSection compact />
-          {/* Community links (#668): this social row is the app's only
+              <GetTheAppSection compact />
+              {/* Community links (#668): this social row is the app's only
               community surface. Community spaces first in order of
               interactivity, GitHub last as the transparency door. Each
               community link hides when its URL is configured empty; GitHub
               is unconditional. */}
-          <SocialConnections
-            connections={[
-              ...(appEnv.discordUrl
-                ? [
-                    {
-                      id: "discord",
-                      icon: "logo-discord" as const,
-                      accessibilityLabel: t("header.joinDiscord"),
-                      onPress: () => openExternal(appEnv.discordUrl),
-                    },
-                  ]
-                : []),
-              ...(appEnv.redditUrl
-                ? [
-                    {
-                      id: "reddit",
-                      icon: "logo-reddit" as const,
-                      accessibilityLabel: t("header.openReddit"),
-                      onPress: () => openExternal(appEnv.redditUrl),
-                    },
-                  ]
-                : []),
-              ...(appEnv.youtubeUrl
-                ? [
-                    {
-                      id: "youtube",
-                      icon: "logo-youtube" as const,
-                      accessibilityLabel: t("header.openYoutube"),
-                      onPress: () => openExternal(appEnv.youtubeUrl),
-                    },
-                  ]
-                : []),
-              {
-                id: "github",
-                icon: "logo-github" as const,
-                accessibilityLabel: t("header.viewGithub"),
-                onPress: () => openExternal(appEnv.githubRepoUrl),
-              },
-            ]}
-          />
+              <SocialConnections
+                connections={[
+                  ...(appEnv.discordUrl
+                    ? [
+                        {
+                          id: "discord",
+                          icon: "logo-discord" as const,
+                          accessibilityLabel: t("header.joinDiscord"),
+                          onPress: () => openExternal(appEnv.discordUrl),
+                        },
+                      ]
+                    : []),
+                  ...(appEnv.redditUrl
+                    ? [
+                        {
+                          id: "reddit",
+                          icon: "logo-reddit" as const,
+                          accessibilityLabel: t("header.openReddit"),
+                          onPress: () => openExternal(appEnv.redditUrl),
+                        },
+                      ]
+                    : []),
+                  ...(appEnv.youtubeUrl
+                    ? [
+                        {
+                          id: "youtube",
+                          icon: "logo-youtube" as const,
+                          accessibilityLabel: t("header.openYoutube"),
+                          onPress: () => openExternal(appEnv.youtubeUrl),
+                        },
+                      ]
+                    : []),
+                  {
+                    id: "github",
+                    icon: "logo-github" as const,
+                    accessibilityLabel: t("header.viewGithub"),
+                    onPress: () => openExternal(appEnv.githubRepoUrl),
+                  },
+                ]}
+              />
 
-          {isSignedIn ? (
-            <View className="flex-row flex-wrap gap-3 py-0.5">
-              <Button
-                variant="outline"
-                size="sm"
-                onPress={() => {
-                  popoverTriggerRef.current?.close();
-                  router.push("/(app)/settings", { dangerouslySingular: true }); // lateral jump (#1027)
-                }}
-              >
-                <Icon name="settings" className="size-4" />
-                <Text>{t("userMenu.settings")}</Text>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onPress={() => {
-                  popoverTriggerRef.current?.close();
-                  router.push("/(app)/support", { dangerouslySingular: true }); // lateral jump (#1027)
-                }}
-              >
-                <Icon name="feedback" className="size-4" />
-                <Text>{t("userMenu.sendFeedback")}</Text>
-              </Button>
-              {/*
+              {isSignedIn ? (
+                <View className="flex-row flex-wrap gap-3 py-0.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() => {
+                      popoverTriggerRef.current?.close();
+                      router.push("/(app)/settings", { dangerouslySingular: true }); // lateral jump (#1027)
+                    }}
+                  >
+                    <Icon name="settings" className="size-4" />
+                    <Text>{t("userMenu.settings")}</Text>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() => {
+                      popoverTriggerRef.current?.close();
+                      router.push("/(app)/support", { dangerouslySingular: true }); // lateral jump (#1027)
+                    }}
+                  >
+                    <Icon name="feedback" className="size-4" />
+                    <Text>{t("userMenu.sendFeedback")}</Text>
+                  </Button>
+                  {/*
                 `grow basis-auto`, not `flex-1`: flex-1's zero basis lets this button
                 "fit" whatever sliver the first two leave on the line, so it never
                 wraps - Bulgarian's longer labels crushed it to ~32px with its text
                 overlapping the feedback button. An auto basis wraps it to its own
                 full-width line instead when the row runs out.
               */}
-              {canSignOut ? (
-                <Button variant="outline" size="sm" className="grow basis-auto" onPress={onSignOut}>
-                  <Icon name="logout" className="size-4" />
-                  <Text>{t("userMenu.signOut")}</Text>
-                </Button>
+                  {canSignOut ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="grow basis-auto"
+                      onPress={onSignOut}
+                    >
+                      <Icon name="logout" className="size-4" />
+                      <Text>{t("userMenu.signOut")}</Text>
+                    </Button>
+                  ) : null}
+                </View>
               ) : null}
-            </View>
-          ) : null}
+            </>
+          )}
         </ScrollView>
       </PopoverContent>
     </Popover>

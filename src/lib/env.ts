@@ -2,8 +2,16 @@ import { Platform } from "react-native";
 
 export const appEnv = {
   githubRepoUrl: process.env.EXPO_PUBLIC_GITHUB_REPO_URL ?? "https://github.com/Selftend/selftend",
-  playStoreUrl: process.env.EXPO_PUBLIC_PLAY_STORE_URL ?? "",
-  appStoreUrl: process.env.EXPO_PUBLIC_APP_STORE_URL ?? "",
+  // Both apps are published, so the live listings are the default - a build that
+  // was handed no store config still points at a real store, the way the Discord
+  // and Sponsors links do. A fork sets its own URL, or an empty string to drop the
+  // store surfaces entirely; a self-hoster must never ship a link to someone
+  // else's listing. Empty is "this build has no store", not "coming soon".
+  playStoreUrl:
+    process.env.EXPO_PUBLIC_PLAY_STORE_URL ??
+    "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend",
+  appStoreUrl:
+    process.env.EXPO_PUBLIC_APP_STORE_URL ?? "https://apps.apple.com/app/selftend/id6796318929",
   discordUrl: process.env.EXPO_PUBLIC_DISCORD_URL ?? "https://discord.gg/pdaAr9FhcQ",
   redditUrl: process.env.EXPO_PUBLIC_REDDIT_URL ?? "https://www.reddit.com/r/Selftend/",
   // The one donation path (#1625, decided 2026-09-02): GitHub Sponsors on the
