@@ -9,6 +9,18 @@
     "openSecurity": "How we protect your data",
     "sections": [
       {
+        "title": "In short",
+        "body": [
+          "This is the short version, in plain words. The numbered sections below say the same things in full, and they are the ones that count.",
+          "Selftend has a minimum age. It is 13 in most countries and higher in some - section 11 lists them.",
+          "We ask your date of birth once, to check that age. We never store it. We keep only whether you met the age, the country you chose, and the date we asked.",
+          "You do not have to give us an email address. The app works without an account.",
+          "What you write in the app is yours. We do not sell it, we do not show you adverts, we do not use it to train AI, and nobody here reads it unless you ask us to or the law requires it.",
+          "You can download everything you have written, or delete all of it, from Settings at any time. Deleting is permanent.",
+          "If anything here worries you, or you want something removed, write to privacy@selftend.org and a person will answer."
+        ]
+      },
+      {
         "title": "1. Who we are",
         "body": [
           "Selftend is a free, open-source cognitive behavioural therapy (CBT) programme available on web, iOS, and Android.",
@@ -20,6 +32,7 @@
         "title": "2. Data we collect",
         "body": [
           "Account data: when you first use the app, a guest account is created for you with no email address or other personal identifier attached - only a random account ID. Your email address and authentication identifiers exist only after you choose to create an account, by registering with an email and password, with Google OAuth, or with Sign in with Apple. If you use Sign in with Apple and choose to hide your email, Apple gives us a private relay address instead of your real one.",
+          "Age check data: we ask for your date of birth and your country once, before you start. The date of birth is used for a single comparison and then discarded - it is not sent anywhere, not written to our database, and not kept on your device. What we store is the result: whether you met the minimum age for the country you chose, that country, and the date you were asked.",
           "App data: user preferences (enabled modules, onboarding status, reminder settings) and private CBT thought records or other self-help entries you create. These entries may include wellness or mental-health reflection content if you choose to enter it.",
           "Device data: only when you explicitly enable reminders, we store the technical address needed to deliver them - a push token on native apps, or a browser push subscription (endpoint and keys) on web - along with your time zone and, on web, your browser's user-agent string. We do not perform device fingerprinting and do not collect hardware identifiers, advertising IDs, or your location.",
           "Session and local preference data: an authentication token stored in browser localStorage (web) or Expo SecureStore (mobile) to maintain your signed-in session, plus small local app preferences such as language, theme, and last timer session duration stored on your device."
@@ -29,6 +42,7 @@
         "title": "3. Data we do not collect",
         "body": [
           "We do not collect IP addresses for profiling, device fingerprints, location data, contacts, or health data from device APIs. The only photo we store is a profile picture, and only if you choose to upload one; we do not otherwise scan or access your photo library.",
+          "We do not store your date of birth, and we do not ask for a document, a photograph, or any other proof of age.",
           "We do not use advertising SDKs, analytics tracking services, behavioral profiling tools, or social media pixels.",
           "We do not sell, rent, or trade your personal data to any third party for any purpose."
         ]
@@ -38,7 +52,9 @@
         "body": [
           "Contract (Art. 6(1)(b)): Processing your email and app data is necessary to provide the service you signed up for - maintaining your account, syncing your records, and delivering the self-help features.",
           "Consent (Art. 6(1)(a)): Notification reminders are only scheduled after you explicitly opt in. You can withdraw consent at any time in Settings.",
-          "Explicit consent for sensitive content (GDPR Art. 9(2)(a), where applicable): if your self-help entries include wellness, mental-health, or other special-category information, we process that content only to provide the app features you choose to use. You can withdraw this consent by deleting your account or contacting privacy@selftend.org.",
+          "Explicit consent for sensitive content (GDPR Art. 9(2)(a)): the self-help entries you save can contain wellness, mental-health, or other special-category information. We process that content only with your explicit consent, which you give as a separate, affirmative act - a step of its own, worded on its own, that everyone completes before using the app. It is never bundled into accepting these policies, and it is never inferred from your continued use. If you already have an account, you are shown that step once, the next time this policy changes.",
+          "Withdrawing that consent: you can withdraw it at any time by deleting your account in Settings, which removes the entries it covers, or by contacting privacy@selftend.org. Withdrawal does not affect processing that already took place while the consent was in force.",
+          "The age check (Art. 6(1)(c) and Art. 9(2)(a)): we ask your age and your country so that we process special-category data only where you can consent to it yourself, and we keep the result as the record that the check happened. Section 11 explains how the minimum age is set.",
           "Legitimate interest (Art. 6(1)(f)): Minimal security logging (e.g., authentication events managed by Supabase) to protect the service and users from abuse."
         ]
       },
@@ -80,6 +96,9 @@
           "Account and app data: retained for as long as your account is active.",
           "Guest accounts: deleted after 12 months of inactivity - twelve months without the app being opened on a device holding the session. The data is removed exactly like self-service deletion: from our live systems immediately, and from backups created beforehand within 90 days.",
           "After account deletion: your personal data (profile, preferences, records) is removed from our live systems immediately. Backups created before deletion are retained for up to 90 days under our backup schedule and then automatically deleted.",
+          "Age check: the result - whether you met the minimum age, the country you chose, and the date you were asked - is kept for as long as your account exists and is deleted with it. Your date of birth is never stored, so there is nothing to retain.",
+          "Attempts below the minimum age: nothing is retained. The account created for the attempt is deleted immediately, together with anything written during it. Only a local timer stays on the device (see section 12).",
+          "Accounts we learn are below the minimum age: if we become aware that an account belongs to someone below the minimum age for their country, we delete the account and its data on becoming aware, without waiting for a request.",
           "Authentication logs: managed and retained by Supabase according to their retention policy.",
           "Feedback messages: feedback you send through the in-app form is delivered to our support mailbox and mirrored (category and message text only) to a private maintainers-only Discord channel. Both copies are kept for as long as needed to act on the feedback. Feedback content is not stored in the app's database.",
           "Local device data (reminder IDs, browser push subscriptions, session tokens): removed when you disable reminders, sign out, delete your account, or delete the app/browser data where applicable."
@@ -112,17 +131,23 @@
         ]
       },
       {
-        "title": "11. Age restriction",
+        "title": "11. Minimum age",
         "body": [
-          "Selftend is intended for adults aged 18 and older. We do not knowingly collect personal data from anyone under 18.",
-          "If you are under 18, do not use this app or provide any personal information.",
-          "If we become aware that we have collected data from someone under 18, we will delete that data promptly. If you believe someone under 18 has provided us with personal data, contact privacy@selftend.org."
+          "Selftend has a minimum age, and it is not the same everywhere. What the app holds - thought records, mood entries, journal text - is special-category data about your health, and the age that matters is the age at which you may consent to that processing yourself. Countries set that age individually, so ours follows theirs.",
+          "The minimum age is 13 in Belgium, Denmark, Estonia, Finland, Iceland, Latvia, Malta, Norway, Portugal, Sweden, the United Kingdom and the United States - and in every other country not named below.",
+          "It is 14 in Austria, Bulgaria, Cyprus, Italy, Lithuania and Spain.",
+          "It is 15 in Czechia, France, Greece and Slovenia.",
+          "It is 16 in Croatia, Germany, Hungary, Ireland, Liechtenstein, Luxembourg, the Netherlands, Poland, Romania and Slovakia.",
+          "It is never below 13, anywhere.",
+          "We ask for your date of birth and your country once, before you start, and keep only the result (see section 2). There is no parental-consent route and no identity check: where the law would require one, our minimum age rises instead.",
+          "We do not knowingly collect personal data from anyone below the minimum age for their country. If we learn that we have, we delete the account and its data promptly. If you believe someone below the minimum age has an account, contact privacy@selftend.org."
         ]
       },
       {
         "title": "12. Cookies and local storage",
         "body": [
           "The web version of Selftend uses browser localStorage to store your authentication session token. This is functionally essential and cannot be disabled while using the app.",
+          "If the age check is not met, your device stores one further item: a time 24 hours ahead, before which the app will not open again. It holds no personal data, no identifier, and no record of what was answered, and it disappears when you clear the app's or the browser's storage.",
           "We do not use tracking cookies, advertising cookies, or third-party cookies.",
           "If optional analytics are introduced in the future, they will require your explicit consent through the cookie preferences manager before any non-essential storage is used.",
           "You can manage your cookie and storage preferences at any time through the cookie settings available in the app."
@@ -172,9 +197,9 @@
       {
         "title": "2. Eligibility",
         "body": [
-          "You must be at least 18 years old to use Selftend.",
-          "By using the app, you represent that you are at least 18 years of age.",
-          "Selftend is not intended for minors. Do not create an account or use the app if you are under 18."
+          "You must be at least 13 years old to use Selftend, or the higher minimum age at which you may consent to the processing of your personal data in your country. Section 11 of the Privacy Policy lists the minimum age country by country.",
+          "By using the app, you represent that you meet that age.",
+          "If you do not, do not create an account and do not use the app. Accounts we learn are below the minimum age are deleted, together with their data."
         ]
       },
       {
@@ -353,7 +378,8 @@
         "body": [
           "We use browser localStorage to store your authentication session token. This is strictly necessary for the app to function - it keeps you signed in between visits.",
           "This storage cannot be disabled while using the app. If you clear your browser storage, you will need to sign in again.",
-          "The app also stores small local preferences, such as language, theme, and last timer session duration. These preferences stay on your device and are not used for tracking."
+          "The app also stores small local preferences, such as language, theme, and last timer session duration. These preferences stay on your device and are not used for tracking.",
+          "If the age check is not met, one further item is stored on the device: a time 24 hours ahead, before which the app will not open again. It holds no personal data and no identifier, and clearing the app's or the browser's storage removes it."
         ]
       },
       {
@@ -412,7 +438,7 @@
       {
         "title": "What data does Selftend collect?",
         "body": [
-          "An email only if you register, preferences, and the records you choose to create - plus a push token only if you turn on reminders. No date of birth, no device fingerprints or hardware identifiers, no advertising or analytics SDKs. Full details in the privacy policy."
+          "An email only if you register, preferences, and the records you choose to create - plus a push token only if you turn on reminders. Your date of birth is asked once for the age check and never stored; we keep the result and the country you chose. No device fingerprints or hardware identifiers, no advertising or analytics SDKs. Full details in the privacy policy."
         ]
       },
       {
@@ -434,9 +460,20 @@
         ]
       },
       {
-        "title": "Why 18 and over?",
+        "title": "What is the minimum age?",
         "body": [
-          "Under-18 support needs legal review, child-safety review, and a parental-consent or age-assurance plan we have not built yet. Until that is in place, Selftend is for adults only."
+          "13 in most countries, and 14, 15 or 16 in some - the privacy policy lists them. The number is not our view of who benefits from CBT. It is the age at which the law where you live lets you agree, by yourself, to an app holding reflections about your own mental health, and where that age is higher, ours is too. We ask for your date of birth and your country once, at the start, and keep only whether you met it."
+        ]
+      },
+      {
+        "title": "For parents and guardians",
+        "body": [
+          "Selftend is a free, non-profit CBT app that a person works through on their own: thought records, mood and habit tracking, breathing, grounding, gratitude, meditation and short lessons. There is no therapist, no counsellor, and no AI pretending to be either. It is not treatment and it is not crisis support - the app says so, and its crisis page points to local emergency services.",
+          "There is a minimum age, asked before anyone starts: 13 in most countries and higher in several, following the age at which a person may consent to this kind of data processing where they live. The privacy policy lists it country by country.",
+          "On data: no adverts, no advertising or analytics SDKs, no profiling, and nothing sold or shared for marketing. Entries are private to the account, encrypted, and reachable only through it. Registering is optional - the app works without an email address - and everything can be exported or permanently deleted from Settings at any time.",
+          "On design: reminders are off until someone turns them on, and go off again in one tap. Nothing counts days, ranks anyone, or measures how often the app is opened, and skipping a day changes nothing in the app.",
+          "If you believe someone below the minimum age for their country is using Selftend, write to privacy@selftend.org with what you can tell us; we delete the account and its data on becoming aware. You can also ask us to delete an account belonging to a child you are responsible for.",
+          "For anything else, support@selftend.org reaches us."
         ]
       },
       {

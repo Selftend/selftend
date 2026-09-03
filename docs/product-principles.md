@@ -59,4 +59,10 @@ Selftend wants people to return, and refuses to engineer the wanting. Every comp
 
 ## Audience Note
 
-The launch posture is adults-only: Selftend is for users aged 18 and older. Under-18 support needs legal review, child-safety review, and a parental-consent or age-assurance plan. Minors, user-generated content, or peer-to-peer communication require higher review before implementation.
+Selftend is for people aged 13 and over, or the higher minimum age at which a person may consent to this kind of data processing in their own country — 14, 15 or 16 in much of Europe. The full table is in [age-floor.md](age-floor.md); the app asks before it opens, and the floor is never below 13 anywhere.
+
+The floor is set by GDPR Art. 9(2)(a) explicit consent rather than by contract, because thought records are special-category data. There is **no parental-consent path and no age verification**: where a law would require one, the floor rises instead.
+
+There is **no minor flag**. Nothing in storage distinguishes a 14-year-old from a 40-year-old, because the protections are universal rather than conditional — nothing counts days or run-lengths, reminders are opt-in only, and there are no ads, no sale of data, no profiling, and no behavioural nudges. A product whose defaults are already safe for a thirteen-year-old needs no second, quieter mode for one.
+
+User-generated content and peer-to-peer communication still require higher review before implementation, and now more so.

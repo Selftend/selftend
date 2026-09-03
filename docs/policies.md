@@ -27,10 +27,10 @@ Deferred items from the review (open questions, not launch blockers):
   **Closed on the consent half 2026-09-04** ([#1766](https://github.com/Selftend/selftend/issues/1766)):
   the Art. 9(2)(a) consent is now its own unticked, separately-worded control at
   the consent gate, not a clause inside the terms checkbox. The age half is
-  closed by the age gate ([#1764](https://github.com/Selftend/selftend/issues/1764))
-  and the published 18+ text it replaces moves in
-  [#1767](https://github.com/Selftend/selftend/issues/1767); until then the
-  eligibility statements below are the live posture. See
+  closed by the age gate ([#1764](https://github.com/Selftend/selftend/issues/1764)),
+  and the published text caught up in
+  [#1767](https://github.com/Selftend/selftend/issues/1767) — so attestation is
+  no longer passive at all: the app asks, and the answer decides. See
   [age-floor.md](age-floor.md).
 
 ## Compliance approach
@@ -43,14 +43,33 @@ Deferred items from the review (open questions, not launch blockers):
 
 ### Age floor
 
-- **Minimum age: 18**
-- Attestation is passive: the terms and privacy policy state the 18+
-  requirement and creating an account constitutes agreement; there is no
-  age checkbox at sign-up (decision recorded 2026-07-23, issue #198)
-- No collection of date of birth (data minimization)
-- Under-18 use is explicitly prohibited in terms and privacy policy
-- No child-directed launch posture; minor support is deferred until legal and safety review
-- Google Play target audience should remain 18+ / adults only for the first launch path
+- **Minimum age: 13, or a country's higher floor** — the full table lives in
+  [age-floor.md](age-floor.md) and in code at `src/features/auth/age-floor.ts`.
+  Never below 13, anywhere.
+- The floor is set by **Art. 9(2)(a) explicit consent, not by contract**: thought
+  records are special-category data, so the age that governs is the age at which
+  a person may consent to that processing themselves, which member states set
+  individually between 13 and 16.
+- Attestation is **active**, and this replaced the passive posture of decision
+  #198 (2026-07-23): the age gate asks for a date of birth and a country before
+  the app opens ([#1764](https://github.com/Selftend/selftend/issues/1764)).
+- **Date of birth is never stored.** It is compared once and discarded; what
+  persists is the verdict, the declared country, and the date asked
+  (`user_preferences.age_floor_met` / `age_attested_country` / `age_attested_at`).
+- Under-floor attempts retain nothing — the account created for the attempt is
+  deleted immediately ([#1765](https://github.com/Selftend/selftend/issues/1765)) —
+  and an account discovered to be under its floor is deleted on knowledge.
+- **No minor flag and no parental-consent path.** Protections are universal
+  rather than conditional; where a law would require a parental-consent route,
+  the floor rises instead.
+- Published in privacy §11 and terms §2, `en` and `bg`
+  ([#1767](https://github.com/Selftend/selftend/issues/1767)).
+  `src/features/policies/policy-age-floor.test.ts` compares the published list
+  against the code table country by country, so the two cannot drift.
+- ⚠️ **Google Play still declares "18 and over"** (last edited 2026-05-08). That
+  declaration moves to 13-15 / 16-17 in the owner's rollout pass
+  ([#1771](https://github.com/Selftend/selftend/issues/1771)), same day as the
+  release that publishes this text — see `docs/releasing.md` and §7 of the spec.
 
 ### Lawful basis for processing (GDPR Articles 6 and 9)
 
@@ -126,7 +145,7 @@ The policy text maintains these boundaries:
 - User-entered self-help records are treated as highly private because they may include wellness or mental-health reflections; they are encrypted at rest at the field level (see [gdpr-compliance.md](gdpr-compliance.md))
 - Android app permissions minimized for the current feature set; no camera-capture or microphone/audio recording permission
 - No ads, subscriptions, manipulative retention, social feeds, or user-facing AI coach
-- Age 18+ required
+- Minimum age 13, or a country's higher floor (see [age-floor.md](age-floor.md))
 
 ## Google Play URLs
 

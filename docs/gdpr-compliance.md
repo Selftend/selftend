@@ -24,7 +24,7 @@ Privacy by design: minimal data collection, Row-Level Security, local-first nati
 
 ## Records of Processing (Article 30)
 
-Processing activities are documented in [policies.md](policies.md). Data subjects are app users aged 18+. Data categories are email, preferences, web push subscriptions, and thought records. Recipients are Supabase, Google (optional OAuth), Cloudflare, and Sentry. Transfers to third countries (USA) are documented with SCCs as the transfer mechanism. Retention periods are documented above.
+Processing activities are documented in [policies.md](policies.md). Data subjects are app users aged 13+, or their country's higher floor (see [age-floor.md](age-floor.md)) — a population that includes children, which is why the DPIA and minors' assessment are mandatory rather than optional. Data categories are email, preferences, web push subscriptions, and thought records. Recipients are Supabase, Google (optional OAuth), Cloudflare, and Sentry. Transfers to third countries (USA) are documented with SCCs as the transfer mechanism. Retention periods are documented above.
 
 ## Security (Article 32)
 

@@ -25,8 +25,13 @@ jest.mock("@/src/features/settings/queries", () => ({
   }),
 }));
 
-const CHECKBOX_LABEL =
-  "I am 18 or older and agree to the current Privacy Policy and Terms of Service.";
+// ⚠️ The age assertion left this label in #1767. It used to read "I am 18 or
+// older and agree to ..." - one tick carrying an eligibility claim as well as
+// the agreement. The age gate above this screen now asks the question properly
+// (date of birth + country, against the per-country floor), and the terms carry
+// the representation, so a second, weaker claim here would only invite ticking
+// through something already answered.
+const CHECKBOX_LABEL = "I agree to the current Privacy Policy and Terms of Service.";
 
 const HEALTH_DATA_LABEL =
   "I consent to Selftend processing the self-help entries I choose to save, including any wellness or mental-health reflection they contain, only to provide the app features I use.";

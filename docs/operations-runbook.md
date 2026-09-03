@@ -348,6 +348,6 @@ re-evaluation trigger.
 
 Before broad public launch:
 
-- Final human/legal review of privacy policy, terms, crisis guidance, and the adults-only 18+ launch posture.
+- Final human/legal review of privacy policy, terms, crisis guidance, and the per-country age floor ([age-floor.md](age-floor.md)) — including the teen-readable summary, the parents-and-guardians section, and the Art. 9 consent wording, in `en` and `bg`. Tracked as [#1771](https://github.com/Selftend/selftend/issues/1771).
 - Confirm support, privacy, security, and deletion aliases are monitored.
 - Keep this runbook and [gdpr-compliance.md](gdpr-compliance.md) in sync.
