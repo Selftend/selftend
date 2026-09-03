@@ -31,7 +31,8 @@ import { useBreathingExercises } from "@/src/features/breathing/exercises-querie
 import { SoundsSheet } from "@/src/features/breathing/sounds-sheet";
 import { VolumeSlider } from "@/src/components/app/volume-slider";
 import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
-import { playIntroCue, useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
+import { useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
+import { prepareOneShot, type PreparedOneShot } from "@/src/lib/native-audio";
 import { mergeUserPreferences } from "@/src/features/modules/types";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useColorSchemeName } from "@/src/lib/color-scheme";
@@ -177,6 +178,25 @@ export default function BreathingSessionScreen() {
     breathVolume,
     ambientVolume,
   });
+
+  // The guided intro is LOADED while setup shows (#1744): Start used to build its
+  // player at the tap, and the spoken intro arrived late by the asset load. One
+  // per visit to setup - a voice change or a return from a session re-prepares -
+  // and let go if Start is never tapped. Off stays off: at 0 nothing is built, so
+  // a user who muted the voice never has the global audio session configured on
+  // their behalf (#1188).
+  const introAsset = breathSound?.introAsset ?? null;
+  const introAhead = screenPhase === "intro" && introAsset !== null && breathVolume > 0;
+  const introRef = useRef<PreparedOneShot | null>(null);
+  useEffect(() => {
+    if (!introAhead || introAsset === null) return;
+    const intro = prepareOneShot(introAsset);
+    introRef.current = intro;
+    return () => {
+      introRef.current = null;
+      intro.release();
+    };
+  }, [introAhead, introAsset]);
 
   const colorScheme = useColorSchemeName();
   const accent = resolved?.color ?? "aqua";
@@ -441,7 +461,10 @@ export default function BreathingSessionScreen() {
     // Guided voice sounds get a short spoken intro before the cycle starts.
     if (breathSound?.introAsset) {
       setScreenPhase("preroll");
-      playIntroCue(breathSound.introAsset, audioPrefs.breathVolume);
+      // Loaded ahead by the effect above; the tap only plays it. At the slider's
+      // live value, like the cues that follow it - not the last value the server
+      // saw, which a failed write would leave behind.
+      introRef.current?.play(breathVolume);
       prerollRef.current = setTimeout(
         beginActive,
         (breathSound.introMs ?? 3000) + POST_INTRO_PAUSE_MS,
