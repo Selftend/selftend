@@ -660,3 +660,71 @@ describe("settings repository", () => {
     expect(eqEndpoint).toHaveBeenCalledWith("expo_push_token", "ExponentPushToken[abc]");
   });
 });
+
+describe("age attestation preferences (#1762)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("maps the three age-attestation columns from the user_preferences row", async () => {
+    mockPreferenceSelect({
+      age_attested_at: "2026-09-03T10:00:00.000Z",
+      age_attested_country: "DE",
+      age_floor_met: true,
+      user_id: "user-1",
+    });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({
+      ageAttestedAt: "2026-09-03T10:00:00.000Z",
+      ageAttestedCountry: "DE",
+      ageFloorMet: true,
+    });
+  });
+
+  it("leaves an account that predates the gate at null, NOT at false", async () => {
+    // The whole point of the nullable column. Every account that exists today
+    // has never been asked, and §7 never asks them: `false` would assert they
+    // FAILED their floor, and a gate reading `=== true` would lock out the
+    // install base. A Boolean() coercion in the mapper - the shape hapticCues
+    // and the other flags use - is exactly the bug this catches.
+    mockPreferenceSelect({ user_id: "user-1" });
+
+    const prefs = await getUserPreferences("user-1");
+
+    expect(prefs.ageFloorMet).toBeNull();
+    expect(prefs.ageAttestedCountry).toBeNull();
+    expect(prefs.ageAttestedAt).toBeNull();
+  });
+
+  it("keeps an explicit false distinct from never-asked", async () => {
+    mockPreferenceSelect({ age_floor_met: false, user_id: "user-1" });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({ ageFloorMet: false });
+  });
+
+  it("defaults to never-asked", () => {
+    expect(defaultUserPreferences.ageFloorMet).toBeNull();
+    expect(defaultUserPreferences.ageAttestedCountry).toBeNull();
+    expect(defaultUserPreferences.ageAttestedAt).toBeNull();
+  });
+
+  it("writes the attestation columns when the gate records a verdict", async () => {
+    const { upsert } = mockPreferenceUpdate({ user_id: "user-1" });
+
+    await updateUserPreferences("user-1", {
+      ageAttestedAt: "2026-09-03T10:00:00.000Z",
+      ageAttestedCountry: "BG",
+      ageFloorMet: true,
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      {
+        age_attested_at: "2026-09-03T10:00:00.000Z",
+        age_attested_country: "BG",
+        age_floor_met: true,
+        user_id: "user-1",
+      },
+      expect.anything(),
+    );
+  });
+});
