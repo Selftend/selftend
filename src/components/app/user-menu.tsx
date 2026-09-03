@@ -1,10 +1,10 @@
 import { router, usePathname } from "expo-router";
-import type { MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import * as React from "react";
 import { Platform, Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { GetTheAppSection } from "@/src/components/app/get-the-app-section";
 import { ProfileAvatar } from "@/src/components/app/profile-avatar";
+import { SchemePicker } from "@/src/components/app/scheme-picker";
 import { SocialConnections } from "@/src/components/app/social-connections";
 import { StylePicker } from "@/src/components/app/style-picker";
 import { Button } from "@/src/components/react-native-reusables/button";
@@ -28,15 +28,7 @@ import { useLanguage } from "@/src/providers/i18n-provider";
 import { useSession } from "@/src/providers/session-provider";
 import { useStyleName } from "@/src/lib/style";
 import { STYLE_LABELS } from "@/src/lib/theme/styles";
-import { useThemeStore, type ThemePreference } from "@/src/stores/theme-store";
 import type { TriggerRef } from "@rn-primitives/popover";
-
-const THEME_OPTIONS: ThemePreference[] = ["system", "light", "dark"];
-const THEME_ICONS: Record<ThemePreference, MaterialIconName> = {
-  system: "desktop-windows",
-  light: "light-mode",
-  dark: "dark-mode",
-};
 
 /** Which view the menu body is showing. See `pane` in `UserMenu` for why. */
 type MenuPane = "root" | "palette";
@@ -115,8 +107,6 @@ export function UserMenu() {
   const isSignedIn = Boolean(session);
   const { data: profile } = useUserProfile(user);
   const { language, setLanguage } = useLanguage();
-  const preference = useThemeStore((s) => s.preference);
-  const setPreference = useThemeStore((s) => s.setPreference);
 
   const email = user?.email;
   // One expression, shared with settings (#970) - the header used to omit the OAuth
@@ -129,12 +119,6 @@ export function UserMenu() {
     count: supportedLanguages.length,
     activeIndex: languageIndex < 0 ? 0 : languageIndex,
     onActivate: (index) => void setLanguage(supportedLanguages[index]),
-  });
-  const themeIndex = THEME_OPTIONS.indexOf(preference);
-  const themeRoving = useRovingFocus({
-    count: THEME_OPTIONS.length,
-    activeIndex: themeIndex < 0 ? 0 : themeIndex,
-    onActivate: (index) => setPreference(THEME_OPTIONS[index]),
   });
 
   function openExternal(url: string) {
@@ -279,36 +263,12 @@ export function UserMenu() {
                 ))}
               </View>
 
-              <View
-                accessibilityLabel={t("themeToggle.toggle")}
-                accessibilityRole="radiogroup"
-                role="radiogroup"
-              >
-                <Text className="text-xs font-medium text-muted-foreground px-2 pb-1">
-                  {t("themeToggle.toggle")}
-                </Text>
-                {THEME_OPTIONS.map((value, index) => (
-                  <Pressable
-                    accessibilityLabel={t(`themeToggle.${value}`)}
-                    accessibilityRole="radio"
-                    aria-checked={preference === value}
-                    key={value}
-                    className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
-                    hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-                    onPress={() => setPreference(value)}
-                    role="radio"
-                    {...themeRoving.getItemProps(index, () => setPreference(value))}
-                  >
-                    <View className="size-4 items-center justify-center">
-                      {preference === value ? (
-                        <Icon name="check" className="size-4 text-foreground" />
-                      ) : null}
-                    </View>
-                    <Icon name={THEME_ICONS[value]} className="size-4 text-foreground" />
-                    <Text className="text-sm">{t(`themeToggle.${value}`)}</Text>
-                  </Pressable>
-                ))}
-              </View>
+              {/* The appearance axis, now the same component Settings mounts
+                  (#1827) - the menu was the only UI implementing one, and it
+                  was the outlier on shape: a vertical radio list where #583 and
+                  the design both specify a segmented track. It keeps the
+                  visible caption here, which is the component's default. */}
+              <SchemePicker />
 
               {/* One row where eight cards were. The palette name is a proper noun
               and stays untranslated (#561); the section word around it does not. */}
