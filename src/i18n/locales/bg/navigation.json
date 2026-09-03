@@ -142,9 +142,12 @@
       "addHeading": "Добави към началния екран",
       "addChip": "Добави {{title}}",
       "addChipTagged": "Добави {{title}}, {{module}}",
+      "addCategory": {
+        "tools": "Инструменти",
+        "cbt": "КПТ",
+        "act": "ACT"
+      },
       "moduleTag": {
-        "cbt": "CBT",
-        "act": "ACT",
         "cbtA11y": "CBT - Когнитивно-поведенческа терапия",
         "actA11y": "ACT - Терапия на приемане и ангажираност"
       },
@@ -237,7 +240,7 @@
         "itemsLabel": "Неща"
       },
       "meditationPick": {
-        "title": "Изборът за днес",
+        "title": "Медитация",
         "desc": "Кратка сесия, избрана за часа на деня.",
         "sessionsLabel": "Сесии",
         "minutesLabel": "Минути"
