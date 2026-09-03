@@ -64,7 +64,7 @@ export async function readUnderFloorBlock(now: Date): Promise<boolean> {
 
     // Expired or unusable: drop it, so a stale entry is not re-read on every
     // launch for the life of the install.
-    await clearUnderFloorBlock();
+    await clearBlock();
     return false;
   } catch {
     return false;
@@ -81,8 +81,17 @@ export async function writeUnderFloorBlock(now: Date): Promise<void> {
   }
 }
 
-/** Lift the block. */
-export async function clearUnderFloorBlock(): Promise<void> {
+/**
+ * Lift the block.
+ *
+ * ⚠️ Deliberately **not exported**. Its only caller is the expiry branch above,
+ * and keeping it private makes "the one thing that lifts this block is time" a
+ * property of the module rather than a convention: an exported clear is an
+ * invitation to lift the block from a screen, which is the hole the flag
+ * exists to close. It is covered through `readUnderFloorBlock` on an expired
+ * entry, not directly.
+ */
+async function clearBlock(): Promise<void> {
   try {
     await AsyncStorage.removeItem(UNDER_FLOOR_BLOCK_KEY);
   } catch {

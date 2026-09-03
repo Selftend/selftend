@@ -92,13 +92,26 @@ export default function ProtectedLayout() {
   // Web signed-out redirect: mutating window.location is a side effect, so it
   // lives in an effect (the compiler's immutability rule forbids it in render);
   // the render below returns null for this state while the redirect kicks in.
-  // ☠️ `&& !deviceBlock.blocked`. The under-floor exit deletes the account and
-  // then signs out, which lands squarely in this condition - so without the
-  // clause the web redirect would fire the moment the erasure succeeded and
-  // bounce the person to the marketing landing, replacing the exit screen with
-  // an invitation to start. The block owns the surface until it lifts.
+  // ☠️ `&& !underFloor && !deviceBlock.blocked`. The under-floor exit deletes
+  // the account and then signs out, which lands squarely in this condition - so
+  // without the clause the web redirect would fire the moment the erasure
+  // succeeded and bounce the person to the marketing landing, replacing the exit
+  // screen with an invitation to start. The block owns the surface until it
+  // lifts.
+  //
+  // ☠️☠️ And `underFloor` is the half that does the work on the mount that
+  // matters, which is why BOTH are here. `deviceBlock` reads storage once, on
+  // mount; the exit writes the flag after that read, so throughout the verdict's
+  // own mount - the one where the sign-out actually happens - `blocked` is still
+  // false. On web every under-floor person has a session (the `!session` branch
+  // precedes the gate), so that mount is the normal path, not an edge case. The
+  // React state is what is true in the same frame the person answers.
   const signedOutOnWeb =
-    status !== "loading" && !session && Platform.OS === "web" && !deviceBlock.blocked;
+    status !== "loading" &&
+    !session &&
+    Platform.OS === "web" &&
+    !underFloor &&
+    !deviceBlock.blocked;
   useEffect(() => {
     if (signedOutOnWeb && typeof window !== "undefined") {
       window.location.href = "/";

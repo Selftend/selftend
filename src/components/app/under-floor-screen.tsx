@@ -12,7 +12,10 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { LinkButton } from "@/src/components/app/link-button";
-import { useUnderFloorExit } from "@/src/features/auth/use-under-floor-exit";
+import {
+  useUnderFloorExit,
+  type UnderFloorErasureState,
+} from "@/src/features/auth/use-under-floor-exit";
 import { crisisActionUrls } from "@/src/features/policies/policy-content";
 import { openExternalUrl } from "@/src/lib/linking";
 import { useSession } from "@/src/providers/session-provider";
@@ -47,6 +50,19 @@ import { useSession } from "@/src/providers/session-provider";
  * with two translations is drift waiting to happen, and a helpline URL with two
  * homes is worse.
  */
+/**
+ * One sentence per erasure state, in one place - the render and the retry
+ * control both branch on `state`, and two cascades over the same union drift.
+ * `null` means "say nothing", which is the honest answer when there was no
+ * account to remove.
+ */
+const ERASURE_COPY_KEY: Record<UnderFloorErasureState, string | null> = {
+  working: "auth:underFloor.erasing",
+  erased: "auth:underFloor.erased",
+  failed: "auth:underFloor.erasureFailed",
+  "nothing-to-erase": null,
+};
+
 export function UnderFloorScreen() {
   const { t } = useTranslation(["auth", "common", "policies"]);
   const { user } = useSession();
@@ -71,13 +87,15 @@ export function UnderFloorScreen() {
               </Text>
               {/* The erasure, said out loud. A deletion that quietly failed
                   would leave a live account behind a screen promising there
-                  is none, so the three states are three sentences rather than
-                  one optimistic one. */}
-              <Text className="text-muted-foreground text-sm" testID="under-floor-erasure">
-                {state === "working" ? t("auth:underFloor.erasing") : null}
-                {state === "erased" ? t("auth:underFloor.erased") : null}
-                {state === "failed" ? t("auth:underFloor.erasureFailed") : null}
-              </Text>
+                  is none, so each state gets its own sentence rather than one
+                  optimistic one - and `nothing-to-erase` gets no sentence at
+                  all, because there is nothing truthful to say about a removal
+                  that was never needed. */}
+              {ERASURE_COPY_KEY[state] ? (
+                <Text className="text-muted-foreground text-sm" testID="under-floor-erasure">
+                  {t(ERASURE_COPY_KEY[state])}
+                </Text>
+              ) : null}
               {state === "failed" ? (
                 <Button onPress={retry} testID="under-floor-erasure-retry" variant="secondary">
                   <Text>{t("auth:underFloor.erasureRetryLabel")}</Text>

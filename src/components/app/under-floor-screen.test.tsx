@@ -127,6 +127,20 @@ describe("under-floor erasure status", () => {
     expect(screen.queryByText(enAuth.underFloor.erased)).toBeNull();
   });
 
+  it("claims no removal when there was no account to remove", () => {
+    // ☠️ A returning blocked device has no session. Saying "the account has
+    // been removed" there would be the screen asserting something it never
+    // observed, so it says nothing about the erasure at all.
+    mockExitState = "nothing-to-erase";
+    renderWithProviders(<UnderFloorScreen />);
+
+    expect(screen.queryByTestId("under-floor-erasure")).toBeNull();
+    expect(screen.queryByText(enAuth.underFloor.erased)).toBeNull();
+    // The block itself, and the way out, are still exactly as they were.
+    expect(screen.getByText(enAuth.underFloor.title)).toBeTruthy();
+    expect(screen.queryAllByRole("link").map((node) => node.props.href)).toEqual(["/crisis"]);
+  });
+
   it("offers to run the erasure again - the account, never the answers", () => {
     mockExitState = "failed";
     renderWithProviders(<UnderFloorScreen />);

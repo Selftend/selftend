@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { signOut } from "@/src/features/auth/api";
-import { writeUnderFloorBlock } from "@/src/features/auth/under-floor-block";
+import { readUnderFloorBlock, writeUnderFloorBlock } from "@/src/features/auth/under-floor-block";
 import { useDeleteUserAccount } from "@/src/features/settings/queries";
 import { captureError, isReportableError } from "@/src/lib/sentry";
 
 /**
  * `working` while the erasure is in flight, `erased` once nothing of this
- * person is left, `failed` when the deletion did not land.
+ * person is left, `failed` when the deletion did not land, and
+ * `nothing-to-erase` when there was no session to act on.
+ *
+ * ⚠️ That fourth state exists so the screen never says *"the account has been
+ * removed"* on a path that removed nothing. A returning blocked device has no
+ * session, and folding it into `erased` would have been the screen asserting an
+ * erasure it did not observe.
  */
-export type UnderFloorErasureState = "working" | "erased" | "failed";
+export type UnderFloorErasureState = "working" | "erased" | "failed" | "nothing-to-erase";
 
 /**
  * The under-floor exit (#1765, spec #227 §3): block this device, then erase the
@@ -58,44 +64,76 @@ export function useUnderFloorExit(userId: string | null) {
   // is the re-entrancy guard for a double-tapped retry.
   const attempted = useRef(false);
   const running = useRef(false);
+  // ⚠️ The screen is normally held up by the block itself, so this hook rarely
+  // unmounts mid-flight - but `run` sets state after two awaits, and its
+  // sibling `useUnderFloorBlock` guards the same way. One convention, not two.
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const run = useCallback(async () => {
     if (running.current) return;
     running.current = true;
 
+    const settle = (next: UnderFloorErasureState) => {
+      if (mounted.current) setState(next);
+    };
+
+    /** One report path for both failures, so neither can quietly lose its. */
+    const report = (error: unknown) => {
+      // Keeps the expected offline case out of Sentry, exactly as `useSignOut`
+      // does with the same helper.
+      if (isReportableError(error)) {
+        captureError(error);
+      }
+    };
+
     try {
-      setState("working");
+      settle("working");
       // ☠️ First, always. See the docblock: this is the step that must survive
       // the app dying in the middle of the next one.
-      await writeUnderFloorBlock(new Date());
+      //
+      // ⚠️ But only when the window is not already running. The write RESTARTS
+      // it, and this hook mounts on every launch inside it - so an
+      // unconditional write would roll the block forward forever for anyone who
+      // opens the app daily. That is a ban on a device rather than the speed
+      // bump this is meant to be, and punitive in the way AGENTS.md rules out.
+      // The window runs from the verdict, not from every glance at the screen
+      // the verdict produced.
+      const now = new Date();
+      if (!(await readUnderFloorBlock(now))) {
+        await writeUnderFloorBlock(now);
+      }
 
       // No session on this path (a web sign-up that never minted one, or a
       // returning device whose token is already gone): there is nothing to
-      // erase, and the block above is the whole exit.
+      // erase, and the block above is the whole exit. Its own state rather than
+      // `erased`, so the screen never claims a removal it did not observe.
       if (!userId) {
-        setState("erased");
+        settle("nothing-to-erase");
         return;
       }
 
       try {
         await deleteAccount.mutateAsync();
       } catch (error) {
-        if (isReportableError(error)) {
-          captureError(error);
-        }
-        setState("failed");
+        report(error);
+        settle("failed");
         return;
       }
 
       try {
         await signOut("global");
       } catch (error) {
-        if (isReportableError(error)) {
-          captureError(error);
-        }
+        report(error);
       }
 
-      setState("erased");
+      settle("erased");
     } finally {
       running.current = false;
     }

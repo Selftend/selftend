@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { StyleSheet, Text as mockText, View as mockView } from "react-native";
+import { Platform, StyleSheet, Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
 import ProtectedLayout from "./protected-layout";
@@ -15,6 +15,7 @@ import {
 } from "@/src/features/settings/queries";
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 
 type MockSessionState = {
   session: {
@@ -641,5 +642,78 @@ describe("ProtectedLayout under-floor block", () => {
     // Flush the hydrate inside act, rather than letting waitFor race it.
     await act(async () => {});
     expect(screen.getByText("Under-floor screen")).toBeTruthy();
+  });
+});
+
+/**
+ * The web signed-out redirect, and the under-floor exit walking straight into
+ * it (#1765).
+ */
+describe("ProtectedLayout under-floor block on web", () => {
+  const ORIGINAL_OS = Platform.OS;
+  let originalLocation: Location;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    setPlatformOS("web");
+    originalLocation = window.location;
+    // The layout redirects by ASSIGNING window.location.href, which jsdom
+    // answers with a navigation error. A plain object records the assignment
+    // instead, so the test can assert it never happened.
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: { href: "http://localhost/" },
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: originalLocation,
+    });
+    setPlatformOS(ORIGINAL_OS as "web" | "ios" | "android");
+  });
+
+  it("does not bounce an under-floor person to the marketing landing", async () => {
+    // ☠️☠️ The regression this exists for. On web every under-floor person has
+    // a session - the '!session' branch precedes the gate - so the exit's own
+    // sign-out lands squarely in 'signedOutOnWeb', and the redirect would
+    // replace the exit screen with a page whose whole job is a Start CTA.
+    //
+    // ⚠️ And the DEVICE FLAG cannot be what stops it: 'useUnderFloorBlock'
+    // reads storage once on mount, before the exit writes the flag, so
+    // 'blocked' is false for the whole of this mount. The React state is the
+    // half that holds here, which is why the condition carries both.
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: false,
+        policyVersionAccepted: null,
+        ageFloorMet: null,
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    const { rerender } = renderWithProviders(<ProtectedLayout />);
+    fireEvent.press(await screen.findByText("Age gate"));
+    await waitFor(() => expect(screen.getByText("Under-floor screen")).toBeTruthy());
+
+    // What the exit does next: deletes the account, then signs out.
+    mockSessionState = { session: null, status: "ready", user: null };
+    rerender(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Under-floor screen")).toBeTruthy());
+    expect(window.location.href).toBe("http://localhost/");
+    expect(screen.queryByText("Signed-out landing")).toBeNull();
+  });
+
+  it("still redirects an ordinary signed-out visitor, so the guard is not a blanket off-switch", async () => {
+    mockSessionState = { session: null, status: "ready", user: null };
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(window.location.href).toBe("/"));
   });
 });

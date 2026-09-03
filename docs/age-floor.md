@@ -189,6 +189,17 @@ blocked device with a live empty account, which is recoverable: the next launch
 lands back on the exit screen and retries. The reverse order would leave a
 deleted account with no flag — a person walking straight back into the gate.
 
+That recovery has one edge, and it is worth naming rather than implying it away.
+The retry needs the token, so if the session is lost before a failed deletion
+ever succeeds, the account is stranded — empty, but stranded. There is no
+server-side sweep that closes this in general: the guest dormancy job
+(`20260826010000_guest_dormancy_cleanup.sql`) only touches
+`auth.users.is_anonymous` rows and only after twelve months, so it eventually
+collects a stranded **guest** and never collects a stranded Google, Apple or
+email account. Nothing personal is in either — the gate writes nothing on a
+failing verdict — so this is an orphaned empty row rather than retained data,
+and it is recorded here rather than presented as impossible.
+
 **A failed deletion does not sign out.** `delete_user_account()` reads
 `auth.uid()`, so the token is the only thing that can finish the job. The exit
 screen says so plainly rather than claiming an erasure that did not happen, and
@@ -197,11 +208,25 @@ after a successful purge is the opposite case: it is reported, not surfaced,
 because a token naming a user row that no longer exists authenticates nothing.
 
 **The flag holds one expiry timestamp and nothing else** — no date of birth, no
-country, no age, no user id. It expires after 24 hours, because a permanent
-device flag would be a ban on a phone rather than a block on a person, it would
-outlive the household that owns the device, and a reinstall would defeat it
-anyway. It fails open: an unreadable store answers "not blocked", so a storage
-fault can never strand a device with no way to get a session.
+country, no age, no user id. It expires 24 hours after **the verdict**, because
+a permanent device flag would be a ban on a phone rather than a block on a
+person, it would outlive the household that owns the device, and a reinstall
+would defeat it anyway. It fails open: an unreadable store answers "not
+blocked", so a storage fault can never strand a device with no way to get a
+session.
+
+⚠️ **From the verdict, not from every launch** — and that took a deliberate
+line of code. Writing the flag restarts the window, and the exit hook mounts on
+every launch inside it, so an unconditional write would roll the block forward
+indefinitely for anyone who opens the app daily. That is a ban on a device
+rather than a speed bump, and punitive in the way AGENTS.md rules out, so the
+write is skipped when the window is already running.
+
+**Nothing lifts the block but time.** `clearUnderFloorBlock` is deliberately not
+exported — its only caller is the expiry branch inside the module — because an
+exported clear is an invitation to lift the block from a screen, which is the
+hole the flag exists to close. The module's export surface is asserted, so the
+property cannot be quietly re-exported.
 
 **Three places consult it**, and each answers a different way back in:
 
@@ -210,6 +235,15 @@ fault can never strand a device with no way to get a session.
   the auth landing. It also suppresses the web signed-out redirect, which would
   otherwise bounce the person to the marketing landing the instant the erasure
   succeeded.
+
+  ☠️ On that redirect the **React state does the work, not the flag**, and the
+  condition carries both for that reason. `useUnderFloorBlock` reads storage
+  once on mount, and the exit writes the flag after that read — so for the whole
+  of the verdict's own mount `blocked` is still `false`. On web that mount _is_
+  the normal path: every under-floor person there has a session, because the
+  `!session` branch precedes the gate. A guard written on the flag alone reads
+  as correct and does nothing.
+
 - `SessionProvider`, which does not mint a guest for a blocked device. The
   block holds without this, but every launch inside the window would otherwise
   create an anonymous user purely so the exit screen could delete it again.

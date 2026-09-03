@@ -119,9 +119,33 @@ describe("the under-floor exit", () => {
     // returning blocked device has none either.
     const { result } = renderExit(null);
 
-    await waitFor(() => expect(result.current.state).toBe("erased"));
+    // ☠️ NOT "erased": nothing was removed, and the screen must not claim a
+    // removal it never observed.
+    await waitFor(() => expect(result.current.state).toBe("nothing-to-erase"));
     expect(mockDeleteAccount).not.toHaveBeenCalled();
     await expect(AsyncStorage.getItem(UNDER_FLOOR_BLOCK_KEY)).resolves.not.toBeNull();
+  });
+
+  it("does not restart the block window on a later launch", async () => {
+    // ☠️ The screen mounts on every launch inside the window, so an
+    // unconditional write would roll the block forward forever for anyone who
+    // opens the app daily - a ban on a device, not the speed bump this is.
+    const verdict = new Date("2026-09-04T09:00:00.000Z");
+    jest.useFakeTimers().setSystemTime(verdict);
+    const { unmount } = renderExit("user-1");
+    await waitFor(async () =>
+      expect(await AsyncStorage.getItem(UNDER_FLOOR_BLOCK_KEY)).not.toBeNull(),
+    );
+    const setAtVerdict = await AsyncStorage.getItem(UNDER_FLOOR_BLOCK_KEY);
+    unmount();
+
+    // A launch twelve hours later, still inside the window.
+    jest.setSystemTime(new Date(verdict.getTime() + 12 * 60 * 60 * 1000));
+    const { result } = renderExit(null);
+    await waitFor(() => expect(result.current.state).toBe("nothing-to-erase"));
+
+    expect(await AsyncStorage.getItem(UNDER_FLOOR_BLOCK_KEY)).toBe(setAtVerdict);
+    jest.useRealTimers();
   });
 
   it("counts the erasure as done when only the sign-out failed", async () => {

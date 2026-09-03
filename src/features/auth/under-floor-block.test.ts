@@ -3,10 +3,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   UNDER_FLOOR_BLOCK_KEY,
   UNDER_FLOOR_BLOCK_MS,
-  clearUnderFloorBlock,
   readUnderFloorBlock,
   writeUnderFloorBlock,
 } from "./under-floor-block";
+import * as underFloorBlockModule from "./under-floor-block";
 
 const NOW = new Date("2026-09-03T12:00:00.000Z");
 
@@ -71,18 +71,22 @@ describe("what the flag stores", () => {
   });
 });
 
-describe("clearUnderFloorBlock", () => {
-  it("removes the block", async () => {
-    await writeUnderFloorBlock(NOW);
-
-    await clearUnderFloorBlock();
-
-    await expect(readUnderFloorBlock(NOW)).resolves.toBe(false);
+describe("lifting the block", () => {
+  it("is time and nothing else - the module exports no way to clear it", () => {
+    // ☠️ An exported clear would be an invitation to lift the block from a
+    // screen, which is the hole the flag exists to close. Asserted on the
+    // module's surface so the property cannot be quietly re-exported.
+    const surface = Object.keys(underFloorBlockModule);
+    expect(surface).not.toContain("clearUnderFloorBlock");
+    expect(surface.filter((name) => name.toLowerCase().includes("clear"))).toEqual([]);
   });
 
-  it("swallows a storage failure", async () => {
+  it("survives a storage failure while dropping an expired entry", async () => {
+    await writeUnderFloorBlock(NOW);
     jest.spyOn(AsyncStorage, "removeItem").mockRejectedValueOnce(new Error("no storage"));
 
-    await expect(clearUnderFloorBlock()).resolves.toBeUndefined();
+    await expect(readUnderFloorBlock(new Date(NOW.getTime() + UNDER_FLOOR_BLOCK_MS))).resolves.toBe(
+      false,
+    );
   });
 });
