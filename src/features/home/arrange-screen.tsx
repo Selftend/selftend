@@ -15,9 +15,16 @@ import { reorderMoveProps } from "@/src/lib/accessibility";
 import { backWithFallback } from "@/src/lib/back-with-fallback";
 import { CHROME_MUTED_TEXT } from "@/src/lib/theme/chrome";
 import { useSession } from "@/src/providers/session-provider";
-import { WIDGET_META, metaForWidget, moduleTagFor } from "@/src/features/home/widget-registry";
+import {
+  CHIP_CATEGORY_ORDER,
+  WIDGET_META,
+  chipCategoryFor,
+  metaForWidget,
+  moduleTagFor,
+} from "@/src/features/home/widget-registry";
+import type { ChipCategoryKey } from "@/src/features/home/widget-registry";
 import { ArrangeRow } from "@/src/features/home/arrange-row";
-import { MODULE_TAG_KEYS } from "@/src/features/home/module-tag-copy";
+import { CHIP_CATEGORY_KEYS, MODULE_TAG_KEYS } from "@/src/features/home/arrange-chip-copy";
 import { useWidgetTiers } from "@/src/features/home/widget-tiers";
 import {
   useAddWidget,
@@ -125,6 +132,28 @@ function RemoveButton({
   );
 }
 
+/**
+ * A group heading inside the chip run, one level under `Add to your home screen`.
+ *
+ * `variant="h3"` is load-bearing, not sizing: it is what makes this a real heading
+ * (`role="heading"`, aria-level 3) rather than styled text, and a real heading is what
+ * earns the right to have removed the per-chip acronym. A screen-reader user navigating by
+ * heading gets the same grouping a sighted user sees; one navigating by button rotor gets
+ * it from the accessible name instead (see `MODULE_TAG_KEYS`). The className carries the
+ * size down to chrome scale so the h2 above stays dominant - `Text` keeps the semantic
+ * level whatever the classes say.
+ */
+function CategoryHeading({ children }: { children: string }) {
+  return (
+    <Text
+      variant="h3"
+      className={cn("text-[11px] font-bold uppercase tracking-[0.1em]", CHROME_MUTED_TEXT)}
+    >
+      {children}
+    </Text>
+  );
+}
+
 /** A section heading, rendered only with the rows it names. */
 function SectionHeading({ children }: { children: string }) {
   return (
@@ -176,8 +205,10 @@ export default function ArrangeScreen() {
    * omitted six real ids, which would make them unreachable now that the three-level modal
    * is gone. Registry-ordered and unsearched: a ranking would be product-authored
    * curriculum, and searching a list you can see in full is chrome. The failure mode is
-   * height - measured at 390dp the full run is 12 lines in English and 16 in Bulgarian,
-   * and #1246's module tags push both up (English 14 -> 18 at 360dp, Bulgarian 19 -> 21).
+   * height - measured at 390dp the full run is 12 lines in English and 16 in Bulgarian.
+   * The group headings trade against the acronyms they replaced: three heading lines are
+   * added, but every tagged chip loses a separator and an acronym, so the wrapped-line
+   * count comes out at or below what #1246's tags cost.
    * ☠️ Not truncation: chip flex-shrink defaults to zero and the title sets no line limit,
    * so a title long enough to exceed the run's width OVERFLOWS its pill rather than
    * ellipsing. Measured headroom in the tightest case is 14px, at 320dp in Bulgarian.
@@ -188,6 +219,29 @@ export default function ArrangeScreen() {
       preferencesSettled ? Object.keys(WIDGET_META).filter((id) => !widgetIds.includes(id)) : [],
     [preferencesSettled, widgetIds],
   );
+
+  /**
+   * The same ids, in the same registry order, split into the run's three groups.
+   *
+   * Derived from `addableIds` rather than filtered from `WIDGET_META` three times, so the
+   * grouping cannot disagree with the subtraction that made the run - an owned id must
+   * disappear from every group at once. Order within a group is registry order, untouched,
+   * for the same reason the flat run was unranked.
+   *
+   * A group with nothing in it renders nothing at all, heading included: the screen's
+   * existing rule is that a heading over an empty list is a claim about a list that is not
+   * there. Reachable in normal use - add every CBT id and the CBT heading goes with them.
+   */
+  const chipGroups = useMemo(() => {
+    const groups = new Map<ChipCategoryKey, string[]>(
+      CHIP_CATEGORY_ORDER.map((category) => [category, []]),
+    );
+    for (const id of addableIds) groups.get(chipCategoryFor(id))?.push(id);
+    return CHIP_CATEGORY_ORDER.map((category) => ({
+      category,
+      ids: groups.get(category) ?? [],
+    })).filter(({ ids }) => ids.length > 0);
+  }, [addableIds]);
 
   const mutationPending =
     addMutation.isPending ||
@@ -460,12 +514,24 @@ export default function ArrangeScreen() {
               Add-only, and no descriptions: a chip tap has exactly one meaning and is
               reversible in one tap, in view.
 
-              That cost is answered by the module tag (#1246), not by restoring the
-              descriptions. 14 of the 25 chips print a muted trailing acronym
-              naming the module they come from, so `Defusion`, `Make room` and `Choice
-              point` read as one family rather than three novelties. It GROUPS, it does not
-              teach - the acronyms are already glossed in the onboarding wizard, in a better
-              form than a legend would manage. Absence of a tag means standalone.
+              That cost is answered by grouping, not by restoring the descriptions. The run
+              is split under `Tools`, `CBT` and `ACT`, so `Defusion`, `Make room` and
+              `Choice point` read as one family rather than three novelties. It GROUPS, it
+              does not teach - the acronyms are already glossed in the onboarding wizard, in
+              a better form than a legend would manage.
+
+              This replaces #1246's per-chip acronym, which said the same thing 14 times
+              over. ☠️ The tag is gone from the CHIP but not from the accessible name - see
+              `MODULE_TAG_KEYS` for why a heading cannot serve a button-rotor user, and do
+              not restore the printed half on sight.
+
+              Grouping also takes the two `programme` ids in with their module, which the
+              tag exempted: under a heading, `CBT programme` beside `Thought record` is the
+              honest shape of the catalogue. ⚠️ The owned rows ABOVE stay grouped by tier
+              (`Your tools` / `Guided programmes`), and the two taxonomies on one screen are
+              deliberate rather than an oversight - the catalogue answers "what is there, by
+              topic" and the owned list answers "your arrangement, by tier". Reconciling
+              them would re-cut the Sortable groups and the dashboard's own tier order.
             */}
             {!preferencesSettled ? null : (
               <View className="gap-2.5">
@@ -480,49 +546,46 @@ export default function ArrangeScreen() {
                     {t("home.arrange.allAdded")}
                   </Text>
                 ) : (
-                  <View testID="arrange-chip-run" className="flex-row flex-wrap gap-2">
-                    {addableIds.map((id) => {
-                      const meta = metaForWidget(id);
-                      const title = meta ? t(meta.titleKey) : id;
-                      const moduleTag = moduleTagFor(id);
-                      return (
-                        <Pressable
-                          key={id}
-                          accessibilityRole="button"
-                          accessibilityLabel={
-                            moduleTag
-                              ? t("home.arrange.addChipTagged", {
-                                  title,
-                                  module: t(MODULE_TAG_KEYS[moduleTag].a11y),
-                                })
-                              : t("home.arrange.addChip", { title })
-                          }
-                          testID={`arrange-chip-${id}`}
-                          disabled={mutationPending}
-                          onPress={() => addWidget(id)}
-                          className={cn(
-                            "flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 active:bg-accent disabled:opacity-40",
-                            Platform.select({ web: "hover:bg-accent" }),
-                          )}
+                  <View testID="arrange-chip-run" className="gap-3">
+                    {chipGroups.map(({ category, ids }) => (
+                      <View key={category} className="gap-1.5">
+                        <CategoryHeading>{t(CHIP_CATEGORY_KEYS[category])}</CategoryHeading>
+                        <View
+                          testID={`arrange-chip-group-${category}`}
+                          className="flex-row flex-wrap gap-2"
                         >
-                          <Icon name="add" className="size-4 shrink-0 text-primary" />
-                          <Text className="text-[13px] font-medium">{title}</Text>
-                          {moduleTag ? (
-                            <>
-                              <Text className={cn("text-[11px]", CHROME_MUTED_TEXT)}>·</Text>
-                              <Text
+                          {ids.map((id) => {
+                            const meta = metaForWidget(id);
+                            const title = meta ? t(meta.titleKey) : id;
+                            const moduleTag = moduleTagFor(id);
+                            return (
+                              <Pressable
+                                key={id}
+                                accessibilityRole="button"
+                                accessibilityLabel={
+                                  moduleTag
+                                    ? t("home.arrange.addChipTagged", {
+                                        title,
+                                        module: t(MODULE_TAG_KEYS[moduleTag]),
+                                      })
+                                    : t("home.arrange.addChip", { title })
+                                }
+                                testID={`arrange-chip-${id}`}
+                                disabled={mutationPending}
+                                onPress={() => addWidget(id)}
                                 className={cn(
-                                  "text-[11px] font-bold uppercase tracking-[0.1em]",
-                                  CHROME_MUTED_TEXT,
+                                  "flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 active:bg-accent disabled:opacity-40",
+                                  Platform.select({ web: "hover:bg-accent" }),
                                 )}
                               >
-                                {t(MODULE_TAG_KEYS[moduleTag].label)}
-                              </Text>
-                            </>
-                          ) : null}
-                        </Pressable>
-                      );
-                    })}
+                                <Icon name="add" className="size-4 shrink-0 text-primary" />
+                                <Text className="text-[13px] font-medium">{title}</Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    ))}
                   </View>
                 )}
               </View>

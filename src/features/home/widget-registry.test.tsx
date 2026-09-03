@@ -2,16 +2,18 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import {
+  CHIP_CATEGORY_ORDER,
   WIDGET_META,
   WIDGET_REGISTRY,
+  chipCategoryFor,
   isImplemented,
   metaForWidget,
   moduleTagFor,
 } from "@/src/features/home/widget-registry";
 import { CONCERN_KEYS, resolveConcernWidgetIds } from "@/src/features/onboarding/concerns";
 import { SHARED_TOOL_WIDGET_IDS } from "@/src/features/onboarding/recommendations";
-import type { ModuleTagKey } from "@/src/features/home/widget-registry";
-import { MODULE_TAG_KEYS } from "@/src/features/home/module-tag-copy";
+import type { ChipCategoryKey, ModuleTagKey } from "@/src/features/home/widget-registry";
+import { CHIP_CATEGORY_KEYS, MODULE_TAG_KEYS } from "@/src/features/home/arrange-chip-copy";
 import enNavigation from "@/src/i18n/locales/en/navigation.json";
 import bgNavigation from "@/src/i18n/locales/bg/navigation.json";
 
@@ -105,19 +107,22 @@ function copyAt(bundle: unknown, keyPath: string): string | undefined {
 const ACRONYM_AS_A_WORD = /(?<![\p{L}\p{N}])(CBT|ACT|КПТ)(?![\p{L}\p{N}])/gu;
 
 /**
- * The arrange chip's two key paths per module, READ from the screen's own map rather
- * than rebuilt here (#1247).
+ * The arrange chip run's copy key paths, READ from the screen's own maps rather than
+ * rebuilt here (#1247).
  *
- * ☠️ This is the whole reason `MODULE_TAG_KEYS` lives in its own module. A guard that
+ * ☠️ This is the whole reason those maps live in their own module. A guard that
  * reconstructed `home.arrange.moduleTag.${tag}` would prove only that its own
  * reconstruction resolves - a typo in the real map would leave it green while a raw key
  * path shipped to a user. For `cbt` and `act` the arrange suite happens to pin both
  * strings literally, but its stub catalogue knows only those two modules, so for the
  * THIRD module this ticket exists to protect, nothing else would notice.
+ *
+ * The `printed` row is gone with the printed tag itself: the chip no longer renders an
+ * acronym, so `spoken` is the only form a module tag still has. What replaced it is the
+ * group heading, guarded below off `CHIP_CATEGORY_KEYS` in the same way.
  */
 const TAG_COPY_KEYS = [
-  { kind: "printed", of: (tag: ModuleTagKey) => MODULE_TAG_KEYS[tag]?.label },
-  { kind: "spoken", of: (tag: ModuleTagKey) => MODULE_TAG_KEYS[tag]?.a11y },
+  { kind: "spoken", of: (tag: ModuleTagKey) => MODULE_TAG_KEYS[tag] },
 ] as const;
 
 describe("widget registry", () => {
@@ -389,7 +394,9 @@ describe("widget registry", () => {
      * is the right rule (see the predicate's docblock: exempting by title *content* would
      * let a translation edit silently flip a widget's tagging). What it cannot see is the
      * opposite drift: a future `CBT quickstart` tool, correctly tier `tool` and correctly
-     * tagged, would render `CBT quickstart · CBT` with nothing objecting.
+     * tagged, would announce `Add CBT quickstart, CBT - Cognitive Behavioural Therapy`
+     * with nothing objecting. The duplication moved from the eye to the ear when the
+     * printed tag became a group heading; it did not stop being duplication.
      *
      * This is the guard for that, and it is why it reads the shipped copy in BOTH locales
      * rather than trusting English: the acronym a title carries is a translator's choice,
@@ -414,7 +421,7 @@ describe("widget registry", () => {
           }
           return [...title.matchAll(ACRONYM_AS_A_WORD)].map(
             (match) =>
-              `${id} (${locale}): the title "${title}" already says "${match[1]}", so its arrange chip would read "${title} · ${match[1]}". Either take the acronym out of the title, or exempt this widget in moduleTagFor - do not weaken this guard.`,
+              `${id} (${locale}): the title "${title}" already says "${match[1]}", so its arrange chip would ANNOUNCE "Add ${title}, ${match[1]} - ...". Either take the acronym out of the title, or exempt this widget in moduleTagFor - do not weaken this guard.`,
           );
         }),
       );
@@ -462,17 +469,13 @@ describe("widget registry", () => {
 
     /**
      * Third-module completeness, direction two (#1247): a tag the predicate can return
-     * always has copy behind both of its keys.
-     *
-     * The two keys per module are not interchangeable - one is printed (`ACT`) and one is
-     * heard (`ACT - Acceptance and Commitment Therapy`) - so a module with only the first
-     * would leave a screen-reader user hearing a raw key path.
+     * always has copy behind its key.
      *
      * ☠️ Nothing else catches this. `test/i18n-key-coverage.test.ts` matches string
      * literals sitting directly inside a `t(...)` call, and the arrange screen calls
-     * `t(MODULE_TAG_KEYS[tag].label)` - a lookup, with no literal for the scanner to see.
-     * Verified by mutation: deleting `home.arrange.moduleTag.cbt` from `en/navigation.json`
-     * leaves that guard green.
+     * `t(MODULE_TAG_KEYS[tag])` - a lookup, with no literal for the scanner to see.
+     * Verified by mutation: deleting `home.arrange.moduleTag.cbtA11y` from
+     * `en/navigation.json` leaves that guard green.
      *
      * ⚠️ Both locales, but this is NOT the cross-locale key sweep #1247's comment rightly
      * warned against. `src/i18n/locale-parity.test.ts` owns key-path parity (empty
@@ -487,7 +490,7 @@ describe("widget registry", () => {
      * widget reaches is unreachable copy, not a chip a user can meet. The length check is
      * the non-vacuity gate: an empty derivation would leave `missingCopy` empty too.
      */
-    it("every tag the predicate can return has both of its strings", () => {
+    it("every tag the predicate can return has its spoken string", () => {
       const tags: ModuleTagKey[] = [
         ...new Set(
           Object.keys(WIDGET_META)
@@ -537,6 +540,117 @@ describe("widget registry", () => {
 
     it("reads three pairs off the migration, so an empty parse cannot pass", () => {
       expect(COLLAPSED_WIDGET_IDS).toHaveLength(3);
+    });
+  });
+
+  describe("chipCategoryFor", () => {
+    /**
+     * The partition invariant: every catalogued id lands in exactly one group, and the
+     * three groups together are the whole catalogue.
+     *
+     * This is what the flat run got for free and grouping has to earn. A chip that fell
+     * out of every group would be UNREACHABLE - the modal it replaced is gone, so the run
+     * is the only way to re-add a removed widget - and `chipCategoryFor` returning a key
+     * outside `CHIP_CATEGORY_ORDER` is exactly how that would happen, silently.
+     */
+    it("files every catalogued id into exactly one of the three groups", () => {
+      const ids = Object.keys(WIDGET_META);
+      const grouped = CHIP_CATEGORY_ORDER.flatMap((category) =>
+        ids.filter((id) => chipCategoryFor(id) === category),
+      );
+
+      expect(ids.length).toBeGreaterThan(0);
+      expect(grouped.sort()).toEqual([...ids].sort());
+    });
+
+    /**
+     * Grouping takes the programmes IN, where tagging left them out.
+     *
+     * The two predicates disagreeing here is the whole point of their being two, so it is
+     * asserted rather than left to the docblocks: a refactor that "simplified" one into
+     * the other would either strand the programmes in the standalone tools or re-announce
+     * their acronym to a screen reader.
+     */
+    it("groups the two programme cards with their module, unlike moduleTagFor", () => {
+      expect(chipCategoryFor("cbt-programme")).toBe("cbt");
+      expect(chipCategoryFor("act-programme")).toBe("act");
+      expect(moduleTagFor("cbt-programme")).toBeUndefined();
+      expect(moduleTagFor("act-programme")).toBeUndefined();
+    });
+
+    it("groups a module tool with its module, prefix or no prefix", () => {
+      expect(chipCategoryFor("cbt-open-record")).toBe("cbt");
+      expect(chipCategoryFor("act-defusion")).toBe("act");
+      // ☠️ No `cbt-` prefix, but it routes into the CBT module. Not a mistake on sight.
+      expect(chipCategoryFor("self-care")).toBe("cbt");
+    });
+
+    it("groups a standalone tool and an unknown id under the tools heading", () => {
+      expect(chipCategoryFor("breathing-suggested")).toBe("tool");
+      expect(chipCategoryFor("meditation-pick")).toBe("tool");
+      expect(chipCategoryFor("no-such-widget")).toBe("tool");
+    });
+
+    /**
+     * Third-module completeness for grouping, and the reason it is a SEPARATE guard from
+     * the tagging one above.
+     *
+     * ☠️ A `/modules/dbt/...` widget fails the tagging guard loudly, but grouping fails
+     * QUIETLY and worse: it returns `tool`, so the widget would file itself among the
+     * standalone tools and read as one. Nothing about the rendered run would look broken.
+     * Read off the route, like its counterpart, so this is not the predicate agreeing
+     * with itself - and it covers the programme tier too, which that one exempts.
+     */
+    it("groups every module-routed widget under that module, tier regardless", () => {
+      const moduleWidgets = Object.entries(WIDGET_META).filter(([, meta]) =>
+        meta.route.startsWith("/modules/"),
+      );
+
+      const offenders = moduleWidgets
+        .map(([id, meta]) => ({
+          id,
+          expected: meta.route.split("/")[2],
+          actual: chipCategoryFor(id),
+        }))
+        .filter(({ expected, actual }) => actual !== expected)
+        .map(
+          ({ id, expected, actual }) =>
+            `${id}: routes into /modules/${expected} but groups as "${actual}", so its chip would print under the wrong heading. If you just added a ${expected.toUpperCase()} widget, ${expected} needs to become a ChipCategoryKey with heading copy behind it and a place in CHIP_CATEGORY_ORDER - that decision is the point of this failure.`,
+        );
+
+      expect(moduleWidgets.length).toBeGreaterThan(0);
+      expect(offenders).toEqual([]);
+    });
+
+    /**
+     * Heading copy completeness, the counterpart of the spoken-string guard above and
+     * exactly as invisible to the static scanner: the screen calls
+     * `t(CHIP_CATEGORY_KEYS[category])`, a lookup with no literal in it.
+     *
+     * Categories are derived from the real registry, so "reachable" means a heading a user
+     * can actually meet. Both locales, for an empty VALUE rather than a missing path -
+     * `locale-parity.test.ts` owns paths, and `""` is a perfectly good leaf path there.
+     */
+    it("every reachable group heading has copy in both locales", () => {
+      const categories: ChipCategoryKey[] = [
+        ...new Set(Object.keys(WIDGET_META).map((id) => chipCategoryFor(id))),
+      ].sort();
+
+      const missingCopy = categories.flatMap((category) => {
+        const key = CHIP_CATEGORY_KEYS[category];
+        if (key === undefined) {
+          return [
+            `${category}: reachable from the registry but CHIP_CATEGORY_KEYS has no entry for it, so its heading has no string to reach for at all.`,
+          ];
+        }
+        return LOCALE_BUNDLES.filter(({ bundle }) => !copyAt(bundle, key)?.trim()).map(
+          ({ locale }) =>
+            `${category}: no heading string at "${key}" in ${locale}/navigation.json, so the chip run would print that key path as a heading. Coin the copy - do not drop the key.`,
+        );
+      });
+
+      expect(categories).toEqual([...CHIP_CATEGORY_ORDER].sort());
+      expect(missingCopy).toEqual([]);
     });
   });
 });

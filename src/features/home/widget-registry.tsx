@@ -387,6 +387,45 @@ export function moduleTagFor(widgetId: string): ModuleTagKey | undefined {
   return meta.toolKey === "cbt" || meta.toolKey === "act" ? meta.toolKey : undefined;
 }
 
+/** The three groups the arrange chip run is divided into. Keys, not display strings. */
+export type ChipCategoryKey = "tool" | "cbt" | "act";
+
+/** The order the run prints its groups in: the standalone tools first, then each module. */
+export const CHIP_CATEGORY_ORDER: readonly ChipCategoryKey[] = ["tool", "cbt", "act"];
+
+/**
+ * Which group a widget's arrange chip renders under.
+ *
+ * This is the GROUPING question, and it is deliberately not the same question as
+ * `moduleTagFor`, even though the two agree about 14 of the 25 ids. Grouping is total -
+ * every chip prints under exactly one heading, so there is no `undefined` to render - and
+ * it takes the two `programme` ids WITH their module rather than exempting them. Under a
+ * heading, `CBT programme` sitting beside `Thought record` is the honest shape of the
+ * catalogue; a fourth `Guided programmes` group would split each module across two
+ * headings for no gain a browsing user can use.
+ *
+ * ☠️ Do not collapse this into `moduleTagFor`. That predicate answers what a chip's
+ * ACCESSIBLE NAME says, and its programme exemption still holds for the reason it always
+ * did: those two titles already carry the acronym, so naming the module again would
+ * announce "CBT programme, CBT - Cognitive Behavioural Therapy". Grouping has no such
+ * problem, because a heading is printed once rather than once per chip. Two questions,
+ * two answers, and the widget-registry suite pins both.
+ *
+ * The `/modules/` route is the rule, exactly as it is there - ☠️ `self-care` carries no
+ * `cbt-` prefix but routes into the CBT module, so it groups with CBT. The id prefix is
+ * not the rule here either.
+ *
+ * An unknown module route falls back to `tool`. That is the wrong answer, and it is the
+ * same silent failure `moduleTagFor` carries: a third module's widget would file itself
+ * among the standalone tools rather than crash. It is made loud in the same place the
+ * other one is - widget-registry.test.tsx, against the real registry with no mocks.
+ */
+export function chipCategoryFor(widgetId: string): ChipCategoryKey {
+  const meta = WIDGET_META[widgetId];
+  if (!meta || !meta.route.startsWith("/modules/")) return "tool";
+  return meta.toolKey === "cbt" || meta.toolKey === "act" ? meta.toolKey : "tool";
+}
+
 /**
  * Whether the dashboard can render this id at all.
  *
