@@ -276,9 +276,11 @@ export default function SupportScreen() {
                 <Label>{t("feedback.categoryLabel")}</Label>
                 {/*
                   The chip cannot know its siblings, so the group is drawn here.
-                  `ChipRun` wraps: "Bug · Idea · Question · This helped" is two
-                  lines at 360dp, and without wrapping the last chip would be
-                  clipped rather than moved.
+                  `ChipRun` wraps, which is what keeps the last chip from being
+                  clipped rather than moved. The four fit on one row in the
+                  column's full 312px at 360dp; they needed two back when the
+                  form was a Card and its `px-6` left them 264px (#1778). The
+                  wrap matters, the row count does not.
                 */}
                 <View
                   accessibilityLabel={t("feedback.categoryLabel")}
