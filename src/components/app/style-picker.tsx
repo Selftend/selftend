@@ -13,7 +13,8 @@ import { DEFAULT_STYLE, STYLE_LABELS, STYLE_NAMES } from "@/src/lib/theme/styles
 
 // The style half of the theme control (#583). One component with two mount
 // points — the user menu and Settings — rather than two implementations, so
-// there is no second copy to drift.
+// there is no second copy to drift. `scheme-picker.tsx` is the appearance half
+// and now has the same two mounts (#1827).
 //
 // Placement note, because the design and the spec disagree and the spec won:
 // the imported mock shows a dedicated header button opening a 344px popover.
