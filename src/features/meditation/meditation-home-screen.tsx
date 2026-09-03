@@ -10,6 +10,7 @@ import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { AMBIENT_SOUNDS } from "@/src/constants/breathing-sounds";
 import { Section } from "@/src/components/app/section";
 import { ScreenLoading } from "@/src/components/app/screen-state";
 import { MeditationInfo } from "@/src/components/app/meditation-info-modal";
@@ -110,6 +111,13 @@ export default function MeditationHomeScreen() {
   const bellKey = pickedBell ?? bellChoiceKey(storedBell);
   const [pickedBellVolume, setPickedBellVolume] = useState<number | null>(null);
   const bellVolume = pickedBellVolume ?? preferences?.bellVolume ?? 1;
+  // The sit's ambient bed (#1742): its OWN pair of preferences, never the
+  // breathing pair - rain chosen for breathing must not play under a sit the
+  // person never asked it for. Null-until-picked, like the bell above.
+  const [pickedBed, setPickedBed] = useState<string | null>(null);
+  const bedId = pickedBed ?? preferences?.meditationAmbientSoundId ?? "none";
+  const [pickedBedVolume, setPickedBedVolume] = useState<number | null>(null);
+  const bedVolume = pickedBedVolume ?? preferences?.meditationAmbientVolume ?? 0.5;
 
   // The loaded sessions only stand in until the server median arrives (undefined while
   // loading); once it does it wins, including a genuine null for "no sessions yet".
@@ -244,6 +252,19 @@ export default function MeditationHomeScreen() {
   function commitBellVolume(volume: number) {
     if (!userId) return;
     void updatePreferences.mutateAsync({ bellVolume: volume }).catch(() => undefined);
+  }
+
+  // The bed is a discrete choice like the bell, so its change is its commit; its
+  // volume drags like the bell's, so it persists on commit (#1742).
+  function pickBed(id: string) {
+    setPickedBed(id);
+    if (!userId) return;
+    void updatePreferences.mutateAsync({ meditationAmbientSoundId: id }).catch(() => undefined);
+  }
+
+  function commitBedVolume(volume: number) {
+    if (!userId) return;
+    void updatePreferences.mutateAsync({ meditationAmbientVolume: volume }).catch(() => undefined);
   }
 
   // The same clock reading, so the last column advances with the query bound
@@ -411,6 +432,41 @@ export default function MeditationHomeScreen() {
                   accessibilityLabel={t("timer:bell.volumeLabel")}
                 />
               </View>
+              {/* A bed under the sit (#1742), beside the bell volume because a
+                  lane with no volume control is an accessibility regression, not
+                  a follow-up (docs/accessibility.md). The nine breathing beds,
+                  named by the breathing keys, but stored as the sit's OWN
+                  preference. "None" is the first row and the default, and nothing
+                  here says a bed is expected: the volume only appears once one
+                  has been chosen, so the silent default is one row, not two. */}
+              <ChoiceRow
+                testID="sit-bed-choices"
+                label={t("timer:ambient.label")}
+                options={AMBIENT_SOUNDS.map((sound) => ({
+                  value: sound.id,
+                  label: t(`cbt:${sound.labelKey}` as Parameters<typeof t>[0]),
+                }))}
+                value={bedId}
+                onChange={pickBed}
+              />
+              {bedId !== "none" ? (
+                <View className="gap-2" testID="sit-bed-volume">
+                  <View className="flex-row items-baseline justify-between gap-3">
+                    <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                      {t("timer:ambient.volumeLabel")}
+                    </Text>
+                    <Text className="text-[13px] font-semibold tabular-nums text-foreground">
+                      {`${Math.round(bedVolume * 100)}%`}
+                    </Text>
+                  </View>
+                  <VolumeSlider
+                    value={bedVolume}
+                    onChange={setPickedBedVolume}
+                    onCommit={commitBedVolume}
+                    accessibilityLabel={t("timer:ambient.volumeLabel")}
+                  />
+                </View>
+              ) : null}
               {/* `lg`, so the screen's primary action clears the 44dp touch
                   floor on a phone - the default button is 40dp tall. The rows
                   above ARE the setup; Begin hands both choices to the sitting

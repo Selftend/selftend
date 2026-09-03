@@ -13,6 +13,10 @@
     "volumeLabel": "Bell volume",
     "muted": "Off"
   },
+  "ambient": {
+    "label": "Background sound",
+    "volumeLabel": "Background sound volume"
+  },
   "timer": {
     "start": "Start",
     "pause": "Pause",

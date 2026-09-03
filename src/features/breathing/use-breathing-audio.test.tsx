@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react-native";
 
-import { LOOP_FADE_MS } from "@/src/features/breathing/lane-player";
+import { LOOP_FADE_MS } from "@/src/lib/lane-player";
 import { useBreathingAudio } from "@/src/features/breathing/use-breathing-audio";
 import {
   fakePlayers as players,

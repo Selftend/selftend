@@ -52,6 +52,36 @@ describe("audio preferences plumbing", () => {
     expect(prefs.ambientSoundId).toBe("none");
   });
 
+  it("maps and resolves the sit's own bed pair, apart from the breathing pair (#1742)", async () => {
+    // Two columns of their own: rain for breathing must not become rain under a sit.
+    const row = {
+      user_id: "user-1",
+      ambient_sound_id: "rain",
+      ambient_volume: 0.9,
+      meditation_ambient_sound_id: "ocean",
+      meditation_ambient_volume: 0.2,
+    };
+    const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
+    const eq = jest.fn(() => ({ maybeSingle }));
+    const select = jest.fn(() => ({ eq }));
+    const from = jest.fn(() => ({ select }));
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    const prefs = await getUserPreferences("user-1");
+    expect(prefs.ambientSoundId).toBe("rain");
+    expect(prefs.meditationAmbientSoundId).toBe("ocean");
+    expect(prefs.meditationAmbientVolume).toBe(0.2);
+
+    // Same catalog, same resolver: a bed the catalog lacks reads as `none`.
+    maybeSingle.mockResolvedValue({
+      data: { user_id: "user-1", meditation_ambient_sound_id: "not-a-bed" },
+      error: null,
+    });
+    const resolved = await getUserPreferences("user-1");
+    expect(resolved.meditationAmbientSoundId).toBe("none");
+    expect(resolved.meditationAmbientVolume).toBe(defaultUserPreferences.meditationAmbientVolume);
+  });
+
   it("falls back to defaults when the columns are null", async () => {
     const maybeSingle = jest.fn().mockResolvedValue({ data: { user_id: "u" }, error: null });
     const eq = jest.fn(() => ({ maybeSingle }));
@@ -62,6 +92,8 @@ describe("audio preferences plumbing", () => {
     const prefs = await getUserPreferences("u");
     expect(prefs.breathSoundId).toBe(defaultUserPreferences.breathSoundId);
     expect(prefs.breathVolume).toBe(defaultUserPreferences.breathVolume);
+    // The sit's default is silence - the same `none` a fresh row would hold.
+    expect(prefs.meditationAmbientSoundId).toBe("none");
   });
 
   it("includes the audio columns in the update payload", async () => {
@@ -75,10 +107,17 @@ describe("audio preferences plumbing", () => {
       ...defaultUserPreferences,
       breathSoundId: "soft-breath",
       ambientVolume: 0.25,
+      meditationAmbientSoundId: "forest",
+      meditationAmbientVolume: 0.35,
     });
 
     expect(upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ breath_sound_id: "soft-breath", ambient_volume: 0.25 }),
+      expect.objectContaining({
+        breath_sound_id: "soft-breath",
+        ambient_volume: 0.25,
+        meditation_ambient_sound_id: "forest",
+        meditation_ambient_volume: 0.35,
+      }),
       { onConflict: "user_id" },
     );
   });
