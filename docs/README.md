@@ -34,6 +34,7 @@ Use this as the map for project docs. Each entry below links to the doc that own
 - [positioning.md](positioning.md) - the market frame, the value themes, and the words every surface must use
 - [policies.md](policies.md) - public policy surfaces, crisis guidance posture, and launch-review status
 - [gdpr-compliance.md](gdpr-compliance.md) - GDPR/CCPA posture
+- [age-floor.md](age-floor.md) - the decided per-country minimum age, and why it varies (not yet in force)
 - [analytics.md](analytics.md) - analytics and observability posture
 - [licensing.md](licensing.md) - AGPL and third-party content rules
 - [self-hosting.md](self-hosting.md) - hosted, local-only, custom backend, self-hosting paths
