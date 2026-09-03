@@ -9,6 +9,7 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  answerConsentGate,
   clearAgeGate,
   deleteUserByEmail,
   dismissCookieBanner,
@@ -68,10 +69,7 @@ test.describe("sign-up + onboarding + first record", () => {
       .then(() => true)
       .catch(() => false);
     if (consentVisible) {
-      await page.getByRole("checkbox").first().click();
-      const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
-      await expect(acceptButton).toBeEnabled({ timeout: 5_000 });
-      await acceptButton.click();
+      await answerConsentGate(page);
       await expect(consentTitle).toBeHidden({ timeout: 10_000 });
     }
 

@@ -151,12 +151,20 @@ describe("ConsentGate - explicit Art. 9 consent (#1766)", () => {
     // "Separately worded" is the requirement, so the two labels must not be the
     // same sentence with a different testID. The terms control names the
     // documents; the Art. 9 control names what is done with the entries.
+    //
+    // ⚠️ Read off the RENDERED controls, not off the constants at the top of
+    // this file. Asserting a regex against a local string is a test of the test
+    // - it passes with the component rendering neither sentence.
     renderWithProviders(<ConsentGate onAccepted={jest.fn()} />);
 
-    expect(CHECKBOX_LABEL).toMatch(/Privacy Policy and Terms of Service/);
-    expect(HEALTH_DATA_LABEL).not.toMatch(/Terms of Service/);
-    expect(HEALTH_DATA_LABEL).toMatch(/processing the self-help entries/);
-    expect(screen.getByLabelText(HEALTH_DATA_LABEL)).toBeTruthy();
+    const terms = screen.getByTestId("consent-accept-checkbox").props.accessibilityLabel as string;
+    const healthData = screen.getByTestId("consent-health-data-checkbox").props
+      .accessibilityLabel as string;
+
+    expect(terms).toMatch(/Privacy Policy and Terms of Service/);
+    expect(healthData).not.toMatch(/Terms of Service/);
+    expect(healthData).toMatch(/processing the self-help entries/);
+    expect(healthData).not.toBe(terms);
   });
 
   it("states the withdrawal path beside the control", () => {

@@ -19,6 +19,56 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { spaceKeyActivationProps } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 
+interface ConsentCheckboxProps {
+  checked: boolean;
+  label: string;
+  onChange: (checked: boolean) => void;
+  testID: string;
+}
+
+/**
+ * One tickable consent row: the visual box, and the whole row as its control.
+ *
+ * Extracted because the gate asks TWO questions since #1766 and the row was
+ * written out twice - which is two copies of an accessibility contract with
+ * four moving parts. The visual `Checkbox` is hidden from the accessibility
+ * tree (`aria-hidden` for web, `accessibilityElementsHidden` /
+ * `importantForAccessibility` for native) so the row is the single announced
+ * control rather than a box and a label read separately, and
+ * `spaceKeyActivationProps` adds the Space activation web needs on a
+ * `role="checkbox"` that is not an input. Getting one of those right in one
+ * copy and wrong in the other is the failure this removes.
+ *
+ * Deliberately NOT a shared component: each caller still owns its own state,
+ * which is what keeps the two consents separately given (#1766). This bundles
+ * the rendering, not the decision.
+ */
+function ConsentCheckbox({ checked, label, onChange, testID }: ConsentCheckboxProps) {
+  const toggle = () => onChange(!checked);
+
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityLabel={label}
+      accessibilityRole="checkbox"
+      aria-checked={checked}
+      className="flex-row items-start gap-3"
+      onPress={toggle}
+      role="checkbox"
+      {...spaceKeyActivationProps(toggle)}
+    >
+      <Checkbox
+        accessibilityElementsHidden
+        aria-hidden
+        checked={checked}
+        importantForAccessibility="no"
+        onCheckedChange={onChange}
+      />
+      <Text className="flex-1 text-sm">{label}</Text>
+    </Pressable>
+  );
+}
+
 interface ConsentGateProps {
   onAccepted: () => void;
 }
@@ -83,25 +133,12 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
                   <Text>{t("consent.readTerms")}</Text>
                 </Button>
               </View>
-              <Pressable
+              <ConsentCheckbox
                 testID="consent-accept-checkbox"
-                accessibilityLabel={t("consent.checkbox")}
-                accessibilityRole="checkbox"
-                aria-checked={accepted}
-                className="flex-row items-start gap-3"
-                onPress={() => setAccepted(!accepted)}
-                role="checkbox"
-                {...spaceKeyActivationProps(() => setAccepted(!accepted))}
-              >
-                <Checkbox
-                  accessibilityElementsHidden
-                  aria-hidden
-                  checked={accepted}
-                  importantForAccessibility="no"
-                  onCheckedChange={setAccepted}
-                />
-                <Text className="flex-1 text-sm">{t("consent.checkbox")}</Text>
-              </Pressable>
+                checked={accepted}
+                label={t("consent.checkbox")}
+                onChange={setAccepted}
+              />
               {/* The Art. 9 act, under its own heading so that it reads as a
                   second question rather than as small print under the first.
                   Unticked on arrival like the one above - a pre-selected box is
@@ -109,25 +146,12 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
                   thing standing behind that. */}
               <View className="gap-2 border-t border-border pt-4">
                 <Text className="text-sm font-medium">{t("consent.healthDataTitle")}</Text>
-                <Pressable
+                <ConsentCheckbox
                   testID="consent-health-data-checkbox"
-                  accessibilityLabel={t("consent.healthDataCheckbox")}
-                  accessibilityRole="checkbox"
-                  aria-checked={healthDataConsent}
-                  className="flex-row items-start gap-3"
-                  onPress={() => setHealthDataConsent(!healthDataConsent)}
-                  role="checkbox"
-                  {...spaceKeyActivationProps(() => setHealthDataConsent(!healthDataConsent))}
-                >
-                  <Checkbox
-                    accessibilityElementsHidden
-                    aria-hidden
-                    checked={healthDataConsent}
-                    importantForAccessibility="no"
-                    onCheckedChange={setHealthDataConsent}
-                  />
-                  <Text className="flex-1 text-sm">{t("consent.healthDataCheckbox")}</Text>
-                </Pressable>
+                  checked={healthDataConsent}
+                  label={t("consent.healthDataCheckbox")}
+                  onChange={setHealthDataConsent}
+                />
                 {/* Beside the control, not in a policy the person would have to
                     go and find: §3 asks for the withdrawal path to be stated
                     here. Its own node rather than part of the checkbox's

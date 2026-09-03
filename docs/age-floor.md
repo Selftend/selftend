@@ -311,6 +311,14 @@ accepted a policy version, so an existing account passes straight through it to
 the consent step. That is §7's "no age or country re-ask", and it falls out of
 the ordering rather than needing a rule of its own.
 
+⚠️ **The copy lives in the `settings` namespace, not `auth`.** §6's inventory
+lists the consent step under "`auth` namespace — new keys", written when the
+step was expected to be part of the age-gate flow. It landed in the consent
+gate instead, whose existing copy (`consent.title`, `consent.checkbox`, and the
+rest) has always been in `settings` — splitting one screen's strings across two
+namespaces to satisfy the inventory would cost more than it bought. Recorded
+here because it is a documented divergence, not because it is in doubt.
+
 ⚠️ **The contractual checkbox still reads _"I am 18 or older"_**, and #1766
 deliberately did not change it. The age half of that sentence is published
 eligibility copy, and it moves when the terms move, in

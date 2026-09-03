@@ -139,6 +139,37 @@ export async function clearAgeGate(page: Page) {
   await expect(day).toBeHidden({ timeout: 10_000 });
 }
 
+/**
+ * Answer the consent gate that is already standing, and submit it.
+ *
+ * ☠️ TWO controls since #1766, and both have to be given: the contractual
+ * acceptance, and the separately-worded explicit Art. 9(2)(a) consent to
+ * processing the entries. A `.first()` click - what all three call sites did
+ * before - now leaves the submit disabled, and the `toBeEnabled` below is what
+ * reports it.
+ *
+ * Both are named by testID rather than swept up with `getByRole("checkbox")`.
+ * A sweep would tick whatever the gate grows next, including a control that is
+ * meant to stay unticked, and would do it silently - which is the opposite of
+ * what a gate whose whole point is a deliberate act should be tested with.
+ *
+ * Shared rather than inlined because it was inlined: `landing-guest-entry` and
+ * `sign-up-onboarding` each carried their own copy, so teaching only the
+ * helper about the second control would have left both red.
+ *
+ * Callers decide whether the gate is standing - `dismissPostSignInModals`
+ * probes for it, `landing-guest-entry` asserts it - so this does not probe
+ * again.
+ */
+export async function answerConsentGate(page: Page) {
+  await page.getByTestId("consent-accept-checkbox").click();
+  await page.getByTestId("consent-health-data-checkbox").click();
+
+  const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
+  await expect(acceptButton).toBeEnabled({ timeout: 5_000 });
+  await acceptButton.click();
+}
+
 // After signing in, gates and modals can appear depending on user state:
 //   1. AgeGate - when the account has never accepted a policy version, i.e. it
 //      is brand new (#1764). Sits ABOVE the consent gate, so it goes first.
@@ -163,19 +194,7 @@ export async function dismissPostSignInModals(page: Page) {
     .then(() => true)
     .catch(() => false);
   if (consentVisible) {
-    // TWO checkboxes since #1766, and both have to be given: the contractual
-    // acceptance, and the separately-worded explicit Art. 9(2)(a) consent to
-    // processing the entries. Ticking them all rather than `.first()` - the
-    // submit stays disabled otherwise, and the `toBeEnabled` below is what
-    // would report it.
-    const checkboxes = page.getByRole("checkbox");
-    const count = await checkboxes.count();
-    for (let index = 0; index < count; index += 1) {
-      await checkboxes.nth(index).click();
-    }
-    const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
-    await expect(acceptButton).toBeEnabled({ timeout: 5_000 });
-    await acceptButton.click();
+    await answerConsentGate(page);
     await expect(consentTitle).toBeHidden({ timeout: 10_000 });
   }
 

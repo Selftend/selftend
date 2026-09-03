@@ -185,10 +185,13 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
+    // Never inferred from privacyPolicyAcceptedAt above: every row predating
+    // #1766 accepted a policy under one bundled checkbox, and the reason this
+    // field exists is that a bundled tick is not the explicit Art. 9(2)(a) act.
+    healthDataConsentAt: row.health_data_consent_at ?? null,
     // `?? null` and deliberately NOT `Boolean(...)`, which is what the other
     // flags on this row use. Coercing here would turn "never asked" into
     // "failed the floor" for every account predating the gate (#1762).
-    healthDataConsentAt: row.health_data_consent_at ?? null,
     ageFloorMet: row.age_floor_met ?? null,
     ageAttestedCountry: row.age_attested_country ?? null,
     ageAttestedAt: row.age_attested_at ?? null,

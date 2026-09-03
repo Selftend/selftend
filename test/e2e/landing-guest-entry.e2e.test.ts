@@ -15,7 +15,7 @@ import { expect, test } from "@playwright/test";
 // ☠️ From session-injection, NOT ./fixtures (its beforeEach pool hook would
 // attach to this file and kill every test at 0ms).
 import { CANDIDATE_STORAGE_KEYS } from "./session-injection";
-import { clearAgeGate, dismissCookieBanner } from "./helpers";
+import { answerConsentGate, clearAgeGate, dismissCookieBanner } from "./helpers";
 import { createServiceClient } from "../integration/helpers";
 
 test.describe("landing guest entry", () => {
@@ -78,10 +78,7 @@ test.describe("landing guest entry", () => {
     const consentTitle = page.getByText("Quick policy check", { exact: true });
     await expect(consentTitle).toBeVisible({ timeout: 15_000 });
 
-    await page.getByRole("checkbox").first().click();
-    const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
-    await expect(acceptButton).toBeEnabled({ timeout: 5_000 });
-    await acceptButton.click();
+    await answerConsentGate(page);
 
     // ...followed by the onboarding wizard: the guest is in the app, created
     // without an email address, a password or a name. The age gate asks two
