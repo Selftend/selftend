@@ -75,6 +75,9 @@ interface UserPreferenceRow {
   privacy_policy_accepted_at: string | null;
   terms_accepted_at: string | null;
   policy_version_accepted: string | null;
+  age_floor_met: boolean | null;
+  age_attested_country: string | null;
+  age_attested_at: string | null;
   cookie_consent: CookieConsent | null;
   language: string | null;
   theme: string | null;
@@ -181,6 +184,12 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
+    // `?? null` and deliberately NOT `Boolean(...)`, which is what the other
+    // flags on this row use. Coercing here would turn "never asked" into
+    // "failed the floor" for every account predating the gate (#1762).
+    ageFloorMet: row.age_floor_met ?? null,
+    ageAttestedCountry: row.age_attested_country ?? null,
+    ageAttestedAt: row.age_attested_at ?? null,
     cookieConsent: row.cookie_consent ?? null,
     language: row.language ?? defaultUserPreferences.language,
     languageExplicit: row.language !== null,
@@ -316,6 +325,9 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   privacyPolicyAcceptedAt: "privacy_policy_accepted_at",
   termsAcceptedAt: "terms_accepted_at",
   policyVersionAccepted: "policy_version_accepted",
+  ageFloorMet: "age_floor_met",
+  ageAttestedCountry: "age_attested_country",
+  ageAttestedAt: "age_attested_at",
   cookieConsent: "cookie_consent",
   language: "language",
   theme: "theme",

@@ -81,6 +81,25 @@ export interface UserPreferences {
   privacyPolicyAcceptedAt: string | null;
   termsAcceptedAt: string | null;
   policyVersionAccepted: string | null;
+  /**
+   * The age gate's verdict (#1762, spec #227 §3): did this person clear the
+   * minimum age for the country they declared. `null` is a third state and not
+   * a synonym for `false` - it means never asked, which is where every account
+   * predating the gate stays, since §7 gives them the consent prompt without
+   * re-asking age or country. Only `true` is a pass; read it as `=== true`.
+   *
+   * The date of birth behind the verdict is compared and discarded - it is not
+   * on this type and not in the database.
+   */
+  ageFloorMet: boolean | null;
+  /**
+   * The country the person declared at the age gate, upper-case ISO 3166-1
+   * alpha-2. It picks the floor (`floorForCountry`, #1761), so it is kept
+   * rather than recomputed. `null` means never asked.
+   */
+  ageAttestedCountry: string | null;
+  /** When the attestation was made (#1762). `null` means never asked. */
+  ageAttestedAt: string | null;
   cookieConsent: CookieConsent | null;
   language: string;
   languageExplicit: boolean;
@@ -213,6 +232,11 @@ export const defaultUserPreferences: UserPreferences = {
   privacyPolicyAcceptedAt: null,
   termsAcceptedAt: null,
   policyVersionAccepted: null,
+  // Never asked, which is also the right default for a brand-new account: the
+  // gate has not run yet at the moment these defaults apply.
+  ageFloorMet: null,
+  ageAttestedCountry: null,
+  ageAttestedAt: null,
   cookieConsent: null,
   language: "en",
   languageExplicit: false,
