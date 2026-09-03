@@ -476,32 +476,22 @@ export default function SupportScreen() {
             inside the Android app is noise. Gated here, at the mount point, for
             the same `Children.toArray` reason as the Discord row.
           */}
-            {Platform.OS === "web" ? (
+            {Platform.OS === "web" && appEnv.playStoreUrl ? (
               <SettingsRow
                 icon="android"
                 label={t("supportPage.getAndroid")}
-                description={
-                  appEnv.playStoreUrl
-                    ? t("supportPage.playStore")
-                    : t("navigation:getTheApp.comingSoon")
-                }
+                description={t("supportPage.playStore")}
                 trailing={{ kind: "external" }}
-                disabled={!appEnv.playStoreUrl}
                 onPress={() => openExternalUrl(appEnv.playStoreUrl)}
                 testID="support-row-android"
               />
             ) : null}
-            {Platform.OS === "web" ? (
+            {Platform.OS === "web" && appEnv.appStoreUrl ? (
               <SettingsRow
                 icon="phone-iphone"
                 label={t("supportPage.getIos")}
-                description={
-                  appEnv.appStoreUrl
-                    ? t("supportPage.appStore")
-                    : t("navigation:getTheApp.comingSoon")
-                }
+                description={t("supportPage.appStore")}
                 trailing={{ kind: "external" }}
-                disabled={!appEnv.appStoreUrl}
                 onPress={() => openExternalUrl(appEnv.appStoreUrl)}
                 testID="support-row-ios"
               />

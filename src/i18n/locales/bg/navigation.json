@@ -50,8 +50,7 @@
     "android": "Android",
     "ios": "iOS",
     "androidAccessibility": "Изтегли приложението за Android от Google Play",
-    "iosAccessibility": "Изтегли приложението за iOS от App Store",
-    "comingSoon": "Скоро"
+    "iosAccessibility": "Изтегли приложението за iOS от App Store"
   },
   "languageToggle": {
     "toggle": "Смени езика",

@@ -101,9 +101,24 @@ describe("hasSupabaseConfig", () => {
 // ---------------------------------------------------------------------------
 
 describe("store and community links", () => {
-  it("defaults playStoreUrl and appStoreUrl to empty strings (not released)", () => {
+  it("defaults playStoreUrl and appStoreUrl to the live listings", () => {
     delete process.env.EXPO_PUBLIC_PLAY_STORE_URL;
     delete process.env.EXPO_PUBLIC_APP_STORE_URL;
+
+    jest.resetModules();
+    const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
+
+    expect(appEnv.playStoreUrl).toBe(
+      "https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend",
+    );
+    expect(appEnv.appStoreUrl).toBe("https://apps.apple.com/app/selftend/id6796318929");
+  });
+
+  // A fork opting out is the only build left with no store, so the empty string
+  // has to survive as a real value rather than falling back to our listings.
+  it("keeps an explicitly empty store URL empty", () => {
+    process.env.EXPO_PUBLIC_PLAY_STORE_URL = "";
+    process.env.EXPO_PUBLIC_APP_STORE_URL = "";
 
     jest.resetModules();
     const { appEnv } = require("@/src/lib/env") as typeof import("@/src/lib/env");
