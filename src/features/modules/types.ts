@@ -119,6 +119,13 @@ export interface UserPreferences {
    */
   meditationBellAtHalf: boolean;
   /**
+   * A tap for each meditation bell and each breath phase boundary (#1741), the
+   * sound's counterpart for a person who cannot hear it or sits with the bells
+   * at 0. Opt-in, off by default, native only; one preference toggled from the
+   * sit setup and the breathing session alike.
+   */
+  hapticCues: boolean;
+  /**
    * Volume for all three meditation bells, 0..1; 0 is off (#1188). Until this
    * shipped they fired at a hardcoded 1, which measured as the loudest sound in
    * the app - louder than either breathing lane, both of which had a slider.
@@ -224,6 +231,7 @@ export const defaultUserPreferences: UserPreferences = {
   breathingCycles: null,
   meditationIntervalBellMinutes: 0,
   meditationBellAtHalf: false,
+  hapticCues: false,
   bellVolume: 1,
   meditationAmbientSoundId: "none",
   meditationAmbientVolume: 0.5,

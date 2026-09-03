@@ -11,7 +11,9 @@
   },
   "bell": {
     "volumeLabel": "Bell volume",
-    "muted": "Off"
+    "muted": "Off",
+    "hapticLabel": "Vibration",
+    "hapticHint": "A tap for each bell and each breath phase, alongside the sound or instead of it. Phones and tablets only."
   },
   "ambient": {
     "label": "Background sound",

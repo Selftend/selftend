@@ -98,7 +98,12 @@ jest.mock("@/src/lib/lane-player", () => ({
 // other things in this screen's import graph use it.
 const mockPreferences: {
   data:
-    | { bellVolume?: number; meditationAmbientSoundId?: string; meditationAmbientVolume?: number }
+    | {
+        bellVolume?: number;
+        meditationAmbientSoundId?: string;
+        meditationAmbientVolume?: number;
+        hapticCues?: boolean;
+      }
     | undefined;
 } = { data: undefined };
 jest.mock("@/src/features/settings/queries", () => ({
@@ -594,5 +599,66 @@ describe("the ambient bed (#1742)", () => {
 
     fireEvent.press(screen.getByText("Resume"));
     expect(mockLane.play).toHaveBeenCalledWith(rain, 0.3, true);
+  });
+});
+
+// The bells' tap (#1741). Replaced at the module seam so the assertion is "was
+// the bell's moment marked", not what the phone did about it; the weight and
+// the web no-op are native-haptics.test.ts's business.
+const mockBellHaptic = jest.fn();
+jest.mock("@/src/lib/native-haptics", () => ({ bellHaptic: () => mockBellHaptic() }));
+
+describe("Meditation bells' haptic counterpart (#1741)", () => {
+  beforeEach(() => {
+    mockBellHaptic.mockClear();
+  });
+
+  it("taps nothing across a whole sit while the switch is off - the default, and every existing account", async () => {
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(12 * 60_000 + 250);
+
+    // The sound path rang all four moments (opening, 5, 10, end); no tap joined any.
+    expect(mockPlayOneShot).toHaveBeenCalledTimes(4);
+    expect(mockBellHaptic).not.toHaveBeenCalled();
+  });
+
+  it("taps once per bell moment when on: the opening, the crossed interval, the end", async () => {
+    mockParams.bell = "10";
+    mockPreferences.data = { bellVolume: 0.4, hapticCues: true };
+    renderWithProviders(<MeditationSitScreen />);
+    expect(mockBellHaptic).toHaveBeenCalledTimes(1);
+
+    await advance(10 * 60_000 + 250);
+    expect(mockBellHaptic).toHaveBeenCalledTimes(2);
+
+    await advance(2 * 60_000 + 250);
+    expect(mockBellHaptic).toHaveBeenCalledTimes(3);
+  });
+
+  it("taps at bell volume 0, which is exactly who the tap is for", async () => {
+    // `playOneShot` returns at 0 (#1188), so a tap placed inside the sound path
+    // would vanish for the one person the switch exists for.
+    mockParams.bell = "10";
+    mockPreferences.data = { bellVolume: 0, hapticCues: true };
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(12 * 60_000 + 250);
+
+    expect(mockBellHaptic).toHaveBeenCalledTimes(3);
+    expect(mockPlayOneShot).toHaveBeenLastCalledWith(expect.anything(), 0);
+  });
+
+  it("does not catch up a boundary the suspended app slept through, same as the bell", async () => {
+    mockPreferences.data = { hapticCues: true };
+    renderWithProviders(<MeditationSitScreen />);
+    await advance(61_000);
+
+    // Backgrounded across the 5- and 10-minute bells: the clock moves, no tick runs.
+    act(() => {
+      jest.setSystemTime(new Date(Date.now() + 9 * 60_000));
+    });
+    await advance(250);
+
+    // The opening tap only - two boundaries passed, neither is replayed.
+    expect(mockBellHaptic).toHaveBeenCalledTimes(1);
   });
 });

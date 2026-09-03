@@ -1,13 +1,14 @@
 import { Redirect, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Platform, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { BarChart } from "@/src/components/charts/bar-chart";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
 import { AMBIENT_SOUNDS } from "@/src/constants/breathing-sounds";
@@ -118,6 +119,10 @@ export default function MeditationHomeScreen() {
   const bedId = pickedBed ?? preferences?.meditationAmbientSoundId ?? "none";
   const [pickedBedVolume, setPickedBedVolume] = useState<number | null>(null);
   const bedVolume = pickedBedVolume ?? preferences?.meditationAmbientVolume ?? 0.5;
+  // The bells' tap (#1741): one preference, also toggled from a running breathing
+  // session. Off by default and on every account that never touched it.
+  const [pickedHaptic, setPickedHaptic] = useState<boolean | null>(null);
+  const hapticCues = pickedHaptic ?? preferences?.hapticCues ?? false;
 
   // The loaded sessions only stand in until the server median arrives (undefined while
   // loading); once it does it wins, including a genuine null for "no sessions yet".
@@ -265,6 +270,13 @@ export default function MeditationHomeScreen() {
   function commitBedVolume(volume: number) {
     if (!userId) return;
     void updatePreferences.mutateAsync({ meditationAmbientVolume: volume }).catch(() => undefined);
+  }
+
+  // A switch is its own commit, like the bed's choice (#1741).
+  function pickHapticCues(value: boolean) {
+    setPickedHaptic(value);
+    if (!userId) return;
+    void updatePreferences.mutateAsync({ hapticCues: value }).catch(() => undefined);
   }
 
   // The same clock reading, so the last column advances with the query bound
@@ -432,6 +444,29 @@ export default function MeditationHomeScreen() {
                   accessibilityLabel={t("timer:bell.volumeLabel")}
                 />
               </View>
+              {/* The bells' non-sound counterpart (#1741): a tap per bell, and per
+                  breath phase in the breathing session, for a person who cannot
+                  hear the cue or sits with the bells at 0. Opt-in, off by default,
+                  a supplement and never required (#777). Native only, so the row
+                  is not offered on web at all (docs/accessibility.md). */}
+              {Platform.OS !== "web" ? (
+                <View className="flex-row items-center gap-4" testID="sit-haptic-cues">
+                  <View className="flex-1 gap-1">
+                    <Text className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                      {t("timer:bell.hapticLabel")}
+                    </Text>
+                    <Text variant="muted" className="text-[13px]">
+                      {t("timer:bell.hapticHint")}
+                    </Text>
+                  </View>
+                  <Switch
+                    accessibilityLabel={t("timer:bell.hapticLabel")}
+                    accessibilityHint={t("timer:bell.hapticHint")}
+                    checked={hapticCues}
+                    onCheckedChange={pickHapticCues}
+                  />
+                </View>
+              ) : null}
               {/* A bed under the sit (#1742), beside the bell volume because a
                   lane with no volume control is an accessibility regression, not
                   a follow-up (docs/accessibility.md). The nine breathing beds,

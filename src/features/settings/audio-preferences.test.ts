@@ -17,6 +17,7 @@ describe("audio preferences plumbing", () => {
       ambient_sound_id: "rain",
       breath_volume: 0.4,
       ambient_volume: 0.9,
+      haptic_cues: true,
     };
     const maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
     const eq = jest.fn(() => ({ maybeSingle }));
@@ -29,6 +30,7 @@ describe("audio preferences plumbing", () => {
     expect(prefs.ambientSoundId).toBe("rain");
     expect(prefs.breathVolume).toBe(0.4);
     expect(prefs.ambientVolume).toBe(0.9);
+    expect(prefs.hapticCues).toBe(true);
   });
 
   it("resolves a stored id the catalog no longer has to `none`, on read, for both lanes", async () => {
@@ -94,6 +96,8 @@ describe("audio preferences plumbing", () => {
     expect(prefs.breathVolume).toBe(defaultUserPreferences.breathVolume);
     // The sit's default is silence - the same `none` a fresh row would hold.
     expect(prefs.meditationAmbientSoundId).toBe("none");
+    // And the tap is off (#1741): a null column, like a fresh row's false, is off.
+    expect(prefs.hapticCues).toBe(false);
   });
 
   it("includes the audio columns in the update payload", async () => {
@@ -109,6 +113,7 @@ describe("audio preferences plumbing", () => {
       ambientVolume: 0.25,
       meditationAmbientSoundId: "forest",
       meditationAmbientVolume: 0.35,
+      hapticCues: true,
     });
 
     expect(upsert).toHaveBeenCalledWith(
@@ -117,6 +122,7 @@ describe("audio preferences plumbing", () => {
         ambient_volume: 0.25,
         meditation_ambient_sound_id: "forest",
         meditation_ambient_volume: 0.35,
+        haptic_cues: true,
       }),
       { onConflict: "user_id" },
     );

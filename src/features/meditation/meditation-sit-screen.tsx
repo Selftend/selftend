@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { announceMessage } from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { playOneShot, prepareOneShot, type PreparedOneShot } from "@/src/lib/native-audio";
+import { bellHaptic } from "@/src/lib/native-haptics";
 import { useAmbientLane } from "@/src/lib/use-ambient-lane";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { defaultUserPreferences } from "@/src/features/modules/types";
@@ -190,6 +191,13 @@ export function MeditationSitScreen() {
   useEffect(() => {
     bellVolumeRef.current = preferences?.bellVolume ?? 1;
   }, [preferences?.bellVolume]);
+  // The haptic switch rides a ref for the same reason (#1741). Off until the
+  // preference says otherwise - the default, and the state of every account
+  // that never touched it.
+  const hapticCuesRef = useRef(false);
+  useEffect(() => {
+    hapticCuesRef.current = preferences?.hapticCues ?? false;
+  }, [preferences?.hapticCues]);
   // The bells this sit will ring are LOADED here, on mount, not at their moments
   // (#1744): `playOneShot` builds its player when the bell is due, and the opening
   // bell - fired the instant the sit starts, in the focus effect below - arrived
@@ -216,6 +224,12 @@ export function MeditationSitScreen() {
     };
   }, [bellsOn, bellSeconds, phase]);
   const ring = (slot: BellSlot) => {
+    // The bell's tap (#1741) fires HERE, at the bell's moment, and never inside
+    // the sound path: `playOneShot` returns at volume 0 (#1188), and a person
+    // who muted the bells is exactly who the tap is for. The interval bell's
+    // suspended-app rule is inherited - this runs inside the same `if` as the
+    // ring, so a boundary crossed minutes ago is not caught up with a tap either.
+    if (hapticCuesRef.current) bellHaptic();
     const asset = BELL_ASSETS[slot];
     const volume = bellVolumeRef.current;
     const bells = bellsRef.current;

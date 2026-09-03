@@ -107,6 +107,14 @@ persisted on `user_preferences`:
 
 A new audio lane without a volume control is an accessibility regression, not a follow-up.
 
+The cues also have a non-sound counterpart. `haptic_cues` (off by default, opt-in from the
+sit setup and from a running breathing session, one preference for both) taps once for each
+meditation bell and once at each breath phase boundary through
+[src/lib/native-haptics.ts](../src/lib/native-haptics.ts), for a person who cannot hear the
+cue or sits with the bells at 0 — the tap fires at volume 0 too. It is a supplement and never
+required, and it is **native only**: the module is a no-op on web and the switch is not shown
+there (see Known Gaps).
+
 ## Contributor Checklist
 
 Before opening a PR that adds or changes UI:
@@ -123,6 +131,11 @@ Before opening a PR that adds or changes UI:
 ## Known Gaps
 
 These should be addressed as MVP flows expand:
+
+- The haptic counterpart to the bells and breath cues is native only. The web build has no
+  haptic path (`expo-haptics` would fall back to the Vibration API on a few browsers only,
+  which is deliberately not wired) and hides the switch; a visual pulse for the meditation
+  bell on web would be a separate piece of work.
 
 - Add focused component tests for each new module's critical accessible actions, not just visual text.
 - Add manual screen-reader notes to the release checklist once Android and web device testing resumes.
