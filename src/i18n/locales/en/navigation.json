@@ -142,9 +142,12 @@
       "addHeading": "Add to your home screen",
       "addChip": "Add {{title}}",
       "addChipTagged": "Add {{title}}, {{module}}",
-      "moduleTag": {
+      "addCategory": {
+        "tools": "Tools",
         "cbt": "CBT",
-        "act": "ACT",
+        "act": "ACT"
+      },
+      "moduleTag": {
         "cbtA11y": "CBT - Cognitive Behavioural Therapy",
         "actA11y": "ACT - Acceptance and Commitment Therapy"
       },
@@ -237,7 +240,7 @@
         "itemsLabel": "Items"
       },
       "meditationPick": {
-        "title": "Today's pick",
+        "title": "Meditation",
         "desc": "A short sit chosen for the time of day.",
         "sessionsLabel": "Sessions",
         "minutesLabel": "Minutes"
