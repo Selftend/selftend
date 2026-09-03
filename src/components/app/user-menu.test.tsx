@@ -247,12 +247,71 @@ describe("UserMenu", () => {
     expect(body.props.scrollEnabled).not.toBe(false);
   });
 
-  it("still renders the actions below the palette grid", () => {
+  it("still renders the actions below the palette row", () => {
     renderWithProviders(<UserMenu />);
     fireEvent.press(screen.getByLabelText("Open account menu"));
 
     expect(screen.getByText("Sign Out")).toBeTruthy();
     expect(screen.getByText("Settings")).toBeTruthy();
+  });
+
+  // #1774: eight cards were about 470px of a 288px-wide popover - the largest
+  // thing in the menu, and the reason the scroller above it exists. The grid
+  // now sits behind one row and opens as a pane that REPLACES the body.
+  describe("the palette submenu (#1774)", () => {
+    function openMenu() {
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+    }
+
+    it("shows one row carrying the active palette, and not the grid", () => {
+      renderWithProviders(<UserMenu />);
+      openMenu();
+
+      // Section and value are both in the accessible name: an explicit label
+      // hides a Pressable's children from assistive tech on the web.
+      expect(screen.getByLabelText("Palette, Quiet Lilac")).toBeTruthy();
+      expect(screen.queryByTestId("style-card-quiet-lilac")).toBeNull();
+      expect(screen.queryByTestId("style-card-glacier")).toBeNull();
+    });
+
+    it("opens the grid in a pane that replaces the menu body", () => {
+      renderWithProviders(<UserMenu />);
+      openMenu();
+      fireEvent.press(screen.getByTestId("user-menu-palette-row"));
+
+      expect(screen.getByTestId("style-card-glacier")).toBeTruthy();
+      // Replaced, not expanded - an accordion would leave the grid competing
+      // with every other section, which is the shape being retired.
+      expect(screen.queryByText("Send feedback")).toBeNull();
+      expect(screen.queryByLabelText("Palette, Quiet Lilac")).toBeNull();
+    });
+
+    it("returns to the root view from the back row", () => {
+      renderWithProviders(<UserMenu />);
+      openMenu();
+      fireEvent.press(screen.getByTestId("user-menu-palette-row"));
+      fireEvent.press(screen.getByTestId("user-menu-palette-back"));
+
+      expect(screen.getByText("Send feedback")).toBeTruthy();
+      expect(screen.getByLabelText("Palette, Quiet Lilac")).toBeTruthy();
+      expect(screen.queryByTestId("style-card-glacier")).toBeNull();
+    });
+
+    // The route-change close is imperative (`triggerRef.close()`), not a press -
+    // it still has to reset the pane, or the next open lands mid-submenu.
+    it("reopens on the root view after a route change closed it mid-pane", () => {
+      const { rerender } = renderWithProviders(<UserMenu />);
+      openMenu();
+      fireEvent.press(screen.getByTestId("user-menu-palette-row"));
+      expect(screen.getByTestId("style-card-glacier")).toBeTruthy();
+
+      mockPathname = "/routines";
+      rerender(<UserMenu />);
+      openMenu();
+
+      expect(screen.getByLabelText("Palette, Quiet Lilac")).toBeTruthy();
+      expect(screen.queryByTestId("style-card-glacier")).toBeNull();
+    });
   });
 
   // #1442: a guest's session token is the only key to their account, so
