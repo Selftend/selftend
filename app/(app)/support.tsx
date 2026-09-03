@@ -4,13 +4,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/src/components/react-native-reusables/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/react-native-reusables/card";
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
@@ -245,25 +238,49 @@ export default function SupportScreen() {
       {/* The page's ONE crisis notice. No second card, no crisis row below. */}
       <CrisisSupportCallout />
 
-      {supportEmail ? (
-        <Card>
-          <CardHeader>
-            {/*
-              The form is the page's h2: the sections that follow are h3s, and
-              the form is the one block a reader jumps to by name.
-            */}
-            <CardTitle aria-level={2}>{t("feedback.title")}</CardTitle>
-            <CardDescription>{t("feedback.description")}</CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/*
+        The form and the four Sections sit in ONE no-gap group: each carries its
+        own py-6 and its own top hairline, so the column's gap-6 would compound
+        into a 72px band between them (the grounding and gratitude homes wrap
+        theirs for the same reason).
+
+        The form is a RULED BAND, not a card (design 13a). The page's whole
+        premise is seven stacked cards becoming one column; a bordered, filled,
+        rounded panel in the middle of that column reads as the one survivor of
+        the stack rather than as the column's second block. Its bottom rule is
+        the next Section's top rule - one hairline between blocks, never two.
+      */}
+      <View>
+        {supportEmail ? (
+          <Section>
+            <View className="gap-1">
+              {/*
+                The form is the page's h2: the sections that follow are h3s, and
+                the form is the one block a reader jumps to by name. It carries a
+                19px title rather than a Section eyebrow because it names a block
+                a reader acts IN, not one they skim past.
+              */}
+              <Text
+                role="heading"
+                aria-level={2}
+                className="text-[19px] font-semibold tracking-tight text-foreground"
+              >
+                {t("feedback.title")}
+              </Text>
+              <Text variant="muted" className="text-sm">
+                {t("feedback.description")}
+              </Text>
+            </View>
             <View className="gap-4">
               <View className="gap-2">
                 <Label>{t("feedback.categoryLabel")}</Label>
                 {/*
                   The chip cannot know its siblings, so the group is drawn here.
-                  `ChipRun` wraps: "Bug · Idea · Question · This helped" is two
-                  lines at 360dp, and without wrapping the last chip would be
-                  clipped rather than moved.
+                  `ChipRun` wraps, which is what keeps the last chip from being
+                  clipped rather than moved. The four fit on one row in the
+                  column's full 312px at 360dp; they needed two back when the
+                  form was a Card and its `px-6` left them 264px (#1778). The
+                  wrap matters, the row count does not.
                 */}
                 <View
                   accessibilityLabel={t("feedback.categoryLabel")}
@@ -290,33 +307,14 @@ export default function SupportScreen() {
               </View>
 
               <View className="gap-2">
-                <Label>{t("feedback.messageLabel")}</Label>
-                <Textarea
-                  accessibilityLabel={t("feedback.messageLabel")}
-                  maxLength={FEEDBACK_MAX_LENGTH}
-                  numberOfLines={5}
-                  onChangeText={(text) => {
-                    setFeedbackMessage(text);
-                    if (feedbackError) setFeedbackError("");
-                  }}
-                  placeholder={t(`feedback.placeholder.${feedbackCategory}`)}
-                  value={feedbackMessage}
-                />
                 {/*
-                  The inline error (too short, or a malformed reply-to) on the
-                  left; the counter always on the right, so it never jumps when
-                  an error appears.
+                  The counter rides the label's own row, right- and
+                  baseline-aligned with it (design 13a). It belongs to the field,
+                  and under the box it shared a line with the inline error, where
+                  the two competed for the same edge.
                 */}
-                <View className="flex-row items-start justify-between gap-3">
-                  {feedbackError ? (
-                    // A polite live region: the error appears on press, away
-                    // from where focus is, so it is announced rather than found.
-                    <Text className="flex-1 text-sm text-destructive" {...politeLiveRegionProps()}>
-                      {feedbackError}
-                    </Text>
-                  ) : (
-                    <View className="flex-1" />
-                  )}
+                <View className="flex-row items-baseline justify-between gap-3">
+                  <Label>{t("feedback.messageLabel")}</Label>
                   <Text
                     // ☠️ `current`, never `count`: `count` is i18next's plural
                     // selector and the lookup would walk `counterLabel_one` first.
@@ -331,6 +329,24 @@ export default function SupportScreen() {
                     {`${feedbackMessage.length} / ${FEEDBACK_MAX_LENGTH}`}
                   </Text>
                 </View>
+                <Textarea
+                  accessibilityLabel={t("feedback.messageLabel")}
+                  maxLength={FEEDBACK_MAX_LENGTH}
+                  numberOfLines={5}
+                  onChangeText={(text) => {
+                    setFeedbackMessage(text);
+                    if (feedbackError) setFeedbackError("");
+                  }}
+                  placeholder={t(`feedback.placeholder.${feedbackCategory}`)}
+                  value={feedbackMessage}
+                />
+                {feedbackError ? (
+                  // A polite live region: the error appears on press, away from
+                  // where focus is, so it is announced rather than found.
+                  <Text className="text-sm text-destructive" {...politeLiveRegionProps()}>
+                    {feedbackError}
+                  </Text>
+                ) : null}
               </View>
 
               {isGuest ? (
@@ -362,35 +378,30 @@ export default function SupportScreen() {
               ) : null}
 
               {/*
-                Footnote beside the button, wrapping under it in the 312px
-                column at 360dp: the button grows to the full width there and
-                sits at its own width from `sm:` up, where the footnote takes
-                the rest of the line. `disabled` only while sending - a success
-                never takes the button away (#1722).
+                Design 13a puts the footnote at the row's left and Send at its
+                right; at 360dp the button is full-width with the footnote under
+                it. Source order stays Button-then-footnote so the narrow column
+                reads the action first, and `sm:flex-row-reverse` with
+                `justify-between` swaps them into the drawn order from `sm:` up.
+                `disabled` only while sending - a success never takes the button
+                away (#1722).
               */}
-              <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2">
+              <View className="gap-3 sm:flex-row-reverse sm:items-center sm:justify-between sm:gap-4">
                 <Button
-                  className="grow sm:grow-0"
+                  className="sm:grow-0"
                   disabled={isSubmitting}
                   onPress={() => void handleFeedbackSubmit()}
                 >
                   <Text>{isSubmitting ? t("feedback.submitting") : t("feedback.submit")}</Text>
                 </Button>
-                <Text variant="muted" className="min-w-0 flex-1 basis-56 text-xs">
+                <Text variant="muted" className="min-w-0 text-xs sm:flex-1">
                   {t("feedback.attachNothing")}
                 </Text>
               </View>
             </View>
-          </CardContent>
-        </Card>
-      ) : null}
+          </Section>
+        ) : null}
 
-      {/*
-        The Sections sit in a no-gap group: each carries its own py-6, so the
-        column's gap-6 would compound into a 72px band between them (the
-        grounding and gratitude homes wrap theirs for the same reason).
-      */}
-      <View>
         <Section title={t("feedback.otherChannels")}>
           {/*
           A hairline run: the section already carries the chrome, and a card

@@ -166,3 +166,36 @@ describe("SelectableChip as a radio", () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 });
+
+/**
+ * The wrap is `ChipRun`'s whole reason to exist: a run too wide for its column
+ * has to take another row, because the alternative is a clipped chip nobody can
+ * press. The support page's e2e used to prove this incidentally, by measuring
+ * that its four chips landed on two rows at 360dp - but that row count came from
+ * the form card's `px-6`, and it stopped being true when the card went (#1778).
+ * Pinned here instead, where it belongs and cannot drift with a caller's width.
+ */
+describe("ChipRun", () => {
+  it("wraps its chips rather than letting them overflow one row", () => {
+    renderWithProviders(
+      <ChipRun className="mt-2">
+        <SelectableChip label="Bug" selected={false} onToggle={jest.fn()} />
+      </ChipRun>,
+    );
+
+    // Walked from the chip rather than matched by testID: the wrap lives on
+    // ChipRun's own View, and this stays true however the chip is nested.
+    let node = screen.getByLabelText("Bug").parent;
+    const classNames: string[] = [];
+    while (node) {
+      if (typeof node.props?.className === "string") classNames.push(node.props.className);
+      node = node.parent;
+    }
+
+    const run = classNames.find((name) => name.includes("flex-wrap"));
+    expect(run).toBeDefined();
+    expect(run).toContain("flex-row");
+    // The caller's own class lands on that same View, so the run stays composable.
+    expect(run).toContain("mt-2");
+  });
+});
