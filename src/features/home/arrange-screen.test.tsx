@@ -119,6 +119,23 @@ jest.mock("@/src/features/home/widget-registry", () => ({
   }),
   moduleTagFor: (widgetId: string) =>
     ({ "cbt-open-record": "cbt", "act-defusion": "act" })[widgetId],
+  /**
+   * Stubbed as bluntly as `moduleTagFor`, and for the same reason - WHICH widget groups
+   * where is proven against the real registry in widget-registry.test.tsx, not here.
+   *
+   * ☠️ The two stubs deliberately DISAGREE about the programme ids, because the real
+   * predicates do: grouping takes them in, tagging leaves them out. A stub that collapsed
+   * the two into one lookup would make this suite unable to notice the screen collapsing
+   * them too.
+   */
+  chipCategoryFor: (widgetId: string) =>
+    ({
+      "cbt-programme": "cbt",
+      "cbt-open-record": "cbt",
+      "act-programme": "act",
+      "act-defusion": "act",
+    })[widgetId] ?? "tool",
+  CHIP_CATEGORY_ORDER: ["tool", "cbt", "act"],
 }));
 
 beforeEach(() => {
@@ -404,7 +421,15 @@ describe("ArrangeScreen reorder", () => {
 });
 
 describe("ArrangeScreen chip run", () => {
-  it("lists every not-added id, in registry order", () => {
+  /**
+   * Every not-added id is still present and complete - the run is the only way back to a
+   * removed widget - but it now reads group by group, tools first.
+   *
+   * ☠️ Registry order survives WITHIN a group and nowhere else. `journal-week` moving
+   * ahead of the two programmes is the grouping working, not a ranking creeping in: it is
+   * second among the tools because it is second among the tools in the catalogue.
+   */
+  it("lists every not-added id, grouped tools-first and in registry order inside each group", () => {
     renderArrange(["sleep-latest"]);
 
     const chips = within(screen.getByTestId("arrange-chip-run"))
@@ -412,12 +437,54 @@ describe("ArrangeScreen chip run", () => {
       .map((node) => node.props.testID as string);
     expect(chips).toEqual([
       "arrange-chip-mood-checkin",
-      "arrange-chip-cbt-programme",
-      "arrange-chip-act-programme",
       "arrange-chip-journal-week",
+      "arrange-chip-cbt-programme",
       "arrange-chip-cbt-open-record",
+      "arrange-chip-act-programme",
       "arrange-chip-act-defusion",
     ]);
+  });
+
+  /**
+   * The group a chip actually renders under, asserted through the group containers rather
+   * than the flat order above - flat order alone would pass if every chip landed in one
+   * group and the headings above them lied.
+   */
+  it("prints each chip under its own group, programmes included", () => {
+    renderArrange(["sleep-latest"]);
+
+    const idsIn = (category: string) =>
+      within(screen.getByTestId(`arrange-chip-group-${category}`))
+        .getAllByRole("button")
+        .map((node) => node.props.testID as string);
+
+    expect(idsIn("tool")).toEqual(["arrange-chip-mood-checkin", "arrange-chip-journal-week"]);
+    expect(idsIn("cbt")).toEqual(["arrange-chip-cbt-programme", "arrange-chip-cbt-open-record"]);
+    expect(idsIn("act")).toEqual(["arrange-chip-act-programme", "arrange-chip-act-defusion"]);
+  });
+
+  it("heads each group, at one level under the run's own heading", () => {
+    renderArrange(["sleep-latest"]);
+
+    const run = within(screen.getByTestId("arrange-chip-run"));
+    for (const heading of ["Tools", "CBT", "ACT"]) {
+      expect(run.getByText(heading).props["aria-level"]).toBe("3");
+    }
+  });
+
+  /**
+   * A heading over nothing is a claim about a list that is not there - the rule the owned
+   * sections above already follow. Reachable in normal use: add every CBT id and the CBT
+   * heading has to go with them.
+   */
+  it("drops a group's heading once everything under it is added", () => {
+    renderArrange(["cbt-programme", "cbt-open-record"]);
+
+    const run = within(screen.getByTestId("arrange-chip-run"));
+    expect(screen.queryByTestId("arrange-chip-group-cbt")).toBeNull();
+    expect(run.queryByText("CBT")).toBeNull();
+    expect(run.getByText("ACT")).toBeTruthy();
+    expect(run.getByText("Tools")).toBeTruthy();
   });
 
   it("is add-only - an already-added id has no chip", () => {
@@ -502,50 +569,46 @@ describe("ArrangeScreen chip run", () => {
    * It is now two tests, and the comments claim what they actually hold: NO DESCRIPTION,
    * which is what #980 removed and what must not creep back - not "nothing else".
    */
-  it("carries no search field, and an untagged chip is its name alone", () => {
+  it("carries no search field, and every chip is its name alone", () => {
     renderArrange(["sleep-latest"]);
 
     expect(screen.queryByPlaceholderText(/search/i)).toBeNull();
-    // One text node: the title. No description, and no tag - `mood-checkin` is standalone,
-    // and absence of a tag is how the run says so.
-    const chip = screen.getByTestId("arrange-chip-mood-checkin");
-    expect(within(chip).getAllByText(/./)).toHaveLength(1);
-  });
-
-  it("gives a tagged chip its title, a separator and the acronym - and still no description", () => {
-    renderArrange(["sleep-latest"]);
-
-    // Exactly three text nodes. A fourth would mean a description had crept back in; two
-    // would mean the tag had collapsed into the title as one interpolated string.
-    const chip = screen.getByTestId("arrange-chip-act-defusion");
-    expect(within(chip).getAllByText(/./)).toHaveLength(3);
+    // One text node per chip: the title. No description, and - since the module moved to a
+    // group heading - no trailing acronym either. Asserted across the WHOLE run rather
+    // than on a sample, which is the mistake described above: a two-node chip would mean a
+    // printed tag had crept back beside the heading that replaced it, and a three-node one
+    // would mean a description had.
+    for (const chip of within(screen.getByTestId("arrange-chip-run")).getAllByRole("button")) {
+      expect({
+        chip: chip.props.testID,
+        nodes: within(chip).getAllByText(/./).length,
+      }).toMatchObject({ chip: chip.props.testID, nodes: 1 });
+    }
   });
 
   /**
    * Asserted by TEXT rather than by a test id. The text proves presence and correctness in
-   * one go, where an id would prove only that something is there - and an id-based ABSENCE
-   * assertion rots silently the day the id is renamed, which is the failure mode that has
-   * bitten this repo before.
+   * one go, where an id would prove only that something is there.
    *
-   * Both modules, because a single case cannot tell a working predicate from a hardcoded
-   * string in the screen.
+   * All three groups, because a single case cannot tell a working predicate from a
+   * hardcoded string in the screen.
    *
-   * ☠️ This test is also the ONLY thing standing between a missing tag key and a raw
-   * `home.arrange.moduleTag.act` rendered to a user. The static i18n coverage guard does
-   * NOT cover these four keys, contrary to what is easy to assume: it matches string
-   * literals sitting directly inside a `t(...)` call, and ours live in `MODULE_TAG_KEYS`,
-   * so `t(MODULE_TAG_KEYS[tag].label)` presents it with no literal at all. The map earns
-   * its place by making the set total at COMPILE time, not by being visible to that guard.
-   * Do not delete this on the grounds that key resolution is already guarded. (Cross-LOCALE
-   * completeness is a different hole again, and is #1247's.)
+   * ☠️ This test is also the ONLY thing standing between a missing heading key and a raw
+   * `home.arrange.addCategory.cbt` rendered to a user. The static i18n coverage guard does
+   * NOT cover these three keys, contrary to what is easy to assume: it matches string
+   * literals sitting directly inside a `t(...)` call, and ours live in
+   * `CHIP_CATEGORY_KEYS`, so `t(CHIP_CATEGORY_KEYS[category])` presents it with no literal
+   * at all. The map earns its place by making the set total at COMPILE time, not by being
+   * visible to that guard. Do not delete this on the grounds that key resolution is already
+   * guarded. (Cross-LOCALE completeness is a different hole again, and is #1247's.)
    */
-  it("prints the acronym of the module each tagged chip comes from", () => {
+  it("prints the heading of every group the run renders", () => {
     renderArrange(["sleep-latest"]);
 
-    expect(within(screen.getByTestId("arrange-chip-act-defusion")).getByText("ACT")).toBeTruthy();
-    expect(
-      within(screen.getByTestId("arrange-chip-cbt-open-record")).getByText("CBT"),
-    ).toBeTruthy();
+    const run = within(screen.getByTestId("arrange-chip-run"));
+    expect(run.getByText("Tools")).toBeTruthy();
+    expect(run.getByText("CBT")).toBeTruthy();
+    expect(run.getByText("ACT")).toBeTruthy();
   });
 
   /**
@@ -553,8 +616,14 @@ describe("ArrangeScreen chip run", () => {
    * so even the untagged label it has always shipped was ungated.
    *
    * Both names are pinned literally, and that pairing is the assertion: it is what goes red
-   * if a regression reaches for the tagged key on every chip, or collapses the two keys
-   * back into one. Either would be invisible to a test that only checked the tagged case.
+   * if a regression reaches for the tagged key on every chip, or drops the module from the
+   * name entirely. Either would be invisible to a test that only checked one of the cases.
+   *
+   * ☠️☠️ This is now the load-bearing half of the module tag, and the reason it did NOT go
+   * when the printed acronym did. The group heading above a chip is a visual grouping; a
+   * screen-reader user browsing the run by button rotor hears these names with no headings
+   * between them, so deleting this as "already said by the heading" would take the module
+   * away from the one audience that cannot see the heading. See `MODULE_TAG_KEYS`.
    */
   it("announces a tagged chip with the module expanded, and leaves an untagged one alone", () => {
     renderArrange(["sleep-latest"]);
@@ -570,11 +639,14 @@ describe("ArrangeScreen chip run", () => {
    * voice-control user speaks what they can see, so every visible word in a chip has to
    * appear in that chip's accessible name.
    *
-   * ☠️ The naive form of this test - loop over every visible text node - FAILS, and
-   * correctly so. The middot is decoration and is deliberately absent from the accessible
-   * name, where the spoken separator is " - " instead. Punctuation-only nodes are filtered
-   * because 2.5.3 concerns label TEXT; drop that filter and this goes red on the separator
-   * rather than on any real defect.
+   * A chip's visible text is now its title alone, so 2.5.3 is satisfied by the untagged
+   * branch and satisfied with room to spare by the tagged one - an accessible name may say
+   * MORE than the label shows, which is exactly the licence the module expansion uses.
+   *
+   * The punctuation filter is kept deliberately though it now filters nothing: it existed
+   * for the middot the printed tag rendered, and it is what lets a decorative separator be
+   * reintroduced inside a chip without this guard going red on the decoration rather than
+   * on a real defect. 2.5.3 concerns label TEXT.
    */
   it("keeps every visible word of a chip inside its accessible name", () => {
     renderArrange(["sleep-latest"]);
