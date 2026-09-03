@@ -234,7 +234,7 @@ describe("SupportScreen column (#1726)", () => {
     appEnv.githubRepoUrl = "https://github.com/Selftend/selftend";
     appEnv.discordUrl = "https://discord.gg/selftend";
     appEnv.playStoreUrl = "https://play.google.com/store/apps/details?id=org.selftend.app";
-    appEnv.appStoreUrl = "";
+    appEnv.appStoreUrl = "https://apps.apple.com/app/selftend/id0000000000";
     mockInvoke.mockResolvedValue({ error: null });
     mockRequireSupabase.mockReturnValue({
       functions: { invoke: mockInvoke },
@@ -367,7 +367,7 @@ describe("SupportScreen column (#1726)", () => {
     expect(screen.queryByRole("link", { name: "Get it on iOS" })).toBeNull();
   });
 
-  it("on web, Android opens Google Play and iOS waits, disabled, with Coming soon", () => {
+  it("on web, both store rows open their live listing", () => {
     setPlatformOS("web");
     renderWithProviders(<SupportScreen />);
 
@@ -377,8 +377,24 @@ describe("SupportScreen column (#1726)", () => {
     );
     expect(screen.getByText("Google Play")).toBeTruthy();
 
-    expect(screen.getByRole("link", { name: "Get it on iOS", disabled: true })).toBeTruthy();
-    expect(screen.getByText("Coming soon")).toBeTruthy();
+    fireEvent.press(screen.getByRole("link", { name: "Get it on iOS" }));
+    expect(mockOpenExternalUrl).toHaveBeenLastCalledWith(
+      "https://apps.apple.com/app/selftend/id0000000000",
+    );
+    expect(screen.getByText("App Store")).toBeTruthy();
+  });
+
+  // A fork with no listing of its own: the row goes, rather than sitting there
+  // disabled promising an app that is never coming.
+  it("drops the row for a store this build has no URL for", () => {
+    setPlatformOS("web");
+    appEnv.appStoreUrl = "";
+    renderWithProviders(<SupportScreen />);
+
+    expect(screen.getByRole("link", { name: "Get it on Android" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Get it on iOS" })).toBeNull();
+    expect(screen.queryByTestId("support-row-ios")).toBeNull();
+    expect(screen.queryByText(/coming soon/i)).toBeNull();
   });
 
   it("policies are two rows that push in-app, and none of them is the crisis page", () => {

@@ -39,11 +39,22 @@ describe("GetTheAppSection", () => {
     expect(mockOpen).toHaveBeenCalledWith(PLAY_URL);
   });
 
-  it("shows a coming-soon chip per platform when the URL is empty", () => {
+  it("omits the store whose URL is empty rather than promising it", () => {
+    setPlatform("web");
+    renderWithProviders(<GetTheAppSection playStoreUrl={PLAY_URL} appStoreUrl="" />);
+
+    expect(screen.getByLabelText("Get the Android app on Google Play")).toBeTruthy();
+    expect(screen.queryByLabelText("Get the iOS app on the App Store")).toBeNull();
+    expect(screen.queryByText(/coming soon/i)).toBeNull();
+  });
+
+  // A fork that opted out of both listings: the heading would otherwise sit over
+  // nothing.
+  it("renders nothing at all when neither store is configured", () => {
     setPlatform("web");
     renderWithProviders(<GetTheAppSection playStoreUrl="" appStoreUrl="" />);
 
-    expect(screen.getAllByText("Coming soon")).toHaveLength(2);
+    expect(screen.queryByText("Get the mobile app")).toBeNull();
     expect(screen.queryByLabelText("Get the Android app on Google Play")).toBeNull();
   });
 });

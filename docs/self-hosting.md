@@ -101,8 +101,8 @@ EXPO_PUBLIC_GITHUB_REPO_URL=https://github.com/Selftend/selftend
 EXPO_PUBLIC_EAS_PROJECT_ID=032dd368-6eae-4a70-bbe5-4ccef2fc06cb
 EXPO_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=<public-vapid-key>
 EXPO_PUBLIC_SENTRY_DSN=<your-sentry-dsn>
-EXPO_PUBLIC_PLAY_STORE_URL=<your-play-store-listing-url>
-EXPO_PUBLIC_APP_STORE_URL=<your-app-store-listing-url>
+EXPO_PUBLIC_PLAY_STORE_URL=<your-play-store-listing-url-or-empty>
+EXPO_PUBLIC_APP_STORE_URL=<your-app-store-listing-url-or-empty>
 EXPO_PUBLIC_DISCORD_URL=<your-discord-invite-url>
 EXPO_PUBLIC_REDDIT_URL=<your-subreddit-url>
 EXPO_PUBLIC_SPONSORS_URL=<your-sponsors-url>
@@ -111,7 +111,9 @@ EXPO_PUBLIC_YOUTUBE_URL=<your-youtube-channel-url>
 
 Error monitoring (Sentry): leave `EXPO_PUBLIC_SENTRY_DSN` unset to disable crash reporting entirely, or set it to a DSN from your own Sentry organization or a self-hosted GlitchTip instance (GlitchTip is Sentry-protocol-compatible). The maintainer's hosted build uses Sentry SaaS; self-hosters are not required to use it.
 
-Store links: `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` are shown on web surfaces. The Play URL additionally drives the Android mobile-web download bar. The Play URL also drives the **Android** in-app update offer, which asks Google Play whether it is serving a newer build to that device rather than reading `/version.json` (a web-deploy timestamp is not evidence a store build is installable). **iOS offers stay disabled** — nothing on the device can observe an App Store promotion. Each platform uses only its own store URL and never falls back to the other. Leave both empty on a self-hosted fork - your build is not on our listings. Empty means the "Coming soon" chip, no download bar, and no native update offer; the web update banner still works because it reads `/version.json` from your own origin (write it in your deploy step, or skip it and the check stays silent).
+Store links: `EXPO_PUBLIC_PLAY_STORE_URL` and `EXPO_PUBLIC_APP_STORE_URL` are shown on web surfaces. Both **default in code to Selftend’s own live listings**, the same way the Discord, Reddit, YouTube and Sponsors links do — a build handed no store config still points somewhere real. **Set each to your own listing URL, or to an empty string, on a self-hosted fork: your build is not on our listings, and shipping a link to someone else’s is exactly what the empty string is for.** An empty store URL drops that store’s button entirely — it is _not_ a "coming soon" state, because a fork’s app is not coming to our listing. Empty also means no download bar and no native update offer; the web update banner still works because it reads `/version.json` from your own origin (write it in your deploy step, or skip it and the check stays silent).
+
+The Play URL additionally drives the Android mobile-web download bar, and the **Android** in-app update offer, which asks Google Play whether it is serving a newer build to that device rather than reading `/version.json` (a web-deploy timestamp is not evidence a store build is installable). **iOS offers stay disabled** — nothing on the device can observe an App Store promotion. Each platform uses only its own store URL and never falls back to the other.
 
 Discord: `EXPO_PUBLIC_DISCORD_URL` defaults in code to the maintainer's community server. Set it to your own invite URL, or set it to an empty string to hide all Discord UI - this is the documented self-hoster affordance for running without a Discord community.
 
