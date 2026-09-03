@@ -268,21 +268,23 @@ describe("SettingsScreen structure", () => {
       renderWithProviders(<SettingsScreen />);
       await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
 
-      const h1s = screen.getAllByRole("heading");
-      expect(h1s).toHaveLength(1);
-      expect(h1s[0].props["aria-level"]).toBe("1");
+      // Read in tree order and across BOTH role names, so "followed by" is what
+      // is actually asserted - two separate role queries could each be in order
+      // and still describe an outline that opens on an h2.
+      const outline = screen.UNSAFE_root.findAll(
+        (node) =>
+          typeof node.type === "string" &&
+          (node.props.role === "heading" || node.props.accessibilityRole === "header"),
+      ).map((node) => [String(node.props["aria-level"]), node.props.children]);
 
-      const h2s = screen.getAllByRole("header");
-      expect(h2s.map((node) => node.props.children)).toEqual([
-        "Appearance",
-        "App",
-        "Your data",
-        "Help",
-        "Account",
+      expect(outline).toEqual([
+        ["1", "Settings"],
+        ["2", "Appearance"],
+        ["2", "App"],
+        ["2", "Your data"],
+        ["2", "Help"],
+        ["2", "Account"],
       ]);
-      for (const node of h2s) {
-        expect(node.props["aria-level"]).toBe(2);
-      }
     });
 
     it("leaves the page eyebrow at the scale it already had", async () => {
