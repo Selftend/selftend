@@ -72,9 +72,16 @@ jest.mock("@/src/features/meditation/queries", () => ({
   }),
 }));
 
+// Every ring lands on this one spy, whether the bell was loaded ahead of its
+// moment (#1744) or built at it, so the volume assertions below read one stream.
+// The loading itself is covered in meditation-sit-screen-preload.test.tsx.
 const mockPlayOneShot = jest.fn();
 jest.mock("@/src/lib/native-audio", () => ({
   playOneShot: (asset: number, volume: number) => mockPlayOneShot(asset, volume),
+  prepareOneShot: (asset: number) => ({
+    play: (volume: number) => mockPlayOneShot(asset, volume),
+    release: () => {},
+  }),
 }));
 
 // Only the one hook is replaced - the rest of the module stays real, because

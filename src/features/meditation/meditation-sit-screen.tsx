@@ -27,7 +27,7 @@ import type {
 import { cn } from "@/lib/utils";
 import { announceMessage } from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
-import { playOneShot } from "@/src/lib/native-audio";
+import { playOneShot, prepareOneShot, type PreparedOneShot } from "@/src/lib/native-audio";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { bellChoiceFromKey, bellSecondsFor } from "@/src/features/meditation/interval";
@@ -54,6 +54,14 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 // attenuated to reach the ceiling. Recorded rather than hidden.
 const bellSound = require("@/assets/sounds/meditation-bell.m4a") as number;
 const intervalSound = require("@/assets/sounds/interval-temple-block.m4a") as number;
+
+/**
+ * The bells one sit rings, each loaded ahead of its moment (#1744). A slot is
+ * `null` once its bell has rung - or, for the interval bell, reloaded behind the
+ * ring, because the next one is due a spacing later.
+ */
+type BellSlot = "opening" | "end" | "interval";
+type SitBells = Record<BellSlot, PreparedOneShot | null>;
 
 /**
  * The reflection's five chips, fixed as `7b` draws them - not the per-stage
@@ -175,6 +183,45 @@ export function MeditationSitScreen() {
   useEffect(() => {
     bellVolumeRef.current = preferences?.bellVolume ?? 1;
   }, [preferences?.bellVolume]);
+  // The bells this sit will ring are LOADED here, on mount, not at their moments
+  // (#1744): `playOneShot` builds its player when the bell is due, and the opening
+  // bell - fired the instant the sit starts, in the focus effect below - arrived
+  // late by the asset load. Declared ABOVE that focus effect on purpose: effects
+  // run in order, so the players exist before the start bell asks for one. The
+  // opening and end bells are the same asset, prepared twice; the interval bell
+  // only when a spacing is set. Whatever never rang is let go with the sit.
+  // Off stays off: at 0 nothing is built, so a user who muted the bells never
+  // has the global audio session configured on their behalf (#1188). The
+  // moment's volume is still read from `bellVolumeRef` when a bell rings.
+  const bellsOn = (preferences?.bellVolume ?? 1) > 0;
+  const bellsRef = useRef<SitBells | null>(null);
+  useEffect(() => {
+    if (!bellsOn || phase !== "sitting") return;
+    const bells: SitBells = {
+      opening: prepareOneShot(bellSound),
+      end: prepareOneShot(bellSound),
+      interval: bellSeconds > 0 ? prepareOneShot(intervalSound) : null,
+    };
+    bellsRef.current = bells;
+    return () => {
+      bellsRef.current = null;
+      for (const bell of Object.values(bells)) bell?.release();
+    };
+  }, [bellsOn, bellSeconds, phase]);
+  const ring = (slot: BellSlot) => {
+    const asset = slot === "interval" ? intervalSound : bellSound;
+    const volume = bellVolumeRef.current;
+    const bells = bellsRef.current;
+    const prepared = bells?.[slot];
+    if (!bells || !prepared) {
+      // Not loaded ahead: the bells are off (nothing plays at 0), or a refocus
+      // restarted the sit after its opening bell was spent. At the moment, as before.
+      playOneShot(asset, volume);
+      return;
+    }
+    prepared.play(volume);
+    bells[slot] = slot === "interval" ? prepareOneShot(asset) : null;
+  };
   // The end bell and the finish request fire once per sit: a pause/resume while
   // the finish waits on the stage query resubscribes the tick, and an unguarded
   // completion branch would ring the end bell again.
@@ -269,7 +316,7 @@ export function MeditationSitScreen() {
         intervalRef.current = null;
         if (!completionRef.current) {
           completionRef.current = true;
-          playOneShot(bellSound, bellVolumeRef.current);
+          ring("end");
           setFinishRequested("after");
         }
         return;
@@ -283,7 +330,7 @@ export function MeditationSitScreen() {
           // not timekeeping.
           const sinceBoundarySeconds = elapsed - boundary * bellSeconds;
           if (boundary - bellCountRef.current === 1 && sinceBoundarySeconds < 2) {
-            playOneShot(intervalSound, bellVolumeRef.current);
+            ring("interval");
           }
           bellCountRef.current = boundary;
         }
@@ -328,7 +375,7 @@ export function MeditationSitScreen() {
       bellCountRef.current = 0;
       completionRef.current = false;
       finishingRef.current = false;
-      playOneShot(bellSound, bellVolumeRef.current);
+      ring("opening");
       setFocused(true);
       return () => {
         if (intervalRef.current) {

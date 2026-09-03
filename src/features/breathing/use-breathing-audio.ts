@@ -4,7 +4,6 @@ import type { PhaseLabel } from "@/src/constants/breathing";
 import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { breathClipFor } from "@/src/features/breathing/breath-audio-plan";
 import { createLanePlayer } from "@/src/features/breathing/lane-player";
-import { playOneShot } from "@/src/lib/native-audio";
 
 interface BreathingAudioOptions {
   active: boolean;
@@ -13,11 +12,6 @@ interface BreathingAudioOptions {
   ambientSoundId: string;
   breathVolume: number;
   ambientVolume: number;
-}
-
-/** Fire-and-forget one-shot (used for the spoken intro before a session). Self-releases. */
-export function playIntroCue(asset: number, volume: number): void {
-  playOneShot(asset, volume);
 }
 
 export function useBreathingAudio(opts: BreathingAudioOptions): void {
