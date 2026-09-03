@@ -26,7 +26,21 @@ interface ConsentGateProps {
 export function ConsentGate({ onAccepted }: ConsentGateProps) {
   const { t } = useTranslation("settings");
   const { user } = useSession();
+  // TWO controls, two pieces of state, and the separation is the whole of
+  // #1766 (spec #227 §3). Until now one checkbox carried three things at once:
+  // an age assertion, agreement to the terms and privacy policy, and consent to
+  // Selftend processing the self-help entries the person saves. The third is
+  // special-category health data, and GDPR Art. 9(2)(a) wants an EXPLICIT act
+  // for it - separately worded, separately given, not a by-product of accepting
+  // a contract. A single tick could not be any of those, however carefully the
+  // sentence was written.
+  //
+  // ☠️ So they must not be collapsed back into one boolean "for tidiness", and
+  // the submit below is disabled until BOTH are true rather than until either
+  // is: `accepted && healthDataConsent`, never `accepted`. The gate's whole
+  // legal weight rests on the Art. 9 half being unsatisfiable by the other.
   const [accepted, setAccepted] = useState(false);
+  const [healthDataConsent, setHealthDataConsent] = useState(false);
   const consentMutation = useRecordPolicyConsent(user?.id ?? null);
   // The gate covers whatever route the user was heading for, so reading a policy
   // from here is a jump out of it and back (#1265, O3). Both policy routes sit
@@ -35,7 +49,11 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
   const pushWithOrigin = usePushWithOrigin();
 
   const handleAccept = async () => {
-    if (!user?.id) {
+    // ☠️ The both-ticked invariant restated where the WRITE is, not only on the
+    // button's `disabled`. `recordPolicyConsent` stamps the Art. 9 consent as
+    // part of the same payload, so anything that reached this function without
+    // the second tick would record a consent nobody gave.
+    if (!user?.id || !accepted || !healthDataConsent) {
       return;
     }
 
@@ -84,10 +102,46 @@ export function ConsentGate({ onAccepted }: ConsentGateProps) {
                 />
                 <Text className="flex-1 text-sm">{t("consent.checkbox")}</Text>
               </Pressable>
+              {/* The Art. 9 act, under its own heading so that it reads as a
+                  second question rather than as small print under the first.
+                  Unticked on arrival like the one above - a pre-selected box is
+                  not an affirmative act, and `useState(false)` is the only
+                  thing standing behind that. */}
+              <View className="gap-2 border-t border-border pt-4">
+                <Text className="text-sm font-medium">{t("consent.healthDataTitle")}</Text>
+                <Pressable
+                  testID="consent-health-data-checkbox"
+                  accessibilityLabel={t("consent.healthDataCheckbox")}
+                  accessibilityRole="checkbox"
+                  aria-checked={healthDataConsent}
+                  className="flex-row items-start gap-3"
+                  onPress={() => setHealthDataConsent(!healthDataConsent)}
+                  role="checkbox"
+                  {...spaceKeyActivationProps(() => setHealthDataConsent(!healthDataConsent))}
+                >
+                  <Checkbox
+                    accessibilityElementsHidden
+                    aria-hidden
+                    checked={healthDataConsent}
+                    importantForAccessibility="no"
+                    onCheckedChange={setHealthDataConsent}
+                  />
+                  <Text className="flex-1 text-sm">{t("consent.healthDataCheckbox")}</Text>
+                </Pressable>
+                {/* Beside the control, not in a policy the person would have to
+                    go and find: §3 asks for the withdrawal path to be stated
+                    here. Its own node rather than part of the checkbox's
+                    accessible name - the name is the act being consented to,
+                    and appending the escape route to it would make the act
+                    longer to hear and no clearer. */}
+                <Text className="text-muted-foreground text-xs">
+                  {t("consent.healthDataWithdrawal")}
+                </Text>
+              </View>
               <Button
                 testID="consent-submit"
                 aria-busy={consentMutation.isPending}
-                disabled={!accepted || consentMutation.isPending}
+                disabled={!accepted || !healthDataConsent || consentMutation.isPending}
                 onPress={() => void handleAccept()}
               >
                 {consentMutation.isPending ? <ActivityIndicator color="#ffffff" /> : null}

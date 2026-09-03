@@ -163,8 +163,16 @@ export async function dismissPostSignInModals(page: Page) {
     .then(() => true)
     .catch(() => false);
   if (consentVisible) {
-    // The first checkbox in the gate is the agreement checkbox.
-    await page.getByRole("checkbox").first().click();
+    // TWO checkboxes since #1766, and both have to be given: the contractual
+    // acceptance, and the separately-worded explicit Art. 9(2)(a) consent to
+    // processing the entries. Ticking them all rather than `.first()` - the
+    // submit stays disabled otherwise, and the `toBeEnabled` below is what
+    // would report it.
+    const checkboxes = page.getByRole("checkbox");
+    const count = await checkboxes.count();
+    for (let index = 0; index < count; index += 1) {
+      await checkboxes.nth(index).click();
+    }
     const acceptButton = page.getByRole("button", { name: "Accept and continue", exact: true });
     await expect(acceptButton).toBeEnabled({ timeout: 5_000 });
     await acceptButton.click();

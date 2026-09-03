@@ -115,6 +115,11 @@ env:
     commands:
       - tapOn:
           id: "consent-accept-checkbox"
+      # The separately-worded explicit Art. 9(2)(a) consent (#1766). Its own
+      # control on purpose, so the submit below stays disabled until both are
+      # given - tapping only the first leaves this flow stuck on the gate.
+      - tapOn:
+          id: "consent-health-data-checkbox"
       - tapOn:
           id: "consent-submit"
       - waitForAnimationToEnd:

@@ -9,6 +9,7 @@ import {
   deleteWebPushSubscription,
   getUserPreferences,
   recordAgeAttestation,
+  recordPolicyConsent,
   updateOnboardingPreferences,
   updateShownButtonTours,
   updateUserPreferences,
@@ -774,6 +775,91 @@ describe("recordAgeAttestation", () => {
     mockAttestationUpsert({ message: "column does not exist" });
 
     await expect(recordAgeAttestation("user-1", "DE")).rejects.toEqual({
+      message: "column does not exist",
+    });
+  });
+});
+
+describe("explicit Art. 9 consent (#1766)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  function mockConsentUpsert(error: unknown = null) {
+    const upsert = jest.fn().mockResolvedValue({ error });
+    const from = jest.fn(() => ({ upsert }));
+
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    return { from, upsert };
+  }
+
+  it("records the health-data consent alongside the contractual acceptance", async () => {
+    const { from, upsert } = mockConsentUpsert();
+
+    await recordPolicyConsent("user-1", "2026-09-02-donations");
+
+    expect(from).toHaveBeenCalledWith("user_preferences");
+    const [payload] = upsert.mock.calls[0];
+    expect(payload).toEqual({
+      user_id: "user-1",
+      privacy_policy_accepted_at: expect.any(String),
+      terms_accepted_at: expect.any(String),
+      policy_version_accepted: "2026-09-02-donations",
+      health_data_consent_at: expect.any(String),
+    });
+  });
+
+  it("stamps both acts with the same moment", () => {
+    // One submit, one payload: the Art. 9 act and the contractual acceptance
+    // are given together even though they are worded and ticked separately, so
+    // a reader comparing the two timestamps should not have to wonder whether
+    // a difference means something.
+    const { upsert } = mockConsentUpsert();
+
+    return recordPolicyConsent("user-1", "v9").then(() => {
+      const [payload] = upsert.mock.calls[0] as [Record<string, string>];
+      expect(payload.health_data_consent_at).toBe(payload.privacy_policy_accepted_at);
+    });
+  });
+
+  it("maps the consent timestamp from the user_preferences row", async () => {
+    mockPreferenceSelect({
+      health_data_consent_at: "2026-09-04T10:00:00.000Z",
+      user_id: "user-1",
+    });
+
+    await expect(getUserPreferences("user-1")).resolves.toMatchObject({
+      healthDataConsentAt: "2026-09-04T10:00:00.000Z",
+    });
+  });
+
+  it("leaves an account that has not performed the act at null", async () => {
+    // Never inferred from privacy_policy_accepted_at. Every existing account
+    // ticked the OLD bundled checkbox, and the reason this column exists is
+    // that a bundled tick is not the explicit act Art. 9(2)(a) asks for - so
+    // "accepted a policy" must never read as "gave explicit consent".
+    mockPreferenceSelect({
+      privacy_policy_accepted_at: "2026-08-01T10:00:00.000Z",
+      terms_accepted_at: "2026-08-01T10:00:00.000Z",
+      policy_version_accepted: "2026-09-02-donations",
+      user_id: "user-1",
+    });
+
+    const prefs = await getUserPreferences("user-1");
+
+    expect(prefs.healthDataConsentAt).toBeNull();
+    expect(prefs.policyVersionAccepted).toBe("2026-09-02-donations");
+  });
+
+  it("defaults to no consent recorded", () => {
+    expect(defaultUserPreferences.healthDataConsentAt).toBeNull();
+  });
+
+  it("propagates a write failure rather than reporting consent that was not stored", async () => {
+    mockConsentUpsert({ message: "column does not exist" });
+
+    await expect(recordPolicyConsent("user-1", "v9")).rejects.toEqual({
       message: "column does not exist",
     });
   });

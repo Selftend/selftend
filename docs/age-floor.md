@@ -264,3 +264,57 @@ strings**, in both locales, with the predicate fired on deliberately bad copy so
 the absence assertions cannot go quiet. It covers the whole `underFloor` block,
 which is why the erasure retry is worded about the account ("Remove it now") and
 never about having another go at the questions.
+
+## The explicit consent that sits beside it
+
+Built in [#1766](https://github.com/Selftend/selftend/issues/1766):
+`src/components/app/consent-gate.tsx`, recorded through
+`recordPolicyConsent` into `user_preferences.health_data_consent_at`
+(`supabase/migrations/20260906000000_health_data_consent.sql`).
+
+The floor exists because the age that matters is the age at which a person may
+consent to Art. 9 processing on their own behalf. That argument only holds if
+the consent is actually asked for — so the gate asks it, of **everyone**,
+whatever age they gave.
+
+**It was already in the app, and being in the app was not the same as being
+given.** The consent gate had one checkbox carrying three things at once: an age
+assertion, agreement to the terms and privacy policy, and consent to processing
+the entries. Art. 9(2)(a) asks for an act that is explicit — separately worded
+and separately performed — and a single tick cannot be that, however carefully
+the sentence is written. So the control split in two: the contractual acceptance
+above, and the Art. 9 consent below it under its own heading, unticked, with the
+withdrawal path stated next to it rather than left in a policy the person would
+have to go and find.
+
+**Both are required to leave the gate.** `disabled={!accepted ||
+!healthDataConsent || …}`, restated inside the submit handler so the invariant
+lives where the write is. `consent-gate.test.tsx` fails if the two are ever
+folded back into one boolean, which is the shape a later tidy-up would naturally
+restore.
+
+**The record is its own column, and it is never inferred.**
+`health_data_consent_at` is NULL until the act is performed, and no migration
+backfills it from `privacy_policy_accepted_at` — every existing row ticked the
+old bundled checkbox, and the whole reason for the column is that a bundled tick
+is not what Art. 9(2)(a) asks for. It is written in the same upsert as the
+contractual acceptance and with the same timestamp (one submit, one moment), and
+it is carried in `export_user_data`, so a person can see their own consent and
+when they gave it.
+
+**Existing users meet it once, and are never asked their age.** Nothing in
+[#1766](https://github.com/Selftend/selftend/issues/1766) bumps `policyVersion`
+— [#1767](https://github.com/Selftend/selftend/issues/1767) does, as part of the
+policy rewrite, and that bump is what re-gates every account through this same
+consent slot. The age gate above it is scoped to accounts that have never
+accepted a policy version, so an existing account passes straight through it to
+the consent step. That is §7's "no age or country re-ask", and it falls out of
+the ordering rather than needing a rule of its own.
+
+⚠️ **The contractual checkbox still reads _"I am 18 or older"_**, and #1766
+deliberately did not change it. The age half of that sentence is published
+eligibility copy, and it moves when the terms move, in
+[#1767](https://github.com/Selftend/selftend/issues/1767) — changing it here
+would leave the checkbox and the terms disagreeing in the other direction. It is
+the same window the warning at the top of this file describes, and it closes the
+same way.

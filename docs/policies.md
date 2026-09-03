@@ -24,6 +24,14 @@ Deferred items from the review (open questions, not launch blockers):
   recommends it.
 - Age attestation stays passive (see "Age floor" below); revisit if a
   jurisdiction or store policy requires an explicit checkbox.
+  **Closed on the consent half 2026-09-04** ([#1766](https://github.com/Selftend/selftend/issues/1766)):
+  the Art. 9(2)(a) consent is now its own unticked, separately-worded control at
+  the consent gate, not a clause inside the terms checkbox. The age half is
+  closed by the age gate ([#1764](https://github.com/Selftend/selftend/issues/1764))
+  and the published 18+ text it replaces moves in
+  [#1767](https://github.com/Selftend/selftend/issues/1767); until then the
+  eligibility statements below are the live posture. See
+  [age-floor.md](age-floor.md).
 
 ## Compliance approach
 
@@ -46,14 +54,14 @@ Deferred items from the review (open questions, not launch blockers):
 
 ### Lawful basis for processing (GDPR Articles 6 and 9)
 
-| Data                                              | Lawful basis                             | Notes                                                                                                                   |
-| ------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Email, auth metadata                              | Contract (Art. 6(1)(b))                  | Necessary to provide the service                                                                                        |
-| Thought records, preferences                      | Contract (Art. 6(1)(b))                  | Core app functionality                                                                                                  |
-| Sensitive self-help content users choose to enter | Explicit consent where Article 9 applies | Processed only to provide selected app features; consent can be withdrawn by deleting the account or contacting privacy |
-| Native local reminders                            | Consent (Art. 6(1)(a))                   | Explicit opt-in, revocable in Settings                                                                                  |
-| Web push reminder subscriptions                   | Consent (Art. 6(1)(a))                   | Explicit opt-in, browser permission, revocable in Settings                                                              |
-| Auth event logs (Supabase)                        | Legitimate interest (Art. 6(1)(f))       | Security and abuse prevention                                                                                           |
+| Data                                              | Lawful basis                             | Notes                                                                                                                                                                                                          |
+| ------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Email, auth metadata                              | Contract (Art. 6(1)(b))                  | Necessary to provide the service                                                                                                                                                                               |
+| Thought records, preferences                      | Contract (Art. 6(1)(b))                  | Core app functionality                                                                                                                                                                                         |
+| Sensitive self-help content users choose to enter | Explicit consent where Article 9 applies | Own unticked control at the consent gate, worded apart from terms acceptance; recorded in `health_data_consent_at` (#1766). Withdrawn by deleting the account or contacting privacy, stated beside the control |
+| Native local reminders                            | Consent (Art. 6(1)(a))                   | Explicit opt-in, revocable in Settings                                                                                                                                                                         |
+| Web push reminder subscriptions                   | Consent (Art. 6(1)(a))                   | Explicit opt-in, browser permission, revocable in Settings                                                                                                                                                     |
+| Auth event logs (Supabase)                        | Legitimate interest (Art. 6(1)(f))       | Security and abuse prevention                                                                                                                                                                                  |
 
 ### Data processors
 

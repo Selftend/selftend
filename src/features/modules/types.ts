@@ -82,6 +82,22 @@ export interface UserPreferences {
   termsAcceptedAt: string | null;
   policyVersionAccepted: string | null;
   /**
+   * When explicit GDPR Art. 9(2)(a) consent was given to Selftend processing
+   * the self-help content this person chooses to enter (#1766, spec #227 §3).
+   *
+   * Its own affirmative act, worded and ticked separately from the terms and
+   * privacy acceptance above - which is what makes it explicit rather than a
+   * by-product of accepting a contract. `null` means the act has not been
+   * performed, and it must never be inferred from `privacyPolicyAcceptedAt`:
+   * every account predating #1766 accepted a policy whose single checkbox did
+   * mention the processing, and the reason this field exists is that a bundled
+   * tick is not what Art. 9(2)(a) asks for.
+   *
+   * Withdrawal is deleting the account or contacting privacy - both remove the
+   * data rather than clearing this field.
+   */
+  healthDataConsentAt: string | null;
+  /**
    * The age gate's verdict (#1762, spec #227 §3): did this person clear the
    * minimum age for the country they declared. `null` is a third state and not
    * a synonym for `false` - it means never asked, which is where every account
@@ -232,6 +248,7 @@ export const defaultUserPreferences: UserPreferences = {
   privacyPolicyAcceptedAt: null,
   termsAcceptedAt: null,
   policyVersionAccepted: null,
+  healthDataConsentAt: null,
   // Never asked, which is also the right default for a brand-new account: the
   // gate has not run yet at the moment these defaults apply.
   ageFloorMet: null,

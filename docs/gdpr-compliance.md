@@ -46,6 +46,8 @@ Transfers to the USA via Supabase, Google, Cloudflare, and Sentry rely on Standa
 
 Consent is freely given (reminders optional, service works without them), specific (separated from terms acceptance in the UX), informed (clear language in Settings), and withdrawable (toggle off in Settings). Reminder consent is recorded in `reminder_consent` and `reminder_consent_updated_at`. Web cookie consent is captured via the banner and managed in cookie preferences.
 
+The Article 9(2)(a) consent for user-entered self-help content is a separate affirmative act from the terms acceptance it used to be bundled with: an unticked, separately-worded control at the consent gate, with the withdrawal path (delete the account, or contact privacy@selftend.org) stated beside it. Both controls must be given before the gate opens, and the act is recorded in `user_preferences.health_data_consent_at` and carried in the user's own data export ([#1766](https://github.com/Selftend/selftend/issues/1766)).
+
 ## Age Restriction (Article 8)
 
 Launch age threshold is 18. Age is attested at sign-up. No data is knowingly collected from users under 18, and the terms prohibit use by minors; no parental-consent flow exists in MVP.
