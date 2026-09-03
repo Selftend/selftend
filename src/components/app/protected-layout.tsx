@@ -11,6 +11,8 @@ import { RoutineFab } from "@/src/components/app/routine-fab";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
+import { AgeGate } from "@/src/components/app/age-gate";
+import { UnderFloorScreen } from "@/src/components/app/under-floor-screen";
 import {
   AppOnboardingWizard,
   type AppOnboardingResult,
@@ -43,6 +45,8 @@ export default function ProtectedLayout() {
   const completeOnboarding = useCompleteAppOnboarding(user?.id ?? null);
   const completeIntroduction = useUpdateOnboardingPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
+  const [underFloor, setUnderFloor] = useState(false);
+  const [ageAttested, setAgeAttested] = useState(false);
   const pathname = usePathname();
 
   const hydrateAppLock = useAppLockStore((s) => s.hydrate);
@@ -122,12 +126,38 @@ export default function ProtectedLayout() {
   // exists the state is known even if the latest refetch errored, so a stale
   // acceptance still gates.
   const prefsUnknown = prefsError && !preferences;
+  // The age gate (#1764, spec #227 §3) sits ABOVE the consent gate in this same
+  // slot, which is what gives it all four entry paths - email/password, Google,
+  // Apple and the silent guest - instead of the two §3 was written against.
+  //
+  // ☠️ `=== true`, never a truthiness check. `ageFloorMet` has three states and
+  // `null` means NEVER ASKED, which is where every account predating the gate
+  // sits (#1762); `Boolean(...)` would read the same as an explicit failure.
+  //
+  // ☠️ And never-asked is NOT on its own a reason to ask. §7 is explicit that
+  // existing users meet the one-time consent prompt WITHOUT being re-asked for
+  // age or country, so the gate is scoped to accounts that have never accepted
+  // a policy version - i.e. accounts that have not been through the consent
+  // gate yet, which for a brand-new account (guest included) is true at exactly
+  // the moment this runs, and for every existing account is false forever.
+  // Without this clause the gate would fire for the entire install base on the
+  // release that ships it.
+  const neverAskedAge = preferences?.ageFloorMet !== true;
+  const isNewAccount = preferences?.policyVersionAccepted === null;
+  const needsAgeAttestation =
+    !ageAttested &&
+    !prefsLoading &&
+    !prefsUnknown &&
+    Boolean(preferences) &&
+    neverAskedAge &&
+    isNewAccount;
   const needsConsent =
     !consentDismissed &&
     !prefsLoading &&
     !prefsUnknown &&
     preferences?.policyVersionAccepted !== policyVersion;
   const needsAppOnboarding =
+    !needsAgeAttestation &&
     !needsConsent &&
     !prefsLoading &&
     Boolean(preferences) &&
@@ -147,6 +177,24 @@ export default function ProtectedLayout() {
       // Error state is shown inside the wizard.
     }
   };
+
+  // Ordered before the consent gate, and before every early return below it:
+  // the floor decides whether this person may be here at all, and consent to
+  // processing is only worth collecting from someone who may.
+  if (underFloor) {
+    return <UnderFloorScreen />;
+  }
+
+  if (needsAgeAttestation) {
+    return (
+      // `onAttested` fires only after the write resolved, so the local flag can
+      // never wave through an attestation that failed to persist. It exists
+      // because the mutation's invalidate is the other half of the same
+      // dismissal, and one of the two arriving late should not leave the person
+      // staring at a form they already completed.
+      <AgeGate onAttested={() => setAgeAttested(true)} onUnderFloor={() => setUnderFloor(true)} />
+    );
+  }
 
   if (needsConsent) {
     return <ConsentGate onAccepted={() => setConsentDismissed(true)} />;

@@ -10,6 +10,19 @@ The minimum age for using Selftend, per country.
 > policy rewrite ships and the owner completes the rollout pass. Until then,
 > [product-principles.md](product-principles.md) is the statement of record.
 
+> [!WARNING]
+> **The gate is built, and the published text has not caught up — so this chain
+> must not reach a production release on its own.** Since
+> [#1764](https://github.com/Selftend/selftend/issues/1764) the app asks a new
+> account for its date of birth and country and applies this table. The terms
+> still say 18 and over and the consent checkbox still reads _"I am 18 or
+> older"_, so a release cut between here and
+> [#1767](https://github.com/Selftend/selftend/issues/1767) would ship a product
+> that admits a 14-year-old and then asks them to affirm they are 18. §7's
+> order — build, owner review, then release the app and publish the text
+> together — is what closes that window, and it is an owner decision, not a
+> branch state. Nothing merges to `main` on this chain until #1767 is in it.
+
 Source: **[Spec: teen access (13+ per-country age floor)](https://github.com/Selftend/selftend/issues/227) §2**, the settled
 destination of wayfinder map [#216](https://github.com/Selftend/selftend/issues/216). This file is the durable copy — the
 values were previously reviewable only inside an issue body.
@@ -86,3 +99,56 @@ owner's call with counsel.
 - **The date of birth is compared and dropped.** The module returns a boolean
   and never echoes the date back, which is what lets the caller honour §227 §3's
   "DOB is discarded" without holding anything in reserve.
+
+## The gate that asks
+
+Built in [#1764](https://github.com/Selftend/selftend/issues/1764):
+`src/components/app/age-gate.tsx`, decided by
+`src/features/auth/age-attestation.ts`, offered the world by
+`src/features/auth/countries.ts`.
+
+**It runs in the shared gate slot in `ProtectedLayout`, above the consent
+gate.** That position is a deliberate correction to §3, which predates two of
+the app's entry paths. There are now **four** — email/password, Google, Apple,
+and the silent guest from `signInAnonymously`, which is the primary one. One
+gate in the shared slot covers all four; per-flow plumbing would have missed
+guests, and guests write thought records, which are exactly the Art. 9 data the
+floor exists to protect. Confirmed by the owner 2026-09-03.
+
+**Who is asked, and who is never asked again:**
+
+- A brand-new account — one that has not been through the consent gate, so
+  `policy_version_accepted` is `null`. Guests included.
+- **Not** an account that predates the gate. `age_floor_met` is `null` for every
+  existing account and `null` means _never asked_, so null alone cannot be the
+  trigger: gating on it would ask the entire install base. §7 is explicit that
+  existing users meet the one-time consent prompt **without** being re-asked for
+  age or country, and the policy-version clause is what delivers that.
+- The verdict is read as `=== true`, never as a truthiness check. Three states,
+  and `null` is not `false`.
+
+**What the screen does and does not say.** Date of birth is three empty fields —
+day, month, year — rather than a calendar, because a picker has to open on some
+month and that is a default year §3 rules out. Country is type-to-find over all
+250 codes. Nothing before or during the questions names an age, a range, or a
+qualifying answer; `age-gate.test.tsx` asserts that against the strings in both
+locales, and fires the same predicate on deliberately bad copy so the absence
+assertions cannot go quiet.
+
+**A typo is not an exit.** `meetsAgeFloor` collapses "too young" and "that date
+is nonsense" into one `false` so that a careless caller still fails closed — but
+the gate checks the calendar first and shows a correctable field error, because
+the under-floor path deletes an account and a mistyped birthday must never reach
+it.
+
+**A failure writes nothing at all** — not even `age_floor_met = false`. Only a
+pass is persisted, through `recordAgeAttestation`, which takes a country and a
+verdict and has no parameter a date of birth could travel in.
+
+### Still owed by [#1765](https://github.com/Selftend/selftend/issues/1765)
+
+`src/components/app/under-floor-screen.tsx` is a deliberate stub: it blocks, and
+that is all it does. The `/crisis` and Find A Helpline links, deletion of the
+auth user that already exists on three of the four paths, and the device-local
+retry flag are #1765's, and until they land an under-floor person is blocked
+only for as long as the screen stays mounted.
