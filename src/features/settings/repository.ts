@@ -75,6 +75,7 @@ interface UserPreferenceRow {
   privacy_policy_accepted_at: string | null;
   terms_accepted_at: string | null;
   policy_version_accepted: string | null;
+  health_data_consent_at: string | null;
   age_floor_met: boolean | null;
   age_attested_country: string | null;
   age_attested_at: string | null;
@@ -184,6 +185,10 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
+    // Never inferred from privacyPolicyAcceptedAt above: every row predating
+    // #1766 accepted a policy under one bundled checkbox, and the reason this
+    // field exists is that a bundled tick is not the explicit Art. 9(2)(a) act.
+    healthDataConsentAt: row.health_data_consent_at ?? null,
     // `?? null` and deliberately NOT `Boolean(...)`, which is what the other
     // flags on this row use. Coercing here would turn "never asked" into
     // "failed the floor" for every account predating the gate (#1762).
@@ -325,6 +330,7 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   privacyPolicyAcceptedAt: "privacy_policy_accepted_at",
   termsAcceptedAt: "terms_accepted_at",
   policyVersionAccepted: "policy_version_accepted",
+  healthDataConsentAt: "health_data_consent_at",
   ageFloorMet: "age_floor_met",
   ageAttestedCountry: "age_attested_country",
   ageAttestedAt: "age_attested_at",
@@ -457,6 +463,19 @@ export async function updateOnboardingPreferences(
   return mapPreferences(data as UserPreferenceRow);
 }
 
+/**
+ * Record what the consent gate collected: the contractual acceptance, and the
+ * explicit Art. 9(2)(a) consent beside it (#1766, spec #227 §3).
+ *
+ * Two records because the gate asks two separate questions. The gate submits
+ * only when BOTH have been ticked, so both are written here - but they are
+ * written as two facts, not one, because `health_data_consent_at` has to be
+ * readable later as its own affirmative act rather than as something implied by
+ * having accepted a policy version.
+ *
+ * The same `now` for both: one submit, one moment. A reader comparing the two
+ * timestamps should not have to wonder what a difference would have meant.
+ */
 export async function recordPolicyConsent(userId: string, policyVersion: string) {
   const client = requireSupabase();
   const now = new Date().toISOString();
@@ -466,6 +485,7 @@ export async function recordPolicyConsent(userId: string, policyVersion: string)
       privacy_policy_accepted_at: now,
       terms_accepted_at: now,
       policy_version_accepted: policyVersion,
+      health_data_consent_at: now,
     },
     { onConflict: "user_id" },
   );
