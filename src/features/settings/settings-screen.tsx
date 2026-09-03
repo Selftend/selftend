@@ -15,6 +15,7 @@ import { CreateAccountCard } from "@/src/features/settings/components/create-acc
 import { DeleteAccountRow } from "@/src/features/settings/components/delete-account-row";
 import { ExportDataRow } from "@/src/features/settings/components/export-data-row";
 import { SettingsColophon } from "@/src/features/settings/components/settings-colophon";
+import { SettingsGroupLabel } from "@/src/features/settings/components/settings-group-label";
 import { SettingsHero } from "@/src/features/settings/components/settings-hero";
 import { SettingsProfileBlock } from "@/src/features/settings/components/settings-profile-block";
 import { SettingsRow } from "@/src/features/settings/components/settings-row";
@@ -96,16 +97,23 @@ export default function SettingsScreen() {
             */}
             <View className="gap-2">
               {/*
+                The group's name (#1828), through the same component the four
+                runs use. Both premises of the shipped "two labels for one grid"
+                ruling died: the group holds a SECOND control now, and #1800
+                removed the card that used to delimit it - leaving this as the
+                only bare region on the page, and the only settings group a
+                screen-reader user had nothing to jump to.
+              */}
+              <SettingsGroupLabel>{t("appearance.title")}</SettingsGroupLabel>
+              {/*
                 The appearance axis, restoring the half of #583 that never
                 shipped here (#1827): Settings gets the SAME control the header
                 menu mounts, not a copy of it.
 
                 Its visible caption is suppressed, as the palette grid's already
-                is - two captions inside one group, on a page whose four runs are
-                each named once. The group's own name is #1828's `Appearance`
-                eyebrow, landing above this. Until then the radiogroup's
-                `accessibilityLabel` carries the name for assistive tech, and it
-                is distinct from the palette grid's.
+                is - two captions inside one group, on a page whose groups are
+                each named once, above. The radiogroups keep their distinct
+                `accessibilityLabel`s.
 
                 ☠️ The two axes in this group have OPPOSITE sync scopes: the
                 scheme rides `user_preferences.theme` across devices, the palette
@@ -114,7 +122,13 @@ export default function SettingsScreen() {
                 hoisting it would make it false about the control above.
               */}
               <SchemePicker showLabel={false} />
-              <Text variant="muted" className="px-1 text-[13px]">
+              {/* No `px-1`: that inset was optical against a card edge, and
+                  #1800 already took the same one off the runs. The sentence
+                  itself is untouched - the eyebrow above is what stops it
+                  standing in as the group's name, so it goes back to being the
+                  palette's own line, where "This device only" is scoped by
+                  adjacency and unconditionally true. */}
+              <Text variant="muted" className="text-[13px]">
                 {t("appearance.description")}
               </Text>
               <StylePicker itemClassName="w-1/2 md:w-1/4 p-1" heading={false} />
