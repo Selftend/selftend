@@ -16,6 +16,7 @@ import {
   readSessionMarker,
   writeSessionMarker,
 } from "@/src/features/auth/session-marker";
+import { readUnderFloorBlock } from "@/src/features/auth/under-floor-block";
 import { purgePersistedWizardDrafts, resetAllDraftStores } from "@/src/stores/draft-store-registry";
 import { useFreshStartNoticeStore } from "@/src/stores/fresh-start-notice-store";
 
@@ -88,6 +89,27 @@ export function SessionProvider({ children }: PropsWithChildren) {
         // switch accounts, not be handed a fresh guest. Web keeps its
         // marketing landing untouched (#1441 adds the Start-now CTA there).
         if (!data.session && Platform.OS !== "web") {
+          // ☠️ An under-floor device does not get a guest (#1765, spec #227
+          // §3). Without this the block still holds - ProtectedLayout consults
+          // the same flag and renders the exit screen either way - but every
+          // launch inside the window would mint an anonymous auth user purely
+          // so the exit screen could delete it again a moment later. Not
+          // creating it is both the honest reading of "leaves no auth user"
+          // and plain data minimisation.
+          //
+          // The flag is a device speed bump with an expiry and nothing
+          // personal in it, and it fails open: an unreadable store answers
+          // `false`, so a storage fault can never strand a device with no way
+          // to get a session.
+          if (await readUnderFloorBlock(new Date())) {
+            if (!mounted) {
+              return;
+            }
+            setSession(null);
+            setStatus("ready");
+            return;
+          }
+
           const guest = await client.auth.signInAnonymously();
           if (!mounted) {
             return;

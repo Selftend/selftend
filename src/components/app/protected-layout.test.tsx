@@ -1,8 +1,10 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { StyleSheet, Text as mockText, View as mockView } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { Platform, StyleSheet, Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
 import ProtectedLayout from "./protected-layout";
+import { writeUnderFloorBlock } from "@/src/features/auth/under-floor-block";
 import { useAppLockStore } from "@/src/features/security/app-lock-store";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
@@ -13,6 +15,7 @@ import {
 } from "@/src/features/settings/queries";
 import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 
 type MockSessionState = {
   session: {
@@ -382,7 +385,7 @@ describe("ProtectedLayout app onboarding", () => {
     await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
   });
 
-  it("shows the landing page when the session is cleared", () => {
+  it("shows the landing page when the session is cleared", async () => {
     mockSessionState = {
       session: null,
       status: "ready",
@@ -390,7 +393,10 @@ describe("ProtectedLayout app onboarding", () => {
     };
 
     renderWithProviders(<ProtectedLayout />);
-    expect(screen.getByText("Signed-out landing")).toBeTruthy();
+    // Awaited since #1765: the layout holds the loading state until the device
+    // under-floor flag has been read, because rendering anything on the tick
+    // before it lands would flash a surface at a blocked person.
+    await waitFor(() => expect(screen.getByText("Signed-out landing")).toBeTruthy());
   });
 });
 
@@ -572,5 +578,142 @@ describe("ProtectedLayout age gate", () => {
     renderWithProviders(<ProtectedLayout />);
 
     await waitFor(() => expect(screen.queryByText("Age gate")).toBeNull());
+  });
+});
+
+/**
+ * The device-local under-floor block (#1765, spec #227 §3).
+ *
+ * #1764 blocked in React state alone, and recorded that as a gap: it lasted
+ * exactly as long as the screen stayed mounted, and on native the next launch
+ * mints a fresh guest a second later. The device flag is what closes it, and
+ * WHERE the layout consults it is the part worth pinning down.
+ */
+describe("ProtectedLayout under-floor block", () => {
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
+  it("keeps a blocked device out of the app, session and consent notwithstanding", async () => {
+    await writeUnderFloorBlock(new Date());
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Under-floor screen")).toBeTruthy());
+    expect(screen.queryByText("Stack content")).toBeNull();
+    expect(screen.queryByText("Age gate")).toBeNull();
+    expect(screen.queryByText("Consent gate")).toBeNull();
+  });
+
+  it("still blocks once the exit has deleted the account and signed the person out", async () => {
+    // ☠️ The reason the check sits ABOVE the '!session' branch. The exit's own
+    // success is what produces this state, so a block consulted below it would
+    // answer the completed erasure with the auth landing - a fresh way in, one
+    // tap after the block.
+    await writeUnderFloorBlock(new Date());
+    mockSessionState = { session: null, status: "ready", user: null };
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Under-floor screen")).toBeTruthy());
+    expect(screen.queryByText("Signed-out landing")).toBeNull();
+  });
+
+  it("lets an unblocked device through, so the gate above is not vacuous", async () => {
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Stack content")).toBeTruthy());
+    expect(screen.queryByText("Under-floor screen")).toBeNull();
+  });
+
+  it("shows nothing at all until the device flag has been read", async () => {
+    // The flag arrives a tick late from AsyncStorage and reads false until it
+    // does, so anything rendered on that tick is a surface flashed at the
+    // person the block exists to keep out.
+    await writeUnderFloorBlock(new Date());
+
+    renderWithProviders(<ProtectedLayout />);
+
+    // The first frame, before the storage read has settled: the shared loading
+    // state, and nothing of the app.
+    expect(screen.queryByText("Stack content")).toBeNull();
+    expect(screen.getByText("Restoring your session...")).toBeTruthy();
+
+    // Flush the hydrate inside act, rather than letting waitFor race it.
+    await act(async () => {});
+    expect(screen.getByText("Under-floor screen")).toBeTruthy();
+  });
+});
+
+/**
+ * The web signed-out redirect, and the under-floor exit walking straight into
+ * it (#1765).
+ */
+describe("ProtectedLayout under-floor block on web", () => {
+  const ORIGINAL_OS = Platform.OS;
+  let originalLocation: Location;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    setPlatformOS("web");
+    originalLocation = window.location;
+    // The layout redirects by ASSIGNING window.location.href, which jsdom
+    // answers with a navigation error. A plain object records the assignment
+    // instead, so the test can assert it never happened.
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: { href: "http://localhost/" },
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: originalLocation,
+    });
+    setPlatformOS(ORIGINAL_OS as "web" | "ios" | "android");
+  });
+
+  it("does not bounce an under-floor person to the marketing landing", async () => {
+    // ☠️☠️ The regression this exists for. On web every under-floor person has
+    // a session - the '!session' branch precedes the gate - so the exit's own
+    // sign-out lands squarely in 'signedOutOnWeb', and the redirect would
+    // replace the exit screen with a page whose whole job is a Start CTA.
+    //
+    // ⚠️ And the DEVICE FLAG cannot be what stops it: 'useUnderFloorBlock'
+    // reads storage once on mount, before the exit writes the flag, so
+    // 'blocked' is false for the whole of this mount. The React state is the
+    // half that holds here, which is why the condition carries both.
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: false,
+        policyVersionAccepted: null,
+        ageFloorMet: null,
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    const { rerender } = renderWithProviders(<ProtectedLayout />);
+    fireEvent.press(await screen.findByText("Age gate"));
+    await waitFor(() => expect(screen.getByText("Under-floor screen")).toBeTruthy());
+
+    // What the exit does next: deletes the account, then signs out.
+    mockSessionState = { session: null, status: "ready", user: null };
+    rerender(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Under-floor screen")).toBeTruthy());
+    expect(window.location.href).toBe("http://localhost/");
+    expect(screen.queryByText("Signed-out landing")).toBeNull();
+  });
+
+  it("still redirects an ordinary signed-out visitor, so the guard is not a blanket off-switch", async () => {
+    mockSessionState = { session: null, status: "ready", user: null };
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(window.location.href).toBe("/"));
   });
 });
