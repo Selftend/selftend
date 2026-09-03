@@ -191,7 +191,7 @@ export function createLanePlayer(): LanePlayer {
         if (loop) ramp.start(0, requestedVolume);
         else if (requestedVolume !== volume) applyVolume(requestedVolume);
       } catch {
-        // Audio is best-effort; never crash a breathing session.
+        // Audio is best-effort; never crash a session.
       }
     },
     async setVolume(volume) {

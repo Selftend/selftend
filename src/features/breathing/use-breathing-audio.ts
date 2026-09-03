@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { PhaseLabel } from "@/src/constants/breathing";
-import { ambientSoundLookup, breathSoundLookup } from "@/src/constants/breathing-sounds";
+import { breathSoundLookup } from "@/src/constants/breathing-sounds";
 import { breathClipFor } from "@/src/features/breathing/breath-audio-plan";
-import { createLanePlayer } from "@/src/features/breathing/lane-player";
+import { createLanePlayer } from "@/src/lib/lane-player";
+import { useAmbientLane } from "@/src/lib/use-ambient-lane";
 
 interface BreathingAudioOptions {
   active: boolean;
@@ -19,29 +20,11 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
   // Lazy useState instead of a render-written ref: same one-instance-per-mount
   // semantics, no ref access during render.
   const [breathLane] = useState(createLanePlayer);
-  const [ambientLane] = useState(createLanePlayer);
   const breathClipRef = useRef<number | null>(null);
 
-  // Ambient: start/stop with the session; restart when the chosen sound changes.
-  // `active` drops on every pause as well as at the end, and the lane fades on both
-  // (#1743): stop() ramps the bed to 0 before releasing it, play() ramps the next one
-  // up from 0. A swap runs this effect's cleanup (stop) and body (play) in one tick;
-  // the lane cuts the outgoing bed and fades the new one in - see `lane-player.ts`.
-  useEffect(() => {
-    const lane = ambientLane;
-    if (!active) {
-      void lane.stop();
-      return;
-    }
-    const asset = ambientSoundLookup[ambientSoundId]?.asset ?? null;
-    if (asset !== null) void lane.play(asset, ambientVolume, true);
-    else void lane.stop();
-    return () => {
-      void lane.stop();
-    };
-    // Volume changes are handled in the volume effect below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, ambientSoundId]);
+  // Ambient: the shared bed lane (#1742) - starts and stops with the session,
+  // fades on pause and at the end (#1743), swaps on a new sound, takes volume live.
+  useAmbientLane({ active, soundId: ambientSoundId, volume: ambientVolume });
 
   // Breath: on each phase (or sound) change, fire the phase's cue / swap the looped texture.
   useEffect(() => {
@@ -68,9 +51,6 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
   useEffect(() => {
     void breathLane.setVolume(breathVolume);
   }, [breathLane, breathVolume]);
-  useEffect(() => {
-    void ambientLane.setVolume(ambientVolume);
-  }, [ambientLane, ambientVolume]);
 
   // Unmount: stop() on a looping lane starts a fade-out that OUTLIVES this component -
   // the ramp is a setInterval with no React owner, finishes within LOOP_FADE_MS and
@@ -79,7 +59,6 @@ export function useBreathingAudio(opts: BreathingAudioOptions): void {
   useEffect(() => {
     return () => {
       void breathLane.stop();
-      void ambientLane.stop();
     };
-  }, [breathLane, ambientLane]);
+  }, [breathLane]);
 }

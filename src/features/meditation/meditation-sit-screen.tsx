@@ -28,7 +28,9 @@ import { cn } from "@/lib/utils";
 import { announceMessage } from "@/src/lib/accessibility";
 import { FORM_COLUMN } from "@/src/lib/layout";
 import { playOneShot, prepareOneShot, type PreparedOneShot } from "@/src/lib/native-audio";
+import { useAmbientLane } from "@/src/lib/use-ambient-lane";
 import { occurrenceTimeFromDate } from "@/src/lib/occurrence-time";
+import { defaultUserPreferences } from "@/src/features/modules/types";
 import { useUserPreferences } from "@/src/features/settings/queries";
 import { bellChoiceFromKey, bellSecondsFor } from "@/src/features/meditation/interval";
 import { useAccentHsl, useThemeHex } from "@/src/lib/theme-palette";
@@ -227,6 +229,20 @@ export function MeditationSitScreen() {
     prepared.play(volume);
     bells[slot] = slot === "interval" ? prepareOneShot(asset) : null;
   };
+  // The sit's ambient bed (#1742): the same lane the breathing session runs,
+  // fed from the sit's OWN pair of preferences (never the breathing pair). It
+  // runs exactly while the clock does - not before focus, not while paused, not
+  // once a finish has been asked for - and fades on every one of those edges
+  // (#1743). Volume is read straight off the query, not a ref like the bell's:
+  // the hook applies it live, so a preference that lands after first paint, or
+  // changes mid-sit, is heard without a restart. The defaults are `none` and
+  // silence: an account that never chose a bed sits exactly as before.
+  useAmbientLane({
+    active: focused && phase === "sitting" && !paused && finishRequested === null,
+    soundId:
+      preferences?.meditationAmbientSoundId ?? defaultUserPreferences.meditationAmbientSoundId,
+    volume: preferences?.meditationAmbientVolume ?? defaultUserPreferences.meditationAmbientVolume,
+  });
   // The end bell and the finish request fire once per sit: a pause/resume while
   // the finish waits on the stage query resubscribes the tick, and an unguarded
   // completion branch would ring the end bell again.
