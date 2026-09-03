@@ -55,12 +55,18 @@ two apart, and so does anyone extending the table later.
 
 ## Open question
 
-The rows flagged **(C)** in the underlying research have not yet been checked
-against primary legislative sources — only against secondary summaries. That
-verification is [#1763](https://github.com/Selftend/selftend/issues/1763), and it must complete before those rows govern
-anyone's access. The research itself lives at
+Not every row is sourced to the same standard. Some were established only from
+secondary summaries rather than from the national statute itself, and the
+research table marks those rows **`(C)`** — the marker is defined there, not
+here, and this file deliberately does not restate which countries carry it,
+because that list is the research document's to change.
+
+Checking those rows against primary legislative sources is
+[#1763](https://github.com/Selftend/selftend/issues/1763), and it must complete before they govern anyone's access.
+
+The research is not merged: it lives at
 `docs/research/2026-07-24-gdpr-consent-ages.md` on branch
-`research/gdpr-consent-ages`.
+`research/gdpr-consent-ages`, so reading it means checking that branch out.
 
 If a primary source contradicts this table, that is **raised, not silently
 applied** — the table is a settled decision of map #216, and revising it is the
