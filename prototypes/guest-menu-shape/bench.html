@@ -1,0 +1,832 @@
+<title>Guest Menu Door Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600&family=Nunito:wght@800&display=swap">
+<style>
+  /* ---- bench chrome tokens (light is the base; dark redefines only) ---- */
+  :root {
+    --bench-bg: #f4f3f8;
+    --bench-panel: #fbfafd;
+    --bench-ink: #17141f;
+    --bench-dim: #605a72;
+    --bench-line: #dedae9;
+    --bench-line-soft: #eae7f1;
+    --bench-accent: #6335c9;
+    --bench-warn: #a35c05;
+    --bench-warn-bg: #fdf3e2;
+    --bench-ok: #1f6f4a;
+    --bench-ok-bg: #e6f4ec;
+    --bench-bad: #a32b2b;
+    --bench-bad-bg: #fbeaea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bench-bg: #131018;
+      --bench-panel: #1b1724;
+      --bench-ink: #f2eefb;
+      --bench-dim: #a79fbd;
+      --bench-line: #2e2840;
+      --bench-line-soft: #241f31;
+      --bench-accent: #b393f5;
+      --bench-warn: #e8b473;
+      --bench-warn-bg: #33260f;
+      --bench-ok: #7fd0a5;
+      --bench-ok-bg: #102b1e;
+      --bench-bad: #f09b9b;
+      --bench-bad-bg: #331616;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bench-bg: #131018;
+    --bench-panel: #1b1724;
+    --bench-ink: #f2eefb;
+    --bench-dim: #a79fbd;
+    --bench-line: #2e2840;
+    --bench-line-soft: #241f31;
+    --bench-accent: #b393f5;
+    --bench-warn: #e8b473;
+    --bench-warn-bg: #33260f;
+    --bench-ok: #7fd0a5;
+    --bench-ok-bg: #102b1e;
+    --bench-bad: #f09b9b;
+    --bench-bad-bg: #331616;
+  }
+
+  body {
+    background: var(--bench-bg);
+    color: var(--bench-ink);
+    font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 32px 24px 72px; }
+
+  h1 {
+    font-family: Nunito, "Noto Sans", ui-sans-serif, sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+  .lede { color: var(--bench-dim); max-width: 68ch; margin: 0 0 4px; }
+  .lede a { color: var(--bench-accent); }
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--bench-dim);
+  }
+
+  /* ---- control strip ---- */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    margin: 24px 0 8px;
+    padding: 14px 16px;
+    background: var(--bench-panel);
+    border: 1px solid var(--bench-line);
+    border-radius: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .ctl { display: flex; align-items: center; gap: 8px; }
+  .ctl > .eyebrow { margin-right: 2px; }
+  .seg { display: inline-flex; border: 1px solid var(--bench-line); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--bench-dim);
+    font: inherit;
+    font-size: 13px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .seg button + button { border-left: 1px solid var(--bench-line); }
+  .seg button[aria-pressed="true"] { background: var(--bench-accent); color: #fff; font-weight: 600; }
+  .seg button:focus-visible { outline: 2px solid var(--bench-accent); outline-offset: -2px; }
+
+  /* ---- specimen bands ---- */
+  .band { margin-top: 34px; }
+  .band-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+  .band-head h2 {
+    font-family: Nunito, "Noto Sans", sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    margin: 0;
+  }
+  .band-note { color: var(--bench-dim); font-size: 13px; }
+
+  .rack { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+  .col { width: 300px; flex: 0 0 auto; }
+  .col-head { margin-bottom: 10px; min-height: 74px; }
+  .col-head .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bench-accent);
+    margin-bottom: 2px;
+  }
+  .col-head h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 2px;
+  }
+  .col-head p { margin: 0; font-size: 12.5px; color: var(--bench-dim); line-height: 1.45; }
+
+  .stage { position: relative; }
+  .fold {
+    position: absolute;
+    left: -6px;
+    right: -6px;
+    border-top: 1px dashed var(--bench-warn);
+    pointer-events: none;
+    z-index: 3;
+  }
+  .fold span {
+    position: absolute;
+    right: 0;
+    top: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bench-warn);
+    background: var(--bench-bg);
+    padding: 0 4px;
+  }
+  .below-fold {
+    position: absolute;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    background: color-mix(in srgb, var(--bench-warn) 10%, transparent);
+    pointer-events: none;
+    z-index: 2;
+    border-radius: 0 0 8px 8px;
+  }
+
+  /* ---- the app specimen itself: tokens lifted verbatim from global.css ---- */
+  .app {
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+  }
+  .app.light {
+    --popover: 260 28% 99%;
+    --popover-foreground: 258 22% 15%;
+    --foreground: 260 18% 14%;
+    --muted-foreground: 260 8% 42%;
+    --border: 260 14% 87%;
+    --input: 260 14% 87%;
+    --background: 260 28% 96%;
+    --accent: 260 28% 93%;
+    --primary: 262 62% 56%;
+    --btn-bg: hsl(var(--background));
+    --btn-border: hsl(var(--border));
+  }
+  .app.dark {
+    --popover: 260 18% 13%;
+    --popover-foreground: 260 30% 96%;
+    --foreground: 260 30% 96%;
+    --muted-foreground: 260 12% 72%;
+    --border: 260 12% 24%;
+    --input: 260 12% 22%;
+    --background: 260 20% 9%;
+    --accent: 260 20% 24%;
+    --primary: 264 72% 72%;
+    --btn-bg: hsl(260 12% 22% / 0.3);
+    --btn-border: hsl(var(--input));
+  }
+
+  .popover {
+    width: 288px;
+    box-sizing: border-box;
+    background: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .idrow { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: hsl(var(--primary) / 0.16);
+    color: hsl(var(--primary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+  .idtext { flex: 1 1 auto; min-width: 0; }
+  .idname {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .idsub {
+    font-size: 14px;
+    line-height: 16px;
+    color: hsl(var(--muted-foreground));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .grouplabel {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    color: hsl(var(--muted-foreground));
+    padding: 0 8px 4px;
+  }
+  .optrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: var(--radius-sm);
+    padding: 8px;
+  }
+  .optrow .slot { width: 16px; height: 16px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+  .optrow .lbl { font-size: 14px; line-height: 20px; }
+
+  .navrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: var(--radius-sm);
+    padding: 8px;
+  }
+  .navrow .lbl { flex: 1 1 auto; font-size: 14px; line-height: 20px; }
+  .navrow .val {
+    font-size: 14px;
+    line-height: 20px;
+    color: hsl(var(--muted-foreground));
+    white-space: nowrap;
+  }
+
+  /* outline Button, size="sm": h-8 (sm:), px-2.5 with icon, gap-1.5, rounded-md, text-sm/medium */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--btn-border);
+    background: var(--btn-bg);
+    color: hsl(var(--foreground));
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+    cursor: pointer;
+  }
+  .btn.start { justify-content: flex-start; }
+  .btn.grow { flex-grow: 1; flex-basis: auto; }
+  .btn.tight { padding: 0 8px; }
+
+  .actionrow { display: flex; flex-wrap: wrap; gap: 12px; padding: 2px 0; }
+  .appcol { display: flex; flex-direction: column; gap: 4px; }
+  .socialrow { display: flex; gap: 4px; }
+  .socialrow .btn { flex: 1 1 0; padding: 0; }
+
+  .door { outline: 2px solid var(--bench-accent); outline-offset: 2px; border-radius: 8px; }
+
+  /* ---- readout ---- */
+  .readout {
+    margin-top: 14px;
+    border: 1px solid var(--bench-line);
+    background: var(--bench-panel);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+  }
+  .readout dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; }
+  .readout dt { color: var(--bench-dim); }
+  .readout dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .chip {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .chip.ok { color: var(--bench-ok); background: var(--bench-ok-bg); }
+  .chip.warn { color: var(--bench-warn); background: var(--bench-warn-bg); }
+  .chip.bad { color: var(--bench-bad); background: var(--bench-bad-bg); }
+
+  .notes { margin-top: 40px; border-top: 1px solid var(--bench-line); padding-top: 24px; }
+  .notes h2 { font-family: Nunito, sans-serif; font-weight: 800; font-size: 18px; margin: 0 0 10px; }
+  .notes ul { margin: 0 0 18px; padding-left: 20px; max-width: 78ch; }
+  .notes li { margin-bottom: 7px; color: var(--bench-ink); }
+  .notes code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    background: var(--bench-line-soft);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .skull { color: var(--bench-bad); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Wayfinder #1811 · prototype, throwaway</p>
+  <h1>Where the guest&rsquo;s Sign in door lands</h1>
+  <p class="lede">
+    Three candidate shapes for the header menu, rendered at the real 288&nbsp;px popover width with
+    <code>global.css</code> tokens and the app&rsquo;s own faces. The fourth column is the registered
+    user&rsquo;s menu, which must not change. Switch to <strong>Български</strong> &mdash; that is the
+    locale the action row is already documented as breaking in.
+  </p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="eyebrow">Locale</span>
+      <div class="seg" id="loc">
+        <button data-loc="en" aria-pressed="true">English</button>
+        <button data-loc="bg" aria-pressed="false">Български</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="eyebrow">Viewport height</span>
+      <div class="seg" id="vh">
+        <button data-vh="932" aria-pressed="false">Pro Max 932</button>
+        <button data-vh="667" aria-pressed="true">iPhone SE 667</button>
+        <button data-vh="568" aria-pressed="false">SE 1st gen 568</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="eyebrow">Named guest</span>
+      <div class="seg" id="named">
+        <button data-named="0" aria-pressed="true">No name</button>
+        <button data-named="1" aria-pressed="false">Saved a name</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bands"></div>
+
+  <div class="notes">
+    <h2>What this bench is for</h2>
+    <ul>
+      <li>
+        <span class="skull">☠</span> <strong>The dashed line is the scroll cap</strong>, not a
+        decoration: <code>menuMaxHeight = round(windowHeight * 0.7)</code>
+        (<code>user-menu.tsx:80</code>). Anything in the shaded zone needs a scroll to reach. The
+        failure #1774 fixed was exactly &ldquo;the actions became unreachable&rdquo;.
+      </li>
+      <li>
+        The action row is <code>flex-row flex-wrap gap-3</code> and every Button carries
+        <code>shrink-0</code>, so buttons never compress &mdash; they wrap. Sign out&rsquo;s
+        <code>grow basis-auto</code> is what makes the third one take its own full-width line
+        instead of being crushed to ~32&nbsp;px, which is the bug the code comments.
+      </li>
+      <li>
+        The identity row shows what <a href="https://github.com/Selftend/selftend/issues/1810">#1810</a>
+        decided: <strong>Guest / Гост</strong> with a person glyph, no sub-line, and the row itself is
+        <strong>not pressable</strong> &mdash; so the door needs its own control wherever it lands.
+      </li>
+      <li>
+        &ldquo;Saved a name&rdquo; is not a curiosity: <code>Edit name</code> has no guest guard, so a
+        guest can hold a real name and lose the word <em>Guest</em> while still being a guest. Shape B
+        has to survive a long name beside its button.
+      </li>
+      <li>
+        Labels here are provisional &mdash; <em>Sign in</em> / <em>Влез</em>, borrowed from
+        <code>auth:signUp.signInLink</code>. Final copy is
+        <a href="https://github.com/Selftend/selftend/issues/1812">the spec&rsquo;s</a> call.
+        <span class="skull">☠</span> &ldquo;Switch account&rdquo; is forbidden by
+        <code>CONTEXT.md</code> §Abandonment.
+      </li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const STR = {
+    en: {
+      guest: "Guest",
+      name: "Alex Petrov",
+      email: "alex@example.com",
+      lang: "Switch language",
+      langOpts: ["English", "Bulgarian"],
+      theme: "Switch theme",
+      themeOpts: ["System", "Light", "Dark"],
+      palette: "Palette",
+      paletteVal: "Quiet Lilac",
+      app: "Get the mobile app",
+      appOpts: ["Android", "iOS"],
+      settings: "Settings",
+      feedback: "Send feedback",
+      signOut: "Sign Out",
+      signIn: "Sign in",
+    },
+    bg: {
+      guest: "Гост",
+      name: "Александър Петров",
+      email: "alex@example.com",
+      lang: "Смени езика",
+      langOpts: ["Английски", "Български"],
+      theme: "Смени темата",
+      themeOpts: ["Системна", "Светла", "Тъмна"],
+      palette: "Палитра",
+      paletteVal: "Quiet Lilac",
+      app: "Вземи мобилното приложение",
+      appOpts: ["Android", "iOS"],
+      settings: "Настройки",
+      feedback: "Изпрати обратна връзка",
+      signOut: "Излизане",
+      signIn: "Влез",
+    },
+  };
+
+  const COLS = [
+    {
+      id: "A",
+      tag: "Candidate A",
+      title: "A third button in the action row",
+      blurb: "Cheapest. Inherits sign-out’s grow basis-auto so it wraps rather than crushes.",
+    },
+    {
+      id: "B",
+      tag: "Candidate B",
+      title: "Attached to the identity row",
+      blurb: "Trailing button on the row it is about. Sits at the very top of the menu.",
+    },
+    {
+      id: "C",
+      tag: "Candidate C",
+      title: "Its own row, under the identity",
+      blurb: "The Palette row’s shape — label left, chevron right — the menu’s existing “leads somewhere”.",
+    },
+    {
+      id: "R",
+      tag: "Reference",
+      title: "Registered user, unchanged",
+      blurb: "Three buttons today. Must stay exactly this. Shown for comparison, not a candidate.",
+    },
+  ];
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  function icon(path, cls) {
+    const s = document.createElementNS(svgNS, "svg");
+    s.setAttribute("viewBox", "0 0 24 24");
+    s.setAttribute("width", "16");
+    s.setAttribute("height", "16");
+    s.setAttribute("aria-hidden", "true");
+    s.style.flex = "0 0 auto";
+    const p = document.createElementNS(svgNS, "path");
+    p.setAttribute("d", path);
+    p.setAttribute("fill", "currentColor");
+    s.appendChild(p);
+    if (cls) s.setAttribute("class", cls);
+    return s;
+  }
+  const P = {
+    person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4Z",
+    check: "M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2Z",
+    chevron: "M10 6 8.6 7.4 13.2 12l-4.6 4.6L10 18l6-6-6-6Z",
+    settings:
+      "M19.1 12.9a7.5 7.5 0 0 0 0-1.8l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.6-.9L14.7 3H9.3l-.4 2.2c-.6.2-1.1.5-1.6.9l-2.4-1-2 3.4 2 1.6a7.5 7.5 0 0 0 0 1.8l-2 1.6 2 3.4 2.4-1c.5.4 1 .7 1.6.9l.4 2.2h5.4l.4-2.2c.6-.2 1.1-.5 1.6-.9l2.4 1 2-3.4-2-1.6ZM12 15.2A3.2 3.2 0 1 1 12 8.8a3.2 3.2 0 0 1 0 6.4Z",
+    feedback:
+      "M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-7 12h-2v-2h2v2Zm0-4h-2V6h2v4Z",
+    logout: "M17 8l-1.4 1.4 1.6 1.6H9v2h8.2l-1.6 1.6L17 16l4-4-4-4ZM5 5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7v-2H5V5Z",
+    login: "M11 7 9.6 8.4l1.6 1.6H3v2h8.2l-1.6 1.6L11 15l4-4-4-4Zm8-4h-7v2h7v14h-7v2h7a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z",
+    android: "M6 18a1 1 0 0 0 1 1h1v3.5a1.5 1.5 0 0 0 3 0V19h2v3.5a1.5 1.5 0 0 0 3 0V19h1a1 1 0 0 0 1-1V8H6v10ZM3.5 8A1.5 1.5 0 0 0 2 9.5v6a1.5 1.5 0 0 0 3 0v-6A1.5 1.5 0 0 0 3.5 8Zm17 0A1.5 1.5 0 0 0 19 9.5v6a1.5 1.5 0 0 0 3 0v-6A1.5 1.5 0 0 0 20.5 8Zm-4.9-5.1 1.3-1.3-.6-.6-1.4 1.5A6.7 6.7 0 0 0 12 1.7c-1.1 0-2.1.3-3 .8L7.7 1l-.6.6 1.3 1.3A6 6 0 0 0 6 7h12a6 6 0 0 0-2.4-4.1ZM10 5H9V4h1v1Zm5 0h-1V4h1v1Z",
+    ios: "M16.4 12.7c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-1.1 2.8-2.2c.9-1.2 1.2-2.5 1.3-2.5-.1 0-2.5-1-2.5-3.7ZM14.2 5.4c.6-.8 1-1.9.9-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.8-1.3Z",
+    dot: "M12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z",
+  };
+
+  function groupLabel(text) {
+    const d = document.createElement("div");
+    d.className = "grouplabel";
+    d.textContent = text;
+    return d;
+  }
+  function optRow(label, checked) {
+    const r = document.createElement("div");
+    r.className = "optrow";
+    const slot = document.createElement("div");
+    slot.className = "slot";
+    if (checked) slot.appendChild(icon(P.check));
+    const l = document.createElement("div");
+    l.className = "lbl";
+    l.textContent = label;
+    r.append(slot, l);
+    return r;
+  }
+  function button(label, iconPath, extra) {
+    const b = document.createElement("button");
+    b.className = "btn" + (extra ? " " + extra : "");
+    b.type = "button";
+    if (iconPath) b.appendChild(icon(iconPath));
+    const s = document.createElement("span");
+    s.textContent = label;
+    b.appendChild(s);
+    return b;
+  }
+
+  function buildMenu(shape, loc, named) {
+    const t = STR[loc];
+    const pop = document.createElement("div");
+    pop.className = "popover";
+
+    // --- identity row (#1810: person glyph + Guest, no sub-line) ---
+    const id = document.createElement("div");
+    id.className = "idrow";
+    const av = document.createElement("div");
+    av.className = "avatar";
+    const registered = shape === "R";
+    if (registered || named) {
+      const initial = document.createElement("span");
+      initial.style.font = "600 18px/1 'Noto Sans', sans-serif";
+      initial.textContent = t.name[0];
+      av.appendChild(initial);
+    } else {
+      const g = icon(P.person);
+      g.setAttribute("width", "22");
+      g.setAttribute("height", "22");
+      av.appendChild(g);
+    }
+    const txt = document.createElement("div");
+    txt.className = "idtext";
+    const primary = document.createElement("div");
+    primary.className = "idname";
+    primary.textContent = registered || named ? t.name : t.guest;
+    txt.appendChild(primary);
+    if (registered) {
+      const sub = document.createElement("div");
+      sub.className = "idsub";
+      sub.textContent = t.email;
+      txt.appendChild(sub);
+    }
+    id.append(av, txt);
+    if (shape === "B") {
+      const door = button(t.signIn, P.login, "tight");
+      door.classList.add("door");
+      door.dataset.door = "1";
+      id.appendChild(door);
+    }
+    pop.appendChild(id);
+
+    // --- candidate C: its own row, directly under the identity ---
+    if (shape === "C") {
+      const row = document.createElement("div");
+      row.className = "navrow";
+      row.dataset.door = "1";
+      row.classList.add("door");
+      row.appendChild(icon(P.login));
+      const l = document.createElement("div");
+      l.className = "lbl";
+      l.textContent = t.signIn;
+      row.appendChild(l);
+      row.appendChild(icon(P.chevron));
+      pop.appendChild(row);
+    }
+
+    // --- language ---
+    const langWrap = document.createElement("div");
+    langWrap.appendChild(groupLabel(t.lang));
+    t.langOpts.forEach((o, i) => langWrap.appendChild(optRow(o, i === (loc === "en" ? 0 : 1))));
+    pop.appendChild(langWrap);
+
+    // --- theme ---
+    const themeWrap = document.createElement("div");
+    themeWrap.appendChild(groupLabel(t.theme));
+    t.themeOpts.forEach((o, i) => themeWrap.appendChild(optRow(o, i === 0)));
+    pop.appendChild(themeWrap);
+
+    // --- palette row ---
+    const pal = document.createElement("div");
+    pal.className = "navrow";
+    const pl = document.createElement("div");
+    pl.className = "lbl";
+    pl.textContent = t.palette;
+    const pv = document.createElement("div");
+    pv.className = "val";
+    pv.textContent = t.paletteVal;
+    pal.append(pl, pv, icon(P.chevron));
+    pop.appendChild(pal);
+
+    // --- get the app ---
+    const appWrap = document.createElement("div");
+    appWrap.appendChild(groupLabel(t.app));
+    const appCol = document.createElement("div");
+    appCol.className = "appcol";
+    appCol.appendChild(button(t.appOpts[0], P.android, "start"));
+    appCol.appendChild(button(t.appOpts[1], P.ios, "start"));
+    appWrap.appendChild(appCol);
+    pop.appendChild(appWrap);
+
+    // --- socials ---
+    const soc = document.createElement("div");
+    soc.className = "socialrow";
+    for (let i = 0; i < 4; i++) soc.appendChild(button("", P.dot));
+    pop.appendChild(soc);
+
+    // --- action row ---
+    const act = document.createElement("div");
+    act.className = "actionrow";
+    act.appendChild(button(t.settings, P.settings));
+    act.appendChild(button(t.feedback, P.feedback));
+    if (shape === "R") act.appendChild(button(t.signOut, P.logout, "grow"));
+    if (shape === "A") {
+      const door = button(t.signIn, P.login, "grow");
+      door.classList.add("door");
+      door.dataset.door = "1";
+      act.appendChild(door);
+    }
+    pop.appendChild(act);
+
+    return pop;
+  }
+
+  const state = { loc: "en", vh: 667, named: 0 };
+
+  function render() {
+    const cap = Math.round(state.vh * 0.7);
+    const bands = document.getElementById("bands");
+    bands.textContent = "";
+
+    ["light", "dark"].forEach((theme) => {
+      const band = document.createElement("section");
+      band.className = "band";
+      const head = document.createElement("div");
+      head.className = "band-head";
+      const h2 = document.createElement("h2");
+      h2.textContent = theme === "light" ? "Light" : "Dark";
+      const note = document.createElement("span");
+      note.className = "band-note";
+      note.textContent =
+        "288 px popover · scroll cap " + cap + " px (70% of " + state.vh + ")";
+      head.append(h2, note);
+      band.appendChild(head);
+
+      const rack = document.createElement("div");
+      rack.className = "rack";
+
+      COLS.forEach((c) => {
+        const col = document.createElement("div");
+        col.className = "col";
+
+        const ch = document.createElement("div");
+        ch.className = "col-head";
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = c.tag;
+        const h3 = document.createElement("h3");
+        h3.textContent = c.title;
+        const p = document.createElement("p");
+        p.textContent = c.blurb;
+        ch.append(tag, h3, p);
+        col.appendChild(ch);
+
+        const stage = document.createElement("div");
+        stage.className = "stage";
+        const app = document.createElement("div");
+        app.className = "app " + theme;
+        app.appendChild(buildMenu(c.id, state.loc, state.named));
+        stage.appendChild(app);
+        col.appendChild(stage);
+
+        const readout = document.createElement("div");
+        readout.className = "readout";
+        readout.dataset.readout = c.id;
+        col.appendChild(readout);
+
+        rack.appendChild(col);
+        col.dataset.col = c.id;
+        col.dataset.theme = theme;
+      });
+
+      band.appendChild(rack);
+      bands.appendChild(band);
+    });
+
+    requestAnimationFrame(() => measure(cap));
+  }
+
+  function measure(cap) {
+    document.querySelectorAll(".col").forEach((col) => {
+      const stage = col.querySelector(".stage");
+      const pop = col.querySelector(".popover");
+      const readout = col.querySelector(".readout");
+      const total = Math.round(pop.getBoundingClientRect().height);
+      const overflow = total - cap;
+
+      // fold overlay
+      if (overflow > 0) {
+        const fold = document.createElement("div");
+        fold.className = "fold";
+        fold.style.top = cap + "px";
+        const lbl = document.createElement("span");
+        lbl.textContent = "fold";
+        fold.appendChild(lbl);
+        const shade = document.createElement("div");
+        shade.className = "below-fold";
+        shade.style.top = cap + "px";
+        stage.append(shade, fold);
+      }
+
+      const door = pop.querySelector("[data-door]");
+      const popTop = pop.getBoundingClientRect().top;
+      let doorLine = "—";
+      let verdict = { cls: "ok", text: "Reference" };
+
+      if (door) {
+        const r = door.getBoundingClientRect();
+        const bottom = Math.round(r.bottom - popTop);
+        const top = Math.round(r.top - popTop);
+        if (bottom <= cap) {
+          doorLine = "visible at rest (" + top + "–" + bottom + " px)";
+          verdict = { cls: "ok", text: "Door visible without scrolling" };
+        } else {
+          doorLine = (bottom - cap) + " px below the fold";
+          verdict = { cls: "bad", text: "Door needs a scroll to reach" };
+        }
+      }
+
+      // how many lines the action row occupies
+      const act = pop.querySelector(".actionrow");
+      const btns = [...act.querySelectorAll(".btn")];
+      const tops = new Set(btns.map((b) => Math.round(b.getBoundingClientRect().top)));
+      const lines = tops.size;
+      const narrowest = Math.min(...btns.map((b) => Math.round(b.getBoundingClientRect().width)));
+
+      if (verdict.cls === "ok" && lines >= 3) {
+        verdict = { cls: "warn", text: "Door visible, but the action row is " + lines + " lines" };
+      }
+
+      readout.textContent = "";
+      const chip = document.createElement("span");
+      chip.className = "chip " + verdict.cls;
+      chip.textContent = verdict.text;
+      readout.appendChild(chip);
+
+      const dl = document.createElement("dl");
+      [
+        ["Menu height", total + " px"],
+        ["Over the cap", overflow > 0 ? "+" + overflow + " px" : "fits"],
+        ["Sign in door", doorLine],
+        ["Action row", lines + (lines === 1 ? " line" : " lines")],
+        ["Narrowest button", narrowest + " px"],
+      ].forEach(([k, v]) => {
+        const dt = document.createElement("dt");
+        dt.textContent = k;
+        const dd = document.createElement("dd");
+        dd.textContent = v;
+        dl.append(dt, dd);
+      });
+      readout.appendChild(dl);
+    });
+  }
+
+  function wire(id, key, cast) {
+    document.getElementById(id).addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      state[key] = cast(b.dataset[key]);
+      [...b.parentElement.children].forEach((c) =>
+        c.setAttribute("aria-pressed", String(c === b)),
+      );
+      render();
+    });
+  }
+  wire("loc", "loc", String);
+  wire("vh", "vh", Number);
+  wire("named", "named", Number);
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(render);
+  } else {
+    render();
+  }
+  render();
+</script>
