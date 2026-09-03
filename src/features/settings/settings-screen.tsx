@@ -4,6 +4,7 @@ import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useTranslation } from "react-i18next";
 
 import { KeyboardAwareScrollView } from "@/src/components/app/keyboard-aware-scroll-view";
+import { SchemePicker } from "@/src/components/app/scheme-picker";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
 import { StylePicker } from "@/src/components/app/style-picker";
 import { Text } from "@/src/components/react-native-reusables/text";
@@ -23,7 +24,7 @@ import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
 
 /**
- * Settings: identity header → palette → four labelled runs → colophon.
+ * Settings: identity header → appearance → four labelled runs → colophon.
  *
  * Eleven rows and one grammar, in place of seven `SettingsSectionCard`s. Two of
  * the old cards each held two unrelated things and had to split - `Onboarding`
@@ -94,6 +95,25 @@ export default function SettingsScreen() {
               asked-and-refused note in `src/lib/theme/encoding.ts`.
             */}
             <View className="gap-2">
+              {/*
+                The appearance axis, restoring the half of #583 that never
+                shipped here (#1827): Settings gets the SAME control the header
+                menu mounts, not a copy of it.
+
+                Its visible caption is suppressed, as the palette grid's already
+                is - two captions inside one group, on a page whose four runs are
+                each named once. The group's own name is #1828's `Appearance`
+                eyebrow, landing above this. Until then the radiogroup's
+                `accessibilityLabel` carries the name for assistive tech, and it
+                is distinct from the palette grid's.
+
+                ☠️ The two axes in this group have OPPOSITE sync scopes: the
+                scheme rides `user_preferences.theme` across devices, the palette
+                is device-local. That is why `This device only` stays welded to
+                the palette sentence below rather than captioning the group -
+                hoisting it would make it false about the control above.
+              */}
+              <SchemePicker showLabel={false} />
               <Text variant="muted" className="px-1 text-[13px]">
                 {t("appearance.description")}
               </Text>

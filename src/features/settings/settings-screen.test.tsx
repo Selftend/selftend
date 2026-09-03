@@ -14,6 +14,7 @@ import {
   useUserPreferences,
 } from "@/src/features/settings/queries";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
+import { useThemeStore } from "@/src/stores/theme-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -147,6 +148,47 @@ describe("SettingsScreen structure", () => {
     // #1446: the guest invitation card renders nothing for this registered
     // user (its guest-side visibility is pinned in create-account-card.test).
     expect(screen.queryByTestId("create-account-card")).toBeNull();
+  });
+
+  /**
+   * The appearance group, whose second control arrived with #1827. Settings had
+   * only ever had the STYLE axis - #594 shipped half of #583 while claiming
+   * compliance - so the assertion that matters is that the scheme control is
+   * here at all, and that adding it left the page with two radiogroups a screen
+   * reader can tell apart.
+   */
+  describe("the appearance group", () => {
+    it("offers the scheme axis beside the palette, under distinct group names", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      const schemeGroup = screen.getByLabelText("Switch theme");
+      expect(schemeGroup.props.accessibilityRole).toBe("radiogroup");
+      expect(screen.getByLabelText("Palette").props.accessibilityRole).toBe("radiogroup");
+      for (const name of ["System", "Light", "Dark"]) {
+        expect(screen.getByRole("radio", { name })).toBeTruthy();
+      }
+    });
+
+    // Both captions are suppressed here: the group is named once, above them.
+    // `StylePicker heading={false}` is the shipped half of that and stays.
+    it("drops both grids' own captions, keeping the groups named", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.queryByText("Switch theme")).toBeNull();
+      expect(screen.queryByText("Palette")).toBeNull();
+    });
+
+    it("stores a scheme chosen here exactly as the header menu would", async () => {
+      useThemeStore.setState({ preference: "system", hydrated: true });
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      fireEvent.press(screen.getByRole("radio", { name: "Dark" }));
+
+      expect(useThemeStore.getState().preference).toBe("dark");
+    });
   });
 
   /**
