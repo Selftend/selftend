@@ -115,6 +115,7 @@ jobs:
           mv "$tmp" eas.json
 
       - name: Pull the live metadata
+        id: pull
         if: steps.gate.outputs.enabled == 'true'
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -148,8 +149,16 @@ jobs:
           echo "Live apple.advisory (only the committed keys are compared):"
           jq -S --argjson want "$want" 'with_entries(select(.key | IN($want | keys[])))' <<<"$live"
 
+          # ☠️ `select(($live | has(.)) | not)` REBINDS `.` TO $live inside the
+          # pipe, so this asked has(<object>) and died with "Cannot check
+          # whether object has a object key" on the FIRST key - every run,
+          # drift or no drift. Under `set -e` that exit 5 killed the step
+          # before the `drifted` report below could print, so the guard could
+          # neither pass nor name what it found (#1798). Bind the key first.
+          # `drifted` below is already correct: nothing rebinds `.` before
+          # `$live[.key]`, so it indexes by the entry's key as intended.
           missing="$(jq -r --argjson live "$live" \
-            'keys[] | select(($live | has(.)) | not)' <<<"$want")"
+            'keys[] as $k | select(($live | has($k)) | not) | $k' <<<"$want")"
           if [ -n "$missing" ]; then
             echo "::error::These keys are committed but absent from the pulled metadata:"
             echo "$missing"
@@ -187,8 +196,15 @@ jobs:
       # drift.mjs is unit-tested in `verify` by test/store-listing-drift.test.ts.
       # An untestable comparison inside a weekly guard is how a guard starts
       # lying without anyone noticing.
+      # ⚠️ RUNS EVEN WHEN THE ADVISORY COMPARISON ABOVE FAILED. The two
+      # comparisons are independent - age rating and listing text - so gating
+      # this one on the other's success lets a single age-rating drift hide
+      # whatever the listing is doing, for as long as the first takes to
+      # resolve. It happened on the first run that got this far (#1798).
+      # Condition on the PULL instead, the only step this one actually needs;
+      # the job still goes red for either.
       - name: Compare the listing text against the committed copy
-        if: steps.gate.outputs.enabled == 'true'
+        if: ${{ !cancelled() && steps.pull.outcome == 'success' }}
         run: node scripts/check-store-listing-drift.mjs store/apple-info.json store.config.json
 
       # store.config.json is gitignored and must never become a committed
