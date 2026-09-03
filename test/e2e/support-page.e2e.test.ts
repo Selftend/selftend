@@ -253,7 +253,7 @@ test.describe("support page", () => {
     });
   });
 
-  test("at phone width the outline holds, the chip run wraps, and both store rows are present", async ({
+  test("at phone width the outline holds, no chip is clipped, and both store rows are present", async ({
     page,
   }) => {
     throwawayEmail = `support-e2e-phone-${Date.now()}@test.local`;
@@ -267,20 +267,36 @@ test.describe("support page", () => {
 
     expect(await readOutline(page)).toEqual(EXPECTED_OUTLINE);
 
-    // "Bug · Idea · Question · This helped" is two lines in the 312px column:
-    // the first and the last chip sit on different rows.
-    const first = await page
-      .getByRole("radio", { name: feedback.category.bug, exact: true })
-      .boundingBox();
-    const last = await page
-      .getByRole("radio", { name: feedback.category.helped, exact: true })
-      .boundingBox();
-    expect(first).not.toBeNull();
-    expect(last).not.toBeNull();
-    expect(last!.y).toBeGreaterThan(first!.y + first!.height / 2);
+    // Every chip sits inside the column at phone width, on however many rows
+    // it takes. `ChipRun` is `flex-row flex-wrap`, so a run too wide to fit
+    // WRAPS rather than clips - which is why the invariant worth asserting is
+    // "nothing is clipped", not "two rows".
+    //
+    // ☠️ This deliberately no longer pins the row count. The form used to be a
+    // Card whose `px-6` left the chips 264px, which forced two rows; as a flush
+    // ruled band (#1778) they have the column's full 312px and fit on one. The
+    // row count was a property of the card's inset, never of the chip run.
+    // `ChipRun`'s wrapping is pinned directly in selectable-chip.test.tsx.
+    const column = await page.getByLabel(feedback.messageLabel, { exact: true }).boundingBox();
+    expect(column).not.toBeNull();
+    for (const name of [
+      feedback.category.bug,
+      feedback.category.idea,
+      feedback.category.question,
+      feedback.category.helped,
+    ]) {
+      const chip = page.getByRole("radio", { name, exact: true });
+      await expect(chip).toBeVisible();
+      const box = await chip.boundingBox();
+      expect(box).not.toBeNull();
+      // One pixel of slack each side: sub-pixel layout rounding, not overflow.
+      expect(box!.x).toBeGreaterThanOrEqual(column!.x - 1);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(column!.x + column!.width + 1);
+    }
 
-    // Store referral is a web-only surface, and both rows are drawn whether or
-    // not their URL is configured (the e2e build bakes only the Play one).
+    // Store referral is a web-only surface. Both rows draw because both store
+    // URLs now fall back to the live listings (#1777), so a build handed no
+    // store config still has one; an empty URL drops its row entirely.
     await expect(page.getByTestId("support-row-android")).toBeVisible();
     await expect(page.getByTestId("support-row-ios")).toBeVisible();
 
