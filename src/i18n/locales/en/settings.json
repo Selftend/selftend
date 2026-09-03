@@ -55,7 +55,7 @@
     "wizConcernsBody": "Pick anything that fits - it shapes your dashboard and the starter routine offered next. You can change it later, and nothing here is a diagnosis.",
     "modulesQuestion": "Would a self-help module be useful?",
     "modulesHint": "Choose CBT, ACT, both, or neither. This is a preference, not an assessment.",
-    "modulesOptional": "Leave both unselected if you only want individual tools.",
+    "modulesOptional": "Leave both unselected if you only want the everyday tools.",
     "cbtChoice": "CBT - work with thoughts and behaviour",
     "actChoice": "ACT - make room for feelings and act on values",
     "guidanceQuestion": "How much structure would you like?",
