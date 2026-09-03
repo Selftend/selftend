@@ -50,8 +50,7 @@
     "android": "Android",
     "ios": "iOS",
     "androidAccessibility": "Get the Android app on Google Play",
-    "iosAccessibility": "Get the iOS app on the App Store",
-    "comingSoon": "Coming soon"
+    "iosAccessibility": "Get the iOS app on the App Store"
   },
   "languageToggle": {
     "toggle": "Switch language",

@@ -9,12 +9,15 @@
 // roadmap". A copy change could not reach the build under review, so the reply
 // pre-empted it and this guard keeps the next one clean.
 //
-// SCOPE IS DERIVED, NOT SUPPRESSED. `getTheApp.comingSoon` is a legitimate
-// "coming soon" string - it marks a store link the app does not have yet - and
-// it is excluded because it is not one of these surfaces, not because it earned
-// an exemption. `GetTheAppSection` returns null on `Platform.OS !== "web"`, so
-// it never renders in a store binary at all. Adding a suppression list here
-// instead of narrowing the scope would have exempted every future sibling too.
+// SCOPE IS DERIVED, NOT SUPPRESSED. This guard walks the surfaces above and
+// nothing else, so a sibling namespace is out of range by construction rather
+// than by exemption - a suppression list here would have exempted every future
+// sibling too.
+//
+// The one string that used to need explaining, `getTheApp.comingSoon`, is gone:
+// both apps are published, the store URLs default to the live listings, and a
+// build with no store URL now drops the surface instead of promising it. The
+// store surfaces keep their own `queryByText(/coming soon/i)` assertions.
 import * as fs from "node:fs";
 import * as path from "node:path";
 
