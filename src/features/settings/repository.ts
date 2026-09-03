@@ -475,6 +475,41 @@ export async function recordPolicyConsent(userId: string, policyVersion: string)
   }
 }
 
+/**
+ * Record that this person cleared their country's age floor (#1764, §3).
+ *
+ * Its own function rather than a `updateUserPreferences` patch, for one
+ * reason: that path retries while PostgREST reports a missing column, dropping
+ * the named column each pass, so on an environment whose schema predates
+ * #1762's migration it would report success having written nothing. The gate
+ * would then re-ask on every launch, and - worse - a caller could reasonably
+ * read the resolved promise as "attested". This fails instead.
+ *
+ * Only ever called for a PASS. There is no failing counterpart: an under-floor
+ * verdict writes nothing at all, because the account it would be written
+ * against is about to be deleted (#1765).
+ *
+ * ⚠️ The date of birth is not a parameter and must not become one.
+ */
+export async function recordAgeAttestation(userId: string, country: string) {
+  const client = requireSupabase();
+  const { error } = await client.from("user_preferences").upsert(
+    {
+      user_id: userId,
+      age_floor_met: true,
+      // `^[A-Z]{2}$` is checked in the database too; normalising here means a
+      // lower-case code is stored rather than rejected.
+      age_attested_country: country.trim().toUpperCase(),
+      age_attested_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function deleteUserAccount() {
   const client = requireSupabase();
   // Best-effort client-side avatar cleanup - it must never abort the actual erasure. A

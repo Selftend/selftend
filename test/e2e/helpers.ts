@@ -101,14 +101,59 @@ export async function dismissCookieBanner(page: Page) {
     .catch(() => undefined);
 }
 
+/**
+ * Clear the age gate (#1764) if it is standing.
+ *
+ * ☠️ It only appears for an account that has never accepted a policy version -
+ * a fresh sign-up, or one minted through the admin API with no preferences row.
+ * Every pooled and injected user skips it, because `NORMALIZED_GATE_PREFS` sets
+ * `policy_version_accepted`; that is why this is a no-op in most specs and why
+ * it must exist anyway for the two that use a genuinely new account.
+ *
+ * It answers rather than bypasses: the gate is the app's, and a spec that
+ * poked its state instead would stop covering the one screen every new user
+ * meets first.
+ */
+export async function clearAgeGate(page: Page) {
+  const day = page.getByTestId("age-gate-day");
+  const standing = await day
+    .waitFor({ state: "visible", timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!standing) {
+    return;
+  }
+
+  // Born 1990: over every floor in the table, so the country is free to be any
+  // country and the date never ages into a different verdict.
+  await day.fill("1");
+  await page.getByTestId("age-gate-month").fill("1");
+  await page.getByTestId("age-gate-year").fill("1990");
+  // The code is an exact match, so it ranks first in the suggestions.
+  await page.getByTestId("age-gate-country").fill("GB");
+  await page.getByTestId("age-gate-country-option-GB").click();
+
+  const submit = page.getByTestId("age-gate-submit");
+  await expect(submit).toBeEnabled({ timeout: 5_000 });
+  await submit.click();
+  await expect(day).toBeHidden({ timeout: 10_000 });
+}
+
 // After signing in, gates and modals can appear depending on user state:
-//   1. ConsentGate - when seeded policy_version_accepted differs from the
+//   1. AgeGate - when the account has never accepted a policy version, i.e. it
+//      is brand new (#1764). Sits ABOVE the consent gate, so it goes first.
+//   2. ConsentGate - when seeded policy_version_accepted differs from the
 //      current app policyVersion ("Quick policy check"). Affects all seed users.
-//   2. App-level OnboardingModal - when appOnboardingCompleted is false ("Welcome to Selftend").
+//   3. App-level OnboardingModal - when appOnboardingCompleted is false ("Welcome to Selftend").
 // Each is dismissed by clicking its primary button so subsequent UI is interactable.
 export async function dismissPostSignInModals(page: Page) {
   // Cookie banner can re-appear post-navigation; always re-dismiss.
   await dismissCookieBanner(page);
+
+  // Ordered first because the app orders it first: while the age gate stands,
+  // the consent gate has not rendered and waiting for it would burn its full
+  // timeout before failing on a screen that was never going to appear.
+  await clearAgeGate(page);
 
   // The modal is gated by prefs loading after sign-in - wait for it to render
   // (or time out if the user is already past consent).

@@ -9,6 +9,7 @@ import {
   deleteUserAccount,
   exportUserData,
   getUserPreferences,
+  recordAgeAttestation,
   recordPolicyConsent,
   updateOnboardingPreferences,
   updateShownButtonTours,
@@ -108,6 +109,31 @@ export function useRecordPolicyConsent(userId: string | null) {
 
   return useMutation({
     mutationFn: (policyVersion: string) => recordPolicyConsent(userId!, policyVersion),
+    onSuccess: async () => {
+      if (!userId) {
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: preferenceKeys.detail(userId) });
+    },
+  });
+}
+
+/**
+ * Persist a passing age attestation and let the gate fall away (#1764).
+ *
+ * The invalidate is what actually dismisses the gate: `ProtectedLayout` reads
+ * `ageFloorMet === true` off the preferences query, so a refetch is the
+ * dismissal. No local "dismissed" flag, unlike the consent gate beside it -
+ * there is nothing here a person can decline, so there is no state to hold
+ * that the server does not already have.
+ */
+export function useRecordAgeAttestation(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (country: string) => recordAgeAttestation(userId!, country),
+    meta: { suppressGlobalErrorToast: true }, // the gate shows its own error
     onSuccess: async () => {
       if (!userId) {
         return;

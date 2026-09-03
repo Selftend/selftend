@@ -93,7 +93,17 @@ function daysInMonth(year: number, month: number): number {
   return month === 2 && isLeapYear(year) ? 29 : DAYS_IN_MONTH[month - 1];
 }
 
-function isRealCivilDate(date: CivilDate): boolean {
+/**
+ * Whether a year/month/day triple names a day that exists.
+ *
+ * Exported because `meetsAgeFloor` deliberately collapses "not old enough" and
+ * "that date is nonsense" into the same `false`, and the gate above it must not
+ * (#1764): a typo has to come back as a correctable field error, while an
+ * under-floor verdict is a one-way exit. The gate asks this first, so the two
+ * are never confused - and the collapse inside `meetsAgeFloor` stays, because
+ * any caller that skips this check must still fail closed.
+ */
+export function isRealCivilDate(date: CivilDate): boolean {
   const { year, month, day } = date;
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
     return false;

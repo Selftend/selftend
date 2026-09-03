@@ -8,6 +8,7 @@ import {
   deleteUserAccount,
   deleteWebPushSubscription,
   getUserPreferences,
+  recordAgeAttestation,
   updateOnboardingPreferences,
   updateShownButtonTours,
   updateUserPreferences,
@@ -726,5 +727,54 @@ describe("age attestation preferences (#1762)", () => {
       },
       expect.anything(),
     );
+  });
+});
+
+describe("recordAgeAttestation", () => {
+  function mockAttestationUpsert(error: unknown = null) {
+    const upsert = jest.fn().mockResolvedValue({ error });
+    const from = jest.fn(() => ({ upsert }));
+
+    mockRequireSupabase.mockReturnValue({ from } as unknown as ReturnType<typeof requireSupabase>);
+
+    return { from, upsert };
+  }
+
+  it("writes the verdict, the country and the moment - and nothing else", async () => {
+    const { from, upsert } = mockAttestationUpsert();
+
+    await recordAgeAttestation("user-1", "DE");
+
+    expect(from).toHaveBeenCalledWith("user_preferences");
+    const [payload] = upsert.mock.calls[0];
+    expect(payload).toEqual({
+      user_id: "user-1",
+      age_floor_met: true,
+      age_attested_country: "DE",
+      age_attested_at: expect.any(String),
+    });
+    // ☠️ The whole payload is asserted, not just its known keys: the date of
+    // birth reaching the database is the one failure §3 rules out outright, and
+    // a `toMatchObject` here would not notice it arriving.
+    expect(Object.keys(payload)).toHaveLength(4);
+  });
+
+  it("normalises the country rather than letting the column check reject it", async () => {
+    const { upsert } = mockAttestationUpsert();
+
+    await recordAgeAttestation("user-1", " bg ");
+
+    expect(upsert.mock.calls[0][0]).toMatchObject({ age_attested_country: "BG" });
+  });
+
+  it("throws rather than reporting a write that did not happen", async () => {
+    // Deliberately not `updateUserPreferences`, whose missing-column retry
+    // would drop `age_floor_met` and resolve - which a caller would read as
+    // "attested" against a row that says nothing of the kind.
+    mockAttestationUpsert({ message: "column does not exist" });
+
+    await expect(recordAgeAttestation("user-1", "DE")).rejects.toEqual({
+      message: "column does not exist",
+    });
   });
 });

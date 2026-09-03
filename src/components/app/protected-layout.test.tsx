@@ -151,6 +151,28 @@ jest.mock("@/src/components/app/consent-gate", () => {
   };
 });
 
+// Visible stubs: the gate's own behaviour (neutral copy, the verdict, what it
+// writes) is covered in age-gate.test.tsx. What this suite owns is WHICH
+// account sees it, and in what order relative to the consent gate. The stub's
+// press is the under-floor exit, so the routing can be driven from here.
+jest.mock("@/src/components/app/age-gate", () => {
+  const Text = mockText;
+
+  return {
+    AgeGate: ({ onUnderFloor }: { onUnderFloor: () => void }) => (
+      <Text onPress={onUnderFloor}>Age gate</Text>
+    ),
+  };
+});
+
+jest.mock("@/src/components/app/under-floor-screen", () => {
+  const Text = mockText;
+
+  return {
+    UnderFloorScreen: () => <Text>Under-floor screen</Text>,
+  };
+});
+
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => mockSessionState,
 }));
@@ -434,5 +456,121 @@ describe("ProtectedLayout headerless shell (#667)", () => {
     // `layered-inset-store.test.tsx`: jest's View is a class mock with no
     // measureInWindow, so no rendered publisher can measure here.
     expect(strip.props.onLayout).toEqual(expect.any(Function));
+  });
+});
+
+/**
+ * The age gate's placement (#1764, spec #227 §3).
+ *
+ * It shares `ConsentGate`'s slot and sits above it, which is what gives it all
+ * four ways into the app - email/password, Google, Apple and the silent guest -
+ * rather than the two paths §3 was written against.
+ */
+describe("ProtectedLayout age gate", () => {
+  /** A brand-new account: nothing accepted, nothing attested. */
+  function newAccount(over: Record<string, unknown> = {}) {
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: false,
+        policyVersionAccepted: null,
+        ageFloorMet: null,
+        ...over,
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+  }
+
+  it("asks a brand-new account before anything else in the shell", async () => {
+    newAccount();
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Age gate")).toBeTruthy());
+    // Above the consent gate, and above the app itself.
+    expect(screen.queryByText("Consent gate")).toBeNull();
+    expect(screen.queryByText("Stack content")).toBeNull();
+    expect(screen.queryByText("Welcome to Selftend")).toBeNull();
+  });
+
+  it("never re-asks an account that has already been through the consent gate", async () => {
+    // ☠️ §7: existing users meet the one-time consent prompt WITHOUT being
+    // re-asked for age or country. `ageFloorMet` is null for every account that
+    // predates the gate, so null alone cannot be the trigger - without the
+    // policy-version clause this fires for the entire install base on the
+    // release that ships it.
+    mockUseUserPreferences.mockReturnValue({
+      data: {
+        ...defaultUserPreferences,
+        appOnboardingCompleted: true,
+        policyVersionAccepted: "2026-05-01",
+        ageFloorMet: null,
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
+    expect(screen.queryByText("Age gate")).toBeNull();
+  });
+
+  it("does not ask again once the floor has been met", async () => {
+    newAccount({ ageFloorMet: true });
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Consent gate")).toBeTruthy());
+    expect(screen.queryByText("Age gate")).toBeNull();
+  });
+
+  it("reads the verdict as `=== true`, so a stored false still gates", async () => {
+    // Nothing writes false today - a failure writes nothing at all - but the
+    // column allows it, and a truthiness check over the three-state value is
+    // the failure mode #1762 warned about from the other side.
+    newAccount({ ageFloorMet: false });
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Age gate")).toBeTruthy());
+  });
+
+  it("hands an under-floor verdict to the exit and nowhere else", async () => {
+    newAccount();
+
+    renderWithProviders(<ProtectedLayout />);
+    fireEvent.press(await screen.findByText("Age gate"));
+
+    await waitFor(() => expect(screen.getByText("Under-floor screen")).toBeTruthy());
+    expect(screen.queryByText("Age gate")).toBeNull();
+    expect(screen.queryByText("Consent gate")).toBeNull();
+    expect(screen.queryByText("Stack content")).toBeNull();
+  });
+
+  it("does not flash the gate when the preferences fetch fails", async () => {
+    // Same fail-open rule as the consent gate beside it (#164): with no cached
+    // row the attestation state is UNKNOWN, and a gate that guessed would ask
+    // an already-attested person again on any transient network error. It
+    // re-evaluates on the next successful load.
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.queryByText("Age gate")).toBeNull());
+  });
+
+  it("waits for preferences rather than gating on a loading row", async () => {
+    mockUseUserPreferences.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    } as unknown as ReturnType<typeof useUserPreferences>);
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.queryByText("Age gate")).toBeNull());
   });
 });
