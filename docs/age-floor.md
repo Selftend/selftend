@@ -145,11 +145,10 @@ it.
 pass is persisted, through `recordAgeAttestation`, which takes a country and a
 verdict and has no parameter a date of birth could travel in.
 
-### Two known gaps in the gate as it stands
+### The one known gap in the gate as it stands
 
-Both are recorded rather than hidden, and both close on
-[#1765](https://github.com/Selftend/selftend/issues/1765) or the release
-sequencing:
+Recorded rather than hidden, and it closes on the release sequencing rather
+than on a ticket:
 
 - **The gate fails open on a preferences error with nothing cached.** In that
   state the attestation is unknown, and the person reaches the shell until a
@@ -159,15 +158,75 @@ sequencing:
   reason ([#164](https://github.com/Selftend/selftend/issues/164)), so the age
   gate is no weaker than the legal gate beside it, but the window is real and
   belongs in the legal review's view of §3.
-- **The under-floor block is React state only.** Nothing is written for a
-  failure, so a reload re-opens the gate and the person may answer again. §3
-  wants a hard block; #1765's account deletion and device-local retry flag are
-  what deliver it.
 
-### Still owed by [#1765](https://github.com/Selftend/selftend/issues/1765)
+The second gap recorded here — _"the under-floor block is React state only"_ —
+is closed by [#1765](https://github.com/Selftend/selftend/issues/1765), below.
 
-`src/components/app/under-floor-screen.tsx` is a deliberate stub: it blocks, and
-that is all it does. The `/crisis` and Find A Helpline links, deletion of the
-auth user that already exists on three of the four paths, and the device-local
-retry flag are #1765's, and until they land an under-floor person is blocked
-only for as long as the screen stays mounted.
+## What happens below the floor
+
+Built in [#1765](https://github.com/Selftend/selftend/issues/1765):
+`src/components/app/under-floor-screen.tsx`, driven by
+`src/features/auth/use-under-floor-exit.ts` over
+`src/features/auth/under-floor-block.ts`.
+
+**The account is deleted, and the capability that deletes it already existed.**
+The gate runs after the session exists on three of the four entry paths — guest,
+Google, Apple — so an auth user has been created by the time the verdict is
+known. §3 describes this as an OAuth-specific deletion; it is not, and the
+silent guest is what makes it the common case. It goes through
+`delete_user_account()`, which is `security definer`, runs as the function
+owner, and delegates to `purge_user_account(uuid)` — revoked from `public`,
+`anon` **and** `authenticated`, so only the owner and `service_role` can call
+it (`20260826000000_account_purge_helper.sql`). The client holds no
+service-role key and cannot name a target: the RPC derives one from
+`auth.uid()`, so the only account it can erase is the caller's own. An edge
+function was **not** added — it would be a second definition of what deletion
+removes, which that migration warns against in its own words.
+
+**The device flag is written before the deletion is asked for**, and the order
+is the guarantee. A crash, a kill or a dead network between the two leaves a
+blocked device with a live empty account, which is recoverable: the next launch
+lands back on the exit screen and retries. The reverse order would leave a
+deleted account with no flag — a person walking straight back into the gate.
+
+**A failed deletion does not sign out.** `delete_user_account()` reads
+`auth.uid()`, so the token is the only thing that can finish the job. The exit
+screen says so plainly rather than claiming an erasure that did not happen, and
+offers to run it again — the _account_, never the answers. A failed sign-out
+after a successful purge is the opposite case: it is reported, not surfaced,
+because a token naming a user row that no longer exists authenticates nothing.
+
+**The flag holds one expiry timestamp and nothing else** — no date of birth, no
+country, no age, no user id. It expires after 24 hours, because a permanent
+device flag would be a ban on a phone rather than a block on a person, it would
+outlive the household that owns the device, and a reinstall would defeat it
+anyway. It fails open: an unreadable store answers "not blocked", so a storage
+fault can never strand a device with no way to get a session.
+
+**Three places consult it**, and each answers a different way back in:
+
+- `ProtectedLayout`, **above** the `!session` branch. The exit signs the person
+  out, so a block checked below that branch would answer its own success with
+  the auth landing. It also suppresses the web signed-out redirect, which would
+  otherwise bounce the person to the marketing landing the instant the erasure
+  succeeded.
+- `SessionProvider`, which does not mint a guest for a blocked device. The
+  block holds without this, but every launch inside the window would otherwise
+  create an anonymous user purely so the exit screen could delete it again.
+- Nothing else. In particular the **public marketing landing is not blocked**:
+  the flag prevents entry, not reading, and blocking a public page would be
+  over-reach. A web visitor inside the window can therefore sign up again — and
+  meets the gate again, and is deleted again. The floor holds; only the speed
+  bump is thinner there, and that is a deliberate line rather than an oversight.
+
+**The exit screen links `/crisis` and Find A Helpline**, and both work without
+an account, because this person is about to not have one: `/crisis` is a root
+route, a sibling of the `(app)` group rather than a screen inside it, and Find A
+Helpline is a plain external URL read from `crisisActionUrls` — the same table
+`app/crisis.tsx` renders, so the URL has one home.
+
+**The copy is calm and non-shaming, and that is tested as a property of the
+strings**, in both locales, with the predicate fired on deliberately bad copy so
+the absence assertions cannot go quiet. It covers the whole `underFloor` block,
+which is why the erasure retry is worded about the account ("Remove it now") and
+never about having another go at the questions.

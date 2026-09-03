@@ -18,6 +18,7 @@ import {
   type AppOnboardingResult,
 } from "@/src/components/app/app-onboarding-wizard";
 import { policyVersion } from "@/src/features/policies/policy-content";
+import { useUnderFloorBlock } from "@/src/features/auth/use-under-floor-block";
 import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
@@ -47,6 +48,10 @@ export default function ProtectedLayout() {
   const [consentDismissed, setConsentDismissed] = useState(false);
   const [underFloor, setUnderFloor] = useState(false);
   const [ageAttested, setAgeAttested] = useState(false);
+  // The device's own under-floor block (#1765). React state alone was #1764's
+  // recorded gap: it lasted exactly as long as the screen stayed mounted, and
+  // on native the next launch mints a fresh guest a second later.
+  const deviceBlock = useUnderFloorBlock();
   const pathname = usePathname();
 
   const hydrateAppLock = useAppLockStore((s) => s.hydrate);
@@ -87,14 +92,26 @@ export default function ProtectedLayout() {
   // Web signed-out redirect: mutating window.location is a side effect, so it
   // lives in an effect (the compiler's immutability rule forbids it in render);
   // the render below returns null for this state while the redirect kicks in.
-  const signedOutOnWeb = status !== "loading" && !session && Platform.OS === "web";
+  // ☠️ `&& !deviceBlock.blocked`. The under-floor exit deletes the account and
+  // then signs out, which lands squarely in this condition - so without the
+  // clause the web redirect would fire the moment the erasure succeeded and
+  // bounce the person to the marketing landing, replacing the exit screen with
+  // an invitation to start. The block owns the surface until it lifts.
+  const signedOutOnWeb =
+    status !== "loading" && !session && Platform.OS === "web" && !deviceBlock.blocked;
   useEffect(() => {
     if (signedOutOnWeb && typeof window !== "undefined") {
       window.location.href = "/";
     }
   }, [signedOutOnWeb]);
 
-  if (status === "loading") {
+  // ⚠️ The device flag is folded into the loading gate the session restore
+  // already shows, rather than getting a spinner of its own: it arrives a tick
+  // late from AsyncStorage, and rendering the shell on that tick would flash
+  // the app at exactly the person the block exists to keep out. On a cold start
+  // the storage read finishes well inside the session round trip, so this costs
+  // nothing visible.
+  if (status === "loading" || !deviceBlock.hydrated) {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 items-center justify-center gap-3 p-6">
@@ -104,6 +121,19 @@ export default function ProtectedLayout() {
         </View>
       </SafeAreaView>
     );
+  }
+
+  // ☠️ ABOVE the `!session` branch, and that placement is the point. The exit
+  // deletes the account and signs out, so by the time the erasure has landed
+  // there IS no session - and the branch below would answer that with the auth
+  // landing, i.e. a fresh way in, one tap after the block. The block outlives
+  // the account it removed; the screen is what it renders, signed in or out.
+  //
+  // The React-state half (`underFloor`) is still needed beside the device flag:
+  // it is what makes the verdict take effect in the same frame the person
+  // answers, without waiting on a storage write.
+  if (underFloor || deviceBlock.blocked) {
+    return <UnderFloorScreen />;
   }
 
   if (!session) {
@@ -196,13 +226,12 @@ export default function ProtectedLayout() {
     }
   };
 
-  // Ordered before the consent gate, and before every early return below it:
-  // the floor decides whether this person may be here at all, and consent to
-  // processing is only worth collecting from someone who may.
-  if (underFloor) {
-    return <UnderFloorScreen />;
-  }
-
+  // The under-floor return that used to sit here has moved above the `!session`
+  // branch (#1765): the exit signs the person out, so a block checked only from
+  // here would hand them the auth landing the moment it succeeded. It still
+  // precedes the consent gate for the reason it always did - the floor decides
+  // whether this person may be here at all, and consent to processing is only
+  // worth collecting from someone who may.
   if (needsAgeAttestation) {
     return (
       // `onAttested` fires only after the write resolved, so the local flag can
