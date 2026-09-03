@@ -496,6 +496,8 @@
   },
   "styleToggle": {
     "toggle": "Palette",
-    "default": "Default"
+    "default": "Default",
+    "open": "Choose a palette",
+    "back": "Back"
   }
 }
