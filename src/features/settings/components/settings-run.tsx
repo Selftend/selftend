@@ -1,7 +1,7 @@
 import { Children, type ReactNode } from "react";
 import { View } from "react-native";
 
-import { Text } from "@/src/components/react-native-reusables/text";
+import { SettingsGroupLabel } from "@/src/features/settings/components/settings-group-label";
 import { cn } from "@/lib/utils";
 
 interface SettingsRunProps {
@@ -49,17 +49,14 @@ export function SettingsRun({ label, children, surface = "card", testID }: Setti
   return (
     <View className="gap-2">
       {/*
-        `accessibilityRole="header"` rather than `variant="h2"`: the run label is
-        an 11px eyebrow, and h2 would drag the display face and a 30px size along
-        with the heading semantics. The role is the part that matters here - four
-        runs a screen-reader user can jump between.
+        The run's name goes through the shared `SettingsGroupLabel` (#1828),
+        which owns the heading role and the kit's eyebrow scale. The appearance
+        group renders the same component, so the two cannot drift.
       */}
       {label ? (
         // The eyebrow's inset is optical, against the card's rounded edge; with no
         // card it sits on the same left edge as the rows' glyphs.
-        <Text variant="eyebrow" accessibilityRole="header" className={cn(card && "px-1")}>
-          {label}
-        </Text>
+        <SettingsGroupLabel className={cn(card && "px-1")}>{label}</SettingsGroupLabel>
       ) : null}
       <View
         className={cn(

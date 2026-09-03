@@ -180,6 +180,120 @@ describe("SettingsScreen structure", () => {
       expect(screen.queryByText("Palette")).toBeNull();
     });
 
+    /**
+     * #1828. Both premises of the shipped "two labels for one grid" ruling died:
+     * #1827 gave the group a second control, and #1800 removed the card that was
+     * delimiting it - leaving the only region on the page with no name.
+     */
+    it("carries an Appearance eyebrow, the group's own name", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getByRole("header", { name: "Appearance" })).toBeTruthy();
+    });
+
+    /**
+     * The eyebrow is what cures the "wrong by omission" worry, so the sentence
+     * it relieves must not also be rewritten - it stops standing in as the group
+     * label and is read as the palette's own line, unchanged.
+     */
+    it("leaves the palette line's copy alone, and drops its optical inset", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      const line = screen.getByText("Choose a palette. This device only.");
+      // The inset was optical, against a card edge #1800 removed - the same
+      // reasoning that took it off the runs.
+      expect(String(line.props.className ?? "").split(/\s+/)).not.toContain("px-1");
+    });
+
+    /**
+     * ☠️ Do not hoist "This device only" to a group-level caption, however the
+     * drawing shows it: `theme` syncs to `user_preferences.theme` while only
+     * `style` is device-local, so the claim is false about the control above.
+     * The drawn palette note is out too - it describes the palette while sitting
+     * beside the scheme pill, and does not fit a phone column.
+     */
+    it("hoists no caption to the group and adds no palette note", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getAllByText(/This device only/)).toHaveLength(1);
+      expect(screen.queryByText(/Palettes change colour/)).toBeNull();
+    });
+  });
+
+  /**
+   * D7 applies to the five GROUP labels and must not reach the page eyebrow,
+   * which is the same `variant="eyebrow"` doing the other of two jobs the design
+   * separates. Asserted from both sides so a sweep cannot silently take the hero
+   * with it.
+   */
+  describe("the eyebrow scale", () => {
+    /** Both the hero eyebrow and the Account run label render the word "Account". */
+    function eyebrowClasses(text: string, isHeader: boolean): string[] {
+      const node = screen
+        .getAllByText(text)
+        .find((el) => (el.props.accessibilityRole === "header") === isHeader);
+
+      return String(node?.props.className ?? "")
+        .split(/\s+/)
+        .filter(Boolean);
+    }
+
+    it("sets the five group labels at 600 / 0.1em", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      for (const label of ["Appearance", "App", "Your data", "Help", "Account"]) {
+        const classes = eyebrowClasses(label, true);
+        expect(classes).toContain("font-semibold");
+        expect(classes).toContain("tracking-[0.1em]");
+      }
+    });
+
+    /**
+     * The outline the group's name joins: the hero's `h1`, then five `h2`s.
+     *
+     * ⚠️ Two role names, one outline. `Text variant="h1"` sets ARIA's
+     * `role="heading"`, the group labels set RN's `accessibilityRole="header"`,
+     * and this jest matcher does not alias one to the other - on the web DOM
+     * both become heading elements.
+     *
+     * ☠️ And the level is asserted because a level-less heading is NOT an `h2`:
+     * `react-native-web` swaps in a literal `<h1>` when `aria-level` is absent,
+     * so without it this page would ship six `h1`s.
+     */
+    it("registers one h1 and five h2s, in that order", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      const h1s = screen.getAllByRole("heading");
+      expect(h1s).toHaveLength(1);
+      expect(h1s[0].props["aria-level"]).toBe("1");
+
+      const h2s = screen.getAllByRole("header");
+      expect(h2s.map((node) => node.props.children)).toEqual([
+        "Appearance",
+        "App",
+        "Your data",
+        "Help",
+        "Account",
+      ]);
+      for (const node of h2s) {
+        expect(node.props["aria-level"]).toBe(2);
+      }
+    });
+
+    it("leaves the page eyebrow at the scale it already had", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      const classes = eyebrowClasses("Account", false);
+      expect(classes).toContain("font-bold");
+      expect(classes).toContain("tracking-[0.14em]");
+    });
+
     it("stores a scheme chosen here exactly as the header menu would", async () => {
       useThemeStore.setState({ preference: "system", hydrated: true });
       renderWithProviders(<SettingsScreen />);

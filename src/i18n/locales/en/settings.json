@@ -251,6 +251,7 @@
     "joinDiscordDescription": "Other people using the app, plus the maintainers."
   },
   "appearance": {
+    "title": "Appearance",
     "description": "Choose a palette. This device only."
   }
 }
