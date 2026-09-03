@@ -18,7 +18,11 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { CountrySelectField } from "@/src/components/app/country-select-field";
-import { readAttestation } from "@/src/features/auth/age-attestation";
+import {
+  isAttestationComplete,
+  readAttestation,
+  type AttestationDraft,
+} from "@/src/features/auth/age-attestation";
 import { useRecordAgeAttestation } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -61,17 +65,32 @@ interface AgeGateProps {
 export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
   const { t } = useTranslation("auth");
   const { user } = useSession();
-  const [day, setDay] = useState("");
-  const [month, setMonth] = useState("");
-  const [year, setYear] = useState("");
-  const [country, setCountry] = useState("");
+  // One state, because the four answers are one draft: they are read together,
+  // judged together, and - the part that matters - cleared together.
+  const [draft, setDraft] = useState<AttestationDraft>({
+    day: "",
+    month: "",
+    year: "",
+    country: "",
+  });
   const [invalidDate, setInvalidDate] = useState(false);
   const attest = useRecordAgeAttestation(user?.id ?? null);
   // Web only: KeyboardAvoidingView is a plain View there, and a shrunk WINDOW
   // is no proxy for the on-screen keyboard.
   const keyboardInset = useWebKeyboardInset();
 
-  const complete = day.trim() !== "" && month.trim() !== "" && year.trim() !== "" && country !== "";
+  const setField = (field: keyof AttestationDraft) => (value: string) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  /**
+   * ☠️ The one place the date of birth is dropped, and it runs on BOTH exits.
+   * Having a single home for it is the point: a second copy is a second thing
+   * to forget when a branch is added.
+   */
+  const forgetDateOfBirth = () => {
+    setDraft((current) => ({ ...current, day: "", month: "", year: "" }));
+  };
 
   const handleSubmit = async () => {
     if (!user?.id) {
@@ -79,7 +98,7 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
     }
 
     // Read the clock here, in an event handler - see the docblock.
-    const outcome = readAttestation({ day, month, year, country }, new Date());
+    const outcome = readAttestation(draft, new Date());
 
     if (outcome.kind === "incomplete") {
       return;
@@ -93,20 +112,14 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
     setInvalidDate(false);
 
     if (outcome.kind === "under-floor") {
-      // Drop the date of birth before leaving, so it is not sitting in a
-      // mounted component's state while the exit path does its work.
-      setDay("");
-      setMonth("");
-      setYear("");
+      forgetDateOfBirth();
       onUnderFloor();
       return;
     }
 
     try {
       await attest.mutateAsync(outcome.country);
-      setDay("");
-      setMonth("");
-      setYear("");
+      forgetDateOfBirth();
       onAttested();
     } catch {
       // Surfaced below via attest.isError; only advance on success.
@@ -116,7 +129,17 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Unlike `ConsentGate` beside it, this gate has text fields, so it needs
-          the app's keyboard chrome rather than a bare ScrollView:
+          the app's keyboard chrome rather than a bare ScrollView.
+
+          ⚠️ This repeats what `MobileFormScreen` assembles, and deliberately
+          does not use it. That component is a form SCREEN inside the shell: it
+          drops the top safe-area edge (a gate covers the shell, so it needs
+          all four) and it registers a layer-1 publisher on the bottom-inset
+          ladder for its footer - chrome measured for a screen this gate stands
+          in front of rather than inside. A gate publishing into the shell's
+          inset ladder is a stranger bug than three duplicated props. If a
+          second gate ever needs the same chrome, that is the moment to lift it
+          into a shared piece; one is not.
 
           - `KeyboardAvoidingView` with the shared "padding" behavior. ☠️ Not
             the iOS-only conditional: edge-to-edge (Expo SDK 54 / Android 15)
@@ -160,10 +183,10 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
                         inputMode="numeric"
                         keyboardType="number-pad"
                         maxLength={2}
-                        onChangeText={setDay}
+                        onChangeText={setField("day")}
                         placeholder={t("ageGate.dayPlaceholder")}
                         testID="age-gate-day"
-                        value={day}
+                        value={draft.day}
                       />
                     </View>
                     <View className="flex-1 gap-1">
@@ -175,10 +198,10 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
                         inputMode="numeric"
                         keyboardType="number-pad"
                         maxLength={2}
-                        onChangeText={setMonth}
+                        onChangeText={setField("month")}
                         placeholder={t("ageGate.monthPlaceholder")}
                         testID="age-gate-month"
-                        value={month}
+                        value={draft.month}
                       />
                     </View>
                     <View className="flex-[1.4] gap-1">
@@ -190,10 +213,10 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
                         inputMode="numeric"
                         keyboardType="number-pad"
                         maxLength={4}
-                        onChangeText={setYear}
+                        onChangeText={setField("year")}
                         placeholder={t("ageGate.yearPlaceholder")}
                         testID="age-gate-year"
-                        value={year}
+                        value={draft.year}
                       />
                     </View>
                   </View>
@@ -203,10 +226,10 @@ export function AgeGate({ onAttested, onUnderFloor }: AgeGateProps) {
                     </Text>
                   ) : null}
                 </View>
-                <CountrySelectField value={country} onChange={setCountry} />
+                <CountrySelectField value={draft.country} onChange={setField("country")} />
                 <Button
                   aria-busy={attest.isPending}
-                  disabled={!complete || attest.isPending}
+                  disabled={!isAttestationComplete(draft) || attest.isPending}
                   onPress={() => void handleSubmit()}
                   testID="age-gate-submit"
                 >

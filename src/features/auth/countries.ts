@@ -319,11 +319,6 @@ export function countryName(code: string, language: string): string {
   return language.startsWith("bg") ? country.bg : country.en;
 }
 
-/** Whether a code is one this app offers - i.e. one `countryName` can name. */
-export function isKnownCountryCode(code: string): boolean {
-  return BY_CODE.has(code.trim().toUpperCase());
-}
-
 export interface NamedCountry {
   code: string;
   name: string;

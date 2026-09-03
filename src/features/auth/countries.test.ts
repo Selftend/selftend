@@ -1,10 +1,4 @@
-import {
-  COUNTRIES,
-  countriesForLanguage,
-  countryName,
-  isKnownCountryCode,
-  searchCountries,
-} from "./countries";
+import { COUNTRIES, countriesForLanguage, countryName, searchCountries } from "./countries";
 import { floorForCountry } from "./age-floor";
 
 describe("countries", () => {
@@ -15,8 +9,9 @@ describe("countries", () => {
     // assertion tying the two modules together, so it fails if either drifts.
     const raised = ["AT", "BG", "CY", "IT", "LT", "ES", "CZ", "FR", "GR", "SI"];
     const raisedMore = ["HR", "DE", "HU", "IE", "LU", "NL", "PL", "RO", "SK", "LI"];
+    const offered = new Set(COUNTRIES.map((c) => c.code));
     for (const code of [...raised, ...raisedMore]) {
-      expect(isKnownCountryCode(code)).toBe(true);
+      expect(offered.has(code)).toBe(true);
       expect(floorForCountry(code)).toBeGreaterThan(13);
     }
   });
@@ -45,14 +40,12 @@ describe("countries", () => {
 
   it("accepts a code in any case or with stray whitespace", () => {
     expect(countryName(" de ", "en")).toBe("Germany");
-    expect(isKnownCountryCode("de")).toBe(true);
   });
 
   it("falls back to the code rather than a blank row", () => {
     // Reached only from stored data - `age_attested_country` is `^[A-Z]{2}$`
     // checked but not constrained to this list.
     expect(countryName("ZZ", "en")).toBe("ZZ");
-    expect(isKnownCountryCode("ZZ")).toBe(false);
   });
 
   describe("searchCountries", () => {

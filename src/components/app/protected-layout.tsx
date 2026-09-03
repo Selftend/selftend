@@ -142,12 +142,30 @@ export default function ProtectedLayout() {
   // the moment this runs, and for every existing account is false forever.
   // Without this clause the gate would fire for the entire install base on the
   // release that ships it.
+  //
+  // ⚠️ That makes the age gate depend on running ABOVE the consent gate: if the
+  // two ever swapped, a new account would accept a policy version first and
+  // then never be asked its age. The order is not left to comments -
+  // `protected-layout.test.tsx` asserts a brand-new account sees the age gate
+  // while the consent gate is absent, which fails the moment the order flips.
   const neverAskedAge = preferences?.ageFloorMet !== true;
   const isNewAccount = preferences?.policyVersionAccepted === null;
   const needsAgeAttestation =
     !ageAttested &&
     !prefsLoading &&
+    // ⚠️ Fail-open, and it is worth naming rather than inheriting silently: on
+    // a preferences error with nothing cached, the attestation state is
+    // UNKNOWN and this lets the person through until a fetch succeeds. Failing
+    // closed instead would block every user whose first fetch of a cold start
+    // failed, since nothing in that state distinguishes a new guest from a
+    // ten-month user. The consent gate below makes the same call for the same
+    // reason (#164), so this is no weaker than the legal gate beside it - but
+    // it is a gap, and it is recorded in docs/age-floor.md rather than only
+    // here.
     !prefsUnknown &&
+    // Not redundant with the two above: the query is DISABLED while there is
+    // no user id, and a disabled query is neither loading nor errored - it
+    // just has no data. Without this, that state reads as "never attested".
     Boolean(preferences) &&
     neverAskedAge &&
     isNewAccount;

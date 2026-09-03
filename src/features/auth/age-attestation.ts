@@ -57,6 +57,24 @@ const DAY_OR_MONTH = /^\d{1,2}$/;
 const YEAR = /^\d{4}$/;
 
 /**
+ * Whether every question has an answer - which is exactly when the gate's
+ * submit should open.
+ *
+ * Exported so the screen asks this module rather than re-deriving it. The two
+ * had already drifted when they were separate: the screen's own version
+ * compared `country !== ""` without trimming, so whitespace counted as an
+ * answer here and as `incomplete` a line later.
+ */
+export function isAttestationComplete(draft: AttestationDraft): boolean {
+  return (
+    draft.day.trim() !== "" &&
+    draft.month.trim() !== "" &&
+    draft.year.trim() !== "" &&
+    draft.country.trim() !== ""
+  );
+}
+
+/**
  * Whether `date` is still ahead of `now`.
  *
  * Returns `false` on an unusable clock rather than guessing, which leaves the
@@ -86,14 +104,14 @@ function isInTheFuture(date: CivilDate, now: Date): boolean {
  * The caller reads it in the submit handler.
  */
 export function readAttestation(draft: AttestationDraft, now: Date): AttestationOutcome {
+  if (!isAttestationComplete(draft)) {
+    return { kind: "incomplete" };
+  }
+
   const day = draft.day.trim();
   const month = draft.month.trim();
   const year = draft.year.trim();
   const country = draft.country.trim().toUpperCase();
-
-  if (!day || !month || !year || !country) {
-    return { kind: "incomplete" };
-  }
 
   if (!DAY_OR_MONTH.test(day) || !DAY_OR_MONTH.test(month) || !YEAR.test(year)) {
     return { kind: "invalid-date" };

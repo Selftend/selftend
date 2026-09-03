@@ -8,7 +8,12 @@
 
 import { expect, test } from "@playwright/test";
 
-import { deleteUserByEmail, dismissCookieBanner, fetchVerificationCodeViaMailpit } from "./helpers";
+import {
+  clearAgeGate,
+  deleteUserByEmail,
+  dismissCookieBanner,
+  fetchVerificationCodeViaMailpit,
+} from "./helpers";
 
 test.describe("sign-up + onboarding + first record", () => {
   const email = `signup-e2e-${Date.now()}@test.local`;
@@ -37,6 +42,23 @@ test.describe("sign-up + onboarding + first record", () => {
     // straight into the app - no interstitial, no confirmation email. Mailbox
     // ownership is proven later through the verify banner, exercised at the
     // end of this journey.
+
+    // The age gate (#1764) is what a brand-new account meets FIRST - above the
+    // consent gate, and this is the only spec that walks it, because every
+    // other one signs in as a user whose preferences were normalized.
+    const dayField = page.getByTestId("age-gate-day");
+    await expect(dayField).toBeVisible({ timeout: 10_000 });
+    // ☠️ Nothing is pre-filled, and the year especially: §3 of spec #227 rules
+    // out a default year, and a calendar picker could not avoid one.
+    await expect(dayField).toHaveValue("");
+    await expect(page.getByTestId("age-gate-year")).toHaveValue("");
+    // Nothing is submittable until every question is answered. The COPPA
+    // neutrality of the copy itself is pinned in age-gate.test.tsx, against
+    // both locales' strings - a body-text scan here would fail on unrelated
+    // chrome and get deleted rather than fixed.
+    await expect(page.getByTestId("age-gate-submit")).toBeDisabled();
+
+    await clearAgeGate(page);
 
     // First-time user must accept consent before anything else.
     // Handle the consent gate manually so the wizard is left for us to walk below.

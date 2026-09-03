@@ -145,6 +145,25 @@ it.
 pass is persisted, through `recordAgeAttestation`, which takes a country and a
 verdict and has no parameter a date of birth could travel in.
 
+### Two known gaps in the gate as it stands
+
+Both are recorded rather than hidden, and both close on
+[#1765](https://github.com/Selftend/selftend/issues/1765) or the release
+sequencing:
+
+- **The gate fails open on a preferences error with nothing cached.** In that
+  state the attestation is unknown, and the person reaches the shell until a
+  fetch succeeds. Failing closed would block every user whose first fetch of a
+  cold start failed — nothing in that state tells a new guest from a
+  ten-month user. The consent gate makes the identical call for the identical
+  reason ([#164](https://github.com/Selftend/selftend/issues/164)), so the age
+  gate is no weaker than the legal gate beside it, but the window is real and
+  belongs in the legal review's view of §3.
+- **The under-floor block is React state only.** Nothing is written for a
+  failure, so a reload re-opens the gate and the person may answer again. §3
+  wants a hard block; #1765's account deletion and device-local retry flag are
+  what deliver it.
+
 ### Still owed by [#1765](https://github.com/Selftend/selftend/issues/1765)
 
 `src/components/app/under-floor-screen.tsx` is a deliberate stub: it blocks, and

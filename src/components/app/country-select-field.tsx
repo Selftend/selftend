@@ -81,7 +81,7 @@ export function CountrySelectField({ value, onChange }: CountrySelectFieldProps)
         ) : null}
       </View>
       {searching && results.length === 0 ? (
-        <Text className="text-muted-foreground text-sm">{t("countryPicker.empty")}</Text>
+        <Text className="text-muted-foreground text-sm">{t("ageGate.countryNoMatch")}</Text>
       ) : null}
       {results.length > 0 ? (
         <View className="border-border overflow-hidden rounded-md border">
