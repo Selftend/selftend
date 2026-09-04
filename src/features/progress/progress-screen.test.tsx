@@ -1,10 +1,11 @@
-import { fireEvent, screen } from "@testing-library/react-native";
-import { ScrollView } from "react-native";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react-native";
+import { Pressable, ScrollView } from "react-native";
 import { Svg } from "react-native-svg";
 import { router } from "expo-router";
 
 import ProgressScreen from "@/src/features/progress/progress-screen";
 import { useMoodScorePoints } from "@/src/features/mood/queries";
+import * as progressRepo from "@/src/features/progress/repository";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { expectEscapeReturnsTo } from "@/test/escape-round-trip";
@@ -38,11 +39,24 @@ jest.mock("@/src/features/mood/queries", () => ({
   useMoodScorePoints: jest.fn(),
 }));
 
+/*
+ * The band's data layer runs for real - only the network edge is mocked - so
+ * these tests exercise `useRecordDays` and `buildRecordBand` as the screen
+ * actually assembles them, and a state that stops reaching the card shows up
+ * here rather than passing against a stubbed hook.
+ */
+jest.mock("@/src/features/progress/repository", () => ({
+  listRecordDays: jest.fn(),
+  viewerOffsetMinutes: jest.fn(() => 330),
+}));
+
 const mockUseMoodScorePoints = useMoodScorePoints as jest.MockedFunction<typeof useMoodScorePoints>;
+const mockListRecordDays = jest.mocked(progressRepo.listRecordDays);
 
 describe("ProgressScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockListRecordDays.mockResolvedValue([]);
     // Both are cross-test state: the round-trip test leaves the pathname at the
     // destination, and a consumed-or-not Origin would leak into the next case.
     mockPathname = "/progress";
@@ -236,5 +250,210 @@ describe("ProgressScreen", () => {
       expect(tokens).toContain(token);
     }
     expect(tokens).toContain("p-6");
+  });
+
+  /**
+   * "Your days" (#1906) - the card that makes this screen worth opening. One
+   * inert mark for each day the person recorded anything, anywhere in the app.
+   *
+   * ☠️ Only the card's BODY changes across the three states. The header, the
+   * prompt and the recovery-plan door render identically in all three, which is
+   * what keeps an empty record from reading as a broken screen.
+   */
+  describe("the Your days band", () => {
+    const NOW = new Date("2026-09-04T12:00:00");
+
+    async function renderAt(dayKeys: string[]) {
+      mockListRecordDays.mockResolvedValue(dayKeys);
+      jest.useFakeTimers({ now: NOW });
+      const view = renderWithProviders(<ProgressScreen />);
+      /*
+       * ⚠️ The settle point has to be something only a SETTLED state renders.
+       * The card's title and description render in every state including
+       * `pending`, so waiting on either returns immediately and every
+       * assertion below then runs against the loading screen - which passes
+       * the negative ones for the wrong reason.
+       */
+      await waitFor(() => {
+        const body =
+          screen.queryByTestId("record-band") ??
+          screen.queryByText("Days you record anything will appear here.") ??
+          screen.queryByText("Your record starts here.");
+        expect(body).not.toBeNull();
+      });
+      return view;
+    }
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("draws one mark per recorded day and nothing for the days between", async () => {
+      await renderAt(["2026-09-01", "2026-09-03"]);
+
+      expect(screen.getAllByTestId("record-mark")).toHaveLength(2);
+      // Four days of axis, two marks. A drawn empty day would promote absence to
+      // a first-class mark - the lattice is the chain, not the calendar (#1834).
+    });
+
+    /**
+     * ☠️ **The gate is SPAN, not count** - and these two cases invert the count
+     * to prove it. Two recorded days ending today draw no band; ONE recorded day
+     * three days back does. A gate that counted marks cannot pass both.
+     */
+    it("draws the band from a single record three days back", async () => {
+      await renderAt(["2026-09-01"]);
+
+      expect(screen.getByTestId("record-band")).toBeTruthy();
+      expect(screen.queryByText("Your record starts here.")).toBeNull();
+    });
+
+    it("says the record starts here when two days of records leave no axis", async () => {
+      await renderAt(["2026-09-03", "2026-09-04"]);
+
+      expect(screen.getByText("Your record starts here.")).toBeTruthy();
+      expect(screen.queryByTestId("record-band")).toBeNull();
+      // ☠️ Its own string: "nothing here yet" would be a lie about the person's
+      // own record, and a count would be the count line refused below.
+      expect(screen.queryByText("Days you record anything will appear here.")).toBeNull();
+    });
+
+    it("says days will appear here only when there is no record at all", async () => {
+      await renderAt([]);
+
+      expect(screen.getByText("Days you record anything will appear here.")).toBeTruthy();
+      expect(screen.queryByTestId("record-band")).toBeNull();
+    });
+
+    /**
+     * ☠️ **The empty state points nowhere.** Home's zero-state ships three
+     * buttons because an empty dashboard is a configuration the person has not
+     * done; an empty record is not a defect and has nothing to repair. A door
+     * here would say *go and use a tool so this fills in*, making the chart the
+     * reason to practise - §12's inversion.
+     *
+     * The recovery-plan door is the screen's, not the card's, and it is
+     * asserted present above at exactly this state.
+     */
+    it("offers nothing to press out of an empty record", async () => {
+      await renderAt([]);
+
+      /*
+       * ⚠️ Scoped to the CARD, and asserted as "no pressable at all" rather
+       * than as the absence of one label. Naming a string would only rule out
+       * the door somebody happened to imagine: a real "Log a check-in" button
+       * added here would sail past it while the test kept its name.
+       */
+      const card = within(screen.getByTestId("your-days-card"));
+      expect(card.queryAllByRole("button")).toHaveLength(0);
+      expect(card.UNSAFE_queryAllByType(Pressable)).toHaveLength(0);
+
+      // The recovery-plan door is the SCREEN's and renders at every state - it
+      // is most useful when there is nothing to look back on yet.
+      expect(screen.getByRole("button", { name: "Your recovery plan" })).toBeTruthy();
+    });
+
+    /**
+     * ☠️ **A failed read is not an empty record.** `MoodHeatmap` shows its empty
+     * string when its query fails; here that would be the exact false absence
+     * this whole card exists to avoid. Query errors reach Sentry through the
+     * shared `QueryCache.onError` but raise no toast - only mutations do - so
+     * without this branch the card sits titled and blank for good.
+     */
+    it("says the read failed rather than claiming the record is empty", async () => {
+      jest.useFakeTimers({ now: NOW });
+      mockListRecordDays.mockRejectedValue(new Error("rpc down"));
+
+      renderWithProviders(<ProgressScreen />);
+
+      expect(await screen.findByText("Your days could not be loaded just now.")).toBeTruthy();
+      expect(screen.queryByText("Days you record anything will appear here.")).toBeNull();
+      expect(screen.queryByTestId("record-band")).toBeNull();
+    });
+
+    /**
+     * ☠️ **The marks are inert - no press handler, no door.** #1840's stated
+     * reason this screen is safe is that it holds no content: "you cannot
+     * re-read a thought record from a dot." A pressable dot is what would put
+     * that back, and a dated-entry door is what #1840 explicitly forbids.
+     */
+    it("draws marks nobody can press", async () => {
+      await renderAt(["2026-09-01", "2026-09-03"]);
+      const band = within(screen.getByTestId("record-band"));
+
+      expect(band.UNSAFE_queryAllByType(Pressable)).toHaveLength(0);
+      for (const mark of screen.getAllByTestId("record-mark")) {
+        expect(mark.props.onPress).toBeUndefined();
+      }
+    });
+
+    /**
+     * ☠️ **No count line, no caption under the band.** #1840 cut the spanning
+     * scalar; a caption restores it by the back door, in the exact
+     * numerator-over-drawn-denominator form #1834 warned about.
+     *
+     * The assertion is not "no digits" - the axis is dated, and a year is a
+     * date rather than a figure. It is that the ONLY digits on the whole screen
+     * are the axis labels themselves, so any count added anywhere shows up here
+     * whatever its wording or language.
+     */
+    it("puts no figure anywhere on the screen but the dates on its axis", async () => {
+      await renderAt(["2026-03-12", "2026-09-01"]);
+
+      const withDigits = screen.queryAllByText(/\d/).map((node) => node.props.children);
+      expect(withDigits).toEqual(["Mar 2026"]);
+    });
+
+    /**
+     * ☠️ **No range control.** A changeable window invites between-window
+     * comparison and re-supplies the denominator #1834 removed. The axis is
+     * anchored at the first record and runs to today - all time, always.
+     */
+    it("gives the axis no window to change", async () => {
+      await renderAt(["2026-03-12", "2026-09-01"]);
+
+      for (const label of ["7d", "30d", "90d", "All", "Custom"]) {
+        expect(screen.queryByText(label)).toBeNull();
+      }
+      // The leftmost tick names the month and year the record opens in, which is
+      // the axis stating its own extent rather than offering to change it.
+      expect(screen.getByText("Mar 2026")).toBeTruthy();
+    });
+
+    /**
+     * ☠️ **One summary node, labelled by EXTENT ONLY.** An a11y-only count was
+     * refused: handing a screen-reader user the figure that was cut for being
+     * harmful is worse than the gap. Stated plainly - a screen-reader user gets
+     * almost nothing from this screen. That is a known cost of the shape,
+     * recorded as such, not a defect to patch with a number.
+     */
+    it("gives a screen reader one node, named by the two ends of the axis", async () => {
+      await renderAt(["2026-03-12", "2026-09-01"]);
+
+      const summaries = screen.getAllByLabelText(/Record timeline/);
+      expect(summaries).toHaveLength(1);
+      expect(summaries[0].props.accessibilityLabel).toBe(
+        "Record timeline, March 12, 2026 to September 4, 2026.",
+      );
+    });
+
+    /**
+     * The band is a claim about the person's record, so it may not be made
+     * before the answer is in. Rendering the empty line while the query is in
+     * flight states "days you record anything will appear here" at someone with
+     * a year of records - a false absence, on the one screen whose job is to
+     * state the record truthfully.
+     */
+    it("says nothing about the record until the days have arrived", () => {
+      jest.useFakeTimers({ now: NOW });
+      mockListRecordDays.mockReturnValue(new Promise(() => {}));
+
+      renderWithProviders(<ProgressScreen />);
+
+      expect(screen.getByText("Your days")).toBeTruthy();
+      expect(screen.queryByText("Days you record anything will appear here.")).toBeNull();
+      expect(screen.queryByText("Your record starts here.")).toBeNull();
+      expect(screen.queryByTestId("record-band")).toBeNull();
+    });
   });
 });

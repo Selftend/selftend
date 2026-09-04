@@ -20,6 +20,7 @@ import {
   type HabitLogsScope,
 } from "@/src/features/habits/optimistic-logs";
 import type { HabitInput, HabitLog } from "@/src/features/habits/types";
+import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -147,7 +148,9 @@ export function useRestoreHabit(userId: string | null) {
 }
 
 export function useDeleteHabit(userId: string | null) {
-  return useDeleteMutation(userId, deleteHabit, habitKeys.all);
+  // Deleting a habit takes its logs with it, so days it alone marked stop
+  // being marked days.
+  return useDeleteMutation(userId, deleteHabit, habitKeys.all, recordDaysKeys.all);
 }
 
 /**
@@ -217,7 +220,13 @@ export function useToggleHabitLog(userId: string | null) {
     onSettled: async (_data, _error, { habitId, loggedOn }) => {
       inFlight.current.delete(toggleKey(habitId, loggedOn));
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: habitKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: habitKeys.all }),
+        // A tick adds `loggedOn` to the record days and an untick removes it, so
+        // this rides the same both-arms settle as the rest: a rollback restores a
+        // guess, not the server's answer.
+        invalidateRecordDays(queryClient),
+      ]);
     },
   });
 
@@ -255,7 +264,12 @@ export function useUpsertHabitLogNote(userId: string | null) {
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: habitKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: habitKeys.all }),
+        // The note upsert INSERTS when no log exists for that day, so it can mark
+        // a day that was not marked before.
+        invalidateRecordDays(queryClient),
+      ]);
     },
   });
 }

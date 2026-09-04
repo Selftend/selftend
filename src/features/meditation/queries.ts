@@ -19,6 +19,7 @@ import type {
   MeditationProgramStateInput,
   MeditationSessionInput,
 } from "@/src/features/meditation/types";
+import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
 
@@ -133,7 +134,10 @@ export function useSaveMeditationSession(userId: string | null) {
       // Invalidate the whole meditation prefix rather than the list alone: logging a sit
       // moves the server-derived session count and median too, and invalidating only
       // `list` left both stale until a remount (#337).
-      await queryClient.invalidateQueries({ queryKey: meditationKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: meditationKeys.all }),
+        invalidateRecordDays(queryClient),
+      ]);
     },
   });
 }

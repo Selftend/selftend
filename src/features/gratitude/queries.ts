@@ -13,6 +13,7 @@ import {
   setGratitudeEntryStarred,
 } from "@/src/features/gratitude/repository";
 import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/types";
+import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -115,13 +116,16 @@ export function useSaveGratitudeEntry(userId: string | null) {
     onSuccess: async (_data, { entryId }) => {
       if (!entryId) requestReminderPrompt("gratitude");
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: gratitudeKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: gratitudeKeys.all }),
+        invalidateRecordDays(queryClient),
+      ]);
     },
   });
 }
 
 export function useDeleteGratitudeEntry(userId: string | null) {
-  return useDeleteMutation(userId, deleteGratitudeEntry, gratitudeKeys.all);
+  return useDeleteMutation(userId, deleteGratitudeEntry, gratitudeKeys.all, recordDaysKeys.all);
 }
 
 export function useSetGratitudeEntryStarred(userId: string | null) {

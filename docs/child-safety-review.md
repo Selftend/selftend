@@ -141,6 +141,20 @@ This is consistent with the live Everyone / PEGI 3 / USK 0 / IARC 3+ ratings rec
 
 The **reading-level** row is deliberately not in the test. Sentence length is a signal, not a rule, and a word-count gate over translated legal text would fail on correct copy every time it was touched. That row lives in this document instead, and is re-judged by reading.
 
+## Re-runs
+
+### 2026-09-04 — `navigation`, for the "Your days" band ([#1906](https://github.com/Selftend/selftend/issues/1906))
+
+Triggered by the PR-template row: a record-over-time surface is engagement-adjacent by construction, so it takes the gate whether or not its copy looks risky.
+
+**Scope.** Six new strings in the `navigation:progress` block, `en` and `bg` — the card's title and description, the two empty bodies, the accessible summary, and a read-failure line. The rest of `navigation` was covered by the run above and is unchanged.
+
+**Both passes, and the third screen.** Zero candidates on all six shapes: no clinical or treatment-protocol vocabulary, no Play-sensitive subject matter, no crisis vocabulary, no absolute effect verb — the strings make no claim about the person at all, which is the point of the surface. Reading level is well inside row 1: the longest is _"Days you record anything will appear here."_ at seven words, the longest Bulgarian nine, and no word reaches twelve letters in either language.
+
+**Row 4 is the one worth stating.** The card reports the record and interprets none of it — no count, no run length, no ratio, no comparison — so there is no reading for a thirteen-year-old to get wrong, and nothing a clinician would recognise as a protocol measure. The one number the surface can render is a year on its axis, which is a date and not a figure.
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** The strings also run clean against `restraint-copy`, `practice-copy`, `positioning-copy` and `child-safety-copy` in both locales.
+
 ## Re-running this
 
 The trigger for a re-run is §4's cadence rule, and [#1769](https://github.com/Selftend/selftend/issues/1769) made it a checkbox: `.github/pull_request_template.md`, in the Product guardrails block, asks every PR whether it ships **a new module, or an engagement-adjacent feature.** `test/child-safety-cadence.test.ts` keeps that line in the checklist rather than in the notes, where it would read the same and gate nothing.

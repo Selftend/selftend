@@ -13,6 +13,7 @@ import {
 } from "@/src/features/journal/repository";
 import type { JournalInput, JournalWritingRange } from "@/src/features/journal/types";
 import { deviceTimeZone } from "@/src/utils/date";
+import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -111,11 +112,14 @@ export function useSaveJournalEntry(userId: string | null) {
     onSuccess: async (_data, { entryId }) => {
       if (!entryId) requestReminderPrompt("journal");
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: journalKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: journalKeys.all }),
+        invalidateRecordDays(queryClient),
+      ]);
     },
   });
 }
 
 export function useDeleteJournalEntry(userId: string | null) {
-  return useDeleteMutation(userId, deleteJournalEntry, journalKeys.all);
+  return useDeleteMutation(userId, deleteJournalEntry, journalKeys.all, recordDaysKeys.all);
 }

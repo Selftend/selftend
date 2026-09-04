@@ -379,6 +379,12 @@
   "progress": {
     "title": "Looking back",
     "description": "Your record over time, and a question to sit with.",
+    "timelineTitle": "Your days",
+    "timelineDescription": "One mark for each day with a record.",
+    "timelineEmpty": "Days you record anything will appear here.",
+    "timelineSingleDay": "Your record starts here.",
+    "timelineError": "Your days could not be loaded just now.",
+    "timelineA11y": "Record timeline, {{from}} to {{to}}.",
     "reflectionTitle": "Reflection prompt",
     "reflectionDescription": "A quiet question to sit with.",
     "prompt": "Looking back over this stretch, what stands out to you?",
