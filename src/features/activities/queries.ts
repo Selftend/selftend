@@ -80,6 +80,13 @@ export function useSaveActivity(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: activityKeys.list(userId) }),
         queryClient.invalidateQueries({ queryKey: activityKeys.detail(userId, activity.id) }),
+        // This edit cannot move a mark today - the payload never touches
+        // `completed_at`, and only a completion is a record day. Invalidated
+        // anyway, under the rule the guard enforces: any mutation writing a
+        // source table invalidates it. Deciding per mutation is the judgement
+        // that rots, and the day this payload gains `completed_at` the old
+        // answer would be silently wrong.
+        invalidateRecordDays(queryClient),
       ]);
     },
   });
