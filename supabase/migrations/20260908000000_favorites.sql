@@ -65,9 +65,11 @@ create policy favorites_own on public.favorites
 -- Every collapse is a dedupe, not a rename (the #973 warning, 20260813000000):
 -- a user holding nine CBT widgets has nine source rows and one target row, and a
 -- user who already starred `tool:mood` before this migration reached them keeps
--- that row. `select distinct` folds the first case inside the statement and
--- `on conflict do nothing` folds the second against rows already there - which is
--- also what makes the statement idempotent, so re-running it adds nothing.
+-- that row. `on conflict do nothing` folds both - same-statement duplicates as
+-- well as rows already there (only DO UPDATE refuses to touch a row twice) - and
+-- is also what makes the statement idempotent, so re-running it adds nothing.
+-- `select distinct` is not needed for correctness; it states the collapse where
+-- the reader is looking for it.
 --
 -- The markers are load-bearing: test/integration/favorites.integration.test.ts
 -- cuts the statement out between them and runs it over freshly inserted old rows,

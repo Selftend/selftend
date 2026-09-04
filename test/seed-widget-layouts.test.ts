@@ -205,6 +205,11 @@ describe("seeded Home layouts", () => {
       for (const id of widgetIds) {
         const { toolKey } = WIDGET_META[id as keyof typeof WIDGET_META];
         if (toolKey === "routines") continue; // /routines is on neither list
+        // ☠️ Deliberately NOT `moduleTagFor` / `chipCategoryFor`: those answer what a
+        // chip SAYS and where it GROUPS, and both gate on the `/modules/` route (the
+        // first also exempts the two programme cards). The migration keys on `toolKey`
+        // alone - `cbt-programme` → `module:cbt` - so this restates that rule, and the
+        // integration suite proves it against the migration's own SQL.
         out.add(toolKey === "cbt" || toolKey === "act" ? `module:${toolKey}` : `tool:${toolKey}`);
       }
       return [...out].sort();

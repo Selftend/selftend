@@ -103,6 +103,7 @@ describe("favorites (integration)", () => {
   const admin = createServiceClient();
   const password = "favorites-test-pass-123";
   const createdUserIds: string[] = [];
+  const signedInClients: SupabaseClient[] = [];
 
   async function createSignedInUser(label: string) {
     const email = `favorites-${label}-${Date.now()}@test.local`;
@@ -113,6 +114,7 @@ describe("favorites (integration)", () => {
     const client = createAnonClient();
     const signedIn = await client.auth.signInWithPassword({ email, password });
     expect(signedIn.error).toBeNull();
+    signedInClients.push(client);
     return { id, client };
   }
 
@@ -139,6 +141,7 @@ describe("favorites (integration)", () => {
   }
 
   afterAll(async () => {
+    await Promise.all(signedInClients.map((client) => client.auth.signOut()));
     // auth.users cascades into both tables.
     for (const id of createdUserIds) await admin.auth.admin.deleteUser(id);
   });
