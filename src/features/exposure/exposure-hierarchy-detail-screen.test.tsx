@@ -219,7 +219,7 @@ describe("ExposureHierarchyDetailScreen error surfaces", () => {
       fireEvent.press(screen.getByText("Cancel"));
       fireEvent.press(screen.getByText("Delete ladder"));
 
-      expect(screen.queryByText("Unable to delete the hierarchy. Try again.")).toBeNull();
+      expect(screen.queryByText("Unable to delete the ladder. Try again.")).toBeNull();
     });
 
     it("still toasts and leaves the screen on a successful delete", async () => {

@@ -37,10 +37,23 @@ interface Rule {
   pattern: RegExp;
   locale: Locale;
   /**
+   * Narrows a rule to one namespace, optionally to keys beneath one prefix.
+   * Omitted means every string in the locale, which is the right default for a
+   * claim shape and the wrong one for a word - see the TREATMENT_FRAMING block.
+   */
+  scope?: { namespace: string; keyPrefix?: string };
+  /**
    * A string this rule MUST match. ☠️ Not decoration - the Bulgarian rules are
    * written against these first, because JS `\b` is ASCII-only and silently
    * matches nothing in Cyrillic. A bg rule with no probe is a rule nobody has
    * evidence works.
+   *
+   * ☠️ **`\w` IS ASCII-ONLY TOO, AND IT BIT THIS FILE DURING REVIEW.** Widening
+   * a bg rule from `преобучение` to a stem plus `\w*` looked like the obvious
+   * generalisation and matched NOTHING - `\w` is `[A-Za-z0-9_]`, so it cannot
+   * follow a Cyrillic stem. The bg rules use explicit `[а-яё]*` for that reason.
+   * This probe test is what caught it; without it the rule would have gone green
+   * and guarded nothing.
    */
   probe: string;
 }
@@ -75,6 +88,13 @@ const MEDICAL_OUTCOME: Rule[] = [
     locale: "en",
     probe: "Think, Act, and Be Your Way to Better Mental Health",
   },
+  // ⚠️ This rule has never had a live violation, and that is the point rather
+  // than an argument against it. `positioning-copy` records the same finding
+  // from #1606: the rules seeded with zero live violations "turn out to be the
+  // highest-consequence ones on the map - the claims a person writing marketing
+  // copy in good faith reaches for first". "Clinically proven" is the single
+  // most reachable false claim a wellness app can make. Do not delete it for
+  // being green.
   {
     name: "en: clinically proven / proven to",
     pattern: /\b(?:clinically proven|proven to (?:reduce|treat|cure|fix|help))\b/i,
@@ -102,6 +122,12 @@ const MEDICAL_OUTCOME: Rule[] = [
     probe: "Максимизира вариабилността на сърдечния ритъм и намалява тревожността с времето.",
   },
   {
+    name: "bg: клинично доказан",
+    pattern: /клинично\s+доказан[а-яё]*/i,
+    locale: "bg",
+    probe: "Клинично доказан подход към тревожността.",
+  },
+  {
     name: "bg: <activity> лекува",
     pattern: /(?:писането|дневникът|медитацията|дишането|благодарността|КПТ)\s+лекува/i,
     locale: "bg",
@@ -109,14 +135,14 @@ const MEDICAL_OUTCOME: Rule[] = [
   },
   {
     name: "bg: преобучение/пренастройване на мозъка",
-    pattern: /(?:преобучение|пренастройване|препрограмиране)\s+на\s+мозъка/i,
+    pattern: /(?:преобуч|пренастрой|препрограмир)[а-яё]*\s+(?:на\s+)?мозъка/i,
     locale: "bg",
     probe:
       "навици за самогрижа, необходими за преобучение на мозъка за трайно емоционално благополучие.",
   },
   {
     name: "bg: пътят към по-добро психично здраве",
-    pattern: /пътя\s+към\s+по-добро\s+психично\s+здраве/i,
+    pattern: /пътя(?:т)?\s+към\s+по-добро\s+психично\s+здраве/i,
     locale: "bg",
     probe: "по пътя към по-добро психично здраве",
   },
@@ -137,12 +163,24 @@ const MEDICAL_OUTCOME: Rule[] = [
  * and `docs/positioning.md` § Words to use draws exactly this line for exactly
  * this reason. These rules read translated values only - `LOCALE_STRINGS` never
  * sees a key or a column.
+ *
+ * ☠️ **THE TWO "hierarchy" RULES ARE SCOPED, AND THE FIRST DRAFT WAS NOT.** They
+ * shipped for review as a bare `/\bhierarch(y|ies)\b/i` over all 20 namespaces -
+ * which is keyed on VOCABULARY, the one thing the header of this file forbids,
+ * in the file that forbids it. "Hierarchy" is an ordinary English word: an
+ * accessibility string describing a heading hierarchy would have failed on
+ * sight, and a guard that goes red on obviously-correct copy is a guard someone
+ * deletes rather than fixes. The finding was never about the word, it was about
+ * the exposure tool calling its own object by a clinician's noun - so the scope
+ * is the finding. `SUDS` needs no scope: it is a clinical instrument acronym
+ * with no ordinary-English use anywhere.
  */
 const TREATMENT_FRAMING: Rule[] = [
   {
     name: "en: exposure hierarchy (UI noun)",
     pattern: /\bhierarch(?:y|ies)\b/i,
     locale: "en",
+    scope: { namespace: "cbt", keyPrefix: "exposure." },
     probe: "Build an exposure hierarchy",
   },
   {
@@ -155,6 +193,7 @@ const TREATMENT_FRAMING: Rule[] = [
     name: "bg: йерархия (UI noun)",
     pattern: /йерархи/i,
     locale: "bg",
+    scope: { namespace: "cbt", keyPrefix: "exposure." },
     probe: "Изгради йерархия за излагане",
   },
   {
@@ -167,8 +206,15 @@ const TREATMENT_FRAMING: Rule[] = [
 
 const ALL_RULES = [...MEDICAL_OUTCOME, ...TREATMENT_FRAMING];
 
+function inScope(rule: Rule, namespace: string, key: string): boolean {
+  if (!rule.scope) return true;
+  if (rule.scope.namespace !== namespace) return false;
+  return rule.scope.keyPrefix ? key.startsWith(rule.scope.keyPrefix) : true;
+}
+
 function matching(rule: Rule) {
   return LOCALE_STRINGS[rule.locale]
+    .filter(({ namespace, key }) => inScope(rule, namespace, key))
     .filter(({ text }) => rule.pattern.test(text))
     .map(({ namespace, key, text }) => `${namespace}:${key} — ${text}`);
 }

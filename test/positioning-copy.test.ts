@@ -436,8 +436,8 @@ const NEVER_SAYABLE_ENCRYPTION: Rule[] = [
  * negation is the legitimate form and the affirmation is the ban. A bare
  * `/AI (therapist|counselor|coach)/i` fails five live, CORRECT strings:
  *
- *   - `policies:*` en - "Why is there no AI counselor?"
- *   - `policies:*` en - "…has no AI therapist, AI counselor, or AI coach."
+ *   - `policies:*` en - "Why is there no AI counsellor?"
+ *   - `policies:*` en - "…has no AI therapist, AI counsellor, or AI coach."
  *   - `policies:*` bg - "Защо няма AI консултант?"
  *   - `policies:*` bg - "…умишлено няма AI терапевт, AI консултант или AI коуч."
  *   - `docs/product-principles.md` - "must not present itself as an AI

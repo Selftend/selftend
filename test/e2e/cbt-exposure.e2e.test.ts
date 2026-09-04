@@ -36,7 +36,7 @@ import { deleteAllExposureForUser } from "./helpers";
  *     (pre SUDS → post SUDS · duration min)
  */
 
-test.describe("CBT exposure: create hierarchy and log a session", () => {
+test.describe("CBT exposure: create ladder and log a session", () => {
   test.beforeEach(async ({ user }) => {
     await deleteAllExposureForUser(user.id);
   });
