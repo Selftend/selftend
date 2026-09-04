@@ -180,11 +180,13 @@ const SHOTS = {
     await lib.sleep(3800);
   },
 
-  // LOOKBACK — insights + journal history (MJ-4)
+  // LOOKBACK — Looking back + journal history (MJ-4)
   async lookback(h) {
     const { page } = h;
-    await goto(page, "/progress", 1800); // mood trend hold
-    await lib.smoothScroll(page, 400, 1800);
+    // #1903 renamed this screen to "Looking back" and took the mood trend off
+    // it, so there is no chart to hold on and nothing to scroll past yet: one
+    // card, held still. The scroll returns when the time view lands (#1906).
+    await goto(page, "/progress", 1800);
     await lib.sleep(2500);
     await goto(page, "/tools/journal", 800);
     await lib.smoothScroll(page, 650, 2400);

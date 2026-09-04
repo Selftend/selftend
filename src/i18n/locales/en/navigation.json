@@ -381,7 +381,9 @@
     "description": "Your record over time, and a question to sit with.",
     "reflectionTitle": "Reflection prompt",
     "reflectionDescription": "A quiet question to sit with.",
-    "prompt": "Looking back over this stretch, what stands out to you?"
+    "prompt": "Looking back over this stretch, what stands out to you?",
+    "recoveryTitle": "Your recovery plan",
+    "recoveryDescription": "What you wrote about what helps."
   },
   "tools": {
     "title": "Tools",

@@ -61,7 +61,10 @@ Deferred items from the review (open questions, not launch blockers):
   and an account discovered to be under its floor is deleted on knowledge.
 - **No minor flag and no parental-consent path.** Protections are universal
   rather than conditional; where a law would require a parental-consent route,
-  the floor rises instead.
+  the floor rises instead. The decision and the compliance argument behind it
+  are in [dpia-minors-assessment.md](dpia-minors-assessment.md) §5, which is
+  also the combined DPIA and Connecticut/Colorado minors' assessment for this
+  processing.
 - Published in privacy §11 and terms §2, `en` and `bg`
   ([#1767](https://github.com/Selftend/selftend/issues/1767)).
   `src/features/policies/policy-age-floor.test.ts` compares the published list
