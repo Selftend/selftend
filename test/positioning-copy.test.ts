@@ -113,6 +113,13 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  *   - `campaign/scripts/` are the narrations of eight videos already on YouTube.
  *     Changing a script does not change a video.
  *   - `launch/` holds a published Reddit banner.
+ *   - `design/1822-before/` transcribes every LIVE surface verbatim (#1822), so
+ *     that #1823 can diff its rewrite against what a visitor actually sees. It
+ *     exists BECAUSE the live copy violates these rules: `main` is 117 commits
+ *     behind `dev`, so the #1616 fix is merged and unreleased, and the banned
+ *     compound is live 11 times. ☠️ Correcting the quotes would delete the only
+ *     record of that gap and make the "before" describe a release that has not
+ *     shipped. It stops being a record the moment the surfaces are recaptured.
  */
 const PUBLISHED_RECORDS = [
   "docs/positioning.md",
@@ -120,6 +127,7 @@ const PUBLISHED_RECORDS = [
   "docs/app-store-recording-script.md",
   "docs/android-closed-testing.md",
   "docs/campaign/scripts/",
+  "docs/design/1822-before/",
   "docs/launch/",
 ];
 
