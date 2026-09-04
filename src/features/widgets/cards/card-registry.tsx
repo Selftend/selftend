@@ -52,8 +52,11 @@ export const CARD_REPLICAS: Record<CardId, CardReplicaEntry> = {
   },
   "gratitude-latest": stats("favorite", "think"),
   "meditation-pick": stats("self-improvement", "iris"),
-  // Registry id kept: it is a storage key in widget_preferences.widget_id. The card
-  // itself is scheduled CBT activities, not habits (#330).
+  // Registry id kept: it is the `cardId` every placed launcher widget persists in
+  // its on-device config (widget-config-store.ts), so renaming it would orphan
+  // placed widgets. (It was once also a `widget_preferences.widget_id` storage key;
+  // #1953 spent that mapping, and the in-app dashboard no longer justifies it.) The
+  // card itself is scheduled CBT activities, not habits (#330).
   "habits-today": {
     kind: "activities",
     icon: "directions-run",
