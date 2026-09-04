@@ -16,8 +16,12 @@ import { useSession } from "@/src/providers/session-provider";
 
 // Stop order = visual priority. targetKey is the registry key components register
 // under; storageKey is what lands in shown_button_tours.
+//
+// One stop since #1956. `home:edit` pointed at the Arrange / Add tool cluster, and that
+// cluster is gone with the dashboard it edited - a favourite is starred on its own card.
+// A `home:edit` value already stored in `shown_button_tours` is left alone: it is inert
+// there, and rewriting a preferences row to tidy a dead key is not worth a write.
 const HOME_TOUR_STOPS = [
-  { storageKey: "home:edit", targetKey: "home-edit", i18nKey: "edit" },
   { storageKey: "home:navigation", targetKey: "home-navigation", i18nKey: "navigation" },
 ] as const;
 

@@ -63,7 +63,7 @@ test.describe("guest conversion", () => {
     await page.getByRole("button", { name: "Create account", exact: true }).click();
 
     // Straight into the app (autoconfirm: no email, no interstitial).
-    await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
 

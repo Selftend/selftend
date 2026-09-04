@@ -26,7 +26,7 @@ test.describe("guest chrome", () => {
 
   test("a guest sees no sign-out and no verify banner; delete-account stays", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
 
@@ -72,7 +72,7 @@ test.describe("guest chrome", () => {
   // asserts someone else's contract.
   test("a guest reaches the sign-in form from the header menu", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Favourites", level: 2 })).toBeVisible({
       timeout: 15_000,
     });
     await dismissHomeTour(page);

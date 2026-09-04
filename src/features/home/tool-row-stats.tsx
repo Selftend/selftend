@@ -2,6 +2,8 @@ import type { ComponentType } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
+import { Text } from "@/src/components/react-native-reusables/text";
+import type { ToolKey } from "@/src/features/favorites/items";
 import { ToolRow } from "@/src/features/home/tool-row";
 import { formatOneDecimal } from "@/src/lib/locale-format";
 import { formatHours } from "@/src/features/sleep/format";
@@ -78,6 +80,20 @@ import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 type StatRowProps = { userId: string | null };
 
 /**
+ * A stat, resolved: `null` is the loading/empty slot (see the three states above), a
+ * string is the line to draw.
+ *
+ * The eight tool rows below are split into a HOOK and a row so that the same figure
+ * reaches two surfaces from one implementation: `ToolRow` on the widget-id-keyed Home
+ * tier that #1959 deletes, and `ToolStat` on the favourites card (#1955) keyed by tool
+ * key. "No second stat implementation may exist" is the rule that split them — `/tools`'
+ * competing `statFor` was wrong three ways (claimed emptiness while loading, capped a
+ * 7-day summary at 30 rows against ADR-0001, labelled a trailing window "this week") and
+ * is gone.
+ */
+type StatHook = (userId: string | null) => string | null;
+
+/**
  * Joins the row's clauses with the design's separator.
  *
  * Exactly two parameters, so the "two clauses is a cap, not a target" rule is enforced
@@ -100,6 +116,10 @@ const emptyStat = (t: TFunction) => t("home.rows.empty");
 // week (#697 decided that deliberately, against a trailing one) and `7-day average` is
 // trailing. Both are labelled, so both are honest; "harmonising" them reverts #697.
 function MoodCheckinRow({ userId }: StatRowProps) {
+  return <ToolRow id="mood-checkin" stat={useMoodStat(userId)} />;
+}
+
+export function useMoodStat(userId: string | null): string | null {
   const { t, i18n } = useTranslation("navigation");
   /**
    * ADR-0001: neither clause may come from a capped list. `useMoodWeek` fetches a DAY
@@ -132,12 +152,16 @@ function MoodCheckinRow({ userId }: StatRowProps) {
                 }),
           );
   }
-  return <ToolRow id="mood-checkin" stat={stat} />;
+  return stat;
 }
 
 // --- 2. journal-week -------------------------------------------------------
 // Lifetime figures, matching the journal hero: the id says "week", the tool does not.
 function JournalRow({ userId }: StatRowProps) {
+  return <ToolRow id="journal-week" stat={useJournalStat(userId)} />;
+}
+
+export function useJournalStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
   const { data: entries } = useJournalEntryCount(userId);
   const { data: words } = useJournalWordTotal(userId);
@@ -152,11 +176,15 @@ function JournalRow({ userId }: StatRowProps) {
             t("home.rows.words", { count: words }),
           );
   }
-  return <ToolRow id="journal-week" stat={stat} />;
+  return stat;
 }
 
 // --- 3. gratitude-latest ---------------------------------------------------
 function GratitudeRow({ userId }: StatRowProps) {
+  return <ToolRow id="gratitude-latest" stat={useGratitudeStat(userId)} />;
+}
+
+export function useGratitudeStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
   const { selectedDate } = useSelectedDate();
   // `mondayKeyOf(todayKey)` is what the gratitude home screen passes, so this shares
@@ -174,11 +202,15 @@ function GratitudeRow({ userId }: StatRowProps) {
             t("home.rows.thisWeek", { value: thisWeek }),
           );
   }
-  return <ToolRow id="gratitude-latest" stat={stat} />;
+  return stat;
 }
 
 // --- 4. breathing-suggested ------------------------------------------------
 function BreathingRow({ userId }: StatRowProps) {
+  return <ToolRow id="breathing-suggested" stat={useBreathingStat(userId)} />;
+}
+
+export function useBreathingStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
   const { data: sessions } = useBreathingSessionCount(userId);
   const { data: minutes } = useBreathingTotalMinutes(userId);
@@ -193,7 +225,7 @@ function BreathingRow({ userId }: StatRowProps) {
             t("home.rows.minutes", { count: minutes }),
           );
   }
-  return <ToolRow id="breathing-suggested" stat={stat} />;
+  return stat;
 }
 
 // --- 5. grounding-log ------------------------------------------------------
@@ -202,6 +234,10 @@ function BreathingRow({ userId }: StatRowProps) {
 // renders "N days ago": a column of `23 days ago · 41 days ago` implies lateness, and
 // home does not tally days since you last opened a tool.
 function GroundingRow({ userId }: StatRowProps) {
+  return <ToolRow id="grounding-log" stat={useGroundingStat(userId)} />;
+}
+
+export function useGroundingStat(userId: string | null): string | null {
   const { t, i18n } = useTranslation("navigation");
   const { data: sessions } = useGroundingSessionCount(userId);
   const { data: recent } = useGroundingSessions(userId, 5);
@@ -229,7 +265,7 @@ function GroundingRow({ userId }: StatRowProps) {
               : null,
           );
   }
-  return <ToolRow id="grounding-log" stat={stat} />;
+  return stat;
 }
 
 // --- 6. meditation-pick ----------------------------------------------------
@@ -237,6 +273,10 @@ function GroundingRow({ userId }: StatRowProps) {
 // sum capped the same way. `useMeditationSessionCount` is a real uncapped head count,
 // and the companion figure is the server's median, not a client sum.
 function MeditationRow({ userId }: StatRowProps) {
+  return <ToolRow id="meditation-pick" stat={useMeditationStat(userId)} />;
+}
+
+export function useMeditationStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
   const { data: sits } = useMeditationSessionCount(userId);
   const { data: median } = useMeditationMedianMinutes(userId);
@@ -252,7 +292,7 @@ function MeditationRow({ userId }: StatRowProps) {
             median === null ? null : t("home.rows.typicalMinutes", { value: median }),
           );
   }
-  return <ToolRow id="meditation-pick" stat={stat} />;
+  return stat;
 }
 
 // --- 7. sleep-latest -------------------------------------------------------
@@ -260,6 +300,10 @@ function MeditationRow({ userId }: StatRowProps) {
 // key), so the server aggregate is windowed in the viewer's civil days. Duration comes
 // back in MINUTES; `formatHours` does the /60 and the locale-aware decimal (#962).
 function SleepRow({ userId }: StatRowProps) {
+  return <ToolRow id="sleep-latest" stat={useSleepStat(userId)} />;
+}
+
+export function useSleepStat(userId: string | null): string | null {
   const { t, i18n } = useTranslation("navigation");
   const { data: stats } = useSleepStats(userId);
 
@@ -281,7 +325,7 @@ function SleepRow({ userId }: StatRowProps) {
               : t("home.rows.quality", { value: formatOneDecimal(quality, i18n.language) }),
           );
   }
-  return <ToolRow id="sleep-latest" stat={stat} />;
+  return stat;
 }
 
 // --- 8. habits-today -------------------------------------------------------
@@ -291,6 +335,10 @@ function SleepRow({ userId }: StatRowProps) {
 //
 // Uncapped: the fraction is over every habit due today, not a page of them.
 function HabitsRow({ userId }: StatRowProps) {
+  return <ToolRow id="habits-today" stat={useHabitsStat(userId)} />;
+}
+
+export function useHabitsStat(userId: string | null): string | null {
   const { t } = useTranslation("navigation");
   const { selectedDate } = useSelectedDate();
   /**
@@ -320,7 +368,38 @@ function HabitsRow({ userId }: StatRowProps) {
           ? t("home.rows.nothingScheduled")
           : t("home.rows.doneToday", { done, total: dueToday.length });
   }
-  return <ToolRow id="habits-today" stat={stat} />;
+  return stat;
+}
+
+/** The eight tool stats, keyed by TOOL KEY — the favourites card's lookup (#1955). */
+const TOOL_STAT_HOOKS: Record<ToolKey, StatHook> = {
+  mood: useMoodStat,
+  journal: useJournalStat,
+  gratitude: useGratitudeStat,
+  breathing: useBreathingStat,
+  grounding: useGroundingStat,
+  meditation: useMeditationStat,
+  sleep: useSleepStat,
+  habits: useHabitsStat,
+};
+
+/**
+ * The card's "what you have" line. Renders NOTHING (not an empty node, not a dash) until
+ * the stat resolves — a loading surface never claims emptiness, and `null` from the hook
+ * is exactly that state.
+ *
+ * `toolKey` never changes for a mounted card, so the hook picked from the table is
+ * stable for the component's lifetime and the rules of hooks hold.
+ */
+export function ToolStat({ toolKey, userId }: { toolKey: ToolKey; userId: string | null }) {
+  const useStat = TOOL_STAT_HOOKS[toolKey];
+  const stat = useStat(userId);
+  if (stat === null) return null;
+  return (
+    <Text variant="muted" testID={`card-stat-tool-${toolKey}`} className="mt-0.5 text-xs">
+      {stat}
+    </Text>
+  );
 }
 
 // --- 9. routines-today -----------------------------------------------------

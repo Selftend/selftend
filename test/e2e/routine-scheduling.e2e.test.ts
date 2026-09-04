@@ -1,10 +1,10 @@
 import { expect, test } from "./fixtures";
 
 import {
-  createServiceClient,
   deleteAllMoodLogsForUser,
   deleteAllRoutinesForUser,
   dismissPostSignInModals,
+  HOME_HEADING,
   navigateViaPanel,
 } from "./helpers";
 
@@ -15,46 +15,21 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 // The editor preselects Mon-Fri when switching to a custom cadence.
 const PRESELECTED_DAYS = [1, 2, 3, 4, 5];
 
-type WidgetRow = Record<string, unknown>;
-
 test.describe("routine scheduling (#95: custom days, off-day surfaces, manual runs)", () => {
-  let originalWidgets: WidgetRow[] = [];
-
-  // The routines-today widget is never default-seeded (WIDGET_META marks it
-  // "available"), so a clean worker would pass the Home suppression check
-  // vacuously. Seed it onto the dashboard, restoring the original rows after.
+  // The Home half of this spec is RETIRED with the routines row (#1956): Home is the
+  // favourites catalogue now, and `/routines` is on neither of its lists, so there is no
+  // Home surface for a routine to appear on or be suppressed from. The positive control
+  // that used to seed the `routines-today` widget went with it; the "routines exist,
+  // none due today" fact is asserted on the routine card itself below, and the FAB - a
+  // layout-level surface, not Home's - is still asserted on every screen it visits.
   test.beforeEach(async ({ user }) => {
     await deleteAllRoutinesForUser(user.id);
     await deleteAllMoodLogsForUser(user.id);
-
-    const admin = createServiceClient();
-    const widgets = await admin
-      .from("widget_preferences")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("position");
-    if (widgets.error) throw new Error(widgets.error.message);
-    originalWidgets = (widgets.data ?? []) as WidgetRow[];
-
-    const del = await admin.from("widget_preferences").delete().eq("user_id", user.id);
-    if (del.error) throw new Error(del.error.message);
-    const ins = await admin
-      .from("widget_preferences")
-      .insert([{ user_id: user.id, widget_id: "routines-today", position: 0 }]);
-    if (ins.error) throw new Error(ins.error.message);
   });
 
   test.afterEach(async ({ user }) => {
     await deleteAllRoutinesForUser(user.id);
     await deleteAllMoodLogsForUser(user.id);
-
-    const admin = createServiceClient();
-    const del = await admin.from("widget_preferences").delete().eq("user_id", user.id);
-    if (del.error) throw new Error(del.error.message);
-    if (originalWidgets.length > 0) {
-      const ins = await admin.from("widget_preferences").insert(originalWidgets);
-      if (ins.error) throw new Error(ins.error.message);
-    }
   });
 
   test("an off-today custom routine hides from FAB and Home, labels its card, and still tracks a manual run", async ({
@@ -76,13 +51,7 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     // is immune to the consent-gate deep-link hijack).
     await page.goto("/");
     await dismissPostSignInModals(page);
-
-    // Positive control: with the widget seeded and no routines yet, Home
-    // renders the routines-today slot (its explore-routines empty state) -
-    // so the later disappearance is real suppression, not a never-there.
-    await expect(page.getByText("Routines today", { exact: true })).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.getByRole("heading", HOME_HEADING)).toBeVisible({ timeout: 15_000 });
 
     await navigateViaPanel(page, "Routines");
     await expect(page).toHaveURL(/\/routines$/, { timeout: 15_000 });
@@ -124,23 +93,13 @@ test.describe("routine scheduling (#95: custom days, off-day surfaces, manual ru
     // with an open step must not nudge (any label form).
     await expect(page.getByTestId("routine-fab")).toBeHidden();
 
-    // --- Home: the routines row stays, and states the empty day ---
-    // Inverted by #975, deliberately rather than deleted. Day-level slot suppression
-    // (#97) existed because a 200px empty card was worse than no card; a row costs one
-    // line, so "routines exist, none due today" is now a fact home can state instead of
-    // a slot it has to hide. This assertion is the positive control for that.
+    // --- Home: the FAB stays quiet there too ---
+    // The routines row that used to state "Nothing scheduled today" here is gone with
+    // the dashboard (#1956); the schedule label on the routine card above is where that
+    // fact now lives. What Home still owes is the FAB, which is layout-level.
     await navigateViaPanel(page, "Home");
     await expect(page).toHaveURL(/\/$/, { timeout: 15_000 });
-    // Plain locators, no `.last()`: panel navigation used to leave TWO mounted `home-layout`
-    // roots, so `.first()` resolved to the hidden backgrounded copy and every home locator
-    // here had to reach past it. #989 fixed the cause, and a strict-mode violation on
-    // either of these is the duplicate coming back.
-    await expect(page.getByText("Routines today", { exact: true })).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByText("Nothing scheduled today", { exact: true })).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.getByRole("heading", HOME_HEADING)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("routine-fab")).toBeHidden();
 
     // --- Manual run: off-schedule still tracks (independent-fact rule) ---
