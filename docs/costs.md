@@ -99,7 +99,7 @@ A paid subscription since 2026-08-04, on the owner's individual account. It is c
 
 Recommended early setup:
 
-- use domain-based forwarding or aliases for `hello@`, `support@`, `privacy@`, `security@`, and `contributors@`
+- use domain-based forwarding or aliases for `support@`, `privacy@`, and `security@` — the three that exist
 - route them to one real inbox initially
 - for the first public launch, prefer aliases such as `support@selftend.org`, `privacy@selftend.org`, and `security@selftend.org` forwarding to the owner's real inbox
 - avoid publishing a personal Gmail address directly as the app's public mental-health support or privacy contact unless there is no better short-term option
