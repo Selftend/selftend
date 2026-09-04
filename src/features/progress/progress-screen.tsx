@@ -12,6 +12,9 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { RecordBandCard } from "@/src/features/progress/record-band-card";
+import { useRecordDays } from "@/src/features/progress/queries";
+import { useSession } from "@/src/providers/session-provider";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { cn } from "@/lib/utils";
@@ -32,8 +35,10 @@ import { cn } from "@/lib/utils";
  * screen will ever draw.
  */
 export default function ProgressScreen() {
-  const { t } = useTranslation("navigation");
+  const { t, i18n } = useTranslation("navigation");
   const pushWithOrigin = usePushWithOrigin();
+  const { user } = useSession();
+  const recordDays = useRecordDays(user?.id ?? null);
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -44,6 +49,13 @@ export default function ProgressScreen() {
             <ScreenHeader title={t("progress.title")} />
             <Text variant="muted">{t("progress.description")}</Text>
           </View>
+
+          {/*
+            The record over time (#1906). It reads `record_days`, which spans
+            every tool - the one query on this screen, and the only thing here
+            that touches the database.
+          */}
+          <RecordBandCard dayKeys={recordDays.data} lang={i18n.language} />
 
           {/*
             One pinned prompt (#1665). Four questions used to rotate by

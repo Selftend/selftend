@@ -16,6 +16,7 @@ import { deviceTimeZone } from "@/src/utils/date";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
+import { recordDaysKeys, useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 const journalKeys = {
   all: ["journal"] as const,
@@ -104,6 +105,7 @@ export function useJournalEntryCountSince(userId: string | null, sinceIso: strin
 
 export function useSaveJournalEntry(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: ({ input, entryId }: { input: JournalInput; entryId?: string }) =>
       saveJournalEntry(userId!, input, entryId),
@@ -112,10 +114,11 @@ export function useSaveJournalEntry(userId: string | null) {
       if (!entryId) requestReminderPrompt("journal");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: journalKeys.all });
+      await invalidateRecordDays();
     },
   });
 }
 
 export function useDeleteJournalEntry(userId: string | null) {
-  return useDeleteMutation(userId, deleteJournalEntry, journalKeys.all);
+  return useDeleteMutation(userId, deleteJournalEntry, journalKeys.all, recordDaysKeys.all);
 }

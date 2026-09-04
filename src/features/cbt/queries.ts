@@ -11,6 +11,7 @@ import {
 } from "@/src/features/cbt/repository";
 import type { ThoughtRecordInput } from "@/src/features/cbt/types";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 const cbtKeys = {
   all: ["cbt"] as const,
@@ -74,6 +75,7 @@ export function useThoughtRecordCountSince(userId: string | null, sinceIso: stri
 
 export function useSaveThoughtRecord(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
 
   return useMutation({
     mutationFn: ({ input, recordId }: { input: ThoughtRecordInput; recordId?: string }) =>
@@ -97,6 +99,7 @@ export function useSaveThoughtRecord(userId: string | null) {
         // and Home's `N records` clause stayed stale until a remount (found in #990).
         queryClient.invalidateQueries({ queryKey: cbtKeys.count(userId) }),
         queryClient.invalidateQueries({ queryKey: cbtKeys.countsSince(userId) }),
+        invalidateRecordDays(),
       ]);
     },
   });
@@ -104,6 +107,7 @@ export function useSaveThoughtRecord(userId: string | null) {
 
 export function useArchiveThoughtRecord(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
 
   return useMutation({
     mutationFn: (recordId: string) => archiveThoughtRecord(userId!, recordId),
@@ -117,6 +121,9 @@ export function useArchiveThoughtRecord(userId: string | null) {
         queryClient.invalidateQueries({ queryKey: cbtKeys.records(userId) }),
         queryClient.invalidateQueries({ queryKey: cbtKeys.count(userId) }),
         queryClient.invalidateQueries({ queryKey: cbtKeys.countsSince(userId) }),
+        // ☠️ Archiving IS this tool's delete - `record_days` filters
+        // `archived_at is null`, so an archived record must stop marking its day.
+        invalidateRecordDays(),
       ]);
     },
   });

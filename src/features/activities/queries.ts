@@ -10,6 +10,7 @@ import {
 } from "@/src/features/activities/repository";
 import type { ActivityInput } from "@/src/features/activities/types";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 const activityKeys = {
   list: (userId: string) => ["activities", "list", userId] as const,
@@ -70,6 +71,7 @@ export function useActivity(userId: string | null, activityId: string | null) {
 
 export function useSaveActivity(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: ({ input, activityId }: { input: ActivityInput; activityId?: string }) =>
       saveActivity(userId!, input, activityId),
@@ -79,6 +81,10 @@ export function useSaveActivity(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: activityKeys.list(userId) }),
         queryClient.invalidateQueries({ queryKey: activityKeys.detail(userId, activity.id) }),
+        // An edit can move a COMPLETED activity, and completions are what
+        // `record_days` counts (an open activity has a null `completed_at` and
+        // contributes nothing).
+        invalidateRecordDays(),
       ]);
     },
   });
@@ -86,6 +92,7 @@ export function useSaveActivity(userId: string | null) {
 
 export function useCompleteActivity(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: ({ activityId, moodAfter }: { activityId: string; moodAfter: number | null }) =>
       completeActivity(userId!, activityId, moodAfter),
@@ -95,6 +102,7 @@ export function useCompleteActivity(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: activityKeys.list(userId) }),
         queryClient.invalidateQueries({ queryKey: activityKeys.detail(userId, activity.id) }),
+        invalidateRecordDays(),
       ]);
     },
   });

@@ -23,6 +23,7 @@ import type { HabitInput, HabitLog } from "@/src/features/habits/types";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
+import { recordDaysKeys, useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 const habitKeys = {
   all: ["habits"] as const,
@@ -147,7 +148,9 @@ export function useRestoreHabit(userId: string | null) {
 }
 
 export function useDeleteHabit(userId: string | null) {
-  return useDeleteMutation(userId, deleteHabit, habitKeys.all);
+  // Deleting a habit takes its logs with it, so a day it was the only record
+  // on stops being marked.
+  return useDeleteMutation(userId, deleteHabit, habitKeys.all, recordDaysKeys.all);
 }
 
 /**
@@ -161,6 +164,7 @@ export function useDeleteHabit(userId: string | null) {
  */
 export function useToggleHabitLog(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   /**
    * The (habit, day) pairs whose toggle is already in flight.
    *
@@ -218,6 +222,9 @@ export function useToggleHabitLog(userId: string | null) {
       inFlight.current.delete(toggleKey(habitId, loggedOn));
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: habitKeys.all });
+      // In `onSettled` with the rest: UNticking can remove a day's only
+      // record, so both arms of the toggle move the marks.
+      await invalidateRecordDays();
     },
   });
 
@@ -242,6 +249,7 @@ function toggleKey(habitId: string, loggedOn: string): string {
 
 export function useUpsertHabitLogNote(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: ({
       habitId,
@@ -256,6 +264,11 @@ export function useUpsertHabitLogNote(userId: string | null) {
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: habitKeys.all });
+      // ☠️ A note is a plain INSERT that the view's INSTEAD OF trigger merges
+      // on (habit_id, logged_on) - so a note on a day with no tick CREATES
+      // the log, and with it a marked day. Skipped in the first pass on the
+      // reasoning that a note needs an existing log; that reasoning was wrong.
+      await invalidateRecordDays();
     },
   });
 }

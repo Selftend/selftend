@@ -16,6 +16,7 @@ import { addDaysToKey } from "@/src/utils/date";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
+import { recordDaysKeys, useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 const moodKeys = {
   all: ["mood"] as const,
@@ -170,11 +171,12 @@ export function useMoodLogCount(userId: string | null) {
 }
 
 export function useDeleteMoodLog(userId: string | null) {
-  return useDeleteMutation(userId, deleteMoodLog, moodKeys.all);
+  return useDeleteMutation(userId, deleteMoodLog, moodKeys.all, recordDaysKeys.all);
 }
 
 export function useSaveMoodLog(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: ({ input, moodLogId }: { input: MoodInput; moodLogId?: string }) =>
       saveMoodLog(userId!, input, moodLogId),
@@ -183,6 +185,7 @@ export function useSaveMoodLog(userId: string | null) {
       if (!moodLogId) requestReminderPrompt("mood");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: moodKeys.all });
+      await invalidateRecordDays();
     },
   });
 }

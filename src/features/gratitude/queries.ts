@@ -16,6 +16,7 @@ import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/ty
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
+import { recordDaysKeys, useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 export const GRATITUDE_HISTORY_PAGE_SIZE = 20;
 
@@ -108,6 +109,7 @@ export function useFavoriteGratitudeEntries(userId: string | null, limit = 100) 
 
 export function useSaveGratitudeEntry(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: ({ input, entryId }: { input: GratitudeInput; entryId?: string }) =>
       saveGratitudeEntry(userId!, input, entryId),
@@ -116,16 +118,18 @@ export function useSaveGratitudeEntry(userId: string | null) {
       if (!entryId) requestReminderPrompt("gratitude");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: gratitudeKeys.all });
+      await invalidateRecordDays();
     },
   });
 }
 
 export function useDeleteGratitudeEntry(userId: string | null) {
-  return useDeleteMutation(userId, deleteGratitudeEntry, gratitudeKeys.all);
+  return useDeleteMutation(userId, deleteGratitudeEntry, gratitudeKeys.all, recordDaysKeys.all);
 }
 
 export function useSetGratitudeEntryStarred(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: ({ id, starred }: { id: string; starred: boolean }) =>
       setGratitudeEntryStarred(userId!, id, starred),
@@ -144,6 +148,10 @@ export function useSetGratitudeEntryStarred(userId: string | null) {
       void queryClient.invalidateQueries({ queryKey: ["gratitude", "favorites", userId] });
       void queryClient.invalidateQueries({ queryKey: gratitudeKeys.historyPages(userId) });
       void queryClient.invalidateQueries({ queryKey: gratitudeKeys.favoriteCount(userId) });
+      // Starring cannot move a day, but it does write `gratitude_entries`, and
+      // the rule is mechanical on purpose: any write to a source table
+      // invalidates. One cheap RPC beats a per-mutation judgement that rots.
+      void invalidateRecordDays();
     },
   });
 }

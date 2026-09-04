@@ -8,6 +8,7 @@ import {
 } from "@/src/features/self-care/repository";
 import type { SelfCareLogInput } from "@/src/features/self-care/types";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
+import { useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 const selfCareKeys = {
   all: ["self-care"] as const,
@@ -47,6 +48,7 @@ export function useSelfCareLogs(userId: string | null) {
 
 export function useUpsertSelfCareLog(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: (input: SelfCareLogInput) => upsertSelfCareLog(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
@@ -58,6 +60,7 @@ export function useUpsertSelfCareLog(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: selfCareKeys.list(userId) }),
         queryClient.invalidateQueries({ queryKey: selfCareKeys.detail(userId, log.logDate) }),
+        invalidateRecordDays(),
       ]);
     },
   });

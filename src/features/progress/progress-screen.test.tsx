@@ -1,10 +1,11 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { fireEvent, screen, within } from "@testing-library/react-native";
 import { ScrollView } from "react-native";
 import { Svg } from "react-native-svg";
 import { router } from "expo-router";
 
 import ProgressScreen from "@/src/features/progress/progress-screen";
 import { useMoodScorePoints } from "@/src/features/mood/queries";
+import { useRecordDays } from "@/src/features/progress/queries";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { expectEscapeReturnsTo } from "@/test/escape-round-trip";
@@ -38,7 +39,18 @@ jest.mock("@/src/features/mood/queries", () => ({
   useMoodScorePoints: jest.fn(),
 }));
 
+// The screen's one query (#1906). Mocked so the band's three states can be set
+// up from here; the band's own behaviour is `record-band-card.test.tsx`.
+jest.mock("@/src/features/progress/queries", () => ({
+  useRecordDays: jest.fn(),
+}));
+
 const mockUseMoodScorePoints = useMoodScorePoints as jest.MockedFunction<typeof useMoodScorePoints>;
+const mockUseRecordDays = useRecordDays as jest.MockedFunction<typeof useRecordDays>;
+
+function recordDays(data: string[] | undefined) {
+  mockUseRecordDays.mockReturnValue({ data } as unknown as ReturnType<typeof useRecordDays>);
+}
 
 describe("ProgressScreen", () => {
   beforeEach(() => {
@@ -47,6 +59,8 @@ describe("ProgressScreen", () => {
     // destination, and a consumed-or-not Origin would leak into the next case.
     mockPathname = "/progress";
     useNavigationOriginStore.setState({ pending: null });
+    // Default: nothing recorded. Cases that need the band say so.
+    recordDays([]);
   });
 
   it("is named Looking back and draws no mood trend (#1826)", () => {
@@ -65,20 +79,67 @@ describe("ProgressScreen", () => {
     expect(mockUseMoodScorePoints).not.toHaveBeenCalled();
     expect(screen.UNSAFE_queryByType(Svg)).toBeNull();
 
-    // No range controls - and the time view landing on this screen next (#1906)
-    // may not bring any either: a changeable window invites comparison between
-    // windows, which is the denominator #1834 removed.
+    // No range controls, and #1906's band brought none either: a changeable
+    // window invites comparison between windows, which is the denominator
+    // #1834 removed. Asserted here at SCREEN level, so a control added beside
+    // the band rather than inside it still fails.
     expect(screen.queryByText("7d")).toBeNull();
     expect(screen.queryByText("30d")).toBeNull();
     expect(screen.queryByText("90d")).toBeNull();
     expect(screen.queryByText("Custom")).toBeNull();
   });
 
+  /**
+   * The band's placement and its wiring to the one query (#1906). The three
+   * bodies and everything they must not contain are
+   * `record-band-card.test.tsx`; what is asserted here is that this screen puts
+   * the card between the header block and the prompt, and feeds it the viewer's
+   * days rather than a window.
+   */
+  it("puts the band between the header and the prompt, fed by the record-days query", () => {
+    recordDays(["2026-07-01", "2026-09-01"]);
+    renderWithProviders(<ProgressScreen />);
+
+    expect(mockUseRecordDays).toHaveBeenCalledWith("user-1");
+    expect(screen.getByText("Your days")).toBeTruthy();
+
+    // Order on screen: description, band title, prompt title, door title.
+    const order = screen
+      .getAllByText(
+        /Your record over time, and a question to sit with\.|Your days|Reflection prompt|Your recovery plan/,
+      )
+      .map((node) => node.props.children);
+
+    expect(order).toEqual([
+      "Your record over time, and a question to sit with.",
+      "Your days",
+      "Reflection prompt",
+      "Your recovery plan",
+    ]);
+  });
+
+  /**
+   * ☠️ **The band is the only thing on this screen that varies, and it varies on
+   * the RECORD - never on the person.** Guest and registered are the same:
+   * `useRecordDays` takes the session's user id, and a guest has a real one.
+   * **No sign-in offer on any state** - conversion is invited from the user
+   * menu, never from a surface someone is reading (#1807).
+   */
+  it("offers no sign-in from any band state, guest or registered", () => {
+    for (const days of [[], ["2026-09-04"], ["2026-07-01", "2026-09-01"]]) {
+      recordDays(days);
+      const view = renderWithProviders(<ProgressScreen />);
+
+      expect(screen.queryByText(/sign in|sign up|create an account|create account/i)).toBeNull();
+
+      view.unmount();
+    }
+  });
+
   it("renders the reflection prompt card", () => {
-    // Deliberately NOT titled "with no data": this screen reads nothing, so
-    // there is no data condition for a test to set up, and a test claiming to
-    // pin one would be describing a state it never establishes. The three
-    // states of the time view are #1906's, where a query exists to vary.
+    // The prompt is identical in all three of the band's states - it is not
+    // one of the bodies that varies - so the default empty record set up above
+    // is as good as any other.
     renderWithProviders(<ProgressScreen />);
 
     expect(screen.getByText("Reflection prompt")).toBeTruthy();
@@ -96,10 +157,9 @@ describe("ProgressScreen", () => {
    * precisely because it is *written*, not computed. So the door is at its most
    * useful when the record is empty, and hiding it at zero would make its
    * presence a function of the record: the reactivity #1826 warns about,
-   * pointed at a door instead of a number. This screen reads nothing at all
-   * (`useMoodScorePoints` is asserted uncalled above), so "with no data" is the
-   * only state it has - which is exactly what makes the unconditional
-   * assertion meaningful rather than a setup nobody established.
+   * pointed at a door instead of a number. The `recordDays([])` default set up
+   * above is the emptiest state the screen has, which is exactly where the
+   * unconditional assertion is worth making.
    */
   it("opens the recovery plan, with nothing on the screen to read (#1905)", () => {
     renderWithProviders(<ProgressScreen />);
@@ -155,15 +215,23 @@ describe("ProgressScreen", () => {
     expect(screen.queryByText("When each part of your CBT toolkit first showed up.")).toBeNull();
 
     /*
-     * And the one that survives a copy rewrite: this screen computes nothing,
-     * so NO digit belongs on it at all. Language- and wording-independent,
-     * which the two pinned strings above are not.
+     * And the one that survives a copy rewrite: the door computes nothing, so
+     * no digit belongs inside it. Language- and wording-independent, which the
+     * two pinned strings above are not.
+     *
+     * ⚠️ **SCOPED TO THE DOOR, not the screen.** It was screen-wide when #1905
+     * shipped, which was true only while this screen rendered nothing else -
+     * #1906's band draws month ticks, and the leftmost names a YEAR. A
+     * screen-wide digit ban would have made a correct band look like a
+     * regression in the door's own test, and the tempting fix would have been
+     * to delete the assertion rather than aim it.
      *
      * ⚠️ It sees rendered `Text` only. A count reaching an `accessibilityLabel`
      * would pass here - and `AccessibleCardLink` builds its label from `title`,
      * so that is the hole to watch if this door ever takes a computed title.
      */
-    expect(screen.queryByText(/\d/)).toBeNull();
+    const door = screen.getByRole("button", { name: "Your recovery plan" });
+    expect(within(door).queryByText(/\d/)).toBeNull();
   });
 
   /**

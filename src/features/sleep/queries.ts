@@ -15,6 +15,7 @@ import { nextDescendingDayCursor, type DayRecordCursor } from "@/src/lib/descend
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { deviceTimeZone } from "@/src/utils/date";
+import { recordDaysKeys, useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 const sleepKeys = {
   all: ["sleep"] as const,
@@ -117,6 +118,7 @@ export function useSleepStats(userId: string | null) {
 
 export function useSaveSleepLog(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: ({ input, logId }: { input: SleepInput; logId?: string }) =>
       saveSleepLog(userId!, input, logId),
@@ -125,10 +127,11 @@ export function useSaveSleepLog(userId: string | null) {
       if (!logId) requestReminderPrompt("sleep");
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: sleepKeys.all });
+      await invalidateRecordDays();
     },
   });
 }
 
 export function useDeleteSleepLog(userId: string | null) {
-  return useDeleteMutation(userId, deleteSleepLog, sleepKeys.all);
+  return useDeleteMutation(userId, deleteSleepLog, sleepKeys.all, recordDaysKeys.all);
 }

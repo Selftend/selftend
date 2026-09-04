@@ -21,6 +21,7 @@ import type {
 } from "@/src/features/meditation/types";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
+import { useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 const meditationKeys = {
   all: ["meditation"] as const,
@@ -125,6 +126,7 @@ export function useMeditationSession(userId: string | null, sessionId: string | 
 
 export function useSaveMeditationSession(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: (input: MeditationSessionInput) => saveMeditationSession(userId!, input),
     onSuccess: async () => {
@@ -134,6 +136,7 @@ export function useSaveMeditationSession(userId: string | null) {
       // moves the server-derived session count and median too, and invalidating only
       // `list` left both stale until a remount (#337).
       await queryClient.invalidateQueries({ queryKey: meditationKeys.all });
+      await invalidateRecordDays();
     },
   });
 }
@@ -145,12 +148,17 @@ export function useSaveMeditationSession(userId: string | null) {
  */
 export function useUpdateMeditationSessionReflection(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: ({ sessionId, patch }: { sessionId: string; patch: MeditationReflectionPatch }) =>
       updateMeditationSessionReflection(userId!, sessionId, patch),
     onSuccess: async () => {
       if (!userId) return;
       await queryClient.invalidateQueries({ queryKey: meditationKeys.all });
+      // A reflection cannot move the sit's day, but it writes
+      // `meditation_sessions` - and the rule is any write to a source table,
+      // not a per-mutation judgement about which edits can shift a day.
+      await invalidateRecordDays();
     },
   });
 }

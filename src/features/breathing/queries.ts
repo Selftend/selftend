@@ -12,6 +12,7 @@ import { breathingSlugs } from "@/src/constants/breathing";
 import { groundingSlugs } from "@/src/constants/grounding";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
+import { useInvalidateRecordDays } from "@/src/features/progress/queries";
 
 /** Rows per page on the all-sessions screen. */
 export const BREATHING_HISTORY_PAGE_SIZE = 20;
@@ -96,6 +97,7 @@ export function useBreathingSessionPages(userId: string | null) {
 
 export function useSaveBreathingSession(userId: string | null) {
   const queryClient = useQueryClient();
+  const invalidateRecordDays = useInvalidateRecordDays();
   return useMutation({
     mutationFn: (input: MindfulnessSessionInput) => saveMindfulnessSession(userId!, input),
     meta: { suppressGlobalErrorToast: true }, // screen shows its own save-error toast
@@ -108,6 +110,7 @@ export function useSaveBreathingSession(userId: string | null) {
         queryClient.invalidateQueries({ queryKey: ["breathing"] }),
         queryClient.invalidateQueries({ queryKey: ["grounding"] }),
         queryClient.invalidateQueries({ queryKey: ["mindfulness"] }),
+        invalidateRecordDays(),
       ]);
     },
   });
