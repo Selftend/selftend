@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 
 // ☠️ This test must NOT live beside the screen: everything under app/ is an
@@ -28,6 +29,14 @@ jest.mock("@/src/features/settings/queries", () => ({
 }));
 jest.mock("@/src/features/auth/api", () => ({ signOut: jest.fn() }));
 
+// #1830 put the row type scale's width branch in `SettingsRow`, which this page
+// shares. Jest reports 750px by default, so the phone frame is invisible without
+// this. The factory carries the default so no test depends on a leaked value.
+jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
+  __esModule: true,
+  default: jest.fn(() => ({ width: 750, height: 800, scale: 2, fontScale: 1 })),
+}));
+
 jest.mock("expo-router", () => ({
   router: {
     canGoBack: jest.fn(() => false),
@@ -51,6 +60,7 @@ jest.mock("@/src/lib/supabase", () => ({
   requireSupabase: jest.fn(),
 }));
 
+const mockDimensions = useWindowDimensions as jest.MockedFunction<typeof useWindowDimensions>;
 const mockRequireSupabase = requireSupabase as jest.MockedFunction<typeof requireSupabase>;
 
 const REPLY_TO_LABEL = "Email me back at (optional)";
@@ -647,5 +657,31 @@ describe("SupportScreen form (#1727)", () => {
     await act(async () => resolveInvoke({ error: null }));
 
     expect(screen.getByRole("button", { name: "Send message", disabled: false })).toBeTruthy();
+  });
+
+  /**
+   * ⚠️ `/support`'s nine rows step down with `/settings`' eight, because both
+   * are the same `SettingsRow` and #1830 put the width branch in the component
+   * rather than forking it per page. That is deliberate — one part, one
+   * kit-backed type scale, and D6's flat 15→14.5 reaches this page regardless —
+   * but it is cross-page behaviour, so it is pinned HERE and not only in a
+   * comment on the row.
+   *
+   * ⚠️ This page has no 640 branch of its own, so its panel type does NOT step
+   * with the rows. Recorded as a follow-up rather than fixed here: `/support`'s
+   * own fidelity pass (#1778) owns that surface.
+   */
+  it("steps its rows down on the phone frame, with /settings", () => {
+    const labelClasses = () => String(screen.getByText("Privacy policy").props.className ?? "");
+
+    mockDimensions.mockReturnValue({ width: 640, height: 800, scale: 2, fontScale: 1 });
+    const wide = renderWithProviders(<SupportScreen />);
+    expect(labelClasses()).toContain("text-[14.5px]");
+    wide.unmount();
+
+    mockDimensions.mockReturnValue({ width: 639, height: 800, scale: 2, fontScale: 1 });
+    const narrow = renderWithProviders(<SupportScreen />);
+    expect(labelClasses()).toContain("text-[14px]");
+    narrow.unmount();
   });
 });

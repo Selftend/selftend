@@ -1,6 +1,7 @@
 import { ActivityIndicator, Platform, Pressable, View } from "react-native";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
+import { useWideFrame } from "@/src/features/settings/use-wide-frame";
 import { Switch } from "@/src/components/react-native-reusables/switch";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
@@ -71,6 +72,20 @@ interface SettingsRowProps {
  * consumers. The grammar is deliberately narrower than the cards' was: a card
  * could hold a switch, two buttons and a link at once, which is how `Security`
  * ended up covering a device lock and a policy page in one box.
+ *
+ * ☠️ **A row NEVER drops its description on a phone, and `14a`'s 390px frame is
+ * not evidence that it should.** That frame is hand-tuning, not a rule: it does
+ * six different things across six groups, and `Delete my account` keeps the
+ * page's longest description — 71 characters — at full size on it. If width
+ * were the constraint, that row would lose its description first. This is the
+ * second time a drawing's phone frame has been read as behaviour on this page
+ * (#1784 found the same about the identity actions), so it is written down
+ * here rather than re-derived. The a11y cost runs backwards too: `description`
+ * is passed as `accessibilityHint`, so a phone-only drop would remove the hint
+ * on iOS and Android — the platforms that announce it — and keep it on web,
+ * which never does. #1830's step-down therefore changes the SIZE uniformly and
+ * never the visibility, and descriptions keep wrapping rather than truncating
+ * (no `numberOfLines`, inside `min-w-0 flex-1`).
  */
 export function SettingsRow({
   icon,
@@ -93,14 +108,32 @@ export function SettingsRow({
    */
   const pressableWhole = trailing.kind !== "switch";
   const inert = disabled || pending;
+  /*
+    D6 + D9 (#1830). The wide sizes are the kit's (`.list-row .lr-title` /
+    `.lr-desc`), not one drawing's whim; the phone frame steps every one of them
+    down by the same rule, visibility never among them.
+
+    ⚠️ The branch lives in the ROW, so `/support`'s nine rows step with
+    `/settings`' eight. That is deliberate: one component with one kit-backed
+    type scale. Forking it per page would put a 14.5px row beside a 15px one on
+    two surfaces built from the same part — the divergence this map keeps
+    closing — and D6's flat change reaches `/support` either way.
+  */
+  const wide = useWideFrame();
+  const iconSize = wide ? "size-5" : "size-[19px]";
 
   const body = (
     <>
-      <Icon name={icon} className={cn("size-5 shrink-0", destructive ? ink : CHROME_MARK)} />
+      <Icon name={icon} className={cn(iconSize, "shrink-0", destructive ? ink : CHROME_MARK)} />
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text className={cn("text-[15px] font-semibold", ink)}>{label}</Text>
+        <Text className={cn(wide ? "text-[14.5px]" : "text-[14px]", "font-semibold", ink)}>
+          {label}
+        </Text>
         {description ? (
-          <Text variant="muted" className="text-[13px] leading-snug">
+          <Text
+            variant="muted"
+            className={cn(wide ? "text-[12.5px]" : "text-[12px]", "leading-snug")}
+          >
             {description}
           </Text>
         ) : null}
@@ -122,7 +155,9 @@ export function SettingsRow({
           name={trailing.kind === "chevron" ? "chevron-right" : "open-in-new"}
           accessibilityElementsHidden
           importantForAccessibility="no"
-          className={cn("size-5 shrink-0", CHROME_MARK)}
+          // Steps with the leading glyph: a 19px mark beside a 20px one on the
+          // same row is a mix nobody chose.
+          className={cn(iconSize, "shrink-0", CHROME_MARK)}
         />
       ) : trailing.kind === "switch" ? (
         <Switch
