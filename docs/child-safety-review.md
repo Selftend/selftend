@@ -143,6 +143,6 @@ The **reading-level** row is deliberately not in the test. Sentence length is a 
 
 ## Re-running this
 
-The trigger for a re-run is §4's cadence rule, which [#1769](https://github.com/Selftend/selftend/issues/1769) turns into a PR-template gate line: **a new module, or an engagement-adjacent feature.**
+The trigger for a re-run is §4's cadence rule, and [#1769](https://github.com/Selftend/selftend/issues/1769) made it a checkbox: `.github/pull_request_template.md`, in the Product guardrails block, asks every PR whether it ships **a new module, or an engagement-adjacent feature.** `test/child-safety-cadence.test.ts` keeps that line in the checklist rather than in the notes, where it would read the same and gate nothing.
 
 A re-run means repeating the two passes above over the namespaces the change touches, adding a row to the results table, and either fixing, raising, or accepting-with-reasoning. An accepted item from a previous run is not settled forever — the meditation stages were accepted because of where they sit, and moving that screen would reopen them.

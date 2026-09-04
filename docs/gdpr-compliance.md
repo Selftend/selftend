@@ -58,4 +58,4 @@ Attestation is **active, not passive**. Before the app opens, the age gate asks 
 
 **No parental-consent flow exists, and none is planned.** Where a national law would require one, the floor rises instead. There is also **no minor flag**: nothing in storage distinguishes a minor from an adult, because the protections are universal — opt-in-only reminders, no ads, no sale, no profiling, no behavioural nudges. That is the "floor of protection" model, and the argument is written down in the DPIA / minors' assessment ([#1768](https://github.com/Selftend/selftend/issues/1768)).
 
-No data is knowingly collected from anyone below the minimum age for their country; an account discovered to be below it is deleted on knowledge ([#1769](https://github.com/Selftend/selftend/issues/1769) holds the runbook).
+No data is knowingly collected from anyone below the minimum age for their country; an account discovered to be below it is deleted on knowledge (the procedure is § [Delete On Knowledge](operations-runbook.md#delete-on-knowledge-under-floor-accounts) in the operations runbook).
