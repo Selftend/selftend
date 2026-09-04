@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Image, View } from "react-native";
 
+import { AvatarPersonGlyph } from "@/src/components/app/avatar-person-glyph";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useAccentHsl } from "@/src/lib/theme-palette";
@@ -86,14 +87,8 @@ export function ProfileIdentityRow({
             accessibilityIgnoresInvertColors
           />
         ) : initial === null ? (
-          // No letter to take, so the circle says *no photo yet* rather than
-          // showing `getInitial`'s old `?` sentinel, which read as an error
-          // (#1810). Asserted by testID, since the circle is `aria-hidden` —
-          // ☠️ and the testID sits on the View because `MaterialIcons` drops it
-          // before the host element, putting it out of `getByTestId`'s reach.
-          <View testID="profile-avatar-person">
-            <Icon name="person" size={28} className="text-primary" />
-          </View>
+          // Inherits the colour token the initial had, inside the 56px wash.
+          <AvatarPersonGlyph size={28} className="text-primary" />
         ) : (
           <Text className="text-2xl font-bold text-primary">{initial}</Text>
         )}

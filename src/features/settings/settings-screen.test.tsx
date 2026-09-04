@@ -242,6 +242,28 @@ describe("SettingsScreen structure", () => {
     });
 
     /**
+     * ☠️ #1810 §5 pins this row UNCHANGED: a guest who saves a name reads as
+     * that name and nothing else. `showEmail = Boolean(name && email)` is what
+     * keeps `Guest` from appearing beside it — making the word persist would
+     * need the banned `is_anonymous` branch.
+     */
+    it("shows only the name for a guest who has saved one, never Guest beside it", async () => {
+      mockSessionUser = {
+        id: "guest-1",
+        email: "",
+        is_anonymous: true,
+        user_metadata: { full_name: "Alex" },
+      };
+      await renderSettings();
+
+      expect(screen.getByText("Alex")).toBeTruthy();
+      expect(screen.queryByText("Guest")).toBeNull();
+      // A real letter, taken from the name they gave — not the glyph.
+      expect(insideCircle("profile-avatar-person")).toBeNull();
+      expect(screen.getByText("A", { includeHiddenElements: true })).toBeTruthy();
+    });
+
+    /**
      * ☠️ No `is_anonymous` branch anywhere. The JWT keeps claiming it after a
      * guest converts, which is why `support.tsx` hand-codes `&& !user.email`.
      * A converted user carries a stale `is_anonymous: true` AND an email, and

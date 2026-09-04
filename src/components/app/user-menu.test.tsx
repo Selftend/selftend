@@ -398,6 +398,26 @@ describe("UserMenu", () => {
     await setLanguage("en");
   });
 
+  /**
+   * ☠️ The row #1810 pins as UNCHANGED, and the one a fallback written into the
+   * SUB-line silently breaks. A guest who opens `Edit name` and saves "Alex"
+   * must read as Alex and nothing else — putting `Guest` below the name would be
+   * a second guest-status signal on one surface, which #1784 and #1805 refused.
+   * Caught by review after exactly that version shipped here.
+   */
+  it("shows only the name for a guest who has saved one, never Guest beside it", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true, user_metadata: { full_name: "Alex" } },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getByText("Alex")).toBeTruthy();
+    expect(screen.queryByText("Guest")).toBeNull();
+  });
+
   /** Registered users are pinned unchanged: the shared helper is a superset. */
   it("still shows a registered user's name and email, unchanged", () => {
     mockSession = {

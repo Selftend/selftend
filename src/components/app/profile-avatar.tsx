@@ -1,5 +1,4 @@
 import * as React from "react";
-import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -7,9 +6,9 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/react-native-reusables/avatar";
-import { Icon } from "@/src/components/react-native-reusables/icon";
+import { AvatarPersonGlyph } from "@/src/components/app/avatar-person-glyph";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { getInitial } from "@/src/features/profile/display-name";
+import { getInitial } from "@/src/features/profile/avatar-initial";
 import { cn } from "@/lib/utils";
 
 export function ProfileAvatar({
@@ -37,16 +36,7 @@ export function ProfileAvatar({
           `Icon` is `aria-hidden` already, and the fallback is decorative here -
           the name sits beside it in every surface that mounts this.
         */}
-        {initial === null ? (
-          // ☠️ The testID sits on the View, not the `Icon`. `MaterialIcons`
-          // drops `testID` before the host element, so it reaches composite
-          // nodes only and `getByTestId` can never find an icon.
-          <View testID="profile-avatar-person">
-            <Icon name="person" className="size-5" />
-          </View>
-        ) : (
-          <Text>{initial}</Text>
-        )}
+        {initial === null ? <AvatarPersonGlyph className="size-5" /> : <Text>{initial}</Text>}
       </AvatarFallback>
     </Avatar>
   );
