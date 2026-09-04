@@ -211,25 +211,112 @@ interface Rule {
  * avoid (#1606 §9). The test that pins them is at the bottom of this file.
  *
  * ☠️ No `\b` anywhere near Cyrillic - see the probe test below.
+ *
+ * ☠️☠️ **ONE WORD MAY INTERVENE, AND THAT IS #1872's WHOLE POINT.** The category
+ * noun is now "a CBT self-help app" (#1814), so the banned compound sits ONE
+ * ADJECTIVE from the category on every surface, permanently - and the missing
+ * word is the frame's own: `A guided CBT self-help app` walked straight through
+ * the adjacent-only pattern, in both languages. `guided` is not a word this
+ * repo can retire either; it is live module vocabulary in 29 English strings
+ * ("Guided programmes", "A guided programme", both breathing voices).
+ *
+ * ⚠️ **THE BOUND IS `{0,1}` AND NOT `{0,2}`.** `{0,2}` was tested and fails on
+ * legitimate copy in both languages - "Guided meditation and self-help tools",
+ * "насочена медитация и самопомощ" - and Selftend SHIPS guided meditation, so
+ * that is not a hypothetical string. It is the over-sweep failure this document
+ * names repeatedly: a guard that fails on good copy gets deleted rather than
+ * fixed. Swept before landing: zero new offenders corpus-wide against the
+ * narrow patterns.
+ *
+ * ☠️ **THE PROBES ARE THE INTERVENING FORM, DELIBERATELY.** If they stayed
+ * adjacent, a later "simplification" back to `\bguided\s+self[-\s]help\b` would
+ * go GREEN and silently reopen the gap. The adjacent form is pinned separately
+ * below, so both shapes are held by something.
  */
 const GUIDED_SELF_HELP: Rule[] = [
   {
     name: "en: guided self-help",
-    pattern: /\bguided\s+self[-\s]help\b/i,
+    pattern: /\bguided\s+(?:[\w-]+\s+){0,1}self[-\s]help/i,
     scope: "prose",
-    probe: "Calm, guided self-help tools for personal reflection.",
+    probe: "A guided CBT self-help app",
   },
   {
     name: "bg: насочена самопомощ",
-    pattern: /насочен\S*\s+самопомощ/i,
+    pattern: /насочен\S*\s+(?:\S+\s+){0,1}самопомощ/i,
     scope: "prose",
-    probe: "Спокойни инструменти за насочена самопомощ и лична рефлексия.",
+    probe: "насочена КПТ самопомощ",
   },
   {
     name: "bg: ръководена самопомощ",
-    pattern: /ръководен\S*\s+самопомощ/i,
+    pattern: /ръководен\S*\s+(?:\S+\s+){0,1}самопомощ/i,
     scope: "prose",
-    probe: "Не. Selftend е ръководена самопомощ.",
+    probe: "ръководена КПТ самопомощ",
+  },
+];
+
+/** The adjacent form each rule above ALSO has to keep catching (#1872). */
+const GUIDED_SELF_HELP_ADJACENT: Record<string, string> = {
+  "en: guided self-help": "Calm, guided self-help tools for personal reflection.",
+  "bg: насочена самопомощ": "Спокойни инструменти за насочена самопомощ и лична рефлексия.",
+  "bg: ръководена самопомощ": "Не. Selftend е ръководена самопомощ.",
+};
+
+/**
+ * ☠️ **A MANAGEMENT VERB MAY NOT TAKE A HEALTH-OR-CONDITION OBJECT** (#1815).
+ *
+ * The ruling that killed the phrase this repositioning map was opened with -
+ * "an app that helps you self-manage your mental health". The failure is the
+ * PAIRING, not either word. `self-management` is a defined term in healthcare
+ * (NHS England scopes it to services that help you "manage your long term
+ * conditions"), so a management verb over a health noun imports a clinical
+ * claim Selftend does not make, whatever the sentence around it asserts.
+ * `docs/product-principles.md` §6 was widened to ratify exactly that reading
+ * (#1820): the guardrail bites on what a phrase MEANS IN THE CLINIC, not only
+ * on what it asserts about the product.
+ *
+ * ✅ **THE VERB SURVIVES ALONE AND MUST STAY LEGAL.** `self-manage` is not
+ * banned - it is the one word that says *no practitioner* without saying *no
+ * help* - and neither is any of these verbs over a non-health object. Only the
+ * pairing is caught, which is why the pattern is verb + `your` + a closed list
+ * of health nouns rather than a word ban.
+ *
+ * ✅ **NON-MANAGEMENT VERBS ARE PERMITTED OVER THE SAME OBJECTS**, and this is
+ * the escape hatch the ban depends on having: "look after your mental health",
+ * "take care of your wellbeing", "tend" - none of them claim to operate ON a
+ * condition. A rule keyed on the object alone would fail all of them.
+ *
+ * ☠️☠️ **#1815 ALSO PROPOSED BARE `treat` / `treatment` / `symptoms` /
+ * `recovery`, AND THAT HALF IS NOT SHIPPABLE.** Swept before writing this:
+ * `treatment` appears in SIX live strings and five of them are SAFETY COPY
+ * saying what Selftend is NOT ("not therapy, medical care, diagnosis,
+ * treatment, crisis intervention"), including `docs/product-principles.md`'s own
+ * "claim treatment outcomes" prohibition; `recovery` appears in THIRTEEN,
+ * naming a shipped CBT feature (`cbt:recovery.title` = "Recovery plan") that a
+ * relapse-prevention plan is properly called; `treat` catches `AGENTS.md`'s own
+ * "Treat this as a wellness and self-help product". Banning those words would
+ * turn the guard red on the guardrail document and on the disclaimers, and the
+ * only "fix" would be to weaken the safety copy. #1815's own ruling already
+ * says why: a condition named as CONTENT is the material describing itself, not
+ * the product claiming scope. So the bare words stay legal, and the prose half
+ * of the rule (row 4 of § *What binds this document*) carries what a regex
+ * cannot.
+ *
+ * ☠️ No `\b` anywhere near Cyrillic - the bg pattern uses `[а-яё]*` and `\S+`.
+ */
+const MANAGEMENT_VERB_ON_HEALTH: Rule[] = [
+  {
+    name: "en: management verb on a health object",
+    pattern:
+      /\b(?:manage|managing|treat|treating|cure|curing|fix|fixing|improve|improving|work\s+on|working\s+on)\s+your\s+(?:mental\s+health|wellbeing|well-being|anxiety|depression|panic|trauma|OCD|burnout|symptoms|condition)\b/i,
+    scope: "all",
+    probe: "An app that helps you manage your mental health.",
+  },
+  {
+    name: "bg: управляващ глагол върху здравен обект",
+    pattern:
+      /(?:управлява|лекува|третира|оправя|подобря)[а-яё]*\s+(?:\S+\s+){0,1}(?:психично\S*\s+(?:си\s+|ти\s+)?здраве|тревожност\S*|депресия\S*|симптомит\S*)/i,
+    scope: "all",
+    probe: "Приложение, което ти помага да управляваш психичното си здраве.",
   },
 ];
 
@@ -690,6 +777,7 @@ const RULES: Rule[] = [
   ...NEVER_SAYABLE_ENCRYPTION,
   ...AI_AFFIRMATIVE,
   ...STREAK_PROMOTION,
+  ...MANAGEMENT_VERB_ON_HEALTH,
 ];
 
 function corpusFor(scope: Rule["scope"]) {
@@ -846,6 +934,88 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
 
     for (const rule of GUIDED_SELF_HELP) {
       for (const entry of bare) {
+        expect({ rule: rule.name, id: entry.id, matched: rule.pattern.test(entry.text) }).toEqual({
+          rule: rule.name,
+          id: entry.id,
+          matched: false,
+        });
+      }
+    }
+  });
+
+  /**
+   * ☠️ **THE HALF THE PROBES NO LONGER COVER** (#1872). Each `GUIDED_SELF_HELP`
+   * probe is now the INTERVENING form, so that a later narrowing back to
+   * adjacency fails loudly instead of going green. That leaves the adjacent
+   * form - the one actually shipping in the App Store subtitle today - held by
+   * nothing, which is what this test is for. Both shapes, or the widening was a
+   * swap rather than a widening.
+   */
+  it("catches the adjacent compound as well as the intervening one", () => {
+    for (const rule of GUIDED_SELF_HELP) {
+      const adjacent = GUIDED_SELF_HELP_ADJACENT[rule.name];
+      expect({ rule: rule.name, adjacent: Boolean(adjacent) }).toEqual({
+        rule: rule.name,
+        adjacent: true,
+      });
+      expect({ rule: rule.name, matched: rule.pattern.test(adjacent) }).toEqual({
+        rule: rule.name,
+        matched: true,
+      });
+      // And the probe really is the intervening form, not a second adjacent one.
+      expect({ rule: rule.name, sameAsProbe: rule.probe === adjacent }).toEqual({
+        rule: rule.name,
+        sameAsProbe: false,
+      });
+    }
+  });
+
+  /**
+   * ☠️☠️ **THE ESCAPE HATCH `MANAGEMENT_VERB_ON_HEALTH` DEPENDS ON HAVING.**
+   * #1815 permitted the same health objects under a non-management verb - "look
+   * after your mental health", "take care of" - because those claim to help a
+   * person rather than to operate on a condition. If someone later "simplifies"
+   * the rule to a ban on the OBJECT, every one of these fails, and so does the
+   * safety copy below.
+   *
+   * ☠️ The second half is the expensive one. #1815 also proposed banning bare
+   * `treat` / `treatment` / `symptoms` / `recovery`, and a sweep found the words
+   * doing SAFETY work: five live strings use `treatment` to say what Selftend is
+   * NOT, `docs/product-principles.md` uses it in its own prohibition, and
+   * `AGENTS.md` opens its guardrails with "Treat this as a wellness and
+   * self-help product". Those are pinned here as literals so a later
+   * completeness sweep meets the decision instead of rediscovering the bare
+   * words as an oversight.
+   */
+  it("leaves non-management verbs and the safety-copy uses of 'treatment' alone", () => {
+    const permitted = [
+      "Look after your mental health.",
+      "Take care of your wellbeing.",
+      "Грижи се за психичното си здраве.",
+      "Selftend is a free, private CBT self-help app - cognitive behavioural therapy - with everyday tools for right now and a programme to work through when you want one.",
+      "Work through something, don't just track how you feel.",
+    ];
+
+    for (const rule of MANAGEMENT_VERB_ON_HEALTH) {
+      for (const text of permitted) {
+        expect({ rule: rule.name, text, matched: rule.pattern.test(text) }).toEqual({
+          rule: rule.name,
+          text,
+          matched: false,
+        });
+      }
+    }
+
+    // The live safety copy, read off disk rather than quoted, so this fails if
+    // the strings are reworded into something the rule would catch.
+    const safety = [
+      ...ALL_SURFACES.filter(({ text }) => /\btreatment\b/i.test(text)),
+      ...ALL_SURFACES.filter(({ text }) => /\brecovery plan\b/i.test(text)),
+    ];
+    expect(safety.length).toBeGreaterThanOrEqual(6);
+
+    for (const rule of MANAGEMENT_VERB_ON_HEALTH) {
+      for (const entry of safety) {
         expect({ rule: rule.name, id: entry.id, matched: rule.pattern.test(entry.text) }).toEqual({
           rule: rule.name,
           id: entry.id,

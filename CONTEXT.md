@@ -1,19 +1,22 @@
 # Selftend
 
-The shared glossary for Selftend, a free, private CBT programme. This file is a glossary only — the canonical meaning of domain terms, devoid of implementation detail. Add terms here as they are resolved; keep definitions tight.
+The shared glossary for Selftend, a free, private CBT self-help app. This file is a glossary only — the canonical meaning of domain terms, devoid of implementation detail. Add terms here as they are resolved; keep definitions tight.
 
 ## Language
 
 ### The product
 
-**CBT programme**:
-What Selftend is, in the words it says so in. _Cognitive behavioural therapy_ — spelled out on first use on a surface, then **CBT** — offered as a staged progression a person works through **on their own**, with no practitioner involved. The noun is load-bearing: _programme_ claims structure and progression, which the CBT module actually is (five phases, with graduation), and claims nothing about a person supervising it.
+**CBT self-help app**:
+What Selftend is, in the words it says so in. _Cognitive behavioural therapy_ — spelled out on first use on a surface, then **CBT** — run by the person using it, with no practitioner involved. The method sits **inside** the noun deliberately: it is what makes the eight everyday tools the everyday end of a named approach rather than a flat inventory of utilities.
 
 The frame binds **copy only**, never what the product contains or what it offers first. The eight everyday tools, the six onboarding concerns, ACT and the DBT overview are all unaffected by it.
 
-_Avoid_: wellness app, toolkit, mood tracker, journalling app — and above all the practitioner-implying compound retired in [#1616](https://github.com/Selftend/selftend/issues/1616). Clinically that compound means self-help _with_ a practitioner; Selftend has none, so it was a claim the product could not back rather than merely a weak pitch. `test/positioning-copy.test.ts` fails `verify` on it — in this file too, which is why the banned words are named in [docs/positioning.md](docs/positioning.md) § _Words never to use_ and not here.
+_Avoid_: wellness app, toolkit, mood tracker, journalling app, habit tracker, sleep app, meditation app — as **categories**; each names a real tool Selftend ships and a shelf it is not on. And above all the practitioner-implying compound retired in [#1616](https://github.com/Selftend/selftend/issues/1616). ☠️ That compound is now **one adjective** from this noun, permanently. The full and current list, with each refusal's reason, is [docs/positioning.md](docs/positioning.md) § _The refusals_ and § _Words never to use_ — read it there rather than from this line, which is a pointer and not a second copy. `test/positioning-copy.test.ts` fails `verify` on the compound in this file too, which is why the banned words are never spelled out here.
 
-> Note: **programme** names this progression and the product frame — never a user's routine, which keeps its own `_Avoid_: program` below. A routine is user-named and user-owned, and has no authored order to graduate from; a programme is authored and staged.
+**programme**:
+The CBT module's own noun, and only that — a staged progression, authored and five phases long, that a person graduates from. ☠️ It is **not** the product's category any more: [#1814](https://github.com/Selftend/selftend/issues/1814) kept the word for the component and moved the category to the entry above.
+
+> Note: **programme** names this progression — never a user's routine, which keeps its own `_Avoid_: program` below. A routine is user-named and user-owned, and has no authored order to graduate from; a programme is authored and staged.
 
 ### Practice
 

@@ -1,6 +1,8 @@
 # Product Principles
 
-Selftend is a free cognitive behavioural therapy (CBT) programme, worked through on your own. It should make support more available without becoming a paid trap, ad funnel, engagement game, diagnosis engine, or therapist replacement.
+Selftend is a free, private cognitive behavioural therapy (CBT) self-help app, run by the person using it. It should make support more available without becoming a paid trap, ad funnel, engagement game, diagnosis engine, or therapist replacement.
+
+☠️ **This file has two ranks, and reading it as one rank runs the hierarchy backwards.** The paragraph above is a **description** — it says what Selftend is, so it is copy, and [positioning.md](positioning.md) governs it. Everything below it **binds** positioning: the twelve principles and the Audience Note outrank the frame, and a positioning change may never edit one in order to fit. The corroboration is countable — the category noun appears in this file exactly once, in that paragraph, and none of the twelve principles depends on it ([#1820](https://github.com/Selftend/selftend/issues/1820)).
 
 ## Principles
 
@@ -27,6 +29,8 @@ Use minimal notifications, few enabled modules, simple language, and low-frictio
 ### 6. Wellness, Not Diagnosis
 
 Support reflection and self-help. Do not diagnose, prescribe, claim treatment outcomes, provide emergency support, or replace professional care.
+
+☠️ **This reaches what a phrase _means in the clinic_, not only what it _asserts about the product_.** A term of art carries its clinical sense even when the sentence containing it makes no claim — and it can carry an assumption about the reader as well as about Selftend. [positioning.md](positioning.md) § _Words never to use_ holds the resulting list; this principle is why that list exists.
 
 ### 7. Privacy And Dignity
 
