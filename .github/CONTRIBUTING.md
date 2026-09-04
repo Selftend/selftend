@@ -39,7 +39,7 @@ You do not need Supabase, EAS, or Google OAuth for docs, copy, design notes, tra
 | `supabase/`                              | Migrations, RLS policies, and edge functions. See [supabase/README.md](../supabase/README.md).                                    |
 | `functions/`                             | Supabase Edge Function source for web push reminders.                                                                             |
 | `test/`                                  | Shared Jest setup/helpers plus separate integration and e2e suites. Unit tests live next to source files as `*.test.ts(x)`.       |
-| `scripts/`                               | Maintainer scripts for Android and dev-client workflows.                                                                          |
+| `scripts/`                               | Maintainer scripts: Android and dev-client workflows, audio tooling, the r/Selftend release-thread drafter (`release-thread/`).   |
 | `docs/`                                  | Product, platform, policy, and process docs.                                                                                      |
 
 New modules must follow [docs/modules/tools.md](../docs/modules/tools.md). For app structure and data-flow details, read [docs/architecture.md](../docs/architecture.md).
