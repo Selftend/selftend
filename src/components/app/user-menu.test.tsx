@@ -418,6 +418,25 @@ describe("UserMenu", () => {
     expect(screen.queryByText("Guest")).toBeNull();
   });
 
+  /**
+   * Apple sends no name at all, so the email stands in — ONCE, in the name slot,
+   * with nothing repeated beneath it. `showEmail = Boolean(name && email)` is
+   * what makes that true; gating on the email alone renders it twice, and
+   * without this test that mutation survives (it did).
+   */
+  it("puts the email in the name slot when there is no name, and never twice", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "user-2", email: "apple@example.com" },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getAllByText("apple@example.com")).toHaveLength(1);
+    expect(screen.queryByText("Guest")).toBeNull();
+  });
+
   /** Registered users are pinned unchanged: the shared helper is a superset. */
   it("still shows a registered user's name and email, unchanged", () => {
     mockSession = {
