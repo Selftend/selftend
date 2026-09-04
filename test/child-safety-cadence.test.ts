@@ -126,7 +126,7 @@ describe("delete-on-knowledge runbook", () => {
    * cannot drift and the assertion cannot pass by not matching.
    */
   it("falls back to the absolute minimum floor, and says the same number the code does", () => {
-    const stated = /absolute minimum floor of \*\*(\d+)\*\*/.exec(body);
+    const stated = /absolute minimum floor of \*{0,2}(\d+)\*{0,2}/.exec(body);
 
     expect(stated).not.toBeNull();
     expect(Number(stated?.[1])).toBe(ABSOLUTE_MINIMUM_AGE_FLOOR);
@@ -139,8 +139,26 @@ describe("delete-on-knowledge runbook", () => {
    * through records content for a match, which is the one search this posture
    * must never perform.
    */
-  it("says what to do when the account is a guest", () => {
+  it("says what to do when the account is a guest, since no lookup can reach one", () => {
     expect(body).toMatch(/guest/i);
+    // Naming the guest case is only half of it. The in-app route is the ONLY
+    // answer available for a guest, so the procedure has to name that too -
+    // "Delete account" is the label the settings screen actually renders.
+    expect(body).toMatch(/Delete account/);
+  });
+
+  /**
+   * The half of "how it is verified" that is easy to leave out, and the one
+   * with a victim if it goes missing. The limits above forbid asking for proof,
+   * so an uncorroborated report is the normal case rather than the exception -
+   * and a procedure that says "act on credible knowledge" without saying who
+   * is NOT credible is a deletion anyone can aim at anyone. The person who
+   * loses their entries in that failure is the person being harassed, so the
+   * refusal case has to survive an edit that tidies the steps.
+   */
+  it("refuses to delete on a report from someone with no connection to the account", () => {
+    expect(body).toMatch(/harassment/i);
+    expect(body).toMatch(/not knowledge/i);
   });
 
   /**
@@ -181,21 +199,16 @@ describe("annual legal-landscape check", () => {
     expect(body).not.toBe("");
   });
 
-  it.each(LEGAL_LANDSCAPE_AREAS)("reviews $name, in one bullet", ({ pattern }) => {
-    expect(items.filter((item) => pattern.test(item))).toHaveLength(1);
-  });
+  it.each(LEGAL_LANDSCAPE_AREAS)(
+    "reviews $name in one bullet, with a source and a date checked",
+    ({ pattern }) => {
+      const matched = items.filter((item) => pattern.test(item));
 
-  it.each(LEGAL_LANDSCAPE_AREAS)("cites a source for $name", ({ pattern }) => {
-    const item = items.find((entry) => pattern.test(entry)) ?? "";
-
-    expect(item).toMatch(/https:\/\//);
-  });
-
-  it.each(LEGAL_LANDSCAPE_AREAS)("records when $name was last checked", ({ pattern }) => {
-    const item = items.find((entry) => pattern.test(entry)) ?? "";
-
-    expect(item).toMatch(/checked \d{4}-\d{2}-\d{2}/);
-  });
+      expect(matched).toHaveLength(1);
+      expect(matched[0]).toMatch(/https:\/\//);
+      expect(matched[0]).toMatch(/checked \d{4}-\d{2}-\d{2}/);
+    },
+  );
 
   it("keeps the thread from the bills the spec named to the bill that carries them", () => {
     const federal = items.find((item) => /\bKOSA\b/.test(item)) ?? "";
