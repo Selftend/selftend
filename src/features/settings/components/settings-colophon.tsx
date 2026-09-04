@@ -10,13 +10,12 @@ import { getRunningVersion } from "@/src/lib/update-availability";
 import { cn } from "@/lib/utils";
 
 /**
- * Phone stacks the colophon and centres it; desktop lays it out as one line.
- * The 640 breakpoint moved to `useWideFrame` (#1830) so the page's type scale
- * steps at the same width this does — one number, one place.
- */
-
-/**
  * The page's last line: the running version, and the one door to the repository.
+ *
+ * Phone stacks it and centres it; desktop lays it out as one line. The 640
+ * breakpoint that used to live here as a private `WIDE_WIDTH` moved to
+ * `useWideFrame` (#1830), so the page's type scale steps at the same width this
+ * does — one number, one place.
  *
  * **Two nodes rather than one string**, which is a correction to the spec's
  * `"Selftend v{{version}} · open source"`. Two things make a single key

@@ -100,15 +100,37 @@ describe("ProfileIdentityRow avatar ring", () => {
     initial: "T",
   };
 
-  /** The circle is the one node carrying `importantForAccessibility="no"`. */
-  const ringOf = (root: ReactTestInstance) => {
-    const circle = root.findAll(
-      (node) => typeof node.type === "string" && node.props?.importantForAccessibility === "no",
-    )[0];
+  const nodeBy = (root: ReactTestInstance, match: (props: Record<string, unknown>) => boolean) =>
+    root.findAll((node) => typeof node.type === "string" && match(node.props))[0];
 
-    return StyleSheet.flatten(circle?.props?.style) as
+  const ringOf = (root: ReactTestInstance) =>
+    StyleSheet.flatten(nodeBy(root, (p) => p.testID === "profile-avatar-ring")?.props?.style) as
       { borderWidth?: number; borderColor?: string } | undefined;
-  };
+
+  /**
+   * ☠️ The ring is an OVERLAY, never a border on the circle itself. React Native
+   * draws borders INWARD and the circle is `overflow-hidden`, so a border there
+   * would shrink the content box to 54px and crop a ring's width off every
+   * avatar photo — an outline in the drawing, a crop in the app.
+   */
+  it("overlays the circle rather than insetting its content", () => {
+    useStyleStore.setState({ style: "quiet-lilac", hydrated: true });
+    const view = render(<ProfileIdentityRow {...props} />);
+
+    const circle = nodeBy(view.UNSAFE_root, (p) => p.importantForAccessibility === "no");
+    const circleStyle = StyleSheet.flatten(circle?.props?.style) as
+      { borderWidth?: number } | undefined;
+
+    // The clipped box carries no border of its own.
+    expect(circleStyle?.borderWidth).toBeUndefined();
+    expect(String(circle.props.className)).toContain("overflow-hidden");
+
+    const ring = nodeBy(view.UNSAFE_root, (p) => p.testID === "profile-avatar-ring");
+    expect(String(ring.props.className)).toContain("absolute");
+    expect(ring.props.pointerEvents).toBe("none");
+
+    view.unmount();
+  });
 
   it("draws a 1px ring at the accent", () => {
     useStyleStore.setState({ style: "quiet-lilac", hydrated: true });

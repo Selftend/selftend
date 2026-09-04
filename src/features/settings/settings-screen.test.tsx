@@ -30,9 +30,15 @@ jest.mock("expo-linking", () => ({
   openURL: jest.fn(),
 }));
 
+// ☠️ The factory carries the default, not just `beforeEach`. `jest.config.js`
+// sets neither `resetMocks` nor `restoreMocks` and `clearAllMocks` keeps
+// implementations, so a bare `jest.fn()` here would leave any describe that
+// never calls `mockWidth` depending on a value LEAKED from an earlier block -
+// green today, and a crash the moment the file is reordered or run with `.only`,
+// because `useWideFrame` destructures the undefined return.
 jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: jest.fn(() => ({ width: 750, height: 800, scale: 2, fontScale: 1 })),
 }));
 
 jest.mock("expo-image-picker", () => ({
@@ -147,8 +153,9 @@ function mockPreferences(data: unknown, isLoading = false) {
 describe("SettingsScreen structure", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Jest's own default, restored explicitly because the hook is mocked here:
-    // an un-stubbed `jest.fn()` returns undefined and every render would throw.
+    // Jest's own reported width, restored per test so a width set by one case
+    // cannot leak into the next. The factory above carries the same default for
+    // any describe that never calls this.
     mockWidth(750);
     mockPreferences(loadedPreferences);
     mockUseUpdateOnboardingPreferences.mockReturnValue({
@@ -641,8 +648,9 @@ describe("SettingsScreen structure", () => {
 describe("SettingsScreen profile disclosures", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Jest's own default, restored explicitly because the hook is mocked here:
-    // an un-stubbed `jest.fn()` returns undefined and every render would throw.
+    // Jest's own reported width, restored per test so a width set by one case
+    // cannot leak into the next. The factory above carries the same default for
+    // any describe that never calls this.
     mockWidth(750);
     mockPreferences(loadedPreferences);
     mockUseUpdateOnboardingPreferences.mockReturnValue({
