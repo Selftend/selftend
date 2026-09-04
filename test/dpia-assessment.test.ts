@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { section } from "@/test/markdown-doc";
+import { isSeparatorRow, section, tableCells } from "@/test/markdown-doc";
 
 /**
  * The combined DPIA and minors' data-protection assessment (#1768, spec #227
@@ -60,15 +60,8 @@ function firstTableAfter(markdown: string, headingPattern: RegExp): string[][] {
   }
 
   return block
-    .map((line) =>
-      line
-        .trim()
-        .replace(/^\|/, "")
-        .replace(/\|$/, "")
-        .split("|")
-        .map((cell) => cell.trim()),
-    )
-    .filter((cells) => !cells.every((cell) => /^:?-{2,}:?$/.test(cell)))
+    .map((line) => tableCells(line) ?? [])
+    .filter((cells) => cells.length > 0 && !isSeparatorRow(cells))
     .slice(1);
 }
 
