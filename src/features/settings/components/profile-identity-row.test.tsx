@@ -138,11 +138,17 @@ describe("ProfileIdentityRow contents", () => {
       <ProfileIdentityRow {...base} name="Guest" showEmail={false} email="" initial={null} />,
     );
 
+    // ☠️ Identified by `importantForAccessibility="no"`, which is the CIRCLE's
+    // alone - `Icon` sets its own `aria-hidden` plus `"no-hide-descendants"`, so
+    // a bare "some node is aria-hidden" search finds the glyph and passes with
+    // the circle wide open. (Confirmed by mutation: that version survived
+    // deleting the prop under test.)
     const circle = view.UNSAFE_root.findAll(
-      (node) => typeof node.type === "string" && node.props?.["aria-hidden"] === true,
+      (node) => typeof node.type === "string" && node.props?.importantForAccessibility === "no",
     );
 
-    expect(circle.length).toBeGreaterThan(0);
+    expect(circle).toHaveLength(1);
+    expect(circle[0].props["aria-hidden"]).toBe(true);
     // The name itself must NOT be hidden - only the circle restating it.
     expect(screen.getByText("Guest")).toBeTruthy();
   });
