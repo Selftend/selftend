@@ -51,13 +51,13 @@ describe("ProgressScreen", () => {
     expect(screen.queryByText("Custom")).toBeNull();
   });
 
-  it("renders the same with no data at all - it reads nothing to render (#1840)", () => {
-    // There is no loading state and no empty state left on this screen, because
-    // there is nothing to load. A person who has recorded nothing sees exactly
-    // what a person with a thousand records sees.
+  it("renders the reflection prompt card", () => {
+    // Deliberately NOT titled "with no data": this screen reads nothing, so
+    // there is no data condition for a test to set up, and a test claiming to
+    // pin one would be describing a state it never establishes. The three
+    // states of the time view are #1906's, where a query exists to vary.
     renderWithProviders(<ProgressScreen />);
 
-    expect(screen.getByText("Looking back")).toBeTruthy();
     expect(screen.getByText("Reflection prompt")).toBeTruthy();
     expect(
       screen.getByText("Looking back over this stretch, what stands out to you?"),

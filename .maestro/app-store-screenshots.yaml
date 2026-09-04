@@ -226,7 +226,7 @@ env:
       - tapOn: "Open"
 - extendedWaitUntil:
     visible:
-      text: "Insights"
+      text: "Looking back"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 10000
