@@ -210,7 +210,7 @@ retains the `code` branch, which is also still used by web Google OAuth).
 
 Selftend admits people from 13, or their country's higher floor - the table is in [age-floor.md](age-floor.md). This section is what to do on the day someone tells us an account belongs to a person below it.
 
-**Knowledge only ever arrives from outside, and that is by design.** Nothing stored distinguishes a teen from an adult: there is no minor flag, because the protections are universal rather than age-targeted (spec [#227](https://github.com/Selftend/selftend/issues/227) §4, argued in the assessment on [#1768](https://github.com/Selftend/selftend/issues/1768)). The one column that touches age, `age_floor_met`, is only ever written `true` - an under-floor verdict at the gate writes nothing at all, because the account it would be written against is deleted on the spot ([#1765](https://github.com/Selftend/selftend/issues/1765)). So the column holds `true` or `null`, and **no query finds an under-floor account**. ⚠️ That is writer behaviour, not a schema fact: `age_floor_met` is a plain nullable boolean, nothing constrains it, and a future write of `false` would not be rejected. What the column guarantees is only that `null` means _never asked_ rather than _failed_. Do not go hunting for a report that cannot exist, and do not add the field that would make one possible.
+**Knowledge only ever arrives from outside, and that is by design.** Nothing stored distinguishes a teen from an adult: there is no minor flag, because the protections are universal rather than age-targeted (spec [#227](https://github.com/Selftend/selftend/issues/227) §4, argued in [dpia-minors-assessment.md](dpia-minors-assessment.md) §5 — [#1768](https://github.com/Selftend/selftend/issues/1768)). The one column that touches age, `age_floor_met`, is only ever written `true` - an under-floor verdict at the gate writes nothing at all, because the account it would be written against is deleted on the spot ([#1765](https://github.com/Selftend/selftend/issues/1765)). So the column holds `true` or `null`, and **no query finds an under-floor account**. ⚠️ That is writer behaviour, not a schema fact: `age_floor_met` is a plain nullable boolean, nothing constrains it, and a future write of `false` would not be rejected. What the column guarantees is only that `null` means _never asked_ rather than _failed_. Do not go hunting for a report that cannot exist, and do not add the field that would make one possible.
 
 Reports reach us through `support@selftend.org` or `privacy@selftend.org`, the private `#feedback-inbox` Discord channel, a store review or store report, or the person themselves.
 
@@ -272,6 +272,9 @@ A personal data breach means a security incident that affects confidentiality, a
 
 ## DPIA Screening
 
+> [!IMPORTANT]
+> **Superseded on 2026-09-04.** A full DPIA now exists, combined with the minors' data-protection assessment: [dpia-minors-assessment.md](dpia-minors-assessment.md) ([#1768](https://github.com/Selftend/selftend/issues/1768)). Read that document, not this section, for the current position. This screening is kept because a decision that was overtaken is part of the accountability record, and because its own last bullet — _revisit before adding under-18 support_ — is what fired.
+
 Decision on 2026-05-12: a full Data Protection Impact Assessment is not required for the current MVP scope, but the decision must be revisited before public scale, new high-risk processing, or major product changes.
 
 Reasons:
@@ -293,7 +296,7 @@ Revisit the DPIA decision before:
 
 Once a year, every **September** - anchored to the month the per-country age floor shipped (2026-09) - re-read the six areas below, and re-read any one of them immediately if it moves in the meantime. First due **September 2027**.
 
-Each check updates the combined DPIA and minors' data-protection assessment ([#1768](https://github.com/Selftend/selftend/issues/1768)); until that document lands, [DPIA Screening](#dpia-screening) above is the record it updates. If a floor changes, the check also updates [age-floor.md](age-floor.md), `FLOOR_BY_COUNTRY` in `src/features/auth/age-floor.ts`, and the published table in `src/i18n/locales/{en,bg}/policies.json`. ⚠️ That last one is a disclosure change: it bumps `policyVersion` and moves the consent digest, which re-gates every existing user. A real cost, worth knowing before the edit rather than after.
+Each check updates the combined DPIA and minors' data-protection assessment, [dpia-minors-assessment.md](dpia-minors-assessment.md) ([#1768](https://github.com/Selftend/selftend/issues/1768)) — §6 for what a legal item moves, §8 for what re-opens the whole document. If a floor changes, the check also updates [age-floor.md](age-floor.md), `FLOOR_BY_COUNTRY` in `src/features/auth/age-floor.ts`, and the published table in `src/i18n/locales/{en,bg}/policies.json`. ⚠️ That last one is a disclosure change: it bumps `policyVersion` and moves the consent digest, which re-gates every existing user. A real cost, worth knowing before the edit rather than after.
 
 **Record the date checked on every line below, even when nothing changed.** "Checked, no change" is what makes the next year's check cheap.
 
@@ -304,7 +307,7 @@ Each check updates the combined DPIA and minors' data-protection assessment ([#1
 - **EU DSA Article 28(1).** The Commission's guidelines on the protection of minors were finalised on 2025-07-14 and exclude micro and small enterprises. Following them is voluntary, but the Commission uses them to assess Art. 28(1) compliance and national regulators may follow. Check whether Selftend still falls inside the micro/small exception, and whether any national coordinator has acted on them. https://digital-strategy.ec.europa.eu/en/library/commission-publishes-guidelines-protection-minors (checked 2026-09-04)
 - **UK Online Safety Act.** Ofcom's protection-of-children duties and codes, and any updates to them. Check scope first: those duties attach to user-to-user and search services, and Selftend hosts nothing user-to-user - nothing a person writes is visible to anyone else. If that ever changes, this line stops being a scope check and becomes a compliance one. https://www.ofcom.org.uk/online-safety/protecting-children/protection-of-children-duties-under-the-online-safety-act (checked 2026-09-04)
 
-Alongside those, re-read the (C)-row statute spot-checks ([#1763](https://github.com/Selftend/selftend/issues/1763)) and the parked counsel questions in spec [#227](https://github.com/Selftend/selftend/issues/227) §9. Escalate to external counsel only if one of them goes live.
+Alongside those, re-read the per-country statute checks in [age-floor-statute-checks.md](age-floor-statute-checks.md) ([#1763](https://github.com/Selftend/selftend/issues/1763)) — every floor's source and the date it was last read are there, and Denmark is the proof that a floor goes stale silently — and the parked counsel questions in spec [#227](https://github.com/Selftend/selftend/issues/227) §9. Escalate to external counsel only if one of them goes live.
 
 ## Transfer Impact Assessment
 

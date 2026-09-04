@@ -25,16 +25,24 @@ Source: **[Spec: teen access (13+ per-country age floor)](https://github.com/Sel
 destination of wayfinder map [#216](https://github.com/Selftend/selftend/issues/216). This file is the durable copy — the
 values were previously reviewable only inside an issue body.
 
+⚠️ **One row deliberately no longer matches §2.** Denmark is 15 here and 13
+there, because the spec inherited a figure from a mapping that predated the
+Danish amendment. The statute won, by the owner's decision on
+[#1921](https://github.com/Selftend/selftend/issues/1921) — so where this table
+and §2 disagree about Denmark, **this table is right**. Every row's source and
+the date it was last read are in
+[age-floor-statute-checks.md](age-floor-statute-checks.md).
+
 Implemented in `src/features/auth/age-floor.ts`.
 
 ## The table
 
-| Floor  | Countries                                                                                                                                                        |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **13** | United States, United Kingdom, Belgium, Denmark, Estonia, Finland, Latvia, Malta, Portugal, Sweden, Norway, Iceland — **and every jurisdiction not named below** |
-| **14** | Austria, Bulgaria, Cyprus, Italy, Lithuania, Spain                                                                                                               |
-| **15** | Czechia, France, Greece, Slovenia                                                                                                                                |
-| **16** | Croatia, Germany, Hungary, Ireland, Luxembourg, Netherlands, Poland, Romania, Slovakia, Liechtenstein                                                            |
+| Floor  | Countries                                                                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **13** | United States, United Kingdom, Belgium, Estonia, Finland, Latvia, Malta, Portugal, Sweden, Norway, Iceland — **and every jurisdiction not named below** |
+| **14** | Austria, Bulgaria, Cyprus, Italy, Lithuania, Spain                                                                                                      |
+| **15** | Czechia, Denmark, France, Greece, Slovenia                                                                                                              |
+| **16** | Croatia, Germany, Hungary, Ireland, Luxembourg, Netherlands, Poland, Romania, Slovakia, Liechtenstein                                                   |
 
 Never below 13, anywhere.
 
@@ -46,7 +54,10 @@ Thought records, mood entries and journal text are special-category health
 data. The age that matters is therefore the age at which a person may consent
 to _that processing_ on their own behalf — which member states set individually
 under Art. 8, between 13 and 16. Where a country sets it higher, Selftend's
-floor rises to match.
+floor rises to match. ☠️ Denmark is the row that proves the rule needs
+checking rather than assuming: it moved to 15 in 2024 and this table said 13
+until [#1921](https://github.com/Selftend/selftend/issues/1921). See § _Where
+each row came from_.
 
 There is **no parental-consent path and no age verification.** Where the law
 would require one, the floor rises instead. That is a deliberate scope
@@ -64,24 +75,54 @@ An entry means the value was **decided and sourced** for that jurisdiction. The
 catch-all means **nobody has looked yet.** The legal review needs to tell those
 two apart, and so does anyone extending the table later.
 
-## Open question
+⚠️ **Sourced is not the same as still true.** Denmark was an entry, sourced to a
+named section of the right act, and the number was wrong anyway because the act
+moved after the mapping was written. What an entry now carries is a row in
+[age-floor-statute-checks.md](age-floor-statute-checks.md) saying where it came
+from and when it was last read — which is the part that can go stale, and the
+part the annual check re-reads.
 
-Not every row is sourced to the same standard. Some were established only from
-secondary summaries rather than from the national statute itself, and the
-research table marks those rows **`(C)`** — the marker is defined there, not
-here, and this file deliberately does not restate which countries carry it,
-because that list is the research document's to change.
+## Where each row came from
 
-Checking those rows against primary legislative sources is
-[#1763](https://github.com/Selftend/selftend/issues/1763), and it must complete before they govern anyone's access.
+Every row now has a provenance record in
+[age-floor-statute-checks.md](age-floor-statute-checks.md), and
+`test/age-floor-provenance.test.ts` holds the two together: a country in the
+table above with no row there, or a row whose stated floor has drifted from the
+code, fails `verify`.
 
-The research is not merged: it lives at
+The twenty-one rows that were only ever established from secondary summaries —
+the research marks them **`(C)`** — were read against the national statute on
+2026-09-04 for [#1763](https://github.com/Selftend/selftend/issues/1763), and
+Spain was read with them because its own "primary" mark rested on a law firm's
+summary. Twenty of those twenty-two confirmed on the spot.
+
+> [!IMPORTANT]
+> **Denmark was the exception, and the table above has been changed.** Its age
+> of digital consent has been **15** since 1 January 2024 while this table said 13. A primary source contradicting the table is **raised, not silently
+> applied** — so it went to the owner as
+> [#1921](https://github.com/Selftend/selftend/issues/1921), the decision was to
+> follow the statute, and Denmark now sits at 15 here, in `FLOOR_BY_COUNTRY`, and
+> in the published policy text in both languages. ⚠️ Counsel has still not seen
+> it: the §5 review ([#1771](https://github.com/Selftend/selftend/issues/1771))
+> comes before publication, and this correction reaches `dev` ahead of it.
+
+**Hungary is unverified**, not confirmed: the official consolidated repository
+could not be reached. It carries 16, which is the GDPR's own default and the
+highest floor here, so the exposure is over-protection rather than under —
+recorded in the checks document as an open question for counsel.
+
+⚠️ **That is a live exception to the rule, not a repeal of it.** Spec §2 is that
+a row is checked against a primary source **before it governs anyone's access**,
+and Hungary's row governs access today without having been. With Denmark
+corrected, it is the one row that reaches the §5 legal review unfinished, and it
+is on [#1771](https://github.com/Selftend/selftend/issues/1771). Not a reason to
+relax the rule for the next row.
+
+The 2026-07-24 research behind the original table is not merged: it lives at
 `docs/research/2026-07-24-gdpr-consent-ages.md` on branch
-`research/gdpr-consent-ages`, so reading it means checking that branch out.
-
-If a primary source contradicts this table, that is **raised, not silently
-applied** — the table is a settled decision of map #216, and revising it is the
-owner's call with counsel.
+`research/gdpr-consent-ages`, so reading it means checking that branch out. Its
+own claim that no country other than Slovenia had changed its age is what Denmark
+falsified.
 
 ## Behaviour worth knowing
 
@@ -168,10 +209,14 @@ Built in [#1765](https://github.com/Selftend/selftend/issues/1765):
 `src/features/auth/under-floor-block.ts`.
 
 **The account is deleted, and the capability that deletes it already existed.**
-The gate runs after the session exists on three of the four entry paths — guest,
-Google, Apple — so an auth user has been created by the time the verdict is
-known. §3 describes this as an OAuth-specific deletion; it is not, and the
-silent guest is what makes it the common case. It goes through
+The gate runs after the session exists on **all four** entry paths — guest,
+Google, Apple and email/password — so an auth user has been created by the time
+the verdict is known, whichever way in was used. The gate mounts below
+`ProtectedLayout`'s `if (!session)` branch, so it cannot be reached without a
+session, and password sign-up yields one immediately because email confirmation
+is off (`enable_confirmations = false`, mirroring `mailer_autoconfirm=true` on
+the hosted projects). §3 describes this as an OAuth-specific deletion; it is
+not, and the silent guest is what makes it the common case. It goes through
 `delete_user_account()`, which is `security definer`, runs as the function
 owner, and delegates to `purge_user_account(uuid)` — revoked from `public`,
 `anon` **and** `authenticated`, so only the owner and `service_role` can call
@@ -325,6 +370,15 @@ asked properly one screen earlier, and terms §2 carries the representation, so 
 second and weaker claim on the tick box would only train people to tick through
 something already answered. #1766 deliberately left it alone because published
 eligibility copy moves with the terms; that is what #1767 did.
+
+## The assessment behind the floor
+
+[dpia-minors-assessment.md](dpia-minors-assessment.md) is the combined DPIA and
+Connecticut/Colorado minors' assessment
+([#1768](https://github.com/Selftend/selftend/issues/1768), spec §4). It
+describes this flow end to end for a reader who has not seen the code, carries
+the risk register — including the two gaps this file records, as R7 and R8 — and
+is where the no-minor-flag decision is argued rather than merely stated.
 
 ## The content behind the floor
 

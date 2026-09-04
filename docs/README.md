@@ -35,6 +35,8 @@ Use this as the map for project docs. Each entry below links to the doc that own
 - [policies.md](policies.md) - public policy surfaces, crisis guidance posture, and launch-review status
 - [gdpr-compliance.md](gdpr-compliance.md) - GDPR/CCPA posture
 - [age-floor.md](age-floor.md) - the per-country minimum age, and why it varies
+- [age-floor-statute-checks.md](age-floor-statute-checks.md) - where each floor came from, read against the national statute
+- [dpia-minors-assessment.md](dpia-minors-assessment.md) - the DPIA and the Connecticut/Colorado minors' assessment, in one document
 - [child-safety-review.md](child-safety-review.md) - the module-by-module content review behind the 13+ floor, and what it accepted
 - [analytics.md](analytics.md) - analytics and observability posture
 - [licensing.md](licensing.md) - AGPL and third-party content rules

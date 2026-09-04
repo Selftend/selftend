@@ -7,6 +7,7 @@ import {
   upsertSelfCareLog,
 } from "@/src/features/self-care/repository";
 import type { SelfCareLogInput } from "@/src/features/self-care/types";
+import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const selfCareKeys = {
@@ -58,6 +59,7 @@ export function useUpsertSelfCareLog(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: selfCareKeys.list(userId) }),
         queryClient.invalidateQueries({ queryKey: selfCareKeys.detail(userId, log.logDate) }),
+        invalidateRecordDays(queryClient),
       ]);
     },
   });

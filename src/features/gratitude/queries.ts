@@ -13,6 +13,7 @@ import {
   setGratitudeEntryStarred,
 } from "@/src/features/gratitude/repository";
 import type { GratitudeEntry, GratitudeInput } from "@/src/features/gratitude/types";
+import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -115,13 +116,16 @@ export function useSaveGratitudeEntry(userId: string | null) {
     onSuccess: async (_data, { entryId }) => {
       if (!entryId) requestReminderPrompt("gratitude");
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: gratitudeKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: gratitudeKeys.all }),
+        invalidateRecordDays(queryClient),
+      ]);
     },
   });
 }
 
 export function useDeleteGratitudeEntry(userId: string | null) {
-  return useDeleteMutation(userId, deleteGratitudeEntry, gratitudeKeys.all);
+  return useDeleteMutation(userId, deleteGratitudeEntry, gratitudeKeys.all, recordDaysKeys.all);
 }
 
 export function useSetGratitudeEntryStarred(userId: string | null) {
@@ -144,6 +148,13 @@ export function useSetGratitudeEntryStarred(userId: string | null) {
       void queryClient.invalidateQueries({ queryKey: ["gratitude", "favorites", userId] });
       void queryClient.invalidateQueries({ queryKey: gratitudeKeys.historyPages(userId) });
       void queryClient.invalidateQueries({ queryKey: gratitudeKeys.favoriteCount(userId) });
+      // Starring cannot move `logged_at`, so no mark moves either. Invalidated
+      // anyway, under the rule the guard enforces: any mutation writing a
+      // source table invalidates it, rather than each one re-deciding whether
+      // its particular edit can reach a civil day. ⚠️ Cheap even here, where
+      // the comment above is careful about refetch cost: the record-days root
+      // has no observer outside "Looking back", so this only marks it stale.
+      void invalidateRecordDays(queryClient);
     },
   });
 }

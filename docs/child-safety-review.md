@@ -15,7 +15,7 @@ This file is the record. It exists so the next reviewer starts from a decision r
 Out of scope, and owned elsewhere:
 
 - Store listing and Play declarations — [#1771](https://github.com/Selftend/selftend/issues/1771), the owner's rollout pass.
-- The DPIA / minors' assessment — [#1768](https://github.com/Selftend/selftend/issues/1768).
+- The DPIA / minors' assessment — [dpia-minors-assessment.md](dpia-minors-assessment.md), [#1768](https://github.com/Selftend/selftend/issues/1768). This review is cited there as the evidence for the duty-of-care row.
 - The delete-on-knowledge runbook, the PR-template gate line, and the annual legal-landscape check — [#1769](https://github.com/Selftend/selftend/issues/1769). §4's _ongoing cadence_ bullet is that ticket's, not this one's.
 
 ## Method
@@ -140,6 +140,20 @@ This is consistent with the live Everyone / PEGI 3 / USK 0 / IARC 3+ ratings rec
 ☠️ **Every rule is keyed on a claim shape, never on subject matter.** Selftend is a mental health app; it has to be able to say "anxiety", "depression", "panic", "crisis", and "not a cure", and the crisis page's whole job is to say some of them plainly. A rule keyed on the vocabulary would go red on the copy that protects people — the over-sweep failure that gets a guard deleted instead of fixed. ⚠️ The first draft of this file broke its own rule: the two "hierarchy" rules were unscoped, so they banned an ordinary English word across all 20 namespaces and would have failed an accessibility string about a heading hierarchy. They are now scoped to the exposure tool's own keys, which is where the finding actually was. Nine legitimate neighbours are pinned in the same file as must-stay-legal for that reason — including the crisis page's plainest sentence in both languages, and the two breathing descriptions that survived finding 6.
 
 The **reading-level** row is deliberately not in the test. Sentence length is a signal, not a rule, and a word-count gate over translated legal text would fail on correct copy every time it was touched. That row lives in this document instead, and is re-judged by reading.
+
+## Re-runs
+
+### 2026-09-04 — `navigation`, for the "Your days" band ([#1906](https://github.com/Selftend/selftend/issues/1906))
+
+Triggered by the PR-template row: a record-over-time surface is engagement-adjacent by construction, so it takes the gate whether or not its copy looks risky.
+
+**Scope.** Six new strings in the `navigation:progress` block, `en` and `bg` — the card's title and description, the two empty bodies, the accessible summary, and a read-failure line. The rest of `navigation` was covered by the run above and is unchanged.
+
+**Both passes, and the third screen.** Zero candidates on all six shapes: no clinical or treatment-protocol vocabulary, no Play-sensitive subject matter, no crisis vocabulary, no absolute effect verb — the strings make no claim about the person at all, which is the point of the surface. Reading level is well inside row 1: the longest is _"Days you record anything will appear here."_ at seven words, the longest Bulgarian nine, and no word reaches twelve letters in either language.
+
+**Row 4 is the one worth stating.** The card reports the record and interprets none of it — no count, no run length, no ratio, no comparison — so there is no reading for a thirteen-year-old to get wrong, and nothing a clinician would recognise as a protocol measure. The one number the surface can render is a year on its axis, which is a date and not a figure.
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** The strings also run clean against `restraint-copy`, `practice-copy`, `positioning-copy` and `child-safety-copy` in both locales.
 
 ## Re-running this
 

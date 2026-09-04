@@ -300,7 +300,21 @@ So a word had to go, and the cap chose it rather than taste:
 
 **`free` drops; `private` stays.** Free is the floor on this shelf rather than a signal, and `private` is the one attribute the style competes on. Free is not demoted out of positioning — it keeps its place in the frame sentence and its own supporting line. ⚠️ **The concrete cost:** `public/index.html`'s `og:title` reads _"Selftend - a free, private CBT programme"_, so this drops **free** from the social card too. **That is the price of refusing a third shape.**
 
-☠️ **"Where length is capped" is now true somewhere for the first time, which means it will be cited everywhere.** So, plainly: **the cap is the App Store `subtitle` field and nothing else has one.** Anywhere else, the answer is the frame sentence.
+☠️ **"Where length is capped" is true in three places, not one, which means it will be cited everywhere — so the inventory is written out rather than summarised.** [#1819](https://github.com/Selftend/selftend/issues/1819) named only the App Store `subtitle`. [#1940](https://github.com/Selftend/selftend/issues/1940) found two more while [#1823](https://github.com/Selftend/selftend/issues/1823) was pricing the store surfaces, and one of them is in this document's own governed mirror.
+
+| Field                  | Cap | Used today | Source                                                                          |
+| ---------------------- | --- | ---------- | ------------------------------------------------------------------------------- |
+| App Store `subtitle`   | 30  | 28         | `test/store-info-invariants.test.ts:39`                                         |
+| App Store `promoText`  | 170 | 168        | `test/store-info-invariants.test.ts:40` — the same `CAPS` object, the next line |
+| Play short description | 80  | 62         | `store/play-listing.md`, _"Short description (62 of 80 characters)"_            |
+
+**The rule holds at all three.** The frame sentence is **164** characters, so it does not fit Play's 80 at all and would leave six characters of `promoText` — which is why the escape clause below is the answer at each of them rather than a new shape:
+
+- **`subtitle` (30)** — the cap that chose the short form's words, above.
+- **Play short description (80)** — ✅ **decided: it takes the short form** ([#1823](https://github.com/Selftend/selftend/issues/1823), owner decision). ⚠️ The **62** in the table is the string this replaces, not the decision — like every surface here, it is written and not yet applied. **The cost is stated rather than hidden:** it leaves **52 of 80** characters unused on Play's most-read line, and drops both `free` and the `cognitive behavioural therapy` gloss from it. The gloss loss is not new — the short form is unglossed **by construction**, and #1819 accepted exactly that for the `subtitle`; the gloss lands one paragraph later, in ¶1 of the same listing.
+- **`promoText` (170)** — a promotional paragraph rather than a line that states the category, so no shape is owed there; #1823 fills it with body copy at **162**. ⚠️ Recorded so a later reader does not treat the cap as an instruction to squeeze a shape into it.
+
+**Anywhere without a cap, the answer is the frame sentence.** ⚠️ **This corrects an inventory, not a rule.** Naming two more capped fields is the escape clause working as written; it sanctions nothing new, and the count of shapes below is unchanged.
 
 The precedent is recorded because the same shortcut will be re-derived otherwise. [#1628](https://github.com/Selftend/selftend/issues/1628) left `auth:landing.subtitle` reading the frame sentence with the spell-out surgically removed, and justified it under this clause. [#1627](https://github.com/Selftend/selftend/issues/1627) overruled it on three counts:
 

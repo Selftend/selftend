@@ -59,9 +59,20 @@ Deferred items from the review (open questions, not launch blockers):
 - Under-floor attempts retain nothing — the account created for the attempt is
   deleted immediately ([#1765](https://github.com/Selftend/selftend/issues/1765)) —
   and an account discovered to be under its floor is deleted on knowledge.
+- **Every floor is sourced to its national statute**, in
+  [age-floor-statute-checks.md](age-floor-statute-checks.md) ([#1763](https://github.com/Selftend/selftend/issues/1763)).
+  That check found one row wrong: Denmark's age of digital consent has been
+  **15** since 2024-01-01 while the table said 13. It was raised rather than
+  changed silently ([#1921](https://github.com/Selftend/selftend/issues/1921)),
+  and the owner's decision was to follow the statute — Denmark is at 15 in the
+  table and in the published text. ⚠️ Hungary could not be verified at all and
+  remains an open question for counsel.
 - **No minor flag and no parental-consent path.** Protections are universal
   rather than conditional; where a law would require a parental-consent route,
-  the floor rises instead.
+  the floor rises instead. The decision and the compliance argument behind it
+  are in [dpia-minors-assessment.md](dpia-minors-assessment.md) §5, which is
+  also the combined DPIA and Connecticut/Colorado minors' assessment for this
+  processing.
 - Published in privacy §11 and terms §2, `en` and `bg`
   ([#1767](https://github.com/Selftend/selftend/issues/1767)).
   `src/features/policies/policy-age-floor.test.ts` compares the published list
