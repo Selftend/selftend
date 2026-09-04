@@ -58,7 +58,6 @@ export const FLOOR_BY_COUNTRY: Readonly<Record<string, AgeFloor>> = {
   US: 13,
   GB: 13,
   BE: 13,
-  DK: 13,
   EE: 13,
   FI: 13,
   LV: 13,
@@ -76,6 +75,12 @@ export const FLOOR_BY_COUNTRY: Readonly<Record<string, AgeFloor>> = {
   ES: 14,
   // 15
   CZ: 15,
+  // ☠️ Denmark is NOT a GDPR-baseline 13. It raised its age of digital consent
+  // from 13 to 15 with effect from 2024-01-01 (LOV nr 1783 af 28/12/2023,
+  // amending databeskyttelsesloven § 6(2)), and the mapping this table was
+  // first built from had not caught up - so it shipped here as 13 until #1921.
+  // Provenance and the two-route verification: docs/age-floor-statute-checks.md.
+  DK: 15,
   FR: 15,
   GR: 15,
   SI: 15,

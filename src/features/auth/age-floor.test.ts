@@ -5,11 +5,19 @@ import { ABSOLUTE_MINIMUM_AGE_FLOOR, floorForCountry, meetsAgeFloor } from "./ag
  * rather than imported from the module. A test that reads the same constant it
  * asserts against proves only that a lookup is a lookup; restating the decision
  * is what makes this a check on the spec.
+ *
+ * ☠️ **`DK` reads 15 here and 13 in #227 §2, and that is deliberate.** The spec
+ * inherited 13 from a consolidated mapping that had not caught up with
+ * `LOV nr 1783 af 28/12/2023`, which raised the Danish age of digital consent
+ * to 15 from 2024-01-01. #1763 read the statute, #1921 was the owner's decision
+ * to follow it, and `docs/age-floor-statute-checks.md` is the record. So this
+ * one row restates a decision that SUPERSEDES the spec rather than the spec
+ * itself - which is why it is called out instead of quietly edited.
  */
 const COUNTRIES_BY_FLOOR: Record<number, string[]> = {
-  13: ["US", "GB", "BE", "DK", "EE", "FI", "LV", "MT", "PT", "SE", "NO", "IS"],
+  13: ["US", "GB", "BE", "EE", "FI", "LV", "MT", "PT", "SE", "NO", "IS"],
   14: ["AT", "BG", "CY", "IT", "LT", "ES"],
-  15: ["CZ", "FR", "GR", "SI"],
+  15: ["CZ", "DK", "FR", "GR", "SI"],
   16: ["HR", "DE", "HU", "IE", "LU", "NL", "PL", "RO", "SK", "LI"],
 };
 

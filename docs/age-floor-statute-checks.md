@@ -16,15 +16,15 @@ never the evidence for a row.
 The rows in § _Rows carried over_ were **not** read in this pass at all. That
 section records where each came from, and when.
 
-> [!CAUTION]
-> **One row is contradicted.** Denmark raised its age of digital consent from 13
-> to **15** with effect from **1 January 2024**, and
-> `src/features/auth/age-floor.ts` still carries `DK: 13`. The floor table is a
-> settled decision of map [#216](https://github.com/Selftend/selftend/issues/216)
-> and this document does not change it —
-> [#1921](https://github.com/Selftend/selftend/issues/1921) raises it for the
-> owner and counsel. See § _The contradiction_ below for what it costs to fix
-> now versus later.
+> [!IMPORTANT]
+> **One row was contradicted, and the table has been corrected.** Denmark raised
+> its age of digital consent from 13 to **15** with effect from **1 January
+> 2024**; this check found `src/features/auth/age-floor.ts` still carrying
+> `DK: 13`. It was raised rather than silently applied
+> ([#1921](https://github.com/Selftend/selftend/issues/1921)), the owner decided
+> to follow the statute, and **Denmark now sits at 15** in the floor table, in
+> `age-floor.md`, and in the published policy text in both languages. § _The
+> contradiction, and what was done about it_ keeps the finding on the record.
 
 ## What this replaces
 
@@ -72,7 +72,7 @@ on a law firm's summary, which is exactly what a (C) row is.
 | **BG** | 14            | `CONFIRMED`                              | ЗЗЛД чл. 25в (нов, ДВ бр. 17/2019) — under-14 consent valid only if given by the parent or guardian   | [Държавен вестник, бр. 17/2019](https://dv.parliament.bg/DVWeb/showMaterialDV.jsp?idMat=135056)                                                                                                            |
 | **CY** | 14            | `CONFIRMED`                              | Ν. 125(Ι)/2018, άρθρο 8(1) — _"εάν το παιδί είναι τουλάχιστον δεκατεσσάρων (14) ετών"_                | [Επίσημη Εφημερίδα, Αρ. 4670, 31.07.2018](https://www.cylaw.org/nomoi/arith/2018_1_125.pdf)                                                                                                                |
 | **CZ** | 15            | `CONFIRMED` ⚠️ source grade              | Zákon č. 110/2019 Sb., § 7 — capacity acquired _"dovršením patnáctého roku věku"_                     | [zakonyprolidi.cz, consolidated](https://www.zakonyprolidi.cz/cs/2019-110) — a **private** consolidator; state sources unreachable, see § _Source grades_                                                  |
-| **DK** | 13            | **`CONTRADICTED`** — text says 15        | Databeskyttelsesloven § 6(2) — _"hvis barnet er mindst 15 år"_, since 2024-01-01                      | [LBK nr 289 af 08/03/2024](https://www.retsinformation.dk/eli/lta/2024/289); amending act [LOV nr 1783 af 28/12/2023](https://www.retsinformation.dk/eli/lta/2023/1783)                                    |
+| **DK** | 15            | `CONFIRMED` — **table corrected, #1921** | Databeskyttelsesloven § 6(2) — _"hvis barnet er mindst 15 år"_, since 2024-01-01                      | [LBK nr 289 af 08/03/2024](https://www.retsinformation.dk/eli/lta/2024/289); amending act [LOV nr 1783 af 28/12/2023](https://www.retsinformation.dk/eli/lta/2023/1783)                                    |
 | **EE** | 13            | `CONFIRMED`                              | Isikuandmete kaitse seadus § 8(1) — _"kui laps on vähemalt 13-aastane"_                               | [Riigi Teataja, consolidated](https://www.riigiteataja.ee/et/akt/112072025014?leiaKehtiv)                                                                                                                  |
 | **ES** | 14            | `CONFIRMED`                              | LO 3/2018 art. 7(1) — consent valid only _"cuando sea mayor de catorce años"_                         | [BOE, consolidated](https://www.boe.es/buscar/act.php?id=BOE-A-2018-16673)                                                                                                                                 |
 | **FI** | 13            | `CONFIRMED`                              | Tietosuojalaki 1050/2018, 5 § — _"jos lapsi on vähintään 13-vuotias"_                                 | [Finlex, consolidated](https://www.finlex.fi/fi/lainsaadanto/2018/1050)                                                                                                                                    |
@@ -91,7 +91,7 @@ on a law firm's summary, which is exactly what a (C) row is.
 | **SE** | 13            | `CONFIRMED`                              | Lag (2018:218) 2 kap. 4 § — _"om barnet är minst 13 år"_                                              | [riksdagen.se, consolidated](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018218-med-kompletterande-bestammelser_sfs-2018-218/)                                 |
 | **SK** | 16            | `CONFIRMED`                              | Zákon č. 18/2018 Z. z. § 15(1) — _"ak dotknutá osoba dovŕšila 16 rokov veku"_                         | [Slov-Lex, consolidated to 2024-07-01](https://static.slov-lex.sk/pdf/SK/ZZ/2018/18/ZZ_2018_18_20240701.pdf)                                                                                               |
 
-## The contradiction
+## The contradiction, and what was done about it
 
 **Denmark is 15, and has been since 1 January 2024.**
 
@@ -105,26 +105,40 @@ Verified twice by different routes — the consolidated act on retsinformation.d
 and the Folketinget bill record for L 79a (2023-24), whose title alone states
 what the act does.
 
-Three things the owner and counsel need alongside the number:
+**What was decided.** The finding was raised rather than applied — §2's rule,
+and the reason this document changes no floor on its own. The owner decided on
+**2026-09-04** to follow the statute, and Denmark moved to 15 in the same change
+that records this: `FLOOR_BY_COUNTRY`, the table in
+[age-floor.md](age-floor.md), the published privacy text in `en` and `bg`, and
+the literal expectation in `age-floor.test.ts` — which is the one place a floor
+is restated rather than imported, so it had to move by hand.
 
-- **The shipped table admits 13- and 14-year-olds in Denmark**, below the age at
-  which Danish law says they can consent for themselves. Denmark sits in the
-  13 group in `FLOOR_BY_COUNTRY` and is named in the published privacy copy's
-  13 list, in both `en` and `bg`.
-- **Fixing it now is nearly free; fixing it later is not.** The teen-floor copy
-  has not been released — `policyVersion` is already at `2026-09-04-teen-floor`
-  and unreleased, so moving Denmark before the §7 release rides on a version bump
-  that has already been paid for. The same edit after the release is a fresh
-  disclosure change: another version bump, a moved consent digest, and every
-  existing user re-gated.
-- **A grandfathering clause exists but does not help here.** § 2, stk. 2 of the
-  amending act preserves the old 13 rule for consents given _before_ 1 January 2024. Selftend has no Danish consent predating that date, so every consent it
-  would collect falls under the 15 rule.
+⚠️ **Counsel has not seen it yet.** Spec §5 puts the legal review before
+publication ([#1771](https://github.com/Selftend/selftend/issues/1771)), and
+this correction reaches `dev` ahead of that review, not past it. Nothing here is
+live until the §7 release.
 
-Our table also mis-cites the limb: **§ 6(2)** sets the age; § 6(3) is the
-parental-consent fallback. And the only "13 år" left anywhere in the consolidated
-act sits inside the reproduced text of GDPR Art. 8(1) in an annex — an easy way
-for a re-checker to confirm the wrong number.
+Three things that shaped the decision:
+
+- **The shipped table admitted 13- and 14-year-olds in Denmark**, below the age
+  at which Danish law says they can consent for themselves. That is the failure
+  direction that matters: under-protection, on the lowest floor in the table.
+- **Correcting it before the release was nearly free; after it would not have
+  been.** `policyVersion` was already at `2026-09-04-teen-floor` and unreleased,
+  so Denmark moved on a version bump already paid for. The same edit after
+  publication is a fresh disclosure change: another bump, a moved consent digest,
+  and every existing user re-gated. The consent digest did move here — but that
+  costs nothing while no user has accepted this version yet.
+- **A grandfathering clause exists but does not help.** § 2, stk. 2 of the
+  amending act preserves the old 13 rule for consents given _before_ 1 January 2024. Selftend holds no Danish consent predating that date, so every consent it
+  collects falls under the 15 rule.
+
+The research row this floor came from also names the wrong limb — it cites
+`Databeskyttelsesloven §6(3)`, and **§ 6(2)** is what sets the age; § 6(3) is the
+parental-consent fallback. That research is unmerged, so nothing in this change
+corrects it; the row above is the citation to use. And the only "13 år" left
+anywhere in the consolidated act sits inside the reproduced text of GDPR
+Art. 8(1) in an annex — an easy way for a re-checker to confirm the wrong number.
 
 ## The unresolved row
 
@@ -276,8 +290,10 @@ statutory text, never from a summary of it.
 ## Where this is read next
 
 - The owner's legal review, [#1771](https://github.com/Selftend/selftend/issues/1771)
-  (spec §5), which happens before publication. The Denmark contradiction and the
-  Hungary gap are both on it.
+  (spec §5), which happens before publication. **The Hungary gap is the one row
+  that reaches it unfinished.** The Denmark finding is on it too, now as a
+  correction already made rather than a decision still owed — counsel sees the
+  changed floor, not a choice about it.
 - The Denmark decision itself:
   [#1921](https://github.com/Selftend/selftend/issues/1921).
 - The annual legal-landscape check in
