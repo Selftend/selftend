@@ -15,7 +15,7 @@
           "Selftend has a minimum age. It is 13 in most countries and higher in some - section 11 lists them.",
           "We ask your date of birth once, to check that age. We never store it. We keep only whether you met the age, the country you chose, and the date we asked.",
           "You do not have to give us an email address. The app works without an account.",
-          "What you write in the app is yours. We do not sell it, we do not show you adverts, we do not use it to train AI, and nobody here reads it unless you ask us to, we have to investigate a security incident, or the law requires it.",
+          "What you write in the app is yours. We do not sell it, we do not show you adverts, and we do not use it to train AI. Nobody here reads it unless you ask us to, we have to investigate a security incident, or the law requires it.",
           "You can download everything you have written, or delete all of it, from Settings at any time. Deleting is permanent.",
           "If anything here worries you, or you want something removed, write to privacy@selftend.org and a person will answer."
         ]
@@ -414,7 +414,7 @@
       {
         "title": "Is Selftend therapy?",
         "body": [
-          "No. Selftend is a CBT programme you work through on your own, with no practitioner involved. It is not therapy, counseling, diagnosis, treatment, or a substitute for a licensed mental health professional. If you need clinical care, contact a qualified provider in your area."
+          "No. Selftend is a CBT programme you work through on your own, with no practitioner involved. It is not therapy, counselling, diagnosis, treatment, or a substitute for a licensed mental health professional. If you need clinical care, contact a qualified provider in your area."
         ]
       },
       {
@@ -454,9 +454,9 @@
         ]
       },
       {
-        "title": "Why is there no AI counselor?",
+        "title": "Why is there no AI counsellor?",
         "body": [
-          "Because we don't think a self-help app should pretend to be one. Selftend has no AI therapist, AI counselor, or AI coach, and nothing you write is used to train AI models."
+          "Because we don't think a self-help app should pretend to be one. Selftend has no AI therapist, AI counsellor, or AI coach, and nothing you write is used to train AI models."
         ]
       },
       {

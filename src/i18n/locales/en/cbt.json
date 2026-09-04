@@ -263,38 +263,38 @@
     "title": "Anxiety & exposure",
     "description": "Build a step-by-step plan to face anxiety, one manageable step at a time.",
     "loading": "Loading...",
-    "empty": "No hierarchies yet",
-    "emptyDescription": "Build your first exposure hierarchy when you're ready to start.",
-    "new": "New hierarchy",
-    "newTitle": "Build an exposure hierarchy",
+    "empty": "No ladders yet",
+    "emptyDescription": "Build your first exposure ladder when you're ready to start.",
+    "new": "New ladder",
+    "newTitle": "Build an exposure ladder",
     "newDescription": "Name the anxiety, then list steps from easier to harder.",
-    "save": "Save hierarchy",
+    "save": "Save ladder",
     "saving": "Saving...",
-    "saveError": "Unable to save the hierarchy.",
+    "saveError": "Unable to save the ladder.",
     "back": "Back",
     "continue": "Continue",
-    "notFound": "Hierarchy not found",
+    "notFound": "Ladder not found",
     "noItems": "No steps logged yet.",
     "step1": "1. About",
     "step2": "2. Steps",
     "hierarchyTitle": "Title",
     "hierarchyTitlePlaceholder": "Example: Driving on the highway",
     "anxietyType": "Type of anxiety",
-    "anxietyTypeHint": "Helps you find the hierarchy later. Free-text.",
+    "anxietyTypeHint": "Helps you find the ladder later. Free-text.",
     "anxietyTypePlaceholder": "Example: Driving, social, specific phobia",
-    "itemsLabel": "Hierarchy steps",
-    "itemsHint": "Add at least one step. Rate each by anticipated anxiety (SUDS, 0-100).",
+    "itemsLabel": "Ladder steps",
+    "itemsHint": "Add at least one step. Rate each by how anxious you expect to feel, from 0 to 100.",
     "itemNumber": "Step {{n}}",
     "itemDescription": "Step description",
     "itemDescriptionPlaceholder": "Describe what you would do.",
-    "itemSuds": "Anticipated SUDS (0-100)",
+    "itemSuds": "Expected anxiety (0-100)",
     "itemSudsHint": "0 = no anxiety, 100 = maximum.",
     "addItem": "Add step",
     "removeItem": "Remove",
     "worryLink": "Worry journal",
     "worryLinkDescription": "Work through worries by writing them down and testing their grip.",
     "item": {
-      "sudsLabel": "Estimated SUDS: {{value}}",
+      "sudsLabel": "Expected anxiety: {{value}}",
       "completed": "completed",
       "recentSessions": "Recent sessions",
       "sessionSummary": "Pre {{pre}} → Post {{post}} · {{duration}} min",
@@ -303,9 +303,9 @@
     },
     "session": {
       "title": "Exposure session",
-      "preSuds": "Pre-exposure SUDS (0-100)",
+      "preSuds": "Anxiety before (0-100)",
       "preSudsHint": "How anxious you felt before starting.",
-      "postSuds": "Post-exposure SUDS (0-100)",
+      "postSuds": "Anxiety after (0-100)",
       "postSudsHint": "How anxious you felt after.",
       "duration": "Duration (minutes)",
       "safetyBehaviorsUsed": "I used safety behaviours",
@@ -316,12 +316,12 @@
       "save": "Save session",
       "saveError": "Unable to save the session. Try again."
     },
-    "deleteHierarchy": "Delete hierarchy",
-    "deleteTitle": "Delete this hierarchy?",
-    "deleteMessage": "This permanently removes the hierarchy and all of its items and session history. This can't be undone.",
-    "deleteError": "Unable to delete the hierarchy. Try again.",
+    "deleteHierarchy": "Delete ladder",
+    "deleteTitle": "Delete this ladder?",
+    "deleteMessage": "This permanently removes the ladder and all of its steps and session history. This can't be undone.",
+    "deleteError": "Unable to delete the ladder. Try again.",
     "validation": {
-      "title": "Give the hierarchy a title.",
+      "title": "Give the ladder a title.",
       "anxietyType": "Name the type of anxiety.",
       "itemDescription": "Describe the exposure step.",
       "items": "Add at least one step."
@@ -626,8 +626,8 @@
   },
   "onboarding": {
     "intro": {
-      "title": "The CBT Toolkit: Think, Act, and Be Your Way to Better Mental Health",
-      "subtitle": "CBT is a solution-focused therapy based on the connection between thoughts, feelings and behaviours. This section breaks down the core Think, Act, Be pillars and the essential self-care habits required to retrain the brain for lasting emotional well-being.",
+      "title": "CBT: Think, Act, Be",
+      "subtitle": "CBT is a solution-focused therapy based on the connection between thoughts, feelings and behaviours. This section covers the three pillars - Think, Act, Be - and the everyday self-care habits that sit alongside them.",
       "actTitle": "ACT: Lead with Action",
       "actBody": "Gradually re-engage in rewarding activities to build 'pleasure and mastery,' even when motivation is low.",
       "thinkTitle": "THINK: Challenge Negative Patterns",
@@ -640,7 +640,7 @@
       "exposureTitle": "The Power of Exposure",
       "exposureBody": "Systematically face fears to teach the brain that the perceived danger is exaggerated and manageable.",
       "sleepTitle": "The 7-9 Hour Sleep Target",
-      "sleepBody": "Prioritise restorative sleep to regulate the limbic system and improve daytime emotional resilience.",
+      "sleepBody": "Protect your sleep. Rest is what most of the rest of this leans on, and short nights make everything else harder.",
       "tableIntro": "The table below describes what CBT is clinically used for. It is background reading, not a diagnosis, an assessment, or a treatment plan.",
       "tableCondition": "Condition",
       "tableCoreFeature": "Core Feature",
@@ -1360,7 +1360,7 @@
       },
       "when": {
         "title": "When to use grounding",
-        "body": "Anxiety spirals, overwhelm, racing thoughts, dissociation, or any moment when the present feels hard to reach. Grounding is not a cure - it's a circuit breaker."
+        "body": "Anxiety spirals, overwhelm, racing thoughts, feeling unreal or far away, or any moment when the present feels hard to reach. Grounding is not a cure - it's a circuit breaker."
       },
       "how": {
         "title": "How it works",
@@ -1487,13 +1487,13 @@
       },
       "4-7-8": {
         "title": "4-7-8 breathing",
-        "shortDescription": "A longer exhale that down-regulates the nervous system quickly.",
+        "shortDescription": "A longer exhale out than in, which settles the body quickly.",
         "benefit": "The extended hold and slow exhale trigger the relaxation response."
       },
       "coherent-breathing": {
         "title": "Coherent breathing",
         "shortDescription": "Slow, equal inhale and exhale at about 5 breaths per minute.",
-        "benefit": "Maximises heart rate variability and reduces anxiety over time."
+        "benefit": "A slow, even rhythm that most people find steadying after a few minutes."
       }
     },
     "sounds": {

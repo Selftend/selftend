@@ -326,6 +326,15 @@ second and weaker claim on the tick box would only train people to tick through
 something already answered. #1766 deliberately left it alone because published
 eligibility copy moves with the terms; that is what #1767 did.
 
+## The content behind the floor
+
+Admitting thirteen-year-olds is a copy question as well as a legal one, and
+[child-safety-review.md](child-safety-review.md) is the record of that pass
+([#1770](https://github.com/Selftend/selftend/issues/1770), spec §4): every module against §4's
+five-row checklist, what was fixed, what was raised, and — the half a review usually loses —
+what was deliberately **accepted**, with the reasoning. `test/child-safety-copy.test.ts` holds
+the rules it established as a merge gate.
+
 ## Where the table is published
 
 Privacy policy §11 (_Minimum age_) lists it floor by floor, in `en` and `bg`,
