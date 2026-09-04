@@ -38,7 +38,7 @@
     "donateA11y": "Дари на Selftend през GitHub Sponsors - отваря се в браузъра"
   },
   "userMenu": {
-    "account": "Акаунт",
+    "guest": "Гост",
     "avatarAlt": "Аватар на потребителя",
     "openMenu": "Отвори меню на акаунта",
     "settings": "Настройки",

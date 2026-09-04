@@ -113,6 +113,23 @@ export function UserMenu() {
   // fallback, so the same `Remove photo` tap changed this and not that.
   const avatarUrl = resolveAvatarUrl(profile, user);
   const displayName = resolveDisplayName(profile, user);
+  /*
+    The same two expressions the settings identity row derives (#1829), not a
+    second answer to the same question — sharing only `resolveDisplayName` and
+    writing the fallback twice is the #970 divergence re-created in the act of
+    closing it.
+
+    ☠️ `||` at every step, never `??`: an anonymous user's `email` is `""` and
+    the type is `email?: string`, so `??` typechecks and walks straight past it.
+    That is why `userMenu.account` never rendered for anyone.
+
+    ☠️ `showEmail` is what keeps a guest to ONE line. Writing the fallback into
+    the SUB-line instead would give a guest who has saved a name both their name
+    and the word `Guest` — a second guest-status signal on one surface, which
+    #1784 and #1805 refused, and which #1810 pins as an unchanged row.
+  */
+  const primaryLine = displayName || email || t("userMenu.guest");
+  const showEmail = Boolean(displayName && email);
 
   const languageIndex = supportedLanguages.indexOf(language);
   const languageRoving = useRovingFocus({
@@ -218,17 +235,23 @@ export function UserMenu() {
                     className="size-10"
                   />
                   <View className="flex-1">
-                    {displayName ? (
-                      <Text className="text-sm font-medium leading-5" numberOfLines={1}>
-                        {displayName}
+                    {/*
+                      The name slot always renders now: it holds the name, or the
+                      email, or the word for having neither. It used to be
+                      conditional with the email pinned below it, which left a
+                      guest with two empty lines and no way to say what they were.
+                    */}
+                    <Text className="text-sm font-medium leading-5" numberOfLines={1}>
+                      {primaryLine}
+                    </Text>
+                    {showEmail ? (
+                      <Text
+                        className="text-sm text-muted-foreground font-normal leading-4"
+                        numberOfLines={1}
+                      >
+                        {email}
                       </Text>
                     ) : null}
-                    <Text
-                      className="text-sm text-muted-foreground font-normal leading-4"
-                      numberOfLines={1}
-                    >
-                      {email ?? t("userMenu.account")}
-                    </Text>
                   </View>
                 </View>
               ) : null}

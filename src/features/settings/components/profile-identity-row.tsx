@@ -1,29 +1,39 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Image, View } from "react-native";
 
+import { AvatarPersonGlyph } from "@/src/components/app/avatar-person-glyph";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useAccentHsl } from "@/src/lib/theme-palette";
 
 interface ProfileIdentityRowProps {
-  /** `profile?.avatarUrl ?? googleAvatarUrl ?? undefined` — nullish, verbatim. */
+  /** `resolveAvatarUrl(profile, user) ?? undefined`. */
   avatarUri: string | undefined;
-  /** `Boolean(profile?.avatarUrl || googleAvatarUrl)` — truthy, verbatim. */
+  /** Whether that resolved to a photo. */
   hasAvatar: boolean;
-  /** `profile?.displayName ?? user?.email ?? ""`. */
+  /**
+   * The most specific thing known about the person:
+   * `name || email || t("navigation:userMenu.guest")`.
+   */
   name: string;
-  /** `Boolean(profile?.displayName)` — gates the email sub-line. */
+  /** `Boolean(name && email)` — gates the email sub-line, so a guest has none. */
   showEmail: boolean;
-  /** `user?.email ?? ""`. */
+  /** `user?.email` — only rendered when `showEmail`. */
   email: string;
-  /** First letter of the display name, uppercased. */
-  initial: string;
+  /**
+   * `getInitial(name, email)`, or `null` when there is no letter to honestly
+   * take — which draws a person glyph instead.
+   */
+  initial: string | null;
 }
 
 /**
  * Identity row: gradient avatar + name/email — the settings page's identity
- * header. Pure props: every derivation happens in `SettingsProfileBlock`, so the
- * `||` vs `??` semantics of the original are preserved exactly.
+ * header.
+ *
+ * Pure props: every derivation happens in `SettingsProfileBlock` through the
+ * helpers the header also uses (#1829), so the two surfaces cannot answer the
+ * same question differently the way they used to.
  */
 export function ProfileIdentityRow({
   avatarUri,
@@ -40,9 +50,18 @@ export function ProfileIdentityRow({
     // group under it. A rounded, bordered panel here made the identity read as
     // the one card on a page that has none.
     <View className="flex-row items-center gap-4 border-b border-t border-border py-5">
+      {/*
+        ☠️ `aria-hidden` is the one of these three that works on web.
+        react-native-web implements neither `accessibilityElementsHidden` nor
+        `importantForAccessibility`, so without it the circle's contents are
+        announced — today the initial, and after #1810 a person glyph — ahead of
+        the name that says the same thing one element over. The circle is
+        decorative: it restates its neighbour.
+      */}
       <View
         accessibilityElementsHidden
         importantForAccessibility="no"
+        aria-hidden
         className="h-14 w-14 items-center justify-center overflow-hidden rounded-full"
       >
         {/*
@@ -67,6 +86,9 @@ export function ProfileIdentityRow({
             style={{ width: 56, height: 56 }}
             accessibilityIgnoresInvertColors
           />
+        ) : initial === null ? (
+          // Inherits the colour token the initial had, inside the 56px wash.
+          <AvatarPersonGlyph size={28} className="text-primary" />
         ) : (
           <Text className="text-2xl font-bold text-primary">{initial}</Text>
         )}

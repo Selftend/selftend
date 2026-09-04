@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react-native";
+import { render, screen } from "@testing-library/react-native";
 import type { ReactTestInstance } from "react-test-renderer";
 
 import { ProfileIdentityRow } from "@/src/features/settings/components/profile-identity-row";
@@ -77,5 +77,79 @@ describe("ProfileIdentityRow avatar wash", () => {
       expect(alpha).toBeLessThan(0.5);
     }
     view.unmount();
+  });
+});
+
+/**
+ * What the circle and the two lines show, per identity state (#1829). The row is
+ * pure props, so these are the four shapes `SettingsProfileBlock` can hand it.
+ */
+describe("ProfileIdentityRow contents", () => {
+  const base = { avatarUri: undefined, hasAvatar: false };
+
+  /**
+   * ☠️ `includeHiddenElements` is required, not incidental. The circle is
+   * `aria-hidden`, and RNTL drops hidden subtrees from EVERY query by default -
+   * `*ByTestId` included - so the row being correctly hidden from assistive tech
+   * is what puts its contents beyond an ordinary query.
+   */
+  const hidden = { includeHiddenElements: true };
+
+  it("draws a person glyph when there is no letter to take", () => {
+    render(<ProfileIdentityRow {...base} name="Guest" showEmail={false} email="" initial={null} />);
+
+    expect(screen.getByTestId("profile-avatar-person", hidden)).toBeTruthy();
+    expect(screen.getByText("Guest")).toBeTruthy();
+  });
+
+  it("draws the letter when there is one, and no glyph", () => {
+    render(
+      <ProfileIdentityRow {...base} name="Alex" showEmail email="alex@example.com" initial="A" />,
+    );
+
+    expect(screen.getByText("A", hidden)).toBeTruthy();
+    expect(screen.queryByTestId("profile-avatar-person", hidden)).toBeNull();
+    expect(screen.getByText("alex@example.com")).toBeTruthy();
+  });
+
+  it("omits the email sub-line when it is not asked for", () => {
+    render(
+      <ProfileIdentityRow
+        {...base}
+        name="person@example.com"
+        showEmail={false}
+        email="person@example.com"
+        initial="P"
+      />,
+    );
+
+    // Once, in the name slot - not twice.
+    expect(screen.getAllByText("person@example.com")).toHaveLength(1);
+  });
+
+  /**
+   * ☠️ react-native-web implements neither `accessibilityElementsHidden` nor
+   * `importantForAccessibility`, so `aria-hidden` is the only one of the three
+   * that hides this circle on web. Without it the glyph or letter is announced
+   * ahead of the name that says the same thing one element over.
+   */
+  it("hides the decorative circle from assistive tech on web too", () => {
+    const view = render(
+      <ProfileIdentityRow {...base} name="Guest" showEmail={false} email="" initial={null} />,
+    );
+
+    // ☠️ Identified by `importantForAccessibility="no"`, which is the CIRCLE's
+    // alone - `Icon` sets its own `aria-hidden` plus `"no-hide-descendants"`, so
+    // a bare "some node is aria-hidden" search finds the glyph and passes with
+    // the circle wide open. (Confirmed by mutation: that version survived
+    // deleting the prop under test.)
+    const circle = view.UNSAFE_root.findAll(
+      (node) => typeof node.type === "string" && node.props?.importantForAccessibility === "no",
+    );
+
+    expect(circle).toHaveLength(1);
+    expect(circle[0].props["aria-hidden"]).toBe(true);
+    // The name itself must NOT be hidden - only the circle restating it.
+    expect(screen.getByText("Guest")).toBeTruthy();
   });
 });

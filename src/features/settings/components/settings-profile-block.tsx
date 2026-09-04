@@ -7,6 +7,8 @@ import { useTranslation } from "react-i18next";
 import { AvatarCropModal } from "@/src/components/app/avatar-crop-modal";
 import { Disclosure } from "@/src/components/app/disclosure";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { getInitial } from "@/src/features/profile/avatar-initial";
+import { resolveDisplayName } from "@/src/features/profile/display-name";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { AvatarControls } from "@/src/features/settings/components/avatar-controls";
 import { DisplayNameField } from "@/src/features/settings/components/display-name-field";
@@ -44,8 +46,30 @@ export function SettingsProfileBlock({ user }: { user: User | null }) {
   const avatar = useProfileAvatar(user, profile);
   const [open, setOpen] = useState<OpenPanel>(null);
 
-  const displayName = profile?.displayName ?? user?.email ?? "";
-  const displayInitial = displayName.charAt(0).toUpperCase();
+  /*
+    The identity slot shows the most specific thing known about the person, and
+    names the state when nothing is (#1829, #1810).
+
+    ☠️ `||` at EVERY step, never `??`. An anonymous user's `user.email` is `""`,
+    not `undefined`, and the type is `email?: string` so a `??` chain typechecks
+    perfectly and then renders a blank line beside an empty circle - which is
+    exactly what this page shipped. `||` is correct under both shapes.
+
+    ☠️ And no `is_anonymous` branch: the JWT keeps claiming it after a guest
+    converts. This expression needs no guard, because `guest` is reachable only
+    with no email and only a guest has none - every registered identity attaches
+    one (password, Google, and Apple's private relay), and there is no phone auth.
+
+    `resolveDisplayName` also fixes a bug that was never guest-only: it reads
+    `full_name` THEN `name`, while the hand-rolled line above read neither, so a
+    provider that supplies only `name` put the EMAIL in the name slot here while
+    the header showed the name.
+  */
+  const name = resolveDisplayName(profile, user);
+  const email = user?.email ?? "";
+  const primaryLine = name || email || t("navigation:userMenu.guest");
+  const displayInitial = getInitial(name, email);
+  const showEmail = Boolean(name && email);
   // Shared with the header (#970); the inline fallback this replaces is what let the two
   // surfaces answer the same `Remove photo` tap differently.
   const avatarUrl = resolveAvatarUrl(profile, user);
@@ -59,9 +83,9 @@ export function SettingsProfileBlock({ user }: { user: User | null }) {
         <ProfileIdentityRow
           avatarUri={avatarUrl ?? undefined}
           hasAvatar={Boolean(avatarUrl)}
-          name={profile?.displayName ?? user?.email ?? ""}
-          showEmail={Boolean(profile?.displayName)}
-          email={user?.email ?? ""}
+          name={primaryLine}
+          showEmail={showEmail}
+          email={email}
           initial={displayInitial}
         />
 
