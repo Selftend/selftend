@@ -42,15 +42,25 @@ const classesOf = (text: string): string[] =>
 describe("SettingsRow type scale", () => {
   beforeEach(() => jest.clearAllMocks());
 
+  /**
+   * ☠️ The literal, pinned. Every width below is written as 640 / 639 rather
+   * than `WIDE_WIDTH ± 1` on purpose: a test phrased in terms of the constant
+   * MOVES WITH IT, so changing 640 to anything else leaves the whole file green.
+   * Confirmed by mutation — that version survived exactly this change.
+   */
+  it("steps at 640, the width the colophon already stepped at", () => {
+    expect(WIDE_WIDTH).toBe(640);
+  });
+
   it("uses the kit's sizes on the wide frame", () => {
-    renderAt(WIDE_WIDTH, { description: "What we store, and why." });
+    renderAt(640, { description: "What we store, and why." });
 
     expect(classesOf("Privacy")).toContain("text-[14.5px]");
     expect(classesOf("What we store, and why.")).toContain("text-[12.5px]");
   });
 
   it("steps label and description down below 640", () => {
-    renderAt(WIDE_WIDTH - 1, { description: "What we store, and why." });
+    renderAt(639, { description: "What we store, and why." });
 
     expect(classesOf("Privacy")).toContain("text-[14px]");
     expect(classesOf("What we store, and why.")).toContain("text-[12px]");
@@ -64,7 +74,7 @@ describe("SettingsRow type scale", () => {
   });
 
   it("steps the icons from 20px to 19px, marks included", () => {
-    const wide = renderAt(WIDE_WIDTH);
+    const wide = renderAt(640);
     const wideIcons = wide.UNSAFE_root.findAll((node) => typeof node.props?.name === "string").map(
       (node) => String(node.props.className ?? ""),
     );
@@ -72,7 +82,7 @@ describe("SettingsRow type scale", () => {
     expect(wideIcons.filter((c) => c.includes("size-5")).length).toBeGreaterThanOrEqual(2);
     wide.unmount();
 
-    const narrow = renderAt(WIDE_WIDTH - 1);
+    const narrow = renderAt(639);
     const narrowIcons = narrow.UNSAFE_root.findAll(
       (node) => typeof node.props?.name === "string",
     ).map((node) => String(node.props.className ?? ""));
@@ -89,7 +99,7 @@ describe("SettingsRow type scale", () => {
    * exactly the platforms that use it.
    */
   it("keeps the description, its hint and its wrapping at every width", () => {
-    for (const width of [WIDE_WIDTH, WIDE_WIDTH - 1, 320]) {
+    for (const width of [640, 639, 320]) {
       const view = renderAt(width, { description: "What we store, and why." });
 
       expect(screen.getByText("What we store, and why.")).toBeTruthy();
