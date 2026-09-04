@@ -130,6 +130,24 @@ export function UserMenu() {
   */
   const primaryLine = displayName || email || t("userMenu.guest");
   const showEmail = Boolean(displayName && email);
+  /*
+    ☠️ Absence-driven, never a bare `is_anonymous` (#1869). `convertGuestWithPassword`
+    flips the flag server-side, but the live JWT keeps claiming `is_anonymous: true`
+    until the token is minted again - so in that window a REGISTERED person carries a
+    true flag, and a flag-based door would offer them a way to sign in to the account
+    they are already signed in to. `app/(app)/support.tsx` guards the same window by
+    ANDing the flag with `!user.email`; here the email carries it alone.
+
+    `!email` implies guest structurally: every registered identity attaches one
+    (password, Google, and Apple's private relay) and there is no phone auth, so the
+    door withdraws the moment conversion gives them an email - stale flag and all.
+
+    ⚠️ This is NOT `useSignOut`'s `canSignOut`, which is the flag alone. The two
+    disagree only inside that same stale window, where a converted user gets
+    neither control - a known `canSignOut` staleness that predates this row and
+    belongs to conversion, not to the door.
+  */
+  const isGuest = isSignedIn && !email;
 
   const languageIndex = supportedLanguages.indexOf(language);
   const languageRoving = useRovingFocus({
@@ -254,6 +272,68 @@ export function UserMenu() {
                     ) : null}
                   </View>
                 </View>
+              ) : null}
+
+              {/*
+                #1869: a guest's only way back into their own account. Sign-out is
+                hidden for them (#1442), `app/index.tsx` bounces any session past
+                the landing screen's Sign in, and native has no URL bar - so
+                before this row the only in-app route to the sign-in form was
+                deleting the account.
+
+                Its own row directly beneath the identity row, in the Palette
+                row's shape (label · chevron, no leading icon): label-plus-chevron
+                is this menu's grammar for NAVIGATION, which is the only basis
+                #1809 permitted the door on. Not the action row - the menu
+                already overflows its own 70% cap for everyone (#1862), so the
+                actions are its least reachable region (#1811).
+
+                ☠️ NO `accessibilityLabel` (#1863). One `Text` child means the
+                label IS the accessible name; an explicit one would hide that
+                child from assistive tech on the web. The Palette row composes a
+                name only because it has a value to fold in.
+
+                ☠️ The Palette shape's middle value slot stays EMPTY, by decision
+                and not omission - do not fill it with a hint about the
+                warn-and-abandon confirm. `guardSignIn` passes an empty guest
+                straight through with no warning at all, so a static caution is
+                false for exactly the newest guests, and a content-aware one
+                costs the whole `export_user_data` RPC on every menu open. #1863
+                carries the rest of the argument. The pre-submit gap is real and
+                is #1865's, on `/sign-in`, which can afford the check on mount.
+              */}
+              {isGuest ? (
+                <Pressable
+                  accessibilityRole="button"
+                  className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => {
+                    popoverTriggerRef.current?.close();
+                    // ☠️ No `dangerouslySingular` here, unlike the two `(app)`
+                    // lateral jumps below: `sign-in` already declares it in
+                    // `app/(auth)/_layout.tsx`, so passing it would be a second
+                    // answer to a settled question.
+                    //
+                    // ☠️ Bare, and it must stay bare: this whole menu is a
+                    // declared Origin opt-out (#1261/#1265), enforced by
+                    // `nav-chrome-origin.test.ts` - which scans this file's
+                    // SOURCE, so even naming the recording helper in a comment
+                    // fails it. The argument holds here too: the sign-in
+                    // screen's top bar leads to `/` by design, so a recorded
+                    // origin would never be read.
+                    router.push("/(auth)/sign-in");
+                  }}
+                  // ☠️ `role="button"`, never `role="link"`: react-native-web
+                  // skips `onPress` on Enter for an href-less link role, the
+                  // keyboard-dead failure the #1730 chain closed. And no
+                  // `spaceKeyActivationProps` - on `role="button"` it
+                  // double-activates.
+                  role="button"
+                  testID="user-menu-sign-in-row"
+                >
+                  <Text className="flex-1 text-sm">{t("userMenu.signIn")}</Text>
+                  <Icon name="chevron-right" className="size-4 shrink-0 text-muted-foreground" />
+                </Pressable>
               ) : null}
 
               <View
