@@ -5,7 +5,9 @@ import {
   policyVersion,
 } from "@/src/features/policies/policy-content";
 import bgPolicies from "@/src/i18n/locales/bg/policies.json";
+import bgSettings from "@/src/i18n/locales/bg/settings.json";
 import enPolicies from "@/src/i18n/locales/en/policies.json";
+import enSettings from "@/src/i18n/locales/en/settings.json";
 import { createHash } from "crypto";
 
 interface DisplayedSection {
@@ -168,7 +170,7 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // gate at all.
 const pinnedPolicyRelease = {
   version: "2026-09-04-teen-floor",
-  englishDigest: "2ea68582c146b06147a854252e7f8f5bd16cf3de47fdaea77a2b660217c8d792",
+  englishDigest: "cbb1685d7978c7123d4f2813981339625f331f4407fd9f2c2e1931813a210027",
 };
 
 describe("policy content - version pinning", () => {
@@ -268,6 +270,26 @@ describe.each(locales)("policy content - required statements (%s)", (_locale, po
     expect(flatBody(policies.terms.sections)).toMatch(
       /donations\. they are never required for access|дарения\. те никога не са условие за достъп/i,
     );
+  });
+});
+
+// The eligibility sweep above reads `policies.json`, and the last surviving
+// "18 or older" in the product was not in it - it was the consent gate's tick
+// box, in the `settings` namespace, which is where that whole screen's copy
+// lives. #1767 removed it. Guarded here rather than in a settings test because
+// the rule being kept is a POLICY one: eligibility is stated in the terms, and
+// asked by the age gate, and nowhere else claims an age on the user's behalf.
+describe.each([
+  ["en", enSettings],
+  ["bg", bgSettings],
+] as const)("consent gate copy (%s)", (_locale, settings) => {
+  it("asks for agreement without asserting an age", () => {
+    expect(settings.consent.checkbox).not.toMatch(/\b18\b|\b13\b|older|повече години/i);
+  });
+
+  it("still names both documents the tick box agrees to", () => {
+    expect(settings.consent.checkbox).toMatch(/Privacy Policy|Политика за поверителност/);
+    expect(settings.consent.checkbox).toMatch(/Terms of Service|Условия за ползване/);
   });
 });
 

@@ -15,7 +15,7 @@
           "Selftend has a minimum age. It is 13 in most countries and higher in some - section 11 lists them.",
           "We ask your date of birth once, to check that age. We never store it. We keep only whether you met the age, the country you chose, and the date we asked.",
           "You do not have to give us an email address. The app works without an account.",
-          "What you write in the app is yours. We do not sell it, we do not show you adverts, we do not use it to train AI, and nobody here reads it unless you ask us to or the law requires it.",
+          "What you write in the app is yours. We do not sell it, we do not show you adverts, we do not use it to train AI, and nobody here reads it unless you ask us to, we have to investigate a security incident, or the law requires it.",
           "You can download everything you have written, or delete all of it, from Settings at any time. Deleting is permanent.",
           "If anything here worries you, or you want something removed, write to privacy@selftend.org and a person will answer."
         ]
@@ -468,10 +468,10 @@
       {
         "title": "For parents and guardians",
         "body": [
-          "Selftend is a free, non-profit CBT app that a person works through on their own: thought records, mood and habit tracking, breathing, grounding, gratitude, meditation and short lessons. There is no therapist, no counsellor, and no AI pretending to be either. It is not treatment and it is not crisis support - the app says so, and its crisis page points to local emergency services.",
+          "Selftend is a free, non-profit CBT programme that a person works through on their own: thought records, mood and habit tracking, breathing, grounding, gratitude, meditation and short lessons. There is no therapist, no counsellor, and no AI pretending to be either. It is not treatment and it is not crisis support - the app says so, and its crisis page points to local emergency services.",
           "There is a minimum age, asked before anyone starts: 13 in most countries and higher in several, following the age at which a person may consent to this kind of data processing where they live. The privacy policy lists it country by country.",
-          "On data: no adverts, no advertising or analytics SDKs, no profiling, and nothing sold or shared for marketing. Entries are private to the account, encrypted, and reachable only through it. Registering is optional - the app works without an email address - and everything can be exported or permanently deleted from Settings at any time.",
-          "On design: reminders are off until someone turns them on, and go off again in one tap. Nothing counts days, ranks anyone, or measures how often the app is opened, and skipping a day changes nothing in the app.",
+          "On data: no adverts, no advertising or analytics SDKs, no profiling, and nothing sold or shared for marketing. Entries are private to the account and encrypted at rest, with the encryption key held outside the database. Registering is optional - the app works without an email address - and everything can be exported or permanently deleted from Settings at any time.",
+          "On design: reminders are off until someone turns them on, and go off again in one tap. Every message the app sends is one the person asked for - none of it is triggered by them being away.",
           "If you believe someone below the minimum age for their country is using Selftend, write to privacy@selftend.org with what you can tell us; we delete the account and its data on becoming aware. You can also ask us to delete an account belonging to a child you are responsible for.",
           "For anything else, support@selftend.org reaches us."
         ]
