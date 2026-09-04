@@ -107,22 +107,3 @@ export function dailyIntegerAverages(logs: MoodSample[], dateKeys: string[]): (n
     return bucket === undefined ? null : Math.round(bucket.sum / bucket.count);
   });
 }
-
-/** Daily averages for the trailing `days`-day window ending today. */
-export function buildMoodChartData(
-  logs: MoodSample[] | undefined,
-  days: number,
-  lang = "en",
-  now: Date = new Date(),
-): MoodChartPoint[] {
-  if (days <= 0) {
-    return [];
-  }
-  // Ends at today, or at a later day the user already holds an entry on, so an
-  // entry logged east of here is never clipped off the right edge.
-  const endKey = dayRangeEndKey(
-    (logs ?? []).map((log) => log.dayKey),
-    now,
-  );
-  return buildMoodChartDataForRange(logs, addDaysToKey(endKey, -(days - 1)), endKey, lang);
-}
