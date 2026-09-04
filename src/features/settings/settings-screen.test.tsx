@@ -57,8 +57,12 @@ const registeredSessionUser = {
   email: "person@example.com",
   id: "user-1",
 };
-let mockSessionUser: { id: string; email?: string; is_anonymous?: boolean } | null =
-  registeredSessionUser;
+let mockSessionUser: {
+  id: string;
+  email?: string;
+  is_anonymous?: boolean;
+  user_metadata?: Record<string, unknown>;
+} | null = registeredSessionUser;
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: mockSessionUser }),
 }));
@@ -148,6 +152,108 @@ describe("SettingsScreen structure", () => {
     // #1446: the guest invitation card renders nothing for this registered
     // user (its guest-side visibility is pinned in create-account-card.test).
     expect(screen.queryByTestId("create-account-card")).toBeNull();
+  });
+
+  /**
+   * The identity row (#1829, word from #1810).
+   *
+   * ☠️ Every test in this file mocks `useUserProfile` as `{ data: null }`, so a
+   * guest assertion MUST also pin `user` — otherwise a registered Apple user,
+   * who has an email and no name, satisfies it for the wrong reason. Each case
+   * below sets `mockSessionUser` explicitly for exactly that reason.
+   */
+  describe("the identity row", () => {
+    async function renderSettings() {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+    }
+
+    /**
+     * ☠️ The circle is `aria-hidden`, and RNTL excludes hidden subtrees from
+     * EVERY query by default — `*ByTestId` included, not just the a11y ones. So
+     * the row being correctly hidden from assistive tech is exactly what puts
+     * its contents out of reach here, and the query has to opt back in. Without
+     * this the glyph assertion fails while the component is right.
+     */
+    const insideCircle = (testID: string) =>
+      screen.queryByTestId(testID, { includeHiddenElements: true });
+
+    /**
+     * The bug. A guest saw a 96px band holding an empty circle beside an empty
+     * line, because `profile?.displayName ?? user?.email ?? ""` found neither —
+     * `user.email` being `""` rather than `undefined` is what walked past the
+     * `??`. The band does not collapse, so it read as breakage.
+     */
+    it("names the guest state and draws the glyph, instead of an empty band", async () => {
+      mockSessionUser = { id: "guest-1", email: "", is_anonymous: true };
+      await renderSettings();
+
+      expect(screen.getByText("Guest")).toBeTruthy();
+      expect(insideCircle("profile-avatar-person")).toBeTruthy();
+      // No sub-line: `showEmail` is `Boolean(name && email)`, false by
+      // construction here. #1784 and #1805 both rejected a guest subtitle.
+      expect(screen.queryByText("person@example.com")).toBeNull();
+      // The sentinel that used to leak into the circle. (The deleted
+      // `userMenu.account` key is asserted in `user-menu.test.tsx` instead: on
+      // this page "Account" is also the hero eyebrow AND a run label, so its
+      // absence here would say nothing about the key.)
+      expect(screen.queryByText("?")).toBeNull();
+    });
+
+    /**
+     * ☠️ Not a guest-only fix. `resolveDisplayName` reads `full_name` THEN
+     * `name`, while the hand-rolled expression read the profile only — so a
+     * provider supplying just `name` put the EMAIL in the name slot here while
+     * the header showed the name. This is the row that proves the widened half.
+     */
+    it("shows a metadata `name` in the name slot, not the email", async () => {
+      mockSessionUser = {
+        id: "user-2",
+        email: "nick@example.com",
+        user_metadata: { name: "Nick" },
+      };
+      await renderSettings();
+
+      expect(screen.getByText("Nick")).toBeTruthy();
+      expect(screen.getByText("nick@example.com")).toBeTruthy();
+    });
+
+    it("shows both lines for a user with a name and an email", async () => {
+      mockSessionUser = {
+        id: "user-3",
+        email: "alex@example.com",
+        user_metadata: { full_name: "Alex Petrov" },
+      };
+      await renderSettings();
+
+      expect(screen.getByText("Alex Petrov")).toBeTruthy();
+      expect(screen.getByText("alex@example.com")).toBeTruthy();
+      expect(insideCircle("profile-avatar-person")).toBeNull();
+    });
+
+    /** Apple sends no name at all: the email stands in, with no sub-line under it. */
+    it("puts the email in the name slot when there is no name, with no sub-line", async () => {
+      mockSessionUser = { id: "user-4", email: "person@example.com" };
+      await renderSettings();
+
+      expect(screen.getAllByText("person@example.com")).toHaveLength(1);
+      expect(screen.queryByText("Guest")).toBeNull();
+      expect(insideCircle("profile-avatar-person")).toBeNull();
+    });
+
+    /**
+     * ☠️ No `is_anonymous` branch anywhere. The JWT keeps claiming it after a
+     * guest converts, which is why `support.tsx` hand-codes `&& !user.email`.
+     * A converted user carries a stale `is_anonymous: true` AND an email, and
+     * an absence-driven expression must show the email regardless.
+     */
+    it("shows the email of a converted guest still carrying a stale is_anonymous", async () => {
+      mockSessionUser = { id: "guest-1", email: "converted@example.com", is_anonymous: true };
+      await renderSettings();
+
+      expect(screen.getByText("converted@example.com")).toBeTruthy();
+      expect(screen.queryByText("Guest")).toBeNull();
+    });
   });
 
   /**
@@ -350,7 +456,8 @@ describe("SettingsScreen structure", () => {
   // rest of the account run stays word-for-word: for a guest, "start fresh"
   // IS delete-account, and export works unchanged.
   it("hides the sign-out row for a guest, keeping delete-account and export", async () => {
-    mockSessionUser = { id: "guest-1", is_anonymous: true };
+    // `email: ""` is the live guest shape, not an absent key (#1829).
+    mockSessionUser = { id: "guest-1", email: "", is_anonymous: true };
     renderWithProviders(<SettingsScreen />);
 
     await waitFor(() => expect(screen.getByLabelText("Delete my account")).toBeTruthy());

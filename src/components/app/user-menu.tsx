@@ -227,7 +227,16 @@ export function UserMenu() {
                       className="text-sm text-muted-foreground font-normal leading-4"
                       numberOfLines={1}
                     >
-                      {email ?? t("userMenu.account")}
+                      {/*
+                        ☠️ `||`, not `??` (#1829). An anonymous user's `email` is
+                        `""` rather than `undefined`, so `??` passed the empty
+                        string straight through and this line rendered BLANK -
+                        which means `userMenu.account` never rendered for anyone:
+                        every registered identity has an email, and the one user
+                        who does not never reached the fallback. It is deleted,
+                        and `userMenu.guest` names the state instead (#1810).
+                      */}
+                      {email || t("userMenu.guest")}
                     </Text>
                   </View>
                 </View>

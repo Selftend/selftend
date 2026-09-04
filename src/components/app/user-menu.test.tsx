@@ -8,6 +8,7 @@ import { appEnv } from "@/src/lib/env";
 import { cancelAllReminders } from "@/src/lib/notifications";
 import { openExternalUrl } from "@/src/lib/linking";
 import { useToastStore } from "@/src/stores/toast-store";
+import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 // ☠️ Load-bearing for exactly ONE test: "shows the compact get-the-app section on
@@ -321,7 +322,12 @@ describe("UserMenu", () => {
   it("hides Sign Out for a guest, keeping Settings and Send feedback", () => {
     mockSession = {
       session: { access_token: "token" },
-      user: { id: "guest-1", is_anonymous: true },
+      // ☠️ `email: ""`, not an absent key. THIS FIXTURE IS WHAT HID THE BLANK
+      // IDENTITY LINE: supabase gives an anonymous user an EMPTY STRING, and the
+      // type is `email?: string`, so a fixture that omits the key makes `??`
+      // reach its fallback and look correct. Under the live shape it does not.
+      // Leaving it absent would let the header regress to `??` and stay green.
+      user: { id: "guest-1", email: "", is_anonymous: true },
     };
 
     renderWithProviders(<UserMenu />);
@@ -330,6 +336,81 @@ describe("UserMenu", () => {
     expect(screen.queryByText("Sign Out")).toBeNull();
     expect(screen.getByText("Settings")).toBeTruthy();
     expect(screen.getByText("Send feedback")).toBeTruthy();
+  });
+
+  /**
+   * #1829/#1810. This line rendered BLANK for every guest: `email ?? t(…)` with
+   * an empty-string email passes the empty string straight through, so the
+   * fallback never fired — which also means `navigation:userMenu.account` never
+   * rendered for anyone, since every registered identity has an email. The key
+   * is deleted and the state is named instead.
+   */
+  it("names the guest state instead of rendering a blank identity line", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getByText("Guest")).toBeTruthy();
+    // The word it replaces, so a later "restore consistency" cannot bring back
+    // a string nobody chose.
+    expect(screen.queryByText("Account")).toBeNull();
+  });
+
+  // A guest has no photo and no letter to take, so the trigger and the header
+  // both draw the glyph rather than `getInitial`'s old `?`.
+  it("draws the person glyph for a guest, never a `?`", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getAllByTestId("profile-avatar-person").length).toBeGreaterThan(0);
+    expect(screen.queryByText("?")).toBeNull();
+  });
+
+  /**
+   * ☠️ Through `setLanguage`, never `i18n.changeLanguage("bg")` — only `en` is
+   * registered at init, so changing the language alone falls through to English
+   * and a `Гост` assertion would be vacuously green against English copy.
+   */
+  it("names the guest state in Bulgarian too", async () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true },
+    };
+    await setLanguage("bg");
+
+    const view = renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Отвори меню на акаунта"));
+
+    expect(screen.getByText("Гост")).toBeTruthy();
+
+    // Unmounted BEFORE the language goes back, or i18n's change notifies a
+    // still-mounted tree and the un-acted update fails the suite.
+    view.unmount();
+    await setLanguage("en");
+  });
+
+  /** Registered users are pinned unchanged: the shared helper is a superset. */
+  it("still shows a registered user's name and email, unchanged", () => {
+    mockSession = {
+      session: { access_token: "token" },
+      user: { id: "user-1", email: "person@example.com", user_metadata: { full_name: "Alex" } },
+    };
+
+    renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Open account menu"));
+
+    expect(screen.getByText("Alex")).toBeTruthy();
+    expect(screen.getByText("person@example.com")).toBeTruthy();
+    expect(screen.queryByText("Guest")).toBeNull();
   });
 
   // #968: supabase-js's `signOut()` defaults to `scope: 'global'`, which revokes
