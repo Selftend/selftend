@@ -22,11 +22,18 @@ export type UnderFloorErasureState = "working" | "erased" | "failed" | "nothing-
  * account that already exists.
  *
  * **Why there is an account to erase at all.** The gate runs in the shared slot
- * in `ProtectedLayout`, which is *after* the session exists on three of the
- * four entry paths - guest, Google, Apple - so by the time the verdict is
- * known an auth user has been created. §3 describes this as an OAuth-specific
- * deletion; it is not, and the silent guest (#1440) is the path that makes it
- * the common case rather than the exotic one.
+ * in `ProtectedLayout`, below the branch that answers a missing session with
+ * the auth landing - so by the time a verdict is known an auth user exists, on
+ * **all four** entry paths. §3 describes this as an OAuth-specific deletion; it
+ * is not, and the silent guest (#1440) is the path that makes it the common
+ * case rather than the exotic one.
+ *
+ * ⚠️ This said "three of the four - guest, Google, Apple" until #1919, which
+ * was a fossil of §3's design where the password path gated *before* the
+ * account was created. #1764 moved the gate into `ProtectedLayout`, and that is
+ * what gave it the fourth path. `protected-layout.test.tsx` now pins it: a
+ * visitor with no session is never asked, so the exit always has something to
+ * delete.
  *
  * **The server-side capability §3 asks for already exists, and it is not an
  * edge function.** `delete_user_account()` is `security definer`, runs as the

@@ -499,6 +499,27 @@ describe("ProtectedLayout age gate", () => {
     expect(screen.queryByText("Welcome to Selftend")).toBeNull();
   });
 
+  /**
+   * The gate renders inside the signed-in half of the layout, below the branch
+   * that answers a missing session with the auth landing. That is why an auth
+   * user always exists by the time a verdict is known - on **all four** entry
+   * paths, not the three §3 predicted, because the password path now reaches
+   * the gate through `ProtectedLayout` like the rest (#1919).
+   *
+   * `use-under-floor-exit.ts` relies on that to explain why its deletion always
+   * has something to delete. This test is what makes it a checked fact rather
+   * than a comment: move the gate above the `!session` branch and it goes red.
+   */
+  it("never asks a visitor with no session, so the exit always has an account", async () => {
+    newAccount();
+    mockSessionState = { session: null, status: "ready", user: null };
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Signed-out landing")).toBeTruthy());
+    expect(screen.queryByText("Age gate")).toBeNull();
+  });
+
   it("never re-asks an account that has already been through the consent gate", async () => {
     // ☠️ §7: existing users meet the one-time consent prompt WITHOUT being
     // re-asked for age or country. `ageFloorMet` is null for every account that

@@ -66,10 +66,11 @@ const ERASURE_COPY_KEY: Record<UnderFloorErasureState, string | null> = {
 export function UnderFloorScreen() {
   const { t } = useTranslation(["auth", "common", "policies"]);
   const { user } = useSession();
-  // Blocks the device, then erases the account that exists on three of the four
-  // entry paths. Mounted here rather than in `ProtectedLayout` so that the
-  // status it reports has somewhere to be read: a silent erasure that failed is
-  // the thing the ticket rules out.
+  // Blocks the device, then erases the account - which exists on every entry
+  // path by the time a verdict is known, because the gate renders below the
+  // layout's session branch (#1919). Mounted here rather than in
+  // `ProtectedLayout` so that the status it reports has somewhere to be read: a
+  // silent erasure that failed is the thing the ticket rules out.
   const { retry, state } = useUnderFloorExit(user?.id ?? null);
 
   return (
