@@ -23,12 +23,13 @@ import { tableCells } from "@/test/markdown-doc";
  * So: a country in the code with no row here, or a row whose stated floor has
  * silently diverged from the code, fails.
  *
- * ⚠️ It deliberately does NOT assert that every row is `CONFIRMED`. Denmark is
- * `CONTRADICTED` and Hungary is `UNRESOLVED`, and both must be allowed to stay
- * that way — the ticket's rule is that a contradiction is raised
- * ([#1921](https://github.com/Selftend/selftend/issues/1921)), never silently
- * applied. A guard that forced every row green would force exactly the silent
- * edit that rule forbids.
+ * ⚠️ It deliberately does NOT assert that every row is `CONFIRMED`. Hungary is
+ * `UNRESOLVED` and must be allowed to stay that way, and a future contradiction
+ * must be allowed to sit here as one — the rule is that a contradiction is
+ * raised, never silently applied. A guard that forced every row green would
+ * force exactly the silent edit that rule forbids. Denmark was `CONTRADICTED`
+ * until [#1921](https://github.com/Selftend/selftend/issues/1921) took the
+ * owner's decision to follow the statute; the row now reads 15 on both sides.
  */
 
 const ROOT = resolve(__dirname, "..");
@@ -108,6 +109,48 @@ describe("the provenance record covers the shipped floor table", () => {
   });
 });
 
+/**
+ * The floor table `docs/age-floor.md` prints for a human reader, parsed back
+ * out.
+ *
+ * ☠️ It is a third copy of `FLOOR_BY_COUNTRY` — after the code and the
+ * published policy text — and until #1921 it was the one copy nothing checked.
+ * `policy-age-floor.test.ts` holds the published lists to the code, and the
+ * provenance rows above hold the per-country record to it; this closes the
+ * last edge. It is also the copy a reader is most likely to trust, because it
+ * is the file called "Age Floor".
+ *
+ * Names come from `countries.ts`, the same source the age gate's own selector
+ * and the published policy guard use, so three artefacts cannot disagree about
+ * what a country is called.
+ */
+describe("the human-facing table in age-floor.md", () => {
+  const floorsByName = new Map<string, number>();
+
+  for (const line of readFileSync(resolve(ROOT, "docs/age-floor.md"), "utf8").split("\n")) {
+    const cells = tableCells(line);
+    const floor = cells?.[0]?.match(/^\*\*(\d{2})\*\*$/)?.[1];
+    if (!cells || !floor) continue;
+
+    // The 13 row carries a trailing "— and every jurisdiction not named below";
+    // the countries are everything before that clause.
+    for (const name of cells[1].split("—")[0].split(",")) {
+      const trimmed = name.trim();
+      if (trimmed) floorsByName.set(trimmed, Number(floor));
+    }
+  }
+
+  it("lists every country in the code table, at the same floor", () => {
+    const fromCode = new Map(
+      Object.entries(FLOOR_BY_COUNTRY).map(([code, floor]) => [countryName(code, "en"), floor]),
+    );
+
+    expect(Object.fromEntries([...floorsByName].sort())).toEqual(
+      Object.fromEntries([...fromCode].sort()),
+    );
+  });
+});
+
 describe("the rows checked in this pass", () => {
   const checked = rows.filter((row) => row.verdict !== undefined);
 
@@ -163,10 +206,21 @@ describe("the rows checked in this pass", () => {
    *
    * Keyed on the country name and the issue that raises it, not on wording.
    *
-   * ☠️ The table rows are stripped first, and that is the whole assertion.
-   * Denmark is named in `age-floor.md`'s own floor table, so a bare
-   * `toContain("Denmark")` over the file passes no matter what — the claim is
-   * that the file *discusses* it, which is only true outside the table.
+   * ☠️ The table rows are stripped first, and that is the whole assertion. A
+   * country is named in `age-floor.md`'s own floor table, so a bare
+   * `toContain(name)` over the file passes no matter what — the claim is that
+   * the file *discusses* it, which is only true outside the table.
+   *
+   * ⚠️ **Dormant as of #1921**: no row is `CONTRADICTED` any more, so this loops
+   * zero times and cannot fail. It is kept rather than deleted because it is a
+   * standing rule for the next contradiction, not a check on this one — but
+   * green here currently means "nothing to check", not "checked".
+   *
+   * ☠️ It asserts the country's NAME and nothing else. A first draft also
+   * required the raising issue's number, hardcoded as `issues/1921` — which
+   * `age-floor.md` now carries permanently, so a future contradicted row would
+   * have satisfied it without naming its own issue at all. A dormant assertion
+   * that revives vacuous is worse than no assertion, because it reads as cover.
    */
   it("warns about a contradicted floor in the file that carries the table", () => {
     const prose = readFileSync(resolve(ROOT, "docs/age-floor.md"), "utf8")
@@ -178,7 +232,6 @@ describe("the rows checked in this pass", () => {
       if (row.verdict !== "CONTRADICTED") continue;
 
       expect(prose).toContain(countryName(row.code, "en"));
-      expect(prose).toMatch(/issues\/1921/);
     }
   });
 });

@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, configure, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Platform, StyleSheet, Text as mockText, View as mockView } from "react-native";
 import type { ReactNode } from "react";
 
@@ -223,6 +223,31 @@ const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jes
 >;
 
 const mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences);
+
+/**
+ * ☠️ **Nothing in this layout renders on the first tick, and the default
+ * one-second `waitFor` is not enough for that under load (#1932).**
+ *
+ * Every assertion here waits on a shell that is gated twice before it shows
+ * anything: `AppLockGate` waits for the app-lock store, and since #1765 the
+ * layout also holds the loading state until the device under-floor flag has
+ * been read out of AsyncStorage. Both settle in microtasks, so on an idle
+ * machine the first paint lands in tens of milliseconds and the default is
+ * ample.
+ *
+ * Under CPU contention it is not. Running this file while a full suite occupied
+ * the machine failed *"shows the wizard panel-1 title"* at **1523 ms** and
+ * **1100 ms** — both just past the 1000 ms default, with the tree still showing
+ * `Restoring your session...`. Idle, the same file passes 26/26. That is a
+ * timeout, not a broken expectation, and it made the file fail on its own while
+ * passing in the full suite — which silently blocked `lint-staged` from ever
+ * committing a change to it.
+ *
+ * ⚠️ Raised only for this file, deliberately. A global bump would buy the same
+ * tolerance everywhere and also hide a component that genuinely never settles;
+ * here the two hydrations are known, named, and expected to finish.
+ */
+configure({ asyncUtilTimeout: 10_000 });
 
 // Shared across every describe: a signed-in, hydrated, consent-current state.
 beforeEach(() => {
@@ -497,6 +522,35 @@ describe("ProtectedLayout age gate", () => {
     expect(screen.queryByText("Consent gate")).toBeNull();
     expect(screen.queryByText("Stack content")).toBeNull();
     expect(screen.queryByText("Welcome to Selftend")).toBeNull();
+  });
+
+  /**
+   * The claim [#1919](https://github.com/Selftend/selftend/issues/1919)
+   * corrected, made checkable. `use-under-floor-exit.ts` explains why its
+   * deletion always has something to delete: the gate renders below the
+   * layout's `!session` branch, so an auth user exists on **all four** entry
+   * paths by the time a verdict is known — not the three §3 predicted.
+   *
+   * ☠️ #1927 fixed that sentence in three places and left nothing holding it
+   * true. A comment cannot notice when the code moves out from under it, and
+   * this one sits beside an irreversible deletion: if the gate ever rendered
+   * above the session branch, the exit would run with no account to erase and
+   * the docblock would still say otherwise. This assertion was written then and
+   * could not be committed until #1932 unblocked this file.
+   *
+   * Mutation-tested by deleting the `!session` branch, which turns this red.
+   * ⚠️ Not by hoisting the gate above it — that puts a `const` in its temporal
+   * dead zone, which Babel leaves `undefined` rather than throwing, so the
+   * branch is silently never taken and the mutation proves nothing.
+   */
+  it("never asks a visitor with no session, so the exit always has an account", async () => {
+    newAccount();
+    mockSessionState = { session: null, status: "ready", user: null };
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Signed-out landing")).toBeTruthy());
+    expect(screen.queryByText("Age gate")).toBeNull();
   });
 
   it("never re-asks an account that has already been through the consent gate", async () => {
