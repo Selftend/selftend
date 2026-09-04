@@ -3,6 +3,9 @@
 Captured **2026-09-04** for [#1822](https://github.com/Selftend/selftend/issues/1822), a task ticket on
 map [#1813](https://github.com/Selftend/selftend/issues/1813) (reposition Selftend tools-first).
 
+Surface 2 was added **2026-09-05** by [#1934](https://github.com/Selftend/selftend/issues/1934); it needed a
+native binary rather than a browser, and the set was left open until it landed.
+
 Everything here is a record of what a real person sees **right now**. Nothing in this folder is a
 proposal, and nothing here is copy to reuse. [#1823](https://github.com/Selftend/selftend/issues/1823)
 owns what the surfaces should say next.
@@ -102,24 +105,50 @@ _"A free, private CBT programme with calm everyday tools."_ (the "third shape" t
 
 ## Surface 2 — the app-shell auth landing (`AuthLandingBlock`)
 
-☠️☠️ **No screenshot exists, and the reason is a finding rather than an omission: this surface is
-unreachable on the web.** Both call sites are platform-gated:
+☑ **Captured 2026-09-05 from the shipped binary** ([#1934](https://github.com/Selftend/selftend/issues/1934)):
 
-- `app/index.tsx:29` — `Platform.OS === "web" ? <LandingScreen /> : <AuthLandingScreen />`.
-- `src/components/app/protected-layout.tsx:109-113` — signed out on web returns `null` and an effect
+| shot                                                 | what it shows                                                  |
+| ---------------------------------------------------- | -------------------------------------------------------------- |
+| `13-native-auth-landing-android-phone.png`           | the landing as it opens - 1080×2400 at 420dpi, i.e. 411×914 dp |
+| `13a-native-auth-landing-android-phone-scrolled.png` | scrolled to the safety line and the four footer links          |
+
+**It is the released artefact, not a rebuild.** `origin/main` is `v0.17.0` (`56476011`) - the exact
+commit that produced the `release.yml` artefact `selftend-android-aab-24` - so the AAB users install
+was downloaded, converted to a universal APK with `bundletool`, and run on the `Selftend_API_35` AVD
+(Android 15, en-US). Two checks that it is the live copy and not `dev`'s: the bundle's
+`index.android.bundle` contains `Calm, guided self-help tools for personal reflection` **once** and
+the `dev` sentence **zero** times, and Settings on that same build reports **Selftend v0.17.0**.
+
+☠️☠️ **The surface is unreachable on the web, and that is a finding rather than an omission.**
+Both call sites are platform-gated:
+
+- `app/index.tsx:29` - `Platform.OS === "web" ? <LandingScreen /> : <AuthLandingScreen />`.
+- `src/components/app/protected-layout.tsx:109-113` - signed out on web returns `null` and an effect
   redirects to `/`; only native falls through to `<AuthLandingScreen />`.
 
 A PWA install is still `Platform.OS === "web"`, so **the PWA shows the landing too**. `AuthLandingBlock`
-ships only inside the iOS and Android binaries. Capturing it needs a native build **from `main`** (a
-build from `dev` would show copy no user has). That is the one deliverable of this ticket left open;
-it needs an Android/iOS build run, not another browser session.
+ships only inside the iOS and Android binaries.
 
-Its copy and structure are fully recorded, so #1823 is not blocked on the image:
+☠️☠️ **A first run never reaches it.** Native arrival on a clean install is `Quick policy check`
+→ the onboarding wizard, and the wizard's `Skip for now` **creates the guest account and lands on
+Home** - so this surface is never seen on a first run. It is reached only once a session ends; the
+capture above was taken after deleting the guest account, which returns the app to `/`. Its real
+audience is the returning-and-signed-out user, not the newcomer - worth knowing before it is designed
+as a front door.
 
-**Structure** (`src/components/app/auth-landing-block.tsx`): 72px app icon (rounded 16) → title →
-subtitle → `SignInForm` → `GetTheAppSection` → safety line → a wrapped row of four link buttons
-(`Open crisis guidance`, `Terms of service`, `Privacy policy`, `Cookie policy`). Note it carries
-**four** footer links; the web landing carries **six** (adds `FAQ` and `Join our Discord`).
+☠️ **The structure recorded while charting was wrong in one place: `GetTheAppSection` does not render
+here.** `src/components/app/get-the-app-section.tsx:37` returns `null` when `Platform.OS !== "web"`
+(_"advertising the Android app inside the Android app ... is noise"_), and native is the **only** place
+this surface exists - so the store-referral block is dead on it in **every** build, not just this one.
+The shots confirm it.
+
+**Structure as it actually renders** (`src/components/app/auth-landing-block.tsx`): 72px app icon
+(rounded 16) → title → subtitle → `SignInForm` (`Continue with Google` · `or continue with email` ·
+Email · Password with `Forgot your password?` · `Continue` · `Don't have an account? Sign up`) → safety
+line → a wrapped row of four link buttons (`Open crisis guidance`, `Terms of service`, `Privacy policy`,
+`Cookie policy`). It carries **four** footer links; the web landing carries **six** (adds `FAQ` and
+`Join our Discord`). ⚠️ Not in the earlier note: the screen's header is the app mark plus a **three-dot
+overflow button**, and there is no drawer affordance.
 
 | key                         | LIVE (`main`)                                                                | `dev`                                                                                                                |
 | --------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -272,6 +301,9 @@ confirmed live, on both public pages.
   App Store Connect drift, unrelated to positioning.
 - **The App Store shows a 13+ age rating** while `docs/product-principles.md` sets an adults-only
   posture and the Play description says _"Selftend is for adults (18+)"_.
+  ☑ Corroborated inside the shipped binary while capturing Surface 2: v0.17.0's own consent gate
+  (`Quick policy check`) reads **"I am 18 or older, agree to the current Privacy Policy and Terms of
+  Service ..."**, so the 18+ posture is what a real installer accepts today, against a 13+ listing.
 
 ---
 
@@ -292,3 +324,8 @@ confirmed live, on both public pages.
 - **English only**, per the ticket. Bulgarian parity stays in the map's fog.
 - The guest account created for this capture was anonymous, emailed nothing, and its browser session
   was cleared afterwards.
+- **Surface 2 came from the released artefact, not a local build.** `origin/main` is `v0.17.0`, the exact
+  commit behind the `release.yml` artefact `selftend-android-aab-24`, so that AAB was downloaded, turned
+  into a universal APK with `bundletool` 1.18.3 (debug-signed, emulator only) and run on `Selftend_API_35`.
+  This keeps the _live only_ rule above: rebuilding `main` would have been a rebuild, this is the binary
+  users install. The guest account it created was deleted from inside the app afterwards.
