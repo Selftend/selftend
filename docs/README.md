@@ -27,7 +27,7 @@ Use this as the map for project docs. Each entry below links to the doc that own
 - [android-closed-testing.md](android-closed-testing.md) - Google Play closed-testing readiness
 - [github-setup.md](github-setup.md) - workflows, labels, release variables, branching
 - [releasing.md](releasing.md) - branch model, dev→main promotion, release-please invariants
-- [operations-runbook.md](operations-runbook.md) - support, privacy, security, breach workflows
+- [operations-runbook.md](operations-runbook.md) - support, privacy, security, breach workflows, the under-floor delete-on-knowledge procedure, and the annual minors legal-landscape check
 
 ## Policy And Planning
 
