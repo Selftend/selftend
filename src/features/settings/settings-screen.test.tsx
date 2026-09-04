@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Text as mockText, View as mockView, useWindowDimensions } from "react-native";
+import { Platform, Text as mockText, View as mockView, useWindowDimensions } from "react-native";
 import type { ReactNode } from "react";
 import { router } from "expo-router";
 
@@ -121,6 +121,7 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: jest.fn(),
 }));
 
+const ORIGINAL_OS = Platform.OS as "web" | "ios" | "android";
 const mockDimensions = useWindowDimensions as jest.MockedFunction<typeof useWindowDimensions>;
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
@@ -218,9 +219,9 @@ describe("SettingsScreen structure", () => {
      *   them empty descriptions on BOTH frames.
      */
     it.each([
-      ["settings-row-support", "Support"],
-      ["settings-row-replay-introduction", "Replay introduction"],
-      ["settings-row-show-tips-again", "Show tips again"],
+      "settings-row-support",
+      "settings-row-replay-introduction",
+      "settings-row-show-tips-again",
     ])("leaves %s bare", async (testID) => {
       renderWithProviders(<SettingsScreen />);
       await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
@@ -243,7 +244,10 @@ describe("SettingsScreen structure", () => {
         const cookies = screen.getByTestId("settings-row-cookies");
         expect(cookies.props.accessibilityHint).toBeUndefined();
       } finally {
-        setPlatformOS("ios");
+        // The captured original, not a hardcoded "ios": the repo runs a single
+        // iOS jest project today, so a literal is right by accident rather than
+        // by construction.
+        setPlatformOS(ORIGINAL_OS);
       }
     });
 

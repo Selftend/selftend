@@ -14,14 +14,24 @@ import { useExportData } from "@/src/features/settings/use-export-data";
  *
  * ✅ The description's promise was CHECKED, not assumed (#1831) — this page has
  * rejected drawn copy four times for describing behaviour that does not exist.
- * *"Everything you've written"* is true: `supabase/README.md` makes export the
- * default and withholding the exception, every withheld entry is a credential,
- * an id or an encrypted twin, and a completeness test holds that line.
+ * *"Everything you've written"* holds: `supabase/README.md:456` makes export the
+ * default and withholding the exception, "it is app state" is explicitly refused
+ * as a reason, and two gates keep it honest (`export-user-data-monotonic` in
+ * `verify`, plus the completeness integration test). Nothing a person AUTHORED
+ * is withheld — the withhold table is caller scoping, credentials and their row
+ * ids, storage plumbing, server bookkeeping, and the encrypted `*_data` twins
+ * that are read back through decrypting views.
  *
- * ⚠️ *"One JSON file"* is exact on web (a `.json` download) and loose on native,
- * where the same JSON leaves through a share sheet. The CONTENTS promise holds
- * on both; only the word "file" is approximate, and a person reading a settings
- * row thinks in files. Taken deliberately.
+ * ⚠️ Two edges, both accepted deliberately rather than papered over:
+ *
+ *   - *"One JSON file"* is exact on web (a `.json` download) and loose on
+ *     native, where the same JSON leaves through `Share.share({ message })` and
+ *     no file exists at all. The CONTENTS promise — the part the sentence is
+ *     really making — holds on both, and a person reading a settings row thinks
+ *     in files.
+ *   - An UNSAVED wizard draft (`selftend:wizard-draft:*`, AsyncStorage only)
+ *     never reaches the export. "Everything you've written" reads as saved
+ *     records to any reasonable user, but the gap is real and recorded here.
  */
 export function ExportDataRow() {
   const { t } = useTranslation("settings");
