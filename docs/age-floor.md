@@ -326,6 +326,15 @@ second and weaker claim on the tick box would only train people to tick through
 something already answered. #1766 deliberately left it alone because published
 eligibility copy moves with the terms; that is what #1767 did.
 
+## The assessment behind the floor
+
+[dpia-minors-assessment.md](dpia-minors-assessment.md) is the combined DPIA and
+Connecticut/Colorado minors' assessment
+([#1768](https://github.com/Selftend/selftend/issues/1768), spec §4). It
+describes this flow end to end for a reader who has not seen the code, carries
+the risk register — including the two gaps this file records, as R7 and R8 — and
+is where the no-minor-flag decision is argued rather than merely stated.
+
 ## The content behind the floor
 
 Admitting thirteen-year-olds is a copy question as well as a legal one, and

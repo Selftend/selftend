@@ -24,7 +24,7 @@ Privacy by design: minimal data collection, Row-Level Security, local-first nati
 
 ## Records of Processing (Article 30)
 
-Processing activities are documented in [policies.md](policies.md). Data subjects are app users aged 13+, or their country's higher floor (see [age-floor.md](age-floor.md)) — a population that includes children, which is why the DPIA and minors' assessment are mandatory rather than optional. Data categories are email, preferences, web push subscriptions, and thought records. Recipients are Supabase, Google (optional OAuth), Cloudflare, and Sentry. Transfers to third countries (USA) are documented with SCCs as the transfer mechanism. Retention periods are documented above.
+Processing activities are documented in [policies.md](policies.md). Data subjects are app users aged 13+, or their country's higher floor (see [age-floor.md](age-floor.md)) — a population that includes children, which is why the DPIA and minors' assessment are mandatory rather than optional ([dpia-minors-assessment.md](dpia-minors-assessment.md)). Data categories are email, preferences, web push subscriptions, and thought records. Recipients are Supabase, Google (optional OAuth), Cloudflare, and Sentry. Transfers to third countries (USA) are documented with SCCs as the transfer mechanism. Retention periods are documented above.
 
 ## Security (Article 32)
 
@@ -36,7 +36,9 @@ Detection, supervisory-authority notification within 72 hours, and notification 
 
 ## Data Protection Impact Assessment (Article 35)
 
-DPIA screening was conducted on 2026-05-12 and a full DPIA was determined not to be required for the current MVP scope, based on: no systematic monitoring, no large-scale processing of special categories, no automated decision-making, and the small-scale voluntary nature of the tool. The decision is recorded in [operations-runbook.md](operations-runbook.md).
+**A full DPIA exists: [dpia-minors-assessment.md](dpia-minors-assessment.md)**, combined with the Connecticut and Colorado minors' data-protection assessment in one document ([#1768](https://github.com/Selftend/selftend/issues/1768)). It describes the as-built data flow, assesses necessity and proportionality, carries a risk register with its residual ratings, and records the no-minor-flag decision and the universal defaults that make it work. Its conclusion is that residual risk is not high and no Art. 36 prior consultation is required.
+
+It **supersedes the 2026-05-12 screening**, which concluded a full DPIA was not required and was correct for the 18-and-over product it described. The teen floor changed two of the WP248 criteria that decide the question — special-category content, and children as vulnerable data subjects. The superseded screening is kept in [operations-runbook.md](operations-runbook.md) as part of the accountability record.
 
 ## International Transfers (Chapter V)
 
@@ -56,6 +58,6 @@ The floor is set by Art. 9(2)(a) explicit consent rather than by contract, becau
 
 Attestation is **active, not passive**. Before the app opens, the age gate asks for a date of birth and a country ([#1764](https://github.com/Selftend/selftend/issues/1764)). The date of birth is compared once and discarded — never stored, logged, or transmitted — and what persists is the verdict, the declared country, and the timestamp (`user_preferences.age_floor_met` / `age_attested_country` / `age_attested_at`). An attempt that fails the floor retains nothing: the account created for it is deleted immediately ([#1765](https://github.com/Selftend/selftend/issues/1765)).
 
-**No parental-consent flow exists, and none is planned.** Where a national law would require one, the floor rises instead. There is also **no minor flag**: nothing in storage distinguishes a minor from an adult, because the protections are universal — opt-in-only reminders, no ads, no sale, no profiling, no behavioural nudges. That is the "floor of protection" model, and the argument is written down in the DPIA / minors' assessment ([#1768](https://github.com/Selftend/selftend/issues/1768)).
+**No parental-consent flow exists, and none is planned.** Where a national law would require one, the floor rises instead. There is also **no minor flag**: nothing in storage distinguishes a minor from an adult, because the protections are universal — opt-in-only reminders, no ads, no sale, no profiling, no behavioural nudges. That is the "floor of protection" model, and the argument is written down in [dpia-minors-assessment.md](dpia-minors-assessment.md) §5 ([#1768](https://github.com/Selftend/selftend/issues/1768)).
 
 No data is knowingly collected from anyone below the minimum age for their country; an account discovered to be below it is deleted on knowledge (the procedure is § [Delete On Knowledge](operations-runbook.md#delete-on-knowledge-under-floor-accounts) in the operations runbook).
