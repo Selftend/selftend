@@ -17,7 +17,12 @@ a value looks wrong, the argument belongs on that ticket.
    parse and pick, so that every line the drafter shows is safe to paste into
    r/Selftend unchanged. Seven steps rewrite the markup; the eighth sends a line
    a machine must not touch to a human as a spare.
-3. The renderer (#1950) and the workflow (#1951) follow.
+3. **`renderer.mjs`** (#1950) - the tiers to the three things the owner is
+   handed: the thread (title and body), the prefilled r/Selftend submit link,
+   and the body of the GitHub issue that carries both. The frame sentence and
+   the rotated supporting line are constants pinned to `docs/positioning.md`
+   by test.
+4. The workflow (#1951) follows.
 
 ## Running the picker
 
@@ -44,6 +49,54 @@ Every `text` is cleaned: `"Sign in with Apple"`, not
 
 Exit 0 whether or not anything was picked - `postable: false` is a skip, not a
 failure. A non-zero exit means the picker broke.
+
+## Running the renderer
+
+```sh
+node scripts/release-thread/renderer.mjs --tag v0.16.0                    # everything, as JSON
+node scripts/release-thread/renderer.mjs --tag v0.16.0 --format thread    # the title, a blank line, the body
+node scripts/release-thread/renderer.mjs --tag v0.16.0 --format issue     # the issue body alone
+RELEASE_BODY="..." node scripts/release-thread/renderer.mjs --tag v0.18.0 # the workflow's shape
+```
+
+The JSON carries `tag`, `version`, `postable`, and when postable also `title`,
+`body`, `submitUrl` and `issue: { title, body }`. A release with nothing
+picked renders to `postable: false` and no thread; `--format thread` and
+`--format issue` print nothing for it. Exit 0 either way; a non-zero exit
+means the renderer broke, and the workflow must then create no issue.
+
+The thread, from [#1880](https://github.com/Selftend/selftend/issues/1880):
+
+- **Title** `Selftend <version> - <lead>`: the version without its `v`, the
+  first pick as the lead, a hyphen between. The lead is structurally the least
+  newsworthy line (the round-robin walks alphabetically sorted scopes), which
+  is why the issue numbers the picks.
+- **Body**: the frame sentence, one supporting line rotated by
+  `(major + minor + patch) mod <line count>`, `In <version>:`, up to eight
+  hyphen bullets, and the fixed four-link footer (web, Google Play, App Store,
+  full changelog) with no version label on any link.
+- **The frame sentence and the supporting lines are constants**, in the sub's
+  hyphens-only shape, because no i18n key holds the full sentence.
+  `test/release-thread-renderer.test.ts` pins each to `docs/positioning.md`,
+  dash-normalised, so a rewording of the doc goes red until the drafter
+  follows; the doc's _What binds this document_ table names that test as the
+  gate. The tools line stays out of the rotation - directly under a frame
+  sentence that already names the everyday tools it restates the opening.
+- What the thread may claim is [#1877](https://github.com/Selftend/selftend/issues/1877)'s
+  seven rules: time-invariant, no per-platform availability claim, the version
+  in the title only, third-person, the category declared in the frame shape.
+
+The submit link is `https://www.reddit.com/r/Selftend/submit?title=…&text=…`,
+both values URL-encoded and nothing else - no flair parameter is verified to
+exist, so selecting the **App update** flair is an explicit step in the issue.
+Over the corpus the longest link is well under the 3.5 KB
+[#1878](https://github.com/Selftend/selftend/issues/1878) verified.
+
+The issue body carries, in order: one line saying the thread is not yet
+posted, the submit link outside any fence, the thread fenced (the exact-paste
+fallback), the picks numbered, the spares each with the reason it was not
+picked, and the steps - flair, submit, close. Closing without posting is a
+valid outcome, and a closed issue is never re-drafted.
 
 ## The rules, in one place
 
