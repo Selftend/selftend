@@ -32,14 +32,19 @@
  *   2. Drop the bold `**scope:**` prefix.
  *   3. Remove EVERY markdown link wherever it sits, not only the trailing one.
  *   4. Remove the now-orphaned `closes` clause and any emptied parentheses.
- *   5. Normalise em dash and en dash to a hyphen, arrows to " to ".
+ *   5. Normalise em dash and en dash to a hyphen, arrows to " to ". The ASCII
+ *      `->` (v0.4.0: *"list -> detail -> editor"*) is not an arrow for this
+ *      purpose: it is plain ASCII, Reddit renders it as typed, and "list to
+ *      detail to editor" would be authoring.
  *   6. Collapse whitespace; strip a trailing comma or semicolon.
  *   7. Capitalise the first character — safe, because only one entry in 379
  *      starts with a token that must stay lowercase (`last-7-days`), and a
  *      first token that is an identifier rather than a word (it carries a digit
  *      or an inner capital) keeps its case.
  *   8. A line containing a NON-BRITISH SPELLING or ANY UNDERSCORE becomes a
- *      spare with that reason — never picked, never auto-corrected.
+ *      spare with that reason — never picked, never auto-corrected. A line the
+ *      first seven steps emptied (a bullet that was only a link) is a spare
+ *      too, as `empty`: nothing is safe to paste from it.
  *
  * ☠️ STEP 8 IS A TRIPWIRE FOR A HUMAN, NOT A DICTIONARY (#1877 rule 4).
  * `favorites` and `colors` name identifiers — the `/tools/gratitude-log/favorites`
@@ -61,14 +66,23 @@
 
 /**
  * @typedef {import("./picker.mjs").Entry} Entry
- * @typedef {"spelling" | "underscore"} Hazard
+ * @typedef {"spelling" | "underscore" | "empty"} Hazard
  */
+
+/**
+ * The bold scope prefix release-please writes (`**auth:** …`), with the scope
+ * captured. The parser reads it and step 2 drops it, so it lives here once.
+ */
+export const SCOPE_PREFIX = /^\*\*([^*]+?):\*\*\s/;
 
 /**
  * The American forms of the words `docs/positioning.md` § house style spells
  * British (#1639, #1651, #1627), plus the ones #1949 names. Whole words only:
  * `programming` and `practice` are identical in both and never match; an
- * identifier like `colorScheme` has no word boundary inside it.
+ * identifier like `colorScheme` has no word boundary inside it. Two are
+ * deliberate over-inclusions: `judgment` in its legal sense and `program` in
+ * the software sense are correct in either style, and the list flags them
+ * anyway — the cost is a slot, the human decides, nothing is respelled.
  */
 export const AMERICAN_SPELLINGS =
   /\b(?:favorites?|colors?|colored|colorful|behaviors?|behavioral|programs?|organiz(?:e|es|ed|ing|er|ers|ation|ations)|recogniz(?:e|es|ed|ing|able)|practicing|fulfill(?:s|ed|ing|ment)?|fueled|judgments?)\b/i;
@@ -101,15 +115,16 @@ export function decodeEntities(text) {
  * @param {string} text
  */
 export function cleanText(text) {
-  let out = decodeEntities(text ?? "");
+  let out = decodeEntities(text);
   // 2. The scope prefix, exactly as parseChangelog recognised it.
-  out = out.replace(/^\*\*[^*]+?:\*\*\s*/, "");
+  out = out.replace(SCOPE_PREFIX, "");
   // 3. Every link, wherever it sits.
   out = out.replace(/\[[^\]]*\]\([^)]*\)/g, "");
   // 4. The `closes` clause is orphaned once its links are gone (`, closes` at
-  //    the end); "closes" as a word in the sentence is not the clause. Then the
-  //    parentheses the links left empty — `()`, `( )`, `(, )`.
-  out = out.replace(/,?\s*\bcloses\s*$/, "");
+  //    the end, possibly with the commas that separated its issues); "closes"
+  //    as a word in the sentence is not the clause. Then the parentheses the
+  //    links left empty — `()`, `( )`, `(, )`.
+  out = out.replace(/,?\s*\bcloses\b[\s,]*$/, "");
   out = out.replace(/\s*\(\s*(?:,\s*)*\)/g, "");
   // 5. The sub is hyphens-only. An en dash between digits is a range and keeps
   //    the hyphen tight; any other em or en dash becomes a spaced hyphen. An
@@ -137,6 +152,7 @@ export function cleanText(text) {
  * @returns {Hazard | undefined}
  */
 export function hazardOf(text) {
+  if (text === "") return "empty";
   if (AMERICAN_SPELLINGS.test(text)) return "spelling";
   if (text.includes("_")) return "underscore";
   return undefined;
@@ -145,7 +161,7 @@ export function hazardOf(text) {
 /**
  * The whole step: a raw entry to a cleaned one. An entry that never reaches the
  * menu (an ineligible section, a denied scope) passes through untouched — there
- * is nothing to make postable. A reason set by an earlier step is honoured.
+ * is nothing to make postable.
  *
  * @param {Entry} entry
  * @returns {Entry}
@@ -153,6 +169,6 @@ export function hazardOf(text) {
 export function clean(entry) {
   if (entry.kind === null || entry.denied) return entry;
   const text = cleanText(entry.text);
-  const reason = entry.reason ?? hazardOf(text);
+  const reason = hazardOf(text);
   return reason === undefined ? { ...entry, text } : { ...entry, text, reason };
 }

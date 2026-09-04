@@ -35,7 +35,7 @@ It prints JSON:
   "version": "0.16.0",
   "postable": true, // false when nothing was picked - no thread (#1876 decision 8)
   "picked": [{ "text": "...", "scope": "act", "kind": "feat" }], // at most 8, round-robin order
-  "spares": [{ "text": "...", "scope": null, "kind": "fix", "reason": "unscoped" }], // or "overflow", "spelling", "underscore"
+  "spares": [{ "text": "...", "scope": null, "kind": "fix", "reason": "unscoped" }], // or "overflow", "spelling", "underscore", "empty"
 }
 ```
 
@@ -86,7 +86,9 @@ The cleaner's, from [#1880 §3](https://github.com/Selftend/selftend/issues/1880
    covers a changelog line on its way to Reddit; a human in front of it beats a
    mechanical fix that might corrupt a real identifier. The spelling list is a
    tripwire, not a dictionary: the American forms the house style in
-   `docs/positioning.md` names.
+   `docs/positioning.md` names. A line the first seven steps emptied (a bullet
+   that was only a link) is a spare as `empty`. The ASCII `->` stays: it is
+   plain ASCII and Reddit renders it as typed.
 
 Step 8 runs before the round-robin, so a forced spare frees its slot rather
 than leaving a hole. Measured over the corpus: 0 residual entities, links,

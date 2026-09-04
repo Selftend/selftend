@@ -73,7 +73,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { clean } from "./cleaner.mjs";
+import { clean, SCOPE_PREFIX } from "./cleaner.mjs";
 
 /**
  * @typedef {"feat" | "fix" | "perf"} Kind
@@ -83,7 +83,7 @@ import { clean } from "./cleaner.mjs";
  * @property {string | null} scope   the conventional-commit scope, or null when unscoped
  * @property {Kind | null} kind   the section the entry sits under, or null for an ineligible section
  * @property {boolean} denied   true when the scope is on {@link DENIED_SCOPES}
- * @property {string} [reason]   set by the cleaner (#1949) to force the entry into spares
+ * @property {Reason} [reason]   set by the cleaner (#1949) to force the entry into spares
  *
  * @typedef {object} Tiered
  * @property {string} text
@@ -167,7 +167,7 @@ export function parseChangelog(body) {
     const bullet = /^\*\s+(.*)$/.exec(line);
     if (!bullet) continue;
     const text = bullet[1];
-    const scoped = /^\*\*([^*]+?):\*\*\s/.exec(text);
+    const scoped = SCOPE_PREFIX.exec(text);
     // The scope is a bucket key, so it is lower-cased here once; `text` keeps
     // whatever case the commit carried. The corpus has never had an upper-case
     // scope, but `Auth` and `auth` must not become two round-robin slots.
@@ -194,7 +194,7 @@ export function pick(entries, { cap = CAP } = {}) {
     if (entry.kind === null || entry.denied) return; // never shown
     const tiered = { text: entry.text, scope: entry.scope, kind: entry.kind };
     if (entry.reason) {
-      spared.push({ index, spare: { ...tiered, reason: /** @type {Reason} */ (entry.reason) } });
+      spared.push({ index, spare: { ...tiered, reason: entry.reason } });
     } else if (entry.scope === null) {
       spared.push({ index, spare: { ...tiered, reason: "unscoped" } });
     } else {

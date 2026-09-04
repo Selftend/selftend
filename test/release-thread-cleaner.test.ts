@@ -18,13 +18,13 @@
  */
 import corpus from "./fixtures/github-releases.json";
 import {
-  AMERICAN_SPELLINGS,
   clean,
   cleanText,
   decodeEntities,
   hazardOf,
+  SCOPE_PREFIX,
 } from "../scripts/release-thread/cleaner.mjs";
-import { CAP, draft, parseChangelog } from "../scripts/release-thread/picker.mjs";
+import { CAP, draft, parseChangelog, pick } from "../scripts/release-thread/picker.mjs";
 
 const releases = corpus.releases;
 const byTag = (tag: string) => {
@@ -33,14 +33,20 @@ const byTag = (tag: string) => {
   return release;
 };
 
-/** The hazards #1880 measured, each as the regex the corpus assertion runs. */
+/**
+ * The hazards #1880 measured, each as the regex the corpus assertion runs. The
+ * spelling regex is deliberately NOT the module's own list: the words #1949
+ * names, written here independently, so a hole in the list is visible.
+ */
 const HAZARDS = {
   entity: /&(?:[a-z]+|#x?[0-9a-f]+);/i,
   link: /\[[^\]]*\]\([^)]*\)/,
-  scopePrefix: /^\*\*[^*]+:\*\*/,
+  scopePrefix: SCOPE_PREFIX,
   dashOrArrow: /[—–→←⇒]/,
   underscore: /_/,
-  spelling: AMERICAN_SPELLINGS,
+  spelling:
+    /\b(?:favorites?|colors?|behaviou?rs?al?|programs?|organiz\w*|recogniz\w*|practicing)\b/i,
+  empty: /^$/,
 };
 
 describe("the whole corpus", () => {
@@ -56,7 +62,7 @@ describe("the whole corpus", () => {
       // point of it.
       const postable = [
         ...picked,
-        ...spares.filter((s) => !["spelling", "underscore"].includes(s.reason)),
+        ...spares.filter((s) => !["spelling", "underscore", "empty"].includes(s.reason)),
       ];
       pickedLines += picked.length;
       spareLines += postable.length - picked.length;
@@ -226,6 +232,10 @@ describe("cleanText (steps 2 to 7)", () => {
         `**settings:** reset clears every flag ([#833](${u})), closes [#821](${u}) [#822](${u})`,
       ),
     ).toBe("Reset clears every flag");
+    // Comma-separated issues in the clause leave commas behind the word.
+    expect(cleanText(`reset clears every flag, closes [#821](${u}), [#822](${u})`)).toBe(
+      "Reset clears every flag",
+    );
     // "closes" as an ordinary word in the sentence is not the clause.
     expect(cleanText("**cbt:** chips open the tool, not a guide that closes back")).toBe(
       "Chips open the tool, not a guide that closes back",
@@ -243,6 +253,11 @@ describe("cleanText (steps 2 to 7)", () => {
       "Upgrade Expo SDK 54 to 55, expo-av to expo-audio",
     );
     expect(cleanText("a ⇒ b ← c")).toBe("A to b to c");
+    // The ASCII `->` is plain ASCII, rendered as typed, and "list to detail to
+    // editor" would be authoring: it stays. (v0.4.0, after entity decoding.)
+    expect(cleanText("**routines:** management screens (list -&gt; detail -&gt; editor)")).toBe(
+      "Management screens (list -> detail -> editor)",
+    );
   });
 
   test("collapses whitespace and strips a trailing comma or semicolon", () => {
@@ -292,8 +307,17 @@ describe("hazardOf (step 8)", () => {
   });
 
   test("a spelling outranks an underscore when a line has both", () => {
-    expect(hazardOf("favorites_one key")).toBe("underscore"); // `_` is a word char, so no whole word
     expect(hazardOf("the favorites route and _one")).toBe("spelling");
+  });
+
+  test("an underscore glued to the word hides the word, so the underscore is the reason", () => {
+    // `_` is a word character: `favorites_one` has no boundary after `favorites`.
+    expect(hazardOf("favorites_one key")).toBe("underscore");
+  });
+
+  test("a line the first seven steps emptied is a hazard of its own", () => {
+    expect(hazardOf("")).toBe("empty");
+    expect(cleanText("**a:** ([#1](https://x/1))")).toBe("");
   });
 });
 
@@ -323,10 +347,11 @@ describe("clean (the whole step)", () => {
     });
   });
 
-  test("never overwrites a reason an earlier step already set", () => {
-    expect(clean({ ...entry("**a:** the favorites"), reason: "elsewhere" }).reason).toBe(
-      "elsewhere",
-    );
+  test("a bullet that was only a link is a spare, never an empty pick", () => {
+    expect(clean(entry("[#1](https://x/1)"))).toMatchObject({ text: "", reason: "empty" });
+    const { picked, spares } = pick([clean(entry("**a:** ([#1](https://x/1))"))]);
+    expect(picked).toEqual([]);
+    expect(spares).toEqual([expect.objectContaining({ text: "", reason: "empty" })]);
   });
 
   test("does not touch an entry that never reaches the menu", () => {
