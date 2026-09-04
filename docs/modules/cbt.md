@@ -29,7 +29,7 @@ The module should be:
 - mood logging
 - weekly review
 - core beliefs
-- exposure hierarchy and worry journal
+- exposure ladder and worry journal
 - guided meditation with mindfulness practices (shared meditation tool)
 - procrastination tasks
 - anger logs

@@ -13,7 +13,7 @@
       },
       "distressTolerance": {
         "name": "Distress tolerance",
-        "desc": "Surviving crisis without making it worse. TIPP, ACCEPTS, IMPROVE."
+        "desc": "Getting through a crisis without making it worse."
       },
       "emotionRegulation": {
         "name": "Emotion regulation",
