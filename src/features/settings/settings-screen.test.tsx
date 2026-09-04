@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Text as mockText, View as mockView, useWindowDimensions } from "react-native";
+import { Platform, Text as mockText, View as mockView, useWindowDimensions } from "react-native";
 import type { ReactNode } from "react";
 import { router } from "expo-router";
 
@@ -15,6 +15,7 @@ import {
 } from "@/src/features/settings/queries";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { useThemeStore } from "@/src/stores/theme-store";
+import { setPlatformOS } from "@/test/modal-marker-mock";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -120,6 +121,7 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: jest.fn(),
 }));
 
+const ORIGINAL_OS = Platform.OS as "web" | "ios" | "android";
 const mockDimensions = useWindowDimensions as jest.MockedFunction<typeof useWindowDimensions>;
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
@@ -178,6 +180,90 @@ describe("SettingsScreen structure", () => {
     // #1446: the guest invitation card renders nothing for this registered
     // user (its guest-side visibility is pinned in create-account-card.test).
     expect(screen.queryByTestId("create-account-card")).toBeNull();
+  });
+
+  /**
+   * The row descriptions (#1831). Copy only — and the half that matters most is
+   * what STAYS BARE, because this page has rejected drawn descriptions five
+   * times for promising behaviour that does not exist.
+   */
+  describe("the row descriptions", () => {
+    /**
+     * ✅ The promise was checked, not assumed: export withholds only
+     * credentials, ids and encrypted twins, and a completeness test holds that
+     * line. ⚠️ "One JSON file" is exact on web and loose on native (a share
+     * sheet) — the CONTENTS promise holds on both.
+     */
+    it("gives Export my data its description", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getByText("One JSON file, everything you've written.")).toBeTruthy();
+    });
+
+    /** The shorter drawn line: the same thing in fewer words. */
+    it("shortens the reminders description", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getByText("Off by default. You choose which ones to turn on.")).toBeTruthy();
+      expect(screen.queryByText(/Reminders stay explicit/)).toBeNull();
+    });
+
+    /**
+     * ☠️ Rejected, and pinned so the next fidelity pass cannot slip them back:
+     *
+     * - `Support` — the drawn "within a couple of days" contradicts the FAQ's
+     *   "within a week", and a response-time promise lives in ONE place.
+     * - `Replay introduction`, `Show tips again`, `Cookies` — the drawing gives
+     *   them empty descriptions on BOTH frames.
+     */
+    it.each([
+      "settings-row-support",
+      "settings-row-replay-introduction",
+      "settings-row-show-tips-again",
+    ])("leaves %s bare", async (testID) => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      // A bare row passes no hint, because the hint IS the description.
+      expect(screen.getByTestId(testID).props.accessibilityHint).toBeUndefined();
+    });
+
+    /**
+     * ⚠️ Cookies needs its own case: the row is WEB-ONLY, so under jest's
+     * default iOS it never renders and an assertion grouped with the three
+     * above would pass without ever seeing it.
+     */
+    it("leaves the web-only Cookies row bare", async () => {
+      setPlatformOS("web");
+      try {
+        renderWithProviders(<SettingsScreen />);
+        await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+        const cookies = screen.getByTestId("settings-row-cookies");
+        expect(cookies.props.accessibilityHint).toBeUndefined();
+      } finally {
+        // The captured original, not a hardcoded "ios": the repo runs a single
+        // iOS jest project today, so a literal is right by accident rather than
+        // by construction.
+        setPlatformOS(ORIGINAL_OS);
+      }
+    });
+
+    /**
+     * ☠️ Unchanged, character for character. `Delete my account`'s drawn line
+     * ("Removes your data from this device and any sync.") has been rejected
+     * FOUR times: it re-promises a local wipe that does not happen.
+     */
+    it("leaves the privacy and delete descriptions exactly as they were", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(screen.getByText("What we store, and how it is handled.")).toBeTruthy();
+      expect(screen.getByText("This cannot be undone.")).toBeTruthy();
+      expect(screen.queryByText(/Removes your data from this device/)).toBeNull();
+    });
   });
 
   /**

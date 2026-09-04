@@ -34,7 +34,7 @@
   },
   "reminders": {
     "title": "Reminders",
-    "description": "Reminders stay explicit and off by default. You choose which ones to turn on."
+    "description": "Off by default. You choose which ones to turn on."
   },
   "onboarding": {
     "saving": "Saving...",
@@ -102,6 +102,7 @@
     "intro": "Quiet defaults, and control over your account and data.",
     "exporting": "Exporting...",
     "exportButton": "Export my data",
+    "exportDescription": "One JSON file, everything you've written.",
     "exportShareTitle": "Selftend data export",
     "exported": "Data exported successfully.",
     "exportError": "Export failed. Please try again.",
