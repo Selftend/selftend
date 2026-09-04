@@ -9,18 +9,6 @@ function dayKeyAgo(daysAgo: number) {
   return addDaysToKey(TODAY, -daysAgo);
 }
 
-/**
- * `buildMoodChartData` — the trailing-`days`-window wrapper — was deleted with
- * its last caller (#1912, after #1903 took the mood trend off `/progress`).
- *
- * ☠️ Its test cases were NOT all deleted with it. Several were the only
- * assertions covering behaviour that lives in `buildMoodChartDataForRange`,
- * which is very much alive (`mood-tracker-screen.tsx`) — deleting them would
- * have quietly removed coverage of live code while looking like tidy-up. Those
- * are retargeted below and marked. Only cases exercising the wrapper's OWN
- * logic (its `days <= 0` guard, and its trailing-window end-key look-ahead)
- * went with it, along with those that merely duplicated a range case.
- */
 describe("buildMoodChartDataForRange", () => {
   it("assigns offsets by real position in an explicit date range", () => {
     // 30-day range; entries on day 0, day 7 and day 29 of it.
@@ -37,13 +25,22 @@ describe("buildMoodChartDataForRange", () => {
     expect(pts[2].offset).toBeCloseTo(1, 5);
     // The middle point sits 7/29 along, not 1/2 — position, not index.
     expect(pts[1].offset).toBeCloseTo(7 / 29, 5);
+    // And each score still travels with its own day.
+    expect(pts.map((p) => p.score)).toEqual([4, 3, 5]);
   });
 
-  it("excludes samples before the range start and after the range end", () => {
+  /**
+   * ☠️ The out-of-range samples sit EXACTLY one day outside the range, and that
+   * is the whole test. Move them further out (2026-03-01 / 2026-04-05, say) and
+   * the off-by-one guard on `dayCount = dayKeyDiff(start, end) + 1` stops being
+   * covered — a walk widened by a day at each end still passes. Review caught
+   * this file weakening in exactly that way, and mutation-proved it.
+   */
+  it("excludes samples one day before the range start and one day after its end", () => {
     const logs = [
-      { dayKey: "2026-03-01", moodScore: 1 },
+      { dayKey: "2026-03-02", moodScore: 1 },
       { dayKey: "2026-03-10", moodScore: 3 },
-      { dayKey: "2026-04-05", moodScore: 5 },
+      { dayKey: "2026-04-02", moodScore: 5 },
     ];
 
     const pts = buildMoodChartDataForRange(logs, "2026-03-03", "2026-04-01");
