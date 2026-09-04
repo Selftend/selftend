@@ -3,25 +3,23 @@
 The minimum age for using Selftend, per country.
 
 > [!IMPORTANT]
-> **This table is not in force yet.** Selftend's live eligibility rule is still
-> 18 and over — in the terms, the privacy policy, the consent checkbox, and the
-> Google Play target-audience declaration. The table below is the decided
-> destination, being built out ticket by ticket; it governs nobody until the
-> policy rewrite ships and the owner completes the rollout pass. Until then,
-> [product-principles.md](product-principles.md) is the statement of record.
+> **This table is the eligibility rule, in the app and in the published text.**
+> [#1767](https://github.com/Selftend/selftend/issues/1767) rewrote privacy §11,
+> terms §2 and the FAQ around it in `en` and `bg`, bumped `policyVersion` to
+> `2026-09-04-teen-floor`, and removed the age assertion from the consent
+> checkbox. The 18-and-over posture is gone from every surface this repository
+> controls.
 
 > [!WARNING]
-> **The gate is built, and the published text has not caught up — so this chain
-> must not reach a production release on its own.** Since
-> [#1764](https://github.com/Selftend/selftend/issues/1764) the app asks a new
-> account for its date of birth and country and applies this table. The terms
-> still say 18 and over and the consent checkbox still reads _"I am 18 or
-> older"_, so a release cut between here and
-> [#1767](https://github.com/Selftend/selftend/issues/1767) would ship a product
-> that admits a 14-year-old and then asks them to affirm they are 18. §7's
-> order — build, owner review, then release the app and publish the text
-> together — is what closes that window, and it is an owner decision, not a
-> branch state. Nothing merges to `main` on this chain until #1767 is in it.
+> **One surface still says 18 and over, and it is not in this repository.** The
+> Google Play target-audience declaration reads "18 and over" (last edited
+> 2026-05-08) and moves to 13-15 / 16-17 in the owner's rollout pass,
+> [#1771](https://github.com/Selftend/selftend/issues/1771) — same day as the
+> release that publishes this text, per §7's fixed order: owner legal review,
+> then release and publish together, then the Play Console pass. Until that day
+> the store record and the app disagree, which is why the order is not a
+> preference. `store/play-listing.md` and `docs/app-store-review-information.md`
+> reproduce live store values and are updated by that pass, not by this file.
 
 Source: **[Spec: teen access (13+ per-country age floor)](https://github.com/Selftend/selftend/issues/227) §2**, the settled
 destination of wayfinder map [#216](https://github.com/Selftend/selftend/issues/216). This file is the durable copy — the
@@ -319,10 +317,25 @@ rest) has always been in `settings` — splitting one screen's strings across tw
 namespaces to satisfy the inventory would cost more than it bought. Recorded
 here because it is a documented divergence, not because it is in doubt.
 
-⚠️ **The contractual checkbox still reads _"I am 18 or older"_**, and #1766
-deliberately did not change it. The age half of that sentence is published
-eligibility copy, and it moves when the terms move, in
-[#1767](https://github.com/Selftend/selftend/issues/1767) — changing it here
-would leave the checkbox and the terms disagreeing in the other direction. It is
-the same window the warning at the top of this file describes, and it closes the
-same way.
+✅ **The contractual checkbox no longer asserts an age.** It read _"I am 18 or
+older and agree to the current Privacy Policy and Terms of Service"_ until
+[#1767](https://github.com/Selftend/selftend/issues/1767) and now reads _"I
+agree to the current Privacy Policy and Terms of Service."_ The age question is
+asked properly one screen earlier, and terms §2 carries the representation, so a
+second and weaker claim on the tick box would only train people to tick through
+something already answered. #1766 deliberately left it alone because published
+eligibility copy moves with the terms; that is what #1767 did.
+
+## Where the table is published
+
+Privacy policy §11 (_Minimum age_) lists it floor by floor, in `en` and `bg`,
+and terms §2 carries the catch-all clause — _"or the higher minimum age at which
+you may consent to the processing of your personal data in your country"_ —
+which is what makes the terms true in the ~200 countries the table never names.
+
+`src/features/policies/policy-age-floor.test.ts` compares the published lists
+against `FLOOR_BY_COUNTRY` country by country, in both locales, using the same
+names the age gate's own selector shows. A country moved in one and not the
+other fails `verify`. That is the reason `FLOOR_BY_COUNTRY` is exported at all:
+a published list retyped by hand drifts silently, and it drifts in the direction
+that admits someone the floor exists to hold back.

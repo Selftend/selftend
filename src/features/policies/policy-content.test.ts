@@ -5,7 +5,9 @@ import {
   policyVersion,
 } from "@/src/features/policies/policy-content";
 import bgPolicies from "@/src/i18n/locales/bg/policies.json";
+import bgSettings from "@/src/i18n/locales/bg/settings.json";
 import enPolicies from "@/src/i18n/locales/en/policies.json";
+import enSettings from "@/src/i18n/locales/en/settings.json";
 import { createHash } from "crypto";
 
 interface DisplayedSection {
@@ -142,9 +144,33 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // misstates a money fact. The half that did NOT change is the half that
 // matters most and is pinned by the required-statements suite below: donations
 // are never required for access to any feature.
+//
+// 2026-09-04-teen-floor (#1767, spec #227 §6) is a BOTH-fields move, and it is
+// the largest one this pin has carried - the only entry so far where the thing
+// that changed is who the product is FOR.
+//
+// Eligibility moved from "18 and over" to a per-country floor of 13 or higher
+// (privacy §11, terms §2). New data appears in the collected-data list: the
+// country you declare and the verdict of the age check, with the statement that
+// the date of birth is asked for one comparison and never stored. A new legal
+// basis is described - the Art. 9(2)(a) explicit consent of #1766, now a
+// separate act with its own withdrawal path - alongside the age check's own
+// basis. Retention gains the two rules the floor needs to mean anything:
+// nothing is kept from an under-floor attempt, and an account discovered to be
+// under its floor is deleted on knowledge. Cookies gains the 24-hour local
+// retry timer. And the policy gains a plain-language summary at the top, which
+// exists because the youngest reader it now admits is thirteen.
+//
+// ☠️ The re-gate is not a side effect here, it is the DELIVERY MECHANISM. #1766
+// deliberately did not bump the version and did not backfill
+// `health_data_consent_at`, because every existing account had only ever ticked
+// the old bundled box. This bump is how those accounts reach the separated
+// consent step - and, per §7, it reaches them WITHOUT re-asking age or country,
+// because the age gate is scoped to accounts that have never passed a consent
+// gate at all.
 const pinnedPolicyRelease = {
-  version: "2026-09-02-donations",
-  englishDigest: "9053ec6fa305547faf50e02db2b23c8f3be6834b083e05c1e51c1959c2c7a3d6",
+  version: "2026-09-04-teen-floor",
+  englishDigest: "cbb1685d7978c7123d4f2813981339625f331f4407fd9f2c2e1931813a210027",
 };
 
 describe("policy content - version pinning", () => {
@@ -187,8 +213,44 @@ describe.each(locales)("policy content - required statements (%s)", (_locale, po
     expect(flatBody(policies.privacy.sections)).toContain("privacy@selftend.org");
   });
 
-  it("terms restrict eligibility to 18+", () => {
-    expect(flatBody(policies.terms.sections)).toMatch(/18/);
+  // The floor itself is guarded country by country in `policy-age-floor.test.ts`,
+  // against the table the gate applies. What is pinned HERE is the half that
+  // table cannot express: the catch-all clause, which is what makes the terms
+  // true in the ~200 countries the table never names. Drop it and the terms
+  // promise 13 to a reader whose own law says 16.
+  it("terms carry the per-country catch-all age clause", () => {
+    expect(flatBody(policies.terms.sections)).toMatch(
+      /higher minimum age at which you may consent to the processing of your personal data in your country|по-високата минимална възраст, на която можеш да дадеш съгласие за обработването на личните си данни в своята държава/i,
+    );
+  });
+
+  it("terms state the 13-year baseline and point at the country list", () => {
+    const body = flatBody(policies.terms.sections);
+    expect(body).toMatch(/at least 13 years old|на поне 13 години/i);
+    expect(body).toMatch(/Privacy Policy|Политиката за поверителност/);
+  });
+
+  // The one sentence the whole age check is built to make true: the date of
+  // birth is asked and never kept. It is the disclosure a reader checks first
+  // and the one a future refactor is likeliest to quietly falsify.
+  it("privacy states that the date of birth is never stored", () => {
+    expect(flatBody(policies.privacy.sections)).toMatch(
+      /We do not store your date of birth|Не съхраняваме датата ти на раждане/i,
+    );
+  });
+
+  // #1767 replaced every "18 and over" eligibility statement. A single survivor
+  // would contradict the floor on the same screen that publishes it.
+  it("states no 18-and-over eligibility rule anywhere", () => {
+    const everything = [
+      flatBody(policies.privacy.sections),
+      flatBody(policies.terms.sections),
+      flatBody(policies.faq.sections),
+    ].join(" ");
+
+    expect(everything).not.toMatch(
+      /\b18\s*(?:\+|and over|or older|years old|and older)|под\s*18|на\s*18\s*(?:и повече|или повече)?\s*години/i,
+    );
   });
 
   // Sign in with Apple sends account identifiers to a processor in the USA, so the
@@ -208,6 +270,26 @@ describe.each(locales)("policy content - required statements (%s)", (_locale, po
     expect(flatBody(policies.terms.sections)).toMatch(
       /donations\. they are never required for access|дарения\. те никога не са условие за достъп/i,
     );
+  });
+});
+
+// The eligibility sweep above reads `policies.json`, and the last surviving
+// "18 or older" in the product was not in it - it was the consent gate's tick
+// box, in the `settings` namespace, which is where that whole screen's copy
+// lives. #1767 removed it. Guarded here rather than in a settings test because
+// the rule being kept is a POLICY one: eligibility is stated in the terms, and
+// asked by the age gate, and nowhere else claims an age on the user's behalf.
+describe.each([
+  ["en", enSettings],
+  ["bg", bgSettings],
+] as const)("consent gate copy (%s)", (_locale, settings) => {
+  it("asks for agreement without asserting an age", () => {
+    expect(settings.consent.checkbox).not.toMatch(/\b18\b|\b13\b|older|повече години/i);
+  });
+
+  it("still names both documents the tick box agrees to", () => {
+    expect(settings.consent.checkbox).toMatch(/Privacy Policy|Политика за поверителност/);
+    expect(settings.consent.checkbox).toMatch(/Terms of Service|Условия за ползване/);
   });
 });
 

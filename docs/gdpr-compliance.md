@@ -24,7 +24,7 @@ Privacy by design: minimal data collection, Row-Level Security, local-first nati
 
 ## Records of Processing (Article 30)
 
-Processing activities are documented in [policies.md](policies.md). Data subjects are app users aged 18+. Data categories are email, preferences, web push subscriptions, and thought records. Recipients are Supabase, Google (optional OAuth), Cloudflare, and Sentry. Transfers to third countries (USA) are documented with SCCs as the transfer mechanism. Retention periods are documented above.
+Processing activities are documented in [policies.md](policies.md). Data subjects are app users aged 13+, or their country's higher floor (see [age-floor.md](age-floor.md)) — a population that includes children, which is why the DPIA and minors' assessment are mandatory rather than optional. Data categories are email, preferences, web push subscriptions, and thought records. Recipients are Supabase, Google (optional OAuth), Cloudflare, and Sentry. Transfers to third countries (USA) are documented with SCCs as the transfer mechanism. Retention periods are documented above.
 
 ## Security (Article 32)
 
@@ -50,4 +50,12 @@ The Article 9(2)(a) consent for user-entered self-help content is a separate aff
 
 ## Age Restriction (Article 8)
 
-Launch age threshold is 18. Age is attested at sign-up. No data is knowingly collected from users under 18, and the terms prohibit use by minors; no parental-consent flow exists in MVP.
+The age threshold is **13, or the higher minimum age at which a person may consent to the processing of their own personal data in their country** — 14, 15 or 16 across much of the EEA. The table is in [age-floor.md](age-floor.md) and in code at `src/features/auth/age-floor.ts`; it is never below 13.
+
+The floor is set by Art. 9(2)(a) explicit consent rather than by contract, because the entries the app holds are special-category data: the age that governs is the age at which the person can consent to _that_ processing themselves.
+
+Attestation is **active, not passive**. Before the app opens, the age gate asks for a date of birth and a country ([#1764](https://github.com/Selftend/selftend/issues/1764)). The date of birth is compared once and discarded — never stored, logged, or transmitted — and what persists is the verdict, the declared country, and the timestamp (`user_preferences.age_floor_met` / `age_attested_country` / `age_attested_at`). An attempt that fails the floor retains nothing: the account created for it is deleted immediately ([#1765](https://github.com/Selftend/selftend/issues/1765)).
+
+**No parental-consent flow exists, and none is planned.** Where a national law would require one, the floor rises instead. There is also **no minor flag**: nothing in storage distinguishes a minor from an adult, because the protections are universal — opt-in-only reminders, no ads, no sale, no profiling, no behavioural nudges. That is the "floor of protection" model, and the argument is written down in the DPIA / minors' assessment ([#1768](https://github.com/Selftend/selftend/issues/1768)).
+
+No data is knowingly collected from anyone below the minimum age for their country; an account discovered to be below it is deleted on knowledge ([#1769](https://github.com/Selftend/selftend/issues/1769) holds the runbook).

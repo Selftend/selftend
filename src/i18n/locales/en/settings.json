@@ -151,7 +151,7 @@
     "description": "We keep this brief: please review and accept the latest Privacy Policy and Terms to continue.",
     "readPrivacy": "Read Privacy Policy",
     "readTerms": "Read Terms of Service",
-    "checkbox": "I am 18 or older and agree to the current Privacy Policy and Terms of Service.",
+    "checkbox": "I agree to the current Privacy Policy and Terms of Service.",
     "healthDataTitle": "Consent to processing your entries",
     "healthDataCheckbox": "I consent to Selftend processing the self-help entries I choose to save, including any wellness or mental-health reflection they contain, only to provide the app features I use.",
     "healthDataWithdrawal": "This is a separate consent. You can withdraw it at any time by deleting your account or contacting privacy@selftend.org.",

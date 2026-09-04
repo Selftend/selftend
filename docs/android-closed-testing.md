@@ -47,7 +47,7 @@ Google currently lists a one-time developer registration fee of `US$25`. Verify 
 
 Current status: the Google Play developer account and Selftend app record exist, required Play policy forms are completed, and the first production AAB has been uploaded. Next work is service-account setup for repeatable uploads, store-asset polish, and real-device closed-test verification.
 
-Launch audience: Google Play and the app policy text should stay aligned as **18+ / adults only** until under-18 support receives legal and safety review.
+Launch audience: the app policy text moved to a **per-country floor of 13 or higher** on 2026-09-04 ([#1767](https://github.com/Selftend/selftend/issues/1767), [age-floor.md](age-floor.md)). Play Console still declares **18 and over** — that declaration is edited in the owner's rollout pass ([#1771](https://github.com/Selftend/selftend/issues/1771)), on the same day as the release that publishes the text, and adds the 13-15 and 16-17 groups. The values recorded below are the live Play state until then; do not edit them here ahead of the Console.
 
 Required owner inputs:
 
@@ -72,7 +72,7 @@ Completed for the current Play app:
 
 - Health apps declaration in Play Console
 - Data safety form for closed testing
-- Target audience set to 18+ / adults only in Play Console
+- Target audience declared in Play Console (live value: 18 and over; moves to 13-15 / 16-17 in [#1771](https://github.com/Selftend/selftend/issues/1771))
 - app access instructions for account-required testing
 - first production AAB upload
 
@@ -85,7 +85,7 @@ Before widening testing:
 - verify reminders are optional, local, and off by default
 - verify the resolved Android prebuild config does not request camera or microphone/audio permissions
 - verify no ads, social feeds, or AI mental-health coach features were added (note: the Sentry SDK is present as an approved Phase 2 exception per `docs/analytics.md`; it is classified essential/Art. 6(1)(f) and disabled without `EXPO_PUBLIC_SENTRY_DSN`)
-- confirm the Play Console target audience is 18+ and the app is not marked as child-directed
+- confirm the Play Console target audience matches the published floor and the app is not marked as child-directed (both halves change together in [#1771](https://github.com/Selftend/selftend/issues/1771); a mismatch in either direction is a policy problem)
 
 ## Build commands
 

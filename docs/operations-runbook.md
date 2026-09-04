@@ -348,6 +348,7 @@ re-evaluation trigger.
 
 Before broad public launch:
 
-- Final human/legal review of privacy policy, terms, crisis guidance, and the adults-only 18+ launch posture.
+- Final human/legal review of privacy policy, terms, crisis guidance, and the per-country age floor ([age-floor.md](age-floor.md)) — including the teen-readable summary, the parents-and-guardians section, and the Art. 9 consent wording, in `en` and `bg`. Tracked as [#1771](https://github.com/Selftend/selftend/issues/1771).
+  - Explicitly in that review's scope and **deliberately not changed by the copy rewrite**: **terms §12, _Limitation of liability_**. Spec [#227](https://github.com/Selftend/selftend/issues/227) §6 marks its minor-related wording "(owner-review scope)". It names no minor today, and its third clause already preserves liability that cannot be excluded by law — which is where minority would bite — so the rewrite left it alone rather than guess at contract language. It needs a lawyer's read now that under-18s are admitted, not an editor's.
 - Confirm support, privacy, security, and deletion aliases are monitored.
 - Keep this runbook and [gdpr-compliance.md](gdpr-compliance.md) in sync.

@@ -43,8 +43,17 @@ export interface CivilDate {
   day: number;
 }
 
-/** ISO 3166-1 alpha-2, uppercase. Anything absent takes the catch-all. */
-const FLOOR_BY_COUNTRY: Readonly<Record<string, AgeFloor>> = {
+/**
+ * ISO 3166-1 alpha-2, uppercase. Anything absent takes the catch-all.
+ *
+ * Exported because the privacy policy has to PUBLISH this table (#1767), and a
+ * published list that is retyped by hand drifts from the one the gate applies -
+ * silently, and in the direction that admits someone the floor was meant to
+ * hold back. `policy-age-floor.test.ts` compares the two, which it can only do
+ * if the table is readable from outside this module. Nothing else re-derives
+ * it: callers ask `floorForCountry`.
+ */
+export const FLOOR_BY_COUNTRY: Readonly<Record<string, AgeFloor>> = {
   // 13 — no national provision raising it above the GDPR baseline.
   US: 13,
   GB: 13,
