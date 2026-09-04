@@ -77,9 +77,11 @@ test.describe("sign-up + onboarding + first record", () => {
     await expect(page.getByText("Welcome to Selftend")).toBeVisible();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Panel 2: pick a concern.
+    // Panel 2: pick a concern. By ROLE: Home now renders its whole catalogue behind the
+    // wizard (#1956), and the Sleep tool card's name is the same word, so a bare text
+    // locator is a strict-mode violation. The concern chip is a checkbox; the card is not.
     await expect(page.getByText("What brings you here?")).toBeVisible();
-    await page.getByText("Sleep", { exact: true }).click();
+    await page.getByRole("checkbox", { name: "Sleep", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // Panel 3: leave both optional modules unselected for a tools-only setup.
