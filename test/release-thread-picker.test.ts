@@ -23,6 +23,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import corpus from "./fixtures/github-releases.json";
+import { clean } from "../scripts/release-thread/cleaner.mjs";
 import {
   CAP,
   DENIED_SCOPES,
@@ -42,9 +43,12 @@ const byTag = (tag: string) => {
 /** Every changelog entry, as parsed — the number #1876 and #1880 measured over. */
 const everyEntry = (): Entry[] => releases.flatMap((r) => parseChangelog(r.body));
 
-/** Scoped entries that survive the section and denylist filters, and so compete for a slot. */
+/**
+ * Scoped entries that survive the section and denylist filters and the cleaner's
+ * step 8 (#1949), and so compete for a slot.
+ */
 const contenders = (entries: Entry[]) =>
-  entries.filter((e) => e.kind !== null && e.scope !== null && !e.denied);
+  entries.map(clean).filter((e) => e.kind !== null && e.scope !== null && !e.denied && !e.reason);
 
 describe("the committed release corpus", () => {
   test("holds all 26 published releases, none of them a pre-release", () => {
@@ -119,8 +123,8 @@ describe("parseChangelog", () => {
       [null, "ci"],
     ]);
     // Untouched: the scope prefix and the links are still in the text. Cleaning
-    // is #1949's job, and the ticket's "text is the raw entry for now" is the
-    // contract the cleaner starts from.
+    // is the cleaner's job (#1949), which `draft` runs between parse and pick;
+    // the raw entry is the contract it starts from.
     expect(entries[1].text).toBe(
       "**auth:** a guest signing in over data gets one calm warning ([#1444](https://x/1444))",
     );
@@ -173,11 +177,11 @@ describe("pick", () => {
     ]);
   });
 
-  test("v0.11.1 yields #1880's two-highlight case", () => {
+  test("v0.11.1 yields #1880's two-highlight case, cleaned", () => {
     const { picked } = draft(byTag("v0.11.1"));
-    expect(picked.map((p) => p.text.replace(/\s*\(\[.*$/, ""))).toEqual([
-      "**a11y:** match arbitrary destructive opacity in the wash gate",
-      "**a11y:** stop pairing destructive text with a wash of its own red",
+    expect(picked.map((p) => p.text)).toEqual([
+      "Match arbitrary destructive opacity in the wash gate",
+      "Stop pairing destructive text with a wash of its own red",
     ]);
   });
 
@@ -336,14 +340,15 @@ describe("the command line", () => {
     const dir = mkdtempSync(join(tmpdir(), "picker-"));
     const file = join(dir, "body.md");
     writeFileSync(file, "### Features\n* **auth:** from a file\n");
+    // The command line prints the draft, so the lines arrive cleaned (#1949).
     expect(run(["--tag", "v9.9.9", "--body-file", file]).picked.map((p: Entry) => p.text)).toEqual([
-      "**auth:** from a file",
+      "From a file",
     ]);
     expect(
       run(["--tag", "v9.9.9"], {
         RELEASE_BODY: "### Bug Fixes\n* **web:** from the env\n",
       }).picked.map((p: Entry) => p.text),
-    ).toEqual(["**web:** from the env"]);
+    ).toEqual(["From the env"]);
   });
 
   test("exits 1 on a tag the corpus does not hold, and without a tag", () => {
