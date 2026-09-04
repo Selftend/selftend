@@ -122,6 +122,8 @@ describe("export_user_data() (integration)", () => {
     // plan_items was retired in 20260715_routines; the export must not carry it.
     expect("planItems" in data).toBe(false);
     expect(Array.isArray(data.widgetPreferences)).toBe(true);
+    // Favourites sit beside the old dashboard rows they were copied from (#1953).
+    expect(Array.isArray(data.favorites)).toBe(true);
     expect(Array.isArray(data.devicePushTokens)).toBe(true);
     // Reminder preferences for every notification target (20260582 - GDPR completeness:
     // the base 'preferences' block only carried CBT reminders before this).

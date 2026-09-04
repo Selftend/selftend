@@ -32,6 +32,7 @@ Use this as the map for project docs. Each entry below links to the doc that own
 ## Policy And Planning
 
 - [positioning.md](positioning.md) - the market frame, the value themes, and the words every surface must use
+- [marketing-plan.md](marketing-plan.md) - the nine marketing squares as decisions, the number the plan answers to, and what the book demands that Selftend refuses
 - [policies.md](policies.md) - public policy surfaces, crisis guidance posture, and launch-review status
 - [gdpr-compliance.md](gdpr-compliance.md) - GDPR/CCPA posture
 - [age-floor.md](age-floor.md) - the per-country minimum age, and why it varies
