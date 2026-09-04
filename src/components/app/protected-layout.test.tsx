@@ -524,6 +524,35 @@ describe("ProtectedLayout age gate", () => {
     expect(screen.queryByText("Welcome to Selftend")).toBeNull();
   });
 
+  /**
+   * The claim [#1919](https://github.com/Selftend/selftend/issues/1919)
+   * corrected, made checkable. `use-under-floor-exit.ts` explains why its
+   * deletion always has something to delete: the gate renders below the
+   * layout's `!session` branch, so an auth user exists on **all four** entry
+   * paths by the time a verdict is known — not the three §3 predicted.
+   *
+   * ☠️ #1927 fixed that sentence in three places and left nothing holding it
+   * true. A comment cannot notice when the code moves out from under it, and
+   * this one sits beside an irreversible deletion: if the gate ever rendered
+   * above the session branch, the exit would run with no account to erase and
+   * the docblock would still say otherwise. This assertion was written then and
+   * could not be committed until #1932 unblocked this file.
+   *
+   * Mutation-tested by deleting the `!session` branch, which turns this red.
+   * ⚠️ Not by hoisting the gate above it — that puts a `const` in its temporal
+   * dead zone, which Babel leaves `undefined` rather than throwing, so the
+   * branch is silently never taken and the mutation proves nothing.
+   */
+  it("never asks a visitor with no session, so the exit always has an account", async () => {
+    newAccount();
+    mockSessionState = { session: null, status: "ready", user: null };
+
+    renderWithProviders(<ProtectedLayout />);
+
+    await waitFor(() => expect(screen.getByText("Signed-out landing")).toBeTruthy());
+    expect(screen.queryByText("Age gate")).toBeNull();
+  });
+
   it("never re-asks an account that has already been through the consent gate", async () => {
     // ☠️ §7: existing users meet the one-time consent prompt WITHOUT being
     // re-asked for age or country. `ageFloorMet` is null for every account that
