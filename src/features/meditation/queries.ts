@@ -154,7 +154,14 @@ export function useUpdateMeditationSessionReflection(userId: string | null) {
       updateMeditationSessionReflection(userId!, sessionId, patch),
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: meditationKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: meditationKeys.all }),
+        // A reflection patch cannot move `completed_at`, so no mark moves.
+        // Invalidated anyway, under the rule the guard enforces: any mutation
+        // writing a source table invalidates it, rather than each one
+        // re-deciding whether its particular edit can reach a civil day.
+        invalidateRecordDays(queryClient),
+      ]);
     },
   });
 }
