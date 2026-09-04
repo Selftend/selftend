@@ -168,9 +168,27 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // consent step - and, per §7, it reaches them WITHOUT re-asking age or country,
 // because the age gate is scoped to accounts that have never passed a consent
 // gate at all.
+//
+// ⚠️ #1770 is the FOURTH digest-only move, and the first made by a REVIEW of the
+// copy rather than by a writer changing it. The child-safety content review
+// (spec #227 §4, `docs/child-safety-review.md`) found that the plain-language
+// summary #1767 had just added carried a 41-word sentence - inside the one
+// section of the privacy policy whose whole promise is plain words, written for
+// the youngest reader the 13+ floor admits. It is now two sentences.
+//
+// Nothing DISCLOSED changed, so the version deliberately did not move: the same
+// three reading exceptions, in the same order, with the same meaning. A full
+// stop moved. Re-gating every existing user over sentence length would spend
+// their attention on nothing and teach them to click consent gates through -
+// the reasoning the three moves above already settled.
+//
+// ☠️ The review's other copy fixes are absent from this digest, and that is
+// correct rather than an oversight: they landed in `faq` and in the `cbt`,
+// `journal` and `modules` namespaces, none of which is consent-bearing. Only
+// privacy, terms, cookies and accountDeletion are hashed.
 const pinnedPolicyRelease = {
   version: "2026-09-04-teen-floor",
-  englishDigest: "cbb1685d7978c7123d4f2813981339625f331f4407fd9f2c2e1931813a210027",
+  englishDigest: "97d6fa3466b36a69aba935fdd1030c22371926608cfc490017c9c040ec87e5bd",
 };
 
 describe("policy content - version pinning", () => {

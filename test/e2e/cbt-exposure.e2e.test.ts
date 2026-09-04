@@ -16,13 +16,13 @@ import { deleteAllExposureForUser } from "./helpers";
  *   hierarchyTitle "Title"
  *   anxietyType "Type of anxiety"
  *   itemDescription "Step description"
- *   itemSuds "Anticipated SUDS (0-100)"
+ *   itemSuds "Expected anxiety (0-100)"
  *   addItem "Add step"
- *   save "Save hierarchy"
+ *   save "Save ladder"
  *   continue "Continue"
  *   item.start "Start session"
- *   session.preSuds "Pre-exposure SUDS (0-100)"
- *   session.postSuds "Post-exposure SUDS (0-100)"
+ *   session.preSuds "Anxiety before (0-100)"
+ *   session.postSuds "Anxiety after (0-100)"
  *   session.duration "Duration (minutes)"
  *   session.save "Save session"
  *
@@ -36,7 +36,7 @@ import { deleteAllExposureForUser } from "./helpers";
  *     (pre SUDS → post SUDS · duration min)
  */
 
-test.describe("CBT exposure: create hierarchy and log a session", () => {
+test.describe("CBT exposure: create ladder and log a session", () => {
   test.beforeEach(async ({ user }) => {
     await deleteAllExposureForUser(user.id);
   });
@@ -44,7 +44,7 @@ test.describe("CBT exposure: create hierarchy and log a session", () => {
     await deleteAllExposureForUser(user.id);
   });
 
-  test("alice creates an exposure hierarchy with one step, logs a session, and the session appears in recent sessions", async ({
+  test("alice creates an exposure ladder with one step, logs a session, and the session appears in recent sessions", async ({
     page,
   }) => {
     const hierarchyTitle = "Driving on motorways";
@@ -66,7 +66,7 @@ test.describe("CBT exposure: create hierarchy and log a session", () => {
     // Buttons are labelled by their numeric value text.
     await page.getByRole("button", { name: "30", exact: true }).first().click();
 
-    await page.getByRole("button", { name: "Save hierarchy", exact: true }).click();
+    await page.getByRole("button", { name: "Save ladder", exact: true }).click();
 
     // After save, routed to /modules/cbt/exposure/[id]
     await expect(page).toHaveURL(/\/modules\/cbt\/exposure\/[^/]+$/, { timeout: 20_000 });
