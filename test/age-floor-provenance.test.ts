@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import { FLOOR_BY_COUNTRY } from "@/src/features/auth/age-floor";
 import { countryName } from "@/src/features/auth/countries";
+import { tableCells } from "@/test/markdown-doc";
 
 /**
  * Every floor in the shipped table has a sourced provenance row (#1763, spec
@@ -37,6 +38,9 @@ const record = readFileSync(resolve(ROOT, DOC), "utf8");
 
 const VERDICTS = ["CONFIRMED", "CONTRADICTED", "UNRESOLVED"] as const;
 
+/** Code · floor · verdict · provision · source — the checked table's shape. */
+const CHECKED_COLUMNS = 5;
+
 interface Row {
   code: string;
   /** The floor the row claims the code carries. */
@@ -57,24 +61,23 @@ function provenanceRows(markdown: string): Row[] {
   const rows: Row[] = [];
 
   for (const line of markdown.split("\n")) {
-    if (!line.trimStart().startsWith("|")) continue;
-
-    const cells = line
-      .trim()
-      .replace(/^\|/, "")
-      .replace(/\|$/, "")
-      .split("|")
-      .map((cell) => cell.trim());
+    const cells = tableCells(line);
+    if (!cells) continue;
 
     const code = cells[0]?.match(/^\*\*([A-Z]{2})\*\*$/)?.[1];
     if (!code) continue;
 
-    const statedFloor = Number(cells[1]);
-    const verdict = VERDICTS.find((candidate) =>
-      new RegExp(`\\b${candidate}\\b`).test(cells[2] ?? ""),
-    );
+    // ⚠️ A verdict is only read from the five-column checked table. The
+    // carried-over table is three columns wide and its third cell is free
+    // prose about provenance - a basis that happened to contain the word
+    // UNRESOLVED would otherwise enrol an unchecked row as a checked one, and
+    // the count assertions below would pass on the wrong set.
+    const verdict =
+      cells.length >= CHECKED_COLUMNS
+        ? VERDICTS.find((candidate) => new RegExp(`\\b${candidate}\\b`).test(cells[2] ?? ""))
+        : undefined;
 
-    rows.push({ code, statedFloor, verdict, cells });
+    rows.push({ code, statedFloor: Number(cells[1]), verdict, cells });
   }
 
   return rows;
@@ -84,10 +87,6 @@ const rows = provenanceRows(record);
 const byCode = new Map(rows.map((row) => [row.code, row]));
 
 describe("the provenance record covers the shipped floor table", () => {
-  it("reads as a table at all", () => {
-    expect(rows.length).toBeGreaterThanOrEqual(30);
-  });
-
   it("has exactly one row per country in FLOOR_BY_COUNTRY, and no strays", () => {
     const inCode = Object.keys(FLOOR_BY_COUNTRY).sort();
     const inDoc = rows.map((row) => row.code).sort();
@@ -126,7 +125,10 @@ describe("the rows checked in this pass", () => {
       if (row.verdict === "UNRESOLVED") continue;
 
       // The provision cell says what was read; the source cell says where from.
+      // A placeholder in either is the shape a half-finished row takes, so it
+      // is rejected as explicitly as an empty one.
       expect(row.cells[3]).not.toBe("");
+      expect(row.cells[3]).not.toMatch(/^(TBD|TODO|N\/A|\?+|-)$/i);
       expect(row.cells[4] ?? "").toMatch(/https:\/\//);
     }
   });
@@ -149,6 +151,34 @@ describe("the rows checked in this pass", () => {
       if (row.verdict === "CONFIRMED") continue;
 
       expect(prose).toContain(countryName(row.code, "en"));
+    }
+  });
+
+  /**
+   * A contradicted floor is the one finding that must not stay inside this
+   * file. `docs/age-floor.md` carries the table itself and is what a reader
+   * reaches first, so a row the statute contradicts has to be warned about
+   * there too — otherwise the table reads as settled and the correction lives
+   * only in a document nobody was sent to.
+   *
+   * Keyed on the country name and the issue that raises it, not on wording.
+   *
+   * ☠️ The table rows are stripped first, and that is the whole assertion.
+   * Denmark is named in `age-floor.md`'s own floor table, so a bare
+   * `toContain("Denmark")` over the file passes no matter what — the claim is
+   * that the file *discusses* it, which is only true outside the table.
+   */
+  it("warns about a contradicted floor in the file that carries the table", () => {
+    const prose = readFileSync(resolve(ROOT, "docs/age-floor.md"), "utf8")
+      .split("\n")
+      .filter((line) => !line.trimStart().startsWith("|"))
+      .join("\n");
+
+    for (const row of checked) {
+      if (row.verdict !== "CONTRADICTED") continue;
+
+      expect(prose).toContain(countryName(row.code, "en"));
+      expect(prose).toMatch(/issues\/1921/);
     }
   });
 });

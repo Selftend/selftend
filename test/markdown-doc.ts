@@ -22,6 +22,32 @@
  * section stops at its sibling. `##` and `###` are the only levels these
  * documents use.
  */
+/**
+ * One markdown table row split into its trimmed cells, or `null` when the line
+ * is not a table row.
+ *
+ * The leading and trailing pipes are dropped so `cells[0]` is the first real
+ * column rather than an empty string — the off-by-one that makes every column
+ * index in a caller wrong at once.
+ */
+export function tableCells(line: string): string[] | null {
+  if (!line.trimStart().startsWith("|")) {
+    return null;
+  }
+
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+/** Whether a row is a table's `| --- | --- |` separator rather than content. */
+export function isSeparatorRow(cells: string[]): boolean {
+  return cells.every((cell) => /^:?-{2,}:?$/.test(cell));
+}
+
 export function section(markdown: string, headingPattern: RegExp): string {
   const lines = markdown.split("\n");
   const start = lines.findIndex((line) => /^#{2,3} /.test(line) && headingPattern.test(line));

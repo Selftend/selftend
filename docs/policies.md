@@ -59,6 +59,13 @@ Deferred items from the review (open questions, not launch blockers):
 - Under-floor attempts retain nothing — the account created for the attempt is
   deleted immediately ([#1765](https://github.com/Selftend/selftend/issues/1765)) —
   and an account discovered to be under its floor is deleted on knowledge.
+- ⚠️ **One row is known wrong and is not yet fixed.** Denmark's age of digital
+  consent has been **15** since 2024-01-01; the table still says 13. It is
+  raised for the owner and counsel at
+  [#1921](https://github.com/Selftend/selftend/issues/1921) rather than changed
+  silently, and it is cheaper to settle before the release than after. Every
+  floor's source is in
+  [age-floor-statute-checks.md](age-floor-statute-checks.md) ([#1763](https://github.com/Selftend/selftend/issues/1763)).
 - **No minor flag and no parental-consent path.** Protections are universal
   rather than conditional; where a law would require a parental-consent route,
   the floor rises instead. The decision and the compliance argument behind it
