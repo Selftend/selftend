@@ -46,7 +46,10 @@ Thought records, mood entries and journal text are special-category health
 data. The age that matters is therefore the age at which a person may consent
 to _that processing_ on their own behalf — which member states set individually
 under Art. 8, between 13 and 16. Where a country sets it higher, Selftend's
-floor rises to match.
+floor rises to match — with **one known exception, open and unresolved**:
+Denmark sets 15 and this table still says 13. See
+[#1921](https://github.com/Selftend/selftend/issues/1921) and § _Where each row
+came from_.
 
 There is **no parental-consent path and no age verification.** Where the law
 would require one, the floor rises instead. That is a deliberate scope
@@ -64,24 +67,53 @@ An entry means the value was **decided and sourced** for that jurisdiction. The
 catch-all means **nobody has looked yet.** The legal review needs to tell those
 two apart, and so does anyone extending the table later.
 
-## Open question
+⚠️ **Sourced is not the same as still true.** Denmark was an entry, sourced to a
+named section of the right act, and the number was wrong anyway because the act
+moved after the mapping was written. What an entry now carries is a row in
+[age-floor-statute-checks.md](age-floor-statute-checks.md) saying where it came
+from and when it was last read — which is the part that can go stale, and the
+part the annual check re-reads.
 
-Not every row is sourced to the same standard. Some were established only from
-secondary summaries rather than from the national statute itself, and the
-research table marks those rows **`(C)`** — the marker is defined there, not
-here, and this file deliberately does not restate which countries carry it,
-because that list is the research document's to change.
+## Where each row came from
 
-Checking those rows against primary legislative sources is
-[#1763](https://github.com/Selftend/selftend/issues/1763), and it must complete before they govern anyone's access.
+Every row now has a provenance record in
+[age-floor-statute-checks.md](age-floor-statute-checks.md), and
+`test/age-floor-provenance.test.ts` holds the two together: a country in the
+table above with no row there, or a row whose stated floor has drifted from the
+code, fails `verify`.
 
-The research is not merged: it lives at
+The twenty-one rows that were only ever established from secondary summaries —
+the research marks them **`(C)`** — were read against the national statute on
+2026-09-04 for [#1763](https://github.com/Selftend/selftend/issues/1763), and
+Spain was read with them because its own "primary" mark rested on a law firm's
+summary. Twenty of those twenty-two confirmed.
+
+> [!CAUTION]
+> **Denmark is the exception, and this table has not been changed.** The Danish
+> age of digital consent has been **15** since 1 January 2024, and the table
+> above still says 13. A primary source contradicting the table is **raised, not
+> silently applied** — the table is a settled decision of map #216, and revising
+> it is the owner's call with counsel. That decision is
+> [#1921](https://github.com/Selftend/selftend/issues/1921), and it is cheaper
+> before the §7 release than after it.
+
+**Hungary is unverified**, not confirmed: the official consolidated repository
+could not be reached. It carries 16, which is the GDPR's own default and the
+highest floor here, so the exposure is over-protection rather than under —
+recorded in the checks document as an open question for counsel.
+
+⚠️ **That is a live exception to the rule, not a repeal of it.** Spec §2 is that
+a row is checked against a primary source **before it governs anyone's access**,
+and Hungary's row governs access today without having been. Two rows therefore
+reach the §5 legal review unfinished — Denmark contradicted, Hungary unverified
+— and both are on [#1771](https://github.com/Selftend/selftend/issues/1771).
+Neither is a reason to relax the rule for the next row.
+
+The 2026-07-24 research behind the original table is not merged: it lives at
 `docs/research/2026-07-24-gdpr-consent-ages.md` on branch
-`research/gdpr-consent-ages`, so reading it means checking that branch out.
-
-If a primary source contradicts this table, that is **raised, not silently
-applied** — the table is a settled decision of map #216, and revising it is the
-owner's call with counsel.
+`research/gdpr-consent-ages`, so reading it means checking that branch out. Its
+own claim that no country other than Slovenia had changed its age is what Denmark
+falsified.
 
 ## Behaviour worth knowing
 
