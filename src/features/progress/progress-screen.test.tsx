@@ -1,12 +1,10 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { screen } from "@testing-library/react-native";
 import { ScrollView } from "react-native";
 import { Svg } from "react-native-svg";
 
 import ProgressScreen from "@/src/features/progress/progress-screen";
 import { useMoodScorePoints } from "@/src/features/mood/queries";
-import { startOfDayDaysAgo } from "@/src/utils/date";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { entryDayKey } from "@/src/lib/occurrence-time";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -15,6 +13,8 @@ jest.mock("@/src/providers/session-provider", () => ({
   }),
 }));
 
+// Mocked so the mood trend's absence can be asserted on the MECHANISM rather
+// than on its copy - see the first test.
 jest.mock("@/src/features/mood/queries", () => ({
   useMoodScorePoints: jest.fn(),
 }));
@@ -26,66 +26,45 @@ describe("ProgressScreen", () => {
     jest.clearAllMocks();
   });
 
-  it("renders the mood trend from a fixed 30-day score-points window with no range controls", () => {
-    const noon = new Date();
-    noon.setHours(12, 0, 0, 0);
-    mockUseMoodScorePoints.mockReturnValue({
-      data: [
-        {
-          loggedAt: noon.toISOString(),
-          loggedOffsetMinutes: null,
-          dayKey: entryDayKey(noon.toISOString(), null),
-          moodScore: 4,
-        },
-      ],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useMoodScorePoints>);
-
+  it("is named Looking back and draws no mood trend (#1826)", () => {
     renderWithProviders(<ProgressScreen />);
 
-    expect(mockUseMoodScorePoints).toHaveBeenCalledWith(
-      "user-1",
-      startOfDayDaysAgo(30).toISOString(),
-    );
-    // Fixed window: no range tabs on this screen.
+    expect(screen.getByText("Looking back")).toBeTruthy();
+
+    /*
+     * The mood trend's removal is asserted on what the screen DOES, not on the
+     * strings it stopped rendering. `queryByText("Log a mood to start your
+     * trend.")` was the old guard here, and deleting that key from the locales
+     * turns it green for good - it would pass just as happily against a screen
+     * that had the whole chart back under different copy. These two survive a
+     * revert: put the card back and the query fires and the chart mounts.
+     */
+    expect(mockUseMoodScorePoints).not.toHaveBeenCalled();
+    expect(screen.UNSAFE_queryByType(Svg)).toBeNull();
+
+    // No range controls - and the time view landing on this screen next (#1906)
+    // may not bring any either: a changeable window invites comparison between
+    // windows, which is the denominator #1834 removed.
     expect(screen.queryByText("7d")).toBeNull();
     expect(screen.queryByText("30d")).toBeNull();
     expect(screen.queryByText("90d")).toBeNull();
     expect(screen.queryByText("Custom")).toBeNull();
-    expect(screen.queryByText("Log a mood to start your trend.")).toBeNull();
   });
 
-  it("sizes the chart to the card's measured content box, not the window", () => {
-    const noon = new Date();
-    noon.setHours(12, 0, 0, 0);
-    mockUseMoodScorePoints.mockReturnValue({
-      data: [
-        {
-          loggedAt: noon.toISOString(),
-          loggedOffsetMinutes: null,
-          dayKey: entryDayKey(noon.toISOString(), null),
-          moodScore: 4,
-        },
-      ],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useMoodScorePoints>);
-
+  it("renders the same with no data at all - it reads nothing to render (#1840)", () => {
+    // There is no loading state and no empty state left on this screen, because
+    // there is nothing to load. A person who has recorded nothing sees exactly
+    // what a person with a thousand records sees.
     renderWithProviders(<ProgressScreen />);
 
-    fireEvent(screen.getByTestId("mood-trend-layout"), "layout", {
-      nativeEvent: { layout: { x: 0, y: 0, width: 294, height: 160 } },
-    });
-
-    const chartSvg = screen.UNSAFE_getByType(Svg);
-    expect(chartSvg.props.width).toBe(294);
+    expect(screen.getByText("Looking back")).toBeTruthy();
+    expect(screen.getByText("Reflection prompt")).toBeTruthy();
+    expect(
+      screen.getByText("Looking back over this stretch, what stands out to you?"),
+    ).toBeTruthy();
   });
 
   it("pins one reflection prompt - the same question on every weekday (#1665)", () => {
-    mockUseMoodScorePoints.mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useMoodScorePoints>);
-
     // A Sunday and a Wednesday: the retired weekday-modulo pick rendered a
     // different question on each (#1665) - content that changes daily on a rule
     // the user cannot see is a schedule, not a library. The Sunday case is the
@@ -98,7 +77,7 @@ describe("ProgressScreen", () => {
         const view = renderWithProviders(<ProgressScreen />);
 
         expect(
-          screen.getByText("What is one thing you noticed about your mood or energy?"),
+          screen.getByText("Looking back over this stretch, what stands out to you?"),
         ).toBeTruthy();
 
         view.unmount();
@@ -106,17 +85,6 @@ describe("ProgressScreen", () => {
         jest.useRealTimers();
       }
     }
-  });
-
-  it("shows the empty state when the window has no points", () => {
-    mockUseMoodScorePoints.mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useMoodScorePoints>);
-
-    renderWithProviders(<ProgressScreen />);
-
-    expect(screen.getByText("Log a mood to start your trend.")).toBeTruthy();
   });
 
   /**
@@ -129,11 +97,6 @@ describe("ProgressScreen", () => {
    * placed inside the gutters would read 720, not 672.
    */
   it("takes the 672px content column of Settings and Notifications (#1721)", () => {
-    mockUseMoodScorePoints.mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as unknown as ReturnType<typeof useMoodScorePoints>);
-
     renderWithProviders(<ProgressScreen />);
 
     const tokens = String(
