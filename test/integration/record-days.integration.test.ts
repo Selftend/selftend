@@ -334,92 +334,83 @@ describe("record_days (integration)", () => {
     expect(await recordDays(alice, KOLKATA)).toEqual([]);
   });
 
-  // === The ADR-0001 parity test =========================================
-  it("agrees with entryDayKey over every source, including the null-offset fallback", async () => {
-    await seedEveryTool(alice);
+  describe("with a record in every tool", () => {
+    // Seeded once per test rather than per assertion: `afterEach(clearAlice)`
+    // already resets between them, so this is the same fixture said once.
+    beforeEach(() => seedEveryTool(alice));
 
-    expect(await recordDays(alice, KOLKATA)).toEqual(expectedDays(KOLKATA));
-  });
+    // === The ADR-0001 parity test =========================================
+    it("agrees with entryDayKey over every source, including the null-offset fallback", async () => {
+      expect(await recordDays(alice, KOLKATA)).toEqual(expectedDays(KOLKATA));
+    });
 
-  it.each(CAPTURED)("carries $source's captured day, whatever the viewer's frame", async (f) => {
-    await seedEveryTool(alice);
+    it.each(CAPTURED)("carries $source's captured day, whatever the viewer's frame", async (f) => {
+      // The captured frame decides, so the same day appears under both viewers.
+      const day = dayOf(f, KOLKATA);
+      expect(await recordDays(alice, KOLKATA)).toContain(day);
+      expect(await recordDays(alice, PACIFIC)).toContain(day);
+    });
 
-    // The captured frame decides, so the same day appears under both viewers.
-    const day = dayOf(f, KOLKATA);
-    expect(await recordDays(alice, KOLKATA)).toContain(day);
-    expect(await recordDays(alice, PACIFIC)).toContain(day);
-  });
+    it.each(LEGACY)("files $source's never-captured row in the viewer's frame", async (f) => {
+      expect(await recordDays(alice, KOLKATA)).toContain(dayOf(f, KOLKATA));
+      expect(await recordDays(alice, PACIFIC)).toContain(dayOf(f, PACIFIC));
+    });
 
-  it.each(LEGACY)("files $source's never-captured row in the viewer's frame", async (f) => {
-    await seedEveryTool(alice);
+    it("agrees under a second frame, and moves ONLY the rows that captured none", async () => {
+      const kolkata = await recordDays(alice, KOLKATA);
+      const pacific = await recordDays(alice, PACIFIC);
 
-    expect(await recordDays(alice, KOLKATA)).toContain(dayOf(f, KOLKATA));
-    expect(await recordDays(alice, PACIFIC)).toContain(dayOf(f, PACIFIC));
-  });
+      expect(pacific).toEqual(expectedDays(PACIFIC));
+      expect(kolkata.filter((day) => !pacific.includes(day)).sort()).toEqual(
+        [...new Set(LEGACY.map((f) => dayOf(f, KOLKATA)))].sort(),
+      );
+      expect(pacific.filter((day) => !kolkata.includes(day)).sort()).toEqual(
+        [...new Set(LEGACY.map((f) => dayOf(f, PACIFIC)))].sort(),
+      );
+    });
 
-  it("agrees under a second frame, and moves ONLY the rows that captured none", async () => {
-    await seedEveryTool(alice);
+    it("yields one key for a day carrying records from several tools", async () => {
+      const days = await recordDays(alice, KOLKATA);
+      // A check-in and a self-care log both land on SHARED_DAY: two records, one
+      // mark - exactly like a day with one record.
+      expect(days.filter((day) => day === SHARED_DAY)).toEqual([SHARED_DAY]);
+      expect(new Set(days).size).toBe(days.length);
+    });
 
-    const kolkata = await recordDays(alice, KOLKATA);
-    const pacific = await recordDays(alice, PACIFIC);
+    it("files a windowed sleep entry on the night it began, not the morning it was logged", async () => {
+      const days = await recordDays(alice, KOLKATA);
+      // #800: the entry belongs to the civil day at sleep start, which is where the
+      // sleep screen itself renders it. Reading `logged_at` would say the 18th.
+      expect(days).toContain(dayOf(WINDOWED_SLEEP, KOLKATA));
+      expect(days).not.toContain(WINDOW_WRONG_DAY);
+    });
 
-    expect(pacific).toEqual(expectedDays(PACIFIC));
-    expect(kolkata.filter((day) => !pacific.includes(day)).sort()).toEqual(
-      [...new Set(LEGACY.map((f) => dayOf(f, KOLKATA)))].sort(),
-    );
-    expect(pacific.filter((day) => !kolkata.includes(day)).sort()).toEqual(
-      [...new Set(LEGACY.map((f) => dayOf(f, PACIFIC)))].sort(),
-    );
-  });
+    it("counts an activity only once it is done, and drops an archived thought record", async () => {
+      const days = await recordDays(alice, KOLKATA);
+      expect(days).not.toContain(entryDayKey(SCHEDULED_ONLY_AT, KOLKATA));
+      expect(days).not.toContain(entryDayKey(ARCHIVED_AT, KOLKATA));
+    });
 
-  it("yields one key for a day carrying records from several tools", async () => {
-    await seedEveryTool(alice);
-
-    const days = await recordDays(alice, KOLKATA);
-    // A check-in and a self-care log both land on SHARED_DAY: two records, one
-    // mark - exactly like a day with one record.
-    expect(days.filter((day) => day === SHARED_DAY)).toEqual([SHARED_DAY]);
-    expect(new Set(days).size).toBe(days.length);
-  });
-
-  it("files a windowed sleep entry on the night it began, not the morning it was logged", async () => {
-    await seedEveryTool(alice);
-
-    const days = await recordDays(alice, KOLKATA);
-    // #800: the entry belongs to the civil day at sleep start, which is where the
-    // sleep screen itself renders it. Reading `logged_at` would say the 18th.
-    expect(days).toContain(dayOf(WINDOWED_SLEEP, KOLKATA));
-    expect(days).not.toContain(WINDOW_WRONG_DAY);
-  });
-
-  it("counts an activity only once it is done, and drops an archived thought record", async () => {
-    await seedEveryTool(alice);
-
-    const days = await recordDays(alice, KOLKATA);
-    expect(days).not.toContain(entryDayKey(SCHEDULED_ONLY_AT, KOLKATA));
-    expect(days).not.toContain(entryDayKey(ARCHIVED_AT, KOLKATA));
-  });
-
-  it("returns days ascending, so the axis can anchor on the first record", async () => {
-    await seedEveryTool(alice);
-
-    const days = await recordDays(alice, KOLKATA);
-    expect(days).toEqual([...days].sort());
-    expect(days[0]).toBe(dayOf(CAPTURED[0], KOLKATA));
+    it("returns days ascending, so the axis can anchor on the first record", async () => {
+      const days = await recordDays(alice, KOLKATA);
+      expect(days).toEqual([...days].sort());
+      expect(days[0]).toBe(dayOf(CAPTURED[0], KOLKATA));
+    });
   });
 
   // === security invoker ==================================================
   it("never shows one person the other's days", async () => {
-    await seedEveryTool(alice);
-    const alicesDays = await recordDays(alice, KOLKATA);
-    const bobsDays = await recordDays(bob, KOLKATA);
+    // Bob keeps his own seeded fixtures, so read him BEFORE and AFTER rather
+    // than asserting his days miss alice's. "Alice's days are absent from bob's"
+    // would quietly become vacuous the day a seed row of his happened to land on
+    // one of these dates - and it would look like a passing isolation test.
+    const bobsDaysBefore = await recordDays(bob, KOLKATA);
 
-    // Bob carries his own seeded fixtures, so assert on the sentinel days alice
-    // just wrote rather than on emptiness.
-    expect(alicesDays).not.toEqual([]);
-    for (const day of alicesDays) {
-      expect(bobsDays).not.toContain(day);
-    }
+    await seedEveryTool(alice);
+
+    const alicesDays = await recordDays(alice, KOLKATA);
+    expect(alicesDays).toEqual(expectedDays(KOLKATA));
+    expect(await recordDays(bob, KOLKATA)).toEqual(bobsDaysBefore);
   });
 
   it("is declared security invoker and stable", () => {

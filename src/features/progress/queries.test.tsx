@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react-native";
 import type { PropsWithChildren } from "react";
 
-import { recordDaysKey, useRecordDays } from "@/src/features/progress/queries";
+import { recordDaysKeys, useRecordDays } from "@/src/features/progress/queries";
 import * as repo from "@/src/features/progress/repository";
 import { createTestQueryClient } from "@/test/render-with-providers";
 
@@ -24,17 +24,31 @@ beforeEach(() => {
   mockListRecordDays.mockResolvedValue([]);
 });
 
-describe("recordDaysKey", () => {
+describe("recordDaysKeys.forViewer", () => {
   it("carries the frame as well as the user, because the RPC reads both", () => {
     // They move independently: rows that captured no offset are bucketed by the
     // frame passed in, so flying between zones changes the answer while the user
     // id does not move. Keying on the id alone would serve the departure city's
     // days after arrival.
-    expect(recordDaysKey("user-1", 330)).not.toEqual(recordDaysKey("user-1", -480));
+    expect(recordDaysKeys.forViewer("user-1", 330)).not.toEqual(
+      recordDaysKeys.forViewer("user-1", -480),
+    );
   });
 
   it("keeps a signed-out reader off every real user's cache entry", () => {
-    expect(recordDaysKey(null, 330)).toEqual(["progress", "record-days", "anonymous", 330]);
+    expect(recordDaysKeys.forViewer(null, 330)).toEqual([
+      "progress",
+      "record-days",
+      "anonymous",
+      330,
+    ]);
+  });
+
+  it("nests under the root, so one invalidation reaches every frame", () => {
+    // The root is the handle a write path will invalidate by (#1906). A key that
+    // did not start with it would leave the root inert while looking wired up.
+    const key = recordDaysKeys.forViewer("user-1", -480);
+    expect(key.slice(0, recordDaysKeys.all.length)).toEqual([...recordDaysKeys.all]);
   });
 });
 
@@ -44,7 +58,7 @@ describe("useRecordDays", () => {
     renderHook(() => useRecordDays(null), { wrapper: wrap(client) });
 
     expect(mockListRecordDays).not.toHaveBeenCalled();
-    expect(client.getQueryState(recordDaysKey(null, 330))?.fetchStatus).toBe("idle");
+    expect(client.getQueryState(recordDaysKeys.forViewer(null, 330))?.fetchStatus).toBe("idle");
   });
 
   it("fetches the viewer's days under the viewer's own frame by default", async () => {

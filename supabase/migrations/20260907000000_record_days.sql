@@ -39,8 +39,9 @@
 -- that renders them.
 --
 -- === Why the _data tables, not the views ============================================
--- Seven of these ten are decrypting views (`app.decrypt_text` per row, VOLATILE, so
--- the planner can neither merge nor drop the calls - #706). This function reads only
+-- Nine of these ten are decrypting views (`app.decrypt_text` per row, VOLATILE, so
+-- the planner can neither merge nor drop the calls - #706); `meditation_sessions` is
+-- the one plain base table, and is read under its own name. This function reads only
 -- plaintext timestamp, offset and date columns, and it scans ALL TIME, so going
 -- through the views would decrypt the user's entire history to answer a question
 -- about calendar days. `sleep_stats` (20260811000000) already reads

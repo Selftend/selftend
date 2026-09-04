@@ -48,11 +48,17 @@ describe("record_days sources", () => {
   });
 
   it("reads the base tables, never the decrypting views", () => {
-    // Seven of the ten are `*_data` tables behind a decrypting view. The RPC
-    // needs only plaintext timestamps, offsets and dates, and it scans ALL TIME,
-    // so going through a view would run `app.decrypt_text` (VOLATILE — the
-    // planner can neither merge nor drop it, #706) over the person's entire
-    // history to answer a question about calendar days.
+    // NINE of the ten are `*_data` tables behind a decrypting view -
+    // `meditation_sessions` is the only plain base table. The RPC needs only
+    // plaintext timestamps, offsets and dates, and it scans ALL TIME, so going
+    // through a view would run `app.decrypt_text` (VOLATILE — the planner can
+    // neither merge nor drop it, #706) over the person's entire history to
+    // answer a question about calendar days.
+    //
+    // The list above already forbids these names, so this cannot go red on its
+    // own today. It is kept because it states the RULE rather than the list: an
+    // edit that moved a leg onto its view AND updated `EXPECTED_SOURCES` to
+    // match would leave that test green and fail here.
     const sql = readFileSync(MIGRATION, "utf8");
     const encryptedFamilies = [
       "mood_logs",
@@ -67,7 +73,11 @@ describe("record_days sources", () => {
     ];
 
     for (const family of encryptedFamilies) {
-      expect(sql).not.toMatch(new RegExp(`\\bfrom\\s+public\\.${family}\\b(?!_data)`));
+      // `\b` alone already separates the view from its `_data` twin: `_` is a
+      // word character, so `public.mood_logs\b` cannot match inside
+      // `public.mood_logs_data`. A `(?!_data)` lookahead here would read as the
+      // thing doing the work while doing nothing.
+      expect(sql).not.toMatch(new RegExp(`\\bfrom\\s+public\\.${family}\\b`));
     }
   });
 });
