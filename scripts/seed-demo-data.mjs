@@ -365,6 +365,35 @@ const DEMO_WIDGET_IDS = [
   );
 }
 
+// Favourites (#1953): exactly what 20260908000000_favorites.sql's one-shot copy
+// produces from the fourteen ids above - the eight shared tools 1:1, and the CBT
+// and ACT ids (`cbt-programme`, `self-care`, `cbt-open-record`; `act-programme`,
+// `act-drop-anchor`) collapsed to one module row each. Written here because seeds
+// run AFTER migrations, so the copy has already run against an empty table by the
+// time the rows above exist. Literals, not derived from DEMO_WIDGET_IDS: deriving
+// would restate WIDGET_META's toolKey mapping a third time, and the pairing is
+// already checked against the registry by test/seed-widget-layouts.test.ts.
+const DEMO_FAVORITES = [
+  ["module", "cbt"],
+  ["module", "act"],
+  ["tool", "mood"],
+  ["tool", "breathing"],
+  ["tool", "journal"],
+  ["tool", "gratitude"],
+  ["tool", "habits"],
+  ["tool", "sleep"],
+  ["tool", "meditation"],
+  ["tool", "grounding"],
+];
+
+{
+  await wipe("favorites");
+  counts.favorites = await insert(
+    "favorites",
+    DEMO_FAVORITES.map(([kind, key]) => ({ user_id: DEMO_USER_ID, kind, key })),
+  );
+}
+
 // ------------------------------------------------------------------- emotions
 // Full default set (constants/emotions.ts order) + two customs, so the picker,
 // manage screen, and usage counts all have something to show.
@@ -5310,6 +5339,37 @@ const SEEDED_ROUTINES = [
         "wizard's starter panel behind it, are reachable at all.",
     );
   }
+
+  // The same three facts, for favourites (#1953): demo's and bob's are exactly the
+  // rows the migration's copy would have produced from their widget rows, and
+  // alice's are zero. Compared as a SORTED set of `kind:key`, not in position
+  // order - favourites have no position, and the migration writes them in no
+  // particular order either.
+  const BOB_FAVORITES = [
+    ["module", "cbt"],
+    ["tool", "mood"],
+    ["tool", "breathing"],
+    ["tool", "journal"],
+  ];
+  const readFavorites = async (userId, label) => {
+    const { data, error } = await admin.from("favorites").select("kind,key").eq("user_id", userId);
+    if (error) throw new Error(`${label} favorites read-back: ${error.message}`);
+    return data.map((row) => `${row.kind}:${row.key}`).sort();
+  };
+  const expectFavorites = async (userId, expected, label) => {
+    const got = await readFavorites(userId, label);
+    const wanted = expected.map(([kind, key]) => `${kind}:${key}`).sort();
+    if (JSON.stringify(got) !== JSON.stringify(wanted)) {
+      throw new Error(
+        `${label}'s favourites read [${got.join(", ")}], not [${wanted.join(", ")}]. ` +
+          "`favorites.key` is bare TEXT with no check, so a typo inserts fine and Home " +
+          "silently ignores it.",
+      );
+    }
+  };
+  await expectFavorites(DEMO_USER_ID, DEMO_FAVORITES, "demo");
+  await expectFavorites(BOB_USER_ID, BOB_FAVORITES, "bob");
+  await expectFavorites(ALICE_USER_ID, [], "alice");
 
   // The other two invariants this layout decided — demo's remaining `/arrange` chip
   // run of 11, and bob's four ids composing a THREE-step starter card — are asserted
