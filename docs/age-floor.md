@@ -25,6 +25,14 @@ Source: **[Spec: teen access (13+ per-country age floor)](https://github.com/Sel
 destination of wayfinder map [#216](https://github.com/Selftend/selftend/issues/216). This file is the durable copy — the
 values were previously reviewable only inside an issue body.
 
+⚠️ **One row deliberately no longer matches §2.** Denmark is 15 here and 13
+there, because the spec inherited a figure from a mapping that predated the
+Danish amendment. The statute won, by the owner's decision on
+[#1921](https://github.com/Selftend/selftend/issues/1921) — so where this table
+and §2 disagree about Denmark, **this table is right**. Every row's source and
+the date it was last read are in
+[age-floor-statute-checks.md](age-floor-statute-checks.md).
+
 Implemented in `src/features/auth/age-floor.ts`.
 
 ## The table

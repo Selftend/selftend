@@ -133,10 +133,12 @@ Three things that shaped the decision:
   amending act preserves the old 13 rule for consents given _before_ 1 January 2024. Selftend holds no Danish consent predating that date, so every consent it
   collects falls under the 15 rule.
 
-The table used to mis-cite the limb, too: **§ 6(2)** sets the age; § 6(3) is the
-parental-consent fallback. And the only "13 år" left anywhere in the consolidated
-act sits inside the reproduced text of GDPR Art. 8(1) in an annex — an easy way
-for a re-checker to confirm the wrong number.
+The research row this floor came from also names the wrong limb — it cites
+`Databeskyttelsesloven §6(3)`, and **§ 6(2)** is what sets the age; § 6(3) is the
+parental-consent fallback. That research is unmerged, so nothing in this change
+corrects it; the row above is the citation to use. And the only "13 år" left
+anywhere in the consolidated act sits inside the reproduced text of GDPR
+Art. 8(1) in an annex — an easy way for a re-checker to confirm the wrong number.
 
 ## The unresolved row
 
@@ -288,8 +290,10 @@ statutory text, never from a summary of it.
 ## Where this is read next
 
 - The owner's legal review, [#1771](https://github.com/Selftend/selftend/issues/1771)
-  (spec §5), which happens before publication. The Denmark contradiction and the
-  Hungary gap are both on it.
+  (spec §5), which happens before publication. **The Hungary gap is the one row
+  that reaches it unfinished.** The Denmark finding is on it too, now as a
+  correction already made rather than a decision still owed — counsel sees the
+  changed floor, not a choice about it.
 - The Denmark decision itself:
   [#1921](https://github.com/Selftend/selftend/issues/1921).
 - The annual legal-landscape check in
