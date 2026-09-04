@@ -13,6 +13,7 @@ import {
 } from "@/src/features/mood/repository";
 import type { MoodInput } from "@/src/features/mood/types";
 import { addDaysToKey } from "@/src/utils/date";
+import { invalidateRecordDays, recordDaysKeys } from "@/src/features/progress/queries";
 import { useDeleteMutation } from "@/src/lib/use-delete-mutation";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { nextDescendingCursor, type RecordCursor } from "@/src/lib/descending-cursor";
@@ -170,7 +171,7 @@ export function useMoodLogCount(userId: string | null) {
 }
 
 export function useDeleteMoodLog(userId: string | null) {
-  return useDeleteMutation(userId, deleteMoodLog, moodKeys.all);
+  return useDeleteMutation(userId, deleteMoodLog, moodKeys.all, recordDaysKeys.all);
 }
 
 export function useSaveMoodLog(userId: string | null) {
@@ -182,7 +183,11 @@ export function useSaveMoodLog(userId: string | null) {
     onSuccess: async (_data, { moodLogId }) => {
       if (!moodLogId) requestReminderPrompt("mood");
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: moodKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: moodKeys.all }),
+        // A check-in is one of the ten records that make a day a marked day.
+        invalidateRecordDays(queryClient),
+      ]);
     },
   });
 }

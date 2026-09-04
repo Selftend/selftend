@@ -9,6 +9,7 @@ import {
   saveActivity,
 } from "@/src/features/activities/repository";
 import type { ActivityInput } from "@/src/features/activities/types";
+import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 
 const activityKeys = {
@@ -95,6 +96,10 @@ export function useCompleteActivity(userId: string | null) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: activityKeys.list(userId) }),
         queryClient.invalidateQueries({ queryKey: activityKeys.detail(userId, activity.id) }),
+        // Behavioural activation contributes COMPLETIONS only, so this is the
+        // activity mutation that can mark a day - `useSaveActivity` above edits a
+        // schedule and never touches `completed_at`.
+        invalidateRecordDays(queryClient),
       ]);
     },
   });

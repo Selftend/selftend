@@ -12,6 +12,7 @@ import {
 import { Text } from "@/src/components/react-native-reusables/text";
 import { AccessibleCardLink } from "@/src/components/app/accessible-card-link";
 import { ScreenHeader } from "@/src/components/app/screen-header";
+import { RecordBandCard } from "@/src/features/progress/record-band-card";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { cn } from "@/lib/utils";
@@ -28,8 +29,8 @@ import { cn } from "@/lib/utils";
  *
  * The recovery-plan door is here (#1905) - the one thing on this screen a
  * person can act on, and the one thing here that is written rather than
- * computed. The time view lands next (#1906), and brings the only marks this
- * screen will ever draw.
+ * computed. The time view (#1906) brings the only marks this screen will ever
+ * draw, and no figure at all.
  */
 export default function ProgressScreen() {
   const { t } = useTranslation("navigation");
@@ -44,6 +45,14 @@ export default function ProgressScreen() {
             <ScreenHeader title={t("progress.title")} />
             <Text variant="muted">{t("progress.description")}</Text>
           </View>
+
+          {/*
+            The time view (#1906) - the record itself, and the reason this
+            screen is worth opening. One inert mark per day with a record,
+            across all ten tools that name their own day, on an all-time axis.
+            It states that the record exists and nothing else.
+          */}
+          <RecordBandCard />
 
           {/*
             One pinned prompt (#1665). Four questions used to rotate by

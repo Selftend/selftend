@@ -29,7 +29,7 @@ Before sending, Sign-In Information was switched to **`demo@selftend.org`** (own
 
 ## ⚠️ This document describes build 6, not `dev`
 
-Apple is reviewing **0.11.1 build 6**. `dev` is already at 0.13.0 and differs — the tools hub gained a tenth entry, the mood tool was relabelled "Check-in", the "Insights" screen was relabelled "Looking back" (#1903; both tables below still say "Insights", and stay that way until the release carrying the rename — #1907), and the home screen was redesigned. **Every claim below was verified against the `v0.11.1` tag**, not the working tree, and nothing in the reply may describe behaviour that only exists on `dev`.
+Apple is reviewing **0.11.1 build 6**. `dev` is already at 0.13.0 and differs — the tools hub gained a tenth entry, the mood tool was relabelled "Check-in", the "Insights" screen was relabelled "Looking back" (#1903; both tables below still say "Insights", and stay that way until the release carrying the rename — #1907) and rebuilt around a band of marks — one per day the person recorded anything, across every tool (#1906) — where build 6 shows a 30-day mood trend, and the home screen was redesigned. **Every claim below was verified against the `v0.11.1` tag**, not the working tree, and nothing in the reply may describe behaviour that only exists on `dev`.
 
 Two corrections this produced, recorded so no later session re-inherits them:
 
