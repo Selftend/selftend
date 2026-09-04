@@ -38,7 +38,7 @@ Detection, supervisory-authority notification within 72 hours, and notification 
 
 **A full DPIA exists: [dpia-minors-assessment.md](dpia-minors-assessment.md)**, combined with the Connecticut and Colorado minors' data-protection assessment in one document ([#1768](https://github.com/Selftend/selftend/issues/1768)). It describes the as-built data flow, assesses necessity and proportionality, carries a risk register with its residual ratings, and records the no-minor-flag decision and the universal defaults that make it work. Its conclusion is that residual risk is not high and no Art. 36 prior consultation is required.
 
-It **supersedes the 2026-05-12 screening**, which concluded a full DPIA was not required and was correct for the 18-and-over product it described. The teen floor changed two of the WP248 criteria that decide the question — special-category content, and children as vulnerable data subjects. The superseded screening is kept in [operations-runbook.md](operations-runbook.md) as part of the accountability record.
+It **supersedes the 2026-05-12 screening**, which concluded a full DPIA was not required and was correct for the 18-and-over product it described. Special-category content was always one of the WP248 criteria that decide the question; the teen floor added the second, vulnerable data subjects, and two is the point at which a DPIA is expected. The superseded screening is kept in [operations-runbook.md](operations-runbook.md) as part of the accountability record.
 
 ## International Transfers (Chapter V)
 

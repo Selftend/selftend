@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { section } from "@/test/markdown-doc";
+
 /**
  * The combined DPIA and minors' data-protection assessment (#1768, spec #227
  * §4).
@@ -35,25 +37,6 @@ const DOC = "docs/dpia-minors-assessment.md";
 const assessment = readFileSync(resolve(ROOT, DOC), "utf8");
 const gdprPosture = readFileSync(resolve(ROOT, "docs/gdpr-compliance.md"), "utf8");
 const runbook = readFileSync(resolve(ROOT, "docs/operations-runbook.md"), "utf8");
-
-/** The body of one section, up to the next heading at the same level or above. */
-function section(markdown: string, headingPattern: RegExp): string {
-  const lines = markdown.split("\n");
-  const start = lines.findIndex((line) => /^#{2,3} /.test(line) && headingPattern.test(line));
-
-  if (start === -1) {
-    return "";
-  }
-
-  const level = (lines[start].match(/^#+/) ?? ["##"])[0].length;
-  const rest = lines.slice(start + 1);
-  const end = rest.findIndex((line) => {
-    const heading = line.match(/^#+(?= )/);
-    return heading !== null && heading[0].length <= level;
-  });
-
-  return (end === -1 ? rest : rest.slice(0, end)).join("\n");
-}
 
 /**
  * The data rows of the first markdown table under a heading, each as its cells.
@@ -100,10 +83,16 @@ function slug(heading: string): string {
 }
 
 describe("the assessment covers both frameworks it was asked to combine", () => {
+  /**
+   * The articles that decide what the document has to contain and what it has
+   * to conclude - not `Art. 35` on its own, which the title and four headings
+   * would satisfy without the document saying anything.
+   */
   it("names the GDPR articles the document answers to", () => {
-    expect(assessment).toMatch(/Art\. 35/);
+    expect(assessment).toMatch(/Art\. 35\(1\)/);
+    expect(assessment).toMatch(/Art\. 35\(9\)/);
     expect(assessment).toMatch(/Art\. 9\(2\)\(a\)/);
-    expect(assessment).toMatch(/Art\. 36/);
+    expect(assessment).toMatch(/Art\. 36\(1\)/);
   });
 
   it("names the Connecticut and Colorado statutes by their own identifiers", () => {
@@ -154,10 +143,13 @@ describe("the duties table", () => {
   });
 });
 
+/** The risk register's column contract, named once so two tests cannot disagree. */
+const RISK = { id: 0, controls: 4, likelihood: 2, severity: 3, residual: 5, columns: 6 } as const;
+
 describe("the risk register", () => {
   const rows = firstTableAfter(assessment, /^## 3\. Risks/);
-  const ids = rows.map((row) => row[0]);
-  const residuals = new Map(rows.map((row) => [row[0], row[row.length - 1]]));
+  const ids = rows.map((row) => row[RISK.id]);
+  const residuals = new Map(rows.map((row) => [row[RISK.id], row[RISK.residual]]));
 
   it("carries the risks it was written to weigh", () => {
     expect(rows.length).toBeGreaterThanOrEqual(10);
@@ -169,11 +161,11 @@ describe("the risk register", () => {
 
   it("rates every risk, before and after the controls", () => {
     for (const row of rows) {
-      expect(row).toHaveLength(6);
-      expect(row[2]).toMatch(/^(Low|Medium|High)$/);
-      expect(row[3]).toMatch(/^(Low|Medium|High)$/);
-      expect(row[5]).toMatch(/^(Low|Medium|High)$/);
-      expect(row[4]).not.toBe("");
+      expect(row).toHaveLength(RISK.columns);
+      expect(row[RISK.likelihood]).toMatch(/^(Low|Medium|High)$/);
+      expect(row[RISK.severity]).toMatch(/^(Low|Medium|High)$/);
+      expect(row[RISK.residual]).toMatch(/^(Low|Medium|High)$/);
+      expect(row[RISK.controls]).not.toBe("");
     }
   });
 
@@ -185,12 +177,17 @@ describe("the risk register", () => {
    * to pick each one up by id - so adding a residual Medium without saying why
    * fails here, and lowering a rating to silence the guard is a visible edit to
    * the rating itself.
+   *
+   * ⚠️ Deliberately no "at least one risk is carried" assertion. It would look
+   * like anti-vacuity insurance and would actually mean the document may never
+   * reduce every risk to Low - a guard that goes red on an improvement, which
+   * is the shape this repo deletes rather than fixes. That the rows exist at
+   * all is already proven by the two tests above.
    */
   it("argues every risk it does not reduce to Low", () => {
     const conclusion = section(assessment, /^## 7\. Residual risk/);
     const carried = ids.filter((id) => residuals.get(id) !== "Low");
 
-    expect(carried.length).toBeGreaterThan(0);
     expect(conclusion).not.toBe("");
 
     for (const id of carried) {
