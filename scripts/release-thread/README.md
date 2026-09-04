@@ -83,8 +83,10 @@ The thread, from [#1880](https://github.com/Selftend/selftend/issues/1880):
   gate. The tools line stays out of the rotation - directly under a frame
   sentence that already names the everyday tools it restates the opening.
 - What the thread may claim is [#1877](https://github.com/Selftend/selftend/issues/1877)'s
-  seven rules: time-invariant, no per-platform availability claim, the version
-  in the title only, third-person, the category declared in the frame shape.
+  seven rules: time-invariant, no per-platform availability claim (the version
+  names a release in the title and the `In <version>:` line, never sits beside
+  an availability sentence), third-person, the category declared in the frame
+  shape.
 
 The submit link is `https://www.reddit.com/r/Selftend/submit?title=…&text=…`,
 both values URL-encoded and nothing else - no flair parameter is verified to

@@ -74,7 +74,7 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
-import { draft, releaseFromCorpus } from "./picker.mjs";
+import { CORPUS_PATH, draft, releaseFromCorpus } from "./picker.mjs";
 
 /**
  * @typedef {import("./picker.mjs").Draft} Draft
@@ -356,8 +356,7 @@ usage:
                into a shell line - pass it as env)
 
 With neither a file nor RELEASE_BODY, the tag is looked up in the committed
-corpus at test/fixtures/github-releases.json, so any past release can be
-rendered for a look.
+corpus at ${CORPUS_PATH}, so any past release can be rendered for a look.
 
 Exit 0 whether or not anything was picked - json prints \`postable: false\`
 and the other formats print nothing; only a non-zero exit means the renderer

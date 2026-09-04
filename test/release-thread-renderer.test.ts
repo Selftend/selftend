@@ -55,23 +55,51 @@ const byTag = (tag: string) => {
 };
 const postable = releases.map((r) => draft(r)).filter((d) => d.postable);
 
+const positioningDoc = fs.readFileSync(path.join(ROOT, "docs/positioning.md"), "utf8");
+
 /**
- * `docs/positioning.md`, in the shape the drafter carries it: bold markers
- * dropped, em and en dashes hyphenated, whitespace collapsed. The frame
- * sentence is printed in the doc with `**` around its two halves.
+ * The body of one `###` section of `docs/positioning.md`, up to the next
+ * heading. ☠️ The pin reads the two SECTIONS, never the whole file: the doc
+ * habitually quotes retired phrasing as history (the old frame tail sits two
+ * paragraphs under the new sentence), so a whole-document substring search
+ * would stay green on a rewording that keeps the old sentence in a "was" note
+ * while the drafter drifts.
  */
-const positioningDoc = hyphenate(
-  fs.readFileSync(path.join(ROOT, "docs/positioning.md"), "utf8").replace(/\*\*/g, ""),
-).replace(/\s+/g, " ");
+const section = (heading: string) => {
+  const match = new RegExp(`^### ${heading}\\n([\\s\\S]*?)(?=^#{1,3} )`, "m").exec(positioningDoc);
+  if (!match) throw new Error(`docs/positioning.md has no "### ${heading}" section`);
+  return match[1];
+};
+
+/** The doc's sentence, in the shape the drafter carries it: bold dropped, dashes hyphenated. */
+const carried = (text: string) => hyphenate(text.replace(/\*\*/g, "")).replace(/\s+/g, " ").trim();
+
+/** § *The frame sentence*'s block quote - the first quoted line of the section. */
+const docFrameSentence = () => {
+  const quote = /^> (.+)$/m.exec(section("The frame sentence"));
+  if (!quote) throw new Error("no block quote under § The frame sentence");
+  return carried(quote[1]);
+};
+
+/**
+ * § *Approved supporting lines*, as the doc lists them: `- **N. <name> — <ROLE>:** "<text>"`,
+ * in order. The name identifies the tools line; the number does not (#1880
+ * called it theme 3, the repositioned doc lists it first).
+ */
+const docSupportingLines = () =>
+  [
+    ...section("Approved supporting lines").matchAll(/^- \*\*\d+\. (.+?) — [^:]+:\*\* "(.+?)"$/gm),
+  ].map(([, name, text]) => ({ name, text: carried(text) }));
 
 describe("the frame sentence and the supporting lines are pinned to docs/positioning.md", () => {
-  test("the frame sentence appears in the doc, dash-normalised", () => {
-    expect(positioningDoc).toContain(FRAME_SENTENCE);
+  test("the frame sentence IS the doc's block quote, dash-normalised", () => {
+    expect(FRAME_SENTENCE).toBe(docFrameSentence());
   });
 
-  test("every supporting line appears in the doc, dash-normalised", () => {
-    expect(SUPPORTING_LINES.length).toBeGreaterThanOrEqual(4);
-    for (const line of SUPPORTING_LINES) expect(positioningDoc).toContain(line.text);
+  test("the supporting lines ARE the doc's list, in its order, dash-normalised", () => {
+    const listed = docSupportingLines();
+    expect(listed.length).toBeGreaterThanOrEqual(4);
+    expect(SUPPORTING_LINES.map((line) => line.text)).toEqual(listed.map((line) => line.text));
   });
 
   test("the constants are the sub's hyphens-only shape: no em dash, en dash or arrow", () => {
@@ -80,17 +108,20 @@ describe("the frame sentence and the supporting lines are pinned to docs/positio
     }
   });
 
-  test("the frame sentence declares the category in the sanctioned shape (#1877 rule 5)", () => {
-    expect(FRAME_SENTENCE).toMatch(/^Selftend is a free, private CBT self-help app - /);
-    expect(FRAME_SENTENCE).toContain("cognitive behavioural therapy");
+  test("the frame sentence keeps its subject - the reason no i18n key could source it (#1880 §2)", () => {
+    expect(FRAME_SENTENCE).toMatch(/^Selftend is /);
   });
 
-  test("the tools line is pinned too, and is the one line kept out of the rotation", () => {
+  test("the tools line is the one the doc names 'The tools', and it alone stays out of the rotation", () => {
+    const listed = docSupportingLines();
+    const docTools = listed.find((line) => line.name === "The tools");
+    expect(docTools).toBeDefined();
     const tools = SUPPORTING_LINES.find((line) => line.role === "tools");
-    expect(tools).toBeDefined();
-    expect(ROTATION).not.toContain(tools!.text);
+    expect(tools?.text).toBe(docTools!.text);
+    expect(ROTATION).toHaveLength(listed.length - 1);
+    expect(ROTATION).not.toContain(docTools!.text);
     expect(ROTATION).toEqual(
-      SUPPORTING_LINES.filter((line) => line.role !== "tools").map((line) => line.text),
+      listed.filter((line) => line.name !== "The tools").map((line) => line.text),
     );
   });
 });
