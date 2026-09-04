@@ -41,9 +41,18 @@ export const recordDaysKeys = {
  * The ten sources are the ones `record_days` reads, listed in
  * `20260907000000_record_days.sql` under "the span rule": check-ins, gratitude,
  * journal, sleep, meditation, mindfulness (breathing AND grounding), completed
- * activities, thought records, habit ticks and self-care. Anything that adds or
- * removes one of those rows belongs here; an edit that cannot move a row's day
- * does not.
+ * activities, thought records, habit ticks and self-care.
+ *
+ * ☠️ **The rule is deliberately coarse: ANY mutation writing one of those
+ * tables invalidates, whether or not that particular edit could move a civil
+ * day.** Deciding per mutation is the judgement that rots - a sleep window
+ * files on the night it BEGAN (#800), an activity counts only once completed,
+ * archiving is the thought record's delete - and the day a payload quietly
+ * gains `completed_at` the old answer is silently wrong. Over-invalidating
+ * costs nothing: this root has no observer outside "Looking back", so a call
+ * from anywhere else only marks it stale. One redundant refetch is cheaper than
+ * one wrong absence. `test/record-days-invalidation.test.ts` enforces it per
+ * hook, deriving the tables from the migration rather than from a list here.
  *
  * A function rather than a key literal, so a new tool has one thing to copy.
  * The five deletes that run through `useDeleteMutation` are the exception: that
