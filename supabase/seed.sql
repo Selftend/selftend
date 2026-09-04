@@ -298,6 +298,23 @@ values
   ('00000000-0000-0000-0000-000000000002', 'breathing-suggested', 2),
   ('00000000-0000-0000-0000-000000000002', 'journal-week',        3);
 
+-- public.favorites - bob (4)
+-- Exactly what 20260908000000_favorites.sql's one-shot copy produces from the four
+-- rows above: `cbt-programme` → `module:cbt`, the other three → `tool:<toolKey>`.
+-- Written here because seeds run AFTER migrations (#1953): the copy has already
+-- run against an empty table by the time this file inserts bob's widget rows, so
+-- without these he would be the one account whose dashboard never migrated. The
+-- pairing is checked against WIDGET_META by test/seed-widget-layouts.test.ts.
+--
+-- alice again gets no rows: with Favourites she is the account whose Home shows
+-- the empty Favourites line, for the same reason she holds no widget rows.
+insert into public.favorites (user_id, kind, key)
+values
+  ('00000000-0000-0000-0000-000000000002', 'module', 'cbt'),
+  ('00000000-0000-0000-0000-000000000002', 'tool',   'mood'),
+  ('00000000-0000-0000-0000-000000000002', 'tool',   'breathing'),
+  ('00000000-0000-0000-0000-000000000002', 'tool',   'journal');
+
 -- ──────────────────────────────────────────────────────────────────────────
 -- e2e worker-pool users (w0..w7)
 -- One dedicated user per Playwright parallel worker so e2e runs fully parallel

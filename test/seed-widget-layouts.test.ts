@@ -193,6 +193,73 @@ describe("seeded Home layouts", () => {
     });
   });
 
+  describe("favourites (#1953)", () => {
+    // Seeds run AFTER migrations, so the one-shot copy in
+    // 20260908000000_favorites.sql has already run against an empty table by the time
+    // either seed inserts its widget rows. Both seeds therefore write the favourites
+    // the copy WOULD have produced, as literals - and this is the comparison that
+    // keeps those literals derivable from the registry's `toolKey`, the way the
+    // widget ids above are derivable from onboarding.
+    function migrated(widgetIds: string[]): string[] {
+      const out = new Set<string>();
+      for (const id of widgetIds) {
+        const { toolKey } = WIDGET_META[id as keyof typeof WIDGET_META];
+        if (toolKey === "routines") continue; // /routines is on neither list
+        out.add(toolKey === "cbt" || toolKey === "act" ? `module:${toolKey}` : `tool:${toolKey}`);
+      }
+      return [...out].sort();
+    }
+
+    /** One `const NAME = [["kind", "key"], ...]` literal out of the demo seed. */
+    function readJsPairs(name: string): string[] {
+      const block = DEMO_SEED.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`));
+      if (!block) throw new Error(`Could not find \`const ${name} = [...]\` in the demo seed.`);
+      return Array.from(block[1].matchAll(/\[\s*"(tool|module)"\s*,\s*"([a-z]+)"\s*\]/g))
+        .map((pair) => `${pair[1]}:${pair[2]}`)
+        .sort();
+    }
+
+    /** Every `favorites` row `supabase/seed.sql` writes, as `userId` → sorted `kind:key`. */
+    function readSqlFavorites(): Map<string, string[]> {
+      const rows = new Map<string, string[]>();
+      for (const statement of SQL_SEED.matchAll(/insert into public\.favorites[\s\S]*?;/g)) {
+        for (const row of statement[0].matchAll(
+          /\(\s*'([0-9a-f-]+)'\s*,\s*'(tool|module)'\s*,\s*'([a-z]+)'\s*\)/g,
+        )) {
+          rows.set(row[1], [...(rows.get(row[1]) ?? []), `${row[2]}:${row[3]}`].sort());
+        }
+      }
+      return rows;
+    }
+
+    const sqlFavorites = readSqlFavorites();
+
+    it("parses both seed files (so nothing below is vacuous)", () => {
+      expect(readJsPairs("DEMO_FAVORITES")).toHaveLength(10);
+      expect(readJsPairs("BOB_FAVORITES")).toHaveLength(4);
+      expect(sqlFavorites.get(BOB_USER_ID)).toHaveLength(4);
+    });
+
+    it("demo's are exactly what the migration derives from her fourteen widget ids", () => {
+      expect(readJsPairs("DEMO_FAVORITES")).toEqual(migrated(demoIds));
+      // 8 tools + cbt + act, no DBT: nothing carries `toolKey: "dbt"`, so 10 of 11 is
+      // the ceiling any migrated account can reach (#1889).
+      expect(migrated(demoIds)).toHaveLength(10);
+    });
+
+    it("bob's are exactly what the migration derives from his four widget ids", () => {
+      const bobIds = bobRows.map((row) => row.widgetId);
+      expect(sqlFavorites.get(BOB_USER_ID)).toEqual(migrated(bobIds));
+      // The demo script's read-back guard restates bob's rows; the two must agree.
+      expect(readJsPairs("BOB_FAVORITES")).toEqual(sqlFavorites.get(BOB_USER_ID));
+    });
+
+    it("alice keeps zero favourites (the empty-Favourites fixture)", () => {
+      expect(sqlFavorites.has(ALICE_USER_ID)).toBe(false);
+      expect([...sqlFavorites.keys()]).toEqual([BOB_USER_ID]);
+    });
+  });
+
   describe("every seeded id", () => {
     const seeded = [
       ...demoIds.map((widgetId) => ["demo", widgetId] as const),
