@@ -110,6 +110,10 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
   "the module and tool listings": [
     "src/features/modules/modules-screen.tsx",
     "src/features/tools/tools-screen.tsx",
+    // #1955: both listings now render THE ONE CARD, so the identity surface is the
+    // card and the array it draws from. Both marks are chrome roles by construction.
+    "src/features/favorites/item-card.tsx",
+    "src/features/favorites/items.ts",
     // The CBT home's pillar cards and the shared-tool pills beneath them are a
     // tool listing wearing a different frame: both took the owning pillar's hue,
     // and both sit on the same screen, so leaving either would have shown the

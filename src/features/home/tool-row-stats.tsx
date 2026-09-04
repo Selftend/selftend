@@ -1,7 +1,8 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
+import type { ToolKey } from "@/src/features/favorites/items";
 import { ToolRow } from "@/src/features/home/tool-row";
 import { formatOneDecimal } from "@/src/lib/locale-format";
 import { formatHours } from "@/src/features/sleep/format";
@@ -78,6 +79,18 @@ import type { MindfulnessSession } from "@/src/features/mindfulness/types";
 type StatRowProps = { userId: string | null };
 
 /**
+ * The eight tool stats are keyed by TOOL KEY and rendered through a render prop
+ * (#1955): the favourites card on `/tools` and Home's widget-id-keyed row both read
+ * the SAME eight implementations, so no second stat implementation exists. `/tools`'
+ * own `statFor` died here - it claimed emptiness while loading (`?? 0`), capped mood
+ * at 30 rows for a 7-day summary (ADR-0001), and labelled a trailing window "this
+ * week". `null` is still "not loaded / nothing to claim", never a zero.
+ */
+export type ToolStatProps = StatRowProps & {
+  children: (stat: string | null) => ReactElement | null;
+};
+
+/**
  * Joins the row's clauses with the design's separator.
  *
  * Exactly two parameters, so the "two clauses is a cap, not a target" rule is enforced
@@ -99,7 +112,7 @@ const emptyStat = (t: TFunction) => t("home.rows.empty");
 // The two clauses use DIFFERENT windows on purpose: `this week` is a calendar Mon-Sun
 // week (#697 decided that deliberately, against a trailing one) and `7-day average` is
 // trailing. Both are labelled, so both are honest; "harmonising" them reverts #697.
-function MoodCheckinRow({ userId }: StatRowProps) {
+function MoodStat({ userId, children }: ToolStatProps) {
   const { t, i18n } = useTranslation("navigation");
   /**
    * ADR-0001: neither clause may come from a capped list. `useMoodWeek` fetches a DAY
@@ -132,12 +145,12 @@ function MoodCheckinRow({ userId }: StatRowProps) {
                 }),
           );
   }
-  return <ToolRow id="mood-checkin" stat={stat} />;
+  return children(stat);
 }
 
 // --- 2. journal-week -------------------------------------------------------
 // Lifetime figures, matching the journal hero: the id says "week", the tool does not.
-function JournalRow({ userId }: StatRowProps) {
+function JournalStat({ userId, children }: ToolStatProps) {
   const { t } = useTranslation("navigation");
   const { data: entries } = useJournalEntryCount(userId);
   const { data: words } = useJournalWordTotal(userId);
@@ -152,11 +165,11 @@ function JournalRow({ userId }: StatRowProps) {
             t("home.rows.words", { count: words }),
           );
   }
-  return <ToolRow id="journal-week" stat={stat} />;
+  return children(stat);
 }
 
 // --- 3. gratitude-latest ---------------------------------------------------
-function GratitudeRow({ userId }: StatRowProps) {
+function GratitudeStat({ userId, children }: ToolStatProps) {
   const { t } = useTranslation("navigation");
   const { selectedDate } = useSelectedDate();
   // `mondayKeyOf(todayKey)` is what the gratitude home screen passes, so this shares
@@ -174,11 +187,11 @@ function GratitudeRow({ userId }: StatRowProps) {
             t("home.rows.thisWeek", { value: thisWeek }),
           );
   }
-  return <ToolRow id="gratitude-latest" stat={stat} />;
+  return children(stat);
 }
 
 // --- 4. breathing-suggested ------------------------------------------------
-function BreathingRow({ userId }: StatRowProps) {
+function BreathingStat({ userId, children }: ToolStatProps) {
   const { t } = useTranslation("navigation");
   const { data: sessions } = useBreathingSessionCount(userId);
   const { data: minutes } = useBreathingTotalMinutes(userId);
@@ -193,7 +206,7 @@ function BreathingRow({ userId }: StatRowProps) {
             t("home.rows.minutes", { count: minutes }),
           );
   }
-  return <ToolRow id="breathing-suggested" stat={stat} />;
+  return children(stat);
 }
 
 // --- 5. grounding-log ------------------------------------------------------
@@ -201,7 +214,7 @@ function BreathingRow({ userId }: StatRowProps) {
 // `at(0)`, which every cap contains - no new query. `formatCompactAtOffset` never
 // renders "N days ago": a column of `23 days ago · 41 days ago` implies lateness, and
 // home does not tally days since you last opened a tool.
-function GroundingRow({ userId }: StatRowProps) {
+function GroundingStat({ userId, children }: ToolStatProps) {
   const { t, i18n } = useTranslation("navigation");
   const { data: sessions } = useGroundingSessionCount(userId);
   const { data: recent } = useGroundingSessions(userId, 5);
@@ -229,14 +242,14 @@ function GroundingRow({ userId }: StatRowProps) {
               : null,
           );
   }
-  return <ToolRow id="grounding-log" stat={stat} />;
+  return children(stat);
 }
 
 // --- 6. meditation-pick ----------------------------------------------------
 // ☠️ The design's drawn "30 sessions · 551 minutes" was the 30-row cache cap times a
 // sum capped the same way. `useMeditationSessionCount` is a real uncapped head count,
 // and the companion figure is the server's median, not a client sum.
-function MeditationRow({ userId }: StatRowProps) {
+function MeditationStat({ userId, children }: ToolStatProps) {
   const { t } = useTranslation("navigation");
   const { data: sits } = useMeditationSessionCount(userId);
   const { data: median } = useMeditationMedianMinutes(userId);
@@ -252,14 +265,14 @@ function MeditationRow({ userId }: StatRowProps) {
             median === null ? null : t("home.rows.typicalMinutes", { value: median }),
           );
   }
-  return <ToolRow id="meditation-pick" stat={stat} />;
+  return children(stat);
 }
 
 // --- 7. sleep-latest -------------------------------------------------------
 // `useSleepStats` passes the viewer timezone itself (`deviceTimeZone()` rides its query
 // key), so the server aggregate is windowed in the viewer's civil days. Duration comes
 // back in MINUTES; `formatHours` does the /60 and the locale-aware decimal (#962).
-function SleepRow({ userId }: StatRowProps) {
+function SleepStat({ userId, children }: ToolStatProps) {
   const { t, i18n } = useTranslation("navigation");
   const { data: stats } = useSleepStats(userId);
 
@@ -281,7 +294,7 @@ function SleepRow({ userId }: StatRowProps) {
               : t("home.rows.quality", { value: formatOneDecimal(quality, i18n.language) }),
           );
   }
-  return <ToolRow id="sleep-latest" stat={stat} />;
+  return children(stat);
 }
 
 // --- 8. habits-today -------------------------------------------------------
@@ -290,7 +303,7 @@ function SleepRow({ userId }: StatRowProps) {
 // always promised. CBT activities keep their own row in S5b, so nothing is lost.
 //
 // Uncapped: the fraction is over every habit due today, not a page of them.
-function HabitsRow({ userId }: StatRowProps) {
+function HabitsStat({ userId, children }: ToolStatProps) {
   const { t } = useTranslation("navigation");
   const { selectedDate } = useSelectedDate();
   /**
@@ -320,7 +333,7 @@ function HabitsRow({ userId }: StatRowProps) {
           ? t("home.rows.nothingScheduled")
           : t("home.rows.doneToday", { done, total: dueToday.length });
   }
-  return <ToolRow id="habits-today" stat={stat} />;
+  return children(stat);
 }
 
 // --- 9. routines-today -----------------------------------------------------
@@ -497,16 +510,49 @@ function ActCommittedActionsRow({ userId }: StatRowProps) {
   return <ToolRow id="act-committed-actions" stat={stat} />;
 }
 
+/** The eight tool stats, by tool key - the one implementation both surfaces read. */
+const TOOL_STATS: Record<ToolKey, ComponentType<ToolStatProps>> = {
+  mood: MoodStat,
+  journal: JournalStat,
+  gratitude: GratitudeStat,
+  breathing: BreathingStat,
+  grounding: GroundingStat,
+  meditation: MeditationStat,
+  sleep: SleepStat,
+  habits: HabitsStat,
+};
+
+/**
+ * One tool's stat line, handed to `children` as a string or `null` (not loaded, or
+ * nothing to claim). The favourites card renders it as its "what you have" line; Home's
+ * row composes it into the row's accessible name. A module has no stat and no entry here.
+ */
+export function ToolStat({ toolKey, userId, children }: { toolKey: ToolKey } & ToolStatProps) {
+  const Stat = TOOL_STATS[toolKey];
+  return <Stat userId={userId}>{children}</Stat>;
+}
+
+/** Home's widget-id-keyed row over the shared tool stat - the bridge until Home is rebuilt. */
+function toolRow(id: string, toolKey: ToolKey): ComponentType<StatRowProps> {
+  return function ToolStatRow({ userId }: StatRowProps) {
+    return (
+      <ToolStat toolKey={toolKey} userId={userId}>
+        {(stat) => <ToolRow id={id} stat={stat} />}
+      </ToolStat>
+    );
+  };
+}
+
 /** Every id that renders a stat. */
 const STAT_ROWS: Record<string, ComponentType<StatRowProps>> = {
-  "mood-checkin": MoodCheckinRow,
-  "journal-week": JournalRow,
-  "gratitude-latest": GratitudeRow,
-  "breathing-suggested": BreathingRow,
-  "grounding-log": GroundingRow,
-  "meditation-pick": MeditationRow,
-  "sleep-latest": SleepRow,
-  "habits-today": HabitsRow,
+  "mood-checkin": toolRow("mood-checkin", "mood"),
+  "journal-week": toolRow("journal-week", "journal"),
+  "gratitude-latest": toolRow("gratitude-latest", "gratitude"),
+  "breathing-suggested": toolRow("breathing-suggested", "breathing"),
+  "grounding-log": toolRow("grounding-log", "grounding"),
+  "meditation-pick": toolRow("meditation-pick", "meditation"),
+  "sleep-latest": toolRow("sleep-latest", "sleep"),
+  "habits-today": toolRow("habits-today", "habits"),
   "routines-today": RoutinesRow,
   "self-care": SelfCareRow,
   "cbt-open-record": CbtOpenRecordRow,

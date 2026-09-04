@@ -1,7 +1,11 @@
-import ToolsScreen, { TOOLS } from "@/src/features/tools/tools-screen";
+import { screen } from "@testing-library/react-native";
+
+import ToolsScreen from "@/src/features/tools/tools-screen";
+import { TOOL_ITEMS } from "@/src/features/favorites/items";
+import { favoriteKeys } from "@/src/features/favorites/queries";
 import { HUE_NAMES } from "@/src/lib/design-tokens";
-import { CHROME_MARK, CHROME_WASH } from "@/src/lib/theme/chrome";
-import { renderWithProviders } from "@/test/render-with-providers";
+import { CHROME_ACCENT_MARK, CHROME_MARK, CHROME_WASH } from "@/src/lib/theme/chrome";
+import { createTestQueryClient, renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
   router: { push: jest.fn() },
@@ -14,83 +18,81 @@ jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
 
-jest.mock("@/src/features/breathing/queries", () => ({
-  useBreathingSessionCount: () => ({ data: 0 }),
+jest.mock("@/src/features/favorites/repository", () => ({
+  addFavorite: jest.fn(),
+  listFavorites: jest.fn().mockResolvedValue([]),
+  removeFavorite: jest.fn(),
 }));
 
-jest.mock("@/src/features/gratitude/queries", () => ({
-  useGratitudeEntryCount: () => ({ data: 0 }),
+// The card reads Home's stat rows (#1955); their strings are tested where they live.
+// Here every tool is "still loading", which is the state a first paint sees.
+jest.mock("@/src/features/home/tool-row-stats", () => ({
+  ToolStat: ({ children }: { children: (stat: string | null) => React.ReactElement | null }) =>
+    children(null),
 }));
 
-jest.mock("@/src/features/grounding/queries", () => ({
-  useGroundingSessionCount: () => ({ data: 0 }),
-}));
+/** A favourites list already loaded, so the stars are drawn on the first render. */
+function render() {
+  const queryClient = createTestQueryClient();
+  queryClient.setQueryData(favoriteKeys.list("user-1"), [{ kind: "tool", key: "journal" }]);
+  return renderWithProviders(<ToolsScreen />, { queryClient });
+}
 
-jest.mock("@/src/features/habits/queries", () => ({
-  useHabits: () => ({ data: [] }),
-}));
+describe("the tools hub renders the catalogue's eight tools through the one card (#1955)", () => {
+  it("renders every tool, in catalogue order, with a navigating region and a star each", () => {
+    render();
 
-jest.mock("@/src/features/journal/queries", () => ({
-  useJournalEntryCount: () => ({ data: 0 }),
-}));
+    for (const item of TOOL_ITEMS) {
+      expect(screen.getByTestId(`card-tool-${item.key}`)).toBeTruthy();
+      expect(screen.getByTestId(`card-star-tool-${item.key}`)).toBeTruthy();
+    }
+    // Order is the array's, not the page's: the first card is the first item.
+    const cards = screen.getAllByTestId(/^card-tool-/);
+    expect(cards.map((card) => card.props.testID)).toEqual(
+      TOOL_ITEMS.map((item) => `card-tool-${item.key}`),
+    );
+  });
 
-jest.mock("@/src/features/meditation/queries", () => ({
-  useMeditationSessionCount: () => ({ data: 0 }),
-}));
+  it("reflects the loaded favourites on the stars", () => {
+    render();
 
-jest.mock("@/src/features/mood/queries", () => ({
-  useMoodLogs: () => ({ data: [] }),
-  useMoodLogCount: () => ({ data: 0 }),
-}));
+    expect(screen.getByTestId("card-star-tool-journal").props.accessibilityState?.selected).toBe(
+      true,
+    );
+    expect(screen.getByTestId("card-star-tool-mood").props.accessibilityState?.selected).toBe(
+      false,
+    );
+  });
 
-jest.mock("@/src/features/sleep/queries", () => ({
-  useSleepLogCount: () => ({ data: 0 }),
-}));
+  it("draws no stat while the stats are loading - never a zero, never 'No logs yet'", () => {
+    // `/tools`' old `statFor` rendered "No logs yet" to a user with 200 logs while their
+    // count was still loading (`?? 0`). The card declines to claim anything instead.
+    render();
+
+    expect(screen.queryAllByTestId(/^card-stat-/)).toEqual([]);
+    expect(screen.queryByText(/No .* yet/)).toBeNull();
+  });
+});
 
 /**
- * INVERTED by #587. This suite used to assert the opposite of what it asserts
- * now, and the history matters because it is what the inversion has to keep.
- *
- * The hub's tiles carried a hardcoded hue map of their own until #421, which had
- * drifted from tool-accent.ts on five of its six entries: journal, gratitude and
- * habits were all violet, grounding and sleep were all pink, so /tools rendered
- * six tools in two colours while the sidebar rendered the same six correctly.
- * Gratitude was the clearest case - gold in the nav, violet in the hub, in the
- * same screenshot. The fix was a single source of truth, and these tests pinned
- * every tile to it: "resolves every tile to a real entry", "renders each tile's
- * chip and glyph in that tool's own hue", "shows more than the two colours it
- * used to".
- *
- * #558 then ruled that a tool has no colour at all - eight tools in eight hues
- * is the "distinguishes items in a set" case, which an icon and a name already
- * do - so tool-accent.ts is deleted and every tile takes the same neutral pair.
- *
- * The defect the old suite guarded is therefore not merely gone, it is
- * unreachable: with no map there is nothing to drift from and no fallback to
- * fall into. What replaces it is the mirror-image risk, which is a partial
- * sweep - one tile left hued, or a later tile added with a hue - and the two
- * assertions below fail on exactly that. They also fail on the OLD behaviour,
- * which is the point of writing them this way round rather than deleting the
- * suite: `bg-muted` was on none of the eight tiles before this change, and
- * seven distinct chips is not one.
+ * INVERTED by #587 and kept through #1955. The hub's tiles once carried a hardcoded hue
+ * map that had drifted from tool-accent.ts on five of six entries (#421); #558 then ruled
+ * that a tool has no colour at all, so every tile takes one neutral pair. These two
+ * assertions fail on a partial sweep - one tile left hued, or a later tile added with a
+ * hue - and on the OLD behaviour, which is why they are written this way round rather
+ * than deleted.
  */
 describe("the tools hub paints no per-tool hue (#587)", () => {
   type Node = { props?: { className?: unknown }; type?: unknown };
 
-  /** Every tile's host element, one per TOOLS entry. */
+  /** Every card's two host pressables - the navigating region and its star. */
   function tiles() {
-    const { UNSAFE_root } = renderWithProviders(<ToolsScreen />);
-    // `typeof node.type === "string"` keeps only the host element: a Pressable
-    // renders through several composite layers that all carry the same props,
-    // so without it each tile matches three times over.
-    const found = UNSAFE_root.findAll(
-      (node) =>
-        typeof node.type === "string" &&
-        node.props?.accessibilityRole === "button" &&
-        typeof node.props?.className === "string" &&
-        node.props.className.includes("basis-[260px]"),
-    );
-    expect(found).toHaveLength(TOOLS.length);
+    render();
+    const found = [
+      ...screen.getAllByTestId(/^card-tool-/),
+      ...screen.getAllByTestId(/^card-star-tool-/),
+    ];
+    expect(found).toHaveLength(TOOL_ITEMS.length * 2);
     return found;
   }
 
@@ -105,9 +107,18 @@ describe("the tools hub paints no per-tool hue (#587)", () => {
     // whole-tree search cannot localise a defect when tools share a class.
     for (const tile of tiles()) {
       const classNames = classNamesIn(tile);
-
-      expect(classNames).toContainEqual(expect.stringContaining(CHROME_WASH));
-      expect(classNames.some((name) => name.split(/\s+/).includes(CHROME_MARK))).toBe(true);
+      // The wash sits behind the mark, which is in the navigating region; the star
+      // column has none and carries only an ink - the mark role when hollow, the accent
+      // role when filled (journal is starred in this fixture). Both are chrome roles.
+      if ((tile.props.testID as string).startsWith("card-tool-")) {
+        expect(classNames).toContainEqual(expect.stringContaining(CHROME_WASH));
+      }
+      expect(
+        classNames.some((name) => {
+          const classes = name.split(/\s+/);
+          return classes.includes(CHROME_MARK) || classes.includes(CHROME_ACCENT_MARK);
+        }),
+      ).toBe(true);
     }
   });
 
@@ -129,10 +140,10 @@ describe("the tools hub paints no per-tool hue (#587)", () => {
   it("leaves the tile names on the neutral foreground", () => {
     // Unchanged by the inversion: the hub never hued its tile names, and the
     // reason it must not start is unchanged too - 16px text owes 4.5:1.
-    const { getByText } = renderWithProviders(<ToolsScreen />);
+    render();
     // "Check-in" since #732 - this hub was the last en surface still calling the
     // tool "Mood tracker" while its own screens said Check-in.
-    const name = getByText("Check-in");
+    const name = screen.getByText("Check-in");
 
     expect(name.props.className as string).not.toContain("text-be");
   });

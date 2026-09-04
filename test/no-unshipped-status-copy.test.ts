@@ -83,20 +83,23 @@ describe("module and navigation copy promises nothing the build does not ship", 
 
   // A guard that only reads copy would pass if someone re-added the chip with
   // fresh wording. These are the two key sets the chips were driven by: the
-  // sidebar's badge keys are gone outright, and `modulesPage.stats` now holds
-  // exactly one value, the one the DBT tile uses to say what it is.
+  // sidebar's badge keys are gone outright, and `modulesPage.stats` - which held
+  // exactly one value after #1020, the DBT tile's "Overview" - is gone with the
+  // tile's footer (#1955): the one card has no status slot, so there is no key
+  // for a status to come back under.
   it.each(LANGUAGES)("%s has no sidebar status-badge keys left", (language) => {
     const sidebar = readNamespace(language, "navigation").sidebar as Record<string, unknown>;
 
     expect(Object.keys(sidebar).filter((key) => key.startsWith("badge"))).toEqual([]);
   });
 
-  it.each(LANGUAGES)("%s offers exactly one module-tile status, and it is neutral", (language) => {
-    const modulesPage = readNamespace(language, "navigation").modulesPage as {
-      stats: Record<string, string>;
-    };
+  it.each(LANGUAGES)("%s offers no module-tile status slot at all", (language) => {
+    const modulesPage = readNamespace(language, "navigation").modulesPage as Record<
+      string,
+      unknown
+    >;
 
-    expect(Object.keys(modulesPage.stats)).toEqual(["overview"]);
+    expect(modulesPage).not.toHaveProperty("stats");
   });
 
   it("both locales carry the same module-surface keys", () => {

@@ -1,6 +1,8 @@
 import { screen } from "@testing-library/react-native";
 
-import { ToolTierRow } from "@/src/features/home/tool-row-stats";
+import { Text } from "@/src/components/react-native-reusables/text";
+import { TOOL_ITEMS, type ToolKey } from "@/src/features/favorites/items";
+import { ToolStat, ToolTierRow } from "@/src/features/home/tool-row-stats";
 import { addDaysToKey, currentDateKey } from "@/src/utils/date";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -429,6 +431,48 @@ describe("per-tool stats", () => {
     expect(stat).toMatch(/^14 sessions · Last /);
     // Never "N days ago": a column of those implies lateness, which home does not do.
     expect(stat).not.toMatch(/days? ago/i);
+  });
+});
+
+/**
+ * #1955: the eight tool stats are ONE implementation read two ways - Home's row by
+ * widget id, the favourites card by tool key. The card path is proven on the same
+ * mocks as the row path, so the two cannot drift: there is nothing to drift.
+ */
+describe("ToolStat, the tool-keyed read the favourites card uses", () => {
+  const renderStat = (toolKey: ToolKey) =>
+    renderWithProviders(
+      <ToolStat toolKey={toolKey} userId="user-1">
+        {(stat) => (stat === null ? null : <Text testID="stat">{stat}</Text>)}
+      </ToolStat>,
+    );
+
+  it("hands the card the same string the Home row renders", () => {
+    mocks.breathingCount.mockReturnValue(q(14));
+    mocks.breathingMinutes.mockReturnValue(q(82));
+
+    renderStat("breathing");
+    expect(screen.getByTestId("stat").props.children).toBe("14 sessions · 82 minutes");
+
+    renderRow("breathing-suggested");
+    expect(statOf("breathing-suggested")).toBe("14 sessions · 82 minutes");
+  });
+
+  it("hands the card null while a clause is still loading, so it draws nothing", () => {
+    mocks.moodLogs.mockReturnValue(loading);
+    mocks.moodCount.mockReturnValue(q(7));
+
+    renderStat("mood");
+
+    expect(screen.queryByTestId("stat")).toBeNull();
+  });
+
+  it("covers exactly the eight tools, and no module", () => {
+    // A module has no stat line at all (spec §2.3); the type is the guard, and this
+    // pins the runtime table to the same eight keys.
+    for (const key of TOOL_ITEMS.map((item) => item.key)) {
+      expect(() => renderStat(key)).not.toThrow();
+    }
   });
 });
 

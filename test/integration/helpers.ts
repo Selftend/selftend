@@ -257,6 +257,13 @@ export async function deleteAllWidgetPreferencesForUser(userId: string) {
   if (error) throw new Error(`deleteAllWidgetPreferencesForUser cleanup failed: ${error.message}`);
 }
 
+/** The starred tools and modules (#1953) - the rows the card's star writes. */
+export async function deleteAllFavoritesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("favorites").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllFavoritesForUser cleanup failed: ${error.message}`);
+}
+
 /**
  * Delete only the `test-widget-*` rows a test inserted, leaving any seeded layout
  * alone.

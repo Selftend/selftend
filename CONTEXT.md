@@ -18,6 +18,10 @@ The CBT module's own noun, and only that — a staged progression, authored and 
 
 > Note: **programme** names this progression — never a user's routine, which keeps its own `_Avoid_: program` below. A routine is user-named and user-owned, and has no authored order to graduate from; a programme is authored and staged.
 
+**Favourite**:
+A **tool** (one of the eight hubs on `/tools`) or a **module** (one of the three on `/modules`) the person starred to keep on Home ([#1885](https://github.com/Selftend/selftend/issues/1885), [#1955](https://github.com/Selftend/selftend/issues/1955)). One `favorites` row per `(kind, key)` and **no position**: the catalogue is one ordered array of eleven (`src/features/favorites/items.ts`) and Favourites is that array _filtered_, never sorted. The star on the card is the whole gesture — one tap adds, a second removes, it flips optimistically and rolls back on failure, and nothing toasts on success. A **star**, never the heart: `favorite` is the gratitude tool's own glyph, and gratitude keeps its separate _favourite moments_ (starred entries) — an accepted collision, since both mean "keep this handy".
+_Avoid_: pin, bookmark, widget (the retired dashboard's vocabulary), "add to home"
+
 ### Practice
 
 **Practice**:
