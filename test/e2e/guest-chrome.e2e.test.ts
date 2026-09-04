@@ -83,7 +83,13 @@ test.describe("guest chrome", () => {
     // rendered for the wrong kind of user.
     await expect(page.getByText("Guest", { exact: true })).toBeVisible();
 
-    await page.getByTestId("user-menu-sign-in-row").click();
+    // ☠️ By ROLE AND NAME, not by testID: this is the only place the row's
+    // accessible name is exercised in a real browser. The unit test can pin the
+    // ABSENCE of an `accessibilityLabel` from props, but only react-native-web
+    // decides what the name then resolves to - and #1863's whole argument is
+    // that the single Text child must supply it. A testID click would pass
+    // just as happily over a row screen readers announce as nothing.
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
 
     await expect(page).toHaveURL(/\/sign-in$/);
     await expect(page.getByTestId("sign-in-email")).toBeVisible({ timeout: 15_000 });

@@ -131,11 +131,21 @@ export function UserMenu() {
   const primaryLine = displayName || email || t("userMenu.guest");
   const showEmail = Boolean(displayName && email);
   /*
-    ☠️ Absence-driven, never `is_anonymous` (#1869): the JWT keeps claiming that
-    flag after conversion, which is why the support form hand-codes `&& !email`
-    too. `!email` implies guest structurally - every registered identity carries
-    one (password, Google, and Apple's private relay), and there is no phone
-    auth - so a converted user loses the door the moment they gain an email.
+    ☠️ Absence-driven, never a bare `is_anonymous` (#1869). `convertGuestWithPassword`
+    flips the flag server-side, but the live JWT keeps claiming `is_anonymous: true`
+    until the token is minted again - so in that window a REGISTERED person carries a
+    true flag, and a flag-based door would offer them a way to sign in to the account
+    they are already signed in to. `app/(app)/support.tsx` guards the same window by
+    ANDing the flag with `!user.email`; here the email carries it alone.
+
+    `!email` implies guest structurally: every registered identity attaches one
+    (password, Google, and Apple's private relay) and there is no phone auth, so the
+    door withdraws the moment conversion gives them an email - stale flag and all.
+
+    ⚠️ This is NOT `useSignOut`'s `canSignOut`, which is the flag alone. The two
+    disagree only inside that same stale window, where a converted user gets
+    neither control - a known `canSignOut` staleness that predates this row and
+    belongs to conversion, not to the door.
   */
   const isGuest = isSignedIn && !email;
 
@@ -274,26 +284,23 @@ export function UserMenu() {
                 Its own row directly beneath the identity row, in the Palette
                 row's shape (label · chevron, no leading icon): label-plus-chevron
                 is this menu's grammar for NAVIGATION, which is the only basis
-                #1809 permitted the door on. The candidate that put it in the
-                action row lost on reach - the menu already overflows its own 70%
-                cap for everyone (#1862), so the actions are its least reachable
-                region.
+                #1809 permitted the door on. Not the action row - the menu
+                already overflows its own 70% cap for everyone (#1862), so the
+                actions are its least reachable region (#1811).
 
                 ☠️ NO `accessibilityLabel` (#1863). One `Text` child means the
                 label IS the accessible name; an explicit one would hide that
                 child from assistive tech on the web. The Palette row composes a
                 name only because it has a value to fold in.
 
-                ☠️ The middle value slot stays EMPTY, by decision, not omission
-                (#1863) - do not fill it with a hint about the warn-and-abandon
-                confirm later. `guardSignIn` passes an empty guest straight
-                through with no warning, so a static caution is false for exactly
-                the newest guests; a content-aware one costs the whole
-                `export_user_data` RPC on every menu open; the slot's grammar is
-                STATE (`Palette · Quiet Lilac`), not consequence; and a caution
-                converts this from the plain navigation #1809 allowed into a
-                warned exit. The pre-submit gap is real and is #1865's, on
-                `/sign-in` itself, which can afford the check on mount.
+                ☠️ The Palette shape's middle value slot stays EMPTY, by decision
+                and not omission - do not fill it with a hint about the
+                warn-and-abandon confirm. `guardSignIn` passes an empty guest
+                straight through with no warning at all, so a static caution is
+                false for exactly the newest guests, and a content-aware one
+                costs the whole `export_user_data` RPC on every menu open. #1863
+                carries the rest of the argument. The pre-submit gap is real and
+                is #1865's, on `/sign-in`, which can afford the check on mount.
               */}
               {isGuest ? (
                 <Pressable

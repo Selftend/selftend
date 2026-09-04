@@ -492,6 +492,49 @@ describe("UserMenu", () => {
       expect(screen.getByText("Sign Out")).toBeTruthy();
     });
 
+    /**
+     * ☠️ The mutation the two tests above CANNOT kill, and the whole reason the
+     * gate reads `email`. The registered fixture omits `is_anonymous`, so it is
+     * `undefined` — which means a gate written as `user.is_anonymous === true`
+     * passes every other test in this block while being wrong.
+     *
+     * This is the state that separates them: `convertGuestWithPassword` flips
+     * the flag server-side but "the live JWT keeps claiming `is_anonymous: true`
+     * until the token is minted again" (`api.ts`), so between conversion and the
+     * refresh a REGISTERED person carries a true flag AND an email. A flag-based
+     * door would still be offering them a way to sign in to the account they are
+     * already signed in to. The email is the honest signal, and it is already
+     * correct in that window.
+     */
+    it("withdraws the door from a converted guest whose flag is still stale", () => {
+      mockSession = {
+        session: { access_token: "token" },
+        user: { id: "guest-1", email: "converted@example.com", is_anonymous: true },
+      };
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      expect(screen.queryByTestId("user-menu-sign-in-row")).toBeNull();
+    });
+
+    /**
+     * The same rule from the other side: the door must not REQUIRE the flag
+     * either. `is_anonymous` is absent here, and this person is still a guest —
+     * an empty email and nothing else to go on.
+     */
+    it("offers the door on an empty email alone, with no flag to read", () => {
+      mockSession = {
+        session: { access_token: "token" },
+        user: { id: "guest-1", email: "" },
+      };
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      expect(screen.getByTestId("user-menu-sign-in-row")).toBeTruthy();
+    });
+
     /** The registered menu is untouched: no shared markup moved. */
     it("leaves the registered action row at three buttons", () => {
       renderWithProviders(<UserMenu />);
