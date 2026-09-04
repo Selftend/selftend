@@ -200,10 +200,14 @@ Built in [#1765](https://github.com/Selftend/selftend/issues/1765):
 `src/features/auth/under-floor-block.ts`.
 
 **The account is deleted, and the capability that deletes it already existed.**
-The gate runs after the session exists on three of the four entry paths — guest,
-Google, Apple — so an auth user has been created by the time the verdict is
-known. §3 describes this as an OAuth-specific deletion; it is not, and the
-silent guest is what makes it the common case. It goes through
+The gate runs after the session exists on **all four** entry paths — guest,
+Google, Apple and email/password — so an auth user has been created by the time
+the verdict is known, whichever way in was used. The gate mounts below
+`ProtectedLayout`'s `if (!session)` branch, so it cannot be reached without a
+session, and password sign-up yields one immediately because email confirmation
+is off (`enable_confirmations = false`, mirroring `mailer_autoconfirm=true` on
+the hosted projects). §3 describes this as an OAuth-specific deletion; it is
+not, and the silent guest is what makes it the common case. It goes through
 `delete_user_account()`, which is `security definer`, runs as the function
 owner, and delegates to `purge_user_account(uuid)` — revoked from `public`,
 `anon` **and** `authenticated`, so only the owner and `service_role` can call

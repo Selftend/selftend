@@ -22,11 +22,23 @@ export type UnderFloorErasureState = "working" | "erased" | "failed" | "nothing-
  * account that already exists.
  *
  * **Why there is an account to erase at all.** The gate runs in the shared slot
- * in `ProtectedLayout`, which is *after* the session exists on three of the
- * four entry paths - guest, Google, Apple - so by the time the verdict is
- * known an auth user has been created. §3 describes this as an OAuth-specific
- * deletion; it is not, and the silent guest (#1440) is the path that makes it
- * the common case rather than the exotic one.
+ * in `ProtectedLayout`, which is *after* the session exists on **all four**
+ * entry paths - guest, Google, Apple and email/password - so by the time the
+ * verdict is known an auth user has been created, whichever way in was used.
+ * The gate mounts below `ProtectedLayout`'s `if (!session) return
+ * <AuthLandingScreen />`, so it is structurally unreachable without a session;
+ * and password sign-up yields one immediately, because email confirmation is
+ * off (`supabase/config.toml` `enable_confirmations = false`, mirroring
+ * `mailer_autoconfirm=true` on the hosted projects). §3 describes this as an
+ * OAuth-specific deletion; it is not, and the silent guest (#1440) is the path
+ * that makes it the common case rather than the exotic one.
+ *
+ * ⚠️ This said *"three of the four"* until #1919. That was a fossil of spec
+ * #227 §3, which had the password gate running BEFORE account creation; #1764
+ * moved the gate into the shared slot and gave it all four paths, and the
+ * correction never reached the comments. The sentence is load-bearing - a
+ * reader uses it to decide whether this exit can be reached with no account to
+ * delete - so it is worth being exact about.
  *
  * **The server-side capability §3 asks for already exists, and it is not an
  * edge function.** `delete_user_account()` is `security definer`, runs as the
