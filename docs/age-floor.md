@@ -29,12 +29,12 @@ Implemented in `src/features/auth/age-floor.ts`.
 
 ## The table
 
-| Floor  | Countries                                                                                                                                                        |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **13** | United States, United Kingdom, Belgium, Denmark, Estonia, Finland, Latvia, Malta, Portugal, Sweden, Norway, Iceland — **and every jurisdiction not named below** |
-| **14** | Austria, Bulgaria, Cyprus, Italy, Lithuania, Spain                                                                                                               |
-| **15** | Czechia, France, Greece, Slovenia                                                                                                                                |
-| **16** | Croatia, Germany, Hungary, Ireland, Luxembourg, Netherlands, Poland, Romania, Slovakia, Liechtenstein                                                            |
+| Floor  | Countries                                                                                                                                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **13** | United States, United Kingdom, Belgium, Estonia, Finland, Latvia, Malta, Portugal, Sweden, Norway, Iceland — **and every jurisdiction not named below** |
+| **14** | Austria, Bulgaria, Cyprus, Italy, Lithuania, Spain                                                                                                      |
+| **15** | Czechia, Denmark, France, Greece, Slovenia                                                                                                              |
+| **16** | Croatia, Germany, Hungary, Ireland, Luxembourg, Netherlands, Poland, Romania, Slovakia, Liechtenstein                                                   |
 
 Never below 13, anywhere.
 
@@ -46,10 +46,10 @@ Thought records, mood entries and journal text are special-category health
 data. The age that matters is therefore the age at which a person may consent
 to _that processing_ on their own behalf — which member states set individually
 under Art. 8, between 13 and 16. Where a country sets it higher, Selftend's
-floor rises to match — with **one known exception, open and unresolved**:
-Denmark sets 15 and this table still says 13. See
-[#1921](https://github.com/Selftend/selftend/issues/1921) and § _Where each row
-came from_.
+floor rises to match. ☠️ Denmark is the row that proves the rule needs
+checking rather than assuming: it moved to 15 in 2024 and this table said 13
+until [#1921](https://github.com/Selftend/selftend/issues/1921). See § _Where
+each row came from_.
 
 There is **no parental-consent path and no age verification.** Where the law
 would require one, the floor rises instead. That is a deliberate scope
@@ -86,16 +86,17 @@ The twenty-one rows that were only ever established from secondary summaries —
 the research marks them **`(C)`** — were read against the national statute on
 2026-09-04 for [#1763](https://github.com/Selftend/selftend/issues/1763), and
 Spain was read with them because its own "primary" mark rested on a law firm's
-summary. Twenty of those twenty-two confirmed.
+summary. Twenty of those twenty-two confirmed on the spot.
 
-> [!CAUTION]
-> **Denmark is the exception, and this table has not been changed.** The Danish
-> age of digital consent has been **15** since 1 January 2024, and the table
-> above still says 13. A primary source contradicting the table is **raised, not
-> silently applied** — the table is a settled decision of map #216, and revising
-> it is the owner's call with counsel. That decision is
-> [#1921](https://github.com/Selftend/selftend/issues/1921), and it is cheaper
-> before the §7 release than after it.
+> [!IMPORTANT]
+> **Denmark was the exception, and the table above has been changed.** Its age
+> of digital consent has been **15** since 1 January 2024 while this table said 13. A primary source contradicting the table is **raised, not silently
+> applied** — so it went to the owner as
+> [#1921](https://github.com/Selftend/selftend/issues/1921), the decision was to
+> follow the statute, and Denmark now sits at 15 here, in `FLOOR_BY_COUNTRY`, and
+> in the published policy text in both languages. ⚠️ Counsel has still not seen
+> it: the §5 review ([#1771](https://github.com/Selftend/selftend/issues/1771))
+> comes before publication, and this correction reaches `dev` ahead of it.
 
 **Hungary is unverified**, not confirmed: the official consolidated repository
 could not be reached. It carries 16, which is the GDPR's own default and the
@@ -104,10 +105,10 @@ recorded in the checks document as an open question for counsel.
 
 ⚠️ **That is a live exception to the rule, not a repeal of it.** Spec §2 is that
 a row is checked against a primary source **before it governs anyone's access**,
-and Hungary's row governs access today without having been. Two rows therefore
-reach the §5 legal review unfinished — Denmark contradicted, Hungary unverified
-— and both are on [#1771](https://github.com/Selftend/selftend/issues/1771).
-Neither is a reason to relax the rule for the next row.
+and Hungary's row governs access today without having been. With Denmark
+corrected, it is the one row that reaches the §5 legal review unfinished, and it
+is on [#1771](https://github.com/Selftend/selftend/issues/1771). Not a reason to
+relax the rule for the next row.
 
 The 2026-07-24 research behind the original table is not merged: it lives at
 `docs/research/2026-07-24-gdpr-consent-ages.md` on branch

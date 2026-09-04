@@ -186,9 +186,15 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // correct rather than an oversight: they landed in `faq` and in the `cbt`,
 // `journal` and `modules` namespaces, none of which is consent-bearing. Only
 // privacy, terms, cookies and accountDeletion are hashed.
+// ⚠️ The digest moved again for #1921 - Denmark left privacy §11's 13 sentence
+// and joined its 15 one - and the VERSION deliberately did not. A version bump
+// re-gates every existing user, and `2026-09-04-teen-floor` has not been
+// released yet, so no user has accepted this text: there is nobody to re-gate
+// and nothing to spend. That is the whole of why the Danish correction was
+// worth making before the §7 release rather than after it.
 const pinnedPolicyRelease = {
   version: "2026-09-04-teen-floor",
-  englishDigest: "97d6fa3466b36a69aba935fdd1030c22371926608cfc490017c9c040ec87e5bd",
+  englishDigest: "5eabd28f5a9d79ec676e14d638527c0d36bb57f0371a81c790f63a4c209ecd1e",
 };
 
 describe("policy content - version pinning", () => {

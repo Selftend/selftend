@@ -23,12 +23,13 @@ import { tableCells } from "@/test/markdown-doc";
  * So: a country in the code with no row here, or a row whose stated floor has
  * silently diverged from the code, fails.
  *
- * ⚠️ It deliberately does NOT assert that every row is `CONFIRMED`. Denmark is
- * `CONTRADICTED` and Hungary is `UNRESOLVED`, and both must be allowed to stay
- * that way — the ticket's rule is that a contradiction is raised
- * ([#1921](https://github.com/Selftend/selftend/issues/1921)), never silently
- * applied. A guard that forced every row green would force exactly the silent
- * edit that rule forbids.
+ * ⚠️ It deliberately does NOT assert that every row is `CONFIRMED`. Hungary is
+ * `UNRESOLVED` and must be allowed to stay that way, and a future contradiction
+ * must be allowed to sit here as one — the rule is that a contradiction is
+ * raised, never silently applied. A guard that forced every row green would
+ * force exactly the silent edit that rule forbids. Denmark was `CONTRADICTED`
+ * until [#1921](https://github.com/Selftend/selftend/issues/1921) took the
+ * owner's decision to follow the statute; the row now reads 15 on both sides.
  */
 
 const ROOT = resolve(__dirname, "..");
@@ -163,10 +164,15 @@ describe("the rows checked in this pass", () => {
    *
    * Keyed on the country name and the issue that raises it, not on wording.
    *
-   * ☠️ The table rows are stripped first, and that is the whole assertion.
-   * Denmark is named in `age-floor.md`'s own floor table, so a bare
-   * `toContain("Denmark")` over the file passes no matter what — the claim is
-   * that the file *discusses* it, which is only true outside the table.
+   * ☠️ The table rows are stripped first, and that is the whole assertion. A
+   * country is named in `age-floor.md`'s own floor table, so a bare
+   * `toContain(name)` over the file passes no matter what — the claim is that
+   * the file *discusses* it, which is only true outside the table.
+   *
+   * ⚠️ **Dormant as of #1921**: no row is `CONTRADICTED` any more, so this loops
+   * zero times and cannot fail. It is kept rather than deleted because it is a
+   * standing rule for the next contradiction, not a check on this one — but
+   * green here currently means "nothing to check", not "checked".
    */
   it("warns about a contradicted floor in the file that carries the table", () => {
     const prose = readFileSync(resolve(ROOT, "docs/age-floor.md"), "utf8")

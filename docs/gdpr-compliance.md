@@ -54,7 +54,7 @@ The Article 9(2)(a) consent for user-entered self-help content is a separate aff
 
 The age threshold is **13, or the higher minimum age at which a person may consent to the processing of their own personal data in their country** — 14, 15 or 16 across much of the EEA. The table is in [age-floor.md](age-floor.md) and in code at `src/features/auth/age-floor.ts`; it is never below 13.
 
-Each row was read against its national statute on 2026-09-04 and the sources are recorded in [age-floor-statute-checks.md](age-floor-statute-checks.md) ([#1763](https://github.com/Selftend/selftend/issues/1763)). ⚠️ Two rows reach the legal review unfinished: **Denmark**, whose statute has said 15 since 2024-01-01 while the table says 13 — raised at [#1921](https://github.com/Selftend/selftend/issues/1921), not silently applied — and **Hungary**, which could not be verified because the official repository was unreachable.
+Each row was read against its national statute on 2026-09-04 and the sources are recorded in [age-floor-statute-checks.md](age-floor-statute-checks.md) ([#1763](https://github.com/Selftend/selftend/issues/1763)). That check found **Denmark** at 15 — its statute has said so since 2024-01-01 — while the table said 13; it was raised rather than silently applied ([#1921](https://github.com/Selftend/selftend/issues/1921)) and the table now follows the statute. ⚠️ **Hungary** could not be verified at all, because the official repository was unreachable, and reaches the legal review as an open question.
 
 The floor is set by Art. 9(2)(a) explicit consent rather than by contract, because the entries the app holds are special-category data: the age that governs is the age at which the person can consent to _that_ processing themselves.
 

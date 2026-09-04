@@ -134,9 +134,9 @@
         "title": "11. Minimum age",
         "body": [
           "Selftend has a minimum age, and it is not the same everywhere. What the app holds - thought records, mood entries, journal text - is special-category data about your health, and the age that matters is the age at which you may consent to that processing yourself. Countries set that age individually, so ours follows theirs.",
-          "The minimum age is 13 in Belgium, Denmark, Estonia, Finland, Iceland, Latvia, Malta, Norway, Portugal, Sweden, the United Kingdom and the United States - and in every other country not named below.",
+          "The minimum age is 13 in Belgium, Estonia, Finland, Iceland, Latvia, Malta, Norway, Portugal, Sweden, the United Kingdom and the United States - and in every other country not named below.",
           "It is 14 in Austria, Bulgaria, Cyprus, Italy, Lithuania and Spain.",
-          "It is 15 in Czechia, France, Greece and Slovenia.",
+          "It is 15 in Czechia, Denmark, France, Greece and Slovenia.",
           "It is 16 in Croatia, Germany, Hungary, Ireland, Liechtenstein, Luxembourg, the Netherlands, Poland, Romania and Slovakia.",
           "It is never below 13, anywhere.",
           "We ask for your date of birth and your country once, before you start, and keep only the result (see section 2). There is no parental-consent route and no identity check: where the law would require one, our minimum age rises instead.",
