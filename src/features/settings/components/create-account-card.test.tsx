@@ -71,4 +71,40 @@ describe("CreateAccountCard", () => {
 
     expect(screen.queryByText(TITLE)).toBeNull();
   });
+
+  /**
+   * ☠️ The audit logged a tint and a `lock_outline` glyph here as drift; #1830's
+   * spec OVERRULES it, and this pins the refusal so a later fidelity pass cannot
+   * quietly "fix" the drawing back in.
+   *
+   * After #1800 the page has **no filled surfaces at all**, so a tinted, bordered
+   * callout would make the registration invitation the single loudest element on
+   * a page of plain rows. #1446 says the card's stronger web wording exists
+   * *"because the risk is real there, not to push"*, and AGENTS.md wants
+   * conversion *"never a gate and never nagged"*. `lock_outline` additionally
+   * implies protection where the card's whole point is fragility.
+   */
+  it("stays a plain card with an outline CTA - no tint, no glyph, no filled button", () => {
+    mockUser = { id: "guest-1", is_anonymous: true };
+
+    const view = renderWithProviders(<CreateAccountCard />);
+
+    const cta = screen.getByTestId("create-account-card-cta");
+    const ctaClasses = String(cta.props.className ?? "");
+    // An outline button, never the filled-primary CTA the audit floated (X2).
+    expect(ctaClasses).not.toMatch(/\bbg-primary\b/);
+
+    // No tinted fill and no primary-tinted border anywhere in the card.
+    const classNames = view.UNSAFE_root.findAll(
+      (node) => typeof node.props?.className === "string",
+    ).map((node) => String(node.props.className));
+    for (const className of classNames) {
+      expect(className).not.toMatch(/bg-primary\/|border-primary/);
+    }
+
+    // No glyph: the card renders no icon at all.
+    expect(view.UNSAFE_root.findAll((node) => typeof node.props?.name === "string")).toHaveLength(
+      0,
+    );
+  });
 });

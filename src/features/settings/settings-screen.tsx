@@ -21,8 +21,10 @@ import { SettingsProfileBlock } from "@/src/features/settings/components/setting
 import { SettingsRow } from "@/src/features/settings/components/settings-row";
 import { SettingsRun } from "@/src/features/settings/components/settings-run";
 import { useOnboardingActions } from "@/src/features/settings/use-reset-onboarding";
+import { useWideFrame } from "@/src/features/settings/use-wide-frame";
 import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from "@/src/lib/keyboard-avoiding";
+import { cn } from "@/lib/utils";
 
 /**
  * Settings: identity header → appearance → four labelled runs → colophon.
@@ -56,6 +58,7 @@ export default function SettingsScreen() {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("settings");
   const { user } = useSession();
+  const wide = useWideFrame();
   const { data } = useUserPreferences(user?.id ?? null);
 
   const { canSignOut, signOut: handleSignOut } = useSignOut(user);
@@ -73,8 +76,21 @@ export default function SettingsScreen() {
       {/* Keyboard avoidance for the display-name field (edge-to-edge Android
           gets no window resize, so the screen must pad itself). */}
       <KeyboardAvoidingView behavior={KEYBOARD_AVOIDING_BEHAVIOR} className="flex-1">
-        <KeyboardAwareScrollView contentContainerClassName="grow p-4">
-          <View testID="settings-layout" className="mx-auto w-full max-w-2xl gap-6">
+        {/*
+          D5 (#1830): the page breathes at top and bottom, and the SIDES stay at
+          16px — that inset is what keeps the content column at 672px inside the
+          `max-w-2xl`, which the design system's own kit backs (#1788). Chasing
+          `14a`'s drawn 720 here would widen the column the kit already settled.
+        */}
+        <KeyboardAwareScrollView contentContainerClassName="grow px-4 pt-[40px] pb-[48px]">
+          {/*
+            D4: the column rhythm the drawing has, on the page's one breakpoint
+            (`useWideFrame`, 640) rather than a second hand-written width test.
+          */}
+          <View
+            testID="settings-layout"
+            className={cn("mx-auto w-full max-w-2xl", wide ? "gap-[34px]" : "gap-[26px]")}
+          >
             <SettingsHero />
 
             <SettingsProfileBlock user={user} />
