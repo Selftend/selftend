@@ -8,27 +8,34 @@
 // is a positioning change nobody reviewed - the same failure the 18+ episode was,
 // one field over.
 //
-// ☠️ LOCALE-AGNOSTIC ON PURPOSE, and this is the part to read before "fixing" it.
-// These fields live under `apple.info.<locale>`, and the locale key App Store
-// Connect actually uses has never been read - the repository has no committed
-// store.config.json and nothing else records it. Hard-coding "en-US" would be
-// precisely the guessed value store/README.md forbids: if it is wrong, the job
-// reports a missing key every week until someone mutes it. So this asks the
-// weaker question it can answer honestly - does SOME locale carry this exact
-// value - which still goes red the moment Apple's English listing changes.
+// Compared PER LOCALE against `en-US` (#1802). That key is READ, not guessed:
+// the guard was broken from birth and had never completed a pull (#1798); once
+// #1799 fixed it, a dispatched run reported `Locales present in the pulled
+// metadata: en-US` (run 33795074521). store/README.md's rule is "read the live
+// value, commit it, never guess", and this is now the read value.
 //
-// Once someone reads the real locale keys out of App Store Connect, tighten this
-// to compare per locale and delete this paragraph.
+// The check used to ask a deliberately weaker question - does SOME locale carry
+// this exact value - because the key had never been read. That question passes
+// if the value MOVES to a different locale, and would keep passing if a second
+// locale were added later still carrying the old string.
 
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 /**
+ * The one locale App Store Connect holds this listing under, read from a live
+ * pull rather than guessed - see the header. Exported so the test names the same
+ * value the script does, instead of restating it.
+ */
+export const EXPECTED_LOCALE = "en-US";
+
+/**
  * @param {Record<string, unknown>} committed Fields read from the live record and committed.
  * @param {Record<string, Record<string, unknown>>} locales The pulled `apple.info` block.
+ * @param {string} [expectedLocale] Overridable so a test can drive the branch without faking the constant.
  * @returns {{ ok: boolean, reason?: string, drifted: string[], locales: string[] }}
  */
-export function findListingDrift(committed, locales) {
+export function findListingDrift(committed, locales, expectedLocale = EXPECTED_LOCALE) {
   const localeNames = Object.keys(locales ?? {});
 
   // A shape change in EAS Metadata, not listing drift. Reported separately
@@ -43,9 +50,27 @@ export function findListingDrift(committed, locales) {
     };
   }
 
+  // Same class as the branch above, and separated from drift for the same
+  // reason: if `en-US` is gone, either Apple renamed the locale or the listing
+  // moved, and both are answered by reading the live record and updating this
+  // repository - not by editing App Store Connect back. Reporting it as drift
+  // would name the wrong side.
+  if (!localeNames.includes(expectedLocale)) {
+    return {
+      ok: false,
+      reason: "expected-locale-absent",
+      drifted: [],
+      locales: localeNames,
+    };
+  }
+
+  const pulled = locales[expectedLocale] ?? {};
   const drifted = Object.entries(committed)
-    .filter(([field, value]) => !localeNames.some((name) => locales[name]?.[field] === value))
-    .map(([field, value]) => `${field}: committed ${JSON.stringify(value)}, matched by no locale`);
+    .filter(([field, value]) => pulled[field] !== value)
+    .map(
+      ([field, value]) =>
+        `${field}: committed ${JSON.stringify(value)}, ${expectedLocale} has ${JSON.stringify(pulled[field])}`,
+    );
 
   return { ok: drifted.length === 0, drifted, locales: localeNames };
 }
@@ -71,6 +96,16 @@ function main() {
     console.error("::error::The pulled metadata has no apple.info block at all.");
     console.error(
       "::error::That is a shape change in EAS Metadata, not listing drift - fix the path in this script.",
+    );
+    process.exit(1);
+  }
+
+  if (result.reason === "expected-locale-absent") {
+    console.error(
+      `::error::The pulled metadata has no ${EXPECTED_LOCALE} locale (found: ${result.locales.join(", ")}).`,
+    );
+    console.error(
+      "::error::That is a repository-side fix, not App Store Connect drift - read the live locale key and update EXPECTED_LOCALE and store/README.md.",
     );
     process.exit(1);
   }
