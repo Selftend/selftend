@@ -452,6 +452,151 @@ describe("UserMenu", () => {
     expect(screen.queryByText("Guest")).toBeNull();
   });
 
+  /**
+   * #1869/#1807. Before this row a guest had NO route back into their own
+   * account from anywhere inside the app: sign-out is hidden for them (#1442),
+   * `app/index.tsx` bounces any session past the landing screen's Sign in, and
+   * on native there is no URL bar to type `/sign-in` into. The only in-app path
+   * from a guest session to the sign-in form was deleting the account.
+   */
+  describe("the guest's Sign in door (#1869)", () => {
+    const guestSession = {
+      session: { access_token: "token" },
+      user: { id: "guest-1", email: "", is_anonymous: true },
+    };
+
+    it("opens the sign-in screen for a guest, closing the menu behind it", () => {
+      mockSession = guestSession;
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+      fireEvent.press(screen.getByTestId("user-menu-sign-in-row"));
+
+      // ☠️ No `{ dangerouslySingular: true }` — unlike the two `(app)` lateral
+      // jumps this menu makes, `sign-in` declares its own singularity in
+      // `app/(auth)/_layout.tsx`, so passing it here would be a second answer.
+      expect(mockPush).toHaveBeenCalledWith("/(auth)/sign-in");
+      expect(screen.queryByText("Settings")).toBeNull();
+    });
+
+    /**
+     * The gate is `isSignedIn && !email`, never `is_anonymous` — the JWT keeps
+     * claiming that flag after conversion, so a converted user would keep a door
+     * built on it. This fixture is a registered user and must not see the row.
+     */
+    it("does not offer it to a registered user", () => {
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      expect(screen.queryByTestId("user-menu-sign-in-row")).toBeNull();
+      expect(screen.getByText("Sign Out")).toBeTruthy();
+    });
+
+    /** The registered menu is untouched: no shared markup moved. */
+    it("leaves the registered action row at three buttons", () => {
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      expect(screen.getByText("Settings")).toBeTruthy();
+      expect(screen.getByText("Send feedback")).toBeTruthy();
+      expect(screen.getByText("Sign Out")).toBeTruthy();
+    });
+
+    /**
+     * ☠️ #1863: the row carries NO `accessibilityLabel`. With a single `Text`
+     * child the label IS the accessible name, and an explicit one would hide
+     * that child from assistive tech on the web. The Palette row composes a name
+     * only because it has a value to fold in — this row has no value slot, by
+     * decision, so it must not copy that prop along with the rest.
+     */
+    it("takes its accessible name from the label, with no explicit one", () => {
+      mockSession = guestSession;
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      const row = screen.getByTestId("user-menu-sign-in-row");
+      expect(row.props.accessibilityLabel).toBeUndefined();
+      expect(row.props["aria-label"]).toBeUndefined();
+      expect(screen.getByText("Sign in")).toBeTruthy();
+      // ☠️ `role="button"`, never `role="link"`: react-native-web skips `onPress`
+      // on Enter for an href-less link role, the keyboard-dead failure the #1730
+      // chain closed. jest(ios) cannot fail on that, so it is pinned as a prop.
+      expect(row.props.role).toBe("button");
+    });
+
+    /**
+     * ☠️ Position IS the ruling (#1811), not a detail: the candidate that lost
+     * put the door in the action row, which the prototype measured 156px BELOW
+     * the fold in Bulgarian on a 667pt screen — this menu already overflows its
+     * own 70% cap for everyone, in English, today (#1862), so the actions are
+     * its LEAST reachable region. A door nobody scrolls to is not a door.
+     *
+     * Asserted as real document order rather than "before the palette row",
+     * which a door dropped BELOW the language group would also satisfy.
+     */
+    it("sits directly beneath the identity row, above the language group", () => {
+      mockSession = guestSession;
+
+      renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Open account menu"));
+
+      // The rendered tree flattened in document order, which is the only thing
+      // that distinguishes "beneath the identity row" from "somewhere in the
+      // menu". Landmarks are read off props so nesting can change freely.
+      const order: string[] = [];
+      const walk = (node: unknown): void => {
+        if (Array.isArray(node)) return void node.forEach(walk);
+        if (!node || typeof node !== "object") return;
+        const { props = {}, children } = node as {
+          props?: Record<string, unknown>;
+          children?: unknown;
+        };
+        if (props.testID === "user-menu-sign-in-row") order.push("door");
+        if (
+          props.accessibilityRole === "radiogroup" &&
+          props.accessibilityLabel === "Switch language"
+        ) {
+          order.push("language");
+        }
+        if (props.testID === "user-menu-palette-row") order.push("palette");
+        if (children) walk(children);
+      };
+      walk(screen.toJSON());
+
+      // The identity row carries no testID, so its text anchors the top edge:
+      // the door is below the word naming the state it is offered for.
+      expect(screen.getByText("Guest")).toBeTruthy();
+      expect(order).toEqual(["door", "language", "palette"]);
+    });
+
+    /**
+     * ☠️ `Вход`, not `Влез`. Both ship today, and the menu's rows split by part
+     * of speech: `Настройки` is a noun naming a place, `Изпрати обратна връзка` a
+     * verb naming an act. #1811 put this row in the navigation grammar so it
+     * reads as a place, and `navigation:breadcrumb.signIn` already calls this
+     * very destination `Вход`.
+     *
+     * ☠️ Through `setLanguage`, never `i18n.changeLanguage("bg")` — only `en` is
+     * registered at init, so a Cyrillic assertion would be vacuously green.
+     */
+    it("reads Вход in Bulgarian", async () => {
+      mockSession = guestSession;
+      await setLanguage("bg");
+
+      const view = renderWithProviders(<UserMenu />);
+      fireEvent.press(screen.getByLabelText("Отвори меню на акаунта"));
+
+      expect(screen.getByText("Вход")).toBeTruthy();
+      // The CTA wording this row is NOT, so a later "consistency" pass cannot
+      // quietly swap the place for the act.
+      expect(screen.queryByText("Влез")).toBeNull();
+
+      view.unmount();
+      await setLanguage("en");
+    });
+  });
+
   // #968: supabase-js's `signOut()` defaults to `scope: 'global'`, which revokes
   // every refresh token the user holds - pressing Sign Out on the laptop ended
   // the session on the phone. Nothing in the product ever asked for that. The

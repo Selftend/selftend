@@ -130,6 +130,14 @@ export function UserMenu() {
   */
   const primaryLine = displayName || email || t("userMenu.guest");
   const showEmail = Boolean(displayName && email);
+  /*
+    ☠️ Absence-driven, never `is_anonymous` (#1869): the JWT keeps claiming that
+    flag after conversion, which is why the support form hand-codes `&& !email`
+    too. `!email` implies guest structurally - every registered identity carries
+    one (password, Google, and Apple's private relay), and there is no phone
+    auth - so a converted user loses the door the moment they gain an email.
+  */
+  const isGuest = isSignedIn && !email;
 
   const languageIndex = supportedLanguages.indexOf(language);
   const languageRoving = useRovingFocus({
@@ -254,6 +262,71 @@ export function UserMenu() {
                     ) : null}
                   </View>
                 </View>
+              ) : null}
+
+              {/*
+                #1869: a guest's only way back into their own account. Sign-out is
+                hidden for them (#1442), `app/index.tsx` bounces any session past
+                the landing screen's Sign in, and native has no URL bar - so
+                before this row the only in-app route to the sign-in form was
+                deleting the account.
+
+                Its own row directly beneath the identity row, in the Palette
+                row's shape (label · chevron, no leading icon): label-plus-chevron
+                is this menu's grammar for NAVIGATION, which is the only basis
+                #1809 permitted the door on. The candidate that put it in the
+                action row lost on reach - the menu already overflows its own 70%
+                cap for everyone (#1862), so the actions are its least reachable
+                region.
+
+                ☠️ NO `accessibilityLabel` (#1863). One `Text` child means the
+                label IS the accessible name; an explicit one would hide that
+                child from assistive tech on the web. The Palette row composes a
+                name only because it has a value to fold in.
+
+                ☠️ The middle value slot stays EMPTY, by decision, not omission
+                (#1863) - do not fill it with a hint about the warn-and-abandon
+                confirm later. `guardSignIn` passes an empty guest straight
+                through with no warning, so a static caution is false for exactly
+                the newest guests; a content-aware one costs the whole
+                `export_user_data` RPC on every menu open; the slot's grammar is
+                STATE (`Palette · Quiet Lilac`), not consequence; and a caution
+                converts this from the plain navigation #1809 allowed into a
+                warned exit. The pre-submit gap is real and is #1865's, on
+                `/sign-in` itself, which can afford the check on mount.
+              */}
+              {isGuest ? (
+                <Pressable
+                  accessibilityRole="button"
+                  className="flex-row items-center gap-3 rounded-sm px-2 py-2 active:bg-accent"
+                  hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
+                  onPress={() => {
+                    popoverTriggerRef.current?.close();
+                    // ☠️ No `dangerouslySingular` here, unlike the two `(app)`
+                    // lateral jumps below: `sign-in` already declares it in
+                    // `app/(auth)/_layout.tsx`, so passing it would be a second
+                    // answer to a settled question.
+                    //
+                    // ☠️ Bare, and it must stay bare: this whole menu is a
+                    // declared Origin opt-out (#1261/#1265), enforced by
+                    // `nav-chrome-origin.test.ts` - which scans this file's
+                    // SOURCE, so even naming the recording helper in a comment
+                    // fails it. The argument holds here too: the sign-in
+                    // screen's top bar leads to `/` by design, so a recorded
+                    // origin would never be read.
+                    router.push("/(auth)/sign-in");
+                  }}
+                  // ☠️ `role="button"`, never `role="link"`: react-native-web
+                  // skips `onPress` on Enter for an href-less link role, the
+                  // keyboard-dead failure the #1730 chain closed. And no
+                  // `spaceKeyActivationProps` - on `role="button"` it
+                  // double-activates.
+                  role="button"
+                  testID="user-menu-sign-in-row"
+                >
+                  <Text className="flex-1 text-sm">{t("userMenu.signIn")}</Text>
+                  <Icon name="chevron-right" className="size-4 shrink-0 text-muted-foreground" />
+                </Pressable>
               ) : null}
 
               <View

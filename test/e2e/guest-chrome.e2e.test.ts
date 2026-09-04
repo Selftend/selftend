@@ -54,4 +54,38 @@ test.describe("guest chrome", () => {
     await expect(page.getByRole("button", { name: "Export my data", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out", exact: true })).toBeHidden();
   });
+
+  // #1869: the other half of the same chrome. Sign-out is hidden for a guest
+  // (above), which left them with no account control at all - and no route to
+  // the sign-in form from anywhere inside the app, since `app/index.tsx` bounces
+  // any session past the landing screen's Sign in. This proves the form is
+  // REACHABLE, which is the whole job of the door.
+  //
+  // ☠️ Its own test rather than more steps in the one above: pressing the row
+  // navigates away, and that journey continues into Settings.
+  //
+  // ☠️ The warn-and-abandon confirm is deliberately NOT re-tested here. It fires
+  // at SUBMIT, not on arrival - `useGuestAbandonGuard` wraps the submit handlers
+  // inside `sign-in-form.tsx`, so a guest sees exactly what a signed-out visitor
+  // sees on arrival - and `guest-signin-abandon.e2e.test.ts` already covers
+  // submit → confirm end to end. Duplicating it here would add a slow test that
+  // asserts someone else's contract.
+  test("a guest reaches the sign-in form from the header menu", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Your tools", level: 2 })).toBeVisible({
+      timeout: 15_000,
+    });
+    await dismissHomeTour(page);
+
+    await page.getByRole("button", { name: "Open account menu", exact: true }).click();
+    // The identity row names the state the door is offered for (#1829/#1810) -
+    // the anchor that keeps the assertion below from passing on a menu that
+    // rendered for the wrong kind of user.
+    await expect(page.getByText("Guest", { exact: true })).toBeVisible();
+
+    await page.getByTestId("user-menu-sign-in-row").click();
+
+    await expect(page).toHaveURL(/\/sign-in$/);
+    await expect(page.getByTestId("sign-in-email")).toBeVisible({ timeout: 15_000 });
+  });
 });
