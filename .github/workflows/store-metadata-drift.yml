@@ -182,18 +182,18 @@ jobs:
       # docs/positioning.md governs, so a silent edit in App Store Connect shows
       # up here the same way an age-rating change does.
       #
-      # ☠️ LOCALE-AGNOSTIC ON PURPOSE. These fields live under `apple.info.<locale>`,
-      # not `apple.advisory`, and the locale key App Store Connect actually uses
-      # was never read - the repository has no store.config.json and nothing else
-      # records it. Guessing "en-US" would be exactly the guessed value
-      # store/README.md forbids: wrong, it reports a missing key forever and the
-      # job gets muted. So the check asks the weaker question it can actually
-      # answer honestly - does SOME locale carry this exact value - which still
-      # fires the moment Apple's English listing changes. Once someone reads the
-      # real locale keys, tighten this to compare per locale.
+      # Compared PER LOCALE against `en-US` (#1802). These fields live under
+      # `apple.info.<locale>`, not `apple.advisory`, and that key is READ rather
+      # than guessed: this guard had never completed a pull (#1798), and the
+      # first dispatched run after #1799 fixed it reported `en-US` as the only
+      # locale in the record. store/README.md's rule is "read the live value,
+      # commit it, never guess" - so indexing one locale is now the honest
+      # question, where before the check could only ask whether SOME locale
+      # carried the value.
       # Node rather than jq, unlike the advisory step above: this comparison has
-      # real logic in it (search every locale), and scripts/check-store-listing-
-      # drift.mjs is unit-tested in `verify` by test/store-listing-drift.test.ts.
+      # real logic in it (a per-locale index plus two distinct not-drift
+      # branches), and scripts/check-store-listing-drift.mjs is unit-tested in
+      # `verify` by test/store-listing-drift.test.ts.
       # An untestable comparison inside a weekly guard is how a guard starts
       # lying without anyone noticing.
       # ⚠️ RUNS EVEN WHEN THE ADVISORY COMPARISON ABOVE FAILED. The two
