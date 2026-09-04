@@ -15,7 +15,7 @@ This file is the record. It exists so the next reviewer starts from a decision r
 Out of scope, and owned elsewhere:
 
 - Store listing and Play declarations — [#1771](https://github.com/Selftend/selftend/issues/1771), the owner's rollout pass.
-- The DPIA / minors' assessment — [#1768](https://github.com/Selftend/selftend/issues/1768).
+- The DPIA / minors' assessment — [dpia-minors-assessment.md](dpia-minors-assessment.md), [#1768](https://github.com/Selftend/selftend/issues/1768). This review is cited there as the evidence for the duty-of-care row.
 - The delete-on-knowledge runbook, the PR-template gate line, and the annual legal-landscape check — [#1769](https://github.com/Selftend/selftend/issues/1769). §4's _ongoing cadence_ bullet is that ticket's, not this one's.
 
 ## Method

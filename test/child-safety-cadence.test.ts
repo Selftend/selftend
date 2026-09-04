@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { ABSOLUTE_MINIMUM_AGE_FLOOR } from "@/src/features/auth/age-floor";
+import { section } from "@/test/markdown-doc";
 
 /**
  * The recurring half of the teen-safety posture (#1769, spec #227 §4).
@@ -33,25 +34,6 @@ const ROOT = resolve(__dirname, "..");
 
 const runbook = readFileSync(resolve(ROOT, "docs/operations-runbook.md"), "utf8");
 const prTemplate = readFileSync(resolve(ROOT, ".github/pull_request_template.md"), "utf8");
-
-/**
- * The body of one `##` section, up to the next `##` heading. Sections are the
- * unit here because "the runbook mentions purge_user_account somewhere" is not
- * the claim - the claim is that the delete procedure names it.
- */
-function section(markdown: string, headingPattern: RegExp): string {
-  const lines = markdown.split("\n");
-  const start = lines.findIndex((line) => /^## /.test(line) && headingPattern.test(line));
-
-  if (start === -1) {
-    return "";
-  }
-
-  const rest = lines.slice(start + 1);
-  const end = rest.findIndex((line) => /^## /.test(line));
-
-  return (end === -1 ? rest : rest.slice(0, end)).join("\n");
-}
 
 /**
  * Top-level `- ` bullets of a markdown block, each carrying its continuation
