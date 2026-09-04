@@ -28,6 +28,8 @@ Use minimal notifications, few enabled modules, simple language, and low-frictio
 
 Support reflection and self-help. Do not diagnose, prescribe, claim treatment outcomes, provide emergency support, or replace professional care.
 
+☠️ **This reaches what a phrase _means in the clinic_, not only what it _asserts about the product_.** A term of art carries its clinical sense even when the sentence containing it makes no claim — and it can carry an assumption about the reader as well as about Selftend. [positioning.md](positioning.md) § _Words never to use_ holds the resulting list; this principle is why that list exists.
+
 ### 7. Privacy And Dignity
 
 Collect only what is needed. Respect the sensitivity of the data. Avoid surveillance-style analytics.
