@@ -25,9 +25,9 @@ The app support page should link to:
 
 ## Public Growth
 
-Before launch: claim likely handles, make GitHub docs readable, publish the mission and roadmap, and set up Discord only when useful.
+How Selftend reaches people is decided in [marketing-plan.md](marketing-plan.md), and this section defers to it. Two things that document settles supersede the earlier guidance here: channels are worked **one at a time** in dated windows rather than several in parallel, and copy never opens on privacy or leads with free — the message is derived from the frame sentence in [positioning.md](positioning.md), which fixes what may be said first.
 
-After MVP: focus on GitHub, Discord, public docs/site, Reddit, and one or two sustainable social channels. Lead with usefulness, privacy, free access, clear boundaries, screenshots, demos, and practical educational content.
+What stays true for the community side: make GitHub docs readable, publish the mission, and set up channels only when there is someone to serve. Contributor channels — GitHub, Discord, Weblate — are places people chose to follow and are published to when the project ships something; they are never counted as acquisition, never mailed, and never used to reach anyone by their behaviour or absence.
 
 Avoid guilt-based retention, fake urgency, and panic marketing.
 

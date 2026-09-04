@@ -229,7 +229,9 @@ const CARD_BUILDERS: Partial<Record<CardId, CardBuilder>> = {
   },
 
   // Scheduled CBT behavioural-activation activities, not habits - the id stays
-  // `habits-today` only because it is a storage key in widget_preferences (#330).
+  // `habits-today` only because placed launcher widgets persist it as their
+  // `cardId` (widget-config-store.ts; #330). It used to be a storage key in
+  // widget_preferences too; #1953 spent that mapping.
   "habits-today": (data, { t, dateKey }) => {
     // Activities carry a captured scheduledDayKey - the civil day the user planned
     // for - so compare directly and never re-bucket by the viewer's day (#330).
