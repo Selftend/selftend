@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { type LayoutChangeEvent, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
@@ -12,50 +11,24 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { ScreenHeader } from "@/src/components/app/screen-header";
-import { LineChart } from "@/src/components/charts/line-chart";
-import { ScreenLoading } from "@/src/components/app/screen-state";
-import { buildMoodChartData } from "@/src/features/mood/chart-data";
-import { useMoodScorePoints } from "@/src/features/mood/queries";
 import { HOME_COLUMN } from "@/src/lib/layout";
-import { useSession } from "@/src/providers/session-provider";
-import { startOfDayDaysAgo } from "@/src/utils/date";
 import { cn } from "@/lib/utils";
 
-const TREND_DAYS = 30;
-
+/**
+ * "Looking back" (#1835) - the record over time, across tools. It computes
+ * nothing (#1840): no cross-tool scalar, no trend, no comparison.
+ *
+ * The 30-day mood trend that used to open this screen is gone. It was the one
+ * tool's chart standing in for every tool's record, and the map that removed it
+ * (#1826) also removed the frame it carried - `noMoodData` read "Log a mood to
+ * start your trend", an imperative wrapped around a debt the user does not owe.
+ * The screen states what is there and stops.
+ *
+ * The time view and the recovery-plan door land next (#1906, #1905); this file
+ * is deliberately small in between.
+ */
 export default function ProgressScreen() {
-  const { t, i18n } = useTranslation("navigation");
-  const { user } = useSession();
-  // Measured from the card's content box (mirrors the mood screen's trend) so
-  // the chart tracks the card at every viewport - a window-derived width both
-  // clipped the newest days at mobile widths and underfilled wide cards.
-  const [chartContainerWidth, setChartContainerWidth] = useState(300);
-
-  // Fixed 30-day window over the narrow score-points query (timestamp/offset/score
-  // only) — the same daily-resolution path as the mood screen's trend, sans controls.
-  const { data: scorePoints, isLoading } = useMoodScorePoints(
-    user?.id ?? null,
-    startOfDayDaysAgo(TREND_DAYS).toISOString(),
-  );
-
-  const chartPoints = (() => {
-    const days = buildMoodChartData(scorePoints, TREND_DAYS, i18n.language);
-    // Only the first and last day are labelled — interior labels would collide
-    // at this window's density (mirrors the mood screen's trend).
-    return days.map((d, i) => ({
-      offset: d.offset,
-      value: d.score,
-      label: i === 0 || i === days.length - 1 ? d.day : undefined,
-    }));
-  })();
-
-  const handleChartLayout = (e: LayoutChangeEvent) => {
-    setChartContainerWidth(e.nativeEvent.layout.width);
-  };
-
-  if (isLoading) {
-    return <ScreenLoading title={t("progress.title")} />;
-  }
+  const { t } = useTranslation("navigation");
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -66,23 +39,6 @@ export default function ProgressScreen() {
             <ScreenHeader title={t("progress.title")} />
             <Text variant="muted">{t("progress.description")}</Text>
           </View>
-
-          {/* 14-day mood trend */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("progress.moodTrend")}</CardTitle>
-              <CardDescription>{t("progress.moodTrendDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <View onLayout={handleChartLayout} testID="mood-trend-layout">
-                {chartPoints.length > 0 ? (
-                  <LineChart points={chartPoints} domain={[1, 5]} width={chartContainerWidth} />
-                ) : (
-                  <Text variant="muted">{t("progress.noMoodData")}</Text>
-                )}
-              </View>
-            </CardContent>
-          </Card>
 
           {/*
             One pinned prompt (#1665). Four questions used to rotate by

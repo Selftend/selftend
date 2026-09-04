@@ -41,14 +41,18 @@ const TODAY_ITEM: NavItemDef = {
   matchPrefix: null,
 };
 
+// `history` (a clock turning back) and not `insights`: that glyph is an
+// upward-trending chart, which draws the improvement claim the screen refuses
+// to make in words (#1837). `timeline` fails the same way - it reads as a
+// direction of travel. This icon names the past and carries no direction.
 const PROGRESS_ITEM: NavItemDef = {
   labelKey: "sidebar.progress",
   href: "/(app)/progress",
-  icon: "insights",
+  icon: "history",
   matchPrefix: "/progress",
 };
 
-// Routines lives with the Home & Insights pair (spec #37, "Navigation
+// Routines lives with the Home & Looking back pair (spec #37, "Navigation
 // placement") - not a fourth module pillar and not another tools entry.
 const ROUTINES_ITEM: NavItemDef = {
   labelKey: "sidebar.routines",
