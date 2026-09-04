@@ -63,6 +63,19 @@ export function ProfileIdentityRow({
         importantForAccessibility="no"
         aria-hidden
         className="h-14 w-14 items-center justify-center overflow-hidden rounded-full"
+        /*
+          D11 (#1830): a 1px ring at the ACTIVE accent, 0.28.
+
+          ☠️ A style value read from `useAccentHsl`, not a hardcoded literal and
+          not a className. The pair that used to sit in this circle was a
+          hand-copied default-palette violet, so it stayed violet on every other
+          palette while the initial inside it followed the style — the visible
+          bug that got reported (audit X5). A className would also be untestable
+          here: `className` never becomes `style` in jest, so nothing could pin
+          that the ring FOLLOWS the palette. It reads from the same hook and the
+          same alpha vocabulary as the wash it sits on.
+        */
+        style={{ borderWidth: 1, borderColor: accent(0.28) }}
       >
         {/*
           A wash of the ACTIVE accent, not two hand-written violet literals.

@@ -1,19 +1,19 @@
-import { Platform, Pressable, useWindowDimensions, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
 import { DEFAULT_INTERACTIVE_HIT_SLOP, enterKeyActivationProps } from "@/src/lib/accessibility";
 import { appEnv } from "@/src/lib/env";
 import { openExternalUrl } from "@/src/lib/linking";
+import { useWideFrame } from "@/src/features/settings/use-wide-frame";
 import { getRunningVersion } from "@/src/lib/update-availability";
 import { cn } from "@/lib/utils";
 
 /**
  * Phone stacks the colophon and centres it; desktop lays it out as one line.
- * Same 640 breakpoint and the same `useWindowDimensions` source the tool and
- * reminder rows use.
+ * The 640 breakpoint moved to `useWideFrame` (#1830) so the page's type scale
+ * steps at the same width this does — one number, one place.
  */
-const WIDE_WIDTH = 640;
 
 /**
  * The page's last line: the running version, and the one door to the repository.
@@ -33,8 +33,7 @@ const WIDE_WIDTH = 640;
  */
 export function SettingsColophon() {
   const { t } = useTranslation("settings");
-  const { width } = useWindowDimensions();
-  const wide = width >= WIDE_WIDTH;
+  const wide = useWideFrame();
   const version = getRunningVersion();
   const openRepo = () => openExternalUrl(appEnv.githubRepoUrl);
 

@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Text as mockText, View as mockView } from "react-native";
+import { Text as mockText, View as mockView, useWindowDimensions } from "react-native";
 import type { ReactNode } from "react";
 import { router } from "expo-router";
 
@@ -28,6 +28,11 @@ jest.mock("expo-router", () => ({
 
 jest.mock("expo-linking", () => ({
   openURL: jest.fn(),
+}));
+
+jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
+  __esModule: true,
+  default: jest.fn(),
 }));
 
 jest.mock("expo-image-picker", () => ({
@@ -109,6 +114,7 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: jest.fn(),
 }));
 
+const mockDimensions = useWindowDimensions as jest.MockedFunction<typeof useWindowDimensions>;
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
 const mockUseUpdateOnboardingPreferences = useUpdateOnboardingPreferences as jest.MockedFunction<
   typeof useUpdateOnboardingPreferences
@@ -122,6 +128,16 @@ const loadedPreferences = {
   shownButtonTours: ["tune", "notifications", "info"],
 };
 
+/**
+ * ⚠️ Jest reports a 750px window by default, so every `useWideFrame` branch
+ * renders wide unless a test says otherwise. Tests that do not call this keep
+ * the default and therefore the wide frame, which is what the pre-#1830
+ * assertions in this file were written against.
+ */
+function mockWidth(width: number) {
+  mockDimensions.mockReturnValue({ width, height: 800, scale: 2, fontScale: 1 });
+}
+
 function mockPreferences(data: unknown, isLoading = false) {
   mockUseUserPreferences.mockReturnValue({ data, isLoading } as unknown as ReturnType<
     typeof useUserPreferences
@@ -131,6 +147,9 @@ function mockPreferences(data: unknown, isLoading = false) {
 describe("SettingsScreen structure", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Jest's own default, restored explicitly because the hook is mocked here:
+    // an un-stubbed `jest.fn()` returns undefined and every render would throw.
+    mockWidth(750);
     mockPreferences(loadedPreferences);
     mockUseUpdateOnboardingPreferences.mockReturnValue({
       isPending: false,
@@ -152,6 +171,64 @@ describe("SettingsScreen structure", () => {
     // #1446: the guest invitation card renders nothing for this registered
     // user (its guest-side visibility is pinned in create-account-card.test).
     expect(screen.queryByTestId("create-account-card")).toBeNull();
+  });
+
+  /**
+   * D4 + D5 (#1830): the column rhythm and the page's own padding, on the ONE
+   * breakpoint the page owns (`useWideFrame`, 640). Two hand-written width
+   * tests on one page is the drift this map keeps closing.
+   *
+   * ⚠️ Jest reports 750px by default, so the phone frame is invisible without
+   * mocking the hook — which is why `mockWidth` exists rather than a resize.
+   */
+  describe("the column rhythm and page padding", () => {
+    const layoutClasses = () =>
+      String(screen.getByTestId("settings-layout").props.className ?? "")
+        .split(/\s+/)
+        .filter(Boolean);
+
+    it("opens the column rhythm to 34px on the wide frame", async () => {
+      mockWidth(900);
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(layoutClasses()).toContain("gap-[34px]");
+      expect(layoutClasses()).not.toContain("gap-[26px]");
+    });
+
+    it("tightens it to 26px below 640", async () => {
+      mockWidth(390);
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(layoutClasses()).toContain("gap-[26px]");
+      expect(layoutClasses()).not.toContain("gap-[34px]");
+    });
+
+    /**
+     * ☠️ The SIDES stay at 16px at every width. That inset is what keeps the
+     * content column at 672px inside `max-w-2xl`, which the design system's own
+     * kit backs — `14a`'s drawn 720 is its hand-rolled number (#1788), and a
+     * `p-*` change here would widen a column that is already settled.
+     */
+    it("breathes at top and bottom while the sides stay 16px, keeping the 672px column", async () => {
+      mockWidth(900);
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      const scroller = screen.UNSAFE_root.findAll(
+        (node) => typeof node.props?.contentContainerClassName === "string",
+      )[0];
+      const padding = String(scroller.props.contentContainerClassName).split(/\s+/);
+
+      expect(padding).toContain("pt-[40px]");
+      expect(padding).toContain("pb-[48px]");
+      expect(padding).toContain("px-4");
+      // The old symmetric inset, which would also have changed the sides.
+      expect(padding).not.toContain("p-4");
+
+      expect(layoutClasses()).toContain("max-w-2xl");
+    });
   });
 
   /**
@@ -564,6 +641,9 @@ describe("SettingsScreen structure", () => {
 describe("SettingsScreen profile disclosures", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Jest's own default, restored explicitly because the hook is mocked here:
+    // an un-stubbed `jest.fn()` returns undefined and every render would throw.
+    mockWidth(750);
     mockPreferences(loadedPreferences);
     mockUseUpdateOnboardingPreferences.mockReturnValue({
       isPending: false,

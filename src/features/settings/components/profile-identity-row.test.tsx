@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 import type { ReactTestInstance } from "react-test-renderer";
 
 import { ProfileIdentityRow } from "@/src/features/settings/components/profile-identity-row";
@@ -76,6 +77,77 @@ describe("ProfileIdentityRow avatar wash", () => {
       expect(alpha).toBeGreaterThan(0);
       expect(alpha).toBeLessThan(0.5);
     }
+    view.unmount();
+  });
+});
+
+/**
+ * D11 (#1830): the circle gains a 1px ring at the active accent, 0.28.
+ *
+ * ☠️ Pinned to the PALETTE, not to a value. The pair that used to sit in this
+ * circle was a hand-copied default-palette violet, so it stayed violet on every
+ * other palette while the initial inside it followed the style — the visible bug
+ * that got reported (audit X5). A hardcoded ring would reintroduce exactly that,
+ * and would pass any assertion that only checked "there is a border".
+ */
+describe("ProfileIdentityRow avatar ring", () => {
+  const props = {
+    avatarUri: undefined,
+    hasAvatar: false,
+    name: "Tester",
+    showEmail: true,
+    email: "tester@example.com",
+    initial: "T",
+  };
+
+  /** The circle is the one node carrying `importantForAccessibility="no"`. */
+  const ringOf = (root: ReactTestInstance) => {
+    const circle = root.findAll(
+      (node) => typeof node.type === "string" && node.props?.importantForAccessibility === "no",
+    )[0];
+
+    return StyleSheet.flatten(circle?.props?.style) as
+      { borderWidth?: number; borderColor?: string } | undefined;
+  };
+
+  it("draws a 1px ring at the accent", () => {
+    useStyleStore.setState({ style: "quiet-lilac", hydrated: true });
+    const view = render(<ProfileIdentityRow {...props} />);
+
+    const ring = ringOf(view.UNSAFE_root);
+    expect(ring?.borderWidth).toBe(1);
+
+    const degrees = (["light", "dark"] as const).map(
+      (scheme) => THEME_TOKENS["quiet-lilac"][scheme]["--primary"].split(" ")[0],
+    );
+    expect(degrees.some((d) => String(ring?.borderColor).startsWith(`hsla(${d},`))).toBe(true);
+    view.unmount();
+  });
+
+  it("changes with the palette, so it can never be a copied literal", () => {
+    useStyleStore.setState({ style: "quiet-lilac", hydrated: true });
+    const first = render(<ProfileIdentityRow {...props} />);
+    const lilac = ringOf(first.UNSAFE_root)?.borderColor;
+    first.unmount();
+
+    useStyleStore.setState({ style: "sage-garden", hydrated: true });
+    const second = render(<ProfileIdentityRow {...props} />);
+    const sage = ringOf(second.UNSAFE_root)?.borderColor;
+    second.unmount();
+
+    expect(lilac).toBeTruthy();
+    expect(sage).not.toEqual(lilac);
+  });
+
+  it("keeps the ring a ring, not a fill", () => {
+    useStyleStore.setState({ style: "quiet-lilac", hydrated: true });
+    const view = render(<ProfileIdentityRow {...props} />);
+
+    const alpha = Number(
+      String(ringOf(view.UNSAFE_root)?.borderColor).replace(/.*,\s*([\d.]+)\)$/, "$1"),
+    );
+    expect(alpha).toBeGreaterThan(0);
+    expect(alpha).toBeLessThan(0.5);
     view.unmount();
   });
 });
