@@ -148,6 +148,13 @@ export function useSetGratitudeEntryStarred(userId: string | null) {
       void queryClient.invalidateQueries({ queryKey: ["gratitude", "favorites", userId] });
       void queryClient.invalidateQueries({ queryKey: gratitudeKeys.historyPages(userId) });
       void queryClient.invalidateQueries({ queryKey: gratitudeKeys.favoriteCount(userId) });
+      // Starring cannot move `logged_at`, so no mark moves either. Invalidated
+      // anyway, under the rule the guard enforces: any mutation writing a
+      // source table invalidates it, rather than each one re-deciding whether
+      // its particular edit can reach a civil day. ⚠️ Cheap even here, where
+      // the comment above is careful about refetch cost: the record-days root
+      // has no observer outside "Looking back", so this only marks it stale.
+      void invalidateRecordDays(queryClient);
     },
   });
 }
