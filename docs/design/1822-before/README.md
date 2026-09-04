@@ -304,6 +304,9 @@ confirmed live, on both public pages.
   ☑ Corroborated inside the shipped binary while capturing Surface 2: v0.17.0's own consent gate
   (`Quick policy check`) reads **"I am 18 or older, agree to the current Privacy Policy and Terms of
   Service ..."**, so the 18+ posture is what a real installer accepts today, against a 13+ listing.
+  ✅ **Already fixed on `dev`, never released** - `dev`'s `checkbox` reads simply _"I agree to the current
+  Privacy Policy and Terms of Service."_, the age floor having moved to its own step. So this is the same
+  class as the nine `guided self-help` offenders: it needs the release, not new copy or a new ticket.
 
 ---
 
