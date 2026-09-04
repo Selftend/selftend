@@ -24,7 +24,7 @@ Help build a free, non-profit mental health product that is useful, calm, privac
 - AI is not part of the MVP user-facing product.
 - The product should remain free to users.
 - Do not propose ad-based monetization or subscription paywalls.
-- Copy that says what Selftend _is_ follows `docs/positioning.md` - the frame is **a CBT programme**, and that doc's "Words never to use" table is binding. These guardrails outrank it: where positioning and a guardrail conflict, the guardrail wins.
+- Copy that says what Selftend _is_ follows `docs/positioning.md`, and that doc's "Words never to use" table is binding. Read the frame there rather than from a copy here - a cached category noun in this file goes stale the next time positioning moves, and it has. These guardrails outrank it: where positioning and a guardrail conflict, the guardrail wins.
 
 ## Technical defaults
 
