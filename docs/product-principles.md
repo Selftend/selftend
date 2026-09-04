@@ -58,6 +58,7 @@ Selftend wants people to return, and refuses to engineer the wanting. Every comp
 
 - **Trigger**: every nudge opt-in, off by default, traced to one explicit choice; nothing on any channel is triggered by non-use.
 - **Action**: remove steps toward the practice, never toward the account.
+  - **Registration invitations live on exactly two surfaces**: the settings card, and one line on the onboarding wizard's final panel. A third is not added by finding a calmer place for it — every surface is a step. This governs invitations to _register_ only; reaching an account you already have is navigation, and `CONTEXT.md` §Accounts governs that.
 - **Reward**: completion copy states the record and stops; nothing varies by date or visit; no levels, badges, or run-lengths.
 - **Investment**: what a user builds is theirs — user-authored commitments welcome, everything exportable, nothing that cannot leave.
 

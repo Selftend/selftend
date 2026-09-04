@@ -11,7 +11,7 @@
   },
   "sidebar": {
     "home": "Home",
-    "progress": "Insights",
+    "progress": "Looking back",
     "routines": "Routines",
     "notifications": "Reminders",
     "settings": "Settings",
@@ -377,14 +377,11 @@
     }
   },
   "progress": {
-    "title": "Insights",
-    "description": "A quiet place to notice mood patterns and reflect on what may be helping.",
-    "moodTrend": "Mood trend",
-    "moodTrendDescription": "Daily average over the last 30 days.",
-    "noMoodData": "Log a mood to start your trend.",
+    "title": "Looking back",
+    "description": "Your record over time, and a question to sit with.",
     "reflectionTitle": "Reflection prompt",
     "reflectionDescription": "A quiet question to sit with.",
-    "prompt": "What is one thing you noticed about your mood or energy?"
+    "prompt": "Looking back over this stretch, what stands out to you?"
   },
   "tools": {
     "title": "Tools",
@@ -437,7 +434,7 @@
   "breadcrumb": {
     "session": "Session",
     "history": "History",
-    "progress": "Reflect",
+    "progress": "Looking back",
     "legal": "Legal",
     "entry": "Entry",
     "entries": "Entries",

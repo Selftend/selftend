@@ -221,3 +221,27 @@ describe("SidebarNav donate row", () => {
     });
   });
 });
+
+/**
+ * ☠️ `history` — a clock turning back — and NOT `insights` (#1903).
+ * `insights` is an UPWARD-TRENDING CHART glyph: it draws the improvement
+ * implication #1837 rejected in words, on a screen that computes nothing and
+ * makes no claim about direction. `timeline` fails the same way.
+ *
+ * Pinned because reverting the glyph passed the ENTIRE suite — an acceptance
+ * criterion of #1903 that shipped with no coverage at all. Found by mutation.
+ */
+describe("SidebarNav Looking back glyph", () => {
+  it("uses a clock turning back, never an upward-trending chart", () => {
+    renderWithProviders(<SidebarNav />);
+
+    const row = screen.getByLabelText("Looking back");
+    const glyphs = row
+      .findAll((node) => typeof node.props?.name === "string")
+      .map((node) => String(node.props.name));
+
+    expect(glyphs).toContain("history");
+    expect(glyphs).not.toContain("insights");
+    expect(glyphs).not.toContain("timeline");
+  });
+});
