@@ -74,8 +74,8 @@ test.describe("onboarding skip", () => {
     expect(favorites.error).toBeNull();
     expect(favorites.data).toEqual([]);
     expect(preferences.error).toBeNull();
-    // ☠️ All three fields: the flag alone is the grandfathered shape, under which
-    // the introduction replay never fires and the funnel reads "pre-tracking".
+    // All three fields, never the flag alone (#1958) — why is on
+    // `finishAppOnboarding` in src/components/app/protected-layout.tsx.
     expect(preferences.data).toMatchObject({
       app_onboarding_completed: true,
       app_onboarding_completed_via: "skip",

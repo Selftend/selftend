@@ -60,8 +60,13 @@ it("renders the welcome panel as the whole wizard, with Finish as its only CTA",
   expect(screen.getByText("Welcome to Selftend")).toBeTruthy();
   expect(screen.getByText(/not a diagnosis tool/i)).toBeTruthy();
   expect(screen.queryByText(/Step \d+ of \d+/)).toBeNull();
-  expect(screen.queryByText("Continue")).toBeNull();
-  expect(screen.queryByText("Back")).toBeNull();
+  // Stated as a COUNT, not as the absence of "Continue"/"Back" - those strings
+  // no longer exist in any locale, so a `queryByText(...).toBeNull()` on them
+  // would pass forever, stepper or no stepper. Exactly two controls: the CTA
+  // and the pinned Escape.
+  expect(screen.getAllByRole("button")).toHaveLength(2);
+  expect(screen.getByRole("button", { name: "Finish" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Skip for now" })).toBeTruthy();
 
   fireEvent.press(screen.getByText("Finish"));
   expect(onFinish).toHaveBeenCalledTimes(1);

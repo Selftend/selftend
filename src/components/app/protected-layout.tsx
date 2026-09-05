@@ -14,6 +14,7 @@ import { ConsentGate } from "@/src/components/app/consent-gate";
 import { AgeGate } from "@/src/components/app/age-gate";
 import { UnderFloorScreen } from "@/src/components/app/under-floor-screen";
 import { AppOnboardingWizard } from "@/src/components/app/app-onboarding-wizard";
+import type { UserPreferences } from "@/src/features/modules/types";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useUnderFloorBlock } from "@/src/features/auth/use-under-floor-block";
 import {
@@ -230,7 +231,12 @@ export default function ProtectedLayout() {
   // (scripts/analytics-onboarding.sql) would count them as pre-tracking. A
   // replay preserves the original path and time: Settings already re-armed the
   // flag while keeping `via` as the replay marker, so only the flag goes back.
-  const finishAppOnboarding = async (mode: "finish" | "skip") => {
+  // `_at` is the device clock (the retired RPC stamped `now()` server-side): the
+  // funnel reads it at day granularity, and every other `*_at` preference this
+  // client writes is already stamped the same way.
+  const finishAppOnboarding = async (
+    mode: NonNullable<UserPreferences["appOnboardingCompletedVia"]>,
+  ) => {
     if (!preferences) return;
     try {
       if (isIntroductionReplay) {

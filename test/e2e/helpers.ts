@@ -214,7 +214,7 @@ export async function dismissPostSignInModals(page: Page) {
     await expect(consentTitle).toBeHidden({ timeout: 10_000 });
   }
 
-  // First-run wizard: "Skip for now" completes onboarding from any panel.
+  // First-run introduction (one panel since #1958): "Skip for now" completes onboarding.
   const wizardTitle = page.getByText(/Welcome to Selftend/i);
   const wizardVisible = await wizardTitle
     .waitFor({ state: "visible", timeout: 2_000 })

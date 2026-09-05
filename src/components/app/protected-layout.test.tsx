@@ -305,9 +305,8 @@ describe("ProtectedLayout app onboarding", () => {
 
     fireEvent.press(escape);
     // The skip path persists onboarding as done — not the step-Back dismiss.
-    // ☠️ All three fields, never the flag alone (#1958): the flag alone is the
-    // GRANDFATHERED shape, and a new user written that way would never get the
-    // introduction replay and would read as pre-tracking in the funnel.
+    // All three fields, never the flag alone (#1958) — why is on
+    // `finishAppOnboarding` in protected-layout.tsx.
     await waitFor(() =>
       expect(mutateAsync).toHaveBeenCalledWith({
         appOnboardingCompleted: true,

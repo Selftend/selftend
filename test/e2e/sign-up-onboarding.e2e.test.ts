@@ -76,8 +76,10 @@ test.describe("sign-up + onboarding + first record", () => {
     // The introduction: one panel since #1958 - welcome + disclaimer, and Finish is
     // its only CTA. There is no concern, module, guidance or starter-routine panel
     // to walk, and finishing seeds nothing.
+    // (The one-panel contract itself - exactly two controls, Finish and the
+    // pinned Skip - is pinned by count in app-onboarding-wizard.test.tsx; an
+    // absence assertion on "Continue" here would pass vacuously.)
     await expect(page.getByText("Welcome to Selftend")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Continue", exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "Finish", exact: true }).click();
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden({
       timeout: 15_000,
@@ -99,8 +101,8 @@ test.describe("sign-up + onboarding + first record", () => {
       page.getByTestId("home-modules").locator('[data-testid^="card-module-"]'),
     ).toHaveCount(3);
 
-    // The optional Home tour may be ineligible after the personalized setup. If
-    // it appears, dismiss it so the reload assertion remains deterministic.
+    // The optional Home tour may or may not fire on a brand-new account. If it
+    // appears, dismiss it so the reload assertion remains deterministic.
     const skipTour = page.getByRole("button", { name: "Skip all tips", exact: true });
     if (await skipTour.isVisible()) await skipTour.click();
 
