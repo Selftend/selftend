@@ -30,7 +30,11 @@ import { setLanguage } from "@/test/i18n-language";
 
 const ROOT = join(__dirname, "..", "..", "..");
 
-/** i18next's own namespace separator; the catalogue spells a cross-namespace key `ns:path`. */
+/**
+ * The namespace an un-prefixed key resolves in - the one the config screen's
+ * `useTranslation("navigation")` binds. A cross-namespace key spells itself `ns:path`
+ * (`routines:widget.metaTitle`) and i18next honours the prefix over this default.
+ */
 const NAMESPACE = "navigation";
 
 /**
