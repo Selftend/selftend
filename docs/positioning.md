@@ -25,11 +25,11 @@ The corroboration is countable: `CBT` and `programme` appear in that file **exac
 
 **What positioning does _not_ bind** ([#1610](https://github.com/Selftend/selftend/issues/1610)). "What the product is" fuses three separable things, and a frame governs only the last:
 
-|               | What it is                                                                              | Bound by the frame?                              |
-| ------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| **Inventory** | What the product contains — eight tools, six onboarding concerns, ACT, the DBT overview | **No.** Protected by the modularity guardrail.   |
-| **Sequence**  | What it offers first, and what it pre-selects                                           | **No.** Has its own non-positioning constraints. |
-| **Copy**      | What it says, on every surface                                                          | **Yes.** This document.                          |
+|               | What it is                                                                            | Bound by the frame?                              |
+| ------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| **Inventory** | What the product contains — eight tools, six onboarding concerns, ACT, the DBT module | **No.** Protected by the modularity guardrail.   |
+| **Sequence**  | What it offers first, and what it pre-selects                                         | **No.** Has its own non-positioning constraints. |
+| **Copy**      | What it says, on every surface                                                        | **Yes.** This document.                          |
 
 This is load-bearing, and it cuts **both ways** — the frame move does not reach inventory any more than the old frame did. Centring CBT was a real argument for pre-selecting the CBT module in onboarding, and that argument was **rejected**: the wizard ships with no module selected, and flipping it loses to the modularity guardrail. Narrowing the six onboarding concerns to the three that route into the programme was **rejected** for the same reason. Leading with the tools does not now reverse either one.
 

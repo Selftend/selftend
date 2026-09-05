@@ -1,0 +1,450 @@
+{
+  "home": {
+    "title": "Dialectical behaviour therapy",
+    "description": "Skills for when feelings run high - for getting through the moment without making it worse, and for changing what keeps bringing it back.",
+    "groupsTitle": "The four skill groups",
+    "groupsDescription": "Dialectical means holding two things at once: accepting this moment as it is, and working to change what you can. Each group leans one way, and the skills work together.",
+    "sharedTools": "Shared tools",
+    "learnLabel": "What DBT is",
+    "statLoadingValue": "—",
+    "statRecords_one": "record",
+    "statRecords_other": "records",
+    "statSessions_one": "session",
+    "statSessions_other": "sessions"
+  },
+  "groups": {
+    "distressTolerance": {
+      "ordinal": "1",
+      "name": "Distress tolerance",
+      "desc": "Getting through a hard moment without making it worse."
+    },
+    "mindfulness": {
+      "ordinal": "2",
+      "name": "Mindfulness",
+      "desc": "Noticing what is here, without judgement."
+    },
+    "emotionRegulation": {
+      "ordinal": "3",
+      "name": "Emotion regulation",
+      "desc": "Reducing vulnerability, understanding emotions, changing painful ones."
+    },
+    "interpersonal": {
+      "ordinal": "4",
+      "name": "Interpersonal effectiveness",
+      "desc": "Asking, saying no, and keeping the relationship and self-respect intact."
+    }
+  },
+  "tools": {
+    "copingPlan": {
+      "name": "Coping plan",
+      "desc": "Your own list of what helps in a hard moment - built once, there when you need it."
+    },
+    "pause": {
+      "name": "Pause and choose",
+      "desc": "Four short steps between the urge and what you do next."
+    },
+    "muscleRelaxation": {
+      "name": "Muscle relaxation",
+      "desc": "A timed practice: tense and release, one muscle group at a time."
+    },
+    "wiseMind": {
+      "name": "Wise mind check-in",
+      "desc": "Ask one question three ways: what emotion says, what reason says, what both say together."
+    },
+    "judgements": {
+      "name": "Judgement record",
+      "desc": "Catch a judgement, mark which way it leans, and note what was actually there."
+    },
+    "emotions": {
+      "name": "Emotion record",
+      "desc": "Walk one feeling from what happened to what came after."
+    },
+    "oppositeAction": {
+      "name": "Opposite action",
+      "desc": "Plan the move a feeling would not choose, and note when you have done it."
+    },
+    "scripts": {
+      "name": "Ask for what you want",
+      "desc": "Write the four lines before the conversation, then have it."
+    },
+    "learn": {
+      "name": "Learn",
+      "desc": "The ideas behind these skills, and the ones you read rather than record."
+    }
+  },
+  "learn": {
+    "title": "What DBT is",
+    "description": "The ideas behind the four skill groups, and how to pace them.",
+    "whatTitle": "What it is",
+    "whatBody": "DBT was developed for moments when feelings run high and fast. It pairs acceptance with change in equal measure - skills for getting through a hard moment as it is, and skills for changing the patterns that bring it back.",
+    "whyTitle": "Why \"dialectical\"",
+    "whyBody": "The name comes from dialectic - two things that seem opposed being true at once. Here the two are acceptance and change: this moment is as it is, and it can be different. Every skill in the module leans one way or the other.",
+    "commitmentTitle": "Where to start",
+    "commitmentBody": "Reading changes nothing on its own. If it helps, name one habitual reaction to a strong feeling that you would like to replace, and write it in your journal. Then pick the one skill group you need most; the order below is the book's, not a rule.",
+    "pacing": {
+      "title": "How much, and how",
+      "rhythm": "These are skills for a moment, not a schedule. One record when a feeling shifts is the pace; more in a day is not more progress.",
+      "signs": "If a skill leaves you feeling worse afterwards more often than not, or the coping plan has become the way you avoid every feeling rather than get through a hard one, that is worth bringing to a professional."
+    },
+    "groupsTitle": "The four skill groups",
+    "groupsDescription": "One page for each group. They are the book's order, and each can be read on its own.",
+    "sectionsLabel": "In this group",
+    "linksLabel": "Try it",
+    "links": {
+      "coldWater": "Cold water, in Grounding",
+      "breathing": "The breathing tool",
+      "habits": "Habit tracking",
+      "meditation": "Meditation",
+      "meditationPractices": "The meditation practices",
+      "journal": "Journal",
+      "checkIn": "Check-in",
+      "sleep": "Sleep diary",
+      "grounding": "Grounding",
+      "cbtActivities": "Activities, in CBT",
+      "cbtBeliefs": "Core beliefs, in CBT",
+      "cbtThoughtRecord": "A thought record, in CBT",
+      "cbtWorry": "The worry log, in CBT",
+      "actDefusion": "Defusion, in ACT",
+      "actExpansion": "Acceptance, in ACT",
+      "actValues": "Values, in ACT",
+      "actDropAnchor": "Drop anchor, in ACT",
+      "actCommittedAction": "Committed action, in ACT",
+      "actConnection": "Connection, in ACT"
+    },
+    "groups": {
+      "distressTolerance": {
+        "intro": "Skills for a hard moment as it is: ways to get through it, and ways to settle the body when thinking clearly is out of reach. None of them fixes the problem. They buy the time in which the problem can be looked at.",
+        "sections": [
+          {
+            "title": "Pain and suffering",
+            "paragraphs": [
+              "Pain is what a hard moment brings. Suffering is what fighting the pain adds on top - the second layer of dread, blame or numbing that keeps the moment going long after it could have passed. Most of the skills in this group work on that second layer.",
+              "A strong feeling is not proof of a big threat. How loud a feeling is says something about you right now; it says much less about the situation. Getting through the moment first, and judging the situation afterwards, is usually the better order."
+            ]
+          },
+          {
+            "title": "Distraction and soothing",
+            "paragraphs": [
+              "Distraction buys time. It is not avoiding a problem forever; it is stepping away from it for as long as the feeling is too loud to think in, and then coming back to it. Soothing does something different: it refuels you, through what you can smell, see, hear, taste and touch, so that you have something left to deal with the problem with.",
+              "Both work better when they are chosen in advance. A list made on a calm day is readable on a hard one, which is what the coping plan is for. Some people also draw strength from faith, from nature, or from people they admire; if that is you, a line about it belongs on the list too.",
+              "One idea to try on small things first: accepting that this moment is as it is, and follows from what came before it. A delayed bus, a dull queue, a mildly annoying message - practise there, where nothing much is at stake."
+            ],
+            "links": ["grounding", "journal"]
+          },
+          {
+            "title": "Pausing before you act",
+            "paragraphs": [
+              "Between a strong feeling and what you do next there is a gap, and it can be widened on purpose. Stop, breathe, look at what is actually happening, choose one skill, and do that one thing with your attention on it. If the feeling is still loud afterwards, the same four steps can be run again.",
+              "Looking back at a moment that went badly is a fair way to learn this: what happened, what you felt, what you did, and where in that chain a pause would have changed what came next. A journal entry is enough. In DBT this interrupt is often taught as STOP - stop, take a step back, observe, proceed mindfully."
+            ],
+            "links": ["journal"]
+          },
+          {
+            "title": "Radical acceptance",
+            "paragraphs": [
+              "Radical acceptance means letting this moment be what it is, without adding a fight against it. It is not approval, and it is not giving up. It is noticing that the moment already happened, that it followed from things that came before, and that fighting the fact of it only adds suffering to the pain.",
+              "A useful way in is to take one hard situation and walk it through in your journal: what happened; what led up to it; your part in it, and other people's; what you could control, and what you could not; how you responded, and what that did to you and to the people around you. Then imagine the same situation met with acceptance, and ask what it would have spared you.",
+              "Try it on something ordinary first - a plan that fell through, a message that never came. Accepting that it happened is the first step towards deciding what to do about it.",
+              "Acceptance is never about tolerating abuse. If someone is hurting you, a trusted adult or a helpline is the right door. You do not have to fix a relationship in which you are being hurt."
+            ],
+            "links": ["journal"]
+          },
+          {
+            "title": "Returning to now",
+            "paragraphs": [
+              "A lot of distress is time travel: replaying what happened, or rehearsing what might. Four questions bring you back - where is my attention right now? Is it in the past, the future, or here? What is my body doing? What one thing can I notice in this room? Then a slow breath, and a check for tension you can let go of.",
+              "If the feeling is still there once you are back, it is a feeling in the present, and the other skills in this group are for exactly that."
+            ],
+            "links": ["actDropAnchor", "grounding", "breathing"]
+          },
+          {
+            "title": "Settling the body",
+            "caution": "These techniques work on the body directly and can lower heart rate and blood pressure quickly. Each carries its own caution below. The app never asks whether any of it applies to you; read the line and decide.",
+            "paragraphs": [
+              "When thinking is out of reach, the body can still be settled. Cold water on the face can slow a racing heart. Breathing out for longer than you breathe in, at around six breaths a minute, can do the same over a few minutes; breathing in for four and out for six is a pattern many people start with. Tensing and releasing one muscle group at a time teaches the difference between tense and loose, and the release itself settles. A short burst of hard movement followed by rest works for some people too.",
+              "Practise these on a calm day, before you need them. Not every one fits every setting - nothing that slows you down while you are driving, for instance. The ones that help belong on your coping plan."
+            ],
+            "cautions": [
+              "Cold water: cool tap water, not ice on skin. Keep breathing normally. Stop if it hurts. Four minutes is the most; this exercise asks thirty seconds. Not while driving. If you have a heart or blood-pressure condition or are pregnant, check with a doctor first.",
+              "Slow breathing: if you feel dizzy, faint, or your lips or fingers tingle, breathe normally - that is the signal to stop, not to push.",
+              "Muscle relaxation: tense gently, never to the point of pain, and let go quickly. Skip any area that hurts - back, neck, joints. If you are pregnant or faint easily, keep it light or leave it.",
+              "Hard movement: warm up, and stop if anything hurts. Go by the talk test - hard enough that talking is difficult, never so hard that it is impossible. If you have a heart, breathing or joint problem, ask a doctor before you start."
+            ],
+            "links": ["coldWater", "breathing", "habits"]
+          },
+          {
+            "title": "Coming later",
+            "paragraphs": [
+              "Two more timed practices belong to this group and are not built yet: imagining a safe place in detail, through every sense, and pairing a chosen word with letting the whole body go, so that after weeks of practice the word alone can settle you. Until they ship, the meditation timer is an unpaced place to try either."
+            ],
+            "links": ["meditation"]
+          }
+        ]
+      },
+      "mindfulness": {
+        "intro": "Mindfulness in DBT is noticing what is here - thoughts, feelings, sensations, what you are doing - without judging it. It underpins the other three groups: you cannot change a pattern you have not noticed, and you cannot accept a moment you are not in.",
+        "sections": [
+          {
+            "title": "Autopilot",
+            "paragraphs": [
+              "Most of a day runs on autopilot: a journey you do not remember, a page read with nothing taken in, a shower spent somewhere else entirely. Where do you run on autopilot? Naming a few of your own is the first exercise, and nothing needs to be written down.",
+              "Two small demonstrations show what attention is like. Guess when a minute has passed, then check - most people are surprised which way they are out. Or sit for three minutes and jot a word for each thought that arrives; the count is the point, not the content."
+            ]
+          },
+          {
+            "title": "One thing at a time",
+            "paragraphs": [
+              "Attention is a muscle. Pick one ordinary object - nothing that could hurt you, nothing loaded with meaning - and give it your full attention for a few minutes: how it looks, then how it feels in your hand. When your mind wanders, and it will, bring it back without telling yourself off. The returning is the practice, not the staying.",
+              "The meditation timer is a good clock for this, and its practices include a body scan and a sit that follows the breath."
+            ],
+            "links": ["meditation", "meditationPractices"]
+          },
+          {
+            "title": "Thoughts as thoughts",
+            "paragraphs": [
+              "A thought is something the mind produces, not a fact about the world. Watching thoughts arrive and leave - as leaves on a stream, clouds crossing the sky, cars passing on a road - loosens their grip without arguing with them. The same works for a feeling: watch it rise, crest and fall like a wave, naming what changes as it goes.",
+              "ACT's defusion and acceptance tools are built for exactly this, and each keeps a dated log if you want one. Describing a feeling in your journal works too: what it would look like if it had a shape, what sound it would make, how strong it is, what it makes you want to do."
+            ],
+            "links": ["actDefusion", "actExpansion", "journal"]
+          },
+          {
+            "title": "Wise mind",
+            "paragraphs": [
+              "Wise mind is Marsha Linehan's name for the place where feeling and thinking meet. Emotion mind decides by how things feel; reason decides by the facts; wise mind holds both and knows what to do. Everyone has it. It is easier to reach when the hottest part of a feeling has passed, so waiting is sometimes the first step.",
+              "Three questions tell wise mind from emotion mind in disguise: did I take both the facts and the feeling into account? Does this feel settled, rather than nervous or forced? And, over time, do the decisions made this way tend to turn out well? The check-in in this group asks one question all three ways."
+            ]
+          },
+          {
+            "title": "Judgements",
+            "paragraphs": [
+              "A judgement is a label stuck onto what is actually there: not 'she did not reply', but 'she is ignoring me'; not 'I missed the bus', but 'I am useless'. Judgements run in both directions - a glowing one sets up the fall when the person or the plan turns out to be ordinary. Catching them as they happen, and noticing what was actually there underneath, is what the judgement record is for.",
+              "Two things help with a judgement once you have caught it: dropping into the senses - the weight of your body, the sounds in the room - or letting the judgement float past like any other thought."
+            ],
+            "links": ["grounding", "actDefusion"]
+          },
+          {
+            "title": "Self-compassion",
+            "paragraphs": [
+              "Kindness towards yourself is a skill, and a few beliefs get in its way: that you have to earn it first; that it is the same as self-pity; that it will make you soft, or let you off the hook; that other people have it harder, so you are not entitled; that a harsh inner voice is what keeps you going. None of those survives being looked at. You deserve compassion for the same reason anyone does - because you have had a hard time.",
+              "The loving-kindness practice is a way to practise it, first towards yourself, then outwards. Strong feelings can surface when you do; that is normal. And kindness towards a difficult person is not permission for them to hurt you."
+            ],
+            "links": ["meditationPractices"]
+          },
+          {
+            "title": "Saying what you feel",
+            "paragraphs": [
+              "'You never listen' is a judgement; 'I feel unheard' is a fact about you. 'I feel that you are being unfair' is the first kind wearing the second's clothes - 'I feel' followed by 'that' is nearly always a judgement in disguise. Say the feeling, and say it as yours. It is harder to argue with, and it keeps the conversation open.",
+              "Doing what works is the other half. Sometimes the situation needs something the feeling does not want to give - staying calm, letting a point go, doing the boring thing first. Doing it anyway is not selling out; it is choosing the goal over the moment."
+            ]
+          },
+          {
+            "title": "In daily life",
+            "paragraphs": [
+              "The hard part is remembering. A note on the mirror, a ring you notice, a word on a card - whatever reminds you to arrive in the moment you are already in. Any task can be done with attention: notice what you are doing, let the wandering thought go, accept the task as it is, bring wise mind to it, and do what works. Brushing your teeth counts.",
+              "If you want a regular practice, build it into a routine: a few minutes following the breath, a few minutes of kindness towards yourself, a wise mind check-in. The DBT tools can be steps in any routine you make.",
+              "Five things get in the way of sitting still: wanting something else, pushing something away, sleepiness, restlessness, and doubt. Each can become the thing you are attending to. For sleepiness, sit up, splash water, walk; for restlessness, narrow the focus and count breaths from one to ten; for doubt, someone who has practised longer than you is worth talking to.",
+              "Attention can also rest in the spaces - between two breaths, between two sounds, in the stillness under the thoughts. The meditation timer is an unguided place for that."
+            ],
+            "links": ["meditation", "journal"]
+          }
+        ]
+      },
+      "emotionRegulation": {
+        "intro": "Emotion regulation is not turning feelings off. It is understanding what a feeling is doing, noticing what makes it harder to handle, and changing the pull of the ones that keep leading somewhere painful.",
+        "sections": [
+          {
+            "title": "What a feeling does",
+            "paragraphs": [
+              "A feeling arrives, a thought explains it, and something gets done about it - and whatever gets done feeds the next feeling. That loop is why the same reaction repeats even when it costs you: it worked once, for a moment, and the moment is what the body remembers. Seeing the loop is most of the way to interrupting it.",
+              "Feelings come in layers. The first one is the reaction to what happened; the second is a feeling about the feeling - shame about being angry, fear of being sad. The second layer is often the louder one and the one that lasts. The emotion record walks one feeling through the whole chain, from what happened to what came after.",
+              "One small trick from the book: say the feeling out loud, to yourself, as it happens. Naming it tends to turn it down a notch."
+            ],
+            "links": ["checkIn"]
+          },
+          {
+            "title": "What makes feelings harder to handle",
+            "paragraphs": [
+              "Some of what decides how a feeling lands has nothing to do with the feeling. A body that is hungry, short of sleep, unwell, in pain, tense or running on caffeine has less room for anything else. DBT collects these under one acronym, PLEASE - treat physical illness, balance eating, avoid mood-altering substances, balance sleep, get exercise - and the point is not perfection but noticing which one is low today."
+            ],
+            "items": [
+              "Food: what and when you eat affects mood more than it seems. If eating feels out of control, that is one to take to a professional.",
+              "Substances: alcohol, drugs, nicotine and caffeine change how a feeling lands, first one way and then the other. Stopping alcohol or a drug can be unsafe to do alone; a doctor is the right door.",
+              "Sleep: how you sleep changes how a feeling lands the next day, more than almost anything else on this list. If sleep is a persistent problem, that is worth taking to a doctor.",
+              "Movement: moving your body, in whatever way is open to you, settles mood over weeks. Go by the talk test, and ask a doctor first if you have a health condition or pain.",
+              "Illness and pain: get the medical help that is available, and follow what is prescribed.",
+              "Tension: slow breathing and your coping plan are built for exactly this."
+            ],
+            "links": ["sleep", "habits", "breathing"]
+          },
+          {
+            "title": "Sleeping better",
+            "paragraphs": [
+              "The sleep diary tracks how you sleep. This is the list the book pairs with it, in plain words:"
+            ],
+            "items": [
+              "No caffeine after the early afternoon.",
+              "Keep the bed for sleep - not for scrolling, working or eating.",
+              "Screens off for a while before bed; the light keeps you awake.",
+              "Get up and go to bed at about the same time, weekends included.",
+              "A wind-down ritual that tells the body what is coming: the same few things, in the same order.",
+              "If you are awake for a long while, get up, do something dull in low light, and go back when you are sleepy.",
+              "Keep the room dark, quiet and cool.",
+              "No heavy meal or hard exercise close to bedtime.",
+              "Naps short and early, or not at all.",
+              "Worries written down before bed, so they are somewhere other than your head.",
+              "If none of this shifts it after a few weeks, a doctor is the right door."
+            ],
+            "links": ["sleep"]
+          },
+          {
+            "title": "Thoughts that set feelings off",
+            "paragraphs": [
+              "Some thoughts turn a small event into a big feeling on their own. Many are old, learned early, and global: that you are a failure, that you are not worth much, that people leave, that you must not make mistakes, that nobody would stay if they knew you. They are not facts; they are habits of mind, and they can be worked on one at a time.",
+              "Two moves help. Look at the whole picture - when a feeling comes from one bad slice of the evidence, deliberately go looking for the rest, and give it a few minutes; nothing is too small. And let the thought pass the way any thought can, even when it comes wrapped in a memory. The CBT tools are built for the first; ACT's defusion for the second.",
+              "The reverse also holds: doing one thing you enjoy, most days, on purpose, is not something you earn by coping - it is part of coping. CBT's activities tool plans them."
+            ],
+            "links": ["cbtBeliefs", "cbtThoughtRecord", "actDefusion", "cbtActivities"]
+          },
+          {
+            "title": "Accepting and changing, both",
+            "paragraphs": [
+              "You can accept yourself exactly as you are and still change what you do. The two are not in tension; they are the two halves of the same move. Observing a feeling without judging it is what makes it possible to decide about it at all."
+            ]
+          },
+          {
+            "title": "Opposite action",
+            "paragraphs": [
+              "Every feeling comes with a pull towards a particular move, and following the pull usually feeds the feeling. Opposite action is planning the move the feeling would not choose - with the body as well as the behaviour - and then doing it, for a set time, and noticing what shifts. It is for feelings that do not fit the facts or that keep leading somewhere painful; a feeling that fits the situation is information, not a target."
+            ],
+            "items": [
+              "Anger pulls towards attacking, snapping, proving the point. The opposite: soften your voice, step back, find the one thing on their side you can grant.",
+              "Fear pulls towards avoiding, escaping, putting it off. The opposite: go towards it in one small step; stand tall; breathe slowly.",
+              "Sadness pulls towards withdrawing, shutting down, staying in. The opposite: get moving; reach out to one person; do one small thing you can finish.",
+              "Guilt and shame pull towards hiding, or punishing yourself. The opposite: if the feeling does not fit the facts, keep doing the thing, in the open; if it does, make it right and move on."
+            ]
+          },
+          {
+            "title": "Tracing the chain",
+            "paragraphs": [
+              "A feeling that keeps arriving usually has a chain behind it: something happened, a thought followed, a feeling followed the thought, and something got done. Three questions to sit with in your journal - what set it off? Which link in the chain do you actually control? What would that link look like done differently? A guided version of this is planned for a later release."
+            ],
+            "links": ["journal", "actCommittedAction"]
+          }
+        ]
+      },
+      "interpersonal": {
+        "intro": "Six skills, and they are all learnable: knowing what you want; asking for it in a way that protects the relationship; negotiating; getting the information you need; saying no; and acting by your own values. This page is the reading; the script is the tool.",
+        "sections": [
+          {
+            "title": "Paying attention in a conversation",
+            "paragraphs": [
+              "Most of what goes wrong between people goes wrong because nobody is looking. Watch the other person's face, body and tone, not just their words; watch your own needs and feelings at the same time; and when you are not sure, ask rather than assume. Five questions do most of the work: how are you? How are we doing? I notice you seem quiet - is that right? What do you need from me right now? What do I need here?",
+              "It helps to remember that the other person is doing their best with what they have, just like you. The loving-kindness practice has stages for people you find hard."
+            ],
+            "links": ["meditationPractices"]
+          },
+          {
+            "title": "Two ways it goes wrong",
+            "paragraphs": [
+              "Passive behaviour gives in: the need goes unsaid, the resentment builds, and it comes out later, sideways or all at once. Aggressive behaviour pushes: it runs on rigid ideas of how people should act and on needing to control what happens next. Both are behaviours, not kinds of person, and most people do both depending on who they are with.",
+              "Two questions show where you are: in one relationship, what do you want, and what do they want - and how often does each get met? And how much of what you do for people is want, and how much is should? A relationship run on should becomes a burden.",
+              "Three questions for your journal: which of the habits below do I fall into, with whom, and what does it cost? What would I like to do instead?"
+            ],
+            "items": [
+              "Pushing habits: discounting what the other person needs; withdrawing or walking away; blaming; belittling; guilt-tripping; changing the subject; taking something away.",
+              "Giving-in habits: agreeing to keep the peace; surrendering your own opinion before it is spoken."
+            ],
+            "links": ["journal", "actValues"]
+          },
+          {
+            "title": "When a feeling takes over",
+            "paragraphs": [
+              "Six signs that a conversation is about to be run by a feeling instead of you: heat in the face; a pounding heart; a change in your breathing; tense muscles; a faster or louder voice; needing to win. Any of them is the cue to breathe slowly for a moment before saying the next thing.",
+              "If the conversation is about anger, the anger log is the place to take it afterwards. If what stops you is fear of what might happen, the worry log walks a fear through the evidence both ways.",
+              "You do not have to fix a relationship in which you are being hurt. A trusted adult or a helpline is the right door. Where a hard person cannot be avoided, settle yourself first and write the script before you see them."
+            ],
+            "links": ["breathing", "cbtWorry"]
+          },
+          {
+            "title": "Four myths",
+            "paragraphs": [
+              "Four beliefs stop people asking at all, and each has a replacement thought."
+            ],
+            "items": [
+              "'Needing things is shameful.' Everyone needs things; asking is how they get met.",
+              "'I could not stand being refused.' A no is uncomfortable, and survivable, and it is information.",
+              "'Asking is selfish.' Asking clearly is fairer to the other person than expecting them to guess.",
+              "'Nothing I do makes any difference.' How you ask changes what you get, more often than not."
+            ]
+          },
+          {
+            "title": "You are allowed to",
+            "paragraphs": ["A short list worth keeping somewhere you will see it."],
+            "items": [
+              "to need things",
+              "to come first sometimes",
+              "to feel what you feel, and to say so",
+              "to your own opinion",
+              "to say no without giving a reason",
+              "to change your mind",
+              "to ask",
+              "to not fix everyone's problems",
+              "to not respond",
+              "to sometimes disappoint someone"
+            ]
+          },
+          {
+            "title": "Knowing what you want",
+            "paragraphs": [
+              "Most failed conversations fail before they start, because the ask was never clear. Start with the feeling, then what the feeling makes you want changed - more of something, less of it, something to stop, something to start - and then one specific behaviour, with a when and a where. That is the first step of the script builder.",
+              "How hard to push depends on two things: how much you need this, and how much the relationship can take right now. Ask both before you ask anything. A simple request has four parts, and two of them are optional: a one-line reason if it helps, a soft opener, one plain and specific question with no blame in it, and thanks."
+            ]
+          },
+          {
+            "title": "The four lines",
+            "paragraphs": [
+              "The script is four lines, in order: I think - the facts, with no guesses about motives; I feel - optional, and always yours, never 'I feel that you'; I want - one behaviour, specific, now; and, held in reserve, what you will do for yourself if the answer is no - information, not a threat; something you do for you, not to them.",
+              "DBT teaches a longer cousin of this under the acronym DEAR MAN - describe, express, assert, reinforce; stay mindful, appear confident, negotiate. The four lines are its heart."
+            ]
+          },
+          {
+            "title": "Listening",
+            "paragraphs": [
+              "Listening is something you do, not something that happens to you. Six questions get you the other person's side: how do they see the problem? How do they make sense of it? How does it feel to them? What does it make them want to do? What do they think should change? What do they want from you? Knowing what someone needs does not oblige you to meet it - but you cannot negotiate with a need you have not heard.",
+              "Ten habits get in the way of hearing anyone: reading their mind; rehearsing your reply; filtering for what you expect; judging; drifting off; advising before they have finished; sparring; needing to be right; changing the subject; and placating - agreeing with everything to make it stop."
+            ]
+          },
+          {
+            "title": "Saying no",
+            "paragraphs": [
+              "Saying no has two beats. First, acknowledge what they want - 'I can see this matters to you'. Then say your own preference or discomfort, plainly - 'and I am not going to be able to do it this week'. No justification, because a justification is something to argue with. A no can also be written as a script: the same four lines, with 'I want' being 'I want to say no to this'.",
+              "DBT's version of keeping your self-respect while you do it goes by FAST - be fair, no over-apologising, stick to your values, be truthful."
+            ]
+          },
+          {
+            "title": "If they push back",
+            "paragraphs": [
+              "Five moves for when the answer is not yes. Grant the true part of what they say, then restate your side. Say your one sentence again, calmly, without answering 'why'. Ask what it is about the request that bothers them, and ask again. Agree with whatever is true in their objection while letting the 'always' and 'never' go. And ask for time - a delay is an answer too.",
+              "When you can both give a little, there are ways to meet halfway: one cuts, the other chooses; take turns; do both; try it for a while and review; my way when I am the one doing it; a trade; part of each; split the difference."
+            ]
+          },
+          {
+            "title": "What got in the way",
+            "paragraphs": [
+              "After a conversation that did not go well, one of these is usually the reason. Naming it in your journal is enough; the next script fixes it."
+            ],
+            "items": [
+              "I judged instead of describing",
+              "I said \"you\" when I meant \"I\"",
+              "I asked for a mood, not a behaviour",
+              "I pushed too hard, or not at all",
+              "I stopped listening",
+              "I forgot to grant the true part"
+            ],
+            "links": ["journal"]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -238,7 +238,11 @@ describe("the route population (pinned, G5)", () => {
     // sibling (`urge-surfing/index.tsx` + `urge-surfing/[id].tsx`); the route PATH of the
     // tool screen is unchanged. 136 → 135: #1959 deleted `/arrange` with the rest of the
     // old Home dashboard (Home is Favourites over the shared card since #1956).
-    expect(ROUTES).toHaveLength(135);
+    // 135 → 137: #1980 gave DBT a learn primer and a per-group learn page.
+    // `/modules/dbt` itself only MOVED (`dbt.tsx` → `dbt/index.tsx`), so the
+    // module home is not a new route; the rest of the module's routes arrive
+    // with the slices that build them.
+    expect(ROUTES).toHaveLength(137);
   });
 
   it("derives exactly the eight <Redirect>-only stubs", () => {
@@ -269,7 +273,7 @@ describe("the route population (pinned, G5)", () => {
     // this class rather than among the stubs. Then 126 → 125 when #1959 deleted the
     // `/arrange` screen. The walk still finds all 135 routes, which is the number this
     // class exists to protect — a drop there would mean the walk itself had gone blind.
-    expect(covered).toHaveLength(125);
+    expect(covered).toHaveLength(127);
   });
 });
 
