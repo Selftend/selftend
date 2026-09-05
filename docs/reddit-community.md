@@ -32,25 +32,29 @@ recorded here. Read from the subreddit 2026-09-05.
 3. **No medical advice or diagnosis.** Share your own experiences freely, but don't ask
    for or offer diagnoses, treatment plans, or medication advice. Selftend is a self-help
    tool, and this community is not a substitute for professional care.
-4. **This community can't provide crisis support.** If you or someone else is in
-   immediate danger or crisis, please contact local emergency services or a helpline
-   (findahelpline.com lists options worldwide). Posts seeking urgent crisis help will be
-   gently redirected to those resources.
+4. **This community can't provide crisis support.** This community is not monitored
+   around the clock and is not a crisis service. If you or someone else is in immediate
+   danger, contact local emergency services now. For someone to talk to,
+   findahelpline.com lists free helplines by country. Posts or comments asking for
+   urgent help are answered once, warmly, by pointing to those resources - they are not
+   removed for asking.
 5. **Protect privacy - yours and others'.** Don't share anyone's personal or identifying
    information, including your own contact details. Be thoughtful when posting sensitive
    personal stories - once it's on the internet, it's hard to take back.
 
-Rule 4 is being reworded ([#1947](https://github.com/Selftend/selftend/issues/1947)):
-"will be gently redirected" implies someone is always watching, and nobody is. The
-decided wording, which stays under Reddit's 500-character limit on a rule description:
+Rule 4 was reworded on 2026-09-05
+([#1947](https://github.com/Selftend/selftend/issues/1947)). It used to end "Posts seeking
+urgent crisis help will be gently redirected to those resources", which implies someone
+is always watching, and nobody is. The current text is 371 of the 500 characters Reddit
+allows in a rule description. Rule 4 is **not** Auto Enforced; rules 2 and 5 are, which
+is Reddit's own feature on non-crisis rules and was left as found.
 
-> This community is not monitored around the clock and is not a crisis service. If you or
-> someone else is in immediate danger, contact local emergency services now. For someone
-> to talk to, findahelpline.com lists free helplines by country. Posts or comments asking
-> for urgent help are answered once, warmly, by pointing to those resources - they are not
-> removed for asking.
+## The sidebar
 
-Until the owner applies it, the live rule reads as recorded above.
+Read signed in on 2026-09-05. Three widgets: a **Rules** widget that mirrors the rules
+above, a **Get Selftend** button widget (web, Android, iOS), and the **Moderators**
+block. There is no separate crisis widget; the crisis text a visitor sees in the sidebar
+is rule 4. The community description line is the one #1946 tracks.
 
 ## Copy on this surface
 
