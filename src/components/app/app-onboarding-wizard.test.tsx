@@ -173,11 +173,15 @@ it("offers the starter panel after guidance and keeps it through the routine wri
   fireEvent.press(screen.getByText("Continue"));
 
   // Panel sits after guidance, before finish: read-only numbered steps
-  // (kept tools, Habits excluded, capped at 3) and an editable name.
+  // (recommended tools, Habits excluded, capped at 3) and an editable name. The
+  // recommendation set is mood, sleep, meditation, breathing; since #1954 the
+  // builder composes in its FIXED candidate order rather than recommendation
+  // order, so breathing (position 8) outranks meditation (position 10).
   expect(screen.getByText("One small routine to start?")).toBeTruthy();
   expect(screen.getByText("Mood check-in")).toBeTruthy();
   expect(screen.getByText("Sleep log")).toBeTruthy();
-  expect(screen.getByText("Meditation")).toBeTruthy();
+  expect(screen.getByText("Breathing")).toBeTruthy();
+  expect(screen.queryByText("Meditation")).toBeNull();
   fireEvent.changeText(screen.getByLabelText("Routine name"), "Morning kit");
 
   fireEvent.press(screen.getByText("Keep"));
@@ -189,7 +193,7 @@ it("offers the starter panel after guidance and keeps it through the routine wri
   expect(addStep).toHaveBeenNthCalledWith(2, { routineId: "r-new", toolId: "sleep", position: 1 });
   expect(addStep).toHaveBeenNthCalledWith(3, {
     routineId: "r-new",
-    toolId: "meditation",
+    toolId: "breathing",
     position: 2,
   });
   expect(onFinish).toHaveBeenCalledWith({

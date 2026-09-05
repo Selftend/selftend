@@ -1,5 +1,6 @@
 import { type Href } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { useIsFetching } from "@tanstack/react-query";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,17 +15,18 @@ import { RoutineDayStrip } from "@/src/features/routines/day-strip";
 import { isScheduledOn } from "@/src/features/routines/scheduling";
 import {
   deriveRoutine,
+  STEPPABLE_TOOL_IDS,
   type RoutineStatus,
   type RoutineToolRecords,
   type SteppableToolId,
 } from "@/src/features/routines/derive";
 import { useRoutines } from "@/src/features/routines/queries";
 import { buildStarterSteps } from "@/src/features/routines/starter";
+import { areToolRecordsReady, toolsWithRecords } from "@/src/features/routines/starter-offer";
 import { StarterStepList } from "@/src/features/routines/starter-step-list";
 import { useKeepStarterRoutine } from "@/src/features/routines/use-keep-starter-routine";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
 import type { RoutineWithSteps } from "@/src/features/routines/types";
-import { useWidgetPreferences } from "@/src/features/home/queries";
 import { DEFAULT_INTERACTIVE_HIT_SLOP } from "@/src/lib/accessibility";
 import { useSession } from "@/src/providers/session-provider";
 import { currentDateKey, parseLocalNoon } from "@/src/utils/date";
@@ -52,11 +54,18 @@ export default function RoutinesHomeScreen() {
       if (!referencedTools.includes(step.toolId)) referencedTools.push(step.toolId);
     }
   }
-  const records = useRoutineToolRecords(userId, referencedTools);
+  // On the empty path the same hook feeds the starter offer instead (#1954): the
+  // full steppable list, so the composition reads every tool the person has records
+  // in. Honest cost, accepted: a routine-less person enables ~17 feature queries at
+  // the recent-list limit - the fetch the second-action card already makes for the
+  // same population, on the same cache. Only once the list is KNOWN empty, so a
+  // still-loading list does not fire the wide fetch for someone who has routines.
+  const hasNoRoutines = routines !== undefined && routines.length === 0;
+  const records = useRoutineToolRecords(
+    userId,
+    hasNoRoutines ? STEPPABLE_TOOL_IDS : referencedTools,
+  );
   const dayKey = currentDateKey();
-
-  // The starter offer is gated on zero routines; widget prefs feed the builder.
-  const { data: widgetPrefs } = useWidgetPreferences(allRoutines.length === 0 ? userId : null);
 
   if (isLoading) {
     return <ScreenLoading title={t("home.title")} />;
@@ -78,8 +87,8 @@ export default function RoutinesHomeScreen() {
             </Button>
           </View>
 
-          {allRoutines.length === 0 ? (
-            <RoutinesEmptyState keptWidgetIds={(widgetPrefs ?? []).map((pref) => pref.widgetId)} />
+          {hasNoRoutines ? (
+            <RoutinesEmptyState records={records} />
           ) : (
             <View className="gap-3">
               <Text className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -197,11 +206,18 @@ function RoutineCard({ routine, records, dayKey, onOpen }: RoutineCardProps) {
   );
 }
 
-// Empty state: the declinable pre-composed starter offer when the kept widgets
-// yield enough candidate steps (>= 2), otherwise a quiet build-your-own card.
-// "Keep" writes one routine + N steps through the normal repository path;
-// "Skip" just dismisses - nothing is ever created silently.
-function RoutinesEmptyState({ keptWidgetIds }: { keptWidgetIds: readonly string[] }) {
+// Empty state: the declinable pre-composed starter offer when the person has records
+// in enough steppable tools (>= 2), otherwise a quiet build-your-own card. "Keep"
+// writes one routine + N steps through the normal repository path; "Skip" just
+// dismisses - nothing is ever created silently.
+//
+// ⚠️ There is deliberately NO second-action records gate here (spec #1885 §5.3,
+// sub-decision 2, dissolved on arithmetic). `countToolsWithRecords` sums a SUPERSET
+// of what composition counts and `SECOND_ACTION_MIN` = `STARTER_STEP_MIN` = 2, so a
+// successful composition already implies >= 2 distinct tools with records - the
+// branch that would sit here could never reject anything. Do not "restore" it
+// without redoing that arithmetic.
+function RoutinesEmptyState({ records }: { records: RoutineToolRecords }) {
   const { t } = useTranslation("routines");
   const { user } = useSession();
   const userId = user?.id ?? null;
@@ -209,7 +225,23 @@ function RoutinesEmptyState({ keptWidgetIds }: { keptWidgetIds: readonly string[
   const { keep, saving, error: starterError } = useKeepStarterRoutine(userId);
   const [starterDismissed, setStarterDismissed] = useState(false);
 
-  const starterSteps = buildStarterSteps(keptWidgetIds);
+  // Three states: `undefined` while the records are still loading (nothing is
+  // claimed either way - neither an offer nor "build your own"), `null` when they
+  // compose nothing, or the steps.
+  //
+  // A slice that ERRORS stays undefined, so readiness alone would blank this
+  // state for good after one failed feature query. Once nothing is fetching any
+  // more, an unready shape means a failure, not a wait: fall back to the quiet
+  // card rather than compose an offer from the slices that did arrive - fewer
+  // candidates is a smaller routine than the person earned, and the card is the
+  // calmer wrong answer.
+  const fetching = useIsFetching() > 0;
+  const starterSteps = areToolRecordsReady(records)
+    ? buildStarterSteps(toolsWithRecords(records))
+    : fetching
+      ? undefined
+      : null;
+  if (starterSteps === undefined) return null;
 
   const handleKeep = () => {
     if (!starterSteps) return;

@@ -9,7 +9,6 @@ import {
   type ModuleInterest,
   type SharedToolWidgetId,
 } from "@/src/features/onboarding/recommendations";
-import { buildStarterSteps, STARTER_STEP_CAP } from "@/src/features/routines/starter";
 
 /**
  * #1352's gate: the two seeded Home layouts stay **derivable**, not hand-maintained.
@@ -157,14 +156,17 @@ describe("seeded Home layouts", () => {
       );
     });
 
-    it("composes the three-step starter card that exists on no other account", () => {
-      // Surface #45, the Routines-page empty-state starter card. It needs zero routines
-      // AND at least two steppable stored ids - bob is the only fixture with both, which
-      // is why he keeps zero routines permanently (#1550).
-      const steps = buildStarterSteps(bobRows.map((row) => row.widgetId));
-      expect(steps).toEqual(["mood", "breathing", "journal"]);
-      expect(steps).toHaveLength(STARTER_STEP_CAP);
-    });
+    // RETIRED (#1954): "composes the three-step starter card that exists on no other
+    // account" asserted that bob's four widget rows composed a starter through
+    // `buildStarterSteps`. The starter now composes from the steppable tools the
+    // person has RECORDS in and reads no preferences table, so a widget layout no
+    // longer composes anything - the assertion lost its subject rather than its
+    // truth. Bob still keeps zero routines permanently (#1550) so the Routines-page
+    // empty state stays reachable on a seeded account - but his seeded records are
+    // five thought records, ONE steppable tool, so on a fresh reset he composes
+    // nothing and sees the quiet card like every other seeded account. To see the
+    // starter card: sign in as bob and log one mood check-in (it composes
+    // [mood, cbt]). supabase/README.md carries that recipe.
 
     it("moves his onboarding answers with his rows, so the list is explainable", () => {
       // ☠️ Rows alone leave a *grandfathered* user holding four widgets: producible
