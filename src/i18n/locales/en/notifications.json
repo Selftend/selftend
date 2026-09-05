@@ -57,6 +57,10 @@
     "routine": {
       "title": "Your routine",
       "body": "A couple of small steps, whenever you're ready."
+    },
+    "dbt": {
+      "title": "DBT practice",
+      "body": "A few minutes with one skill - relax your body, or write one record."
     }
   },
   "targets": {
@@ -89,6 +93,9 @@
     },
     "habits": {
       "label": "Habits"
+    },
+    "dbt": {
+      "label": "DBT"
     }
   },
   "reminderPrompt": {

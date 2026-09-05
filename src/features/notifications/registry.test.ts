@@ -48,6 +48,7 @@ import { defaultUserPreferences } from "@/src/features/modules/types";
 const PRACTICE_TARGETS: NotificationTargetKey[] = [
   "cbt",
   "act",
+  "dbt",
   "meditation",
   "gratitude",
   "mood",
@@ -96,9 +97,14 @@ describe("NOTIFICATION_TARGETS", () => {
       catalogueOrder.push(meta.toolKey);
     }
 
-    // Every reminder target is a dashboard tool, so the catalogue names all ten.
-    expect(catalogueOrder).toHaveLength(PRACTICE_TARGETS.length);
-    expect(NOTIFICATION_TARGETS.map((t) => t.key)).toEqual(catalogueOrder);
+    // ⚠️ NOT every reminder target is a launcher widget any more. DBT ships a
+    // reminder and no widget (#1980, decision 13 excludes the launcher), so the
+    // catalogue cannot order it - and a target the catalogue does not name sits
+    // after the ones it does. Derived either way: adding a widget id ahead of
+    // another still reorders this screen.
+    const withoutWidget = PRACTICE_TARGETS.filter((key) => !seen.has(key));
+    expect(catalogueOrder).toHaveLength(PRACTICE_TARGETS.length - withoutWidget.length);
+    expect(NOTIFICATION_TARGETS.map((t) => t.key)).toEqual([...catalogueOrder, ...withoutWidget]);
   });
 
   it.each(PRACTICE_TARGETS)("%s names all four preference columns", (key) => {

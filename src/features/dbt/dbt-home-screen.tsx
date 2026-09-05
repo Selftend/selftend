@@ -1,10 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 
 import { Text } from "@/src/components/react-native-reusables/text";
+import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
+import { DbtProgramCard } from "@/src/components/app/dbt-program-card";
 import { ModuleHomeHeader } from "@/src/components/app/module-home-header";
+import { ProgramGraduation } from "@/src/components/app/program-graduation";
 import { PillarCard } from "@/src/components/app/pillar-card";
 import { CrisisSupportCallout } from "@/src/components/app/safety-callout";
 import { SharedToolsRow } from "@/src/components/app/shared-tools-row";
@@ -21,6 +24,7 @@ import {
   useScriptCount,
   useWiseMindCheckinCount,
 } from "@/src/features/dbt/queries";
+import { useDbtProgram } from "@/src/features/dbt/use-dbt-program";
 import { useSession } from "@/src/providers/session-provider";
 
 /**
@@ -37,12 +41,9 @@ import { useSession } from "@/src/providers/session-provider";
  * case. The three disagree today; DBT's casing is ruled and the siblings are an
  * observation for a later pass, not something to "fix" by changing this one.
  *
- * Not here yet, and each arrives with the slice that builds it: the tool rows
- * (a row is added when its route exists - see `DbtGroup.tools`), the bell (the
- * `dbt` reminder target is the programme's), and the programme card. There is
- * deliberately NO recent-records feed: six record kinds make any one feed
- * favouritism, every list is one tap away, and the programme card carries the
- * state a feed would be standing in for.
+ * There is deliberately **no recent-records feed**: six record kinds make any
+ * one feed favouritism, every list is one tap away, and the programme card
+ * carries the state a feed would be standing in for.
  */
 export default function DbtHomeScreen() {
   const { t } = useTranslation("dbt");
@@ -70,6 +71,21 @@ export default function DbtHomeScreen() {
     prefetchCopingPlan(userId);
   }, [prefetchCopingPlan, userId]);
 
+  const {
+    program,
+    startProgram,
+    dismissProgramPrompt,
+    showProgramPrompt,
+    abandonProgram,
+    replayProgram,
+    advancePhase,
+    dismissGraduation,
+    promptDismissedAt,
+    graduationDismissedAt,
+    isUpdating,
+  } = useDbtProgram(userId);
+  const [abandonVisible, setAbandonVisible] = useState(false);
+
   const counts = [wiseMind, judgements, emotions, oppositeAction, scripts];
   // ☠️ An unresolved count is NOT zero. `?? 0` would tell someone with 200
   // records they had none for as long as the query was in flight - the
@@ -89,6 +105,19 @@ export default function DbtHomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom", "left", "right"]}>
+      <ConfirmDialog
+        visible={abandonVisible}
+        isPending={isUpdating}
+        title={t("program.abandonTitle")}
+        message={t("program.abandonDescription")}
+        confirmLabel={t("program.abandonConfirm")}
+        cancelLabel={t("program.abandonCancel")}
+        onCancel={() => setAbandonVisible(false)}
+        onConfirm={() => {
+          abandonProgram();
+          setAbandonVisible(false);
+        }}
+      />
       <ScrollView contentContainerClassName="grow p-4">
         <View className={cn(HOME_COLUMN, "gap-6")}>
           <ModuleHomeHeader
@@ -96,6 +125,21 @@ export default function DbtHomeScreen() {
             description={t("home.description")}
             stats={stats}
             actions={[
+              // The bell is a door to the central Reminders screen, with this
+              // module's row brought into view - never a surface of its own.
+              { type: "notifications", targetKey: "dbt" },
+              // The flag appears ONLY while the invitation is dismissed and
+              // nothing is started: it restores what the person closed, and a
+              // permanent flag beside a running programme would be noise.
+              ...(program.status === "not_started"
+                ? [
+                    {
+                      type: "program" as const,
+                      onPress: showProgramPrompt,
+                      accessibilityLabel: t("program.showPromptLabel"),
+                    },
+                  ]
+                : []),
               {
                 // A page, not a modal: DBT has no primer modal and no
                 // onboarding, so the info action is a door to the learn primer.
@@ -105,6 +149,49 @@ export default function DbtHomeScreen() {
               },
             ]}
           />
+
+          {/* The programme sits under the header and above the four groups.
+              Nothing when the invitation was dismissed and nothing started -
+              the flag above is how it comes back. */}
+          {program.status === "graduated" ? (
+            <ProgramGraduation
+              namespace="dbt"
+              // ☠️ CBT's filtered shape: only non-zero lines, so a graduation
+              // never reads back a row of noughts at someone.
+              lines={[
+                ...(program.summaryStats.sessions > 0
+                  ? [t("program.statSessions", { count: program.summaryStats.sessions })]
+                  : []),
+                ...(program.summaryStats.wiseMindCheckins > 0
+                  ? [t("program.statWiseMind", { count: program.summaryStats.wiseMindCheckins })]
+                  : []),
+                ...(program.summaryStats.emotionRecords > 0
+                  ? [
+                      t("program.statEmotionRecords", {
+                        count: program.summaryStats.emotionRecords,
+                      }),
+                    ]
+                  : []),
+                ...(program.summaryStats.scriptsDone > 0
+                  ? [t("program.statScripts", { count: program.summaryStats.scriptsDone })]
+                  : []),
+              ]}
+              dismissed={graduationDismissedAt != null}
+              onDismiss={dismissGraduation}
+              onReplay={replayProgram}
+            />
+          ) : program.status === "not_started" && promptDismissedAt ? null : (
+            <DbtProgramCard
+              program={program}
+              isPending={isUpdating}
+              onStart={startProgram}
+              onAdvance={advancePhase}
+              onDismissStart={program.status === "not_started" ? dismissProgramPrompt : undefined}
+              onAbandon={
+                program.status === "in_progress" ? () => setAbandonVisible(true) : undefined
+              }
+            />
+          )}
 
           {/* ⚠️ Level 2, like CBT's and ACT's framework headings: it INTRODUCES
               the four cards below it, so flattening it to 3 would put it on a

@@ -112,5 +112,11 @@
     "what": "Taking values-guided steps even when discomfort, fear, or difficult feelings are present.",
     "how": "Choose a small, concrete action toward your values, commit to it, and follow through regardless of how you feel in the moment.",
     "why": "Waiting to feel ready means waiting forever. Small committed steps build momentum and prove values-guided living is possible even in difficulty."
+  },
+  "dbtProgram": {
+    "title": "The DBT programme",
+    "what": "A path in four phases through the module's four skill groups, in the book's order: getting through a hard moment, steadying your attention, working with a feeling, and asking for what you want.",
+    "how": "Each phase names two things to do once and, most phases, one thing to try that day. You advance when you decide to - the daily practice never holds a phase shut, and a day without it changes nothing.",
+    "why": "The skills build on each other, and the order is the one the book teaches. The programme is a way to take them in that order without having to remember it."
   }
 }
