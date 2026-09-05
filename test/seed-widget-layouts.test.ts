@@ -162,9 +162,11 @@ describe("seeded Home layouts", () => {
     // person has RECORDS in and reads no preferences table, so a widget layout no
     // longer composes anything - the assertion lost its subject rather than its
     // truth. Bob still keeps zero routines permanently (#1550) so the Routines-page
-    // empty state stays reachable on a seeded account; what he is offered there is
-    // now a function of his seeded records, which the demo seed's own re-derivation
-    // covers.
+    // empty state stays reachable on a seeded account - but his seeded records are
+    // five thought records, ONE steppable tool, so on a fresh reset he composes
+    // nothing and sees the quiet card like every other seeded account. To see the
+    // starter card: sign in as bob and log one mood check-in (it composes
+    // [mood, cbt]). supabase/README.md carries that recipe.
 
     it("moves his onboarding answers with his rows, so the list is explainable", () => {
       // ☠️ Rows alone leave a *grandfathered* user holding four widgets: producible

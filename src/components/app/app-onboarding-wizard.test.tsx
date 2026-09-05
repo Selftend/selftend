@@ -173,7 +173,7 @@ it("offers the starter panel after guidance and keeps it through the routine wri
   fireEvent.press(screen.getByText("Continue"));
 
   // Panel sits after guidance, before finish: read-only numbered steps
-  // (kept tools, Habits excluded, capped at 3) and an editable name. The
+  // (recommended tools, Habits excluded, capped at 3) and an editable name. The
   // recommendation set is mood, sleep, meditation, breathing; since #1954 the
   // builder composes in its FIXED candidate order rather than recommendation
   // order, so breathing (position 8) outranks meditation (position 10).
