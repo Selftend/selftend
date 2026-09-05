@@ -120,7 +120,6 @@ export interface UserPreferences {
   language: string;
   languageExplicit: boolean;
   theme: string | null;
-  selectedConcerns: string[];
   activeStrategies: string[];
   startHereDismissedAt: string | null;
   shownButtonTours: ButtonTourKey[];
@@ -258,7 +257,6 @@ export const defaultUserPreferences: UserPreferences = {
   language: "en",
   languageExplicit: false,
   theme: null,
-  selectedConcerns: [],
   activeStrategies: [],
   startHereDismissedAt: null,
   shownButtonTours: [],

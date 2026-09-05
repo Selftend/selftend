@@ -14,7 +14,6 @@ import {
   deleteAllCoreBeliefsForUser,
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
-  deleteAllWidgetPreferencesForUser,
   deleteAllFavoritesForUser,
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
@@ -47,11 +46,6 @@ export {
 // type-only dependency on Playwright, which lets jest drive it directly
 // (test/toast-signal.test.ts) - `test/e2e/` is in jest's testPathIgnorePatterns.
 export { SAVE_FAILED_TOAST_TITLE, expectSuccessToast } from "./toast-signal";
-
-// Alias: clear widget preferences. Empty Home is intentional and no longer seeds defaults.
-export async function resetWidgetPreferencesForUser(userId: string): Promise<void> {
-  await deleteAllWidgetPreferencesForUser(userId);
-}
 
 /**
  * Replace the user's favourites with exactly these rows (#1956): what Home's Favourites

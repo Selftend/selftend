@@ -175,22 +175,21 @@ values (
 
 -- bob: full onboarding done, reminders enabled at 19:30 local
 --
--- The four onboarding-answer columns below (`selected_concerns`, `widgets_seeded`,
--- `app_onboarding_completed_via`, `app_onboarding_completed_at`) belong to the same
--- change as bob's `favorites` rows further down, and are NOT optional trim (#1352).
--- Seed the rows alone and bob becomes a *grandfathered* user - `via` null,
--- `widgets_seeded` false, `selected_concerns` `{}` - who happens to hold four
--- favourites. That makes the list unexplainable, which is exactly what the decision
--- refused.
+-- The two completion columns below (`app_onboarding_completed_via`,
+-- `app_onboarding_completed_at`) belong to the same change as bob's `favorites`
+-- rows further down, and are NOT optional trim (#1352). Seed the rows alone and
+-- bob becomes a *grandfathered* user - `via` null, `_at` null - who happens to
+-- hold four favourites. That makes the list unexplainable, which is exactly what
+-- the decision refused. (`selected_concerns` and `widgets_seeded`, the other two
+-- onboarding-answer columns this insert used to carry, were dropped in #1958: the
+-- one-panel wizard asks no concern and seeds no Home. Bob's four favourites are
+-- the ones an `anxious-thoughts` + `cbt` answer became under the #1953 copy, and
+-- that is now recorded here in prose rather than in a column.)
 --
--- `anxious-thoughts` is the concern that EXPLAINS this account: bob's whole dataset
--- is five thought records nudged by a 19:30 CBT reminder, and that is the concern a
--- person arriving with them would pick. `enabled_modules` stays `['cbt']` -
--- unlike demo, bob needs no module edit.
+-- `enabled_modules` stays `['cbt']` - unlike demo, bob needs no module edit.
 insert into public.user_preferences (
   user_id,
   enabled_modules,
-  selected_concerns,
   reminder_consent,
   reminder_consent_updated_at,
   cbt_reminders_enabled,
@@ -201,7 +200,6 @@ insert into public.user_preferences (
   app_onboarding_completed,
   app_onboarding_completed_via,
   app_onboarding_completed_at,
-  widgets_seeded,
   cbt_onboarding_completed,
   privacy_policy_accepted_at,
   terms_accepted_at,
@@ -212,7 +210,6 @@ insert into public.user_preferences (
 values (
   '00000000-0000-0000-0000-000000000002',
   array['cbt']::text[],
-  array['anxious-thoughts']::text[],
   true,
   timezone('utc', now()) - interval '29 days',
   true,
@@ -222,7 +219,6 @@ values (
   true,
   'finish',
   timezone('utc', now()) - interval '30 days',
-  true,
   true,
   timezone('utc', now()) - interval '30 days',
   timezone('utc', now()) - interval '30 days',

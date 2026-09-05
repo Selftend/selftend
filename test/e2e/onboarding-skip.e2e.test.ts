@@ -1,15 +1,18 @@
 import { expect, test } from "./fixtures";
 
-import {
-  createServiceClient,
-  deleteAllFavoritesForUser,
-  resetWidgetPreferencesForUser,
-} from "./helpers";
+import { createServiceClient, deleteAllFavoritesForUser } from "./helpers";
 
-test.describe("widget onboarding skip", () => {
+/**
+ * The skip half of the one-panel introduction (#1958). `sign-up-onboarding.e2e`
+ * walks the finish half on a brand-new account; this one covers what only a skip
+ * decides - `app_onboarding_completed_via = 'skip'` - and that a skip changes
+ * nothing on Home: Favourites stay empty over the full catalogue, and the
+ * introduction does not come back on reload. Kept as its own spec because the
+ * finish spec cannot observe the skip path at all.
+ */
+test.describe("onboarding skip", () => {
   test.beforeEach(async ({ user }) => {
     const admin = createServiceClient();
-    await resetWidgetPreferencesForUser(user.id);
     // Home reads `favorites` since #1956; a row left by another spec would fill the
     // Favourites section this test asserts empty.
     await deleteAllFavoritesForUser(user.id);
@@ -19,7 +22,6 @@ test.describe("widget onboarding skip", () => {
         app_onboarding_completed: false,
         app_onboarding_completed_via: null,
         app_onboarding_completed_at: null,
-        widgets_seeded: false,
       })
       .eq("user_id", user.id);
     if (error) throw new Error(`Unable to prepare onboarding state: ${error.message}`);
@@ -27,7 +29,6 @@ test.describe("widget onboarding skip", () => {
 
   test.afterEach(async ({ user }) => {
     const admin = createServiceClient();
-    await resetWidgetPreferencesForUser(user.id);
     await deleteAllFavoritesForUser(user.id);
     const { error } = await admin
       .from("user_preferences")
@@ -36,7 +37,7 @@ test.describe("widget onboarding skip", () => {
     if (error) throw new Error(`Unable to restore onboarding state: ${error.message}`);
   });
 
-  test("skip leaves Favourites empty and does not appear again after reload", async ({
+  test("skip persists as 'skip', leaves Favourites empty, and does not appear again after reload", async ({
     page,
     user,
   }) => {
@@ -45,34 +46,41 @@ test.describe("widget onboarding skip", () => {
       timeout: 15_000,
     });
 
+    // The pinned Escape wears the word (#1258 M2): it is the one close in the app
+    // with a lasting consequence, and the footer no longer duplicates it.
+    await expect(page.getByRole("button", { name: "Skip for now", exact: true })).toHaveCount(1);
     await page.getByRole("button", { name: "Skip for now", exact: true }).click();
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden({
       timeout: 15_000,
     });
     // The empty-Favourites line (#1956): one quiet sentence, no box, no door. The
-    // catalogue below it renders regardless, so this is the only thing a skip changes.
+    // catalogue below it renders regardless, so a skip changes nothing here.
     await expect(page.getByText("Star a tool or a module to keep it here.")).toBeVisible();
+    await expect(page.getByTestId("home-tools").locator('[data-testid^="card-tool-"]')).toHaveCount(
+      8,
+    );
 
     const admin = createServiceClient();
-    const [widgets, favorites, preferences] = await Promise.all([
-      admin.from("widget_preferences").select("widget_id").eq("user_id", user.id),
+    const [favorites, preferences] = await Promise.all([
       admin.from("favorites").select("kind, key").eq("user_id", user.id),
       admin
         .from("user_preferences")
-        .select("app_onboarding_completed, app_onboarding_completed_via, widgets_seeded")
+        .select(
+          "app_onboarding_completed, app_onboarding_completed_via, app_onboarding_completed_at",
+        )
         .eq("user_id", user.id)
         .single(),
     ]);
-    expect(widgets.error).toBeNull();
-    expect(widgets.data).toEqual([]);
     expect(favorites.error).toBeNull();
     expect(favorites.data).toEqual([]);
     expect(preferences.error).toBeNull();
+    // ☠️ All three fields: the flag alone is the grandfathered shape, under which
+    // the introduction replay never fires and the funnel reads "pre-tracking".
     expect(preferences.data).toMatchObject({
       app_onboarding_completed: true,
       app_onboarding_completed_via: "skip",
-      widgets_seeded: true,
     });
+    expect(preferences.data?.app_onboarding_completed_at).toEqual(expect.any(String));
 
     await page.reload();
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden();

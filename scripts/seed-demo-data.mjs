@@ -248,15 +248,14 @@ async function insertReturningId(table, row) {
 const counts = {};
 
 // ---------------------------------------------------------------- preferences
-// `selected_concerns` and `enabled_modules` are the onboarding answers demo's Home
-// layout below is DERIVED from, and they move with it (#1352). Neither steers
-// anything live today — `selected_concerns` is read only during onboarding, where it
-// seeds Home's widgets and the starter routine, and is never consulted again; and
-// `enabled_modules` is only ever written, never read as a gate — so both are
-// seeded as documentation-in-data: without them the fourteen ids are a list nobody
-// can explain, which is the state the decision refused. `widgets_seeded` is the same
-// character: only the RPC writes it and nothing live reads it, but it is what a real
-// wizard run leaves behind.
+// `enabled_modules` is the onboarding answer demo's favourites below are DERIVED
+// from, and it moves with them (#1352). It steers nothing live — it is only ever
+// written, never read as a gate — so it is seeded as documentation-in-data: without
+// it the favourites are a list nobody can explain, which is the state the decision
+// refused. `selected_concerns` and `widgets_seeded` used to sit beside it for the
+// same reason; both columns were dropped in #1958 (the one-panel wizard asks no
+// concern and seeds no Home), so the concerns demo "arrived with" - anxious
+// thoughts, low mood, sleep - live in this comment now, not in a column.
 //
 // `app_onboarding_completed_via` / `_at` are deliberately NOT touched. Demo already
 // reads as a completed-onboarding account and they are part of no decision here.
@@ -296,8 +295,6 @@ const counts = {};
       email_verified: true,
       emotions_seeded: true,
       enabled_modules: ["cbt", "act"],
-      selected_concerns: ["anxious-thoughts", "low-mood", "sleep"],
-      widgets_seeded: true,
     },
     { onConflict: "user_id" },
   );

@@ -2,10 +2,15 @@
 -- no per-user rows, no user ids, no emails.
 --
 -- Column types verified against migrations:
---   selected_concerns : text[]  (20260514_cbt_phase1.sql)
---   initial_concerns  : text[]  (20260901000000_initial_concerns.sql)
 --   shown_button_tours: text[]  (20260543_button_tours.sql)
 -- All use unnest() / array_length() as written below (no jsonb variant needed).
+--
+-- Concern distribution (the old §4a/4b) is GONE with the `selected_concerns`
+-- column (#1958, 20260909000000_onboarding_one_panel.sql): the one-panel
+-- introduction asks no concern, so nothing writes it. Anything cohorted by
+-- what someone declared on arrival lives in scripts/analytics-segment.sql,
+-- which reads the immutable `initial_concerns` - a pre-redesign cohort the app
+-- never writes again.
 --
 -- ☠️ Every table below is split by account type (#1613). `useStartAsGuest`
 -- (src/features/auth/use-start-as-guest.ts) calls `signInAnonymously`, minting
@@ -83,37 +88,7 @@ where p.app_onboarding_completed
 group by 1, 2 order by 3 desc, 1, 2;
 
 \echo
-\echo '=== 4a) Concern distribution — CURRENT concerns, not concerns at intake ==='
---
--- ☠️ This reads CURRENT concerns. `selected_concerns` is last-write-wins:
--- `apply_widget_recommendations` overwrites it, and Home re-runs the wizard
--- through the same RPC. Only a RETURNING user re-runs it, so reading this as
--- "what people arrived wanting" is biased in the flattering direction by
--- construction (#1612).
---
--- `user_preferences.initial_concerns` is the immutable intake record, written
--- once at a first onboarding completion. Anything cohorted by what someone
--- declared on arrival belongs in `scripts/analytics-segment.sql` (#1613), which
--- reads that column and reports a NULL there as an explicit `unknown` arm,
--- never as zero concerns.
-select a.account, concern, count(*) as picks
-from public.user_preferences p
-join accounts a on a.user_id = p.user_id
-cross join lateral unnest(p.selected_concerns) as concern
-group by 1, 2 order by 3 desc, 1, 2;
-
-\echo
-\echo '=== 4b) Picks-per-user histogram (0-6) ==='
-select a.account,
-       coalesce(array_length(p.selected_concerns, 1), 0) as picks_count,
-       count(*) as users
-from public.user_preferences p
-join accounts a on a.user_id = p.user_id
-where p.app_onboarding_completed
-group by 1, 2 order by 2, 1;
-
-\echo
-\echo '=== 5) Current Home widget selection (the wizard never adds hidden defaults) ==='
+\echo '=== 5) Home widget selection still written by pre-Favourites native builds (#1958: the current app neither reads nor seeds this table) ==='
 select a.account, w.widget_id, count(*) as users
 from public.widget_preferences w
 join accounts a on a.user_id = w.user_id

@@ -928,10 +928,11 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
    * ☠️ The compound is banned; the bare noun is not. #1616 swept 22 strings and
    * deliberately left twenty alone, because "self-help" on its own is accurate
    * and legally load-bearing where it appears: the GDPR clauses that name
-   * "private CBT thought records or other self-help entries" and
-   * `settings:modulesQuestion` ("Would a self-help module be useful?"). The
-   * support form's placeholder was one of the twenty until #1727 replaced it
-   * with four per-category placeholders, none of which needs the noun.
+   * "private CBT thought records or other self-help entries". The support
+   * form's placeholder was one of the twenty until #1727 replaced it with four
+   * per-category placeholders, none of which needs the noun; the onboarding's
+   * `settings:modulesQuestion` ("Would a self-help module be useful?") was
+   * another until #1958 deleted the panel that asked it.
    * Bulgarian mirrors every remaining one with bare `самопомощ`.
    *
    * So if someone later "simplifies" the rules above to `/self-help/i` or
@@ -941,10 +942,12 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
   it("leaves the bare self-help noun alone in both locales", () => {
     const bare = USER_FACING.filter(({ text }) => /self-help|самопомощ/i.test(text));
 
-    // Nine per locale today (ten until #1727). A floor rather than an equality,
-    // so rewording one string is not a test change - but high enough that an
-    // empty or moved corpus cannot make the loop below vacuous.
-    expect(bare.length).toBeGreaterThanOrEqual(16);
+    // Seven per locale today (nine until #1727, eight until #1958 deleted the
+    // onboarding's "Would a self-help module be useful?" with its modules
+    // panel). A floor rather than an equality, so rewording one string is not a
+    // test change - but high enough that an empty or moved corpus cannot make
+    // the loop below vacuous.
+    expect(bare.length).toBeGreaterThanOrEqual(14);
 
     for (const rule of GUIDED_SELF_HELP) {
       for (const entry of bare) {

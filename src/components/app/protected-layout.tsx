@@ -13,17 +13,13 @@ import { AuthLandingScreen } from "@/src/components/app/auth-landing-screen";
 import { ConsentGate } from "@/src/components/app/consent-gate";
 import { AgeGate } from "@/src/components/app/age-gate";
 import { UnderFloorScreen } from "@/src/components/app/under-floor-screen";
-import {
-  AppOnboardingWizard,
-  type AppOnboardingResult,
-} from "@/src/components/app/app-onboarding-wizard";
+import { AppOnboardingWizard } from "@/src/components/app/app-onboarding-wizard";
 import { policyVersion } from "@/src/features/policies/policy-content";
 import { useUnderFloorBlock } from "@/src/features/auth/use-under-floor-block";
 import {
   useUpdateOnboardingPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
-import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
 import { useNotificationDeepLink } from "@/src/features/notifications/use-notification-deep-link";
 import { useNotificationSync } from "@/src/features/notifications/use-notification-sync";
 import { useRoutines } from "@/src/features/routines/queries";
@@ -43,8 +39,7 @@ export default function ProtectedLayout() {
     isLoading: prefsLoading,
     isError: prefsError,
   } = useUserPreferences(user?.id ?? null);
-  const completeOnboarding = useCompleteAppOnboarding(user?.id ?? null);
-  const completeIntroduction = useUpdateOnboardingPreferences(user?.id ?? null);
+  const completeOnboarding = useUpdateOnboardingPreferences(user?.id ?? null);
   const [consentDismissed, setConsentDismissed] = useState(false);
   const [underFloor, setUnderFloor] = useState(false);
   const [ageAttested, setAgeAttested] = useState(false);
@@ -226,14 +221,27 @@ export default function ProtectedLayout() {
     pathname === "/";
   const isIntroductionReplay = Boolean(preferences?.appOnboardingCompletedVia);
 
-  const finishAppOnboarding = async (result: AppOnboardingResult | null) => {
+  // Onboarding completion is a plain preference write (#1958, spec #1885 §5.1);
+  // the `apply_widget_recommendations` RPC that used to seed Home alongside it
+  // is no longer called from the app. ☠️ A first completion writes all THREE
+  // fields, never the flag alone: the flag alone is the GRANDFATHERED shape
+  // (`via`/`_at` null, like seed.sql's alice), so a new user would read as one -
+  // the introduction replay above would never fire for them, and the funnel
+  // (scripts/analytics-onboarding.sql) would count them as pre-tracking. A
+  // replay preserves the original path and time: Settings already re-armed the
+  // flag while keeping `via` as the replay marker, so only the flag goes back.
+  const finishAppOnboarding = async (mode: "finish" | "skip") => {
     if (!preferences) return;
     try {
       if (isIntroductionReplay) {
-        await completeIntroduction.mutateAsync({ appOnboardingCompleted: true });
+        await completeOnboarding.mutateAsync({ appOnboardingCompleted: true });
         return;
       }
-      await completeOnboarding.mutateAsync(result ?? { selectedConcerns: null, widgetIds: [] });
+      await completeOnboarding.mutateAsync({
+        appOnboardingCompleted: true,
+        appOnboardingCompletedVia: mode,
+        appOnboardingCompletedAt: new Date().toISOString(),
+      });
     } catch {
       // Error state is shown inside the wizard.
     }
@@ -266,20 +274,10 @@ export default function ProtectedLayout() {
       {needsAppOnboarding ? (
         <AppOnboardingWizard
           visible
-          // The app's only first-run gate: skipping here persists onboarding
-          // as done and the wizard never returns, so its Escape wears the
-          // word "Skip for now" instead of a bare X (M2, #1258).
-          skipPersists
-          introductionOnly={isIntroductionReplay}
-          initialConcerns={preferences?.selectedConcerns ?? []}
-          isPending={completeOnboarding.isPending || completeIntroduction.isPending}
-          errorMessage={
-            completeOnboarding.isError || completeIntroduction.isError
-              ? t("onboarding.appSaveError")
-              : undefined
-          }
-          onFinish={(result) => void finishAppOnboarding(result)}
-          onSkip={() => void finishAppOnboarding(null)}
+          isPending={completeOnboarding.isPending}
+          errorMessage={completeOnboarding.isError ? t("onboarding.appSaveError") : undefined}
+          onFinish={() => void finishAppOnboarding("finish")}
+          onSkip={() => void finishAppOnboarding("skip")}
         />
       ) : null}
       <View className="flex-1 flex-row bg-background">

@@ -73,43 +73,31 @@ test.describe("sign-up + onboarding + first record", () => {
       await expect(consentTitle).toBeHidden({ timeout: 10_000 });
     }
 
-    // Panel 1: welcome + disclaimer.
+    // The introduction: one panel since #1958 - welcome + disclaimer, and Finish is
+    // its only CTA. There is no concern, module, guidance or starter-routine panel
+    // to walk, and finishing seeds nothing.
     await expect(page.getByText("Welcome to Selftend")).toBeVisible();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Panel 2: pick a concern. By ROLE: Home now renders its whole catalogue behind the
-    // wizard (#1956), and the Sleep tool card's name is the same word, so a bare text
-    // locator is a strict-mode violation. The concern chip is a checkbox; the card is not.
-    await expect(page.getByText("What brings you here?")).toBeVisible();
-    await page.getByRole("checkbox", { name: "Sleep", exact: true }).click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Panel 3: leave both optional modules unselected for a tools-only setup.
-    // Guidance is skipped; with >= 2 eligible steps and zero routines the
-    // starter-routine offer (#46) is the panel before finish.
-    await expect(page.getByText("Would a self-help module be useful?")).toBeVisible();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Final panel: the pre-composed starter routine. Decline it - skipping must
-    // write nothing and simply finish onboarding with the tool suggestions.
-    await expect(page.getByText("One small routine to start?")).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: "Skip", exact: true }).click();
-    await expect(page.getByText("One small routine to start?", { exact: true })).toBeHidden({
+    await expect(page.getByRole("button", { name: "Continue", exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
+    await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden({
       timeout: 15_000,
     });
 
-    // Home rendered: the catalogue (#1956). The wizard still writes its picks to
-    // `widget_preferences`, which Home no longer reads, so until #1958 collapses the
-    // wizard a brand-new account lands with an EMPTY Favourites section and the complete
-    // Tools catalogue beneath it - which is what proves the screen came up.
-    //
-    // Scoped to the Tools section rather than the page: a favourited item renders its
-    // card twice on Home (Favourites and catalogue), so an unscoped `getByText("Check-in")`
-    // is a strict-mode violation the moment one is starred.
+    // Home rendered (#1956): a brand-new account lands with an EMPTY Favourites line over
+    // the complete catalogue - eight tools and three modules - which is what proves the
+    // screen came up. Counted within each section rather than looked up by text: a
+    // favourited item renders its card twice on Home (Favourites and catalogue), so an
+    // unscoped `getByText("Check-in")` is a strict-mode violation the moment one is
+    // starred, and an absence assertion on Favourites would pass vacuously.
+    await expect(page.getByText("Star a tool or a module to keep it here.")).toBeVisible({
+      timeout: 10_000,
+    });
     const tools = page.getByTestId("home-tools");
     await expect(tools.getByText("Check-in", { exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(tools.getByTestId("card-tool-sleep")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Star a tool or a module to keep it here.")).toBeVisible();
+    await expect(tools.locator('[data-testid^="card-tool-"]')).toHaveCount(8);
+    await expect(
+      page.getByTestId("home-modules").locator('[data-testid^="card-module-"]'),
+    ).toHaveCount(3);
 
     // The optional Home tour may be ineligible after the personalized setup. If
     // it appears, dismiss it so the reload assertion remains deterministic.
