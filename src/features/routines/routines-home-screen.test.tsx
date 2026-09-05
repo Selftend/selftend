@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react-native";
 
 import RoutinesHomeScreen from "./routines-home-screen";
-import { useWidgetPreferences } from "@/src/features/home/queries";
+import { STEPPABLE_TOOL_IDS, type RoutineToolRecords } from "@/src/features/routines/derive";
 import { useAddStep, useCreateRoutine, useRoutines } from "@/src/features/routines/queries";
 import type { RoutineWithSteps } from "@/src/features/routines/types";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
@@ -32,19 +32,38 @@ jest.mock("@/src/features/routines/use-routine-tool-records", () => ({
   useRoutineToolRecords: jest.fn(),
 }));
 
-jest.mock("@/src/features/home/queries", () => ({
-  useWidgetPreferences: jest.fn(),
-}));
-
 const mockUseRoutines = useRoutines as jest.MockedFunction<typeof useRoutines>;
 const mockUseCreateRoutine = useCreateRoutine as jest.MockedFunction<typeof useCreateRoutine>;
 const mockUseAddStep = useAddStep as jest.MockedFunction<typeof useAddStep>;
 const mockUseRoutineToolRecords = useRoutineToolRecords as jest.MockedFunction<
   typeof useRoutineToolRecords
 >;
-const mockUseWidgetPreferences = useWidgetPreferences as jest.MockedFunction<
-  typeof useWidgetPreferences
->;
+
+/** Every steppable slice fetched and empty; overrides add the records a scenario needs. */
+function readyRecords(overrides: Partial<RoutineToolRecords> = {}): RoutineToolRecords {
+  return {
+    moodLogs: [],
+    journalEntries: [],
+    gratitudeEntries: [],
+    sleepLogs: [],
+    thoughtRecords: [],
+    mindfulnessSessions: [],
+    meditationSessions: [],
+    habitLogs: [],
+    activityLogs: [],
+    exposureSessions: [],
+    defusionLogs: [],
+    expansionLogs: [],
+    urgeSurfLogs: [],
+    connectionLogs: [],
+    observingSelfSessions: [],
+    bullsEyeSnapshots: [],
+    choicePoints: [],
+    committedActions: [],
+    actionSteps: [],
+    ...overrides,
+  };
+}
 
 function makeRoutine(
   id: string,
@@ -95,9 +114,6 @@ describe("RoutinesHomeScreen", () => {
       isPending: false,
     } as unknown as ReturnType<typeof useAddStep>);
     mockUseRoutineToolRecords.mockReturnValue({});
-    mockUseWidgetPreferences.mockReturnValue({ data: [] } as unknown as ReturnType<
-      typeof useWidgetPreferences
-    >);
     createRoutine.mockResolvedValue({ id: "r-new" });
     addStep.mockResolvedValue({ id: "s-new" });
   });
@@ -224,12 +240,14 @@ describe("RoutinesHomeScreen", () => {
   });
 
   it("offers the starter routine at zero routines and writes it on Keep", async () => {
-    mockUseWidgetPreferences.mockReturnValue({
-      data: [
-        { id: "w-1", userId: "user-1", widgetId: "mood-checkin", position: 0, createdAt: "" },
-        { id: "w-2", userId: "user-1", widgetId: "journal-week", position: 1, createdAt: "" },
-      ],
-    } as unknown as ReturnType<typeof useWidgetPreferences>);
+    // Composed from RECORDS (#1954): two tools with a record, and no dashboard row
+    // anywhere - the shape every post-redesign install has.
+    mockUseRoutineToolRecords.mockReturnValue(
+      readyRecords({
+        journalEntries: [{ dayKey: "2026-09-02" }],
+        moodLogs: [{ dayKey: "2026-09-01" }],
+      }),
+    );
 
     renderWithProviders(<RoutinesHomeScreen />);
 
@@ -252,12 +270,12 @@ describe("RoutinesHomeScreen", () => {
   });
 
   it("dismisses the starter offer on Skip without writing anything", () => {
-    mockUseWidgetPreferences.mockReturnValue({
-      data: [
-        { id: "w-1", userId: "user-1", widgetId: "mood-checkin", position: 0, createdAt: "" },
-        { id: "w-2", userId: "user-1", widgetId: "journal-week", position: 1, createdAt: "" },
-      ],
-    } as unknown as ReturnType<typeof useWidgetPreferences>);
+    mockUseRoutineToolRecords.mockReturnValue(
+      readyRecords({
+        moodLogs: [{ dayKey: "2026-09-01" }],
+        journalEntries: [{ dayKey: "2026-09-02" }],
+      }),
+    );
 
     renderWithProviders(<RoutinesHomeScreen />);
     fireEvent.press(screen.getByText("Skip"));
@@ -267,14 +285,14 @@ describe("RoutinesHomeScreen", () => {
     expect(createRoutine).not.toHaveBeenCalled();
   });
 
-  it("shows the plain empty state when the kept widgets yield fewer than two steps", () => {
-    mockUseWidgetPreferences.mockReturnValue({
-      data: [
-        { id: "w-1", userId: "user-1", widgetId: "mood-checkin", position: 0, createdAt: "" },
+  it("shows the plain empty state when the records compose fewer than two steps", () => {
+    mockUseRoutineToolRecords.mockReturnValue(
+      readyRecords({
+        moodLogs: [{ dayKey: "2026-09-01" }],
         // Habits is excluded from starter composition, so this adds nothing.
-        { id: "w-2", userId: "user-1", widgetId: "habits-today", position: 1, createdAt: "" },
-      ],
-    } as unknown as ReturnType<typeof useWidgetPreferences>);
+        habitLogs: [{ loggedOn: "2026-09-01" }],
+      }),
+    );
 
     renderWithProviders(<RoutinesHomeScreen />);
 
@@ -282,17 +300,51 @@ describe("RoutinesHomeScreen", () => {
     expect(screen.getByText("No routines yet")).toBeTruthy();
   });
 
+  it("claims nothing while the records are still loading - neither offer nor empty card", () => {
+    // `{}` is the not-yet-fetched shape. An empty card here would tell a person with
+    // two hundred journal entries to build their own; the offer would be missing steps.
+    mockUseRoutineToolRecords.mockReturnValue({});
+
+    renderWithProviders(<RoutinesHomeScreen />);
+
+    expect(screen.queryByText("Start with a ready-made routine?")).toBeNull();
+    expect(screen.queryByText("No routines yet")).toBeNull();
+    // The screen itself is up: the header and the new-routine door render regardless.
+    expect(screen.getByText("New routine")).toBeTruthy();
+  });
+
+  it("fetches the full steppable list on the empty path, and only the referenced tools otherwise", () => {
+    mockUseRoutineToolRecords.mockReturnValue(readyRecords());
+    renderWithProviders(<RoutinesHomeScreen />);
+    expect(mockUseRoutineToolRecords).toHaveBeenLastCalledWith("user-1", STEPPABLE_TOOL_IDS);
+
+    mockUseRoutines.mockReturnValue({
+      data: [makeRoutine("r-1", "Morning reset", ["mood", "journal"])],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useRoutines>);
+    renderWithProviders(<RoutinesHomeScreen />);
+    expect(mockUseRoutineToolRecords).toHaveBeenLastCalledWith("user-1", ["mood", "journal"]);
+  });
+
+  it("does not fire the wide fetch while the routine list is still unknown", () => {
+    mockUseRoutines.mockReturnValue({ data: undefined, isLoading: true } as unknown as ReturnType<
+      typeof useRoutines
+    >);
+    renderWithProviders(<RoutinesHomeScreen />);
+    expect(mockUseRoutineToolRecords).toHaveBeenLastCalledWith("user-1", []);
+  });
+
   it("never shows the starter offer once routines exist", () => {
     mockUseRoutines.mockReturnValue({
       data: [makeRoutine("r-1", "Morning reset", ["mood"])],
       isLoading: false,
     } as unknown as ReturnType<typeof useRoutines>);
-    mockUseWidgetPreferences.mockReturnValue({
-      data: [
-        { id: "w-1", userId: "user-1", widgetId: "mood-checkin", position: 0, createdAt: "" },
-        { id: "w-2", userId: "user-1", widgetId: "journal-week", position: 1, createdAt: "" },
-      ],
-    } as unknown as ReturnType<typeof useWidgetPreferences>);
+    mockUseRoutineToolRecords.mockReturnValue(
+      readyRecords({
+        moodLogs: [{ dayKey: "2026-09-01" }],
+        journalEntries: [{ dayKey: "2026-09-02" }],
+      }),
+    );
 
     renderWithProviders(<RoutinesHomeScreen />);
 
