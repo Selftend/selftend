@@ -31,7 +31,13 @@ export type SteppableToolId =
   | "observingSelf"
   | "bullsEye"
   | "choicePoint"
-  | "committedAction";
+  | "committedAction"
+  | "muscleRelaxation"
+  | "wiseMind"
+  | "judgement"
+  | "emotionRecord"
+  | "oppositeAction"
+  | "script";
 
 export const STEPPABLE_TOOL_IDS: readonly SteppableToolId[] = [
   "mood",
@@ -54,6 +60,12 @@ export const STEPPABLE_TOOL_IDS: readonly SteppableToolId[] = [
   "bullsEye",
   "choicePoint",
   "committedAction",
+  "muscleRelaxation",
+  "wiseMind",
+  "judgement",
+  "emotionRecord",
+  "oppositeAction",
+  "script",
 ];
 
 export function isSteppableToolId(value: string): value is SteppableToolId {
@@ -121,6 +133,34 @@ export interface RoutineToolRecords {
    */
   committedActions?: readonly { createdAt: string; updatedAt: string }[];
   actionSteps?: readonly { createdAt: string; completedAt: string | null }[];
+  /**
+   * DBT is born in the captured frame (#1980): every one of these rows
+   * carries the civil day its own repository resolved, so all six compare
+   * and none is ever re-bucketed here. There is no `onDay` leg in this
+   * module - passing a timestamp would let a routine file an entry under a
+   * different day than the DBT screen that wrote it.
+   *
+   * Muscle relaxation is the only DBT session kind, but the slice still
+   * carries `sessionSlug` so a second one cannot silently tick this step.
+   */
+  dbtSessions?: readonly { sessionSlug: string; dayKey: string }[];
+  dbtWiseMindCheckins?: readonly { dayKey: string }[];
+  dbtJudgements?: readonly { dayKey: string }[];
+  dbtEmotionRecords?: readonly { dayKey: string }[];
+  /**
+   * ☠️ The DONE day, never the created one. A plan written on Monday and
+   * carried out on Thursday is Thursday's practice; `doneDayKey` is null
+   * while it is open, so an unfinished plan can never match a real day.
+   * Writing an opposite action down is not doing it.
+   */
+  dbtOppositeActionPlans?: readonly { doneDayKey: string | null }[];
+  /**
+   * ⚠️ The CREATED day, unlike the plan above. A script's own follow-through
+   * is a later, separate fact the module tracks; the routine step is about
+   * sitting down and writing what you want to say, which is what `dayKey`
+   * dates. The two DBT tables differ here because their steps differ.
+   */
+  dbtScripts?: readonly { dayKey: string }[];
 }
 
 export type RoutineStatus = "not_started" | "in_progress" | "complete";
@@ -245,6 +285,26 @@ export function stepDoneOnDate(
         onDay(records.actionSteps, (s) => s.createdAt, dayKey) ||
         onDay(records.actionSteps, (s) => s.completedAt, dayKey)
       );
+    // DBT (#1980). Every leg is `onCapturedDay`: the module captured an
+    // offset on every dated column from its first migration, so none of
+    // these re-buckets by the viewer's timezone.
+    case "muscleRelaxation":
+      return onCapturedDay(
+        (records.dbtSessions ?? []).filter((s) => s.sessionSlug === "muscle-relaxation"),
+        dayKey,
+      );
+    case "wiseMind":
+      return onCapturedDay(records.dbtWiseMindCheckins, dayKey);
+    case "judgement":
+      return onCapturedDay(records.dbtJudgements, dayKey);
+    case "emotionRecord":
+      return onCapturedDay(records.dbtEmotionRecords, dayKey);
+    case "oppositeAction":
+      // Done day only - see the slice comment. A null doneDayKey never
+      // matches, so an open plan leaves the step open.
+      return (records.dbtOppositeActionPlans ?? []).some((p) => p.doneDayKey === dayKey);
+    case "script":
+      return onCapturedDay(records.dbtScripts, dayKey);
   }
 }
 

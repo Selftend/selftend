@@ -19,7 +19,7 @@
 --     cannot be filled there.
 --   * A FLAT READING IS A FINDING, not a failure. If every arm retains alike,
 --     the concern axis is not the segment axis, and the next axes to look at
---     are module usage (cbt/meditation/gratitude/act), platform, and locale
+--     are module usage (cbt/meditation/gratitude/act/dbt), platform, and locale
 --     (EN/BG). Decided in advance so the standing interpretation cannot quietly
 --     become "not enough data yet", permanently.
 --
@@ -74,7 +74,15 @@ create temp view content_events as
   union all select user_id, created_at, 'act', 'connection' from public.act_connection_logs
   union all select user_id, created_at, 'act', 'observing_self' from public.act_observing_self_sessions
   union all select user_id, created_at, 'act', 'choice_point' from public.act_choice_points
-  union all select user_id, created_at, 'act', 'committed_action' from public.act_committed_actions;
+  union all select user_id, created_at, 'act', 'committed_action' from public.act_committed_actions
+  -- dbt module
+  union all select user_id, created_at, 'dbt', 'coping_plan' from public.dbt_coping_plans
+  union all select user_id, completed_at, 'dbt', 'muscle_relaxation' from public.dbt_sessions
+  union all select user_id, created_at, 'dbt', 'wise_mind' from public.dbt_wise_mind_checkins
+  union all select user_id, created_at, 'dbt', 'judgement' from public.dbt_judgements
+  union all select user_id, created_at, 'dbt', 'emotion_record' from public.dbt_emotion_records
+  union all select user_id, created_at, 'dbt', 'opposite_action' from public.dbt_opposite_action_plans
+  union all select user_id, created_at, 'dbt', 'script' from public.dbt_scripts;
 -- <<< shared:content_events
 
 -- k=5 cell suppression. ☠️ This is a FALSE-PRECISION control first and a privacy

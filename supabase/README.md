@@ -65,7 +65,7 @@ User-entered text columns are encrypted at rest. The schema uses a two-layer mod
 - **Same-named decrypting views** present plaintext to the client via `INSTEAD OF INSERT/UPDATE` triggers that encrypt on write and decrypt on read.
 - **`app.encrypt_text` / `app.decrypt_text`** are `SECURITY DEFINER` helpers (pinned `search_path`, `REVOKE ... FROM public, anon; GRANT ... TO authenticated`) that read the Vault secret `app_field_encryption_key` - the key never appears in client SQL.
 - **Supabase Vault** holds the encryption key outside the database. A leaked database dump yields only ciphertext.
-- **`profiles.email` is intentionally plaintext** (synced from `auth.users`). All other user-entered fields in `profiles` and across ~36 content tables are encrypted.
+- **`profiles.email` is intentionally plaintext** (synced from `auth.users`). All other user-entered fields in `profiles` and across ~43 content tables are encrypted.
 
 Client code (`src/features/*/repository.ts`) reads and writes through the named view; the encryption layer is transparent to the application.
 

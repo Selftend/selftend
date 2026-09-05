@@ -74,6 +74,7 @@
       "mindfulness": "Mindfulness",
       "cbt": "CBT",
       "act": "ACT",
+      "dbt": "DBT",
       "habits": "Habits"
     },
     "addStep": "Add {{tool}}",
@@ -123,7 +124,13 @@
     "observingSelf": "Observing Self",
     "bullsEye": "Values check-in",
     "choicePoint": "Choice point",
-    "committedAction": "Committed Action"
+    "committedAction": "Committed Action",
+    "muscleRelaxation": "Muscle relaxation",
+    "wiseMind": "Wise mind check-in",
+    "judgement": "Judgement record",
+    "emotionRecord": "Emotion record",
+    "oppositeAction": "Opposite action",
+    "script": "Script"
   },
   "reminder": {
     "sectionLabel": "Daily reminder",

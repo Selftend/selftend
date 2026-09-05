@@ -488,7 +488,7 @@ const PLAIN_NOUN_SPELLING: Rule[] = [
  * #1602 named a permanent boundary on the encryption claim, and it is the one
  * place on this map where the wrong word is a lie rather than a weak pitch.
  *
- * Selftend encrypts ~36 tables with pgcrypto and holds the Vault key OUTSIDE the
+ * Selftend encrypts ~43 tables with pgcrypto and holds the Vault key OUTSIDE the
  * database, so a leaked dump is ciphertext. That is a real, checkable claim and
  * the doc says it in those words. What it is NOT is end-to-end: the migration
  * itself calls the design "provider-recoverable". Saying otherwise would promise

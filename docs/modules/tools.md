@@ -72,18 +72,25 @@ Working meditation routes (all under `/tools/meditation`; there is no `/modules/
 
 `meditation-tmi.md` is the module spec; its §5 lists the same routes.
 
-DBT routes (decided, not built - `dbt-mckay-skills-workbook.md` §7 is the spec; today only `/modules/dbt` routes, as an overview screen):
+Working DBT routes (`dbt-mckay-skills-workbook.md` is the module spec; its §7 lists the same routes):
 
-- `/modules/dbt` - module home (converts the overview screen; the route file moves to `modules/dbt/index.tsx`)
+- `/modules/dbt` - module home: the coping-plan card, the four skill groups, the programme card, one reminder bell
 - `/modules/dbt/learn`, `/modules/dbt/learn/[group]` - the primer and the four skill-group learn pages
 - `/modules/dbt/coping-plan`, `/modules/dbt/coping-plan/edit` - the card (or the builder's intro), the builder
 - `/modules/dbt/pause` - Pause and choose, a four-step flow that records nothing
-- `/modules/dbt/sessions/muscle-relaxation` - the timed session; `sessions/safe-place`, `cue-word`, `inner-outer`, `focus-shifting` are reserved for the second slice
+- `/modules/dbt/sessions/muscle-relaxation` - the timed session; `sessions/safe-place`, `cue-word`, `inner-outer`, `focus-shifting` are reserved for a second slice and are not built
 - `/modules/dbt/wise-mind`, `/modules/dbt/wise-mind/new`, `/modules/dbt/wise-mind/[id]`
 - `/modules/dbt/judgements`, `/modules/dbt/judgements/new`, `/modules/dbt/judgements/[id]`
 - `/modules/dbt/emotions`, `/modules/dbt/emotions/new`, `/modules/dbt/emotions/[id]`
 - `/modules/dbt/opposite-action`, `/modules/dbt/opposite-action/new`, `/modules/dbt/opposite-action/[id]`
-- `/modules/dbt/scripts`, `/modules/dbt/scripts/new`, `/modules/dbt/scripts/[id]`; `/modules/dbt/chain` is reserved for the second slice
+- `/modules/dbt/scripts`, `/modules/dbt/scripts/new`, `/modules/dbt/scripts/[id]`; `/modules/dbt/chain` is reserved for a second slice and is not built
+
+What the module joins elsewhere, rather than owning:
+
+- **Routines** admit six DBT steps - `muscleRelaxation`, `wiseMind`, `judgement`, `emotionRecord`, `oppositeAction` and `script`. Each completes on the day its own record names, and `oppositeAction` counts the day a plan was **done**, never the day it was written.
+- **Looking back** joins six of the seven tables; the coping plan is out, because a plan has no day.
+- **Reminders** carry one DBT target: off by default, time-of-day only, and suppressed on a day the module already has a record.
+- Two hand-offs leave the module through in-memory stores rather than route parameters: an emotion record opens a CBT thought record, and a judgement opens ACT defusion.
 
 Compatibility redirects: `/tools/act` → `/modules/act`.
 

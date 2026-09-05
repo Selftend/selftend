@@ -7,7 +7,7 @@
 --   retention  : signup-anchored windows, week N = days 7*N .. 7*(N+1) after the
 --                user's own signup; retained = any content row in the window.
 --                Percentages use mature users only (window fully elapsed).
---   usage      : per module (cbt, meditation, gratitude, act), % of the account
+--   usage      : per module (cbt, meditation, gratitude, act, dbt), % of the account
 --                population with >=1 record in the module's tables; then the
 --                same per core tool (mood, journal, sleep, habits, mindfulness).
 --                Nothing is enableable: every tool is reachable from the tools
@@ -74,7 +74,15 @@ create temp view content_events as
   union all select user_id, created_at, 'act', 'connection' from public.act_connection_logs
   union all select user_id, created_at, 'act', 'observing_self' from public.act_observing_self_sessions
   union all select user_id, created_at, 'act', 'choice_point' from public.act_choice_points
-  union all select user_id, created_at, 'act', 'committed_action' from public.act_committed_actions;
+  union all select user_id, created_at, 'act', 'committed_action' from public.act_committed_actions
+  -- dbt module
+  union all select user_id, created_at, 'dbt', 'coping_plan' from public.dbt_coping_plans
+  union all select user_id, completed_at, 'dbt', 'muscle_relaxation' from public.dbt_sessions
+  union all select user_id, created_at, 'dbt', 'wise_mind' from public.dbt_wise_mind_checkins
+  union all select user_id, created_at, 'dbt', 'judgement' from public.dbt_judgements
+  union all select user_id, created_at, 'dbt', 'emotion_record' from public.dbt_emotion_records
+  union all select user_id, created_at, 'dbt', 'opposite_action' from public.dbt_opposite_action_plans
+  union all select user_id, created_at, 'dbt', 'script' from public.dbt_scripts;
 -- <<< shared:content_events
 
 create temp view first_content as
@@ -156,7 +164,7 @@ where signup_week >= date_trunc('week', now())::date - interval '11 weeks'
 group by 1, 2 order by 2 desc, 1;
 
 \echo
-\echo '=== 4) Module usage (cbt, meditation, gratitude, act; distinct users with >=1 record, pct of that account population) ==='
+\echo '=== 4) Module usage (cbt, meditation, gratitude, act, dbt; distinct users with >=1 record, pct of that account population) ==='
 -- A content row is the only adoption signal the schema carries. This table
 -- used to add "enabled" and "enabled-but-never-used" columns read from
 -- `user_preferences.enabled_modules`, an array that gates nothing (#1672; the
@@ -172,14 +180,14 @@ used as (
   select a.account, c.module, count(distinct c.user_id) as used_users
   from content_events c
   join accounts a on a.user_id = c.user_id
-  where c.module in ('cbt', 'meditation', 'gratitude', 'act')
+  where c.module in ('cbt', 'meditation', 'gratitude', 'act', 'dbt')
   group by 1, 2
 )
 select t.account,
        mods.module,
        coalesce(u.used_users, 0) as users,
        round(100.0 * coalesce(u.used_users, 0) / nullif(t.all_users, 0), 1) as users_pct
-from (values ('cbt'), ('meditation'), ('gratitude'), ('act')) as mods(module)
+from (values ('cbt'), ('meditation'), ('gratitude'), ('act'), ('dbt')) as mods(module)
 cross join totals t
 left join used u on u.module = mods.module and u.account = t.account
 order by t.account, mods.module;

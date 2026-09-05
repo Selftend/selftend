@@ -88,6 +88,12 @@ const REQUIRED_SLICE_MAP: Record<keyof RoutineToolRecords, true> = {
   choicePoints: true,
   committedActions: true,
   actionSteps: true,
+  dbtSessions: true,
+  dbtWiseMindCheckins: true,
+  dbtJudgements: true,
+  dbtEmotionRecords: true,
+  dbtOppositeActionPlans: true,
+  dbtScripts: true,
 };
 
 const REQUIRED_SLICES = Object.keys(REQUIRED_SLICE_MAP) as (keyof RoutineToolRecords)[];
@@ -165,6 +171,22 @@ function toolHasAnyRecord(toolId: SteppableToolId, records: RoutineToolRecords):
       return (records.choicePoints ?? []).length > 0;
     case "committedAction":
       return (records.committedActions ?? []).length > 0 || (records.actionSteps ?? []).length > 0;
+    // DBT (#1980). Each leg is its stepDoneOnDate twin minus the day filter.
+    case "muscleRelaxation":
+      return (records.dbtSessions ?? []).some((s) => s.sessionSlug === "muscle-relaxation");
+    case "wiseMind":
+      return (records.dbtWiseMindCheckins ?? []).length > 0;
+    case "judgement":
+      return (records.dbtJudgements ?? []).length > 0;
+    case "emotionRecord":
+      return (records.dbtEmotionRecords ?? []).length > 0;
+    case "oppositeAction":
+      // Done only, matching stepDoneOnDate and the activities/exposure
+      // precedent: a plan written but never carried out is planning, not a
+      // second action.
+      return (records.dbtOppositeActionPlans ?? []).some((p) => p.doneDayKey !== null);
+    case "script":
+      return (records.dbtScripts ?? []).length > 0;
   }
 }
 

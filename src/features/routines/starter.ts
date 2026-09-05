@@ -23,7 +23,7 @@ export const STARTER_STEP_MIN = 2;
 
 /**
  * Every tool a starter may compose from, in the ONE order a starter is ever
- * composed in: `DISTINCT_STEPPABLE_TOOLS` minus `habits` - eighteen tools.
+ * composed in: `DISTINCT_STEPPABLE_TOOLS` minus `habits` - twenty-four tools.
  *
  * - `habits` is a valid manual step but excluded from auto-composition (#31,
  *   2026-07-15). `dropAnchor` is absent from the distinct list already: a
@@ -32,10 +32,13 @@ export const STARTER_STEP_MIN = 2;
  *   widening is self-limiting because of this order: the everyday tools come
  *   first, only `cbt`/`activities`/`exposure` precede breathing, grounding and
  *   meditation, and every pure-ACT exercise sits from position 11 of the
- *   eighteen (the spec's "12+" counted the list with `habits` still in). With the cap
+ *   twenty-four (the spec's "12+" counted the list with `habits` still in). With the cap
  *   at three, an exercise composes only for someone with too few everyday-tool
  *   records to fill three slots - the CBT/ACT-centred person the old map never
  *   offered anything to.
+ * - The six DBT tools (#1980) land LAST, after every ACT exercise, so the
+ *   self-limiting property above only tightens: a DBT record composes a step
+ *   only for someone with fewer than three records across the other eighteen.
  *
  * ☠️ Fixed order, NEVER recency. Ordering by the newest record would make the
  * same surface show a different routine on different visits, the shape

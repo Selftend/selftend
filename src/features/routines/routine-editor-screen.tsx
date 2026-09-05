@@ -86,7 +86,7 @@ const DEFAULT_CUSTOM_DAYS = [1, 2, 3, 4, 5];
 // headers split it by family; every steppable tool appears in exactly one
 // group (asserted by the editor test) and chip behavior is unchanged.
 export const STEP_TOOL_GROUPS: readonly {
-  key: "checkins" | "mindfulness" | "cbt" | "act" | "habits";
+  key: "checkins" | "mindfulness" | "cbt" | "act" | "dbt" | "habits";
   tools: readonly SteppableToolId[];
 }[] = [
   { key: "checkins", tools: ["mood", "journal", "gratitude", "sleep"] },
@@ -104,6 +104,17 @@ export const STEP_TOOL_GROUPS: readonly {
       "bullsEye",
       "choicePoint",
       "committedAction",
+    ],
+  },
+  {
+    key: "dbt",
+    tools: [
+      "muscleRelaxation",
+      "wiseMind",
+      "judgement",
+      "emotionRecord",
+      "oppositeAction",
+      "script",
     ],
   },
   { key: "habits", tools: ["habits"] },
