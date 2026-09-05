@@ -82,14 +82,16 @@ jobs:
           if [ "$EVENT_NAME" = "release" ]; then
             printf '%s' "$RELEASE_BODY" > "$RUNNER_TEMP/release-body.md"
           else
-            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > "$RUNNER_TEMP/release.json"
-            if [ "$(jq -r '.prerelease' "$RUNNER_TEMP/release.json")" = "true" ]; then
+            # A tag with no release is a non-zero exit here: a red run before
+            # the render, and before any issue call.
+            release="repos/$GITHUB_REPOSITORY/releases/tags/$TAG"
+            if [ "$(gh api "$release" --jq '.prerelease')" = "true" ]; then
               echo "prerelease=true" >> "$GITHUB_OUTPUT"
               echo "- $TAG is a pre-release; no thread is drafted for one." >> "$GITHUB_STEP_SUMMARY"
               echo "::notice::$TAG is a pre-release; no thread is drafted for one."
               exit 0
             fi
-            jq -r '.body // ""' "$RUNNER_TEMP/release.json" > "$RUNNER_TEMP/release-body.md"
+            gh api "$release" --jq '.body // ""' > "$RUNNER_TEMP/release-body.md"
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
