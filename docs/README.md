@@ -42,7 +42,9 @@ Use this as the map for project docs. Each entry below links to the doc that own
 - [analytics.md](analytics.md) - analytics and observability posture
 - [licensing.md](licensing.md) - AGPL and third-party content rules
 - [self-hosting.md](self-hosting.md) - hosted, local-only, custom backend, self-hosting paths
-- [community.md](community.md) - community model, channels, recognition, donations
+- [community.md](community.md) - community model, channels, recognition, donations, the shared crisis posture
+- [reddit-community.md](reddit-community.md) - r/Selftend: the live rules, moderation and crisis process, what is deliberately absent
+- [discord-server.md](discord-server.md) - the Discord server: structure, administration, moderation and crisis process
 - [costs.md](costs.md) - launch and operating cost planning
 - [branding.md](branding.md) - icon source and theme tokens
 - [naming.md](naming.md) - app name, identifiers, production domain
