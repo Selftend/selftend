@@ -1010,6 +1010,8 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
       "Take care of your wellbeing.",
       "Грижи се за психичното си здраве.",
       "Selftend is a free, private CBT self-help app - cognitive behavioural therapy - with everyday tools for right now and a programme to work through when you want one.",
+      "Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one.",
+      "Private mental health tools.",
       "Work through something, don't just track how you feel.",
     ];
 

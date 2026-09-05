@@ -28,8 +28,8 @@
  * sentence or any supporting line no longer appears in the doc, dash-
  * normalised — the doc's § *What binds this document* names that test as this
  * surface's gate. The strings below are the doc's text as of 2026-09-05, the
- * repositioning of #1813/#1819; a rewording of the doc goes red here until
- * these follow. Never "fix" the frame sentence's "you": it is the sanctioned
+ * second repositioning (#2003, frame sentence #2007); a rewording of the doc
+ * goes red here until these follow. Never "fix" the frame sentence's "you": it is the sanctioned
  * shape, and #1877 rule 7 bans addressing the reader's INSTALLED APP ("you
  * can now…"), not the generic reader.
  *
@@ -97,7 +97,7 @@ import { CORPUS_PATH, draft, releaseFromCorpus } from "./picker.mjs";
  * sub's hyphens-only shape. Pinned to the doc by test.
  */
 export const FRAME_SENTENCE =
-  "Selftend is a free, private CBT self-help app - cognitive behavioural therapy - with everyday tools for right now and a programme to work through when you want one.";
+  "Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one.";
 
 /**
  * `docs/positioning.md` § *Approved supporting lines*, in the doc's order and

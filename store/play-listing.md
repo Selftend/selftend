@@ -4,7 +4,7 @@
 
 Governed by [docs/positioning.md](../docs/positioning.md). Play Console text is an owner-only hand edit, so this file is a **mirror**, not a source — editing it changes nothing in the store.
 
-☠️ **As of 2026-09-05 this mirror and the governing document disagree on the frame, on purpose and on the record.** `docs/positioning.md` names the category _a CBT self-help app_ ([#1814](https://github.com/Selftend/selftend/issues/1814)); the text below says **mental health tools**, applied on the owner's direction and pending the owner's decision on which way the rest of the surfaces move — [#1999](https://github.com/Selftend/selftend/issues/1999). Do not "fix" either side to match the other from this file; the decision lives on that issue.
+⚠️ **This mirror lags the governing document by two decided edits, and it must keep lagging until the Console visit that applies them.** The text below carries _mental health tools_ in the shape the owner put live on 2026-09-05, ahead of the decision ([#1999](https://github.com/Selftend/selftend/issues/1999)); `docs/positioning.md` has since caught up and decided two things this text does not yet have — the frame sentence takes a **colon** after the noun (_tools: everyday tools_, not _tools — everyday tools_), and the short description is the 28-character short form **_Private mental health tools._**, not the 34 below ([#2007](https://github.com/Selftend/selftend/issues/2007)). Both land in one Console visit on [#2010](https://github.com/Selftend/selftend/issues/2010), which moves this block and the date line in the same PR. Do not "fix" this file ahead of the store: it mirrors what is live, and a mirror that leads its listing is a lie about it.
 
 ## Why this file exists even though nothing verifies it
 

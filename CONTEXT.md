@@ -1,20 +1,20 @@
 # Selftend
 
-The shared glossary for Selftend, a free, private CBT self-help app. This file is a glossary only — the canonical meaning of domain terms, devoid of implementation detail. Add terms here as they are resolved; keep definitions tight.
+The shared glossary for Selftend, a set of free, private mental health tools. This file is a glossary only — the canonical meaning of domain terms, devoid of implementation detail. Add terms here as they are resolved; keep definitions tight.
 
 ## Language
 
 ### The product
 
-**CBT self-help app**:
-What Selftend is, in the words it says so in. _Cognitive behavioural therapy_ — spelled out on first use on a surface, then **CBT** — run by the person using it, with no practitioner involved. The method sits **inside** the noun deliberately: it is what makes the eight everyday tools the everyday end of a named approach rather than a flat inventory of utilities.
+**mental health tools**:
+What Selftend is, in the words it says so in — the category noun, a bare plural with no article and no qualifier, spelled the same way everywhere ([#2004](https://github.com/Selftend/selftend/issues/2004)). _A set of_ may stand in front of it in the frame sentence and nowhere else. The method — a **CBT programme**, _cognitive behavioural therapy_ spelled out on first use on a surface, then **CBT** — is **not** inside the noun: it is the second beat of the frame sentence, run by the person using it with no practitioner involved, and it is what makes the eight everyday tools the everyday end of a named approach rather than a flat inventory of utilities. The noun alone is that inventory, which is why no surface may carry it without the method somewhere on it. (The previous noun, _CBT self-help app_, carried the method inside itself — [#1814](https://github.com/Selftend/selftend/issues/1814); that move was surrendered on #2004.)
 
 The frame binds **copy only**, never what the product contains or what it offers first. The eight everyday tools, ACT and the DBT overview are all unaffected by it. (The six onboarding concerns this line once listed are gone: since [#1958](https://github.com/Selftend/selftend/issues/1958) the first-run introduction is one panel and asks no concern.)
 
-_Avoid_: wellness app, toolkit, mood tracker, journalling app, habit tracker, sleep app, meditation app — as **categories**; each names a real tool Selftend ships and a shelf it is not on. And above all the practitioner-implying compound retired in [#1616](https://github.com/Selftend/selftend/issues/1616). ☠️ That compound is now **one adjective** from this noun, permanently. The full and current list, with each refusal's reason, is [docs/positioning.md](docs/positioning.md) § _The refusals_ and § _Words never to use_ — read it there rather than from this line, which is a pointer and not a second copy. `test/positioning-copy.test.ts` fails `verify` on the compound in this file too, which is why the banned words are never spelled out here.
+_Avoid_: wellness app, toolkit, mood tracker, journalling app, habit tracker, sleep app, meditation app — as **categories**; each names a real tool Selftend ships and a shelf it is not on. Telehealth or therapy-matching, likewise — Apple files the noun beside prescribers, and Selftend has nobody else in the loop. And above all the practitioner-implying compound retired in [#1616](https://github.com/Selftend/selftend/issues/1616). ☠️ The noun no longer owns half of that compound, but _self-help_ stays live vocabulary elsewhere, so the ban and its one-word gap stay. The full and current list, with each refusal's reason, is [docs/positioning.md](docs/positioning.md) § _The refusals_ and § _Words never to use_ — read it there rather than from this line, which is a pointer and not a second copy. `test/positioning-copy.test.ts` fails `verify` on the compound in this file too, which is why the banned words are never spelled out here.
 
 **programme**:
-The CBT module's own noun, and only that — a staged progression, authored and five phases long, that a person graduates from. ☠️ It is **not** the product's category any more: [#1814](https://github.com/Selftend/selftend/issues/1814) kept the word for the component and moved the category to the entry above.
+The CBT module's own noun, and only that — a staged progression, authored and five phases long, that a person graduates from. ☠️ It is **not** the product's category any more: [#1814](https://github.com/Selftend/selftend/issues/1814) kept the word for the component and moved the category to the entry above, and [#2004](https://github.com/Selftend/selftend/issues/2004) kept it there when the category moved again.
 
 > Note: **programme** names this progression — never a user's routine, which keeps its own `_Avoid_: program` below. A routine is user-named and user-owned, and has no authored order to graduate from; a programme is authored and staged.
 
