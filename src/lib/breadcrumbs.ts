@@ -71,6 +71,8 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/dbt/pause": "breadcrumb.pause",
   "/modules/dbt/sessions/muscle-relaxation": "breadcrumb.muscleRelaxation",
   "/modules/dbt/emotions": "breadcrumb.emotions",
+  "/modules/dbt/wise-mind": "breadcrumb.wiseMind",
+  "/modules/dbt/judgements": "breadcrumb.judgements",
 
   "/tools": "sidebar.tools",
   "/tools/check-in": "sidebar.moodTracker",

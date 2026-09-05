@@ -721,5 +721,96 @@
       "whatHappened": "Add what happened to save this record",
       "primary": "Pick one first feeling"
     }
+  },
+  "wiseMind": {
+    "newTitle": "New check-in",
+    "listSubtitle": "One question, asked three ways.",
+    "empty": "No check-ins yet.",
+    "start": "Start",
+    "next": "Next",
+    "back": "Back",
+    "stop": "Stop",
+    "save": "Save check-in",
+    "saving": "Saving",
+    "saved": "Checked in",
+    "saveError": "That did not save",
+    "notFound": "That check-in is not here any more.",
+    "delete": "Delete this check-in",
+    "deleteTitle": "Delete this check-in?",
+    "deleteBody": "It goes for good. Nothing else changes.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Keep it",
+    "deleteError": "That did not delete",
+    "questionLabel": "What am I deciding?",
+    "emotionMindLabel": "Emotion mind says",
+    "reasonLabel": "Reason says",
+    "wiseMindLabel": "Wise mind says",
+    "triad": {
+      "emotion": "Emotion mind decides by how things feel.",
+      "reason": "Reason decides by the facts.",
+      "wise": "Wise mind holds both, and knows what to do."
+    },
+    "beats": {
+      "intro": {
+        "title": "Wise mind",
+        "body": "Wise mind is Marsha Linehan's name for the place where feeling and thinking meet. Everyone has one. Four short beats, and then one question."
+      },
+      "settle": {
+        "title": "Settle",
+        "body": "Put a hand on the middle of your body, just below the ribs, and let your attention rest there. Nothing to work out yet."
+      },
+      "breathe": {
+        "title": "Breathe",
+        "body": "A few slow breaths, out for longer than in. There is nothing to time."
+      },
+      "question": {
+        "title": "Bring the question",
+        "body": "One thing you are deciding. Short is better than complete."
+      },
+      "ask": {
+        "title": "Ask it three ways",
+        "body": "Answer whichever of the three you can hear. An empty one is not a failed check-in."
+      }
+    },
+    "errors": {
+      "question": "Write the question first"
+    }
+  },
+  "judgements": {
+    "newTitle": "New judgement",
+    "newDescription": "Catch it as it happens. Three fields, one tap.",
+    "listSubtitle": "Judgements you caught, and what was actually there.",
+    "empty": "Nothing caught yet.",
+    "save": "Save judgement",
+    "saving": "Saving",
+    "saved": "Caught it",
+    "saveError": "That did not save",
+    "notFound": "That judgement is not here any more.",
+    "delete": "Delete this judgement",
+    "deleteTitle": "Delete this judgement?",
+    "deleteBody": "It goes for good. Nothing else changes.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Keep it",
+    "deleteError": "That did not delete",
+    "unhook": "Unhook from it",
+    "judgementLabel": "The judgement",
+    "judgementHint": "What went through your mind, in its own words.",
+    "markLabel": "Which way it leans",
+    "markHint": "A glowing judgement is a trap too - it sets up the fall when things turn out ordinary.",
+    "restatementLabel": "What was actually there",
+    "restatementHint": "The same moment with the judgement taken out. Optional.",
+    "valence": {
+      "negative": "Negative",
+      "positive": "Positive"
+    },
+    "sections": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "Earlier this week",
+      "lastWeek": "Last week"
+    },
+    "errors": {
+      "judgement": "Write the judgement first"
+    }
   }
 }

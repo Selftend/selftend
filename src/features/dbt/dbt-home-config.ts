@@ -100,7 +100,10 @@ export const DBT_GROUPS: DbtGroup[] = [
   },
   {
     key: "mindfulness",
-    tools: [],
+    tools: [
+      { key: "wiseMind", route: "/modules/dbt/wise-mind", icon: "balance" },
+      { key: "judgements", route: "/modules/dbt/judgements", icon: "gavel" },
+    ],
     shared: [MEDITATION, JOURNAL],
   },
   {
