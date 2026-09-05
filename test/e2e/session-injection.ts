@@ -99,8 +99,10 @@ export const NORMALIZED_GATE_PREFS = {
   email_verified: true,
   // The once-ever starter-routine offer (#1677) counts as already shown.
   // With reminder consent declined above, the reminder prompt never wins a
-  // save here, so a pooled user with records in two distinct tools and zero
-  // routines (bob, by design - see supabase/seed.sql) would otherwise pop
-  // the offer after any tool save and block unrelated specs' buttons.
+  // save here, so a pooled user at zero routines (bob, by design - see
+  // supabase/seed.sql) whose specs save into a second steppable tool would
+  // otherwise pop the offer after that save and block unrelated specs'
+  // buttons. (Bob's own seed is one tool - five thought records - so it is
+  // the specs' saves, not the seed, that reach the second action.)
   starter_routine_offered: true,
 } as const;

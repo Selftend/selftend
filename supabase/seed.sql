@@ -280,12 +280,17 @@ values (
 -- `widgetId in WIDGET_META`, so a typo lands silently and renders nothing. The ids are
 -- checked against the live registry by test/seed-widget-layouts.test.ts.
 --
--- WHAT THIS LAYOUT IS FOR: the Routines-page empty-state starter card (spec #37,
--- surface #45), which renders only at zero routines AND at least two steppable stored
--- widget ids, and today renders on no account at all. `buildStarterSteps` maps these
--- four to [mood, breathing, journal] - three steps, exactly STARTER_STEP_CAP.
--- ☠️ Which is why bob keeps ZERO routines, permanently: give him one and the only
--- account that card can be reviewed on is gone. See supabase/README.md.
+-- WHAT THIS LAYOUT WAS FOR: the Routines-page empty-state starter card (spec #37,
+-- surface #45) used to compose from these rows - `buildStarterSteps` mapped the four
+-- to [mood, breathing, journal]. Since #1954 it composes from the steppable tools the
+-- person has RECORDS in and reads no widget row at all, so this layout composes
+-- nothing; bob's five thought records are one tool, so on a fresh reset he gets the
+-- quiet "No routines yet" card like every seeded account. One mood check-in logged as
+-- bob makes the card compose [mood, cbt] - the review recipe in supabase/README.md.
+-- ☠️ Which is still why bob keeps ZERO routines, permanently: he is the only mid-use
+-- fixture at zero routines, so give him one and the card has no account to be
+-- reviewed on. The rows themselves stay: they are what the pre-Favourites native
+-- builds still render, and what the #1953 favourites copy is derived from.
 --
 -- alice deliberately gets no rows here: with demo and bob both carrying a layout, she
 -- is the only account left on which Home's empty dashboard - and the wizard's starter
