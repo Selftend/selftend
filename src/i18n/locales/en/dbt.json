@@ -671,5 +671,55 @@
       "backAndHips": "Back and hips",
       "legsAndFeet": "Legs and feet"
     }
+  },
+  "alsoTry": "Also try",
+  "emotions": {
+    "newTitle": "New emotion record",
+    "newDescription": "One feeling, from what happened to what came after. Fill the parts in any order.",
+    "listSubtitle": "One feeling at a time, kept for you to read back.",
+    "empty": "Nothing recorded yet.",
+    "capLine": "If right now feels too heavy, this can wait",
+    "railNote_one": "{{count}} of {{total}} parts filled in",
+    "railNote_other": "{{count}} of {{total}} parts filled in",
+    "finishLater": "Finish later",
+    "save": "Save record",
+    "saving": "Saving",
+    "saved": "Recorded",
+    "saveError": "That did not save",
+    "notFound": "That record is not here any more.",
+    "wholePicture": "Look at the whole picture",
+    "delete": "Delete this record",
+    "deleteTitle": "Delete this record?",
+    "deleteBody": "It goes for good. Nothing else changes.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Keep it",
+    "deleteError": "That did not delete",
+    "primaryLabel": "First feeling",
+    "primaryHint": "What arrived first. Pick at least one.",
+    "secondaryLabel": "Feelings about the feeling",
+    "secondaryHint": "Shame about being angry, fear of being sad - the second layer, if there was one.",
+    "bodyLabel": "In the body",
+    "bodyHint": "Where you felt it, and what it felt like.",
+    "noneChosen": "Nothing chosen yet",
+    "parts": {
+      "whatHappened": "What happened",
+      "meaning": "Why I think it happened",
+      "feelings": "Feelings",
+      "urges": "Urges",
+      "didAndSaid": "What I did and said",
+      "afterwards": "Afterwards"
+    },
+    "hints": {
+      "whatHappened": "Just the event - what you would have seen on a video.",
+      "meaning": "The meaning you gave it, not the facts.",
+      "feelings": "What you felt, and where it sat in your body.",
+      "urges": "What you wanted to do. An urge you did not act on counts, and is worth writing down.",
+      "didAndSaid": "What you actually did, and what you said.",
+      "afterwards": "What came of it - what it gave you in the moment, and what it cost after."
+    },
+    "errors": {
+      "whatHappened": "Add what happened to save this record",
+      "primary": "Pick one first feeling"
+    }
   }
 }

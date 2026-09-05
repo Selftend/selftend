@@ -105,7 +105,7 @@ export const DBT_GROUPS: DbtGroup[] = [
   },
   {
     key: "emotionRegulation",
-    tools: [],
+    tools: [{ key: "emotions", route: "/modules/dbt/emotions", icon: "mood" }],
     shared: [
       {
         key: "checkIn",
