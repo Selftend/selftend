@@ -54,7 +54,12 @@ is Reddit's own feature on non-crisis rules and was left as found.
 Read signed in on 2026-09-05. Three widgets: a **Rules** widget that mirrors the rules
 above, a **Get Selftend** button widget (web, Android, iOS), and the **Moderators**
 block. There is no separate crisis widget; the crisis text a visitor sees in the sidebar
-is rule 4. The community description line is the one #1946 tracks.
+is rule 4. The community description line was rewritten on 2026-09-05
+([#1946](https://github.com/Selftend/selftend/issues/1946)) to the _mental health tools_
+frame the owner set on the Play listing the same day
+([#1999](https://github.com/Selftend/selftend/issues/1999)), in the Play first paragraph's
+shape with hyphens. ⚠️ That frame is ahead of `docs/positioning.md`, which still says
+_a CBT self-help app_; #1999 holds the decision on which way the document moves.
 
 ## Copy on this surface
 
@@ -62,9 +67,10 @@ The subreddit's sidebar, rules, welcome post and every reply are copy on an unga
 surface. [positioning.md § What binds this document](positioning.md#what-binds-this-document)
 lists the Reddit banner and sidebar in the row whose only gate is human habit. The
 rules that bite are § _Words never to use_ there and the standing rule against
-advertising the absence of streaks. Two defects in the live intro post and sidebar
-are tracked at [#1946](https://github.com/Selftend/selftend/issues/1946). Reddit copy
-uses hyphens, never em dashes.
+advertising the absence of streaks. The intro post and the sidebar description were
+both rewritten on 2026-09-05 ([#1946](https://github.com/Selftend/selftend/issues/1946)):
+the banned compound, the American spelling and the wellbeing frame are gone from both,
+and the post no longer lists the tools flat. Reddit copy uses hyphens, never em dashes.
 
 ## Moderation and crisis process
 
