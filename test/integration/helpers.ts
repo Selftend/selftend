@@ -259,34 +259,17 @@ export async function deleteAllWidgetPreferencesForUser(userId: string) {
 
 /**
  * The favourites table Home reads since #1956 (`widget_preferences` serves only older
- * native builds). Same caveat as above for the SEED users: bob carries four seeded rows.
+ * native builds, and no seed writes it any more - #1959).
+ *
+ * ☠️ Not for the SEED users: bob carries four seeded rows (#1953) and alice's zero rows
+ * are themselves a fixture, and neither is restored by anything short of
+ * `npm run db:reset` — `npm run db:seed:demo` writes the demo user only. Right for
+ * throwaway and e2e worker users, which own no seeded favourites.
  */
 export async function deleteAllFavoritesForUser(userId: string) {
   const admin = createServiceClient();
   const { error } = await admin.from("favorites").delete().eq("user_id", userId);
   if (error) throw new Error(`deleteAllFavoritesForUser cleanup failed: ${error.message}`);
-}
-
-/**
- * Delete only the `test-widget-*` rows a test inserted, leaving any seeded layout
- * alone.
- *
- * ☠️ Prefer this over {@link deleteAllWidgetPreferencesForUser} for the SEED users.
- * bob carries four seeded `widget_preferences` rows (#1352) and alice's zero rows are
- * themselves a fixture, and neither is restored by anything short of
- * `npm run db:reset` — `npm run db:seed:demo` writes the demo user only. A delete-all
- * cleanup therefore strips bob's Home layout for the rest of the day and leaves the
- * demo seeder failing its own read-back. The delete-all form is still right for
- * throwaway and e2e worker users, which own no seeded layout.
- */
-export async function deleteTestWidgetPreferencesForUser(userId: string) {
-  const admin = createServiceClient();
-  const { error } = await admin
-    .from("widget_preferences")
-    .delete()
-    .eq("user_id", userId)
-    .like("widget_id", "test-widget-%");
-  if (error) throw new Error(`deleteTestWidgetPreferencesForUser cleanup failed: ${error.message}`);
 }
 
 export async function deleteAllBreathingExercisesForUser(userId: string) {

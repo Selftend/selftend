@@ -305,74 +305,19 @@ const counts = {};
   counts.user_preferences = 1;
 }
 
-// ------------------------------------------------------------------ Home layout
-// The fourteen widget ids demo's dashboard carries (#1352). Two halves, and both
-// are DERIVABLE rather than hand-maintained — that is the point of the split:
+// ------------------------------------------------------------------ Favourites
+// Ten of the eleven catalogue items (#1953): every tool hub plus the CBT and ACT
+// modules, which is what 20260908000000_favorites.sql's one-shot copy produced from
+// the fourteen widget ids demo's dashboard used to carry (#1352) - the eight shared
+// tools 1:1, the CBT and ACT ids collapsed to one module row each. DBT is the one
+// left unstarred, so the star's off state is reviewable on a card next to ten on
+// ones. Written as favourites directly because seeds run AFTER migrations, so the
+// copy had already run against an empty table.
 //
-// - Positions 0-8 are mechanically what `buildWidgetRecommendations` emits for the
-//   answers seeded just above: `['anxious-thoughts', 'low-mood', 'sleep']` IN THAT
-//   PICKED ORDER (`resolveConcernWidgetIds` iterates SELECTION order, not
-//   `CONCERN_KEYS` order) plus modules `['cbt', 'act']`, with `mood-checkin`
-//   hardcoded first by the wizard.
-// - Positions 9-13 are the `/arrange` tail, appended in `WIDGET_META` declaration
-//   order. It reads as "things she added later", which is what a real history looks
-//   like. `cbt-open-record`, `act-drop-anchor` and `grounding-log` are ids the
-//   registry treats as default-or-shared that NO onboarding run can ever produce, so
-//   without demo they are reviewable nowhere; `self-care` is the one CBT tool row
-//   that is not a record-keeping row, so the tool tier shows more than one row shape.
-//
-// ☠️ `routines-today` is `status: "available"`, and specs #37/#50 keep it out of every
-// auto-seeding surface. Carrying it here does not contradict that — it exercises it.
-// The available-not-default decision governs what the PRODUCT offers unasked; it says
-// nothing about what a FIXTURE'S HISTORY contains, and `available` means "reachable
-// only by deliberate choice", which is precisely the user demo stands in for. Seeding
-// it into onboarding's auto-seed path would be the contradiction. Without it #1271's
-// routines have no Home surface at all.
-//
-// ☠️ The list stops at fourteen for a mechanical reason, not a taste one: `/arrange`'s
-// add row is every registry id demo does NOT own, so a demo owning all 25 empties the
-// surface it exists to be reviewed on. Eleven chips left, asserted below.
-const DEMO_WIDGET_IDS = [
-  "cbt-programme",
-  "act-programme",
-  "mood-checkin",
-  "breathing-suggested",
-  "journal-week",
-  "gratitude-latest",
-  "habits-today",
-  "sleep-latest",
-  "meditation-pick",
-  "self-care",
-  "cbt-open-record",
-  "act-drop-anchor",
-  "grounding-log",
-  "routines-today",
-];
-
-{
-  // ☠️ `apply_widget_recommendations` is unusable from here: it is `security invoker`
-  // and reads `auth.uid()`, which is null under the service-role client. Direct
-  // inserts, and 0-BASED positions — the RPC assigns `min(ordinality)::integer - 1`,
-  // so anything else fails to reproduce a real wizard run.
-  await wipe("widget_preferences");
-  counts.widget_preferences = await insert(
-    "widget_preferences",
-    DEMO_WIDGET_IDS.map((widgetId, position) => ({
-      user_id: DEMO_USER_ID,
-      widget_id: widgetId,
-      position,
-    })),
-  );
-}
-
-// Favourites (#1953): exactly what 20260908000000_favorites.sql's one-shot copy
-// produces from the fourteen ids above - the eight shared tools 1:1, and the CBT
-// and ACT ids (`cbt-programme`, `self-care`, `cbt-open-record`; `act-programme`,
-// `act-drop-anchor`) collapsed to one module row each. Written here because seeds
-// run AFTER migrations, so the copy has already run against an empty table by the
-// time the rows above exist. Literals, not derived from DEMO_WIDGET_IDS: deriving
-// would restate WIDGET_META's toolKey mapping a third time, and the pairing is
-// already checked against the registry by test/seed-widget-layouts.test.ts.
+// No `widget_preferences` rows any more (#1959): Home reads favourites, the old table
+// serves only the native builds that predate them, and a seed writing both would be
+// two sources of truth for one account. The keys are checked against the favourites
+// catalogue by test/seed-favorites.test.ts.
 const DEMO_FAVORITES = [
   ["module", "cbt"],
   ["module", "act"],
@@ -5271,80 +5216,29 @@ const SEEDED_ROUTINES = [
   }
 }
 
-// ------------------------ the Home layouts, read back out of the DB (#1352)
+// ------------------------ the seeded favourites, read back out of the DB (#1352)
 // Three accounts, one guard, because the three facts are one decision: demo's
-// dashboard is full, bob's holds exactly what onboarding would have given him, and
-// alice's is empty ON PURPOSE. This script only ever WRITES the demo user, but it is
+// Favourites are full, bob's hold exactly what onboarding would have given him, and
+// alice's are empty ON PURPOSE. This script only ever WRITES the demo user, but it is
 // the last thing `npm run db:reset` runs, so it is the only place that can fail
 // loudly about all three on a freshly reset stack — `supabase/seed.sql` is a plain
 // data file with no way to assert anything.
 //
-// Checked as IDS IN POSITION ORDER, never as a count. The failure this exists to
-// catch is a silently dropped or mistyped id: `widget_preferences.widget_id` is bare
-// TEXT with no FK and no check, and the dashboard filters on `widgetId in
-// WIDGET_META`, so a typo inserts fine, renders nothing, and reads as a missing Home
-// row that gets blamed on the screen being reviewed.
+// Checked as a SORTED set of `kind:key`, never as a count. The failure this exists to
+// catch is a silently dropped or mistyped key: `favorites.key` is bare TEXT with no
+// FK and no check, so a typo inserts fine, Home ignores it, and it reads as a missing
+// card that gets blamed on the screen being reviewed. (Until #1959 this block read
+// `widget_preferences` layouts back the same way; no seed writes that table now.)
 {
   // Must match supabase/seed.sql. Read-only here; nothing below writes them.
   const ALICE_USER_ID = "00000000-0000-0000-0000-000000000001";
   const BOB_USER_ID = "00000000-0000-0000-0000-000000000002";
-  // Restated from #1352, not read off seed.sql, so the two have something to
-  // disagree about.
-  const BOB_WIDGET_IDS = ["cbt-programme", "mood-checkin", "breathing-suggested", "journal-week"];
-
-  const readLayout = async (userId, label) => {
-    const { data, error } = await admin
-      .from("widget_preferences")
-      .select("widget_id,position")
-      .eq("user_id", userId)
-      .order("position", { ascending: true });
-    if (error) throw new Error(`${label} widget_preferences read-back: ${error.message}`);
-    return data;
-  };
-
-  const expectLayout = (rows, expected, label) => {
-    const ids = rows.map((row) => row.widget_id);
-    if (JSON.stringify(ids) !== JSON.stringify(expected)) {
-      throw new Error(
-        `${label}'s Home layout reads [${ids.join(", ")}], not [${expected.join(", ")}]. ` +
-          "An id that is not in WIDGET_META inserts fine and renders nothing, so a typo " +
-          "here surfaces as a Home row the reviewer thinks the screen dropped.",
-      );
-    }
-    // 0-based and contiguous, the way `apply_widget_recommendations` assigns them.
-    const positions = rows.map((row) => row.position);
-    const wanted = expected.map((_, index) => index);
-    if (JSON.stringify(positions) !== JSON.stringify(wanted)) {
-      throw new Error(
-        `${label}'s widget positions are [${positions.join(", ")}], not a contiguous ` +
-          `0-based [${wanted.join(", ")}]. That is not a layout a real wizard run produces.`,
-      );
-    }
-  };
-
-  expectLayout(await readLayout(DEMO_USER_ID, "demo"), DEMO_WIDGET_IDS, "demo");
-  // ⚠️ bob's rows come from seed.sql and this script never writes them, so this leg
+  // ⚠️ bob's rows come from seed.sql and this script never writes them, so his leg
   // can only fail on a stack whose seed.sql did not run or was undone. Anything that
-  // clears a seed user's `widget_preferences` wholesale strips a layout nothing short
-  // of `npm run db:reset` restores — which is why the integration suite's cleanup is
-  // scoped to its own `test-widget-*` ids rather than deleting by user.
-  expectLayout(await readLayout(BOB_USER_ID, "bob"), BOB_WIDGET_IDS, "bob");
-
-  const aliceLayout = await readLayout(ALICE_USER_ID, "alice");
-  if (aliceLayout.length > 0) {
-    throw new Error(
-      `alice holds ${aliceLayout.length} widget preference(s), and she is the fixture whose ` +
-        "Home must read as an EMPTY DASHBOARD. Once demo and bob carry layouts she is the " +
-        "only account left on which the empty-dashboard re-offer, and the onboarding " +
-        "wizard's starter panel behind it, are reachable at all.",
-    );
-  }
-
-  // The same three facts, for favourites (#1953): demo's and bob's are exactly the
-  // rows the migration's copy would have produced from their widget rows, and
-  // alice's are zero. Compared as a SORTED set of `kind:key`, not in position
-  // order - favourites have no position, and the migration writes them in no
-  // particular order either.
+  // clears a seed user's `favorites` wholesale strips rows nothing short of
+  // `npm run db:reset` restores — which is why the integration suite's cleanup of
+  // that table is reserved for throwaway users. Restated from #1953, not read off
+  // seed.sql, so the two have something to disagree about.
   const BOB_FAVORITES = [
     ["module", "cbt"],
     ["tool", "mood"],
@@ -5369,18 +5263,18 @@ const SEEDED_ROUTINES = [
   };
   await expectFavorites(DEMO_USER_ID, DEMO_FAVORITES, "demo");
   await expectFavorites(BOB_USER_ID, BOB_FAVORITES, "bob");
+  // alice is the account whose Home must show the EMPTY Favourites line: once demo
+  // and bob carry favourites she is the only account left on which that state, and
+  // the star's first press, are reviewable at all.
   await expectFavorites(ALICE_USER_ID, [], "alice");
 
-  // The other invariant this layout decided — demo's remaining `/arrange` chip run of
-  // 11 — is asserted in `test/seed-widget-layouts.test.ts`, not here, and deliberately
-  // so. It is a fact about SOURCE (`WIDGET_META`), not about rows, and that test can
+  // Whether every seeded key is a real catalogue item is asserted in
+  // `test/seed-favorites.test.ts`, not here, and deliberately so. It is a fact about
+  // SOURCE (`CATALOGUE` in src/features/favorites/items.ts), and that test can
   // `import` the real thing where this script, being plain `.mjs`, could only regex
   // TypeScript. A guard that reads another file's type annotation and indentation
-  // would break `npm run db:reset` on a reformat that changed nothing. (Bob's four ids
-  // composing a three-step starter card was the second such invariant until #1954
-  // made the starter compose from records instead of widget rows; that assertion
-  // retired with its subject.) This block owns what only a database can answer; that
-  // test owns the rest.
+  // would break `npm run db:reset` on a reformat that changed nothing. This block owns
+  // what only a database can answer; that test owns the rest.
 }
 
 // ------------------- reminder consent, read back out of the DB (#1271/#1525)

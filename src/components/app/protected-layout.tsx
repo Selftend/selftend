@@ -348,7 +348,6 @@ export default function ProtectedLayout() {
                 and holds per-visit state, so it is the query-keyed exception above, not an
                 oversight. */}
             <Stack.Screen name="index" dangerouslySingular />
-            <Stack.Screen name="arrange" dangerouslySingular />
             <Stack.Screen name="settings" dangerouslySingular />
             <Stack.Screen name="modules/index" dangerouslySingular />
             <Stack.Screen name="modules/cbt/index" dangerouslySingular />

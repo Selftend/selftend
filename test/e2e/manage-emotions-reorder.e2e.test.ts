@@ -13,8 +13,9 @@
  * as well as the render - a row that moves on screen and snaps back on reload is a lie,
  * not a reorder.
  *
- * ⚠️ This surface is a `Modal`, not a route, which is what makes it worth its own spec
- * even though `arrange-screen` proves the same helper elsewhere: the handle has to be
+ * ⚠️ This surface is a `Modal`, not a route, which is what made it worth its own spec
+ * even while the old arrange screen proved the same helper elsewhere (it went in #1959,
+ * so this is now the helper's only e2e coverage): the handle has to be
  * reachable by Tab INSIDE react-native-web's modal, and nesting inside `Sortable.Handle`
  * inside a second `GestureHandlerRootView` must not take it out of the tab order.
  */

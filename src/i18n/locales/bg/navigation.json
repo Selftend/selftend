@@ -74,13 +74,6 @@
     "greetingEvening": "Добър вечер",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "emptyTitle": "Добави инструменти, с които искаш да се проверяваш всеки ден",
-    "emptyDescription": "Подреди таблото самостоятелно или отговори на няколко въпроса за подходящи предложения.",
-    "unsupportedTitle": "Част от таблото ти изисква по-нова версия",
-    "unsupportedDescription": "Добавил си неща, които тази версия на приложението още не може да покаже. Обнови, когато можеш, или добави нещо друго междувременно.",
-    "addManually": "Добави ръчно",
-    "getSuggestions": "Получаване на предложения",
-    "logMood": "Запиши настроението си",
     "plan": {
       "open": "Отвори"
     },
@@ -111,10 +104,6 @@
       "habitsSub": "Изгради постоянни ежедневни навици"
     },
     "dashboard": {
-      "removeWidget": "Премахни {{title}}",
-      "undo": "Отмени",
-      "moveEarlier": "Премести {{title}} по-напред",
-      "moveLater": "Премести {{title}} по-назад",
       "doneToday": "Направено днес",
       "startBreathing": "Започни дишане",
       "write": "Напиши",
@@ -143,31 +132,6 @@
     }
   },
   "home": {
-    "doneLabel": "Готово",
-    "arrangeLabel": "Подреди",
-    "addToolLabel": "Добави инструмент",
-    "arrange": {
-      "hint": "Плъзни, за да пренаредиш, или премахни това, с което не се проверяваш.",
-      "handle": "Пренареждане на {{title}}",
-      "handleHint": "Премества този инструмент нагоре или надолу в списъка.",
-      "addHeading": "Добави към началния екран",
-      "addChip": "Добави {{title}}",
-      "addChipTagged": "Добави {{title}}, {{module}}",
-      "addCategory": {
-        "tools": "Инструменти",
-        "cbt": "КПТ",
-        "act": "ACT"
-      },
-      "moduleTag": {
-        "cbtA11y": "CBT - Когнитивно-поведенческа терапия",
-        "actA11y": "ACT - Терапия на приемане и ангажираност"
-      },
-      "allAdded": "Всичко вече е на началния екран."
-    },
-    "addToHome": {
-      "button": "Добави в начало",
-      "title": "Добави в начало"
-    },
     "categories": {
       "mood": "Запис на настроението",
       "journal": "Дневник",
@@ -189,22 +153,6 @@
       "moreGoals_one": "+още {{count}} цел",
       "moreGoals_other": "+още {{count}} цели"
     },
-    "tiers": {
-      "tools": "Твоите инструменти",
-      "programmes": "Насочени програми"
-    },
-    "programme": {
-      "phase": "Фаза {{current}} от {{total}}",
-      "complete": "Завършена"
-    },
-    "rightNow": {
-      "heading": "Точно сега",
-      "moodTitle": "Как си?",
-      "sleepTitle": "Сън",
-      "sleepNothing": "Няма записано от вчера",
-      "habitsTitle": "Навиците за днес",
-      "sleepNothingWithAverage": "Няма записано от вчера — средно {{value}} тази седмица"
-    },
     "rows": {
       "empty": "Още нищо",
       "nothingScheduled": "Нищо насрочено за днес",
@@ -223,13 +171,7 @@
       "minutes_one": "{{count}} минута",
       "minutes_other": "{{count}} минути",
       "sits_one": "{{count}} седене",
-      "sits_other": "{{count}} седения",
-      "records_one": "{{count}} запис",
-      "records_other": "{{count}} записа",
-      "activeGoals_one": "{{count}} активна цел",
-      "activeGoals_other": "{{count}} активни цели",
-      "active_one": "{{count}} активно",
-      "active_other": "{{count}} активни"
+      "sits_other": "{{count}} седения"
     },
     "widgets": {
       "moodCheckin": {
@@ -413,10 +355,6 @@
   },
   "homeTour": {
     "skipAll": "Пропусни всички",
-    "edit": {
-      "description": "Подреди началния екран - добавяй, махай и размествай инструментите си.",
-      "dismiss": "Разбрах"
-    },
     "navigation": {
       "description": "Тук ще намериш всички модули и инструменти.",
       "dismiss": "Разбрах"
