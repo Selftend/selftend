@@ -104,6 +104,13 @@ const MUST_REMOUNT: Record<string, string> = {
   // then scrubs the auth material from history. A reused instance would never process a
   // second, different code — and it reads `window.location.href`, not `useLocalSearchParams`,
   // so the query-keyed derivation above is blind to it.
+  // The builder holds a whole coping plan the person has chosen and not yet
+  // saved; a reused instance hands it back half-edited, over the plan they
+  // did save. Seeded once from the query at mount, deliberately.
+  "modules/dbt/coping-plan/edit": "unsaved plan",
+  // Four steps that record nothing: re-entering is starting again, and
+  // reuse would drop the person back on step three of a run they left.
+  "modules/dbt/pause": "in-progress flow",
   "auth-callback": "mount performs the auth callback",
 };
 

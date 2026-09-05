@@ -446,5 +446,176 @@
         ]
       }
     }
+  },
+  "copingPlan": {
+    "title": "Coping plan",
+    "introTitle": "Your coping plan",
+    "introBody": "A list of what helps in a hard moment, written once, on a calm day. Pick from the menus, add lines of your own, and put three to six of them in the order you would try them.",
+    "introAside": "Nothing here is tracked. Opening the plan records nothing.",
+    "build": "Build my plan",
+    "edit": "Edit",
+    "editTitle": "Your coping plan",
+    "editHelp": "Everything you choose lands on your card. You can change it whenever you like.",
+    "save": "Save plan",
+    "saving": "Saving",
+    "saved": "Your plan is ready",
+    "saveError": "That did not save",
+    "loadErrorTitle": "That did not load",
+    "loadErrorBody": "The plan is stored with your account, so this needs a connection the first time.",
+    "retry": "Try again",
+    "deletePlan": "Delete this plan",
+    "deleteTitle": "Delete this plan?",
+    "deleteBody": "The list and the lines you wrote go with it. Nothing else changes.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Keep it",
+    "full": "That is as many lines as the plan holds.",
+    "sections": {
+      "distract": {
+        "name": "Distract",
+        "help": "Buy some time - not forever, just long enough to think again."
+      },
+      "soothe": {
+        "name": "Soothe",
+        "help": "Refuel through your senses, so there is something left to meet the problem with."
+      },
+      "remind": {
+        "name": "Remind myself",
+        "help": "Short lines to read when the loud ones are winning."
+      }
+    },
+    "own": {
+      "add": "Add my own",
+      "placeholder": "In my own words",
+      "save": "Add",
+      "cancel": "Cancel",
+      "remove": "Remove {{item}}",
+      "empty": "Nothing chosen here yet"
+    },
+    "fallback": {
+      "title": "If that doesn't work, next…",
+      "help": "Three to six, in the order you would try them. Anything on your plan can go on the list.",
+      "empty": "Nothing on the list yet",
+      "error": "Choose three to six for the list",
+      "homeOnly": "at home only",
+      "homeOnlyToggle": "Only at home",
+      "add": "Add to the list",
+      "remove": "Take {{item}} off the list",
+      "moveUp": "Move {{item}} up",
+      "moveDown": "Move {{item}} down",
+      "reorder": "Reorder {{item}}"
+    },
+    "leadIns": ["First…", "If that doesn't help…", "Then…", "And then…", "After that…", "Last…"],
+    "cardEmpty": "Nothing on the plan yet.",
+    "opens": "Opens {{tool}}"
+  },
+  "pause": {
+    "title": "Pause and choose",
+    "intro": "Four short steps between the urge and what you do next. Nothing here is recorded.",
+    "start": "Start",
+    "next": "Next",
+    "back": "Back",
+    "stop": "Stop",
+    "stepOf": "Step {{current}} of {{total}}",
+    "steps": {
+      "danger": {
+        "title": "First",
+        "body": "If anyone is in danger right now, that comes first - the crisis guidance is below."
+      },
+      "breathe": {
+        "title": "Stop and breathe",
+        "body": "Three slow breaths. Out for longer than in. There is nothing to time and nothing to get right."
+      },
+      "look": {
+        "title": "Look",
+        "body": "Two questions, read rather than answered. Nothing to type.",
+        "promptOne": "What is actually happening?",
+        "promptTwo": "What am I about to do?"
+      },
+      "pick": {
+        "title": "Pick one thing",
+        "body": "One thing, and then decide again.",
+        "withPlan": "The first few from your list.",
+        "withoutPlan": "You have no plan yet. Either of these works in the meantime.",
+        "openPlan": "Open my plan",
+        "buildPlan": "Build a plan"
+      }
+    },
+    "defaults": {
+      "breathing": "A paced breathing session",
+      "stepOutside": "Step outside"
+    }
+  },
+  "picks": {
+    "walk": "Go for a walk",
+    "stretch": "Stretch",
+    "shower": "Have a shower",
+    "danceToOneSong": "Dance to one song",
+    "tenseAndRelease": "Tense and release my shoulders",
+    "tidyOneSurface": "Tidy one surface",
+    "washUp": "Wash up",
+    "waterThePlants": "Water the plants",
+    "fixSomethingSmall": "Fix something small",
+    "cookSomething": "Cook something",
+    "messageAFriend": "Message a friend",
+    "helpWithSomething": "Help someone with something",
+    "peopleWatch": "Watch people go by",
+    "lookAtAPhoto": "Look at a photo of someone I care about",
+    "sitWithAPet": "Sit with a pet",
+    "aShow": "Put on a show",
+    "aGame": "Play a game",
+    "aSong": "Put on a song",
+    "aBook": "Read a few pages",
+    "aGoodMemory": "Go back to a good memory",
+    "aPlaceInMyHead": "Go to a place in my head",
+    "countBreaths": "Count my breaths",
+    "countBlueThings": "Count the blue things in the room",
+    "countBackwardsBySevens": "Count backwards from 100 by sevens",
+    "fiveFourThreeTwoOne": "Five things I can see, four I can hear",
+    "stepOutside": "Step outside",
+    "anotherRoom": "Go to another room",
+    "aWalkToNowhere": "Walk with nowhere to be",
+    "planSomethingIEnjoy": "Plan something I enjoy",
+    "writeItDown": "Write it down",
+    "somethingThatSmellsGood": "Something that smells good",
+    "freshAir": "Fresh air",
+    "coffeeOrTea": "Coffee or tea",
+    "cleanLaundry": "Clean laundry",
+    "somethingGreen": "Something green",
+    "theSky": "The sky",
+    "photosILike": "Photos I like",
+    "lowLight": "Low light",
+    "aSongIKnow": "A song I know by heart",
+    "rainOrWaves": "Rain or waves",
+    "quiet": "Quiet",
+    "anAmbientSound": "An ambient sound",
+    "somethingWarmToDrink": "Something warm to drink",
+    "somethingSharp": "Something sharp - mint, lemon",
+    "eatSlowly": "Eat one thing slowly",
+    "aBlanket": "A blanket",
+    "aWarmShower": "A warm shower",
+    "handsInWater": "Hands in warm water",
+    "coolWaterOnMyWrists": "Cool water on my wrists",
+    "somethingSoftInMyPocket": "Something soft in my pocket",
+    "thisWillPass": "This will pass.",
+    "gotThroughBefore": "I have got through hard moments before.",
+    "feelingIsNotDoing": "Feeling it is not the same as acting on it.",
+    "mistakesAreNormal": "Mistakes are normal.",
+    "feelingsAreAWave": "Feelings are a wave - they rise and they fall.",
+    "iCanDoOneThing": "I can do one thing, and then decide again.",
+    "iDoNotHaveToDecideNow": "I do not have to decide anything right now.",
+    "iAmAllowedToAskForHelp": "I am allowed to ask for help."
+  },
+  "families": {
+    "move": "Move",
+    "makeOrFix": "Make or fix something",
+    "someoneElse": "Someone else",
+    "changeChannel": "Change the channel",
+    "count": "Count something",
+    "leave": "Leave",
+    "smell": "Smell",
+    "see": "See",
+    "hear": "Hear",
+    "taste": "Taste",
+    "touch": "Touch"
   }
 }
