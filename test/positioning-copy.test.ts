@@ -125,6 +125,12 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  *     in order to ban them — the designer reads the brief and never the repo,
  *     so a rule the brief cannot spell out is a rule the designer cannot obey.
  *     Only the prompt file is excluded; the README beside it stays scanned.
+ *   - `design/1980-handoff/prompt.md` is the DBT module's Claude Design brief
+ *     (#1994), the same shape for the same reason: its "Never write" table
+ *     spells the American spellings and the banned phrases out to ban them.
+ *     Only the prompt file is excluded; the README and the spec it is drawn
+ *     from (`modules/dbt-mckay-skills-workbook.md`) stay scanned - the spec
+ *     cites the workbook without spelling its American title.
  */
 const PUBLISHED_RECORDS = [
   "docs/positioning.md",
@@ -134,6 +140,7 @@ const PUBLISHED_RECORDS = [
   "docs/campaign/scripts/",
   "docs/design/1822-before/",
   "docs/design/1825-handoff/prompt.md",
+  "docs/design/1980-handoff/prompt.md",
   "docs/launch/",
 ];
 
