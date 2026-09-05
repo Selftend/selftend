@@ -35,8 +35,10 @@ export function TechniqueCaution({ lines, className }: TechniqueCautionProps) {
     >
       <Icon name="info-outline" size={18} className="mt-0.5 shrink-0 text-muted-foreground" />
       <View className="min-w-0 flex-1 gap-1.5">
-        {lines.map((line) => (
-          <Text key={line} className="text-[13px] leading-relaxed">
+        {lines.map((line, index) => (
+          // Position is the identity here — the lines are an ordered pair
+          // (stop rule, then who-should-check), never reordered or filtered.
+          <Text key={index} className="text-[13px] leading-relaxed">
             {line}
           </Text>
         ))}

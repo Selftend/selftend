@@ -10,6 +10,7 @@ import { TechniqueCaution } from "@/src/components/app/technique-caution";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { translatedLines } from "@/src/lib/translated-lines";
 
 const groundingOnboardingImage = require("../../../assets/images/onboarding/grounding_sweet_spot_frequency.png");
 
@@ -29,10 +30,7 @@ export function GroundingOnboarding({
   onDismiss,
 }: Props) {
   const { t } = useTranslation("cbt");
-  const coldWaterCaution = (() => {
-    const list = t("grounding.techniques.cold-water.caution", { returnObjects: true });
-    return Array.isArray(list) ? (list as string[]) : [];
-  })();
+  const coldWaterCaution = translatedLines(t, "grounding.techniques.cold-water.caution");
 
   return (
     <RichOnboardingShell

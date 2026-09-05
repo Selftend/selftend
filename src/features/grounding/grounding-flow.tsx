@@ -7,6 +7,7 @@ import { groundingLookup } from "@/src/constants/grounding";
 import { GroundingDone } from "@/src/features/grounding/grounding-done";
 import { GroundingSession } from "@/src/features/grounding/grounding-session";
 import { useSaveGroundingSession } from "@/src/features/grounding/queries";
+import { translatedLines } from "@/src/lib/translated-lines";
 import { useSingleFlight } from "@/src/lib/use-single-flight";
 import { useSession } from "@/src/providers/session-provider";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -99,24 +100,13 @@ export function GroundingFlow({ slug }: { slug: string }) {
     return <ScreenNotFound title={t("grounding.notFound")} />;
   }
 
-  const stepsText = (() => {
-    const list = t(`grounding.techniques.${technique.slug}.steps`, { returnObjects: true });
-    return Array.isArray(list) ? (list as string[]) : [];
-  })();
-  const stepLabels = (() => {
-    const list = t(`grounding.techniques.${technique.slug}.stepLabels`, { returnObjects: true });
-    return Array.isArray(list) ? (list as string[]) : [];
-  })();
-  const stepHints = (() => {
-    const list = t(`grounding.techniques.${technique.slug}.stepHints`, { returnObjects: true });
-    return Array.isArray(list) ? (list as string[]) : [];
-  })();
+  const copy = `grounding.techniques.${technique.slug}`;
+  const stepsText = translatedLines(t, `${copy}.steps`);
+  const stepLabels = translatedLines(t, `${copy}.stepLabels`);
+  const stepHints = translatedLines(t, `${copy}.stepHints`);
   // The technique's medical caution (#1996) — only cold water carries one
   // today, so the missing key resolves to no array and renders nothing.
-  const caution = (() => {
-    const list = t(`grounding.techniques.${technique.slug}.caution`, { returnObjects: true });
-    return Array.isArray(list) ? (list as string[]) : [];
-  })();
+  const caution = translatedLines(t, `${copy}.caution`);
 
   const title = t(`grounding.techniques.${technique.slug}.title`);
   const total = stepsText.length;
