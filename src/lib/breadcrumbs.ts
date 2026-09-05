@@ -73,6 +73,8 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/dbt/emotions": "breadcrumb.emotions",
   "/modules/dbt/wise-mind": "breadcrumb.wiseMind",
   "/modules/dbt/judgements": "breadcrumb.judgements",
+  "/modules/dbt/opposite-action": "breadcrumb.oppositeAction",
+  "/modules/dbt/scripts": "breadcrumb.scripts",
 
   "/tools": "sidebar.tools",
   "/tools/check-in": "sidebar.moodTracker",

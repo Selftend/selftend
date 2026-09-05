@@ -108,7 +108,10 @@ export const DBT_GROUPS: DbtGroup[] = [
   },
   {
     key: "emotionRegulation",
-    tools: [{ key: "emotions", route: "/modules/dbt/emotions", icon: "mood" }],
+    tools: [
+      { key: "emotions", route: "/modules/dbt/emotions", icon: "mood" },
+      { key: "oppositeAction", route: "/modules/dbt/opposite-action", icon: "swap-horiz" },
+    ],
     shared: [
       {
         key: "checkIn",
@@ -133,7 +136,7 @@ export const DBT_GROUPS: DbtGroup[] = [
   },
   {
     key: "interpersonal",
-    tools: [],
+    tools: [{ key: "scripts", route: "/modules/dbt/scripts", icon: "record-voice-over" }],
     shared: [JOURNAL],
   },
 ];
