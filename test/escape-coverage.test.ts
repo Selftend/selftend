@@ -245,7 +245,8 @@ describe("the route population (pinned, G5)", () => {
     // 137 → 140: #1980's coping plan (the card and the builder) and Pause
     // and choose.
     // 140 → 141: #1980's muscle-relaxation session, the module's first.
-    expect(ROUTES).toHaveLength(141);
+    // 141 → 144: #1980's emotion record - its list, its form and its detail.
+    expect(ROUTES).toHaveLength(144);
   });
 
   it("derives exactly the eight <Redirect>-only stubs", () => {
@@ -276,7 +277,7 @@ describe("the route population (pinned, G5)", () => {
     // this class rather than among the stubs. Then 126 → 125 when #1959 deleted the
     // `/arrange` screen. The walk still finds all 135 routes, which is the number this
     // class exists to protect — a drop there would mean the walk itself had gone blind.
-    expect(covered).toHaveLength(131);
+    expect(covered).toHaveLength(134);
   });
 });
 

@@ -70,6 +70,7 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/dbt/coping-plan": "breadcrumb.copingPlan",
   "/modules/dbt/pause": "breadcrumb.pause",
   "/modules/dbt/sessions/muscle-relaxation": "breadcrumb.muscleRelaxation",
+  "/modules/dbt/emotions": "breadcrumb.emotions",
 
   "/tools": "sidebar.tools",
   "/tools/check-in": "sidebar.moodTracker",
