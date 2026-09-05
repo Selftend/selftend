@@ -58,6 +58,7 @@ import {
   ACT_BAND_START_HOUR,
   createBand,
 } from "./seed-demo-band.mjs";
+import { DAYS, FUTURE_MARGIN_MS, createWindow } from "./seed-demo-window.mjs";
 
 const LOCAL_SUPABASE_URL = process.env.SUPABASE_TEST_URL ?? "http://127.0.0.1:54321";
 const LOCAL_SERVICE_ROLE_KEY =
@@ -91,30 +92,10 @@ const pick = (arr) => arr[Math.floor(rng() * arr.length)];
 const chance = (p) => rng() < p;
 const between = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
 
-// The seeded window: ~3 months ending today. `new Date()` is fine here — the
-// script runs in plain Node, and the dataset should always end "today".
-const DAYS = 89;
-const end = new Date();
-end.setHours(12, 0, 0, 0);
-
-// Run early in the day and today's later entries would land in the future,
-// tripping the DB's occurrence-time guard ("Occurrence time cannot be in the
-// future") and failing the whole seed. Clamp to just-passed instead — today's
-// rows bunch up near "now", which only shows when seeding at odd hours and
-// only on today's rows. The margin absorbs the clock drift between building a
-// row here and the database checking it.
-const FUTURE_MARGIN_MS = 120_000;
-
-function clampToPast(millis) {
-  return new Date(Math.min(millis, Date.now() - FUTURE_MARGIN_MS)).toISOString();
-}
-
-/** The calendar date at day index i (0 = oldest), as a machine-local Date. */
-function dayAt(dayIndex) {
-  const d = new Date(end);
-  d.setDate(d.getDate() - (DAYS - 1 - dayIndex));
-  return d;
-}
+// The seeded window: ~3 months ending today, and the future-clamp today's rows
+// go through. Both live in `seed-demo-window.mjs` so the band's day-boundary
+// tests build the exact window this seed does (#1971).
+const { dayAt, clampToPast } = createWindow();
 
 /** Local-civil-day at index i (0 = oldest), at local hour/minute. */
 function at(dayIndex, hour, minute = 0) {

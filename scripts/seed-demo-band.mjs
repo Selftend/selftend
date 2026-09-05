@@ -20,14 +20,15 @@ export const ACT_BAND_MINUTES = (ACT_BAND_END_HOUR - ACT_BAND_START_HOUR) * 60;
  *   an instant that has not happened yet becomes just-passed
  */
 export function createBand({ dayAt, clampToPast }) {
-  // The instants the future-clamp pulled out of the band, by epoch millisecond.
+  // The instants the future-clamp produced, by epoch millisecond.
   //
   // Only ever TODAY's rows, and only on a run that starts before the band
   // closes: `clampToPast` pulls a future instant back to just-passed, which is
-  // the same trade every other block in the seed makes for today's rows.
-  // Recorded rather than waved through so the stray check can excuse exactly
-  // these and nothing else.
-  const clampedOutOfBand = new Set();
+  // the same trade every other block in the seed makes for today's rows. A
+  // clamp that lands inside the band is recorded too (harmless — it is not a
+  // stray either way); the set is what the stray check excuses, exactly these
+  // and nothing else.
+  const clampedInstants = new Set();
 
   /** The UTC instant `minutesIntoBand` into the band on day `dayIndex`, unclamped. */
   function intendedAt(dayIndex, minutesIntoBand) {
@@ -61,7 +62,7 @@ export function createBand({ dayAt, clampToPast }) {
     // 00:01 UTC, or a machine whose local day is ahead of the UTC day), where
     // "is the hour before the band opens?" reads 23 and says no (#1971).
     if (new Date(iso).getTime() < intended) {
-      clampedOutOfBand.add(new Date(iso).getTime());
+      clampedInstants.add(new Date(iso).getTime());
     }
     return iso;
   }
@@ -72,7 +73,7 @@ export function createBand({ dayAt, clampToPast }) {
    * PostgREST returns a different ISO format than the seed wrote.
    */
   function isStray(millis) {
-    if (clampedOutOfBand.has(millis)) return false;
+    if (clampedInstants.has(millis)) return false;
     const hour = new Date(millis).getUTCHours();
     return hour < ACT_BAND_START_HOUR || hour >= ACT_BAND_END_HOUR;
   }
@@ -95,5 +96,5 @@ export function createBand({ dayAt, clampToPast }) {
     return intendedAt(dayIndex, ACT_BAND_MINUTES);
   }
 
-  return { inBand, isStray, bandOpensAt, bandClosesAt, clampedOutOfBand };
+  return { inBand, isStray, bandOpensAt, bandClosesAt, clampedInstants };
 }
