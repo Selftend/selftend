@@ -8,7 +8,6 @@ import bgJournal from "./journal.json";
 import bgMeditation from "./meditation.json";
 import bgTimer from "./timer.json";
 import bgMood from "./mood.json";
-import bgModules from "./modules.json";
 import bgSettings from "./settings.json";
 import bgNavigation from "./navigation.json";
 import bgPolicies from "./policies.json";
@@ -20,6 +19,7 @@ import bgAct from "./act.json";
 import bgNotifications from "./notifications.json";
 import bgHelp from "./help.json";
 import bgSecurity from "./security.json";
+import bgDbt from "./dbt.json";
 
 export const bgResources: Record<string, object> = {
   common: bgCommon,
@@ -30,7 +30,6 @@ export const bgResources: Record<string, object> = {
   meditation: bgMeditation,
   timer: bgTimer,
   mood: bgMood,
-  modules: bgModules,
   settings: bgSettings,
   navigation: bgNavigation,
   policies: bgPolicies,
@@ -42,4 +41,5 @@ export const bgResources: Record<string, object> = {
   notifications: bgNotifications,
   help: bgHelp,
   security: bgSecurity,
+  dbt: bgDbt,
 };

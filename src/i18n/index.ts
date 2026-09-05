@@ -9,7 +9,6 @@ import enJournal from "./locales/en/journal.json";
 import enMeditation from "./locales/en/meditation.json";
 import enTimer from "./locales/en/timer.json";
 import enMood from "./locales/en/mood.json";
-import enModules from "./locales/en/modules.json";
 import enSettings from "./locales/en/settings.json";
 import enNavigation from "./locales/en/navigation.json";
 import enPolicies from "./locales/en/policies.json";
@@ -21,6 +20,7 @@ import enAct from "./locales/en/act.json";
 import enNotifications from "./locales/en/notifications.json";
 import enHelp from "./locales/en/help.json";
 import enSecurity from "./locales/en/security.json";
+import enDbt from "./locales/en/dbt.json";
 
 export const supportedLanguages = ["en", "bg"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
@@ -38,7 +38,6 @@ i18n.use(initReactI18next).init({
     "meditation",
     "timer",
     "mood",
-    "modules",
     "settings",
     "navigation",
     "policies",
@@ -50,6 +49,7 @@ i18n.use(initReactI18next).init({
     "notifications",
     "help",
     "security",
+    "dbt",
   ],
   interpolation: { escapeValue: false },
   resources: {
@@ -62,7 +62,6 @@ i18n.use(initReactI18next).init({
       meditation: enMeditation,
       timer: enTimer,
       mood: enMood,
-      modules: enModules,
       settings: enSettings,
       navigation: enNavigation,
       policies: enPolicies,
@@ -74,6 +73,7 @@ i18n.use(initReactI18next).init({
       notifications: enNotifications,
       help: enHelp,
       security: enSecurity,
+      dbt: enDbt,
     },
     // bg is registered lazily via ensureLanguageBundle() so its ~377 KB of JSON is not
     // parsed/inlined on the startup path for the majority-English audience.

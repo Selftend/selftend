@@ -1,3 +1,5 @@
+import { DBT_GROUP_BY_SLUG } from "@/src/features/dbt/dbt-home-config";
+
 export interface Breadcrumb {
   label: string;
   href?: string;
@@ -64,6 +66,7 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/cbt/self-care": "breadcrumb.selfCare",
   "/modules/cbt/recovery": "breadcrumb.recovery",
   "/modules/dbt": "sidebar.dbt",
+  "/modules/dbt/learn": "breadcrumb.learn",
 
   "/tools": "sidebar.tools",
   "/tools/check-in": "sidebar.moodTracker",
@@ -155,6 +158,10 @@ const SLUG_LABEL_KEYS: Record<string, (slug: string) => string> = {
   "/tools/breathing": (slug) => `cbt:breathing.exercises.${slug}.title`,
   "/tools/grounding": (slug) => `cbt:grounding.techniques.${slug}.title`,
   "/tools/habits/learn": (slug) => `habits:learn.cards.${slug}.title`,
+  // The skill-group slugs are kebab-case URLs and their copy keys are
+  // camelCase, so the map is data (`DBT_GROUP_BY_SLUG`) rather than a
+  // transformation - a slug outlives a rename of the symbol beside it.
+  "/modules/dbt/learn": (slug) => `dbt:groups.${DBT_GROUP_BY_SLUG[slug] ?? slug}.name`,
 };
 
 /**

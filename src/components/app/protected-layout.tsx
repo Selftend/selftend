@@ -414,7 +414,9 @@ export default function ProtectedLayout() {
                 the route rather than excusing it. */}
             <Stack.Screen name="modules/act/values/bulls-eye" dangerouslySingular />
             <Stack.Screen name="modules/act/values/[domain]" />
-            <Stack.Screen name="modules/dbt" dangerouslySingular />
+            <Stack.Screen name="modules/dbt/index" dangerouslySingular />
+            <Stack.Screen name="modules/dbt/learn/index" dangerouslySingular />
+            <Stack.Screen name="modules/dbt/learn/[group]" />
             <Stack.Screen name="tools/index" dangerouslySingular />
             <Stack.Screen name="tools/check-in/index" dangerouslySingular />
             <Stack.Screen name="tools/meditation/index" />

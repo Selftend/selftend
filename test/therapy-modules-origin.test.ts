@@ -33,7 +33,7 @@ const ROOT = join(__dirname, "..");
  * test runs at render on the destination and ignores it. The point is that the
  * helper becomes the only way to navigate, so the next cross-link cannot forget.
  */
-const SCOPE = ["app/(app)/modules", "src/features/cbt", "src/features/act"];
+const SCOPE = ["app/(app)/modules", "src/features/cbt", "src/features/act", "src/features/dbt"];
 
 /**
  * A forward navigation that bypasses the helper.

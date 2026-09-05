@@ -45,7 +45,7 @@ describe("ModulesScreen", () => {
   it.each([
     ["cbt", "CBT", "Cognitive behavioural therapy", "Think · Act · Be"],
     ["act", "ACT", "Acceptance & commitment", "Act on what matters"],
-    ["dbt", "DBT", "Dialectical behaviour therapy", "Four skill groups"],
+    ["dbt", "DBT", "Dialectical behaviour therapy", "For when feelings run high"],
   ])("gives %s a mark, a name and a fragment, and nothing beside them", (key, mark, name, sub) => {
     renderWithProviders(<ModulesScreen />);
 

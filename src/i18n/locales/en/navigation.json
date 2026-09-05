@@ -28,7 +28,7 @@
     "cbt": "CBT",
     "cbtA11y": "CBT module - Cognitive Behavioural Therapy",
     "actA11y": "ACT module - Acceptance and Commitment Therapy",
-    "dbtA11y": "DBT overview - Dialectical Behaviour Therapy",
+    "dbtA11y": "DBT module - Dialectical Behaviour Therapy",
     "modules": "Modules",
     "gratitudeLog": "Gratitude log",
     "sleep": "Sleep",
@@ -83,7 +83,7 @@
       "actName": "Acceptance & commitment",
       "actSub": "Act on what matters",
       "dbtName": "Dialectical behaviour therapy",
-      "dbtSub": "Four skill groups"
+      "dbtSub": "For when feelings run high"
     },
     "tools": {
       "moodTracker": "Check-in",

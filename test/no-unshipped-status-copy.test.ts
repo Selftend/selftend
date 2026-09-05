@@ -31,7 +31,8 @@ function readNamespace(language: string, namespace: string): Record<string, unkn
 
 /**
  * The surfaces that tell a user - or a reviewer - what the app contains: the
- * nav rows, the `/modules` index and its tiles, and the DBT overview screen.
+ * nav rows, the `/modules` index and its tiles, and the DBT module's own
+ * namespace (which absorbed the overview screen's copy under #1980).
  */
 function surfaceStrings(language: string): { key: string; value: string }[] {
   const navigation = readNamespace(language, "navigation") as {
@@ -44,7 +45,7 @@ function surfaceStrings(language: string): { key: string; value: string }[] {
     "navigation.sidebar": navigation.sidebar,
     "navigation.modulesPage": navigation.modulesPage,
     "navigation.today.modules": navigation.today.modules,
-    modules: readNamespace(language, "modules"),
+    dbt: readNamespace(language, "dbt"),
   };
 
   const out: { key: string; value: string }[] = [];
