@@ -1,6 +1,6 @@
 # Product Principles
 
-Selftend is a free, private cognitive behavioural therapy (CBT) self-help app, run by the person using it. It should make support more available without becoming a paid trap, ad funnel, engagement game, diagnosis engine, or therapist replacement.
+Selftend is a set of free, private mental health tools - everyday tools for right now, and a CBT programme (cognitive behavioural therapy) to work through when you want one - run by the person using it. It should make support more available without becoming a paid trap, ad funnel, engagement game, diagnosis engine, or therapist replacement.
 
 ☠️ **This file has two ranks, and reading it as one rank runs the hierarchy backwards.** The paragraph above is a **description** — it says what Selftend is, so it is copy, and [positioning.md](positioning.md) governs it. Everything below it **binds** positioning: the twelve principles and the Audience Note outrank the frame, and a positioning change may never edit one in order to fit. The corroboration is countable — the category noun appears in this file exactly once, in that paragraph, and none of the twelve principles depends on it ([#1820](https://github.com/Selftend/selftend/issues/1820)).
 
