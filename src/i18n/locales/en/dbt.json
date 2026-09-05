@@ -617,5 +617,59 @@
     "hear": "Hear",
     "taste": "Taste",
     "touch": "Touch"
+  },
+  "session": {
+    "eyebrow": "DBT · Distress tolerance",
+    "what": "Tense and release, one muscle group at a time. Tensing first makes the letting go easier to feel, and the letting go is the part that settles.",
+    "caution": [
+      "Tense gently, never to the point of pain, and let go quickly. Skip any area that hurts - back, neck, joints.",
+      "If you are pregnant or faint easily, keep it light or leave it."
+    ],
+    "lengthLabel": "Length",
+    "lengthNote": "{{groups}} groups, about {{minutes}} minutes.",
+    "variants": {
+      "full": "Full",
+      "short": "Short"
+    },
+    "start": "Start",
+    "back": "Back",
+    "next": "Next",
+    "pause": "Pause",
+    "resume": "Resume",
+    "stop": "Stop",
+    "stopNote": "Stop ends it now. Nothing is saved.",
+    "pausedNote": "A paused clock saves nothing either.",
+    "progress": "Group {{current}} of {{total}} · {{clock}} left",
+    "remaining": "{{seconds}} seconds left in this part",
+    "phases": {
+      "tense": "Tense",
+      "release": "Release"
+    },
+    "instructions": {
+      "tense": "Tighten this group and hold it, gently. Keep breathing.",
+      "release": "Let go all at once, and notice the difference."
+    },
+    "done": "Muscle relaxation, {{minutes}} minutes",
+    "doneAction": "Done",
+    "saveError": "That did not save",
+    "groups": {
+      "hands": "Hands",
+      "forearms": "Forearms",
+      "upperArms": "Upper arms",
+      "shoulders": "Shoulders",
+      "neck": "Neck",
+      "face": "Face",
+      "chest": "Chest",
+      "stomach": "Stomach",
+      "back": "Back",
+      "hips": "Hips",
+      "thighs": "Thighs",
+      "calvesAndFeet": "Calves and feet",
+      "handsAndArms": "Hands and arms",
+      "faceAndNeck": "Face and neck",
+      "chestAndStomach": "Chest and stomach",
+      "backAndHips": "Back and hips",
+      "legsAndFeet": "Legs and feet"
+    }
   }
 }

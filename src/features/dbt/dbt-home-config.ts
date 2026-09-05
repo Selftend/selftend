@@ -76,6 +76,11 @@ export const DBT_GROUPS: DbtGroup[] = [
     tools: [
       { key: "copingPlan", route: "/modules/dbt/coping-plan", icon: "checklist" },
       { key: "pause", route: "/modules/dbt/pause", icon: "pause-circle-outline" },
+      {
+        key: "muscleRelaxation",
+        route: "/modules/dbt/sessions/muscle-relaxation",
+        icon: "timer",
+      },
     ],
     shared: [
       {

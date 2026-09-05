@@ -111,6 +111,9 @@ const MUST_REMOUNT: Record<string, string> = {
   // Four steps that record nothing: re-entering is starting again, and
   // reuse would drop the person back on step three of a run they left.
   "modules/dbt/pause": "in-progress flow",
+  // A timed session with a running clock; re-entering mid-run is not a
+  // resume, and this session records on completion only.
+  "modules/dbt/sessions/muscle-relaxation": "in-progress session",
   "auth-callback": "mount performs the auth callback",
 };
 
