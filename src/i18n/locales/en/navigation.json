@@ -74,13 +74,6 @@
     "greetingEvening": "Good evening",
     "greetingWithName": "{{greeting}}, {{name}}.",
     "greetingPlain": "{{greeting}}.",
-    "emptyTitle": "Add tools you want to check in with each day",
-    "emptyDescription": "Build a dashboard yourself, or answer a few questions for tailored suggestions.",
-    "unsupportedTitle": "Some of your dashboard needs a newer version",
-    "unsupportedDescription": "You added things this version of the app can't show yet. Update when you can, or add something else in the meantime.",
-    "addManually": "Add manually",
-    "getSuggestions": "Get suggestions",
-    "logMood": "Log your mood",
     "plan": {
       "open": "Open"
     },
@@ -111,10 +104,6 @@
       "habitsSub": "Build consistent daily habits"
     },
     "dashboard": {
-      "removeWidget": "Remove {{title}}",
-      "undo": "Undo",
-      "moveEarlier": "Move {{title}} earlier",
-      "moveLater": "Move {{title}} later",
       "doneToday": "Done today",
       "startBreathing": "Start breathing",
       "write": "Write",
@@ -143,31 +132,6 @@
     }
   },
   "home": {
-    "doneLabel": "Done",
-    "arrangeLabel": "Arrange",
-    "addToolLabel": "Add tool",
-    "arrange": {
-      "hint": "Drag to reorder, or remove what you don't check in with.",
-      "handle": "Reorder {{title}}",
-      "handleHint": "Moves this tool up or down in the list.",
-      "addHeading": "Add to your home screen",
-      "addChip": "Add {{title}}",
-      "addChipTagged": "Add {{title}}, {{module}}",
-      "addCategory": {
-        "tools": "Tools",
-        "cbt": "CBT",
-        "act": "ACT"
-      },
-      "moduleTag": {
-        "cbtA11y": "CBT - Cognitive Behavioural Therapy",
-        "actA11y": "ACT - Acceptance and Commitment Therapy"
-      },
-      "allAdded": "Everything is already on your home screen."
-    },
-    "addToHome": {
-      "button": "Add to home",
-      "title": "Add to home"
-    },
     "categories": {
       "mood": "Check-in",
       "journal": "Journal",
@@ -189,22 +153,6 @@
       "moreGoals_one": "+{{count}} more goal",
       "moreGoals_other": "+{{count}} more goals"
     },
-    "tiers": {
-      "tools": "Your tools",
-      "programmes": "Guided programmes"
-    },
-    "programme": {
-      "phase": "Phase {{current}} of {{total}}",
-      "complete": "Complete"
-    },
-    "rightNow": {
-      "heading": "Right now",
-      "moodTitle": "How are you?",
-      "sleepTitle": "Sleep",
-      "sleepNothing": "Nothing captured since yesterday",
-      "habitsTitle": "Today's habits",
-      "sleepNothingWithAverage": "Nothing captured since yesterday — {{value}} average this week"
-    },
     "rows": {
       "empty": "Nothing yet",
       "nothingScheduled": "Nothing scheduled today",
@@ -223,13 +171,7 @@
       "minutes_one": "{{count}} minute",
       "minutes_other": "{{count}} minutes",
       "sits_one": "{{count}} sit",
-      "sits_other": "{{count}} sits",
-      "records_one": "{{count}} record",
-      "records_other": "{{count}} records",
-      "activeGoals_one": "{{count}} active goal",
-      "activeGoals_other": "{{count}} active goals",
-      "active_one": "{{count}} active",
-      "active_other": "{{count}} active"
+      "sits_other": "{{count}} sits"
     },
     "widgets": {
       "moodCheckin": {
@@ -413,10 +355,6 @@
   },
   "homeTour": {
     "skipAll": "Skip all tips",
-    "edit": {
-      "description": "Arrange your home screen - add, remove and reorder your tools.",
-      "dismiss": "Got it"
-    },
     "navigation": {
       "description": "Find all Modules and Tools here.",
       "dismiss": "Got it"

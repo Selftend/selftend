@@ -173,7 +173,7 @@ describe("a drill-down inside a tool still escapes to Up", () => {
     ["/tools/journal", "/tools/journal/3f9a-uuid"],
     ["/tools/habits", "/tools/habits/new"],
     ["/tools/gratitude-log", "/tools/gratitude-log/entries"],
-    ["/", "/arrange"],
+    ["/", "/routines"],
   ])("ignores an Origin of %s on %s", (origin, pathname) => {
     const crumbs = computeBreadcrumbs(pathname, t);
     const upHref = findUpCrumb(crumbs)?.href ?? "/";

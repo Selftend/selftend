@@ -32,8 +32,8 @@ interface ItemCardProps {
  * 1. The card is an inert `View` holding TWO interactive siblings — the navigating region
  *    and the star. A star nested inside the navigating pressable is `role="button"` inside
  *    `role="button"` on react-native-web, with the outer press firing on every star tap.
- *    (`arrange-row.tsx`'s shape; that file is being deleted, so the shape is copied, not
- *    imported.) The press wash covers the navigating region only.
+ *    (`arrange-row.tsx`'s shape; that file went with the dashboard in #1959, so the shape
+ *    was copied, not imported.) The press wash covers the navigating region only.
  * 2. The navigating region carries NO `accessibilityLabel` and NO `accessibilityHint`.
  *    The hint is a prop react-native-web never implements, and an explicit label hides
  *    the rendered children from assistive tech on the web — which would make the stat

@@ -81,9 +81,11 @@ export interface NotificationTarget {
 }
 
 /**
- * Ordered by the dashboard catalogue, so a user meets the same tools in the same sequence on
- * home and here (#981). `registry.test.ts` derives the expected order from `WIDGET_META`
- * rather than restating it, so the two screens cannot drift apart silently.
+ * Ordered by the widget catalogue (#981), which `registry.test.ts` derives from
+ * `WIDGET_META` rather than restating, so the two cannot drift apart silently. That
+ * catalogue is the Android launcher's since #1952; Home's Favourites (#1956) follow
+ * `CATALOGUE` in src/features/favorites/items.ts, a different tool order, and
+ * re-sequencing this screen onto it is an open product call, not something a test decides.
  */
 export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   {
