@@ -67,7 +67,10 @@ export const COPING_PLAN_PICKS: CopingPlanPick[] = [
   distract("move", "stretch"),
   distract("move", "shower"),
   distract("move", "danceToOneSong"),
-  distract("move", "tenseAndRelease"),
+  distract("move", "tenseAndRelease", {
+    route: "/modules/dbt/sessions/muscle-relaxation",
+    icon: "timer",
+  }),
   distract("makeOrFix", "tidyOneSurface"),
   distract("makeOrFix", "washUp"),
   distract("makeOrFix", "waterThePlants"),

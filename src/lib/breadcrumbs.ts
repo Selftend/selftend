@@ -69,6 +69,7 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/dbt/learn": "breadcrumb.learn",
   "/modules/dbt/coping-plan": "breadcrumb.copingPlan",
   "/modules/dbt/pause": "breadcrumb.pause",
+  "/modules/dbt/sessions/muscle-relaxation": "breadcrumb.muscleRelaxation",
 
   "/tools": "sidebar.tools",
   "/tools/check-in": "sidebar.moodTracker",
@@ -138,7 +139,7 @@ const STATIC_ROUTES: Record<string, string> = {
 // index: a list there would duplicate `/modules/cbt/history`, and nothing in
 // the app ever navigates to the bare path. #1251's `breadcrumb.saved` label
 // left with it - the trail now ends in the generic "Entry" and Up is CBT.
-const TRANSPARENT_SEGMENTS = new Set(["session", "saved"]);
+const TRANSPARENT_SEGMENTS = new Set(["session", "sessions", "saved"]);
 
 // Known named sub-segments that appear after dynamic segments
 const KNOWN_SUB_SEGMENTS: Record<string, string> = {
