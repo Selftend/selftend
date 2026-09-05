@@ -20,6 +20,13 @@ const PAGE_READS = [
   ["act/repository/urge-surf.ts", "listUrgeSurfLogsPage"],
   ["act/repository/bulls-eye.ts", "listBullsEyeSnapshotsPage"],
   ["act/repository/committed-action.ts", "listCommittedActionArchivePage"],
+  // DBT's five record archives (#1980 spec §6): every row is encrypted, so the same
+  // ADR-0001 pricing applies; sessions have no list and no page read.
+  ["dbt/repository/wise-mind.ts", "listWiseMindCheckinsPage"],
+  ["dbt/repository/judgements.ts", "listJudgementsPage"],
+  ["dbt/repository/emotion-records.ts", "listEmotionRecordsPage"],
+  ["dbt/repository/opposite-action.ts", "listOppositeActionPlansPage"],
+  ["dbt/repository/scripts.ts", "listScriptsPage"],
 ] as const;
 
 function exportedFunction(file: string, name: string): string {

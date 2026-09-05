@@ -321,6 +321,25 @@ export async function deleteAllActLogsForUser(userId: string) {
   }
 }
 
+/** Every DBT table (#1980) - the coping plan singleton, sessions and the five record kinds. */
+export const DBT_TABLES = [
+  "dbt_coping_plans",
+  "dbt_sessions",
+  "dbt_wise_mind_checkins",
+  "dbt_judgements",
+  "dbt_emotion_records",
+  "dbt_opposite_action_plans",
+  "dbt_scripts",
+] as const;
+
+export async function deleteAllDbtForUser(userId: string) {
+  const admin = createServiceClient();
+  for (const table of DBT_TABLES) {
+    const { error } = await admin.from(table).delete().eq("user_id", userId);
+    if (error) throw new Error(`deleteAllDbtForUser (${table}) failed: ${error.message}`);
+  }
+}
+
 // Mailpit (the Supabase CLI's local mail catcher) exposes a REST API on 54324.
 const MAILPIT_URL = "http://127.0.0.1:54324";
 
