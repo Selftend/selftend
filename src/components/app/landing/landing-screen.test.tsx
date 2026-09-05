@@ -54,7 +54,7 @@ describe("LandingScreen", () => {
 
     expect(
       screen.getByText(
-        "A free, private CBT programme - cognitive behavioural therapy - with everyday tools for the days you cannot face it. No ads, no subscriptions.",
+        "A set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one. No ads, no subscriptions.",
       ),
     ).toBeTruthy();
   });

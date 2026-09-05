@@ -4,13 +4,13 @@
   <img src="./assets/icon.png" alt="Selftend logo" width="200" height="200" />
 </div>
 
-**A free, open-source cognitive behavioural therapy (CBT) self-help app for web, iOS, and Android.**
+**Free, open-source mental health tools for web, iOS, and Android.**
 
-Selftend is a private CBT self-help app: everyday tools for right now, and a programme to work through when you want one. The current working slice pairs two evidence-based modules - a Gillihan-based CBT toolkit (thought records, exposure, worry, anger, beliefs, recovery planning) and an ACT module - with a set of shared tools: mood tracker, journal, gratitude log, grounding, meditation and breathing, sleep, and habits. A DBT module adds an overview of that approach, not a set of exercises. It has no ads, subscriptions, or paywalls.
+Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one. The current working slice pairs two evidence-based modules - a Gillihan-based CBT toolkit (thought records, exposure, worry, anger, beliefs, recovery planning) and an ACT module - with a set of shared tools: mood tracker, journal, gratitude log, grounding, meditation and breathing, sleep, and habits. A DBT module adds an overview of that approach, not a set of exercises. It has no ads, subscriptions, or paywalls.
 
 Your entries are encrypted in the database at the field level; a leaked database backup exposes only ciphertext, not your content. See [.github/SECURITY.md](.github/SECURITY.md) for the full security posture.
 
-Selftend is a CBT self-help app you run yourself - not therapy, diagnosis, or crisis support. If things feel heavy, see [selftend.org/crisis](https://selftend.org/crisis).
+Selftend is a set of mental health tools you run yourself - not therapy, diagnosis, or crisis support. If things feel heavy, see [selftend.org/crisis](https://selftend.org/crisis).
 
 ## Try it
 
