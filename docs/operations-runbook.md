@@ -178,7 +178,7 @@ retains the `code` branch, which is also still used by web Google OAuth).
 
 - Check `support@selftend.org` at least weekly during testing and more often during public launch windows.
 - Do not ask users to send detailed mental-health, crisis, therapy, or other sensitive self-help content by email.
-- For urgent distress or self-harm messages, reply once with calm crisis guidance and direct the person to local emergency or crisis resources. Do not provide counseling or ongoing crisis support by email.
+- For urgent distress or self-harm messages, reply once with calm crisis guidance and direct the person to local emergency or crisis resources. Do not provide counseling or ongoing crisis support by email. The reference reply and the rule it follows are in [community.md § Community crisis posture](community.md#community-crisis-posture).
 - For product bugs, ask only for the minimum needed: platform, browser/app version, steps, expected result, actual result, and screenshots only if they do not reveal private content.
 - Move reproducible non-private bugs into GitHub issues. Keep private account, health, security, or deletion details out of public issues.
 - Keep a private support log outside the repo with date received, sender email, category, status, and date closed.
