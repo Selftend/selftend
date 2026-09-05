@@ -1,0 +1,266 @@
+[
+  {
+    "file": "01-dbt-overview-phone-light.png",
+    "note": "/modules/dbt as it ships on dev, phone light (top)"
+  },
+  {
+    "file": "01-dbt-overview-phone-light-scroll1.png",
+    "note": "/modules/dbt as it ships on dev, phone light (scrolled to 503px of 503px max)"
+  },
+  {
+    "file": "02-cbt-home-phone-light.png",
+    "note": "/modules/cbt on the seeded demo account, phone light (top)"
+  },
+  {
+    "file": "02-cbt-home-phone-light-scroll1.png",
+    "note": "/modules/cbt on the seeded demo account, phone light (scrolled to 764px of 4033px max)"
+  },
+  {
+    "file": "02-cbt-home-phone-light-scroll2.png",
+    "note": "/modules/cbt on the seeded demo account, phone light (scrolled to 1528px of 4033px max)"
+  },
+  {
+    "file": "02-cbt-home-phone-light-scroll3.png",
+    "note": "/modules/cbt on the seeded demo account, phone light (scrolled to 2292px of 4033px max)"
+  },
+  {
+    "file": "02-cbt-home-phone-light-scroll4.png",
+    "note": "/modules/cbt on the seeded demo account, phone light (scrolled to 3056px of 4033px max)"
+  },
+  {
+    "file": "02-cbt-home-phone-light-scroll5.png",
+    "note": "/modules/cbt on the seeded demo account, phone light (scrolled to 3820px of 4033px max)"
+  },
+  {
+    "file": "03-act-home-phone-light.png",
+    "note": "/modules/act on the seeded demo account, phone light (top)"
+  },
+  {
+    "file": "03-act-home-phone-light-scroll1.png",
+    "note": "/modules/act on the seeded demo account, phone light (scrolled to 764px of 2082px max)"
+  },
+  {
+    "file": "03-act-home-phone-light-scroll2.png",
+    "note": "/modules/act on the seeded demo account, phone light (scrolled to 1528px of 2082px max)"
+  },
+  {
+    "file": "03-act-home-phone-light-scroll3.png",
+    "note": "/modules/act on the seeded demo account, phone light (scrolled to 2082px of 2082px max)"
+  },
+  {
+    "file": "00-modules-index-phone-light.png",
+    "note": "/modules — the modules index the DBT tile lives on, phone light (top)"
+  },
+  {
+    "file": "04-thought-record-form-empty-phone-light.png",
+    "note": "/modules/cbt/new empty, phone light — the rail at 0 parts"
+  },
+  {
+    "file": "05-thought-record-form-filled-phone-light.png",
+    "note": "/modules/cbt/new with the first two parts typed (demo text, not saved), phone light — the rail counting (top)"
+  },
+  {
+    "file": "05-thought-record-form-filled-phone-light-scroll1.png",
+    "note": "/modules/cbt/new with the first two parts typed (demo text, not saved), phone light — the rail counting (scrolled to 764px of 4941px max)"
+  },
+  {
+    "file": "05-thought-record-form-filled-phone-light-scroll2.png",
+    "note": "/modules/cbt/new with the first two parts typed (demo text, not saved), phone light — the rail counting (scrolled to 1528px of 4941px max)"
+  },
+  {
+    "file": "06-grounding-home-phone-light.png",
+    "note": "/tools/grounding — technique cards, phone light (top)"
+  },
+  {
+    "file": "06-grounding-home-phone-light-scroll1.png",
+    "note": "/tools/grounding — technique cards, phone light (scrolled to 174px of 174px max)"
+  },
+  {
+    "file": "07-grounding-session-step1-phone-light.png",
+    "note": "/tools/grounding/54321 step 1 of the 5-4-3-2-1 flow, phone light"
+  },
+  {
+    "file": "07-grounding-session-step3-phone-light.png",
+    "note": "the same flow on step 3, phone light"
+  },
+  {
+    "file": "08-breathing-session-ready-phone-light.png",
+    "note": "/tools/breathing/session?pattern=box-breathing before Start, phone light"
+  },
+  {
+    "file": "08-breathing-session-running-phone-light.png",
+    "note": "the timed breathing session a few seconds in, phone light"
+  },
+  {
+    "file": "11-sidebar-open-phone-light.png",
+    "note": "navigation drawer open from /modules/dbt, phone light"
+  },
+  {
+    "file": "11-sidebar-open-phone-light-scrolled.png",
+    "note": "the drawer scrolled to its foot, phone light"
+  },
+  {
+    "file": "01-dbt-overview-desktop-light.png",
+    "note": "/modules/dbt as it ships on dev, desktop light (top)"
+  },
+  {
+    "file": "02-cbt-home-desktop-light.png",
+    "note": "/modules/cbt on the seeded demo account, desktop light (top)"
+  },
+  {
+    "file": "02-cbt-home-desktop-light-scroll1.png",
+    "note": "/modules/cbt on the seeded demo account, desktop light (scrolled to 820px of 2960px max)"
+  },
+  {
+    "file": "02-cbt-home-desktop-light-scroll2.png",
+    "note": "/modules/cbt on the seeded demo account, desktop light (scrolled to 1640px of 2960px max)"
+  },
+  {
+    "file": "02-cbt-home-desktop-light-scroll3.png",
+    "note": "/modules/cbt on the seeded demo account, desktop light (scrolled to 2460px of 2960px max)"
+  },
+  {
+    "file": "02-cbt-home-desktop-light-scroll4.png",
+    "note": "/modules/cbt on the seeded demo account, desktop light (scrolled to 2960px of 2960px max)"
+  },
+  {
+    "file": "03-act-home-desktop-light.png",
+    "note": "/modules/act on the seeded demo account, desktop light (top)"
+  },
+  {
+    "file": "03-act-home-desktop-light-scroll1.png",
+    "note": "/modules/act on the seeded demo account, desktop light (scrolled to 820px of 1310px max)"
+  },
+  {
+    "file": "03-act-home-desktop-light-scroll2.png",
+    "note": "/modules/act on the seeded demo account, desktop light (scrolled to 1310px of 1310px max)"
+  },
+  {
+    "file": "00-modules-index-desktop-light.png",
+    "note": "/modules — the modules index the DBT tile lives on, desktop light (top)"
+  },
+  {
+    "file": "04-thought-record-form-empty-desktop-light.png",
+    "note": "/modules/cbt/new empty, desktop light — the rail at 0 parts"
+  },
+  {
+    "file": "05-thought-record-form-filled-desktop-light.png",
+    "note": "/modules/cbt/new with the first two parts typed (demo text, not saved), desktop light — the rail counting (top)"
+  },
+  {
+    "file": "05-thought-record-form-filled-desktop-light-scroll1.png",
+    "note": "/modules/cbt/new with the first two parts typed (demo text, not saved), desktop light — the rail counting (scrolled to 820px of 3825px max)"
+  },
+  {
+    "file": "06-grounding-home-desktop-light.png",
+    "note": "/tools/grounding — technique cards, desktop light (top)"
+  },
+  {
+    "file": "06-grounding-home-desktop-light-scroll1.png",
+    "note": "/tools/grounding — technique cards, desktop light (scrolled to 7px of 7px max)"
+  },
+  {
+    "file": "07-grounding-session-step1-desktop-light.png",
+    "note": "/tools/grounding/54321 step 1 of the 5-4-3-2-1 flow, desktop light"
+  },
+  {
+    "file": "07-grounding-session-step3-desktop-light.png",
+    "note": "the same flow on step 3, desktop light"
+  },
+  {
+    "file": "08-breathing-session-ready-desktop-light.png",
+    "note": "/tools/breathing/session?pattern=box-breathing before Start, desktop light"
+  },
+  {
+    "file": "08-breathing-session-running-desktop-light.png",
+    "note": "the timed breathing session a few seconds in, desktop light"
+  },
+  {
+    "file": "11-sidebar-open-desktop-light.png",
+    "note": "navigation drawer open from /modules/dbt, desktop light"
+  },
+  {
+    "file": "01-dbt-overview-phone-dark.png",
+    "note": "/modules/dbt as it ships on dev, phone dark (top)"
+  },
+  {
+    "file": "01-dbt-overview-phone-dark-scroll1.png",
+    "note": "/modules/dbt as it ships on dev, phone dark (scrolled to 503px of 503px max)"
+  },
+  {
+    "file": "02-cbt-home-phone-dark.png",
+    "note": "/modules/cbt on the seeded demo account, phone dark (top)"
+  },
+  {
+    "file": "03-act-home-phone-dark.png",
+    "note": "/modules/act on the seeded demo account, phone dark (top)"
+  },
+  {
+    "file": "04-thought-record-form-empty-phone-dark.png",
+    "note": "/modules/cbt/new empty, phone dark — the rail at 0 parts"
+  },
+  {
+    "file": "05-thought-record-form-filled-phone-dark.png",
+    "note": "/modules/cbt/new with the first two parts typed (demo text, not saved), phone dark — the rail counting (top)"
+  },
+  {
+    "file": "05-thought-record-form-filled-phone-dark-scroll1.png",
+    "note": "/modules/cbt/new with the first two parts typed (demo text, not saved), phone dark — the rail counting (scrolled to 764px of 4941px max)"
+  },
+  {
+    "file": "05-thought-record-form-filled-phone-dark-scroll2.png",
+    "note": "/modules/cbt/new with the first two parts typed (demo text, not saved), phone dark — the rail counting (scrolled to 1528px of 4941px max)"
+  },
+  {
+    "file": "07-grounding-session-step1-phone-dark.png",
+    "note": "/tools/grounding/54321 step 1 of the 5-4-3-2-1 flow, phone dark"
+  },
+  {
+    "file": "07-grounding-session-step3-phone-dark.png",
+    "note": "the same flow on step 3, phone dark"
+  },
+  {
+    "file": "08-breathing-session-ready-phone-dark.png",
+    "note": "/tools/breathing/session?pattern=box-breathing before Start, phone dark"
+  },
+  {
+    "file": "08-breathing-session-running-phone-dark.png",
+    "note": "the timed breathing session a few seconds in, phone dark"
+  },
+  {
+    "file": "11-sidebar-open-phone-dark.png",
+    "note": "navigation drawer open from /modules/dbt, phone dark"
+  },
+  {
+    "file": "11-sidebar-open-phone-dark-scrolled.png",
+    "note": "the drawer scrolled to its foot, phone dark"
+  },
+  {
+    "file": "01-dbt-overview-desktop-dark.png",
+    "note": "/modules/dbt as it ships on dev, desktop dark (top)"
+  },
+  {
+    "file": "02-cbt-home-desktop-dark.png",
+    "note": "/modules/cbt on the seeded demo account, desktop dark (top)"
+  },
+  {
+    "file": "03-act-home-desktop-dark.png",
+    "note": "/modules/act on the seeded demo account, desktop dark (top)"
+  },
+  {
+    "file": "12-cbt-graduation-phone-light.png",
+    "note": "/modules/cbt with cbt_program_completed_at set locally — the graduation surface, phone light (top)"
+  },
+  {
+    "file": "12-cbt-graduation-desktop-light.png",
+    "note": "/modules/cbt with cbt_program_completed_at set locally — the graduation surface, desktop light (top)"
+  },
+  {
+    "file": "13-act-graduation-phone-light.png",
+    "note": "/modules/act with act_program_completed_at set locally — the graduation surface, phone light (top)"
+  },
+  {
+    "file": "13-act-graduation-desktop-light.png",
+    "note": "/modules/act with act_program_completed_at set locally — the graduation surface, desktop light (top)"
+  }
+]
