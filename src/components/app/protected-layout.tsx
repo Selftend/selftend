@@ -424,6 +424,12 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/dbt/emotions/index" dangerouslySingular />
             <Stack.Screen name="modules/dbt/emotions/new" />
             <Stack.Screen name="modules/dbt/emotions/[id]" />
+            <Stack.Screen name="modules/dbt/wise-mind/index" dangerouslySingular />
+            <Stack.Screen name="modules/dbt/wise-mind/new" />
+            <Stack.Screen name="modules/dbt/wise-mind/[id]" />
+            <Stack.Screen name="modules/dbt/judgements/index" dangerouslySingular />
+            <Stack.Screen name="modules/dbt/judgements/new" />
+            <Stack.Screen name="modules/dbt/judgements/[id]" />
             <Stack.Screen name="tools/index" dangerouslySingular />
             <Stack.Screen name="tools/check-in/index" dangerouslySingular />
             <Stack.Screen name="tools/meditation/index" />
