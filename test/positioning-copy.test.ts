@@ -178,9 +178,17 @@ const ALL_SURFACES: Scanned[] = [
   readFile("docs/product-principles.md"),
 ];
 
-/** `ALL_SURFACES` plus the prose docs, deduplicated - `product-principles.md` is in both. */
+/**
+ * `ALL_SURFACES` plus the prose docs, deduplicated - `product-principles.md` is
+ * in both.
+ *
+ * ☠️ The dedupe keys on `surface` AND `id`, never `id` alone - see
+ * `keeps every Bulgarian i18n value in the prose corpus` below for what `id`
+ * alone silently dropped, and why nothing went red over it (#2019).
+ */
 const WITH_PROSE_DOCS: Scanned[] = [...ALL_SURFACES, ...PROSE_DOCS].filter(
-  (entry, index, all) => all.findIndex((other) => other.id === entry.id) === index,
+  (entry, index, all) =>
+    all.findIndex((other) => other.surface === entry.surface && other.id === entry.id) === index,
 );
 
 interface Rule {
@@ -868,6 +876,51 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
     for (const record of ["docs/app-store-review-information.md", "docs/campaign/scripts/cbt.md"]) {
       expect(readFile(record).text).toMatch(/guided self-help/i);
     }
+  });
+
+  /**
+   * The prose corpus keeps BOTH locales (#2019). It is built by deduplicating
+   * `ALL_SURFACES` against `PROSE_DOCS`, and an i18n entry's `id` is
+   * `namespace:key` with no locale in it - so a dedupe on `id` alone kept the
+   * first locale listed and dropped the second as a "duplicate". `en` is listed
+   * first and `locale-parity` guarantees every `bg` key has an `en` twin, which
+   * made the two Bulgarian guided-self-help rules green over ZERO Bulgarian copy
+   * from the day the corpus was introduced. The other three corpora never
+   * dedupe, so the hole was confined to the loudest rule in the file.
+   *
+   * The dedupe now keys on `surface` as well, and this pins it: a locale is
+   * only a duplicate of itself.
+   *
+   * The two counts are asserted EQUAL rather than merely "bg is not fewer".
+   * `src/i18n/locale-parity.test.ts` makes the two key sets identical, so
+   * equality holds today and catches a half dropped in either direction - the
+   * looser inequality would sit green if the `en` half were the one to vanish.
+   *
+   * ☠️ Equality alone is not enough either, and neither is a bare "more than
+   * zero". Deduping on `surface` ALONE - the tempting mis-fix in the other
+   * direction - collapses each locale to ONE entry, which is still equal, still
+   * non-zero, and still leaves the prose rules scanning two strings. So each
+   * locale is pinned against the whole locale it was built from: every value
+   * `locale-strings` read has to survive into the corpus, not merely some.
+   */
+  it("keeps every Bulgarian i18n value in the prose corpus (#2019)", () => {
+    const inCorpus = (surface: string) =>
+      WITH_PROSE_DOCS.filter((entry) => entry.surface === surface).length;
+
+    // Nothing is lost between `locale-strings` and the corpus, in either locale.
+    expect(inCorpus("i18n/en")).toBe(LOCALE_STRINGS.en.length);
+    expect(inCorpus("i18n/bg")).toBe(LOCALE_STRINGS.bg.length);
+    expect(inCorpus("i18n/bg")).toBe(inCorpus("i18n/en"));
+
+    // And a named Bulgarian value really is in there, not just a matching count.
+    expect(
+      WITH_PROSE_DOCS.some(
+        (entry) => entry.surface === "i18n/bg" && entry.id === "auth:landing.subtitle",
+      ),
+    ).toBe(true);
+
+    // The one genuine duplicate is still collapsed to a single entry.
+    expect(inCorpus("docs/product-principles.md")).toBe(1);
   });
 
   /**
