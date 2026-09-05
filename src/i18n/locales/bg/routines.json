@@ -74,6 +74,7 @@
       "mindfulness": "Осъзнатост",
       "cbt": "КПТ",
       "act": "ACT",
+      "dbt": "ДПТ",
       "habits": "Навици"
     },
     "addStep": "Добави {{tool}}",
@@ -123,7 +124,13 @@
     "observingSelf": "Наблюдаващото Аз",
     "bullsEye": "Проверка на ценностите",
     "choicePoint": "Момент на избор",
-    "committedAction": "Ангажирано действие"
+    "committedAction": "Ангажирано действие",
+    "muscleRelaxation": "Мускулна релаксация",
+    "wiseMind": "Проверка с мъдрия ум",
+    "judgement": "Запис на осъждане",
+    "emotionRecord": "Запис на емоция",
+    "oppositeAction": "Противоположно действие",
+    "script": "Сценарий"
   },
   "reminder": {
     "sectionLabel": "Ежедневно напомняне",

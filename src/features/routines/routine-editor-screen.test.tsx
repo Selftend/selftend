@@ -306,15 +306,21 @@ describe("RoutineEditorScreen", () => {
     expect(new Set(grouped).size).toBe(grouped.length);
   });
 
-  it("renders the five group headers over the add-step chips", () => {
+  it("renders a header over the add-step chips for every picker group", () => {
     renderWithProviders(<RoutineEditorScreen fallbackHref="/routines" mode="create" />);
 
     expect(screen.getByText("Check-ins & logs")).toBeTruthy();
     expect(screen.getByText("Mindfulness")).toBeTruthy();
     expect(screen.getByText("CBT")).toBeTruthy();
     expect(screen.getByText("ACT")).toBeTruthy();
+    expect(screen.getByText("DBT")).toBeTruthy();
     // "Habits" is both the group header and its only chip's label.
     expect(screen.getAllByText("Habits").length).toBeGreaterThanOrEqual(2);
+
+    // ☠️ Pinned to the group list itself, so a seventh group cannot ship
+    // with no header while the four hand-written assertions above still
+    // pass. The count is derived; the names are spot checks.
+    expect(STEP_TOOL_GROUPS).toHaveLength(6);
   });
 
   it("adds a newly admitted ACT tool as a step and saves it like any other", async () => {

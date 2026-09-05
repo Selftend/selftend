@@ -69,6 +69,12 @@ function readyRecords(overrides: Partial<RoutineToolRecords> = {}): RoutineToolR
     choicePoints: [],
     committedActions: [],
     actionSteps: [],
+    dbtSessions: [],
+    dbtWiseMindCheckins: [],
+    dbtJudgements: [],
+    dbtEmotionRecords: [],
+    dbtOppositeActionPlans: [],
+    dbtScripts: [],
     ...overrides,
   };
 }

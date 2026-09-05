@@ -32,6 +32,12 @@ function emptyRecords(): RoutineToolRecords {
     choicePoints: [],
     committedActions: [],
     actionSteps: [],
+    dbtSessions: [],
+    dbtWiseMindCheckins: [],
+    dbtJudgements: [],
+    dbtEmotionRecords: [],
+    dbtOppositeActionPlans: [],
+    dbtScripts: [],
   };
 }
 

@@ -13,18 +13,18 @@ import { DISTINCT_STEPPABLE_TOOLS } from "@/src/features/routines/starter-offer"
  * its order is the fixed candidate array; recency never enters.
  */
 describe("STARTER_CANDIDATE_TOOLS", () => {
-  it("is every distinct steppable tool except habits - eighteen of them", () => {
+  it("is every distinct steppable tool except habits - twenty-four of them", () => {
     // #31 keeps Habits out of auto-composition; dropAnchor is already out of the
     // DISTINCT list because it is a subset of connection.
     expect(STARTER_CANDIDATE_TOOLS).toEqual(
       DISTINCT_STEPPABLE_TOOLS.filter((tool) => tool !== "habits"),
     );
-    expect(STARTER_CANDIDATE_TOOLS).toHaveLength(18);
+    expect(STARTER_CANDIDATE_TOOLS).toHaveLength(24);
     expect(STARTER_CANDIDATE_TOOLS).not.toContain("habits");
     expect(STARTER_CANDIDATE_TOOLS).not.toContain("dropAnchor");
   });
 
-  it("orders the everyday tools first and every pure-ACT exercise from position 11 of 18", () => {
+  it("orders the everyday tools first, then the ACT exercises, then DBT last", () => {
     // The widening to module exercises is self-limiting BECAUSE of this order: with a
     // cap of 3, an exercise composes only when fewer than three everyday tools have
     // records (sub-decision 1, ratified on #1894).
@@ -32,6 +32,20 @@ describe("STARTER_CANDIDATE_TOOLS", () => {
     const firstAct = STARTER_CANDIDATE_TOOLS.indexOf("defusion");
     expect(firstAct).toBeGreaterThanOrEqual(10);
     expect(STARTER_CANDIDATE_TOOLS.indexOf("breathing")).toBeLessThan(firstAct);
+
+    // ☠️ DBT sits behind every ACT exercise (#1980), which is what keeps the
+    // widening self-limiting: with the cap at three, a DBT record composes a
+    // step only for someone with fewer than three records across the rest.
+    const firstDbt = STARTER_CANDIDATE_TOOLS.indexOf("muscleRelaxation");
+    expect(firstDbt).toBeGreaterThan(STARTER_CANDIDATE_TOOLS.indexOf("committedAction"));
+    expect(STARTER_CANDIDATE_TOOLS.slice(firstDbt)).toEqual([
+      "muscleRelaxation",
+      "wiseMind",
+      "judgement",
+      "emotionRecord",
+      "oppositeAction",
+      "script",
+    ]);
   });
 });
 
