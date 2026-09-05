@@ -417,6 +417,9 @@ export default function ProtectedLayout() {
             <Stack.Screen name="modules/dbt/index" dangerouslySingular />
             <Stack.Screen name="modules/dbt/learn/index" dangerouslySingular />
             <Stack.Screen name="modules/dbt/learn/[group]" />
+            <Stack.Screen name="modules/dbt/coping-plan/index" dangerouslySingular />
+            <Stack.Screen name="modules/dbt/coping-plan/edit" />
+            <Stack.Screen name="modules/dbt/pause" />
             <Stack.Screen name="tools/index" dangerouslySingular />
             <Stack.Screen name="tools/check-in/index" dangerouslySingular />
             <Stack.Screen name="tools/meditation/index" />

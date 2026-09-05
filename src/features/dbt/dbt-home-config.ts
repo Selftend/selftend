@@ -73,7 +73,10 @@ const MEDITATION: SharedTool = {
 export const DBT_GROUPS: DbtGroup[] = [
   {
     key: "distressTolerance",
-    tools: [],
+    tools: [
+      { key: "copingPlan", route: "/modules/dbt/coping-plan", icon: "checklist" },
+      { key: "pause", route: "/modules/dbt/pause", icon: "pause-circle-outline" },
+    ],
     shared: [
       {
         key: "breathing",
