@@ -128,7 +128,7 @@ const SECTION_KINDS = new Map([
 ]);
 
 /** Repo-relative path of the frozen corpus, resolved from the working directory. */
-const CORPUS_PATH = "test/fixtures/github-releases.json";
+export const CORPUS_PATH = "test/fixtures/github-releases.json";
 
 /**
  * Exact match against the denylist. A compound scope (`ci,deps`, `nav+design`)
