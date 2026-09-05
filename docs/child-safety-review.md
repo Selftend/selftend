@@ -233,9 +233,17 @@ A new module is the PR-template trigger, and the spec (`docs/modules/dbt-mckay-s
 
 **Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** With this pass the module's first-release copy is fully reviewed apart from the programme, which arrives next.
 
-### Owed — the rest of the DBT module, at implementation (spec decided 2026-09-05, [#1994](https://github.com/Selftend/selftend/issues/1994))
+### The DBT module, seventh pass — the programme and its one reminder (2026-09-05, [#1980](https://github.com/Selftend/selftend/issues/1980))
 
-A new module is the PR-template trigger. The spec (`docs/modules/dbt-mckay-skills-workbook.md` §9) was written inside five standing rules — self-harm and suicide named on the crisis page only, nothing branching on the person's state, no stored health fact beyond the record, _crisis_ kept to the crisis page's meaning, no medical question asked — so the re-run is over the strings, not the shape. **Scope when it runs:** the `dbt` namespace's remaining copy — the programme's phases, its card and its graduation — plus the `copy.dbt.*` reminder strings and the DBT `help` keys, `en` and `bg` (the home, the groups, the learn pages, every tool was covered by the six passes above); and specifically the per-emotion opposite-action hints, the sleep-hygiene list, the _You are allowed to…_ lines, the five push-back lines, the _what got in the way_ list and the four caution sentences, each of which the spec flags for the absolute-effect-verb and positioning gates. Two facts for that run are already known: the learn page carries the app's second substance reference (see _For the Play pass_ above), and the acronyms STOP, PLEASE, DEAR MAN and FAST appear once each, beside their expansion, on a learn page only (row 10).
+**Scope.** The programme's invitation, card, phases, twelve task labels, graduation lines and management copy; the module's `help` entry; and the **one reminder string**. Roughly 60 strings per locale plus three notification strings.
+
+**The reminder is the block this pass exists for**, because it is the only DBT copy that can reach a person who did not open the app. It is **one static string**, off by default, time-of-day only: _"DBT practice — A few minutes with one skill: relax your body, or write one record."_ Checked against §4's list of what it may never say, and it says none of them: no _crisis_ and no _emergency_; no self-harm or suicide word; **no missed-day, come-back or loss line** — nothing on any channel is triggered by non-use, and this copy does not imply it was; nothing about the person's state; no count; nothing that varies by date, phase or visit; and no DBT® mark. It reminds toward the module home and names one thing to do.
+
+**The programme copy.** Two rules read closely. The **graduation is CBT's filtered shape**: only non-zero lines, so it never reads a row of noughts back at someone, and with every count zero it says _"You reached the end at your own pace. Your tools are here whenever you need them."_ rather than a prescription to keep going. And the **daily practice is named as a practice, not a debt**: a phase advances on its milestones, a day without the daily task changes nothing on the card, and no string anywhere names a missed one. The word _daily_ appears once, in the shipped _"No daily task this phase"_, which says a task is absent rather than owed.
+
+**Leaving.** _Leave the DBT programme?_ answers with _"Your saved records stay. You can start the programme again any time."_ — the guarantee that matters, said before the choice rather than after it.
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** With this pass **the DBT module's first-release copy is fully reviewed** in both locales.
 
 ## Re-running this
 

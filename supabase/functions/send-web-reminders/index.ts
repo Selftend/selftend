@@ -147,7 +147,7 @@ Deno.serve(async (request) => {
       supabase
         .from("web_push_subscriptions")
         .select(
-          "id,user_id,endpoint,p256dh,auth,time_zone,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys,failure_count",
+          "id,user_id,endpoint,p256dh,auth,time_zone,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_dbt_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys,failure_count",
         )
         .eq("enabled", true),
     )) as WebPushSubscriptionRow[];
@@ -159,7 +159,7 @@ Deno.serve(async (request) => {
       supabase
         .from("device_push_tokens")
         .select(
-          "id,user_id,expo_push_token,time_zone,failure_count,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys",
+          "id,user_id,expo_push_token,time_zone,failure_count,last_cbt_reminder_key,last_meditation_reminder_key,last_act_reminder_key,last_dbt_reminder_key,last_mood_reminder_key,last_journal_reminder_key,last_gratitude_reminder_key,last_grounding_reminder_key,last_breathing_reminder_key,last_sleep_reminder_key,last_habits_reminder_key,last_routine_reminder_keys",
         )
         .eq("enabled", true),
     )) as TokenRow[];
@@ -191,6 +191,10 @@ Deno.serve(async (request) => {
       "act_reminder_hour",
       "act_reminder_minute",
       "act_reminder_timezone",
+      "dbt_reminders_enabled",
+      "dbt_reminder_hour",
+      "dbt_reminder_minute",
+      "dbt_reminder_timezone",
       "mood_reminders_enabled",
       "mood_reminder_hour",
       "mood_reminder_minute",

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { countDbtSessions, listDbtSessions, saveDbtSession } from "@/src/features/dbt/repository";
 import type { DbtSessionInput } from "@/src/features/dbt/types";
+import { requestReminderPrompt } from "@/src/stores/reminder-prompt-store";
 import { invalidateRecordDays } from "@/src/features/progress/queries";
 import { dbtKeys } from "./keys";
 
@@ -30,6 +31,10 @@ export function useSaveDbtSession(userId: string | null) {
     mutationFn: (input: DbtSessionInput) => saveDbtSession(userId!, input),
     meta: { suppressGlobalErrorToast: true },
     onSuccess: async () => {
+      // The once-ever reminder offer rides any DBT save (spec §4). The store
+      // decides whether to show it and the shipped eligibility gates it; this
+      // only reports that a save happened.
+      requestReminderPrompt("dbt");
       if (!userId) return;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: dbtKeys.sessionList(userId) }),

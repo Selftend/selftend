@@ -10,6 +10,7 @@ import {
   useScriptCount,
   useWiseMindCheckinCount,
 } from "@/src/features/dbt/queries";
+import { useDbtProgram } from "@/src/features/dbt/use-dbt-program";
 import { useNavigationOriginStore } from "@/src/stores/navigation-origin-store";
 import { renderWithProviders } from "@/test/render-with-providers";
 
@@ -21,6 +22,10 @@ jest.mock("expo-router", () => ({
 
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
+}));
+
+jest.mock("@/src/features/dbt/use-dbt-program", () => ({
+  useDbtProgram: jest.fn(),
 }));
 
 jest.mock("@/src/features/dbt/queries", () => ({
@@ -49,11 +54,45 @@ function setCounts(records: (number | undefined)[], sessions: number | undefined
 
 const prefetch = jest.fn();
 
+const NOT_STARTED = {
+  status: "not_started" as const,
+  startedAt: null,
+  phaseIndex: 0,
+  totalPhases: 4,
+  isLastPhase: false,
+  phase: null,
+  phaseReady: false,
+  summaryStats: { sessions: 0, wiseMindCheckins: 0, emotionRecords: 0, scriptsDone: 0 },
+};
+
+/** The programme hook, with everything the home reads off it. */
+function setProgram(
+  program: Record<string, unknown> = NOT_STARTED,
+  overrides: Record<string, unknown> = {},
+) {
+  (useDbtProgram as unknown as jest.Mock).mockReturnValue({
+    program,
+    isLoading: false,
+    startProgram: jest.fn(),
+    dismissProgramPrompt: jest.fn(),
+    showProgramPrompt: jest.fn(),
+    abandonProgram: jest.fn(),
+    replayProgram: jest.fn(),
+    advancePhase: jest.fn(),
+    dismissGraduation: jest.fn(),
+    promptDismissedAt: null,
+    graduationDismissedAt: null,
+    isUpdating: false,
+    ...overrides,
+  });
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   useNavigationOriginStore.setState({ pending: null });
   (usePrefetchCopingPlan as unknown as jest.Mock).mockReturnValue(prefetch);
   setCounts([1, 1, 1, 1, 1], 1);
+  setProgram();
 });
 
 /** Every rendered string, in document order. */
@@ -183,6 +222,64 @@ describe("DbtHomeScreen", () => {
       origin: "/modules/dbt",
       forPathname: "/modules/dbt/learn/distress-tolerance",
     });
+  });
+
+  it("invites the person into the programme, and offers the bell", () => {
+    renderWithProviders(<DbtHomeScreen />);
+
+    expect(screen.getByText("Start the DBT programme")).toBeTruthy();
+    expect(screen.getByLabelText("Reminders")).toBeTruthy();
+  });
+
+  /**
+   * ☠️ The flag restores an invitation the person closed. A flag beside a
+   * RUNNING programme would be noise, so it only appears while nothing is
+   * started.
+   */
+  it("shows the restore-invitation flag only while nothing is started", () => {
+    renderWithProviders(<DbtHomeScreen />);
+    expect(screen.getByLabelText("Show the programme invitation")).toBeTruthy();
+
+    setProgram({ ...NOT_STARTED, status: "in_progress", startedAt: "2026-06-01T09:00:00.000Z" });
+    renderWithProviders(<DbtHomeScreen />);
+    expect(screen.queryByLabelText("Show the programme invitation")).toBeNull();
+  });
+
+  it("shows nothing at all once the invitation is dismissed and nothing started", () => {
+    setProgram(NOT_STARTED, { promptDismissedAt: "2026-06-01T09:00:00.000Z" });
+    renderWithProviders(<DbtHomeScreen />);
+
+    expect(screen.queryByText("Start the DBT programme")).toBeNull();
+  });
+
+  /**
+   * ☠️ CBT's filtered graduation, never ACT's: only non-zero lines, so a
+   * graduation never reads a row of noughts back at someone.
+   */
+  it("filters the graduation to what actually happened", () => {
+    setProgram({
+      ...NOT_STARTED,
+      status: "graduated",
+      startedAt: "2026-06-01T09:00:00.000Z",
+      summaryStats: { sessions: 2, wiseMindCheckins: 0, emotionRecords: 1, scriptsDone: 0 },
+    });
+    renderWithProviders(<DbtHomeScreen />);
+
+    expect(screen.getByText("You finished the DBT programme")).toBeTruthy();
+    expect(screen.getByText("2 sessions completed")).toBeTruthy();
+    expect(screen.getByText("1 emotion record")).toBeTruthy();
+    expect(screen.queryByText(/0 wise mind|0 scripts/)).toBeNull();
+  });
+
+  it("says something kind rather than nothing when every count is zero", () => {
+    setProgram({
+      ...NOT_STARTED,
+      status: "graduated",
+      startedAt: "2026-06-01T09:00:00.000Z",
+    });
+    renderWithProviders(<DbtHomeScreen />);
+
+    expect(screen.getByText(/You reached the end at your own pace/)).toBeTruthy();
   });
 
   it("keeps the crisis callout on the module home", () => {
