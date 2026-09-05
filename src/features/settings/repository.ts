@@ -66,12 +66,22 @@ interface UserPreferenceRow {
   habits_reminder_hour: number | null;
   habits_reminder_minute: number | null;
   habits_reminder_timezone: string | null;
+  dbt_reminders_enabled: boolean | null;
+  dbt_reminder_hour: number | null;
+  dbt_reminder_minute: number | null;
+  dbt_reminder_timezone: string | null;
   act_program_started_at: string | null;
   act_program_completed_at: string | null;
   act_program_prompt_dismissed_at: string | null;
   act_program_phase_index: number | null;
   act_program_phase_started_at: string | null;
   act_graduation_dismissed_at: string | null;
+  dbt_program_started_at: string | null;
+  dbt_program_completed_at: string | null;
+  dbt_program_prompt_dismissed_at: string | null;
+  dbt_program_phase_index: number | null;
+  dbt_program_phase_started_at: string | null;
+  dbt_graduation_dismissed_at: string | null;
   privacy_policy_accepted_at: string | null;
   terms_accepted_at: string | null;
   policy_version_accepted: string | null;
@@ -175,12 +185,22 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     habitsReminderHour: row.habits_reminder_hour ?? defaultUserPreferences.habitsReminderHour,
     habitsReminderMinute: row.habits_reminder_minute ?? defaultUserPreferences.habitsReminderMinute,
     habitsReminderTimezone: row.habits_reminder_timezone ?? null,
+    dbtRemindersEnabled: Boolean(row.dbt_reminders_enabled),
+    dbtReminderHour: row.dbt_reminder_hour ?? defaultUserPreferences.dbtReminderHour,
+    dbtReminderMinute: row.dbt_reminder_minute ?? defaultUserPreferences.dbtReminderMinute,
+    dbtReminderTimezone: row.dbt_reminder_timezone ?? null,
     actProgramStartedAt: row.act_program_started_at ?? null,
     actProgramCompletedAt: row.act_program_completed_at ?? null,
     actProgramPromptDismissedAt: row.act_program_prompt_dismissed_at ?? null,
     actProgramPhaseIndex: row.act_program_phase_index ?? 0,
     actProgramPhaseStartedAt: row.act_program_phase_started_at ?? null,
     actGraduationDismissedAt: row.act_graduation_dismissed_at ?? null,
+    dbtProgramStartedAt: row.dbt_program_started_at ?? null,
+    dbtProgramCompletedAt: row.dbt_program_completed_at ?? null,
+    dbtProgramPromptDismissedAt: row.dbt_program_prompt_dismissed_at ?? null,
+    dbtProgramPhaseIndex: row.dbt_program_phase_index ?? 0,
+    dbtProgramPhaseStartedAt: row.dbt_program_phase_started_at ?? null,
+    dbtGraduationDismissedAt: row.dbt_graduation_dismissed_at ?? null,
     privacyPolicyAcceptedAt: row.privacy_policy_accepted_at ?? null,
     termsAcceptedAt: row.terms_accepted_at ?? null,
     policyVersionAccepted: row.policy_version_accepted ?? null,
@@ -319,12 +339,22 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   habitsReminderHour: "habits_reminder_hour",
   habitsReminderMinute: "habits_reminder_minute",
   habitsReminderTimezone: "habits_reminder_timezone",
+  dbtRemindersEnabled: "dbt_reminders_enabled",
+  dbtReminderHour: "dbt_reminder_hour",
+  dbtReminderMinute: "dbt_reminder_minute",
+  dbtReminderTimezone: "dbt_reminder_timezone",
   actProgramStartedAt: "act_program_started_at",
   actProgramCompletedAt: "act_program_completed_at",
   actProgramPromptDismissedAt: "act_program_prompt_dismissed_at",
   actProgramPhaseIndex: "act_program_phase_index",
   actProgramPhaseStartedAt: "act_program_phase_started_at",
   actGraduationDismissedAt: "act_graduation_dismissed_at",
+  dbtProgramStartedAt: "dbt_program_started_at",
+  dbtProgramCompletedAt: "dbt_program_completed_at",
+  dbtProgramPromptDismissedAt: "dbt_program_prompt_dismissed_at",
+  dbtProgramPhaseIndex: "dbt_program_phase_index",
+  dbtProgramPhaseStartedAt: "dbt_program_phase_started_at",
+  dbtGraduationDismissedAt: "dbt_graduation_dismissed_at",
   privacyPolicyAcceptedAt: "privacy_policy_accepted_at",
   termsAcceptedAt: "terms_accepted_at",
   policyVersionAccepted: "policy_version_accepted",

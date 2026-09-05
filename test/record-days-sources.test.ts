@@ -1,10 +1,46 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-const MIGRATION = join(__dirname, "..", "supabase", "migrations", "20260907000000_record_days.sql");
+const MIGRATIONS_DIR = join(__dirname, "..", "supabase", "migrations");
+const DECLARATION = "create or replace function public.record_days";
 
 /**
- * `record_days` reads exactly the ten sources that NAME THEIR OWN DAY (#1904).
+ * The migration whose `record_days` declaration wins - the newest by version
+ * order, exactly as `export_user_data` is resolved. ☠️ Pinning the ORIGINAL file
+ * here would let a redeclaration add a source nothing could see, which is the
+ * quiet failure this suite exists to stop; #1980's six legs were the first.
+ */
+export function winningRecordDaysMigration(): string {
+  const files = readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .filter((f) => readFileSync(join(MIGRATIONS_DIR, f), "utf8").includes(DECLARATION));
+  return join(MIGRATIONS_DIR, files[files.length - 1]);
+}
+
+const MIGRATION = winningRecordDaysMigration();
+
+/**
+ * The declaration body only - from `create or replace function public.record_days`
+ * to its closing `$$;`. ☠️ The winning migration can carry other statements
+ * (#1980's carries seven tables' DDL and an `export_user_data` redeclaration
+ * that reads every table through its VIEW), so a whole-file scan would both
+ * widen the source list and trip the base-tables-only rule below.
+ */
+function recordDaysBody(): string {
+  const file = readFileSync(MIGRATION, "utf8");
+  const start = file.indexOf(DECLARATION);
+  const end = file.indexOf("\n$$;", start);
+  expect(start).toBeGreaterThan(-1);
+  expect(end).toBeGreaterThan(start);
+  return file.slice(start, end);
+}
+
+/**
+ * `record_days` reads exactly the sixteen sources that NAME THEIR OWN DAY (#1904),
+ * ten of them since the first declaration and six since the DBT module (#1980):
+ * every DBT table carries its offset from day one, and the coping plan is out
+ * because it has no day.
  *
  * The rule, not the count, is what this pins: a mark on the "Looking back"
  * timeline sits on the day the record itself names, so a table that captures no
@@ -28,6 +64,12 @@ const MIGRATION = join(__dirname, "..", "supabase", "migrations", "2026090700000
  */
 const EXPECTED_SOURCES = [
   "activity_logs_data",
+  "dbt_emotion_records_data",
+  "dbt_judgements_data",
+  "dbt_opposite_action_plans_data",
+  "dbt_scripts_data",
+  "dbt_sessions_data",
+  "dbt_wise_mind_checkins_data",
   "gratitude_entries_data",
   "habit_logs_data",
   "journal_entries_data",
@@ -40,15 +82,19 @@ const EXPECTED_SOURCES = [
 ];
 
 describe("record_days sources", () => {
-  it("reads exactly the ten tables that name their own day", () => {
-    const sql = readFileSync(MIGRATION, "utf8");
+  it("resolves the newest declaration, not the first", () => {
+    expect(MIGRATION).toMatch(/20260910000000_dbt_module\.sql$/);
+  });
+
+  it("reads exactly the sixteen tables that name their own day", () => {
+    const sql = recordDaysBody();
     const sources = [...sql.matchAll(/\bfrom\s+public\.(\w+)\b/g)].map((match) => match[1]);
 
     expect([...new Set(sources)].sort()).toEqual(EXPECTED_SOURCES);
   });
 
   it("reads the base tables, never the decrypting views", () => {
-    // NINE of the ten are `*_data` tables behind a decrypting view -
+    // Fifteen of the sixteen are `*_data` tables behind a decrypting view -
     // `meditation_sessions` is the only plain base table. The RPC needs only
     // plaintext timestamps, offsets and dates, and it scans ALL TIME, so going
     // through a view would run `app.decrypt_text` (VOLATILE — the planner can
@@ -59,7 +105,7 @@ describe("record_days sources", () => {
     // own today. It is kept because it states the RULE rather than the list: an
     // edit that moved a leg onto its view AND updated `EXPECTED_SOURCES` to
     // match would leave that test green and fail here.
-    const sql = readFileSync(MIGRATION, "utf8");
+    const sql = recordDaysBody();
     const encryptedFamilies = [
       "mood_logs",
       "gratitude_entries",
@@ -70,6 +116,12 @@ describe("record_days sources", () => {
       "thought_records",
       "habit_logs",
       "self_care_logs",
+      "dbt_sessions",
+      "dbt_wise_mind_checkins",
+      "dbt_judgements",
+      "dbt_emotion_records",
+      "dbt_opposite_action_plans",
+      "dbt_scripts",
     ];
 
     for (const family of encryptedFamilies) {
