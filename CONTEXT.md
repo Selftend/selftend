@@ -14,9 +14,57 @@ The frame binds **copy only**, never what the product contains or what it offers
 _Avoid_: wellness app, toolkit, mood tracker, journalling app, habit tracker, sleep app, meditation app — as **categories**; each names a real tool Selftend ships and a shelf it is not on. Telehealth or therapy-matching, likewise — Apple files the noun beside prescribers, and Selftend has nobody else in the loop. And above all the practitioner-implying compound retired in [#1616](https://github.com/Selftend/selftend/issues/1616). ☠️ The noun no longer owns half of that compound, but _self-help_ stays live vocabulary elsewhere, so the ban and its one-word gap stay. The full and current list, with each refusal's reason, is [docs/positioning.md](docs/positioning.md) § _The refusals_ and § _Words never to use_ — read it there rather than from this line, which is a pointer and not a second copy. `test/positioning-copy.test.ts` fails `verify` on the compound in this file too, which is why the banned words are never spelled out here.
 
 **programme**:
-The CBT module's own noun, and only that — a staged progression, authored and five phases long, that a person graduates from. ☠️ It is **not** the product's category any more: [#1814](https://github.com/Selftend/selftend/issues/1814) kept the word for the component and moved the category to the entry above, and [#2004](https://github.com/Selftend/selftend/issues/2004) kept it there when the category moved again.
+The noun of a module's own staged progression — authored, phased, and graduated from once: the CBT programme (five phases), the ACT programme (four), and the DBT programme (four, decided in [docs/modules/dbt-mckay-skills-workbook.md](docs/modules/dbt-mckay-skills-workbook.md) §4, not yet built). The frame sentence names only the CBT one, because that is the method the category is paired with; the word itself belongs to every module that has one ([#1991](https://github.com/Selftend/selftend/issues/1991)). ☠️ It is **not** the product's category any more: [#1814](https://github.com/Selftend/selftend/issues/1814) kept the word for the component and moved the category to the entry above, and [#2004](https://github.com/Selftend/selftend/issues/2004) kept it there when the category moved again.
 
 > Note: **programme** names this progression — never a user's routine, which keeps its own `_Avoid_: program` below. A routine is user-named and user-owned, and has no authored order to graduate from; a programme is authored and staged.
+
+### DBT
+
+The module's vocabulary, decided on map [#1980](https://github.com/Selftend/selftend/issues/1980) and held in full by [docs/modules/dbt-mckay-skills-workbook.md](docs/modules/dbt-mckay-skills-workbook.md) §12; the terms below are the ones other parts of the app meet.
+
+**Skill group**:
+One of DBT's four — distress tolerance, mindfulness, emotion regulation, interpersonal effectiveness — in the book's order. The same four are the DBT programme's phases. In Bulgarian, distress tolerance is _Устойчивост на стрес_ ([#1991](https://github.com/Selftend/selftend/issues/1991)).
+_Avoid_: pillar (CBT's word), module (the group is inside one), phase (that is the programme's view of it)
+
+**Coping plan**:
+One per person: three sections of app-written picks and the person's own lines, plus an ordered fallback list of three to six, read as a **card** in a hard moment. It is a document with a _touched_ time, never a record with history, and the card carries no crisis bar and no completion affordance. Never counted.
+_Avoid_: emergency plan, crisis plan, safety plan (all reserved or banned vocabulary), plan history
+
+**Pause and choose**:
+A four-step flow between the urge and the next act, ending on the person's coping plan. It **records nothing** — no row, no count, no signal — and its first step is a static line pointing at the crisis bar, identical for everyone.
+_Avoid_: interrupt log, a record of moments, any per-use count
+
+**Session** _(in DBT's sense)_:
+A timed, text-guided practice that records **on completion only**. Its **Stop** ends it at once, saves nothing and asks nothing — the opposite of the everyday tools' _Finish early_, which saves a partial row and answers the back gesture with a dialog. Muscle relaxation is the first; the rest are the second slice.
+_Avoid_: finish early, partial session, `stepsCompleted`
+
+**Wise mind**:
+Deciding by feeling and by facts together; _emotion mind_ and _reason_ are its halves. The **wise mind check-in** is a guided pause ending in a typed decision note: one row, no timer, no outcome field, no draft.
+_Avoid_: intuition, gut, the right answer
+
+**Judgement record**:
+A judgement, a Negative/Positive mark, and an optional plain restatement of what was actually there; the time is captured, not asked. No _where_, no counts. Spelled with the _e_ in every string the gate reads.
+_Avoid_: judgment (gated spelling), judgement log, a tally
+
+**Emotion record**:
+Six parts from what happened to what came after — the meaning kept as the person's own, feelings from the check-in's editable list — with no rating of any kind. Its one door hands the event and the built-in emotions to the CBT thought record through the seed store.
+_Avoid_: emotion log (the check-in's job), intensity, portrait fields
+
+**Opposite action**:
+The move a feeling would not choose. The **opposite-action plan** is an open record closed from its detail with a done-day and an optional _what shifted_; the done-day is the fact, the plan's existence never is. Nothing asks the person to close it.
+_Avoid_: overdue, age on an open plan, a count of plans, _should_
+
+**Script**:
+The four lines — I think, I feel, I want, what I'll do for myself — written before a conversation and reopened as a card. _Ask for what you want_ is the door and the room; _script_ is the record noun. Nothing is stored about the other person.
+_Avoid_: who, assertiveness training, hierarchy, rehearsal record
+
+**Ladder** _(DBT)_:
+The script list ordered easiest-first by the optional 0–100 difficulty, done scripts falling away. An ordering, never an entity, and never the CBT exposure ladder.
+_Avoid_: hierarchy, rung numbers, a gate between rungs
+
+**Learn page**:
+A static primer or skill-group page — DBT is the only module with a learn route, and every learn page opens with the crisis bar. It carries every learn-only skill, the cautions and the referral lines, and it records nothing and varies by nothing.
+_Avoid_: onboarding, info modal (the siblings' primer shape), lesson
 
 **Favourite**:
 A tool or a module the person has starred to keep on Home — one of the eight everyday tools or one of the three modules, and nothing finer-grained than that ([#1885](https://github.com/Selftend/selftend/issues/1885)). Home lists the favourites first, then the complete catalogue of eleven, through the same card; a favourited item therefore appears twice, plainly. The star is a toggle with an immediately visible consequence, so there is no cap and no "full" state. Favourites is the catalogue **filtered**, never sorted — nothing stores an order — and the modules section beneath it renders unconditionally, because a Home that shows the tools without the method is the inventory `docs/positioning.md` forbids.

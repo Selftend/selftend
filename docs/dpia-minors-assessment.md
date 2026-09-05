@@ -523,3 +523,14 @@ Not on a calendar alone. Any of these re-opens it:
 - **Analytics, research use, AI, community or sharing features, or any
   practitioner in the loop.** Each would change the answer in §2 rather than add
   a row to it.
+
+**Re-read 2026-09-05 — the DBT module spec** (`modules/dbt-mckay-skills-workbook.md`,
+a new module, the second trigger above). Read for the spec, before any build: the
+module adds seven encrypted tables of the person's own words and emotion ids
+under the same controller, processor, transfer and entry path as every existing
+record, and its safety rules refuse every new field class this document would
+care about — no medical answer, no severity rating, no belief or religious
+field, nothing about a third party, no per-day count. Nothing in §2 or §5
+changes; §1's table gains its rows when the tables ship, and the child-safety
+review re-run owed at implementation is recorded in
+[child-safety-review.md](child-safety-review.md).

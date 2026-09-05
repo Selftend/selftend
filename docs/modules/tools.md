@@ -72,6 +72,19 @@ Working meditation routes (all under `/tools/meditation`; there is no `/modules/
 
 `meditation-tmi.md` is the module spec; its §5 lists the same routes.
 
+DBT routes (decided, not built - `dbt-mckay-skills-workbook.md` §7 is the spec; today only `/modules/dbt` routes, as an overview screen):
+
+- `/modules/dbt` - module home (converts the overview screen; the route file moves to `modules/dbt/index.tsx`)
+- `/modules/dbt/learn`, `/modules/dbt/learn/[group]` - the primer and the four skill-group learn pages
+- `/modules/dbt/coping-plan`, `/modules/dbt/coping-plan/edit` - the card (or the builder's intro), the builder
+- `/modules/dbt/pause` - Pause and choose, a four-step flow that records nothing
+- `/modules/dbt/sessions/muscle-relaxation` - the timed session; `sessions/safe-place`, `cue-word`, `inner-outer`, `focus-shifting` are reserved for the second slice
+- `/modules/dbt/wise-mind`, `/modules/dbt/wise-mind/new`, `/modules/dbt/wise-mind/[id]`
+- `/modules/dbt/judgements`, `/modules/dbt/judgements/new`, `/modules/dbt/judgements/[id]`
+- `/modules/dbt/emotions`, `/modules/dbt/emotions/new`, `/modules/dbt/emotions/[id]`
+- `/modules/dbt/opposite-action`, `/modules/dbt/opposite-action/new`, `/modules/dbt/opposite-action/[id]`
+- `/modules/dbt/scripts`, `/modules/dbt/scripts/new`, `/modules/dbt/scripts/[id]`; `/modules/dbt/chain` is reserved for the second slice
+
 Compatibility redirects: `/tools/act` → `/modules/act`.
 
 ## Expansion Rule
@@ -103,7 +116,8 @@ Planned boundaries:
 - **CBT:** self-help strategies under the Gillihan CBT program, private history, recovery planning, pattern insights, and optional quiet reminders
 - **Check-in:** check-ins only; do not mix in generic journaling
 - **Journaling:** private free-text reflection, separate from CBT and check-ins. Spec: [journaling.md](journaling.md)
-- **ACT:** focused exercises after a spec
+- **ACT:** the Happiness Trap module - six principle tools, a four-phase programme, optional quiet reminders. Spec: [act-harris-happiness-trap.md](act-harris-happiness-trap.md)
+- **DBT:** skills for when feelings run high - a coping plan read as a card, a flow that records nothing, one timed session, five kinds of dated record, a four-phase programme on the shared machinery, learn pages, one opt-in reminder; nothing branches on the person's input, Stop saves nothing, and self-harm is named on the crisis page only. Spec: [dbt-mckay-skills-workbook.md](dbt-mckay-skills-workbook.md)
 - **Meditation:** the ten-stage Mind Illuminated program with onboarding, stage-aware sits, private session history, and optional quiet reminders. Spec: [meditation-tmi.md](meditation-tmi.md)
 - **Gratitude:** three-level practice (Noticing → Reflecting → Practicing), 9 named exercises from the Kurzgesagt Gratitude Journal, private history, no reminders or streak pressure. Spec: [gratitude.md](gratitude.md)
 - **Habits:** Atomic Habits four-law strategies, identity-based framing, tap-to-tick today list, calendar heat-strip on detail, "Never Miss Twice" copy, no streaks. Spec: [habits.md](habits.md)

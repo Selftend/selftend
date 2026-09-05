@@ -241,7 +241,7 @@ Radius token: 10px (`--radius`); cards use `rounded-2xl`.
 
 **Icons.** MaterialIcons only, through the app's `Icon` wrapper (icons are hidden from assistive tech by default and sized/coloured by class). Brand marks (Google sign-in) are the only exception.
 
-**Layout constants.** Content column 720px for home-type screens, 620px for forms; content is centred inside the shell. Phone floor 390 wide. The one responsive breakpoint is 640. Touch targets are 44px. Cards wrap at min-width 260.
+**Layout constants.** Content column 720px for home-type screens, 620px for forms; content is centred inside the shell. Phone floor 360 wide. The one responsive breakpoint is 640. Touch targets are 44px. Cards wrap at min-width 260.
 
 **Existing components** (use them before inventing): Text (with heading variants), Button, Card, Badge, Input, Textarea, Checkbox, Switch, Label, Popover, Avatar, Icon. The house empty state renders its own card — Home's empty-Favourites line deliberately does not use it.
 
