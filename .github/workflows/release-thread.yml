@@ -82,10 +82,13 @@ jobs:
           if [ "$EVENT_NAME" = "release" ]; then
             printf '%s' "$RELEASE_BODY" > "$RUNNER_TEMP/release-body.md"
           else
-            # A tag with no release is a non-zero exit here: a red run before
-            # the render, and before any issue call.
+            # A tag with no release is a non-zero exit on this assignment: a
+            # red run before the render, and before any issue call. (Assigned
+            # first on purpose - `set -e` ignores a failing substitution
+            # inside an `if` test.)
             release="repos/$GITHUB_REPOSITORY/releases/tags/$TAG"
-            if [ "$(gh api "$release" --jq '.prerelease')" = "true" ]; then
+            prerelease="$(gh api "$release" --jq '.prerelease')"
+            if [ "$prerelease" = "true" ]; then
               echo "prerelease=true" >> "$GITHUB_OUTPUT"
               echo "- $TAG is a pre-release; no thread is drafted for one." >> "$GITHUB_STEP_SUMMARY"
               echo "::notice::$TAG is a pre-release; no thread is drafted for one."
@@ -106,6 +109,18 @@ jobs:
           set -euo pipefail
           node scripts/release-thread/renderer.mjs --tag "$TAG" \
             --body-file "$RUNNER_TEMP/release-body.md" > "$RUNNER_TEMP/rendered.json"
+
+      # The key label, idempotently: `--force` updates an existing one in
+      # place. Without it a deleted label would fail the create call red for
+      # a reason that has nothing to do with the draft.
+      - name: Ensure the reddit-draft label exists
+        if: steps.release.outputs.prerelease != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh label create reddit-draft --repo "$GITHUB_REPOSITORY" --force --color FF4500 \
+            --description "A CI-drafted r/Selftend release thread; open = not yet posted, closed = done"
 
       # Look up, decide, act - and write the one-line trace to the step
       # summary: "nothing picked, no post for <tag>", "already handled", or the

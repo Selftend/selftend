@@ -128,15 +128,12 @@ export const runGh = (args, input) =>
  * @returns {IssueRef}
  */
 function issueFromUrl(stdout, title) {
-  const url = stdout
-    .trim()
-    .split(/\s+/)
-    .find((word) => /\/issues\/\d+$/.test(word));
-  if (!url)
+  const match = /\S+\/issues\/(\d+)$/m.exec(stdout.trim());
+  if (!match)
     throw new Error(
       `gh printed no issue URL, so the issue's number is unknown: ${JSON.stringify(stdout)}`,
     );
-  return { number: Number(url.match(/\/issues\/(\d+)$/)[1]), state: "OPEN", title, url };
+  return { number: Number(match[1]), state: "OPEN", title, url: match[0] };
 }
 
 /**
@@ -152,7 +149,7 @@ function issueFromUrl(stdout, title) {
  */
 export function file(rendered, gh = runGh, { repo = process.env.GITHUB_REPOSITORY } = {}) {
   if (!rendered.postable) return decide(rendered, []);
-  const at = repo ? ["--repo", repo] : [];
+  const repoFlag = repo ? ["--repo", repo] : [];
 
   /** @type {IssueRef[]} */
   const issues = JSON.parse(
@@ -167,7 +164,7 @@ export function file(rendered, gh = runGh, { repo = process.env.GITHUB_REPOSITOR
       String(LIST_LIMIT),
       "--json",
       "number,state,title,url",
-      ...at,
+      ...repoFlag,
     ]),
   );
 
@@ -177,13 +174,13 @@ export function file(rendered, gh = runGh, { repo = process.env.GITHUB_REPOSITOR
     case "create": {
       const labels = LABELS.flatMap((label) => ["--label", label]);
       const stdout = gh(
-        ["issue", "create", "--title", title, "--body-file", "-", ...labels, ...at],
+        ["issue", "create", "--title", title, "--body-file", "-", ...labels, ...repoFlag],
         body,
       );
       return { action: "create", issue: issueFromUrl(stdout, title) };
     }
     case "update":
-      gh(["issue", "edit", String(outcome.issue.number), "--body-file", "-", ...at], body);
+      gh(["issue", "edit", String(outcome.issue.number), "--body-file", "-", ...repoFlag], body);
       return outcome;
     default:
       return outcome;

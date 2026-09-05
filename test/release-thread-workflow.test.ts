@@ -113,10 +113,9 @@ describe("the order of steps (#1878 decision 6)", () => {
     expect(source).not.toMatch(/\/issues\b/);
   });
 
-  it("writes the nothing-picked trace as a step-summary line", () => {
-    // The filer writes it; the workflow must hand it the summary file by
-    // leaving GITHUB_STEP_SUMMARY alone, so the only thing to pin here is that
-    // no step overrides it.
+  it("leaves GITHUB_STEP_SUMMARY to the filer, which writes the trace there", () => {
+    // The filer appends the one-line trace to the runner's summary file; the
+    // workflow must not point it anywhere else.
     expect(source).not.toMatch(/GITHUB_STEP_SUMMARY\s*:/);
   });
 });
