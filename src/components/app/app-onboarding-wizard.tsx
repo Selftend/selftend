@@ -15,6 +15,7 @@ import {
   type GuidancePreference,
   type ModuleInterest,
 } from "@/src/features/onboarding/recommendations";
+import type { SteppableToolId } from "@/src/features/routines/derive";
 import { useRoutines } from "@/src/features/routines/queries";
 import { ROUTINE_NAME_MAX } from "@/src/features/routines/schemas";
 import { buildStarterSteps } from "@/src/features/routines/starter";
@@ -25,6 +26,25 @@ import { useSession } from "@/src/providers/session-provider";
 import { cn } from "@/lib/utils";
 
 const welcomeIllustration = require("../../../assets/images/onboarding/app_welcome.png");
+
+/**
+ * ⚠️ TEMPORARY ADAPTER - dies with this wizard's recommendation panels (#1958).
+ *
+ * `buildStarterSteps` composes from steppable tool ids since #1954; this wizard is
+ * the last caller still holding widget ids, because it pre-composes the starter from
+ * the recommendations it is about to seed. Local on purpose: the shared widget map
+ * it replaces (`WIDGET_STEP_TOOLS`) was deleted rather than kept alive for one dying
+ * call site. Habits is absent, as it always was (#31).
+ */
+const STARTER_WIDGET_TOOLS: Readonly<Record<string, SteppableToolId>> = {
+  "mood-checkin": "mood",
+  "journal-week": "journal",
+  "gratitude-latest": "gratitude",
+  "sleep-latest": "sleep",
+  "breathing-suggested": "breathing",
+  "grounding-log": "grounding",
+  "meditation-pick": "meditation",
+};
 type OnboardingPanel = "welcome" | "concerns" | "modules" | "guidance" | "routines";
 
 export interface AppOnboardingResult {
@@ -131,10 +151,13 @@ export function AppOnboardingWizard({
     });
 
   // The starter is pre-composed from the widgets this very wizard is about to
-  // keep on Home, so the candidate list is the current recommendation set (in
-  // concern-resolution order; buildStarterSteps drops non-steppable widgets,
-  // excludes Habits, and enforces the cap-3 / min-2 rules).
-  const starterSteps = buildStarterSteps(buildRecommendations().map((item) => item.widgetId));
+  // keep on Home. `buildStarterSteps` now takes steppable tool ids (#1954), so
+  // the recommendation set is mapped through the TEMPORARY adapter below; the
+  // builder excludes Habits and enforces the cap-3 / min-2 rules, in its fixed
+  // candidate order rather than concern-resolution order.
+  const starterSteps = buildStarterSteps(
+    buildRecommendations().flatMap((item) => STARTER_WIDGET_TOOLS[item.widgetId] ?? []),
+  );
   const starterEligible =
     !introductionOnly &&
     existingRoutines !== undefined &&

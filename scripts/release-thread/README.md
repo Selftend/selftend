@@ -22,7 +22,11 @@ a value looks wrong, the argument belongs on that ticket.
    and the body of the GitHub issue that carries both. The frame sentence and
    the rotated supporting line are constants pinned to `docs/positioning.md`
    by test.
-4. The workflow (#1951) follows.
+4. **`filer.mjs`** (#1951) - the renderer's output to exactly one GitHub issue
+   per release (`reddit-draft` + `ready-for-human`, the tag in the title), or
+   to a one-line trace on the run and no issue. The workflow
+   `.github/workflows/release-thread.yml` runs the three on every published
+   release; `docs/releasing.md` carries the human routine that follows.
 
 ## Running the picker
 
@@ -99,6 +103,29 @@ posted, the submit link outside any fence, the thread fenced (the exact-paste
 fallback), the picks numbered, the spares each with the reason it was not
 picked, and the steps - flair, submit, close. Closing without posting is a
 valid outcome, and a closed issue is never re-drafted.
+
+## Running the filer
+
+```sh
+node scripts/release-thread/filer.mjs --rendered rendered.json   # the renderer's JSON to one issue, or a trace
+```
+
+The workflow's last step. It reads the renderer's JSON and, with the `gh` on
+PATH under the workflow's own token:
+
+- **nothing picked** - no `gh` call at all; prints
+  `nothing picked, no post for <tag>` and appends it to the step summary;
+- otherwise lists every issue under the `reddit-draft` label, open and closed
+  (a listing, not a search - the search index lags and a quick re-run would
+  file a second copy), and matches the renderer's title exactly:
+  - **closed** - does nothing: the thread was posted, or deliberately not, and
+    is never re-drafted;
+  - **open** - replaces the body in place;
+  - **absent** - creates the issue, labelled `reddit-draft` + `ready-for-human`.
+
+Exit 0 on all three; a non-zero exit means the filer or `gh` broke. It never
+runs the renderer itself, so a render failure fails the workflow one step
+earlier, before any issue call.
 
 ## The rules, in one place
 
