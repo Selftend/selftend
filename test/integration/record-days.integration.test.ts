@@ -7,6 +7,7 @@ import {
   createAnonClient,
   createServiceClient,
   deleteAllActivityLogsForUser,
+  deleteAllDbtForUser,
   deleteAllGratitudeEntriesForUser,
   deleteAllHabitsForUser,
   deleteAllJournalEntriesForUser,
@@ -53,7 +54,16 @@ type SourceName =
   | "meditation"
   | "mindfulness"
   | "activity"
-  | "thoughtRecord";
+  | "thoughtRecord"
+  // The DBT module's six legs (#1980): a completed session, the three created-day
+  // records, a plan's DONE day, and the script's written AND done days.
+  | "dbtSession"
+  | "wiseMind"
+  | "judgement"
+  | "emotionRecord"
+  | "oppositeActionDone"
+  | "scriptWritten"
+  | "scriptDone";
 
 /**
  * One fixture row, described the way the CLIENT describes it: the occurrence
@@ -82,6 +92,25 @@ const CAPTURED: Fixture[] = [
     occurredAt: "2026-03-15T20:00:00.000Z",
     capturedOffsetMinutes: PACIFIC,
   },
+  { source: "dbtSession", occurredAt: "2026-06-01T20:00:00.000Z", capturedOffsetMinutes: KOLKATA },
+  { source: "wiseMind", occurredAt: "2026-06-03T20:00:00.000Z", capturedOffsetMinutes: PACIFIC },
+  { source: "judgement", occurredAt: "2026-06-05T20:00:00.000Z", capturedOffsetMinutes: KOLKATA },
+  {
+    source: "emotionRecord",
+    occurredAt: "2026-06-07T20:00:00.000Z",
+    capturedOffsetMinutes: PACIFIC,
+  },
+  {
+    source: "oppositeActionDone",
+    occurredAt: "2026-06-09T20:00:00.000Z",
+    capturedOffsetMinutes: KOLKATA,
+  },
+  {
+    source: "scriptWritten",
+    occurredAt: "2026-06-11T20:00:00.000Z",
+    capturedOffsetMinutes: PACIFIC,
+  },
+  { source: "scriptDone", occurredAt: "2026-06-13T20:00:00.000Z", capturedOffsetMinutes: KOLKATA },
 ];
 
 // The legacy tail 20260726_occurrence_offset_nullable left behind, plus every
@@ -102,7 +131,25 @@ const LEGACY: Fixture[] = [
   { source: "mindfulness", occurredAt: "2026-04-11T20:00:00.000Z", capturedOffsetMinutes: null },
   { source: "activity", occurredAt: "2026-04-13T20:00:00.000Z", capturedOffsetMinutes: null },
   { source: "thoughtRecord", occurredAt: "2026-04-15T20:00:00.000Z", capturedOffsetMinutes: null },
+  // DBT captures its offset from day one, so a never-captured row is a client
+  // predating nothing - but the fallback arm exists on every leg and each one
+  // needs its own row, or a deleted arm hides behind a sibling's.
+  { source: "dbtSession", occurredAt: "2026-07-01T20:00:00.000Z", capturedOffsetMinutes: null },
+  { source: "wiseMind", occurredAt: "2026-07-03T20:00:00.000Z", capturedOffsetMinutes: null },
+  { source: "judgement", occurredAt: "2026-07-05T20:00:00.000Z", capturedOffsetMinutes: null },
+  { source: "emotionRecord", occurredAt: "2026-07-07T20:00:00.000Z", capturedOffsetMinutes: null },
+  {
+    source: "oppositeActionDone",
+    occurredAt: "2026-07-09T20:00:00.000Z",
+    capturedOffsetMinutes: null,
+  },
+  { source: "scriptWritten", occurredAt: "2026-07-11T20:00:00.000Z", capturedOffsetMinutes: null },
+  { source: "scriptDone", occurredAt: "2026-07-13T20:00:00.000Z", capturedOffsetMinutes: null },
 ];
+
+// An opposite-action plan that is still open marks no day (#1988): only the done
+// day is a record of doing, exactly as a scheduled activity is not one.
+const OPEN_PLAN_AT = "2026-05-03T10:00:00.000Z";
 
 // A windowed sleep entry belongs to the civil day at SLEEP START (#800) - the
 // night before the morning it was logged on.
@@ -173,6 +220,7 @@ async function clearAlice() {
     deleteAllThoughtRecordsForUser(ALICE),
     deleteAllSelfCareLogsForUser(ALICE),
     deleteAllHabitsForUser(ALICE),
+    deleteAllDbtForUser(ALICE),
   ]);
   const admin = createServiceClient();
   const { error } = await admin.from("meditation_sessions").delete().eq("user_id", ALICE);
@@ -299,6 +347,89 @@ async function seedEveryTool(client: SupabaseClient) {
       { user_id: ALICE, log_date: SELF_CARE_DAY },
       { user_id: ALICE, log_date: SHARED_DAY },
     ]),
+    // === DBT (#1980) ===
+    client.from("dbt_sessions").insert(
+      rowsFor("dbtSession").map((f) => ({
+        user_id: ALICE,
+        session_slug: "muscle-relaxation",
+        variant: "short",
+        duration_seconds: 300,
+        completed_at: f.occurredAt,
+        completed_offset_minutes: f.capturedOffsetMinutes,
+      })),
+    ),
+    client.from("dbt_wise_mind_checkins").insert(
+      rowsFor("wiseMind").map((f) => ({
+        user_id: ALICE,
+        question: "What am I deciding?",
+        created_at: f.occurredAt,
+        created_offset_minutes: f.capturedOffsetMinutes,
+      })),
+    ),
+    client.from("dbt_judgements").insert(
+      rowsFor("judgement").map((f) => ({
+        user_id: ALICE,
+        judgement: "A judgement",
+        valence: "negative",
+        created_at: f.occurredAt,
+        created_offset_minutes: f.capturedOffsetMinutes,
+      })),
+    ),
+    client.from("dbt_emotion_records").insert(
+      rowsFor("emotionRecord").map((f) => ({
+        user_id: ALICE,
+        what_happened: "Something happened",
+        primary_emotions: ["sad"],
+        created_at: f.occurredAt,
+        created_offset_minutes: f.capturedOffsetMinutes,
+      })),
+    ),
+    client.from("dbt_opposite_action_plans").insert([
+      // Done plans: created on a day that is already marked (SHARED_DAY), done on
+      // the fixture day - so the fixture day can only come from the DONE leg.
+      ...rowsFor("oppositeActionDone").map((f) => ({
+        user_id: ALICE,
+        emotion: "sad",
+        pull: "stay in",
+        opposite_action: "go out",
+        created_at: SHARED_DAY_MOOD_AT,
+        created_offset_minutes: 0,
+        done_at: f.occurredAt,
+        done_offset_minutes: f.capturedOffsetMinutes,
+      })),
+      // Open: a plain row until the person closes it.
+      {
+        user_id: ALICE,
+        emotion: "anxious",
+        pull: "avoid it",
+        opposite_action: "one small step towards it",
+        created_at: OPEN_PLAN_AT,
+        created_offset_minutes: KOLKATA,
+      },
+    ]),
+    client.from("dbt_scripts").insert([
+      // Writing the script is the skill: the written day marks.
+      ...rowsFor("scriptWritten").map((f) => ({
+        user_id: ALICE,
+        situation: "s",
+        i_think: "t",
+        i_want: "w",
+        created_at: f.occurredAt,
+        created_offset_minutes: f.capturedOffsetMinutes,
+      })),
+      // Done scripts: written on SHARED_DAY (already marked), done on the fixture
+      // day, so that day can only come from the DONE leg.
+      ...rowsFor("scriptDone").map((f) => ({
+        user_id: ALICE,
+        situation: "s",
+        i_think: "t",
+        i_want: "w",
+        created_at: SHARED_DAY_MOOD_AT,
+        created_offset_minutes: 0,
+        done_at: f.occurredAt,
+        done_offset_minutes: f.capturedOffsetMinutes,
+      })),
+    ]),
   ];
 
   for (const result of await Promise.all(inserts)) {
@@ -389,6 +520,11 @@ describe("record_days (integration)", () => {
       const days = await recordDays(alice, KOLKATA);
       expect(days).not.toContain(entryDayKey(SCHEDULED_ONLY_AT, KOLKATA));
       expect(days).not.toContain(entryDayKey(ARCHIVED_AT, KOLKATA));
+    });
+
+    it("marks an opposite-action plan on its DONE day only, never while it is open", async () => {
+      const days = await recordDays(alice, KOLKATA);
+      expect(days).not.toContain(entryDayKey(OPEN_PLAN_AT, KOLKATA));
     });
 
     it("returns days ascending, so the axis can anchor on the first record", async () => {
