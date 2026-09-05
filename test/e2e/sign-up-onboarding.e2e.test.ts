@@ -77,9 +77,11 @@ test.describe("sign-up + onboarding + first record", () => {
     await expect(page.getByText("Welcome to Selftend")).toBeVisible();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Panel 2: pick a concern.
+    // Panel 2: pick a concern. By ROLE: Home now renders its whole catalogue behind the
+    // wizard (#1956), and the Sleep tool card's name is the same word, so a bare text
+    // locator is a strict-mode violation. The concern chip is a checkbox; the card is not.
     await expect(page.getByText("What brings you here?")).toBeVisible();
-    await page.getByText("Sleep", { exact: true }).click();
+    await page.getByRole("checkbox", { name: "Sleep", exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
     // Panel 3: leave both optional modules unselected for a tools-only setup.
@@ -96,15 +98,18 @@ test.describe("sign-up + onboarding + first record", () => {
       timeout: 15_000,
     });
 
-    // Personalization payoff: the selected shared widgets are now on Home.
+    // Home rendered: the catalogue (#1956). The wizard still writes its picks to
+    // `widget_preferences`, which Home no longer reads, so until #1958 collapses the
+    // wizard a brand-new account lands with an EMPTY Favourites section and the complete
+    // Tools catalogue beneath it - which is what proves the screen came up.
     //
-    // The two `.last()` here were read as one workaround and were really two different
-    // things. `Check-in` was the #989 duplicate-home mount, now fixed, so it goes back to
-    // a plain text locator that a returning duplicate would break. `Sleep` never was:
-    // it names the Right now nudge AND the tool row on a SINGLE home (the mood card reads
-    // "How are you?", which is why only Sleep has this twin), so it goes by testID.
-    await expect(page.getByText("Check-in", { exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("tool-row-sleep-latest")).toBeVisible({ timeout: 10_000 });
+    // Scoped to the Tools section rather than the page: a favourited item renders its
+    // card twice on Home (Favourites and catalogue), so an unscoped `getByText("Check-in")`
+    // is a strict-mode violation the moment one is starred.
+    const tools = page.getByTestId("home-tools");
+    await expect(tools.getByText("Check-in", { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(tools.getByTestId("card-tool-sleep")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Star a tool or a module to keep it here.")).toBeVisible();
 
     // The optional Home tour may be ineligible after the personalized setup. If
     // it appears, dismiss it so the reload assertion remains deterministic.

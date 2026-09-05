@@ -1,11 +1,18 @@
 import { expect, test } from "./fixtures";
 
-import { createServiceClient, resetWidgetPreferencesForUser } from "./helpers";
+import {
+  createServiceClient,
+  deleteAllFavoritesForUser,
+  resetWidgetPreferencesForUser,
+} from "./helpers";
 
 test.describe("widget onboarding skip", () => {
   test.beforeEach(async ({ user }) => {
     const admin = createServiceClient();
     await resetWidgetPreferencesForUser(user.id);
+    // Home reads `favorites` since #1956; a row left by another spec would fill the
+    // Favourites section this test asserts empty.
+    await deleteAllFavoritesForUser(user.id);
     const { error } = await admin
       .from("user_preferences")
       .update({
@@ -21,6 +28,7 @@ test.describe("widget onboarding skip", () => {
   test.afterEach(async ({ user }) => {
     const admin = createServiceClient();
     await resetWidgetPreferencesForUser(user.id);
+    await deleteAllFavoritesForUser(user.id);
     const { error } = await admin
       .from("user_preferences")
       .update({ app_onboarding_completed: true, app_onboarding_completed_via: null })
@@ -28,7 +36,10 @@ test.describe("widget onboarding skip", () => {
     if (error) throw new Error(`Unable to restore onboarding state: ${error.message}`);
   });
 
-  test("skip leaves Home empty and does not appear again after reload", async ({ page, user }) => {
+  test("skip leaves Favourites empty and does not appear again after reload", async ({
+    page,
+    user,
+  }) => {
     await page.goto("/(app)");
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeVisible({
       timeout: 15_000,
@@ -38,11 +49,14 @@ test.describe("widget onboarding skip", () => {
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden({
       timeout: 15_000,
     });
-    await expect(page.getByText("Add tools you want to check in with each day")).toBeVisible();
+    // The empty-Favourites line (#1956): one quiet sentence, no box, no door. The
+    // catalogue below it renders regardless, so this is the only thing a skip changes.
+    await expect(page.getByText("Star a tool or a module to keep it here.")).toBeVisible();
 
     const admin = createServiceClient();
-    const [widgets, preferences] = await Promise.all([
+    const [widgets, favorites, preferences] = await Promise.all([
       admin.from("widget_preferences").select("widget_id").eq("user_id", user.id),
+      admin.from("favorites").select("kind, key").eq("user_id", user.id),
       admin
         .from("user_preferences")
         .select("app_onboarding_completed, app_onboarding_completed_via, widgets_seeded")
@@ -51,6 +65,8 @@ test.describe("widget onboarding skip", () => {
     ]);
     expect(widgets.error).toBeNull();
     expect(widgets.data).toEqual([]);
+    expect(favorites.error).toBeNull();
+    expect(favorites.data).toEqual([]);
     expect(preferences.error).toBeNull();
     expect(preferences.data).toMatchObject({
       app_onboarding_completed: true,
@@ -60,6 +76,6 @@ test.describe("widget onboarding skip", () => {
 
     await page.reload();
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden();
-    await expect(page.getByText("Add tools you want to check in with each day")).toBeVisible();
+    await expect(page.getByText("Star a tool or a module to keep it here.")).toBeVisible();
   });
 });

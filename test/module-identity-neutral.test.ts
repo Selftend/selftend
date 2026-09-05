@@ -110,6 +110,8 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
   "the module and tool listings": [
     "src/features/modules/modules-screen.tsx",
     "src/features/tools/tools-screen.tsx",
+    // The one card both of those render through, and Home (#1955).
+    "src/features/favorites/item-card.tsx",
     // The CBT home's pillar cards and the shared-tool pills beneath them are a
     // tool listing wearing a different frame: both took the owning pillar's hue,
     // and both sit on the same screen, so leaving either would have shown the

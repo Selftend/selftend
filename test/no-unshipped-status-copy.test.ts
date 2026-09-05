@@ -91,12 +91,17 @@ describe("module and navigation copy promises nothing the build does not ship", 
     expect(Object.keys(sidebar).filter((key) => key.startsWith("badge"))).toEqual([]);
   });
 
-  it.each(LANGUAGES)("%s offers exactly one module-tile status, and it is neutral", (language) => {
-    const modulesPage = readNamespace(language, "navigation").modulesPage as {
-      stats: Record<string, string>;
-    };
+  // The module tile's footer went with #1887's one card (#1955): its sole occupant was
+  // the neutral "Overview", and a status has no slot to come back to. So the key set is
+  // asserted absent as a whole — a `stats` object reappearing here, under any wording,
+  // is the chip's slot being rebuilt.
+  it.each(LANGUAGES)("%s offers no module-tile status at all", (language) => {
+    const modulesPage = readNamespace(language, "navigation").modulesPage as Record<
+      string,
+      unknown
+    >;
 
-    expect(Object.keys(modulesPage.stats)).toEqual(["overview"]);
+    expect(modulesPage.stats).toBeUndefined();
   });
 
   it("both locales carry the same module-surface keys", () => {

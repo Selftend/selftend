@@ -18,6 +18,11 @@ The CBT module's own noun, and only that — a staged progression, authored and 
 
 > Note: **programme** names this progression — never a user's routine, which keeps its own `_Avoid_: program` below. A routine is user-named and user-owned, and has no authored order to graduate from; a programme is authored and staged.
 
+**Favourite**:
+A tool or a module the person has starred to keep on Home — one of the eight everyday tools or one of the three modules, and nothing finer-grained than that ([#1885](https://github.com/Selftend/selftend/issues/1885)). Home lists the favourites first, then the complete catalogue of eleven, through the same card; a favourited item therefore appears twice, plainly. The star is a toggle with an immediately visible consequence, so there is no cap and no "full" state. Favourites is the catalogue **filtered**, never sorted — nothing stores an order — and the modules section beneath it renders unconditionally, because a Home that shows the tools without the method is the inventory `docs/positioning.md` forbids.
+
+> Note: the star means "keep this handy", not "I do this" — a routine composes from what the person has records in, never from their favourites. The word collides on purpose with gratitude's own starred **entries**, one tap deeper; the two are different kinds of object and the Home copy names its kinds (_a tool or a module_) rather than disclaiming the other. _Avoid_: **widget** for this — that is the Android launcher's word, and the in-app dashboard it also used to name is gone.
+
 ### Practice
 
 **Practice**:

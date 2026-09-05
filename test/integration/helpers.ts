@@ -258,6 +258,16 @@ export async function deleteAllWidgetPreferencesForUser(userId: string) {
 }
 
 /**
+ * The favourites table Home reads since #1956 (`widget_preferences` serves only older
+ * native builds). Same caveat as above for the SEED users: bob carries four seeded rows.
+ */
+export async function deleteAllFavoritesForUser(userId: string) {
+  const admin = createServiceClient();
+  const { error } = await admin.from("favorites").delete().eq("user_id", userId);
+  if (error) throw new Error(`deleteAllFavoritesForUser cleanup failed: ${error.message}`);
+}
+
+/**
  * Delete only the `test-widget-*` rows a test inserted, leaving any seeded layout
  * alone.
  *

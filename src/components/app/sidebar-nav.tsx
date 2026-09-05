@@ -343,11 +343,18 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
           {renderNavItem(PROGRESS_ITEM)}
           {renderNavItem(ROUTINES_ITEM)}
 
-          {renderGroupLabel(t("sidebar.modules"), "/modules")}
-          {MODULE_ITEMS.map((item) => renderNavItem(item))}
-
+          {/*
+            TOOLS above MODULES (#1823, a sequence call rather than a positioning
+            consequence): Home leads with the tools and lists the modules after them,
+            and a panel that led with the modules would make the two surfaces disagree
+            about the order of encounter. The group labels stay neutral — no hue per
+            group, and no status chip on any row (#1020).
+          */}
           {renderGroupLabel(t("sidebar.tools"), "/tools")}
           {TOOL_ITEMS.map((item) => renderNavItem(item))}
+
+          {renderGroupLabel(t("sidebar.modules"), "/modules")}
+          {MODULE_ITEMS.map((item) => renderNavItem(item))}
         </View>
 
         <View className="grow" />

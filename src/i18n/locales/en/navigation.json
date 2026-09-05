@@ -86,11 +86,11 @@
     },
     "modules": {
       "cbtName": "Cognitive behavioural therapy",
-      "cbtDescription": "The Think · Act · Be framework. Evidence-based strategies for anxiety, depression, anger, panic and worry.",
+      "cbtSub": "Think · Act · Be",
       "actName": "Acceptance & commitment",
-      "actDescription": "Skills for handling difficult feelings and acting on what matters to you (Acceptance and Commitment Therapy).",
+      "actSub": "Act on what matters",
       "dbtName": "Dialectical behaviour therapy",
-      "dbtDescription": "Four skill groups - mindfulness, distress tolerance, emotion regulation, interpersonal effectiveness. An overview of the approach."
+      "dbtSub": "Four skill groups"
     },
     "tools": {
       "moodTracker": "Check-in",
@@ -130,6 +130,16 @@
       "habitsAllDone": "All done for today!",
       "newHabit": "New habit",
       "done": "Done"
+    },
+    "sections": {
+      "favorites": "Favourites",
+      "tools": "Tools",
+      "modules": "Modules"
+    },
+    "favorites": {
+      "empty": "Star a tool or a module to keep it here.",
+      "add": "Favourite {{name}}",
+      "remove": "Remove {{name}} from favourites"
     }
   },
   "home": {
@@ -393,34 +403,7 @@
   },
   "tools": {
     "title": "Tools",
-    "description": "Standalone trackers any module can call into. Use them on their own, too.",
-    "stats": {
-      "moodLogs_one": "{{count}} log",
-      "moodLogs_other": "{{count}} logs",
-      "moodLast7": "{{average}} avg this week",
-      "moodNoData": "No logs yet",
-      "journalEntries_one": "{{count}} entry",
-      "journalEntries_other": "{{count}} entries",
-      "journalNoData": "No entries yet",
-      "breathingSessions_one": "{{count}} session",
-      "breathingSessions_other": "{{count}} sessions",
-      "breathingNoData": "No sessions yet",
-      "gratitudeEntries_one": "{{count}} gratitude entry",
-      "gratitudeEntries_other": "{{count}} gratitude entries",
-      "gratitudeNoData": "No gratitude entries yet",
-      "groundingSessions_one": "{{count}} session",
-      "groundingSessions_other": "{{count}} sessions",
-      "groundingNoData": "No sessions yet",
-      "meditationSessions_one": "{{count}} session",
-      "meditationSessions_other": "{{count}} sessions",
-      "meditationNoData": "No sessions yet",
-      "sleepLogs_one": "{{count}} log",
-      "sleepLogs_other": "{{count}} logs",
-      "sleepNoData": "No logs yet",
-      "habits_one": "{{count}} habit",
-      "habits_other": "{{count}} habits",
-      "habitsNoData": "No habits yet"
-    }
+    "description": "Standalone trackers any module can call into. Use them on their own, too."
   },
   "headerButton": {
     "tune": "Customise",
@@ -484,10 +467,7 @@
   "modulesPage": {
     "title": "Modules",
     "description": "Structured therapeutic programmes you can work through over time. Each draws on the shared tools.",
-    "whereToStart": "Not sure where to start? The everyday tools help with general wellbeing. Try CBT if difficult thoughts are your main concern. Mixing is fine.",
-    "stats": {
-      "overview": "Overview"
-    }
+    "whereToStart": "Not sure where to start? The everyday tools help with general wellbeing. Try CBT if difficult thoughts are your main concern. Mixing is fine."
   },
   "plan": {
     "wizard": {
