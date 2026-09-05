@@ -56,6 +56,8 @@ Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON
 
 The other ten are one per tool or module: `act`, `cbt`, `gratitude`, `habits`, `journal`, `meditation`, `mood`, `routines`, `sleep`, `timer`.
 
+Some key paths are deliberately stale. `navigation.json`'s `home.widgets.*` block (with `today.dashboard.*`, `home.programWidget.*`, `today.plan.open` and `home.categories.routines`) is the Android launcher widget's copy — `src/features/widgets/snapshot-builder.ts` and `widget-config-screen.tsx` — and nothing on Home has rendered it since the dashboard was deleted ([#1959](https://github.com/Selftend/selftend/issues/1959)). Renaming it to `widgets.*` was rejected because every namespace is Weblate-tracked: a rename presents ~100 keys per locale as new source strings and orphans the Bulgarian. `home.rows.*` keeps its path for the same reason. Neither i18n test can see those keys' consumers (the launcher's `t` arrives as a parameter), so `src/features/widgets/widget-meta.test.ts` resolves every launcher literal in both locales instead; a key's existence in a locale file is no evidence that anything renders it.
+
 Components use `useTranslation("namespace")`; non-component code may import `i18n.t()` directly. Structured content — policy sections, grounding steps, meditation instructions, gratitude prompts — is stored as JSON arrays and read with `t(key, { returnObjects: true })`.
 
 Language preference is stored in AsyncStorage (`selftend:language`) and synced to `user_preferences.language`.

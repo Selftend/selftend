@@ -205,8 +205,8 @@ interface EmotionReorderHandleProps {
    * Structural only, and list-level rather than row-level: false when the list is too
    * short to reorder at all. Never "a write is in flight" (see `reorderMoveProps`). The
    * first and last rows therefore still offer both moves, one of which no-ops - the same
-   * shape `arrange-screen` ships, and preferable to a handle whose action set changes as
-   * rows move past it.
+   * shape the old Home arrange screen shipped until #1959, and preferable to a handle whose
+   * action set changes as rows move past it.
    */
   canMove: boolean;
   onMove: (offset: -1 | 1) => void;
@@ -578,15 +578,16 @@ export function ManageEmotionsModal({ visible, onClose }: ManageEmotionsModalPro
                     {/* `Sortable.Grid columns={1}`, explicitly, never `Sortable.Flex`:
                         Flex alone re-derives which items share a line, from measurements it
                         rounds, so rows of near-identical height can group unpredictably.
-                        `arrange-screen.tsx` carries the full statement (#1592).
+                        The old Home arrange screen carried the full statement (#1592)
+                        until #1959 deleted it; this is now the one Sortable surface.
 
                         ⚠️ NOT because "Flex drops sub-pixel re-measures", which is what
                         this comment used to say: that 1px gate is in the SHARED
                         `MeasurementsProvider` and Grid has it too.
 
                         ☠️ There is deliberately NO `sortEnabled={!reorderEmotions.isPending}`
-                        here, though `arrange-screen` carries the equivalent and a reviewer
-                        will suggest it. MEASURED, not reasoned: adding it makes the second
+                        here, though the old arrange screen carried the equivalent and a
+                        reviewer will suggest it. MEASURED, not reasoned: adding it makes the second
                         keyboard move stop writing - `manage-emotions-reorder.e2e` fails on
                         exactly the "and AGAIN, without re-focusing" press, and passes with
                         the prop removed and nothing else changed. Binding `sortEnabled` to a

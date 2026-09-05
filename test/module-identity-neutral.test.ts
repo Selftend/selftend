@@ -132,15 +132,10 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
   // rejected. Read as in scope; recorded on the PR.
   "the home dashboard's widget identity": [
     "src/features/widgets/widget-tint.ts",
-    "src/features/home/widgets/widget-card-header.tsx",
-    // The nine card files this listed are gone (#975); the tool tier's identity now
-    // lives in one row component, whose leading glyph is CHROME_MARK by construction.
-    "src/features/home/tool-row.tsx",
+    // #1959: the dashboard's own row, card header and programme card are RETIRED below.
+    // What is left of the tier is the stat line the favourites card renders, whose
+    // only styling is the muted text variant.
     "src/features/home/tool-row-stats.tsx",
-    // #977: the programme card is the tier's other identity surface. Its glyph is
-    // CHROME_MARK and its wash is `primary`, which is the app accent rather than a
-    // per-module hue - #587 already collapsed the identical act/primary twins here.
-    "src/features/home/widgets/program-widget.tsx",
   ],
   // #981: the reminders screen lists the same ten tools and modules as home, one row each,
   // so it is the same identity surface wearing a different control. Its leading glyph is
@@ -190,9 +185,8 @@ const RETIRED = [
   // Orphaned by the same change: their only importers were the nine above.
   "src/features/home/widgets/session-log-widget.tsx",
   "src/features/home/widgets/two-stat-body.tsx",
-  // #976: the remaining fourteen module and shortcut cards became rows, which empties
-  // the `tool` tier of card components entirely. `widget-card-header.tsx` survives -
-  // `program-widget.tsx` still renders it for the two programme ids.
+  // #976: the remaining fourteen module and shortcut cards became rows, which emptied
+  // the `tool` tier of card components entirely.
   "src/features/home/widgets/self-care-widget.tsx",
   "src/features/home/widgets/cbt-open-record-widget.tsx",
   "src/features/home/widgets/cbt-worry-widget.tsx",
@@ -238,6 +232,15 @@ const RETIRED = [
   // than being one more scan it would have passed while still painting.
   "src/features/home/widgets/mood-trend-widget.tsx",
   "src/features/home/widgets/module-shortcut-widget.tsx",
+  // #1959: Home became Favourites over the shared card (#1955/#1956), and the old
+  // dashboard's last three identity surfaces went with it - the tool row, the
+  // programme card and the card header the programme card rendered. Moved here from
+  // IDENTITY_SURFACES for the reason every entry above was: a file that is gone
+  // cannot regain a hue, and a silent drop from the scan list would look identical to
+  // an exemption.
+  "src/features/home/tool-row.tsx",
+  "src/features/home/widgets/program-widget.tsx",
+  "src/features/home/widgets/widget-card-header.tsx",
 ];
 
 /**

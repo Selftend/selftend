@@ -125,8 +125,9 @@ interface ReorderMoveOptions {
  * Drag-alone reordering fails WCAG 2.2 SC 2.5.7 (Dragging Movements, AA), and every
  * reorderable surface answers it the same way: a named `accessibilityActions` pair for
  * screen readers, plus Up/Down keys for the keyboard. Both halves live here rather than
- * being copied per screen - `arrange-screen` (#956) and `manage-emotions-modal` (#965) are
- * the callers, and a copied `actionName` cascade is a cascade that can drift.
+ * being copied per screen - `manage-emotions-modal` (#965) is the caller (`arrange-screen`,
+ * #956, was the other until #1959 deleted it), and a copied `actionName` cascade is a
+ * cascade that can drift.
  *
  * Spread onto a `View`, not a `Pressable`: pressing a drag handle does nothing - the
  * gesture is the pointer path - and a button whose press does nothing would be a lie.

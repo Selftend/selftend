@@ -1,3 +1,11 @@
+// ☠️ The launcher's copy lives under `home.widgets.*` (and `today.dashboard.*`,
+// `home.programWidget.*`, `today.plan.open`, `home.categories.routines`) in
+// `navigation.json`, although no Home surface has rendered any of it since #1959.
+// The name is stale on purpose: every namespace is Weblate-tracked, so renaming the
+// block to the honest `widgets.*` would present ~100 keys per locale as new source
+// strings and orphan the Bulgarian. Leave the path alone; `widget-meta.test.ts`
+// resolves every literal this file names, in both locales, because the static key
+// guard cannot see a `t` that arrives as a parameter.
 import {
   averageDurationMinutes,
   averageQuality,

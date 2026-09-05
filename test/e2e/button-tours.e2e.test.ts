@@ -211,15 +211,13 @@ test.describe("home tips (1 remaining stop)", () => {
 
     // If the removed "dates" or "edit" stop still existed, it would show now (neither key
     // is in shown_button_tours). Anchored on Home having rendered, so "no Got it" is an
-    // absence on a real screen rather than on a blank one.
+    // absence on a real screen rather than on a blank one. The dismiss button is the
+    // assertion, not either stop's copy: both strings were deleted with their stops
+    // (#1959 took the last), and a `getByText` on deleted copy passes unconditionally.
     await expect(page.getByRole("heading", HOME_HEADING)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("button", { name: "Got it", exact: true })).toHaveCount(0, {
       timeout: 10_000,
     });
-    await expect(page.getByText(/Browse previous days to see what you logged\./i)).toHaveCount(0);
-    await expect(
-      page.getByText(/Arrange your home screen - add, remove and reorder your tools\./i),
-    ).toHaveCount(0);
   });
 
   test("Show tips again makes home tips eligible again", async ({ page }) => {
