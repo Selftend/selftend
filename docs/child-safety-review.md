@@ -245,6 +245,8 @@ A new module is the PR-template trigger, and the spec (`docs/modules/dbt-mckay-s
 
 **Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** With this pass **the DBT module's first-release copy is fully reviewed** in both locales.
 
+**One footnote, added when the module joined routines.** Six DBT-named strings do not live in the `dbt` namespace at all - the routine step labels _Muscle relaxation_, _Wise mind check-in_, _Judgement record_, _Emotion record_, _Opposite action_ and _Script_, plus the picker's _DBT_ group header, which sit in `routines`. They were screened with the same shapes and came back clean in both locales: no hit on any of the nine, and the longest is three words. They are labels naming a record, not claims about it, so they raise nothing the passes above did not already settle - but they are recorded here so "fully reviewed" is not read as "everything DBT says lives in one file".
+
 ## Re-running this
 
 The trigger for a re-run is §4's cadence rule, and [#1769](https://github.com/Selftend/selftend/issues/1769) made it a checkbox: `.github/pull_request_template.md`, in the Product guardrails block, asks every PR whether it ships **a new module, or an engagement-adjacent feature.** `test/child-safety-cadence.test.ts` keeps that line in the checklist rather than in the notes, where it would read the same and gate nothing.
