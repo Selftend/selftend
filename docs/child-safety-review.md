@@ -128,7 +128,7 @@ An accepted item is one the review looked at and deliberately kept. Recorded so 
 The IARC questionnaire re-run asks about sensitive content, and the screen's answer is unusually clean, which is worth stating rather than leaving to be rediscovered:
 
 - Across all 4,140 strings, **the only references to self-harm or suicide are on the crisis page**, in the sentence quoted above, framed as an instruction to get help.
-- **No violence, sexual content, gambling, or drug references anywhere.** The only substance reference in the app is the sleep-diary example noted above ("caffeine, alcohol, stress, late screens") — a neutral list of sleep disruptors, no depiction and no encouragement.
+- **No violence, sexual content, gambling, or drug references anywhere.** The only substance reference in the app is the sleep-diary example noted above ("caffeine, alcohol, stress, late screens") — a neutral list of sleep disruptors, no depiction and no encouragement. ⚠️ **A second one is decided and not yet shipped:** the DBT module spec (`docs/modules/dbt-mckay-skills-workbook.md` §9, 2026-09-05) puts one referral line on the DBT learn page — _stopping alcohol or a drug can be unsafe to do alone; a doctor is the right door_ — a safety instruction naming no substance use of the reader's own. When the module ships, the questionnaire answer names two references, not one.
 - Nothing user-generated is shared, so there is no user-to-user content surface to rate.
 
 This is consistent with the live Everyone / PEGI 3 / USK 0 / IARC 3+ ratings recorded in `store/play-listing.md`, and supports the expectation in #1771 that the questionnaire re-run is a confirmation rather than a change. **Answer the live questions truthfully regardless of this note** — it records what the copy contains, not what the form asks.
@@ -154,6 +154,10 @@ Triggered by the PR-template row: a record-over-time surface is engagement-adjac
 **Row 4 is the one worth stating.** The card reports the record and interprets none of it — no count, no run length, no ratio, no comparison — so there is no reading for a thirteen-year-old to get wrong, and nothing a clinician would recognise as a protocol measure. The one number the surface can render is a year on its axis, which is a date and not a figure.
 
 **Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** The strings also run clean against `restraint-copy`, `practice-copy`, `positioning-copy` and `child-safety-copy` in both locales.
+
+### Owed — the DBT module, at implementation (spec decided 2026-09-05, [#1994](https://github.com/Selftend/selftend/issues/1994))
+
+A new module is the PR-template trigger. The spec (`docs/modules/dbt-mckay-skills-workbook.md` §9) was written inside five standing rules — self-harm and suicide named on the crisis page only, nothing branching on the person's state, no stored health fact beyond the record, _crisis_ kept to the crisis page's meaning, no medical question asked — so the re-run is over the strings, not the shape. **Scope when it runs:** the whole `dbt` namespace, the `copy.dbt.*` reminder strings, the DBT `navigation` and `help` keys, `en` and `bg`; and specifically the coping-plan pick copy, the per-emotion opposite-action hints, the sleep-hygiene list, the _You are allowed to…_ lines, the five push-back lines, the _what got in the way_ list and the four caution sentences, each of which the spec flags for the absolute-effect-verb and positioning gates. Two facts for that run are already known: the learn page carries the app's second substance reference (see _For the Play pass_ above), and the acronyms STOP, PLEASE, DEAR MAN and FAST appear once each, beside their expansion, on a learn page only (row 10).
 
 ## Re-running this
 

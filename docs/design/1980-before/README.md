@@ -44,6 +44,26 @@ current for what it shows.
 
 ---
 
+## Upload labels for the brief (`S1`–`S6`)
+
+The brief ([`../1980-handoff/`](../1980-handoff/), [#1993](https://github.com/Selftend/selftend/issues/1993)
+§ 8) names its six screens `S1`–`S6` and uploads a subset of this folder under those labels. The
+handoff README carries the full per-screen manifest; this is the index from screen to surface here.
+⚠️ The shots are 390 wide because that was the capture; **the designs are at 360**
+(`docs/accessibility.md` § _Supported width floor_).
+
+| Label  | Screen                                   | Surfaces here                                                                                                       |
+| ------ | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **S1** | the DBT module home                      | Surface 1 (`01-*`, the surface being replaced), Surface 2 (`02-*`, `03-*`, `00-*` - the sibling anatomy to inherit) |
+| **S2** | the coping plan (builder and card)       | nothing shipped is its twin; `04-thought-record-form-empty-phone-light.png` for the form chrome only                |
+| **S3** | the emotion record form                  | Surface 3 (`04-*`, `05-*` - the rail, the draft footer, the bar)                                                    |
+| **S4** | the timed session (muscle relaxation)    | Surface 4 (`08-*` the timed engine and the exit DBT departs from; `07-*` the step shape; `06-*` context)            |
+| **S5** | the script (builder step 2 and the card) | not captured (`WizardScreen`); see _Not captured_ below                                                             |
+| **S6** | the programme card in its states         | Surface 5 (the top slices of `02-*` / `03-*`; `12-*` the model; `13-*` the two defects)                             |
+| -      | context                                  | Surface 6 (`11-*`, the sidebar)                                                                                     |
+
+---
+
 ## Surface 1 — the DBT overview (`/modules/dbt`)
 
 `DbtModuleScreen` (`src/features/modules/dbt-module-screen.tsx`), every theme × size. This is the
