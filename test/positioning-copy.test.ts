@@ -182,10 +182,9 @@ const ALL_SURFACES: Scanned[] = [
  * `ALL_SURFACES` plus the prose docs, deduplicated - `product-principles.md` is
  * in both.
  *
- * ☠️ The dedupe keys on `surface` AND `id`. An i18n entry's `id` is
- * `namespace:key` with no locale in it, so keying on `id` alone treated every
- * Bulgarian value as a duplicate of its English twin and silently dropped the
- * whole `i18n/bg` half (#2019). The control test below pins the count.
+ * ☠️ The dedupe keys on `surface` AND `id`, never `id` alone - see
+ * `keeps every Bulgarian i18n value in the prose corpus` below for what `id`
+ * alone silently dropped, and why nothing went red over it (#2019).
  */
 const WITH_PROSE_DOCS: Scanned[] = [...ALL_SURFACES, ...PROSE_DOCS].filter(
   (entry, index, all) =>
@@ -891,15 +890,37 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
    *
    * The dedupe now keys on `surface` as well, and this pins it: a locale is
    * only a duplicate of itself.
+   *
+   * The two counts are asserted EQUAL rather than merely "bg is not fewer".
+   * `src/i18n/locale-parity.test.ts` makes the two key sets identical, so
+   * equality holds today and catches a half dropped in either direction - the
+   * looser inequality would sit green if the `en` half were the one to vanish.
+   *
+   * ☠️ Equality alone is not enough either, and neither is a bare "more than
+   * zero". Deduping on `surface` ALONE - the tempting mis-fix in the other
+   * direction - collapses each locale to ONE entry, which is still equal, still
+   * non-zero, and still leaves the prose rules scanning two strings. So each
+   * locale is pinned against the whole locale it was built from: every value
+   * `locale-strings` read has to survive into the corpus, not merely some.
    */
   it("keeps every Bulgarian i18n value in the prose corpus (#2019)", () => {
-    const count = (surface: string) =>
+    const inCorpus = (surface: string) =>
       WITH_PROSE_DOCS.filter((entry) => entry.surface === surface).length;
 
-    expect(count("i18n/en")).toBeGreaterThan(0);
-    expect(count("i18n/bg")).toBeGreaterThanOrEqual(count("i18n/en"));
+    // Nothing is lost between `locale-strings` and the corpus, in either locale.
+    expect(inCorpus("i18n/en")).toBe(LOCALE_STRINGS.en.length);
+    expect(inCorpus("i18n/bg")).toBe(LOCALE_STRINGS.bg.length);
+    expect(inCorpus("i18n/bg")).toBe(inCorpus("i18n/en"));
+
+    // And a named Bulgarian value really is in there, not just a matching count.
+    expect(
+      WITH_PROSE_DOCS.some(
+        (entry) => entry.surface === "i18n/bg" && entry.id === "auth:landing.subtitle",
+      ),
+    ).toBe(true);
+
     // The one genuine duplicate is still collapsed to a single entry.
-    expect(count("docs/product-principles.md")).toBe(1);
+    expect(inCorpus("docs/product-principles.md")).toBe(1);
   });
 
   /**
