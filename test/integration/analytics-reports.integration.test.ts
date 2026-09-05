@@ -475,11 +475,16 @@ describe("aggregate analytics reports (integration)", () => {
     });
 
     it("prints every module for every account type, zeros included", () => {
+      // ☠️ The module list is the REPORT's, and it grows: `dbt` joined it with
+      // the DBT module (#1980). The claim is that every module prints for every
+      // account type even at zero, so a module missing here is a row the report
+      // silently stopped emitting - keep this list in step with the `mods(module)`
+      // VALUES list in scripts/analytics-engagement.sql.
       const keys = [...moduleUsers().keys()].sort();
       expect(keys).toEqual(
         ["guest", "registered"]
           .flatMap((account) =>
-            ["cbt", "meditation", "gratitude", "act"].map((m) => `${account}/${m}`),
+            ["cbt", "meditation", "gratitude", "act", "dbt"].map((m) => `${account}/${m}`),
           )
           .sort(),
       );
