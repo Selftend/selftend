@@ -100,7 +100,9 @@ jest.mock("@/src/features/home/queries", () => ({
  * real registry with no mocks. One module each, so the printed acronym is proven to come
  * from the predicate's answer rather than from a hardcoded string in the screen.
  */
-jest.mock("@/src/features/home/widget-registry", () => ({
+// The catalogue and its lookup live in the launcher feature (#1952); the Home-only
+// predicates below stay in widget-registry. Two mocks, one fixture each.
+jest.mock("@/src/features/widgets/widget-meta", () => ({
   WIDGET_META: {
     "mood-checkin": { id: "mood-checkin" },
     "sleep-latest": { id: "sleep-latest" },
@@ -110,13 +112,15 @@ jest.mock("@/src/features/home/widget-registry", () => ({
     "cbt-open-record": { id: "cbt-open-record" },
     "act-defusion": { id: "act-defusion" },
   },
-  isImplemented: (widgetId: string) => !mockUnimplementedIds.includes(widgetId),
   metaForWidget: (widgetId: string) => ({
     titleKey: widgetId,
     icon: "circle",
     route: `/${widgetId}`,
     tier: widgetId.endsWith("-programme") ? "programme" : "tool",
   }),
+}));
+jest.mock("@/src/features/home/widget-registry", () => ({
+  isImplemented: (widgetId: string) => !mockUnimplementedIds.includes(widgetId),
   moduleTagFor: (widgetId: string) =>
     ({ "cbt-open-record": "cbt", "act-defusion": "act" })[widgetId],
   /**

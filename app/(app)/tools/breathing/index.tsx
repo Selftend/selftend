@@ -129,7 +129,6 @@ export default function BreathingScreen() {
       <ScrollView contentContainerClassName="grow p-4">
         <View className={cn(HOME_COLUMN, "gap-9")}>
           <ModuleHomeHeader
-            addWidgetCategory="breathing"
             tourScope="breathing"
             title={t("breathing.title")}
             description={t("breathing.tagline")}

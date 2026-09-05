@@ -2,7 +2,7 @@ import { View } from "react-native";
 
 import { Icon, type MaterialIconName } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { tintClasses, type WidgetTint } from "@/src/features/home/widget-tint";
+import { tintClasses, type WidgetTint } from "@/src/features/widgets/widget-tint";
 import { cn } from "@/lib/utils";
 
 export function WidgetCardHeader({

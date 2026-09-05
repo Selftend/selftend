@@ -17,12 +17,11 @@ import { CHROME_MUTED_TEXT } from "@/src/lib/theme/chrome";
 import { useSession } from "@/src/providers/session-provider";
 import {
   CHIP_CATEGORY_ORDER,
-  WIDGET_META,
   chipCategoryFor,
-  metaForWidget,
   moduleTagFor,
 } from "@/src/features/home/widget-registry";
 import type { ChipCategoryKey } from "@/src/features/home/widget-registry";
+import { WIDGET_META, metaForWidget } from "@/src/features/widgets/widget-meta";
 import { ArrangeRow } from "@/src/features/home/arrange-row";
 import { CHIP_CATEGORY_KEYS, MODULE_TAG_KEYS } from "@/src/features/home/arrange-chip-copy";
 import { useWidgetTiers } from "@/src/features/home/widget-tiers";

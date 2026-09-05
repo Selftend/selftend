@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { CHROME_ACCENT_MARK } from "@/src/lib/theme/chrome";
-import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { ScreenBreadcrumb } from "@/src/components/app/screen-breadcrumb";
 import { ScreenEscape } from "@/src/components/app/screen-escape";
 import { Icon } from "@/src/components/react-native-reusables/icon";
@@ -48,8 +47,6 @@ interface ModuleHomeHeaderProps {
   actions?: readonly HeaderAction[];
   description?: string;
   stats?: readonly HeaderStat[];
-  /** When set, shows an "add to home" button (dropdown of this category's widgets) in the actions row. */
-  addWidgetCategory?: string;
   /**
    * No longer used: per-page button coach marks were removed (only the home dashboard
    * keeps first-run tips now). Kept as an accepted prop so the module screens that
@@ -82,7 +79,6 @@ export function ModuleHomeHeader({
   actions = [],
   description,
   stats,
-  addWidgetCategory,
 }: ModuleHomeHeaderProps) {
   const pushWithOrigin = usePushWithOrigin();
 
@@ -115,7 +111,7 @@ export function ModuleHomeHeader({
           <ScreenEscape />
           <ScreenBreadcrumb />
         </View>
-        {actions.length > 0 || addWidgetCategory ? (
+        {actions.length > 0 ? (
           <View className="flex-row items-center gap-3">
             {actions.map((action) => (
               <ActionButton
@@ -124,9 +120,6 @@ export function ModuleHomeHeader({
                 onPress={() => handleActionPress(action)}
               />
             ))}
-            {addWidgetCategory ? (
-              <AddToHomeButton category={addWidgetCategory} iconClassName="text-muted-foreground" />
-            ) : null}
           </View>
         ) : null}
       </View>

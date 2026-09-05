@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react-native";
 
 import { ArrangeRow } from "@/src/features/home/arrange-row";
-import { WIDGET_META } from "@/src/features/home/widget-registry";
+import { WIDGET_META } from "@/src/features/widgets/widget-meta";
 import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 

@@ -8,7 +8,7 @@ import { MoodScale } from "@/src/components/app/mood-scale";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
 import { formatHours } from "@/src/features/sleep/format";
-import { metaForWidget } from "@/src/features/home/widget-registry";
+import { metaForWidget } from "@/src/features/widgets/widget-meta";
 import { useMoodLogs } from "@/src/features/mood/queries";
 import { useSleepStats, useSleepLogs } from "@/src/features/sleep/queries";
 import { useHabits, useHabitLogs } from "@/src/features/habits/queries";

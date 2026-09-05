@@ -3,13 +3,12 @@ import { join } from "node:path";
 
 import {
   CHIP_CATEGORY_ORDER,
-  WIDGET_META,
   WIDGET_REGISTRY,
   chipCategoryFor,
   isImplemented,
-  metaForWidget,
   moduleTagFor,
 } from "@/src/features/home/widget-registry";
+import { WIDGET_META, metaForWidget } from "@/src/features/widgets/widget-meta";
 import { CONCERN_KEYS, resolveConcernWidgetIds } from "@/src/features/onboarding/concerns";
 import { SHARED_TOOL_WIDGET_IDS } from "@/src/features/onboarding/recommendations";
 import type { ChipCategoryKey, ModuleTagKey } from "@/src/features/home/widget-registry";

@@ -210,7 +210,6 @@ export default function ActHomeScreen() {
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
-              addWidgetCategory="act"
               title={t("home.fullTitle")}
               tourScope="act"
               description={t("home.description")}

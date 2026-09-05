@@ -6,7 +6,7 @@ import {
   readHour,
   readMinute,
 } from "@/src/features/notifications/registry";
-import { WIDGET_META } from "@/src/features/home/widget-registry";
+import { WIDGET_META } from "@/src/features/widgets/widget-meta";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 
 /**
@@ -122,7 +122,7 @@ describe("NOTIFICATION_TARGETS", () => {
    * ☠️ **It asserts a route EXISTS, not where the route points, and the
    * difference matters.** The first draft required `/tools/` or `/modules/`,
    * which is wrong: `routines` is a `tier: "tool"` widget routed at
-   * **`/routines`**, with a comment in `widget-registry.tsx` saying so on
+   * **`/routines`**, with a comment in `widget-meta.ts` saying so on
    * purpose - *"Not `/tools/routines` - routines live at the top level of the
    * router."* A routine reminder is the most plausible next target of all, and
    * that draft would have blocked it with a guard whose docblock says tripping

@@ -2,7 +2,7 @@ import {
   currentLocalDayRange,
   getProgramWidgetTaskStatus,
   programWidgetStatusKey,
-} from "@/src/features/home/program-widget-status";
+} from "@/src/features/widgets/program-widget-status";
 import { requireSupabase } from "@/src/lib/supabase";
 
 jest.mock("@/src/lib/supabase", () => ({ requireSupabase: jest.fn() }));

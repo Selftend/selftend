@@ -64,7 +64,6 @@ export default function GroundingHomeScreen() {
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN, "gap-6")}>
             <ModuleHomeHeader
-              addWidgetCategory="grounding"
               title={t("grounding.title")}
               tourScope="grounding"
               description={t("grounding.description")}

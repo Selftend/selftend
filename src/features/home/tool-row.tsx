@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { CHROME_MARK } from "@/src/lib/theme/chrome";
-import { metaForWidget } from "@/src/features/home/widget-registry";
+import { metaForWidget } from "@/src/features/widgets/widget-meta";
 import { cn } from "@/lib/utils";
 
 export interface ToolRowProps {
