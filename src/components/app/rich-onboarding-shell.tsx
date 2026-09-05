@@ -133,9 +133,11 @@ interface OnboardingInfoRowProps {
   icon: MaterialIconName;
   title: string;
   body: string;
+  /** Rendered under the body, aligned with it — a technique's caution (#1996). */
+  children?: ReactNode;
 }
 
-export function OnboardingInfoRow({ icon, title, body }: OnboardingInfoRowProps) {
+export function OnboardingInfoRow({ icon, title, body, children }: OnboardingInfoRowProps) {
   return (
     <View className="flex-row items-start gap-3">
       <View className="mt-0.5 size-8 items-center justify-center rounded-lg bg-muted">
@@ -146,6 +148,7 @@ export function OnboardingInfoRow({ icon, title, body }: OnboardingInfoRowProps)
         <Text variant="muted" className="text-sm">
           {body}
         </Text>
+        {children}
       </View>
     </View>
   );

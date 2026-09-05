@@ -93,4 +93,34 @@ describe("GroundingSession", () => {
     );
     expect(getByText("Finish")).toBeTruthy();
   });
+
+  // The technique-level caution (#1996, shape ruled on #1985). There is no
+  // intro screen to carry it (#874), so it rides the first step — the one
+  // every session mounts on, before the person has touched anything — inline
+  // and always visible: no modal, no acknowledgement, nothing stored.
+  describe("caution", () => {
+    const caution = ["Cool tap water, not ice on skin.", "Check with a doctor first."];
+
+    it("renders the caution lines on the first step", () => {
+      const { getByText, getByTestId } = renderWithProviders(
+        <GroundingSession {...baseProps} caution={caution} />,
+      );
+      expect(getByTestId("technique-caution")).toBeTruthy();
+      expect(getByText("Cool tap water, not ice on skin.")).toBeTruthy();
+      expect(getByText("Check with a doctor first.")).toBeTruthy();
+    });
+
+    it("does not repeat the caution on later steps", () => {
+      const { queryByTestId, queryByText } = renderWithProviders(
+        <GroundingSession {...baseProps} caution={caution} stepIndex={1} stepLabel="Touch" />,
+      );
+      expect(queryByTestId("technique-caution")).toBeNull();
+      expect(queryByText("Cool tap water, not ice on skin.")).toBeNull();
+    });
+
+    it("renders no caution block for a technique without one", () => {
+      const { queryByTestId } = renderWithProviders(<GroundingSession {...baseProps} />);
+      expect(queryByTestId("technique-caution")).toBeNull();
+    });
+  });
 });

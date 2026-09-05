@@ -111,6 +111,12 @@ export function GroundingFlow({ slug }: { slug: string }) {
     const list = t(`grounding.techniques.${technique.slug}.stepHints`, { returnObjects: true });
     return Array.isArray(list) ? (list as string[]) : [];
   })();
+  // The technique's medical caution (#1996) — only cold water carries one
+  // today, so the missing key resolves to no array and renders nothing.
+  const caution = (() => {
+    const list = t(`grounding.techniques.${technique.slug}.caution`, { returnObjects: true });
+    return Array.isArray(list) ? (list as string[]) : [];
+  })();
 
   const title = t(`grounding.techniques.${technique.slug}.title`);
   const total = stepsText.length;
@@ -134,6 +140,7 @@ export function GroundingFlow({ slug }: { slug: string }) {
           stepText={stepsText[stepIndex]}
           stepLabel={stepLabels[stepIndex] ?? ""}
           stepHint={stepHints[stepIndex] ?? ""}
+          caution={caution}
           stepIndex={stepIndex}
           total={total}
           isLast={stepIndex === total - 1}
