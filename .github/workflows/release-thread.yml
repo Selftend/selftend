@@ -1,0 +1,115 @@
+name: Release thread
+
+# One GitHub issue per published release, holding the ready-to-post r/Selftend
+# thread. CI drafts, the owner posts (#1884): nothing here touches the Reddit
+# API - no OAuth app, no secret, no control-tower entry. The workflow's own
+# token with issues-write is the only credential (#1878 decision 5).
+#
+# The routine on the human side is in docs/releasing.md. The rules the draft
+# obeys are in scripts/release-thread/README.md; this file only runs them.
+#
+# A SEPARATE workflow, on purpose, with NO `needs:` on any deploy job (#1878
+# decision 2). A deploy gate would have suppressed the draft on two of the four
+# releases before the map: their run-level conclusion read `cancelled` while
+# everything but TestFlight shipped. The template is time-invariant (#1877
+# rule 1), so drafting before or despite a deploy asserts nothing false.
+#
+# What a run means (#1878 decision 6): green with "nothing picked" on the
+# summary = skipped, an issue = something to post, RED = the drafter broke,
+# not the release. On a render failure the run fails BEFORE any issue call, so
+# a half-rendered draft is never what gets pasted at 1am.
+#
+# The tag's issue is keyed by the `reddit-draft` label plus the tag in the
+# title (#1878 decision 5): open = not yet posted (its body is replaced in
+# place on a re-run), CLOSED = already posted or deliberately not posted, and
+# is never touched again. A closed issue is never resurrected.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to draft a thread for (e.g. v0.17.0)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  issues: write
+
+# One run per tag at a time, never cancelled: two runs for the same tag racing
+# the lookup is the one way to file two issues for one release.
+concurrency:
+  group: release-thread-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  draft:
+    name: Draft the r/Selftend thread
+    # Pre-releases are skipped (#1878 decision 4). Never exercised - 26 of 26
+    # releases are `prerelease=false` - but the guard costs one line. On a
+    # dispatch the API answers the same question in the read step below.
+    if: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # No `ref:` on purpose. The drafter is code and the release body is data:
+      # on a release event GITHUB_REF is the tag, whose tree is the promotion
+      # commit that carries the drafter; on a dispatch it is the branch the run
+      # was started from. Checking out an OLD tag on a dispatch would look for
+      # a drafter that did not exist yet.
+      - name: Check out the drafter
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The body reaches the shell as an environment value only. A changelog
+      # line can carry a backtick or a `$(`; interpolated into a `run:` line
+      # that is a command. On a dispatch the body comes from the API instead,
+      # and a pre-release is skipped here with a notice.
+      - name: Read the release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "release" ]; then
+            printf '%s' "$RELEASE_BODY" > "$RUNNER_TEMP/release-body.md"
+          else
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > "$RUNNER_TEMP/release.json"
+            if [ "$(jq -r '.prerelease' "$RUNNER_TEMP/release.json")" = "true" ]; then
+              echo "prerelease=true" >> "$GITHUB_OUTPUT"
+              echo "- $TAG is a pre-release; no thread is drafted for one." >> "$GITHUB_STEP_SUMMARY"
+              echo "::notice::$TAG is a pre-release; no thread is drafted for one."
+              exit 0
+            fi
+            jq -r '.body // ""' "$RUNNER_TEMP/release.json" > "$RUNNER_TEMP/release-body.md"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      # The whole drafter - parse, clean, pick, render - in one step with no
+      # credential in its environment. A non-zero exit here is the red run
+      # #1878 decision 6 asks for, and it happens before the filer can run.
+      - name: Render the thread
+        if: steps.release.outputs.prerelease != 'true'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          node scripts/release-thread/renderer.mjs --tag "$TAG" \
+            --body-file "$RUNNER_TEMP/release-body.md" > "$RUNNER_TEMP/rendered.json"
+
+      # Look up, decide, act - and write the one-line trace to the step
+      # summary: "nothing picked, no post for <tag>", "already handled", or the
+      # issue that was filed or updated.
+      - name: File the draft issue
+        if: steps.release.outputs.prerelease != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-thread/filer.mjs --rendered "$RUNNER_TEMP/rendered.json"
