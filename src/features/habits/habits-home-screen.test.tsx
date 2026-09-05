@@ -17,19 +17,6 @@ import { renderWithProviders } from "@/test/render-with-providers";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 import { useSelectedDate } from "@/src/stores/selected-date-store";
 
-// Load-bearing for the "on web" test alone, which flips `Platform.OS` to "web".
-// This screen renders the real `ModuleHomeHeader` → `AddToHomeButton` →
-// `popover.tsx`, and the popover picks its overlay wrapper at MODULE LOAD, under
-// jest-expo's default iOS - so the real `FullWindowOverlay` is already frozen in
-// by the time the platform moves, and its off-iOS branch warns (which
-// `test/setup.js` turns into a failure). The same local mock as
-// `user-menu.test.tsx` (#1338); the journal and meditation tests need none
-// because they mock `AddToHomeButton` away.
-jest.mock("react-native-screens", () => ({
-  ...jest.requireActual("react-native-screens"),
-  FullWindowOverlay: ({ children }: { children: React.ReactNode }) => children,
-}));
-
 jest.mock("expo-router", () => ({
   router: {
     canGoBack: jest.fn(() => false),

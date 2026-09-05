@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useWindowDimensions } from "react-native";
 
 import { ToolRow } from "@/src/features/home/tool-row";
-import { WIDGET_META } from "@/src/features/home/widget-registry";
+import { WIDGET_META } from "@/src/features/widgets/widget-meta";
 import { setLanguage } from "@/test/i18n-language";
 import { renderWithProviders } from "@/test/render-with-providers";
 

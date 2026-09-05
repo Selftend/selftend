@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { WIDGET_META } from "@/src/features/home/widget-registry";
+import { WIDGET_META } from "@/src/features/widgets/widget-meta";
 import type { ConcernKey } from "@/src/features/onboarding/concerns";
 import {
   buildWidgetRecommendations,

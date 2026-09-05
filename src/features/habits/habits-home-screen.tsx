@@ -163,7 +163,6 @@ export default function HabitsHomeScreen() {
               between two sections' padding rather than across a flex gap. */}
           <View className={cn(HOME_COLUMN)}>
             <ModuleHomeHeader
-              addWidgetCategory="habits"
               title={t("home.title")}
               tourScope="habits"
               description={t("home.subtitle")}

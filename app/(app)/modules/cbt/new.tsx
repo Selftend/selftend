@@ -11,7 +11,6 @@ import {
 } from "@/src/components/react-native-reusables/card";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { Text } from "@/src/components/react-native-reusables/text";
-import { AddToHomeButton } from "@/src/components/app/add-to-home-button";
 import { HelpButton } from "@/src/components/app/help-button";
 import { CrisisSupportBar } from "@/src/components/app/crisis-support-bar";
 import { ConfirmDialog } from "@/src/components/app/confirm-dialog";
@@ -184,12 +183,7 @@ export default function ThoughtRecordEditorScreen() {
         <View className="gap-2">
           <ScreenHeader
             title={recordId ? t("record.editTitle") : t("record.newTitle")}
-            right={
-              <View className="flex-row items-center gap-3">
-                <AddToHomeButton widgetId="cbt-open-record" />
-                <HelpButton helpKey="thoughtRecords" />
-              </View>
-            }
+            right={<HelpButton helpKey="thoughtRecords" />}
           />
           <Text variant="muted">
             {recordId ? t("record.editDescription") : t("record.newDescription")}

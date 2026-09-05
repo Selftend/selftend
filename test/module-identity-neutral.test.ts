@@ -131,7 +131,7 @@ const IDENTITY_SURFACES: Record<string, string[]> = {
   // `/modules` behind a fully hued home is the same half-done look #558
   // rejected. Read as in scope; recorded on the PR.
   "the home dashboard's widget identity": [
-    "src/features/home/widget-tint.ts",
+    "src/features/widgets/widget-tint.ts",
     "src/features/home/widgets/widget-card-header.tsx",
     // The nine card files this listed are gone (#975); the tool tier's identity now
     // lives in one row component, whose leading glyph is CHROME_MARK by construction.

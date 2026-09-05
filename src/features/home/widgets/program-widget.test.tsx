@@ -3,10 +3,10 @@ import { router } from "expo-router";
 
 import { ProgramWidget } from "@/src/features/home/widgets/program-widget";
 import { useUserPreferences } from "@/src/features/settings/queries";
-import { useProgramWidgetTaskStatus } from "@/src/features/home/program-widget-status";
+import { useProgramWidgetTaskStatus } from "@/src/features/widgets/program-widget-status";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 import { CBT_PROGRAM } from "@/src/features/cbt/program-definition";
-import { WIDGET_META } from "@/src/features/home/widget-registry";
+import { WIDGET_META } from "@/src/features/widgets/widget-meta";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 /**
@@ -26,7 +26,7 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: jest.fn(),
 }));
 
-jest.mock("@/src/features/home/program-widget-status", () => ({
+jest.mock("@/src/features/widgets/program-widget-status", () => ({
   useProgramWidgetTaskStatus: jest.fn(() => ({ data: [] })),
 }));
 

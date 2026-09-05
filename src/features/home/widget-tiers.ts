@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 
 import type { WidgetPreference } from "@/src/features/home/types";
-import { isImplemented, metaForWidget } from "@/src/features/home/widget-registry";
+import { isImplemented } from "@/src/features/home/widget-registry";
+import { metaForWidget } from "@/src/features/widgets/widget-meta";
 
 /**
  * The `Guided programmes` tier's fixed order, CBT then ACT (#977) - deliberately NOT
