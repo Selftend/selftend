@@ -5371,14 +5371,16 @@ const SEEDED_ROUTINES = [
   await expectFavorites(BOB_USER_ID, BOB_FAVORITES, "bob");
   await expectFavorites(ALICE_USER_ID, [], "alice");
 
-  // The other two invariants this layout decided — demo's remaining `/arrange` chip
-  // run of 11, and bob's four ids composing a THREE-step starter card — are asserted
-  // in `test/seed-widget-layouts.test.ts`, not here, and deliberately so. Both are
-  // facts about SOURCE (`WIDGET_META`, `buildStarterSteps`), not about rows, and that
-  // test can `import` the real thing where this script, being plain `.mjs`, could only
-  // regex TypeScript. A guard that reads another file's type annotation and
-  // indentation would break `npm run db:reset` on a reformat that changed nothing.
-  // This block owns what only a database can answer; that test owns the rest.
+  // The other invariant this layout decided — demo's remaining `/arrange` chip run of
+  // 11 — is asserted in `test/seed-widget-layouts.test.ts`, not here, and deliberately
+  // so. It is a fact about SOURCE (`WIDGET_META`), not about rows, and that test can
+  // `import` the real thing where this script, being plain `.mjs`, could only regex
+  // TypeScript. A guard that reads another file's type annotation and indentation
+  // would break `npm run db:reset` on a reformat that changed nothing. (Bob's four ids
+  // composing a three-step starter card was the second such invariant until #1954
+  // made the starter compose from records instead of widget rows; that assertion
+  // retired with its subject.) This block owns what only a database can answer; that
+  // test owns the rest.
 }
 
 // ------------------- reminder consent, read back out of the DB (#1271/#1525)
