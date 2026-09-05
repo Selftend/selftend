@@ -812,5 +812,136 @@
     "errors": {
       "judgement": "Write the judgement first"
     }
+  },
+  "oppositeAction": {
+    "newTitle": "New plan",
+    "newDescription": "Plan the move the feeling would not choose, and how long you will hold it.",
+    "listSubtitle": "Plans you have made, and the ones you have carried out.",
+    "empty": "No plans yet.",
+    "save": "Save plan",
+    "saving": "Saving",
+    "saved": "Planned",
+    "saveError": "That did not save",
+    "notFound": "That plan is not here any more.",
+    "done": "Done",
+    "donePrefix": "Done:",
+    "doneOn": "Done",
+    "doneError": "That did not save",
+    "saveDone": "Save",
+    "skipNote": "Skip the note",
+    "delete": "Delete this plan",
+    "deleteTitle": "Delete this plan?",
+    "deleteBody": "It goes for good. Nothing else changes.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Keep it",
+    "deleteError": "That did not delete",
+    "emotionLabel": "The feeling",
+    "emotionHint": "Whichever one is driving this. Whether it is worth changing is your call.",
+    "pullLabel": "What it pulls me to do",
+    "oppositeLabel": "The opposite",
+    "oppositeHint": "The body too - posture, voice, face.",
+    "holdForLabel": "How long I'll hold it",
+    "holdForHint": "The whole conversation, ten minutes, until I have left the room. Your words, no clock.",
+    "whatShiftedLabel": "What shifted",
+    "whatShiftedHint": "Only if you have words for it. Optional.",
+    "sections": {
+      "open": "Planned",
+      "done": "Carried out"
+    },
+    "families": {
+      "anger": {
+        "pull": "Anger usually pulls towards attacking, snapping, proving the point.",
+        "opposite": "Soften your voice, step back, find the one thing on their side you can grant."
+      },
+      "fear": {
+        "pull": "Fear usually pulls towards avoiding, escaping, putting it off.",
+        "opposite": "Go towards it in one small step; stand tall; breathe slowly."
+      },
+      "sadness": {
+        "pull": "Sadness usually pulls towards withdrawing, shutting down, staying in.",
+        "opposite": "Get moving; reach out to one person; do one small thing you can finish."
+      },
+      "guiltShame": {
+        "pull": "Guilt and shame usually pull towards hiding, or punishing yourself.",
+        "opposite": "If it does not fit the facts, keep doing the thing, in the open; if it does, make it right and move on."
+      }
+    },
+    "errors": {
+      "emotion": "Pick the feeling first",
+      "pull": "Add what it pulls you to do",
+      "oppositeAction": "Add the opposite"
+    }
+  },
+  "scripts": {
+    "newTitle": "New script",
+    "newDescription": "Four lines, in order. You will read them back before the conversation.",
+    "cardTitle": "Script",
+    "listSubtitle": "Easiest first. Done ones fall to the bottom.",
+    "empty": "No scripts yet.",
+    "next": "Next",
+    "back": "Back",
+    "save": "Save script",
+    "saving": "Saving",
+    "saved": "Saved",
+    "saveError": "That did not save",
+    "notFound": "That script is not here any more.",
+    "done": "Done",
+    "donePrefix": "Done:",
+    "closedOn": "Closed",
+    "doneError": "That did not save",
+    "saveDone": "Save",
+    "skipNote": "Skip the note",
+    "delete": "Delete this script",
+    "deleteTitle": "Delete this script?",
+    "deleteBody": "It goes for good. Nothing else changes.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Keep it",
+    "deleteError": "That did not delete",
+    "steps": {
+      "situation": "What's going on",
+      "script": "The script",
+      "before": "Before the conversation"
+    },
+    "situationLabel": "What's going on",
+    "situationHint": "The problem, in a line or two - what keeps happening.",
+    "wantChangedLabel": "What would you want changed?",
+    "wantChanged": {
+      "moreOf": "More of",
+      "lessOf": "Less of",
+      "stop": "Stop",
+      "start": "Start"
+    },
+    "iThinkLabel": "I think",
+    "iThinkHint": "Just the facts - what happened, not why you think they did it.",
+    "iFeelLabel": "I feel",
+    "iFeelHint": "Your feeling, in your own words. \"I feel hurt\", never \"I feel that you…\" - that is a thought about them wearing a feeling's clothes.",
+    "iWantLabel": "I want",
+    "iWantHint": "One thing, specific, something they could do this week. Not \"be nicer\" - \"text me if you'll be late\".",
+    "selfCareLabel": "If the answer is no",
+    "selfCareHint": "What you will do for yourself. Something you do for you, not something you do to them - and you can keep it to yourself.",
+    "difficultyLabel": "How hard does this one feel?",
+    "difficultyHint": "It orders your list, easiest first. Nothing else reads it, and leaving it blank is fine.",
+    "whenWhereLabel": "When and where",
+    "whenWhereHint": "A calm moment, not mid-argument.",
+    "intensityHint": "How hard to push? Ask yourself how much you need this, and how much the relationship can take right now.",
+    "iThinkLine": "I think",
+    "iFeelLine": "I feel",
+    "iWantLine": "I want",
+    "selfCareLine": "If the answer is no",
+    "pushBackTitle": "If they push back",
+    "pushBackReadOnly": "Read-only. Nothing here is a field.",
+    "pushBackLines": [
+      "Grant the true part, then say your side again.",
+      "Say the one sentence again, calmly, without answering \"why\".",
+      "Ask what exactly about it bothers them, and ask again.",
+      "Agree with what is true, and let the always and never go.",
+      "Ask for time - a delay is an answer too."
+    ],
+    "howItWentLabel": "How did it go?",
+    "errors": {
+      "situation": "Add what's going on",
+      "iThink": "Add the I think line",
+      "iWant": "Add the I want line"
+    }
   }
 }
