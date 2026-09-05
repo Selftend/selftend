@@ -14,7 +14,6 @@ import {
   deleteAllCoreBeliefsForUser,
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
-  deleteAllWidgetPreferencesForUser,
   deleteAllFavoritesForUser,
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
@@ -47,11 +46,6 @@ export {
 // type-only dependency on Playwright, which lets jest drive it directly
 // (test/toast-signal.test.ts) - `test/e2e/` is in jest's testPathIgnorePatterns.
 export { SAVE_FAILED_TOAST_TITLE, expectSuccessToast } from "./toast-signal";
-
-// Alias: clear widget preferences. Empty Home is intentional and no longer seeds defaults.
-export async function resetWidgetPreferencesForUser(userId: string): Promise<void> {
-  await deleteAllWidgetPreferencesForUser(userId);
-}
 
 /**
  * Replace the user's favourites with exactly these rows (#1956): what Home's Favourites
@@ -220,7 +214,7 @@ export async function dismissPostSignInModals(page: Page) {
     await expect(consentTitle).toBeHidden({ timeout: 10_000 });
   }
 
-  // First-run wizard: "Skip for now" completes onboarding from any panel.
+  // First-run introduction (one panel since #1958): "Skip for now" completes onboarding.
   const wizardTitle = page.getByText(/Welcome to Selftend/i);
   const wizardVisible = await wizardTitle
     .waitFor({ state: "visible", timeout: 2_000 })

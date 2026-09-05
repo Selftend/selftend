@@ -9,7 +9,7 @@ The shared glossary for Selftend, a free, private CBT self-help app. This file i
 **CBT self-help app**:
 What Selftend is, in the words it says so in. _Cognitive behavioural therapy_ — spelled out on first use on a surface, then **CBT** — run by the person using it, with no practitioner involved. The method sits **inside** the noun deliberately: it is what makes the eight everyday tools the everyday end of a named approach rather than a flat inventory of utilities.
 
-The frame binds **copy only**, never what the product contains or what it offers first. The eight everyday tools, the six onboarding concerns, ACT and the DBT overview are all unaffected by it.
+The frame binds **copy only**, never what the product contains or what it offers first. The eight everyday tools, ACT and the DBT overview are all unaffected by it. (The six onboarding concerns this line once listed are gone: since [#1958](https://github.com/Selftend/selftend/issues/1958) the first-run introduction is one panel and asks no concern.)
 
 _Avoid_: wellness app, toolkit, mood tracker, journalling app, habit tracker, sleep app, meditation app — as **categories**; each names a real tool Selftend ships and a shelf it is not on. And above all the practitioner-implying compound retired in [#1616](https://github.com/Selftend/selftend/issues/1616). ☠️ That compound is now **one adjective** from this noun, permanently. The full and current list, with each refusal's reason, is [docs/positioning.md](docs/positioning.md) § _The refusals_ and § _Words never to use_ — read it there rather than from this line, which is a pointer and not a second copy. `test/positioning-copy.test.ts` fails `verify` on the compound in this file too, which is why the banned words are never spelled out here.
 

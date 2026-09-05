@@ -333,13 +333,12 @@ test.describe("settings - onboarding actions", () => {
       { kind: "tool", key: "mood" },
     ]);
 
-    // Returning Home replays only the welcome introduction. Completing it must not enter
-    // recommendation questions or replace the current Favourites.
+    // Returning Home replays the welcome introduction - the whole wizard since #1958.
+    // Completing it must not replace the current Favourites.
     await page.goto("/");
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Finish", exact: true }).click();
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden();
-    await expect(page.getByText("What brings you here?", { exact: true })).toBeHidden();
     // Scoped to the SECTION, not to `home-layout`: a favourited item renders its card
     // twice on Home (Favourites and catalogue), and both copies are inside `home-layout`,
     // so that scope is precisely the strict-mode violation (#1956).

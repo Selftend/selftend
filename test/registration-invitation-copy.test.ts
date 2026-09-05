@@ -88,11 +88,12 @@ const INVITATION_SOURCES = [
  * single i18n key or either file above, which is the cheapest third surface
  * available to anyone.
  *
- * ☠️ **THE WIZARD'S MOUNT SITES ARE DELIBERATELY NOT GUARDED.**
- * `AppOnboardingWizard` already renders from two shells (`protected-layout.tsx`
- * and `today-screen.tsx`), and that is one onboarding flow reachable two ways,
- * not two invitations - the rule counts surfaces, and the wizard's final panel
- * is one surface however many shells can open it. The card is different: it is
+ * ☠️ **THE WIZARD'S MOUNT SITE IS DELIBERATELY NOT GUARDED.**
+ * `AppOnboardingWizard` rendered from two shells (`protected-layout.tsx` and
+ * `today-screen.tsx`) until #1956 removed Home's re-offer, and even then that
+ * was one onboarding flow reachable two ways, not two invitations - the rule
+ * counts surfaces, and the wizard's final panel (its only panel since #1958) is
+ * one surface however many shells can open it. The card is different: it is
  * the invitation itself rather than a flow that contains one, so each mount is
  * another surface.
  */

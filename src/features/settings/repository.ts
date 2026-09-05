@@ -82,7 +82,6 @@ interface UserPreferenceRow {
   cookie_consent: CookieConsent | null;
   language: string | null;
   theme: string | null;
-  selected_concerns: string[] | null;
   active_strategies: string[] | null;
   start_here_dismissed_at: string | null;
   shown_button_tours: string[] | null;
@@ -199,7 +198,6 @@ function mapPreferences(row?: UserPreferenceRow | null): UserPreferences {
     language: row.language ?? defaultUserPreferences.language,
     languageExplicit: row.language !== null,
     theme: row.theme ?? null,
-    selectedConcerns: row.selected_concerns ?? [],
     activeStrategies: row.active_strategies ?? [],
     startHereDismissedAt: row.start_here_dismissed_at ?? null,
     shownButtonTours: (row.shown_button_tours ?? []) as ButtonTourKey[],
@@ -337,7 +335,6 @@ const PREFERENCE_COLUMNS: Partial<Record<keyof UserPreferences, string>> = {
   cookieConsent: "cookie_consent",
   language: "language",
   theme: "theme",
-  selectedConcerns: "selected_concerns",
   activeStrategies: "active_strategies",
   startHereDismissedAt: "start_here_dismissed_at",
   shownButtonTours: "shown_button_tours",
@@ -430,7 +427,6 @@ type OnboardingPreferencesPatch = Partial<
     | "appOnboardingCompletedVia"
     | "appOnboardingCompletedAt"
     | "shownButtonTours"
-    | "selectedConcerns"
     | "startHereDismissedAt"
   >
 >;

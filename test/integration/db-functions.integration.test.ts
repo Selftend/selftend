@@ -73,7 +73,6 @@ describe("export_user_data() (integration)", () => {
         app_onboarding_completed: true,
         cbt_onboarding_completed: true,
         language: "en",
-        selected_concerns: expect.any(Array),
         active_strategies: expect.any(Array),
       },
     });

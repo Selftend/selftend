@@ -2,6 +2,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createAnonClient, createServiceClient } from "./helpers";
 
+/**
+ * `apply_widget_recommendations` survives for native builds that predate the
+ * one-panel introduction (#1958): they have no OTA channel and still call it
+ * with all three arguments when their wizard finishes. The current app calls it
+ * from nowhere. What this suite now pins is the SHIPPED-BUILD obligation: the
+ * signature is unchanged, `p_selected_concerns` is still accepted, completion
+ * and the write-once `initial_concerns` are still written - and none of that
+ * errors now that `selected_concerns` and `widgets_seeded` are gone from
+ * `user_preferences` (20260909000000_onboarding_one_panel.sql).
+ */
 describe("apply_widget_recommendations (integration)", () => {
   const password = "onboarding-rpc-test-pass-123";
   const email = `onboarding-rpc-${Date.now()}@test.local`;
@@ -28,7 +38,9 @@ describe("apply_widget_recommendations (integration)", () => {
     if (userId) await admin.auth.admin.deleteUser(userId);
   });
 
-  it("atomically stores ordered widgets and completes onboarding", async () => {
+  it("still takes p_selected_concerns and completes onboarding against the dropped columns", async () => {
+    // Exactly the call a pre-#1958 build makes. If the redeclaration had been
+    // skipped, this would be a raw `column "widgets_seeded" does not exist`.
     const applied = await client.rpc("apply_widget_recommendations", {
       p_widget_ids: ["sleep-latest", "mood-checkin"],
       p_selected_concerns: ["sleep"],
@@ -45,7 +57,7 @@ describe("apply_widget_recommendations (integration)", () => {
       client
         .from("user_preferences")
         .select(
-          "widgets_seeded, selected_concerns, app_onboarding_completed, app_onboarding_completed_via",
+          "initial_concerns, app_onboarding_completed, app_onboarding_completed_via, app_onboarding_completed_at",
         )
         .eq("user_id", userId)
         .single(),
@@ -58,11 +70,31 @@ describe("apply_widget_recommendations (integration)", () => {
     ]);
     expect(preferences.error).toBeNull();
     expect(preferences.data).toMatchObject({
-      widgets_seeded: true,
-      selected_concerns: ["sleep"],
+      // `p_selected_concerns` now feeds ONLY the intake record.
+      initial_concerns: ["sleep"],
       app_onboarding_completed: true,
       app_onboarding_completed_via: "finish",
     });
+    expect(preferences.data?.app_onboarding_completed_at).toEqual(expect.any(String));
+  });
+
+  it("has nowhere left to write selected_concerns or widgets_seeded - the columns are gone", async () => {
+    // Asserted through PostgREST rather than information_schema so the test
+    // reads the same schema cache a client would hit. `42703` is Postgres's
+    // undefined_column; PostgREST surfaces it as an error on the select.
+    const concerns = await client
+      .from("user_preferences")
+      .select("selected_concerns")
+      .eq("user_id", userId)
+      .single();
+    expect(concerns.error).not.toBeNull();
+
+    const seeded = await client
+      .from("user_preferences")
+      .select("widgets_seeded")
+      .eq("user_id", userId)
+      .single();
+    expect(seeded.error).not.toBeNull();
   });
 
   // #986. End-state check: the wizard and `add_widget_preference` running together on one

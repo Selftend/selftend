@@ -102,9 +102,17 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
     end
   $$;
 
--- The arms. The first six are the onboarding concern keys
--- (src/features/onboarding/concerns.ts); the last four are the users who
--- declared no concern, plus the users who predate the column.
+-- The arms. The first six are the concern keys the pre-#1958 onboarding wizard
+-- offered (its `concerns.ts` module is deleted; the keys live on only in the
+-- rows already written); the last four are the users who declared no concern,
+-- plus the users who predate the column.
+--
+-- ☠️ Since #1958 the app asks no concern: `initial_concerns` is written only by
+-- `apply_widget_recommendations`, which only native builds predating the
+-- one-panel introduction still call. Every arm below therefore covers the
+-- pre-redesign cohort, and users onboarded by the current app all land in
+-- `unknown` (or `skipped`/`finished-with-none` if a completion mode is set with
+-- no intake) - that is the honest reading, not a defect (#1891).
 --
 -- ☠️ `skipped` and `finished-with-none` are distinguishable ONLY via
 -- `app_onboarding_completed_via`: `apply_widget_recommendations` coalesces a
@@ -112,14 +120,16 @@ create function pg_temp.k_pct(num bigint, den bigint) returns text
 -- skip from a finish with nothing ticked.
 --
 -- `zero-concerns-no-mode` is the residue: an empty `initial_concerns` written by
--- a call that passed no completion mode (the empty-Home suggestion flow,
--- `useApplyWidgetSuggestions`). It exists so those users are never silently
--- counted as either of the two real zero arms.
+-- a call that passed no completion mode (the empty-Home suggestion flow of
+-- pre-#1956 builds, `useApplyWidgetSuggestions`, deleted with the app-side
+-- caller in #1958). It exists so those users are never silently counted as
+-- either of the two real zero arms.
 --
--- `unknown` is `initial_concerns IS NULL` — a row predating #1612, or an account
--- with no `user_preferences` row at all. It shrinks over time; there is no
--- backfill, deliberately (#1605: filling it from today's `selected_concerns`
--- would import exactly the survivorship bias the column exists to remove).
+-- `unknown` is `initial_concerns IS NULL` — a row predating #1612, an account
+-- onboarded by the one-panel introduction (#1958), or an account with no
+-- `user_preferences` row at all. There is no backfill, deliberately (#1605:
+-- filling it from the then-current `selected_concerns` - a column since dropped -
+-- would have imported exactly the survivorship bias the column exists to remove).
 -- ⚠️ Accounts grandfathered by 20260705_grandfather_widget_onboarding.sql have
 -- `app_onboarding_completed = true` but `app_onboarding_completed_at = null`, so
 -- #1612's write-once guard does not hold them back: if such a user re-runs the
