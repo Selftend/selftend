@@ -24,7 +24,7 @@ describe("STARTER_CANDIDATE_TOOLS", () => {
     expect(STARTER_CANDIDATE_TOOLS).not.toContain("dropAnchor");
   });
 
-  it("orders the everyday tools first and every pure-ACT exercise from position 12", () => {
+  it("orders the everyday tools first and every pure-ACT exercise from position 11 of 18", () => {
     // The widening to module exercises is self-limiting BECAUSE of this order: with a
     // cap of 3, an exercise composes only when fewer than three everyday tools have
     // records (sub-decision 1, ratified on #1894).

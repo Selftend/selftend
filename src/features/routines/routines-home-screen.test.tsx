@@ -17,6 +17,14 @@ jest.mock("expo-router", () => ({
   usePathname: () => "/routines",
 }));
 
+// The empty state tells "still loading" from "a slice failed" by whether anything is
+// still fetching; the records hook is mocked, so the real count would always be 0.
+let mockFetchingCount = 0;
+jest.mock("@tanstack/react-query", () => ({
+  ...jest.requireActual("@tanstack/react-query"),
+  useIsFetching: () => mockFetchingCount,
+}));
+
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
@@ -304,6 +312,7 @@ describe("RoutinesHomeScreen", () => {
     // `{}` is the not-yet-fetched shape. An empty card here would tell a person with
     // two hundred journal entries to build their own; the offer would be missing steps.
     mockUseRoutineToolRecords.mockReturnValue({});
+    mockFetchingCount = 1;
 
     renderWithProviders(<RoutinesHomeScreen />);
 
@@ -311,6 +320,23 @@ describe("RoutinesHomeScreen", () => {
     expect(screen.queryByText("No routines yet")).toBeNull();
     // The screen itself is up: the header and the new-routine door render regardless.
     expect(screen.getByText("New routine")).toBeTruthy();
+    mockFetchingCount = 0;
+  });
+
+  it("falls back to the quiet card when a slice failed and nothing is fetching any more", () => {
+    // One errored feature query leaves its slice undefined for good. Readiness alone
+    // would blank the empty state permanently; with nothing in flight, unready means
+    // failed, and the person gets the build-your-own card rather than nothing.
+    mockUseRoutineToolRecords.mockReturnValue({
+      ...readyRecords({ moodLogs: [{ dayKey: "2026-09-01" }] }),
+      journalEntries: undefined,
+    });
+    mockFetchingCount = 0;
+
+    renderWithProviders(<RoutinesHomeScreen />);
+
+    expect(screen.queryByText("Start with a ready-made routine?")).toBeNull();
+    expect(screen.getByText("No routines yet")).toBeTruthy();
   });
 
   it("fetches the full steppable list on the empty path, and only the referenced tools otherwise", () => {

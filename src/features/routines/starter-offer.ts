@@ -36,7 +36,8 @@ export const DISTINCT_STEPPABLE_TOOLS: readonly SteppableToolId[] = STEPPABLE_TO
  * tool's, so they are in-app actions in the glossary's sense, and they count
  * toward the second action (#1677, decided 2026-09-02): the offer is about
  * the person having acted twice, and the routine it offers is composed from
- * the kept widgets, not from these records. Existence is all the count reads,
+ * the STEPPABLE tools' records (#1954), never from these three - a routine
+ * cannot hold them as steps. Existence is all the count reads,
  * so the element type is left open. The three lists are row-capped (worry and
  * anger at 500, self-care at its newest 14), never date-windowed, so any
  * record at all makes its list non-empty - unlike habits, nothing here can

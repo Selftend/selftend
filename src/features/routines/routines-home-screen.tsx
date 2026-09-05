@@ -1,5 +1,6 @@
 import { type Href } from "expo-router";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
+import { useIsFetching } from "@tanstack/react-query";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -86,7 +87,7 @@ export default function RoutinesHomeScreen() {
             </Button>
           </View>
 
-          {allRoutines.length === 0 ? (
+          {hasNoRoutines ? (
             <RoutinesEmptyState records={records} />
           ) : (
             <View className="gap-3">
@@ -227,9 +228,19 @@ function RoutinesEmptyState({ records }: { records: RoutineToolRecords }) {
   // Three states: `undefined` while the records are still loading (nothing is
   // claimed either way - neither an offer nor "build your own"), `null` when they
   // compose nothing, or the steps.
+  //
+  // A slice that ERRORS stays undefined, so readiness alone would blank this
+  // state for good after one failed feature query. Once nothing is fetching any
+  // more, an unready shape means a failure, not a wait: fall back to the quiet
+  // card rather than compose an offer from the slices that did arrive - fewer
+  // candidates is a smaller routine than the person earned, and the card is the
+  // calmer wrong answer.
+  const fetching = useIsFetching() > 0;
   const starterSteps = areToolRecordsReady(records)
     ? buildStarterSteps(toolsWithRecords(records))
-    : undefined;
+    : fetching
+      ? undefined
+      : null;
   if (starterSteps === undefined) return null;
 
   const handleKeep = () => {

@@ -31,7 +31,8 @@ export const STARTER_STEP_MIN = 2;
  * - Module exercises ARE eligible (sub-decision 1, ratified on #1894), and the
  *   widening is self-limiting because of this order: the everyday tools come
  *   first, only `cbt`/`activities`/`exposure` precede breathing, grounding and
- *   meditation, and every pure-ACT exercise sits from position 12. With the cap
+ *   meditation, and every pure-ACT exercise sits from position 11 of the
+ *   eighteen (the spec's "12+" counted the list with `habits` still in). With the cap
  *   at three, an exercise composes only for someone with too few everyday-tool
  *   records to fill three slots - the CBT/ACT-centred person the old map never
  *   offered anything to.
@@ -53,9 +54,9 @@ export const STARTER_CANDIDATE_TOOLS: readonly SteppableToolId[] = DISTINCT_STEP
  * {@link STARTER_STEP_MIN} candidates have records, in which case no offer is shown.
  */
 export function buildStarterSteps(
-  toolsWithRecords: readonly SteppableToolId[],
+  candidates: readonly SteppableToolId[],
 ): SteppableToolId[] | null {
-  const tools = STARTER_CANDIDATE_TOOLS.filter((tool) => toolsWithRecords.includes(tool)).slice(
+  const tools = STARTER_CANDIDATE_TOOLS.filter((tool) => candidates.includes(tool)).slice(
     0,
     STARTER_STEP_CAP,
   );
