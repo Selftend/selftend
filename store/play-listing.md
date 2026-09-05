@@ -1,10 +1,10 @@
 # Google Play listing text
 
-**Last verified against Play Console: 2026-09-05** — saved in the store-listing form and sent for Google review the same day. ⚠️ **The public listing page still shows the 2026-09-02 text until that review clears** (up to seven days or longer); whoever sees it clear re-reads the public page and moves this line forward.
+**Last verified against Play Console: 2026-09-05 (evening)** — the morning's [#1999](https://github.com/Selftend/selftend/issues/1999) edit cleared Google's review and was cross-checked on the public listing page the same evening (short description, first paragraph and bullets all matched this file). In that evening visit the **short description was re-saved as the 28-character short form and sent for review** ([#2010](https://github.com/Selftend/selftend/issues/2010)); ⚠️ **the public page shows the 34-character short until that review clears** (up to seven days or longer); whoever sees it clear re-reads the public page and moves this line forward.
 
 Governed by [docs/positioning.md](../docs/positioning.md). Play Console text is an owner-only hand edit, so this file is a **mirror**, not a source — editing it changes nothing in the store.
 
-⚠️ **This mirror lags the governing document by two decided edits, and it must keep lagging until the Console visit that applies them.** The text below carries _mental health tools_ in the shape the owner put live on 2026-09-05, ahead of the decision ([#1999](https://github.com/Selftend/selftend/issues/1999)); `docs/positioning.md` has since caught up and decided two things this text does not yet have — the frame sentence takes a **colon** after the noun (_tools: everyday tools_, not _tools — everyday tools_), and the short description is the 28-character short form **_Private mental health tools._**, not the 34 below ([#2007](https://github.com/Selftend/selftend/issues/2007)). Both land in one Console visit on [#2010](https://github.com/Selftend/selftend/issues/2010), which moves this block and the date line in the same PR. Do not "fix" this file ahead of the store: it mirrors what is live, and a mirror that leads its listing is a lie about it.
+⚠️ **This mirror lags the governing document by one decided edit, and it must keep lagging until the Console visit that applies it.** The short description below is the 28-character short form as saved on 2026-09-05 (evening) — in review, see the date line. The first paragraph still carries the **dash** after the noun (_tools — everyday tools_) where `docs/positioning.md` decided a **colon** (_tools: everyday tools_, [#2007](https://github.com/Selftend/selftend/issues/2007)): the agent's full-description edit was refused by the auto-mode classifier on 2026-09-05, so that one-character edit is an owner Console visit, bundled with the feature-graphic replacement ([#2022](https://github.com/Selftend/selftend/issues/2022)) so it costs one review rather than two. Do not "fix" this file ahead of the store: it mirrors what the Console holds, and the diff on the day it moves is the record.
 
 ## Why this file exists even though nothing verifies it
 
@@ -16,15 +16,15 @@ That makes this file the weakest gate in `docs/positioning.md`, and it is kept a
 
 Play was also the most-contradicted listing on the positioning map until the 2026-09-02 edit, which is why leaving it with zero repository representation was the worse end of the trade.
 
-## Verbatim, as saved on 2026-09-05
+## Verbatim, as saved on 2026-09-05 (evening)
 
-Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://github.com/Selftend/selftend/issues/1999) visit: new short description, new first paragraph, and the bullet fixes [#1823](https://github.com/Selftend/selftend/issues/1823) decided — Check-in, a Grounding bullet, Sleep diary, the meditation line, Habits, `journalling`; the "Private by design" block, the sync line, the 18+ line and the closing paragraph unchanged). Read back from the form after the save; the Publishing overview listed both changes as "in review". **Not yet cross-checked against the public listing page** — see the date line. The 2026-09-02 text this replaced is in this file's git history. This block is the listing word for word, not a summary.
+Saved in the Play Console store-listing form on 2026-09-05 (the [#1999](https://github.com/Selftend/selftend/issues/1999) visit: new short description, new first paragraph, and the bullet fixes [#1823](https://github.com/Selftend/selftend/issues/1823) decided — Check-in, a Grounding bullet, Sleep diary, the meditation line, Habits, `journalling`; the "Private by design" block, the sync line, the 18+ line and the closing paragraph unchanged). Read back from the form after the save; that review cleared and the public page matched on the evening of 2026-09-05. The same evening the short description was re-saved as the 28 below and sent for review ([#2010](https://github.com/Selftend/selftend/issues/2010)); the full description was not touched. The 2026-09-02 text this replaced is in this file's git history. This block is the listing word for word, not a summary.
 
 ⚠️ **The 18+ line was kept deliberately.** Production is still v0.17.0 (released 2026-08-28), which predates the teen floor; the replacement string is [#1771](https://github.com/Selftend/selftend/issues/1771)'s, after the release that ships it.
 
-**Short description (34 of 80 characters):**
+**Short description (28 of 80 characters):**
 
-> Free, private mental health tools.
+> Private mental health tools.
 
 **Full description:**
 
