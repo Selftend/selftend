@@ -178,9 +178,18 @@ const ALL_SURFACES: Scanned[] = [
   readFile("docs/product-principles.md"),
 ];
 
-/** `ALL_SURFACES` plus the prose docs, deduplicated - `product-principles.md` is in both. */
+/**
+ * `ALL_SURFACES` plus the prose docs, deduplicated - `product-principles.md` is
+ * in both.
+ *
+ * ☠️ The dedupe keys on `surface` AND `id`. An i18n entry's `id` is
+ * `namespace:key` with no locale in it, so keying on `id` alone treated every
+ * Bulgarian value as a duplicate of its English twin and silently dropped the
+ * whole `i18n/bg` half (#2019). The control test below pins the count.
+ */
 const WITH_PROSE_DOCS: Scanned[] = [...ALL_SURFACES, ...PROSE_DOCS].filter(
-  (entry, index, all) => all.findIndex((other) => other.id === entry.id) === index,
+  (entry, index, all) =>
+    all.findIndex((other) => other.surface === entry.surface && other.id === entry.id) === index,
 );
 
 interface Rule {
@@ -868,6 +877,29 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
     for (const record of ["docs/app-store-review-information.md", "docs/campaign/scripts/cbt.md"]) {
       expect(readFile(record).text).toMatch(/guided self-help/i);
     }
+  });
+
+  /**
+   * The prose corpus keeps BOTH locales (#2019). It is built by deduplicating
+   * `ALL_SURFACES` against `PROSE_DOCS`, and an i18n entry's `id` is
+   * `namespace:key` with no locale in it - so a dedupe on `id` alone kept the
+   * first locale listed and dropped the second as a "duplicate". `en` is listed
+   * first and `locale-parity` guarantees every `bg` key has an `en` twin, which
+   * made the two Bulgarian guided-self-help rules green over ZERO Bulgarian copy
+   * from the day the corpus was introduced. The other three corpora never
+   * dedupe, so the hole was confined to the loudest rule in the file.
+   *
+   * The dedupe now keys on `surface` as well, and this pins it: a locale is
+   * only a duplicate of itself.
+   */
+  it("keeps every Bulgarian i18n value in the prose corpus (#2019)", () => {
+    const count = (surface: string) =>
+      WITH_PROSE_DOCS.filter((entry) => entry.surface === surface).length;
+
+    expect(count("i18n/en")).toBeGreaterThan(0);
+    expect(count("i18n/bg")).toBeGreaterThanOrEqual(count("i18n/en"));
+    // The one genuine duplicate is still collapsed to a single entry.
+    expect(count("docs/product-principles.md")).toBe(1);
   });
 
   /**
