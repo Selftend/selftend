@@ -60,9 +60,12 @@ frame the owner set on the Play listing the same day
 ([#1999](https://github.com/Selftend/selftend/issues/1999)), in the Play first paragraph's
 shape with hyphens. ⚠️ `docs/positioning.md` has since decided that sentence with a colon
 after the noun (`tools: everyday tools`) rather than a hyphen
-([#2007](https://github.com/Selftend/selftend/issues/2007)); the sidebar and the intro post
-each take that one-character edit on their next visit
-([#2010](https://github.com/Selftend/selftend/issues/2010)).
+([#2007](https://github.com/Selftend/selftend/issues/2007)). The intro post took that
+one-character edit on 2026-09-05 (evening, [#2010](https://github.com/Selftend/selftend/issues/2010),
+verified on `about.json`'s sibling post JSON); the sidebar `description` and
+`public_description` still carry the hyphen, because the subreddit settings form is the one
+Reddit surface the agent's browser cannot edit — the owner pastes the colon on the next
+sidebar visit, exact text on #2010.
 
 ## Copy on this surface
 
