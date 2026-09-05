@@ -52,6 +52,14 @@ import path from "node:path";
 
 import { createClient } from "@supabase/supabase-js";
 
+import {
+  ACT_BAND_END_HOUR,
+  ACT_BAND_MINUTES,
+  ACT_BAND_START_HOUR,
+  createBand,
+} from "./seed-demo-band.mjs";
+import { DAYS, FUTURE_MARGIN_MS, createWindow } from "./seed-demo-window.mjs";
+
 const LOCAL_SUPABASE_URL = process.env.SUPABASE_TEST_URL ?? "http://127.0.0.1:54321";
 const LOCAL_SERVICE_ROLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
@@ -84,30 +92,10 @@ const pick = (arr) => arr[Math.floor(rng() * arr.length)];
 const chance = (p) => rng() < p;
 const between = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
 
-// The seeded window: ~3 months ending today. `new Date()` is fine here — the
-// script runs in plain Node, and the dataset should always end "today".
-const DAYS = 89;
-const end = new Date();
-end.setHours(12, 0, 0, 0);
-
-// Run early in the day and today's later entries would land in the future,
-// tripping the DB's occurrence-time guard ("Occurrence time cannot be in the
-// future") and failing the whole seed. Clamp to just-passed instead — today's
-// rows bunch up near "now", which only shows when seeding at odd hours and
-// only on today's rows. The margin absorbs the clock drift between building a
-// row here and the database checking it.
-const FUTURE_MARGIN_MS = 120_000;
-
-function clampToPast(millis) {
-  return new Date(Math.min(millis, Date.now() - FUTURE_MARGIN_MS)).toISOString();
-}
-
-/** The calendar date at day index i (0 = oldest), as a machine-local Date. */
-function dayAt(dayIndex) {
-  const d = new Date(end);
-  d.setDate(d.getDate() - (DAYS - 1 - dayIndex));
-  return d;
-}
+// The seeded window: ~3 months ending today, and the future-clamp today's rows
+// go through. Both live in `seed-demo-window.mjs` so the band's day-boundary
+// tests build the exact window this seed does (#1971).
+const { dayAt, clampToPast } = createWindow();
 
 /** Local-civil-day at index i (0 = oldest), at local hour/minute. */
 function at(dayIndex, hour, minute = 0) {
@@ -154,25 +142,6 @@ function atFuture(daysAfterToday, hour, minute = 0) {
   d.setDate(d.getDate() + daysAfterToday);
   d.setHours(hour, minute, 0, 0);
   return d.toISOString();
-}
-
-/**
- * The same calendar day as `at()`, but at an explicit UTC hour/minute.
- *
- * `at()` stamps the SEEDING MACHINE's local clock, so it cannot express a fixed
- * UTC wall time: `at(d, 11)` is 11:00 in Sofia on one machine and 11:00 in
- * London on another. Tables that carry no captured-offset column have nowhere
- * to record which was meant, so their rows must be pinned to UTC instead of
- * inheriting whatever clock the seeding machine happened to have. Applies the
- * same future-clamp as `at()`.
- *
- * Every caller today goes through `inBand()` in the ACT section, which is where
- * the tables with no captured-offset column live (#1284). Reach for it directly
- * only for a table with the same problem and a different intended time.
- */
-function atUtc(dayIndex, hour, minute = 0) {
-  const d = dayAt(dayIndex);
-  return clampToPast(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute, 0, 0));
 }
 
 /**
@@ -3170,8 +3139,11 @@ const OBSERVING_TECHNIQUES = ["tenDeepBreaths", "skyAndWeather", "bodyAwareness"
 // current timezone instead. Two consequences, and both shape the placement
 // below.
 //
-// FIRST: every row goes in a 10:00-12:00 UTC BAND, via `atUtc` rather than
-// `at`. A band centred on 11:00 UTC keeps its intended civil day for 92 of the
+// FIRST: every row goes in a 10:00-12:00 UTC BAND, via `inBand` rather than
+// `at`: `at()` stamps the SEEDING MACHINE's local clock, so it cannot express a
+// fixed UTC wall time — `at(d, 11)` is 11:00 in Sofia on one machine and 11:00
+// in London on another, and these tables have nowhere to record which was
+// meant. A band centred on 11:00 UTC keeps its intended civil day for 92 of the
 // 101 real-world quarter-hour offsets at the 10:00 edge and 97 at the 11:59
 // edge; the evening bands the tools blocks use would hold for as few as 64.
 // Supported range is UTC-11 through UTC+12:45 — UTC+13 and UTC+14 are knowingly
@@ -3188,9 +3160,9 @@ const OBSERVING_TECHNIQUES = ["tenDeepBreaths", "skyAndWeather", "bodyAwareness"
 // Together they keep `openUp`'s make-room milestone legitimately open and its
 // daily practice open, which is #1178's ruling and the one row a reviewer can
 // exercise on the demo account themselves.
-const ACT_BAND_START_HOUR = 10;
-const ACT_BAND_END_HOUR = 12;
-const ACT_BAND_MINUTES = (ACT_BAND_END_HOUR - ACT_BAND_START_HOUR) * 60;
+//
+// The band's hours, the placement and the stray guard live in
+// `seed-demo-band.mjs`, pure, so the day-boundary cases are unit-tested (#1971).
 
 // The current ACT phase start, as a day index into the rolling window (#1178):
 // `openUp`, index 2 of 4, a couple of days behind CBT's phase start rather than
@@ -3214,32 +3186,13 @@ const ACT_BAND_MINUTES = (ACT_BAND_END_HOUR - ACT_BAND_START_HOUR) * 60;
 // phase out from under the margins below without anything failing.
 const ACT_PHASE_STARTED_DAY = 78;
 
-// The instants the future-clamp pulled out of the band, by epoch millisecond.
-//
-// Only ever TODAY's rows, and only on a run that starts before the band closes:
-// `atUtc` clamps a future instant back to just-passed, which is the same trade
-// every other block in this script makes for today's rows. Recorded rather than
-// waved through so the band check below can excuse exactly these and nothing
-// else.
-const clampedOutOfBand = new Set();
-
-/** A timestamp `minutesIntoBand` into the 10:00-12:00 UTC band on day `dayIndex`. */
-function inBand(dayIndex, minutesIntoBand) {
-  if (
-    !Number.isInteger(minutesIntoBand) ||
-    minutesIntoBand < 0 ||
-    minutesIntoBand >= ACT_BAND_MINUTES
-  ) {
-    throw new Error(
-      `inBand() takes 0-${ACT_BAND_MINUTES - 1} minutes into the band, got ${minutesIntoBand}.`,
-    );
-  }
-  const iso = atUtc(dayIndex, ACT_BAND_START_HOUR, minutesIntoBand);
-  if (new Date(iso).getUTCHours() < ACT_BAND_START_HOUR) {
-    clampedOutOfBand.add(new Date(iso).getTime());
-  }
-  return iso;
-}
+// `inBand(dayIndex, minutes)` places a row inside the band; `isStray(millis)`
+// is the guard's verdict on a stored instant — outside the band and not one of
+// the instants today's future-clamp itself produced. The clamp is detected by
+// comparing instants, not by the hour of the result, so a run at 00:01 UTC (or
+// on a machine whose local day is ahead of the UTC day) no longer kills the
+// seed when the clamped row lands at 23:59 on the previous UTC day (#1971).
+const { inBand, isStray, bandOpensAt, bandClosesAt } = createBand({ dayAt, clampToPast });
 
 /**
  * Anywhere inside the band on day `dayIndex` — what almost every row here wants.
@@ -3249,20 +3202,6 @@ function inBand(dayIndex, minutesIntoBand) {
  */
 function somewhereInBand(dayIndex) {
   return inBand(dayIndex, between(0, ACT_BAND_MINUTES - 1));
-}
-
-/**
- * The UTC instant the band OPENS on day `dayIndex`, in epoch millis.
- *
- * The margin checks compare band edge to band edge rather than counting 48
- * hours back from `now`: every row sits somewhere inside a two-hour band, so a
- * fixed-hours comparison rejects a correctly placed row whenever the run starts
- * earlier in the day than the row it is measuring. Unclamped on purpose — these
- * are boundaries to measure against, not timestamps to store.
- */
-function bandOpensAt(dayIndex) {
-  const d = dayAt(dayIndex);
-  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), ACT_BAND_START_HOUR, 0, 0, 0);
 }
 
 /**
@@ -3311,10 +3250,9 @@ async function requireEveryVariantInDb(checks) {
  *
  * These tables store no captured offset, so a row placed with `at()` instead of
  * `inBand()` changes civil day for viewers the band was chosen to cover. Null
- * columns are skipped — several are genuinely optional. The excused instants are
- * today's rows the future-clamp pulled back out of the band; ☠️ they are matched
- * by EPOCH MILLIS rather than by string, because PostgREST returns a different
- * ISO format than the script wrote.
+ * columns are skipped — several are genuinely optional. `isStray` excuses only
+ * today's rows the future-clamp itself pulled out of the band, matched by
+ * epoch millis (`seed-demo-band.mjs`, unit-tested at the UTC day boundary).
  */
 async function requireRowsInBand(entries) {
   const strays = [];
@@ -3323,9 +3261,7 @@ async function requireRowsInBand(entries) {
       for (const column of columns) {
         if (row[column] === null) continue;
         const millis = new Date(row[column]).getTime();
-        if (clampedOutOfBand.has(millis)) continue;
-        const hour = new Date(millis).getUTCHours();
-        if (hour < ACT_BAND_START_HOUR || hour >= ACT_BAND_END_HOUR) {
+        if (isStray(millis)) {
           strays.push(`${table}.${column} at ${new Date(millis).toISOString()}`);
         }
       }
@@ -3339,12 +3275,6 @@ async function requireRowsInBand(entries) {
         "was chosen to cover. Place it with `inBand`, not `at`.",
     );
   }
-}
-
-/** The UTC instant the band CLOSES on day `dayIndex`, in epoch millis. */
-function bandClosesAt(dayIndex) {
-  const d = dayAt(dayIndex);
-  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), ACT_BAND_END_HOUR, 0, 0, 0);
 }
 
 // ☠️ THE PER-DAY-VIEW REASON THESE ROWS WERE PLACED HERE IS GONE. It used to be
