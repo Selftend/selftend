@@ -58,8 +58,11 @@ is rule 4. The community description line was rewritten on 2026-09-05
 ([#1946](https://github.com/Selftend/selftend/issues/1946)) to the _mental health tools_
 frame the owner set on the Play listing the same day
 ([#1999](https://github.com/Selftend/selftend/issues/1999)), in the Play first paragraph's
-shape with hyphens. ⚠️ That frame is ahead of `docs/positioning.md`, which still says
-_a CBT self-help app_; #1999 holds the decision on which way the document moves.
+shape with hyphens. ⚠️ `docs/positioning.md` has since decided that sentence with a colon
+after the noun (`tools: everyday tools`) rather than a hyphen
+([#2007](https://github.com/Selftend/selftend/issues/2007)); the sidebar and the intro post
+each take that one-character edit on their next visit
+([#2010](https://github.com/Selftend/selftend/issues/2010)).
 
 ## Copy on this surface
 
