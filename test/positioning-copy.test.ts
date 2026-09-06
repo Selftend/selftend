@@ -156,10 +156,13 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  *     fixing one without the other silently desynchronises them.
  *   - `campaign/scripts/` are the narrations of eight videos already on YouTube.
  *     Changing a script does not change a video.
- *   - `launch/` holds a published Reddit banner. ☠️ It does NOT hold only
- *     that: the Play feature graphic's HTML source lives beside it and is
- *     regenerated on demand rather than published once, so it is carved back
- *     out by `RENDERED_ARTWORK_SOURCES` below (#2022).
+ *   - `launch/` holds a published Reddit banner, and the July closed-testing
+ *     thread as it went out. ☠️ It does NOT hold only records, and is carved
+ *     back out TWICE: the Play feature graphic's HTML source is regenerated on
+ *     demand rather than published once (`RENDERED_ARTWORK_SOURCES`, #2022),
+ *     and the Reddit promotion package is seven drafts nobody has posted yet
+ *     (`READY_TO_POST_DRAFTS`, #1901). Both carve out per FILE and neither
+ *     drops the entry, because what is left under `launch/` really is history.
  *   - `design/1822-before/` transcribes every LIVE surface verbatim (#1822), so
  *     that #1823 can diff its rewrite against what a visitor actually sees. It
  *     exists BECAUSE the live copy violates these rules: `main` is 117 commits
@@ -225,6 +228,45 @@ const TRACKED_DOCS: ReadonlySet<string> = new Set(
 );
 
 /**
+ * Copy filed under a `PUBLISHED_RECORDS` directory that has NOT gone out yet,
+ * carved back into the scan (#1901).
+ *
+ * ☠️☠️ **A DIRECTORY EXEMPTION EARNED BY ONE FINISHED ARTEFACT SILENTLY
+ * COVERS EVERY UNFINISHED ONE FILED BESIDE IT.** `docs/launch/` is excluded
+ * because it holds a posted Reddit banner, and a record's job is to match the
+ * artefact it records rather than the current positioning.
+ * `reddit-promotion-package.md` then landed in that same directory carrying
+ * seven ready-to-post drafts written around 2026-08-19 — before
+ * `positioning.md` existed — and inherited an exemption it had never earned.
+ * They drifted through two repositionings (#1616, #2003) and no gate could say
+ * so, because the gate had been told this directory was history.
+ *
+ * The test a directory cannot apply per file, this list can, and it is not
+ * "image vs doc" but whether the artefact is FINISHED. A posted banner is
+ * finished: editing its source changes nothing anyone can see and only makes
+ * the record lie. A draft is inventory, and the file's own copy rules invite
+ * whoever posts it to edit it first. Copy you are invited to rewrite is copy,
+ * and copy is gated — the same line #2022 drew for the feature graphic,
+ * reached from the other side of the same directory.
+ *
+ * ⚠️ **THIS CARVES OUT; IT DOES NOT DROP THE EXEMPTION**, following #2022
+ * deliberately. `reddit-post-android-closed-testing.md` beside it is the July
+ * thread as it was posted, and stays out.
+ *
+ * ☠️ **PROSE SCOPE ONLY, WHICH IS A MEASUREMENT AND NOT TIMIDITY.** The
+ * tempting next step is to treat ready-to-post marketing copy the way
+ * `STORE_LISTING_TEXT` is treated, appended to every scope. That goes red on
+ * the day it lands: the r/reactnative draft quotes `behavior="padding"`, a
+ * React Native prop name that is correctly American, and the house-style rules
+ * would fail the file over an API it does not get to rename. This document is
+ * a package — drafts, sub research, verdicts and checklists — not marketing
+ * prose end to end, which is exactly the property #1760 relied on for the
+ * store listings. A guard that fails on good copy gets deleted rather than
+ * fixed.
+ */
+const READY_TO_POST_DRAFTS = ["docs/launch/reddit-promotion-package.md"];
+
+/**
  * The corpus filter, extracted so it can be exercised on synthetic input: on a
  * clean checkout — CI, or any worktree — the gitignored tree simply is not
  * there, so the bug is invisible to a test that can only read this machine.
@@ -233,7 +275,11 @@ function proseDocIds(walked: string[], tracked: ReadonlySet<string>): string[] {
   return walked
     .filter((file) => file.endsWith(".md"))
     .filter((file) => tracked.has(file))
-    .filter((file) => !PUBLISHED_RECORDS.some((record) => file.startsWith(record)))
+    .filter(
+      (file) =>
+        READY_TO_POST_DRAFTS.includes(file) ||
+        !PUBLISHED_RECORDS.some((record) => file.startsWith(record)),
+    )
     .sort();
 }
 
@@ -1125,10 +1171,14 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
    * dropped. So the rule is run directly against the string the graphic carried
    * until 2026-09-06, which is the shape this entry exists to catch.
    *
-   * ⚠️ The Reddit banner beside it is asserted OUT, and still contains the
-   * compound: `docs/launch/` earns its `PUBLISHED_RECORDS` place on that file,
-   * and a carve-out that quietly swept the whole directory in would turn the
-   * build red on a banner nobody may edit.
+   * ⚠️ The Reddit banner beside it is asserted OUT, and is the ONLY file
+   * under `docs/launch/` still carrying the compound — measured across all
+   * eight, #1901. ☠️ But the filter holding it out is the `.md` one, NOT
+   * `PUBLISHED_RECORDS`: an `.html` file is dropped before the exemption is
+   * ever consulted. So the directory entry protects the banner in intent only,
+   * and a carve-out written per DIRECTORY rather than per file would sweep the
+   * banner straight in and turn the build red on an image nobody may edit.
+   * That is why `READY_TO_POST_DRAFTS` names a file.
    */
   it("scans the feature graphic's HTML source, but not the posted banner beside it (#2022)", () => {
     const ids = new Set(PROSE_DOCS.map((entry) => entry.id));
@@ -1168,6 +1218,50 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
         rule: pattern.source,
         hit: false,
       });
+    }
+  });
+
+  /**
+   * The seven ready-to-post Reddit drafts are scanned; the posted thread filed
+   * beside them is not (#1901).
+   *
+   * ☠️ **MEMBERSHIP IS THE ASSERTION THAT PROVES LEAST**, which is the
+   * #2022 lesson restated: the live corpus is equally green when the whole
+   * directory is swept in, and equally green when the carve-out is deleted and
+   * the file drops back out. So the carve-out is exercised on synthetic input
+   * instead — a draft and a record sitting in the same excluded directory,
+   * where only the named file may come back. Nothing about that is visible
+   * from reading this machine's `docs/` tree.
+   *
+   * ⚠️ The drafts were rewritten against current positioning first (#2046),
+   * so this lands green on a file that is already clean. That ordering is the
+   * point: a gate added over copy that violates it is a gate someone deletes.
+   */
+  it("scans the unposted Reddit drafts, but not the posted thread beside them (#1901)", () => {
+    const ids = new Set(PROSE_DOCS.map((entry) => entry.id));
+    const drafts = "docs/launch/reddit-promotion-package.md";
+    const posted = "docs/launch/reddit-post-android-closed-testing.md";
+
+    expect(ids).toContain(drafts);
+    expect(ids.has(posted)).toBe(false);
+
+    // The carve-out is what puts it there. Same directory, same exemption, and
+    // only the file named in `READY_TO_POST_DRAFTS` survives — so deleting
+    // that list fails here rather than silently un-gating the drafts again.
+    expect(
+      proseDocIds([drafts, posted, "docs/naming.md"], new Set([drafts, posted, "docs/naming.md"])),
+    ).toEqual([drafts, "docs/naming.md"]);
+
+    // The corpus entry is the real file. An empty or moved read would make the
+    // three rules below vacuously green over exactly the document this entry
+    // was added for.
+    const scanned = PROSE_DOCS.find(({ id }) => id === drafts)!;
+    expect(scanned.text).toMatch(/^# Reddit promotion package/);
+    expect(scanned.text.length).toBeGreaterThan(5000);
+
+    // And it is clean under every rule that reaches the prose corpus.
+    for (const { name, pattern } of GUIDED_SELF_HELP) {
+      expect({ rule: name, hit: pattern.test(scanned.text) }).toEqual({ rule: name, hit: false });
     }
   });
 
