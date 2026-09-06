@@ -1,3 +1,4 @@
+import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
@@ -145,18 +146,65 @@ const PUBLISHED_RECORDS = [
 ];
 
 /**
+ * Every path git is tracking under `docs/`, repo-relative and POSIX-separated.
+ *
+ * ☠️☠️ **READING A CORPUS OFF DISK IS RIGHT FOR `src/i18n/locales/` AND WRONG
+ * FOR `docs/`, AND #1908 IS WHERE THAT DIFFERENCE COST SOMETHING.** The walk
+ * below is what keeps a doc added tomorrow covered without anyone remembering
+ * to list it, and it is safe over the locales tree because that tree has no
+ * untracked members. `docs/` does: `docs/superpowers/` is gitignored
+ * (`.gitignore:63`) and holds old plans and copy audits that legitimately quote
+ * the banned compound in order to record it. So the working tree and the git
+ * index disagree, and the corpus was built from the wrong one — **six offenders
+ * on a clean `dev`, all of them gitignored scratch, and green in CI, on the
+ * machine of the person most likely to act on it.**
+ *
+ * That is the exact failure `docs/positioning.md` says twice gets a guard
+ * deleted rather than fixed: red on files that are not copy at all. The index
+ * is what CI scans, so the index is what the corpus is intersected with.
+ *
+ * ⚠️ This is a filter, never the source. Discovery stays the disk walk, so a
+ * committed doc still cannot hide by being absent from a list — and an
+ * `execSync` that fails takes the whole suite down loudly rather than returning
+ * an empty set and making every prose rule vacuously green.
+ */
+const TRACKED_DOCS: ReadonlySet<string> = new Set(
+  execFileSync("git", ["ls-files", "-z", "--cached", "--", "docs"], {
+    cwd: ROOT,
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+  })
+    .split("\0")
+    .filter(Boolean),
+);
+
+/**
+ * The corpus filter, extracted so it can be exercised on synthetic input: on a
+ * clean checkout — CI, or any worktree — the gitignored tree simply is not
+ * there, so the bug is invisible to a test that can only read this machine.
+ */
+function proseDocIds(walked: string[], tracked: ReadonlySet<string>): string[] {
+  return walked
+    .filter((file) => file.endsWith(".md"))
+    .filter((file) => tracked.has(file))
+    .filter((file) => !PUBLISHED_RECORDS.some((record) => file.startsWith(record)))
+    .sort();
+}
+
+/**
  * Contributor-facing prose: `AGENTS.md` and the docs tree, minus the records
- * above. Only the `guided self-help` rules run over this — see their block for
- * why that phrase, and only that phrase, can safely reach this far.
+ * above and minus anything git is not tracking. Only the `guided self-help`
+ * rules run over this — see their block for why that phrase, and only that
+ * phrase, can safely reach this far.
  */
 const PROSE_DOCS: Scanned[] = [
   "AGENTS.md",
-  ...fs
-    .readdirSync(path.join(ROOT, "docs"), { recursive: true, encoding: "utf8" })
-    .map((entry) => `docs/${entry.split(path.sep).join("/")}`)
-    .filter((file) => file.endsWith(".md"))
-    .filter((file) => !PUBLISHED_RECORDS.some((record) => file.startsWith(record)))
-    .sort(),
+  ...proseDocIds(
+    fs
+      .readdirSync(path.join(ROOT, "docs"), { recursive: true, encoding: "utf8" })
+      .map((entry) => `docs/${entry.split(path.sep).join("/")}`),
+    TRACKED_DOCS,
+  ),
 ].map(readFile);
 
 /**
@@ -876,6 +924,45 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
     for (const record of ["docs/app-store-review-information.md", "docs/campaign/scripts/cbt.md"]) {
       expect(readFile(record).text).toMatch(/guided self-help/i);
     }
+  });
+
+  /**
+   * ☠️ **THE CORPUS IS THE GIT INDEX, NOT THE WORKING TREE** (#1908).
+   *
+   * This one cannot be written against the real filesystem, and that is the
+   * whole difficulty: the offending files are gitignored, so on CI and in any
+   * fresh worktree they do not exist, and a test that reads this machine would
+   * be green everywhere the bug is not. So the filter is exercised on synthetic
+   * input — a walk containing a path the index does not carry — and the real
+   * corpus is then checked for the property that filter guarantees.
+   *
+   * ⚠️ The tracked set is asserted non-empty first. An `execFileSync` that
+   * returned nothing would filter the entire docs tree away, and every prose
+   * rule would pass over `AGENTS.md` alone: the vacuum this file's other
+   * positive controls exist to refuse.
+   */
+  it("builds the prose corpus from the git index, not the working tree (#1908)", () => {
+    expect(TRACKED_DOCS.size).toBeGreaterThanOrEqual(20);
+    expect(TRACKED_DOCS.has("docs/positioning.md")).toBe(true);
+
+    // Gitignored scratch is dropped even though the walk found it; a tracked
+    // sibling in the same walk is kept, so this is a filter and not a wipe.
+    expect(
+      proseDocIds(
+        [
+          "docs/naming.md",
+          "docs/superpowers/bg-copy-audit-2026-07.md",
+          "docs/superpowers/plans/2026-07-08-ux-polish-phase2b-inapp-clarity.md",
+        ],
+        new Set(["docs/naming.md"]),
+      ),
+    ).toEqual(["docs/naming.md"]);
+
+    // And the live corpus really did go through it: nothing in it is untracked.
+    const untracked = PROSE_DOCS.map(({ id }) => id).filter(
+      (id) => id !== "AGENTS.md" && !TRACKED_DOCS.has(id),
+    );
+    expect(untracked).toEqual([]);
   });
 
   /**
