@@ -79,6 +79,11 @@ current build, which is the same reason `docs/launch/` sits in the copy test's
 `PUBLISHED_RECORDS`. This directory keeps its own captures precisely so the
 graphic can be regenerated without disturbing that record.
 
+✅ **Uploaded and sent for review on 2026-09-06.** ☠️ An earlier draft of this
+file said the upload was something "no agent can do". That is false, and it is
+the third premise on #2041 to claim a step needed a human and be wrong: the
+Console asset panel is an in-page picker, not a native file dialog, so the whole
+edit is scriptable. The recipe is in `../../../store/play-listing.md`.
+
 ⚠️ The listing's own screenshot slots are a separate set and still need fresh
-captures from the current build (owner step on #201) — as does uploading this
-graphic, which no agent can do. Same Console visit.
+captures from the current build (#201).
