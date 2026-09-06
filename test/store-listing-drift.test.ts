@@ -15,9 +15,30 @@
  */
 import { EXPECTED_LOCALE, findListingDrift } from "../scripts/check-store-listing-drift.mjs";
 
+/**
+ * ☠️ **SYNTHETIC ON PURPOSE, AND IT MUST STAY THAT WAY** (#1760).
+ *
+ * This used to copy the real committed listing — `subtitle` read "Calm, guided
+ * self-help tools", the phrase `docs/positioning.md` calls unsafe rather than
+ * merely off-frame. Nothing here ever compared it to `store/apple-info.json`,
+ * so when that file was corrected (#2009/#2021) this fixture kept the retired
+ * phrase, and **the repository went on encoding it inside a file nobody thinks
+ * of as copy**.
+ *
+ * ⚠️ It could not go red either way: the fixture feeds `COMMITTED` to the
+ * function and asserts against itself, so it passes whatever the string says.
+ * And the copy gate cannot reach it — `positioning-copy.test.ts` does not scan
+ * `test/`, deliberately, because tests here legitimately quote banned phrases
+ * in order to assert on them.
+ *
+ * Every assertion below is relational — does `findListingDrift` report drift —
+ * so the values are arbitrary. Keeping them obviously fake is what stops this
+ * file from quietly becoming a copy surface for a second time. **Do not paste
+ * the live listing back in.**
+ */
 const COMMITTED = {
-  subtitle: "Calm, guided self-help tools",
-  promoText: "Free and open source.",
+  subtitle: "A committed subtitle",
+  promoText: "A committed promo text.",
 };
 
 const matching = () => ({ subtitle: COMMITTED.subtitle, promoText: COMMITTED.promoText });
@@ -55,8 +76,11 @@ describe("the App Store listing drift comparison", () => {
     });
 
     expect(result.ok).toBe(false);
+    // Built from COMMITTED rather than spelled out: a literal here was the
+    // second place the retired subtitle survived, and the one that went red
+    // when the fixture above was made synthetic.
     expect(result.drifted).toEqual([
-      'subtitle: committed "Calm, guided self-help tools", en-US has "A calm CBT programme"',
+      `subtitle: committed "${COMMITTED.subtitle}", en-US has "A calm CBT programme"`,
     ]);
   });
 
