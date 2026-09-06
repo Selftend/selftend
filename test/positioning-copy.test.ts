@@ -154,8 +154,13 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  *     changes — which is an owner action in App Store Connect and Play Console,
  *     not a file edit. ☠️ #1644 listed only `store/play-listing.md` for that;
  *     fixing one without the other silently desynchronises them.
- *   - `campaign/scripts/` are the narrations of eight videos already on YouTube.
- *     Changing a script does not change a video.
+ *   - `campaign/scripts/` are the narrations of eight videos already recorded.
+ *     Changing a script does not change a recording. ☠️ Those eight went
+ *     **Private** on 2026-09-06 (#1965) rather than being re-narrated — the
+ *     owner declined the re-record — so the compound they spell is no longer
+ *     public. The recordings themselves are untouched, so this exclusion and
+ *     the `cbt.md` pin below both still hold, and editing a script would still
+ *     make it lie.
  *   - `launch/` holds a published Reddit banner, and the July closed-testing
  *     thread as it went out. ☠️ It does NOT hold only records, and is carved
  *     back out TWICE: the Play feature graphic's HTML source is regenerated on
