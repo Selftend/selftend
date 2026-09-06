@@ -77,9 +77,22 @@ describe("Selftend's committed age-rating declaration", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("points the age-suitability URL at a real Selftend page over https", () => {
-    if (!("developerAgeRatingInfoUrl" in advisory)) return;
-
-    expect(advisory.developerAgeRatingInfoUrl).toMatch(/^https:\/\/selftend\.org\//);
-  });
+  // ☠️ THERE IS DELIBERATELY NO `developerAgeRatingInfoUrl` TEST HERE (#1803).
+  //
+  // There used to be one, and it read `if (!("developerAgeRatingInfoUrl" in
+  // advisory)) return;` before asserting the URL. The key was dropped from
+  // store/apple-advisory.json when the first working drift run proved it had
+  // never been read from the live record - it was the Support URL's value,
+  // filed against an unrelated age-rating field. With the key gone that test
+  // did not fail: it returned on line one and passed, forever, asserting
+  // nothing. A guard that cannot fail is worse than no guard, because the
+  // suite still counts it.
+  //
+  // The `%s override` tests above take the same early-out and are safe only
+  // because "keeps at least one override field committed" holds them to
+  // account. Nothing played that role for the URL.
+  //
+  // If the field is ever genuinely read from App Store Connect and committed,
+  // bring the assertion back WITH an anti-vacuity companion like that one -
+  // never a bare conditional.
 });
