@@ -1,7 +1,9 @@
+import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
 import { LOCALE_STRINGS } from "@/test/locale-strings";
+import { APP_STORE_CAPS } from "@/test/store-caps";
 
 /**
  * The merge-gate half of `docs/positioning.md` (#1611, spec'd by #1606).
@@ -145,18 +147,65 @@ const PUBLISHED_RECORDS = [
 ];
 
 /**
+ * Every path git is tracking under `docs/`, repo-relative and POSIX-separated.
+ *
+ * ☠️☠️ **READING A CORPUS OFF DISK IS RIGHT FOR `src/i18n/locales/` AND WRONG
+ * FOR `docs/`, AND #1908 IS WHERE THAT DIFFERENCE COST SOMETHING.** The walk
+ * below is what keeps a doc added tomorrow covered without anyone remembering
+ * to list it, and it is safe over the locales tree because that tree has no
+ * untracked members. `docs/` does: `docs/superpowers/` is gitignored
+ * (`.gitignore:63`) and holds old plans and copy audits that legitimately quote
+ * the banned compound in order to record it. So the working tree and the git
+ * index disagree, and the corpus was built from the wrong one — **six offenders
+ * on a clean `dev`, all of them gitignored scratch, and green in CI, on the
+ * machine of the person most likely to act on it.**
+ *
+ * That is the exact failure `docs/positioning.md` says twice gets a guard
+ * deleted rather than fixed: red on files that are not copy at all. The index
+ * is what CI scans, so the index is what the corpus is intersected with.
+ *
+ * ⚠️ This is a filter, never the source. Discovery stays the disk walk, so a
+ * committed doc still cannot hide by being absent from a list — and an
+ * `execSync` that fails takes the whole suite down loudly rather than returning
+ * an empty set and making every prose rule vacuously green.
+ */
+const TRACKED_DOCS: ReadonlySet<string> = new Set(
+  execFileSync("git", ["ls-files", "-z", "--cached", "--", "docs"], {
+    cwd: ROOT,
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+  })
+    .split("\0")
+    .filter(Boolean),
+);
+
+/**
+ * The corpus filter, extracted so it can be exercised on synthetic input: on a
+ * clean checkout — CI, or any worktree — the gitignored tree simply is not
+ * there, so the bug is invisible to a test that can only read this machine.
+ */
+function proseDocIds(walked: string[], tracked: ReadonlySet<string>): string[] {
+  return walked
+    .filter((file) => file.endsWith(".md"))
+    .filter((file) => tracked.has(file))
+    .filter((file) => !PUBLISHED_RECORDS.some((record) => file.startsWith(record)))
+    .sort();
+}
+
+/**
  * Contributor-facing prose: `AGENTS.md` and the docs tree, minus the records
- * above. Only the `guided self-help` rules run over this — see their block for
- * why that phrase, and only that phrase, can safely reach this far.
+ * above and minus anything git is not tracking. Only the `guided self-help`
+ * rules run over this — see their block for why that phrase, and only that
+ * phrase, can safely reach this far.
  */
 const PROSE_DOCS: Scanned[] = [
   "AGENTS.md",
-  ...fs
-    .readdirSync(path.join(ROOT, "docs"), { recursive: true, encoding: "utf8" })
-    .map((entry) => `docs/${entry.split(path.sep).join("/")}`)
-    .filter((file) => file.endsWith(".md"))
-    .filter((file) => !PUBLISHED_RECORDS.some((record) => file.startsWith(record)))
-    .sort(),
+  ...proseDocIds(
+    fs
+      .readdirSync(path.join(ROOT, "docs"), { recursive: true, encoding: "utf8" })
+      .map((entry) => `docs/${entry.split(path.sep).join("/")}`),
+    TRACKED_DOCS,
+  ),
 ].map(readFile);
 
 /**
@@ -879,6 +928,45 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
   });
 
   /**
+   * ☠️ **THE CORPUS IS THE GIT INDEX, NOT THE WORKING TREE** (#1908).
+   *
+   * This one cannot be written against the real filesystem, and that is the
+   * whole difficulty: the offending files are gitignored, so on CI and in any
+   * fresh worktree they do not exist, and a test that reads this machine would
+   * be green everywhere the bug is not. So the filter is exercised on synthetic
+   * input — a walk containing a path the index does not carry — and the real
+   * corpus is then checked for the property that filter guarantees.
+   *
+   * ⚠️ The tracked set is asserted non-empty first. An `execFileSync` that
+   * returned nothing would filter the entire docs tree away, and every prose
+   * rule would pass over `AGENTS.md` alone: the vacuum this file's other
+   * positive controls exist to refuse.
+   */
+  it("builds the prose corpus from the git index, not the working tree (#1908)", () => {
+    expect(TRACKED_DOCS.size).toBeGreaterThanOrEqual(20);
+    expect(TRACKED_DOCS.has("docs/positioning.md")).toBe(true);
+
+    // Gitignored scratch is dropped even though the walk found it; a tracked
+    // sibling in the same walk is kept, so this is a filter and not a wipe.
+    expect(
+      proseDocIds(
+        [
+          "docs/naming.md",
+          "docs/superpowers/bg-copy-audit-2026-07.md",
+          "docs/superpowers/plans/2026-07-08-ux-polish-phase2b-inapp-clarity.md",
+        ],
+        new Set(["docs/naming.md"]),
+      ),
+    ).toEqual(["docs/naming.md"]);
+
+    // And the live corpus really did go through it: nothing in it is untracked.
+    const untracked = PROSE_DOCS.map(({ id }) => id).filter(
+      (id) => id !== "AGENTS.md" && !TRACKED_DOCS.has(id),
+    );
+    expect(untracked).toEqual([]);
+  });
+
+  /**
    * The prose corpus keeps BOTH locales (#2019). It is built by deduplicating
    * `ALL_SURFACES` against `PROSE_DOCS`, and an i18n entry's `id` is
    * `namespace:key` with no locale in it - so a dedupe on `id` alone kept the
@@ -1301,5 +1389,254 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
         offenders: corpusFor(rule.scope).filter(({ text }) => rule.pattern.test(text)).length,
       }).toEqual({ rule: rule.name, offenders: 0 });
     }
+  });
+});
+
+/**
+ * ☠️☠️ **THE GOVERNING DOCUMENT COULD NOT BE WRONG OUT LOUD** (#1944).
+ *
+ * Everything above scans copy *against* `docs/positioning.md`.
+ * `docs/positioning.md` was scanned against nothing. It is in
+ * `PUBLISHED_RECORDS` and deliberately held out of every corpus - correctly,
+ * since it necessarily quotes the phrases it bans - but that exclusion is
+ * total, and the copy gate is the only thing that reads the file. So its
+ * factual claims had no automated check of any kind.
+ *
+ * What that cost: the document asserted **in bold** that the App Store
+ * `subtitle` was the only capped store field. Two others are capped, and one of
+ * them was named on the next line of the same `CAPS` object. The claim was
+ * wrong from the moment #1824 merged it, and it survived merge, review and a
+ * `verify` run until #1940 happened to read both.
+ *
+ * ☠️ **The fix for a wrong claim was a more specific claim, and specificity
+ * rots.** #1940 replaced the false sentence with a sourced table of exact
+ * numbers. Six numbers and two file references now sit in prose, and every one
+ * of them goes stale the moment a cap moves or a listing is edited - which two
+ * of them already had by the time this guard was written: the Play row still
+ * quoted **34** after `store/play-listing.md` had moved to 28, and the
+ * `subtitle` row still named the #1760 defect string as the committed value
+ * after #2009 had replaced it.
+ *
+ * ⚠️ **SCOPE: THIS ASSERTS NUMBERS AND IDENTITIES, NEVER PHRASING.** Do not
+ * close a gap here by adding `docs/positioning.md` to `PROSE_DOCS` - the
+ * comment on `ALL_SURFACES` forbids exactly that, and doing it turns the build
+ * red on a file quoting its own bans, whose tempting fix is to weaken the rule.
+ * Nothing below reads the document for style.
+ *
+ * ⚠️ **Reading `store/` for a NUMBER is not scanning `store/` for phrasing.**
+ * That gap is real and is still open, at #1760 and #1789; this does not touch
+ * it. `store/play-listing.md` is read here for the digits in its own
+ * "N of 80 characters" line and for nothing else.
+ *
+ * ☠️ **Line numbers are deliberately not asserted.** Pinning
+ * `store-info-invariants.test.ts:39` in a test re-creates the rot it is meant
+ * to catch. The values are matched; a `:NN` suffix in the prose is treated as
+ * decoration and stripped before the path is checked.
+ */
+describe("docs/positioning.md's own facts, which nothing else can check", () => {
+  const POSITIONING = readFile("docs/positioning.md").text;
+  const PLAY_LISTING = readFile("store/play-listing.md").text;
+  const APPLE_INFO = JSON.parse(readFile("store/apple-info.json").text) as Record<string, string>;
+
+  /** The body of one `###` section, up to the next heading of any depth. */
+  function section(heading: string): string {
+    const at = POSITIONING.indexOf(`\n${heading}\n`);
+    if (at === -1) throw new Error(`docs/positioning.md has no "${heading}" section`);
+    const rest = POSITIONING.slice(at + heading.length + 2);
+    const end = rest.search(/\n#{2,4} /);
+    return end === -1 ? rest : rest.slice(0, end);
+  }
+
+  /** The data rows of the first table in `body` whose header line matches. */
+  function rowsOf(body: string, header: RegExp): string[][] {
+    const lines = body.split("\n");
+    const at = lines.findIndex((line) => header.test(line));
+    if (at === -1) throw new Error(`no table matching ${header} in the section`);
+
+    const rows: string[][] = [];
+    for (let i = at + 2; i < lines.length && lines[i].startsWith("|"); i += 1) {
+      rows.push(
+        lines[i]
+          .split("|")
+          .slice(1, -1)
+          .map((cell) => cell.trim()),
+      );
+    }
+    return rows;
+  }
+
+  /** A cell's literal string: bold stripped, a trailing italic aside dropped. */
+  function plain(cell: string): string {
+    return cell
+      .replace(/\*\*/g, "")
+      .replace(/\s*_\([^)]*\)_\s*$/, "")
+      .trim();
+  }
+
+  /** The number a cell leads with — `**28**`, `28`, `34 live — …` all give it. */
+  function leadingNumber(cell: string): number | null {
+    const hit = /^\**(\d+)\**/.exec(cell.trim());
+    return hit ? Number(hit[1]) : null;
+  }
+
+  const SHORT_FORM = section("### The short form");
+  const INVENTORY = rowsOf(SHORT_FORM, /^\|\s*Field\s*\|\s*Cap\s*\|/);
+  const CANDIDATES = rowsOf(SHORT_FORM, /^\|\s*Candidate\s*\|\s*Chars\s*\|/);
+
+  const rowNaming = (needle: RegExp) => INVENTORY.find((cells) => needle.test(cells[0]));
+
+  it("parses the section it is asserting, rather than passing over an empty one", () => {
+    // The positive control every corpus in this file has. A renamed heading or
+    // a reformatted table would otherwise make all of this vacuously green.
+    expect(INVENTORY.length).toBeGreaterThanOrEqual(3);
+    expect(CANDIDATES.length).toBeGreaterThanOrEqual(4);
+    expect(Object.keys(APP_STORE_CAPS).length).toBeGreaterThanOrEqual(2);
+  });
+
+  /**
+   * The first half of #1944: every field this repo caps has to be named in the
+   * document's inventory, at the cap the repo actually enforces. A third cap
+   * added to `store-caps.ts` and not written down here fails, which is the
+   * failure #1940 found by hand.
+   */
+  it("names every capped App Store field, at the cap this repo enforces", () => {
+    for (const [field, cap] of Object.entries(APP_STORE_CAPS)) {
+      const row = rowNaming(new RegExp(`\`${field}\``));
+      expect({ field, named: Boolean(row) }).toEqual({ field, named: true });
+      expect({ field, cap: leadingNumber(row![1]) }).toEqual({ field, cap });
+    }
+
+    // The same numbers also appear in the prose above the table - "caps the App
+    // Store `subtitle` at **30**" is the sentence #1819 and #2007 both reasoned
+    // from. Every occurrence has to agree with the object; none is REQUIRED to
+    // exist, because requiring a sentence is guarding phrasing, and this file
+    // does not do that to `positioning.md`.
+    for (const [field, cap] of Object.entries(APP_STORE_CAPS)) {
+      for (const [, stated] of SHORT_FORM.matchAll(
+        new RegExp(`\`${field}\` at \\*\\*(\\d+)\\*\\*`, "g"),
+      )) {
+        expect({ field, stated: Number(stated) }).toEqual({ field, stated: cap });
+      }
+    }
+  });
+
+  /**
+   * The second half: the Play cap is not in `store-caps.ts` - Play is not App
+   * Store Connect - so it is matched against the only place that records it,
+   * `store/play-listing.md`'s own count line. Both numbers on that line are
+   * used: the cap, and how much of it the committed short description spends.
+   */
+  it("matches the Play short-description cap and usage to store/play-listing.md", () => {
+    const counted = /Short description \((\d+) of (\d+) characters\)/.exec(PLAY_LISTING);
+    expect({ found: Boolean(counted) }).toEqual({ found: true });
+
+    const [, used, cap] = counted!;
+    const row = rowNaming(/Play short description/i);
+    expect({ named: Boolean(row) }).toEqual({ named: true });
+    expect({ cap: leadingNumber(row![1]) }).toEqual({ cap: Number(cap) });
+    expect({ committed: leadingNumber(row![2]) }).toEqual({ committed: Number(used) });
+  });
+
+  /**
+   * The "committed today" column, against the committed files themselves. This
+   * is the column with the shortest half-life: it changes whenever a listing is
+   * edited, and nothing used to notice.
+   */
+  it("states the committed lengths the store files actually carry", () => {
+    for (const field of Object.keys(APP_STORE_CAPS)) {
+      const row = rowNaming(new RegExp(`\`${field}\``))!;
+      expect({ field, stated: leadingNumber(row[2]) }).toEqual({
+        field,
+        stated: APPLE_INFO[field].length,
+      });
+    }
+  });
+
+  /**
+   * ☠️ A length is not enough, and this is the trap that proves it: the
+   * `subtitle` row named _"Calm, guided self-help tools"_ as the committed
+   * value long after #2009 had replaced it with _"Private mental health
+   * tools."_ - and **both are 28 characters**, so the check above sat green
+   * over a false quotation. Where the document quotes a committed value, the
+   * quotation is compared, not just its length.
+   */
+  it("quotes committed values verbatim where it quotes them at all", () => {
+    let quoted = 0;
+
+    for (const field of Object.keys(APP_STORE_CAPS)) {
+      const row = rowNaming(new RegExp(`\`${field}\``))!;
+      const hit = /_"([^"]*)"_/.exec(row[2]);
+      if (!hit) continue;
+
+      quoted += 1;
+      expect({ field, quoted: hit[1] }).toEqual({ field, quoted: APPLE_INFO[field] });
+    }
+
+    // Non-vacuous: at least one row really does quote, so the loop above is not
+    // skipping every iteration.
+    expect(quoted).toBeGreaterThanOrEqual(1);
+  });
+
+  /**
+   * The Source column, checked as references rather than as prose: the files
+   * exist, and where a source line is quoted the quotation is really in it.
+   * A `:NN` suffix is stripped first - #1944's own warning is that pinning line
+   * numbers re-creates the rot, so they are decoration here and nothing more.
+   */
+  it("cites sources that exist and quotes them accurately", () => {
+    let checked = 0;
+
+    for (const cells of INVENTORY) {
+      const source = cells[cells.length - 1];
+
+      for (const [, cited] of source.matchAll(/`([^`]+)`/g)) {
+        // Backticks also wrap identifiers in this column; only paths are files.
+        if (!cited.includes("/")) continue;
+
+        const file = cited.replace(/:\d+$/, "");
+        expect({ file, exists: fs.existsSync(path.join(ROOT, file)) }).toEqual({
+          file,
+          exists: true,
+        });
+
+        const quote = /_"([^"]*)"_/.exec(source);
+        if (quote) {
+          expect({
+            file,
+            quoted: fs.readFileSync(path.join(ROOT, file), "utf8").includes(quote[1]),
+          }).toEqual({ file, quoted: true });
+        }
+        checked += 1;
+      }
+    }
+
+    expect(checked).toBeGreaterThanOrEqual(3);
+  });
+
+  /**
+   * The candidates table is pure arithmetic - a character count beside a string
+   * - and it is the table #1819 and #2007 both reasoned from. It has been
+   * repeated row for row once already, so a miscount here would propagate.
+   */
+  it("counts its own candidate strings correctly, and adopts one that fits", () => {
+    for (const cells of CANDIDATES) {
+      const candidate = plain(cells[0]);
+      expect({ candidate, chars: leadingNumber(cells[1]) }).toEqual({
+        candidate,
+        chars: candidate.length,
+      });
+    }
+
+    const adopted = CANDIDATES.filter((cells) => /adopted/i.test(cells[2]));
+    expect(adopted).toHaveLength(1);
+
+    const shortForm = plain(adopted[0][0]);
+    expect(shortForm.length).toBeLessThanOrEqual(APP_STORE_CAPS.subtitle);
+
+    // And the blockquote under the heading is that same adopted string, so the
+    // section cannot advertise one short form and reason about another.
+    const quoted = /^> \*\*(.+)\*\*$/m.exec(SHORT_FORM);
+    expect({ found: Boolean(quoted) }).toEqual({ found: true });
+    expect(quoted![1]).toBe(shortForm);
   });
 });
