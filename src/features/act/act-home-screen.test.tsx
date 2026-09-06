@@ -367,4 +367,103 @@ describe("ActHomeScreen", () => {
     expect(screen.queryByText("You finished the ACT programme")).toBeNull();
     expect(screen.getByText("Replay the ACT programme")).toBeTruthy();
   });
+
+  /**
+   * The graduation surface states the record and stops (`docs/product-principles.md` §12,
+   * ADR-0004), so the stat list is filtered to non-zero counts exactly as
+   * `cbt-program-section.tsx` does, and the body no longer closes with "Keep using them."
+   * (#2013). "0 feelings made room for" is not a record of what the person did.
+   *
+   * ☠️ The `queryByText("0 …")` assertions below are only meaningful because the first test
+   * proves the "<n> thoughts unhooked" template is what actually renders - a negative query
+   * against a string the screen never produces passes for the wrong reason, so a rename of
+   * this copy must break the first test rather than silently gutting the rest.
+   *
+   * ☠️ The header's stat run collides with these queries. `act:home.stat*` values carry no
+   * `{{count}}` ("thoughts unhooked"), but `ModuleHomeHeader` renders `{value}` + `" "` +
+   * `{label}` inside ONE `<Text>`, so with the suite's default counts of 0 the header itself
+   * renders the exact string "0 thoughts unhooked" and every assertion below matched the
+   * header rather than the graduation list. The head counts are therefore set to distinct
+   * non-zero values here, so a "0 …" string can only have come from the graduation.
+   */
+  describe("graduation stat lines (#2013)", () => {
+    const renderGraduatedWith = (summaryStats: {
+      choicePoints: number;
+      defusionLogs: number;
+      expansionLogs: number;
+      committedActions: number;
+    }) => {
+      setCounts({ choicePoints: 7, defusionLogs: 9, committedActions: 5 });
+      mockUseActProgram.mockReturnValue({
+        program: { ...defaultActProgram, status: "graduated", summaryStats },
+        isLoading: false,
+        isUpdating: false,
+        abandonProgram: jest.fn(),
+        advancePhase: jest.fn(),
+        dismissProgramPrompt: jest.fn(),
+        dismissGraduation: jest.fn(),
+        promptDismissedAt: null,
+        graduationDismissedAt: null,
+        startProgram: jest.fn(),
+        showProgramPrompt: jest.fn(),
+        replayProgram: jest.fn(),
+      } as unknown as ReturnType<typeof useActProgram>);
+
+      renderWithProviders(<ActHomeScreen />);
+    };
+
+    it("renders each stat the person logged, and closes without a prescription", () => {
+      renderGraduatedWith({
+        choicePoints: 2,
+        defusionLogs: 3,
+        expansionLogs: 1,
+        committedActions: 4,
+      });
+
+      expect(
+        screen.getByText("You built skills to be present, open up, and do what matters."),
+      ).toBeTruthy();
+      expect(screen.getByText("2 choice points mapped")).toBeTruthy();
+      expect(screen.getByText("3 thoughts unhooked")).toBeTruthy();
+      expect(screen.getByText("1 feeling made room for")).toBeTruthy();
+      expect(screen.getByText("4 committed actions")).toBeTruthy();
+      expect(screen.queryByText(/Keep using them/)).toBeNull();
+    });
+
+    it("omits a stat the person never logged instead of printing a zero line", () => {
+      renderGraduatedWith({
+        choicePoints: 2,
+        defusionLogs: 0,
+        expansionLogs: 1,
+        committedActions: 4,
+      });
+
+      expect(screen.queryByText("0 thoughts unhooked")).toBeNull();
+      // The surviving lines still render, so the filter narrowed the list rather than emptying it.
+      expect(screen.getByText("2 choice points mapped")).toBeTruthy();
+      expect(screen.getByText("1 feeling made room for")).toBeTruthy();
+    });
+
+    it("falls back to the empty body when every stat is zero", () => {
+      renderGraduatedWith({
+        choicePoints: 0,
+        defusionLogs: 0,
+        expansionLogs: 0,
+        committedActions: 0,
+      });
+
+      expect(
+        screen.getByText(
+          "You reached the end at your own pace. Your tools are here whenever you need them.",
+        ),
+      ).toBeTruthy();
+      expect(
+        screen.queryByText("You built skills to be present, open up, and do what matters."),
+      ).toBeNull();
+      expect(screen.queryByText("0 choice points mapped")).toBeNull();
+      expect(screen.queryByText("0 thoughts unhooked")).toBeNull();
+      expect(screen.queryByText("0 feelings made room for")).toBeNull();
+      expect(screen.queryByText("0 committed actions")).toBeNull();
+    });
+  });
 });
