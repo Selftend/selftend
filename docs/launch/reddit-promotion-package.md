@@ -25,8 +25,9 @@ per day at most, with a fresh same-day read of the target sub's rules before eac
    imply outcomes.
 5. Never pitch the absence of streaks - the guardrail stays, but it is not a selling point
    (owner decision 2026-07-24), and the phrasings are `verify`-banned in both languages.
-   ⚠️ Worded this way rather than quoting them, so this file stays clean against the scan it
-   is currently exempt from. Fine instead: "no pressure", "no penalty for missing a day",
+   ⚠️ Worded this way rather than quoting them. The streak rules do **not** reach this file
+   even now (see rule 10), so this one is still habit - but describing them beats quoting
+   them either way. Fine instead: "no pressure", "no penalty for missing a day",
    "no ads, no subscriptions".
 6. Describe the meditation tool as **unguided sitting**; no book or brand claims, and no
    wording that implies a narrated session library (see rule 10).
@@ -50,12 +51,16 @@ per day at most, with a fresh same-day read of the target sub's rules before eac
    Short form: **Private mental health tools.** / **Лични инструменти за психично здраве.**
 
 10. ☠️ **Before posting, read [positioning.md](../positioning.md) § _Words never to use_ and
-    check the draft against it.** No gate reaches this file (see the note under § _Drafts_), so
-    that read is the only check there is. **The table is deliberately not copied here**: a
-    cached list goes stale the next time positioning moves, which is how these drafts drifted in
-    the first place - and quoting the banned strings verbatim would turn the scan red on this
-    file the day anyone decides to include it, which is the open call on
-    [#1901](https://github.com/Selftend/selftend/issues/1901).
+    check the draft against it.** ⚠️ **One gate now reaches this file, and only one**
+    ([#1901](https://github.com/Selftend/selftend/issues/1901), closed 2026-09-06): it joined
+    `test/positioning-copy.test.ts`'s prose corpus, where exactly **three** rules run - the
+    practitioner-implying compound in English and its two Bulgarian forms. **The other five
+    rows of the table are still habit**, and so is everything about the frame. So that read is
+    still most of the check there is; what changed is that the single unsafe phrasing can no
+    longer land here silently. **The table is deliberately not copied here**: a cached list
+    goes stale the next time positioning moves, which is how these drafts drifted in the first
+    place - and now that the file IS scanned, quoting the banned strings verbatim would turn
+    `verify` red on it, so the description below is the only safe form.
 
     What the six rows cover, so you know what you are checking for: the practitioner-implying
     compound built from _guided_ + _self-help_ (in either language, and it catches one
@@ -133,7 +138,11 @@ comments can land any day since they are comments, not posts. One sub per day at
 
 Every draft is a starting point in the owner's voice - edit freely, keep the copy rules.
 
-☠️☠️ **NOTHING BELOW IS GATED, AND THAT IS WHY THESE DRIFTED** ([#1901](https://github.com/Selftend/selftend/issues/1901)). `docs/launch/` is in `test/positioning-copy.test.ts`'s `PUBLISHED_RECORDS` list, which is **excluded** from the prose scan - deliberately, because the directory is meant to hold records of what was already posted. Ready-to-post drafts living in the same directory inherit that exemption, so between 2026-08-19 and 2026-09-06 every draft here kept a category noun the product had retired **twice** ([#1813](https://github.com/Selftend/selftend/issues/1813), then [#2004](https://github.com/Selftend/selftend/issues/2004)) and `verify` stayed green throughout. Rewriting them does not fix that; **rule 9 and rule 10 above are the only thing standing between this file and the next drift.** Whether the exclusion should distinguish _records of what went out_ from _drafts of what has not_ is an open call on #1901 - and [#2022](https://github.com/Selftend/selftend/issues/2022) set the precedent for the shape of the answer, carving one text-in-repo source out of an image-shaped exemption rather than dropping the exemption.
+☠️☠️ **NOTHING BELOW WAS GATED, AND THAT IS WHY THESE DRIFTED** ([#1901](https://github.com/Selftend/selftend/issues/1901)). `docs/launch/` is in `test/positioning-copy.test.ts`'s `PUBLISHED_RECORDS` list, which is **excluded** from the prose scan - deliberately, because the directory is meant to hold records of what was already posted. Ready-to-post drafts living in the same directory inherited that exemption, so between 2026-08-19 and 2026-09-06 every draft here kept a category noun the product had retired **twice** ([#1813](https://github.com/Selftend/selftend/issues/1813), then [#2004](https://github.com/Selftend/selftend/issues/2004)) and `verify` stayed green throughout.
+
+✅ **The open call is answered, and this file is now scanned** (2026-09-06). It is named in `UNFINISHED_DRAFTS`, a **file** list that overrides the directory exclusion, on the reasoning [#2022](https://github.com/Selftend/selftend/issues/2022) established for the feature graphic: **the test is finished versus unfinished, not image versus doc.** Editing a posted banner's source changes nothing anyone can see and would only make the record lie; editing a draft changes what goes out. A file the repository invites you to rewrite is copy, and copy is gated. The posted records beside it keep their exemption, and the test asserts that split as a pair so a carve-out that quietly swept the whole directory in would fail.
+
+⚠️ **What the gate does and does not buy.** It catches the one unsafe phrasing - the practitioner-implying compound, in English and both Bulgarian forms - and **nothing else**: not the frame, not the retired noun, not the other five rows. The drift that actually happened here was a stale category noun, which **no ban can see**. So **rule 9 and rule 10 above are still most of what stands between this file and the next drift**; the gate removes only the worst single failure from the honour system.
 
 ### 1. r/SideProject
 
@@ -358,4 +367,4 @@ All subreddit rules, subscriber counts, account stats, and store URLs in this fi
 verified 2026-08-19. Sources: reddit.com per-sub rules API, iTunes lookup API
 (app id 6796318929, version 0.14.1), github.com/Selftend/selftend (license).
 
-⚠️ **The drafts were rewritten 2026-09-06 ([#1901](https://github.com/Selftend/selftend/issues/1901)); the sub research above was not re-run.** Only the copy changed - the category noun, the framing of the meditation tool, and the copy rules. Every verdict, rule summary, subscriber count and flair name in this file is still the **2026-08-19 snapshot**, and checklist item 4 stands: re-read the target sub's rules the same day as each post. Two rows carry a dated caveat of their own - r/InternetIsBeautiful above, whose account-requirement premise moved on 2026-09-02, and r/Android, whose deferral depends on a posting history that may have changed.
+⚠️ **The drafts were rewritten 2026-09-06 ([#1901](https://github.com/Selftend/selftend/issues/1901)); the sub research above was not re-run.** Only the copy changed - the category noun, the framing of the meditation tool, and the copy rules. ☠️ **Two drafts were missed by that rewrite and fixed later the same day:** 4 (r/webdev) and 5 (r/reactnative) said Selftend _is_ a set of mental health tools and named **CBT nowhere in the post**, which is § _The hard rule_ clause 1 - _no surface presents the tools without the method somewhere on it_. They looked compliant because they are technical posts that never read as frame-carriers; the five drafts carrying the full frame were fine throughout. Every verdict, rule summary, subscriber count and flair name in this file is still the **2026-08-19 snapshot**, and checklist item 4 stands: re-read the target sub's rules the same day as each post. Two rows carry a dated caveat of their own - r/InternetIsBeautiful above, whose account-requirement premise moved on 2026-09-02, and r/Android, whose deferral depends on a posting history that may have changed.
