@@ -58,6 +58,35 @@ function readFile(relative: string): Scanned {
 }
 
 /**
+ * The same, with markup replaced by whitespace — for the artwork sources in
+ * `RENDERED_ARTWORK_SOURCES`.
+ *
+ * ☠️☠️ **WITHOUT THIS, ADDING THE FILE TO THE CORPUS GUARDS NOTHING, AND
+ * THE SUITE IS GREEN EITHER WAY.** Every rule in this file is a regex over a
+ * flat string, and the phrases they ban are multi-word. In an HTML document a
+ * tag can fall between any two of those words — and in the file this was
+ * written for, one did: the headline was
+ *
+ *     <h1>Calm, guided <span class="accent">self-help</span></h1>
+ *
+ * `\bguided\s+(?:[\w-]+\s+){0,1}self[-\s]help` does not match that, because
+ * `<span class="accent">` is not `[\w-]+`. So the corpus entry would have been
+ * added in response to a live violation, over the exact file carrying it, and
+ * reported clean — the worst outcome available, because it also looks like
+ * proof the rest of the repository is clean.
+ *
+ * Replaced with a SPACE and never the empty string: `a<br>b` is two words, and
+ * concatenating it into `ab` would hide a phrase as surely as splitting one.
+ */
+function readArtworkSource(relative: string): Scanned {
+  return {
+    surface: relative,
+    id: relative,
+    text: fs.readFileSync(path.join(ROOT, relative), "utf8").replace(/<[^>]+>/g, " "),
+  };
+}
+
+/**
  * Copy a user reads inside the product. The i18n half is read via
  * `locale-strings` rather than imported, so a namespace added tomorrow is
  * covered the day its file lands - the property `restraint-copy` was written
@@ -114,7 +143,10 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  *     fixing one without the other silently desynchronises them.
  *   - `campaign/scripts/` are the narrations of eight videos already on YouTube.
  *     Changing a script does not change a video.
- *   - `launch/` holds a published Reddit banner.
+ *   - `launch/` holds a published Reddit banner. ☠️ It does NOT hold only
+ *     that: the Play feature graphic's HTML source lives beside it and is
+ *     regenerated on demand rather than published once, so it is carved back
+ *     out by `RENDERED_ARTWORK_SOURCES` below (#2022).
  *   - `design/1822-before/` transcribes every LIVE surface verbatim (#1822), so
  *     that #1823 can diff its rewrite against what a visitor actually sees. It
  *     exists BECAUSE the live copy violates these rules: `main` is 117 commits
@@ -193,20 +225,64 @@ function proseDocIds(walked: string[], tracked: ReadonlySet<string>): string[] {
 }
 
 /**
+ * Artwork that is TEXT in this repository and pixels everywhere else (#2022).
+ *
+ * ☠️☠️ **"IT IS AN IMAGE, SO NO GATE CAN SEE IT" IS HALF WRONG, AND THE WRONG
+ * HALF IS THE ONE THAT COSTS SOMETHING.** The Play feature graphic published the
+ * banned compound as its headline for the whole of the #1616 → #2003
+ * repositioning, and every account of it — the ticket that found it, and
+ * `store/play-listing.md` — explained the miss by saying a PNG is unreadable to
+ * a gate. True, and beside the point: the PNG is a *screenshot* of
+ * `feature-graphic.html`, which is text, tracked, and sitting in this repository
+ * the entire time. The words were greppable; nothing was grepping them.
+ *
+ * They fell through two filters at once, and neither was aimed at them:
+ *
+ *   1. `proseDocIds` keeps `.md` files only, because the corpus was built to
+ *      walk a documentation tree. An `.html` file is not a doc, so it was never
+ *      a candidate.
+ *   2. `docs/launch/` is a `PUBLISHED_RECORDS` entry, earned by the Reddit
+ *      banner beside it — a banner posted once, whose source must keep matching
+ *      the image on Reddit rather than the current positioning.
+ *
+ * ⚠️ **The exclusion is right about the banner and wrong about the graphic, and
+ * the difference is not "image vs doc" — it is whether the artefact is FINISHED.**
+ * A posted banner is a record: editing its source changes nothing that anyone
+ * can see, and would only make the record lie. A store asset is live inventory:
+ * `docs/launch/play-listing/README.md` says in as many words to edit this file
+ * and re-screenshot, and the listing takes whatever it is regenerated into. A
+ * file the repository invites you to rewrite is copy, and copy is gated.
+ *
+ * Only the `guided self-help` rules reach here, exactly as for the prose docs —
+ * so this adds one file's worth of banned-compound coverage and no house-style
+ * or user-facing rule, which would go red on the CSS this file is mostly made of.
+ *
+ * ☠️ These are read through `readArtworkSource`, never `readFile`, and that is
+ * not a detail: the headline that prompted all of this had a `<span>` sitting
+ * between the two banned words, which every rule here is blind to. See that
+ * function.
+ */
+const RENDERED_ARTWORK_SOURCES = ["docs/launch/play-listing/feature-graphic.html"];
+
+/**
  * Contributor-facing prose: `AGENTS.md` and the docs tree, minus the records
- * above and minus anything git is not tracking. Only the `guided self-help`
- * rules run over this — see their block for why that phrase, and only that
- * phrase, can safely reach this far.
+ * above and minus anything git is not tracking — plus the rendered-artwork
+ * sources above, which are neither prose nor Markdown but are copy. Only the
+ * `guided self-help` rules run over this — see their block for why that phrase,
+ * and only that phrase, can safely reach this far.
  */
 const PROSE_DOCS: Scanned[] = [
-  "AGENTS.md",
-  ...proseDocIds(
-    fs
-      .readdirSync(path.join(ROOT, "docs"), { recursive: true, encoding: "utf8" })
-      .map((entry) => `docs/${entry.split(path.sep).join("/")}`),
-    TRACKED_DOCS,
-  ),
-].map(readFile);
+  ...[
+    "AGENTS.md",
+    ...proseDocIds(
+      fs
+        .readdirSync(path.join(ROOT, "docs"), { recursive: true, encoding: "utf8" })
+        .map((entry) => `docs/${entry.split(path.sep).join("/")}`),
+      TRACKED_DOCS,
+    ),
+  ].map(readFile),
+  ...RENDERED_ARTWORK_SOURCES.map(readArtworkSource),
+];
 
 /**
  * The user-facing copy plus the three prose surfaces that also declare what
@@ -924,6 +1000,62 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
     // is load-bearing, not a leftover.
     for (const record of ["docs/app-store-review-information.md", "docs/campaign/scripts/cbt.md"]) {
       expect(readFile(record).text).toMatch(/guided self-help/i);
+    }
+  });
+
+  /**
+   * The feature graphic's source is scanned, and the exclusion around it still
+   * holds (#2022).
+   *
+   * ☠️ The assertion that matters is the THIRD one. Adding the file to the
+   * corpus is worth nothing unless the rules actually reach it, and "the suite
+   * is green" cannot show that — it is equally green when the corpus entry is
+   * dropped. So the rule is run directly against the string the graphic carried
+   * until 2026-09-06, which is the shape this entry exists to catch.
+   *
+   * ⚠️ The Reddit banner beside it is asserted OUT, and still contains the
+   * compound: `docs/launch/` earns its `PUBLISHED_RECORDS` place on that file,
+   * and a carve-out that quietly swept the whole directory in would turn the
+   * build red on a banner nobody may edit.
+   */
+  it("scans the feature graphic's HTML source, but not the posted banner beside it (#2022)", () => {
+    const ids = new Set(PROSE_DOCS.map((entry) => entry.id));
+    const graphic = "docs/launch/play-listing/feature-graphic.html";
+
+    expect(ids).toContain(graphic);
+    expect(ids.has("docs/launch/reddit-post/banner.html")).toBe(false);
+
+    // The banner really does still carry the compound, so holding `docs/launch/`
+    // out of the walk is load-bearing rather than a leftover.
+    expect(readFile("docs/launch/reddit-post/banner.html").text).toMatch(/guided self-help/i);
+
+    const rule = GUIDED_SELF_HELP.find(({ name }) => name === "en: guided self-help")!;
+
+    // The headline this file carried until 2026-09-06, verbatim. The rule misses
+    // it as markup and catches it as text: that gap is the whole reason the
+    // corpus entry is read through `readArtworkSource`, and asserting the miss
+    // is what stops someone "simplifying" that back to `readFile`.
+    const wasLive = '<h1>Calm, guided <span class="accent">self-help</span></h1>';
+    expect(rule.pattern.test(wasLive)).toBe(false);
+    expect(rule.pattern.test(wasLive.replace(/<[^>]+>/g, " "))).toBe(true);
+
+    // So the entry in the corpus must be the stripped form, not the raw file.
+    // ⚠️ The headline is matched with `\s+` and not as a literal: the accent
+    // span around the noun becomes whitespace, and the full stop after its
+    // closing tag detaches into `tools .`. Harmless for every rule that reaches
+    // this corpus, since all three match word sequences — but a future rule
+    // anchored on adjacent punctuation would not survive the strip, and should
+    // be written against the raw file instead of being bent to fit this one.
+    const scanned = PROSE_DOCS.find(({ id }) => id === graphic)!;
+    expect(scanned.text).not.toMatch(/<h1/);
+    expect(scanned.text).toMatch(/Private\s+mental health tools/);
+
+    // And what it carries today is clean under every guided-self-help rule.
+    for (const { pattern } of GUIDED_SELF_HELP) {
+      expect({ rule: pattern.source, hit: pattern.test(scanned.text) }).toEqual({
+        rule: pattern.source,
+        hit: false,
+      });
     }
   });
 

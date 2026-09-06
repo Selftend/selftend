@@ -47,7 +47,9 @@
         letter-spacing: -0.7px;
       }
       h1 {
-        font-size: 30px;
+        /* 28px, not 30: at 30 the short form measures exactly the 380px column
+           and wraps to a two-line "…mental health / tools." orphan. */
+        font-size: 28px;
         font-weight: 700;
         color: #2c2140;
         line-height: 1.2;
@@ -58,9 +60,9 @@
         color: #7b4cd9;
       }
       .sub {
-        font-size: 17px;
+        font-size: 16px;
         color: #574a70;
-        line-height: 1.45;
+        line-height: 1.5;
         margin-bottom: 20px;
       }
       .pills {
@@ -123,12 +125,15 @@
           <img src="../../../assets/icon.png" alt="" />
           <div class="name">Selftend</div>
         </div>
-        <h1>Calm, guided <span class="accent">self-help</span></h1>
-        <div class="sub">Free, open-source tools for working with thoughts, moods, and habits.</div>
+        <h1>Private <span class="accent">mental health tools</span>.</h1>
+        <div class="sub">
+          A set of free, private mental health tools: everyday tools for right now, and a CBT
+          programme — cognitive behavioural therapy — to work through when you want one.
+        </div>
         <div class="pills">
           <div class="pill">No ads</div>
           <div class="pill">Open source</div>
-          <div class="pill">Private by design</div>
+          <div class="pill">No account needed</div>
         </div>
       </div>
       <div class="phones">
