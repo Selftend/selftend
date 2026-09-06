@@ -30,6 +30,26 @@
 -- cannot show (guest -> registered conversion happens in place, so a converted
 -- guest reads as `registered` for their whole history).
 
+-- ☠️ SECTION 6'S CUTOFF, AND IT IS THE ONE LINE THAT MOVES THAT FIGURE (#1978).
+-- `age_floor_met` is null for every account that predates the age gate, and
+-- null means *never asked*, not *refused* (docs/age-floor.md, the three-state
+-- note). So without a created-after cutoff, "asked, never attested" is the
+-- entire pre-gate install base. The cutoff is the production release that
+-- carries supabase/migrations/20260905000000_age_attestation.sql.
+--
+-- ⚠️ That release has not shipped. Until it does the figure is legitimately
+-- zero, and `infinity` says so in the report's own output rather than printing
+-- a zero a reader could mistake for a measured one. When it ships, edit these
+-- two lines and nothing else: the tag, and the release's publication instant.
+--
+-- ⚠️ These are psql variables, and this report is the first of the three to use
+-- one — the other windows here are inline `interval` literals, so do not go
+-- looking for a sibling convention. `\set` is used because a variable can be
+-- overridden after the definitions block, which is how the integration test
+-- exercises a cutoff without shipping one.
+\set age_gate_release 'unreleased'
+\set age_gate_cutoff 'infinity'
+
 -- The block below is byte-identical in analytics-onboarding.sql and
 -- analytics-segment.sql; test/analytics-shared-sql.test.ts fails if they drift.
 -- >>> shared:accounts
@@ -203,3 +223,40 @@ from content_events c
 join accounts a on a.user_id = c.user_id
 where c.module = 'core'
 group by 1, 2 order by 3 desc, 2, 1;
+
+\echo
+\echo '=== 6) Asked, never attested (accounts that met the age gate and stopped at it; cutoff_at = infinity means the gate has not shipped, so zero is expected) ==='
+-- #1978, the evidence #1936 reopens the gate's placement on. The person counted
+-- here met the age gate on a brand-new account and did not get past it:
+--
+--   * `age_floor_met is null` - no verdict was ever written, and
+--   * `policy_version_accepted is null` - they never reached the consent gate
+--     that sits behind the age gate, and
+--   * the account was created after the cutoff release (see the `\set` at the
+--     top of this file, and read its ☠️ before touching this section).
+--
+-- No collection is added: both columns already exist, and this is a derived
+-- count over them. Under-floor exits are NOT in this number - they delete the
+-- account, so they never appear as a null. Platform is not knowable from the
+-- row and is deliberately not an axis (#1936 accepted that); this answers "how
+-- many stop at the first screen", never "on which platform".
+--
+-- ⚠️ The left join to user_preferences is load-bearing, not defensive: an
+-- account that stopped at the gate may have no preferences row at all, and that
+-- person is exactly the one being counted. `count(a.user_id)` ignores nulls, so
+-- an account type with nobody in the window prints 0 rather than vanishing.
+select l.account,
+       :'age_gate_release' as cutoff_release,
+       :'age_gate_cutoff' as cutoff_at,
+       count(a.user_id) as accounts_since_cutoff,
+       count(a.user_id) filter (where p.age_floor_met is null
+                                  and p.policy_version_accepted is null) as asked_never_attested,
+       round(100.0 * count(a.user_id) filter (where p.age_floor_met is null
+                                                and p.policy_version_accepted is null)
+             / nullif(count(a.user_id), 0), 1) as asked_never_attested_pct
+from account_labels l
+left join accounts a
+       on a.account = l.account
+      and a.created_at > :'age_gate_cutoff'::timestamptz
+left join public.user_preferences p on p.user_id = a.user_id
+group by 1 order by 1;
