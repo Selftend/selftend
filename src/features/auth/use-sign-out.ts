@@ -39,7 +39,10 @@ import { useToastStore } from "@/src/stores/toast-store";
  * user got neither Sign Out (hidden here) nor Sign in (withdrawn by the menu,
  * which was already absence-driven). `isGuestAccount` closes that window.
  */
-export function useSignOut(user: Pick<User, "id" | "is_anonymous" | "email"> | null) {
+// ⚠️ `is_anonymous` is deliberately NOT in this Pick (#1896). Nothing here reads
+// it any more, and leaving it in the type kept the flag passable - so a future
+// "restore the flag check" edit would have compiled. Narrowed, it does not.
+export function useSignOut(user: Pick<User, "id" | "email"> | null) {
   const { t } = useTranslation("auth");
   const showToast = useToastStore((state) => state.showToast);
   const clearToasts = useToastStore((state) => state.clearToasts);

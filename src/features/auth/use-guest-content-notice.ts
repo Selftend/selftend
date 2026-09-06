@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { guestHasContent } from "@/src/features/auth/guest-content";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { useSession } from "@/src/providers/session-provider";
 
 export const guestContentKeys = {
@@ -43,7 +44,14 @@ export const guestContentKeys = {
  */
 export function useGuestContentNotice(): boolean {
   const { user } = useSession();
-  const isGuest = user?.is_anonymous === true;
+  // ☠️ `isGuestAccount`, not the flag (#1896). This surface was missed when the
+  // predicate was extracted, and it is the one where a false positive costs the
+  // most: the line is a standing claim that this person's work will be left
+  // behind, and inside the stale-flag window it made that claim to somebody who
+  // had JUST converted - whose work is now reachable by email and password, and
+  // is going nowhere. A deterrent in front of the account is exactly what
+  // `docs/product-principles.md` §12 removes steps toward.
+  const isGuest = isGuestAccount(user);
 
   const { data } = useQuery({
     queryKey: guestContentKeys.detail(user?.id ?? null),
