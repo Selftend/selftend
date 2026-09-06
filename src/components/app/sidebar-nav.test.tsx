@@ -9,6 +9,18 @@ import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("@/src/lib/linking", () => ({ openExternalUrl: jest.fn() }));
 
+/**
+ * The panel reads `usePathname()` to decide which row is current, so a test about
+ * an active state has to be able to move it. Default "/" keeps every existing case
+ * exactly as it was; `beforeEach` puts it back, so one case cannot leak a route
+ * into the next. The `mock` prefix is what lets the factory below close over it.
+ */
+let mockPathname = "/";
+
+beforeEach(() => {
+  mockPathname = "/";
+});
+
 jest.mock("expo-router", () => {
   const React = require("react");
 
@@ -28,7 +40,7 @@ jest.mock("expo-router", () => {
       // expo-router's real SingularOptions; the panel only ever passes `true`.
       dangerouslySingular?: boolean | ((name: string, params: object) => string | undefined);
     }) => React.cloneElement(React.Children.only(children), { href, dangerouslySingular }),
-    usePathname: () => "/",
+    usePathname: () => mockPathname,
   };
 });
 
@@ -119,6 +131,70 @@ describe("SidebarNav link identity", () => {
     const hrefs = screen.getAllByRole("link").map((link) => String(link.props.href));
 
     expect(hrefs).toEqual(expect.arrayContaining(["/(app)", "/(app)/routines", "/(app)/settings"]));
+  });
+});
+
+/**
+ * The two hub rows (#1841).
+ *
+ * ☠️ **`/tools` and `/modules` were reachable only from their own group label** — an
+ * 11px uppercase muted section header. Both were genuine links with an active state,
+ * so a test asserting "something links to /tools" was green throughout the defect and
+ * would be green again if the rows were deleted tomorrow. These cases are written to
+ * fail on the old code instead: they key on the row's own accessible name, which the
+ * heading never had, and on the heading having stopped being a link at all.
+ */
+describe("SidebarNav hub rows (#1841)", () => {
+  it("gives each hub a destination row of its own, named as a row and not as a heading", () => {
+    renderWithProviders(<SidebarNav />);
+
+    for (const [label, href] of [
+      ["All tools", "/tools"],
+      ["All modules", "/modules"],
+    ]) {
+      const row = screen.getByLabelText(label);
+      expect(String(row.props.href)).toBe(href);
+    }
+  });
+
+  it("leaves the group headings as headings - no second, invisible link to the same place", () => {
+    renderWithProviders(<SidebarNav />);
+
+    const hrefs = screen
+      .getAllByRole("link")
+      .map((link) => String(link.props.href))
+      .filter((href) => href === "/tools" || href === "/modules");
+
+    // Exactly one route each: the row. Two would mean the heading is still a link.
+    expect(hrefs.sort()).toEqual(["/modules", "/tools"]);
+  });
+
+  it("sits at the end of its group, after the last item in it", () => {
+    renderWithProviders(<SidebarNav />);
+
+    const labels = screen.getAllByRole("link").map((link) => String(link.props.accessibilityLabel));
+
+    expect(labels.indexOf("All tools")).toBeGreaterThan(labels.indexOf("Habit tracking"));
+    expect(labels.indexOf("All modules")).toBeGreaterThan(labels.indexOf("All tools"));
+  });
+
+  /**
+   * ☠️ The reason `activeWhen` is an exact match rather than `matchPrefix: "/tools"`.
+   * A prefix lights this row on all eight tool pages beneath it, so the hub would read
+   * as the current page while a different row was - and on native `aria-selected` folds
+   * into `accessibilityState.selected` before the host node sees it.
+   */
+  it("is current on the hub itself and never on a tool beneath it", () => {
+    mockPathname = "/tools";
+    renderWithProviders(<SidebarNav />);
+    expect(screen.getByLabelText("All tools").props.accessibilityState.selected).toBe(true);
+    screen.unmount();
+
+    mockPathname = "/tools/journal";
+    renderWithProviders(<SidebarNav />);
+    expect(screen.getByLabelText("All tools").props.accessibilityState.selected).toBe(false);
+    // The row that IS current says so, so this is not just "nothing is selected".
+    expect(screen.getByLabelText("Journal").props.accessibilityState.selected).toBe(true);
   });
 });
 
