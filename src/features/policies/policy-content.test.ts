@@ -192,9 +192,38 @@ const consentBearingSections = ["privacy", "terms", "cookies", "accountDeletion"
 // released yet, so no user has accepted this text: there is nobody to re-gate
 // and nothing to spend. That is the whole of why the Danish correction was
 // worth making before the §7 release rather than after it.
+// ⚠️ #1957 is the FIFTH digest-only move, and it is a VOCABULARY fix rather
+// than a rewrite: docs/positioning.md moved the market category twice - to "a
+// CBT self-help app" (#1814) and then to "mental health tools" (#2004) - while
+// keeping "programme" as the MODULE's own noun. Terms §3 still opened
+// "Selftend is a CBT programme you work through on your own", naming the
+// product with a noun that now names one part of it, and §5 listed the app's
+// intended purpose as "your own reflection and the CBT programme" - true when
+// the programme was the whole product, incomplete once the eight everyday
+// tools lead. §3 now reads "a set of mental health tools you use on your own"
+// and §5 adds "the everyday tools" beside the programme it already named.
+//
+// Nothing DISCLOSED changed, so the version deliberately did not move. Not a
+// processor, not a data field, not retention, not a right, not eligibility,
+// not liability - and not one item of §3's "not therapy, not medical care, not
+// diagnosis, not treatment, not crisis intervention, not emergency support"
+// boundary list, which survives word for word. "On your own" - the
+// no-practitioner statement #1616 put there - survives as "you use on your
+// own". §5's change only WIDENS the permitted use, which is the same shape as
+// #1616's "strictly more protective than what it replaced".
+//
+// ☑ And as with #1921, there is currently nobody to re-gate: 2026-09-04-teen-floor
+// is still unreleased - `main` publishes 2026-08-27-feedback-processors - so no
+// user has accepted this text. Same reasoning as the four moves above, with the
+// cost of the wrong call temporarily at zero.
+//
+// ☠️ The sibling fixes to the SAME retired noun in terms.pageDescription and in
+// two `faq` answers move nothing here, and that is correct rather than an
+// oversight: pageDescription is not inside `.sections`, and `faq` is not one of
+// the four consent-bearing keys. Only terms §3 and §5 moved this digest.
 const pinnedPolicyRelease = {
   version: "2026-09-04-teen-floor",
-  englishDigest: "5eabd28f5a9d79ec676e14d638527c0d36bb57f0371a81c790f63a4c209ecd1e",
+  englishDigest: "303efd286733c9deb5abe4b47cdff5e2312e19358e494b5e5b029f5fc3fde635",
 };
 
 describe("policy content - version pinning", () => {
