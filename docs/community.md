@@ -7,7 +7,7 @@ Selftend should feel like a mission-led community project with clear maintainers
 - GitHub is the source of truth for code, docs, issues, PRs, and roadmap decisions.
 - Discord is the preferred real-time contributor channel when volume justifies it. Server structure, roles, and moderation process are documented in [discord-server.md](discord-server.md).
 - Slack can be reconsidered later if the community needs a formal workspace.
-- Shared aliases should cover `hello@`, `support@`, `security@`, and `contributors@`; early forwarding to one inbox is fine.
+- Shared aliases are `support@`, `privacy@`, and `security@`, forwarding to one inbox. That set is deliberate rather than partial: a further alias splits an inbox one person reads, and an address that goes unanswered is worse than one that never existed.
 
 ## Early Contributor Paths
 
