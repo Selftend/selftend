@@ -299,6 +299,10 @@ confirmed live, on both public pages.
 - **`developerAgeRatingInfoUrl` has drifted.** The weekly guard has failed on every run since it began
   actually comparing: committed `https://selftend.org/faq`, live `null`. That is a real
   App Store Connect drift, unrelated to positioning.
+  ❌ **Wrong on the direction, corrected by [#1803](https://github.com/Selftend/selftend/issues/1803).**
+  Nothing drifted in App Store Connect: the field was never set there, and the committed value was the
+  **Support URL**'s `/faq` filed against an unrelated age-rating field. The defect was repository-side,
+  and the key has been dropped. See `store/README.md` for why the read is trustworthy.
 - **The App Store shows a 13+ age rating** while `docs/product-principles.md` sets an adults-only
   posture and the Play description says _"Selftend is for adults (18+)"_.
   ☑ Corroborated inside the shipped binary while capturing Surface 2: v0.17.0's own consent gate
