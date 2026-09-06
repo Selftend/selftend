@@ -84,12 +84,12 @@ brief describes the wizard's shape; `S3`'s form chrome is the nearest reference.
 
 ### S6 — the programme card
 
-| Upload as                  | File(s)                                                                     | Notes                                                                                                     |
-| -------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `S6 CBT card, in progress` | `02-cbt-home-phone-light.png`, `02-cbt-home-desktop-light.png` (top slices) | `YOUR PROGRAMME`, phase title, `This phase` rows, `Today's practice`, `Advance to next phase`. _Inherit._ |
-| `S6 ACT card, in progress` | `03-act-home-phone-light.png`, `03-act-home-desktop-light.png` (top slices) | `ACT PROGRAMME`; `4/1` printed as-is. _Inherit._                                                          |
-| `S6 CBT graduation`        | `12-cbt-graduation-phone-light.png`, `-desktop-light.png`                   | **The model**: filters zero lines, no closing prescription.                                               |
-| `S6 ACT graduation`        | `13-act-graduation-phone-light.png`, `-desktop-light.png`                   | The two defects DBT does not copy: `Keep using them.` and zero-count lines. _Depart._                     |
+| Upload as                  | File(s)                                                                     | Notes                                                                                                                                                                                                                                                |
+| -------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `S6 CBT card, in progress` | `02-cbt-home-phone-light.png`, `02-cbt-home-desktop-light.png` (top slices) | `YOUR PROGRAMME`, phase title, `This phase` rows, `Today's practice`, `Advance to next phase`. _Inherit._                                                                                                                                            |
+| `S6 ACT card, in progress` | `03-act-home-phone-light.png`, `03-act-home-desktop-light.png` (top slices) | `ACT PROGRAMME`; `4/1` printed as-is. _Inherit._                                                                                                                                                                                                     |
+| `S6 CBT graduation`        | `12-cbt-graduation-phone-light.png`, `-desktop-light.png`                   | **The model**: filters zero lines, no closing prescription.                                                                                                                                                                                          |
+| `S6 ACT graduation`        | `13-act-graduation-phone-light.png`, `-desktop-light.png`                   | The two defects DBT does not copy: `Keep using them.` and zero-count lines. _Depart._ ☠️ [#2013](https://github.com/Selftend/selftend/issues/2013) has since fixed both on the live ACT home, so this shot is the _before_, not the current surface. |
 
 ### Context
 

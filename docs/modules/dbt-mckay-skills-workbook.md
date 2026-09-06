@@ -445,7 +445,7 @@ Shown on the module home whenever the programme is **not started and not dismiss
 
 ### Graduation
 
-**CBT's filtered shape, never ACT's** (☠️ ACT prints zero-count lines and _Keep using them._ - [#2013](https://github.com/Selftend/selftend/issues/2013)). **You finished the DBT programme** · **Here's what you did:** · one line per phase **filtered to non-zero**, counted since the programme started - _{{count}} session(s) completed_ · _{{count}} wise mind check-in(s)_ · _{{count}} emotion record(s)_ · _{{count}} script(s) followed through_ - or, with every count zero, the shipped _You reached the end at your own pace. Your tools are here whenever you need them._ · **Done**. Dismissed → the shipped Replay row, _Replay the DBT programme_. **No closing prescription.** Nothing varies by date or visit. ⚠️ The graduation's counts are programme-window counts while the header's are lifetime - the same one-off gap the CBT and ACT homes show; shipped behaviour, not a defect.
+**CBT's filtered shape** (☠️ ACT printed zero-count lines and _Keep using them._ until [#2013](https://github.com/Selftend/selftend/issues/2013) gave it the same filtered shape - all three modules now agree, so mirror CBT and do not resurrect ACT's old form). **You finished the DBT programme** · **Here's what you did:** · one line per phase **filtered to non-zero**, counted since the programme started - _{{count}} session(s) completed_ · _{{count}} wise mind check-in(s)_ · _{{count}} emotion record(s)_ · _{{count}} script(s) followed through_ - or, with every count zero, the shipped _You reached the end at your own pace. Your tools are here whenever you need them._ · **Done**. Dismissed → the shipped Replay row, _Replay the DBT programme_. **No closing prescription.** Nothing varies by date or visit. ⚠️ The graduation's counts are programme-window counts while the header's are lifetime - the same one-off gap the CBT and ACT homes show; shipped behaviour, not a defect.
 
 ### The one reminder (decision 13)
 
@@ -782,8 +782,8 @@ Collected so the implementation map does not re-derive them. Each is on the map'
 - Neither the ACT defusion form nor `journal/new` takes a query parameter; hand-offs go through draft/seed stores.
 - The check-in → thought-record hand-off is an in-memory seed store carrying built-in emotion ids only.
 - "Outcome later = an edit of the same record" is not a shipped shape; the later-fill is Activities' planned → completed from the detail.
-- The ACT spec's §4 daily-practice machinery (4/3/3/4 distinct days, `distinctDays`, `DAILY_PRACTICE_TARGET`, `program-hero`, three flags) **never shipped** (#2011); `act_program_state` is ACT's onboarding state; the Home programme widget was deleted (#1977).
-- ACT's graduation prints zero lines and _Keep using them._ (#2013); CBT's filtered shape is the model.
+- The ACT spec's §4 daily-practice machinery (4/3/3/4 distinct days, `distinctDays`, `DAILY_PRACTICE_TARGET`, `program-hero`, three flags) **never shipped**; #2011 rewrote §4 and §6 to describe the shipped shape, so the ACT spec is now safe to mirror. `act_program_state` is ACT's onboarding state; the Home programme widget was deleted (#1977).
+- ACT's graduation printed zero lines and _Keep using them._; #2013 gave it CBT's filtered shape, so CBT's shape is now what every module ships.
 - The escape-coverage pins were 135 / 125 when #1991 ruled, not the 136 / 126 an earlier ticket recorded.
 - `today.modules.dbtDescription` does not exist; the live DBT strings are `modules:dbt.*` and four `navigation` keys.
 - ACT has no learn route (its primer is the replayable info modal); CBT's `learn.tsx` is the distortion guide.
