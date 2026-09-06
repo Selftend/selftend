@@ -55,8 +55,9 @@
  * Reddit. A human in front of the line beats a mechanical fix that might
  * corrupt a real identifier; the same goes for an underscore, which is either
  * an identifier or an italics trigger and never a word. The spelling list is
- * the American forms the house style names, whole words only; a false positive
- * costs one line a slot, a miss costs the sub a misspelling.
+ * the American forms the corpus carries, whole words only — the house style's
+ * named words are its floor, not its bound (#1970, at `AMERICAN_SPELLINGS`); a
+ * false positive costs one line a slot, a miss costs the sub a misspelling.
  *
  * ☠️ NOTHING IS AUTHORED HERE (#1876 decisions 1 and 2). Every step removes
  * markup, decodes what the API encoded, or swaps one punctuation mark for the
@@ -83,9 +84,30 @@ export const SCOPE_PREFIX = /^\*\*([^*]+?):\*\*\s/;
  * deliberate over-inclusions: `judgment` in its legal sense and `program` in
  * the software sense are correct in either style, and the list flags them
  * anyway — the cost is a slot, the human decides, nothing is respelled.
+ *
+ * ☠️ THE HOUSE STYLE'S NAMED WORDS ARE A FLOOR, NOT THE LIST (#1970). § *Words
+ * to use* is British *throughout*; the nine words it spells out are the ones
+ * the `verify` guard had cause to name, and `verify` covers translated strings
+ * only, so a changelog line is not in its sample at all. `defense` proves it:
+ * v0.5.0's *"Post-launch advisor + defense-in-depth hardening"* was **picked**
+ * — an American form on its way to r/Selftend with no gate on the path, found
+ * by the review on #1967. So the list takes any American form the corpus
+ * actually carries, named by § *Words to use* or not. Sweeping the 369
+ * postable lines for the whole -our/-er/-ise/-se/-og families found two:
+ * `defense` and `localized` (the -ise family the house style already governs
+ * through `organise` and `recognise`).
+ *
+ * ☠️ `dialog` WAS FOUND AND DELIBERATELY LEFT OUT — pinned in the test so a
+ * later sweep meets the decision instead of rediscovering it as an oversight,
+ * exactly as positioning.md pins `licence`. All three corpus occurrences are
+ * the UI component (*"becomes a dialog on desktop web, a drawer on mobile
+ * web"*), which is the term of art British technical writing uses too —
+ * `role="dialog"`, the `<dialog>` element. Flagging it would spare three
+ * correct lines to catch no misspelling, which is the one trade the tripwire
+ * does not make: a false positive costs a slot, and here it buys nothing.
  */
 export const AMERICAN_SPELLINGS =
-  /\b(?:favorites?|colors?|colored|colorful|behaviors?|behavioral|programs?|organiz(?:e|es|ed|ing|er|ers|ation|ations)|recogniz(?:e|es|ed|ing|able)|practicing|fulfill(?:s|ed|ing|ment)?|fueled|judgments?)\b/i;
+  /\b(?:favorites?|colors?|colored|colorful|behaviors?|behavioral|defenses?|programs?|organiz(?:e|es|ed|ing|er|ers|ation|ations)|recogniz(?:e|es|ed|ing|able)|localiz(?:e|es|ed|ing|ation|ations)|practicing|fulfill(?:s|ed|ing|ment)?|fueled|judgments?)\b/i;
 
 /** The named entities the release body has carried, decoded in this order; `&amp;` goes last. */
 const NAMED_ENTITIES = [

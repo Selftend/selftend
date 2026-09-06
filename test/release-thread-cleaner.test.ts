@@ -37,6 +37,13 @@ const byTag = (tag: string) => {
  * The hazards #1880 measured, each as the regex the corpus assertion runs. The
  * spelling regex is deliberately NOT the module's own list: the words #1949
  * names, written here independently, so a hole in the list is visible.
+ *
+ * ☠️ THE INDEPENDENCE IS THE WHOLE POINT, AND IT ONLY WORKS IF THIS GROWS TOO
+ * (#1970). `defense` sat in this corpus, uncaught by the module, and this
+ * regex did not name it either — so the corpus assertion was green over a line
+ * that was **picked** and heading for r/Selftend. A word added to
+ * `AMERICAN_SPELLINGS` must be added here in its own words, or the second pair
+ * of eyes is the first pair wearing a hat.
  */
 const HAZARDS = {
   entity: /&(?:[a-z]+|#x?[0-9a-f]+);/i,
@@ -45,7 +52,7 @@ const HAZARDS = {
   dashOrArrow: /[—–→←⇒]/,
   underscore: /_/,
   spelling:
-    /\b(?:favorites?|colors?|behaviou?rs?al?|programs?|organiz\w*|recogniz\w*|practicing)\b/i,
+    /\b(?:favorites?|colors?|behaviou?rs?al?|defenses?|programs?|organiz\w*|recogniz\w*|localiz\w*|practicing)\b/i,
   empty: /^$/,
 };
 
@@ -132,9 +139,59 @@ describe("the whole corpus", () => {
     }
     expect([...reasons.keys()].sort()).toEqual(["overflow", "spelling", "underscore", "unscoped"]);
     // #1876 counted three American spellings (`favorites` x2, `colors`); #1880
-    // counted seven underscores.
-    expect(reasons.get("spelling")).toBe(3);
+    // counted seven underscores. #1970 found two more spellings the list had
+    // missed — `defense` (v0.5.0, which was being PICKED) and `localized`
+    // (v0.16.0, which was already an overflow spare) — so three becomes five
+    // while the underscores are untouched.
+    expect(reasons.get("spelling")).toBe(5);
     expect(reasons.get("underscore")).toBe(7);
+  });
+
+  test("#1970's two: `defense` stops being picked, `localized` changes its reason", () => {
+    const spellings = releases.flatMap((r) =>
+      draft(r)
+        .spares.filter((s) => s.reason === "spelling")
+        .map((s) => `${r.tag_name}: ${s.text}`),
+    );
+    expect(spellings).toEqual([
+      "v0.5.0: Post-launch advisor + defense-in-depth hardening",
+      "v0.7.0: List, favorites, and detail join the think room",
+      "v0.7.0: Habit colors become a token alias layer with certified chips",
+      "v0.8.0: Human labels for the gratitude favorites breadcrumb and habit tick days",
+      "v0.16.0: Check-in picker on the shared sheet, localized, draft-until-Done",
+    ]);
+    // v0.5.0 is the one that was leaking: the line was slot seven of eight, and
+    // the release still posts a full eight because the freed slot promotes the
+    // overflow spare behind it rather than leaving a hole.
+    const v5 = draft(byTag("v0.5.0"));
+    expect(v5.picked).toHaveLength(CAP);
+    expect(v5.picked.map((p) => p.text)).not.toContain(
+      "Post-launch advisor + defense-in-depth hardening",
+    );
+    expect(v5.picked.map((p) => p.text)).toContain(
+      "Upgrade Expo SDK 56 to 57 - land the spine target",
+    );
+    expect(v5.spares).toEqual([
+      expect.objectContaining({
+        text: "Post-launch advisor + defense-in-depth hardening",
+        reason: "spelling",
+      }),
+    ]);
+  });
+
+  test("`dialog` was swept for and deliberately left out, so it stays postable", () => {
+    // ☠️ Pinned the way positioning.md pins `licence`: a later completeness
+    // sweep must meet this decision, not rediscover it as an oversight. All
+    // three occurrences are the UI component — the term of art British
+    // technical writing uses too (`role="dialog"`, the `<dialog>` element) —
+    // so flagging it would spare three correct lines to catch no misspelling.
+    const dialogs = releases.flatMap((r) => {
+      const { picked, spares } = draft(r);
+      return [...picked, ...spares].filter((e) => /\bdialogs?\b/i.test(e.text));
+    });
+    expect(dialogs).toHaveLength(3);
+    for (const entry of dialogs) expect(entry.reason).not.toBe("spelling");
+    expect(hazardOf("Manage emotions becomes a dialog on desktop web")).toBeUndefined();
   });
 
   test("a forced spare frees its slot rather than leaving a hole", () => {
@@ -296,6 +353,13 @@ describe("hazardOf (step 8)", () => {
     // Identical-in-both words are not American (positioning.md § house style).
     expect(hazardOf("practice the noun, programming the verb, humorous")).toBeUndefined();
     expect(hazardOf("favourites, colours, behaviour, programme, judgement")).toBeUndefined();
+    // #1970's two, and the British forms they must not touch. `defensive` is
+    // identical in both styles, so it is not on the list and must not match.
+    expect(hazardOf("post-launch advisor + defense-in-depth hardening")).toBe("spelling");
+    expect(hazardOf("defenses hold")).toBe("spelling");
+    expect(hazardOf("the picker on the shared sheet, localized")).toBe("spelling");
+    expect(hazardOf("localize, localizes, localizing, localization")).toBe("spelling");
+    expect(hazardOf("defence in depth, localised strings, a defensive read")).toBeUndefined();
     // Whole words: `colorScheme` is an identifier and matched by nothing here.
     expect(hazardOf("prefers-colorScheme")).toBeUndefined();
   });
