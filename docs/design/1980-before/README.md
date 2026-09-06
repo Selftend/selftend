@@ -210,10 +210,11 @@ The programme card is not a separate route: it is the second block of each modul
 Two facts for the DBT programme ([#1990](https://github.com/Selftend/selftend/issues/1990) rules the
 CBT shape):
 
-- The CBT graduation **filters zero lines and prints no "keep using them"**; the ACT one carries the
+- The CBT graduation **filters zero lines and prints no "keep using them"**; the ACT one carried the
   _Keep using them._ sentence and would print `0 …` lines on an empty account
   ([#2013](https://github.com/Selftend/selftend/issues/2013)). The two shots are the two shapes side by
-  side.
+  side. ☠️ Fixed since these shots were taken: #2013 gave ACT the filtered shape and dropped the
+  sentence, so `13-act-graduation-*.png` records the surface as it was, not as it now ships.
 - The graduation card's counts are **programme-window counts, not the header's lifetime counts** —
   the ACT header says `29 thoughts unhooked`, the card `28`; the CBT header `17 thought records`, the
   card `16`. A DBT header of lifetime stats above a windowed graduation card will show the same
