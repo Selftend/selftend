@@ -25,8 +25,10 @@ per day at most, with a fresh same-day read of the target sub's rules before eac
    imply outcomes.
 5. Never pitch the absence of streaks - the guardrail stays, but it is not a selling point
    (owner decision 2026-07-24), and the phrasings are `verify`-banned in both languages.
-   ⚠️ Worded this way rather than quoting them, so this file stays clean against the scan it
-   is currently exempt from. Fine instead: "no pressure", "no penalty for missing a day",
+   ⚠️ Worded this way rather than quoting them. ☠️ The streak bans are `all`-scope, so they
+   do NOT reach this file even now that it is scanned (rule 10 says what does) - this one is
+   still habit. Describing a ban beats quoting it either way. Fine instead: "no pressure",
+   "no penalty for missing a day",
    "no ads, no subscriptions".
 6. Describe the meditation tool as **unguided sitting**; no book or brand claims, and no
    wording that implies a narrated session library (see rule 10).
@@ -37,12 +39,12 @@ per day at most, with a fresh same-day read of the target sub's rules before eac
    [positioning.md](../positioning.md), not a phrasing invented here.** These are pre-threshold
    surfaces - a reader meets them before crossing into the product - so § _Which surfaces carry
    it_ binds them. Because the drafts ban em dashes (rule 3), the shape to paste is the
-   **hyphen form the app already ships** (`auth:landingPage.subtitle`), verbatim:
+   **hyphen form the app already ships** (`auth:landingPage.heroSupport`), verbatim:
 
    > A set of free, private mental health tools: everyday tools for right now, and a CBT
    > programme - cognitive behavioural therapy - to work through when you want one.
 
-   Bulgarian twin (`bg` `auth:landingPage.subtitle`), for draft 7:
+   Bulgarian twin (`bg` `auth:landingPage.heroSupport`), for draft 7:
 
    > Набор от безплатни, лични инструменти за психично здраве: ежедневни инструменти за момента
    > и КПТ програма - когнитивно-поведенческа терапия - по която да работиш, когато поискаш.
@@ -239,9 +241,10 @@ Title:
 
 Body:
 
-> I built this. Selftend (https://selftend.org) is a free, open-source set of mental health
-> tools, and the same codebase is live on all three platforms (web + Play Store + App Store).
-> The web story is the part this sub might find interesting:
+> I built this. Selftend (https://selftend.org) is a set of free, private mental health
+> tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy -
+> to work through when you want one. The same codebase is live on web, Google Play and the App
+> Store, and the web story is the part this sub might find interesting:
 >
 > - React Native Web static-exported via Expo Router, served as static assets on Cloudflare
 >   Workers. No Node server anywhere.
@@ -263,8 +266,9 @@ Title:
 
 Body:
 
-> I built this - Selftend, a free open-source set of mental health tools - and the same Expo
-> codebase is live on all three platforms. Things I would tell past me:
+> I built this. Selftend is a set of free, private mental health tools: everyday tools for
+> right now, and a CBT programme - cognitive behavioural therapy - to work through when you
+> want one. The same Expo codebase is live on all three platforms. Things I would tell past me:
 >
 > - React Native Web is a different platform, not a free target. onLayout is a mount-time
 >   decision there, Modal animations eat clicks mid-slide, and jest never sees any of it -
@@ -356,4 +360,4 @@ All subreddit rules, subscriber counts, account stats, and store URLs in this fi
 verified 2026-08-19. Sources: reddit.com per-sub rules API, iTunes lookup API
 (app id 6796318929, version 0.14.1), github.com/Selftend/selftend (license).
 
-⚠️ **The drafts were rewritten 2026-09-06 ([#1901](https://github.com/Selftend/selftend/issues/1901)); the sub research above was not re-run.** Only the copy changed - the category noun, the framing of the meditation tool, and the copy rules. Every verdict, rule summary, subscriber count and flair name in this file is still the **2026-08-19 snapshot**, and checklist item 4 stands: re-read the target sub's rules the same day as each post. Two rows carry a dated caveat of their own - r/InternetIsBeautiful above, whose account-requirement premise moved on 2026-09-02, and r/Android, whose deferral depends on a posting history that may have changed.
+⚠️ **The drafts were rewritten 2026-09-06 ([#1901](https://github.com/Selftend/selftend/issues/1901)); the sub research above was not re-run.** Only the copy changed - the category noun, the framing of the meditation tool, and the copy rules. ☠☠ **Two drafts were missed by that rewrite and fixed later the same day:** **4** (r/webdev) and **5** (r/reactnative) named the category and stopped, carrying the method nowhere in the post - which is [positioning.md](../positioning.md) § _The hard rule_ **clause 1**, and since [#2004](https://github.com/Selftend/selftend/issues/2004) clause 1 is the only thing keeping the method on a surface at all. They read as compliant because they are technical posts that never look like frame-carriers, and the five drafts carrying the full frame were fine throughout. ⚠️ **Draft 8 was checked and does NOT breach clause 1** - it presents no tools and names no category, so there is no bare inventory for the rule to bind; a keyword sweep flags it anyway, so this line exists to stop it being "fixed". Every verdict, rule summary, subscriber count and flair name in this file is still the **2026-08-19 snapshot**, and checklist item 4 stands: re-read the target sub's rules the same day as each post. Two rows carry a dated caveat of their own - r/InternetIsBeautiful above, whose account-requirement premise moved on 2026-09-02, and r/Android, whose deferral depends on a posting history that may have changed.
