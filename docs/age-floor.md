@@ -154,6 +154,34 @@ gate in the shared slot covers all four; per-flow plumbing would have missed
 guests, and guests write thought records, which are exactly the Art. 9 data the
 floor exists to protect. Confirmed by the owner 2026-09-03.
 
+☠️ **On native this is the first screen of a clean install, and it stays there.**
+Decided on [#1936](https://github.com/Selftend/selftend/issues/1936) (2026-09-05)
+and recorded here rather than only on the ticket, because the finding re-files
+itself: a later reader meets a date-of-birth form on a fresh install and reads it
+as a defect. The chain is real — a native cold start with no stored session mints
+a guest silently (`src/providers/session-provider.tsx`), `app/index.tsx`
+redirects straight into `(app)`, and nothing precedes the shared gate slot — but
+**the store listing is native's landing.** The app is distributed only through the
+App Store and Play, the latest release carries no assets and no sideload path is
+documented, and `docs/positioning.md` § _Which surfaces carry it_ lists **both
+store listings** among the pre-threshold surfaces that carry the frame sentence.
+So a native arrival has read what Selftend is, on the page they installed from;
+the web landing is the same read on the web, not something native lacks. And
+**the gate is post-threshold on both platforms**: positioning keys the threshold
+on _the deliberate act of entry_, on the surface and never on the reader, and
+opening the installed app is that act exactly as _Start now_ is on web. A
+post-threshold surface is free not to declare the category, so the gate owes no
+frame sentence and no orientation line — while any screen placed in front of it
+would become a **new pre-threshold surface that does owe one**, which is why none
+was added rather than one being designed. ⚠️ **The placement is revisited on
+evidence, not on instinct:** the hand-run analytics carry an _"asked, never
+attested"_ figure ([#1978](https://github.com/Selftend/selftend/issues/1978)) —
+accounts that met this gate and never got past it — and it reopens if that share
+is large against the guests minted in the same window, with the number the
+owner's to set once a real cohort exists. Testers arriving through TestFlight or
+an internal Play track read no listing and are out of scope. Nothing in the gate,
+its ordering, its tests or its copy changed.
+
 **Who is asked, and who is never asked again:**
 
 - A brand-new account — one that has not been through the consent gate, so
