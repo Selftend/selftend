@@ -23,6 +23,30 @@ interface ItemCardProps {
 }
 
 /**
+ * The mark column, and BOTH branches take it (#2059).
+ *
+ * ☠️ It used to be 24px, which is the width of a glyph and not the width of a mark.
+ * `size-6` is right for an icon and about six pixels too narrow for three bold, tracked
+ * characters, so every module card wrapped its abbreviation onto a second line — `CB/T`,
+ * `AC/T`, `DB/T` — in Favourites, on Home and on the modules screen alike. `shrink-0`
+ * pins the width, so this happened at EVERY viewport rather than only narrow ones, and
+ * no amount of free row space reached it.
+ *
+ * ☠️ The two branches must share ONE width, which is why this is a constant rather than
+ * a number typed twice. The marks alternate down a single list, so a column that sized
+ * itself to its content would shift the name and the stat line left and right between
+ * neighbouring rows. The icon keeps its 24px glyph and is centred in the wider column,
+ * so the change is invisible on a tool card and only the wrap disappears on a module's.
+ *
+ * ☠️ **The guard is an e2e, and it has to be** — `test/e2e/module-mark-column.e2e.test.ts`.
+ * A wrap is a layout fact the accessibility tree cannot see (the text content is `CBT`
+ * either way), and NativeWind resolves no width into `props.style` under jest, so the
+ * `props.style` assertion that catches a wrong font face in this repo would be
+ * **vacuously green** on this defect. Only a real engine can measure it.
+ */
+const MARK_COLUMN = "w-8 shrink-0";
+
+/**
  * THE ONE CARD (#1887, #1955): `mark → name / what-it-is / what-you-have → star`,
  * rendered identically in Favourites and in the catalogue beneath it. A favourited item
  * simply appears twice, unmarked.
@@ -49,6 +73,7 @@ interface ItemCardProps {
  * and the star only once the favourites have loaded: a hollow star and a zero are both
  * claims, and a loading surface makes none.
  */
+
 export function ItemCard({ item, userId, favorites }: ItemCardProps) {
   const pushWithOrigin = usePushWithOrigin();
   const { t } = useTranslation("navigation");
@@ -68,11 +93,18 @@ export function ItemCard({ item, userId, favorites }: ItemCardProps) {
         )}
       >
         {item.kind === "tool" ? (
-          <Icon name={item.icon} className={cn("mt-px size-6 shrink-0", CHROME_MARK)} />
+          <View
+            testID={`card-mark-${item.kind}-${item.key}`}
+            className={cn("mt-px items-center", MARK_COLUMN)}
+          >
+            <Icon name={item.icon} className={cn("size-6", CHROME_MARK)} />
+          </View>
         ) : (
           <Text
+            testID={`card-mark-${item.kind}-${item.key}`}
             className={cn(
-              "mt-0.5 w-6 shrink-0 text-center text-sm font-bold tracking-wider",
+              "mt-0.5 text-center text-sm font-bold tracking-wider",
+              MARK_COLUMN,
               CHROME_TEXT,
             )}
           >
