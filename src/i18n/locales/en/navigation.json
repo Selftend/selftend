@@ -30,10 +30,12 @@
     "actA11y": "ACT module - Acceptance and Commitment Therapy",
     "dbtA11y": "DBT module - Dialectical Behaviour Therapy",
     "modules": "Modules",
+    "allModules": "All modules",
     "gratitudeLog": "Gratitude log",
     "sleep": "Sleep",
     "habits": "Habit tracking",
     "tools": "Tools",
+    "allTools": "All tools",
     "donate": "Donate",
     "donateA11y": "Donate to Selftend on GitHub Sponsors - opens in your browser"
   },

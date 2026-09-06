@@ -61,6 +61,42 @@ const ROUTINES_ITEM: NavItemDef = {
   matchPrefix: "/routines",
 };
 
+/**
+ * The two hub rows (#1841).
+ *
+ * ☠️ **`/tools` and `/modules` existed and were all but unreachable.** Both hubs
+ * were linked only from their own group label — an 11px uppercase muted section
+ * header. They were genuine links, with `accessibilityRole="link"` and an active
+ * state, and nothing about section-header styling reads as a destination. A
+ * complete list can ship and still go unseen.
+ *
+ * Owner ruling 2026-09-06: an explicit row at the **end of each group**, rather
+ * than restyling the headers or adding peer rows beside Home. The header stays a
+ * header, the destination looks like every other destination, and the primary nav
+ * does not grow. ⚠️ The group labels consequently **stop being links** — with a
+ * real row below them, a second invisible link to the same place is the confusion
+ * this ticket describes rather than a second chance at it.
+ *
+ * ⚠️ `activeWhen` is an exact match, deliberately. `matchPrefix: "/tools"` would
+ * light this row on every one of the eight tool pages beneath it, so the hub would
+ * read as active while a different row was.
+ */
+const ALL_TOOLS_ITEM: NavItemDef = {
+  labelKey: "sidebar.allTools",
+  href: "/tools",
+  icon: "apps",
+  matchPrefix: null,
+  activeWhen: (pathname) => pathname === "/tools",
+};
+
+const ALL_MODULES_ITEM: NavItemDef = {
+  labelKey: "sidebar.allModules",
+  href: "/modules",
+  icon: "view-list",
+  matchPrefix: null,
+  activeWhen: (pathname) => pathname === "/modules",
+};
+
 const MODULE_ITEMS: NavItemDef[] = [
   {
     labelKey: "sidebar.cbt",
@@ -254,36 +290,23 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
     );
   }
 
-  function renderGroupLabel(label: string, href?: Href) {
-    const active = href ? pathname === href : false;
-    const className = cn(
-      "px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider",
-      active ? "text-primary" : "text-muted-foreground",
-    );
-
-    if (!href) {
-      return (
-        <Text className={className} key={`group-${label}`}>
-          {label}
-        </Text>
-      );
-    }
-
+  /**
+   * A heading, and only a heading (#1841).
+   *
+   * ☠️ It used to take an optional `href` and render as a `link` when given one,
+   * which is how `/tools` and `/modules` were reachable — and effectively how they
+   * were not. `ALL_TOOLS_ITEM` and `ALL_MODULES_ITEM` are the destinations now, so
+   * the link branch is gone rather than left beside them: two links to one place,
+   * one of them invisible, is the defect and not a fallback for it.
+   */
+  function renderGroupLabel(label: string) {
     return (
-      <Link href={href} key={`group-${label}`} dangerouslySingular asChild>
-        <Pressable
-          accessibilityLabel={label}
-          accessibilityRole="link"
-          {...currentStateProps(active, "page")}
-          hitSlop={DEFAULT_INTERACTIVE_HIT_SLOP}
-          onPress={() => {
-            onSelect?.();
-          }}
-          role="link"
-        >
-          <Text className={className}>{label}</Text>
-        </Pressable>
-      </Link>
+      <Text
+        className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+        key={`group-${label}`}
+      >
+        {label}
+      </Text>
     );
   }
 
@@ -350,11 +373,13 @@ export function SidebarNav({ includeTopInset = false, onSelect }: SidebarNavProp
             about the order of encounter. The group labels stay neutral — no hue per
             group, and no status chip on any row (#1020).
           */}
-          {renderGroupLabel(t("sidebar.tools"), "/tools")}
+          {renderGroupLabel(t("sidebar.tools"))}
           {TOOL_ITEMS.map((item) => renderNavItem(item))}
+          {renderNavItem(ALL_TOOLS_ITEM)}
 
-          {renderGroupLabel(t("sidebar.modules"), "/modules")}
+          {renderGroupLabel(t("sidebar.modules"))}
           {MODULE_ITEMS.map((item) => renderNavItem(item))}
+          {renderNavItem(ALL_MODULES_ITEM)}
         </View>
 
         <View className="grow" />
