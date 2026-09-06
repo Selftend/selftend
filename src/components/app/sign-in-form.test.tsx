@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { TextInput } from "react-native";
 
 import bgAuth from "@/src/i18n/locales/bg/auth.json";
@@ -344,6 +344,84 @@ describe("SignInForm", () => {
 
       expect(mockGuestHasContent).not.toHaveBeenCalled();
       expect(mockSignIn).toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * #1865: the confirm above is calm and complete, but it fires from inside
+   * `guardSignIn`, which wraps the SUBMIT actions - so the first mention that
+   * this device's data stays behind arrived after an email and a password had
+   * been typed. The line says it on arrival instead.
+   */
+  describe("the guest content notice", () => {
+    const NOTICE =
+      "What you've saved as a guest stays on this device — you can export a copy before you finish signing in.";
+
+    function asGuest() {
+      mockSessionState.user = { is_anonymous: true };
+    }
+
+    it("tells a guest holding content before they have typed anything", async () => {
+      asGuest();
+      mockGuestHasContent.mockResolvedValue(true);
+      renderWithProviders(<SignInForm />);
+
+      // No `fillCredentials()` - arriving is the whole trigger, and the point of
+      // the ticket is that this used to need a filled-in form to appear.
+      expect(await screen.findByTestId("sign-in-guest-notice")).toBeTruthy();
+      expect(screen.getByText(NOTICE)).toBeTruthy();
+    });
+
+    /**
+     * ☠️ `CONTEXT.md` §Abandonment: both words hide that data is being left
+     * behind, which is the one thing this line exists to say.
+     */
+    it("says it without the words that hide it", () => {
+      expect(NOTICE).not.toMatch(/\b(switch|log ?out|sign ?out)\b/i);
+    });
+
+    it("says nothing to a guest with an empty account", async () => {
+      asGuest();
+      mockGuestHasContent.mockResolvedValue(false);
+      renderWithProviders(<SignInForm />);
+
+      // Wait for the check to actually resolve, so this is "asked and answered
+      // no" rather than "asserted before the answer arrived".
+      await waitFor(() => expect(mockGuestHasContent).toHaveBeenCalled());
+      expect(screen.queryByTestId("sign-in-guest-notice")).toBeNull();
+    });
+
+    /**
+     * ☠️ The two halves fail in OPPOSITE directions, and this test is the pair.
+     * A standing line is a claim, so an unreachable `export_user_data` must not
+     * put one on the screen - but the confirm's polarity is untouched, so an
+     * unreachable check still warns at submit. The line can under-promise; it
+     * can never over-promise.
+     */
+    it("stays silent when the check fails, while the confirm still warns", async () => {
+      asGuest();
+      mockGuestHasContent.mockRejectedValue(new Error("network down"));
+      renderWithProviders(<SignInForm />);
+
+      await waitFor(() => expect(mockGuestHasContent).toHaveBeenCalled());
+      expect(screen.queryByTestId("sign-in-guest-notice")).toBeNull();
+
+      fillCredentials();
+      fireEvent.press(screen.getByText("Continue"));
+
+      expect(await screen.findByText("Your guest data stays behind")).toBeTruthy();
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("shows nothing, and asks nothing, for a registered user", async () => {
+      mockSessionState.user = { is_anonymous: false };
+      renderWithProviders(<SignInForm />);
+
+      await waitFor(() => expect(screen.getByText("Continue")).toBeTruthy());
+      expect(screen.queryByTestId("sign-in-guest-notice")).toBeNull();
+      // The mount check is disabled outright, so a registered user never pays
+      // the export round trip for a line that could not apply to them.
+      expect(mockGuestHasContent).not.toHaveBeenCalled();
     });
   });
 });
