@@ -24,7 +24,7 @@ No setup needed - the app ships in English and Bulgarian on all three platforms:
 
 - [Discord](https://discord.gg/pdaAr9FhcQ) - questions, feedback, and contributor chat
 - [r/Selftend](https://www.reddit.com/r/Selftend/) - community on Reddit
-- [YouTube](https://www.youtube.com/@Selftend) - a short trailer plus a walkthrough of every tool
+- [YouTube](https://www.youtube.com/@Selftend) - a short trailer for the app
 - [GitHub Sponsors](https://github.com/sponsors/vasilyoshev) - optional donations toward running costs; never required for anything
 
 ## Quick Start
