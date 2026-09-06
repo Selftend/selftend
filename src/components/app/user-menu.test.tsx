@@ -82,6 +82,41 @@ afterEach(() => {
   mockSignOut.mockResolvedValue(undefined);
 });
 
+/**
+ * The open menu's landmarks in real document order (#1862).
+ *
+ * ☠️ Order, not presence. "The actions are above the preference sections" and
+ * "the actions are somewhere in the menu" are different claims, and only the
+ * flattened tree separates them — `getByText` would pass either way, which is
+ * exactly how the old action-row test managed to be green while the row it
+ * named sat below the fold.
+ *
+ * Landmarks are read off props rather than off nesting, so the sections can be
+ * re-wrapped freely without touching this. The two radiogroups are matched by
+ * their accessible name, which is translated — hence the parameters, so the
+ * Bulgarian run asserts the same shape rather than a weaker one.
+ */
+function menuOrder(languageLabel = "Switch language", themeLabel = "Switch theme"): string[] {
+  const order: string[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return void node.forEach(walk);
+    if (!node || typeof node !== "object") return;
+    const { props = {}, children } = node as {
+      props?: Record<string, unknown>;
+      children?: unknown;
+    };
+    if (props.testID === "user-menu-actions") order.push("actions");
+    if (props.accessibilityRole === "radiogroup") {
+      if (props.accessibilityLabel === languageLabel) order.push("language");
+      if (props.accessibilityLabel === themeLabel) order.push("theme");
+    }
+    if (props.testID === "user-menu-palette-row") order.push("palette");
+    if (children) walk(children);
+  };
+  walk(screen.toJSON());
+  return order;
+}
+
 describe("UserMenu", () => {
   // The header (and this menu) persists across routes: navigating from a
   // sidebar link used to leave the open menu hanging over the new screen (#491).
@@ -248,12 +283,65 @@ describe("UserMenu", () => {
     expect(body.props.scrollEnabled).not.toBe(false);
   });
 
-  it("still renders the actions below the palette row", () => {
+  /**
+   * #1862: this menu is taller than its own scroll cap at every phone height,
+   * in both locales — `menuMaxHeight` bounds the body to 70% of the viewport
+   * and seven sections in a 288px column run past that. So whatever renders
+   * LAST is below the fold at rest, for everyone, and what rendered last was
+   * `[Settings] [Send feedback] [Sign Out]` — simultaneously the menu's least
+   * reachable region and its only route to any of the three. #1774 closed the
+   * same class of failure ("the actions became unreachable") when the palette
+   * grid caused it.
+   *
+   * The fix is ORDER, not height: nothing can make 638px of Bulgarian fit a
+   * 398px cap, and the menu is still expected to overflow and scroll. What
+   * changes is which end of it takes the overflow — the preference shortcuts,
+   * each of which has a second home on the Settings screen this row leads to.
+   *
+   * ☠️ Asserted as real document order. The test this replaces was named
+   * "still renders the actions below the palette row" and asserted only that
+   * two labels existed, so it passed with the action row anywhere at all —
+   * including where it actually was. A name is not an assertion.
+   */
+  it("puts the actions above the preference sections, not last in the menu", () => {
     renderWithProviders(<UserMenu />);
     fireEvent.press(screen.getByLabelText("Open account menu"));
 
-    expect(screen.getByText("Sign Out")).toBeTruthy();
+    expect(menuOrder()).toEqual(["actions", "language", "theme", "palette"]);
+    // The row itself is unchanged at three buttons — this moves it, nothing else.
     expect(screen.getByText("Settings")).toBeTruthy();
+    expect(screen.getByText("Send feedback")).toBeTruthy();
+    expect(screen.getByText("Sign Out")).toBeTruthy();
+  });
+
+  /**
+   * The taller locale, which is the one the cap fails hardest: Bulgarian wraps
+   * the action row to three stacked full-width lines (`Изпрати обратна връзка`
+   * cannot share a 264px line with `Настройки`), so it is the state that sank
+   * furthest below the fold. jest cannot see the wrap — RNTL has no layout — so
+   * what is pinned here is that the order fix is not English-only.
+   *
+   * ☠️ Through `setLanguage`, never `i18n.changeLanguage("bg")`: only `en` is
+   * registered at init, so a Cyrillic assertion would be vacuously green.
+   */
+  it("puts the actions above the preference sections in Bulgarian too", async () => {
+    await setLanguage("bg");
+
+    const view = renderWithProviders(<UserMenu />);
+    fireEvent.press(screen.getByLabelText("Отвори меню на акаунта"));
+
+    expect(menuOrder("Смени езика", "Смени темата")).toEqual([
+      "actions",
+      "language",
+      "theme",
+      "palette",
+    ]);
+    expect(screen.getByText("Настройки")).toBeTruthy();
+    expect(screen.getByText("Изпрати обратна връзка")).toBeTruthy();
+    expect(screen.getByText("Излизане")).toBeTruthy();
+
+    view.unmount();
+    await setLanguage("en");
   });
 
   // #1774: eight cards were about 470px of a 288px-wide popover - the largest
@@ -571,9 +659,15 @@ describe("UserMenu", () => {
     /**
      * ☠️ Position IS the ruling (#1811), not a detail: the candidate that lost
      * put the door in the action row, which the prototype measured 156px BELOW
-     * the fold in Bulgarian on a 667pt screen — this menu already overflows its
-     * own 70% cap for everyone, in English, today (#1862), so the actions are
-     * its LEAST reachable region. A door nobody scrolls to is not a door.
+     * the fold in Bulgarian on a 667pt screen — the menu overflows its own 70%
+     * cap for everyone, and the action row was last, so it was the menu's LEAST
+     * reachable region. A door nobody scrolls to is not a door.
+     *
+     * #1862 has since moved the action row directly BELOW this one, which
+     * retires that measurement without retiring the ruling: the door stays here
+     * on grammar, not on reachability. Label-plus-chevron is this menu's word
+     * for navigation and a button is its word for "do this now" — and #1809
+     * permitted the door only as the former.
      *
      * Asserted as real document order rather than "before the palette row",
      * which a door dropped BELOW the language group would also satisfy.
