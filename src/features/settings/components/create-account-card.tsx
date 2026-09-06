@@ -24,6 +24,21 @@ import { useSession } from "@/src/providers/session-provider";
  * a guest's session lives in browser storage, which the browser itself can
  * clear. Navigation goes to /sign-up, which is the conversion form for a
  * guest (#1443) - their data stays in place.
+ *
+ * ☠️ The title's level is overridden to 2 (#1801). This card is the only thing
+ * on `/settings` that renders for guests alone, so the guest outline is the one
+ * nothing tested: `CardTitle`'s default `aria-level={3}` put an `h3` between the
+ * hero's `h1` and the five group `h2`s below - a skipped level, and a heading
+ * outranking every peer that follows it. Level 2 is the honest one: the card sits
+ * OUTSIDE every run, a sibling of the five groups rather than a child of any.
+ *
+ * The default stays 3 on the primitive, because a card nested inside a titled
+ * section is the shape that default is for; `sign-in-form.tsx` already overrides
+ * it the same way for the opposite reason (`aria-level={1}` - there the card IS
+ * the page). Design `14a` draws this title as a plain `span`, which is the third
+ * answer and the one refused: it would leave a screen-reader user with no heading
+ * to reach the single surface inviting them to register, and the invitation is
+ * meant to be quiet, not unreachable (#1446).
  */
 export function CreateAccountCard() {
   const { t } = useTranslation("settings");
@@ -35,7 +50,7 @@ export function CreateAccountCard() {
   return (
     <Card testID="create-account-card">
       <CardHeader className="gap-1">
-        <CardTitle>{t("guestInvite.title")}</CardTitle>
+        <CardTitle aria-level={2}>{t("guestInvite.title")}</CardTitle>
         <CardDescription>
           {Platform.OS === "web" ? t("guestInvite.bodyWeb") : t("guestInvite.body")}
         </CardDescription>

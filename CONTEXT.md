@@ -308,7 +308,11 @@ _Avoid_: upgrade, migration, merge (a conversion never combines two accounts)
 Knowingly leaving a guest account behind by signing in to a registered account from a device that
 holds guest data. Always preceded by a warning when the guest account holds any user-created
 content — never silent — and the warning offers export in place (#1430). A guest account with
-nothing in it is abandoned without ceremony.
+nothing in it is abandoned without ceremony. The warning is a confirm at submit; `/sign-in` also
+carries a quiet line saying the same thing on arrival, so the fact reaches the person before they
+have typed anything rather than after (#1865). The line is a foreshadow, not a second gate: it
+appears on exactly the confirm's own preconditions, and it stays silent when the content check
+cannot be reached, where the confirm warns.
 _Avoid_: logout, switch (both hide that data is being left behind)
 
 **Orphaned guest account**:
