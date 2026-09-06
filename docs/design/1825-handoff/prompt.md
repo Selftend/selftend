@@ -82,7 +82,7 @@ Copy, in document order (unchanged lines are shipped copy and stay as they are):
 - `ACT MODULE` kicker → h2 **Act on your values** → _Skills for handling difficult feelings while doing what matters - acceptance, defusion, committed action._
 - `HOW IT WORKS` → `01 Start where you are` / _Pick one small tool, or one module. No intake quiz, no setup._ · `02 Go at your own pace` / _Sessions are short, and nothing expires._ · `03 Review quietly` / _Look back over your entries when you're ready - they stay yours._
 - h2 **Yours, and private** → _Your entries are encrypted at the field level - a leaked database backup exposes only ciphertext. No ads, no subscriptions, no tracking._ → button `View the source on GitHub`
-- Safety line (verbatim, visually separate, never styled as a feature): _Selftend is a CBT programme for when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders._
+- Safety line (verbatim, visually separate, never styled as a feature): _Selftend is a set of mental health tools for when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders._
 - Footer links: `Open crisis guidance` · `Terms of service` · `Privacy policy` · `Cookie policy` · `FAQ` · `Join our Discord`
 
 Ordering intent — what the layout must achieve:
