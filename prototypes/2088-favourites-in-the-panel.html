@@ -1,0 +1,1170 @@
+<title>Favourites in the Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600&family=Nunito:wght@800&family=IBM+Plex+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap">
+
+<style>
+  /* ---------------------------------------------------------------
+     THROWAWAY PROTOTYPE &#8212; issue #2088, wayfinder map #2083.
+     Question: should the navigation panel carry Favourites where the
+     eleven catalogue rows used to be?
+
+     The panel is rendered in the app's OWN light/dark tokens, copied
+     verbatim from global.css (quiet-lilac), at the app's real
+     measurements: w-60 = 240px, rows px-3 py-2.5, size-6 icons,
+     text-sm font-medium labels, 11px uppercase group headings.
+     The harness around it is deliberately a different world &#8212; slate
+     ground, mono annotations &#8212; so nothing here is mistaken for a
+     design proposal.
+     --------------------------------------------------------------- */
+
+  :root {
+    /* harness &#8212; cool slate, biased away from the app's lilac */
+    --h-bg: #eceef2;
+    --h-panel: #f8f9fb;
+    --h-ink: #1b1f2a;
+    --h-ink-dim: #5a6274;
+    --h-line: #d3d8e1;
+    --h-mark: #9a4f16;
+    --h-mark-soft: #f4e6d8;
+    --h-stage: #cfd4de;
+
+    /* app tokens &#8212; light (global.css :root, quiet-lilac) */
+    --background: hsl(260 28% 96%);
+    --foreground: hsl(260 18% 14%);
+    --card: hsl(260 28% 99%);
+    --muted-foreground: hsl(260 8% 42%);
+    --border: hsl(260 14% 87%);
+    --primary: hsl(262 62% 56%);
+    --primary-ink: hsl(262 62% 28%);
+    --primary-10: hsl(262 62% 56% / 0.10);
+    --scrim: rgba(20, 16, 30, 0.45);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --h-bg: #101219;
+      --h-panel: #171a23;
+      --h-ink: #e6e9f0;
+      --h-ink-dim: #939cb0;
+      --h-line: #2a2f3d;
+      --h-mark: #e0a06a;
+      --h-mark-soft: #2b2118;
+      --h-stage: #0a0b10;
+
+      --background: hsl(260 20% 9%);
+      --foreground: hsl(260 30% 96%);
+      --card: hsl(260 16% 16%);
+      --muted-foreground: hsl(260 10% 68%);
+      --border: hsl(260 14% 26%);
+      --primary: hsl(264 72% 72%);
+      --primary-ink: hsl(264 72% 80%);
+      --primary-10: hsl(264 72% 72% / 0.14);
+      --scrim: rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --h-bg: #101219;
+    --h-panel: #171a23;
+    --h-ink: #e6e9f0;
+    --h-ink-dim: #939cb0;
+    --h-line: #2a2f3d;
+    --h-mark: #e0a06a;
+    --h-mark-soft: #2b2118;
+    --h-stage: #0a0b10;
+
+    --background: hsl(260 20% 9%);
+    --foreground: hsl(260 30% 96%);
+    --card: hsl(260 16% 16%);
+    --muted-foreground: hsl(260 10% 68%);
+    --border: hsl(260 14% 26%);
+    --primary: hsl(264 72% 72%);
+    --primary-ink: hsl(264 72% 80%);
+    --primary-10: hsl(264 72% 72% / 0.14);
+    --scrim: rgba(0, 0, 0, 0.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--h-bg);
+    color: var(--h-ink);
+    font-family: "Noto Sans", system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    padding: 0 0 132px;
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 32px 24px 0;
+  }
+
+  /* ---------- masthead ---------- */
+
+  header.masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 16px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--h-line);
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--h-mark);
+  }
+
+  h1 {
+    font-family: "Nunito", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(24px, 3.4vw, 34px);
+    line-height: 1.15;
+    margin: 0;
+    text-wrap: balance;
+    flex: 1 1 460px;
+  }
+
+  .masthead p {
+    margin: 0;
+    flex: 1 1 100%;
+    max-width: 66ch;
+    color: var(--h-ink-dim);
+    font-size: 14px;
+  }
+
+  /* ---------- controls ---------- */
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px 40px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--h-line);
+  }
+
+  .control-group { display: flex; flex-direction: column; gap: 7px; }
+
+  .control-label {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--h-ink-dim);
+  }
+
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .seg button {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 13px;
+    border-radius: 7px;
+    border: 1px solid var(--h-line);
+    background: var(--h-panel);
+    color: var(--h-ink);
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+  }
+
+  .seg button:hover { border-color: var(--h-mark); }
+
+  .seg button[aria-pressed="true"] {
+    background: var(--h-mark);
+    border-color: var(--h-mark);
+    color: var(--h-bg);
+  }
+
+  .seg button:focus-visible {
+    outline: 2px solid var(--h-mark);
+    outline-offset: 2px;
+  }
+
+  /* ---------- stage + readout ---------- */
+
+  .split {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 36px;
+    padding: 30px 0 40px;
+    align-items: start;
+  }
+
+  @media (max-width: 880px) {
+    .split { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .stage {
+    background: var(--h-stage);
+    border: 1px solid var(--h-line);
+    border-radius: 14px;
+    padding: 16px;
+    position: sticky;
+    top: 20px;
+  }
+
+  .stage-cap {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--h-ink-dim);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+
+  /* the drawer as the app mounts it: SidebarNav inside navigation-overlay */
+  .device {
+    position: relative;
+    width: 100%;
+    height: 660px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--background);
+    border: 1px solid var(--border);
+  }
+
+  .device-scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--scrim);
+  }
+
+  /* --- the real panel: w-60 = 240px, bg-card, border-r --- */
+  .panel {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 240px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .panel-inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 16px 12px; /* px-3 py-4 */
+  }
+
+  .grp { display: flex; flex-direction: column; gap: 4px; } /* gap-1 */
+  .spacer { flex: 1 1 auto; min-height: 12px; }
+  .foot { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; }
+  .rule { height: 1px; background: var(--border); margin: 0 4px 8px; }
+
+  /* row: flex-row items-center gap-3 rounded-md px-3 py-2.5 */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: var(--foreground);
+    font-family: "Noto Sans", system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+  }
+
+  .row.active { background: var(--primary-10); color: var(--primary-ink); }
+
+  .row .mi {
+    font-family: "Material Symbols Outlined", system-ui;
+    font-size: 24px;
+    line-height: 24px;
+    width: 24px;
+    flex: 0 0 24px;
+    color: var(--muted-foreground);
+    -webkit-font-feature-settings: "liga";
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  }
+
+  .row.active .mi { color: var(--primary); }
+
+  .row .lbl { flex: 1 1 auto; }
+
+  /* group heading: px-3 pb-1 pt-3, 11px semibold uppercase tracking-wider */
+  .ghead {
+    padding: 12px 12px 4px;
+    font-family: "Noto Sans", system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted-foreground);
+  }
+
+  .empty-copy {
+    padding: 6px 12px 8px;
+    font-family: "Noto Sans", system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--muted-foreground);
+  }
+
+  /* variant B marker &#8212; a hairline the group heading would otherwise carry */
+  .b-mark {
+    margin: 8px 4px 4px;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* variant C strip */
+  .strip {
+    display: flex;
+    gap: 8px;
+    padding: 2px 12px 8px;
+    overflow-x: auto;
+  }
+
+  .chip {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--primary-10);
+    display: grid;
+    place-items: center;
+  }
+
+  .chip .mi {
+    font-family: "Material Symbols Outlined", system-ui;
+    font-size: 22px;
+    color: var(--primary);
+  }
+
+  /* ---------- readout ---------- */
+
+  .readout { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+
+  .vname {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .vkey {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: var(--h-mark-soft);
+    color: var(--h-mark);
+  }
+
+  h2 {
+    font-family: "Nunito", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 21px;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .vsummary { margin: 0; max-width: 64ch; color: var(--h-ink-dim); font-size: 14.5px; }
+
+  /* the numbers &#8212; label/value pairs down a list, not tiles */
+  dl.facts {
+    margin: 0;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--h-line);
+  }
+
+  dl.facts > dt,
+  dl.facts > dd {
+    padding: 9px 0;
+    border-bottom: 1px solid var(--h-line);
+    margin: 0;
+    font-size: 13.5px;
+  }
+
+  dl.facts > dt {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--h-ink-dim);
+    padding-right: 26px;
+    align-self: center;
+  }
+
+  dl.facts > dd { font-variant-numeric: tabular-nums; }
+
+  dd .flag { color: var(--h-mark); font-weight: 600; }
+
+  /* findings &#8212; the thing this prototype exists to surface */
+  .finding {
+    border-left: 3px solid var(--h-mark);
+    background: var(--h-mark-soft);
+    padding: 13px 16px;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .finding h3 {
+    margin: 0 0 5px;
+    font-size: 13px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--h-mark);
+  }
+
+  .finding p { margin: 0; font-size: 14px; max-width: 64ch; }
+  .finding p + p { margin-top: 8px; }
+
+  .verdict {
+    padding: 14px 0 0;
+    border-top: 1px solid var(--h-line);
+  }
+
+  .verdict h3 {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--h-ink-dim);
+  }
+
+  .verdict p { margin: 0; max-width: 64ch; font-size: 14.5px; }
+
+  /* ---------- order comparison ---------- */
+
+  section.orders {
+    border-top: 1px solid var(--h-line);
+    padding: 30px 0 10px;
+  }
+
+  section.orders > h2 { margin-bottom: 6px; }
+
+  section.orders > p.lede {
+    margin: 0 0 22px;
+    max-width: 68ch;
+    color: var(--h-ink-dim);
+    font-size: 14.5px;
+  }
+
+  .order-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 18px;
+  }
+
+  .order-col {
+    background: var(--h-panel);
+    border: 1px solid var(--h-line);
+    border-radius: 10px;
+    padding: 14px 16px 16px;
+  }
+
+  .order-col h4 {
+    margin: 0 0 2px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .order-col .src {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--h-ink-dim);
+    display: block;
+    margin-bottom: 11px;
+  }
+
+  ol.olist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: o;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  ol.olist li {
+    counter-increment: o;
+    font-size: 13px;
+    display: flex;
+    gap: 9px;
+    align-items: baseline;
+  }
+
+  ol.olist li::before {
+    content: counter(o);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    color: var(--h-ink-dim);
+    min-width: 13px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ol.olist li.moved { color: var(--h-mark); font-weight: 600; }
+
+  /* ---------- switcher ---------- */
+
+  .switcher {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    background: var(--h-ink);
+    color: var(--h-bg);
+    border-radius: 999px;
+    padding: 5px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
+    z-index: 40;
+    max-width: calc(100vw - 32px);
+  }
+
+  .switcher button {
+    font: inherit;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .switcher button:hover { background: rgba(255, 255, 255, 0.14); }
+
+  .switcher button:focus-visible {
+    outline: 2px solid var(--h-mark);
+    outline-offset: 2px;
+  }
+
+  .switcher .now {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .switcher .now b { font-weight: 600; }
+  .switcher .now span { opacity: 0.66; margin-left: 8px; }
+
+  footer.foot-note {
+    border-top: 1px solid var(--h-line);
+    padding: 20px 0 0;
+    color: var(--h-ink-dim);
+    font-size: 13px;
+    max-width: 74ch;
+  }
+
+  footer.foot-note code {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <span class="eyebrow">Prototype &#183; #2088 &#183; map #2083</span>
+    <h1>Does the panel carry Favourites where the catalogue used to be?</h1>
+    <p>
+      Three structurally different answers plus the control, each at nought, three and eleven
+      favourites. The panel is drawn in the app's own tokens at its real measurements &#8212; 240&nbsp;wide,
+      44px rows &#8212; so it can be judged as itself. Everything grey around it is scaffolding.
+    </p>
+  </header>
+
+  <div class="controls">
+    <div class="control-group">
+      <span class="control-label" id="lbl-variant">Variant</span>
+      <div class="seg" id="seg-variant" role="group" aria-labelledby="lbl-variant"></div>
+    </div>
+    <div class="control-group">
+      <span class="control-label" id="lbl-count">Favourites the person has</span>
+      <div class="seg" id="seg-count" role="group" aria-labelledby="lbl-count"></div>
+    </div>
+    <div class="control-group">
+      <span class="control-label" id="lbl-where">Screen behind the drawer</span>
+      <div class="seg" id="seg-where" role="group" aria-labelledby="lbl-where"></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="stage">
+      <div class="stage-cap">
+        <span>navigation-overlay</span>
+        <span id="cap-rows">&#8212;</span>
+      </div>
+      <div class="device">
+        <div class="device-scrim"></div>
+        <nav class="panel" id="panel" aria-label="Navigation panel prototype"></nav>
+      </div>
+    </div>
+
+    <div class="readout">
+      <div class="vname">
+        <span class="vkey" id="v-key">&#8212;</span>
+        <h2 id="v-title">&#8212;</h2>
+      </div>
+      <p class="vsummary" id="v-summary"></p>
+
+      <dl class="facts" id="v-facts"></dl>
+
+      <div id="v-findings"></div>
+
+      <div class="verdict">
+        <h3>Reads against the settled purpose</h3>
+        <p id="v-verdict"></p>
+      </div>
+    </div>
+  </div>
+
+  <section class="orders">
+    <h2>The order question the panel inherits</h2>
+    <p class="lede">
+      Map #2084 settled on 2026-09-07 that Favourites orders by <b>starred-at, newest first</b>, with
+      catalogue order only as the tiebreak. Home's Favourites strip therefore already disagrees with
+      Home's own catalogue below it. A favourites block in the panel is a third rendering, and it has
+      to pick a side. Highlighted rows are the ones that sit in a different place than they do in the
+      column to their left.
+    </p>
+    <div class="order-grid" id="order-grid"></div>
+  </section>
+
+  <footer class="foot-note">
+    Throwaway. Drawn from <code>src/components/app/sidebar-nav.tsx</code>,
+    <code>src/features/favorites/items.ts</code> and <code>global.css</code> at
+    <code>origin/dev 1a45d98f</code>; base rows are the post-#2085 / post-#2094 panel, so the eight
+    tool rows, the three module rows, both group headings and both hub rows are already gone.
+    Fidelity limit: this is HTML at the app's measurements, not the running Expo app &#8212; it settles
+    shape and length, not touch behaviour. Arrow keys cycle variants.
+  </footer>
+</div>
+
+<div class="switcher" role="group" aria-label="Variant switcher">
+  <button type="button" id="prev" aria-label="Previous variant">&#8592;</button>
+  <div class="now"><b id="now-key">&#8212;</b><span id="now-name"></span></div>
+  <button type="button" id="next" aria-label="Next variant">&#8594;</button>
+</div>
+
+<script>
+  // ---- catalogue, in CATALOGUE order (items.ts: TOOLS then MODULES) ----
+  var CATALOGUE = [
+    { key: "mood",      label: "Check-in",       icon: "mood" },
+    { key: "journal",   label: "Journal",        icon: "edit_note" },
+    { key: "breathing", label: "Breathing",      icon: "air" },
+    { key: "gratitude", label: "Gratitude log",  icon: "favorite" },
+    { key: "grounding", label: "Grounding",      icon: "anchor" },
+    { key: "meditation",label: "Meditation",     icon: "self_improvement" },
+    { key: "sleep",     label: "Sleep",          icon: "bedtime" },
+    { key: "habits",    label: "Habit tracking", icon: "task_alt" },
+    { key: "cbt",       label: "CBT",            icon: "psychology" },
+    { key: "act",       label: "ACT",            icon: "explore" },
+    { key: "dbt",       label: "DBT",            icon: "anchor" }
+  ];
+
+  function byKey(k) {
+    for (var i = 0; i < CATALOGUE.length; i++) {
+      if (CATALOGUE[i].key === k) return CATALOGUE[i];
+    }
+    return null;
+  }
+
+  // Starred-at, newest first (#2091's rule) \u2014 deliberately not catalogue order.
+  var STARRED_3 = ["sleep", "dbt", "journal"];
+  var STARRED_11 = ["dbt", "sleep", "mood", "act", "journal", "habits", "breathing", "cbt", "meditation", "grounding", "gratitude"];
+
+  function favourites(n) {
+    if (n === 0) return [];
+    var keys = n === 3 ? STARRED_3 : STARRED_11;
+    return keys.map(byKey);
+  }
+
+  // ---- base panel rows, post-#2085 + post-#2094 ----
+  var TOP = [
+    { label: "Home",         icon: "home",      active: "home" },
+    { label: "Looking back", icon: "history",   active: "progress" },
+    { label: "Routines",     icon: "checklist", active: "routines" }
+  ];
+
+  var FOOT = [
+    { label: "Reminders", icon: "notifications" },
+    { label: "Settings",  icon: "settings" },
+    { label: "Support",   icon: "support" },
+    { label: "Donate",    icon: "volunteer_activism" }
+  ];
+
+  // ---- variants ----
+  var VARIANTS = [
+    {
+      key: "Control",
+      name: "no favourites",
+      title: "The panel as already decided",
+      summary:
+        "What #2085 and #2094 leave standing, with nothing added. Seven rows, one divider, no group heading anywhere in the component. This is the thing any favourites proposal has to beat.",
+      mirrors: false,
+      order: "n/a \u2014 no collection rendered",
+      editable: "n/a",
+      empty: "n/a",
+      verdict:
+        "Consistent with it by construction. Home is the doing; this is everything around the doing \u2014 record, plans, reminders, account \u2014 and a person who wants a tool goes to Home, which is one tap away from every screen via the header brand."
+    },
+    {
+      key: "A",
+      name: "favourites as a group",
+      title: "A FAVOURITES heading over the person's starred rows",
+      summary:
+        "The shape the deleted catalogue left behind, refilled: a group heading in the slot the TOOLS and MODULES headings vacated, with one row per starred item underneath in the same row style as everything else.",
+      mirrors: true,
+      order: "must choose \u2014 starred-at (matches Home's strip, fights Home's catalogue) or catalogue (the reverse)",
+      editable: "no \u2014 the star is a card gesture; the panel has no card",
+      empty: "a heading over nothing, or the heading disappears and the panel silently changes shape per person",
+      verdict:
+        "Directly against it. This is a collection mirrored into the panel \u2014 the exact thing the principle names \u2014 and it reinstates the component shape (renderGroupLabel, a variable row list) that #2085 and #2097 delete. The only difference from what was removed is that the list is now shorter and different per person, which is a smaller version of the same defect, not a different one."
+    },
+    {
+      key: "B",
+      name: "favourites as peer rows",
+      title: "Starred items as unlabelled peers, under Home",
+      summary:
+        "No heading. Starred items sit directly beneath Home, Looking back and Routines, separated only by a hairline \u2014 the claim being that a person's favourites are their own fixed doors, not a collection, so they belong among the fixed rows rather than under a label.",
+      mirrors: true,
+      order: "same forced choice as A, with the disagreement harder to see because nothing labels the block",
+      editable: "no",
+      empty: "clean \u2014 the hairline and the rows both vanish, and the panel is the Control",
+      verdict:
+        "Against it, and it hides the fact rather than fixing it. The empty state is the best of the three and the reasoning is the most interesting \u2014 but calling the rows 'fixed' does not make them fixed: the set changes the moment someone taps a star on Home, which is what 'may not mirror a collection' is about. Removing the heading removes the evidence, not the drift."
+    },
+    {
+      key: "C",
+      name: "one door, not a list",
+      title: "A single Favourites row that opens Home's strip",
+      summary:
+        "One row, in the fixed group, labelled Favourites and carrying the star glyph. It scrolls Home to its Favourites section. No item names in the panel, nothing per person, nothing to order. Shown here with the optional icon strip beneath it, which is the version that starts sliding back toward A.",
+      mirrors: false,
+      order: "none \u2014 the panel renders no items",
+      editable: "n/a \u2014 starring stays where the cards are",
+      empty: "the row stays and lands on Home's own empty copy, or the row is dropped for people with none",
+      verdict:
+        "The only one that survives it: a fixed door, duplicated, which the principle explicitly permits. Whether it is worth adding is a separate and much smaller question \u2014 Home is already one tap away and its Favourites strip is the first thing on it, so this row saves a scroll, not a tap. The strip variation underneath is the slippery half: the moment the icons appear it is mirroring a collection again."
+    }
+  ];
+
+  var COUNTS = [0, 3, 11];
+  var WHERE = [
+    { key: "home",     label: "Home" },
+    { key: "progress", label: "Looking back" },
+    { key: "journal",  label: "Journal" }
+  ];
+
+  var state = { v: 0, n: 3, w: "home" };
+
+  // ---- rendering ----
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  function row(label, icon, active) {
+    var r = el("div", "row" + (active ? " row active" : ""));
+    r.className = active ? "row active" : "row";
+    var i = el("span", "mi", icon);
+    i.setAttribute("aria-hidden", "true");
+    r.appendChild(i);
+    r.appendChild(el("span", "lbl", label));
+    return r;
+  }
+
+  function renderPanel() {
+    var v = VARIANTS[state.v];
+    var favs = favourites(state.n);
+    var panel = document.getElementById("panel");
+    panel.innerHTML = "";
+
+    var inner = el("div", "panel-inner");
+    var top = el("div", "grp");
+
+    TOP.forEach(function (t) {
+      top.appendChild(row(t.label, t.icon, t.active === state.w));
+    });
+
+    if (v.key === "A") {
+      var head = el("div", "ghead", "Favourites");
+      inner.appendChild(top);
+      inner.appendChild(head);
+      var list = el("div", "grp");
+      if (favs.length === 0) {
+        list.appendChild(el("div", "empty-copy", "Star a tool or a module to keep it here."));
+      } else {
+        favs.forEach(function (f) {
+          list.appendChild(row(f.label, f.icon, false));
+        });
+      }
+      inner.appendChild(list);
+    } else if (v.key === "B") {
+      if (favs.length > 0) {
+        top.appendChild(el("div", "b-mark"));
+        favs.forEach(function (f) {
+          top.appendChild(row(f.label, f.icon, false));
+        });
+      }
+      inner.appendChild(top);
+    } else if (v.key === "C") {
+      top.appendChild(row("Favourites", "star", false));
+      inner.appendChild(top);
+      if (favs.length > 0) {
+        var strip = el("div", "strip");
+        favs.forEach(function (f) {
+          var c = el("div", "chip");
+          var g = el("span", "mi", f.icon);
+          g.setAttribute("aria-hidden", "true");
+          c.appendChild(g);
+          strip.appendChild(c);
+        });
+        inner.appendChild(strip);
+      }
+    } else {
+      inner.appendChild(top);
+    }
+
+    inner.appendChild(el("div", "spacer"));
+
+    var foot = el("div", "foot");
+    foot.appendChild(el("div", "rule"));
+    FOOT.forEach(function (f) {
+      foot.appendChild(row(f.label, f.icon, false));
+    });
+    inner.appendChild(foot);
+
+    panel.appendChild(inner);
+
+    var rows = panel.querySelectorAll(".row").length;
+    document.getElementById("cap-rows").textContent = rows + " rows \u00b7 240px";
+  }
+
+  function fact(dl, k, v, flag) {
+    dl.appendChild(el("dt", null, k));
+    var dd = el("dd");
+    if (flag) {
+      var s = el("span", "flag", v);
+      dd.appendChild(s);
+    } else {
+      dd.textContent = v;
+    }
+    dl.appendChild(dd);
+  }
+
+  function renderReadout() {
+    var v = VARIANTS[state.v];
+    var favs = favourites(state.n);
+    var rowCount = document.querySelectorAll("#panel .row").length;
+
+    document.getElementById("v-key").textContent = v.key;
+    document.getElementById("v-title").textContent = v.title;
+    document.getElementById("v-summary").textContent = v.summary;
+    document.getElementById("v-verdict").textContent = v.verdict;
+    document.getElementById("now-key").textContent = v.key;
+    document.getElementById("now-name").textContent = v.name;
+
+    var dl = document.getElementById("v-facts");
+    dl.innerHTML = "";
+    fact(dl, "Rows rendered", String(rowCount));
+    fact(dl, "Rows only reachable here", "4  (Looking back, Routines, Reminders, Donate)");
+    fact(dl, "Rows that vary per person", String(v.key === "Control" || v.key === "C" ? 0 : favs.length), v.key !== "Control" && v.key !== "C" && favs.length > 0);
+    fact(dl, "Mirrors a collection", v.mirrors ? "yes" : "no", v.mirrors);
+    fact(dl, "Order rule in force", v.order, v.mirrors);
+    fact(dl, "Can you unstar from here", v.editable, v.mirrors);
+    fact(dl, "At nought favourites", v.empty);
+    fact(dl, "Surfaces listing an item", String(surfaceCount(v)), surfaceCount(v) > 3);
+
+    var box = document.getElementById("v-findings");
+    box.innerHTML = "";
+    findingsFor(v, favs).forEach(function (f) {
+      var d = el("div", "finding");
+      d.appendChild(el("h3", null, f.h));
+      f.p.forEach(function (para) {
+        d.appendChild(el("p", null, para));
+      });
+      box.appendChild(d);
+    });
+  }
+
+  function surfaceCount(v) {
+    // Home already lists a favourited item twice: its Favourites strip and its
+    // Tools or Modules section. Both hubs are deleted by map #2094.
+    return v.mirrors ? 3 : 2;
+  }
+
+  function findingsFor(v, favs) {
+    var out = [];
+
+    if (v.mirrors) {
+      out.push({
+        h: "A third appearance, and the first one that can be wrong",
+        p: [
+          "A favourited item already appears twice on one screen, by design \u2014 Home's Favourites strip and Home's Tools or Modules section (#1885 decision 5). This makes three. The two on Home sit on the same screen and are visibly the same card, so the repetition reads as emphasis. The third is behind a hamburger on a different surface, so nobody ever sees it agree; they only ever notice it disagree."
+        ]
+      });
+      out.push({
+        h: "The drift is no longer hypothetical",
+        p: [
+          "When #2088 was written, Favourites was the catalogue filtered \u2014 same order everywhere, nothing to drift. Map #2084 closed on 2026-09-07 with starred-at, newest first, so Favourites now has an order rule of its own that no other surface shares. A favourites block in the panel is a hand-maintained agreement between two independently-ordered lists: exactly the drift cost #2085 charged the eleven catalogue rows for, minus the excuse that they were at least stable.",
+          "See the columns at the bottom of this page for what that disagreement actually looks like at three and at eleven."
+        ]
+      });
+      out.push({
+        h: "A copy you cannot edit is the lesser copy",
+        p: [
+          "Starring is a card gesture \u2014 the star sits on the item card on Home. The panel has no cards, so a favourites block there can be read but not changed: to remove one you leave the panel, go to Home, find the card, unstar. That is the definition of the lesser copy #2085 rejected, and it is worse here than it was for the catalogue rows, because the catalogue rows were never editable anywhere."
+        ]
+      });
+    }
+
+    if (v.key === "A" && state.n === 0) {
+      out.push({
+        h: "The empty state is the tell",
+        p: [
+          "A group heading standing over one line of muted copy, in a component from which every other heading has just been deleted. The alternative \u2014 dropping the heading when the list is empty \u2014 means the panel has two different shapes depending on the person, which is a teaching and testing cost the panel has never had."
+        ]
+      });
+    }
+
+    if (v.key === "A" && state.n === 11) {
+      out.push({
+        h: "At the ceiling it is the thing that was deleted",
+        p: [
+          "Eleven starred items is every catalogue item starred, and the panel is then eighteen rows: the same length as before #2085, in the same component, under one heading instead of two. Length was explicitly not #2085's reason for the deletion \u2014 but a proposal that lands back at the original length while reintroducing the original defect has nothing left to argue with."
+        ]
+      });
+    }
+
+    if (v.key === "B" && state.n === 0) {
+      out.push({
+        h: "Indistinguishable from the Control, which is the point and the problem",
+        p: [
+          "At nought favourites this variant is the decided panel exactly. That is the cleanest empty state of the three \u2014 and it also means the feature is invisible to anyone who has not already found starring somewhere else. It cannot teach itself."
+        ]
+      });
+    }
+
+    if (v.key === "B" && state.n > 0) {
+      out.push({
+        h: "Peer rows were already ruled against, on a different question",
+        p: [
+          "The owner picked the end-of-group row for the hubs on 2026-09-06 from four options, having explicitly rejected peer rows beside Home. That ruling was about the hub doors, not about favourites, so it does not bind here \u2014 but the objection travels: this dilutes the fixed group, and Home, Looking back and Routines stop reading as a set."
+        ]
+      });
+    }
+
+    if (v.key === "C") {
+      out.push({
+        h: "It duplicates a door, which is permitted",
+        p: [
+          "One fixed row, the same on every device and for every person, with nothing to order and nothing to drift. It sits beside Settings and Support, which are already duplicated between the panel and the UserMenu deliberately.",
+          "The honest case against it is smaller than a principle: the row costs one more thing to read in a panel whose whole point was to get shorter, and it buys a scroll rather than a tap. Home is one tap from anywhere via the header brand, and Favourites is the first section on Home."
+        ]
+      });
+      if (state.n > 0) {
+        out.push({
+          h: "The icon strip is variant A in disguise",
+          p: [
+            "Shown here as the tempting middle. It renders per-person items in the panel, in an order it has to choose, that cannot be edited from there \u2014 every objection above applies to it, with the labels removed so an icon-only row of Grounding and DBT (both the anchor glyph) is now ambiguous as well. If the strip is what appeals, the answer is variant A and the case has to be made for A."
+          ]
+        });
+      }
+    }
+
+    if (v.key === "Control") {
+      out.push({
+        h: "What the panel is worth without it",
+        p: [
+          "Four rows reachable nowhere else \u2014 Looking back, Routines, Reminders, and the outbound Donate. Settings and Support have a second door in the UserMenu on every screen. That is a real drawer, and it is short enough that nothing in it is buried."
+        ]
+      });
+    }
+
+    return out;
+  }
+
+  function renderOrders() {
+    var grid = document.getElementById("order-grid");
+    grid.innerHTML = "";
+    var favs = favourites(state.n === 0 ? 3 : state.n);
+    var keys = favs.map(function (f) { return f.key; });
+
+    var catalogueOrdered = CATALOGUE.filter(function (c) {
+      return keys.indexOf(c.key) !== -1;
+    });
+
+    var cols = [
+      {
+        h: "Home \u00b7 Favourites strip",
+        src: "starred-at, newest first (#2091)",
+        items: favs,
+        ref: null
+      },
+      {
+        h: "Home \u00b7 Tools then Modules",
+        src: "catalogue order (items.ts)",
+        items: catalogueOrdered,
+        ref: favs
+      },
+      {
+        h: "Panel \u00b7 if it follows Home's strip",
+        src: "agrees above, fights below",
+        items: favs,
+        ref: catalogueOrdered
+      },
+      {
+        h: "Panel \u00b7 if it follows the catalogue",
+        src: "agrees below, fights above",
+        items: catalogueOrdered,
+        ref: favs
+      }
+    ];
+
+    cols.forEach(function (c) {
+      var d = el("div", "order-col");
+      d.appendChild(el("h4", null, c.h));
+      d.appendChild(el("span", "src", c.src));
+      var ol = el("ol", "olist");
+      c.items.forEach(function (item, idx) {
+        var li = el("li", null, item.label);
+        if (c.ref && c.ref[idx] && c.ref[idx].key !== item.key) {
+          li.className = "moved";
+        }
+        ol.appendChild(li);
+      });
+      d.appendChild(ol);
+      grid.appendChild(d);
+    });
+  }
+
+  function render() {
+    renderPanel();
+    renderReadout();
+    renderOrders();
+    syncSegs();
+    syncUrl();
+  }
+
+  // ---- controls ----
+  function buildSegs() {
+    var sv = document.getElementById("seg-variant");
+    VARIANTS.forEach(function (v, i) {
+      var b = el("button", null, v.key === "Control" ? "Control" : v.key + " \u2014 " + v.name);
+      b.type = "button";
+      b.addEventListener("click", function () { state.v = i; render(); });
+      b.dataset.v = String(i);
+      sv.appendChild(b);
+    });
+
+    var sc = document.getElementById("seg-count");
+    COUNTS.forEach(function (n) {
+      var b = el("button", null, n === 0 ? "none" : n === 11 ? "11 \u2014 the ceiling" : String(n));
+      b.type = "button";
+      b.addEventListener("click", function () { state.n = n; render(); });
+      b.dataset.n = String(n);
+      sc.appendChild(b);
+    });
+
+    var sw = document.getElementById("seg-where");
+    WHERE.forEach(function (w) {
+      var b = el("button", null, w.label);
+      b.type = "button";
+      b.addEventListener("click", function () { state.w = w.key; render(); });
+      b.dataset.w = w.key;
+      sw.appendChild(b);
+    });
+  }
+
+  function syncSegs() {
+    document.querySelectorAll("#seg-variant button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.v) === state.v));
+    });
+    document.querySelectorAll("#seg-count button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.n) === state.n));
+    });
+    document.querySelectorAll("#seg-where button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.w === state.w));
+    });
+  }
+
+  function syncUrl() {
+    try {
+      var u = new URL(window.location.href);
+      u.searchParams.set("variant", VARIANTS[state.v].key);
+      u.searchParams.set("favourites", String(state.n));
+      window.history.replaceState(null, "", u.toString());
+    } catch (e) { /* file:// \u2014 no-op */ }
+  }
+
+  function readUrl() {
+    try {
+      var p = new URLSearchParams(window.location.search);
+      var v = p.get("variant");
+      if (v) {
+        VARIANTS.forEach(function (x, i) {
+          if (x.key.toLowerCase() === v.toLowerCase()) state.v = i;
+        });
+      }
+      var n = Number(p.get("favourites"));
+      if (COUNTS.indexOf(n) !== -1) state.n = n;
+    } catch (e) { /* no-op */ }
+  }
+
+  function cycle(d) {
+    state.v = (state.v + d + VARIANTS.length) % VARIANTS.length;
+    render();
+  }
+
+  document.getElementById("prev").addEventListener("click", function () { cycle(-1); });
+  document.getElementById("next").addEventListener("click", function () { cycle(1); });
+
+  document.addEventListener("keydown", function (e) {
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.key === "ArrowLeft") { cycle(-1); }
+    if (e.key === "ArrowRight") { cycle(1); }
+  });
+
+  buildSegs();
+  readUrl();
+  render();
+</script>
