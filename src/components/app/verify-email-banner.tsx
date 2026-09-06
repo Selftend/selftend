@@ -11,6 +11,7 @@ import {
   sendVerificationCode,
   verifyEmailCode,
 } from "@/src/features/auth/api";
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -73,13 +74,21 @@ export function VerifyEmailBanner() {
     user?.app_metadata?.provider === "email" ||
     (user?.identities?.some((identity) => identity.provider === "email") ?? false);
   // A guest has no email to verify, whatever the rest of the user object says
-  // (#1442). The email/identity checks already exclude today's guests - no
-  // email, no identities - but the banner's contract is "never while the
-  // session is a guest", so the guard is the claim itself, not its side
-  // effects. A CONVERTED guest is not anonymous any more and still gets the
-  // banner through the identity check above.
+  // (#1442). The banner's contract is "never while the session is a guest", so
+  // the guard is the claim itself, not its side effects.
+  //
+  // ☠️ #1896 moved it onto the shared predicate, which FIXED a case this
+  // comment used to get wrong. It said "a CONVERTED guest is not anonymous any
+  // more and still gets the banner" - but inside the stale-JWT window they are
+  // still anonymous as far as the flag is concerned, so the banner was
+  // suppressed for exactly the person who had just attached an email needing
+  // verification. `isGuestAccount` says no the moment that email lands.
+  //
+  // ⚠️ `!email` below is NOT redundant beside it: this predicate is false for a
+  // signed-out visitor (no account to be a guest of), and `email` is null for
+  // them too. The two clauses cover different holes and both stay.
   if (
-    user?.is_anonymous ||
+    isGuestAccount(user) ||
     !email ||
     !hasSelfAttachedEmail ||
     !preferences ||

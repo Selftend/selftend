@@ -95,12 +95,39 @@ describe("VerifyEmailBanner", () => {
     expect(screen.queryByText("Verify your email to secure your account.")).toBeNull();
   });
 
-  it("renders nothing while the session is a guest, whatever else the user carries (#1442)", () => {
-    // A real guest has no email and no identities, which the other guards
-    // already catch - this user is deliberately over-endowed so the assertion
-    // pins the is_anonymous claim itself, not its usual side effects.
+  // #1442's contract — "never while the session is a guest" — is unchanged.
+  // What changed with #1896 is how a guest is spelled: no email, rather than a
+  // true `is_anonymous` claim.
+  it("renders nothing while the session is a guest (#1442)", () => {
     mockUser = {
       id: "guest-1",
+      email: "",
+      app_metadata: {},
+      identities: [],
+    };
+
+    renderWithProviders(<VerifyEmailBanner />);
+    expect(screen.queryByText("Verify your email to secure your account.")).toBeNull();
+  });
+
+  /**
+   * ☠️☠️ REPLACES a test that asserted the OPPOSITE, and the inversion is the
+   * fix rather than a weakening (#1896).
+   *
+   * The old test built a deliberately "over-endowed guest" — an email, an email
+   * identity, and `is_anonymous: true` — to prove the flag alone suppressed the
+   * banner. But that fixture is not a guest at all: it is exactly the person
+   * inside the stale-JWT window, who has just attached the very email this
+   * banner asks them to verify. Suppressing it for them was the defect.
+   *
+   * Their flag is still `true` here and is deliberately ignored: nothing in the
+   * component reads it any more, so the banner appears the moment the email
+   * does. A real guest — no email — is covered by the test directly above, so
+   * the #1442 contract keeps its own assertion rather than riding on this one.
+   */
+  it("shows the prompt inside the stale-flag window, where it used to be suppressed", () => {
+    mockUser = {
+      id: "converted-1",
       email: "person@example.com",
       app_metadata: {},
       identities: [{ provider: "email" }],
@@ -108,7 +135,7 @@ describe("VerifyEmailBanner", () => {
     };
 
     renderWithProviders(<VerifyEmailBanner />);
-    expect(screen.queryByText("Verify your email to secure your account.")).toBeNull();
+    expect(screen.getByText("Verify your email to secure your account.")).toBeTruthy();
   });
 
   it("shows the prompt for a converted guest, whose provider claim never arrives (#1443)", () => {

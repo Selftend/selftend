@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { OnboardingHero, RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { useSession } from "@/src/providers/session-provider";
 
 const welcomeIllustration = require("../../../assets/images/onboarding/app_welcome.png");
@@ -66,7 +67,9 @@ export function AppOnboardingWizard({
         // informational line, guests only, on the final panel - which is the
         // only panel. The other half is the settings card, and that is the
         // whole invitation surface, by spec.
-        user?.is_anonymous ? (
+        // #1896: the shared predicate, so a person who converted moments ago is
+        // not invited to register again on the panel they are still reading.
+        isGuestAccount(user) ? (
           <Text variant="muted" className="text-center text-xs">
             {t("onboarding.guestInviteLine")}
           </Text>

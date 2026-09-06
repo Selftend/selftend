@@ -4,6 +4,7 @@ import { View } from "react-native";
 import { SignInForm } from "@/src/components/app/sign-in-form";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function SignInScreen() {
@@ -14,7 +15,11 @@ export default function SignInScreen() {
   // redirect would bounce the guest straight back into the app. A guest
   // actually signing in over their data is guarded inside the form by the
   // warn-and-abandon confirm (#1444, `useGuestAbandonGuard`).
-  if (session && !user?.is_anonymous) {
+  //
+  // #1896: "pass through" means a GUEST, and a just-converted person is not one
+  // - the flag kept them on this screen for the length of the stale-JWT window,
+  // offering a sign-in form to somebody already signed in to that very account.
+  if (session && !isGuestAccount(user)) {
     return <Redirect href="/(app)" />;
   }
 

@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
 } from "@/src/components/react-native-reusables/popover";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { resolveAvatarUrl } from "@/src/features/profile/avatar-url";
 import { resolveDisplayName } from "@/src/features/profile/display-name";
@@ -131,23 +132,17 @@ export function UserMenu() {
   const primaryLine = displayName || email || t("userMenu.guest");
   const showEmail = Boolean(displayName && email);
   /*
-    ☠️ Absence-driven, never a bare `is_anonymous` (#1869). `convertGuestWithPassword`
-    flips the flag server-side, but the live JWT keeps claiming `is_anonymous: true`
-    until the token is minted again - so in that window a REGISTERED person carries a
-    true flag, and a flag-based door would offer them a way to sign in to the account
-    they are already signed in to. `app/(app)/support.tsx` guards the same window by
-    ANDing the flag with `!user.email`; here the email carries it alone.
+    ☠️ Absence-driven, never a bare `is_anonymous` (#1869, extracted by #1896).
+    The argument that used to live here now lives in `isGuestAccount`'s docblock,
+    where every surface deciding this question can read it - which is the whole
+    point of #1896 having moved it.
 
-    `!email` implies guest structurally: every registered identity attaches one
-    (password, Google, and Apple's private relay) and there is no phone auth, so the
-    door withdraws the moment conversion gives them an email - stale flag and all.
-
-    ⚠️ This is NOT `useSignOut`'s `canSignOut`, which is the flag alone. The two
-    disagree only inside that same stale window, where a converted user gets
-    neither control - a known `canSignOut` staleness that predates this row and
-    belongs to conversion, not to the door.
+    ⚠️ The note that used to sit here - "this is NOT `useSignOut`'s `canSignOut`,
+    which is the flag alone" - is retired: #1896 moved `canSignOut` onto this
+    same predicate, which is what closed the window where a just-converted
+    person got neither Sign Out nor this door.
   */
-  const isGuest = isSignedIn && !email;
+  const isGuest = isGuestAccount(user);
 
   const languageIndex = supportedLanguages.indexOf(language);
   const languageRoving = useRovingFocus({

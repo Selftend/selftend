@@ -29,7 +29,7 @@ jest.mock("expo-router", () => {
 // guest; the factory closes over it and reads it at render time.
 const mockSessionState: {
   hasSupabaseConfig: boolean;
-  user: { is_anonymous?: boolean } | null;
+  user: { email?: string; is_anonymous?: boolean } | null;
 } = { hasSupabaseConfig: true, user: null };
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -235,7 +235,7 @@ describe("SignInForm", () => {
     const WARNING_TITLE = "Your guest data stays behind";
 
     function asGuest() {
-      mockSessionState.user = { is_anonymous: true };
+      mockSessionState.user = { email: "" };
     }
 
     it("shows the warning instead of signing in when the guest holds content", async () => {
@@ -333,7 +333,7 @@ describe("SignInForm", () => {
     });
 
     it("never runs the content check for a registered user", async () => {
-      mockSessionState.user = { is_anonymous: false };
+      mockSessionState.user = { email: "user@example.com" };
       mockSignIn.mockResolvedValue(undefined as never);
       renderWithProviders(<SignInForm />);
 
@@ -358,7 +358,7 @@ describe("SignInForm", () => {
       "What you've saved as a guest stays on this device — you can export a copy before you finish signing in.";
 
     function asGuest() {
-      mockSessionState.user = { is_anonymous: true };
+      mockSessionState.user = { email: "" };
     }
 
     it("tells a guest holding content before they have typed anything", async () => {
@@ -414,7 +414,7 @@ describe("SignInForm", () => {
     });
 
     it("shows nothing, and asks nothing, for a registered user", async () => {
-      mockSessionState.user = { is_anonymous: false };
+      mockSessionState.user = { email: "user@example.com" };
       renderWithProviders(<SignInForm />);
 
       await waitFor(() => expect(screen.getByText("Continue")).toBeTruthy());

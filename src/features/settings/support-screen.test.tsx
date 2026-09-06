@@ -76,7 +76,7 @@ async function submit() {
 describe("SupportScreen guest reply-to (#1447)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUser = { id: "guest-1", is_anonymous: true };
+    mockUser = { id: "guest-1", email: "" };
     appEnv.supportEmail = "support@selftend.org";
     mockInvoke.mockResolvedValue({ error: null });
     mockRequireSupabase.mockReturnValue({
@@ -617,18 +617,32 @@ describe("SupportScreen form (#1727)", () => {
   });
 
   it("offers a guest the field and no address line", () => {
-    mockUser = { id: "guest-1", is_anonymous: true };
+    mockUser = { id: "guest-1", email: "" };
     renderWithProviders(<SupportScreen />);
 
     expect(screen.getByLabelText(REPLY_TO_LABEL)).toBeTruthy();
     expect(screen.queryByText(/Replies go to/)).toBeNull();
   });
 
-  it("shows an account without an email neither the field nor the line", () => {
-    mockUser = { id: "user-2", is_anonymous: false };
+  /**
+   * ⚠️ REPLACES "shows an account without an email neither the field nor the
+   * line" (#1896). That test pinned a THIRD state the old predicate could
+   * express — `is_anonymous: false` with no email, so neither a guest nor
+   * someone with an address — and it left that person with no way to be
+   * replied to at all: no field to offer one, and no line saying where replies
+   * would go.
+   *
+   * `isGuestAccount` collapses that state deliberately: a session carrying no
+   * email has not converted, whatever the flag says, so it is a guest and gets
+   * the field. That is the better answer for the same fixture — a person with
+   * no address on file can now supply one — and the state is not reachable in
+   * practice anyway, since every registered identity attaches an email.
+   */
+  it("offers the field to an account carrying no email, rather than nothing at all", () => {
+    mockUser = { id: "user-2" };
     renderWithProviders(<SupportScreen />);
 
-    expect(screen.queryByLabelText(REPLY_TO_LABEL)).toBeNull();
+    expect(screen.getByLabelText(REPLY_TO_LABEL)).toBeTruthy();
     expect(screen.queryByText(/Replies go to/)).toBeNull();
   });
 

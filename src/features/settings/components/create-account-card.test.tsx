@@ -10,7 +10,7 @@ jest.mock("expo-router", () => ({
   usePathname: () => "/settings",
 }));
 
-let mockUser: { id: string; is_anonymous?: boolean } | null = null;
+let mockUser: { id: string; email?: string } | null = null;
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: mockUser }),
 }));
@@ -22,7 +22,7 @@ const TITLE = "Create an account to protect your data";
 describe("CreateAccountCard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUser = { id: "guest-1", is_anonymous: true };
+    mockUser = { id: "guest-1", email: "" };
   });
 
   afterEach(() => {
@@ -56,20 +56,46 @@ describe("CreateAccountCard", () => {
   });
 
   it("renders nothing for a registered user", () => {
-    mockUser = { id: "user-1", is_anonymous: false };
+    mockUser = { id: "user-1", email: "user@example.com" };
 
     renderWithProviders(<CreateAccountCard />);
 
     expect(screen.queryByText(TITLE)).toBeNull();
   });
 
-  // Older tokens predate the claim entirely - absence means registered.
-  it("renders nothing when the claim is absent", () => {
-    mockUser = { id: "user-1" };
+  /**
+   * ☠️☠️ THE DEFECT #1896 FILED THIS CARD FOR. `convertGuestWithPassword` flips
+   * `is_anonymous` server-side while the live JWT keeps claiming `true` until
+   * the token is minted again — so reading the flag left this card on screen
+   * for the length of that window, inviting a person to *"create an account to
+   * protect your data"* seconds after they had created one.
+   *
+   * The fixture is that person: converted, holding an email, and still carrying
+   * a stale `is_anonymous: true` claim that the component no longer reads.
+   */
+  it("stops inviting a just-converted user whose flag is still stale", () => {
+    mockUser = { id: "converted-1", email: "converted@example.com", is_anonymous: true } as never;
 
     renderWithProviders(<CreateAccountCard />);
 
     expect(screen.queryByText(TITLE)).toBeNull();
+  });
+
+  /**
+   * ⚠️ REPLACES "renders nothing when the claim is absent", whose premise the
+   * move retired rather than whose assertion was flipped. It read a missing
+   * `is_anonymous` as an older token, and therefore as registered; nothing
+   * reads that claim now. The same fixture — a session with no email — is a
+   * GUEST under `isGuestAccount`, which is the intended reading: every
+   * registered identity attaches an email, so a session with none has not
+   * converted and the invitation is exactly right for them.
+   */
+  it("still invites a session carrying no email at all", () => {
+    mockUser = { id: "user-1" };
+
+    renderWithProviders(<CreateAccountCard />);
+
+    expect(screen.getByText(TITLE)).toBeTruthy();
   });
 
   /**
@@ -85,7 +111,7 @@ describe("CreateAccountCard", () => {
    * implies protection where the card's whole point is fragility.
    */
   it("stays a plain card with an outline CTA - no tint, no glyph, no filled button", () => {
-    mockUser = { id: "guest-1", is_anonymous: true };
+    mockUser = { id: "guest-1", email: "" };
 
     const view = renderWithProviders(<CreateAccountCard />);
 

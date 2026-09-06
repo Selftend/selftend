@@ -293,6 +293,19 @@ the person's own, just unlabelled by an email.
 _Avoid_: anonymous account (mechanism word, and wrong as a privacy claim), local account, device
 account, trial account
 
+☠️ **In code the question is answered by `isGuestAccount(user)` (`src/features/auth/guest-account.ts`),
+and it reads the absence of an email — never `is_anonymous`.** Conversion flips that flag on the
+server while the device's JWT keeps claiming `true` until the token is next minted, so for the
+length of that window a flag-reading check calls a registered person a guest. The email answers the
+same question immediately, and it is structurally sound because every registered identity attaches
+one (password, Google, Apple's private relay; there is no phone auth). A guest's email is the empty
+string, so the test is `!user.email` and never `?? `.
+
+⚠️ One question that looks like this one and is not: **is this submission a conversion?** — whether
+a signup is an in-place upgrade of an existing anonymous row, which is about the row's history
+rather than the session's present state. `sign-up-form.tsx` answers that one with the flag, and
+deliberately does not use the predicate above.
+
 **Registered account**:
 An account with at least one sign-in identity attached (email and password, or an OAuth provider).
 What a guest becomes after conversion. Registering is invited, never required, and gates no

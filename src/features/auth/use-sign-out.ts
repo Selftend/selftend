@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { useTranslation } from "react-i18next";
 
 import { signOut } from "@/src/features/auth/api";
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { cancelAllReminders } from "@/src/lib/notifications";
 import { captureError, isReportableError } from "@/src/lib/sentry";
 import { useToastStore } from "@/src/stores/toast-store";
@@ -30,14 +31,24 @@ import { useToastStore } from "@/src/stores/toast-store";
  * here rather than at each surface means the settings row and the header menu
  * cannot drift apart. "Start fresh" for a guest is delete-account; "switch
  * accounts" is sign-in - both stay visible.
+ *
+ * ☠️ It reads `isGuestAccount`, NOT `is_anonymous`, and the reason above is why
+ * (#1896). The stated hazard is "the session token is the only key to their
+ * account" - which is a fact about having no second key, not about a flag. A
+ * just-converted person HAS one (their email and password), so the control
+ * should be theirs the moment conversion lands. Reading the flag withheld it
+ * for the length of the stale-JWT window, and because `user-menu.tsx` had
+ * already moved its sign-in door onto the email, that user got NEITHER control
+ * until the token refreshed. That was the bug; nothing about the guest refusal
+ * itself has changed.
  */
-export function useSignOut(user: Pick<User, "id" | "is_anonymous"> | null) {
+export function useSignOut(user: Pick<User, "id" | "email"> | null) {
   const { t } = useTranslation("auth");
   const showToast = useToastStore((state) => state.showToast);
   const clearToasts = useToastStore((state) => state.clearToasts);
 
   const userId = user?.id ?? null;
-  const canSignOut = user !== null && user.is_anonymous !== true;
+  const canSignOut = user !== null && !isGuestAccount(user);
 
   const handleSignOut = async () => {
     // Enforced here, not just advertised: a future surface that renders a

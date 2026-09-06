@@ -26,7 +26,10 @@ const mockUseToastStore = useToastStore as unknown as jest.Mock;
 const showToast = jest.fn();
 const clearToasts = jest.fn();
 
-const registeredUser = { id: "user-1", is_anonymous: false };
+// ☠️ Identified by its EMAIL, not by `is_anonymous: false` (#1896). The hook's
+// parameter is `Pick<User, "id" | "email">` now, so the flag is not merely
+// unused here - it cannot be passed at all.
+const registeredUser = { id: "user-1", email: "user@example.com" };
 
 /** Runs a sign-out that fails at `signOut` with `error`. */
 async function signOutFailingWith(error: unknown) {
@@ -166,16 +169,23 @@ describe("useSignOut", () => {
   // menu) render their sign-out control off this one flag, so this is the
   // single place the guard can regress.
   describe("canSignOut", () => {
+    // ☠️ `email: ""`, never an ABSENT key (#1896). That is what a guest's user
+    // object actually carries - the type says `email?: string` and the value is
+    // the empty string - and a fixture that omits the key instead would pass
+    // whether the predicate used `!email` or `?? `, which is precisely the trap
+    // `isGuestAccount`'s docblock exists to warn about.
+    const guest = { id: "guest-1", email: "" };
+
     it("is false for a guest", () => {
-      const { result } = renderHook(() => useSignOut({ id: "guest-1", is_anonymous: true }));
+      const { result } = renderHook(() => useSignOut(guest));
 
       expect(result.current.canSignOut).toBe(false);
     });
 
-    // The layer enforces, not just advertises: a surface that forgets the
-    // flag still cannot sign a guest out.
+    // The layer enforces, not just advertises: a surface that forgets to check
+    // still cannot sign a guest out.
     it("the handler itself refuses to sign a guest out", async () => {
-      const { result } = renderHook(() => useSignOut({ id: "guest-1", is_anonymous: true }));
+      const { result } = renderHook(() => useSignOut(guest));
 
       await act(async () => {
         await result.current.signOut();
@@ -191,11 +201,46 @@ describe("useSignOut", () => {
       expect(result.current.canSignOut).toBe(true);
     });
 
-    // Older tokens predate the claim entirely - absence means registered, not guest.
-    it("is true when the claim is absent", () => {
-      const { result } = renderHook(() => useSignOut({ id: "user-1" }));
+    /**
+     * ☠️☠️ THE WINDOW THIS MOVED FOR (#1896). `convertGuestWithPassword` flips
+     * `is_anonymous` server-side while the live JWT keeps claiming `true` until
+     * the token is minted again. The old predicate read that flag, so for the
+     * length of the window a just-converted person was refused Sign Out — and
+     * `user-menu.tsx` had already moved its Sign in door onto the email, so the
+     * same person was offered NEITHER control.
+     *
+     * The fixture is that person: converted, holding an email, and still
+     * carrying a stale `is_anonymous: true` claim. ⚠️ The claim cannot be
+     * written into the fixture at all any more — the parameter is
+     * `Pick<User, "id" | "email">` — and that is the strongest form of the fix:
+     * a later "restore the flag check" edit does not typecheck.
+     */
+    it("is true for a just-converted user whose flag is still stale", () => {
+      const { result } = renderHook(() =>
+        useSignOut({ id: "converted-1", email: "converted@example.com" }),
+      );
 
       expect(result.current.canSignOut).toBe(true);
+    });
+
+    /**
+     * ⚠️ REPLACES "is true when the claim is absent", whose premise the move
+     * retired rather than whose assertion was flipped. That test read a missing
+     * `is_anonymous` as "an older token that predates the claim, so registered".
+     * Nothing reads the claim now, so the question no longer exists — and the
+     * fixture it used, `{ id: "user-1" }` with no email, describes a user this
+     * predicate calls a GUEST.
+     *
+     * That is the intended reading, not a regression: `isGuestAccount` rests on
+     * every registered identity attaching an email (password, Google, Apple's
+     * private relay; no phone auth), so a session with none is a guest. Pinned
+     * here so the structural claim is asserted somewhere rather than only
+     * argued in a docblock.
+     */
+    it("is false for a session carrying no email at all", () => {
+      const { result } = renderHook(() => useSignOut({ id: "user-1" }));
+
+      expect(result.current.canSignOut).toBe(false);
     });
 
     it("is false with no user at all", () => {

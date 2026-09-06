@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { guestHasContent } from "@/src/features/auth/guest-content";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -28,7 +29,11 @@ export function useGuestAbandonGuard() {
   const [isProceeding, setIsProceeding] = useState(false);
 
   const guardSignIn = async (action: SignInAction) => {
-    if (!user?.is_anonymous) {
+    // #1896: the shared predicate. There is nothing to warn a just-converted
+    // person about - their data is now reachable by email and password, so it
+    // is not being left behind - and the flag would have warned them anyway
+    // for the length of the stale-JWT window.
+    if (!isGuestAccount(user)) {
       await action();
       return;
     }

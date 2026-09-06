@@ -25,6 +25,7 @@ import { ShowAllLink } from "@/src/components/app/show-all-link";
 import { DeleteAccountRow } from "@/src/features/settings/components/delete-account-row";
 import { SettingsRow } from "@/src/features/settings/components/settings-row";
 import { SettingsRun } from "@/src/features/settings/components/settings-run";
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { HOME_COLUMN } from "@/src/lib/layout";
 import { useRovingFocus } from "@/src/lib/roving-focus";
@@ -156,13 +157,18 @@ export default function SupportScreen() {
 
   // A registered user's reply address comes from their account on the server;
   // only a guest, who has no email anywhere, is offered one - optional,
-  // guest-only, and used for nothing but replying (#1447). The email check
-  // matters: a just-converted guest can still carry a stale is_anonymous
+  // guest-only, and used for nothing but replying (#1447). The email is what
+  // decides it: a just-converted guest can still carry a stale is_anonymous
   // claim until token refresh (#1443), and offering them the field would take
   // an address the server then silently ignores in favour of their account
   // email. That same person sees the address line instead: the server will
   // use it, so it is the truthful thing to say.
-  const isGuest = user?.is_anonymous === true && !user.email;
+  //
+  // #1896: this was one of only two sites that already survived that window,
+  // by ANDing the flag with the email. The flag was never load-bearing - the
+  // email alone excludes the same person - so it now shares the predicate
+  // rather than keeping a second, differently-spelled answer to one question.
+  const isGuest = isGuestAccount(user);
   const accountEmail = isGuest ? "" : (user?.email ?? "");
 
   const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>(DEFAULT_CATEGORY);

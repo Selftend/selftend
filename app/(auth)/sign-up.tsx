@@ -4,6 +4,7 @@ import { View } from "react-native";
 import { SignUpForm } from "@/src/components/app/sign-up-form";
 import { MobileFormScreen } from "@/src/components/app/mobile-form-screen";
 import { ScreenTopBar } from "@/src/components/app/screen-top-bar";
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { useSession } from "@/src/providers/session-provider";
 
 export default function SignUpScreen() {
@@ -11,9 +12,16 @@ export default function SignUpScreen() {
 
   // Conversion (#1443): only a REGISTERED session redirects. A guest reaching
   // sign-up is exactly who this screen now serves - the unconditional redirect
-  // would make registration unreachable for them - so an `is_anonymous`
-  // session falls through to the form, which renders its conversion mode.
-  if (session && !user?.is_anonymous) {
+  // would make registration unreachable for them - so a guest session falls
+  // through to the form, which renders its conversion mode.
+  //
+  // ☠️ #1896: this reads `isGuestAccount`, but `SignUpForm`'s own `isConversion`
+  // deliberately still reads the FLAG. They are different questions - "is this
+  // session a guest right now" against "is this submission an upgrade of an
+  // anonymous row" - and the form is mid-submission when they diverge. The
+  // redirect firing on a successful conversion is harmless: the form's success
+  // path is already `router.replace("/(app)")`, the same destination.
+  if (session && !isGuestAccount(user)) {
     return <Redirect href="/(app)" />;
   }
 

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { guestHasContent } from "@/src/features/auth/guest-content";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -43,7 +44,10 @@ export const guestContentKeys = {
  */
 export function useGuestContentNotice(): boolean {
   const { user } = useSession();
-  const isGuest = user?.is_anonymous === true;
+  // #1896: the shared predicate, so the notice stops the instant conversion
+  // lands rather than at the next token refresh. A line telling a registered
+  // person their work will be left behind is the deterrent §12 forbids.
+  const isGuest = isGuestAccount(user);
 
   const { data } = useQuery({
     queryKey: guestContentKeys.detail(user?.id ?? null),

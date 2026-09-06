@@ -22,14 +22,14 @@ jest.mock("react-native", () => {
   });
 });
 
-let mockWizardUser: { id: string; is_anonymous?: boolean } = { id: "user-1" };
+let mockWizardUser: { id: string; email?: string } = { id: "user-1", email: "user@example.com" };
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: mockWizardUser }),
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockWizardUser = { id: "user-1" };
+  mockWizardUser = { id: "user-1", email: "user@example.com" };
 });
 
 function renderWizard(overrides: Partial<React.ComponentProps<typeof AppOnboardingWizard>> = {}) {
@@ -133,7 +133,7 @@ describe("guest invitation line", () => {
     "You're using Selftend as a guest - you can create an account any time from Settings to protect your data.";
 
   it("shows the line to a guest", () => {
-    mockWizardUser = { id: "guest-1", is_anonymous: true };
+    mockWizardUser = { id: "guest-1", email: "" };
     renderWizard();
     expect(screen.getByText(LINE)).toBeTruthy();
   });

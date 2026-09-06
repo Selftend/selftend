@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { isGuestAccount } from "@/src/features/auth/guest-account";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -45,7 +46,12 @@ export function CreateAccountCard() {
   const { user } = useSession();
   const pushWithOrigin = usePushWithOrigin();
 
-  if (user?.is_anonymous !== true) return null;
+  // ☠️ `isGuestAccount`, not `is_anonymous` (#1896). This card's own contract is
+  // "for as long as the account is a guest, and gone the moment it is not" -
+  // and the flag stays true for the length of the stale-JWT window, so it kept
+  // inviting a just-converted person to create the account they had just
+  // created. The email answers the same question and answers it immediately.
+  if (!isGuestAccount(user)) return null;
 
   return (
     <Card testID="create-account-card">
