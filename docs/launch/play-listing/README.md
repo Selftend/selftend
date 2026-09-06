@@ -52,6 +52,17 @@ consent panel, finish the one onboarding panel, then star a few tools so Home is
 not empty. `/` is Home, `/modules/cbt` the CBT module, and `/tools/breathing` →
 _Box breathing_ → _Start_ gives the running session.
 
+☠️ **Never let a date into the frame.** Home's greeting card prints
+`TODAY · <weekday>, <month> <day>`, and a store asset outlives the day it was
+shot by months — so the Home capture is deliberately **scrolled down to put the
+`Favourites` heading just under the app bar**, leaving the greeting above the
+viewport. The July capture this set replaced had `THURSDAY, JULY 16` baked into
+it for the whole of its life on the listing.
+
+⚠️ Star tools that are **low** in the Tools list (Gratitude log, Meditation,
+Sleep). Favourites is a pinned subset of the same list, so favouriting the first
+few tools puts the identical card on screen twice.
+
 Two things the 2026-09-06 retake changed beyond the spellings:
 
 - **The middle mockup is Home, not the old Dashboard.** That screen no longer
