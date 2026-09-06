@@ -2,6 +2,5 @@
   "medicalOrTreatmentInformation": "INFREQUENT_OR_MILD",
   "healthOrWellnessTopics": true,
   "ageRatingOverride": "NONE",
-  "ageRatingOverrideV2": "NONE",
-  "developerAgeRatingInfoUrl": "https://selftend.org/faq"
+  "ageRatingOverrideV2": "NONE"
 }
