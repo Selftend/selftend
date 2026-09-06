@@ -1941,6 +1941,120 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
   });
 
   /**
+   * The category noun as each locale writes it - the half of the frame that
+   * § _The hard rule_ clause 1 says may never appear on its own.
+   */
+  const CATEGORY: Record<Locale, RegExp> = {
+    en: /mental health tools/i,
+    bg: /инструменти за психично здраве/i,
+  };
+
+  const DRAFTS_DOC = "docs/launch/reddit-promotion-package.md";
+
+  /**
+   * The `### N. sub` sections of the Reddit drafts file, each returned both raw
+   * and flattened - blockquote markers stripped and every run of whitespace
+   * collapsed to one space.
+   *
+   * ☠️☠️ **THE FLATTENING IS THE RULE'S REACH, NOT TIDINESS**, and it is the
+   * `readArtworkSource` lesson in a second costume: these phrases are multi-word
+   * and the drafts are hard-wrapped inside `>` blockquotes, so a line break can
+   * fall between any two words. Draft 4 wraps the category noun itself
+   * (`...free, private mental health` / `> tools: ...`), so a guard written
+   * against the raw file finds no category, calls that draft exempt, and passes
+   * over **the exact draft this rule exists for**. Exercised on synthetic input
+   * below, because a fixture taken from today's wrapping would go green the day
+   * someone reflows the paragraph.
+   */
+  function draftSections(markdown: string): { id: string; raw: string; text: string }[] {
+    return markdown
+      .split(/\n### /)
+      .slice(1)
+      .filter((section) => /^\d+\./.test(section))
+      .map((section) => ({
+        id: section.split("\n")[0].trim(),
+        raw: section,
+        text: section.replace(/^[ \t]*>[ ]?/gm, "").replace(/\s+/g, " "),
+      }));
+  }
+
+  /**
+   * ☠️☠️ **CLAUSE 1 IS AN OBLIGATION FOR SOMETHING TO BE PRESENT, AND EVERY
+   * OTHER RULE IN THIS FILE IS A BAN ON A STRING** (#1901). A ban cannot check a
+   * presence, which is why `docs/positioning.md` says in its own heading that no
+   * gate can enforce either clause, and why [#2073](https://github.com/Selftend/selftend/pull/2073)
+   * adding this file to the prose corpus did not help: the drafts were clean
+   * against every banned phrase in both languages **and still had two
+   * violations**. Drafts 4 (r/webdev) and 5 (r/reactnative) named the category
+   * and stopped, carrying the method nowhere in the post.
+   *
+   * ⚠️ **One narrow form of clause 1 IS checkable, and it is the form that
+   * actually failed.** `positioning.md` gives the reading test as _"a surface
+   * that names the category and stops has already failed"_ - so within one
+   * structured file, per draft: **if the section names the category noun, it
+   * must also name the method.** That is mechanical. What stays unreachable is
+   * the general clause, which asks whether a surface *presents the tools* at
+   * all, and that is a judgement no regex makes.
+   *
+   * ☠️ **THE EXEMPTION IS EARNED BY THE TEXT, NOT BY A LIST.** Draft 8 (the
+   * tester-sub update comments) names no category and presents no tools, so
+   * there is no bare inventory for clause 1 to bind and the rule skips it on its
+   * own. That is deliberate: an allowlist would have to be maintained, and the
+   * day someone gives draft 8 a frame it would keep exempting it. Conversely
+   * nothing here asserts that a draft IS exempt - adding the frame to draft 8 is
+   * a legitimate edit, and it simply moves that section into the checked half.
+   *
+   * ☠️ The method pattern is the COMPOUND and never the bare acronym, for the
+   * reason `METHOD` above gives: naming a tool is not naming the method, so a
+   * draft saying "CBT thought records" and nothing else must still fail.
+   */
+  it("keeps the method in every Reddit draft that names the category (#1901)", () => {
+    const sections = draftSections(readFile(DRAFTS_DOC).text);
+
+    // Positive control: a renamed heading level or a moved file would return an
+    // empty list and make the loop below pass by never running.
+    expect(sections.length).toBeGreaterThanOrEqual(8);
+
+    const checked: string[] = [];
+    for (const { id, text } of sections) {
+      const locale = (["en", "bg"] as const).find((candidate) => CATEGORY[candidate].test(text));
+      if (!locale) continue;
+      checked.push(id);
+      expect({ id, namesTheMethod: METHOD[locale].test(text) }).toEqual({
+        id,
+        namesTheMethod: true,
+      });
+    }
+
+    // And the rule really did run over the drafts rather than skipping them all
+    // on a category noun that has quietly moved on. Both locales are covered:
+    // draft 7 is the Bulgarian one and is checked through the `bg` pattern.
+    expect(checked.length).toBeGreaterThanOrEqual(7);
+  });
+
+  /**
+   * The flattening above, on synthetic input (#1901).
+   *
+   * ☠️ Without this the guard is worth nothing on the draft it was written
+   * for, and the suite is green either way - the same shape of miss #2022
+   * recorded when a `<span>` sat between the two banned words.
+   */
+  it("sees a category noun that a blockquote line break splits in two (#1901)", () => {
+    const wrapped =
+      "9. r/example\n\n> Selftend is a set of free, private mental health\n> tools: everyday tools for right now.\n";
+
+    // Raw, the phrase is not there at all - the newline and the `> ` sit inside it.
+    expect(CATEGORY.en.test(wrapped)).toBe(false);
+
+    // Flattened, it is, so the section reaches the method check rather than
+    // being waved through as one that never named the category.
+    const [section] = draftSections(`\n### ${wrapped}`);
+    expect(section.id).toBe("9. r/example");
+    expect(CATEGORY.en.test(section.text)).toBe(true);
+    expect(METHOD.en.test(section.text)).toBe(false);
+  });
+
+  /**
    * ☠️ Non-vacuous in the two ways this repo has already been bitten.
    *
    * The corpus has to be non-empty — `i18nValue` throwing would be loud, but a
