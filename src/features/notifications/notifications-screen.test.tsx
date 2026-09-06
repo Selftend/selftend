@@ -139,7 +139,7 @@ describe("NotificationsScreen", () => {
     expect(screen.getAllByText("Reminders")).toHaveLength(1);
   });
 
-  it("renders ten rows in the registry's order, each switch named for its target", () => {
+  it("renders a row per registry target, in the registry's order, each switch named", () => {
     renderWithProviders(<NotificationsScreen />);
 
     // The registry order IS the dashboard order (asserted in registry.test.ts), so this
@@ -147,7 +147,9 @@ describe("NotificationsScreen", () => {
     const rendered = NOTIFICATION_TARGETS.map((target) =>
       screen.getByTestId(`notification-row-${target.key}`),
     );
-    expect(rendered).toHaveLength(10);
+    // Derived from the registry rather than pinned at a number: the count is
+    // that registry's business, and this screen's job is to read it whole.
+    expect(rendered).toHaveLength(NOTIFICATION_TARGETS.length);
     for (const target of NOTIFICATION_TARGETS) {
       expect(screen.getByLabelText(i18n.t(`notifications:${target.labelKey}`))).toBeTruthy();
     }

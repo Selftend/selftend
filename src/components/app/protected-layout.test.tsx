@@ -13,7 +13,6 @@ import {
   useUpdateUserPreferences,
   useUserPreferences,
 } from "@/src/features/settings/queries";
-import { useCompleteAppOnboarding } from "@/src/features/onboarding/queries";
 import { renderWithProviders } from "@/test/render-with-providers";
 import { setPlatformOS } from "@/test/modal-marker-mock";
 
@@ -186,10 +185,6 @@ jest.mock("@/src/features/settings/queries", () => ({
   useUserPreferences: jest.fn(),
 }));
 
-jest.mock("@/src/features/onboarding/queries", () => ({
-  useCompleteAppOnboarding: jest.fn(),
-}));
-
 // Notification deep-linking touches the native expo-notifications module; it has its own
 // unit test (use-notification-deep-link.test.tsx), so stub it out of the layout render.
 jest.mock("@/src/features/notifications/use-notification-deep-link", () => ({
@@ -212,9 +207,6 @@ jest.mock("@/src/features/routines/queries", () => ({
 }));
 
 const mockUseUserPreferences = useUserPreferences as jest.MockedFunction<typeof useUserPreferences>;
-const mockUseCompleteAppOnboarding = useCompleteAppOnboarding as jest.MockedFunction<
-  typeof useCompleteAppOnboarding
->;
 const mockUseUpdateUserPreferences = useUpdateUserPreferences as jest.MockedFunction<
   typeof useUpdateUserPreferences
 >;
@@ -269,23 +261,19 @@ beforeEach(() => {
       id: "user-1",
     },
   };
-  mutateAsync.mockResolvedValue(undefined);
-  mockUseCompleteAppOnboarding.mockReturnValue({
-    isError: false,
-    isPending: false,
-    mutate: jest.fn(),
-    mutateAsync,
-  } as unknown as ReturnType<typeof useCompleteAppOnboarding>);
+  mutateAsync.mockResolvedValue(defaultUserPreferences);
   mockUseUpdateUserPreferences.mockReturnValue({
     isPending: false,
     mutate: jest.fn(),
     mutateAsync: jest.fn(),
   } as unknown as ReturnType<typeof useUpdateUserPreferences>);
+  // The one onboarding writer since #1958: first-run completion and the
+  // introduction replay both go through the plain preference update.
   mockUseUpdateOnboardingPreferences.mockReturnValue({
     isError: false,
     isPending: false,
     mutate: jest.fn(),
-    mutateAsync: jest.fn().mockResolvedValue(defaultUserPreferences),
+    mutateAsync,
   } as unknown as ReturnType<typeof useUpdateOnboardingPreferences>);
   mockUseUserPreferences.mockReturnValue({
     data: {
@@ -317,9 +305,29 @@ describe("ProtectedLayout app onboarding", () => {
 
     fireEvent.press(escape);
     // The skip path persists onboarding as done — not the step-Back dismiss.
+    // All three fields, never the flag alone (#1958) — why is on
+    // `finishAppOnboarding` in protected-layout.tsx.
     await waitFor(() =>
-      expect(mutateAsync).toHaveBeenCalledWith({ selectedConcerns: null, widgetIds: [] }),
+      expect(mutateAsync).toHaveBeenCalledWith({
+        appOnboardingCompleted: true,
+        appOnboardingCompletedVia: "skip",
+        appOnboardingCompletedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      }),
     );
+  });
+
+  it("finishing writes completion with via 'finish' and a timestamp (#1958)", async () => {
+    renderWithProviders(<ProtectedLayout />);
+    await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
+
+    fireEvent.press(screen.getByText("Finish"));
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+    expect(mutateAsync).toHaveBeenCalledWith({
+      appOnboardingCompleted: true,
+      appOnboardingCompletedVia: "finish",
+      appOnboardingCompletedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+    });
   });
 
   it("hides the wizard when app onboarding is complete", async () => {
@@ -349,7 +357,15 @@ describe("ProtectedLayout app onboarding", () => {
 
     renderWithProviders(<ProtectedLayout />);
     await waitFor(() => expect(screen.getByText("Welcome to Selftend")).toBeTruthy());
-    expect(screen.queryByText("What brings you here?")).toBeNull();
+
+    // The replay is recognised by `via` being set while the flag is off, and it
+    // must stay recognisable: finishing it re-arms the flag ALONE, so the
+    // original completion path and time survive as the record of the first run
+    // (the funnel reads `_at` as first completion). Asserted as an exact call,
+    // because `objectContaining` would wave through a rewritten `via`.
+    fireEvent.press(screen.getByText("Finish"));
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+    expect(mutateAsync).toHaveBeenCalledWith({ appOnboardingCompleted: true });
   });
 
   it("shows the policy gate before app onboarding when consent is outdated", async () => {

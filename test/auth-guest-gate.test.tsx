@@ -42,7 +42,7 @@ const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
 
 type SessionValue = ReturnType<typeof useSession>;
 
-const sessionValue = (user: { id: string; is_anonymous?: boolean } | null) =>
+const sessionValue = (user: { id: string; is_anonymous?: boolean; email?: string } | null) =>
   ({
     hasSupabaseConfig: true,
     session: user ? { user } : null,
@@ -63,7 +63,26 @@ describe.each([
   ["sign-in", SignInScreen],
 ])("%s screen gate", (_name, Screen) => {
   it("redirects a registered session into the app", () => {
-    mockUseSession.mockReturnValue(sessionValue({ id: "u1", is_anonymous: false }));
+    mockUseSession.mockReturnValue(
+      sessionValue({ id: "u1", is_anonymous: false, email: "person@example.com" }),
+    );
+    renderWithProviders(<Screen />);
+
+    expect(screen.getByTestId("redirect-/(app)")).toBeTruthy();
+    expect(screen.queryByTestId("auth-form")).toBeNull();
+  });
+
+  /**
+   * ☠️ The stale-flag window (#1896). `convertGuestWithPassword` flips
+   * `is_anonymous` server-side while the live JWT keeps claiming it, so this
+   * person is registered and still carries a true flag. Gating on the flag left
+   * them on the auth screens - and on sign-up that meant being shown the
+   * conversion form a second time, for an account they had just created.
+   */
+  it("redirects a just-converted session whose token still claims anonymous", () => {
+    mockUseSession.mockReturnValue(
+      sessionValue({ id: "u1", is_anonymous: true, email: "person@example.com" }),
+    );
     renderWithProviders(<Screen />);
 
     expect(screen.getByTestId("redirect-/(app)")).toBeTruthy();

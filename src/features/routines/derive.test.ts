@@ -347,12 +347,88 @@ describe("deriveRoutineStrip", () => {
   });
 });
 
+/**
+ * DBT's six steps (#1980).
+ *
+ * ☠️ Every DBT table captures an offset beside its timestamp, so the module is
+ * the ONLY one whose every leg is `onCapturedDay`. These tests pass a `dayKey`
+ * that disagrees with the timestamps around it on purpose: if a leg ever
+ * re-bucketed a timestamp through the runner's clock, the row would file under a
+ * different day and the assertion would flip. A test that fed matching values
+ * would pass either way and notice nothing.
+ */
+describe("stepDoneOnDate - DBT", () => {
+  it("counts a muscle-relaxation session on its own captured day", () => {
+    const records: RoutineToolRecords = {
+      dbtSessions: [{ sessionSlug: "muscle-relaxation", dayKey: DAY }],
+    };
+    expect(stepDoneOnDate("muscleRelaxation", records, DAY)).toBe(true);
+    expect(stepDoneOnDate("muscleRelaxation", records, NEXT_DAY)).toBe(false);
+  });
+
+  it("ignores a session of some other slug", () => {
+    // `muscle-relaxation` is the only slug today, but the filter is what stops a
+    // second session kind from silently ticking this step when one ships.
+    const records: RoutineToolRecords = {
+      dbtSessions: [{ sessionSlug: "some-other-session", dayKey: DAY }],
+    };
+    expect(stepDoneOnDate("muscleRelaxation", records, DAY)).toBe(false);
+  });
+
+  it("counts wise mind, judgements, emotion records and scripts on their captured day", () => {
+    expect(stepDoneOnDate("wiseMind", { dbtWiseMindCheckins: [{ dayKey: DAY }] }, DAY)).toBe(true);
+    expect(stepDoneOnDate("judgement", { dbtJudgements: [{ dayKey: DAY }] }, DAY)).toBe(true);
+    expect(stepDoneOnDate("emotionRecord", { dbtEmotionRecords: [{ dayKey: DAY }] }, DAY)).toBe(
+      true,
+    );
+    expect(stepDoneOnDate("script", { dbtScripts: [{ dayKey: DAY }] }, DAY)).toBe(true);
+
+    expect(stepDoneOnDate("wiseMind", { dbtWiseMindCheckins: [{ dayKey: PREV_DAY }] }, DAY)).toBe(
+      false,
+    );
+    expect(stepDoneOnDate("script", { dbtScripts: [{ dayKey: PREV_DAY }] }, DAY)).toBe(false);
+  });
+
+  /**
+   * ☠️ The opposite-action step is the DONE day, never the created one - and a
+   * plan that was never carried out files under no day at all. Writing an
+   * opposite action down is not doing it.
+   */
+  it("counts an opposite-action plan on the day it was DONE, and never while open", () => {
+    expect(
+      stepDoneOnDate("oppositeAction", { dbtOppositeActionPlans: [{ doneDayKey: DAY }] }, DAY),
+    ).toBe(true);
+    expect(
+      stepDoneOnDate("oppositeAction", { dbtOppositeActionPlans: [{ doneDayKey: null }] }, DAY),
+    ).toBe(false);
+    expect(
+      stepDoneOnDate("oppositeAction", { dbtOppositeActionPlans: [{ doneDayKey: PREV_DAY }] }, DAY),
+    ).toBe(false);
+  });
+
+  it("derives a DBT routine end to end", () => {
+    const view = deriveRoutine(
+      steps("wiseMind", "emotionRecord"),
+      {
+        dbtWiseMindCheckins: [{ dayKey: DAY }],
+        dbtEmotionRecords: [{ dayKey: PREV_DAY }],
+      },
+      DAY,
+    );
+
+    expect(view.status).toBe("in_progress");
+    expect(view.doneCount).toBe(1);
+    expect(view.nextStep?.toolId).toBe("emotionRecord");
+  });
+});
+
 describe("isSteppableToolId", () => {
   it("accepts the steppable set and rejects other strings", () => {
     expect(isSteppableToolId("breathing")).toBe(true);
     expect(isSteppableToolId("habits")).toBe(true);
     expect(isSteppableToolId("defusion")).toBe(true);
     expect(isSteppableToolId("committedAction")).toBe(true);
+    expect(isSteppableToolId("oppositeAction")).toBe(true);
     expect(isSteppableToolId("plan")).toBe(false);
     // Weekly review stays out by decision (weekly by design; a daily routine
     // would read open 6/7 days).

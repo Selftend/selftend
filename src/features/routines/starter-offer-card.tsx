@@ -14,7 +14,6 @@ import {
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { useAngerLogs } from "@/src/features/anger/queries";
-import { useWidgetPreferences } from "@/src/features/home/queries";
 import { isReminderPromptEligible } from "@/src/features/notifications/reminder-prompt";
 import { STEPPABLE_TOOL_IDS, type SteppableToolId } from "@/src/features/routines/derive";
 import { useRoutines } from "@/src/features/routines/queries";
@@ -23,6 +22,7 @@ import {
   areOfferRecordsReady,
   countToolsWithRecords,
   SECOND_ACTION_MIN,
+  toolsWithRecords,
 } from "@/src/features/routines/starter-offer";
 import { StarterStepList } from "@/src/features/routines/starter-step-list";
 import { useKeepStarterRoutine } from "@/src/features/routines/use-keep-starter-routine";
@@ -90,7 +90,10 @@ export function StarterOfferCard() {
   const { data: routines } = useRoutines(evaluating ? userId : null);
   const noRoutineUserId =
     evaluating && routines !== undefined && routines.length === 0 ? userId : null;
-  const { data: widgetPrefs } = useWidgetPreferences(noRoutineUserId);
+  // One fetch feeds both questions (#1954): the second-action count AND the starter's
+  // composition read these same records. Nothing here reads a preferences table -
+  // the old dashboard's rows stop being seeded, and a starter composed from them
+  // would never fire for anyone who installs after that.
   const records = useRoutineToolRecords(noRoutineUserId, STEPPABLE_TOOL_IDS);
   // The three prompting tools a routine cannot admit count toward the second
   // action too (#1677); same gate, same "owns no routine" moment.
@@ -112,16 +115,16 @@ export function StarterOfferCard() {
     } else if (routines !== undefined) {
       if (routines.length > 0) {
         setPendingSave(false);
-      } else if (widgetPrefs !== undefined) {
-        const composed = buildStarterSteps(widgetPrefs.map((pref) => pref.widgetId));
-        if (!composed) {
-          setPendingSave(false);
-        } else if (areOfferRecordsReady(records, offerOnly)) {
-          setPendingSave(false);
-          if (countToolsWithRecords(records, offerOnly) >= SECOND_ACTION_MIN) {
-            setSteps(composed);
-            setVisible(true);
-          }
+      } else if (areOfferRecordsReady(records, offerOnly)) {
+        setPendingSave(false);
+        // Composed only once every slice is in: a half-loaded shape would compose
+        // fewer steps, not wrong ones, but fewer is still a routine the person did
+        // not earn. The gate can pass while composition is null - records only in
+        // worry, anger and self-care, or habits plus one tool - so both are checked.
+        const composed = buildStarterSteps(toolsWithRecords(records));
+        if (composed && countToolsWithRecords(records, offerOnly) >= SECOND_ACTION_MIN) {
+          setSteps(composed);
+          setVisible(true);
         }
       }
     }

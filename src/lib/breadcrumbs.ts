@@ -1,3 +1,5 @@
+import { DBT_GROUP_BY_SLUG } from "@/src/features/dbt/dbt-home-config";
+
 export interface Breadcrumb {
   label: string;
   href?: string;
@@ -64,6 +66,15 @@ const STATIC_ROUTES: Record<string, string> = {
   "/modules/cbt/self-care": "breadcrumb.selfCare",
   "/modules/cbt/recovery": "breadcrumb.recovery",
   "/modules/dbt": "sidebar.dbt",
+  "/modules/dbt/learn": "breadcrumb.learn",
+  "/modules/dbt/coping-plan": "breadcrumb.copingPlan",
+  "/modules/dbt/pause": "breadcrumb.pause",
+  "/modules/dbt/sessions/muscle-relaxation": "breadcrumb.muscleRelaxation",
+  "/modules/dbt/emotions": "breadcrumb.emotions",
+  "/modules/dbt/wise-mind": "breadcrumb.wiseMind",
+  "/modules/dbt/judgements": "breadcrumb.judgements",
+  "/modules/dbt/opposite-action": "breadcrumb.oppositeAction",
+  "/modules/dbt/scripts": "breadcrumb.scripts",
 
   "/tools": "sidebar.tools",
   "/tools/check-in": "sidebar.moodTracker",
@@ -133,7 +144,7 @@ const STATIC_ROUTES: Record<string, string> = {
 // index: a list there would duplicate `/modules/cbt/history`, and nothing in
 // the app ever navigates to the bare path. #1251's `breadcrumb.saved` label
 // left with it - the trail now ends in the generic "Entry" and Up is CBT.
-const TRANSPARENT_SEGMENTS = new Set(["session", "saved"]);
+const TRANSPARENT_SEGMENTS = new Set(["session", "sessions", "saved"]);
 
 // Known named sub-segments that appear after dynamic segments
 const KNOWN_SUB_SEGMENTS: Record<string, string> = {
@@ -155,6 +166,10 @@ const SLUG_LABEL_KEYS: Record<string, (slug: string) => string> = {
   "/tools/breathing": (slug) => `cbt:breathing.exercises.${slug}.title`,
   "/tools/grounding": (slug) => `cbt:grounding.techniques.${slug}.title`,
   "/tools/habits/learn": (slug) => `habits:learn.cards.${slug}.title`,
+  // The skill-group slugs are kebab-case URLs and their copy keys are
+  // camelCase, so the map is data (`DBT_GROUP_BY_SLUG`) rather than a
+  // transformation - a slug outlives a rename of the symbol beside it.
+  "/modules/dbt/learn": (slug) => `dbt:groups.${DBT_GROUP_BY_SLUG[slug] ?? slug}.name`,
 };
 
 /**

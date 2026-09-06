@@ -49,7 +49,7 @@ Every namespace, with the surfaces it covers. **Pass** means read and nothing to
 | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | -------------------- | ---------------------- | ------------------- | --------- | -------- |
 | CBT module — Think/Act/Be, thought records, distortions, beliefs, **exposure**, worry, anger, procrastination, activities, recovery, grounding, breathing | `cbt`                       | **Fixed**            | **Fixed** + **Raised** | Pass                | **Fixed** | Pass     |
 | ACT module                                                                                                                                                | `act`                       | Accepted             | Pass                   | Pass                | Pass      | Pass     |
-| DBT overview                                                                                                                                              | `modules`                   | **Fixed**            | Pass                   | Pass                | Pass      | Pass     |
+| DBT overview (now the module home)                                                                                                                        | `dbt`                       | **Fixed**            | Pass                   | Pass                | Pass      | Pass     |
 | Meditation module                                                                                                                                         | `meditation`                | Accepted             | Pass                   | Pass                | Pass      | Pass     |
 | Mood tracker                                                                                                                                              | `mood`                      | Pass                 | Pass                   | Pass                | Pass      | Pass     |
 | Journal                                                                                                                                                   | `journal`                   | **Fixed**            | **Fixed**              | Pass                | Pass      | Pass     |
@@ -104,6 +104,8 @@ Only the tool's own UI said hierarchy. So this unified on the word the app alrea
 
 It is accurate and it is honestly disclaimed. What changed is who reads it: a table pairing a named diagnosis with its defining feature is a self-identification prompt, and the audience now starts at thirteen. Removing or relocating it is a content-structure decision, so per the ticket — _"a flag is a finding to raise rather than a change to make quietly"_ — it is an issue with options, not an edit. Nothing in this review depends on its outcome.
 
+✅ **Decided and shipped 2026-09-06 — option 3, keep it in onboarding and soften the framing.** The table stays where it is; three things changed. **`GAD` is spelled out** — it appeared exactly once in each locale, in that cell, so for the reader it introduces it was an unfamiliar acronym in the first column of the first table they meet. **The intro no longer says _"clinically"_**; it now reads _"The table below shows what CBT is most often used for, and what it focuses on in each"_, because the old wording framed the module as clinical treatment on the very screen introducing it. **The _"Core Feature"_ column is gone** — pairing a named condition with its defining feature is what did the self-identification work; `Condition` + `CBT Focus` keeps the useful half. ⚠️ The _"not a diagnosis, an assessment, or a treatment plan"_ clause is **untouched and verbatim** in both locales: it was doing real work and none of the above weakens it. `src/components/app/cbt-onboarding-modal.test.tsx` pins all three changes, each against copy that still renders rather than by bare absence.
+
 ## Findings accepted, with reasoning
 
 An accepted item is one the review looked at and deliberately kept. Recorded so the next reviewer does not re-derive the argument, and so a reversal is a decision rather than an oversight.
@@ -128,7 +130,7 @@ An accepted item is one the review looked at and deliberately kept. Recorded so 
 The IARC questionnaire re-run asks about sensitive content, and the screen's answer is unusually clean, which is worth stating rather than leaving to be rediscovered:
 
 - Across all 4,140 strings, **the only references to self-harm or suicide are on the crisis page**, in the sentence quoted above, framed as an instruction to get help.
-- **No violence, sexual content, gambling, or drug references anywhere.** The only substance reference in the app is the sleep-diary example noted above ("caffeine, alcohol, stress, late screens") — a neutral list of sleep disruptors, no depiction and no encouragement.
+- **No violence, sexual content, gambling, or drug references anywhere.** The only substance reference in the app is the sleep-diary example noted above ("caffeine, alcohol, stress, late screens") — a neutral list of sleep disruptors, no depiction and no encouragement. ⚠️ **A second one shipped on 2026-09-05** ([#1980](https://github.com/Selftend/selftend/issues/1980)): the DBT emotion-regulation learn page carries one referral line — _stopping alcohol or a drug can be unsafe to do alone; a doctor is the right door_ — a safety instruction naming no substance use of the reader's own. **The questionnaire answer now names two references, not one**, and the IARC re-run is owed at the next store submission.
 - Nothing user-generated is shared, so there is no user-to-user content surface to rate.
 
 This is consistent with the live Everyone / PEGI 3 / USK 0 / IARC 3+ ratings recorded in `store/play-listing.md`, and supports the expectation in #1771 that the questionnaire re-run is a confirmation rather than a change. **Answer the live questions truthfully regardless of this note** — it records what the copy contains, not what the form asks.
@@ -154,6 +156,98 @@ Triggered by the PR-template row: a record-over-time surface is engagement-adjac
 **Row 4 is the one worth stating.** The card reports the record and interprets none of it — no count, no run length, no ratio, no comparison — so there is no reading for a thirteen-year-old to get wrong, and nothing a clinician would recognise as a protocol measure. The one number the surface can render is a year on its axis, which is a date and not a figure.
 
 **Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** The strings also run clean against `restraint-copy`, `practice-copy`, `positioning-copy` and `child-safety-copy` in both locales.
+
+### The DBT module, first pass — the namespace, the home and the learn pages (2026-09-05, [#1980](https://github.com/Selftend/selftend/issues/1980))
+
+A new module is the PR-template trigger, and the spec (`docs/modules/dbt-mckay-skills-workbook.md` §9) was written inside five standing rules — self-harm and suicide named on the crisis page only, nothing branching on the person's state, no stored health fact beyond the record, _crisis_ kept to the crisis page's meaning, no medical question asked — so the run is over the strings, not the shape.
+
+**Scope of this pass.** The whole `dbt` namespace as it stands — the module home, the four skill groups, the nine tool names, the learn primer and the four group learn pages — plus the two `navigation` keys the module rewrote (`sidebar.dbtA11y`, `today.modules.dbtSub`). **264 strings per locale, `en` and `bg`.** The module's remaining copy does not exist yet: the tool screens, the reminder strings (`copy.dbt.*`) and the `help` entries arrive with the slices that build them, and each is owed its own row here.
+
+**Pass 1, the mechanical screen.** Zero candidates on four of the five shapes: no self-harm or suicide vocabulary (S1 holds — the substitute list, the reward-and-cost worksheets, the cold-pressor relief framing and the "threatening to hurt yourself" item are all cut, not softened); no diagnostic label (_eating feels out of control_ carries row 7.7 without naming a condition); no crisis vocabulary (S4 — the learn pages say _a hard moment_, _when feelings run high_, _distress_, and the live overview's "Getting through a crisis without making it worse" was reworded on the way in); and none of the module's own banned frames (_manipulat-_, _toxic_, _dysregulation_, _impulse control_, _assertiveness training_, _hierarchy_, _your therapist_, the DBT® mark). **Seventeen medical-vocabulary candidates**, all expected: the four technique cautions and the four professional referrals.
+
+**Pass 2, the close read of those seventeen.** Every one tells; not one asks. No caution is a question, a gate, a checkbox or a stored acknowledgement, and the app nowhere asks whether a person has a heart or blood-pressure condition, is pregnant, or has checked with a doctor (S5). The referral lines name a door and no diagnosis: eating, substances, sleep, illness. The abuse-boundary line appears exactly twice, once on acceptance and once on interpersonal effectiveness, in the reworded form — _you do not have to fix a relationship in which you are being hurt_ — never as advice to leave.
+
+**The third screen, absolute effect verbs.** Two hits, both the shape's inverse: _"None of them fixes the problem"_ refuses a claim, and _"the next script fixes it"_ is about a sentence you will write, not a health outcome. The physical skills describe rather than promise throughout — _can slow a racing heart_, _can do the same_, _works for some people_.
+
+**Two findings, both fixed before landing.** The first draft of the emotion-regulation page carried **two physiological target numbers** — a sleep figure and a movement dose — which §9's claim 6 bans outright, and the sleep one was additionally wrong for this audience: the adult range is not the teen range, and a number to fall short of turns guidance into failure. Both were rewritten to describe rather than prescribe, keeping the talk test. The second was the word **_reward_** applied to something the person did; it was there only to be denied (_"not a reward for coping"_), which still puts the label on the page. Rewritten to _not something you earn by coping_.
+
+**Reading level.** Twelve sentences of 503 reach 30 words in `en` (2.4%) and thirteen of 504 in `bg`, against 0% for `cbt` and 0.3% for `act` — higher than its siblings, and the reason is structural rather than careless: these are the module's reading pages, and they carry the paraphrased content of twelve chapters that no tool absorbs. Every one of them is plain-clause; **zero `en` sentences carry three or more words of twelve letters or more**, and one `bg` sentence does (the PLEASE expansion, where the acronym's five items are spelled out beside it). Accepted with that reasoning, and worth revisiting if a group page grows again.
+
+**Acronyms.** STOP, PLEASE, DEAR MAN and FAST appear once each, on a learn page only, beside their expansion, never as the thing the reader is asked to act on (row 10). TIPP, ACCEPTS, IMPROVE and GIVE appear nowhere, and neither do the workbook's own mnemonics.
+
+**Result: two findings, both fixed; nothing raised; one item accepted with reasoning (sentence length).** The strings also run clean against `positioning-copy`, `child-safety-copy`, `restraint-copy` and `practice-copy` in both locales, and the learn page carries the app's second substance reference as decided (see _For the Play pass_ above).
+
+### The DBT module, second pass — the coping plan and Pause and choose (2026-09-05, [#1980](https://github.com/Selftend/selftend/issues/1980))
+
+**Scope.** The first two tool surfaces and the menus behind them: the coping plan's card, its builder and its **58 app-written picks**, plus the four steps of Pause and choose. Roughly 150 strings per locale, `en` and `bg`, on top of the pass above.
+
+**The picks are the reason this pass matters.** They are a menu a person in distress reads and acts on, and the workbook's own lists are _not_ what shipped: its hundred-item catalogue is written for an adult in crisis, and six of its entries are cut by ruling — the self-injury substitutes, the crisis-line item, the twelve-step chore, the massage aside, the higher-power menu, and anything whose point is _relief like_ something. Every line here is new copy, written for a thirteen-year-old, and every one is a plain thing to do in five words or so.
+
+**Both passes.** The new strings raise exactly **two** candidates. One is `pause.steps.danger.body` — _"If anyone is in danger right now, that comes first - the crisis guidance is below."_ — which uses _crisis_ in the crisis page's own sense, pointing at the app's guidance rather than describing the person's distress, and is the module's single ruled hand-off (S4). The other is `picks.aSongIKnow`, which matched the medical screen on the words _by heart_. Nothing else: no self-harm or suicide vocabulary, no diagnostic label, no banned frame, no physiological target number, no management verb over an emotion, no return prescription.
+
+**Two rules the surfaces carry rather than the copy.** Pause and choose **asks the person nothing** — step one names danger in a sentence identical for everyone, on every run, and no answer changes any later step (S2); and the coping-plan card **records nothing** — no "I used this", no last-used date, no count on a surface someone opens in a hard moment. Both are asserted in tests rather than left to review, because both are the kind of thing a later improvement adds without noticing the cost.
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** Clean against `positioning-copy`, `child-safety-copy`, `restraint-copy` and `practice-copy` in both locales.
+
+### The DBT module, third pass — the muscle-relaxation session (2026-09-05, [#1980](https://github.com/Selftend/selftend/issues/1980))
+
+**Scope.** The module's one timed session: its intro, its two-line caution, seventeen muscle-group names across both variants, the run's instructions and the done screen. Roughly 40 strings per locale.
+
+**Both passes.** No new candidates on any of the five shapes beyond the four already recorded. The caution is the block this pass exists for, and it is the wording #1985 ruled, unchanged: _"Tense gently, never to the point of pain, and let go quickly. Skip any area that hurts - back, neck, joints."_ and _"If you are pregnant or faint easily, keep it light or leave it."_ It **tells** — no question mark, no gate, no acknowledgement, nothing stored, and the app nowhere asks whether either line applies (S5). A test asserts all of that rather than leaving it to a reader.
+
+**Row 4, and the one thing worth stating.** The done screen states the record — _"Muscle relaxation, 12 minutes"_ — and stops. No rating, no _how do you feel now_, nothing to fill in, so there is no reading of themselves for a thirteen-year-old to get wrong. And **Stop saves nothing and says so before it is pressed**, which matters more here than anywhere else in the module: this is the surface a person is most likely to leave halfway, and leaving must never be a gamble about what gets written down.
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.**
+
+### The DBT module, fourth pass — the emotion record (2026-09-05, [#1980](https://github.com/Selftend/selftend/issues/1980))
+
+**Scope.** The emotion record's form, list and detail: six part names, six hints, the cap line, the two validation messages and the delete confirmation. Roughly 40 strings per locale.
+
+**Both passes.** No new candidates on any of the five shapes. The block worth reading closely is the hints, because they are where the workbook's clinical framing would have leaked in, and it did not: _Afterwards_ carries the reward-and-cost question as **hint copy** — _"what it gave you in the moment, and what it cost after"_ — rather than as a field with a label, which is how 7.13's self-destructive-behaviour worksheet is folded in without naming a behaviour or storing a label (S3). _Urges_ says plainly that an urge not acted on counts and is worth writing down, which is the book's own point kept and its self-harm vignette dropped (S1).
+
+**Two rules the surface carries rather than the copy.** There is **no rating of any kind** — no intensity, no before-and-after, nothing that yields a number, because nothing in the app would read one and a number nobody reads is a score to be compared against; a test asserts the absence across the whole namespace, not just the screen. And the **cap line is a statement** — _If right now feels too heavy, this can wait_ — sitting under the crisis bar with no gate, no question and no branch behind it (S2).
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.**
+
+### The DBT module, fifth pass — the wise mind check-in and the judgement record (2026-09-05, [#1980](https://github.com/Selftend/selftend/issues/1980))
+
+**Scope.** Both mindfulness tools: the check-in's five beats and three answer labels, the judgement record's three fields, its valence labels and its day headings. Roughly 60 strings per locale.
+
+**Both passes.** No new candidates on any of the five shapes. Two blocks were read closely because they are where a claim would have crept in.
+
+**Wise mind.** The triad is described as a way of deciding, never as a faculty that knows things: the copy contains no _gut_, no _intuition_, no _enteric brain_ and no _the right answer_ — all four are asserted absent, because the book leans on the first three and the fourth is what a reader would supply for themselves. _Wise mind_ is named once as Marsha Linehan's term, on the intro beat, which is the acronym rule applied to a named concept.
+
+**The judgement record.** The mark is _which way it leans_, not a verdict: a glowing judgement is recorded on the same record as a harsh one, and the hint says why. There is **no `where` field** — the book keeps one to spot patterns across places, and this module builds no pattern view, so a location column would be a health fact stored with nothing to read it (S3, decision 7). And there are **no counts** on either history: catching a judgement is the skill, and counting turns noticing into scoring, so a quieter week would read as a worse one.
+
+**One thing the surface carries rather than the copy.** The check-in has **no outcome field and no later prompt**. The book logs whether the decision turned out well; a record with a slot waiting to be filled is a surface engineered to be reopened (ADR-0004), and its absence is asserted in both the screen and the namespace.
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** The module's English also carries no instance of the American _judgment_ — checked over the whole namespace, since the two spellings render side by side with the CBT and ACT names.
+
+### The DBT module, sixth pass — the opposite-action plan and the script (2026-09-05, [#1980](https://github.com/Selftend/selftend/issues/1980))
+
+**Scope.** The module's last two tools: the plan's fields and its **eight per-emotion guidance lines**, and the script's three steps, four line labels, five push-back lines and its card. Roughly 90 strings per locale.
+
+**The guidance lines are the block this pass exists for.** They are the book's 8.3 table, and they are the closest the module comes to telling a person what to do about a feeling. Every one is a **hint, not a rule**: the word _should_ appears in none of them, asserted by a test over all four families. They describe what a feeling usually pulls towards and what the opposite looks like, and the app never decides whether a particular feeling deserves changing — opening the tool is the person making that call, and no screen asks (S2). A pleasant feeling or a word the app has never seen resolves to **no line at all**, because guessing at guidance for an unknown feeling would be inventing advice about it.
+
+**The script's own claims.** _Ask for what you want_ is framed as **ask, and keep the relationship** throughout: the copy contains no _win_, no _get your way_, no _make them_, no _threat_, no _toxic_ and no _rights_ as a claim. The self-care line is described as _something you do for you, not something you do to them_, and is written **last** so it cannot leak into the ask and turn a request into a threat. The _I feel_ hint carries 5.10's rule verbatim — _"I feel hurt", never "I feel that you…"_ — which is the one place the module teaches the difference between a feeling and a judgement wearing a feeling's clothes.
+
+**Two rules the surfaces carry rather than the copy.** There is **no `who` field** and nothing structured about the other person: a named person's behaviour stored inside a health record is data about someone who never consented to it, and no shipped record has one. And **nothing asks** — an open plan is a plain row with no age, no _overdue_, no _3 waiting_ and no count of the closed ones; the difficulty rating orders the script list and nothing else reads it.
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** With this pass the module's first-release copy is fully reviewed apart from the programme, which arrives next.
+
+### The DBT module, seventh pass — the programme and its one reminder (2026-09-05, [#1980](https://github.com/Selftend/selftend/issues/1980))
+
+**Scope.** The programme's invitation, card, phases, twelve task labels, graduation lines and management copy; the module's `help` entry; and the **one reminder string**. Roughly 60 strings per locale plus three notification strings.
+
+**The reminder is the block this pass exists for**, because it is the only DBT copy that can reach a person who did not open the app. It is **one static string**, off by default, time-of-day only: _"DBT practice — A few minutes with one skill: relax your body, or write one record."_ Checked against §4's list of what it may never say, and it says none of them: no _crisis_ and no _emergency_; no self-harm or suicide word; **no missed-day, come-back or loss line** — nothing on any channel is triggered by non-use, and this copy does not imply it was; nothing about the person's state; no count; nothing that varies by date, phase or visit; and no DBT® mark. It reminds toward the module home and names one thing to do.
+
+**The programme copy.** Two rules read closely. The **graduation is CBT's filtered shape**: only non-zero lines, so it never reads a row of noughts back at someone, and with every count zero it says _"You reached the end at your own pace. Your tools are here whenever you need them."_ rather than a prescription to keep going. And the **daily practice is named as a practice, not a debt**: a phase advances on its milestones, a day without the daily task changes nothing on the card, and no string anywhere names a missed one. The word _daily_ appears once, in the shipped _"No daily task this phase"_, which says a task is absent rather than owed.
+
+**Leaving.** _Leave the DBT programme?_ answers with _"Your saved records stay. You can start the programme again any time."_ — the guarantee that matters, said before the choice rather than after it.
+
+**Result: nothing to fix, nothing to raise, nothing accepted-with-reasoning.** With this pass **the DBT module's first-release copy is fully reviewed** in both locales.
+
+**One footnote, added when the module joined routines.** Six DBT-named strings do not live in the `dbt` namespace at all - the routine step labels _Muscle relaxation_, _Wise mind check-in_, _Judgement record_, _Emotion record_, _Opposite action_ and _Script_, plus the picker's _DBT_ group header, which sit in `routines`. They were screened with the same shapes and came back clean in both locales: no hit on any of the nine, and the longest is three words. They are labels naming a record, not claims about it, so they raise nothing the passes above did not already settle - but they are recorded here so "fully reviewed" is not read as "everything DBT says lives in one file".
 
 ## Re-running this
 

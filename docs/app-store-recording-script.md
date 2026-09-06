@@ -53,7 +53,7 @@ Force-quit the app first, so the recording begins at a genuine cold launch.
 
 Open **Selftend**. You land on a screen with the app icon, **"Selftend"**, the line _"Calm, guided self-help tools for personal reflection."_, and a sign-in form.
 
-**Scroll down on this screen without tapping anything else.** Below the form is a short safety paragraph — _"Selftend is for guided self-help when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders."_ — and a row of links: **Open crisis guidance**, Terms, Privacy, Cookies.
+**Scroll down on this screen without tapping anything else.** Below the form is a short safety paragraph — _"Selftend is a set of mental health tools for when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders."_ — and a row of links: **Open crisis guidance**, Terms, Privacy, Cookies.
 
 **Let that sit on screen for ~3 seconds.** This is the shot proving crisis guidance is reachable **before signing in**, which is one of the written answers.
 

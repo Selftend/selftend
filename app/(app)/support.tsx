@@ -9,6 +9,7 @@ import { Input } from "@/src/components/react-native-reusables/input";
 import { Label } from "@/src/components/react-native-reusables/label";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Textarea } from "@/src/components/react-native-reusables/textarea";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { appEnv } from "@/src/lib/env";
 import { politeLiveRegionProps } from "@/src/lib/accessibility";
 import { openExternalUrl } from "@/src/lib/linking";
@@ -156,13 +157,13 @@ export default function SupportScreen() {
 
   // A registered user's reply address comes from their account on the server;
   // only a guest, who has no email anywhere, is offered one - optional,
-  // guest-only, and used for nothing but replying (#1447). The email check
-  // matters: a just-converted guest can still carry a stale is_anonymous
-  // claim until token refresh (#1443), and offering them the field would take
-  // an address the server then silently ignores in favour of their account
-  // email. That same person sees the address line instead: the server will
+  // guest-only, and used for nothing but replying (#1447). This surface
+  // found the stale-flag window first, by ANDing the flag with `!user.email`;
+  // #1896 moved that argument into `isGuestAccount`, the same predicate spelled
+  // once. Offering the field to a just-converted guest would take an address the
+  // server then silently ignores in favour of their account email. That same person sees the address line instead: the server will
   // use it, so it is the truthful thing to say.
-  const isGuest = user?.is_anonymous === true && !user.email;
+  const isGuest = isGuestAccount(user);
   const accountEmail = isGuest ? "" : (user?.email ?? "");
 
   const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>(DEFAULT_CATEGORY);

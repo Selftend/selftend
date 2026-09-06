@@ -198,9 +198,12 @@ opacity configuration. The app builds a pre-localized snapshot from the same Rea
 Home reads, then the native widget layer renders the selected card with
 `react-native-android-widget` primitives.
 
-The launcher's card set tracks the **catalogue**, not how Home happens to draw an entry. Home's
-tool entries render as rows rather than cards, so the launcher replica is the only card form
-some IDs still have; `card-registry.test.tsx` pins the two sets equal so neither can drift.
+The launcher's card set tracks the **catalogue**, not how Home happens to draw an entry. Home no
+longer draws the catalogue at all (#1956): it renders its own eleven-item list — the eight tool
+hubs and the three modules, with the person's starred ones repeated in a Favourites section on
+top — through one card, read from the `favorites` table rather than `widget_preferences`. So for
+most catalogue IDs the launcher replica is the only in-app rendering left; `card-registry.test.tsx`
+pins the launcher's set equal to the catalogue so neither can drift.
 
 The CBT and ACT programme replicas preserve the three states their Home cards have: review
 before enrollment, current programme goals with deep links while enrolled, and completion

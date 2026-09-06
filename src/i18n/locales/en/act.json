@@ -485,7 +485,7 @@
     "showPromptLabel": "Show the programme invitation",
     "replay": "Replay the ACT programme",
     "graduationTitle": "You finished the ACT programme",
-    "graduationBody": "You built skills to be present, open up, and do what matters. Keep using them.",
+    "graduationBody": "You built skills to be present, open up, and do what matters.",
     "graduationBodyEmpty": "You reached the end at your own pace. Your tools are here whenever you need them.",
     "graduationDismiss": "Done",
     "statChoicePoints_one": "{{count}} choice point mapped",

@@ -1,11 +1,20 @@
 import { create } from "zustand";
 
-interface ThoughtRecordSeedState {
-  /** Emotion ids the check-in handoff wants the next new thought record to open with. */
+export interface ThoughtRecordSeed {
+  /** Emotion ids the handoff wants the next new thought record to open with. */
   emotions: string[];
-  seedThoughtRecord: (emotions: string[]) => void;
+  /**
+   * What happened, for the record's Situation. Empty from the check-in, which
+   * has no such field; carried by the DBT emotion record, whose first part is
+   * exactly that (#1980, spec §3.3.1).
+   */
+  situation: string;
+}
+
+interface ThoughtRecordSeedState extends ThoughtRecordSeed {
+  seedThoughtRecord: (emotions: string[], situation?: string) => void;
   /** Read the seed and clear it in one step, so it can never be applied twice. */
-  consumeThoughtRecordSeed: () => string[];
+  consumeThoughtRecordSeed: () => ThoughtRecordSeed;
 }
 
 /**
@@ -26,19 +35,20 @@ interface ThoughtRecordSeedState {
  */
 export const useThoughtRecordSeedStore = create<ThoughtRecordSeedState>((set, get) => ({
   emotions: [],
-  seedThoughtRecord: (emotions) => set({ emotions }),
+  situation: "",
+  seedThoughtRecord: (emotions, situation = "") => set({ emotions, situation }),
   consumeThoughtRecordSeed: () => {
-    const { emotions } = get();
-    if (emotions.length > 0) set({ emotions: [] });
-    return emotions;
+    const { emotions, situation } = get();
+    if (emotions.length > 0 || situation.length > 0) set({ emotions: [], situation: "" });
+    return { emotions, situation };
   },
 }));
 
 /** Plain-function entry point, for call sites that are event handlers rather than hooks. */
-export function seedThoughtRecord(emotions: string[]) {
-  useThoughtRecordSeedStore.getState().seedThoughtRecord(emotions);
+export function seedThoughtRecord(emotions: string[], situation = "") {
+  useThoughtRecordSeedStore.getState().seedThoughtRecord(emotions, situation);
 }
 
-export function consumeThoughtRecordSeed(): string[] {
+export function consumeThoughtRecordSeed(): ThoughtRecordSeed {
   return useThoughtRecordSeedStore.getState().consumeThoughtRecordSeed();
 }

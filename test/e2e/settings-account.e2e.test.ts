@@ -14,16 +14,22 @@
  */
 import { expect, NORMALIZED_GATE_PREFS, test } from "./fixtures";
 
-import { createServiceClient, dismissPostSignInModals, expectSuccessToast } from "./helpers";
+import {
+  createServiceClient,
+  dismissPostSignInModals,
+  expectSuccessToast,
+  seedFavoritesForUser,
+} from "./helpers";
 
 type PreferenceRow = Record<string, unknown>;
 type ProfileRow = Record<string, unknown>;
+type FavoriteRow = { kind: "tool" | "module"; key: string };
 
 let USER_ID: string;
 
 let originalPreferences: PreferenceRow | null = null;
 let originalProfile: ProfileRow | null = null;
-let originalWidgets: PreferenceRow[] | null = null;
+let originalFavorites: FavoriteRow[] | null = null;
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -47,15 +53,16 @@ async function getProfileRow(): Promise<ProfileRow> {
   return data as ProfileRow;
 }
 
-async function getWidgetRows(): Promise<PreferenceRow[]> {
+async function getFavoriteRows(): Promise<FavoriteRow[]> {
   const admin = createServiceClient();
   const { data, error } = await admin
-    .from("widget_preferences")
-    .select("*")
+    .from("favorites")
+    .select("kind, key")
     .eq("user_id", USER_ID)
-    .order("position");
-  if (error) throw new Error(`Could not read widget_preferences: ${error.message}`);
-  return (data ?? []) as PreferenceRow[];
+    .order("kind")
+    .order("key");
+  if (error) throw new Error(`Could not read favorites: ${error.message}`);
+  return (data ?? []) as FavoriteRow[];
 }
 
 async function restorePreferences() {
@@ -79,19 +86,9 @@ async function restoreProfile() {
   if (error) throw new Error(`Could not restore profiles: ${error.message}`);
 }
 
-async function restoreWidgets() {
-  if (!originalWidgets) return;
-  const admin = createServiceClient();
-  const { error: deleteError } = await admin
-    .from("widget_preferences")
-    .delete()
-    .eq("user_id", USER_ID);
-  if (deleteError) throw new Error(`Could not clear widget_preferences: ${deleteError.message}`);
-  if (originalWidgets.length === 0) return;
-  const { error: insertError } = await admin.from("widget_preferences").insert(originalWidgets);
-  if (insertError) {
-    throw new Error(`Could not restore widget_preferences: ${insertError.message}`);
-  }
+async function restoreFavorites() {
+  if (!originalFavorites) return;
+  await seedFavoritesForUser(USER_ID, originalFavorites);
 }
 
 // ---------------------------------------------------------------------------
@@ -269,34 +266,29 @@ test.describe("settings - onboarding actions", () => {
     USER_ID = user.id;
     if (!originalPreferences) originalPreferences = await getPreferenceRow();
     if (!originalProfile) originalProfile = await getProfileRow();
-    originalWidgets = await getWidgetRows();
+    originalFavorites = await getFavoriteRows();
   });
 
   test.afterEach(async () => {
     await restorePreferences();
     await restoreProfile();
-    await restoreWidgets();
+    await restoreFavorites();
   });
 
-  test("replays the introduction, re-arms tips separately, and preserves Home widgets", async ({
+  test("replays the introduction, re-arms tips separately, and preserves Home favourites", async ({
     page,
   }) => {
     const admin = createServiceClient();
-    const { error: deleteError } = await admin
-      .from("widget_preferences")
-      .delete()
-      .eq("user_id", USER_ID);
-    if (deleteError)
-      throw new Error(`Could not prepare widget preferences: ${deleteError.message}`);
-    const { error: insertError } = await admin.from("widget_preferences").insert([
-      { user_id: USER_ID, widget_id: "mood-checkin", position: 0 },
-      { user_id: USER_ID, widget_id: "self-care", position: 1 },
-    ]);
-    if (insertError)
-      throw new Error(`Could not prepare widget preferences: ${insertError.message}`);
+    // What Home renders under Favourites since #1956 - one tool and one module, so the
+    // replay is proven not to touch either kind.
+    const seeded: FavoriteRow[] = [
+      { kind: "tool", key: "mood" },
+      { kind: "module", key: "cbt" },
+    ];
+    await seedFavoritesForUser(USER_ID, seeded);
     const { error: preferenceError } = await admin
       .from("user_preferences")
-      .update({ shown_button_tours: ["home:edit"] })
+      .update({ shown_button_tours: ["home:navigation"] })
       .eq("user_id", USER_ID);
     if (preferenceError)
       throw new Error(`Could not prepare onboarding preferences: ${preferenceError.message}`);
@@ -324,7 +316,7 @@ test.describe("settings - onboarding actions", () => {
       .eq("user_id", USER_ID)
       .single();
     expect(replayed?.app_onboarding_completed).toBe(false);
-    expect(replayed?.shown_button_tours).toEqual(["home:edit"]);
+    expect(replayed?.shown_button_tours).toEqual(["home:navigation"]);
 
     await page.getByRole("button", { name: "Show tips again", exact: true }).click();
     await expectSuccessToast(page, /button tips.*can appear again/i, { timeout: 8_000 });
@@ -336,23 +328,25 @@ test.describe("settings - onboarding actions", () => {
     expect(tips?.shown_button_tours ?? []).toEqual([]);
     expect(tips?.start_here_dismissed_at).toBeNull();
 
-    expect(
-      (await getWidgetRows()).map(({ widget_id, position }) => ({ widget_id, position })),
-    ).toEqual([
-      { widget_id: "mood-checkin", position: 0 },
-      { widget_id: "self-care", position: 1 },
+    expect(await getFavoriteRows()).toEqual([
+      { kind: "module", key: "cbt" },
+      { kind: "tool", key: "mood" },
     ]);
 
-    // Returning Home replays only the welcome introduction. Completing it must not enter
-    // recommendation questions or replace the current Home layout.
+    // Returning Home replays the welcome introduction - the whole wizard since #1958.
+    // Completing it must not replace the current Favourites.
     await page.goto("/");
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Finish", exact: true }).click();
     await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden();
-    await expect(page.getByText("What brings you here?", { exact: true })).toBeHidden();
-    const home = page.getByTestId("home-layout");
-    await expect(home.getByText("Check-in", { exact: true })).toBeVisible();
-    await expect(home.getByText("Self-care log", { exact: true })).toBeVisible();
+    // Scoped to the SECTION, not to `home-layout`: a favourited item renders its card
+    // twice on Home (Favourites and catalogue), and both copies are inside `home-layout`,
+    // so that scope is precisely the strict-mode violation (#1956).
+    const favourites = page.getByTestId("home-favourites");
+    await expect(favourites.getByText("Check-in", { exact: true })).toBeVisible();
+    await expect(
+      favourites.getByText("Cognitive behavioural therapy", { exact: true }),
+    ).toBeVisible();
 
     const { data: completed } = await admin
       .from("user_preferences")
@@ -360,11 +354,9 @@ test.describe("settings - onboarding actions", () => {
       .eq("user_id", USER_ID)
       .single();
     expect(completed?.app_onboarding_completed).toBe(true);
-    expect(
-      (await getWidgetRows()).map(({ widget_id, position }) => ({ widget_id, position })),
-    ).toEqual([
-      { widget_id: "mood-checkin", position: 0 },
-      { widget_id: "self-care", position: 1 },
+    expect(await getFavoriteRows()).toEqual([
+      { kind: "module", key: "cbt" },
+      { kind: "tool", key: "mood" },
     ]);
   });
 });

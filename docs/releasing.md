@@ -35,6 +35,24 @@ This doc defines the two-branch release flow: how everyday changes land, how a r
 
 **Never squash the promotion PR.** Squashing collapses the per-PR Conventional Commits into one commit and loses the version/CHANGELOG signal. release-please traverses `main`'s full commit graph, so the squash commits carried in by the merge commit are parsed individually; the merge commit's own subject does not need to be conventional. To keep the wrong button unavailable, the repo allows only the two merge methods that are actually used: squash (dev PRs, release PR) and merge commit (promotion and hotfix PRs) — rebase merge is disabled.
 
+## Posting the r/Selftend thread (by hand)
+
+Every published release also gets a **draft r/Selftend thread**, filed as a GitHub issue by the [Release thread](../.github/workflows/release-thread.yml) workflow (`reddit-draft` + `ready-for-human`, titled `r/Selftend thread for <tag>`). CI drafts; a person posts. Nothing in the pipeline touches the Reddit API, and the thread's text is the release's own changelog, filtered and cleaned - the rules are in [scripts/release-thread/README.md](../scripts/release-thread/README.md), decided on [#1873](https://github.com/Selftend/selftend/issues/1873).
+
+The routine, per open `reddit-draft` issue:
+
+1. **Open the prefilled composer** from the link at the top of the issue. If the composer arrives empty, paste the fenced title and body from the issue instead.
+2. **Read every line, then delete, swap or rewrite in the composer.** The highlights are commit messages: capitalised, they read as instructions ("Match arbitrary opacity in the wash gate") until a person rewrites them, and the lead is structurally the least newsworthy line because the picker walks scopes alphabetically - the issue numbers the picks so swapping the lead is one edit. The frame sentence and the supporting line are pinned to `docs/positioning.md` by a merge-gated test; the picks are not gated by anything, so the reader in front of them is the only gate they have. The spares under the thread are lines CI would not pick on its own; promote one only after reading it.
+3. **Select the "App update" flair.** No link parameter sets it.
+4. **Submit.**
+5. **Close the issue.**
+
+What the issue's state means: **open = not yet posted**, **closed = done**. The open count is the backlog. **Closing an issue unposted is a first-class outcome**, not a failure: the drafter files roughly 150 a year ([#1880](https://github.com/Selftend/selftend/issues/1880)'s measurement over the release cadence) and a meaningful share of them - patch releases with one fix, promotions whose eight picks are all plumbing - are rightly closed without a post. A closed issue is never re-drafted, so never reopen one for a thread that is live on Reddit; a re-run of the workflow against a closed tag does nothing, by design.
+
+**Release threads have no after-life** ([#1942](https://github.com/Selftend/selftend/issues/1942)): never pin or highlight one. With one author and one post type every post scores the same, so the feed's first row is already the newest thread; a highlight would only duplicate that row while being the one thing that can fall behind it.
+
+**A red run of the Release thread workflow means the drafter broke, not the release.** It is a separate workflow with no gate on any deploy job, so it cannot fail a deploy and a failed deploy cannot silence it. A green run with "nothing picked, no post for `<tag>`" on its summary is a skip: the release had nothing user-visible to post. Re-run it by hand from the Actions tab with the tag as input; against an open issue the body is replaced in place.
+
 ## How Android reaches users
 
 The pipeline releases the AAB to the Play **production** track as `completed` — every user, as soon as Google's review clears.

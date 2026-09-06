@@ -17,10 +17,12 @@
  * decisions are #1876's, and the numbers in the comments were measured there and
  * on #1880 over the 26-release corpus committed at `test/fixtures/github-releases.json`.
  *
- * ☠️ NOTHING IS AUTHORED HERE, EVER (#1876 decisions 1 and 2). The text of every
- * entry passes through untouched — scope prefix, issue links and SHA included.
- * The cleaner (#1949) strips them; the renderer (#1950) lays them out; the
- * owner curates in Reddit's composer. This file only sorts entries into tiers.
+ * ☠️ NOTHING IS AUTHORED HERE, EVER (#1876 decisions 1 and 2). `parseChangelog`
+ * returns the text of every entry untouched — scope prefix, issue links and SHA
+ * included — and `pick` only sorts entries into tiers. Between the two, `draft`
+ * runs the cleaner (`cleaner.mjs`, #1949), which strips the markup and decodes
+ * what the API encoded so every picked line is postable as pasted; the renderer
+ * (#1950) lays them out; the owner curates in Reddit's composer.
  *
  * The three tiers (#1876 decision 3):
  *   - DENIED  never reaches the output. A scope that is never user-visible:
@@ -61,14 +63,17 @@
  * (#1951) keys on. Exit code stays 0 — a green run with nothing picked is a
  * SKIP; only a red run means the drafter broke (#1878 decision 6).
  *
- * The seam for #1949: an entry that arrives with a `reason` already set is
- * honoured as a spare with that reason and never competes for a slot, so a
- * forced spare frees its slot instead of leaving a hole.
+ * The seam the cleaner uses: an entry that arrives at `pick` with a `reason`
+ * already set is honoured as a spare with that reason and never competes for a
+ * slot, so a forced spare (a non-British spelling, an underscore — #1949 step 8)
+ * frees its slot instead of leaving a hole.
  */
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+
+import { clean, SCOPE_PREFIX } from "./cleaner.mjs";
 
 /**
  * @typedef {"feat" | "fix" | "perf"} Kind
@@ -78,14 +83,17 @@ import { pathToFileURL } from "node:url";
  * @property {string | null} scope   the conventional-commit scope, or null when unscoped
  * @property {Kind | null} kind   the section the entry sits under, or null for an ineligible section
  * @property {boolean} denied   true when the scope is on {@link DENIED_SCOPES}
- * @property {string} [reason]   set by a later step to force the entry into spares
+ * @property {Reason} [reason]   set by the cleaner (#1949) to force the entry into spares
  *
  * @typedef {object} Tiered
  * @property {string} text
  * @property {string | null} scope
  * @property {Kind} kind
  *
- * @typedef {Tiered & { reason: string }} Spare
+ * @typedef {"unscoped" | "overflow"} PickerReason   the picker's own reasons (#1876 decision 3)
+ * @typedef {PickerReason | import("./cleaner.mjs").Hazard} Reason
+ *
+ * @typedef {Tiered & { reason: Reason }} Spare
  *
  * @typedef {object} Draft
  * @property {string} tag
@@ -120,7 +128,7 @@ const SECTION_KINDS = new Map([
 ]);
 
 /** Repo-relative path of the frozen corpus, resolved from the working directory. */
-const CORPUS_PATH = "test/fixtures/github-releases.json";
+export const CORPUS_PATH = "test/fixtures/github-releases.json";
 
 /**
  * Exact match against the denylist. A compound scope (`ci,deps`, `nav+design`)
@@ -159,7 +167,7 @@ export function parseChangelog(body) {
     const bullet = /^\*\s+(.*)$/.exec(line);
     if (!bullet) continue;
     const text = bullet[1];
-    const scoped = /^\*\*([^*]+?):\*\*\s/.exec(text);
+    const scoped = SCOPE_PREFIX.exec(text);
     // The scope is a bucket key, so it is lower-cased here once; `text` keeps
     // whatever case the commit carried. The corpus has never had an upper-case
     // scope, but `Auth` and `auth` must not become two round-robin slots.
@@ -231,14 +239,16 @@ export function versionOf(tag) {
 
 /**
  * The whole step: a release (as the releases API and the fixture shape it, or
- * just `{ tag_name, body }`) to the tiered draft.
+ * just `{ tag_name, body }`) to the tiered draft — parse, clean, pick. The
+ * cleaner sits between the other two so that a line it refuses (#1949 step 8)
+ * frees its slot in the round-robin rather than leaving a hole.
  *
  * @param {{ tag_name: string, body: string }} release
  * @param {{ cap?: number }} [options]
  * @returns {Draft}
  */
 export function draft(release, options) {
-  const { picked, spares } = pick(parseChangelog(release.body), options);
+  const { picked, spares } = pick(parseChangelog(release.body).map(clean), options);
   return {
     tag: release.tag_name,
     version: versionOf(release.tag_name),

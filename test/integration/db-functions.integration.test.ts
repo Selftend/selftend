@@ -73,7 +73,6 @@ describe("export_user_data() (integration)", () => {
         app_onboarding_completed: true,
         cbt_onboarding_completed: true,
         language: "en",
-        selected_concerns: expect.any(Array),
         active_strategies: expect.any(Array),
       },
     });
@@ -694,6 +693,14 @@ const DEMO_SEED_TABLES = [
   "thought_records",
   "values_profile",
   "worry_entries",
+  // DBT
+  "dbt_coping_plans",
+  "dbt_emotion_records",
+  "dbt_judgements",
+  "dbt_opposite_action_plans",
+  "dbt_scripts",
+  "dbt_sessions",
+  "dbt_wise_mind_checkins",
   // Routines
   "routine_steps",
   "routines",

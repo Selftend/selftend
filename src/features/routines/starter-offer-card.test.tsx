@@ -13,7 +13,6 @@ import {
 } from "@/src/features/routines/queries";
 import { StarterOfferCard } from "@/src/features/routines/starter-offer-card";
 import { useRoutineToolRecords } from "@/src/features/routines/use-routine-tool-records";
-import { useWidgetPreferences } from "@/src/features/home/queries";
 import { useUpdateUserPreferences, useUserPreferences } from "@/src/features/settings/queries";
 import { useLayeredInsetStore } from "@/src/stores/layered-inset-store";
 import { useReminderPromptStore } from "@/src/stores/reminder-prompt-store";
@@ -35,10 +34,6 @@ jest.mock("@/src/features/routines/queries", () => ({
   useDeleteRoutine: jest.fn(),
 }));
 
-jest.mock("@/src/features/home/queries", () => ({
-  useWidgetPreferences: jest.fn(),
-}));
-
 jest.mock("@/src/features/routines/use-routine-tool-records", () => ({
   useRoutineToolRecords: jest.fn(),
 }));
@@ -55,7 +50,6 @@ const mockUseRoutines = jest.mocked(useRoutines);
 const mockUseCreateRoutine = jest.mocked(useCreateRoutine);
 const mockUseAddStep = jest.mocked(useAddStep);
 const mockUseDeleteRoutine = jest.mocked(useDeleteRoutine);
-const mockUseWidgetPreferences = jest.mocked(useWidgetPreferences);
 const mockUseRoutineToolRecords = jest.mocked(useRoutineToolRecords);
 const mockUseWorryEntries = jest.mocked(useWorryEntries);
 const mockUseAngerLogs = jest.mocked(useAngerLogs);
@@ -100,6 +94,12 @@ function readyRecords(overrides: Partial<RoutineToolRecords> = {}): RoutineToolR
     choicePoints: [],
     committedActions: [],
     actionSteps: [],
+    dbtSessions: [],
+    dbtWiseMindCheckins: [],
+    dbtJudgements: [],
+    dbtEmotionRecords: [],
+    dbtOppositeActionPlans: [],
+    dbtScripts: [],
     ...overrides,
   };
 }
@@ -141,19 +141,14 @@ function setRoutineMutations() {
 }
 
 // The second-action baseline: two distinct tools have records, no routine
-// exists, two kept widgets compose the starter, and the reminder prompt was
-// already asked for the saved tool - so the save is the starter offer's.
+// exists - so those two records both pass the gate and compose the starter
+// (#1954: one set, read twice) - and the reminder prompt was already asked for
+// the saved tool, so the save is the starter offer's.
 function setEligibleScenario() {
   const preferences = setPreferences({ reminderPromptedTools: ["journal"] });
   const prefsMutate = setUpdateMutation();
   const mutations = setRoutineMutations();
   mockUseRoutines.mockReturnValue({ data: [] } as unknown as ReturnType<typeof useRoutines>);
-  mockUseWidgetPreferences.mockReturnValue({
-    data: [
-      { widgetId: "mood-checkin", position: 0 },
-      { widgetId: "journal-week", position: 1 },
-    ],
-  } as unknown as ReturnType<typeof useWidgetPreferences>);
   mockUseRoutineToolRecords.mockReturnValue(
     readyRecords({
       moodLogs: [{ dayKey: "2026-09-01" }],
@@ -264,10 +259,13 @@ describe("StarterOfferCard", () => {
     expect(prefsMutate).not.toHaveBeenCalled();
   });
 
-  it("counts a worry entry as the second action", async () => {
-    // Mood then a worry entry: the second tool is one a routine cannot hold,
-    // and it still counts (#1677). Worry saves prompt under the "cbt" target,
-    // already asked here so the reminder prompt yields this save.
+  it("a worry entry is a second action but composes nothing, so no empty routine is offered", async () => {
+    // Mood then a worry entry: the second tool is one a routine cannot hold. It
+    // still counts toward the second action (#1677) - `countToolsWithRecords`
+    // says 2 - but the starter composes from RECORDS now (#1954), and one
+    // steppable tool is below its minimum. Before #1954 this scenario showed the
+    // offer, composed from two kept widgets the person had never used; the offer
+    // is now held until a second steppable tool has a record.
     setEligibleScenario();
     setPreferences({ reminderPromptedTools: ["cbt"] });
     const prefsMutate = setUpdateMutation();
@@ -279,21 +277,19 @@ describe("StarterOfferCard", () => {
     renderWithProviders(<StarterOfferCard />);
     requestSave("cbt");
 
-    expect(await screen.findByText(OFFER_TITLE)).toBeTruthy();
-    await waitFor(() => {
-      expect(prefsMutate).toHaveBeenCalledWith({ starterRoutineOffered: true });
-    });
+    await act(async () => {});
+
+    expect(screen.queryByText(OFFER_TITLE)).toBeNull();
+    // The save is consumed, not carried: nothing was offered, and nothing is written.
+    expect(prefsMutate).not.toHaveBeenCalled();
   });
 
   it("waits while an offer-only slice is still loading", async () => {
-    // Mood + worry would qualify, but worry's list has not arrived: the
-    // readiness gate holds rather than deciding on a half-loaded shape.
+    // Mood + journal would qualify on their own, but worry's list has not arrived:
+    // the readiness gate holds rather than deciding on a half-loaded shape.
     setEligibleScenario();
     setPreferences({ reminderPromptedTools: ["cbt"] });
     const prefsMutate = setUpdateMutation();
-    mockUseRoutineToolRecords.mockReturnValue(
-      readyRecords({ moodLogs: [{ dayKey: "2026-09-01" }] }),
-    );
     setOfferOnlyRecords();
     mockUseWorryEntries.mockReturnValue({ data: undefined } as unknown as ReturnType<
       typeof useWorryEntries
@@ -308,20 +304,47 @@ describe("StarterOfferCard", () => {
     expect(prefsMutate).not.toHaveBeenCalled();
   });
 
-  it("renders nothing when the kept widgets compose fewer than two steps", async () => {
+  it("renders nothing when the gate passes but nothing composes: records only in worry, anger and self-care", async () => {
+    // Three second actions a routine cannot admit (#1954, spec §5.3): the count is 3,
+    // the composition is null, and the offer must not render an empty routine.
     setEligibleScenario();
-    mockUseWidgetPreferences.mockReturnValue({
-      data: [{ widgetId: "mood-checkin", position: 0 }],
-    } as unknown as ReturnType<typeof useWidgetPreferences>);
+    setPreferences({ reminderPromptedTools: ["cbt"] });
     const prefsMutate = setUpdateMutation();
+    mockUseRoutineToolRecords.mockReturnValue(readyRecords());
+    setOfferOnlyRecords({
+      worry: [{ id: "worry-1" }],
+      anger: [{ id: "anger-1" }],
+      selfCare: [{ id: "self-care-1" }],
+    });
 
     renderWithProviders(<StarterOfferCard />);
-    requestSave("journal");
+    requestSave("cbt");
 
     await act(async () => {});
 
     expect(screen.queryByText(OFFER_TITLE)).toBeNull();
     expect(prefsMutate).not.toHaveBeenCalled();
+  });
+
+  it("composes from the records themselves, with no dashboard rows anywhere", async () => {
+    // A person who installed after the redesign holds zero widget_preferences rows
+    // forever; the offer must still fire from two tools' records (#1954).
+    setEligibleScenario();
+    mockUseRoutineToolRecords.mockReturnValue(
+      readyRecords({
+        thoughtRecords: [{ dayKey: "2026-09-01" }],
+        defusionLogs: [{ createdAt: "2026-09-02T08:00:00.000Z" }],
+      }),
+    );
+    const prefsMutate = setUpdateMutation();
+
+    renderWithProviders(<StarterOfferCard />);
+    requestSave("journal");
+
+    expect(await screen.findByText(OFFER_TITLE)).toBeTruthy();
+    await waitFor(() => {
+      expect(prefsMutate).toHaveBeenCalledWith({ starterRoutineOffered: true });
+    });
   });
 
   it("yields while the reminder prompt card is on screen", async () => {

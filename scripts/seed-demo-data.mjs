@@ -52,6 +52,14 @@ import path from "node:path";
 
 import { createClient } from "@supabase/supabase-js";
 
+import {
+  ACT_BAND_END_HOUR,
+  ACT_BAND_MINUTES,
+  ACT_BAND_START_HOUR,
+  createBand,
+} from "./seed-demo-band.mjs";
+import { DAYS, FUTURE_MARGIN_MS, createWindow } from "./seed-demo-window.mjs";
+
 const LOCAL_SUPABASE_URL = process.env.SUPABASE_TEST_URL ?? "http://127.0.0.1:54321";
 const LOCAL_SERVICE_ROLE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
@@ -84,30 +92,10 @@ const pick = (arr) => arr[Math.floor(rng() * arr.length)];
 const chance = (p) => rng() < p;
 const between = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
 
-// The seeded window: ~3 months ending today. `new Date()` is fine here — the
-// script runs in plain Node, and the dataset should always end "today".
-const DAYS = 89;
-const end = new Date();
-end.setHours(12, 0, 0, 0);
-
-// Run early in the day and today's later entries would land in the future,
-// tripping the DB's occurrence-time guard ("Occurrence time cannot be in the
-// future") and failing the whole seed. Clamp to just-passed instead — today's
-// rows bunch up near "now", which only shows when seeding at odd hours and
-// only on today's rows. The margin absorbs the clock drift between building a
-// row here and the database checking it.
-const FUTURE_MARGIN_MS = 120_000;
-
-function clampToPast(millis) {
-  return new Date(Math.min(millis, Date.now() - FUTURE_MARGIN_MS)).toISOString();
-}
-
-/** The calendar date at day index i (0 = oldest), as a machine-local Date. */
-function dayAt(dayIndex) {
-  const d = new Date(end);
-  d.setDate(d.getDate() - (DAYS - 1 - dayIndex));
-  return d;
-}
+// The seeded window: ~3 months ending today, and the future-clamp today's rows
+// go through. Both live in `seed-demo-window.mjs` so the band's day-boundary
+// tests build the exact window this seed does (#1971).
+const { dayAt, clampToPast } = createWindow();
 
 /** Local-civil-day at index i (0 = oldest), at local hour/minute. */
 function at(dayIndex, hour, minute = 0) {
@@ -154,25 +142,6 @@ function atFuture(daysAfterToday, hour, minute = 0) {
   d.setDate(d.getDate() + daysAfterToday);
   d.setHours(hour, minute, 0, 0);
   return d.toISOString();
-}
-
-/**
- * The same calendar day as `at()`, but at an explicit UTC hour/minute.
- *
- * `at()` stamps the SEEDING MACHINE's local clock, so it cannot express a fixed
- * UTC wall time: `at(d, 11)` is 11:00 in Sofia on one machine and 11:00 in
- * London on another. Tables that carry no captured-offset column have nowhere
- * to record which was meant, so their rows must be pinned to UTC instead of
- * inheriting whatever clock the seeding machine happened to have. Applies the
- * same future-clamp as `at()`.
- *
- * Every caller today goes through `inBand()` in the ACT section, which is where
- * the tables with no captured-offset column live (#1284). Reach for it directly
- * only for a table with the same problem and a different intended time.
- */
-function atUtc(dayIndex, hour, minute = 0) {
-  const d = dayAt(dayIndex);
-  return clampToPast(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute, 0, 0));
 }
 
 /**
@@ -248,15 +217,14 @@ async function insertReturningId(table, row) {
 const counts = {};
 
 // ---------------------------------------------------------------- preferences
-// `selected_concerns` and `enabled_modules` are the onboarding answers demo's Home
-// layout below is DERIVED from, and they move with it (#1352). Neither steers
-// anything live today — `selected_concerns` is read only during onboarding, where it
-// seeds Home's widgets and the starter routine, and is never consulted again; and
-// `enabled_modules` is only ever written, never read as a gate — so both are
-// seeded as documentation-in-data: without them the fourteen ids are a list nobody
-// can explain, which is the state the decision refused. `widgets_seeded` is the same
-// character: only the RPC writes it and nothing live reads it, but it is what a real
-// wizard run leaves behind.
+// `enabled_modules` is the onboarding answer demo's favourites below are DERIVED
+// from, and it moves with them (#1352). It steers nothing live — it is only ever
+// written, never read as a gate — so it is seeded as documentation-in-data: without
+// it the favourites are a list nobody can explain, which is the state the decision
+// refused. `selected_concerns` and `widgets_seeded` used to sit beside it for the
+// same reason; both columns were dropped in #1958 (the one-panel wizard asks no
+// concern and seeds no Home), so the concerns demo "arrived with" - anxious
+// thoughts, low mood, sleep - live in this comment now, not in a column.
 //
 // `app_onboarding_completed_via` / `_at` are deliberately NOT touched. Demo already
 // reads as a completed-onboarding account and they are part of no decision here.
@@ -296,8 +264,6 @@ const counts = {};
       email_verified: true,
       emotions_seeded: true,
       enabled_modules: ["cbt", "act"],
-      selected_concerns: ["anxious-thoughts", "low-mood", "sleep"],
-      widgets_seeded: true,
     },
     { onConflict: "user_id" },
   );
@@ -305,74 +271,19 @@ const counts = {};
   counts.user_preferences = 1;
 }
 
-// ------------------------------------------------------------------ Home layout
-// The fourteen widget ids demo's dashboard carries (#1352). Two halves, and both
-// are DERIVABLE rather than hand-maintained — that is the point of the split:
+// ------------------------------------------------------------------ Favourites
+// Ten of the eleven catalogue items (#1953): every tool hub plus the CBT and ACT
+// modules, which is what 20260908000000_favorites.sql's one-shot copy produced from
+// the fourteen widget ids demo's dashboard used to carry (#1352) - the eight shared
+// tools 1:1, the CBT and ACT ids collapsed to one module row each. DBT is the one
+// left unstarred, so the star's off state is reviewable on a card next to ten on
+// ones. Written as favourites directly because seeds run AFTER migrations, so the
+// copy had already run against an empty table.
 //
-// - Positions 0-8 are mechanically what `buildWidgetRecommendations` emits for the
-//   answers seeded just above: `['anxious-thoughts', 'low-mood', 'sleep']` IN THAT
-//   PICKED ORDER (`resolveConcernWidgetIds` iterates SELECTION order, not
-//   `CONCERN_KEYS` order) plus modules `['cbt', 'act']`, with `mood-checkin`
-//   hardcoded first by the wizard.
-// - Positions 9-13 are the `/arrange` tail, appended in `WIDGET_META` declaration
-//   order. It reads as "things she added later", which is what a real history looks
-//   like. `cbt-open-record`, `act-drop-anchor` and `grounding-log` are ids the
-//   registry treats as default-or-shared that NO onboarding run can ever produce, so
-//   without demo they are reviewable nowhere; `self-care` is the one CBT tool row
-//   that is not a record-keeping row, so the tool tier shows more than one row shape.
-//
-// ☠️ `routines-today` is `status: "available"`, and specs #37/#50 keep it out of every
-// auto-seeding surface. Carrying it here does not contradict that — it exercises it.
-// The available-not-default decision governs what the PRODUCT offers unasked; it says
-// nothing about what a FIXTURE'S HISTORY contains, and `available` means "reachable
-// only by deliberate choice", which is precisely the user demo stands in for. Seeding
-// it into onboarding's auto-seed path would be the contradiction. Without it #1271's
-// routines have no Home surface at all.
-//
-// ☠️ The list stops at fourteen for a mechanical reason, not a taste one: `/arrange`'s
-// add row is every registry id demo does NOT own, so a demo owning all 25 empties the
-// surface it exists to be reviewed on. Eleven chips left, asserted below.
-const DEMO_WIDGET_IDS = [
-  "cbt-programme",
-  "act-programme",
-  "mood-checkin",
-  "breathing-suggested",
-  "journal-week",
-  "gratitude-latest",
-  "habits-today",
-  "sleep-latest",
-  "meditation-pick",
-  "self-care",
-  "cbt-open-record",
-  "act-drop-anchor",
-  "grounding-log",
-  "routines-today",
-];
-
-{
-  // ☠️ `apply_widget_recommendations` is unusable from here: it is `security invoker`
-  // and reads `auth.uid()`, which is null under the service-role client. Direct
-  // inserts, and 0-BASED positions — the RPC assigns `min(ordinality)::integer - 1`,
-  // so anything else fails to reproduce a real wizard run.
-  await wipe("widget_preferences");
-  counts.widget_preferences = await insert(
-    "widget_preferences",
-    DEMO_WIDGET_IDS.map((widgetId, position) => ({
-      user_id: DEMO_USER_ID,
-      widget_id: widgetId,
-      position,
-    })),
-  );
-}
-
-// Favourites (#1953): exactly what 20260908000000_favorites.sql's one-shot copy
-// produces from the fourteen ids above - the eight shared tools 1:1, and the CBT
-// and ACT ids (`cbt-programme`, `self-care`, `cbt-open-record`; `act-programme`,
-// `act-drop-anchor`) collapsed to one module row each. Written here because seeds
-// run AFTER migrations, so the copy has already run against an empty table by the
-// time the rows above exist. Literals, not derived from DEMO_WIDGET_IDS: deriving
-// would restate WIDGET_META's toolKey mapping a third time, and the pairing is
-// already checked against the registry by test/seed-widget-layouts.test.ts.
+// No `widget_preferences` rows any more (#1959): Home reads favourites, the old table
+// serves only the native builds that predate them, and a seed writing both would be
+// two sources of truth for one account. The keys are checked against the favourites
+// catalogue by test/seed-favorites.test.ts.
 const DEMO_FAVORITES = [
   ["module", "cbt"],
   ["module", "act"],
@@ -962,6 +873,15 @@ const DEMO_SEED_WIPE_TABLES = [
   "act_bulls_eye_snapshots",
   "act_committed_actions",
   "act_program_state",
+  // DBT (#1980) - all seven, so the tail check below refuses a run that
+  // clears the module and forgets to refill it.
+  "dbt_coping_plans",
+  "dbt_sessions",
+  "dbt_wise_mind_checkins",
+  "dbt_judgements",
+  "dbt_emotion_records",
+  "dbt_opposite_action_plans",
+  "dbt_scripts",
   "routines",
 ];
 
@@ -3228,8 +3148,11 @@ const OBSERVING_TECHNIQUES = ["tenDeepBreaths", "skyAndWeather", "bodyAwareness"
 // current timezone instead. Two consequences, and both shape the placement
 // below.
 //
-// FIRST: every row goes in a 10:00-12:00 UTC BAND, via `atUtc` rather than
-// `at`. A band centred on 11:00 UTC keeps its intended civil day for 92 of the
+// FIRST: every row goes in a 10:00-12:00 UTC BAND, via `inBand` rather than
+// `at`: `at()` stamps the SEEDING MACHINE's local clock, so it cannot express a
+// fixed UTC wall time — `at(d, 11)` is 11:00 in Sofia on one machine and 11:00
+// in London on another, and these tables have nowhere to record which was
+// meant. A band centred on 11:00 UTC keeps its intended civil day for 92 of the
 // 101 real-world quarter-hour offsets at the 10:00 edge and 97 at the 11:59
 // edge; the evening bands the tools blocks use would hold for as few as 64.
 // Supported range is UTC-11 through UTC+12:45 — UTC+13 and UTC+14 are knowingly
@@ -3246,9 +3169,9 @@ const OBSERVING_TECHNIQUES = ["tenDeepBreaths", "skyAndWeather", "bodyAwareness"
 // Together they keep `openUp`'s make-room milestone legitimately open and its
 // daily practice open, which is #1178's ruling and the one row a reviewer can
 // exercise on the demo account themselves.
-const ACT_BAND_START_HOUR = 10;
-const ACT_BAND_END_HOUR = 12;
-const ACT_BAND_MINUTES = (ACT_BAND_END_HOUR - ACT_BAND_START_HOUR) * 60;
+//
+// The band's hours, the placement and the stray guard live in
+// `seed-demo-band.mjs`, pure, so the day-boundary cases are unit-tested (#1971).
 
 // The current ACT phase start, as a day index into the rolling window (#1178):
 // `openUp`, index 2 of 4, a couple of days behind CBT's phase start rather than
@@ -3272,32 +3195,13 @@ const ACT_BAND_MINUTES = (ACT_BAND_END_HOUR - ACT_BAND_START_HOUR) * 60;
 // phase out from under the margins below without anything failing.
 const ACT_PHASE_STARTED_DAY = 78;
 
-// The instants the future-clamp pulled out of the band, by epoch millisecond.
-//
-// Only ever TODAY's rows, and only on a run that starts before the band closes:
-// `atUtc` clamps a future instant back to just-passed, which is the same trade
-// every other block in this script makes for today's rows. Recorded rather than
-// waved through so the band check below can excuse exactly these and nothing
-// else.
-const clampedOutOfBand = new Set();
-
-/** A timestamp `minutesIntoBand` into the 10:00-12:00 UTC band on day `dayIndex`. */
-function inBand(dayIndex, minutesIntoBand) {
-  if (
-    !Number.isInteger(minutesIntoBand) ||
-    minutesIntoBand < 0 ||
-    minutesIntoBand >= ACT_BAND_MINUTES
-  ) {
-    throw new Error(
-      `inBand() takes 0-${ACT_BAND_MINUTES - 1} minutes into the band, got ${minutesIntoBand}.`,
-    );
-  }
-  const iso = atUtc(dayIndex, ACT_BAND_START_HOUR, minutesIntoBand);
-  if (new Date(iso).getUTCHours() < ACT_BAND_START_HOUR) {
-    clampedOutOfBand.add(new Date(iso).getTime());
-  }
-  return iso;
-}
+// `inBand(dayIndex, minutes)` places a row inside the band; `isStray(millis)`
+// is the guard's verdict on a stored instant — outside the band and not one of
+// the instants today's future-clamp itself produced. The clamp is detected by
+// comparing instants, not by the hour of the result, so a run at 00:01 UTC (or
+// on a machine whose local day is ahead of the UTC day) no longer kills the
+// seed when the clamped row lands at 23:59 on the previous UTC day (#1971).
+const { inBand, isStray, bandOpensAt, bandClosesAt } = createBand({ dayAt, clampToPast });
 
 /**
  * Anywhere inside the band on day `dayIndex` — what almost every row here wants.
@@ -3307,20 +3211,6 @@ function inBand(dayIndex, minutesIntoBand) {
  */
 function somewhereInBand(dayIndex) {
   return inBand(dayIndex, between(0, ACT_BAND_MINUTES - 1));
-}
-
-/**
- * The UTC instant the band OPENS on day `dayIndex`, in epoch millis.
- *
- * The margin checks compare band edge to band edge rather than counting 48
- * hours back from `now`: every row sits somewhere inside a two-hour band, so a
- * fixed-hours comparison rejects a correctly placed row whenever the run starts
- * earlier in the day than the row it is measuring. Unclamped on purpose — these
- * are boundaries to measure against, not timestamps to store.
- */
-function bandOpensAt(dayIndex) {
-  const d = dayAt(dayIndex);
-  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), ACT_BAND_START_HOUR, 0, 0, 0);
 }
 
 /**
@@ -3369,10 +3259,9 @@ async function requireEveryVariantInDb(checks) {
  *
  * These tables store no captured offset, so a row placed with `at()` instead of
  * `inBand()` changes civil day for viewers the band was chosen to cover. Null
- * columns are skipped — several are genuinely optional. The excused instants are
- * today's rows the future-clamp pulled back out of the band; ☠️ they are matched
- * by EPOCH MILLIS rather than by string, because PostgREST returns a different
- * ISO format than the script wrote.
+ * columns are skipped — several are genuinely optional. `isStray` excuses only
+ * today's rows the future-clamp itself pulled out of the band, matched by
+ * epoch millis (`seed-demo-band.mjs`, unit-tested at the UTC day boundary).
  */
 async function requireRowsInBand(entries) {
   const strays = [];
@@ -3381,9 +3270,7 @@ async function requireRowsInBand(entries) {
       for (const column of columns) {
         if (row[column] === null) continue;
         const millis = new Date(row[column]).getTime();
-        if (clampedOutOfBand.has(millis)) continue;
-        const hour = new Date(millis).getUTCHours();
-        if (hour < ACT_BAND_START_HOUR || hour >= ACT_BAND_END_HOUR) {
+        if (isStray(millis)) {
           strays.push(`${table}.${column} at ${new Date(millis).toISOString()}`);
         }
       }
@@ -3397,12 +3284,6 @@ async function requireRowsInBand(entries) {
         "was chosen to cover. Place it with `inBand`, not `at`.",
     );
   }
-}
-
-/** The UTC instant the band CLOSES on day `dayIndex`, in epoch millis. */
-function bandClosesAt(dayIndex) {
-  const d = dayAt(dayIndex);
-  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), ACT_BAND_END_HOUR, 0, 0, 0);
 }
 
 // ☠️ THE PER-DAY-VIEW REASON THESE ROWS WERE PLACED HERE IS GONE. It used to be
@@ -4834,6 +4715,537 @@ function alignmentFor(domain, dayIndex) {
   ]);
 }
 
+// ---------------------------------------------------------------- DBT module
+// Seven tables, all born encrypted and all carrying a captured offset beside
+// every dated column (#1980). That last fact is why this whole section is
+// shorter than ACT's above: there is NO band or margin machinery here, and
+// there deliberately is none. ACT needs it because its tables store no offset,
+// so a viewer's clock decides which civil day an ACT row falls on; a DBT row
+// names its own day and keeps naming it from anywhere on earth. The newest row
+// below still sits eight days clear of today, so the "nothing today" claim the
+// programme read-back makes cannot flip at a band edge either.
+// The four skill-group keys, in the book's order - the same array
+// src/features/dbt/program-definition.ts is built on. Restated rather than
+// imported because this script talks to the database, not to the app.
+const DBT_PHASE_KEYS = ["distressTolerance", "mindfulness", "emotionRegulation", "interpersonal"];
+const DBT_PROGRAM_STARTED_DAY = 46;
+const DBT_PHASE_STARTED_DAY = 67;
+const DBT_PROGRAM_PHASE_KEY = "mindfulness";
+const DBT_PROGRAM_PHASE_INDEX = DBT_PHASE_KEYS.indexOf(DBT_PROGRAM_PHASE_KEY);
+
+/** A dated row's `{ <t>_at, <t>_offset_minutes }` pair, from one placement. */
+function dbtStamp(prefix, dayIndex, hour, minute = 0) {
+  const instant = at(dayIndex, hour, minute);
+  return { [`${prefix}_at`]: instant, [`${prefix}_offset_minutes`]: offsetMinutesFor(instant) };
+}
+
+// ---------------------------------------------------------- the coping plan
+// One plan, three sections, and a four-id fallback (the guard allows 3-6).
+// `homeOnly` marks the one item the person wants on the module home's card and
+// nowhere else; exactly one carries it, so the flag is visible on the demo
+// account rather than merely permitted by the schema.
+//
+// ☠️ Picks are stored as KEYS, never labels (decision 14) - a plan that stored
+// the app's words would freeze whatever the copy said the day it was built. The
+// keys below are real `COPING_PLAN_PICKS` entries; an unknown one renders as
+// nothing at all, so a typo here is an item that silently vanishes from the card.
+{
+  const items = [
+    { id: "cp-1", section: "distract", kind: "pick", pickKey: "walk", homeOnly: false },
+    { id: "cp-2", section: "distract", kind: "pick", pickKey: "tenseAndRelease", homeOnly: false },
+    { id: "cp-3", section: "distract", kind: "pick", pickKey: "messageAFriend", homeOnly: false },
+    {
+      id: "cp-4",
+      section: "distract",
+      kind: "own",
+      text: "Put the kettle on and stand at the window until it boils",
+      homeOnly: false,
+    },
+    { id: "cp-5", section: "soothe", kind: "pick", pickKey: "aSongIKnow", homeOnly: false },
+    {
+      id: "cp-6",
+      section: "soothe",
+      kind: "pick",
+      pickKey: "coolWaterOnMyWrists",
+      homeOnly: false,
+    },
+    { id: "cp-7", section: "soothe", kind: "pick", pickKey: "aBlanket", homeOnly: true },
+    { id: "cp-8", section: "remind", kind: "pick", pickKey: "thisWillPass", homeOnly: false },
+    { id: "cp-9", section: "remind", kind: "pick", pickKey: "iCanDoOneThing", homeOnly: false },
+    {
+      id: "cp-10",
+      section: "remind",
+      kind: "own",
+      text: "I have got through this exact evening before",
+      homeOnly: false,
+    },
+  ].map((item, position) => ({ ...item, position }));
+
+  const created = at(DBT_PROGRAM_STARTED_DAY, 20, 10);
+  counts.dbt_coping_plans = await insert("dbt_coping_plans", [
+    {
+      user_id: DEMO_USER_ID,
+      // The order the person would actually try them in, which is not the order
+      // they were added: the fallback is its own sequence over item ids.
+      plan: { items, fallback: ["cp-8", "cp-2", "cp-6", "cp-3"] },
+      created_at: created,
+      // ☠️ `updated_at` is NOT settable and is deliberately not passed. Both the
+      // view's INSTEAD OF trigger and the base table's BEFORE UPDATE trigger
+      // stamp it with `now()`, so any value sent here would be silently
+      // discarded - and a comment claiming the plan was last touched months ago
+      // would be describing a row that does not exist. The seeded plan therefore
+      // reads as touched TODAY.
+      //
+      // That is invisible in the anchored phase, which reads no coping-plan
+      // signal at all. It would NOT be invisible under a phase-one anchor:
+      // `copingPlanReady` counts the plan being touched since the phase began,
+      // so it would open already done. Re-anchoring this seed to
+      // `distressTolerance` means solving that first, not just moving the index.
+    },
+  ]);
+}
+
+// ------------------------------------------------- muscle-relaxation sessions
+// Four completed sessions, one of them the SHORT variant, so both values of the
+// schema's two-value CHECK render on the demo account. Durations are the real
+// ones the plan builds: twelve groups x two rounds x 30s for `full`, five for
+// `short`.
+{
+  const sessions = [
+    { day: 47, hour: 21, variant: "full", duration_seconds: 720 },
+    { day: 52, hour: 13, variant: "short", duration_seconds: 300 },
+    { day: 60, hour: 22, variant: "full", duration_seconds: 720 },
+    { day: 71, hour: 20, variant: "full", duration_seconds: 720 },
+  ];
+  counts.dbt_sessions = await insert(
+    "dbt_sessions",
+    sessions.map((session) => ({
+      user_id: DEMO_USER_ID,
+      session_slug: "muscle-relaxation",
+      variant: session.variant,
+      duration_seconds: session.duration_seconds,
+      ...dbtStamp("completed", session.day, session.hour, 30),
+      created_at: at(session.day, session.hour, 30),
+    })),
+  );
+}
+
+// ------------------------------------------------------ wise mind check-ins
+// ☠️ At least one sits on or after `DBT_PHASE_STARTED_DAY`: it is what makes the
+// anchored phase's `wiseMindOnce` milestone read done, and the read-back below
+// derives that back out of the database rather than trusting this comment.
+{
+  const checkins = [
+    {
+      day: 62,
+      hour: 18,
+      question: "Should I say yes to covering the Saturday shift?",
+      emotion_mind: "I want to say no and never be asked again.",
+      reason: "The money would cover the boiler service I keep putting off.",
+      wise_mind: "Say yes to this one, and say early that I cannot do the next.",
+    },
+    {
+      day: 70,
+      hour: 8,
+      question: "Do I bring up the washing-up again?",
+      emotion_mind: "It is not worth it. Nothing changes and I look petty.",
+      reason: "We agreed a rota. It has been ignored four times this month.",
+      wise_mind: "Bring it up once, calmly, tonight - not at the sink.",
+    },
+    {
+      day: 79,
+      hour: 22,
+      question: "Do I go to the thing on Friday?",
+      emotion_mind: "I will not know anyone and I will want to leave immediately.",
+      reason: "I said I would go, and I usually enjoy it once I am there.",
+      wise_mind: "Go, and give myself permission to leave after an hour.",
+    },
+  ];
+  counts.dbt_wise_mind_checkins = await insert(
+    "dbt_wise_mind_checkins",
+    checkins.map((row) => ({
+      user_id: DEMO_USER_ID,
+      question: row.question,
+      emotion_mind: row.emotion_mind,
+      reason: row.reason,
+      wise_mind: row.wise_mind,
+      ...dbtStamp("created", row.day, row.hour, 15),
+    })),
+  );
+}
+
+// ---------------------------------------------------------------- judgements
+// ☠️ EVERY judgement is dated BEFORE `DBT_PHASE_STARTED_DAY`, which is what
+// leaves the anchored phase's `judgementOnce` milestone OPEN. That is the whole
+// point: a phase with both milestones done would read complete, and the demo
+// account is meant to sit part-way through one. The list still has four rows to
+// browse - an open milestone is not an empty screen.
+//
+// Both valences appear, so the mark renders in both of its forms.
+{
+  const judgements = [
+    {
+      day: 50,
+      hour: 9,
+      valence: "negative",
+      judgement: "I am hopeless at this",
+      restatement: "I have done this twice and both times took longer than I expected.",
+    },
+    {
+      day: 55,
+      hour: 14,
+      valence: "positive",
+      judgement: "She is so much better at all of this than me",
+      restatement: "She has been doing it for six years. I started in March.",
+    },
+    {
+      day: 58,
+      hour: 19,
+      valence: "negative",
+      judgement: "That was a stupid thing to say",
+      restatement: "I said something I would say differently now.",
+    },
+    {
+      day: 64,
+      hour: 11,
+      valence: "positive",
+      judgement: "I handled that perfectly",
+      restatement: null,
+    },
+  ];
+  counts.dbt_judgements = await insert(
+    "dbt_judgements",
+    judgements.map((row) => ({
+      user_id: DEMO_USER_ID,
+      judgement: row.judgement,
+      restatement: row.restatement,
+      valence: row.valence,
+      ...dbtStamp("created", row.day, row.hour, 40),
+    })),
+  );
+}
+
+// ------------------------------------------------------------ emotion records
+// One record names a CUSTOM emotion id. The seed already creates
+// `custom-curious` in `emotion_preferences`, so this reads back with a name and
+// an emoji rather than as an id the screen cannot resolve - which is the failure
+// worth having a demo row for.
+{
+  const records = [
+    {
+      day: 53,
+      hour: 16,
+      primary: ["anxious"],
+      secondary: ["ashamed"],
+      what_happened: "Got a one-line reply to a long message and read it four times.",
+      meaning: "That I had annoyed them and they were being polite about it.",
+      body_sensations: "Tight chest, hot face, could not sit still.",
+      urges: "Send a second message apologising for the first one.",
+      did_and_said: "Put the phone in a drawer and went for a walk instead.",
+      afterwards: "They replied properly two hours later. Nothing was wrong.",
+    },
+    {
+      day: 66,
+      hour: 20,
+      primary: ["frustrated", "lonely"],
+      secondary: [],
+      what_happened: "Third evening this week eating standing up in the kitchen.",
+      meaning: "That this is just what my life is now.",
+      body_sensations: "Jaw clenched, heavy arms.",
+      urges: "Scroll until it is late enough to go to bed.",
+      did_and_said: "Sat down at the table with the plate. Ate slowly.",
+      afterwards: "Still tired, but less like the evening had happened to me.",
+    },
+    {
+      day: 74,
+      hour: 12,
+      primary: ["custom-curious"],
+      secondary: ["hopeful"],
+      what_happened: "Someone asked what I would do if the job were not a factor.",
+      meaning: "That I have not actually asked myself that in a long time.",
+      body_sensations: "Lighter. Sat forward.",
+      urges: "Change the subject.",
+      did_and_said: "Answered honestly, and it was a longer answer than I expected.",
+      afterwards: "Wrote two of it down afterwards.",
+    },
+  ];
+  counts.dbt_emotion_records = await insert(
+    "dbt_emotion_records",
+    records.map((row) => ({
+      user_id: DEMO_USER_ID,
+      what_happened: row.what_happened,
+      meaning: row.meaning,
+      body_sensations: row.body_sensations,
+      urges: row.urges,
+      did_and_said: row.did_and_said,
+      afterwards: row.afterwards,
+      primary_emotions: row.primary,
+      secondary_emotions: row.secondary,
+      ...dbtStamp("created", row.day, row.hour, 25),
+    })),
+  );
+}
+
+// ------------------------------------------------------- opposite-action plans
+// Two plans: one still open, one carried out with `what_shifted` written after.
+// ☠️ The open one has a NULL `done_at`, which is what makes the list's
+// open/done split render - and what keeps `oppositeActionDone` honest, since the
+// programme counts a plan DONE and never a plan written.
+{
+  const plans = [
+    {
+      day: 57,
+      hour: 19,
+      emotion: "angry",
+      pull: "Send the email now, while I can still remember every detail.",
+      opposite_action: "Draft it, do not send it, and read it back in the morning.",
+      hold_for: "Until 9am tomorrow",
+      done: null,
+      what_shifted: null,
+    },
+    {
+      day: 72,
+      hour: 17,
+      emotion: "anxious",
+      pull: "Cancel and say I am ill.",
+      opposite_action: "Go, and stay for at least half an hour.",
+      hold_for: "Thirty minutes",
+      done: { day: 75, hour: 21 },
+      what_shifted:
+        "Stayed nearly two hours in the end. The dread was the worst part of the whole evening.",
+    },
+  ];
+  counts.dbt_opposite_action_plans = await insert(
+    "dbt_opposite_action_plans",
+    plans.map((row) => ({
+      user_id: DEMO_USER_ID,
+      emotion: row.emotion,
+      pull: row.pull,
+      opposite_action: row.opposite_action,
+      hold_for: row.hold_for,
+      what_shifted: row.what_shifted,
+      ...dbtStamp("created", row.day, row.hour, 5),
+      ...(row.done
+        ? dbtStamp("done", row.done.day, row.done.hour, 0)
+        : { done_at: null, done_offset_minutes: null }),
+    })),
+  );
+}
+
+// ---------------------------------------------------------------- the scripts
+// Two, BOTH carrying a `difficulty` - the list orders by it, so a null would put
+// a row in a position the ladder does not explain. One is followed through, with
+// `how_it_went` written afterwards.
+{
+  const scripts = [
+    {
+      day: 61,
+      hour: 15,
+      situation: "Asking my manager to move the Monday stand-up",
+      want_changed: "moreOf",
+      i_think: "The 8:30 start means I am always the one apologising for the school run.",
+      emotion: "anxious",
+      i_feel: "Anxious about looking like I am asking for special treatment.",
+      i_want: "Could we move the stand-up to 9:15?",
+      self_care: "If the answer is no, I will ask what else could work rather than let it drop.",
+      difficulty: 65,
+      when_where: "Thursday, in our one-to-one",
+      done: null,
+      how_it_went: null,
+    },
+    {
+      day: 76,
+      hour: 10,
+      situation: "Telling my brother I cannot host again this year",
+      want_changed: "stop",
+      i_think: "I have hosted the last four and I am dreading it before it starts.",
+      emotion: "guilty",
+      i_feel: "Guilty, and worried he will think I am making a point.",
+      i_want: "I would like someone else to host this year.",
+      self_care: "I will not offer to do the food as a consolation prize.",
+      difficulty: 40,
+      when_where: "Sunday call",
+      done: { day: 80, hour: 19 },
+      how_it_went:
+        "He said yes straight away and seemed surprised I had not asked sooner. I did offer to bring the pudding, which I said I would not do.",
+    },
+  ];
+  counts.dbt_scripts = await insert(
+    "dbt_scripts",
+    scripts.map((row) => ({
+      user_id: DEMO_USER_ID,
+      situation: row.situation,
+      want_changed: row.want_changed,
+      i_think: row.i_think,
+      emotion: row.emotion,
+      i_feel: row.i_feel,
+      i_want: row.i_want,
+      self_care: row.self_care,
+      difficulty: row.difficulty,
+      when_where: row.when_where,
+      how_it_went: row.how_it_went,
+      ...dbtStamp("created", row.day, row.hour, 45),
+      ...(row.done
+        ? dbtStamp("done", row.done.day, row.done.hour, 30)
+        : { done_at: null, done_offset_minutes: null }),
+    })),
+  );
+}
+
+// ------------------------------------------------------------- DBT programme
+// The anchor is the INPUT, exactly as the ACT block above states it: the rows
+// were placed to satisfy it. DBT sits in `mindfulness`, index 1 of 4, PARTIALLY
+// complete - a wise mind check-in inside the phase ticks `wiseMindOnce`, every
+// judgement predates the phase so `judgementOnce` stays open, and nothing at all
+// is dated today, which leaves the daily practice as the one row a reviewer can
+// exercise on the demo account themselves.
+{
+  const { error } = await admin
+    .from("user_preferences")
+    .update({
+      dbt_program_started_at: at(DBT_PROGRAM_STARTED_DAY, 9, 0),
+      dbt_program_phase_index: DBT_PROGRAM_PHASE_INDEX,
+      dbt_program_phase_started_at: at(DBT_PHASE_STARTED_DAY, 9, 0),
+      // Null keeps it in progress; a date would graduate it and the phase card
+      // would stop rendering.
+      dbt_program_completed_at: null,
+      // Cleared so a re-run reproduces the same picture - both are set by taps
+      // in the app, and a reviewer's dismissal would otherwise persist across
+      // every later seed.
+      dbt_program_prompt_dismissed_at: null,
+      dbt_graduation_dismissed_at: null,
+    })
+    .eq("user_id", DEMO_USER_ID);
+  if (error) throw new Error(`dbt program anchor: ${error.message}`);
+}
+
+// ☠️ `dbt_program_phase_index` is STORED while every milestone DERIVES from the
+// rows, and nothing in the app recomputes it or rejects one that contradicts its
+// own data - an out-of-range index is silently clamped, not refused. So derive
+// the phase's legs back OUT of the database and check the two agree, as the CBT
+// and ACT blocks above do. Reading back rather than reusing the arrays also
+// proves the rows survived the seven encrypted views with the timestamps and the
+// captured offsets they were given, which is the other way this goes quietly
+// wrong.
+{
+  const { data: prefs, error: prefsError } = await admin
+    .from("user_preferences")
+    .select(
+      "dbt_program_started_at, dbt_program_phase_index, dbt_program_phase_started_at, " +
+        "dbt_program_completed_at",
+    )
+    .eq("user_id", DEMO_USER_ID)
+    .single();
+  if (prefsError) throw new Error(`dbt program read-back: ${prefsError.message}`);
+
+  /** Rows back out of a DBT view, failing loudly on an empty table. */
+  async function dbtRows(table, columns) {
+    const { data, error } = await admin
+      .from(table)
+      .select(columns.join(","))
+      .eq("user_id", DEMO_USER_ID);
+    if (error) throw new Error(`dbt program read-back (${table}): ${error.message}`);
+    if (data.length === 0) throw new Error(`dbt program read-back (${table}): no rows came back.`);
+    return data;
+  }
+
+  const wiseMind = await dbtRows("dbt_wise_mind_checkins", [
+    "created_at",
+    "created_offset_minutes",
+  ]);
+  const judgements = await dbtRows("dbt_judgements", ["created_at", "created_offset_minutes"]);
+
+  const phaseStart = new Date(
+    prefs.dbt_program_phase_started_at ?? prefs.dbt_program_started_at,
+  ).getTime();
+
+  // Keyed by PHASE, and only the seeded phase is declared - every phase has
+  // different milestones and a different daily practice, so re-anchoring means
+  // choosing afresh which signals the rows satisfy. An undeclared phase fails
+  // here rather than quietly checking `mindfulness`'s legs against another
+  // phase's anchor and passing.
+  //
+  // Milestones and daily practice are declared SEPARATELY because "partially
+  // complete" is a claim about the milestones alone: a phase is ready on its
+  // milestones, and the daily practice is never a gate.
+  const phaseExpectations = {
+    mindfulness: {
+      milestones: { wiseMindOnce: true, judgementOnce: false },
+      dailyPractice: { wiseMindOrJudgementDaily: false },
+    },
+  };
+
+  if (prefs.dbt_program_phase_index !== DBT_PROGRAM_PHASE_INDEX) {
+    throw new Error(
+      `The database holds DBT phase index ${prefs.dbt_program_phase_index} but this run wrote ` +
+        `${DBT_PROGRAM_PHASE_INDEX} ('${DBT_PROGRAM_PHASE_KEY}'). The anchor did not land.`,
+    );
+  }
+
+  const anchoredPhaseKey = DBT_PHASE_KEYS[prefs.dbt_program_phase_index];
+  const phaseExpectation = phaseExpectations[anchoredPhaseKey];
+  if (!phaseExpectation) {
+    throw new Error(
+      `The anchored DBT phase index ${prefs.dbt_program_phase_index} is ` +
+        `'${anchoredPhaseKey ?? "out of range"}', which this script declares no expectations ` +
+        `for - it seeds '${DBT_PROGRAM_PHASE_KEY}'. Re-phasing the account means re-choosing ` +
+        "which milestones and which daily practice the rows have to satisfy, because no two " +
+        "phases share them.",
+    );
+  }
+
+  // ☠️ Through `capturedDayKey`, NEVER the viewer's clock. Every DBT table
+  // carries an offset beside its timestamp, so `didOnCapturedDay` on the client
+  // compares the day the row itself names - and this check has to resolve the
+  // day the same way or it would be measuring a different question than the
+  // screen does. This is the one line that would have been copied wrong from the
+  // ACT block above, where no offset exists to read.
+  const today = dayKeyAt(DAYS - 1);
+  const namesToday = (rows) =>
+    rows.some((row) => capturedDayKey(row.created_at, row.created_offset_minutes) === today);
+  const sincePhase = (rows) => rows.some((row) => new Date(row.created_at).getTime() >= phaseStart);
+
+  const derived = {
+    started: prefs.dbt_program_started_at !== null,
+    graduated: prefs.dbt_program_completed_at !== null,
+    // `mindfulness`'s two milestones and its daily practice, in the same shape
+    // src/features/dbt/program-definition.ts evaluates them.
+    wiseMindOnce: sincePhase(wiseMind),
+    judgementOnce: sincePhase(judgements),
+    wiseMindOrJudgementDaily: namesToday(wiseMind) || namesToday(judgements),
+  };
+  const expected = {
+    started: true,
+    graduated: false,
+    ...phaseExpectation.milestones,
+    ...phaseExpectation.dailyPractice,
+  };
+
+  const disagreements = Object.keys(expected)
+    .filter((key) => derived[key] !== expected[key])
+    .map((key) => `${key}: anchored ${expected[key]}, derived ${derived[key]}`);
+  if (disagreements.length > 0) {
+    throw new Error(
+      `The seeded DBT programme anchor ('${anchoredPhaseKey}') and the rows behind it ` +
+        `disagree - ${disagreements.join("; ")}. The anchor is the input and the rows are ` +
+        "generated to satisfy it, so whichever moved, they have to move together.",
+    );
+  }
+
+  if (Object.values(phaseExpectation.milestones).every(Boolean)) {
+    throw new Error(
+      `Every milestone of '${anchoredPhaseKey}' is expected done, so the phase would read ` +
+        "complete rather than partially complete.",
+    );
+  }
+  if (Object.values(phaseExpectation.dailyPractice).some(Boolean)) {
+    throw new Error(
+      `Today's practice for '${anchoredPhaseKey}' is expected done. It is deliberately left ` +
+        "open - it is the one row a reviewer can exercise on the demo account themselves.",
+    );
+  }
+}
+
 // ------------------------------------------------------------------ routines
 // Four routines whose steps are CBT, ACT and shared-tool practices (#1290,
 // #1271). Nothing seeded routines before #1290, so the /routines list, Home's
@@ -5271,80 +5683,29 @@ const SEEDED_ROUTINES = [
   }
 }
 
-// ------------------------ the Home layouts, read back out of the DB (#1352)
+// ------------------------ the seeded favourites, read back out of the DB (#1352)
 // Three accounts, one guard, because the three facts are one decision: demo's
-// dashboard is full, bob's holds exactly what onboarding would have given him, and
-// alice's is empty ON PURPOSE. This script only ever WRITES the demo user, but it is
+// Favourites are full, bob's hold exactly what onboarding would have given him, and
+// alice's are empty ON PURPOSE. This script only ever WRITES the demo user, but it is
 // the last thing `npm run db:reset` runs, so it is the only place that can fail
 // loudly about all three on a freshly reset stack — `supabase/seed.sql` is a plain
 // data file with no way to assert anything.
 //
-// Checked as IDS IN POSITION ORDER, never as a count. The failure this exists to
-// catch is a silently dropped or mistyped id: `widget_preferences.widget_id` is bare
-// TEXT with no FK and no check, and the dashboard filters on `widgetId in
-// WIDGET_META`, so a typo inserts fine, renders nothing, and reads as a missing Home
-// row that gets blamed on the screen being reviewed.
+// Checked as a SORTED set of `kind:key`, never as a count. The failure this exists to
+// catch is a silently dropped or mistyped key: `favorites.key` is bare TEXT with no
+// FK and no check, so a typo inserts fine, Home ignores it, and it reads as a missing
+// card that gets blamed on the screen being reviewed. (Until #1959 this block read
+// `widget_preferences` layouts back the same way; no seed writes that table now.)
 {
   // Must match supabase/seed.sql. Read-only here; nothing below writes them.
   const ALICE_USER_ID = "00000000-0000-0000-0000-000000000001";
   const BOB_USER_ID = "00000000-0000-0000-0000-000000000002";
-  // Restated from #1352, not read off seed.sql, so the two have something to
-  // disagree about.
-  const BOB_WIDGET_IDS = ["cbt-programme", "mood-checkin", "breathing-suggested", "journal-week"];
-
-  const readLayout = async (userId, label) => {
-    const { data, error } = await admin
-      .from("widget_preferences")
-      .select("widget_id,position")
-      .eq("user_id", userId)
-      .order("position", { ascending: true });
-    if (error) throw new Error(`${label} widget_preferences read-back: ${error.message}`);
-    return data;
-  };
-
-  const expectLayout = (rows, expected, label) => {
-    const ids = rows.map((row) => row.widget_id);
-    if (JSON.stringify(ids) !== JSON.stringify(expected)) {
-      throw new Error(
-        `${label}'s Home layout reads [${ids.join(", ")}], not [${expected.join(", ")}]. ` +
-          "An id that is not in WIDGET_META inserts fine and renders nothing, so a typo " +
-          "here surfaces as a Home row the reviewer thinks the screen dropped.",
-      );
-    }
-    // 0-based and contiguous, the way `apply_widget_recommendations` assigns them.
-    const positions = rows.map((row) => row.position);
-    const wanted = expected.map((_, index) => index);
-    if (JSON.stringify(positions) !== JSON.stringify(wanted)) {
-      throw new Error(
-        `${label}'s widget positions are [${positions.join(", ")}], not a contiguous ` +
-          `0-based [${wanted.join(", ")}]. That is not a layout a real wizard run produces.`,
-      );
-    }
-  };
-
-  expectLayout(await readLayout(DEMO_USER_ID, "demo"), DEMO_WIDGET_IDS, "demo");
-  // ⚠️ bob's rows come from seed.sql and this script never writes them, so this leg
+  // ⚠️ bob's rows come from seed.sql and this script never writes them, so his leg
   // can only fail on a stack whose seed.sql did not run or was undone. Anything that
-  // clears a seed user's `widget_preferences` wholesale strips a layout nothing short
-  // of `npm run db:reset` restores — which is why the integration suite's cleanup is
-  // scoped to its own `test-widget-*` ids rather than deleting by user.
-  expectLayout(await readLayout(BOB_USER_ID, "bob"), BOB_WIDGET_IDS, "bob");
-
-  const aliceLayout = await readLayout(ALICE_USER_ID, "alice");
-  if (aliceLayout.length > 0) {
-    throw new Error(
-      `alice holds ${aliceLayout.length} widget preference(s), and she is the fixture whose ` +
-        "Home must read as an EMPTY DASHBOARD. Once demo and bob carry layouts she is the " +
-        "only account left on which the empty-dashboard re-offer, and the onboarding " +
-        "wizard's starter panel behind it, are reachable at all.",
-    );
-  }
-
-  // The same three facts, for favourites (#1953): demo's and bob's are exactly the
-  // rows the migration's copy would have produced from their widget rows, and
-  // alice's are zero. Compared as a SORTED set of `kind:key`, not in position
-  // order - favourites have no position, and the migration writes them in no
-  // particular order either.
+  // clears a seed user's `favorites` wholesale strips rows nothing short of
+  // `npm run db:reset` restores — which is why the integration suite's cleanup of
+  // that table is reserved for throwaway users. Restated from #1953, not read off
+  // seed.sql, so the two have something to disagree about.
   const BOB_FAVORITES = [
     ["module", "cbt"],
     ["tool", "mood"],
@@ -5369,16 +5730,18 @@ const SEEDED_ROUTINES = [
   };
   await expectFavorites(DEMO_USER_ID, DEMO_FAVORITES, "demo");
   await expectFavorites(BOB_USER_ID, BOB_FAVORITES, "bob");
+  // alice is the account whose Home must show the EMPTY Favourites line: once demo
+  // and bob carry favourites she is the only account left on which that state, and
+  // the star's first press, are reviewable at all.
   await expectFavorites(ALICE_USER_ID, [], "alice");
 
-  // The other two invariants this layout decided — demo's remaining `/arrange` chip
-  // run of 11, and bob's four ids composing a THREE-step starter card — are asserted
-  // in `test/seed-widget-layouts.test.ts`, not here, and deliberately so. Both are
-  // facts about SOURCE (`WIDGET_META`, `buildStarterSteps`), not about rows, and that
-  // test can `import` the real thing where this script, being plain `.mjs`, could only
-  // regex TypeScript. A guard that reads another file's type annotation and
-  // indentation would break `npm run db:reset` on a reformat that changed nothing.
-  // This block owns what only a database can answer; that test owns the rest.
+  // Whether every seeded key is a real catalogue item is asserted in
+  // `test/seed-favorites.test.ts`, not here, and deliberately so. It is a fact about
+  // SOURCE (`CATALOGUE` in src/features/favorites/items.ts), and that test can
+  // `import` the real thing where this script, being plain `.mjs`, could only regex
+  // TypeScript. A guard that reads another file's type annotation and indentation
+  // would break `npm run db:reset` on a reformat that changed nothing. This block owns
+  // what only a database can answer; that test owns the rest.
 }
 
 // ------------------- reminder consent, read back out of the DB (#1271/#1525)

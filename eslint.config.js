@@ -126,6 +126,9 @@ const CAPTURED_FRAME_FILES = [
   "src/features/grounding/**/*.{ts,tsx}",
   "src/features/activities/**/*.{ts,tsx}",
   "src/features/cbt/**/*.{ts,tsx}",
+  // DBT is born in the captured frame (#1980 spec §5.2): every one of its dated
+  // tables carries an offset from day one, so the module joins whole.
+  "src/features/dbt/**/*.{ts,tsx}",
   "app/(app)/tools/breathing/**/*.{ts,tsx}",
 ];
 

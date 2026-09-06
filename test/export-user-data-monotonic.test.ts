@@ -45,6 +45,13 @@ const INTENTIONALLY_DROPPED = new Set([
   // pre-routines "plan" concept, replaced by routines/routine_steps in the same
   // migration. Confirmed absent from information_schema on a migrated database.
   "plan_items.*",
+  // `20260909000000_onboarding_one_panel.sql` drops both columns (#1958). The
+  // one-panel wizard no longer asks for concerns, so the pre-tick that read
+  // `selected_concerns` is gone; `widgets_seeded` recorded a Home seeding that
+  // onboarding no longer performs. `initial_concerns` - the immutable intake
+  // record - is a different column and is still exported.
+  "user_preferences.selected_concerns",
+  "user_preferences.widgets_seeded",
 ]);
 
 /**

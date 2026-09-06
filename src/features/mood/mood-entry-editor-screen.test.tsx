@@ -344,7 +344,10 @@ describe("MoodEntryEditorScreen", () => {
       fireEvent.press(screen.getByText("Open a CBT thought record →"));
 
       expect(mockRouter.push).toHaveBeenCalledWith("/modules/cbt/new");
-      expect(consumeThoughtRecordSeed()).toEqual(["anxious"]);
+      // ⚠️ The check-in seeds emotions ONLY. Its note is a note, not a
+      // situation - which is why the seed's `situation` stays empty here even
+      // though the DBT emotion record fills it (#1980).
+      expect(consumeThoughtRecordSeed()).toEqual({ emotions: ["anxious"], situation: "" });
     });
 
     it("pushes rather than replaces, so the half-written check-in survives the detour", () => {

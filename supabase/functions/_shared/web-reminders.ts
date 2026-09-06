@@ -6,6 +6,7 @@ export type ReminderTarget =
   | "cbt"
   | "meditation"
   | "act"
+  | "dbt"
   | "mood"
   | "journal"
   | "gratitude"
@@ -23,6 +24,7 @@ export interface WebPushSubscriptionRow {
   last_cbt_reminder_key: string | null;
   last_meditation_reminder_key: string | null;
   last_act_reminder_key: string | null;
+  last_dbt_reminder_key: string | null;
   last_mood_reminder_key: string | null;
   last_journal_reminder_key: string | null;
   last_gratitude_reminder_key: string | null;
@@ -52,6 +54,10 @@ export interface UserPreferenceRow {
   act_reminder_hour: number;
   act_reminder_minute: number;
   act_reminder_timezone: string | null;
+  dbt_reminders_enabled: boolean;
+  dbt_reminder_hour: number;
+  dbt_reminder_minute: number;
+  dbt_reminder_timezone: string | null;
   mood_reminders_enabled: boolean;
   mood_reminder_hour: number;
   mood_reminder_minute: number;
@@ -130,6 +136,18 @@ const ACT_PRACTICE_SOURCES: readonly [ActivitySource, ...ActivitySource[]] = [
   { table: "act_action_steps", timestampColumn: "completed_at" },
 ];
 
+// The six DBT tables that mean "practised today". Each is a security-invoker
+// view over an encrypted `_data` table; the service role reads through the view
+// exactly as it does for ACT's, selecting `id` only.
+const DBT_PRACTICE_SOURCES: readonly [ActivitySource, ...ActivitySource[]] = [
+  { table: "dbt_sessions", timestampColumn: "completed_at" },
+  { table: "dbt_wise_mind_checkins", timestampColumn: "created_at" },
+  { table: "dbt_judgements", timestampColumn: "created_at" },
+  { table: "dbt_emotion_records", timestampColumn: "created_at" },
+  { table: "dbt_opposite_action_plans", timestampColumn: "created_at" },
+  { table: "dbt_scripts", timestampColumn: "created_at" },
+];
+
 export interface TargetConfig {
   enabledField: keyof UserPreferenceRow;
   hourField: keyof UserPreferenceRow;
@@ -176,6 +194,20 @@ export const TARGET_CONFIGS: Record<ReminderTarget, TargetConfig> = {
     tag: "selftend-act-reminder",
     // No single ACT activity table, so the practice logs are read any-of (#1668).
     activitySources: ACT_PRACTICE_SOURCES,
+  },
+  dbt: {
+    enabledField: "dbt_reminders_enabled",
+    hourField: "dbt_reminder_hour",
+    minuteField: "dbt_reminder_minute",
+    timezoneField: "dbt_reminder_timezone",
+    lastKeyField: "last_dbt_reminder_key",
+    url: "/modules/dbt",
+    tag: "selftend-dbt-reminder",
+    // Six tables, read any-of, the way ACT's practice logs are. ☠️ The coping
+    // plan is NOT among them: its `updated_at` moves when someone reorders a
+    // list, which is not a day's practice and would suppress a reminder the
+    // person never earned.
+    activitySources: DBT_PRACTICE_SOURCES,
   },
   mood: {
     enabledField: "mood_reminders_enabled",
@@ -279,6 +311,7 @@ export const TARGETS: ReminderTarget[] = [
   "cbt",
   "meditation",
   "act",
+  "dbt",
   "mood",
   "journal",
   "gratitude",

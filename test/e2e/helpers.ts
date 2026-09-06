@@ -14,7 +14,7 @@ import {
   deleteAllCoreBeliefsForUser,
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
-  deleteAllWidgetPreferencesForUser,
+  deleteAllFavoritesForUser,
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
   deleteAllRoutinesForUser,
@@ -34,6 +34,7 @@ export {
   deleteAllCoreBeliefsForUser,
   deleteAllGoalsForUser,
   deleteAllActLogsForUser,
+  deleteAllFavoritesForUser,
   deleteAllExposureForUser,
   deleteAllActivityLogsForUser,
   deleteAllRoutinesForUser,
@@ -46,10 +47,25 @@ export {
 // (test/toast-signal.test.ts) - `test/e2e/` is in jest's testPathIgnorePatterns.
 export { SAVE_FAILED_TOAST_TITLE, expectSuccessToast } from "./toast-signal";
 
-// Alias: clear widget preferences. Empty Home is intentional and no longer seeds defaults.
-export async function resetWidgetPreferencesForUser(userId: string): Promise<void> {
-  await deleteAllWidgetPreferencesForUser(userId);
+/**
+ * Replace the user's favourites with exactly these rows (#1956): what Home's Favourites
+ * section renders, in catalogue order whatever order they are given here.
+ */
+export async function seedFavoritesForUser(
+  userId: string,
+  rows: { kind: "tool" | "module"; key: string }[],
+): Promise<void> {
+  await deleteAllFavoritesForUser(userId);
+  if (rows.length === 0) return;
+  const admin = createServiceClient();
+  const { error } = await admin
+    .from("favorites")
+    .insert(rows.map((row) => ({ user_id: userId, ...row })));
+  if (error) throw new Error(`seedFavoritesForUser failed: ${error.message}`);
 }
+
+/** The heading that proves Home rendered: unique to Home, and drawn before its query settles. */
+export const HOME_HEADING = { name: "Favourites", level: 2 } as const;
 
 // Sign in via the actual UI form using a seeded user. Asserts redirect to the
 // authenticated tabs.
@@ -198,7 +214,7 @@ export async function dismissPostSignInModals(page: Page) {
     await expect(consentTitle).toBeHidden({ timeout: 10_000 });
   }
 
-  // First-run wizard: "Skip for now" completes onboarding from any panel.
+  // First-run introduction (one panel since #1958): "Skip for now" completes onboarding.
   const wizardTitle = page.getByText(/Welcome to Selftend/i);
   const wizardVisible = await wizardTitle
     .waitFor({ state: "visible", timeout: 2_000 })

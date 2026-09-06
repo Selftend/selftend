@@ -45,6 +45,8 @@ const mockUseUpdateShownButtonTours = useUpdateShownButtonTours as jest.MockedFu
   typeof useUpdateShownButtonTours
 >;
 
+const NAVIGATION_COPY = "Find all Modules and Tools here.";
+
 const fakeView = new MockView({});
 
 function setupMutationMock(mutateAsync = jest.fn().mockResolvedValue(defaultUserPreferences)) {
@@ -69,101 +71,86 @@ function setupPreferencesMock(appOnboardingCompleted: boolean, shownButtonTours:
 beforeEach(() => {
   jest.clearAllMocks();
   mockPathname = "/";
-  // Clear all registered targets between tests.
-  setTourTarget("home-edit", null);
   setTourTarget("home-navigation", null);
 });
 
+/**
+ * One stop since #1956: `home:edit` pointed at the Arrange / Add tool cluster, which went
+ * with the dashboard it edited. The tests that used to assert the edit copy ABSENT are
+ * re-pointed at the navigation stop rather than deleted - the pathname gate's only
+ * coverage was one of them, and an absence assertion for copy that no longer exists
+ * passes forever.
+ */
 describe("HomeTour", () => {
   it("renders nothing until app onboarding is complete", () => {
     setupPreferencesMock(false, []);
     setupMutationMock();
-    setTourTarget("home-edit", fakeView as never);
+    setTourTarget("home-navigation", fakeView as never);
 
     renderWithProviders(<HomeTour />);
 
-    expect(
-      screen.queryByText("Arrange your home screen - add, remove and reorder your tools."),
-    ).toBeNull();
+    expect(screen.queryByText(NAVIGATION_COPY)).toBeNull();
+    expect(screen.queryByText("Got it")).toBeNull();
   });
 
-  it("shows the first unseen stop whose target is registered", async () => {
+  it("shows the navigation stop once its target is registered", async () => {
     setupPreferencesMock(true, []);
     setupMutationMock();
-    setTourTarget("home-edit", fakeView as never);
+    setTourTarget("home-navigation", fakeView as never);
 
     renderWithProviders(<HomeTour />);
 
-    expect(
-      await screen.findByText("Arrange your home screen - add, remove and reorder your tools."),
-    ).toBeTruthy();
+    expect(await screen.findByText(NAVIGATION_COPY)).toBeTruthy();
   });
 
   it("does not show Home tips while another route covers Home", () => {
     mockPathname = "/settings";
     setupPreferencesMock(true, []);
     setupMutationMock();
-    setTourTarget("home-edit", fakeView as never);
-
-    renderWithProviders(<HomeTour />);
-
-    expect(
-      screen.queryByText("Arrange your home screen - add, remove and reorder your tools."),
-    ).toBeNull();
-  });
-
-  /**
-   * Home's edit cluster is mounted only when the tool tier is non-empty (#979), so an
-   * empty dashboard leaves `home-edit` unregistered. Skipping is not dismissing: the stop
-   * must fall out of the queue WITHOUT being written to `shown_button_tours`, or the tip
-   * burns itself on the one screen where it has nothing to point at and never fires on
-   * the screen where it would.
-   */
-  it("skips an unregistered home-edit without marking it shown", async () => {
-    const mutateAsync = setupMutationMock();
-    setupPreferencesMock(true, []);
-    // Only the hamburger is registered - an empty dashboard's home.
     setTourTarget("home-navigation", fakeView as never);
 
     renderWithProviders(<HomeTour />);
 
-    expect(await screen.findByText("Find all Modules and Tools here.")).toBeTruthy();
-    expect(
-      screen.queryByText("Arrange your home screen - add, remove and reorder your tools."),
-    ).toBeNull();
-
-    fireEvent.press(screen.getByText("Got it"));
-
-    await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["home:navigation"]);
-    });
-  });
-
-  it("skips stops with no registered target (desktop: no hamburger)", () => {
-    setupPreferencesMock(true, ["home:edit"]);
-    setupMutationMock();
-    // Do NOT register "home-navigation"
-
-    renderWithProviders(<HomeTour />);
-
-    expect(screen.queryByText("Find all Modules and Tools here.")).toBeNull();
+    expect(screen.queryByText(NAVIGATION_COPY)).toBeNull();
     expect(screen.queryByText("Got it")).toBeNull();
   });
 
-  it("dismiss stores the stop key; skip-all stores both home keys", async () => {
+  /**
+   * Skipping is not dismissing. A stop whose target is unregistered (desktop, where there
+   * is no hamburger) falls out of the queue WITHOUT being written to `shown_button_tours`
+   * - otherwise the tip burns itself on the one screen where it has nothing to point at.
+   * This is the proof that used to ride the edit stop; it now rides the only stop left,
+   * and the write assertion is what makes it a proof rather than a blank screen.
+   */
+  it("skips an unregistered stop without marking it shown", async () => {
     const mutateAsync = setupMutationMock();
     setupPreferencesMock(true, []);
-    setTourTarget("home-edit", fakeView as never);
+    // Do NOT register "home-navigation".
+
+    renderWithProviders(<HomeTour />);
+
+    await waitFor(() => expect(screen.queryByText("Got it")).toBeNull());
+    expect(screen.queryByText(NAVIGATION_COPY)).toBeNull();
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("dismiss stores the stop key; Skip all tips stores the same one stop", async () => {
+    const mutateAsync = setupMutationMock();
+    setupPreferencesMock(true, []);
+    setTourTarget("home-navigation", fakeView as never);
 
     renderWithProviders(<HomeTour />);
 
     fireEvent.press(await screen.findByText("Got it"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["home:edit"]);
+      expect(mutateAsync).toHaveBeenCalledWith(["home:navigation"]);
     });
 
-    // Reset and re-render to test skip-all.
+    // Reset and re-render to test skip-all. With one stop it writes the same key: it
+    // still renders, because the e2e helpers and every other tour dismiss through it,
+    // and an overlay whose second button quietly vanished on Home alone would be the
+    // kind of difference nothing but a screenshot could explain.
     mutateAsync.mockClear();
     setupPreferencesMock(true, []);
 
@@ -171,9 +158,20 @@ describe("HomeTour", () => {
     fireEvent.press(await screen.findByText("Skip all tips"));
 
     await waitFor(() => {
-      expect(mutateAsync).toHaveBeenCalledWith(["home:edit", "home:navigation"]);
+      expect(mutateAsync).toHaveBeenCalledWith(["home:navigation"]);
     });
 
     unmount();
+  });
+
+  it("shows nothing once the one stop has been seen", () => {
+    setupPreferencesMock(true, ["home:navigation"]);
+    setupMutationMock();
+    setTourTarget("home-navigation", fakeView as never);
+
+    renderWithProviders(<HomeTour />);
+
+    expect(screen.queryByText("Got it")).toBeNull();
+    expect(screen.queryByText("Skip all tips")).toBeNull();
   });
 });

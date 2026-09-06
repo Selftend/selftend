@@ -1,4 +1,4 @@
-export type ModuleKey = "cbt" | "meditation" | "gratitude" | "act";
+export type ModuleKey = "cbt" | "meditation" | "gratitude" | "act" | "dbt";
 
 export type ButtonTourAction = "tune" | "notifications" | "program" | "info";
 // A shown-tour storage key: legacy bare action ("info"), screen-scoped
@@ -62,6 +62,10 @@ export interface UserPreferences {
   habitsReminderHour: number;
   habitsReminderMinute: number;
   habitsReminderTimezone: string | null;
+  dbtRemindersEnabled: boolean;
+  dbtReminderHour: number;
+  dbtReminderMinute: number;
+  dbtReminderTimezone: string | null;
   appOnboardingCompleted: boolean;
   appOnboardingCompletedVia: "finish" | "skip" | null;
   appOnboardingCompletedAt: string | null;
@@ -78,6 +82,17 @@ export interface UserPreferences {
   actProgramPhaseIndex: number;
   actProgramPhaseStartedAt: string | null;
   actGraduationDismissedAt: string | null;
+  /**
+   * The DBT programme's six columns (#1990), the same shape as ACT's above:
+   * no encrypted singleton, because DBT has no onboarding wizard and stores no
+   * such fact (spec §5.5).
+   */
+  dbtProgramStartedAt: string | null;
+  dbtProgramCompletedAt: string | null;
+  dbtProgramPromptDismissedAt: string | null;
+  dbtProgramPhaseIndex: number;
+  dbtProgramPhaseStartedAt: string | null;
+  dbtGraduationDismissedAt: string | null;
   privacyPolicyAcceptedAt: string | null;
   termsAcceptedAt: string | null;
   policyVersionAccepted: string | null;
@@ -120,7 +135,6 @@ export interface UserPreferences {
   language: string;
   languageExplicit: boolean;
   theme: string | null;
-  selectedConcerns: string[];
   activeStrategies: string[];
   startHereDismissedAt: string | null;
   shownButtonTours: ButtonTourKey[];
@@ -229,6 +243,10 @@ export const defaultUserPreferences: UserPreferences = {
   habitsReminderHour: 9,
   habitsReminderMinute: 0,
   habitsReminderTimezone: null,
+  dbtRemindersEnabled: false,
+  dbtReminderHour: 19,
+  dbtReminderMinute: 0,
+  dbtReminderTimezone: null,
   appOnboardingCompleted: false,
   appOnboardingCompletedVia: null,
   appOnboardingCompletedAt: null,
@@ -245,6 +263,12 @@ export const defaultUserPreferences: UserPreferences = {
   actProgramPhaseIndex: 0,
   actProgramPhaseStartedAt: null,
   actGraduationDismissedAt: null,
+  dbtProgramStartedAt: null,
+  dbtProgramCompletedAt: null,
+  dbtProgramPromptDismissedAt: null,
+  dbtProgramPhaseIndex: 0,
+  dbtProgramPhaseStartedAt: null,
+  dbtGraduationDismissedAt: null,
   privacyPolicyAcceptedAt: null,
   termsAcceptedAt: null,
   policyVersionAccepted: null,
@@ -258,7 +282,6 @@ export const defaultUserPreferences: UserPreferences = {
   language: "en",
   languageExplicit: false,
   theme: null,
-  selectedConcerns: [],
   activeStrategies: [],
   startHereDismissedAt: null,
   shownButtonTours: [],
@@ -279,7 +302,10 @@ export const defaultUserPreferences: UserPreferences = {
   emailVerified: false,
 };
 
-const VALID_MODULES: ModuleKey[] = ["cbt", "meditation", "gratitude", "act"];
+// ☠️ A key left out here is silently stripped from `enabledModules` on every read
+// (spec §5.5). `dbt` joined with its data layer; nothing writes it yet, since the
+// module has no onboarding chip and `enabled_modules` gates nothing.
+const VALID_MODULES: ModuleKey[] = ["cbt", "meditation", "gratitude", "act", "dbt"];
 
 export function sanitizeEnabledModules(value: unknown): ModuleKey[] {
   if (!Array.isArray(value)) return ["cbt"];

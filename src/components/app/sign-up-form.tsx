@@ -49,6 +49,14 @@ export function SignUpForm() {
   // account in place, not creating a second one. Same fields, different verbs:
   // `updateUser` instead of `signUp`, so the user id - and every row under it -
   // stays put.
+  // ☠️ The ONE predicate in the app deliberately still spelled on the flag
+  // (#1896). It does not ask "is this a guest?" - it asks "is this submit an
+  // upgrade of an existing anonymous row?", which chooses `updateUser` over
+  // `signUp`. The two answers differ only for a converted user inside the
+  // stale-flag window, and `app/(auth)/sign-up.tsx` now redirects that person
+  // before this form mounts - so the flag is unreachable where it would be
+  // wrong, and the branch that picks a Supabase call stays on the claim it is
+  // actually about.
   const isConversion = user?.is_anonymous === true;
   // ⚠️ These hrefs carry their route group - `/(auth)/sign-in` - which the
   // helper's `targetPathname` strips; see its docblock for why a raw one would

@@ -1,7 +1,7 @@
 {
   "name": "Selftend",
   "short_name": "Selftend",
-  "description": "A free, private CBT programme with calm everyday tools.",
+  "description": "A set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

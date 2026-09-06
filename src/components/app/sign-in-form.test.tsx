@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { TextInput } from "react-native";
 
 import bgAuth from "@/src/i18n/locales/bg/auth.json";
@@ -29,7 +29,7 @@ jest.mock("expo-router", () => {
 // guest; the factory closes over it and reads it at render time.
 const mockSessionState: {
   hasSupabaseConfig: boolean;
-  user: { is_anonymous?: boolean } | null;
+  user: { is_anonymous?: boolean; email?: string } | null;
 } = { hasSupabaseConfig: true, user: null };
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -234,8 +234,10 @@ describe("SignInForm", () => {
   describe("guest warn-and-abandon", () => {
     const WARNING_TITLE = "Your guest data stays behind";
 
+    // ☠️ `email: ""`, not an absent key — that is what a guest's user object
+    // actually carries, and the predicate reading it is `!email` (#1896).
     function asGuest() {
-      mockSessionState.user = { is_anonymous: true };
+      mockSessionState.user = { is_anonymous: true, email: "" };
     }
 
     it("shows the warning instead of signing in when the guest holds content", async () => {
@@ -333,7 +335,7 @@ describe("SignInForm", () => {
     });
 
     it("never runs the content check for a registered user", async () => {
-      mockSessionState.user = { is_anonymous: false };
+      mockSessionState.user = { is_anonymous: false, email: "person@example.com" };
       mockSignIn.mockResolvedValue(undefined as never);
       renderWithProviders(<SignInForm />);
 
@@ -344,6 +346,110 @@ describe("SignInForm", () => {
 
       expect(mockGuestHasContent).not.toHaveBeenCalled();
       expect(mockSignIn).toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * #1865: the confirm above is calm and complete, but it fires from inside
+   * `guardSignIn`, which wraps the SUBMIT actions - so the first mention that
+   * this device's data stays behind arrived after an email and a password had
+   * been typed. The line says it on arrival instead.
+   */
+  describe("the guest content notice", () => {
+    const NOTICE =
+      "What you've saved as a guest stays on this device — you can export a copy before you finish signing in.";
+
+    // ☠️ `email: ""`, not an absent key — that is what a guest's user object
+    // actually carries, and the predicate reading it is `!email` (#1896).
+    function asGuest() {
+      mockSessionState.user = { is_anonymous: true, email: "" };
+    }
+
+    it("tells a guest holding content before they have typed anything", async () => {
+      asGuest();
+      mockGuestHasContent.mockResolvedValue(true);
+      renderWithProviders(<SignInForm />);
+
+      // No `fillCredentials()` - arriving is the whole trigger, and the point of
+      // the ticket is that this used to need a filled-in form to appear.
+      expect(await screen.findByTestId("sign-in-guest-notice")).toBeTruthy();
+      expect(screen.getByText(NOTICE)).toBeTruthy();
+    });
+
+    /**
+     * ☠️ `CONTEXT.md` §Abandonment: both words hide that data is being left
+     * behind, which is the one thing this line exists to say.
+     */
+    it("says it without the words that hide it", () => {
+      expect(NOTICE).not.toMatch(/\b(switch|log ?out|sign ?out)\b/i);
+    });
+
+    /**
+     * ☠️☠️ THE SURFACE #1896 MISSED. `useGuestContentNotice` was still reading
+     * `is_anonymous` after the predicate was extracted, so inside the stale-JWT
+     * window this line told a person who had JUST converted that their work
+     * "stays on this device". It does not — it is theirs by email and password
+     * now, and it is going nowhere.
+     *
+     * That makes this the costliest of the flag-reading surfaces to leave: the
+     * line is a standing false claim of impending loss, sitting in front of the
+     * account, which `docs/product-principles.md` §12 removes steps toward.
+     *
+     * ⚠️ The check must never even be ASKED for them. `enabled` is the same
+     * predicate, so a converted user pays for no `export_user_data` round trip.
+     */
+    it("says nothing, and asks nothing, inside the stale-flag window", async () => {
+      mockSessionState.user = { is_anonymous: true, email: "converted@example.com" };
+      mockGuestHasContent.mockResolvedValue(true);
+      renderWithProviders(<SignInForm />);
+
+      await waitFor(() => expect(screen.getByText("Continue")).toBeTruthy());
+      expect(screen.queryByTestId("sign-in-guest-notice")).toBeNull();
+      expect(mockGuestHasContent).not.toHaveBeenCalled();
+    });
+
+    it("says nothing to a guest with an empty account", async () => {
+      asGuest();
+      mockGuestHasContent.mockResolvedValue(false);
+      renderWithProviders(<SignInForm />);
+
+      // Wait for the check to actually resolve, so this is "asked and answered
+      // no" rather than "asserted before the answer arrived".
+      await waitFor(() => expect(mockGuestHasContent).toHaveBeenCalled());
+      expect(screen.queryByTestId("sign-in-guest-notice")).toBeNull();
+    });
+
+    /**
+     * ☠️ The two halves fail in OPPOSITE directions, and this test is the pair.
+     * A standing line is a claim, so an unreachable `export_user_data` must not
+     * put one on the screen - but the confirm's polarity is untouched, so an
+     * unreachable check still warns at submit. The line can under-promise; it
+     * can never over-promise.
+     */
+    it("stays silent when the check fails, while the confirm still warns", async () => {
+      asGuest();
+      mockGuestHasContent.mockRejectedValue(new Error("network down"));
+      renderWithProviders(<SignInForm />);
+
+      await waitFor(() => expect(mockGuestHasContent).toHaveBeenCalled());
+      expect(screen.queryByTestId("sign-in-guest-notice")).toBeNull();
+
+      fillCredentials();
+      fireEvent.press(screen.getByText("Continue"));
+
+      expect(await screen.findByText("Your guest data stays behind")).toBeTruthy();
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    it("shows nothing, and asks nothing, for a registered user", async () => {
+      mockSessionState.user = { is_anonymous: false, email: "person@example.com" };
+      renderWithProviders(<SignInForm />);
+
+      await waitFor(() => expect(screen.getByText("Continue")).toBeTruthy());
+      expect(screen.queryByTestId("sign-in-guest-notice")).toBeNull();
+      // The mount check is disabled outright, so a registered user never pays
+      // the export round trip for a line that could not apply to them.
+      expect(mockGuestHasContent).not.toHaveBeenCalled();
     });
   });
 });

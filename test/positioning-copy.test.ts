@@ -1,7 +1,9 @@
+import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
-import { LOCALE_STRINGS } from "@/test/locale-strings";
+import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
+import { APP_STORE_CAPS } from "@/test/store-caps";
 
 /**
  * The merge-gate half of `docs/positioning.md` (#1611, spec'd by #1606).
@@ -29,13 +31,26 @@ import { LOCALE_STRINGS } from "@/test/locale-strings";
  * #1606 put it, turn out to be the highest-consequence ones on the map: the
  * claims a person writing marketing copy in good faith reaches for first.
  *
- * ☠️ **ONE-SIDED ON PURPOSE (#1606 §9).** Every rule here is a ban. There is no
- * assertion that the hero *contains* "CBT", because that pins a string and fails
- * on any legitimate rewrite. And #1604's real positive rule - the everyday tools
- * are an on-ramp, never listed flat beside the programme - is a judgement no
- * regex reaches. It is stated in `docs/positioning.md` in prose precisely so
- * nobody builds a brittle gate for it here, watches it fail on good copy, and
- * deletes the whole file.
+ * ☠️ **ONE-SIDED UNTIL #1790, AND THE EXCEPTION IS NAMED RATHER THAN QUIET.**
+ * #1606 §9 seeded this file as bans only: *"There is no assertion that the hero
+ * contains 'CBT', because that pins a string and fails on any legitimate
+ * rewrite."* #1759 re-weighed that and declined to change it. #1790 overturned
+ * it for ONE rule, on a fact neither of them had: the repositioning (#2004)
+ * took CBT out of the category noun, so the noun no longer carries the method
+ * onto the surfaces it reaches, and `docs/positioning.md`'s clause 1 became the
+ * only thing keeping the method on a surface - under a heading that says no
+ * gate can enforce it.
+ *
+ * ⚠️ The rewrite objection is answered by scope rather than waved away: the one
+ * positive rule asserts the METHOD IS PRESENT, never that a sentence is equal,
+ * and it runs only over surfaces this repo ships. See the ring at the bottom of
+ * this file for what it covers and the two things it deliberately does not.
+ *
+ * ⚠️ Unchanged by that: #1604's real positive rule - the everyday tools are an
+ * on-ramp, never listed flat beside the programme - is a judgement no regex
+ * reaches. It stays in `docs/positioning.md` in prose precisely so nobody
+ * builds a brittle gate for it here, watches it fail on good copy, and deletes
+ * the whole file.
  */
 
 const ROOT = path.resolve(__dirname, "..");
@@ -52,6 +67,35 @@ function readFile(relative: string): Scanned {
     surface: relative,
     id: relative,
     text: fs.readFileSync(path.join(ROOT, relative), "utf8"),
+  };
+}
+
+/**
+ * The same, with markup replaced by whitespace — for the artwork sources in
+ * `RENDERED_ARTWORK_SOURCES`.
+ *
+ * ☠️☠️ **WITHOUT THIS, ADDING THE FILE TO THE CORPUS GUARDS NOTHING, AND
+ * THE SUITE IS GREEN EITHER WAY.** Every rule in this file is a regex over a
+ * flat string, and the phrases they ban are multi-word. In an HTML document a
+ * tag can fall between any two of those words — and in the file this was
+ * written for, one did: the headline was
+ *
+ *     <h1>Calm, guided <span class="accent">self-help</span></h1>
+ *
+ * `\bguided\s+(?:[\w-]+\s+){0,1}self[-\s]help` does not match that, because
+ * `<span class="accent">` is not `[\w-]+`. So the corpus entry would have been
+ * added in response to a live violation, over the exact file carrying it, and
+ * reported clean — the worst outcome available, because it also looks like
+ * proof the rest of the repository is clean.
+ *
+ * Replaced with a SPACE and never the empty string: `a<br>b` is two words, and
+ * concatenating it into `ab` would hide a phrase as surely as splitting one.
+ */
+function readArtworkSource(relative: string): Scanned {
+  return {
+    surface: relative,
+    id: relative,
+    text: fs.readFileSync(path.join(ROOT, relative), "utf8").replace(/<[^>]+>/g, " "),
   };
 }
 
@@ -112,7 +156,10 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  *     fixing one without the other silently desynchronises them.
  *   - `campaign/scripts/` are the narrations of eight videos already on YouTube.
  *     Changing a script does not change a video.
- *   - `launch/` holds a published Reddit banner.
+ *   - `launch/` holds a published Reddit banner. ☠️ It does NOT hold only
+ *     that: the Play feature graphic's HTML source lives beside it and is
+ *     regenerated on demand rather than published once, so it is carved back
+ *     out by `RENDERED_ARTWORK_SOURCES` below (#2022).
  *   - `design/1822-before/` transcribes every LIVE surface verbatim (#1822), so
  *     that #1823 can diff its rewrite against what a visitor actually sees. It
  *     exists BECAUSE the live copy violates these rules: `main` is 117 commits
@@ -125,6 +172,12 @@ const I18N_VALUES: Scanned[] = USER_FACING.filter(({ surface }) => surface.start
  *     in order to ban them — the designer reads the brief and never the repo,
  *     so a rule the brief cannot spell out is a rule the designer cannot obey.
  *     Only the prompt file is excluded; the README beside it stays scanned.
+ *   - `design/1980-handoff/prompt.md` is the DBT module's Claude Design brief
+ *     (#1994), the same shape for the same reason: its "Never write" table
+ *     spells the American spellings and the banned phrases out to ban them.
+ *     Only the prompt file is excluded; the README and the spec it is drawn
+ *     from (`modules/dbt-mckay-skills-workbook.md`) stay scanned - the spec
+ *     cites the workbook without spelling its American title.
  */
 const PUBLISHED_RECORDS = [
   "docs/positioning.md",
@@ -134,23 +187,115 @@ const PUBLISHED_RECORDS = [
   "docs/campaign/scripts/",
   "docs/design/1822-before/",
   "docs/design/1825-handoff/prompt.md",
+  "docs/design/1980-handoff/prompt.md",
   "docs/launch/",
 ];
 
 /**
+ * Every path git is tracking under `docs/`, repo-relative and POSIX-separated.
+ *
+ * ☠️☠️ **READING A CORPUS OFF DISK IS RIGHT FOR `src/i18n/locales/` AND WRONG
+ * FOR `docs/`, AND #1908 IS WHERE THAT DIFFERENCE COST SOMETHING.** The walk
+ * below is what keeps a doc added tomorrow covered without anyone remembering
+ * to list it, and it is safe over the locales tree because that tree has no
+ * untracked members. `docs/` does: `docs/superpowers/` is gitignored
+ * (`.gitignore:63`) and holds old plans and copy audits that legitimately quote
+ * the banned compound in order to record it. So the working tree and the git
+ * index disagree, and the corpus was built from the wrong one — **six offenders
+ * on a clean `dev`, all of them gitignored scratch, and green in CI, on the
+ * machine of the person most likely to act on it.**
+ *
+ * That is the exact failure `docs/positioning.md` says twice gets a guard
+ * deleted rather than fixed: red on files that are not copy at all. The index
+ * is what CI scans, so the index is what the corpus is intersected with.
+ *
+ * ⚠️ This is a filter, never the source. Discovery stays the disk walk, so a
+ * committed doc still cannot hide by being absent from a list — and an
+ * `execSync` that fails takes the whole suite down loudly rather than returning
+ * an empty set and making every prose rule vacuously green.
+ */
+const TRACKED_DOCS: ReadonlySet<string> = new Set(
+  execFileSync("git", ["ls-files", "-z", "--cached", "--", "docs"], {
+    cwd: ROOT,
+    encoding: "utf8",
+    maxBuffer: 32 * 1024 * 1024,
+  })
+    .split("\0")
+    .filter(Boolean),
+);
+
+/**
+ * The corpus filter, extracted so it can be exercised on synthetic input: on a
+ * clean checkout — CI, or any worktree — the gitignored tree simply is not
+ * there, so the bug is invisible to a test that can only read this machine.
+ */
+function proseDocIds(walked: string[], tracked: ReadonlySet<string>): string[] {
+  return walked
+    .filter((file) => file.endsWith(".md"))
+    .filter((file) => tracked.has(file))
+    .filter((file) => !PUBLISHED_RECORDS.some((record) => file.startsWith(record)))
+    .sort();
+}
+
+/**
+ * Artwork that is TEXT in this repository and pixels everywhere else (#2022).
+ *
+ * ☠️☠️ **"IT IS AN IMAGE, SO NO GATE CAN SEE IT" IS HALF WRONG, AND THE WRONG
+ * HALF IS THE ONE THAT COSTS SOMETHING.** The Play feature graphic published the
+ * banned compound as its headline for the whole of the #1616 → #2003
+ * repositioning, and every account of it — the ticket that found it, and
+ * `store/play-listing.md` — explained the miss by saying a PNG is unreadable to
+ * a gate. True, and beside the point: the PNG is a *screenshot* of
+ * `feature-graphic.html`, which is text, tracked, and sitting in this repository
+ * the entire time. The words were greppable; nothing was grepping them.
+ *
+ * They fell through two filters at once, and neither was aimed at them:
+ *
+ *   1. `proseDocIds` keeps `.md` files only, because the corpus was built to
+ *      walk a documentation tree. An `.html` file is not a doc, so it was never
+ *      a candidate.
+ *   2. `docs/launch/` is a `PUBLISHED_RECORDS` entry, earned by the Reddit
+ *      banner beside it — a banner posted once, whose source must keep matching
+ *      the image on Reddit rather than the current positioning.
+ *
+ * ⚠️ **The exclusion is right about the banner and wrong about the graphic, and
+ * the difference is not "image vs doc" — it is whether the artefact is FINISHED.**
+ * A posted banner is a record: editing its source changes nothing that anyone
+ * can see, and would only make the record lie. A store asset is live inventory:
+ * `docs/launch/play-listing/README.md` says in as many words to edit this file
+ * and re-screenshot, and the listing takes whatever it is regenerated into. A
+ * file the repository invites you to rewrite is copy, and copy is gated.
+ *
+ * Only the `guided self-help` rules reach here, exactly as for the prose docs —
+ * so this adds one file's worth of banned-compound coverage and no house-style
+ * or user-facing rule, which would go red on the CSS this file is mostly made of.
+ *
+ * ☠️ These are read through `readArtworkSource`, never `readFile`, and that is
+ * not a detail: the headline that prompted all of this had a `<span>` sitting
+ * between the two banned words, which every rule here is blind to. See that
+ * function.
+ */
+const RENDERED_ARTWORK_SOURCES = ["docs/launch/play-listing/feature-graphic.html"];
+
+/**
  * Contributor-facing prose: `AGENTS.md` and the docs tree, minus the records
- * above. Only the `guided self-help` rules run over this — see their block for
- * why that phrase, and only that phrase, can safely reach this far.
+ * above and minus anything git is not tracking — plus the rendered-artwork
+ * sources above, which are neither prose nor Markdown but are copy. Only the
+ * `guided self-help` rules run over this — see their block for why that phrase,
+ * and only that phrase, can safely reach this far.
  */
 const PROSE_DOCS: Scanned[] = [
-  "AGENTS.md",
-  ...fs
-    .readdirSync(path.join(ROOT, "docs"), { recursive: true, encoding: "utf8" })
-    .map((entry) => `docs/${entry.split(path.sep).join("/")}`)
-    .filter((file) => file.endsWith(".md"))
-    .filter((file) => !PUBLISHED_RECORDS.some((record) => file.startsWith(record)))
-    .sort(),
-].map(readFile);
+  ...[
+    "AGENTS.md",
+    ...proseDocIds(
+      fs
+        .readdirSync(path.join(ROOT, "docs"), { recursive: true, encoding: "utf8" })
+        .map((entry) => `docs/${entry.split(path.sep).join("/")}`),
+      TRACKED_DOCS,
+    ),
+  ].map(readFile),
+  ...RENDERED_ARTWORK_SOURCES.map(readArtworkSource),
+];
 
 /**
  * The user-facing copy plus the three prose surfaces that also declare what
@@ -171,9 +316,80 @@ const ALL_SURFACES: Scanned[] = [
   readFile("docs/product-principles.md"),
 ];
 
-/** `ALL_SURFACES` plus the prose docs, deduplicated - `product-principles.md` is in both. */
+/**
+ * `ALL_SURFACES` plus the prose docs, deduplicated - `product-principles.md` is
+ * in both.
+ *
+ * ☠️ The dedupe keys on `surface` AND `id`, never `id` alone - see
+ * `keeps every Bulgarian i18n value in the prose corpus` below for what `id`
+ * alone silently dropped, and why nothing went red over it (#2019).
+ */
 const WITH_PROSE_DOCS: Scanned[] = [...ALL_SURFACES, ...PROSE_DOCS].filter(
-  (entry, index, all) => all.findIndex((other) => other.id === entry.id) === index,
+  (entry, index, all) =>
+    all.findIndex((other) => other.surface === entry.surface && other.id === entry.id) === index,
+);
+
+const APPLE_INFO_SURFACE = "store/apple-info.json";
+const PLAY_VERBATIM_SURFACE = "store/play-listing.md";
+
+/** Where `store/play-listing.md` starts quoting the listing rather than describing it. */
+const PLAY_VERBATIM_HEADING = "## Verbatim, as saved";
+
+/**
+ * The text that is actually ON a store listing, pulled out of the two files
+ * that mirror them. See the `#1760` describe near the bottom for why this
+ * corpus exists at all, and why it is the listing text rather than the files.
+ *
+ * ☠️ **THROWS rather than returning an empty list.** Both halves are extracted
+ * by structure — JSON fields, and the blockquote under a heading — and both can
+ * silently yield nothing when the file is reorganised. A corpus that quietly
+ * empties leaves every rule vacuously green while looking covered, which is the
+ * #1908 / #2019 failure mode this file has already paid for twice.
+ *
+ * ⚠️ Takes the file contents rather than reading them, so the extraction can be
+ * exercised on synthetic input. Nothing else here is testable without it.
+ */
+function storeListingText(appleInfoJson: string, playListingMd: string): Scanned[] {
+  const entries: Scanned[] = [];
+
+  const apple = JSON.parse(appleInfoJson) as Record<string, unknown>;
+  for (const [field, value] of Object.entries(apple)) {
+    if (typeof value === "string") {
+      entries.push({ surface: APPLE_INFO_SURFACE, id: field, text: value });
+    } else if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
+      entries.push({
+        surface: APPLE_INFO_SURFACE,
+        id: field,
+        text: (value as string[]).join(", "),
+      });
+    }
+  }
+  if (entries.length === 0) {
+    throw new Error(`${APPLE_INFO_SURFACE} yielded no listing fields`);
+  }
+
+  const at = playListingMd.indexOf(PLAY_VERBATIM_HEADING);
+  if (at === -1) {
+    throw new Error(`${PLAY_VERBATIM_SURFACE} has no "${PLAY_VERBATIM_HEADING}" section`);
+  }
+  const verbatim = playListingMd
+    .slice(at)
+    .split("\n")
+    .filter((line) => line.startsWith(">"))
+    .map((line) => line.replace(/^>\s?/, ""))
+    .join("\n")
+    .trim();
+  if (verbatim === "") {
+    throw new Error(`${PLAY_VERBATIM_SURFACE}'s "${PLAY_VERBATIM_HEADING}" block quotes nothing`);
+  }
+  entries.push({ surface: PLAY_VERBATIM_SURFACE, id: "verbatim", text: verbatim });
+
+  return entries;
+}
+
+const STORE_LISTING_TEXT: Scanned[] = storeListingText(
+  fs.readFileSync(path.join(ROOT, APPLE_INFO_SURFACE), "utf8"),
+  fs.readFileSync(path.join(ROOT, PLAY_VERBATIM_SURFACE), "utf8"),
 );
 
 interface Rule {
@@ -473,7 +689,7 @@ const PLAIN_NOUN_SPELLING: Rule[] = [
  * #1602 named a permanent boundary on the encryption claim, and it is the one
  * place on this map where the wrong word is a lie rather than a weak pitch.
  *
- * Selftend encrypts ~36 tables with pgcrypto and holds the Vault key OUTSIDE the
+ * Selftend encrypts ~43 tables with pgcrypto and holds the Vault key OUTSIDE the
  * database, so a leaked dump is ciphertext. That is a real, checkable claim and
  * the doc says it in those words. What it is NOT is end-to-end: the migration
  * itself calls the design "provider-recoverable". Saying otherwise would promise
@@ -781,6 +997,26 @@ const HOUSE_STYLE_SPELLING: Rule[] = [
     scope: "i18n",
     probe: "Notice sensations without judgment",
   },
+  /**
+   * Added with the store corpus above, because without it that corpus would not
+   * have caught the defect it was built for: the live Play description spelled
+   * `catastrophizing` while `cbt.json` spelled the same word `Catastrophising`
+   * two surfaces away (#2061). The corpus gap and the rule gap were separate,
+   * and closing only the first would have looked like closing both.
+   *
+   * ☠️ **The distortion's KEY is `catastrophizing` and must stay that way.**
+   * It is a persisted identifier — `src/constants/distortions.ts`, the rows
+   * already saved against it, and the i18n key itself — so this is the
+   * `behavioral-activation` situation exactly. Safe here by construction: this
+   * scope reads translated VALUES and never keys, the same reason
+   * `behavioralActivation` survives the `behavioral` rules.
+   */
+  {
+    name: "en: catastrophize (American)",
+    pattern: /\bcatastrophiz(e|es|ed|ing|ation)\b/i,
+    scope: "i18n",
+    probe: "thinking patterns (like catastrophizing or mind-reading)",
+  },
 ];
 
 const RULES: Rule[] = [
@@ -794,10 +1030,26 @@ const RULES: Rule[] = [
   ...MANAGEMENT_VERB_ON_HEALTH,
 ];
 
+/**
+ * ⚠️ **The store listing text is appended to EVERY scope, including `i18n`.**
+ * That looks like a violation of the narrowing the house-style block argues
+ * for, and is not: `i18n` is narrow because the wider corpora carry CSS
+ * tokens, manifest keys and file paths where `color` and `program` are code
+ * rather than copy. A store listing has none of those — it is marketing prose
+ * end to end, so every rule that applies to shipped copy applies to it, and the
+ * spelling rules are the half that would have caught #2061.
+ */
 function corpusFor(scope: Rule["scope"]) {
-  if (scope === "i18n") return I18N_VALUES;
-  if (scope === "prose") return WITH_PROSE_DOCS;
-  return scope === "user-facing" ? USER_FACING : ALL_SURFACES;
+  const base =
+    scope === "i18n"
+      ? I18N_VALUES
+      : scope === "prose"
+        ? WITH_PROSE_DOCS
+        : scope === "user-facing"
+          ? USER_FACING
+          : ALL_SURFACES;
+
+  return [...base, ...STORE_LISTING_TEXT];
 }
 
 /** Renders offenders for a failure message: which surface said it, and what it said. */
@@ -861,6 +1113,146 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
     for (const record of ["docs/app-store-review-information.md", "docs/campaign/scripts/cbt.md"]) {
       expect(readFile(record).text).toMatch(/guided self-help/i);
     }
+  });
+
+  /**
+   * The feature graphic's source is scanned, and the exclusion around it still
+   * holds (#2022).
+   *
+   * ☠️ The assertion that matters is the THIRD one. Adding the file to the
+   * corpus is worth nothing unless the rules actually reach it, and "the suite
+   * is green" cannot show that — it is equally green when the corpus entry is
+   * dropped. So the rule is run directly against the string the graphic carried
+   * until 2026-09-06, which is the shape this entry exists to catch.
+   *
+   * ⚠️ The Reddit banner beside it is asserted OUT, and still contains the
+   * compound: `docs/launch/` earns its `PUBLISHED_RECORDS` place on that file,
+   * and a carve-out that quietly swept the whole directory in would turn the
+   * build red on a banner nobody may edit.
+   */
+  it("scans the feature graphic's HTML source, but not the posted banner beside it (#2022)", () => {
+    const ids = new Set(PROSE_DOCS.map((entry) => entry.id));
+    const graphic = "docs/launch/play-listing/feature-graphic.html";
+
+    expect(ids).toContain(graphic);
+    expect(ids.has("docs/launch/reddit-post/banner.html")).toBe(false);
+
+    // The banner really does still carry the compound, so holding `docs/launch/`
+    // out of the walk is load-bearing rather than a leftover.
+    expect(readFile("docs/launch/reddit-post/banner.html").text).toMatch(/guided self-help/i);
+
+    const rule = GUIDED_SELF_HELP.find(({ name }) => name === "en: guided self-help")!;
+
+    // The headline this file carried until 2026-09-06, verbatim. The rule misses
+    // it as markup and catches it as text: that gap is the whole reason the
+    // corpus entry is read through `readArtworkSource`, and asserting the miss
+    // is what stops someone "simplifying" that back to `readFile`.
+    const wasLive = '<h1>Calm, guided <span class="accent">self-help</span></h1>';
+    expect(rule.pattern.test(wasLive)).toBe(false);
+    expect(rule.pattern.test(wasLive.replace(/<[^>]+>/g, " "))).toBe(true);
+
+    // So the entry in the corpus must be the stripped form, not the raw file.
+    // ⚠️ The headline is matched with `\s+` and not as a literal: the accent
+    // span around the noun becomes whitespace, and the full stop after its
+    // closing tag detaches into `tools .`. Harmless for every rule that reaches
+    // this corpus, since all three match word sequences — but a future rule
+    // anchored on adjacent punctuation would not survive the strip, and should
+    // be written against the raw file instead of being bent to fit this one.
+    const scanned = PROSE_DOCS.find(({ id }) => id === graphic)!;
+    expect(scanned.text).not.toMatch(/<h1/);
+    expect(scanned.text).toMatch(/Private\s+mental health tools/);
+
+    // And what it carries today is clean under every guided-self-help rule.
+    for (const { pattern } of GUIDED_SELF_HELP) {
+      expect({ rule: pattern.source, hit: pattern.test(scanned.text) }).toEqual({
+        rule: pattern.source,
+        hit: false,
+      });
+    }
+  });
+
+  /**
+   * ☠️ **THE CORPUS IS THE GIT INDEX, NOT THE WORKING TREE** (#1908).
+   *
+   * This one cannot be written against the real filesystem, and that is the
+   * whole difficulty: the offending files are gitignored, so on CI and in any
+   * fresh worktree they do not exist, and a test that reads this machine would
+   * be green everywhere the bug is not. So the filter is exercised on synthetic
+   * input — a walk containing a path the index does not carry — and the real
+   * corpus is then checked for the property that filter guarantees.
+   *
+   * ⚠️ The tracked set is asserted non-empty first. An `execFileSync` that
+   * returned nothing would filter the entire docs tree away, and every prose
+   * rule would pass over `AGENTS.md` alone: the vacuum this file's other
+   * positive controls exist to refuse.
+   */
+  it("builds the prose corpus from the git index, not the working tree (#1908)", () => {
+    expect(TRACKED_DOCS.size).toBeGreaterThanOrEqual(20);
+    expect(TRACKED_DOCS.has("docs/positioning.md")).toBe(true);
+
+    // Gitignored scratch is dropped even though the walk found it; a tracked
+    // sibling in the same walk is kept, so this is a filter and not a wipe.
+    expect(
+      proseDocIds(
+        [
+          "docs/naming.md",
+          "docs/superpowers/bg-copy-audit-2026-07.md",
+          "docs/superpowers/plans/2026-07-08-ux-polish-phase2b-inapp-clarity.md",
+        ],
+        new Set(["docs/naming.md"]),
+      ),
+    ).toEqual(["docs/naming.md"]);
+
+    // And the live corpus really did go through it: nothing in it is untracked.
+    const untracked = PROSE_DOCS.map(({ id }) => id).filter(
+      (id) => id !== "AGENTS.md" && !TRACKED_DOCS.has(id),
+    );
+    expect(untracked).toEqual([]);
+  });
+
+  /**
+   * The prose corpus keeps BOTH locales (#2019). It is built by deduplicating
+   * `ALL_SURFACES` against `PROSE_DOCS`, and an i18n entry's `id` is
+   * `namespace:key` with no locale in it - so a dedupe on `id` alone kept the
+   * first locale listed and dropped the second as a "duplicate". `en` is listed
+   * first and `locale-parity` guarantees every `bg` key has an `en` twin, which
+   * made the two Bulgarian guided-self-help rules green over ZERO Bulgarian copy
+   * from the day the corpus was introduced. The other three corpora never
+   * dedupe, so the hole was confined to the loudest rule in the file.
+   *
+   * The dedupe now keys on `surface` as well, and this pins it: a locale is
+   * only a duplicate of itself.
+   *
+   * The two counts are asserted EQUAL rather than merely "bg is not fewer".
+   * `src/i18n/locale-parity.test.ts` makes the two key sets identical, so
+   * equality holds today and catches a half dropped in either direction - the
+   * looser inequality would sit green if the `en` half were the one to vanish.
+   *
+   * ☠️ Equality alone is not enough either, and neither is a bare "more than
+   * zero". Deduping on `surface` ALONE - the tempting mis-fix in the other
+   * direction - collapses each locale to ONE entry, which is still equal, still
+   * non-zero, and still leaves the prose rules scanning two strings. So each
+   * locale is pinned against the whole locale it was built from: every value
+   * `locale-strings` read has to survive into the corpus, not merely some.
+   */
+  it("keeps every Bulgarian i18n value in the prose corpus (#2019)", () => {
+    const inCorpus = (surface: string) =>
+      WITH_PROSE_DOCS.filter((entry) => entry.surface === surface).length;
+
+    // Nothing is lost between `locale-strings` and the corpus, in either locale.
+    expect(inCorpus("i18n/en")).toBe(LOCALE_STRINGS.en.length);
+    expect(inCorpus("i18n/bg")).toBe(LOCALE_STRINGS.bg.length);
+    expect(inCorpus("i18n/bg")).toBe(inCorpus("i18n/en"));
+
+    // And a named Bulgarian value really is in there, not just a matching count.
+    expect(
+      WITH_PROSE_DOCS.some(
+        (entry) => entry.surface === "i18n/bg" && entry.id === "auth:landing.subtitle",
+      ),
+    ).toBe(true);
+
+    // The one genuine duplicate is still collapsed to a single entry.
+    expect(inCorpus("docs/product-principles.md")).toBe(1);
   });
 
   /**
@@ -928,10 +1320,11 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
    * ☠️ The compound is banned; the bare noun is not. #1616 swept 22 strings and
    * deliberately left twenty alone, because "self-help" on its own is accurate
    * and legally load-bearing where it appears: the GDPR clauses that name
-   * "private CBT thought records or other self-help entries" and
-   * `settings:modulesQuestion` ("Would a self-help module be useful?"). The
-   * support form's placeholder was one of the twenty until #1727 replaced it
-   * with four per-category placeholders, none of which needs the noun.
+   * "private CBT thought records or other self-help entries". The support
+   * form's placeholder was one of the twenty until #1727 replaced it with four
+   * per-category placeholders, none of which needs the noun; the onboarding's
+   * `settings:modulesQuestion` ("Would a self-help module be useful?") was
+   * another until #1958 deleted the panel that asked it.
    * Bulgarian mirrors every remaining one with bare `самопомощ`.
    *
    * So if someone later "simplifies" the rules above to `/self-help/i` or
@@ -941,10 +1334,12 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
   it("leaves the bare self-help noun alone in both locales", () => {
     const bare = USER_FACING.filter(({ text }) => /self-help|самопомощ/i.test(text));
 
-    // Nine per locale today (ten until #1727). A floor rather than an equality,
-    // so rewording one string is not a test change - but high enough that an
-    // empty or moved corpus cannot make the loop below vacuous.
-    expect(bare.length).toBeGreaterThanOrEqual(16);
+    // Seven per locale today (nine until #1727, eight until #1958 deleted the
+    // onboarding's "Would a self-help module be useful?" with its modules
+    // panel). A floor rather than an equality, so rewording one string is not a
+    // test change - but high enough that an empty or moved corpus cannot make
+    // the loop below vacuous.
+    expect(bare.length).toBeGreaterThanOrEqual(14);
 
     for (const rule of GUIDED_SELF_HELP) {
       for (const entry of bare) {
@@ -1007,6 +1402,8 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
       "Take care of your wellbeing.",
       "Грижи се за психичното си здраве.",
       "Selftend is a free, private CBT self-help app - cognitive behavioural therapy - with everyday tools for right now and a programme to work through when you want one.",
+      "Selftend is a set of free, private mental health tools: everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work through when you want one.",
+      "Private mental health tools.",
       "Work through something, don't just track how you feel.",
     ];
 
@@ -1236,5 +1633,530 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
         offenders: corpusFor(rule.scope).filter(({ text }) => rule.pattern.test(text)).length,
       }).toEqual({ rule: rule.name, offenders: 0 });
     }
+  });
+});
+
+/**
+ * ☠️☠️ **THE STORE LISTINGS ARE COPY, AND NO RULE HAD EVER READ THEM** (#1760,
+ * #1789). Every corpus above is built from what the app ships or what the
+ * repository documents. The two files that carry what the App Store and Play
+ * actually say were in none of them, so a banned phrase in a store listing
+ * passed `verify` **by construction** — and did, twice over:
+ *
+ *   - `store/apple-info.json`'s `subtitle` read _"Calm, guided self-help
+ *     tools"_ from #1611 until #2009/#2021, the one phrase this file calls
+ *     unsafe rather than merely off-frame, live on the App Store the whole time.
+ *   - The Play full description spelled `catastrophizing` while the app spelled
+ *     the same word `Catastrophising` (#2061) — and there was no rule for that
+ *     word either, so the corpus gap and the rule gap were both real.
+ *
+ * ⚠️ **The corpus is the mirrored listing TEXT, never the files.** Both files
+ * are mostly prose ABOUT the listings — `store/play-listing.md` quotes retired
+ * spellings and banned compounds inside records of the fixes that retired them,
+ * exactly as `docs/positioning.md` does. Scanning the files whole would go red
+ * on those records, and the tempting fix would be to weaken the rule. So this
+ * reads the App Store fields and the Play verbatim block, and nothing else.
+ *
+ * ☠️ `storeListingText` THROWS rather than returning `[]` when the Play heading
+ * moves or the block is empty. An extractor that silently yields nothing makes
+ * every rule below vacuously green over a corpus that looks covered — the
+ * #1908/#2019 failure in a third costume.
+ */
+describe("the store listings are in scope (#1760)", () => {
+  it("puts the App Store fields and the Play verbatim block in every corpus", () => {
+    for (const scope of ["i18n", "user-facing", "all", "prose"] as const) {
+      const surfaces = new Set(corpusFor(scope).map(({ surface }) => surface));
+
+      expect({
+        scope,
+        apple: surfaces.has(APPLE_INFO_SURFACE),
+        play: surfaces.has(PLAY_VERBATIM_SURFACE),
+      }).toEqual({ scope, apple: true, play: true });
+    }
+  });
+
+  it("reads the real listing text, so the corpus cannot be quietly empty", () => {
+    const subtitle = STORE_LISTING_TEXT.find(
+      ({ surface, id }) => surface === APPLE_INFO_SURFACE && id === "subtitle",
+    );
+    const verbatim = STORE_LISTING_TEXT.find(({ surface }) => surface === PLAY_VERBATIM_SURFACE);
+
+    expect(subtitle?.text.length).toBeGreaterThan(10);
+    expect(verbatim?.text).toContain("What's inside:");
+  });
+
+  /**
+   * The wiring, proven on synthetic input rather than on the live files: if the
+   * copy is ever wrong again, a rule has to see it. Running the real rule set
+   * over a mutated listing is the only assertion here that would fail if
+   * `corpusFor` stopped appending the store text.
+   */
+  it("catches a banned phrase planted in either store surface", () => {
+    const planted = storeListingText(
+      JSON.stringify({ subtitle: "Calm, guided self-help tools" }),
+      `## Verbatim, as saved on 2026-01-01\n\n> A guided self-help app.\n`,
+    );
+
+    const caught = GUIDED_SELF_HELP.filter((rule) =>
+      planted.some(({ text }) => rule.pattern.test(text)),
+    ).map(({ name }) => name);
+
+    expect(caught).toContain("en: guided self-help");
+    expect(planted.map(({ surface }) => surface)).toEqual([
+      APPLE_INFO_SURFACE,
+      PLAY_VERBATIM_SURFACE,
+    ]);
+  });
+
+  it("refuses to yield an empty corpus when the Play verbatim block moves", () => {
+    expect(() => storeListingText(`{"subtitle":"x"}`, "# no verbatim heading here\n")).toThrow(
+      /Verbatim/,
+    );
+    expect(() =>
+      storeListingText(
+        `{"subtitle":"x"}`,
+        "## Verbatim, as saved on 2026-01-01\n\nno quote lines\n",
+      ),
+    ).toThrow(/Verbatim/);
+  });
+});
+
+/**
+ * ☠️☠️ **THE ONE POSITIVE RULE, AND WHY IT IS THE ONLY ONE** (#1790).
+ *
+ * Every rule above fails when someone WRITES a forbidden thing. This one fails
+ * when someone DELETES a required one — a different failure, and since #2004 a
+ * live one rather than a theoretical one.
+ *
+ * Under the old noun, *a CBT self-help app*, the method rode inside the
+ * category noun, so every surface that named the category named the method for
+ * free and a positive pin was a second lock on a door that locked itself.
+ * `docs/positioning.md` records what changed, in its own words:
+ *
+ * > Clause 1 is now the **only** thing keeping the method on a surface: under
+ * > _a CBT self-help app_ the noun carried the method wherever the noun went,
+ * > and under _mental health tools_ it does not, so a surface that names the
+ * > category and stops has already failed the first reading test.
+ *
+ * …under a heading reading *"two clauses, and no gate can enforce either"*, and
+ * beside the doc's own note that the failure mode is **already shipping** (the
+ * iOS first screenshot is a home screen headed `Your tools`, no programme in
+ * frame). Deleting `CBT programme` from the web hero passes `verify` on `dev`
+ * today. That is what this ring is for, and nothing above it reaches.
+ *
+ * ☠️ **PRESENCE, NEVER EQUALITY.** The pattern is the method's NAME, not the
+ * frame sentence. #1606 §9's objection — a pin "fails on any legitimate
+ * rewrite" — is real and is answered by staying this loose: beat two may be
+ * recut freely as long as it still names the thing. Anything stricter guards
+ * phrasing, which this file pointedly does not do even to `positioning.md`.
+ *
+ * ☠️☠️ **TWO EXCLUSIONS, EACH FOR ITS OWN REASON. NEITHER IS A BACKLOG.**
+ *
+ *  1. **Capped fields are out by RULE, not by timing.** `subtitle` (30) and
+ *     Play's short description (80) carry the short form — *"Private mental
+ *     health tools."*, 28 characters, no method — because the frame sentence is
+ *     174 and does not fit. A pin over them is red by design, and no fix
+ *     anywhere turns it green. ⚠️ #1790 was filed believing it was blocked
+ *     until #1760 cleared `subtitle`; it never was. #1760's own decided
+ *     replacement is that same method-free 28, so closing it changes nothing
+ *     here.
+ *  2. **Transcripts of live external listings are out because the repo is not
+ *     where they get fixed.** `store/play-listing.md`'s full description is the
+ *     Play listing *"word for word, not a summary"*. If the listing drifts the
+ *     transcript must follow it to stay true, and a pin would fight that
+ *     correction — going red pending an owner action in the Play Console. That
+ *     is the bargain #1616 set and #1790 restated: fix the copy and add the
+ *     rule in the same change, or do not add the rule.
+ *
+ * What is left is what this repository ships and can fix inside a PR.
+ */
+describe("the frame's second beat survives on the surfaces this repo ships (#1790)", () => {
+  /**
+   * The method as beat two names it, per locale.
+   *
+   * ☠️ The COMPOUND, never the bare acronym. `promoText` says "CBT thought
+   * records" and has no programme in it at all, so a `/CBT/` pattern would call
+   * that surface conformant — and the whole point of clause 1 is that naming a
+   * tool is not naming the method.
+   *
+   * ☠️ No `\b` and no `\w` near the Bulgarian pattern: both are ASCII-only in
+   * JS, so against Cyrillic they do not do what they appear to. A plain
+   * substring is what is wanted in either locale anyway, and it keeps the rule
+   * loose enough to survive inflection (`КПТ програмата` still matches).
+   */
+  const METHOD: Record<Locale, RegExp> = {
+    en: /CBT programme/i,
+    bg: /КПТ програма/i,
+  };
+
+  const INDEX_HTML = readFile("public/index.html").text;
+  const MANIFEST = JSON.parse(readFile("public/manifest.webmanifest").text) as Record<
+    string,
+    string
+  >;
+
+  /** One `<meta>`'s content, whether it is written on one line or on four. */
+  function metaContent(named: string): string {
+    const hit = new RegExp(`<meta\\s+(?:name|property)="${named}"\\s+content="([^"]*)"`).exec(
+      INDEX_HTML,
+    );
+    if (!hit) throw new Error(`public/index.html has no <meta> named "${named}"`);
+    return hit[1];
+  }
+
+  /** One i18n value by `namespace:dotted.key`, from the same corpus the bans use. */
+  function i18nValue(locale: Locale, id: string): string {
+    const hit = LOCALE_STRINGS[locale].find(({ namespace, key }) => `${namespace}:${key}` === id);
+    if (!hit) throw new Error(`${locale} has no ${id}`);
+    return hit.text;
+  }
+
+  /**
+   * The uncapped, repo-shipped surfaces `docs/positioning.md` says carry the
+   * frame sentence. Each is addressed as the FIELD it is, never as "somewhere
+   * in the file": `index.html` carries the sentence in three separate metas,
+   * and a whole-file scan would stay green with two of them hollowed out.
+   */
+  const FRAME_CARRIERS: { id: string; locale: Locale; text: string }[] = [
+    ...(["en", "bg"] as const).flatMap((locale) =>
+      ["auth:landing.subtitle", "auth:landingPage.heroSupport"].map((key) => ({
+        id: `i18n/${locale} ${key}`,
+        locale,
+        text: i18nValue(locale, key),
+      })),
+    ),
+    ...["description", "og:description", "twitter:description"].map((named) => ({
+      id: `public/index.html <meta ${named}>`,
+      locale: "en" as Locale,
+      text: metaContent(named),
+    })),
+    {
+      id: "public/manifest.webmanifest description",
+      locale: "en" as Locale,
+      text: MANIFEST.description,
+    },
+  ];
+
+  it("names the method on every frame-carrying surface, in both locales", () => {
+    for (const { id, locale, text } of FRAME_CARRIERS) {
+      expect({ id, namesTheMethod: METHOD[locale].test(text) }).toEqual({
+        id,
+        namesTheMethod: true,
+      });
+    }
+  });
+
+  /**
+   * ☠️ Non-vacuous in the two ways this repo has already been bitten.
+   *
+   * The corpus has to be non-empty — `i18nValue` throwing would be loud, but a
+   * filter quietly matching nothing would leave the loop above passing by never
+   * running at all. And the locale halves are compared as a RELATION rather
+   * than to a literal count (#2019): a fix that deletes one locale wholesale
+   * satisfies "bg has N entries" by editing N, and cannot satisfy "bg has as
+   * many as en".
+   */
+  it("covers both locales in equal number, over a corpus that is not empty", () => {
+    const i18nCount = (locale: Locale) =>
+      FRAME_CARRIERS.filter((c) => c.locale === locale && c.id.startsWith("i18n/")).length;
+
+    expect(i18nCount("en")).toBeGreaterThan(0);
+    expect(i18nCount("bg")).toEqual(i18nCount("en"));
+    // And the web surfaces are really in there beside the i18n half.
+    expect(FRAME_CARRIERS.length).toBeGreaterThan(i18nCount("en") + i18nCount("bg"));
+  });
+
+  /**
+   * ☠️ A pattern that cannot fail is green over hollowed-out copy and looks
+   * exactly like a working one. Both directions are probed, in both locales:
+   * the noun ALONE must not satisfy the rule — that is the precise state clause
+   * 1 calls a failed first reading test — and beat two must.
+   */
+  it("uses a pattern that rejects the category noun standing alone", () => {
+    expect(METHOD.en.test("a set of free, private mental health tools")).toBe(false);
+    expect(METHOD.en.test("and a CBT programme - cognitive behavioural therapy")).toBe(true);
+    expect(METHOD.bg.test("Набор от безплатни, лични инструменти за психично здраве")).toBe(false);
+    expect(METHOD.bg.test("и КПТ програма - когнитивно-поведенческа терапия")).toBe(true);
+  });
+
+  /**
+   * Exclusion 1, pinned as the FACT that justifies it rather than as the list
+   * itself. Re-listing the excluded fields would only restate the decision;
+   * this goes red if the world moves under it — if the short form ever gains a
+   * method, the capped fields become pinnable and this exclusion needs
+   * re-arguing rather than inheriting.
+   */
+  it("leaves the capped store fields out, because the short form they carry has no method in it", () => {
+    const APPLE = JSON.parse(readFile("store/apple-info.json").text) as Record<string, string>;
+
+    for (const field of Object.keys(APP_STORE_CAPS)) {
+      expect({ field, namesTheMethod: METHOD.en.test(APPLE[field]) }).toEqual({
+        field,
+        namesTheMethod: false,
+      });
+    }
+    expect(FRAME_CARRIERS.some(({ id }) => id.includes("apple-info"))).toBe(false);
+  });
+
+  /**
+   * Exclusion 2, stated so it cannot be mistaken for a tolerated violation: the
+   * Play transcript DOES carry the method today. It is out because of where a
+   * future divergence would have to be fixed — in the Play Console, by the
+   * owner — and not because it currently fails.
+   */
+  it("leaves the Play transcript out, though it carries the method today", () => {
+    expect(FRAME_CARRIERS.some(({ id }) => id.includes("play-listing"))).toBe(false);
+    expect(METHOD.en.test(readFile("store/play-listing.md").text)).toBe(true);
+  });
+});
+
+/**
+ * ☠️☠️ **THE GOVERNING DOCUMENT COULD NOT BE WRONG OUT LOUD** (#1944).
+ *
+ * Everything above scans copy *against* `docs/positioning.md`.
+ * `docs/positioning.md` was scanned against nothing. It is in
+ * `PUBLISHED_RECORDS` and deliberately held out of every corpus - correctly,
+ * since it necessarily quotes the phrases it bans - but that exclusion is
+ * total, and the copy gate is the only thing that reads the file. So its
+ * factual claims had no automated check of any kind.
+ *
+ * What that cost: the document asserted **in bold** that the App Store
+ * `subtitle` was the only capped store field. Two others are capped, and one of
+ * them was named on the next line of the same `CAPS` object. The claim was
+ * wrong from the moment #1824 merged it, and it survived merge, review and a
+ * `verify` run until #1940 happened to read both.
+ *
+ * ☠️ **The fix for a wrong claim was a more specific claim, and specificity
+ * rots.** #1940 replaced the false sentence with a sourced table of exact
+ * numbers. Six numbers and two file references now sit in prose, and every one
+ * of them goes stale the moment a cap moves or a listing is edited - which two
+ * of them already had by the time this guard was written: the Play row still
+ * quoted **34** after `store/play-listing.md` had moved to 28, and the
+ * `subtitle` row still named the #1760 defect string as the committed value
+ * after #2009 had replaced it.
+ *
+ * ⚠️ **SCOPE: THIS ASSERTS NUMBERS AND IDENTITIES, NEVER PHRASING.** Do not
+ * close a gap here by adding `docs/positioning.md` to `PROSE_DOCS` - the
+ * comment on `ALL_SURFACES` forbids exactly that, and doing it turns the build
+ * red on a file quoting its own bans, whose tempting fix is to weaken the rule.
+ * Nothing below reads the document for style.
+ *
+ * ⚠️ **Reading `store/` for a NUMBER is not scanning `store/` for phrasing.**
+ * Still true of THIS block — `store/play-listing.md` is read here for the
+ * digits in its own "N of 80 characters" line and for nothing else. ✅ The gap
+ * it used to point at is closed: `STORE_LISTING_TEXT` puts the App Store fields
+ * and the Play verbatim block into every corpus (#1760). #1789 remains open for
+ * the surfaces outside this repository.
+ *
+ * ☠️ **Line numbers are deliberately not asserted.** Pinning
+ * `store-info-invariants.test.ts:39` in a test re-creates the rot it is meant
+ * to catch. The values are matched; a `:NN` suffix in the prose is treated as
+ * decoration and stripped before the path is checked.
+ */
+describe("docs/positioning.md's own facts, which nothing else can check", () => {
+  const POSITIONING = readFile("docs/positioning.md").text;
+  const PLAY_LISTING = readFile("store/play-listing.md").text;
+  const APPLE_INFO = JSON.parse(readFile("store/apple-info.json").text) as Record<string, string>;
+
+  /** The body of one `###` section, up to the next heading of any depth. */
+  function section(heading: string): string {
+    const at = POSITIONING.indexOf(`\n${heading}\n`);
+    if (at === -1) throw new Error(`docs/positioning.md has no "${heading}" section`);
+    const rest = POSITIONING.slice(at + heading.length + 2);
+    const end = rest.search(/\n#{2,4} /);
+    return end === -1 ? rest : rest.slice(0, end);
+  }
+
+  /** The data rows of the first table in `body` whose header line matches. */
+  function rowsOf(body: string, header: RegExp): string[][] {
+    const lines = body.split("\n");
+    const at = lines.findIndex((line) => header.test(line));
+    if (at === -1) throw new Error(`no table matching ${header} in the section`);
+
+    const rows: string[][] = [];
+    for (let i = at + 2; i < lines.length && lines[i].startsWith("|"); i += 1) {
+      rows.push(
+        lines[i]
+          .split("|")
+          .slice(1, -1)
+          .map((cell) => cell.trim()),
+      );
+    }
+    return rows;
+  }
+
+  /** A cell's literal string: bold stripped, a trailing italic aside dropped. */
+  function plain(cell: string): string {
+    return cell
+      .replace(/\*\*/g, "")
+      .replace(/\s*_\([^)]*\)_\s*$/, "")
+      .trim();
+  }
+
+  /** The number a cell leads with — `**28**`, `28`, `34 live — …` all give it. */
+  function leadingNumber(cell: string): number | null {
+    const hit = /^\**(\d+)\**/.exec(cell.trim());
+    return hit ? Number(hit[1]) : null;
+  }
+
+  const SHORT_FORM = section("### The short form");
+  const INVENTORY = rowsOf(SHORT_FORM, /^\|\s*Field\s*\|\s*Cap\s*\|/);
+  const CANDIDATES = rowsOf(SHORT_FORM, /^\|\s*Candidate\s*\|\s*Chars\s*\|/);
+
+  const rowNaming = (needle: RegExp) => INVENTORY.find((cells) => needle.test(cells[0]));
+
+  it("parses the section it is asserting, rather than passing over an empty one", () => {
+    // The positive control every corpus in this file has. A renamed heading or
+    // a reformatted table would otherwise make all of this vacuously green.
+    expect(INVENTORY.length).toBeGreaterThanOrEqual(3);
+    expect(CANDIDATES.length).toBeGreaterThanOrEqual(4);
+    expect(Object.keys(APP_STORE_CAPS).length).toBeGreaterThanOrEqual(2);
+  });
+
+  /**
+   * The first half of #1944: every field this repo caps has to be named in the
+   * document's inventory, at the cap the repo actually enforces. A third cap
+   * added to `store-caps.ts` and not written down here fails, which is the
+   * failure #1940 found by hand.
+   */
+  it("names every capped App Store field, at the cap this repo enforces", () => {
+    for (const [field, cap] of Object.entries(APP_STORE_CAPS)) {
+      const row = rowNaming(new RegExp(`\`${field}\``));
+      expect({ field, named: Boolean(row) }).toEqual({ field, named: true });
+      expect({ field, cap: leadingNumber(row![1]) }).toEqual({ field, cap });
+    }
+
+    // The same numbers also appear in the prose above the table - "caps the App
+    // Store `subtitle` at **30**" is the sentence #1819 and #2007 both reasoned
+    // from. Every occurrence has to agree with the object; none is REQUIRED to
+    // exist, because requiring a sentence is guarding phrasing, and this file
+    // does not do that to `positioning.md`.
+    for (const [field, cap] of Object.entries(APP_STORE_CAPS)) {
+      for (const [, stated] of SHORT_FORM.matchAll(
+        new RegExp(`\`${field}\` at \\*\\*(\\d+)\\*\\*`, "g"),
+      )) {
+        expect({ field, stated: Number(stated) }).toEqual({ field, stated: cap });
+      }
+    }
+  });
+
+  /**
+   * The second half: the Play cap is not in `store-caps.ts` - Play is not App
+   * Store Connect - so it is matched against the only place that records it,
+   * `store/play-listing.md`'s own count line. Both numbers on that line are
+   * used: the cap, and how much of it the committed short description spends.
+   */
+  it("matches the Play short-description cap and usage to store/play-listing.md", () => {
+    const counted = /Short description \((\d+) of (\d+) characters\)/.exec(PLAY_LISTING);
+    expect({ found: Boolean(counted) }).toEqual({ found: true });
+
+    const [, used, cap] = counted!;
+    const row = rowNaming(/Play short description/i);
+    expect({ named: Boolean(row) }).toEqual({ named: true });
+    expect({ cap: leadingNumber(row![1]) }).toEqual({ cap: Number(cap) });
+    expect({ committed: leadingNumber(row![2]) }).toEqual({ committed: Number(used) });
+  });
+
+  /**
+   * The "committed today" column, against the committed files themselves. This
+   * is the column with the shortest half-life: it changes whenever a listing is
+   * edited, and nothing used to notice.
+   */
+  it("states the committed lengths the store files actually carry", () => {
+    for (const field of Object.keys(APP_STORE_CAPS)) {
+      const row = rowNaming(new RegExp(`\`${field}\``))!;
+      expect({ field, stated: leadingNumber(row[2]) }).toEqual({
+        field,
+        stated: APPLE_INFO[field].length,
+      });
+    }
+  });
+
+  /**
+   * ☠️ A length is not enough, and this is the trap that proves it: the
+   * `subtitle` row named _"Calm, guided self-help tools"_ as the committed
+   * value long after #2009 had replaced it with _"Private mental health
+   * tools."_ - and **both are 28 characters**, so the check above sat green
+   * over a false quotation. Where the document quotes a committed value, the
+   * quotation is compared, not just its length.
+   */
+  it("quotes committed values verbatim where it quotes them at all", () => {
+    let quoted = 0;
+
+    for (const field of Object.keys(APP_STORE_CAPS)) {
+      const row = rowNaming(new RegExp(`\`${field}\``))!;
+      const hit = /_"([^"]*)"_/.exec(row[2]);
+      if (!hit) continue;
+
+      quoted += 1;
+      expect({ field, quoted: hit[1] }).toEqual({ field, quoted: APPLE_INFO[field] });
+    }
+
+    // Non-vacuous: at least one row really does quote, so the loop above is not
+    // skipping every iteration.
+    expect(quoted).toBeGreaterThanOrEqual(1);
+  });
+
+  /**
+   * The Source column, checked as references rather than as prose: the files
+   * exist, and where a source line is quoted the quotation is really in it.
+   * A `:NN` suffix is stripped first - #1944's own warning is that pinning line
+   * numbers re-creates the rot, so they are decoration here and nothing more.
+   */
+  it("cites sources that exist and quotes them accurately", () => {
+    let checked = 0;
+
+    for (const cells of INVENTORY) {
+      const source = cells[cells.length - 1];
+
+      for (const [, cited] of source.matchAll(/`([^`]+)`/g)) {
+        // Backticks also wrap identifiers in this column; only paths are files.
+        if (!cited.includes("/")) continue;
+
+        const file = cited.replace(/:\d+$/, "");
+        expect({ file, exists: fs.existsSync(path.join(ROOT, file)) }).toEqual({
+          file,
+          exists: true,
+        });
+
+        const quote = /_"([^"]*)"_/.exec(source);
+        if (quote) {
+          expect({
+            file,
+            quoted: fs.readFileSync(path.join(ROOT, file), "utf8").includes(quote[1]),
+          }).toEqual({ file, quoted: true });
+        }
+        checked += 1;
+      }
+    }
+
+    expect(checked).toBeGreaterThanOrEqual(3);
+  });
+
+  /**
+   * The candidates table is pure arithmetic - a character count beside a string
+   * - and it is the table #1819 and #2007 both reasoned from. It has been
+   * repeated row for row once already, so a miscount here would propagate.
+   */
+  it("counts its own candidate strings correctly, and adopts one that fits", () => {
+    for (const cells of CANDIDATES) {
+      const candidate = plain(cells[0]);
+      expect({ candidate, chars: leadingNumber(cells[1]) }).toEqual({
+        candidate,
+        chars: candidate.length,
+      });
+    }
+
+    const adopted = CANDIDATES.filter((cells) => /adopted/i.test(cells[2]));
+    expect(adopted).toHaveLength(1);
+
+    const shortForm = plain(adopted[0][0]);
+    expect(shortForm.length).toBeLessThanOrEqual(APP_STORE_CAPS.subtitle);
+
+    // And the blockquote under the heading is that same adopted string, so the
+    // section cannot advertise one short form and reason about another.
+    const quoted = /^> \*\*(.+)\*\*$/m.exec(SHORT_FORM);
+    expect({ found: Boolean(quoted) }).toEqual({ found: true });
+    expect(quoted![1]).toBe(shortForm);
   });
 });

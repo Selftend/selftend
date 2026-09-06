@@ -373,7 +373,6 @@ export default function MeditationHomeScreen() {
               between two sections' padding rather than across a flex gap. */}
           <View className={cn(HOME_COLUMN)}>
             <ModuleHomeHeader
-              addWidgetCategory="meditation"
               title={t("module.home.title")}
               tourScope="meditation"
               description={t("module.home.subtitle")}

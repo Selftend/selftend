@@ -128,7 +128,6 @@ export default function JournalListScreen() {
         <ScrollView contentContainerClassName="grow p-4">
           <View className={cn(HOME_COLUMN)}>
             <ModuleHomeHeader
-              addWidgetCategory="journal"
               title={t("title")}
               tourScope="journal"
               description={t("tagline")}

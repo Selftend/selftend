@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { sourceFiles, stripComments, stripCommentsAndStrings } from "@/test/source-scan";
@@ -49,7 +49,22 @@ import { sourceFiles, stripComments, stripCommentsAndStrings } from "@/test/sour
  * on a correct-today judgement that nothing was holding in place.
  */
 const ROOT = join(__dirname, "..");
-const MIGRATION = "supabase/migrations/20260907000000_record_days.sql";
+
+/**
+ * The migration whose `record_days` declaration wins - the newest by version
+ * order (`record-days-sources.test.ts` resolves it the same way). ☠️ Pinning
+ * the original file would leave a redeclaration's new legs unguarded - the
+ * DBT module's six (#1980) were the first.
+ */
+const DECLARATION = "create or replace function public.record_days";
+const MIGRATION = (() => {
+  const dir = join(ROOT, "supabase", "migrations");
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .filter((f) => readFileSync(join(dir, f), "utf8").includes(DECLARATION));
+  return `supabase/migrations/${files[files.length - 1]}`;
+})();
 
 /**
  * Every `public.*` table the RPC reads, `_data` suffix dropped.
@@ -68,7 +83,18 @@ const MIGRATION = "supabase/migrations/20260907000000_record_days.sql";
  * drop the prose instead.
  */
 function sourceTables(): string[] {
-  const sql = readFileSync(join(ROOT, MIGRATION), "utf8")
+  // ☠️ The DECLARATION BODY only, never the whole file. The winning migration
+  // can carry other statements - #1980's carries seven tables' DDL and an
+  // `export_user_data` redeclaration naming every table in the product - and a
+  // whole-file scan would demand record-days invalidation from every one of
+  // them. The body runs from the declaration to its closing `$$;`.
+  const file = readFileSync(join(ROOT, MIGRATION), "utf8");
+  const start = file.indexOf(DECLARATION);
+  const end = file.indexOf("\n$$;", start);
+  expect(start).toBeGreaterThan(-1);
+  expect(end).toBeGreaterThan(start);
+  const sql = file
+    .slice(start, end)
     .replace(/--[^\n]*/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   const names = [...sql.matchAll(/\bpublic\.(\w+)/g)]
@@ -78,9 +104,16 @@ function sourceTables(): string[] {
   return [...new Set(names)].sort();
 }
 
-const REPOSITORIES = sourceFiles(ROOT, { dirs: ["src", "app"] }).filter((file) =>
-  file.endsWith("/repository.ts"),
-);
+/**
+ * A repository is `<feature>/repository.ts` OR one file of a `<feature>/repository/`
+ * directory - ACT and DBT split theirs per table. ☠️ The single-file shape alone
+ * would make a directory repository's tables look unwritten, and the positive
+ * control below would fail on the first source table that lives in one.
+ */
+const isRepository = (file: string) =>
+  file.endsWith("/repository.ts") || /\/repository\/[^/]+\.ts$/.test(file);
+
+const REPOSITORIES = sourceFiles(ROOT, { dirs: ["src", "app"] }).filter(isRepository);
 const MODULES = sourceFiles(ROOT, { dirs: ["src", "app"] });
 
 const read = (file: string) => readFileSync(join(ROOT, file), "utf8");
@@ -120,7 +153,7 @@ function writeFunctionsFor(table: string): { repository: string; names: string[]
 function writingHooks(names: string[]): { module: string; hook: string }[] {
   const found: { module: string; hook: string }[] = [];
   for (const module of MODULES) {
-    if (module.endsWith("/repository.ts")) continue;
+    if (isRepository(module)) continue;
     const source = read(module);
     if (!names.some((name) => source.includes(name))) continue;
 
@@ -159,6 +192,8 @@ describe("every mutation that writes a record_days source invalidates it", () =>
     expect(sourceTables().length).toBeGreaterThanOrEqual(10);
     expect(sourceTables()).toContain("habit_logs");
     expect(sourceTables()).toContain("mindfulness_sessions");
+    // The first source that lives in a directory repository (#1980).
+    expect(sourceTables()).toContain("dbt_sessions");
     expect(REPOSITORIES.length).toBeGreaterThan(10);
   });
 

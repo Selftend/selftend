@@ -48,6 +48,26 @@ Owner ruling, recorded from [#1625](https://github.com/Selftend/selftend/issues/
 - **Tax and reporting** on donations to an individual are the owner's responsibility. Accepted 2026-09-02.
 - This ruling also settles the seller-entity question the same way: the App Store seller stays an individual account ([#1618](https://github.com/Selftend/selftend/issues/1618)).
 
+## Community crisis posture
+
+Decided 2026-09-05 on [#1947](https://github.com/Selftend/selftend/issues/1947). One posture for every community venue - Reddit ([reddit-community.md](reddit-community.md)), Discord ([discord-server.md](discord-server.md)), and the support inbox ([operations-runbook.md](operations-runbook.md)). Each venue doc holds only its own mechanics; the rule of conduct lives here.
+
+**The rule.** When someone appears to be in distress: reply **once**, warmly, as a person; say plainly that this place is not monitored by crisis responders; point to local emergency services for immediate danger and to Find A Helpline for someone to talk to; do not counsel, do not diagnose, do not promise follow-up. Keep the exchange where the person started it. The comment or message is never removed for being distress.
+
+**What this is not.** Not therapy, not crisis intervention, not emergency support. The community mirrors the app's own crisis page: country-neutral, no hand-curated hotline numbers, the EU emergency number 112 named only where the app already names it.
+
+**The reference reply.** A human adapts and sends it; no bot ever posts it. It mirrors `policies:crisis` in both languages, stays inside [positioning.md § Words never to use](positioning.md#words-never-to-use), prescribes no return, and uses hyphens because Reddit copy does.
+
+English:
+
+> Thank you for saying this here - I'm sorry things are this heavy right now. This community isn't monitored by crisis responders, so it can't be the right support for what you're describing - but there are people who can be. If you might be in immediate danger, please contact your local emergency services now. For someone to talk to, findahelpline.com lists free helplines by country, many of them 24/7.
+
+Bulgarian:
+
+> Благодаря, че го споделяш тук - съжалявам, че в момента ти е толкова тежко. Тази общност не се наблюдава от кризисни специалисти, така че не може да бъде подходящата подкрепа за това, което описваш - но има хора, които могат. Ако е възможно да си в непосредствена опасност, моля, свържи се веднага с местните спешни служби (в България и в целия ЕС: 112). За човек, с когото да поговориш, findahelpline.com изброява безплатни линии за подкрепа по държави, много от тях денонощни.
+
+**Refused, and chosen rather than defaulted into:** keyword auto-responders on any venue; a monitoring or reply-time promise; country-specific helpline lists; removing distress posts; any obligation beyond the one reply.
+
 ## Moderation Note
 
 Do not add public or semi-public community features inside the app until moderation, abuse handling, and child-safety processes exist.

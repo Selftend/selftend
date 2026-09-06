@@ -6,7 +6,7 @@
     "emptyTitle": "No routines yet",
     "emptyBody": "A routine strings a few small tool actions together - a check-in, a line of gratitude, a short breath. Steps complete themselves when you use the tools.",
     "starterTitle": "Start with a ready-made routine?",
-    "starterBody": "Composed from the tools already on your Home. Keep it as is, or skip - you can always build your own.",
+    "starterBody": "Composed from the tools you already use. Keep it as is, or skip - you can always build your own.",
     "openDetail": "Open routine"
   },
   "strip": {
@@ -57,11 +57,6 @@
     "deleteConfirmTitle": "Delete routine",
     "deleteConfirmBody": "Delete this routine and its steps? Your tool entries are untouched. This can't be undone."
   },
-  "onboarding": {
-    "title": "One small routine to start?",
-    "body": "We put together a tiny routine from the tools you just picked. Keep it if it helps - nothing is created unless you say so.",
-    "stepsNote": "Steps complete themselves when you use the tools - nothing to tick off, and no reminders unless you add one later."
-  },
   "form": {
     "newTitle": "New routine",
     "editTitle": "Edit routine",
@@ -79,6 +74,7 @@
       "mindfulness": "Mindfulness",
       "cbt": "CBT",
       "act": "ACT",
+      "dbt": "DBT",
       "habits": "Habits"
     },
     "addStep": "Add {{tool}}",
@@ -128,7 +124,13 @@
     "observingSelf": "Observing Self",
     "bullsEye": "Values check-in",
     "choicePoint": "Choice point",
-    "committedAction": "Committed Action"
+    "committedAction": "Committed Action",
+    "muscleRelaxation": "Muscle relaxation",
+    "wiseMind": "Wise mind check-in",
+    "judgement": "Judgement record",
+    "emotionRecord": "Emotion record",
+    "oppositeAction": "Opposite action",
+    "script": "Script"
   },
   "reminder": {
     "sectionLabel": "Daily reminder",

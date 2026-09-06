@@ -6,9 +6,11 @@ import {
   OnboardingInfoRow,
   RichOnboardingShell,
 } from "@/src/components/app/rich-onboarding-shell";
+import { TechniqueCaution } from "@/src/components/app/technique-caution";
 import { Card, CardContent } from "@/src/components/react-native-reusables/card";
 import { Icon } from "@/src/components/react-native-reusables/icon";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { translatedLines } from "@/src/lib/translated-lines";
 
 const groundingOnboardingImage = require("../../../assets/images/onboarding/grounding_sweet_spot_frequency.png");
 
@@ -28,6 +30,7 @@ export function GroundingOnboarding({
   onDismiss,
 }: Props) {
   const { t } = useTranslation("cbt");
+  const coldWaterCaution = translatedLines(t, "grounding.techniques.cold-water.caution");
 
   return (
     <RichOnboardingShell
@@ -76,7 +79,11 @@ export function GroundingOnboarding({
             icon="water-drop"
             title={t("grounding.onboarding.techniques.coldLabel")}
             body={t("grounding.onboarding.techniques.coldBody")}
-          />
+          >
+            {/* The technique's own caution copy (#1996) — one key, read here
+                and on the session's opening step, so the two never drift. */}
+            <TechniqueCaution lines={coldWaterCaution} className="mt-1.5" />
+          </OnboardingInfoRow>
           <OnboardingInfoRow
             icon="directions-walk"
             title={t("grounding.onboarding.techniques.feetLabel")}

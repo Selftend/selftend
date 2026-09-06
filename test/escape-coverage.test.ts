@@ -236,8 +236,21 @@ describe("the route population (pinned, G5)", () => {
     // neither a full list nor an `[id]`, so four of the six fields its form writes were
     // readable by nobody at any depth. Its route leaf became a directory to hold the
     // sibling (`urge-surfing/index.tsx` + `urge-surfing/[id].tsx`); the route PATH of the
-    // tool screen is unchanged.
-    expect(ROUTES).toHaveLength(136);
+    // tool screen is unchanged. 136 → 135: #1959 deleted `/arrange` with the rest of the
+    // old Home dashboard (Home is Favourites over the shared card since #1956).
+    // 135 → 137: #1980 gave DBT a learn primer and a per-group learn page.
+    // `/modules/dbt` itself only MOVED (`dbt.tsx` → `dbt/index.tsx`), so the
+    // module home is not a new route; the rest of the module's routes arrive
+    // with the slices that build them.
+    // 137 → 140: #1980's coping plan (the card and the builder) and Pause
+    // and choose.
+    // 140 → 141: #1980's muscle-relaxation session, the module's first.
+    // 141 → 144: #1980's emotion record - its list, its form and its detail.
+    // 144 → 150: #1980's wise mind check-in and judgement record, three
+    // routes each.
+    // 150 → 156: #1980's opposite-action plan and its script, three routes
+    // each - the module's last two tools.
+    expect(ROUTES).toHaveLength(156);
   });
 
   it("derives exactly the eight <Redirect>-only stubs", () => {
@@ -265,10 +278,10 @@ describe("the route population (pinned, G5)", () => {
   it("covers everything else", () => {
     // 126 → 125: the bulls-eye route moved from covered to stub above. Then 125 → 126
     // with urge surf's new detail route (#1517), which is a real screen and so lands in
-    // this class rather than among the stubs. The walk still finds all 136 routes, which
-    // is the number this class exists to protect — a drop there would mean the walk
-    // itself had gone blind.
-    expect(covered).toHaveLength(126);
+    // this class rather than among the stubs. Then 126 → 125 when #1959 deleted the
+    // `/arrange` screen. The walk still finds all 135 routes, which is the number this
+    // class exists to protect — a drop there would mean the walk itself had gone blind.
+    expect(covered).toHaveLength(146);
   });
 });
 

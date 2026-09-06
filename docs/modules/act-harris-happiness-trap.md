@@ -2,7 +2,7 @@
 
 **Source:** _The Happiness Trap: How to Stop Struggling and Start Living_ - Russ Harris, **second edition** (Trumpeter / Shambhala, 2022)
 **Citations caveat (FID-1):** the chapter numbers cited throughout (e.g. "Ch 5", "Ch 22-23") are best-effort and were **not** verified against a 2nd-edition copy - only the 1st edition was on hand, so some may reflect 1st-edition ordering. Treat chapter references as approximate; the concepts and tool descriptions are the authoritative part.
-**Status:** Canonical spec for the ACT module. The six core principle tools are implemented; this revision (a) reconciles the module to the second edition, and (b) adds a guided four-week program mirroring the CBT program.
+**Status:** Canonical spec for the ACT module. The six core principle tools are implemented; this revision (a) reconciles the module to the second edition, and (b) adds a guided four-phase program mirroring the CBT program.
 **Audience:** Developers and product contributors
 
 ---
@@ -17,7 +17,7 @@ The first edition of this spec described the 1st-edition hexaflex (six principle
 - **Be Present:** Drop Anchor (the **ACE** formula), guided body scan.
 - **Open Up:** expansion reframed as **TAME**; new defusion techniques (Name the Process, Play with Text, Adding a Soundtrack, Shifting Locations); a discrete **self-compassion** tool (kind hands + kind self-talk); a worry/rumination "dipping in and out of the stream" variant; healing-the-past reflection; savoring linked to the gratitude-log tool.
 - **Do What Matters:** **willingness** and **HARD barriers** on committed action; the Challenge Formula / Values Square flow; **breaking bad habits** (5 questions); **difficult decisions** (10-step); a **maintenance plan** capstone (the 7 R's) - a post-MVP / Phase-3 enhancement (see the §4 graduation contract).
-- **A four-week guided program** (`ACT_PROGRAM`) mirroring the CBT program machinery.
+- **A four-phase guided program** (`ACT_PROGRAM`) mirroring the CBT program machinery.
 
 The implemented module already covers: defusion, expansion (1st-ed four-step), connection, observing self, values + Bull's-Eye, committed action, urge surfing, program-state, and onboarding scaffolding. Those remain; the items above extend or reframe them.
 
@@ -341,11 +341,11 @@ Values are chosen directions, not goals - they can't be completed, only lived. F
 
 ---
 
-## 4. The Four-Week Program
+## 4. The Four-Phase Program
 
-Mirrors the CBT program (`src/features/cbt/program-definition.ts`, `derive-program.ts`, `use-cbt-program.ts`) exactly. One pillar per week; each week mixes one **recurring daily-practice** task (counted by distinct calendar days so it cannot be cleared in a single sitting) with one or two **milestone** tasks. The program **graduates** when all four weeks are complete; graduation latches once.
+Mirrors the CBT program (`src/features/cbt/program-definition.ts`, `derive-cbt-program.ts`, `use-cbt-program.ts`) exactly. One pillar per phase; each phase mixes one **recurring daily-practice** task (a same-day check on the date being viewed) with one or two **milestone** tasks. Phases are self-paced - the person advances with a button, there is no calendar timing - and the last phase's button latches graduation once. (The numbered **Phases 1-5** in §10 are implementation sequencing, a different axis from the four program phases here.)
 
-> **Graduation contract (2026-06, authoritative): the program graduates when all four weeks are complete - there is no capstone gate.** This matches `use-act-program.ts` (`advancePhase` latches `actProgramCompletedAt` once past the last phase) and supersedes the "the artifact the program graduates on" / "graduation key" phrasing for the maintenance plan elsewhere in this doc. The **maintenance-plan (7 R's) capstone** (§3.3.5) and the discrete **self-compassion tool** are **post-MVP / Phase-3 enhancements** - not graduation prerequisites and not part of the shipped MVP. Their specs (§3.3.5, the §5 tables, the §7 routes) stand as the design for that future build, which should land in both ACT and CBT to keep the modules symmetric.
+> **Graduation contract (2026-06, authoritative): the program graduates at the end of the last phase - there is no capstone gate.** This matches `use-act-program.ts` (`advancePhase` latches `actProgramCompletedAt` once past the last phase) and supersedes the "the artifact the program graduates on" / "graduation key" phrasing for the maintenance plan elsewhere in this doc. The **maintenance-plan (7 R's) capstone** (§3.3.5) and the discrete **self-compassion tool** are **post-MVP / Phase-3 enhancements** - not graduation prerequisites and not part of the shipped MVP. Their specs (§3.3.5, the §5 tables, the §7 routes) stand as the design for that future build, which should land in both ACT and CBT to keep the modules symmetric.
 
 ### Pillars
 
@@ -353,45 +353,52 @@ Mirrors the CBT program (`src/features/cbt/program-definition.ts`, `derive-progr
 type ProgramPillar = "foundation" | "bePresent" | "openUp" | "doWhatMatters";
 ```
 
-### Weeks, tasks, and signals
+Declared in `src/features/act/types.ts` (alongside `ACT_PROGRAM_PILLARS`), not in `program-definition.ts`.
 
-The program follows the book's teaching order (Foundation: Choice Point + Dropping Anchor → Be Present → Open Up → Do What Matters). It deliberately contains **no mood-tracking task** - ACT teaches getting better at feeling, not monitoring or improving mood, so a daily mood check-in is a CBT convention, not an ACT one. The book's first daily skill is Dropping Anchor (Ch 5), which it instructs the reader to practice repeatedly throughout the day; that is the Foundation week's daily practice.
+### Phases, tasks, and signals
 
-| Week | Pillar        | Task                                                | Signal (since program start)                                     | Target | Route                                 |
-| ---- | ------------- | --------------------------------------------------- | ---------------------------------------------------------------- | ------ | ------------------------------------- |
-| 1    | foundation    | _Daily:_ drop anchor (ACE) - Ch 5                   | distinct days with a `connection` log, technique `dropAnchor`    | 4      | `/modules/act/connection/drop-anchor` |
-| 1    | foundation    | Map your Choice Point - Ch 2                        | `choicePoints` created                                           | 1      | `/modules/act/choice-point/new`       |
-| 2    | bePresent     | _Daily:_ come back to the present - Ch 16-17        | distinct days with a `connection` log, technique != `dropAnchor` | 3      | `/modules/act/connection`             |
-| 2    | bePresent     | Meet your Observing Self - Ch 9, 19                 | `observingSelfSessions` created                                  | 1      | `/modules/act/observing-self`         |
-| 3    | openUp        | _Daily:_ unhook from a thought - Ch 6-8             | distinct days with a `defusion` log                              | 3      | `/modules/act/defusion`               |
-| 3    | openUp        | Make room for a feeling, or surf an urge - Ch 12-15 | `expansionLogs` + `urgeSurfLogs` created                         | 1      | `/modules/act/expansion`              |
-| 4    | doWhatMatters | _Daily:_ take a values-guided step - Ch 23          | distinct days with a completed `actionStep`                      | 4      | `/modules/act/committed-action`       |
-| 4    | doWhatMatters | Clarify what matters - Ch 22                        | `valueEntries` updated                                           | 1      | `/modules/act/values`                 |
-| 4    | doWhatMatters | Set a committed-action plan - Ch 23                 | `committedActions` created                                       | 1      | `/modules/act/committed-action/new`   |
+The program follows the book's teaching order (Foundation: Choice Point + Dropping Anchor → Be Present → Open Up → Do What Matters). It deliberately contains **no mood-tracking task** - ACT teaches getting better at feeling, not monitoring or improving mood, so a daily mood check-in is a CBT convention, not an ACT one. The book's first daily skill is Dropping Anchor (Ch 5), which it instructs the reader to practice repeatedly throughout the day; that is the Foundation phase's daily practice.
 
-Daily-practice targets (4, 3, 3, 4) keep the recurring practices achievable so a missed day is not punished. Phase 3 adds a maintenance-plan (7 R's) capstone to the Do What Matters week, and folds self-compassion (Ch 11) into the Week-3 "make room or surf an urge" task.
+Milestone signals count **since the current phase started** (`phaseStartedAt ?? startedAt`); daily-practice signals are a same-day check on **the date being viewed**, not a count.
+
+| Phase | Pillar        | Task key                | Task                                                | Signal                                                                      | Target | Route                                 |
+| ----- | ------------- | ----------------------- | --------------------------------------------------- | --------------------------------------------------------------------------- | ------ | ------------------------------------- |
+| 1     | foundation    | `dropAnchorDaily`       | _Daily:_ drop anchor (ACE) - Ch 5                   | a `connection` log with technique `dropAnchor` on the viewed day            | 1      | `/modules/act/connection/drop-anchor` |
+| 1     | foundation    | `mapChoicePoint`        | Map your Choice Point - Ch 2                        | `choicePoints` created                                                      | 1      | `/modules/act/choice-point/new`       |
+| 2     | bePresent     | `bePresentDaily`        | _Daily:_ come back to the present - Ch 16-17        | a `connection` log with technique other than `dropAnchor` on the viewed day | 1      | `/modules/act/connection`             |
+| 2     | bePresent     | `observeSelfOnce`       | Meet your Observing Self - Ch 9, 19                 | `observingSelfSessions` created                                             | 1      | `/modules/act/observing-self`         |
+| 3     | openUp        | `unhookOrMakeRoomDaily` | _Daily:_ unhook, or make room - Ch 6-8, 12-15       | a `defusion`, `expansion` or `urgeSurf` log on the viewed day               | 1      | `/modules/act/defusion`               |
+| 3     | openUp        | `unhookOnce`            | Unhook from a thought - Ch 6-8                      | `defusionLogs` created                                                      | 1      | `/modules/act/defusion`               |
+| 3     | openUp        | `makeRoomOnce`          | Make room for a feeling, or surf an urge - Ch 12-15 | `expansionLogs` + `urgeSurfLogs` created                                    | 1      | `/modules/act/expansion`              |
+| 4     | doWhatMatters | `valuesStepDaily`       | _Daily:_ take a values-guided step - Ch 23          | an `actionStep` whose `completedAt` falls on the viewed day                 | 1      | `/modules/act/committed-action`       |
+| 4     | doWhatMatters | `clarifyValue`          | Clarify what matters - Ch 22                        | `valueEntries` whose `updatedAt` is at or after the phase start             | 1      | `/modules/act/values`                 |
+| 4     | doWhatMatters | `commitActionOnce`      | Set a committed-action plan - Ch 23                 | `committedActions` created                                                  | 1      | `/modules/act/committed-action/new`   |
+
+☠️ **The daily practice is `target: 1` on the viewed date and never gates the phase.** `didOnDate` in `program-definition.ts` answers 1/0 for the selected local day, and `deriveActProgram` computes `phaseReady` from the milestones alone (`milestones.every((m) => m.done)`). A missed day therefore removes nothing and blocks nothing - the tick simply reads unticked for that date. Distinct-day counting with per-phase targets (4/3/3/4) was specified but **removed before the module shipped** (`226edf8a`); `distinctDays` and `DAILY_PRACTICE_TARGET` do not exist, and a sibling module's spec must not reintroduce them by mirroring an older copy of this section. Implementation phase 3 (§10) would add a maintenance-plan (7 R's) capstone to the Do What Matters phase and fold self-compassion (Ch 11) into the "make room or surf an urge" task.
 
 ### Machinery
 
-New files in `src/features/act/`, mirroring CBT:
+Files in `src/features/act/`, mirroring CBT:
 
-- `program-definition.ts` - exports `ACT_PROGRAM: ProgramWeek[]`, the `ProgramPillar` type, `ActProgramSignalData` (choice points, connection/defusion/expansion/urge logs, observing sessions, value entries, committed actions, action steps - no mood logs), and shared helpers (`atOrAfter`, `countSince`, `distinctDays`, `DAILY_PRACTICE_TARGET`).
-- `derive-act-program.ts` - `deriveActProgram(input): ActProgramView` with statuses `not_started | in_progress | graduated`, per-week/-task progress, `summaryStats`, `currentWeekIndex`.
-- `use-act-program.ts` - reads the ACT queries + `useUserPreferences`; exposes `startProgram`, `dismissProgramPrompt`, `showProgramPrompt`, `abandonProgram`, `replayProgram`; latches graduation by persisting `actProgramCompletedAt` once when `allWeeksComplete`.
+- `program-definition.ts` - exports `ACT_PROGRAM: ProgramPhase[]` (`ProgramPhase` and `ProgramTaskDef` are module-local, not exported), `ActProgramSignalData` (`since`, `selectedDate`, and the ACT record arrays - choice points, connection/defusion/expansion/urge logs, observing sessions, value entries, committed actions, action steps; no mood logs), and the shared helpers `atOrAfter` and `countSince`. The daily-practice helper `didOnDate` is module-private. There is **no** `distinctDays` and **no** `DAILY_PRACTICE_TARGET`. The `ProgramPillar` union and `ACT_PROGRAM_PILLARS` live in `src/features/act/types.ts`, not here.
+- `derive-act-program.ts` - `deriveActProgram(input): ActProgramView` with statuses `not_started | in_progress | graduated`, the current phase only (`phase.milestones` + `phase.dailyPractice`), `phaseReady`, `phaseIndex` / `totalPhases` / `isLastPhase`, and `summaryStats`. `summaryStats` counts since the **program's** start (not the phase's), and its `expansionLogs` figure folds urge-surf logs in.
+- `use-act-program.ts` - reads the ACT queries + `useUserPreferences`; exposes `startProgram`, `dismissProgramPrompt`, `showProgramPrompt`, `abandonProgram`, `replayProgram`, `advancePhase`, `dismissGraduation`. Advancing is **manual**: `advancePhase` increments `act_program_phase_index` and stamps `act_program_phase_started_at`, and on the last phase latches `act_program_completed_at` instead. Nothing latches graduation automatically - it happens only when the person presses **Finish the programme** (`act:program.graduateCta`), and pressing advance with unfinished milestones raises the early-advance confirm (`act:program.advanceEarlyConfirmTitle`).
 
-Preference flags on `user_preferences` (mirror `cbt_program_*`): `act_program_started_at`, `act_program_completed_at`, `act_program_prompt_dismissed_at`.
+Preference flags on `user_preferences` (mirror `cbt_program_*`) - **six**, not three: `act_program_started_at`, `act_program_completed_at`, `act_program_prompt_dismissed_at` (migration `20260550`), `act_program_phase_index`, `act_program_phase_started_at` (`20260556`), and `act_graduation_dismissed_at` (`20260580`).
 
-**Shared UI:** parameterize `src/components/app/program-hero.tsx` and `program-graduation.tsx` by module (labels, pillar names, and i18n namespace) so both CBT and ACT reuse one component rather than forking. The ACT home screen (`/modules/act`) renders the hero; the program prompt and graduation surfaces follow the CBT pattern.
+**Shared UI:** ☠️ `program-hero.tsx` does not exist. The shared, already-parameterised components are `src/components/app/program-card.tsx` (`ns` + `helpKey`) and `src/components/app/program-graduation.tsx` (`lines` + `namespace`); ACT's thin wrapper is `act-program-card.tsx`. The ACT home screen (`/modules/act`) renders the card, the graduation surface, and the start prompt, following the CBT pattern. `derive-<module>-program.ts` and `use-<module>-program.ts` are per-module forks by design, not a shared generic.
 
 ### Program milestones (informational)
 
-| Milestone  | Conditions                                                                          |
-| ---------- | ----------------------------------------------------------------------------------- |
-| Week 1     | Choice Point mapped; dropping anchor on several days                                |
-| Week 2     | Present-moment practice on several days; an observing-self session                  |
-| Week 3     | Defusion on several days; a feeling made room for, or an urge surfed                |
-| Week 4     | A value clarified; a committed-action plan set; values-guided steps on several days |
-| Graduation | All four weeks complete                                                             |
+Milestones are the only gate on advancing; the daily practices are deliberately absent from this table because they gate nothing.
+
+| Milestone  | Conditions                                                     |
+| ---------- | -------------------------------------------------------------- |
+| Phase 1    | Choice Point mapped                                            |
+| Phase 2    | An observing-self session                                      |
+| Phase 3    | A thought unhooked; a feeling made room for, or an urge surfed |
+| Phase 4    | A value clarified; a committed-action plan set                 |
+| Graduation | The last phase's **Finish the programme** button pressed       |
 
 ---
 
@@ -628,7 +635,7 @@ Follows the contract in `tools.md`:
 - `ModuleKey: "act"` (already in the union). Default `enabledModules` stays `["cbt"]`, and the array gates nothing: ACT's tools are reachable from the tools grid without enabling anything (#1672).
 - i18n namespace: `act:*`. Program strings live under `act:program.*` (weeks, tasks, pillars), mirroring `cbt:program.*`.
 - Route group: `/modules/act/*` (see §7).
-- `user_preferences` fields: existing onboarding/reminder fields plus the three new program flags (`act_program_started_at`, `act_program_completed_at`, `act_program_prompt_dismissed_at`).
+- `user_preferences` fields: existing onboarding/reminder fields plus the **six** program flags (`act_program_started_at`, `act_program_completed_at`, `act_program_prompt_dismissed_at`, `act_program_phase_index`, `act_program_phase_started_at`, `act_graduation_dismissed_at`) - see §4 _Machinery_ for the migrations that added them.
 - Reminders default off; single daily check-in; non-punitive copy.
 - Settings can abandon/replay the program. The current client does not read or reset an ACT onboarding flag; the legacy database column remains temporarily for compatibility with supported mobile builds.
 
@@ -636,28 +643,28 @@ Follows the contract in `tools.md`:
 
 ## 7. Routes
 
-| Route                                 | Purpose                                                                  |
-| ------------------------------------- | ------------------------------------------------------------------------ |
-| `/modules/act`                        | Home: program hero, daily check-in, Bull's-Eye overview, recent practice |
-| `/modules/act/onboarding`             | Full-screen onboarding fallback                                          |
-| `/modules/act/learn`                  | Primer: happiness trap, Choice Point, three pillars, ACT overview        |
-| `/modules/act/choice-point`           | Choice Point list **(new)**                                              |
-| `/modules/act/choice-point/new`       | Create/edit a Choice Point map **(new)**                                 |
-| `/modules/act/choice-point/[id]`      | Choice Point detail **(new)**                                            |
-| `/modules/act/defusion`               | Defusion log + technique library                                         |
-| `/modules/act/expansion`              | Expansion (TAME) + Struggle Switch                                       |
-| `/modules/act/expansion/urge-surfing` | Urge surfing flow                                                        |
-| `/modules/act/self-compassion`        | Kind hands / kind self-talk **(new)**                                    |
-| `/modules/act/connection`             | Noticing + Drop Anchor (ACE) flow                                        |
-| `/modules/act/observing-self`         | Ten Deep Breaths / chessboard                                            |
-| `/modules/act/values`                 | Values questionnaire + the alignment check-in and its snapshot history   |
-| `/modules/act/values/bulls-eye`       | Compatibility redirect to `/modules/act/values` (folded in, #1379)       |
-| `/modules/act/committed-action`       | Action plans (willingness + HARD barriers)                               |
-| `/modules/act/committed-action/[id]`  | Plan detail                                                              |
-| `/modules/act/break-habit`            | Breaking-habits 5-question plans **(new)**                               |
-| `/modules/act/decisions`              | Difficult-decisions worksheets **(new)**                                 |
-| `/modules/act/maintenance`            | Maintenance plan / 7 R's capstone **(new)**                              |
-| `/tools/act`                          | Compatibility redirect to `/modules/act`                                 |
+| Route                                 | Purpose                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `/modules/act`                        | Home: program card / graduation, the three pillars and their tools, recent defusion logs |
+| `/modules/act/onboarding`             | Full-screen onboarding fallback                                                          |
+| `/modules/act/learn`                  | Primer: happiness trap, Choice Point, three pillars, ACT overview                        |
+| `/modules/act/choice-point`           | Choice Point list **(new)**                                                              |
+| `/modules/act/choice-point/new`       | Create/edit a Choice Point map **(new)**                                                 |
+| `/modules/act/choice-point/[id]`      | Choice Point detail **(new)**                                                            |
+| `/modules/act/defusion`               | Defusion log + technique library                                                         |
+| `/modules/act/expansion`              | Expansion (TAME) + Struggle Switch                                                       |
+| `/modules/act/expansion/urge-surfing` | Urge surfing flow                                                                        |
+| `/modules/act/self-compassion`        | Kind hands / kind self-talk **(new)**                                                    |
+| `/modules/act/connection`             | Noticing + Drop Anchor (ACE) flow                                                        |
+| `/modules/act/observing-self`         | Ten Deep Breaths / chessboard                                                            |
+| `/modules/act/values`                 | Values questionnaire + the alignment check-in and its snapshot history                   |
+| `/modules/act/values/bulls-eye`       | Compatibility redirect to `/modules/act/values` (folded in, #1379)                       |
+| `/modules/act/committed-action`       | Action plans (willingness + HARD barriers)                                               |
+| `/modules/act/committed-action/[id]`  | Plan detail                                                                              |
+| `/modules/act/break-habit`            | Breaking-habits 5-question plans **(new)**                                               |
+| `/modules/act/decisions`              | Difficult-decisions worksheets **(new)**                                                 |
+| `/modules/act/maintenance`            | Maintenance plan / 7 R's capstone **(new)**                                              |
+| `/tools/act`                          | Compatibility redirect to `/modules/act`                                                 |
 
 ---
 
@@ -671,7 +678,7 @@ Mirrors `src/components/app/cbt-onboarding-modal.tsx`. Five steps; only Step 1 m
 2. **The Choice Point + Three Pillars.** Toward/away moves, getting hooked (OBEY/STRUGGLE), and the three pillars (Be Present, Open Up, Do What Matters). Optionally fill a first Choice Point map.
 3. **What brings you here?** Multi-select concern picker (plain language). Stored on `act_program_state.primaryConcerns`.
 4. **Your values - a quick look.** Rate current alignment (1-10) per Bull's-Eye domain; writes initial `BullsEyeSnapshot` rows.
-5. **Start the program or a first practice.** Offer to start the four-week program, or recommend one principle (see §11). Optional daily check-in time + reminder toggle (default off).
+5. **Start the program or a first practice.** Offer to start the four-phase program, or recommend one principle (see §11). Optional daily check-in time + reminder toggle (default off).
 
 Skippable after Step 1; user lands with all six principle tools available and defusion as the default starting point.
 
@@ -690,13 +697,13 @@ Skippable after Step 1; user lands with all six principle tools available and de
 
 | Phase                                  | Scope                                                                                                                                                                                                                                                     |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1 - Foundation & scaffolding**       | Choice Point primer + map, creative-hopelessness reflection, Drop Anchor/ACE, 2nd-ed onboarding & learn; program scaffolding (`program-definition`, `derive-act-program`, `use-act-program`); parameterize `program-hero`/`program-graduation` by module. |
+| **1 - Foundation & scaffolding**       | Choice Point primer + map, creative-hopelessness reflection, Drop Anchor/ACE, 2nd-ed onboarding & learn; program scaffolding (`program-definition`, `derive-act-program`, `use-act-program`); parameterize `program-card`/`program-graduation` by module. |
 | **2 - Open Up reconciliation**         | TAME rename (+ legacy alias), new defusion techniques, worry/rumination variant, self-compassion tool.                                                                                                                                                    |
 | **3 - Do What Matters reconciliation** | Willingness + HARD barriers on committed action, Challenge Formula / Values Square flow, maintenance-plan capstone.                                                                                                                                       |
 | **4 - Supplementary**                  | Break-habit 5-Q, difficult decisions, healing the past, savoring link.                                                                                                                                                                                    |
 | **5 - Activate program**               | Wire `ACT_PROGRAM` weeks/tasks/signals to the above, graduation latch, home insights.                                                                                                                                                                     |
 
-Phases 1-4 build the tools the program references; Phase 5 activates the program once the Choice Point and the four-week machinery exist. The maintenance-plan capstone and self-compassion tool are **post-MVP enhancements**, not activation prerequisites - the program shipped without them (see the §4 graduation contract).
+Phases 1-4 build the tools the program references; Phase 5 activates the program once the Choice Point and the four-phase machinery exist. The maintenance-plan capstone and self-compassion tool are **post-MVP enhancements**, not activation prerequisites - the program shipped without them (see the §4 graduation contract).
 
 ---
 
@@ -809,7 +816,7 @@ This spec is ready to drive implementation when:
 
 - The three pillars and the Choice Point are documented, with the six principle tools mapped under them.
 - Every new tool (Choice Point, Drop Anchor, self-compassion, TAME reframe, HARD barriers, breaking habits, decisions, maintenance plan) has concepts, inputs, and prompts.
-- The four-week program is fully specified (pillars, weeks, tasks, signals, targets, graduation) and maps onto the CBT program machinery.
+- The four-phase program is fully specified (pillars, phases, tasks, signals, graduation) and maps onto the CBT program machinery.
 - The data model covers new entities/columns with partial-save semantics matching CBT.
 - Safety, tone, and non-goals rule out clinical language and streak pressure.
 

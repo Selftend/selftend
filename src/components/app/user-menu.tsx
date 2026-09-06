@@ -18,6 +18,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { resolveAvatarUrl } from "@/src/features/profile/avatar-url";
 import { resolveDisplayName } from "@/src/features/profile/display-name";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { supportedLanguages } from "@/src/i18n";
 import { appEnv } from "@/src/lib/env";
@@ -141,13 +142,14 @@ export function UserMenu() {
     `!email` implies guest structurally: every registered identity attaches one
     (password, Google, and Apple's private relay) and there is no phone auth, so the
     door withdraws the moment conversion gives them an email - stale flag and all.
+    That argument now lives in `isGuestAccount`: this row got it right first, and
+    #1896 made it the one predicate the whole app shares.
 
-    ⚠️ This is NOT `useSignOut`'s `canSignOut`, which is the flag alone. The two
-    disagree only inside that same stale window, where a converted user gets
-    neither control - a known `canSignOut` staleness that predates this row and
-    belongs to conversion, not to the door.
+    ✅ `useSignOut`'s `canSignOut` AGREES with this row since #1896. It was the
+    flag alone until then, so inside the stale-flag window a converted user got
+    neither control; the two now withdraw and return together.
   */
-  const isGuest = isSignedIn && !email;
+  const isGuest = isSignedIn && isGuestAccount(user);
 
   const languageIndex = supportedLanguages.indexOf(language);
   const languageRoving = useRovingFocus({
@@ -284,9 +286,13 @@ export function UserMenu() {
                 Its own row directly beneath the identity row, in the Palette
                 row's shape (label · chevron, no leading icon): label-plus-chevron
                 is this menu's grammar for NAVIGATION, which is the only basis
-                #1809 permitted the door on. Not the action row - the menu
-                already overflows its own 70% cap for everyone (#1862), so the
-                actions are its least reachable region (#1811).
+                #1809 permitted the door on. Not the action row - and that ruling
+                survives #1862 moving the action row directly below this one.
+                Reachability was the argument that RULED OUT the action row in
+                #1811 (it was last in a menu that overflows its own 70% cap, so it
+                sat below the fold); grammar is the argument that put the door
+                here, and grammar does not move with the actions. A button is this
+                menu's word for "do this now", which is what #1809 refused.
 
                 ☠️ NO `accessibilityLabel` (#1863). One `Text` child means the
                 label IS the accessible name; an explicit one would hide that
@@ -334,6 +340,73 @@ export function UserMenu() {
                   <Text className="flex-1 text-sm">{t("userMenu.signIn")}</Text>
                   <Icon name="chevron-right" className="size-4 shrink-0 text-muted-foreground" />
                 </Pressable>
+              ) : null}
+
+              {/*
+                #1862: the account's actions sit directly beneath the account
+                block, ABOVE the preference sections, because this menu is taller
+                than its own scroll cap on a phone. `menuMaxHeight` bounds the
+                body to 70% of the viewport and seven sections in a 288px column
+                run past that at every phone height, in both locales - so
+                whatever is last is below the fold at rest, for everyone. The
+                order is the whole fix: the menu still overflows and still
+                scrolls, but what now falls below the fold is the preference
+                shortcuts rather than the only route to Settings, to feedback and
+                out of the session. #1774 closed the same class of failure - "the
+                actions became unreachable" - when the palette grid caused it.
+
+                What makes this the cheap trade rather than a coin toss: language,
+                theme and palette each have a second home on the Settings screen
+                this row leads to, and the store links and socials are not errands
+                anyone opened the menu to run. The action row has no second home.
+
+                ☠️ BELOW the guest's `Sign in` door, never above it. #1811 placed
+                that door directly beneath the identity row, and the block reads
+                identity · door · actions.
+              */}
+              {isSignedIn ? (
+                <View className="flex-row flex-wrap gap-3 py-0.5" testID="user-menu-actions">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() => {
+                      popoverTriggerRef.current?.close();
+                      router.push("/(app)/settings", { dangerouslySingular: true }); // lateral jump (#1027)
+                    }}
+                  >
+                    <Icon name="settings" className="size-4" />
+                    <Text>{t("userMenu.settings")}</Text>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={() => {
+                      popoverTriggerRef.current?.close();
+                      router.push("/(app)/support", { dangerouslySingular: true }); // lateral jump (#1027)
+                    }}
+                  >
+                    <Icon name="feedback" className="size-4" />
+                    <Text>{t("userMenu.sendFeedback")}</Text>
+                  </Button>
+                  {/*
+                `grow basis-auto`, not `flex-1`: flex-1's zero basis lets this button
+                "fit" whatever sliver the first two leave on the line, so it never
+                wraps - Bulgarian's longer labels crushed it to ~32px with its text
+                overlapping the feedback button. An auto basis wraps it to its own
+                full-width line instead when the row runs out.
+              */}
+                  {canSignOut ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="grow basis-auto"
+                      onPress={onSignOut}
+                    >
+                      <Icon name="logout" className="size-4" />
+                      <Text>{t("userMenu.signOut")}</Text>
+                    </Button>
+                  ) : null}
+                </View>
               ) : null}
 
               <View
@@ -444,51 +517,6 @@ export function UserMenu() {
                   },
                 ]}
               />
-
-              {isSignedIn ? (
-                <View className="flex-row flex-wrap gap-3 py-0.5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={() => {
-                      popoverTriggerRef.current?.close();
-                      router.push("/(app)/settings", { dangerouslySingular: true }); // lateral jump (#1027)
-                    }}
-                  >
-                    <Icon name="settings" className="size-4" />
-                    <Text>{t("userMenu.settings")}</Text>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={() => {
-                      popoverTriggerRef.current?.close();
-                      router.push("/(app)/support", { dangerouslySingular: true }); // lateral jump (#1027)
-                    }}
-                  >
-                    <Icon name="feedback" className="size-4" />
-                    <Text>{t("userMenu.sendFeedback")}</Text>
-                  </Button>
-                  {/*
-                `grow basis-auto`, not `flex-1`: flex-1's zero basis lets this button
-                "fit" whatever sliver the first two leave on the line, so it never
-                wraps - Bulgarian's longer labels crushed it to ~32px with its text
-                overlapping the feedback button. An auto basis wraps it to its own
-                full-width line instead when the row runs out.
-              */}
-                  {canSignOut ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="grow basis-auto"
-                      onPress={onSignOut}
-                    >
-                      <Icon name="logout" className="size-4" />
-                      <Text>{t("userMenu.signOut")}</Text>
-                    </Button>
-                  ) : null}
-                </View>
-              ) : null}
             </>
           )}
         </ScrollView>

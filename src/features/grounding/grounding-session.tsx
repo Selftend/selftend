@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Text } from "@/src/components/react-native-reusables/text";
 import { Button } from "@/src/components/react-native-reusables/button";
 import { FocusSessionShell } from "@/src/components/app/focus-session-shell";
+import { TechniqueCaution } from "@/src/components/app/technique-caution";
 import { HueIconBadge } from "@/src/features/grounding/hue-icon-badge";
 import { ProgressSegments } from "@/src/components/app/progress-segments";
 import type { GroundingTechnique } from "@/src/constants/grounding";
@@ -17,6 +18,15 @@ interface GroundingSessionProps {
   stepLabel: string;
   /** The quiet line under the prompt (design 5b + #783's AC); "" renders none. */
   stepHint: string;
+  /**
+   * The technique's medical caution (#1996), two lines at most; `[]` (the
+   * default) renders none. It is shown on the first step only — the step every
+   * session mounts on, before the person has touched anything — which is the
+   * closest this flow has to the "intro screen before Start" #1985 ruled on,
+   * since #874 removed the intro. Inline and always visible: no modal, no
+   * acknowledgement, nothing stored.
+   */
+  caution?: string[];
   stepIndex: number; // 0-based
   total: number;
   isLast: boolean;
@@ -44,6 +54,7 @@ export function GroundingSession({
   stepText,
   stepLabel,
   stepHint,
+  caution = [],
   stepIndex,
   total,
   isLast,
@@ -125,6 +136,9 @@ export function GroundingSession({
           <Text variant="muted" className="max-w-[34ch] text-center text-sm leading-relaxed">
             {stepHint}
           </Text>
+        ) : null}
+        {stepIndex === 0 ? (
+          <TechniqueCaution lines={caution} className="mt-3 w-full max-w-[44ch]" />
         ) : null}
       </View>
 

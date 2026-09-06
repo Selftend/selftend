@@ -175,22 +175,21 @@ values (
 
 -- bob: full onboarding done, reminders enabled at 19:30 local
 --
--- The four onboarding-answer columns below (`selected_concerns`, `widgets_seeded`,
--- `app_onboarding_completed_via`, `app_onboarding_completed_at`) belong to the same
--- change as bob's `widget_preferences` rows further down, and are NOT optional trim
--- (#1352). Seed the rows alone and bob becomes a *grandfathered* user - `via` null,
--- `widgets_seeded` false, `selected_concerns` `{}` - who happens to hold four widgets.
--- That state is producible (it is what `/arrange` leaves behind), but it makes the
--- layout unexplainable, which is exactly what the decision refused.
+-- The two completion columns below (`app_onboarding_completed_via`,
+-- `app_onboarding_completed_at`) belong to the same change as bob's `favorites`
+-- rows further down, and are NOT optional trim (#1352). Seed the rows alone and
+-- bob becomes a *grandfathered* user - `via` null, `_at` null - who happens to
+-- hold four favourites. That makes the list unexplainable, which is exactly what
+-- the decision refused. (`selected_concerns` and `widgets_seeded`, the other two
+-- onboarding-answer columns this insert used to carry, were dropped in #1958: the
+-- one-panel wizard asks no concern and seeds no Home. Bob's four favourites are
+-- the ones an `anxious-thoughts` + `cbt` answer became under the #1953 copy, and
+-- that is now recorded here in prose rather than in a column.)
 --
--- `anxious-thoughts` is the concern that EXPLAINS this account: bob's whole dataset
--- is five thought records nudged by a 19:30 CBT reminder, and that is the concern a
--- person arriving with them would pick. `enabled_modules` stays `['cbt']` -
--- unlike demo, bob needs no module edit.
+-- `enabled_modules` stays `['cbt']` - unlike demo, bob needs no module edit.
 insert into public.user_preferences (
   user_id,
   enabled_modules,
-  selected_concerns,
   reminder_consent,
   reminder_consent_updated_at,
   cbt_reminders_enabled,
@@ -201,7 +200,6 @@ insert into public.user_preferences (
   app_onboarding_completed,
   app_onboarding_completed_via,
   app_onboarding_completed_at,
-  widgets_seeded,
   cbt_onboarding_completed,
   privacy_policy_accepted_at,
   terms_accepted_at,
@@ -212,7 +210,6 @@ insert into public.user_preferences (
 values (
   '00000000-0000-0000-0000-000000000002',
   array['cbt']::text[],
-  array['anxious-thoughts']::text[],
   true,
   timezone('utc', now()) - interval '29 days',
   true,
@@ -222,7 +219,6 @@ values (
   true,
   'finish',
   timezone('utc', now()) - interval '30 days',
-  true,
   true,
   timezone('utc', now()) - interval '30 days',
   timezone('utc', now()) - interval '30 days',
@@ -268,46 +264,33 @@ values (
   timezone('utc', now())
 );
 
--- public.widget_preferences - bob (4)
--- Exactly what onboarding's `buildWidgetRecommendations` emits for concerns
--- ['anxious-thoughts'] and modules ['cbt'], and nothing else - no `/arrange` tail
--- (#1352). Positions are 0-BASED: `apply_widget_recommendations` assigns
--- `min(ordinality)::integer - 1`, so a direct insert has to use 0..n-1 to reproduce a
--- real wizard run. The RPC itself is unusable from here - it is `security invoker` and
--- reads `auth.uid()`, which is null under seed.sql - hence the direct insert.
---
--- ⚠️ `widget_id` is bare TEXT with no FK and no check, and the dashboard filters on
--- `widgetId in WIDGET_META`, so a typo lands silently and renders nothing. The ids are
--- checked against the live registry by test/seed-widget-layouts.test.ts.
---
--- WHAT THIS LAYOUT IS FOR: the Routines-page empty-state starter card (spec #37,
--- surface #45), which renders only at zero routines AND at least two steppable stored
--- widget ids, and today renders on no account at all. `buildStarterSteps` maps these
--- four to [mood, breathing, journal] - three steps, exactly STARTER_STEP_CAP.
--- ☠️ Which is why bob keeps ZERO routines, permanently: give him one and the only
--- account that card can be reviewed on is gone. See supabase/README.md.
---
--- alice deliberately gets no rows here: with demo and bob both carrying a layout, she
--- is the only account left on which Home's empty dashboard - and the wizard's starter
--- panel behind its re-offer - is reachable at all. demo's fourteen ids are written by
--- scripts/seed-demo-data.mjs, which `npm run db:reset` runs last.
-insert into public.widget_preferences (user_id, widget_id, position)
-values
-  ('00000000-0000-0000-0000-000000000002', 'cbt-programme',       0),
-  ('00000000-0000-0000-0000-000000000002', 'mood-checkin',        1),
-  ('00000000-0000-0000-0000-000000000002', 'breathing-suggested', 2),
-  ('00000000-0000-0000-0000-000000000002', 'journal-week',        3);
-
 -- public.favorites - bob (4)
--- Exactly what 20260908000000_favorites.sql's one-shot copy produces from the four
--- rows above: `cbt-programme` → `module:cbt`, the other three → `tool:<toolKey>`.
--- Written here because seeds run AFTER migrations (#1953): the copy has already
--- run against an empty table by the time this file inserts bob's widget rows, so
--- without these he would be the one account whose dashboard never migrated. The
--- pairing is checked against WIDGET_META by test/seed-widget-layouts.test.ts.
+-- What onboarding emitted for concern ['anxious-thoughts'] plus module ['cbt'] -
+-- `cbt-programme`, `mood-checkin`, `breathing-suggested`, `journal-week` - once
+-- 20260908000000_favorites.sql's one-shot copy folded it onto favourites:
+-- `cbt-programme` → `module:cbt`, the other three → `tool:<toolKey>`. Written as
+-- favourites directly because seeds run AFTER migrations (#1953), so the copy has
+-- already run against an empty table by the time this file runs.
 --
--- alice again gets no rows: with Favourites she is the account whose Home shows
--- the empty Favourites line, for the same reason she holds no widget rows.
+-- No `widget_preferences` rows any more (#1959): Home reads favourites, the old table
+-- serves only the native builds that predate them, and a seed writing both would be
+-- two sources of truth for one account. The keys are checked against the favourites
+-- catalogue by test/seed-favorites.test.ts.
+--
+-- WHAT THIS LIST IS NOT FOR: the Routines-page empty-state starter card (spec #37,
+-- surface #45) used to compose from bob's dashboard rows - `buildStarterSteps` mapped
+-- the four to [mood, breathing, journal]. Since #1954 it composes from the steppable
+-- tools the person has RECORDS in and reads no favourite either, so this list composes
+-- nothing; bob's five thought records are one tool, so on a fresh reset he gets the
+-- quiet "No routines yet" card like every seeded account. One mood check-in logged as
+-- bob makes the card compose [mood, cbt] - the review recipe in supabase/README.md.
+-- ☠️ Which is still why bob keeps ZERO routines, permanently: he is the only mid-use
+-- fixture at zero routines, so give him one and the card has no account to be
+-- reviewed on.
+--
+-- alice deliberately gets no rows here: she is the account whose Home shows the empty
+-- Favourites line. demo's ten are written by scripts/seed-demo-data.mjs, which
+-- `npm run db:reset` runs last.
 insert into public.favorites (user_id, kind, key)
 values
   ('00000000-0000-0000-0000-000000000002', 'module', 'cbt'),

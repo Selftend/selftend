@@ -21,14 +21,50 @@ per day at most, with a fresh same-day read of the target sub's rules before eac
 1. First line discloses "I built this".
 2. Free, open source, non-profit, no ads - state it plainly.
 3. No em dashes anywhere; use "-".
-4. No medical claims: Selftend is self-help and well-being support, not therapy, not diagnosis,
-   not treatment. Never imply outcomes.
-5. Do not pitch "no streaks" (owner decision 2026-07-24). Fine instead: "no pressure",
-   "no penalty for missing a day", "no ads, no subscriptions".
-6. Describe the meditation module as a staged practice; no book or brand claims.
+4. No medical claims: Selftend is self-help, not therapy, not diagnosis, not treatment. Never
+   imply outcomes.
+5. Never pitch the absence of streaks - the guardrail stays, but it is not a selling point
+   (owner decision 2026-07-24), and the phrasings are `verify`-banned in both languages.
+   ⚠️ Worded this way rather than quoting them, so this file stays clean against the scan it
+   is currently exempt from. Fine instead: "no pressure", "no penalty for missing a day",
+   "no ads, no subscriptions".
+6. Describe the meditation tool as **unguided sitting**; no book or brand claims, and no
+   wording that implies a narrated session library (see rule 10).
 7. Lead with the story or the value, not the link list.
 8. Point people to r/Selftend as the home community (except where a sub forbids
    subreddit links).
+9. ☠️ **A draft that says what Selftend _is_ takes the frame sentence from
+   [positioning.md](../positioning.md), not a phrasing invented here.** These are pre-threshold
+   surfaces - a reader meets them before crossing into the product - so § _Which surfaces carry
+   it_ binds them. Because the drafts ban em dashes (rule 3), the shape to paste is the
+   **hyphen form the app already ships** (`auth:landingPage.subtitle`), verbatim:
+
+   > A set of free, private mental health tools: everyday tools for right now, and a CBT
+   > programme - cognitive behavioural therapy - to work through when you want one.
+
+   Bulgarian twin (`bg` `auth:landingPage.subtitle`), for draft 7:
+
+   > Набор от безплатни, лични инструменти за психично здраве: ежедневни инструменти за момента
+   > и КПТ програма - когнитивно-поведенческа терапия - по която да работиш, когато поискаш.
+
+   Short form: **Private mental health tools.** / **Лични инструменти за психично здраве.**
+
+10. ☠️ **Before posting, read [positioning.md](../positioning.md) § _Words never to use_ and
+    check the draft against it.** No gate reaches this file (see the note under § _Drafts_), so
+    that read is the only check there is. **The table is deliberately not copied here**: a
+    cached list goes stale the next time positioning moves, which is how these drafts drifted in
+    the first place - and quoting the banned strings verbatim would turn the scan red on this
+    file the day anyone decides to include it, which is the open call on
+    [#1901](https://github.com/Selftend/selftend/issues/1901).
+
+    What the six rows cover, so you know what you are checking for: the practitioner-implying
+    compound built from _guided_ + _self-help_ (in either language, and it catches one
+    intervening word); a management verb taking **your** + a health or condition object; the
+    three over-claims about encryption; affirmative AI-practitioner framing; the AI capability
+    claim; and the absence-of-streaks pitch. ⚠️ Under a **tools** noun the first of those is easy
+    to walk into - a sentence pairing a management verb with this category noun is the one a
+    good-faith writer reaches for first, and it is banned. _look after_, _take care of_ and
+    _tend_ over the same objects are permitted, and so is _self-manage_.
 
 ## Cross-cutting risk: the 90/10 self-promotion guideline
 
@@ -59,35 +95,35 @@ threads are a natural place to bank real contributions. This also directly unblo
 
 ## Verdicts at a glance
 
-| Sub                    | Size | Verdict             | Why (2026-08-19 rules read)                                                                                                                             |
-| ---------------------- | ---- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| r/SideProject          | 812k | GO (first)          | Showcase sub, no formal rules returned                                                                                                                  |
-| r/droidappshowcase     | 13k  | GO                  | The designated showcase sub r/androidapps points to; 1 app post/week, template encouraged, store link required                                          |
-| r/opensource           | 376k | GO                  | Self-promo allowed in moderation with `Promotional` flair; OSI license required - AGPL-3.0 qualifies; must engage in comments                           |
-| r/webdev               | 3.3M | GO (Saturday only)  | Showoff Saturday flair; "think project, not product" - technical framing; no commercial promotion                                                       |
-| r/reactnative          | 187k | GO with care        | "No self promotion" targets companies; individual OSS showcase is the sub norm - frame as a technical writeup, modmail if unsure                        |
-| r/OpenSourceApps       | 2.8k | GO after approval   | FOSS-only, official repo/store links only; sub is restricted - request posting access or modmail first                                                  |
-| r/bulgaria             | 361k | GO with care        | Ads "generally forbidden" but mods allow clever/interesting posts that spark discussion; BG-language story post; removal risk accepted or modmail first |
-| r/AndroidAppTesters    | 9k   | Comment only        | Reciprocity home of the July tester post; update the existing thread, no new promo post                                                                 |
-| r/TestersCommunity     | 19k  | Comment only        | Same July thread (21 comments); sub bans self-promo posts outside testing purposes                                                                      |
-| r/Android              | 3.2M | Deferred            | Rule 4 allows dev self-posts but requires reasonable posting history on r/Android - u/only_radar has none yet; participate first, revisit               |
-| r/AndroidClosedTesting | 37k  | Skip                | #510's premise was wrong - the tester posts never went here; sub also bans links to other subreddits                                                    |
-| r/androidapps          | -    | Skip                | Self-promo now banned outright; posts redirect to r/droidappshowcase                                                                                    |
-| r/InternetIsBeautiful  | -    | Skip (disqualified) | Bans sites that require an email/account to fully experience - Selftend requires an account in MVP; also enforces 90/10                                 |
-| r/DecidingToBeBetter   | -    | Participate only    | Strictly no links, no app promotion, no exceptions                                                                                                      |
-| r/selfimprovement      | -    | Participate only    | No links; may not mention your app at all                                                                                                               |
-| r/getdisciplined       | -    | Participate only    | No links, permanent ban for shilling; also 200-karma gate                                                                                               |
-| r/NonZeroDay           | -    | Participate only    | "Posts advertising your productivity app will be removed"                                                                                               |
-| r/Habits               | 206k | Participate only    | "Spams from constant app promotions will be removed"; text-only sub; low upside vs risk                                                                 |
-| r/CBT                  | -    | Participate only    | "Links to the app you developed... are not allowed"                                                                                                     |
-| r/dbtselfhelp          | -    | Participate only    | No solicitation/self-promo; Selftend's DBT screen is educational-only anyway                                                                            |
-| r/Meditation           | -    | Participate only    | Self-promo banned regardless of cost; feedback requests count as promo                                                                                  |
-| r/Mindfulness          | -    | Participate only    | Self-promo, sales, recruitment prohibited                                                                                                               |
-| r/TheMindIlluminated   | -    | Participate only    | Questions-only sub; articles go through mod nomination                                                                                                  |
-| r/journaling           | -    | Skip hard           | Pen-and-paper only; app promotion is a permanent ban                                                                                                    |
-| r/digitaljournaling    | 26k  | Participate only    | "You cannot promote one you've created", even in comments, even when asked                                                                              |
-| r/sleep                | -    | Participate only    | No commercial content, no links of any kind                                                                                                             |
-| r/GratitudeJournal     | -    | Dead lead           | Returns 404 (banned or gone)                                                                                                                            |
+| Sub                    | Size | Verdict                 | Why (2026-08-19 rules read)                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------- | ---- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| r/SideProject          | 812k | GO (first)              | Showcase sub, no formal rules returned                                                                                                                                                                                                                                                                                                                                                               |
+| r/droidappshowcase     | 13k  | GO                      | The designated showcase sub r/androidapps points to; 1 app post/week, template encouraged, store link required                                                                                                                                                                                                                                                                                       |
+| r/opensource           | 376k | GO                      | Self-promo allowed in moderation with `Promotional` flair; OSI license required - AGPL-3.0 qualifies; must engage in comments                                                                                                                                                                                                                                                                        |
+| r/webdev               | 3.3M | GO (Saturday only)      | Showoff Saturday flair; "think project, not product" - technical framing; no commercial promotion                                                                                                                                                                                                                                                                                                    |
+| r/reactnative          | 187k | GO with care            | "No self promotion" targets companies; individual OSS showcase is the sub norm - frame as a technical writeup, modmail if unsure                                                                                                                                                                                                                                                                     |
+| r/OpenSourceApps       | 2.8k | GO after approval       | FOSS-only, official repo/store links only; sub is restricted - request posting access or modmail first                                                                                                                                                                                                                                                                                               |
+| r/bulgaria             | 361k | GO with care            | Ads "generally forbidden" but mods allow clever/interesting posts that spark discussion; BG-language story post; removal risk accepted or modmail first                                                                                                                                                                                                                                              |
+| r/AndroidAppTesters    | 9k   | Comment only            | Reciprocity home of the July tester post; update the existing thread, no new promo post                                                                                                                                                                                                                                                                                                              |
+| r/TestersCommunity     | 19k  | Comment only            | Same July thread (21 comments); sub bans self-promo posts outside testing purposes                                                                                                                                                                                                                                                                                                                   |
+| r/Android              | 3.2M | Deferred                | Rule 4 allows dev self-posts but requires reasonable posting history on r/Android - u/only_radar has none yet; participate first, revisit                                                                                                                                                                                                                                                            |
+| r/AndroidClosedTesting | 37k  | Skip                    | #510's premise was wrong - the tester posts never went here; sub also bans links to other subreddits                                                                                                                                                                                                                                                                                                 |
+| r/androidapps          | -    | Skip                    | Self-promo now banned outright; posts redirect to r/droidappshowcase                                                                                                                                                                                                                                                                                                                                 |
+| r/InternetIsBeautiful  | -    | Skip (⚠️ premise moved) | Bans sites that require an email/account to fully experience - ☠️ true on 2026-08-19, **not true now**: anonymous sign-in went live in production 2026-09-02 (#1674), so a visitor reaches the tools with no email and no password. The **90/10** half stands untouched and is reason enough to keep skipping; the _disqualification_ is not. Re-read on the day before treating this row as settled |
+| r/DecidingToBeBetter   | -    | Participate only        | Strictly no links, no app promotion, no exceptions                                                                                                                                                                                                                                                                                                                                                   |
+| r/selfimprovement      | -    | Participate only        | No links; may not mention your app at all                                                                                                                                                                                                                                                                                                                                                            |
+| r/getdisciplined       | -    | Participate only        | No links, permanent ban for shilling; also 200-karma gate                                                                                                                                                                                                                                                                                                                                            |
+| r/NonZeroDay           | -    | Participate only        | "Posts advertising your productivity app will be removed"                                                                                                                                                                                                                                                                                                                                            |
+| r/Habits               | 206k | Participate only        | "Spams from constant app promotions will be removed"; text-only sub; low upside vs risk                                                                                                                                                                                                                                                                                                              |
+| r/CBT                  | -    | Participate only        | "Links to the app you developed... are not allowed"                                                                                                                                                                                                                                                                                                                                                  |
+| r/dbtselfhelp          | -    | Participate only        | No solicitation/self-promo; Selftend's DBT screen is educational-only anyway                                                                                                                                                                                                                                                                                                                         |
+| r/Meditation           | -    | Participate only        | Self-promo banned regardless of cost; feedback requests count as promo                                                                                                                                                                                                                                                                                                                               |
+| r/Mindfulness          | -    | Participate only        | Self-promo, sales, recruitment prohibited                                                                                                                                                                                                                                                                                                                                                            |
+| r/TheMindIlluminated   | -    | Participate only        | Questions-only sub; articles go through mod nomination                                                                                                                                                                                                                                                                                                                                               |
+| r/journaling           | -    | Skip hard               | Pen-and-paper only; app promotion is a permanent ban                                                                                                                                                                                                                                                                                                                                                 |
+| r/digitaljournaling    | 26k  | Participate only        | "You cannot promote one you've created", even in comments, even when asked                                                                                                                                                                                                                                                                                                                           |
+| r/sleep                | -    | Participate only        | No commercial content, no links of any kind                                                                                                                                                                                                                                                                                                                                                          |
+| r/GratitudeJournal     | -    | Dead lead               | Returns 404 (banned or gone)                                                                                                                                                                                                                                                                                                                                                                         |
 
 Suggested order: r/SideProject -> r/droidappshowcase -> r/opensource -> r/webdev (first
 Saturday) -> r/reactnative -> r/OpenSourceApps (once approved) -> r/bulgaria. Tester-sub
@@ -97,25 +133,32 @@ comments can land any day since they are comments, not posts. One sub per day at
 
 Every draft is a starting point in the owner's voice - edit freely, keep the copy rules.
 
+☠️☠️ **NOTHING BELOW IS GATED, AND THAT IS WHY THESE DRIFTED** ([#1901](https://github.com/Selftend/selftend/issues/1901)). `docs/launch/` is in `test/positioning-copy.test.ts`'s `PUBLISHED_RECORDS` list, which is **excluded** from the prose scan - deliberately, because the directory is meant to hold records of what was already posted. Ready-to-post drafts living in the same directory inherit that exemption, so between 2026-08-19 and 2026-09-06 every draft here kept a category noun the product had retired **twice** ([#1813](https://github.com/Selftend/selftend/issues/1813), then [#2004](https://github.com/Selftend/selftend/issues/2004)) and `verify` stayed green throughout. Rewriting them does not fix that; **rule 9 and rule 10 above are the only thing standing between this file and the next drift.** Whether the exclusion should distinguish _records of what went out_ from _drafts of what has not_ is an open call on #1901 - and [#2022](https://github.com/Selftend/selftend/issues/2022) set the precedent for the shape of the answer, carving one text-in-repo source out of an image-shaped exemption rather than dropping the exemption.
+
 ### 1. r/SideProject
 
 Title:
 
-> I built a free, open-source mental well-being app. As of yesterday it is live on web, Android and iOS
+> I built a free, open-source set of mental health tools - live on web, Android and iOS
 
 Body:
 
-> I built this over the past year and yesterday the last platform went live, so the whole thing
-> finally exists the way I imagined it: one free app for looking after your mental well-being,
-> on web, Android and iOS.
+> I built this, so read it as my own project rather than a recommendation.
 >
-> Selftend is a set of small self-help tools: mood check-in, journal, gratitude, CBT thought
-> records, breathing and grounding exercises, a staged meditation practice, sleep log, habits
-> and routines. It is modular - you pick the tools you want and ignore the rest. No ads, no
-> subscriptions, no selling data. It is non-profit and open source (AGPL), so it stays free.
+> Selftend is a set of free, private mental health tools: everyday tools for right now, and a
+> CBT programme - cognitive behavioural therapy - to work through when you want one. Same
+> codebase on web, Android and iOS.
 >
-> To be clear about what it is not: it is not therapy and it does not diagnose anything. It is
-> the kind of structured self-help you would do on paper, made easier to keep up. Crisis
+> The everyday tools are what most people actually use: mood check-in, journal, gratitude,
+> breathing and grounding, unguided sitting with ambient sound and bells, sleep log, habits and
+> routines. Open one, use it, and you are done - none of them asks you to come back tomorrow.
+> The programme is there for when you want to work through something rather than just track how
+> you feel, and you never have to touch it.
+>
+> No ads, no subscriptions, no selling data. It is non-profit and open source (AGPL), so it
+> stays free.
+>
+> To be clear about what it is not: it is not therapy and it does not diagnose anything. Crisis
 > resources are linked separately and visibly in the app.
 >
 > Web: https://selftend.org
@@ -133,14 +176,17 @@ Flair: app showcase (per sidebar template; re-check flair names on the day).
 
 Title:
 
-> Selftend - free, open-source mental well-being toolkit (no ads, no subscriptions)
+> Selftend - free, open-source mental health tools (no ads, no subscriptions)
 
 Body:
 
-> I built this. Selftend is a free, non-profit, open-source app for looking after your mental
-> well-being: mood check-in, journal, gratitude, CBT thought records, breathing and grounding,
-> a staged meditation practice, sleep log, habits and routines. Modular - use only the parts
-> you want. No ads, no subscriptions, no selling data.
+> I built this. Selftend is a set of free, private mental health tools: everyday tools for right
+> now, and a CBT programme - cognitive behavioural therapy - to work through when you want one.
+> Non-profit and open source.
+>
+> The everyday side is mood check-in, journal, gratitude, breathing and grounding, unguided
+> sitting, sleep log, habits and routines. Open one, use it, and you are done. The programme is
+> optional and always was. No ads, no subscriptions, no selling data.
 >
 > It is not therapy and not a diagnosis tool - it is structured self-help, with crisis
 > resources linked separately in the app.
@@ -158,18 +204,19 @@ Flair: Promotional (required by their rule 8).
 
 Title:
 
-> Selftend - an AGPL mental well-being app that just shipped its third platform (web, Android, iOS from one Expo codebase)
+> Selftend - AGPL mental health tools on three platforms from one Expo codebase (web, Android, iOS)
 
 Body:
 
 > I built this and it is fully open source under AGPL-3.0:
 > https://github.com/Selftend/selftend
 >
-> Selftend is a free, non-profit mental well-being toolkit: mood check-in, journal, gratitude,
-> CBT thought records, breathing, grounding, staged meditation, sleep, habits, routines. No
-> ads, no subscriptions, no tracking-based business model - the license and the non-profit
-> setup are the point, because a well-being app is exactly the kind of software whose
-> incentives you want inspectable.
+> Selftend is a set of free, private mental health tools: everyday tools for right now, and a
+> CBT programme - cognitive behavioural therapy - to work through when you want one. Mood
+> check-in, journal, gratitude, breathing, grounding, unguided sitting, sleep, habits and
+> routines on the everyday side. No ads, no subscriptions, no tracking-based business model -
+> the license and the non-profit setup are the point, because this is exactly the kind of
+> software whose incentives you want inspectable.
 >
 > Stack: Expo + React Native + TypeScript, one codebase shipping to web (Cloudflare Workers),
 > Google Play and the App Store. Supabase backend with row-level security. i18n in English and
@@ -191,9 +238,9 @@ Title:
 
 Body:
 
-> I built this. Selftend (https://selftend.org) is a free, open-source mental well-being app,
-> and this week the same codebase went live on its third platform (web + Play Store + App
-> Store). The web story is the part this sub might find interesting:
+> I built this. Selftend (https://selftend.org) is a free, open-source set of mental health
+> tools, and the same codebase is live on all three platforms (web + Play Store + App Store).
+> The web story is the part this sub might find interesting:
 >
 > - React Native Web static-exported via Expo Router, served as static assets on Cloudflare
 >   Workers. No Node server anywhere.
@@ -202,7 +249,7 @@ Body:
 >   e2e. Happy to detail any of these.
 > - Supabase (Postgres + RLS) as the backend; TanStack Query on top.
 > - i18n with i18next (English + Bulgarian), accessibility tested with reduced motion and
->   screen readers - a well-being app gets used on bad days, so this mattered more than usual.
+>   screen readers - this kind of app gets used on bad days, so it mattered more than usual.
 >
 > It is open source (AGPL): https://github.com/Selftend/selftend
 > Questions about the setup very welcome.
@@ -215,8 +262,8 @@ Title:
 
 Body:
 
-> I built this - Selftend, a free open-source mental well-being app - and as of this week the
-> same Expo codebase is live on all three platforms. Things I would tell past me:
+> I built this - Selftend, a free open-source set of mental health tools - and the same Expo
+> codebase is live on all three platforms. Things I would tell past me:
 >
 > - React Native Web is a different platform, not a free target. onLayout is a mount-time
 >   decision there, Modal animations eat clicks mid-slide, and jest never sees any of it -
@@ -236,16 +283,17 @@ Body:
 
 Title:
 
-> Selftend - free, AGPL, non-profit mental well-being app for web, Android and iOS
+> Selftend - free, AGPL, non-profit mental health tools for web, Android and iOS
 
 Body:
 
 > I built this. Fully open source (AGPL-3.0), non-profit, no ads, no subscriptions.
 >
-> Selftend is a modular mental well-being toolkit: mood check-in, journal, gratitude, CBT
-> thought records, breathing and grounding, staged meditation, sleep log, habits and routines.
-> Not therapy, not diagnosis - structured self-help with crisis resources kept visibly
-> separate.
+> Selftend is a set of free, private mental health tools: everyday tools for right now, and a
+> CBT programme - cognitive behavioural therapy - to work through when you want one. Everyday
+> side: mood check-in, journal, gratitude, breathing and grounding, unguided sitting, sleep
+> log, habits and routines. Not therapy, not diagnosis - structured self-help with crisis
+> resources kept visibly separate.
 >
 > Repo: https://github.com/Selftend/selftend
 > Play Store: https://play.google.com/store/apps/details?id=org.vasilyoshev.selftend
@@ -256,15 +304,21 @@ Body:
 
 Title:
 
-> Направих безплатно приложение за психично благосъстояние - изцяло на български, без реклами и без абонаменти
+> Направих безплатни инструменти за психично здраве - изцяло на български, без реклами и без абонаменти
 
 Body:
 
-> Аз го направих, затова направо казвам: това е моят проект. Selftend е безплатно приложение
-> с инструменти за грижа за психичното благосъстояние - дневник, проследяване на настроението,
-> благодарности, CBT записи на мисли, дишане, медитация, навици и рутини. Изцяло преведено на
-> български, с отворен код, без реклами, без абонаменти и без продаване на данни - проектът е
-> с нестопанска цел и ще си остане безплатен.
+> Аз го направих, затова направо казвам: това е моят проект. Selftend е набор от безплатни,
+> лични инструменти за психично здраве: ежедневни инструменти за момента и КПТ програма -
+> когнитивно-поведенческа терапия - по която да работиш, когато поискаш.
+>
+> Ежедневните инструменти са това, което повечето хора ползват: настроение, дневник,
+> благодарности, дишане и заземяване, седене в тишина с фонов звук и камбанки, сън, навици и
+> рутини. Отваряш един, ползваш го и си готов. Програмата е за когато искаш да поработиш върху
+> нещо, а не просто да отчиташ как се чувстваш - и никога не си длъжен да я пипаш.
+>
+> Изцяло преведено на български, с отворен код, без реклами, без абонаменти и без продаване на
+> данни - проектът е с нестопанска цел и ще си остане безплатен.
 >
 > Не е терапия и не поставя диагнози - това са структурирани упражнения за самопомощ, а
 > линковете към кризисна помощ са отделени и винаги видими.
@@ -300,3 +354,5 @@ respectful cadence.
 All subreddit rules, subscriber counts, account stats, and store URLs in this file were
 verified 2026-08-19. Sources: reddit.com per-sub rules API, iTunes lookup API
 (app id 6796318929, version 0.14.1), github.com/Selftend/selftend (license).
+
+⚠️ **The drafts were rewritten 2026-09-06 ([#1901](https://github.com/Selftend/selftend/issues/1901)); the sub research above was not re-run.** Only the copy changed - the category noun, the framing of the meditation tool, and the copy rules. Every verdict, rule summary, subscriber count and flair name in this file is still the **2026-08-19 snapshot**, and checklist item 4 stands: re-read the target sub's rules the same day as each post. Two rows carry a dated caveat of their own - r/InternetIsBeautiful above, whose account-requirement premise moved on 2026-09-02, and r/Android, whose deferral depends on a posting history that may have changed.

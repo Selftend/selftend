@@ -454,7 +454,6 @@ export default function MoodTrackerScreen() {
               between two sections' padding rather than across a flex gap. */}
           <View className={cn(HOME_COLUMN)}>
             <ModuleHomeHeader
-              addWidgetCategory="mood"
               title={t("title")}
               tourScope="mood"
               description={t("description")}

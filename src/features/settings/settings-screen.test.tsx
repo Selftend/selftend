@@ -551,32 +551,64 @@ describe("SettingsScreen structure", () => {
     });
 
     /**
-     * The outline the group's name joins: the hero's `h1`, then five `h2`s.
+     * The page's heading outline as an ordered list of `[level, text]`.
      *
      * ⚠️ Two role names, one outline. `Text variant="h1"` sets ARIA's
      * `role="heading"`, the group labels set RN's `accessibilityRole="header"`,
      * and this jest matcher does not alias one to the other - on the web DOM
-     * both become heading elements.
+     * both become heading elements. Read in tree order and across BOTH names, so
+     * "followed by" is what is actually asserted: two separate role queries could
+     * each be in order and still describe an outline that opens on an `h2`.
      *
-     * ☠️ And the level is asserted because a level-less heading is NOT an `h2`:
-     * `react-native-web` swaps in a literal `<h1>` when `aria-level` is absent,
-     * so without it this page would ship six `h1`s.
+     * ☠️ The LEVEL is what has to be asserted, not the count or the role: a
+     * level-less heading is not an `h2`, because `react-native-web` swaps in a
+     * literal `<h1>` when `aria-level` is absent. Jest never renders that DOM
+     * element, so the level prop is the only place the mistake is visible here.
      */
-    it("registers one h1 and five h2s, in that order", async () => {
-      renderWithProviders(<SettingsScreen />);
-      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
-
-      // Read in tree order and across BOTH role names, so "followed by" is what
-      // is actually asserted - two separate role queries could each be in order
-      // and still describe an outline that opens on an h2.
-      const outline = screen.UNSAFE_root.findAll(
+    function readOutline(): [string, unknown][] {
+      return screen.UNSAFE_root.findAll(
         (node) =>
           typeof node.type === "string" &&
           (node.props.role === "heading" || node.props.accessibilityRole === "header"),
       ).map((node) => [String(node.props["aria-level"]), node.props.children]);
+    }
 
-      expect(outline).toEqual([
+    /** The outline the group's name joins: the hero's `h1`, then five `h2`s. */
+    it("registers one h1 and five h2s, in that order", async () => {
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByText("Settings")).toBeTruthy());
+
+      expect(readOutline()).toEqual([
         ["1", "Settings"],
+        ["2", "Appearance"],
+        ["2", "App"],
+        ["2", "Your data"],
+        ["2", "Help"],
+        ["2", "Account"],
+      ]);
+    });
+
+    /**
+     * #1801: the SAME outline with the guest card's title in it, which is the
+     * page's other rendering and the one nothing asserted. `CreateAccountCard`
+     * returns `null` for a registered user, so the test above walks a tree the
+     * callout is simply absent from - which is exactly how its `h3` survived.
+     *
+     * ☠️ The card is a sibling of the five groups, not a child of one: it sits
+     * outside every `SettingsRun`. So `CardTitle`'s default `aria-level={3}` both
+     * skipped a level after the `h1` and outranked every peer below it, and the
+     * override to 2 is what makes the guest outline the registered one plus one
+     * entry, in place, rather than a different shape.
+     */
+    it("keeps the outline flat for a guest, the callout a peer of the groups", async () => {
+      // `email: ""` is the live guest shape, not an absent key (#1829).
+      mockSessionUser = { id: "guest-1", email: "", is_anonymous: true };
+      renderWithProviders(<SettingsScreen />);
+      await waitFor(() => expect(screen.getByTestId("create-account-card")).toBeTruthy());
+
+      expect(readOutline()).toEqual([
+        ["1", "Settings"],
+        ["2", "Create an account to protect your data"],
         ["2", "Appearance"],
         ["2", "App"],
         ["2", "Your data"],

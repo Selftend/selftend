@@ -1,6 +1,9 @@
-import ToolsScreen, { TOOLS } from "@/src/features/tools/tools-screen";
+import { screen } from "@testing-library/react-native";
+
+import ToolsScreen from "@/src/features/tools/tools-screen";
+import { TOOLS } from "@/src/features/favorites/items";
 import { HUE_NAMES } from "@/src/lib/design-tokens";
-import { CHROME_MARK, CHROME_WASH } from "@/src/lib/theme/chrome";
+import { CHROME_MARK } from "@/src/lib/theme/chrome";
 import { renderWithProviders } from "@/test/render-with-providers";
 
 jest.mock("expo-router", () => ({
@@ -14,79 +17,42 @@ jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: { id: "user-1" } }),
 }));
 
-jest.mock("@/src/features/breathing/queries", () => ({
-  useBreathingSessionCount: () => ({ data: 0 }),
+jest.mock("@/src/features/favorites/queries", () => ({
+  useFavorites: () => ({ data: [] }),
+  useToggleFavorite: () => ({ mutate: jest.fn() }),
 }));
 
-jest.mock("@/src/features/gratitude/queries", () => ({
-  useGratitudeEntryCount: () => ({ data: 0 }),
-}));
-
-jest.mock("@/src/features/grounding/queries", () => ({
-  useGroundingSessionCount: () => ({ data: 0 }),
-}));
-
-jest.mock("@/src/features/habits/queries", () => ({
-  useHabits: () => ({ data: [] }),
-}));
-
-jest.mock("@/src/features/journal/queries", () => ({
-  useJournalEntryCount: () => ({ data: 0 }),
-}));
-
-jest.mock("@/src/features/meditation/queries", () => ({
-  useMeditationSessionCount: () => ({ data: 0 }),
-}));
-
-jest.mock("@/src/features/mood/queries", () => ({
-  useMoodLogs: () => ({ data: [] }),
-  useMoodLogCount: () => ({ data: 0 }),
-}));
-
-jest.mock("@/src/features/sleep/queries", () => ({
-  useSleepLogCount: () => ({ data: 0 }),
+jest.mock("@/src/features/home/tool-row-stats", () => ({
+  ToolStat: () => null,
 }));
 
 /**
- * INVERTED by #587. This suite used to assert the opposite of what it asserts
- * now, and the history matters because it is what the inversion has to keep.
+ * INVERTED by #587, and carried onto the one card by #1955. This suite used to assert
+ * the opposite of what it asserts now, and the history matters because it is what the
+ * inversion has to keep.
  *
  * The hub's tiles carried a hardcoded hue map of their own until #421, which had
- * drifted from tool-accent.ts on five of its six entries: journal, gratitude and
- * habits were all violet, grounding and sleep were all pink, so /tools rendered
- * six tools in two colours while the sidebar rendered the same six correctly.
- * Gratitude was the clearest case - gold in the nav, violet in the hub, in the
- * same screenshot. The fix was a single source of truth, and these tests pinned
- * every tile to it: "resolves every tile to a real entry", "renders each tile's
- * chip and glyph in that tool's own hue", "shows more than the two colours it
- * used to".
+ * drifted from tool-accent.ts on five of its six entries - /tools rendered six tools in
+ * two colours while the sidebar rendered the same six correctly. #558 then ruled that a
+ * tool has no colour at all: eight tools in eight hues is the "distinguishes items in a
+ * set" case, which an icon and a name already do.
  *
- * #558 then ruled that a tool has no colour at all - eight tools in eight hues
- * is the "distinguishes items in a set" case, which an icon and a name already
- * do - so tool-accent.ts is deleted and every tile takes the same neutral pair.
- *
- * The defect the old suite guarded is therefore not merely gone, it is
- * unreachable: with no map there is nothing to drift from and no fallback to
- * fall into. What replaces it is the mirror-image risk, which is a partial
- * sweep - one tile left hued, or a later tile added with a hue - and the two
- * assertions below fail on exactly that. They also fail on the OLD behaviour,
- * which is the point of writing them this way round rather than deleting the
- * suite: `bg-muted` was on none of the eight tiles before this change, and
- * seven distinct chips is not one.
+ * What replaces the old guard is the mirror-image risk - a partial sweep, one tile left
+ * hued or a later tile added with a hue - and the two assertions below fail on exactly
+ * that. They also fail on the OLD behaviour, which is the point of keeping the suite.
  */
 describe("the tools hub paints no per-tool hue (#587)", () => {
   type Node = { props?: { className?: unknown }; type?: unknown };
 
-  /** Every tile's host element, one per TOOLS entry. */
+  /** Every card's host element, one per TOOLS entry. */
   function tiles() {
     const { UNSAFE_root } = renderWithProviders(<ToolsScreen />);
-    // `typeof node.type === "string"` keeps only the host element: a Pressable
-    // renders through several composite layers that all carry the same props,
-    // so without it each tile matches three times over.
+    // `typeof node.type === "string"` keeps only the host element. The card is an inert
+    // View since #1887 - the two pressables are its children - so the outer box is what
+    // carries the wrapping-row sizing class.
     const found = UNSAFE_root.findAll(
       (node) =>
         typeof node.type === "string" &&
-        node.props?.accessibilityRole === "button" &&
         typeof node.props?.className === "string" &&
         node.props.className.includes("basis-[260px]"),
     );
@@ -100,13 +66,11 @@ describe("the tools hub paints no per-tool hue (#587)", () => {
       .findAll((node) => typeof node.props?.className === "string")
       .map((node) => node.props?.className as string);
 
-  it("gives every tile the same neutral wash and mark", () => {
+  it("gives every tile the same neutral mark", () => {
     // Scoped per TILE rather than to the screen, for the reason #421 found: a
     // whole-tree search cannot localise a defect when tools share a class.
     for (const tile of tiles()) {
       const classNames = classNamesIn(tile);
-
-      expect(classNames).toContainEqual(expect.stringContaining(CHROME_WASH));
       expect(classNames.some((name) => name.split(/\s+/).includes(CHROME_MARK))).toBe(true);
     }
   });
@@ -128,12 +92,24 @@ describe("the tools hub paints no per-tool hue (#587)", () => {
 
   it("leaves the tile names on the neutral foreground", () => {
     // Unchanged by the inversion: the hub never hued its tile names, and the
-    // reason it must not start is unchanged too - 16px text owes 4.5:1.
+    // reason it must not start is unchanged too - 15px text owes 4.5:1.
     const { getByText } = renderWithProviders(<ToolsScreen />);
     // "Check-in" since #732 - this hub was the last en surface still calling the
     // tool "Mood tracker" while its own screens said Check-in.
     const name = getByText("Check-in");
 
     expect(name.props.className as string).not.toContain("text-be");
+  });
+});
+
+describe("the tools hub renders the catalogue's first eight through the one card (#1955)", () => {
+  it("renders exactly the eight tool cards, each with a star", () => {
+    renderWithProviders(<ToolsScreen />);
+
+    expect(screen.getAllByTestId(/^card-tool-/).map((node) => node.props.testID)).toEqual(
+      TOOLS.map((tool) => `card-tool-${tool.key}`),
+    );
+    expect(screen.getAllByTestId(/^card-star-tool-/)).toHaveLength(TOOLS.length);
+    expect(screen.queryByTestId(/^card-module-/)).toBeNull();
   });
 });

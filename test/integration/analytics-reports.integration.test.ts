@@ -135,6 +135,21 @@ function insertEnabledModules(id: string, enabledModulesSql: string) {
   `);
 }
 
+/**
+ * A preferences row carrying only the two columns the age gate writes through
+ * (#1978). Both are three-state: `null` on `age_floor_met` means *never asked*,
+ * never *refused*, which is the whole reason section 6 needs a cutoff.
+ */
+function insertAgeAttestation(
+  id: string,
+  options: { ageFloorMetSql: string; policyVersionSql: string },
+) {
+  runSql(`
+    insert into public.user_preferences (user_id, age_floor_met, policy_version_accepted)
+    values ('${id}', ${options.ageFloorMetSql}, ${options.policyVersionSql});
+  `);
+}
+
 /** A gratitude record, the module content row the #1672 drift was first seen on. */
 function insertGratitudeEntry(id: string) {
   runSql(`insert into public.gratitude_entries (user_id, item_1) values ('${id}', 'a warm cup');`);
@@ -475,11 +490,16 @@ describe("aggregate analytics reports (integration)", () => {
     });
 
     it("prints every module for every account type, zeros included", () => {
+      // ☠️ The module list is the REPORT's, and it grows: `dbt` joined it with
+      // the DBT module (#1980). The claim is that every module prints for every
+      // account type even at zero, so a module missing here is a row the report
+      // silently stopped emitting - keep this list in step with the `mods(module)`
+      // VALUES list in scripts/analytics-engagement.sql.
       const keys = [...moduleUsers().keys()].sort();
       expect(keys).toEqual(
         ["guest", "registered"]
           .flatMap((account) =>
-            ["cbt", "meditation", "gratitude", "act"].map((m) => `${account}/${m}`),
+            ["cbt", "meditation", "gratitude", "act", "dbt"].map((m) => `${account}/${m}`),
           )
           .sort(),
       );
@@ -517,5 +537,148 @@ describe("aggregate analytics reports (integration)", () => {
         ]);
       });
     }
+  });
+
+  describe("engagement report: asked, never attested", () => {
+    // #1978, the evidence #1936 reopens the age gate's placement on. Counted:
+    // an account created after the gate shipped, with no age verdict written
+    // and no consent version accepted - someone who met the first screen and
+    // stopped there.
+    //
+    // ☠️ THE CUTOFF IS THE WHOLE FIGURE. `age_floor_met` is null for every
+    // account that predates the gate, and null means *never asked*, so without
+    // the created-after cutoff this number is the entire pre-gate install base.
+    // Fixture 44 sits an hour BELOW the cutoff and 40..43 above it, because a
+    // window assertion whose fixtures do not straddle both edges survives a
+    // mutation that moves the edge.
+    //
+    // The shipped section cannot be filtered to this suite's cohort, so it is
+    // read before and after seeding and the assertions are on the deltas.
+    const CUTOFF = "2026-09-06T00:00:00Z";
+    const WIDE = "2026-01-01T00:00:00Z";
+    const AFTER = `timestamptz '2026-09-06T01:00:00Z'`;
+    const BELOW = `timestamptz '2026-09-05T23:00:00Z'`;
+
+    interface Row {
+      accountsSinceCutoff: number;
+      askedNeverAttested: number;
+    }
+
+    /** Section 6 as shipped, with only the cutoff overridden. */
+    function askedNeverAttested(cutoff = CUTOFF): Map<string, Row> {
+      const rows = queryWithin(
+        "engagement",
+        `\\set age_gate_cutoff '${cutoff}'\n${section("engagement", 6)}`,
+      );
+      return new Map(
+        rows.map(([account, , , accounts, asked]) => [
+          account,
+          { accountsSinceCutoff: Number(accounts), askedNeverAttested: Number(asked) },
+        ]),
+      );
+    }
+
+    // ☠️ A baseline per cutoff, because widening the cutoff admits every
+    // pre-existing account on the database, not just this suite's fixtures.
+    // Only the delta at a given cutoff is this suite's own contribution.
+    const before = new Map<string, Map<string, Row>>();
+
+    function delta(account: string, cutoff = CUTOFF): Row {
+      const now = askedNeverAttested(cutoff).get(account)!;
+      const was = before.get(cutoff)!.get(account)!;
+      return {
+        accountsSinceCutoff: now.accountsSinceCutoff - was.accountsSinceCutoff,
+        askedNeverAttested: now.askedNeverAttested - was.askedNeverAttested,
+      };
+    }
+
+    beforeAll(() => {
+      deleteSuiteUsers();
+      before.set(CUTOFF, askedNeverAttested(CUTOFF));
+      before.set(WIDE, askedNeverAttested(WIDE));
+
+      // 40: above the cutoff with NO preferences row at all. This is the person
+      // the figure is about - stopping at the gate can mean the row was never
+      // written - so the left join is load-bearing, not defensive.
+      insertAuthUser({ id: userId(40), createdAtSql: AFTER });
+
+      // 41: above the cutoff, preferences row present, both columns null.
+      insertAuthUser({ id: userId(41), createdAtSql: AFTER });
+      insertAgeAttestation(userId(41), { ageFloorMetSql: "null", policyVersionSql: "null" });
+
+      // 42: answered the gate. Not counted, whatever the consent gate did next.
+      insertAuthUser({ id: userId(42), createdAtSql: AFTER });
+      insertAgeAttestation(userId(42), { ageFloorMetSql: "true", policyVersionSql: "null" });
+
+      // 43: got past the consent gate behind it, so they were never stuck here.
+      insertAuthUser({ id: userId(43), createdAtSql: AFTER });
+      insertAgeAttestation(userId(43), {
+        ageFloorMetSql: "null",
+        policyVersionSql: `'2026-09-04-teen-floor'`,
+      });
+
+      // 44: the pre-gate install base, one hour BELOW the cutoff, with exactly
+      // the null/null shape 41 has. Only the cutoff can tell them apart.
+      insertAuthUser({ id: userId(44), createdAtSql: BELOW });
+      insertAgeAttestation(userId(44), { ageFloorMetSql: "null", policyVersionSql: "null" });
+
+      // 45: a guest above the cutoff. Guests pass through the same gate and
+      // abandon for different reasons, so they are counted on their own row.
+      insertAuthUser({ id: userId(45), createdAtSql: AFTER, isAnonymous: true });
+    });
+
+    afterAll(deleteSuiteUsers);
+
+    it("counts the account that never answered, whether or not it has a preferences row", () => {
+      expect(delta("registered").askedNeverAttested).toBe(2);
+    });
+
+    it("excludes an account that answered, and one that reached the consent gate", () => {
+      // Four registered fixtures are in the window; only two of them stopped.
+      // Both halves are asserted: dropping the consent-gate leg of the
+      // predicate would let 43 in while leaving the window size untouched.
+      expect(delta("registered")).toEqual({ accountsSinceCutoff: 4, askedNeverAttested: 2 });
+    });
+
+    it("excludes the pre-gate install base, which has the identical null/null shape", () => {
+      // Fixture 44 is null/null exactly as 41 is, and differs from it only by
+      // sitting an hour below the cutoff. So it is invisible at the shipped
+      // cutoff and appears the moment the cutoff is moved below it - which is
+      // the only thing separating "asked and stopped" from "never asked".
+      expect(delta("registered")).toEqual({ accountsSinceCutoff: 4, askedNeverAttested: 2 });
+      expect(delta("registered", WIDE)).toEqual({ accountsSinceCutoff: 5, askedNeverAttested: 3 });
+    });
+
+    it("splits guests from registered accounts", () => {
+      expect(delta("guest")).toEqual({ accountsSinceCutoff: 1, askedNeverAttested: 1 });
+    });
+
+    it("prints the cutoff release and instant on every row, so a zero can be read", () => {
+      // The acceptance #1978 names: a reader must never mistake a pre-cutoff
+      // zero for a measured one, so the cutoff travels with the numbers.
+      const rows = queryWithin(
+        "engagement",
+        `\\set age_gate_cutoff '${CUTOFF}'\n${section("engagement", 6)}`,
+      );
+      expect(rows).toHaveLength(2);
+      for (const row of rows) {
+        expect(row).toHaveLength(6);
+        expect(row[2]).toBe(CUTOFF);
+      }
+    });
+
+    it("ships with a cutoff that yields zero, because the gate has not been released", () => {
+      // ☠️ Not a style assertion. `infinity` is what stops the shipped default
+      // reading as a measured zero; the day the gate ships, these two lines and
+      // this test move together.
+      const source = reportSql("engagement");
+      expect(source).toContain(`\\set age_gate_cutoff 'infinity'`);
+      expect(source).toContain(`\\set age_gate_release 'unreleased'`);
+      const rows = queryWithin("engagement", section("engagement", 6));
+      expect(rows).toEqual([
+        ["guest", "unreleased", "infinity", "0", "0", ""],
+        ["registered", "unreleased", "infinity", "0", "0", ""],
+      ]);
+    });
   });
 });

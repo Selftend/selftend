@@ -1,10 +1,14 @@
 import type { RoutineToolRecords } from "@/src/features/routines/derive";
 import {
   areOfferRecordsReady,
+  areToolRecordsReady,
   countToolsWithRecords,
+  DISTINCT_STEPPABLE_TOOLS,
   SECOND_ACTION_MIN,
+  toolsWithRecords,
   type OfferOnlyRecords,
 } from "@/src/features/routines/starter-offer";
+import { buildStarterSteps, STARTER_STEP_MIN } from "@/src/features/routines/starter";
 
 // Every slice fetched and empty: the loaded-but-recordless baseline.
 function emptyRecords(): RoutineToolRecords {
@@ -28,6 +32,12 @@ function emptyRecords(): RoutineToolRecords {
     choicePoints: [],
     committedActions: [],
     actionSteps: [],
+    dbtSessions: [],
+    dbtWiseMindCheckins: [],
+    dbtJudgements: [],
+    dbtEmotionRecords: [],
+    dbtOppositeActionPlans: [],
+    dbtScripts: [],
   };
 }
 
@@ -143,5 +153,71 @@ describe("countToolsWithRecords", () => {
 describe("SECOND_ACTION_MIN", () => {
   it("is the glossary's second action", () => {
     expect(SECOND_ACTION_MIN).toBe(2);
+  });
+});
+
+describe("toolsWithRecords (#1954)", () => {
+  it("lists the distinct steppable tools with a record, in the fixed array order", () => {
+    // Records "arrived" gratitude-first; the answer is still array order.
+    const records = emptyRecords();
+    records.gratitudeEntries = [{ dayKey: "2026-09-03" }];
+    records.moodLogs = [{ dayKey: "2026-09-01" }];
+    records.connectionLogs = [{ technique: "dropAnchor", createdAt: "2026-09-02T08:00:00.000Z" }];
+
+    expect(toolsWithRecords(records)).toEqual(["mood", "gratitude", "connection"]);
+    expect(toolsWithRecords(emptyRecords())).toEqual([]);
+  });
+
+  it("is a subsequence of DISTINCT_STEPPABLE_TOOLS, so it can never name dropAnchor", () => {
+    const records = emptyRecords();
+    records.connectionLogs = [{ technique: "dropAnchor", createdAt: "2026-09-02T08:00:00.000Z" }];
+    const tools = toolsWithRecords(records);
+    expect(tools).toEqual(["connection"]);
+    expect(tools.every((tool) => DISTINCT_STEPPABLE_TOOLS.includes(tool))).toBe(true);
+  });
+});
+
+describe("areToolRecordsReady", () => {
+  it("is the steppable half of the offer readiness", () => {
+    expect(areToolRecordsReady(emptyRecords())).toBe(true);
+    const { moodLogs: _unfetched, ...rest } = emptyRecords();
+    expect(areToolRecordsReady(rest)).toBe(false);
+    expect(areToolRecordsReady({})).toBe(false);
+  });
+});
+
+/**
+ * Sub-decision 2 of spec #1885 §5.3: composition and the gate now read ONE set, so a
+ * successful composition implies the gate (`STARTER_STEP_MIN` = `SECOND_ACTION_MIN`) -
+ * which is why `/routines`' empty state adds no records gate. But NOT the other way
+ * round, and this pins the direction that still matters.
+ */
+describe("composition against the second-action gate", () => {
+  it("can pass the gate and still compose nothing: records only in worry, anger and self-care", () => {
+    const offerOnly = { worryEntries: [{}], angerLogs: [{}], selfCareLogs: [{}] };
+    expect(countToolsWithRecords(emptyRecords(), offerOnly)).toBeGreaterThanOrEqual(
+      SECOND_ACTION_MIN,
+    );
+    expect(buildStarterSteps(toolsWithRecords(emptyRecords()))).toBeNull();
+  });
+
+  it("can pass the gate and still compose nothing: habits plus one everyday tool", () => {
+    const records = emptyRecords();
+    records.habitLogs = [{ loggedOn: "2026-09-01" }];
+    records.moodLogs = [{ dayKey: "2026-09-01" }];
+    expect(countToolsWithRecords(records, emptyOfferOnly())).toBe(2);
+    expect(buildStarterSteps(toolsWithRecords(records))).toBeNull();
+  });
+
+  it("never composes without passing the gate", () => {
+    // Every composition has >= STARTER_STEP_MIN distinct steppable tools, and the
+    // count is a superset of those - the arithmetic the dissolved gate rested on.
+    expect(STARTER_STEP_MIN).toBe(SECOND_ACTION_MIN);
+    const records = emptyRecords();
+    records.thoughtRecords = [{ dayKey: "2026-09-01" }];
+    records.defusionLogs = [{ createdAt: "2026-09-02T08:00:00.000Z" }];
+    const composed = buildStarterSteps(toolsWithRecords(records));
+    expect(composed).toEqual(["cbt", "defusion"]);
+    expect(countToolsWithRecords(records, {})).toBeGreaterThanOrEqual(SECOND_ACTION_MIN);
   });
 });

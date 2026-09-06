@@ -19,26 +19,14 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+// The caps moved to `test/store-caps.ts` on #1944, unchanged, so that
+// `positioning-copy.test.ts` can hold `docs/positioning.md`'s written inventory
+// of them against the same object rather than a second copy of the numbers.
+import { APP_STORE_CAPS as CAPS } from "@/test/store-caps";
+
 const info = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, "..", "store", "apple-info.json"), "utf8"),
 ) as Record<string, unknown>;
-
-/**
- * App Store Connect's own caps, per the EAS Metadata schema
- * (https://docs.expo.dev/eas/metadata/schema/) and App Store Connect's editor.
- *
- * ⚠️ `keywords` and `description` are deliberately NOT here, and their absence
- * is the finding rather than an omission - see store/README.md. `keywords` is a
- * hidden field that cannot be read from outside App Store Connect at all, and
- * only the first line and second paragraph of `description` were ever captured.
- * Committing a truncated description would make the weekly drift check red on
- * arrival. The file is a verified subset; anything never read stays absent
- * rather than guessed at.
- */
-const CAPS: Record<string, number> = {
-  subtitle: 30,
-  promoText: 170,
-};
 
 describe("Selftend's committed App Store listing text", () => {
   it("commits only fields whose live value was actually read", () => {

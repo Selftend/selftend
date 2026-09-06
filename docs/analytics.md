@@ -57,7 +57,7 @@ Two things to know when reading it:
 and within 72h of signup; setup actions excluded), retention (signup-anchored
 weekly cohorts, W1-W4, retained = any content row in the window, percentages
 over mature users only), module usage (per module — cbt, meditation,
-gratitude, act — % with >=1 record in the module's tables), and core tool usage
+gratitude, act, dbt — % with >=1 record in the module's tables), and core tool usage
 (mood, journal, sleep, habits, mindfulness, per feature). All queries count
 distinct users; none emit per-user rows.
 
@@ -72,20 +72,53 @@ an instrument measuring a mechanism that does not exist (#1672). Usage is the
 only adoption signal the schema carries, so it is the only one reported;
 `test/analytics-shared-sql.test.ts` fails any report that reads the column.
 
+Section 6, **asked, never attested**, counts accounts that met the age gate and
+did not get past it — `age_floor_met` null, `policy_version_accepted` null, and
+created after the gate shipped — split guest from registered, as a count and as
+a share of accounts created in the same window. It collects nothing new: both
+columns already exist and this is a derived count over them. It is the evidence
+[#1936](https://github.com/Selftend/selftend/issues/1936) settled the age gate's
+placement on: the gate is the first screen of a clean install on native, and
+**the placement is revisited if this share is large against guests minted in the
+same window; the owner sets the number once a real cohort exists.** The reasoning
+behind the placement lives in [age-floor.md](age-floor.md) § _The gate that
+asks_, not here.
+
+☠️ **Read the cutoff before reading the number.** `age_floor_met` is null for
+every account that predates the gate, and null means _never asked_, never
+_refused_ — so without the created-after cutoff this figure is the entire
+pre-gate install base rather than a count of people who stopped. The cutoff is
+the production release carrying
+`supabase/migrations/20260905000000_age_attestation.sql`, set by the two `\set`
+lines at the top of the report and printed on every row as `cutoff_release` and
+`cutoff_at`. ⚠️ That release has not shipped, so those read `unreleased` and
+`infinity` and the figure is a legitimate zero; a zero with a real instant beside
+it is the measured one. Under-floor exits are not in this number — they delete
+the account, so they never appear as a null. Platform is not an axis and is not
+to be added: the row cannot say which platform it came from, and #1936 accepted
+that the figure answers "how many stop at the first screen" and nothing else.
+
 `npm run analytics:onboarding` runs `scripts/analytics-onboarding.sql`.
-The report covers: signups, widget-suggestion wizard conversion, finish-vs-skip
-(`user_preferences.app_onboarding_completed_via` / `_at`, written at wizard
-completion), concern distribution, current Home widget selection, and home-tour
-engagement. The wizard can legitimately finish or skip with zero widgets; it never
-seeds hidden defaults. The two funnel columns are ordinary first-party preferences,
-included in `export_user_data()` and account deletion.
+The report covers: signups, first-run introduction conversion, finish-vs-skip
+(`user_preferences.app_onboarding_completed_via` / `_at`, written when the
+one-panel introduction is finished or skipped), the Home widget selection older
+native builds still write, and home-tour engagement. The two funnel columns are
+ordinary first-party preferences, included in `export_user_data()` and account
+deletion. The concern-distribution sections (§4a/4b) were removed with the
+`selected_concerns` column on 2026-09-05 (#1958): the introduction no longer asks
+a concern, so nothing writes the column and it is gone; anything cohorted by
+concern reads the immutable `initial_concerns` in the segment report below, which
+covers the pre-redesign cohort only and is never written again by the app.
 
 `npm run analytics:segment` runs `scripts/analytics-segment.sql` (added
 2026-09-01). It cross-tabs W4 retention against the concern each person declared
 when they arrived, read from the immutable `user_preferences.initial_concerns`
-column — never from `selected_concerns`, which is last-write-wins and therefore
-flatters retained users by construction. It collects nothing new: every column it
-reads already exists.
+column — never from the since-dropped `selected_concerns`, which was
+last-write-wins and therefore flattered retained users by construction. It
+collects nothing new: every column it reads already exists. Since 2026-09-05
+(#1958) the app writes `initial_concerns` for nobody — the one-panel
+introduction asks no concern — so every concern arm covers the pre-redesign
+cohort only, and users onboarded since land in `unknown`.
 
 How to read it, in the order the report prints:
 

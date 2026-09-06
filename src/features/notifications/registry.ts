@@ -4,6 +4,7 @@ import type { UserPreferences } from "@/src/features/modules/types";
 export type NotificationTargetKey =
   | "cbt"
   | "act"
+  | "dbt"
   | "meditation"
   | "gratitude"
   | "mood"
@@ -17,6 +18,7 @@ type EnabledField =
   | "cbtRemindersEnabled"
   | "meditationRemindersEnabled"
   | "actRemindersEnabled"
+  | "dbtRemindersEnabled"
   | "moodRemindersEnabled"
   | "journalRemindersEnabled"
   | "gratitudeRemindersEnabled"
@@ -28,6 +30,7 @@ type HourField =
   | "cbtReminderHour"
   | "meditationReminderHour"
   | "actReminderHour"
+  | "dbtReminderHour"
   | "moodReminderHour"
   | "journalReminderHour"
   | "gratitudeReminderHour"
@@ -39,6 +42,7 @@ type MinuteField =
   | "cbtReminderMinute"
   | "meditationReminderMinute"
   | "actReminderMinute"
+  | "dbtReminderMinute"
   | "moodReminderMinute"
   | "journalReminderMinute"
   | "gratitudeReminderMinute"
@@ -50,6 +54,7 @@ type TimezoneField =
   | "cbtReminderTimezone"
   | "meditationReminderTimezone"
   | "actReminderTimezone"
+  | "dbtReminderTimezone"
   | "moodReminderTimezone"
   | "journalReminderTimezone"
   | "gratitudeReminderTimezone"
@@ -81,9 +86,11 @@ export interface NotificationTarget {
 }
 
 /**
- * Ordered by the dashboard catalogue, so a user meets the same tools in the same sequence on
- * home and here (#981). `registry.test.ts` derives the expected order from `WIDGET_META`
- * rather than restating it, so the two screens cannot drift apart silently.
+ * Ordered by the widget catalogue (#981), which `registry.test.ts` derives from
+ * `WIDGET_META` rather than restating, so the two cannot drift apart silently. That
+ * catalogue is the Android launcher's since #1952; Home's Favourites (#1956) follow
+ * `CATALOGUE` in src/features/favorites/items.ts, a different tool order, and
+ * re-sequencing this screen onto it is an open product call, not something a test decides.
  */
 export const NOTIFICATION_TARGETS: NotificationTarget[] = [
   {
@@ -175,6 +182,19 @@ export const NOTIFICATION_TARGETS: NotificationTarget[] = [
     hourField: "groundingReminderHour",
     minuteField: "groundingReminderMinute",
     timezoneField: "groundingReminderTimezone",
+  },
+  // ⚠️ LAST, and not by preference: the row order is derived from the Android
+  // launcher's widget catalogue, and DBT has no widget by ruling (#1980,
+  // decision 13 excludes the launcher). A target the catalogue cannot name has
+  // to sit somewhere the catalogue is not deciding, which is the end.
+  {
+    key: "dbt",
+    labelKey: "targets.dbt.label",
+    icon: "balance",
+    enabledField: "dbtRemindersEnabled",
+    hourField: "dbtReminderHour",
+    minuteField: "dbtReminderMinute",
+    timezoneField: "dbtReminderTimezone",
   },
 ];
 

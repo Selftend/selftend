@@ -49,7 +49,7 @@ describe("LandingFooter", () => {
 
     expect(
       screen.getByText(
-        "Selftend is a CBT programme for when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders.",
+        "Selftend is a set of mental health tools for when there is time and safety to reflect. It is not emergency support and is not monitored by crisis responders.",
       ),
     ).toBeTruthy();
   });

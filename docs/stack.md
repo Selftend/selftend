@@ -39,22 +39,25 @@ Do not add a second broad UI kit without a specific reason. `daisyUI` is web-DOM
 
 Supported languages: English (`en`) and Bulgarian (`bg`). English is the fallback.
 
-Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON file per namespace per language. The authoritative list is the `ns` array in `src/i18n/index.ts`, and `src/i18n/locale-parity.test.ts` keeps the `en` and `bg` key sets identical. Ten cover app-level surfaces:
+Translation files live in `src/i18n/locales/{lang}/` — 20 namespaces, one JSON file per namespace per language. The authoritative list is the `ns` array in `src/i18n/index.ts`, and `src/i18n/locale-parity.test.ts` keeps the `en` and `bg` key sets identical. Nine cover app-level surfaces:
 
-| Namespace       | Scope                                          |
-| --------------- | ---------------------------------------------- |
-| `common`        | shared UI strings                              |
-| `auth`          | sign-in, sign-up, verification, passwords      |
-| `settings`      | settings, profile, consent, cookie banner      |
-| `navigation`    | tabs, sidebar, header, not-found               |
-| `policies`      | policy page chrome and section content         |
-| `errors`        | error messages                                 |
-| `notifications` | reminder and notification settings             |
-| `security`      | app lock and security settings                 |
-| `help`          | in-app help content for tools and programs     |
-| `modules`       | module copy without a dedicated tool namespace |
+| Namespace       | Scope                                      |
+| --------------- | ------------------------------------------ |
+| `common`        | shared UI strings                          |
+| `auth`          | sign-in, sign-up, verification, passwords  |
+| `settings`      | settings, profile, consent, cookie banner  |
+| `navigation`    | tabs, sidebar, header, not-found           |
+| `policies`      | policy page chrome and section content     |
+| `errors`        | error messages                             |
+| `notifications` | reminder and notification settings         |
+| `security`      | app lock and security settings             |
+| `help`          | in-app help content for tools and programs |
 
-The other ten are one per tool or module: `act`, `cbt`, `gratitude`, `habits`, `journal`, `meditation`, `mood`, `routines`, `sleep`, `timer`.
+The other eleven are one per tool or module: `act`, `cbt`, `dbt`, `gratitude`, `habits`, `journal`, `meditation`, `mood`, `routines`, `sleep`, `timer`.
+
+The count held at 20 across [#1980](https://github.com/Selftend/selftend/issues/1980): `dbt` arrived and `modules` left in the same change. `modules` had exactly one block in it — the DBT overview screen's copy — and that copy moved into the module's own namespace, leaving an empty file rather than a general-purpose home (the `/modules` index page reads from `navigation`, not from `modules`, which is what made the namespace's name misleading). **Weblate has not caught up:** its `modules` component now matches no file and its `dbt` namespace has no component. Both are owner actions — remove the one, run `node scripts/weblate-create-components.js --apply` for the other, after the change reaches `main`.
+
+Some key paths are deliberately stale. `navigation.json`'s `home.widgets.*` block (with `today.dashboard.*`, `home.programWidget.*`, `today.plan.open` and `home.categories.routines`) is the Android launcher widget's copy — `src/features/widgets/snapshot-builder.ts` and `widget-config-screen.tsx` — and nothing on Home has rendered it since the dashboard was deleted ([#1959](https://github.com/Selftend/selftend/issues/1959)). Renaming it to `widgets.*` was rejected because every namespace is Weblate-tracked: a rename presents ~100 keys per locale as new source strings and orphans the Bulgarian. `home.rows.*` keeps its path for the same reason. Neither i18n test can see those keys' consumers (the launcher's `t` arrives as a parameter), so `src/features/widgets/widget-meta.test.ts` resolves every launcher literal in both locales instead; a key's existence in a locale file is no evidence that anything renders it.
 
 Components use `useTranslation("namespace")`; non-component code may import `i18n.t()` directly. Structured content — policy sections, grounding steps, meditation instructions, gratitude prompts — is stored as JSON arrays and read with `t(key, { returnObjects: true })`.
 

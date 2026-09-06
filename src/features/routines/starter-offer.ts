@@ -21,8 +21,12 @@ export const SECOND_ACTION_MIN = 2;
  * (dropping anchor IS connecting - see RoutineToolRecords), so counting both
  * would turn one saved log into two "distinct tools" and fire the offer at
  * the first action.
+ *
+ * Exported because the starter composes from it too (#1954): `STARTER_CANDIDATE_TOOLS`
+ * is this list minus `habits`, so the gate and the composition read ONE set and
+ * can no longer disagree the way the widget map let them.
  */
-const DISTINCT_STEPPABLE_TOOLS: readonly SteppableToolId[] = STEPPABLE_TOOL_IDS.filter(
+export const DISTINCT_STEPPABLE_TOOLS: readonly SteppableToolId[] = STEPPABLE_TOOL_IDS.filter(
   (tool) => tool !== "dropAnchor",
 );
 
@@ -32,7 +36,8 @@ const DISTINCT_STEPPABLE_TOOLS: readonly SteppableToolId[] = STEPPABLE_TOOL_IDS.
  * tool's, so they are in-app actions in the glossary's sense, and they count
  * toward the second action (#1677, decided 2026-09-02): the offer is about
  * the person having acted twice, and the routine it offers is composed from
- * the kept widgets, not from these records. Existence is all the count reads,
+ * the STEPPABLE tools' records (#1954), never from these three - a routine
+ * cannot hold them as steps. Existence is all the count reads,
  * so the element type is left open. The three lists are row-capped (worry and
  * anger at 500, self-care at its newest 14), never date-windowed, so any
  * record at all makes its list non-empty - unlike habits, nothing here can
@@ -83,9 +88,24 @@ const REQUIRED_SLICE_MAP: Record<keyof RoutineToolRecords, true> = {
   choicePoints: true,
   committedActions: true,
   actionSteps: true,
+  dbtSessions: true,
+  dbtWiseMindCheckins: true,
+  dbtJudgements: true,
+  dbtEmotionRecords: true,
+  dbtOppositeActionPlans: true,
+  dbtScripts: true,
 };
 
 const REQUIRED_SLICES = Object.keys(REQUIRED_SLICE_MAP) as (keyof RoutineToolRecords)[];
+
+/**
+ * True once every steppable-tool slice has been fetched - the readiness the
+ * starter composition needs on its own (#1954): `/routines`' empty state fetches
+ * the full steppable list and composes from it, with no offer-only slices in play.
+ */
+export function areToolRecordsReady(records: RoutineToolRecords): boolean {
+  return REQUIRED_SLICES.every((slice) => records[slice] !== undefined);
+}
 
 /** True once every slice the distinct-tool count reads has been fetched. */
 export function areOfferRecordsReady(
@@ -93,7 +113,7 @@ export function areOfferRecordsReady(
   offerOnly: OfferOnlyRecords,
 ): boolean {
   return (
-    REQUIRED_SLICES.every((slice) => records[slice] !== undefined) &&
+    areToolRecordsReady(records) &&
     OFFER_ONLY_SLICES.every((slice) => offerOnly[slice] !== undefined)
   );
 }
@@ -151,7 +171,34 @@ function toolHasAnyRecord(toolId: SteppableToolId, records: RoutineToolRecords):
       return (records.choicePoints ?? []).length > 0;
     case "committedAction":
       return (records.committedActions ?? []).length > 0 || (records.actionSteps ?? []).length > 0;
+    // DBT (#1980). Each leg is its stepDoneOnDate twin minus the day filter.
+    case "muscleRelaxation":
+      return (records.dbtSessions ?? []).some((s) => s.sessionSlug === "muscle-relaxation");
+    case "wiseMind":
+      return (records.dbtWiseMindCheckins ?? []).length > 0;
+    case "judgement":
+      return (records.dbtJudgements ?? []).length > 0;
+    case "emotionRecord":
+      return (records.dbtEmotionRecords ?? []).length > 0;
+    case "oppositeAction":
+      // Done only, matching stepDoneOnDate and the activities/exposure
+      // precedent: a plan written but never carried out is planning, not a
+      // second action.
+      return (records.dbtOppositeActionPlans ?? []).some((p) => p.doneDayKey !== null);
+    case "script":
+      return (records.dbtScripts ?? []).length > 0;
   }
+}
+
+/**
+ * The distinct steppable tools with at least one record, in
+ * {@link DISTINCT_STEPPABLE_TOOLS} order. This is the starter's input (#1954):
+ * `buildStarterSteps(toolsWithRecords(records))`. The order here is the fixed
+ * array's, never the records' recency, so the same person composes the same
+ * routine on every visit.
+ */
+export function toolsWithRecords(records: RoutineToolRecords): SteppableToolId[] {
+  return DISTINCT_STEPPABLE_TOOLS.filter((tool) => toolHasAnyRecord(tool, records));
 }
 
 /**
@@ -159,14 +206,18 @@ function toolHasAnyRecord(toolId: SteppableToolId, records: RoutineToolRecords):
  * three offer-only ones alike. Compared against {@link SECOND_ACTION_MIN} by
  * the host card: at two, the person has taken their second action and the
  * starter offer's moment has arrived.
+ *
+ * ⚠️ A SUPERSET of what the starter composes from, which is why a successful
+ * composition already implies this gate (`SECOND_ACTION_MIN` = `STARTER_STEP_MIN`
+ * = 2) - but not the other way round: the three offer-only tools, and `habits`,
+ * count here and can never be steps, so the count can pass while the starter
+ * composes `null`. Both callers check both.
  */
 export function countToolsWithRecords(
   records: RoutineToolRecords,
   offerOnly: OfferOnlyRecords,
 ): number {
-  const steppable = DISTINCT_STEPPABLE_TOOLS.filter((tool) =>
-    toolHasAnyRecord(tool, records),
-  ).length;
+  const steppable = toolsWithRecords(records).length;
   const offerOnlyCount = OFFER_ONLY_SLICES.filter(
     (slice) => (offerOnly[slice] ?? []).length > 0,
   ).length;

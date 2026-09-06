@@ -107,6 +107,7 @@ const ALLOWED_REMINDER_ROUTES = new Set<string>([
   "/modules/cbt",
   "/tools/meditation",
   "/modules/act",
+  "/modules/dbt",
   "/tools/mood-tracker",
   "/tools/journal",
   "/tools/gratitude-log",

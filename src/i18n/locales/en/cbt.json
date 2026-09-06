@@ -641,18 +641,14 @@
       "exposureBody": "Systematically face fears to teach the brain that the perceived danger is exaggerated and manageable.",
       "sleepTitle": "The 7-9 Hour Sleep Target",
       "sleepBody": "Protect your sleep. Rest is what most of the rest of this leans on, and short nights make everything else harder.",
-      "tableIntro": "The table below describes what CBT is clinically used for. It is background reading, not a diagnosis, an assessment, or a treatment plan.",
+      "tableIntro": "The table below shows what CBT is most often used for, and what it focuses on in each. It is background reading, not a diagnosis, an assessment, or a treatment plan.",
       "tableCondition": "Condition",
-      "tableCoreFeature": "Core Feature",
       "tableCbtFocus": "CBT Focus",
-      "tableRow1Condition": "GAD",
-      "tableRow1Feature": "Chronic Worry",
+      "tableRow1Condition": "Generalised Anxiety Disorder",
       "tableRow1Focus": "Embracing uncertainty and present-moment focus",
       "tableRow2Condition": "Panic Disorder",
-      "tableRow2Feature": "Fear of Sensations",
       "tableRow2Focus": "Controlling breath and facing physical symptoms",
       "tableRow3Condition": "Depression",
-      "tableRow3Feature": "Negative Filter",
       "tableRow3Focus": "Behavioural activation and cognitive restructuring",
       "continue": "Got it"
     }
@@ -1333,6 +1329,10 @@
           "Wrists first, if splashing your face feels like too much.",
           "Count slowly if it helps — the sharpness fades as you stay with it.",
           "No rush. Let drying off be part of the exercise."
+        ],
+        "caution": [
+          "Cool tap water, not ice on skin. Keep breathing normally, and stop if it hurts — four minutes is the most, and this exercise asks thirty seconds. Not while driving.",
+          "If you have a heart or blood-pressure condition or are pregnant, check with a doctor first."
         ]
       },
       "feet-floor": {

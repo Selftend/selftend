@@ -6,7 +6,8 @@ import {
   readHour,
   readMinute,
 } from "@/src/features/notifications/registry";
-import { WIDGET_META } from "@/src/features/home/widget-registry";
+import { CATALOGUE } from "@/src/features/favorites/items";
+import { WIDGET_META } from "@/src/features/widgets/widget-meta";
 import { defaultUserPreferences } from "@/src/features/modules/types";
 
 /**
@@ -47,6 +48,7 @@ import { defaultUserPreferences } from "@/src/features/modules/types";
 const PRACTICE_TARGETS: NotificationTargetKey[] = [
   "cbt",
   "act",
+  "dbt",
   "meditation",
   "gratitude",
   "mood",
@@ -71,25 +73,38 @@ describe("NOTIFICATION_TARGETS", () => {
   });
 
   /**
-   * DERIVED, not restated (#981): the expected order is computed from the dashboard
+   * DERIVED, not restated (#981): the expected order is computed from the widget
    * catalogue, so adding a widget id ahead of another reorders this screen too rather than
-   * quietly disagreeing with home. A hand-written expected array would pass forever while the
-   * two screens drifted, which is the failure shape #807 recorded.
+   * quietly disagreeing with it. A hand-written expected array would pass forever while the
+   * two drifted, which is the failure shape #807 recorded.
+   *
+   * ⚠️ That catalogue is the Android launcher's since #1952 (`WIDGET_META`), and Home
+   * stopped rendering it at #1956: Home's Favourites follow `CATALOGUE` in
+   * src/features/favorites/items.ts, whose tool order differs (journal second, grounding
+   * fifth). So "home and reminders agree" no longer holds as a fact about screens - the
+   * registry still follows the widget order it was built against, and re-sequencing the
+   * reminders screen onto the Favourites order is a product decision this test does not
+   * take. The first `toolKey` occurrence wins, which is what the old `tier === "tool"`
+   * filter amounted to: the two programme ids sit behind their module's tool rows.
    */
-  it("is ordered by the dashboard catalogue, so home and reminders agree", () => {
+  it("is ordered by the widget catalogue", () => {
     const reminderKeys = new Set<string>(PRACTICE_TARGETS);
     const seen = new Set<string>();
     const catalogueOrder: string[] = [];
     for (const meta of Object.values(WIDGET_META)) {
-      if (meta.tier !== "tool") continue;
       if (!reminderKeys.has(meta.toolKey) || seen.has(meta.toolKey)) continue;
       seen.add(meta.toolKey);
       catalogueOrder.push(meta.toolKey);
     }
 
-    // Every reminder target is a dashboard tool, so the catalogue names all ten.
-    expect(catalogueOrder).toHaveLength(PRACTICE_TARGETS.length);
-    expect(NOTIFICATION_TARGETS.map((t) => t.key)).toEqual(catalogueOrder);
+    // ⚠️ NOT every reminder target is a launcher widget any more. DBT ships a
+    // reminder and no widget (#1980, decision 13 excludes the launcher), so the
+    // catalogue cannot order it - and a target the catalogue does not name sits
+    // after the ones it does. Derived either way: adding a widget id ahead of
+    // another still reorders this screen.
+    const withoutWidget = PRACTICE_TARGETS.filter((key) => !seen.has(key));
+    expect(catalogueOrder).toHaveLength(PRACTICE_TARGETS.length - withoutWidget.length);
+    expect(NOTIFICATION_TARGETS.map((t) => t.key)).toEqual([...catalogueOrder, ...withoutWidget]);
   });
 
   it.each(PRACTICE_TARGETS)("%s names all four preference columns", (key) => {
@@ -113,36 +128,32 @@ describe("NOTIFICATION_TARGETS", () => {
 
   /**
    * The second lock, and the one the allowlist alone cannot provide: every
-   * target names a **catalogue tool with somewhere to go**. The allowlist is
-   * deliberately a one-line edit, so padding it is the obvious lazy fix; this
-   * is what makes padding insufficient, because a fake entry would have to
-   * invent a widget and a destination too. Mutation-tested in exactly that
-   * shape.
+   * target names a **catalogue item with somewhere to go** - a tool hub or a
+   * module on Home's Favourites catalogue, each of which carries its `href`.
+   * The allowlist is deliberately a one-line edit, so padding it is the obvious
+   * lazy fix; this is what makes padding insufficient, because a fake entry
+   * would have to invent a catalogue item and a destination too. Mutation-tested
+   * in exactly that shape.
    *
-   * ☠️ **It asserts a route EXISTS, not where the route points, and the
-   * difference matters.** The first draft required `/tools/` or `/modules/`,
-   * which is wrong: `routines` is a `tier: "tool"` widget routed at
-   * **`/routines`**, with a comment in `widget-registry.tsx` saying so on
-   * purpose - *"Not `/tools/routines` - routines live at the top level of the
-   * router."* A routine reminder is the most plausible next target of all, and
-   * that draft would have blocked it with a guard whose docblock says tripping
-   * it means you are doing something forbidden. A false alarm on a legitimate
-   * practice teaches people to edit the rule, which is the one thing this file
-   * must not teach.
+   * ☠️ **It asserts a destination EXISTS, not where it points, and the
+   * difference matters.** An earlier draft required `/tools/` or `/modules/`,
+   * which would have blocked the most plausible next target of all - a routine
+   * reminder, whose home is the top-level `/routines` - with a guard whose
+   * docblock says tripping it means you are doing something forbidden. A false
+   * alarm on a legitimate practice teaches people to edit the rule, which is the
+   * one thing this file must not teach. (Until #1959 this read `route` off the
+   * widget catalogue; that field died with the dashboard, and the favourites
+   * catalogue is the surface Home actually renders.)
    *
-   * ⚠️ Derived from `WIDGET_META`, so it follows the catalogue rather than
-   * pinning routes that go stale.
+   * ⚠️ Derived from `CATALOGUE`, so it follows the catalogue rather than
+   * pinning destinations that go stale.
    */
-  it.each(PRACTICE_TARGETS)("%s is a catalogue tool with somewhere to go", (key) => {
-    const widgets = Object.values(WIDGET_META).filter(
-      (meta) => meta.tier === "tool" && meta.toolKey === key,
-    );
+  it.each(PRACTICE_TARGETS)("%s is a catalogue item with somewhere to go", (key) => {
+    const items = CATALOGUE.filter((item) => item.key === key);
 
-    expect(widgets.length).toBeGreaterThan(0);
-    for (const widget of widgets) {
-      expect(typeof widget.route).toBe("string");
-      expect(widget.route.length).toBeGreaterThan(1);
-    }
+    expect(items).toHaveLength(1);
+    expect(typeof items[0].href).toBe("string");
+    expect(String(items[0].href).length).toBeGreaterThan(1);
   });
 
   /**

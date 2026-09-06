@@ -5,8 +5,8 @@ import { createAnonClient, createServiceClient } from "./helpers";
 /**
  * `initial_concerns` — concern-at-intake, written once (#1612, decided in #1605).
  *
- * `selected_concerns` is last-write-wins: `apply_widget_recommendations`
- * overwrites it and Home re-runs the wizard through the same RPC, so the
+ * It was created because `selected_concerns` was last-write-wins: the wizard's
+ * RPC overwrote it and Home could re-run the wizard through the same RPC, so the
  * concern someone declared on arrival was recorded nowhere.
  *
  * ☠️ The reason that matters — and the reason the third test below exists — is
@@ -14,6 +14,12 @@ import { createAnonClient, createServiceClient } from "./helpers";
  * populate this column populates it precisely for the retained users, which is
  * the survivorship bias the column exists to remove, arriving one row at a time
  * instead of in a backfill.
+ *
+ * Since #1958 the app asks no concern at all: `selected_concerns` is dropped and
+ * the one-panel introduction completes with a plain preference write. The only
+ * remaining writer is `apply_widget_recommendations`, called by native builds
+ * that predate that change, so the column covers the pre-redesign cohort only
+ * and the guard below is what keeps it honest for exactly those callers.
  */
 describe("initial_concerns is written once (integration)", () => {
   const password = "initial-concerns-test-pass-123";
@@ -37,14 +43,14 @@ describe("initial_concerns is written once (integration)", () => {
     return { userId, client };
   }
 
-  async function readConcerns(client: SupabaseClient, userId: string) {
+  async function readIntake(client: SupabaseClient, userId: string) {
     const row = await client
       .from("user_preferences")
-      .select("selected_concerns, initial_concerns")
+      .select("initial_concerns")
       .eq("user_id", userId)
       .single();
     expect(row.error).toBeNull();
-    return row.data as { selected_concerns: string[]; initial_concerns: string[] | null };
+    return (row.data as { initial_concerns: string[] | null }).initial_concerns;
   }
 
   afterAll(async () => {
@@ -61,15 +67,12 @@ describe("initial_concerns is written once (integration)", () => {
     });
     expect(applied.error).toBeNull();
 
-    expect(await readConcerns(client, userId)).toEqual({
-      selected_concerns: ["sleep"],
-      initial_concerns: ["sleep"],
-    });
+    expect(await readIntake(client, userId)).toEqual(["sleep"]);
 
     await client.auth.signOut();
   });
 
-  it("does not overwrite it when the wizard is re-run with different concerns", async () => {
+  it("does not overwrite it when the old wizard is re-run with different concerns", async () => {
     const { userId, client } = await newSignedInUser();
 
     await client.rpc("apply_widget_recommendations", {
@@ -85,12 +88,10 @@ describe("initial_concerns is written once (integration)", () => {
     });
     expect(rerun.error).toBeNull();
 
-    // `selected_concerns` MUST still move - it drives widget suggestions and
-    // stays live. Only the intake record is frozen.
-    expect(await readConcerns(client, userId)).toEqual({
-      selected_concerns: ["low-mood"],
-      initial_concerns: ["sleep"],
-    });
+    // Only the intake record exists now, and it is frozen. (Before #1958 this
+    // also checked that `selected_concerns` moved to `low-mood`; that column is
+    // gone.)
+    expect(await readIntake(client, userId)).toEqual(["sleep"]);
 
     await client.auth.signOut();
   });
@@ -132,10 +133,7 @@ describe("initial_concerns is written once (integration)", () => {
     });
     expect(rerun.error).toBeNull();
 
-    expect(await readConcerns(client, userId)).toEqual({
-      selected_concerns: ["low-mood"],
-      initial_concerns: null,
-    });
+    expect(await readIntake(client, userId)).toBeNull();
 
     await client.auth.signOut();
   });
@@ -151,9 +149,9 @@ describe("initial_concerns is written once (integration)", () => {
    * therefore the ones whose bias matters most — could still be filled in from
    * a later re-run.
    *
-   * `useApplyWidgetSuggestions` is the live path that reaches this: the
-   * empty-Home "Get suggestions" flow passes `completionMode: null` and still
-   * hits the same upsert.
+   * The live path that reached this was the empty-Home "Get suggestions" flow
+   * of pre-#1956 builds, which passes `completionMode: null` and still hits the
+   * same upsert. Those builds still exist in the wild, so the shape stays pinned.
    */
   it("leaves a GRANDFATHERED user NULL, even though their completion timestamp is null", async () => {
     const { userId, client } = await newSignedInUser();
@@ -177,7 +175,7 @@ describe("initial_concerns is written once (integration)", () => {
       .eq("user_id", userId);
     expect(grandfathered.error).toBeNull();
 
-    // The empty-Home suggestion flow: no completion mode, but the same upsert.
+    // The old empty-Home suggestion flow: no completion mode, but the same upsert.
     const suggestions = await client.rpc("apply_widget_recommendations", {
       p_widget_ids: ["mood-checkin"],
       p_selected_concerns: ["low-mood"],
@@ -185,10 +183,7 @@ describe("initial_concerns is written once (integration)", () => {
     });
     expect(suggestions.error).toBeNull();
 
-    expect(await readConcerns(client, userId)).toEqual({
-      selected_concerns: ["low-mood"],
-      initial_concerns: null,
-    });
+    expect(await readIntake(client, userId)).toBeNull();
 
     // And a full completion must not fill it either.
     const completed = await client.rpc("apply_widget_recommendations", {
@@ -198,12 +193,12 @@ describe("initial_concerns is written once (integration)", () => {
     });
     expect(completed.error).toBeNull();
 
-    expect((await readConcerns(client, userId)).initial_concerns).toBeNull();
+    expect(await readIntake(client, userId)).toBeNull();
 
     await client.auth.signOut();
   });
 
-  it("still records intake for a genuinely new user who meets Home suggestions first", async () => {
+  it("still records intake for a genuinely new user who meets the old Home suggestions first", async () => {
     // The counterpart the widened guard must not break: someone with no
     // user_preferences row at all takes the INSERT branch, where the flag is
     // false and there is nothing to guard against.
@@ -216,10 +211,7 @@ describe("initial_concerns is written once (integration)", () => {
     });
     expect(suggestions.error).toBeNull();
 
-    expect(await readConcerns(client, userId)).toEqual({
-      selected_concerns: ["low-mood"],
-      initial_concerns: ["low-mood"],
-    });
+    expect(await readIntake(client, userId)).toEqual(["low-mood"]);
 
     await client.auth.signOut();
   });
@@ -237,10 +229,10 @@ describe("initial_concerns is written once (integration)", () => {
     expect(exported.error).toBeNull();
 
     const preferences = (exported.data as { preferences?: Record<string, unknown> }).preferences;
-    expect(preferences).toMatchObject({
-      selected_concerns: ["sleep"],
-      initial_concerns: ["sleep"],
-    });
+    expect(preferences).toMatchObject({ initial_concerns: ["sleep"] });
+    // The dropped column is not silently projected as null either (#1958).
+    expect(preferences).not.toHaveProperty("selected_concerns");
+    expect(preferences).not.toHaveProperty("widgets_seeded");
 
     await client.auth.signOut();
   });

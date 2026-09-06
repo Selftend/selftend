@@ -73,41 +73,36 @@ test.describe("sign-up + onboarding + first record", () => {
       await expect(consentTitle).toBeHidden({ timeout: 10_000 });
     }
 
-    // Panel 1: welcome + disclaimer.
+    // The introduction: one panel since #1958 - welcome + disclaimer, and Finish is
+    // its only CTA. There is no concern, module, guidance or starter-routine panel
+    // to walk, and finishing seeds nothing.
+    // (The one-panel contract itself - exactly two controls, Finish and the
+    // pinned Skip - is pinned by count in app-onboarding-wizard.test.tsx; an
+    // absence assertion on "Continue" here would pass vacuously.)
     await expect(page.getByText("Welcome to Selftend")).toBeVisible();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Panel 2: pick a concern.
-    await expect(page.getByText("What brings you here?")).toBeVisible();
-    await page.getByText("Sleep", { exact: true }).click();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Panel 3: leave both optional modules unselected for a tools-only setup.
-    // Guidance is skipped; with >= 2 eligible steps and zero routines the
-    // starter-routine offer (#46) is the panel before finish.
-    await expect(page.getByText("Would a self-help module be useful?")).toBeVisible();
-    await page.getByRole("button", { name: "Continue", exact: true }).click();
-
-    // Final panel: the pre-composed starter routine. Decline it - skipping must
-    // write nothing and simply finish onboarding with the tool suggestions.
-    await expect(page.getByText("One small routine to start?")).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: "Skip", exact: true }).click();
-    await expect(page.getByText("One small routine to start?", { exact: true })).toBeHidden({
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
+    await expect(page.getByText("Welcome to Selftend", { exact: true })).toBeHidden({
       timeout: 15_000,
     });
 
-    // Personalization payoff: the selected shared widgets are now on Home.
-    //
-    // The two `.last()` here were read as one workaround and were really two different
-    // things. `Check-in` was the #989 duplicate-home mount, now fixed, so it goes back to
-    // a plain text locator that a returning duplicate would break. `Sleep` never was:
-    // it names the Right now nudge AND the tool row on a SINGLE home (the mood card reads
-    // "How are you?", which is why only Sleep has this twin), so it goes by testID.
-    await expect(page.getByText("Check-in", { exact: true })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("tool-row-sleep-latest")).toBeVisible({ timeout: 10_000 });
+    // Home rendered (#1956): a brand-new account lands with an EMPTY Favourites line over
+    // the complete catalogue - eight tools and three modules - which is what proves the
+    // screen came up. Counted within each section rather than looked up by text: a
+    // favourited item renders its card twice on Home (Favourites and catalogue), so an
+    // unscoped `getByText("Check-in")` is a strict-mode violation the moment one is
+    // starred, and an absence assertion on Favourites would pass vacuously.
+    await expect(page.getByText("Star a tool or a module to keep it here.")).toBeVisible({
+      timeout: 10_000,
+    });
+    const tools = page.getByTestId("home-tools");
+    await expect(tools.getByText("Check-in", { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(tools.locator('[data-testid^="card-tool-"]')).toHaveCount(8);
+    await expect(
+      page.getByTestId("home-modules").locator('[data-testid^="card-module-"]'),
+    ).toHaveCount(3);
 
-    // The optional Home tour may be ineligible after the personalized setup. If
-    // it appears, dismiss it so the reload assertion remains deterministic.
+    // The optional Home tour may or may not fire on a brand-new account. If it
+    // appears, dismiss it so the reload assertion remains deterministic.
     const skipTour = page.getByRole("button", { name: "Skip all tips", exact: true });
     if (await skipTour.isVisible()) await skipTour.click();
 

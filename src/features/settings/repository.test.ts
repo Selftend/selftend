@@ -479,17 +479,15 @@ describe("settings repository", () => {
     expect(result.languageExplicit).toBe(true);
   });
 
-  it("maps start_here_dismissed_at and selected_concerns from the row", async () => {
+  it("maps start_here_dismissed_at from the row", async () => {
     mockPreferenceSelect({
       user_id: "user-1",
       enabled_modules: ["cbt"],
       start_here_dismissed_at: "2026-07-02T10:00:00Z",
-      selected_concerns: ["sleep"],
     });
 
     const result = await getUserPreferences("user-1");
     expect(result.startHereDismissedAt).toBe("2026-07-02T10:00:00Z");
-    expect(result.selectedConcerns).toEqual(["sleep"]);
   });
 
   it("defaults startHereDismissedAt to null when column absent from row", async () => {
@@ -549,22 +547,19 @@ describe("settings repository", () => {
     );
   });
 
-  it("updateOnboardingPreferences writes selected_concerns and start_here_dismissed_at", async () => {
+  it("updateOnboardingPreferences writes start_here_dismissed_at", async () => {
     const { upsert } = mockPreferenceUpdate({
       user_id: "user-1",
       enabled_modules: ["cbt"],
-      selected_concerns: ["sleep", "habits"],
       start_here_dismissed_at: "2026-07-02T10:00:00Z",
     });
 
     await updateOnboardingPreferences("user-1", {
-      selectedConcerns: ["sleep", "habits"],
       startHereDismissedAt: "2026-07-02T10:00:00Z",
     } as Parameters<typeof updateOnboardingPreferences>[1]);
 
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        selected_concerns: ["sleep", "habits"],
         start_here_dismissed_at: "2026-07-02T10:00:00Z",
         user_id: "user-1",
       }),
