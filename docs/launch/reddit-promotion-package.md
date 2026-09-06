@@ -238,17 +238,19 @@ Title:
 
 Body:
 
-> I built this. Selftend (https://selftend.org) is a free, open-source set of mental health
-> tools, and the same codebase is live on all three platforms (web + Play Store + App Store).
-> The web story is the part this sub might find interesting:
+> I built this. Selftend (https://selftend.org) is a set of free, private mental health tools:
+> everyday tools for right now, and a CBT programme - cognitive behavioural therapy - to work
+> through when you want one. The same codebase is live on all three platforms (web + Play Store
 >
-> - React Native Web static-exported via Expo Router, served as static assets on Cloudflare
+> - App Store). The web story is the part this sub might find interesting:
+>
+> * React Native Web static-exported via Expo Router, served as static assets on Cloudflare
 >   Workers. No Node server anywhere.
-> - The RNW layer has real traps: onLayout handlers attached after mount never fire, hydration
+> * The RNW layer has real traps: onLayout handlers attached after mount never fire, hydration
 >   sees empty search params on first pass, and Modal slide-in animations swallow clicks in
 >   e2e. Happy to detail any of these.
-> - Supabase (Postgres + RLS) as the backend; TanStack Query on top.
-> - i18n with i18next (English + Bulgarian), accessibility tested with reduced motion and
+> * Supabase (Postgres + RLS) as the backend; TanStack Query on top.
+> * i18n with i18next (English + Bulgarian), accessibility tested with reduced motion and
 >   screen readers - this kind of app gets used on bad days, so it mattered more than usual.
 >
 > It is open source (AGPL): https://github.com/Selftend/selftend
@@ -262,8 +264,9 @@ Title:
 
 Body:
 
-> I built this - Selftend, a free open-source set of mental health tools - and the same Expo
-> codebase is live on all three platforms. Things I would tell past me:
+> I built this. Selftend is a set of free, private mental health tools: everyday tools for
+> right now, and a CBT programme - cognitive behavioural therapy - to work through when you
+> want one. The same Expo codebase is live on all three platforms. Things I would tell past me:
 >
 > - React Native Web is a different platform, not a free target. onLayout is a mount-time
 >   decision there, Modal animations eat clicks mid-slide, and jest never sees any of it -

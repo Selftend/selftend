@@ -229,11 +229,40 @@ const TRACKED_DOCS: ReadonlySet<string> = new Set(
  * clean checkout — CI, or any worktree — the gitignored tree simply is not
  * there, so the bug is invisible to a test that can only read this machine.
  */
+/**
+ * Copy that lives inside a `PUBLISHED_RECORDS` directory but is NOT a record
+ * (#1901), carved out on the reasoning #2022 already established below.
+ *
+ * ☠️☠️ **`docs/launch/` HOLDS TWO KINDS OF FILE AND THE EXCLUSION COULD ONLY SEE
+ * ONE.** The directory earned its place because a posted Reddit banner must keep
+ * matching the image on Reddit rather than the current positioning. The
+ * promotion package sitting beside it is the opposite object: seven drafts that
+ * have **not** been posted, which the file itself calls "ready-to-post" and
+ * invites the owner to edit. Between 2026-08-19 and 2026-09-06 every draft in it
+ * kept a category noun the product had retired **twice**, and `verify` stayed
+ * green the whole time — the drafts inherited an exemption earned by their
+ * neighbour.
+ *
+ * ⚠️ **The test is FINISHED versus UNFINISHED, not image versus doc** — exactly
+ * the distinction `RENDERED_ARTWORK_SOURCES` below draws for the feature
+ * graphic. Editing a posted banner's source changes nothing anyone can see and
+ * would only make the record lie; editing a draft changes what goes out. **A
+ * file the repository invites you to rewrite is copy, and copy is gated.**
+ *
+ * ⚠️ This carve-out is a *file* list, never a directory prefix. `docs/launch/`
+ * keeps its exclusion, and anything genuinely posted keeps it too.
+ */
+const UNFINISHED_DRAFTS = ["docs/launch/reddit-promotion-package.md"];
+
 function proseDocIds(walked: string[], tracked: ReadonlySet<string>): string[] {
   return walked
     .filter((file) => file.endsWith(".md"))
     .filter((file) => tracked.has(file))
-    .filter((file) => !PUBLISHED_RECORDS.some((record) => file.startsWith(record)))
+    .filter(
+      (file) =>
+        UNFINISHED_DRAFTS.includes(file) ||
+        !PUBLISHED_RECORDS.some((record) => file.startsWith(record)),
+    )
     .sort();
 }
 
@@ -1113,6 +1142,17 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
     for (const record of ["docs/app-store-review-information.md", "docs/campaign/scripts/cbt.md"]) {
       expect(readFile(record).text).toMatch(/guided self-help/i);
     }
+
+    // ☠️ `docs/launch/` is excluded as a directory and now splits in two (#1901):
+    // the unfinished drafts are copy and ARE scanned, while the posted records
+    // beside them keep the exemption. Asserted as a pair, because a carve-out
+    // that quietly swept the whole directory in would look identical from a
+    // green suite - and would go red on files nobody may edit.
+    expect(ids).toContain("docs/launch/reddit-promotion-package.md");
+    expect({
+      record: "docs/launch/reddit-post-android-closed-testing.md",
+      scanned: ids.has("docs/launch/reddit-post-android-closed-testing.md"),
+    }).toEqual({ record: "docs/launch/reddit-post-android-closed-testing.md", scanned: false });
   });
 
   /**
