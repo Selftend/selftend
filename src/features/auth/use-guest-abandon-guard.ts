@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { guestHasContent } from "@/src/features/auth/guest-content";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { useSession } from "@/src/providers/session-provider";
 
 type SignInAction = () => void | Promise<void>;
@@ -28,7 +29,7 @@ export function useGuestAbandonGuard() {
   const [isProceeding, setIsProceeding] = useState(false);
 
   const guardSignIn = async (action: SignInAction) => {
-    if (!user?.is_anonymous) {
+    if (!isGuestAccount(user)) {
       await action();
       return;
     }

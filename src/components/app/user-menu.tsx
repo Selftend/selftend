@@ -18,6 +18,7 @@ import { Text } from "@/src/components/react-native-reusables/text";
 import { useSignOut } from "@/src/features/auth/use-sign-out";
 import { resolveAvatarUrl } from "@/src/features/profile/avatar-url";
 import { resolveDisplayName } from "@/src/features/profile/display-name";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { useUserProfile } from "@/src/features/profile/queries";
 import { supportedLanguages } from "@/src/i18n";
 import { appEnv } from "@/src/lib/env";
@@ -141,13 +142,14 @@ export function UserMenu() {
     `!email` implies guest structurally: every registered identity attaches one
     (password, Google, and Apple's private relay) and there is no phone auth, so the
     door withdraws the moment conversion gives them an email - stale flag and all.
+    That argument now lives in `isGuestAccount`: this row got it right first, and
+    #1896 made it the one predicate the whole app shares.
 
-    ⚠️ This is NOT `useSignOut`'s `canSignOut`, which is the flag alone. The two
-    disagree only inside that same stale window, where a converted user gets
-    neither control - a known `canSignOut` staleness that predates this row and
-    belongs to conversion, not to the door.
+    ✅ `useSignOut`'s `canSignOut` AGREES with this row since #1896. It was the
+    flag alone until then, so inside the stale-flag window a converted user got
+    neither control; the two now withdraw and return together.
   */
-  const isGuest = isSignedIn && !email;
+  const isGuest = isSignedIn && isGuestAccount(user);
 
   const languageIndex = supportedLanguages.indexOf(language);
   const languageRoving = useRovingFocus({

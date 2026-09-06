@@ -10,7 +10,7 @@ jest.mock("expo-router", () => ({
   usePathname: () => "/settings",
 }));
 
-let mockUser: { id: string; is_anonymous?: boolean } | null = null;
+let mockUser: { id: string; is_anonymous?: boolean; email?: string } | null = null;
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: mockUser }),
 }));
@@ -56,16 +56,31 @@ describe("CreateAccountCard", () => {
   });
 
   it("renders nothing for a registered user", () => {
-    mockUser = { id: "user-1", is_anonymous: false };
+    mockUser = { id: "user-1", is_anonymous: false, email: "person@example.com" };
 
     renderWithProviders(<CreateAccountCard />);
 
     expect(screen.queryByText(TITLE)).toBeNull();
   });
 
-  // Older tokens predate the claim entirely - absence means registered.
+  // Older tokens predate the claim entirely - absence means registered. Since
+  // #1896 the EMAIL carries that: such a token belongs to someone who
+  // registered, so it has one.
   it("renders nothing when the claim is absent", () => {
-    mockUser = { id: "user-1" };
+    mockUser = { id: "user-1", email: "person@example.com" };
+
+    renderWithProviders(<CreateAccountCard />);
+
+    expect(screen.queryByText(TITLE)).toBeNull();
+  });
+
+  /**
+   * ☠️ The window this card was wrong in until #1896: a person who had just
+   * registered still carried `is_anonymous: true` in the live JWT, so the card
+   * kept inviting them to create the account they had already created.
+   */
+  it("renders nothing for a just-converted user whose token still claims anonymous", () => {
+    mockUser = { id: "user-1", is_anonymous: true, email: "person@example.com" };
 
     renderWithProviders(<CreateAccountCard />);
 

@@ -26,7 +26,7 @@ const mockUseToastStore = useToastStore as unknown as jest.Mock;
 const showToast = jest.fn();
 const clearToasts = jest.fn();
 
-const registeredUser = { id: "user-1", is_anonymous: false };
+const registeredUser = { id: "user-1", is_anonymous: false, email: "person@example.com" };
 
 /** Runs a sign-out that fails at `signOut` with `error`. */
 async function signOutFailingWith(error: unknown) {
@@ -191,11 +191,43 @@ describe("useSignOut", () => {
       expect(result.current.canSignOut).toBe(true);
     });
 
-    // Older tokens predate the claim entirely - absence means registered, not guest.
+    // Older tokens predate the claim entirely - absence means registered, not
+    // guest. Since #1896 the EMAIL carries that: a token minted before the
+    // anonymous feature belongs to someone who registered, so it has one.
     it("is true when the claim is absent", () => {
-      const { result } = renderHook(() => useSignOut({ id: "user-1" }));
+      const registered = { id: "user-1", email: "person@example.com" };
+
+      const { result } = renderHook(() => useSignOut(registered));
 
       expect(result.current.canSignOut).toBe(true);
+    });
+
+    /**
+     * ☠️ The window this guard was wrong in until #1896.
+     * `convertGuestWithPassword` flips `is_anonymous` server-side while the live
+     * JWT keeps claiming it, so this person is REGISTERED and still carries a
+     * true flag. The flag hid Sign Out from them, while the header menu had
+     * already withdrawn Sign in on the email alone - so they had neither.
+     */
+    it("is true for a just-converted user whose token still claims anonymous", () => {
+      const justConverted = { id: "user-1", is_anonymous: true, email: "person@example.com" };
+
+      const { result } = renderHook(() => useSignOut(justConverted));
+
+      expect(result.current.canSignOut).toBe(true);
+    });
+
+    /**
+     * ⚠️ A contract change that arrived with #1896, pinned rather than implied:
+     * a user carrying NEITHER the claim NOR an email is now treated as a guest
+     * and cannot sign out. The predicate fails toward refusing because the cost
+     * is asymmetric - hiding Sign Out from a registered user is an annoyance,
+     * showing it to a guest is silent irreversible data loss.
+     */
+    it("is false for a user carrying neither the claim nor an email", () => {
+      const { result } = renderHook(() => useSignOut({ id: "user-1" }));
+
+      expect(result.current.canSignOut).toBe(false);
     });
 
     it("is false with no user at all", () => {
