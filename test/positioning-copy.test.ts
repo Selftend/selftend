@@ -2,7 +2,7 @@ import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
-import { LOCALE_STRINGS } from "@/test/locale-strings";
+import { LOCALE_STRINGS, type Locale } from "@/test/locale-strings";
 import { APP_STORE_CAPS } from "@/test/store-caps";
 
 /**
@@ -31,13 +31,26 @@ import { APP_STORE_CAPS } from "@/test/store-caps";
  * #1606 put it, turn out to be the highest-consequence ones on the map: the
  * claims a person writing marketing copy in good faith reaches for first.
  *
- * ☠️ **ONE-SIDED ON PURPOSE (#1606 §9).** Every rule here is a ban. There is no
- * assertion that the hero *contains* "CBT", because that pins a string and fails
- * on any legitimate rewrite. And #1604's real positive rule - the everyday tools
- * are an on-ramp, never listed flat beside the programme - is a judgement no
- * regex reaches. It is stated in `docs/positioning.md` in prose precisely so
- * nobody builds a brittle gate for it here, watches it fail on good copy, and
- * deletes the whole file.
+ * ☠️ **ONE-SIDED UNTIL #1790, AND THE EXCEPTION IS NAMED RATHER THAN QUIET.**
+ * #1606 §9 seeded this file as bans only: *"There is no assertion that the hero
+ * contains 'CBT', because that pins a string and fails on any legitimate
+ * rewrite."* #1759 re-weighed that and declined to change it. #1790 overturned
+ * it for ONE rule, on a fact neither of them had: the repositioning (#2004)
+ * took CBT out of the category noun, so the noun no longer carries the method
+ * onto the surfaces it reaches, and `docs/positioning.md`'s clause 1 became the
+ * only thing keeping the method on a surface - under a heading that says no
+ * gate can enforce it.
+ *
+ * ⚠️ The rewrite objection is answered by scope rather than waved away: the one
+ * positive rule asserts the METHOD IS PRESENT, never that a sentence is equal,
+ * and it runs only over surfaces this repo ships. See the ring at the bottom of
+ * this file for what it covers and the two things it deliberately does not.
+ *
+ * ⚠️ Unchanged by that: #1604's real positive rule - the everyday tools are an
+ * on-ramp, never listed flat beside the programme - is a judgement no regex
+ * reaches. It stays in `docs/positioning.md` in prose precisely so nobody
+ * builds a brittle gate for it here, watches it fail on good copy, and deletes
+ * the whole file.
  */
 
 const ROOT = path.resolve(__dirname, "..");
@@ -1521,6 +1534,195 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
         offenders: corpusFor(rule.scope).filter(({ text }) => rule.pattern.test(text)).length,
       }).toEqual({ rule: rule.name, offenders: 0 });
     }
+  });
+});
+
+/**
+ * ☠️☠️ **THE ONE POSITIVE RULE, AND WHY IT IS THE ONLY ONE** (#1790).
+ *
+ * Every rule above fails when someone WRITES a forbidden thing. This one fails
+ * when someone DELETES a required one — a different failure, and since #2004 a
+ * live one rather than a theoretical one.
+ *
+ * Under the old noun, *a CBT self-help app*, the method rode inside the
+ * category noun, so every surface that named the category named the method for
+ * free and a positive pin was a second lock on a door that locked itself.
+ * `docs/positioning.md` records what changed, in its own words:
+ *
+ * > Clause 1 is now the **only** thing keeping the method on a surface: under
+ * > _a CBT self-help app_ the noun carried the method wherever the noun went,
+ * > and under _mental health tools_ it does not, so a surface that names the
+ * > category and stops has already failed the first reading test.
+ *
+ * …under a heading reading *"two clauses, and no gate can enforce either"*, and
+ * beside the doc's own note that the failure mode is **already shipping** (the
+ * iOS first screenshot is a home screen headed `Your tools`, no programme in
+ * frame). Deleting `CBT programme` from the web hero passes `verify` on `dev`
+ * today. That is what this ring is for, and nothing above it reaches.
+ *
+ * ☠️ **PRESENCE, NEVER EQUALITY.** The pattern is the method's NAME, not the
+ * frame sentence. #1606 §9's objection — a pin "fails on any legitimate
+ * rewrite" — is real and is answered by staying this loose: beat two may be
+ * recut freely as long as it still names the thing. Anything stricter guards
+ * phrasing, which this file pointedly does not do even to `positioning.md`.
+ *
+ * ☠️☠️ **TWO EXCLUSIONS, EACH FOR ITS OWN REASON. NEITHER IS A BACKLOG.**
+ *
+ *  1. **Capped fields are out by RULE, not by timing.** `subtitle` (30) and
+ *     Play's short description (80) carry the short form — *"Private mental
+ *     health tools."*, 28 characters, no method — because the frame sentence is
+ *     174 and does not fit. A pin over them is red by design, and no fix
+ *     anywhere turns it green. ⚠️ #1790 was filed believing it was blocked
+ *     until #1760 cleared `subtitle`; it never was. #1760's own decided
+ *     replacement is that same method-free 28, so closing it changes nothing
+ *     here.
+ *  2. **Transcripts of live external listings are out because the repo is not
+ *     where they get fixed.** `store/play-listing.md`'s full description is the
+ *     Play listing *"word for word, not a summary"*. If the listing drifts the
+ *     transcript must follow it to stay true, and a pin would fight that
+ *     correction — going red pending an owner action in the Play Console. That
+ *     is the bargain #1616 set and #1790 restated: fix the copy and add the
+ *     rule in the same change, or do not add the rule.
+ *
+ * What is left is what this repository ships and can fix inside a PR.
+ */
+describe("the frame's second beat survives on the surfaces this repo ships (#1790)", () => {
+  /**
+   * The method as beat two names it, per locale.
+   *
+   * ☠️ The COMPOUND, never the bare acronym. `promoText` says "CBT thought
+   * records" and has no programme in it at all, so a `/CBT/` pattern would call
+   * that surface conformant — and the whole point of clause 1 is that naming a
+   * tool is not naming the method.
+   *
+   * ☠️ No `\b` and no `\w` near the Bulgarian pattern: both are ASCII-only in
+   * JS, so against Cyrillic they do not do what they appear to. A plain
+   * substring is what is wanted in either locale anyway, and it keeps the rule
+   * loose enough to survive inflection (`КПТ програмата` still matches).
+   */
+  const METHOD: Record<Locale, RegExp> = {
+    en: /CBT programme/i,
+    bg: /КПТ програма/i,
+  };
+
+  const INDEX_HTML = readFile("public/index.html").text;
+  const MANIFEST = JSON.parse(readFile("public/manifest.webmanifest").text) as Record<
+    string,
+    string
+  >;
+
+  /** One `<meta>`'s content, whether it is written on one line or on four. */
+  function metaContent(named: string): string {
+    const hit = new RegExp(`<meta\\s+(?:name|property)="${named}"\\s+content="([^"]*)"`).exec(
+      INDEX_HTML,
+    );
+    if (!hit) throw new Error(`public/index.html has no <meta> named "${named}"`);
+    return hit[1];
+  }
+
+  /** One i18n value by `namespace:dotted.key`, from the same corpus the bans use. */
+  function i18nValue(locale: Locale, id: string): string {
+    const hit = LOCALE_STRINGS[locale].find(({ namespace, key }) => `${namespace}:${key}` === id);
+    if (!hit) throw new Error(`${locale} has no ${id}`);
+    return hit.text;
+  }
+
+  /**
+   * The uncapped, repo-shipped surfaces `docs/positioning.md` says carry the
+   * frame sentence. Each is addressed as the FIELD it is, never as "somewhere
+   * in the file": `index.html` carries the sentence in three separate metas,
+   * and a whole-file scan would stay green with two of them hollowed out.
+   */
+  const FRAME_CARRIERS: { id: string; locale: Locale; text: string }[] = [
+    ...(["en", "bg"] as const).flatMap((locale) =>
+      ["auth:landing.subtitle", "auth:landingPage.heroSupport"].map((key) => ({
+        id: `i18n/${locale} ${key}`,
+        locale,
+        text: i18nValue(locale, key),
+      })),
+    ),
+    ...["description", "og:description", "twitter:description"].map((named) => ({
+      id: `public/index.html <meta ${named}>`,
+      locale: "en" as Locale,
+      text: metaContent(named),
+    })),
+    {
+      id: "public/manifest.webmanifest description",
+      locale: "en" as Locale,
+      text: MANIFEST.description,
+    },
+  ];
+
+  it("names the method on every frame-carrying surface, in both locales", () => {
+    for (const { id, locale, text } of FRAME_CARRIERS) {
+      expect({ id, namesTheMethod: METHOD[locale].test(text) }).toEqual({
+        id,
+        namesTheMethod: true,
+      });
+    }
+  });
+
+  /**
+   * ☠️ Non-vacuous in the two ways this repo has already been bitten.
+   *
+   * The corpus has to be non-empty — `i18nValue` throwing would be loud, but a
+   * filter quietly matching nothing would leave the loop above passing by never
+   * running at all. And the locale halves are compared as a RELATION rather
+   * than to a literal count (#2019): a fix that deletes one locale wholesale
+   * satisfies "bg has N entries" by editing N, and cannot satisfy "bg has as
+   * many as en".
+   */
+  it("covers both locales in equal number, over a corpus that is not empty", () => {
+    const i18nCount = (locale: Locale) =>
+      FRAME_CARRIERS.filter((c) => c.locale === locale && c.id.startsWith("i18n/")).length;
+
+    expect(i18nCount("en")).toBeGreaterThan(0);
+    expect(i18nCount("bg")).toEqual(i18nCount("en"));
+    // And the web surfaces are really in there beside the i18n half.
+    expect(FRAME_CARRIERS.length).toBeGreaterThan(i18nCount("en") + i18nCount("bg"));
+  });
+
+  /**
+   * ☠️ A pattern that cannot fail is green over hollowed-out copy and looks
+   * exactly like a working one. Both directions are probed, in both locales:
+   * the noun ALONE must not satisfy the rule — that is the precise state clause
+   * 1 calls a failed first reading test — and beat two must.
+   */
+  it("uses a pattern that rejects the category noun standing alone", () => {
+    expect(METHOD.en.test("a set of free, private mental health tools")).toBe(false);
+    expect(METHOD.en.test("and a CBT programme - cognitive behavioural therapy")).toBe(true);
+    expect(METHOD.bg.test("Набор от безплатни, лични инструменти за психично здраве")).toBe(false);
+    expect(METHOD.bg.test("и КПТ програма - когнитивно-поведенческа терапия")).toBe(true);
+  });
+
+  /**
+   * Exclusion 1, pinned as the FACT that justifies it rather than as the list
+   * itself. Re-listing the excluded fields would only restate the decision;
+   * this goes red if the world moves under it — if the short form ever gains a
+   * method, the capped fields become pinnable and this exclusion needs
+   * re-arguing rather than inheriting.
+   */
+  it("leaves the capped store fields out, because the short form they carry has no method in it", () => {
+    const APPLE = JSON.parse(readFile("store/apple-info.json").text) as Record<string, string>;
+
+    for (const field of Object.keys(APP_STORE_CAPS)) {
+      expect({ field, namesTheMethod: METHOD.en.test(APPLE[field]) }).toEqual({
+        field,
+        namesTheMethod: false,
+      });
+    }
+    expect(FRAME_CARRIERS.some(({ id }) => id.includes("apple-info"))).toBe(false);
+  });
+
+  /**
+   * Exclusion 2, stated so it cannot be mistaken for a tolerated violation: the
+   * Play transcript DOES carry the method today. It is out because of where a
+   * future divergence would have to be fixed — in the Play Console, by the
+   * owner — and not because it currently fails.
+   */
+  it("leaves the Play transcript out, though it carries the method today", () => {
+    expect(FRAME_CARRIERS.some(({ id }) => id.includes("play-listing"))).toBe(false);
+    expect(METHOD.en.test(readFile("store/play-listing.md").text)).toBe(true);
   });
 });
 
