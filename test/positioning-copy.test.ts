@@ -997,6 +997,26 @@ const HOUSE_STYLE_SPELLING: Rule[] = [
     scope: "i18n",
     probe: "Notice sensations without judgment",
   },
+  /**
+   * Added with the store corpus above, because without it that corpus would not
+   * have caught the defect it was built for: the live Play description spelled
+   * `catastrophizing` while `cbt.json` spelled the same word `Catastrophising`
+   * two surfaces away (#2061). The corpus gap and the rule gap were separate,
+   * and closing only the first would have looked like closing both.
+   *
+   * ☠️ **The distortion's KEY is `catastrophizing` and must stay that way.**
+   * It is a persisted identifier — `src/constants/distortions.ts`, the rows
+   * already saved against it, and the i18n key itself — so this is the
+   * `behavioral-activation` situation exactly. Safe here by construction: this
+   * scope reads translated VALUES and never keys, the same reason
+   * `behavioralActivation` survives the `behavioral` rules.
+   */
+  {
+    name: "en: catastrophize (American)",
+    pattern: /\bcatastrophiz(e|es|ed|ing|ation)\b/i,
+    scope: "i18n",
+    probe: "thinking patterns (like catastrophizing or mind-reading)",
+  },
 ];
 
 const RULES: Rule[] = [
@@ -1922,9 +1942,11 @@ describe("the frame's second beat survives on the surfaces this repo ships (#179
  * Nothing below reads the document for style.
  *
  * ⚠️ **Reading `store/` for a NUMBER is not scanning `store/` for phrasing.**
- * That gap is real and is still open, at #1760 and #1789; this does not touch
- * it. `store/play-listing.md` is read here for the digits in its own
- * "N of 80 characters" line and for nothing else.
+ * Still true of THIS block — `store/play-listing.md` is read here for the
+ * digits in its own "N of 80 characters" line and for nothing else. ✅ The gap
+ * it used to point at is closed: `STORE_LISTING_TEXT` puts the App Store fields
+ * and the Play verbatim block into every corpus (#1760). #1789 remains open for
+ * the surfaces outside this repository.
  *
  * ☠️ **Line numbers are deliberately not asserted.** Pinning
  * `store-info-invariants.test.ts:39` in a test re-creates the rot it is meant
