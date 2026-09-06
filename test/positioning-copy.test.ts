@@ -329,6 +329,69 @@ const WITH_PROSE_DOCS: Scanned[] = [...ALL_SURFACES, ...PROSE_DOCS].filter(
     all.findIndex((other) => other.surface === entry.surface && other.id === entry.id) === index,
 );
 
+const APPLE_INFO_SURFACE = "store/apple-info.json";
+const PLAY_VERBATIM_SURFACE = "store/play-listing.md";
+
+/** Where `store/play-listing.md` starts quoting the listing rather than describing it. */
+const PLAY_VERBATIM_HEADING = "## Verbatim, as saved";
+
+/**
+ * The text that is actually ON a store listing, pulled out of the two files
+ * that mirror them. See the `#1760` describe near the bottom for why this
+ * corpus exists at all, and why it is the listing text rather than the files.
+ *
+ * ☠️ **THROWS rather than returning an empty list.** Both halves are extracted
+ * by structure — JSON fields, and the blockquote under a heading — and both can
+ * silently yield nothing when the file is reorganised. A corpus that quietly
+ * empties leaves every rule vacuously green while looking covered, which is the
+ * #1908 / #2019 failure mode this file has already paid for twice.
+ *
+ * ⚠️ Takes the file contents rather than reading them, so the extraction can be
+ * exercised on synthetic input. Nothing else here is testable without it.
+ */
+function storeListingText(appleInfoJson: string, playListingMd: string): Scanned[] {
+  const entries: Scanned[] = [];
+
+  const apple = JSON.parse(appleInfoJson) as Record<string, unknown>;
+  for (const [field, value] of Object.entries(apple)) {
+    if (typeof value === "string") {
+      entries.push({ surface: APPLE_INFO_SURFACE, id: field, text: value });
+    } else if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
+      entries.push({
+        surface: APPLE_INFO_SURFACE,
+        id: field,
+        text: (value as string[]).join(", "),
+      });
+    }
+  }
+  if (entries.length === 0) {
+    throw new Error(`${APPLE_INFO_SURFACE} yielded no listing fields`);
+  }
+
+  const at = playListingMd.indexOf(PLAY_VERBATIM_HEADING);
+  if (at === -1) {
+    throw new Error(`${PLAY_VERBATIM_SURFACE} has no "${PLAY_VERBATIM_HEADING}" section`);
+  }
+  const verbatim = playListingMd
+    .slice(at)
+    .split("\n")
+    .filter((line) => line.startsWith(">"))
+    .map((line) => line.replace(/^>\s?/, ""))
+    .join("\n")
+    .trim();
+  if (verbatim === "") {
+    throw new Error(`${PLAY_VERBATIM_SURFACE}'s "${PLAY_VERBATIM_HEADING}" block quotes nothing`);
+  }
+  entries.push({ surface: PLAY_VERBATIM_SURFACE, id: "verbatim", text: verbatim });
+
+  return entries;
+}
+
+const STORE_LISTING_TEXT: Scanned[] = storeListingText(
+  fs.readFileSync(path.join(ROOT, APPLE_INFO_SURFACE), "utf8"),
+  fs.readFileSync(path.join(ROOT, PLAY_VERBATIM_SURFACE), "utf8"),
+);
+
 interface Rule {
   name: string;
   pattern: RegExp;
@@ -947,10 +1010,26 @@ const RULES: Rule[] = [
   ...MANAGEMENT_VERB_ON_HEALTH,
 ];
 
+/**
+ * ⚠️ **The store listing text is appended to EVERY scope, including `i18n`.**
+ * That looks like a violation of the narrowing the house-style block argues
+ * for, and is not: `i18n` is narrow because the wider corpora carry CSS
+ * tokens, manifest keys and file paths where `color` and `program` are code
+ * rather than copy. A store listing has none of those — it is marketing prose
+ * end to end, so every rule that applies to shipped copy applies to it, and the
+ * spelling rules are the half that would have caught #2061.
+ */
 function corpusFor(scope: Rule["scope"]) {
-  if (scope === "i18n") return I18N_VALUES;
-  if (scope === "prose") return WITH_PROSE_DOCS;
-  return scope === "user-facing" ? USER_FACING : ALL_SURFACES;
+  const base =
+    scope === "i18n"
+      ? I18N_VALUES
+      : scope === "prose"
+        ? WITH_PROSE_DOCS
+        : scope === "user-facing"
+          ? USER_FACING
+          : ALL_SURFACES;
+
+  return [...base, ...STORE_LISTING_TEXT];
 }
 
 /** Renders offenders for a failure message: which surface said it, and what it said. */
@@ -1534,6 +1613,91 @@ describe("shipped copy matches the positioning in docs/positioning.md", () => {
         offenders: corpusFor(rule.scope).filter(({ text }) => rule.pattern.test(text)).length,
       }).toEqual({ rule: rule.name, offenders: 0 });
     }
+  });
+});
+
+/**
+ * ☠️☠️ **THE STORE LISTINGS ARE COPY, AND NO RULE HAD EVER READ THEM** (#1760,
+ * #1789). Every corpus above is built from what the app ships or what the
+ * repository documents. The two files that carry what the App Store and Play
+ * actually say were in none of them, so a banned phrase in a store listing
+ * passed `verify` **by construction** — and did, twice over:
+ *
+ *   - `store/apple-info.json`'s `subtitle` read _"Calm, guided self-help
+ *     tools"_ from #1611 until #2009/#2021, the one phrase this file calls
+ *     unsafe rather than merely off-frame, live on the App Store the whole time.
+ *   - The Play full description spelled `catastrophizing` while the app spelled
+ *     the same word `Catastrophising` (#2061) — and there was no rule for that
+ *     word either, so the corpus gap and the rule gap were both real.
+ *
+ * ⚠️ **The corpus is the mirrored listing TEXT, never the files.** Both files
+ * are mostly prose ABOUT the listings — `store/play-listing.md` quotes retired
+ * spellings and banned compounds inside records of the fixes that retired them,
+ * exactly as `docs/positioning.md` does. Scanning the files whole would go red
+ * on those records, and the tempting fix would be to weaken the rule. So this
+ * reads the App Store fields and the Play verbatim block, and nothing else.
+ *
+ * ☠️ `storeListingText` THROWS rather than returning `[]` when the Play heading
+ * moves or the block is empty. An extractor that silently yields nothing makes
+ * every rule below vacuously green over a corpus that looks covered — the
+ * #1908/#2019 failure in a third costume.
+ */
+describe("the store listings are in scope (#1760)", () => {
+  it("puts the App Store fields and the Play verbatim block in every corpus", () => {
+    for (const scope of ["i18n", "user-facing", "all", "prose"] as const) {
+      const surfaces = new Set(corpusFor(scope).map(({ surface }) => surface));
+
+      expect({
+        scope,
+        apple: surfaces.has(APPLE_INFO_SURFACE),
+        play: surfaces.has(PLAY_VERBATIM_SURFACE),
+      }).toEqual({ scope, apple: true, play: true });
+    }
+  });
+
+  it("reads the real listing text, so the corpus cannot be quietly empty", () => {
+    const subtitle = STORE_LISTING_TEXT.find(
+      ({ surface, id }) => surface === APPLE_INFO_SURFACE && id === "subtitle",
+    );
+    const verbatim = STORE_LISTING_TEXT.find(({ surface }) => surface === PLAY_VERBATIM_SURFACE);
+
+    expect(subtitle?.text.length).toBeGreaterThan(10);
+    expect(verbatim?.text).toContain("What's inside:");
+  });
+
+  /**
+   * The wiring, proven on synthetic input rather than on the live files: if the
+   * copy is ever wrong again, a rule has to see it. Running the real rule set
+   * over a mutated listing is the only assertion here that would fail if
+   * `corpusFor` stopped appending the store text.
+   */
+  it("catches a banned phrase planted in either store surface", () => {
+    const planted = storeListingText(
+      JSON.stringify({ subtitle: "Calm, guided self-help tools" }),
+      `## Verbatim, as saved on 2026-01-01\n\n> A guided self-help app.\n`,
+    );
+
+    const caught = GUIDED_SELF_HELP.filter((rule) =>
+      planted.some(({ text }) => rule.pattern.test(text)),
+    ).map(({ name }) => name);
+
+    expect(caught).toContain("en: guided self-help");
+    expect(planted.map(({ surface }) => surface)).toEqual([
+      APPLE_INFO_SURFACE,
+      PLAY_VERBATIM_SURFACE,
+    ]);
+  });
+
+  it("refuses to yield an empty corpus when the Play verbatim block moves", () => {
+    expect(() => storeListingText(`{"subtitle":"x"}`, "# no verbatim heading here\n")).toThrow(
+      /Verbatim/,
+    );
+    expect(() =>
+      storeListingText(
+        `{"subtitle":"x"}`,
+        "## Verbatim, as saved on 2026-01-01\n\nno quote lines\n",
+      ),
+    ).toThrow(/Verbatim/);
   });
 });
 
