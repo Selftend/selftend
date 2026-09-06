@@ -15,19 +15,23 @@ const toolSleep = require("../../../assets/images/onboarding/cbt_sleep_target.pn
 
 interface TableRowProps {
   condition: string;
-  feature: string;
   focus: string;
   isLast?: boolean;
 }
 
-function TableRow({ condition, feature, focus, isLast = false }: TableRowProps) {
+/**
+ * ☠️ Two columns, and the third is not coming back (#1867). A "Core Feature"
+ * column sat between these two — pairing a named condition with its defining
+ * feature — and that pairing is what turned background reading into a
+ * self-identification prompt once the eligibility floor moved to 13+ (#1767).
+ * Condition + CBT Focus keeps the useful half. The condition column is wider
+ * than the old quarter because the acronym it used to hide is now spelled out.
+ */
+function TableRow({ condition, focus, isLast = false }: TableRowProps) {
   return (
     <View className={`flex-row${isLast ? "" : " border-b border-border"}`}>
-      <View className="w-1/4 border-r border-border p-2">
+      <View className="w-2/5 border-r border-border p-2">
         <Text className="text-xs font-medium">{condition}</Text>
-      </View>
-      <View className="w-1/4 border-r border-border p-2">
-        <Text className="text-xs text-muted-foreground">{feature}</Text>
       </View>
       <View className="flex-1 p-2">
         <Text className="text-xs text-muted-foreground">{focus}</Text>
@@ -181,6 +185,15 @@ export function CbtOnboarding({
        * which is the strongest thing in the app that reads as treatment information
        * (#1002). It is educational and never assesses anyone - this line makes that
        * true on the screen's face rather than only in argument (#1011).
+       *
+       * ☠️ Re-read at 13+ and softened rather than removed (#1867, ruling: option 3).
+       * The floor moved in #1767 and this screen is now met by thirteen-year-olds on
+       * their first entry to the module, which changed the character of three things:
+       * the acronym `GAD` was expanded (it was spelled out nowhere in the app, in
+       * either locale), the intro no longer says "clinically" - it framed the module
+       * as clinical treatment on the very screen introducing it - and the
+       * "Core Feature" column is gone. The "not a diagnosis, an assessment, or a
+       * treatment plan" clause is untouched: it is doing real work and stays verbatim.
        */}
       <View className="gap-2">
         <Text variant="muted" className="text-sm">
@@ -189,13 +202,8 @@ export function CbtOnboarding({
 
         <View className="overflow-hidden rounded-lg border border-border">
           <View className="flex-row border-b border-border">
-            <View className="w-1/4 border-r border-border p-2">
+            <View className="w-2/5 border-r border-border p-2">
               <Text className="text-xs font-semibold">{t("onboarding.intro.tableCondition")}</Text>
-            </View>
-            <View className="w-1/4 border-r border-border p-2">
-              <Text className="text-xs font-semibold">
-                {t("onboarding.intro.tableCoreFeature")}
-              </Text>
             </View>
             <View className="flex-1 p-2">
               <Text className="text-xs font-semibold">{t("onboarding.intro.tableCbtFocus")}</Text>
@@ -203,17 +211,14 @@ export function CbtOnboarding({
           </View>
           <TableRow
             condition={t("onboarding.intro.tableRow1Condition")}
-            feature={t("onboarding.intro.tableRow1Feature")}
             focus={t("onboarding.intro.tableRow1Focus")}
           />
           <TableRow
             condition={t("onboarding.intro.tableRow2Condition")}
-            feature={t("onboarding.intro.tableRow2Feature")}
             focus={t("onboarding.intro.tableRow2Focus")}
           />
           <TableRow
             condition={t("onboarding.intro.tableRow3Condition")}
-            feature={t("onboarding.intro.tableRow3Feature")}
             focus={t("onboarding.intro.tableRow3Focus")}
             isLast
           />
