@@ -50,12 +50,13 @@ per day at most, with a fresh same-day read of the target sub's rules before eac
    Short form: **Private mental health tools.** / **Лични инструменти за психично здраве.**
 
 10. ☠️ **Before posting, read [positioning.md](../positioning.md) § _Words never to use_ and
-    check the draft against it.** No gate reaches this file (see the note under § _Drafts_), so
-    that read is the only check there is. **The table is deliberately not copied here**: a
+    check the draft against it.** `verify` reaches this file now (see the note under § _Drafts_),
+    but for **row 1 only** - the prose corpus runs that one rule and no other - so the remaining
+    five rows are still checked by eye alone. **The table is deliberately not copied here**: a
     cached list goes stale the next time positioning moves, which is how these drafts drifted in
-    the first place - and quoting the banned strings verbatim would turn the scan red on this
-    file the day anyone decides to include it, which is the open call on
-    [#1901](https://github.com/Selftend/selftend/issues/1901).
+    the first place - and quoting the banned strings verbatim would now turn the scan red on
+    this file, which is no longer hypothetical
+    ([#1901](https://github.com/Selftend/selftend/issues/1901)).
 
     What the six rows cover, so you know what you are checking for: the practitioner-implying
     compound built from _guided_ + _self-help_ (in either language, and it catches one
@@ -133,7 +134,7 @@ comments can land any day since they are comments, not posts. One sub per day at
 
 Every draft is a starting point in the owner's voice - edit freely, keep the copy rules.
 
-☠️☠️ **NOTHING BELOW IS GATED, AND THAT IS WHY THESE DRIFTED** ([#1901](https://github.com/Selftend/selftend/issues/1901)). `docs/launch/` is in `test/positioning-copy.test.ts`'s `PUBLISHED_RECORDS` list, which is **excluded** from the prose scan - deliberately, because the directory is meant to hold records of what was already posted. Ready-to-post drafts living in the same directory inherit that exemption, so between 2026-08-19 and 2026-09-06 every draft here kept a category noun the product had retired **twice** ([#1813](https://github.com/Selftend/selftend/issues/1813), then [#2004](https://github.com/Selftend/selftend/issues/2004)) and `verify` stayed green throughout. Rewriting them does not fix that; **rule 9 and rule 10 above are the only thing standing between this file and the next drift.** Whether the exclusion should distinguish _records of what went out_ from _drafts of what has not_ is an open call on #1901 - and [#2022](https://github.com/Selftend/selftend/issues/2022) set the precedent for the shape of the answer, carving one text-in-repo source out of an image-shaped exemption rather than dropping the exemption.
+☠️☠️ **NOTHING BELOW WAS GATED, WHICH IS WHY THESE DRIFTED - AND ONE ROW IS GATED NOW** ([#1901](https://github.com/Selftend/selftend/issues/1901)). `docs/launch/` is in `test/positioning-copy.test.ts`'s `PUBLISHED_RECORDS` list, which is **excluded** from the prose scan - deliberately, because the directory is meant to hold records of what was already posted. Ready-to-post drafts living in the same directory inherited that exemption, so between 2026-08-19 and 2026-09-06 every draft here kept a category noun the product had retired **twice** ([#1813](https://github.com/Selftend/selftend/issues/1813), then [#2004](https://github.com/Selftend/selftend/issues/2004)) and `verify` stayed green throughout. **Settled on the [#2022](https://github.com/Selftend/selftend/issues/2022) precedent:** the exemption stands and this one file is carved back out of it by name (`READY_TO_POST_DRAFTS`), because a posted banner is finished - editing its source only makes the record lie - while a draft is inventory the repository invites you to rewrite. The banner and the July closed-testing thread beside it stay excluded. ⚠️ **The carve-out reaches row 1 and nothing else** - the prose corpus runs that single rule - so **rule 9 and rule 10 above are still the only thing standing between this file and a drift on the other five rows.**
 
 ### 1. r/SideProject
 
