@@ -104,7 +104,7 @@ The instrument that will fill it was specified in [#1605](https://github.com/Sel
 
 ⚠️ **Theme 5's job changed even though its position did not.** Under the CBT frame, `free` read as institutional. On this shelf **every top result across every term tested lists at $0**, so free is the floor rather than a signal, and the question a visitor silently asks becomes _"what's the catch?"_. That is what theme 5 now answers. Promoting it would tempt precisely the durability claim #1609 left conditional on donations covering a year of running costs. ⚠️ The freemium characterisation is **reasoning, not copy** — #1816 measured price, not business model.
 
-### ☠️ The hard rule on how the tools appear — two clauses, and no gate can enforce either
+### ☠️ The hard rule on how the tools appear — two clauses, and a gate reaches one narrow slice of clause 1
 
 The old rule protected the tools' **subordination** — _"Supporting. Never leading."_ That failure mode is retired with the ranking. ☠️ **The live failure mode is its inverse, and it is already shipping: the iOS first screenshot is a home screen headed `Your tools` with no programme in frame.**
 
@@ -113,6 +113,10 @@ The old rule protected the tools' **subordination** — _"Supporting. Never lead
 > **2. Privacy is never the opening claim.** It is the primary differentiated value and the one attribute the style competes on, and it still lands third. Leading with it spends comprehension on "an anti-AI thing" ([#1609](https://github.com/Selftend/selftend/issues/1609)'s reasoning, transferred).
 
 **Two reading tests, so a reviewer can apply them without a judgement call:** _Is the method on this surface?_ and _Is privacy the first claim?_
+
+✅ **The first reading test now has a merge gate, in one narrow form and over one file** ([#1901](https://github.com/Selftend/selftend/issues/1901), 2026-09-06). ☠️ **This rule was prose because clause 1 asks for something to be PRESENT and every rule in `test/positioning-copy.test.ts` bans a STRING** — a ban cannot check a presence, so putting a file into the copy corpus does nothing for it. That was demonstrated the expensive way: the seven Reddit drafts were verified clean against every banned phrase in both languages and **still** breached clause 1 twice, naming the category and stopping. But the reading test has a mechanical form, and it is the one that failed — _names the category and stops_. So `keeps the method in every Reddit draft that names the category` walks `docs/launch/reddit-promotion-package.md` section by section and requires the method wherever the category noun appears, in either locale.
+
+⚠️ **What is still prose is nearly all of it, and reading the line above as more than it says is how this gets over-trusted.** Whether a surface _presents the tools_ at all is a judgement no pattern makes; clause 2 is untouched and unreachable; and **no other file is covered** — the drafts earned a gate only because they are one structured document of pre-threshold surfaces with a section per surface. A general clause-1 gate does not exist and is not in prospect. ☠️ Note also what the gate does NOT do: a draft may name the category, name the method, and still enumerate the tools flat, which clause 1 forbids in its own sentence and which nothing checks.
 
 ☠️ **Clause 1 got heavier on 2026-09-05, and clause 2 got a precedent written beside it** ([#2004](https://github.com/Selftend/selftend/issues/2004) ruling 3). Clause 1 is now the **only** thing keeping the method on a surface: under _a CBT self-help app_ the noun carried the method wherever the noun went, and under _mental health tools_ it does not, so a surface that names the category and stops has already failed the first reading test. Clause 2 is untouched, with one thing said so it is not re-litigated: **_private_ as an adjective in a short form is not the opening claim.** _"A private CBT self-help app."_ was sanctioned under this clause by [#1819](https://github.com/Selftend/selftend/issues/1819), and _"Private mental health tools."_ inherits the sanction — the short form's subject is the noun, and the adjective in front of it qualifies; it does not lead.
 
@@ -486,7 +490,7 @@ Five gates, split by what each can physically reach. **Nothing reaches the last 
 
 ⚠️ **The closing claim below has now been wrong five times, and it is left standing as a warning rather than repaired into a sixth prediction.** #1627 called itself "the last one this document promised" and #1638 falsified it the next day; #1638 wrote the sentence beneath this one, #1639 falsified that, #1651 falsified it again, and the reposition falsified it a fourth time from a direction none of them anticipated — **not by counting, but by changing the words the rules are about.** So: the gate grows a ring whenever someone counts, and also whenever the positioning moves. The honest statement is that no one has yet counted and found nothing.
 
-**With this, every rule the four-gate table can physically reach is in place.** What remains unreachable is unchanged, and the hard rule on the tools above is still prose for the reason stated there.
+**With this, every rule the four-gate table can physically reach is in place.** What remains unreachable is unchanged, and the hard rule on the tools above is still prose — apart from the one narrow slice of clause 1 that [#1901](https://github.com/Selftend/selftend/issues/1901) gated over the Reddit drafts — for the reason stated there.
 
 `CONTEXT.md` takes the **vocabulary** and only the vocabulary — what "mental health tools" means, why the method lives in beat two of the frame sentence, why _programme_ is the module's noun, and why the retired compound is banned. The position itself stays here.
 
