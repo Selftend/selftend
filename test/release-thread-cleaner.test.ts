@@ -185,12 +185,18 @@ describe("the whole corpus", () => {
     // three occurrences are the UI component — the term of art British
     // technical writing uses too (`role="dialog"`, the `<dialog>` element) —
     // so flagging it would spare three correct lines to catch no misspelling.
+    const carriesDialog = (text: string) => /\bdialogs?\b/i.test(text);
+    // A pick has no `reason` at all; only a spare carries one, so the two tiers
+    // are read apart and reduced to the reason each line ended up with.
     const dialogs = releases.flatMap((r) => {
       const { picked, spares } = draft(r);
-      return [...picked, ...spares].filter((e) => /\bdialogs?\b/i.test(e.text));
+      return [
+        ...picked.filter((e) => carriesDialog(e.text)).map(() => "picked"),
+        ...spares.filter((e) => carriesDialog(e.text)).map((e) => e.reason),
+      ];
     });
     expect(dialogs).toHaveLength(3);
-    for (const entry of dialogs) expect(entry.reason).not.toBe("spelling");
+    expect(dialogs).not.toContain("spelling");
     expect(hazardOf("Manage emotions becomes a dialog on desktop web")).toBeUndefined();
   });
 
