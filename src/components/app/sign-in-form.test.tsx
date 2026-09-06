@@ -234,8 +234,10 @@ describe("SignInForm", () => {
   describe("guest warn-and-abandon", () => {
     const WARNING_TITLE = "Your guest data stays behind";
 
+    // ☠️ `email: ""`, not an absent key — that is what a guest's user object
+    // actually carries, and the predicate reading it is `!email` (#1896).
     function asGuest() {
-      mockSessionState.user = { is_anonymous: true };
+      mockSessionState.user = { is_anonymous: true, email: "" };
     }
 
     it("shows the warning instead of signing in when the guest holds content", async () => {
@@ -357,8 +359,10 @@ describe("SignInForm", () => {
     const NOTICE =
       "What you've saved as a guest stays on this device — you can export a copy before you finish signing in.";
 
+    // ☠️ `email: ""`, not an absent key — that is what a guest's user object
+    // actually carries, and the predicate reading it is `!email` (#1896).
     function asGuest() {
-      mockSessionState.user = { is_anonymous: true };
+      mockSessionState.user = { is_anonymous: true, email: "" };
     }
 
     it("tells a guest holding content before they have typed anything", async () => {
@@ -378,6 +382,30 @@ describe("SignInForm", () => {
      */
     it("says it without the words that hide it", () => {
       expect(NOTICE).not.toMatch(/\b(switch|log ?out|sign ?out)\b/i);
+    });
+
+    /**
+     * ☠️☠️ THE SURFACE #1896 MISSED. `useGuestContentNotice` was still reading
+     * `is_anonymous` after the predicate was extracted, so inside the stale-JWT
+     * window this line told a person who had JUST converted that their work
+     * "stays on this device". It does not — it is theirs by email and password
+     * now, and it is going nowhere.
+     *
+     * That makes this the costliest of the flag-reading surfaces to leave: the
+     * line is a standing false claim of impending loss, sitting in front of the
+     * account, which `docs/product-principles.md` §12 removes steps toward.
+     *
+     * ⚠️ The check must never even be ASKED for them. `enabled` is the same
+     * predicate, so a converted user pays for no `export_user_data` round trip.
+     */
+    it("says nothing, and asks nothing, inside the stale-flag window", async () => {
+      mockSessionState.user = { is_anonymous: true, email: "converted@example.com" };
+      mockGuestHasContent.mockResolvedValue(true);
+      renderWithProviders(<SignInForm />);
+
+      await waitFor(() => expect(screen.getByText("Continue")).toBeTruthy());
+      expect(screen.queryByTestId("sign-in-guest-notice")).toBeNull();
+      expect(mockGuestHasContent).not.toHaveBeenCalled();
     });
 
     it("says nothing to a guest with an empty account", async () => {

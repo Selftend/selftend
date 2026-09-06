@@ -163,11 +163,16 @@ describe("useSignOut", () => {
 
   // #1442: a guest signing out is silent irreversible data loss - their session
   // token is the only key to the account. Both surfaces (settings row, header
-  // menu) render their sign-out control off this one flag, so this is the
+  // menu) render their sign-out control off this one predicate, so this is the
   // single place the guard can regress.
+  //
+  // ☠️ The fixtures spell a guest `email: ""` and never `is_anonymous: true`
+  // (#1896). They cannot spell it the old way at all now - the parameter is
+  // `Pick<User, "id" | "email">`, so the flag does not typecheck, which is what
+  // stops a later edit quietly reintroducing it.
   describe("canSignOut", () => {
     it("is false for a guest", () => {
-      const { result } = renderHook(() => useSignOut({ id: "guest-1", is_anonymous: true }));
+      const { result } = renderHook(() => useSignOut({ id: "guest-1", email: "" }));
 
       expect(result.current.canSignOut).toBe(false);
     });
@@ -175,7 +180,7 @@ describe("useSignOut", () => {
     // The layer enforces, not just advertises: a surface that forgets the
     // flag still cannot sign a guest out.
     it("the handler itself refuses to sign a guest out", async () => {
-      const { result } = renderHook(() => useSignOut({ id: "guest-1", is_anonymous: true }));
+      const { result } = renderHook(() => useSignOut({ id: "guest-1", email: "" }));
 
       await act(async () => {
         await result.current.signOut();
