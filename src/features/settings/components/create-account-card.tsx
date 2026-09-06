@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/src/components/react-native-reusables/card";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { usePushWithOrigin } from "@/src/lib/escape-origin";
 import { useSession } from "@/src/providers/session-provider";
 
@@ -45,7 +46,7 @@ export function CreateAccountCard() {
   const { user } = useSession();
   const pushWithOrigin = usePushWithOrigin();
 
-  if (user?.is_anonymous !== true) return null;
+  if (!isGuestAccount(user)) return null;
 
   return (
     <Card testID="create-account-card">

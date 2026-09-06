@@ -290,6 +290,15 @@ owns its data like any other — whose only key is the session held on that devi
 the session, lose the account. "Guest" is the word in copy, docs and code alike; the platform's
 mechanism word is "anonymous", which stays out of the UI because the data is not anonymous — it is
 the person's own, just unlabelled by an email.
+
+**How the code answers it** (#1896): `isGuestAccount(user)` in `src/features/profile/guest.ts`,
+which reads the **absence of an email**, never `is_anonymous`. The flag is a lie for the length of
+one window — `convertGuestWithPassword` flips it server-side while the live JWT keeps claiming
+`is_anonymous: true` until the token is minted again — so a just-registered person carries a true
+flag and an email at the same time. Until #1896 that person was hidden from Sign Out, still shown
+the "create an account" card, and denied the verify-email banner they had just earned. The one
+deliberate exception is `SignUpForm`'s `isConversion`, which asks whether a submit is an upgrade of
+an anonymous row rather than whether the person is a guest, and is documented in place.
 _Avoid_: anonymous account (mechanism word, and wrong as a privacy claim), local account, device
 account, trial account
 

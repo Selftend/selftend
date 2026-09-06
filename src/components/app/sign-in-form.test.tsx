@@ -29,7 +29,7 @@ jest.mock("expo-router", () => {
 // guest; the factory closes over it and reads it at render time.
 const mockSessionState: {
   hasSupabaseConfig: boolean;
-  user: { is_anonymous?: boolean } | null;
+  user: { is_anonymous?: boolean; email?: string } | null;
 } = { hasSupabaseConfig: true, user: null };
 
 jest.mock("@/src/providers/session-provider", () => ({
@@ -333,7 +333,7 @@ describe("SignInForm", () => {
     });
 
     it("never runs the content check for a registered user", async () => {
-      mockSessionState.user = { is_anonymous: false };
+      mockSessionState.user = { is_anonymous: false, email: "person@example.com" };
       mockSignIn.mockResolvedValue(undefined as never);
       renderWithProviders(<SignInForm />);
 
@@ -414,7 +414,7 @@ describe("SignInForm", () => {
     });
 
     it("shows nothing, and asks nothing, for a registered user", async () => {
-      mockSessionState.user = { is_anonymous: false };
+      mockSessionState.user = { is_anonymous: false, email: "person@example.com" };
       renderWithProviders(<SignInForm />);
 
       await waitFor(() => expect(screen.getByText("Continue")).toBeTruthy());

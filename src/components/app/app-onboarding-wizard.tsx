@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { OnboardingHero, RichOnboardingShell } from "@/src/components/app/rich-onboarding-shell";
 import { Text } from "@/src/components/react-native-reusables/text";
+import { isGuestAccount } from "@/src/features/profile/guest";
 import { useSession } from "@/src/providers/session-provider";
 
 const welcomeIllustration = require("../../../assets/images/onboarding/app_welcome.png");
@@ -66,7 +67,7 @@ export function AppOnboardingWizard({
         // informational line, guests only, on the final panel - which is the
         // only panel. The other half is the settings card, and that is the
         // whole invitation surface, by spec.
-        user?.is_anonymous ? (
+        isGuestAccount(user) ? (
           <Text variant="muted" className="text-center text-xs">
             {t("onboarding.guestInviteLine")}
           </Text>

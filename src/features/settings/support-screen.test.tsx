@@ -624,11 +624,22 @@ describe("SupportScreen form (#1727)", () => {
     expect(screen.queryByText(/Replies go to/)).toBeNull();
   });
 
-  it("shows an account without an email neither the field nor the line", () => {
+  /**
+   * ⚠️ This pinned a THIRD state until #1896 - "registered, but carrying no
+   * email" - which got neither the reply-to field nor the address line, leaving
+   * that session with no way to be replied to at all. The state is unreachable
+   * in production (every registered identity attaches an email) and the ad-hoc
+   * handling of it was why this surface needed its own predicate.
+   *
+   * There are two states now: a session with an email is replied to at that
+   * address, and one without is offered the optional field. No email IS what
+   * `isGuestAccount` means.
+   */
+  it("offers the field, not the line, to a session carrying no email", () => {
     mockUser = { id: "user-2", is_anonymous: false };
     renderWithProviders(<SupportScreen />);
 
-    expect(screen.queryByLabelText(REPLY_TO_LABEL)).toBeNull();
+    expect(screen.getByLabelText(REPLY_TO_LABEL)).toBeTruthy();
     expect(screen.queryByText(/Replies go to/)).toBeNull();
   });
 

@@ -22,14 +22,19 @@ jest.mock("react-native", () => {
   });
 });
 
-let mockWizardUser: { id: string; is_anonymous?: boolean } = { id: "user-1" };
+let mockWizardUser: { id: string; is_anonymous?: boolean; email?: string } = {
+  id: "user-1",
+  email: "person@example.com",
+};
 jest.mock("@/src/providers/session-provider", () => ({
   useSession: () => ({ user: mockWizardUser }),
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockWizardUser = { id: "user-1" };
+  // A registered user carries an email - that is what makes them registered,
+  // and since #1896 it is what the invitation line reads.
+  mockWizardUser = { id: "user-1", email: "person@example.com" };
 });
 
 function renderWizard(overrides: Partial<React.ComponentProps<typeof AppOnboardingWizard>> = {}) {
