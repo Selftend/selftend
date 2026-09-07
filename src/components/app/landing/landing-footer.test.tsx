@@ -26,9 +26,14 @@ jest.mock("@/src/lib/linking", () => ({
   openExternalUrl: jest.fn(),
 }));
 
+// ☠️ This factory REPLACES `appEnv`, it does not extend it: a URL the footer
+// reads and this object omits arrives as `undefined`, which is falsy, so the
+// link would simply never render and a presence test would fail for a reason
+// that has nothing to do with the component.
 jest.mock("@/src/lib/env", () => ({
   appEnv: {
     discordUrl: "https://discord.gg/pdaAr9FhcQ",
+    redditUrl: "https://www.reddit.com/r/Selftend/",
   },
 }));
 
@@ -40,6 +45,7 @@ function linkHref(name: string) {
 
 beforeEach(() => {
   appEnv.discordUrl = "https://discord.gg/pdaAr9FhcQ";
+  appEnv.redditUrl = "https://www.reddit.com/r/Selftend/";
   jest.clearAllMocks();
 });
 
@@ -88,5 +94,34 @@ describe("LandingFooter", () => {
     renderWithProviders(<LandingFooter />);
 
     expect(screen.queryByText("Join our Discord")).toBeNull();
+  });
+
+  it("opens the subreddit externally when appEnv.redditUrl is set", () => {
+    renderWithProviders(<LandingFooter />);
+
+    fireEvent.press(screen.getByText("Join r/Selftend"));
+
+    expect(mockOpen).toHaveBeenCalledWith("https://www.reddit.com/r/Selftend/");
+  });
+
+  it("hides the subreddit link when appEnv.redditUrl is empty, keeping Discord", () => {
+    appEnv.redditUrl = "";
+
+    renderWithProviders(<LandingFooter />);
+
+    expect(screen.queryByText("Join r/Selftend")).toBeNull();
+    expect(screen.getByText("Join our Discord")).toBeTruthy();
+  });
+
+  it("closes the row with Discord then the subreddit, after the policy links", () => {
+    renderWithProviders(<LandingFooter />);
+
+    // Order is the assertion: both are external buttons appended to the same
+    // wrapping row, so either could land anywhere in it and still be found by
+    // the presence checks above. `getAllByText` returns them in tree order.
+    expect(screen.getAllByText(/^Join /).map((node) => node.props.children)).toEqual([
+      "Join our Discord",
+      "Join r/Selftend",
+    ]);
   });
 });

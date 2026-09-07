@@ -10,7 +10,14 @@ import { openExternalUrl } from "@/src/lib/linking";
 /**
  * Landing page footer: the same full safety disclaimer and crisis/terms/
  * privacy/cookies link row as `AuthLandingBlock` (the auth screen's version
- * of this notice), extended with FAQ and, when configured, Discord.
+ * of this notice), extended with FAQ and, when configured, Discord and the
+ * subreddit.
+ *
+ * ☠️ The subreddit link takes `header.joinReddit`, NOT the `header.openReddit`
+ * that already existed: that one is the accessible name of an icon-only button
+ * in the nav panel's social row, phrased as an instruction ("Open the Selftend
+ * subreddit"). Visible text in a row of one- and two-word labels needs the
+ * short form, and it is the same string the support page's row carries.
  *
  * Deliberately the quietest thing on the page: a hairline top border sets it
  * off as closing material rather than another pitch, and the tighter gap (3,
@@ -45,6 +52,11 @@ export function LandingFooter() {
         {appEnv.discordUrl ? (
           <Button onPress={() => openExternalUrl(appEnv.discordUrl)} variant="link" size="sm">
             <Text className="text-xs">{t("navigation:header.joinDiscord")}</Text>
+          </Button>
+        ) : null}
+        {appEnv.redditUrl ? (
+          <Button onPress={() => openExternalUrl(appEnv.redditUrl)} variant="link" size="sm">
+            <Text className="text-xs">{t("navigation:header.joinReddit")}</Text>
           </Button>
         ) : null}
       </View>
